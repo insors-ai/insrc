@@ -21,6 +21,7 @@
   },
   "homepage": "https://github.com/insors-ai/insrc#readme",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.78.0",
     "@parcel/watcher": "^2.5.6",
     "ollama": "^0.6.3",
     "surrealdb": "^2.0.1"

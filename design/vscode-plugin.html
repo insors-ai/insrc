@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VS Code Plugin Design Document</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --border: #2a2d3a;
+      --text: #e2e4ed;
+      --muted: #8b8fa8;
+      --accent: #7c6af7;
+      --accent2: #4fc3f7;
+      --green: #4caf7d;
+      --yellow: #f5c842;
+      --red: #f47c7c;
+      --code-bg: #12151e;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 15px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      padding: 2rem;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    h1 { font-size: 2rem; color: var(--accent); margin-bottom: 0.25rem; }
+    h2 { font-size: 1.3rem; color: var(--accent2); margin: 2.5rem 0 0.75rem; border-bottom: 1px solid var(--border); padding-bottom: 0.4rem; }
+    h3 { font-size: 1.05rem; color: var(--yellow); margin: 1.5rem 0 0.5rem; }
+    h4 { font-size: 0.95rem; color: var(--green); margin: 1rem 0 0.4rem; }
+
+    p { margin: 0.6rem 0; color: var(--text); }
+    .muted { color: var(--muted); font-size: 0.9rem; }
+
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1rem 1.2rem;
+      overflow-x: auto;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 0.82rem;
+      line-height: 1.6;
+      color: #c9d1d9;
+      margin: 0.75rem 0;
+    }
+
+    code {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 0.1em 0.4em;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 0.85em;
+      color: var(--accent2);
+    }
+
+    pre code { background: none; border: none; padding: 0; color: inherit; font-size: inherit; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0.75rem 0;
+      font-size: 0.9rem;
+    }
+
+    th {
+      background: var(--surface);
+      color: var(--accent);
+      text-align: left;
+      padding: 0.5rem 0.8rem;
+      border: 1px solid var(--border);
+      font-weight: 600;
+    }
+
+    td {
+      padding: 0.45rem 0.8rem;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    tr:nth-child(even) td { background: #13161f; }
+
+    ul, ol { padding-left: 1.5rem; margin: 0.5rem 0; }
+    li { margin: 0.25rem 0; }
+
+    .badge {
+      display: inline-block;
+      padding: 0.15em 0.6em;
+      border-radius: 4px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      margin-right: 0.3rem;
+    }
+
+    .badge-phase  { background: #2d2460; color: var(--accent); }
+    .badge-ok     { background: #1a2d20; color: var(--green); }
+    .badge-warn   { background: #2d2410; color: var(--yellow); }
+    .badge-err    { background: #2d1a1a; color: var(--red); }
+
+    .callout {
+      background: var(--surface);
+      border-left: 3px solid var(--accent);
+      border-radius: 0 6px 6px 0;
+      padding: 0.75rem 1rem;
+      margin: 1rem 0;
+      font-size: 0.92rem;
+    }
+
+    .callout.warn  { border-color: var(--yellow); }
+    .callout.info  { border-color: var(--accent2); }
+    .callout.ok    { border-color: var(--green); }
+
+    .phase-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 0.75rem;
+      margin: 0.75rem 0;
+    }
+
+    .phase-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.9rem 1rem;
+    }
+
+    .phase-card h4 { margin-top: 0; color: var(--accent2); }
+    .phase-card ul { font-size: 0.87rem; }
+
+    .flow-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      margin: 0.5rem 0;
+    }
+
+    .flow-num {
+      background: var(--accent);
+      color: #fff;
+      border-radius: 50%;
+      width: 1.5rem;
+      height: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.78rem;
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-top: 0.2rem;
+    }
+
+    .flow-num.ok     { background: var(--green); }
+    .flow-num.warn   { background: var(--yellow); color: #000; }
+
+    hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+    .meta { color: var(--muted); font-size: 0.85rem; margin-top: 0.25rem; }
+  </style>
+</head>
+<body>
+
+  <h1>VS Code Plugin Design Document</h1>
+  <p class="meta">insrc VS Code extension &mdash; v0.1 &mdash; March 2026</p>
+
+  <h2>Overview</h2>
+  <p>
+    The insrc VS Code extension provides a native graphical interface for the insrc agent directly
+    inside the IDE. It is a <strong>thin UI layer</strong> — all intelligence, routing, and tool
+    execution lives in the insrc daemon. The extension connects to the already-running daemon over
+    a local IPC channel and renders its output.
+  </p>
+  <p>
+    Installing the extension is the complete setup experience. The extension handles daemon
+    installation, Ollama detection, model pulling, and first-run key configuration through an
+    in-IDE wizard. The user never needs to touch a terminal to get started.
+  </p>
+
+  <div class="callout info">
+    <strong>Architecture boundary:</strong> The extension owns UI only — chat panel, diff review,
+    status bar, settings UI, and setup wizard. The daemon owns everything else: intent
+    classification, LLM routing, tool execution, graph queries, session memory. The extension
+    communicates with the daemon exclusively over a local WebSocket or Unix socket.
+  </div>
+
+  <h2>Architecture</h2>
+
+  <pre><code>┌─────────────────────────────────────────────────────────┐
+│  VS Code                                                │
+│                                                         │
+│  ┌─────────────────────┐    ┌───────────────────────┐  │
+│  │  Extension (TS)     │    │  Extension Host       │  │
+│  │  - Navigation panel │◄──►│  (VS Code process)    │  │
+│  │  - Code panel       │    └───────────────────────┘  │
+│  │  - Chat panel       │                               │
+│  │  - Status bar       │                               │
+│  │  - Settings UI      │                               │
+│  │  - Setup wizard     │                               │
+│  └──────────┬──────────┘                               │
+│             │ WebSocket / Unix socket                  │
+└─────────────┼───────────────────────────────────────── ┘
+              │
+  ┌───────────▼───────────────────────────────────────────┐
+  │  insrc daemon (Node.js — local background process)    │
+  │  - Intent classification                              │
+  │  - Local LLM routing (Ollama / qwen3-coder)           │
+  │  - Claude escalation (@anthropic-ai/sdk)              │
+  │  - Tool execution + call validation                   │
+  │  - Kuzu graph + LanceDB vector store                  │
+  │  - Session memory                                     │
+  └───────────────────────────────────────────────────────┘</code></pre>
+
+  <h2>Daemon Lifecycle</h2>
+
+  <p>
+    The extension manages the daemon process lifecycle. On activation, it checks if the daemon is
+    already running (a previous VS Code window may have started it). If not, it spawns the daemon
+    as a detached child process that outlives any single VS Code window.
+  </p>
+
+  <h3>Startup sequence</h3>
+  <pre><code>Extension activated (VS Code opens workspace)
+  │
+  ├─ 1. Check: is daemon running?
+  │         ping localhost:&lt;port&gt; or ~/.insrc/daemon.sock
+  │         ✓ already running → connect
+  │         ✗ not running    → spawn daemon process
+  │
+  ├─ 2. Check: Ollama installed?
+  │         ✓ continue
+  │         ✗ → show setup wizard step: "Install Ollama"
+  │
+  ├─ 3. Check: qwen3-coder + qwen3-embedding:0.6b pulled?
+  │         ✓ continue
+  │         ✗ → daemon pulls both automatically, extension shows per-model progress bars
+  │
+  ├─ 4. Check: ANTHROPIC_API_KEY configured?
+  │         ✓ continue
+  │         ✗ → show setup wizard step: "Add API key" (skippable — local-only mode)
+  │
+  └─ 5. Ready → show status bar ✓, enable chat panel</code></pre>
+
+  <div class="callout warn">
+    <strong>Daemon is shared across windows:</strong> If the user opens multiple VS Code windows,
+    all connect to the same daemon instance. The daemon handles concurrent sessions per repo.
+    Only the first window to activate spawns the daemon; subsequent windows connect to the
+    existing process.
+  </div>
+
+  <h3>Daemon installation</h3>
+  <p>
+    The insrc daemon (Node.js + npm dependencies) is bundled inside the VSIX. On first activation
+    the extension extracts it to <code>~/.insrc/daemon/</code> and registers it for auto-start.
+    Subsequent updates replace the daemon binary when a new extension version is installed.
+  </p>
+
+  <table>
+    <thead><tr><th>Component</th><th>Bundled in VSIX?</th><th>Install strategy</th></tr></thead>
+    <tbody>
+      <tr><td>insrc daemon (Node.js)</td><td><span class="badge badge-ok">Yes</span></td><td>Extracted to <code>~/.insrc/daemon/</code> on first activation</td></tr>
+      <tr><td>Kuzu + LanceDB</td><td><span class="badge badge-ok">Yes</span></td><td>npm dependencies bundled with daemon</td></tr>
+      <tr><td>Ollama binary</td><td><span class="badge badge-warn">No</span></td><td>Detected; setup wizard links to <code>ollama.com/download</code> or runs install script</td></tr>
+      <tr><td>qwen3-coder model</td><td><span class="badge badge-warn">No</span></td><td>Pulled automatically via <code>ollama pull</code> once Ollama is present; progress shown in extension</td></tr>
+      <tr><td>qwen3-embedding:0.6b model</td><td><span class="badge badge-warn">No</span></td><td>Pulled automatically alongside qwen3-coder; required for graph search and session memory embeddings</td></tr>
+      <tr><td>Anthropic API key</td><td><span class="badge badge-warn">No</span></td><td>First-run wizard; stored in <code>~/.insrc/config.json</code>; skippable for local-only mode</td></tr>
+      <tr><td>Brave Search API key</td><td><span class="badge badge-warn">No</span></td><td>Optional; setup wizard offers signup link; skippable (falls back to Claude web search)</td></tr>
+    </tbody>
+  </table>
+
+  <h2>First-Run Setup Wizard</h2>
+
+  <p>
+    Shown automatically on first activation when any required component is missing. Each step is
+    independently skippable. The wizard re-opens from the status bar or settings panel at any time.
+  </p>
+
+  <div class="phase-grid">
+    <div class="phase-card">
+      <h4><span class="badge badge-phase">Step 1</span> Ollama</h4>
+      <ul>
+        <li>Detect Ollama at <code>localhost:11434</code> or custom host</li>
+        <li>If missing: show install button (opens browser) or run <code>curl … | sh</code> inline</li>
+        <li>If remote: show host field — validate with health check ping</li>
+      </ul>
+    </div>
+    <div class="phase-card">
+      <h4><span class="badge badge-phase">Step 2</span> Local models</h4>
+      <ul>
+        <li>Check if <code>qwen3-coder:latest</code> is pulled — agent model</li>
+        <li>Check if <code>qwen3-embedding:0.6b</code> is pulled — embedding model (graph search + session memory)</li>
+        <li>If either missing: pull automatically with per-model progress bars in wizard</li>
+        <li>Custom agent model: dropdown to select any installed Ollama model</li>
+      </ul>
+    </div>
+    <div class="phase-card">
+      <h4><span class="badge badge-phase">Step 3</span> Anthropic API key</h4>
+      <ul>
+        <li>Text field — validates by making a minimal test call</li>
+        <li>Skippable: extension works in local-only mode without it</li>
+        <li>Stored in <code>~/.insrc/config.json</code>, not in VS Code settings</li>
+      </ul>
+    </div>
+    <div class="phase-card">
+      <h4><span class="badge badge-phase">Step 4</span> Brave Search (optional)</h4>
+      <ul>
+        <li>Text field — validates with a test query</li>
+        <li>Skippable: falls back to Claude web search tool</li>
+        <li>Link to free signup (2,000 queries/month)</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout ok">
+    <strong>Local-only mode:</strong> If the user skips the Anthropic API key, the extension
+    operates fully locally — Ollama handles all requests. Intents that normally escalate to Claude
+    (<code>requirements</code>, <code>design</code>, <code>plan</code>, <code>review</code>) are
+    handled by the local model with a visible <span class="badge badge-warn">LOCAL-ONLY</span>
+    badge. Quality is lower but no API calls are made.
+  </div>
+
+  <h2>Settings</h2>
+
+  <p>
+    Settings are split into two layers: VS Code extension settings (workspace/user scope, in
+    <code>settings.json</code>) for IDE behaviour, and insrc config (<code>~/.insrc/config.json</code>)
+    for agent behaviour. The extension settings panel provides a UI for both, but writes to the
+    correct backing store for each.
+  </p>
+
+  <h3>Ollama host</h3>
+  <table>
+    <thead><tr><th>Setting</th><th>Default</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>insrc.ollama.host</code></td>
+        <td><code>http://localhost:11434</code></td>
+        <td>
+          Ollama server URL. Change to a remote host if Ollama runs on a different machine
+          (e.g. a GPU workstation). The daemon health-checks this URL on startup and on every
+          model request. If unreachable, the agent falls back to Claude for all intents and
+          shows a status bar warning.
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Local model</h3>
+  <table>
+    <thead><tr><th>Setting</th><th>Default</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>insrc.model.local</code></td>
+        <td><code>qwen3-coder:latest</code></td>
+        <td>
+          The Ollama model used for local inference. Must be a model name available on the
+          configured Ollama host. The extension shows a dropdown populated by querying
+          <code>GET /api/tags</code> on the Ollama host. Changing this setting restarts the
+          daemon's model connection.
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Claude model tiers</h3>
+  <p>
+    Maps to the <code>models</code> section of <code>~/.insrc/config.json</code>. The settings UI
+    exposes tier defaults and per-role overrides. See the agent design document for the full role
+    list.
+  </p>
+  <table>
+    <thead><tr><th>Setting</th><th>Default</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>insrc.model.tiers.fast</code></td>
+        <td><code>claude-haiku-4-5</code></td>
+        <td>Model for call validation, diff validation, fix escalation. Dropdown: Haiku / Sonnet / Opus.</td>
+      </tr>
+      <tr>
+        <td><code>insrc.model.tiers.standard</code></td>
+        <td><code>claude-sonnet-4-6</code></td>
+        <td>Model for requirements, design, plan, review. Dropdown: Haiku / Sonnet / Opus.</td>
+      </tr>
+      <tr>
+        <td><code>insrc.model.tiers.powerful</code></td>
+        <td><code>claude-opus-4-6</code></td>
+        <td>Model for explicit <code>@opus</code> escalation only. Dropdown: Sonnet / Opus.</td>
+      </tr>
+      <tr>
+        <td><code>insrc.model.roles.*</code></td>
+        <td>(tier defaults)</td>
+        <td>
+          Per-role overrides. Exposed as an expandable table in the settings UI — each row is a
+          role name (e.g. <code>review</code>, <code>implement.validate</code>) with a tier
+          dropdown. Empty = use tier default.
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>API keys</h3>
+  <table>
+    <thead><tr><th>Setting</th><th>Stored in</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>insrc.anthropic.apiKey</code></td>
+        <td><code>~/.insrc/config.json</code></td>
+        <td>
+          Anthropic API key. Displayed as a masked field with a "Validate" button that makes a
+          minimal test call. Stored in <code>~/.insrc/config.json</code>, not in VS Code settings
+          — so it is shared with the CLI and never committed to a workspace.
+        </td>
+      </tr>
+      <tr>
+        <td><code>insrc.search.braveApiKey</code></td>
+        <td><code>~/.insrc/config.json</code></td>
+        <td>
+          Brave Search API key. Optional. If empty, web searches fall back to Claude's hosted
+          <code>WebSearch</code> tool. Validated with a test query on save.
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Permission mode</h3>
+  <table>
+    <thead><tr><th>Setting</th><th>Default</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>insrc.permissions.mode</code></td>
+        <td><code>validate</code></td>
+        <td>
+          Controls whether mutating tool calls are validated by Claude/Haiku before execution.
+          <br><br>
+          <strong><code>validate</code></strong> — Claude/Haiku validates all mutating calls
+          (<code>Write</code>, <code>Edit</code>, <code>Bash</code> mutations,
+          <code>kubectl apply/exec/delete</code>, <code>git commit/push/reset</code>) before
+          execution. Recommended default.<br><br>
+          <strong><code>auto-accept</code></strong> — Mutating calls execute immediately without
+          Claude validation. Removes the ~$0.0004/call validation cost but increases risk of
+          unintended mutations. Suitable for trusted local workflows where the user monitors output.
+          <br><br>
+          The current mode is always shown in the status bar. Can be toggled per-session from the
+          chat panel without changing the persistent setting.
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout warn">
+    <strong>auto-accept mode risk:</strong> In <code>auto-accept</code> mode, the local LLM can
+    write files, run shell commands, and execute kubectl mutations without any Claude review.
+    The extension shows a persistent <span class="badge badge-warn">AUTO-ACCEPT</span> badge in
+    the status bar whenever this mode is active to keep the user aware.
+  </div>
+
+  <h2>Panel Layout</h2>
+
+  <p>
+    The extension occupies three distinct areas of the VS Code workspace. Each panel has a single
+    clear responsibility. They can be used side-by-side or independently.
+  </p>
+
+  <table>
+    <thead><tr><th>Panel</th><th>VS Code primitive</th><th>Position</th><th>Responsibility</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Navigation</strong></td>
+        <td><code>TreeView</code></td>
+        <td>Primary sidebar (left)</td>
+        <td>Session list — browse, switch, and manage past sessions</td>
+      </tr>
+      <tr>
+        <td><strong>Code</strong></td>
+        <td><code>WebviewPanel</code></td>
+        <td>Editor area (centre)</td>
+        <td>Intent-specific views: diffs, test results, plan tracker, graph, review reports, document previews</td>
+      </tr>
+      <tr>
+        <td><strong>Chat</strong></td>
+        <td><code>WebviewView</code></td>
+        <td>Secondary sidebar (right)</td>
+        <td>Persistent conversation stream, input box, tool call blocks, escalation notices</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <pre><code>┌──────────┬─────────────────────────────────┬──────────────┐
+│Navigation│         Code panel               │  Chat panel  │
+│          │  (WebviewPanel — intent view)    │ (WebviewView │
+│TreeView  │                                  │  right bar)  │
+│sessions  │  diff / test / plan / graph /    │              │
+│          │  review / document / …           │  ┌─────────┐ │
+│          │                                  │  │ stream  │ │
+│          │                                  │  │         │ │
+│          │                                  │  ├─────────┤ │
+│          │                                  │  │  input  │ │
+│          │                                  │  └─────────┘ │
+└──────────┴─────────────────────────────────┴──────────────┘</code></pre>
+
+  <h3>Chat panel — floating</h3>
+  <p>
+    The chat panel lives in the secondary sidebar by default. A <strong>Pop out</strong> button
+    in the chat header opens it as a <code>WebviewPanel</code> editor tab, which can then be
+    dragged outside VS Code into a floating OS window (VS Code 1.85+). This is ideal for
+    dual-monitor setups — chat floats on a second screen while the main window shows code.
+  </p>
+  <ul>
+    <li><strong>Float:</strong> click <em>Pop out</em> in chat header, then drag tab outside VS Code
+    — or right-click tab → <em>Move into New Window</em></li>
+    <li><strong>Re-attach:</strong> drag tab back into VS Code — or right-click tab → <em>Move into Main Window</em></li>
+    <li>Session state is preserved across float/attach cycles
+    (<code>retainContextWhenHidden: true</code>)</li>
+  </ul>
+
+  <h3>Chat panel — layout</h3>
+  <p>
+    The chat panel is split vertically into two sections: <strong>History</strong> (top, scrollable)
+    and <strong>Action</strong> (bottom, fixed height). The split is resizable by dragging the
+    divider. The action panel content is context-driven — it changes based on what the agent is
+    doing. When a plan is active, the action panel is locked to plan progress and cannot be
+    replaced by other content until the plan is complete or cancelled.
+  </p>
+
+  <pre><code>┌─────────────────────┐
+│                     │
+│   History panel     │  ← scrollable message stream
+│   (grows upward)    │
+│                     │
+├─────────────────────┤  ← draggable divider
+│   Action panel      │  ← context-driven (plan / tool / input)
+│                     │
+│  [input box]        │
+└─────────────────────┘</code></pre>
+
+  <h4>History panel</h4>
+  <ul>
+    <li>Scrollable stream of conversation turns — user messages and agent responses</li>
+    <li>Tool calls rendered as collapsible blocks: tool name + input summary, expandable output</li>
+    <li>Escalation notices inline: provider, model, estimated token cost before each Claude call</li>
+    <li><code>@opus</code> cost confirmation rendered as an inline card — confirm or cancel without leaving the panel</li>
+    <li>Timestamps and intent badges on each agent turn</li>
+  </ul>
+
+  <h4>Action panel</h4>
+  <p>
+    Shows the most relevant action context for the current state. Priority order (highest wins):
+  </p>
+  <table>
+    <thead><tr><th>Condition</th><th>Action panel content</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Plan is active</td>
+        <td>
+          <strong>Always shown — cannot be displaced.</strong> Step tracker: current step name,
+          step N of M, status badge, <em>Continue</em> / <em>Skip</em> / <em>Cancel plan</em>
+          buttons. Progress bar across all steps. Tool spinners and diff decisions appear as
+          transient overlays inside the tracker card rather than replacing it.
+        </td>
+      </tr>
+      <tr>
+        <td>Agent processing a turn</td>
+        <td>
+          Spinner + current tool name (<code>read_file src/index.ts…</code>). Input box disabled
+          with a <em>Cancel</em> button.
+        </td>
+      </tr>
+      <tr>
+        <td>Diff awaiting decision</td>
+        <td>
+          <em>Accept</em> / <em>Reject</em> / <em>Edit</em> buttons for the pending diff.
+          File name and change summary shown above the buttons.
+        </td>
+      </tr>
+      <tr>
+        <td>Idle</td>
+        <td>
+          Input box — supports <code>@file</code> mentions (fuzzy picker), <code>@claude</code> /
+          <code>@opus</code> / <code>@local</code> prefixes, file drag-and-drop attachments,
+          and <code>/</code> command menu.
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout info">
+    <strong>Plan always wins the action panel.</strong> While a plan is active, the step tracker
+    is pinned. The input box is still accessible via a collapsed drawer at the bottom of the
+    action panel for mid-plan questions to the agent.
+  </div>
+
+  <h3>Navigation panel — contents</h3>
+  <p>
+    The tree is organised by <strong>repo first, sessions second</strong>. The top level lists all
+    repos known to the daemon. Sessions are nested under their repo. The user can work across
+    multiple repos in the same VS Code window without switching workspaces.
+  </p>
+
+  <pre><code>┌─────────────────────────────┐
+│ 🔍 Search sessions…         │
+├─────────────────────────────┤
+│ ＋ Add repo                 │
+├─────────────────────────────┤
+│ ▼ insrc          [indexed]  │  ← active repo (current workspace)
+│   ▼ Today                   │
+│     · debug payments #4     │
+│     · refactor auth layer   │
+│   ▶ Yesterday               │
+│   ▶ This week               │
+│                             │
+│ ▶ api-gateway    [indexed]  │  ← other indexed repos
+│ ▶ frontend       [indexed]  │
+│ ▶ ml-pipeline   [stale ⚠]  │  ← stale index badge
+└─────────────────────────────┘</code></pre>
+
+  <h4>Repo management</h4>
+  <ul>
+    <li><strong>Active repo</strong> — the repo matching the current VS Code workspace folder;
+    expanded by default; sessions are scoped to this repo's graph context</li>
+    <li><strong>Indexed repos</strong> — any repo previously indexed by the daemon appears in the
+    list; user can expand it and resume any past session regardless of which folder VS Code has open</li>
+    <li><strong>Stale badge ⚠</strong> — shown when the repo's index is out of date; click to
+    trigger a re-index</li>
+    <li><strong>＋ Add repo</strong> button at the top — opens a folder picker; the selected path
+    is registered with the daemon and indexing starts immediately with a progress indicator under
+    the repo node</li>
+    <li>Right-click a repo node: <em>Re-index</em> · <em>Remove from list</em> (does not delete
+    the repo, only removes it from the daemon's tracked list)</li>
+  </ul>
+
+  <h4>Session list</h4>
+  <ul>
+    <li>Sessions grouped by date under each repo: <em>Today</em> · <em>Yesterday</em> · <em>This week</em> · older</li>
+    <li>Each session node shows: first message preview, intent badge, timestamp</li>
+    <li>Click a session → switches active repo context in the daemon, loads the session into the
+    chat panel, restores last active code view</li>
+    <li>Right-click a session: <em>Rename</em> · <em>Delete</em> · <em>Export</em></li>
+    <li>Search box at the top searches sessions across <em>all</em> repos (queries daemon graph)</li>
+  </ul>
+
+  <h3>Status bar</h3>
+  <p>
+    Permanent entry in the VS Code status bar (bottom-right). Single click opens the insrc panel.
+  </p>
+  <table>
+    <thead><tr><th>State</th><th>Display</th></tr></thead>
+    <tbody>
+      <tr><td>Daemon running, Ollama available</td><td><code>✱ insrc</code> (accent colour)</td></tr>
+      <tr><td>Processing a turn</td><td><code>✱ insrc ⟳</code> (spinning)</td></tr>
+      <tr><td>Ollama unavailable, Claude fallback active</td><td><code>✱ insrc ☁</code> (yellow)</td></tr>
+      <tr><td>auto-accept mode active</td><td><code>✱ insrc AUTO-ACCEPT</code> (yellow)</td></tr>
+      <tr><td>Daemon not running</td><td><code>✱ insrc ✗</code> (red) — click to restart</td></tr>
+      <tr><td>Graph index stale</td><td><code>✱ insrc △</code> (yellow) — click to re-index</td></tr>
+      <tr><td>Setup wizard incomplete</td><td><code>✱ insrc setup required</code> (yellow)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Settings panel</h3>
+  <p>
+    A dedicated webview panel (accessible via <code>insrc: Open Settings</code> command or the
+    <code>/settings</code> chat command) that provides a structured form UI for all insrc
+    configuration. Changes are written immediately to the appropriate backing store
+    (<code>~/.insrc/config.json</code> or VS Code <code>settings.json</code>) and take effect
+    without restarting VS Code.
+  </p>
+  <p>
+    Sections: <strong>Ollama</strong> · <strong>Local model</strong> · <strong>Claude models</strong>
+    · <strong>API keys</strong> · <strong>Permissions</strong> · <strong>Daemon</strong>
+  </p>
+
+  <h2>Intent-Specific Views</h2>
+
+  <p>
+    Each intent has a distinct primary artifact rendered in the <strong>Code panel</strong>
+    (centre editor area). The chat panel (right sidebar) remains accessible at all times alongside
+    the code view. When the daemon signals an intent, the extension opens the matching
+    <code>WebviewPanel</code> in the editor area automatically.
+  </p>
+
+  <div class="callout info">
+    <strong>View switching is automatic but not forced.</strong> The extension opens the
+    intent-specific code view when a turn starts. The user can close it, drag it to a different
+    column, or ignore it entirely — the chat panel always works standalone. Per-intent view
+    preference is remembered.
+  </div>
+
+  <h3>implement / refactor</h3>
+  <p>Primary artifact: <strong>file diff</strong></p>
+  <ul>
+    <li>Split view: chat stream on left, native VS Code diff editor on right</li>
+    <li>Pipeline status bar above the diff: <code>Stage 1 — local generating…</code> →
+    <code>Stage 2 — Claude validating…</code> → <code>APPROVED</code> / <code>CHANGES_NEEDED (retry 1/2)</code></li>
+    <li>Per-file diff tabs when multiple files are changed</li>
+    <li>Accept / Reject / Edit buttons pinned to the bottom of the diff panel</li>
+    <li>On exhausted retries: diff border turns yellow, manual decision prompt appears inline</li>
+  </ul>
+
+  <h3>test</h3>
+  <p>Primary artifact: <strong>test run results</strong></p>
+  <ul>
+    <li>Test results panel (VS Code native Testing API) shows pass / fail per test case</li>
+    <li>Fix loop counter shown in panel header: <code>Fix loop — attempt 2/3 (local)</code> or
+    <code>Escalating to Claude…</code></li>
+    <li>Failing test highlighted with the current error and stack trace inline</li>
+    <li>Fix diff shown in a secondary split alongside the failing test body so the user can
+    see what the model is changing and why</li>
+    <li>Terminal condition prompt appears inline when claudeRounds cap is reached:
+    <em>accept / discard / open editor</em></li>
+  </ul>
+
+  <h3>debug</h3>
+  <p>Primary artifact: <strong>tool call timeline</strong></p>
+  <ul>
+    <li>Timeline view showing each tool call as a collapsible row:
+    tool name, command/input, output summary, auto-execute vs. validated badge</li>
+    <li>Read-only calls collapsed by default (low noise); mutating calls and their
+    validation result expanded by default</li>
+    <li>Running cost counter in the panel header (Claude calls only):
+    <code>Claude spend: $0.0008</code></li>
+    <li>Stuck escalation shown as a distinct row: local model's ≤200-token summary sent to
+    Claude, Claude's direction returned — both visible</li>
+    <li>Fix diff appears in a split when the local model produces a patch, same as implement</li>
+  </ul>
+
+  <h3>plan</h3>
+  <p>Primary artifact: <strong>plan step tracker</strong></p>
+  <ul>
+    <li>Kanban-style column view: <code>Pending</code> · <code>In Progress</code> ·
+    <code>Done</code> · <code>Failed</code> · <code>Skipped</code></li>
+    <li>Each step card shows: step description, estimated effort, dependent steps</li>
+    <li>Active step highlighted with a pulsing border; click to start it immediately</li>
+    <li>Step state transitions animated in real time as <code>plan_step_update</code>
+    events arrive from the daemon</li>
+    <li>Click any completed step to expand its diff and Claude validation result</li>
+    <li>Toolbar: <em>Start next</em> · <em>Skip step</em> · <em>View full plan</em></li>
+  </ul>
+
+  <h3>review</h3>
+  <p>Primary artifact: <strong>structured review report</strong></p>
+  <ul>
+    <li>Review output rendered as a structured document rather than a chat message:
+    sections for Security · Performance · Correctness · Style</li>
+    <li>Each finding linked to the relevant file and line — click to jump to the location
+    in the editor</li>
+    <li>Severity badges: <span class="badge badge-err">HIGH</span>
+    <span class="badge badge-warn">MED</span>
+    <span class="badge badge-ok">LOW</span></li>
+    <li>Inline "fix this" button on each finding — triggers an <code>implement</code>
+    turn pre-seeded with the finding context</li>
+    <li>Export button: save report as Markdown to workspace</li>
+  </ul>
+
+  <h3>research</h3>
+  <p>Primary artifact: <strong>entity detail panel</strong></p>
+  <ul>
+    <li>Graph entities referenced in the answer shown in a sidebar list: name, kind,
+    file, line — click to open in editor</li>
+    <li>Call graph mini-view for the resolved entity: callers above, callees below,
+    depth configurable (1–3 hops)</li>
+    <li>Chat stream on the left contains the explanation; entity panel on the right
+    stays in sync as the model references different entities</li>
+  </ul>
+
+  <h3>graph</h3>
+  <p>Primary artifact: <strong>graph query result</strong></p>
+  <ul>
+    <li>No LLM involved — results rendered directly from Kuzu query output</li>
+    <li>Tree view for callers/callees/dependents: expandable nodes, file path and
+    line number on each</li>
+    <li>Tabular view for multi-column Cypher query results (entity name, kind, file)</li>
+    <li>Click any node to open the file at the entity's line in the editor</li>
+  </ul>
+
+  <h3>requirements</h3>
+  <p>Primary artifact: <strong>split document panel (preview / raw)</strong></p>
+  <p>
+    The Code panel is split horizontally into two panes rendered inside the same
+    <code>WebviewPanel</code> — no dependency on VS Code's native Markdown viewer.
+    A swap button in the toolbar flips the positions of the two panes.
+  </p>
+
+  <pre><code>┌──────────────────────────────────────────┐
+│  Toolbar: [MD] [HTML]  [⇅]  [✎ Annotate] │
+├──────────────────────────────────────────┤
+│                                          │
+│   Preview pane                           │  ← rendered (markdown-it / raw HTML)
+│   (top by default)                       │     styled to VS Code theme
+│                                          │
+├──────────────────────────────────────────┤  ← draggable divider
+│                                          │
+│   Raw pane                               │  ← editable source (Monaco editor)
+│   (bottom by default)                    │
+│                                          │
+└──────────────────────────────────────────┘</code></pre>
+
+  <ul>
+    <li><strong>Preview pane</strong> — rendered live using <code>markdown-it</code> (MD mode) or
+    direct HTML injection (HTML mode); updates as the agent streams output</li>
+    <li><strong>Raw pane</strong> — Monaco editor showing the source text; edits in raw immediately
+    re-render the preview</li>
+    <li><strong>Format toggle</strong> (<code>MD</code> / <code>HTML</code>) — switches both panes;
+    daemon instructed to produce output in the selected format; persisted in
+    <code>insrc.views.requirements.format</code></li>
+    <li><strong>Swap (⇅)</strong> — flips preview to bottom and raw to top; persisted per workspace</li>
+    <li>Save writes to <code>docs/requirements.md</code> or <code>docs/requirements.html</code></li>
+    <li>Revision history: each agent response is a named revision; diff between revisions in the
+    raw pane using Monaco's diff view</li>
+  </ul>
+
+  <h4>Annotations</h4>
+  <p>
+    Clicking <strong>✎ Annotate</strong> in the toolbar enters annotation mode. The user selects
+    text in either pane and types a comment. When done, all annotations are bundled and sent to
+    the chat panel as structured context for the next agent turn.
+  </p>
+  <ul>
+    <li><strong>Preview pane annotations</strong> — select any rendered text → a comment bubble
+    appears; type the note and press Enter; annotated text highlighted in amber with a margin
+    indicator</li>
+    <li><strong>Raw pane annotations</strong> — Monaco inline widget on the selected line range;
+    same comment bubble UX; shown as a gutter decoration</li>
+    <li>Annotations accumulate until the user clicks <strong>Send to chat</strong> — they are
+    compiled into a single structured message:
+    <pre><code>Annotations on requirements draft:
+
+&gt; "The system shall support multi-tenancy"
+  → needs clarification: tenant isolation at DB level or app level?
+
+&gt; "Response time &lt; 200ms"
+  → this conflicts with the batch import requirement in section 3</code></pre></li>
+    <li>The chat panel receives the annotation bundle as a user turn — the agent responds to
+    each point in sequence, updating the document in the raw pane</li>
+    <li>Annotation mode is cleared after sending; annotations can also be discarded individually
+    or all at once with <em>Clear all</em></li>
+  </ul>
+
+  <h3>design</h3>
+  <p>Primary artifact: <strong>split document panel (preview / raw) + architecture canvas</strong></p>
+  <p>
+    Same split layout and annotation behaviour as requirements. An additional <strong>Canvas</strong>
+    tab in the toolbar replaces the preview pane with the architecture canvas when selected.
+    Annotations are supported on the canvas too — click any node to attach a comment.
+  </p>
+
+  <pre><code>┌──────────────────────────────────────────────────┐
+│  Toolbar: [MD] [HTML] [Canvas]  [⇅]  [✎ Annotate] │
+├──────────────────────────────────────────────────┤
+│                                                  │
+│   Preview pane  — or —  Canvas                   │  ← toggled by [Canvas]
+│   (top by default)                               │
+│                                                  │
+├──────────────────────────────────────────────────┤
+│                                                  │
+│   Raw pane (Monaco editor)                       │
+│   (bottom by default)                            │
+│                                                  │
+└──────────────────────────────────────────────────┘</code></pre>
+
+  <ul>
+    <li>MD / HTML / swap / annotation behaviour identical to requirements; persisted in
+    <code>insrc.views.design.format</code></li>
+    <li><strong>Canvas tab</strong> — replaces the preview pane with the architecture canvas:
+    graph entities as nodes, proposed entities/relationships as dashed overlays; raw pane
+    stays visible below for the written document</li>
+    <li><strong>Canvas annotations</strong> — in annotation mode, click any canvas node to attach
+    a comment; node highlighted with amber border; sent to chat alongside text annotations</li>
+    <li>Save to <code>docs/adr-NNN.md</code> or <code>docs/design-NNN.html</code></li>
+    <li>Revision history same as requirements</li>
+  </ul>
+
+  <h3>document</h3>
+  <p>Primary artifact: <strong>side-by-side doc preview</strong></p>
+  <ul>
+    <li>Left pane: source code (the file being documented)</li>
+    <li>Right pane: generated docstrings / README / changelog in a Markdown preview</li>
+    <li>Accept inserts generated docs inline at the correct positions in the source file</li>
+    <li>When user-requested Claude review is active: review findings appear as inline
+    annotations in the right pane</li>
+  </ul>
+
+  <h3>View summary</h3>
+  <table>
+    <thead><tr><th>Intent</th><th>Primary view</th><th>Secondary (always available)</th></tr></thead>
+    <tbody>
+      <tr><td><code>implement</code>, <code>refactor</code></td><td>Diff editor + pipeline status</td><td>Chat stream</td></tr>
+      <tr><td><code>test</code></td><td>Test results + fix loop counter</td><td>Chat stream + fix diff</td></tr>
+      <tr><td><code>debug</code></td><td>Tool call timeline</td><td>Chat stream + fix diff</td></tr>
+      <tr><td><code>plan</code></td><td>Kanban step tracker</td><td>Chat stream</td></tr>
+      <tr><td><code>review</code></td><td>Structured review report</td><td>Chat stream</td></tr>
+      <tr><td><code>research</code></td><td>Entity detail panel + call graph</td><td>Chat stream</td></tr>
+      <tr><td><code>graph</code></td><td>Tree / table result view</td><td>—</td></tr>
+      <tr><td><code>requirements</code></td><td>Document editor (MD or HTML, selectable)</td><td>Chat stream</td></tr>
+      <tr><td><code>design</code></td><td>Architecture canvas + document editor (MD or HTML, selectable)</td><td>Chat stream</td></tr>
+      <tr><td><code>document</code></td><td>Source + doc preview split</td><td>Chat stream</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Code Annotations</h2>
+
+  <p>
+    Annotations are a cross-cutting feature available in <strong>any file open in the VS Code
+    editor</strong> — not just requirements and design views. The user selects a range of code,
+    adds a comment, and when done sends all annotations to the chat panel as structured context
+    for the next agent turn. The mechanism is the same as in the requirements/design split panel
+    but implemented using native VS Code editor APIs.
+  </p>
+
+  <h3>How it works</h3>
+  <ul>
+    <li>Select any text range in any open editor file</li>
+    <li>A <strong>CodeLens</strong> appears above the selection: <em>＋ Add insrc annotation</em>
+    — or use the right-click context menu → <em>insrc: Add annotation</em>
+    — or keybind <code>Ctrl+Shift+A</code> / <code>Cmd+Shift+A</code></li>
+    <li>A VS Code <strong>InputBox</strong> appears — type the annotation and press Enter</li>
+    <li>The annotated range is decorated with an amber highlight and a gutter icon; a
+    <strong>CodeLens</strong> above it shows the annotation text (truncated to 60 chars)</li>
+    <li>Multiple annotations accumulate across multiple files</li>
+    <li>A badge in the chat panel action area and status bar shows <code>N annotations pending</code></li>
+    <li>Click <strong>Send annotations to chat</strong> (chat action panel or status bar) to compile
+    and send</li>
+  </ul>
+
+  <h3>Annotation message format</h3>
+  <p>Sent to the chat as a user turn with structured context:</p>
+  <pre><code>Code annotations:
+
+src/payment/handler.ts  lines 42–51
+&gt; const result = await db.query(sql, params)
+  → this runs inside a loop — N+1 query problem
+
+src/payment/handler.ts  lines 78–80
+&gt; if (err.code === 'TIMEOUT') retry()
+  → retry has no backoff or limit — can storm the DB
+
+src/auth/middleware.ts  line 12
+&gt; req.user = jwt.decode(token)
+  → decode does not verify signature — use jwt.verify</code></pre>
+
+  <h3>VS Code API used</h3>
+  <ul>
+    <li><code>vscode.languages.registerCodeLensProvider</code> — renders the <em>Add annotation</em>
+    and annotation preview lenses above selections/annotated ranges</li>
+    <li><code>vscode.window.createTextEditorDecorationType</code> — amber highlight + gutter icon
+    on annotated ranges</li>
+    <li><code>vscode.window.showInputBox</code> — annotation text input</li>
+    <li>Annotations stored in extension memory (not on disk) — cleared after sending or on session
+    close</li>
+  </ul>
+
+  <div class="callout info">
+    <strong>Works alongside requirements / design views.</strong> The same annotation queue is
+    shared — a user can annotate code files and the requirements preview in the same session,
+    then send all annotations to chat in one batch.
+  </div>
+
+  <h2>IPC Protocol</h2>
+
+  <p>
+    The extension and daemon communicate over a local WebSocket (TCP on <code>localhost:&lt;port&gt;</code>,
+    port stored in <code>~/.insrc/daemon.json</code>) or a Unix domain socket
+    (<code>~/.insrc/daemon.sock</code>). All messages are newline-delimited JSON.
+  </p>
+
+  <h3>Message types (extension → daemon)</h3>
+  <pre><code>// Send a user turn
+{ "type": "turn", "sessionId": "sess_abc", "repoId": "repo_xyz",
+  "message": "debug why payments are failing",
+  "attachments": [{ "kind": "text", "name": "crash.log", "content": "..." }] }
+
+// Cancel in-progress turn
+{ "type": "cancel", "sessionId": "sess_abc" }
+
+// Toggle permission mode for session
+{ "type": "setPermissionMode", "sessionId": "sess_abc", "mode": "auto-accept" }
+
+// Re-index current repo
+{ "type": "reindex", "repoId": "repo_xyz" }</code></pre>
+
+  <h3>Message types (daemon → extension)</h3>
+  <pre><code>// Streaming token delta
+{ "type": "delta", "sessionId": "sess_abc", "text": "Found OOMKilled in describe..." }
+
+// Tool call notification (shown as collapsible block)
+{ "type": "toolCall", "sessionId": "sess_abc",
+  "tool": "Bash", "input": "kubectl logs payment-svc --tail=100",
+  "validation": "auto-execute" }
+
+// Tool result
+{ "type": "toolResult", "sessionId": "sess_abc",
+  "tool": "Bash", "output": "...", "isError": false }
+
+// Escalation notice (shown before Claude call)
+{ "type": "escalation", "sessionId": "sess_abc",
+  "provider": "claude", "model": "claude-haiku-4-5",
+  "role": "call_validation", "estimatedTokens": 320 }
+
+// Diff ready for review
+{ "type": "diff", "sessionId": "sess_abc",
+  "file": "src/payment/handler.ts", "patch": "...",
+  "status": "approved" | "needs_changes" | "exhausted" }
+
+// Intent classified — extension switches to the appropriate view
+{ "type": "intentView", "sessionId": "sess_abc",
+  "intent": "debug" | "implement" | "test" | "plan" | "review" | "research" | "graph" | "requirements" | "design" | "document",
+  "confidence": 0.92 }
+
+// Turn complete
+{ "type": "done", "sessionId": "sess_abc",
+  "stopReason": "end_turn" | "user_cancel" | "error" }
+
+// Daemon status update (for status bar)
+{ "type": "status",
+  "daemon": "running",
+  "ollama": "available" | "unavailable",
+  "indexStatus": "current" | "stale",
+  "permissionMode": "validate" | "auto-accept" }</code></pre>
+
+  <h2>Extension Commands</h2>
+
+  <table>
+    <thead><tr><th>Command</th><th>Shortcut</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>insrc.openPanel</code></td><td><code>Ctrl+Shift+I</code> / <code>Cmd+Shift+I</code></td><td>Open or focus the insrc chat panel</td></tr>
+      <tr><td><code>insrc.addAnnotation</code></td><td><code>Ctrl+Shift+A</code> / <code>Cmd+Shift+A</code></td><td>Add annotation to current selection (any editor or requirements/design view)</td></tr>
+      <tr><td><code>insrc.sendAnnotations</code></td><td>—</td><td>Send all pending annotations to chat as a structured user turn</td></tr>
+      <tr><td><code>insrc.clearAnnotations</code></td><td>—</td><td>Discard all pending annotations</td></tr>
+      <tr><td><code>insrc.newSession</code></td><td><code>Ctrl+Shift+N</code> / <code>Cmd+Shift+N</code></td><td>Start a new chat session in a new tab</td></tr>
+      <tr><td><code>insrc.openSettings</code></td><td>—</td><td>Open the insrc settings panel</td></tr>
+      <tr><td><code>insrc.addRepo</code></td><td>—</td><td>Add a new repo for indexing (opens folder picker)</td></tr>
+      <tr><td><code>insrc.reindex</code></td><td>—</td><td>Trigger a re-index of the current workspace</td></tr>
+      <tr><td><code>insrc.restartDaemon</code></td><td>—</td><td>Stop and restart the insrc daemon</td></tr>
+      <tr><td><code>insrc.togglePermissionMode</code></td><td>—</td><td>Toggle between <code>validate</code> and <code>auto-accept</code> for the current session</td></tr>
+      <tr><td><code>insrc.openSetupWizard</code></td><td>—</td><td>Re-open the first-run setup wizard</td></tr>
+      <tr><td><code>insrc.showCost</code></td><td>—</td><td>Show Claude API spend for the current session</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Extension Manifest (package.json sketch)</h2>
+
+  <pre><code>{
+  "name": "insrc",
+  "displayName": "insrc — local-first coding agent",
+  "description": "AI coding assistant with local LLM, graph context, and selective Claude escalation",
+  "version": "0.1.0",
+  "engines": { "vscode": "^1.98.0" },
+  "categories": ["AI", "Programming Languages", "Other"],
+  "extensionKind": ["workspace"],
+  "activationEvents": ["onStartupFinished"],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [ ... ],
+    "configuration": {
+      "title": "insrc",
+      "properties": {
+        "insrc.ollama.host":             { "type": "string",  "default": "http://localhost:11434" },
+        "insrc.model.local":             { "type": "string",  "default": "qwen3-coder:latest" },
+        "insrc.model.tiers.fast":        { "type": "string",  "default": "claude-haiku-4-5",  "enum": ["claude-haiku-4-5", "claude-sonnet-4-6", "claude-opus-4-6"] },
+        "insrc.model.tiers.standard":    { "type": "string",  "default": "claude-sonnet-4-6", "enum": ["claude-haiku-4-5", "claude-sonnet-4-6", "claude-opus-4-6"] },
+        "insrc.model.tiers.powerful":    { "type": "string",  "default": "claude-opus-4-6",   "enum": ["claude-sonnet-4-6", "claude-opus-4-6"] },
+        "insrc.permissions.mode":        { "type": "string",  "default": "validate",           "enum": ["validate", "auto-accept"] },
+        "insrc.daemon.autoStart":        { "type": "boolean", "default": true },
+        "insrc.daemon.port":             { "type": "number",  "default": 0, "description": "0 = auto-assign" }
+      }
+    },
+    "viewsContainers": {
+      "activitybar": [{ "id": "insrc", "title": "insrc", "icon": "$(sparkle)" }]
+    },
+    "views": {
+      "insrc": [{ "type": "webview", "id": "insrc.chatPanel", "name": "Chat" }]
+    }
+  }
+}</code></pre>
+
+  <div class="callout info">
+    <strong>API keys not in VS Code settings:</strong> <code>ANTHROPIC_API_KEY</code> and
+    <code>BRAVE_API_KEY</code> are intentionally absent from the VS Code
+    <code>contributes.configuration</code> schema. They are stored in
+    <code>~/.insrc/config.json</code> only — this prevents them from appearing in
+    workspace <code>settings.json</code> files and being accidentally committed to git.
+  </div>
+
+  <h2>Implementation Phases</h2>
+
+  <div class="phase-grid">
+    <div class="phase-card">
+      <h4><span class="badge badge-phase">Phase 1</span> Scaffold + Daemon lifecycle</h4>
+      <ul>
+        <li>Extension activates, spawns daemon</li>
+        <li>WebSocket IPC established</li>
+        <li>Status bar connected to daemon status</li>
+        <li>Setup wizard (Ollama + model pull)</li>
+      </ul>
+    </div>
+    <div class="phase-card">
+      <h4><span class="badge badge-phase">Phase 2</span> Chat panel</h4>
+      <ul>
+        <li>Webview chat UI with streaming</li>
+        <li>Tool call blocks (collapsible)</li>
+        <li>Escalation notices inline</li>
+        <li>@file mentions + attachments</li>
+      </ul>
+    </div>
+    <div class="phase-card">
+      <h4><span class="badge badge-phase">Phase 3</span> Diff viewer + permissions</h4>
+      <ul>
+        <li>Native VS Code diff editor for patches</li>
+        <li>Accept / reject / edit controls</li>
+        <li>Permission mode toggle in panel</li>
+        <li>@opus cost confirmation flow</li>
+      </ul>
+    </div>
+    <div class="phase-card">
+      <h4><span class="badge badge-phase">Phase 4</span> Settings panel + polish</h4>
+      <ul>
+        <li>Webview settings form</li>
+        <li>Per-role model override table</li>
+        <li>API key validation UI</li>
+        <li>Plan progress header</li>
+      </ul>
+    </div>
+  </div>
+
+</body>
+</html>

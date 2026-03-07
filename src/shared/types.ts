@@ -9,41 +9,101 @@ export interface LLMMessage {
   content: string;
 }
 
+export interface ToolDefinition {
+  name: string;
+  description: string;
+  inputSchema: Record<string, unknown>;
+}
+
+export interface ToolCall {
+  id: string;
+  name: string;
+  input: Record<string, unknown>;
+}
+
+export interface ToolResult {
+  toolCallId: string;
+  content: string;
+  isError?: boolean | undefined;
+}
+
+export interface LLMResponse {
+  text: string;
+  toolCalls?: ToolCall[] | undefined;
+  stopReason: 'end_turn' | 'tool_use' | 'max_tokens';
+}
+
 export interface CompletionOpts {
   maxTokens?: number;
   temperature?: number;
+  tools?: ToolDefinition[] | undefined;
 }
 
 export interface LLMProvider {
-  complete(messages: LLMMessage[], opts?: CompletionOpts): Promise<string>;
+  complete(messages: LLMMessage[], opts?: CompletionOpts): Promise<LLMResponse>;
   stream(messages: LLMMessage[], opts?: CompletionOpts): AsyncIterable<string>;
+  readonly supportsTools: boolean;
 }
 
-/**
- * Task routing — what kind of work the agent is being asked to do.
- * Used to select the right provider (local vs Claude).
- */
-export type TaskKind =
-  | 'complete'      // inline completion, next line
-  | 'explain'       // explain function/class/file
-  | 'test'          // generate unit tests
-  | 'edit'          // single-file edit or refactor
-  | 'design'        // architecture, design decision
-  | 'review'        // code review, tradeoff analysis
-  | 'document'      // generate a document
-  | 'graph'         // pure graph query — no LLM needed
+// ---------------------------------------------------------------------------
+// Intent taxonomy
+// ---------------------------------------------------------------------------
+
+export type Intent =
+  | 'implement'
+  | 'refactor'
+  | 'test'
+  | 'debug'
+  | 'review'
+  | 'document'
+  | 'research'
+  | 'graph'
+  | 'plan'
+  | 'requirements'
+  | 'design';
+
+export type ExplicitProvider = 'claude' | 'opus' | 'local';
 
 export interface Task {
-  kind: TaskKind;
-  text: string;
-  /** If true, always route to Claude regardless of kind */
-  explicit?: 'claude';
-  /** Number of files the task touches */
-  fileCount?: number;
-  /** Number of repos the task touches */
-  repoCount?: number;
-  /** Estimated token count of required context */
-  tokenEstimate?: number;
+  intent: Intent;
+  message: string;
+  explicit?: ExplicitProvider | undefined;
+  attachments?: Attachment[] | undefined;
+  activeFile?: string | undefined;
+  selectedEntity?: string | undefined;
+}
+
+export interface Attachment {
+  kind: 'text' | 'code' | 'image' | 'pdf';
+  name: string;
+  path: string;
+  content?: string | undefined;
+}
+
+// ---------------------------------------------------------------------------
+// Agent config
+// ---------------------------------------------------------------------------
+
+export interface AgentConfig {
+  ollama: {
+    host: string;
+  };
+  models: {
+    local: string;
+    tiers: {
+      fast: string;
+      standard: string;
+      powerful: string;
+    };
+    roles: Record<string, string>;
+  };
+  keys: {
+    anthropic?: string | undefined;
+    brave?: string | undefined;
+  };
+  permissions: {
+    mode: 'validate' | 'auto-accept';
+  };
 }
 
 // ---------------------------------------------------------------------------

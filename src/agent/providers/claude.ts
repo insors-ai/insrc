@@ -1,41 +1,20 @@
 import Anthropic from '@anthropic-ai/sdk';
-import type { LLMMessage, LLMProvider, CompletionOpts } from '../../shared/types.js';
+import type {
+  LLMMessage,
+  LLMProvider,
+  LLMResponse,
+  CompletionOpts,
+  ToolDefinition,
+  ToolCall,
+} from '../../shared/types.js';
 
 // ---------------------------------------------------------------------------
 // Configuration
 // ---------------------------------------------------------------------------
 
-/**
- * Supported Claude backends.
- *
- * 'anthropic' — direct Anthropic API, requires ANTHROPIC_API_KEY.
- * 'bedrock'   — AWS Bedrock, requires @anthropic-ai/bedrock-sdk (future).
- * 'vertex'    — Google Vertex AI, requires @anthropic-ai/vertex-sdk (future).
- */
-export type ClaudeBackend = 'anthropic' | 'bedrock' | 'vertex';
-
 export interface ClaudeProviderConfig {
-  /**
-   * Claude model to use.
-   * Defaults to claude-sonnet-4-6 (balanced cost/quality for coding tasks).
-   * Switch to claude-opus-4-6 for maximum reasoning on complex design tasks,
-   * or claude-haiku-4-5 for lowest cost on simple tasks.
-   */
-  model?: string;
-
-  /**
-   * Backend for Claude API access.
-   * Only 'anthropic' is currently implemented.
-   * 'bedrock' and 'vertex' require their respective SDK packages.
-   */
-  backend?: ClaudeBackend;
-
-  // Bedrock options (for future use with @anthropic-ai/bedrock-sdk)
-  awsRegion?: string;
-
-  // Vertex options (for future use with @anthropic-ai/vertex-sdk)
-  gcpRegion?: string;
-  gcpProjectId?: string;
+  model?: string | undefined;
+  apiKey?: string | undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -43,56 +22,62 @@ export interface ClaudeProviderConfig {
 // ---------------------------------------------------------------------------
 
 export class ClaudeProvider implements LLMProvider {
+  readonly supportsTools = true;
   private readonly client: Anthropic;
   private readonly model: string;
 
   constructor(config: ClaudeProviderConfig = {}) {
     this.model = config.model ?? 'claude-sonnet-4-6';
-
-    const backend = config.backend ?? 'anthropic';
-    if (backend !== 'anthropic') {
-      throw new Error(
-        `ClaudeProvider backend '${backend}' is not yet implemented. ` +
-        `Install @anthropic-ai/bedrock-sdk or @anthropic-ai/vertex-sdk and wire it in.`,
-      );
-    }
-
-    // Throws AuthenticationError on first request if ANTHROPIC_API_KEY is not set.
-    this.client = new Anthropic();
+    this.client = new Anthropic({
+      ...(config.apiKey ? { apiKey: config.apiKey } : {}),
+    });
   }
 
-  // -------------------------------------------------------------------------
-  // complete() — non-streaming, returns the full response string
-  // -------------------------------------------------------------------------
-
-  async complete(messages: LLMMessage[], opts: CompletionOpts = {}): Promise<string> {
+  async complete(messages: LLMMessage[], opts: CompletionOpts = {}): Promise<LLMResponse> {
     const { system, apiMessages } = splitMessages(messages);
+    const tools = opts.tools ? toAnthropicTools(opts.tools) : undefined;
 
     try {
-      const response = await (this.client as Anthropic).messages.create({
+      const response = await this.client.messages.create({
         model:      this.model,
         max_tokens: opts.maxTokens ?? 8_192,
         ...(system ? { system } : {}),
+        ...(tools && tools.length > 0 ? { tools } : {}),
         messages:   apiMessages,
       });
 
-      const textBlock = response.content.find(b => b.type === 'text');
-      return textBlock?.text ?? '';
+      const text = response.content
+        .filter((b): b is Anthropic.TextBlock => b.type === 'text')
+        .map(b => b.text)
+        .join('');
 
+      const toolCalls = response.content
+        .filter((b): b is Anthropic.ToolUseBlock => b.type === 'tool_use')
+        .map((b): ToolCall => ({
+          id:    b.id,
+          name:  b.name,
+          input: b.input as Record<string, unknown>,
+        }));
+
+      return {
+        text,
+        toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
+        stopReason: response.stop_reason === 'tool_use'
+          ? 'tool_use'
+          : response.stop_reason === 'max_tokens'
+            ? 'max_tokens'
+            : 'end_turn',
+      };
     } catch (err) {
       throw wrapError(err);
     }
   }
 
-  // -------------------------------------------------------------------------
-  // stream() — yields text deltas as they arrive
-  // -------------------------------------------------------------------------
-
   async *stream(messages: LLMMessage[], opts: CompletionOpts = {}): AsyncIterable<string> {
     const { system, apiMessages } = splitMessages(messages);
 
     try {
-      const stream = (this.client as Anthropic).messages.stream({
+      const stream = this.client.messages.stream({
         model:      this.model,
         max_tokens: opts.maxTokens ?? 8_192,
         ...(system ? { system } : {}),
@@ -107,7 +92,6 @@ export class ClaudeProvider implements LLMProvider {
           yield event.delta.text;
         }
       }
-
     } catch (err) {
       throw wrapError(err);
     }
@@ -118,11 +102,6 @@ export class ClaudeProvider implements LLMProvider {
 // Helpers
 // ---------------------------------------------------------------------------
 
-/**
- * Split LLMMessage[] into Claude API format.
- * System messages are concatenated and passed as the top-level `system` param.
- * Remaining messages map to user/assistant turns.
- */
 function splitMessages(messages: LLMMessage[]): {
   system: string | undefined;
   apiMessages: Anthropic.MessageParam[];
@@ -143,14 +122,18 @@ function splitMessages(messages: LLMMessage[]): {
   return { system, apiMessages };
 }
 
-/**
- * Re-wrap SDK errors with clearer messages.
- * Always throws — use as `throw wrapError(err)`.
- */
+function toAnthropicTools(tools: ToolDefinition[]): Anthropic.Tool[] {
+  return tools.map(t => ({
+    name:         t.name,
+    description:  t.description,
+    input_schema: t.inputSchema as Anthropic.Tool.InputSchema,
+  }));
+}
+
 function wrapError(err: unknown): never {
   if (err instanceof Anthropic.AuthenticationError) {
     throw new Error(
-      'Claude API authentication failed. Set ANTHROPIC_API_KEY or configure a Bedrock/Vertex backend.',
+      'Claude API authentication failed. Set ANTHROPIC_API_KEY.',
     );
   }
   if (err instanceof Anthropic.RateLimitError) {

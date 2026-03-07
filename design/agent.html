@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agent Design Document</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --border: #2a2d3a;
+      --text: #e2e4ed;
+      --muted: #8b8fa8;
+      --accent: #7c6af7;
+      --accent2: #4fc3f7;
+      --green: #4caf7d;
+      --yellow: #f5c842;
+      --red: #f47c7c;
+      --code-bg: #12151e;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 15px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      padding: 2rem;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    h1 { font-size: 2rem; color: var(--accent); margin-bottom: 0.25rem; }
+    h2 { font-size: 1.3rem; color: var(--accent2); margin: 2.5rem 0 0.75rem; border-bottom: 1px solid var(--border); padding-bottom: 0.4rem; }
+    h3 { font-size: 1.05rem; color: var(--yellow); margin: 1.5rem 0 0.5rem; }
+    h4 { font-size: 0.95rem; color: var(--green); margin: 1rem 0 0.4rem; }
+
+    p { margin: 0.6rem 0; color: var(--text); }
+    .muted { color: var(--muted); font-size: 0.9rem; }
+
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1rem 1.2rem;
+      overflow-x: auto;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 0.82rem;
+      line-height: 1.6;
+      color: #c9d1d9;
+      margin: 0.75rem 0;
+    }
+
+    code {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 0.1em 0.4em;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 0.85em;
+      color: var(--accent2);
+    }
+
+    pre code { background: none; border: none; padding: 0; color: inherit; font-size: inherit; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0.75rem 0;
+      font-size: 0.9rem;
+    }
+
+    th {
+      background: var(--surface);
+      color: var(--accent);
+      text-align: left;
+      padding: 0.5rem 0.8rem;
+      border: 1px solid var(--border);
+      font-weight: 600;
+    }
+
+    td {
+      padding: 0.45rem 0.8rem;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    tr:nth-child(even) td { background: #13161f; }
+
+    ul, ol { padding-left: 1.5rem; margin: 0.5rem 0; }
+    li { margin: 0.25rem 0; }
+
+    .badge {
+      display: inline-block;
+      padding: 0.15em 0.6em;
+      border-radius: 4px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      margin-right: 0.3rem;
+    }
+
+    .badge-phase  { background: #2d2460; color: var(--accent); }
+    .badge-local  { background: #1a2d20; color: var(--green); }
+    .badge-claude { background: #2d1a2d; color: #c792ea; }
+    .badge-note   { background: #2d2410; color: var(--yellow); }
+
+    .callout {
+      background: var(--surface);
+      border-left: 3px solid var(--accent);
+      border-radius: 0 6px 6px 0;
+      padding: 0.75rem 1rem;
+      margin: 1rem 0;
+      font-size: 0.92rem;
+    }
+
+    .callout.warn  { border-color: var(--yellow); }
+    .callout.info  { border-color: var(--accent2); }
+    .callout.local { border-color: var(--green); }
+    .callout.claude { border-color: #c792ea; }
+
+    .phase-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 0.75rem;
+      margin: 0.75rem 0;
+    }
+
+    .phase-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.9rem 1rem;
+    }
+
+    .phase-card h4 { margin-top: 0; color: var(--accent2); }
+    .phase-card ul { font-size: 0.87rem; }
+
+    hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+
+    .meta { color: var(--muted); font-size: 0.85rem; margin-top: 0.25rem; }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin: 0.75rem 0;
+    }
+
+    .provider-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.1rem;
+    }
+
+    .provider-card.local  { border-color: var(--green); }
+    .provider-card.claude { border-color: #c792ea; }
+
+    .provider-card h3 { margin-top: 0; }
+    .provider-card.local  h3 { color: var(--green); }
+    .provider-card.claude h3 { color: #c792ea; }
+  </style>
+</head>
+<body>
+
+  <h1>Agent Design Document</h1>
+  <p class="meta">insrc coding agent &mdash; v0.1 &mdash; March 2026</p>
+
+  <h2>Overview</h2>
+  <p>
+    The insrc agent is a <strong>local-first hybrid coding assistant</strong>. The majority of tasks
+    are handled autonomously by a local LLM running via Ollama &mdash; fast, private, and free.
+    For tasks that require deeper reasoning, architectural judgment, or cross-repo design decisions,
+    the agent transparently escalates to Claude.
+  </p>
+  <p>
+    Both providers draw context from the same source: the live <strong>Code Knowledge Graph</strong>
+    maintained by the indexer daemon (see <code>indexer.html</code>). The agent never sends raw file
+    dumps to any LLM &mdash; it assembles structured, minimal context from graph queries.
+  </p>
+
+  <div class="callout info">
+    <strong>Indexer dependency:</strong> The agent requires the daemon to be running. On startup it
+    connects via the Unix socket, resolves the dependency closure of the active repo, and holds that
+    closure for the session duration.
+  </div>
+
+  <h2>LLM Providers</h2>
+
+  <div class="two-col">
+    <div class="provider-card local">
+      <h3><span class="badge badge-local">LOCAL</span> qwen3-coder:latest</h3>
+      <ul>
+        <li>Runs via Ollama — no API key, no network</li>
+        <li>Code-specialized model, fast response</li>
+        <li>Handles the majority of day-to-day tasks</li>
+        <li>Auto-installed on daemon startup if missing</li>
+        <li>Privacy default — code never leaves the machine</li>
+      </ul>
+    </div>
+    <div class="provider-card claude">
+      <h3><span class="badge badge-claude">CLOUD</span> Claude (Anthropic)</h3>
+      <ul>
+        <li>Invoked only for complex / design tasks</li>
+        <li>Requires <code>ANTHROPIC_API_KEY</code></li>
+        <li>Always announced to user before invocation</li>
+        <li>Receives structured graph context, not raw files</li>
+        <li>200K token context — handles large result sets</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>Task Routing</h2>
+
+  <p>
+    Tasks are classified by scope and reasoning depth. Local handles everything it can;
+    Claude is invoked only when the task genuinely exceeds local capability.
+  </p>
+
+  <table>
+    <thead>
+      <tr><th>Task</th><th>Provider</th><th>Routing Signal</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Inline completion / next line</td><td><span class="badge badge-local">LOCAL</span></td><td>Cursor position, single file</td></tr>
+      <tr><td>Explain this function / class</td><td><span class="badge badge-local">LOCAL</span></td><td>Scope &le; 1 file</td></tr>
+      <tr><td>Write unit tests for a function</td><td><span class="badge badge-local">LOCAL</span></td><td>Single entity target</td></tr>
+      <tr><td>Fix a specific bug</td><td><span class="badge badge-local">LOCAL</span></td><td>Error + file pointed at</td></tr>
+      <tr><td>Rename / refactor within a file</td><td><span class="badge badge-local">LOCAL</span></td><td>Single file scope</td></tr>
+      <tr><td>Summarize what a file does</td><td><span class="badge badge-local">LOCAL</span></td><td>Single file scope</td></tr>
+      <tr><td>Find callers / usages</td><td><span class="badge badge-local">LOCAL</span></td><td>Pure graph query — no LLM needed</td></tr>
+      <tr><td>Multi-file refactor</td><td><span class="badge badge-claude">CLAUDE</span></td><td>Entities span &gt; 2 files</td></tr>
+      <tr><td>Architecture / design question</td><td><span class="badge badge-claude">CLAUDE</span></td><td>Task kind = <code>design</code></td></tr>
+      <tr><td>Cross-repo impact analysis</td><td><span class="badge badge-claude">CLAUDE</span></td><td>Entities span &gt; 1 repo</td></tr>
+      <tr><td>Explain a complex interaction</td><td><span class="badge badge-claude">CLAUDE</span></td><td>Graph depth &gt; 2 hops, multi-repo</td></tr>
+      <tr><td>Generate a design document</td><td><span class="badge badge-claude">CLAUDE</span></td><td>Task kind = <code>document</code></td></tr>
+      <tr><td>Code review / tradeoff analysis</td><td><span class="badge badge-claude">CLAUDE</span></td><td>Task kind = <code>review</code></td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout local">
+    <strong>Graph queries are free:</strong> Tasks like "find all callers of X" or "what does this repo depend on"
+    are answered directly from SurrealDB with no LLM involved. The agent resolves these as pure
+    graph traversals and formats the result for the user.
+  </div>
+
+  <h2>Escalation Modes</h2>
+
+  <h3>1. Explicit — user-directed</h3>
+  <p>User prefixes a message with <code>@claude</code> to bypass routing and always use Claude:</p>
+  <pre><code>&gt; @claude how should I restructure the payment service to support multiple providers?</code></pre>
+
+  <h3>2. Agent-suggested — local agent defers</h3>
+  <p>
+    When the local agent determines a task exceeds its confidence or scope, it pauses and asks
+    rather than producing a low-quality answer:
+  </p>
+  <pre><code>Local agent: This refactor touches 6 files across 2 repos (order-service, shared-lib).
+             Would you like me to ask Claude for a plan? [y/N]</code></pre>
+
+  <h3>3. Automatic — threshold-based</h3>
+  <p>The agent escalates automatically when any of these signals fire:</p>
+  <table>
+    <thead><tr><th>Signal</th><th>Threshold</th></tr></thead>
+    <tbody>
+      <tr><td>Files involved</td><td>&gt; 3 files</td></tr>
+      <tr><td>Repos involved</td><td>&gt; 1 repo</td></tr>
+      <tr><td>Context tokens needed</td><td>&gt; 8K tokens</td></tr>
+      <tr><td>Task kind</td><td><code>design</code>, <code>review</code>, <code>document</code></td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout warn">
+    <strong>Always transparent:</strong> The agent never silently calls Claude. Every escalation &mdash;
+    whether suggested or automatic &mdash; is announced in the output before the API call is made.
+    This keeps the user aware of cost and of code leaving the machine.
+  </div>
+
+  <h2>Context Assembly</h2>
+
+  <p>
+    Neither provider receives raw file dumps. The agent assembles a <strong>structured context
+    package</strong> from the Code Knowledge Graph for each task. This keeps prompts tight,
+    deterministic, and cost-efficient.
+  </p>
+
+  <h3>Local context (qwen3-coder)</h3>
+  <p>Small, focused: 3&ndash;10 entities, direct neighbors only.</p>
+  <pre><code>// Assembled by agent/context.ts
+{
+  task: "write unit tests for OrderService.create",
+  entities: [
+    { kind: "Function", name: "create", file: "src/services/order.ts", body: "..." },
+    { kind: "Interface", name: "IOrderRepo", file: "shared-lib/repos/order.ts", body: "..." },
+    { kind: "Type", name: "Order", file: "src/types/order.ts", body: "..." }
+  ],
+  relations: [
+    "OrderService.create CALLS IOrderRepo.save",
+    "OrderService.create CALLS PaymentService.charge"
+  ]
+}</code></pre>
+
+  <h3>Claude context (design / cross-repo)</h3>
+  <p>
+    Broader but still structured: dependency closure summary, key entity graph, relevant
+    relations. Raw source is only included for the directly relevant entities.
+  </p>
+  <pre><code>System: You are a senior engineer. Here is the relevant code graph context:
+
+[Active repo]: order-service
+[Dependency closure]: order-service, shared-lib, payment-service
+
+[Key Entities]
+- OrderService.create()     src/services/order.ts:42
+- PaymentService.charge()   payment-service/src/service.ts:18  (external repo)
+- IOrderRepo.save()         shared-lib/repos/order.ts:9        (external repo)
+- PgOrderRepo               shared-lib/repos/pg-order.ts:5     implements IOrderRepo
+
+[Relations]
+OrderService.create  &rarr; CALLS      &rarr; PaymentService.charge
+OrderService.create  &rarr; CALLS      &rarr; IOrderRepo.save
+IOrderRepo           &larr; IMPLEMENTS &larr; PgOrderRepo
+
+[Source: OrderService.create]
+&lt;body of function&gt;
+
+[User question]
+How should I restructure this to support multiple payment providers?</code></pre>
+
+  <div class="callout info">
+    Entity bodies are included only for the directly relevant entities. Related entities are
+    described by name, file, and relation type only &mdash; not full source. This keeps Claude
+    prompts well under the token budget even for large dependency closures.
+  </div>
+
+  <h2>Provider Interface</h2>
+
+  <p>
+    Both providers implement a common <code>LLMProvider</code> interface so the agent layer is
+    decoupled from the underlying model. Task routing selects the provider; the agent code
+    does not branch on provider identity.
+  </p>
+
+  <pre><code>// shared/types.ts
+interface LLMMessage {
+  role: 'system' | 'user' | 'assistant';
+  content: string;
+}
+
+interface LLMProvider {
+  complete(messages: LLMMessage[], opts?: { maxTokens?: number }): Promise&lt;string&gt;;
+  stream(messages: LLMMessage[], opts?: { maxTokens?: number }): AsyncIterable&lt;string&gt;;
+}
+
+// agent/providers/ollama.ts
+class OllamaProvider implements LLMProvider {
+  constructor(private model = 'qwen3-coder:latest') {}
+  // uses ollama npm package
+}
+
+// agent/providers/claude.ts
+class ClaudeProvider implements LLMProvider {
+  constructor(private model = 'claude-sonnet-4-6') {}
+  // uses @anthropic-ai/sdk
+}
+
+// agent/router.ts
+function selectProvider(task: Task, config: AgentConfig): LLMProvider {
+  if (task.explicit === 'claude') return claudeProvider;
+  if (needsEscalation(task))     return claudeProvider;
+  return ollamaProvider;
+}</code></pre>
+
+  <h2>Session Management</h2>
+
+  <p>
+    The agent maintains per-session conversation history in two tiers: raw turns stored in SurrealDB
+    during the session (for semantic retrieval), and a session summary promoted to persistent storage
+    at session end (for cross-session continuity).
+  </p>
+
+  <table>
+    <thead><tr><th>Property</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td>Raw turn storage</td><td>SurrealDB <code>conversation_turn</code> — session duration only, deleted on close</td></tr>
+      <tr><td>Session summary</td><td>Persisted to <code>conversation_session</code> — retained across sessions, pruned by TTL</td></tr>
+      <tr><td>Context window management</td><td>Layered memory model — see below</td></tr>
+      <tr><td>Provider switching</td><td>History is provider-agnostic; can switch mid-session</td></tr>
+      <tr><td>Dependency closure</td><td>Resolved once at session start, held for session duration</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout info">
+    When the agent escalates to Claude mid-session, it passes L1 + L2 (rolling summary) +
+    the assembled task context only. The full turn history is not forwarded &mdash; it adds
+    noise without value for design-level questions.
+  </div>
+
+  <h2>Context Window &amp; Memory</h2>
+
+  <p>
+    Ollama's context window is 64K tokens. This sounds generous but is quickly consumed by system
+    prompt, conversation history, code context, and response headroom all competing for the same
+    budget. A naive sliding-window approach discards turns arbitrarily and loses earlier context
+    permanently. The layered memory model below allocates the budget deliberately, using
+    <strong>recency for near-term turns and semantic retrieval for older history</strong>.
+  </p>
+
+  <div class="callout info">
+    <strong>The index is the memory.</strong> The SurrealDB Code Knowledge Graph is the agent's
+    persistent long-term memory for code structure. The context window only needs to hold what is
+    immediately relevant to the current turn &mdash; everything else is re-queryable on demand.
+  </div>
+
+  <h3>Layer Budget</h3>
+
+  <pre><code>┌──────────────────────────────────────────────────────┐  64K total
+│  L1  System context        ~1K   fixed               │  always present
+│  L2  Session summary       ~3K   rolling             │  compressed older turns
+│  L3a Recent turns          ~4K   recency-weighted    │  last 5 turns, tapered verbatim
+│  L3b Semantic history      ~4K   retrieved per turn  │  relevant older turns via embedding
+│  L4  Task context         ~16K   dynamic per turn    │  graph-fetched, not accumulated
+│  L5  Response headroom     ~8K   reserved            │  never used for input
+│  L6  Overflow buffer      ~28K   elastic             │  absorbed by L3/L4 as needed
+└──────────────────────────────────────────────────────┘</code></pre>
+
+  <table>
+    <thead><tr><th>Layer</th><th>Budget</th><th>Contents</th><th>Eviction policy</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>L1 — System</strong></td>
+        <td>~1K</td>
+        <td>Agent persona, active repo name, dependency closure repo list (names only)</td>
+        <td>Never evicted</td>
+      </tr>
+      <tr>
+        <td><strong>L2 — Summary</strong></td>
+        <td>~3K</td>
+        <td>Rolling compressed summary of older conversation turns</td>
+        <td>Regenerated in place when L3a overflows; never grows beyond budget</td>
+      </tr>
+      <tr>
+        <td><strong>L3a — Recent turns</strong></td>
+        <td>~4K</td>
+        <td>Last 5 turns verbatim, recency-weighted (newest = full, oldest = truncated)</td>
+        <td>Oldest turn compressed into L2 when L3a overflows</td>
+      </tr>
+      <tr>
+        <td><strong>L3b — Semantic history</strong></td>
+        <td>~4K</td>
+        <td>Top-K older turns retrieved by embedding similarity to current message</td>
+        <td>Re-fetched every turn; not accumulated. Skipped for first 5 turns.</td>
+      </tr>
+      <tr>
+        <td><strong>L4 — Task context</strong></td>
+        <td>~16K</td>
+        <td>Entities + relations fetched from code graph for current turn</td>
+        <td>Replaced every turn &mdash; not accumulated across turns</td>
+      </tr>
+      <tr>
+        <td><strong>L5 — Response</strong></td>
+        <td>~8K</td>
+        <td>Reserved for model output</td>
+        <td>Hard reservation &mdash; input never fills this</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Recency-Weighted Recent Turns (L3a)</h3>
+  <p>
+    Near-term turns are the most contextually connected. Rather than a flat window, L3a weights turns
+    by age &mdash; the most recent turn is included in full, older turns are progressively truncated:
+  </p>
+  <table>
+    <thead><tr><th>Turn age</th><th>Inclusion</th></tr></thead>
+    <tbody>
+      <tr><td>Turn &minus;1 (most recent)</td><td>Full text</td></tr>
+      <tr><td>Turn &minus;2</td><td>75% &mdash; trim assistant response tail</td></tr>
+      <tr><td>Turn &minus;3</td><td>50% &mdash; user message + first half of response</td></tr>
+      <tr><td>Turn &minus;4</td><td>25% &mdash; user message + first paragraph of response</td></tr>
+      <tr><td>Turn &minus;5</td><td>User message only</td></tr>
+      <tr><td>Turn &minus;6+</td><td>Evicted to L2 (summarized) or L3b (embedded)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Semantic History Retrieval (L3b)</h3>
+  <p>
+    Every turn is embedded and stored in SurrealDB. When assembling context, the current user message
+    is used to retrieve the most semantically relevant older turns &mdash; regardless of when they
+    occurred. A turn from 30 exchanges ago resurfaces if it is relevant to the current question.
+  </p>
+  <p>
+    History embedding is skipped for the first 5 turns of a session (pure L3a recency is sufficient
+    and cheaper when history is short).
+  </p>
+
+  <h4>Storage — per turn (end of turn, non-blocking)</h4>
+  <pre><code>// memory.ts — called after assistant response is streamed
+async function storeTurn(session: Session, turn: ConversationTurn): Promise&lt;void&gt; {
+  if (session.turnIndex &lt; 5) return;  // skip embedding for early turns
+
+  const vec = await embed(turn.userMessage);  // embed user message only
+
+  await db.query(`
+    INSERT INTO conversation_turn {
+      session:   $session,
+      idx:       $idx,
+      user:      $user,
+      assistant: $assistant,
+      embedding: $vec,
+      entities:  $entities,   -- graph entity IDs referenced in this turn
+      createdAt: time::now()
+    }
+  `, { session: session.id, idx: session.turnIndex, ...turn, vec });
+}</code></pre>
+
+  <h4>Retrieval — per turn (start of turn, on critical path ~5ms)</h4>
+  <pre><code>// memory.ts — called before assembling context
+async function retrieveSemanticHistory(
+  session: Session,
+  vec: number[]
+): Promise&lt;ConversationTurn[]&gt; {
+  if (session.turnIndex &lt; 5) return [];  // nothing stored yet
+
+  return db.query(`
+    SELECT idx, user, assistant,
+           vector::similarity::cosine(embedding, $vec) AS score
+    FROM conversation_turn
+    WHERE session = $session
+      AND idx &lt; $currentIdx - 5   -- exclude what is already in L3a
+      AND score &gt; 0.70
+    ORDER BY score DESC
+    LIMIT 4
+  `, { session: session.id, vec, currentIdx: session.turnIndex });
+}</code></pre>
+
+  <h3>Rolling Summarization (L2)</h3>
+  <p>
+    When L3a overflows (turn &minus;6 is evicted), that turn is compressed into the rolling L2
+    summary by the local model. The summary accumulates key decisions, entity names, and conclusions
+    &mdash; not raw dialogue:
+  </p>
+  <pre><code>// memory.ts
+async function evictToSummary(session: Session): Promise&lt;void&gt; {
+  const turn = session.recentTurns.pop();  // evict oldest (turn -6)
+
+  const prompt = [
+    { role: 'system', content:
+        'Update the running summary to include the new exchange. ' +
+        'Preserve: decisions made, file names, entity names, open questions. ' +
+        'Be concise. Max 3 sentences total.' },
+    { role: 'user', content:
+        `Current summary:\n${session.summary}\n\nNew exchange:\n${formatTurn(turn)}` }
+  ];
+
+  session.summary = await ollamaProvider.complete(prompt, { maxTokens: 250 });
+}</code></pre>
+
+  <h3>Dynamic Graph Retrieval (L4)</h3>
+  <p>
+    Task context is not accumulated &mdash; it is re-assembled from the code graph each turn.
+    This keeps L4 fresh and avoids context drift from stale code that has since been edited by
+    the indexer daemon.
+  </p>
+  <pre><code>// context.ts
+async function assembleContext(turn: string, session: Session): Promise&lt;AssembledContext&gt; {
+  // Single embed call serves both code search (L4) and history retrieval (L3b)
+  const vec = await embed(turn);
+
+  const [codeHits, historyHits] = await Promise.all([
+    db.searchCode(vec, { repos: session.closureRepos, limit: 8 }),   // L4
+    retrieveSemanticHistory(session, vec),                            // L3b
+  ]);
+
+  const neighbors  = await db.neighbors(codeHits.map(h =&gt; h.id));
+  const entities   = buildEntityContext(codeHits, neighbors, session.seenEntities);
+
+  return fitToBudget({
+    system:    session.systemContext,                    // L1
+    summary:   session.summary,                          // L2
+    recent:    weightedRecent(session.recentTurns),      // L3a
+    semantic:  historyHits,                              // L3b
+    code:      entities,                                 // L4
+  });
+}</code></pre>
+
+  <div class="callout info">
+    <strong>Single embed per turn:</strong> The same embedding vector is reused for both the code
+    graph search (L4) and the conversation history search (L3b). Only one Ollama call is needed.
+  </div>
+
+  <h3>Progressive Entity Disclosure (L4)</h3>
+  <p>Entity bodies are large. Disclosure is staged to conserve L4 budget:</p>
+  <table>
+    <thead><tr><th>Entity state</th><th>What is included in L4</th></tr></thead>
+    <tbody>
+      <tr><td>Never seen this session</td><td>Full body (if budget allows) or signature + first 10 lines</td></tr>
+      <tr><td>Seen in last 5 turns (L3a)</td><td>Signature only &mdash; body is still in recent history</td></tr>
+      <tr><td>Seen earlier, retrieved via L3b</td><td>Name + file + line reference only</td></tr>
+      <tr><td>Neighbor (not directly hit)</td><td>Name + kind + relation type only</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Token Budget Enforcement</h3>
+  <p>
+    Context assembly respects hard per-layer ceilings. L4 entities are dropped in reverse relevance
+    order (lowest vector score first) if over budget.
+  </p>
+  <pre><code>// budget.ts
+const TOKEN_BUDGET = {
+  system:   1_000,
+  summary:  3_000,
+  recent:   4_000,   // L3a
+  semantic: 4_000,   // L3b
+  code:    16_000,   // L4
+  response: 8_000,   // reserved — never consumed by input
+  total:   64_000,
+} as const;</code></pre>
+
+  <h3>History Retention &amp; Pruning</h3>
+
+  <p>
+    Raw turn embeddings are ephemeral. At session end, the final L2 summary is promoted to a
+    persistent <code>conversation_session</code> record and raw turns are deleted. This gives
+    cross-session continuity without unbounded storage growth.
+  </p>
+
+  <h4>Session close</h4>
+  <pre><code>// session.ts — on disconnect or explicit /exit
+async function closeSession(session: Session): Promise&lt;void&gt; {
+  // Promote summary to persistent store
+  await db.query(`
+    INSERT INTO conversation_session {
+      id:        $sid,
+      repo:      $repoId,
+      summary:   $summary,
+      entities:  $seenEntities,
+      createdAt: time::now(),
+      expiresAt: time::now() + 30d
+    }
+  `, { sid: session.id, repoId: session.repoId,
+       summary: session.summary, seenEntities: [...session.seenEntities] });
+
+  // Delete all raw turns — summary is the durable artifact
+  await db.query(`DELETE conversation_turn WHERE session = $sid`, { sid: session.id });
+}</code></pre>
+
+  <h4>Cross-session seeding</h4>
+  <p>On session start, recent session summaries for the same repo seed the initial L2:</p>
+  <pre><code>// session.ts — on session start
+const priorSummaries = await db.query(`
+  SELECT summary, createdAt FROM conversation_session
+  WHERE repo = $repoId AND expiresAt &gt; time::now()
+  ORDER BY createdAt DESC
+  LIMIT 3
+`, { repoId });
+
+session.summary = priorSummaries.map(s =&gt; s.summary).join('\n\n');</code></pre>
+
+  <h4>Pruning strategy</h4>
+  <table>
+    <thead><tr><th>What</th><th>When pruned</th><th>How</th></tr></thead>
+    <tbody>
+      <tr><td>Raw turn embeddings (<code>conversation_turn</code>)</td><td>Session end</td><td>Hard delete by session ID</td></tr>
+      <tr><td>Session summaries (<code>conversation_session</code>)</td><td>TTL: 30 days after creation</td><td>Nightly daemon maintenance job</td></tr>
+      <tr><td>Session summaries (count cap)</td><td>When &gt; 20 summaries per repo</td><td>Delete oldest beyond cap</td></tr>
+      <tr><td>Pinned entries</td><td>Manual only</td><td>User command: <code>/forget</code></td></tr>
+    </tbody>
+  </table>
+
+  <h4>Nightly daemon maintenance job</h4>
+  <pre><code>// lifecycle.ts — runs daily via setInterval
+async function pruneConversationHistory(): Promise&lt;void&gt; {
+  // Delete expired summaries
+  await db.query(`DELETE conversation_session WHERE expiresAt &lt; time::now()`);
+
+  // Cap at 20 summaries per repo — delete oldest beyond cap
+  const repos = await db.query(`SELECT DISTINCT repo FROM conversation_session`);
+  for (const { repo } of repos) {
+    await db.query(`
+      DELETE conversation_session
+      WHERE repo = $repo
+        AND id NOT IN (
+          SELECT id FROM conversation_session
+          WHERE repo = $repo
+          ORDER BY createdAt DESC
+          LIMIT 20
+        )
+    `, { repo });
+  }
+}</code></pre>
+
+  <div class="callout warn">
+    <strong>Claude escalation and memory:</strong> Claude has a 200K token context window, so
+    budget pressure is much lower. When escalating, pass L1 + L2 (summary) + assembled task
+    context (L4). Do not forward L3a/L3b turn history &mdash; it adds noise for design-level questions.
+  </div>
+
+  <h2>Model Bootstrap</h2>
+
+  <p>
+    On daemon startup, after the embedding model check, the agent model is also verified and
+    pulled if missing. Both checks run sequentially before any index or agent jobs are processed.
+  </p>
+
+  <pre><code>// lifecycle.ts
+const MODELS = {
+  embedding: 'qwen3-embedding:0.6b',
+  agent:     'qwen3-coder:latest',
+};
+
+async function ensureModels(ollama: Ollama): Promise&lt;void&gt; {
+  const { models } = await ollama.list();
+  const installed = new Set(models.map(m =&gt; m.name));
+
+  for (const [role, model] of Object.entries(MODELS)) {
+    if (installed.has(model)) continue;
+    log.info(`Pulling ${role} model: ${model}`);
+    const stream = await ollama.pull({ model, stream: true });
+    for await (const event of stream) {
+      const pct = event.total ? Math.round((event.completed / event.total) * 100) : 0;
+      setDaemonState({ modelPull: { role, model, pct } });
+    }
+    log.info(`${model} ready`);
+  }
+}</code></pre>
+
+  <h2>Privacy</h2>
+
+  <table>
+    <thead><tr><th>Scenario</th><th>Code sent externally?</th></tr></thead>
+    <tbody>
+      <tr><td>Local task (qwen3-coder)</td><td>No &mdash; stays on machine</td></tr>
+      <tr><td>Claude task</td><td>Yes &mdash; structured context sent to Anthropic API</td></tr>
+      <tr><td>Embeddings</td><td>No &mdash; always via Ollama locally</td></tr>
+      <tr><td>Graph queries</td><td>No &mdash; SurrealDB, local only</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout warn">
+    <strong>No API key = local only.</strong> If <code>ANTHROPIC_API_KEY</code> is not set,
+    Claude escalation is disabled entirely. The agent operates fully locally and will
+    decline tasks it cannot handle rather than failing silently.
+  </div>
+
+  <h2>File Structure</h2>
+  <pre><code>src/
+  agent/
+    index.ts          -- Session entry point: connect to daemon, resolve closure, start REPL
+    session.ts        -- Conversation history, context window management
+    router.ts         -- Task classification and provider selection
+    context.ts        -- Assembles structured graph context for each task
+    escalation.ts     -- Escalation signals, user prompt, announcement
+
+    providers/
+      ollama.ts       -- OllamaProvider: wraps ollama npm package (qwen3-coder:latest)
+      claude.ts       -- ClaudeProvider: wraps @anthropic-ai/sdk
+
+    tasks/
+      classify.ts     -- Infer task kind from user message + cursor context
+      complete.ts     -- Inline completion task handler
+      explain.ts      -- Explain entity task handler
+      test.ts         -- Generate tests task handler
+      edit.ts         -- File edit task handler (local scope)
+      design.ts       -- Design/architecture task handler (Claude)</code></pre>
+
+  <h2>Implementation Phases</h2>
+
+  <div class="phase-grid">
+    <div class="phase-card">
+      <h4><span class="badge badge-phase">Phase 1</span> Local Agent (Ollama)</h4>
+      <ul>
+        <li>OllamaProvider with <code>qwen3-coder:latest</code></li>
+        <li>Session REPL + layered memory model</li>
+        <li>Rolling summarization (L2) + sliding history (L3)</li>
+        <li>Dynamic graph retrieval + progressive disclosure (L4)</li>
+        <li>Token budget enforcement</li>
+        <li>Task handlers: explain, complete, test, edit</li>
+        <li>Model bootstrap in daemon lifecycle</li>
+      </ul>
+    </div>
+    <div class="phase-card">
+      <h4><span class="badge badge-phase">Phase 2</span> Task Classification</h4>
+      <ul>
+        <li>Task kind inference from user message</li>
+        <li>Scope signals: file count, repo count, token estimate</li>
+        <li>Automatic escalation thresholds</li>
+        <li>Agent-suggested escalation prompts</li>
+      </ul>
+    </div>
+    <div class="phase-card">
+      <h4><span class="badge badge-phase">Phase 3</span> Claude Integration</h4>
+      <ul>
+        <li>ClaudeProvider via <code>@anthropic-ai/sdk</code></li>
+        <li><code>@claude</code> explicit routing prefix</li>
+        <li>Structured context package for Claude</li>
+        <li>Escalation announcement before API call</li>
+        <li>Graceful degradation when no API key</li>
+      </ul>
+    </div>
+    <div class="phase-card">
+      <h4><span class="badge badge-phase">Phase 4</span> Graph-Native Tasks</h4>
+      <ul>
+        <li>Pure graph answers (callers, dependents) with no LLM</li>
+        <li>Cross-repo impact formatted as structured report</li>
+        <li>Dependency closure visualization</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>Open Questions</h2>
+  <ol>
+    <li>
+      <strong>Summarization model</strong> &mdash; Rolling summarization (L2 eviction) uses
+      <code>qwen3-coder:latest</code> for convenience, but a smaller/faster model (e.g.
+      <code>qwen3:0.6b</code>) would be more efficient for this internal housekeeping task.
+      Worth benchmarking summary quality vs. latency tradeoff.
+    </li>
+    <li>
+      <strong>Token counting accuracy</strong> &mdash; Accurate token counting requires the model's
+      tokenizer. Approximating with character count (~4 chars/token) is fast but imprecise.
+      Consider using <code>tiktoken</code>-style counting or a lightweight tokenizer aligned to
+      Qwen's vocabulary to avoid budget overruns.
+    </li>
+    <li>
+      <strong>Task classification accuracy</strong> &mdash; Simple heuristics (file count, repo count)
+      may misclassify. A lightweight classifier model or rule-based NLU might improve routing
+      over time. Consider logging escalation decisions for later review.
+    </li>
+    <li>
+      <strong>Claude model selection</strong> &mdash; Default is <code>claude-sonnet-4-6</code>
+      (balanced cost/quality). User-configurable; <code>claude-opus-4-6</code> for highest quality,
+      <code>claude-haiku-4-5</code> for lowest cost.
+    </li>
+    <li>
+      <strong>Session persistence</strong> &mdash; Currently ephemeral. Future option: persist
+      session summaries to SurrealDB as a lightweight "conversation memory" per repo, giving
+      the agent recall across sessions without full history replay.
+    </li>
+    <li>
+      <strong>Streaming UX</strong> &mdash; Both providers support streaming. The REPL should
+      stream tokens to the terminal in real time. Escalation announcement must appear before
+      the first token from Claude.
+    </li>
+  </ol>
+
+</body>
+</html>

@@ -1,0 +1,33 @@
+{
+  "name": "insrc",
+  "version": "1.0.0",
+  "description": "Hybrid Coding agent",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/insors-ai/insrc.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/insors-ai/insrc/issues"
+  },
+  "homepage": "https://github.com/insors-ai/insrc#readme",
+  "dependencies": {
+    "@parcel/watcher": "^2.5.6",
+    "ollama": "^0.6.3",
+    "surrealdb": "^2.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^25.3.5",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}

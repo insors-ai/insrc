@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Indexer Design Document</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --border: #2a2d3a;
+      --text: #e2e4ed;
+      --muted: #8b8fa8;
+      --accent: #7c6af7;
+      --accent2: #4fc3f7;
+      --green: #4caf7d;
+      --yellow: #f5c842;
+      --red: #f47c7c;
+      --code-bg: #12151e;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 15px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      padding: 2rem;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    h1 { font-size: 2rem; color: var(--accent); margin-bottom: 0.25rem; }
+    h2 { font-size: 1.3rem; color: var(--accent2); margin: 2.5rem 0 0.75rem; border-bottom: 1px solid var(--border); padding-bottom: 0.4rem; }
+    h3 { font-size: 1.05rem; color: var(--yellow); margin: 1.5rem 0 0.5rem; }
+    h4 { font-size: 0.95rem; color: var(--green); margin: 1rem 0 0.4rem; }
+
+    p { margin: 0.6rem 0; color: var(--text); }
+    .muted { color: var(--muted); font-size: 0.9rem; }
+
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1rem 1.2rem;
+      overflow-x: auto;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 0.82rem;
+      line-height: 1.6;
+      color: #c9d1d9;
+      margin: 0.75rem 0;
+    }
+
+    code {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 0.1em 0.4em;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 0.85em;
+      color: var(--accent2);
+    }
+
+    pre code { background: none; border: none; padding: 0; color: inherit; font-size: inherit; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0.75rem 0;
+      font-size: 0.9rem;
+    }
+
+    th {
+      background: var(--surface);
+      color: var(--accent);
+      text-align: left;
+      padding: 0.5rem 0.8rem;
+      border: 1px solid var(--border);
+      font-weight: 600;
+    }
+
+    td {
+      padding: 0.45rem 0.8rem;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    tr:nth-child(even) td { background: #13161f; }
+
+    ul, ol { padding-left: 1.5rem; margin: 0.5rem 0; }
+    li { margin: 0.25rem 0; }
+
+    .badge {
+      display: inline-block;
+      padding: 0.15em 0.6em;
+      border-radius: 4px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      margin-right: 0.3rem;
+    }
+
+    .badge-phase { background: #2d2460; color: var(--accent); }
+    .badge-lang  { background: #1a2d20; color: var(--green); }
+    .badge-note  { background: #2d2410; color: var(--yellow); }
+
+    .callout {
+      background: var(--surface);
+      border-left: 3px solid var(--accent);
+      border-radius: 0 6px 6px 0;
+      padding: 0.75rem 1rem;
+      margin: 1rem 0;
+      font-size: 0.92rem;
+    }
+
+    .callout.warn { border-color: var(--yellow); }
+    .callout.info { border-color: var(--accent2); }
+
+    .arch-diagram {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1.2rem;
+      font-family: monospace;
+      font-size: 0.82rem;
+      color: #adb5bd;
+      margin: 0.75rem 0;
+      white-space: pre;
+      overflow-x: auto;
+    }
+
+    .phase-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 0.75rem;
+      margin: 0.75rem 0;
+    }
+
+    .phase-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.9rem 1rem;
+    }
+
+    .phase-card h4 { margin-top: 0; color: var(--accent2); }
+    .phase-card ul { font-size: 0.87rem; }
+
+    hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+
+    .meta { color: var(--muted); font-size: 0.85rem; margin-top: 0.25rem; }
+  </style>
+</head>
+<body>
+
+  <h1>Indexer Design Document</h1>
+  <p class="meta">insrc coding agent &mdash; v0.1 &mdash; March 2026</p>
+
+  <h2>Overview</h2>
+  <p>
+    The indexer is the foundational subsystem of the insrc coding agent. Its responsibility is to
+    parse source code across one or more repositories, extract meaningful code entities and their
+    relationships, embed them for semantic search, and persist everything into SurrealDB &mdash;
+    which serves as both a graph database (structural relationships) and a vector store (semantic search).
+  </p>
+  <p>
+    The result is a living <strong>Code Knowledge Graph</strong> that the agent queries to understand
+    context, trace dependencies, find relevant code, and reason across repo boundaries.
+  </p>
+
+  <h2>Goals</h2>
+  <ul>
+    <li>Parse Python, Go, and TypeScript/JavaScript source files into structured entities</li>
+    <li>Model code relationships as a traversable graph (calls, imports, inheritance, etc.)</li>
+    <li>Support semantic search via vector embeddings stored alongside graph nodes</li>
+    <li>Handle large codebases efficiently using native file watching and incremental updates</li>
+    <li>Support multiple repositories simultaneously with cross-repo relationship linking</li>
+    <li>Be language-extensible &mdash; new grammars can be added without changing the core pipeline</li>
+  </ul>
+
+  <h2>Non-Goals</h2>
+  <ul>
+    <li>Real-time type inference or full compiler-level analysis</li>
+    <li>Execution or dynamic analysis of code</li>
+    <li>Replacing a language server (LSP) &mdash; this is a knowledge graph, not an IDE feature</li>
+    <li>Remote/published package deep indexing (stub nodes only for external deps)</li>
+  </ul>
+
+  <h2>User Data Directory</h2>
+  <p>
+    All insrc state is stored under <code>~/.insrc/</code> in the user's home directory.
+    This includes the embedded database, daemon runtime files, and logs.
+  </p>
+  <pre><code>~/.insrc/
+  db/            &larr; SurrealDB surrealkv embedded store (persistent)
+  daemon.pid     &larr; PID of the running background indexer process
+  daemon.sock    &larr; Unix domain socket for CLI &harr; daemon IPC
+  logs/
+    daemon.log   &larr; indexer daemon output</code></pre>
+
+  <div class="callout info">
+    SurrealDB is opened exclusively by the daemon process. The CLI communicates with it
+    indirectly via the Unix socket &mdash; it never opens the database directly.
+  </div>
+
+  <h2>Repo Registry</h2>
+  <p>
+    Users register local repositories for indexing. The registry is stored as a
+    <code>registered_repo</code> table in SurrealDB, so it persists alongside the index itself.
+    No separate config file is needed.
+  </p>
+
+  <pre><code>-- Repo registry table
+DEFINE TABLE registered_repo SCHEMAFULL;
+DEFINE FIELD path        ON registered_repo TYPE string;   -- absolute path on disk
+DEFINE FIELD name        ON registered_repo TYPE string;   -- display name (inferred or user-set)
+DEFINE FIELD addedAt     ON registered_repo TYPE datetime;
+DEFINE FIELD lastIndexed ON registered_repo TYPE option&lt;datetime&gt;;
+DEFINE FIELD status      ON registered_repo TYPE string;   -- 'pending' | 'indexing' | 'ready' | 'error'
+DEFINE FIELD errorMsg    ON registered_repo TYPE option&lt;string&gt;;
+DEFINE INDEX repo_path   ON registered_repo FIELDS path UNIQUE;</code></pre>
+
+  <h3>CLI Commands</h3>
+  <table>
+    <thead><tr><th>Command</th><th>Action</th></tr></thead>
+    <tbody>
+      <tr><td><code>insrc repo add &lt;path&gt;</code></td><td>Register a local repo; daemon begins indexing immediately if running</td></tr>
+      <tr><td><code>insrc repo remove &lt;path&gt;</code></td><td>Unregister repo and delete all its entities + edges from the graph</td></tr>
+      <tr><td><code>insrc repo list</code></td><td>Show all registered repos, status, and last indexed timestamp</td></tr>
+      <tr><td><code>insrc daemon start</code></td><td>Spawn the background indexer process; write PID + socket</td></tr>
+      <tr><td><code>insrc daemon stop</code></td><td>Send graceful shutdown message via socket; wait for exit</td></tr>
+      <tr><td><code>insrc daemon status</code></td><td>Show daemon health, active repos, and indexing queue depth</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Background Daemon Architecture</h2>
+  <p>
+    The indexer runs as a persistent background process separate from the CLI. This allows
+    the index to stay live across multiple agent sessions without re-scanning on every invocation.
+  </p>
+
+  <svg viewBox="0 0 700 410" width="100%" xmlns="http://www.w3.org/2000/svg" style="margin: 0.75rem 0; display: block;">
+    <defs>
+      <marker id="da-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+        <polygon points="0 0, 8 3, 0 6" fill="#4fc3f7"/>
+      </marker>
+    </defs>
+    <rect width="700" height="410" rx="8" fill="#12151e" stroke="#2a2d3a" stroke-width="1"/>
+    <!-- CLI Box -->
+    <rect x="10" y="150" width="160" height="80" rx="6" fill="#1a1d27" stroke="#7c6af7" stroke-width="1.5"/>
+    <text x="90" y="185" text-anchor="middle" fill="#e2e4ed" font-family="system-ui,sans-serif" font-size="14" font-weight="600">CLI / Agent</text>
+    <text x="90" y="204" text-anchor="middle" fill="#8b8fa8" font-family="system-ui,sans-serif" font-size="11">(foreground)</text>
+    <!-- Flow labels below CLI -->
+    <text x="90" y="253" text-anchor="middle" fill="#8b8fa8" font-family="system-ui,sans-serif" font-size="10">repo.add/remove &#x2192; notify</text>
+    <text x="90" y="269" text-anchor="middle" fill="#8b8fa8" font-family="system-ui,sans-serif" font-size="10">search.query &#x2192; proxy to DB</text>
+    <text x="90" y="285" text-anchor="middle" fill="#8b8fa8" font-family="system-ui,sans-serif" font-size="10">daemon.status &#x2192; stats</text>
+    <!-- IPC bidirectional arrows -->
+    <line x1="170" y1="182" x2="280" y2="182" stroke="#4fc3f7" stroke-width="1.5" marker-end="url(#da-arr)"/>
+    <line x1="280" y1="196" x2="170" y2="196" stroke="#4fc3f7" stroke-width="1.5" marker-end="url(#da-arr)"/>
+    <!-- IPC labels -->
+    <text x="225" y="172" text-anchor="middle" fill="#f5c842" font-family="system-ui,sans-serif" font-size="10" font-weight="600">JSON-RPC</text>
+    <text x="225" y="213" text-anchor="middle" fill="#8b8fa8" font-family="system-ui,sans-serif" font-size="9">~/.insrc/daemon.sock</text>
+    <!-- Daemon outer box -->
+    <rect x="285" y="10" width="405" height="390" rx="8" fill="#1a1d27" stroke="#4fc3f7" stroke-width="1.5"/>
+    <text x="487" y="38" text-anchor="middle" fill="#4fc3f7" font-family="system-ui,sans-serif" font-size="14" font-weight="600">Indexer Daemon</text>
+    <text x="487" y="56" text-anchor="middle" fill="#8b8fa8" font-family="system-ui,sans-serif" font-size="10">~/.insrc/daemon.pid</text>
+    <!-- Inner Box 1: IndexerService -->
+    <rect x="305" y="66" width="365" height="56" rx="5" fill="#12151e" stroke="#7c6af7" stroke-width="1"/>
+    <text x="487" y="90" text-anchor="middle" fill="#e2e4ed" font-family="system-ui,sans-serif" font-size="13" font-weight="600">IndexerService</text>
+    <text x="487" y="109" text-anchor="middle" fill="#8b8fa8" font-family="system-ui,sans-serif" font-size="10">orchestrates pipeline &#xB7; manages job queue</text>
+    <line x1="487" y1="122" x2="487" y2="155" stroke="#4fc3f7" stroke-width="1.5" marker-end="url(#da-arr)"/>
+    <!-- Inner Box 2: Watcher -->
+    <rect x="305" y="155" width="365" height="56" rx="5" fill="#12151e" stroke="#7c6af7" stroke-width="1"/>
+    <text x="487" y="179" text-anchor="middle" fill="#e2e4ed" font-family="system-ui,sans-serif" font-size="13" font-weight="600">Watcher</text>
+    <text x="487" y="198" text-anchor="middle" fill="#8b8fa8" font-family="system-ui,sans-serif" font-size="10">@parcel/watcher &#x2014; all registered repos</text>
+    <line x1="487" y1="211" x2="487" y2="244" stroke="#4fc3f7" stroke-width="1.5" marker-end="url(#da-arr)"/>
+    <!-- Inner Box 3: Pipeline -->
+    <rect x="305" y="244" width="365" height="56" rx="5" fill="#12151e" stroke="#7c6af7" stroke-width="1"/>
+    <text x="487" y="268" text-anchor="middle" fill="#e2e4ed" font-family="system-ui,sans-serif" font-size="13" font-weight="600">Parser &#x2192; Resolver &#x2192; Embedder</text>
+    <text x="487" y="287" text-anchor="middle" fill="#8b8fa8" font-family="system-ui,sans-serif" font-size="10">tree-sitter &#xB7; import linking &#xB7; Ollama embeddings</text>
+    <line x1="487" y1="300" x2="487" y2="333" stroke="#4fc3f7" stroke-width="1.5" marker-end="url(#da-arr)"/>
+    <!-- Inner Box 4: SurrealDB -->
+    <rect x="305" y="333" width="365" height="56" rx="5" fill="#12151e" stroke="#4caf7d" stroke-width="1"/>
+    <text x="487" y="357" text-anchor="middle" fill="#e2e4ed" font-family="system-ui,sans-serif" font-size="13" font-weight="600">SurrealDB</text>
+    <text x="487" y="376" text-anchor="middle" fill="#8b8fa8" font-family="system-ui,sans-serif" font-size="10">graph + vector store &#xB7; surrealkv://~/.insrc/db/</text>
+  </svg>
+
+  <h3>Why a Separate Process (Not a Worker Thread)</h3>
+  <table>
+    <thead><tr><th>Concern</th><th>Separate Process</th><th>Worker Thread</th></tr></thead>
+    <tbody>
+      <tr><td>Survives CLI exit</td><td>&#x2713; Yes</td><td>&#x2717; No</td></tr>
+      <tr><td>Shared by multiple sessions</td><td>&#x2713; Yes</td><td>&#x2717; No</td></tr>
+      <tr><td>Crash isolation</td><td>&#x2713; Yes</td><td>&#x2717; No</td></tr>
+      <tr><td>Index always fresh</td><td>&#x2713; Yes</td><td>Only while CLI is open</td></tr>
+      <tr><td>Memory overhead</td><td>Separate Node.js process (~30MB)</td><td>Shared heap</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Daemon Lifecycle</h3>
+  <ol>
+    <li><code>insrc daemon start</code> forks a detached child process (<code>process.detach()</code>), redirects stdio to <code>~/.insrc/logs/daemon.log</code>, writes PID to <code>daemon.pid</code></li>
+    <li>Daemon opens SurrealDB at <code>surrealkv://~/.insrc/db</code></li>
+    <li><strong>Daemon checks Ollama availability and ensures the embedding model is installed</strong> (see below)</li>
+    <li>Daemon reads all <code>registered_repo</code> rows, starts <code>@parcel/watcher</code> on each</li>
+    <li>Daemon runs an initial full index on any repo with <code>status = 'pending'</code></li>
+    <li>Daemon opens Unix socket at <code>~/.insrc/daemon.sock</code> and listens for JSON-RPC messages</li>
+    <li>On <code>insrc daemon stop</code>: CLI sends <code>shutdown</code> message, daemon flushes in-flight writes, closes DB, deletes <code>daemon.pid</code> + <code>daemon.sock</code>, exits</li>
+  </ol>
+
+  <div class="callout warn">
+    On startup, if <code>daemon.pid</code> exists but the process is not alive (stale PID from a crash),
+    delete the stale files and start fresh. Do not refuse to start.
+  </div>
+
+  <h3>Embedding Model Bootstrap</h3>
+  <p>
+    Before any indexing begins, the daemon checks that <code>qwen3-embedding:0.6b</code> is installed
+    in Ollama and pulls it automatically if not. Pull progress is streamed to the daemon log and
+    exposed via the <code>daemon.status</code> IPC method so the CLI can surface it to the user.
+  </p>
+  <pre><code>// lifecycle.ts — run before first IndexJob is processed
+async function ensureEmbeddingModel(ollama: Ollama): Promise&lt;void&gt; {
+  const MODEL = 'qwen3-embedding:0.6b';
+
+  const { models } = await ollama.list();
+  if (models.some(m =&gt; m.name === MODEL)) return; // already installed
+
+  log.info(`Pulling ${MODEL} from Ollama registry...`);
+  setDaemonState({ modelPullStatus: 'pulling' });
+
+  const stream = await ollama.pull({ model: MODEL, stream: true });
+  for await (const event of stream) {
+    // event: { status, completed, total }
+    const pct = event.total ? Math.round((event.completed / event.total) * 100) : 0;
+    setDaemonState({ modelPullStatus: 'pulling', modelPullPct: pct });
+    log.info(`  ${event.status} ${pct}%`);
+  }
+
+  setDaemonState({ modelPullStatus: 'ready' });
+  log.info(`${MODEL} ready`);
+}</code></pre>
+
+  <div class="callout info">
+    <strong>Status surface:</strong> While pulling, <code>daemon.status</code> returns
+    <code>{ modelPullStatus: "pulling", modelPullPct: 42 }</code> so the CLI can show a progress bar.
+    Index jobs are held in the queue but not processed until the model is ready.
+  </div>
+
+  <div class="callout warn">
+    If Ollama itself is not running or unreachable at startup, the daemon logs a warning and continues.
+    Entities are written to the DB without embeddings. A <code>reembed</code> job is enqueued for all
+    registered repos and retried when Ollama becomes available.
+  </div>
+
+  <h3>IPC Protocol (JSON-RPC over Unix Socket)</h3>
+  <p>All messages are newline-delimited JSON. The CLI sends a request and reads one response.</p>
+
+  <table>
+    <thead><tr><th>Method</th><th>Params</th><th>Response</th></tr></thead>
+    <tbody>
+      <tr><td><code>repo.add</code></td><td><code>{ path: string }</code></td><td><code>{ ok: true }</code> or error</td></tr>
+      <tr><td><code>repo.remove</code></td><td><code>{ path: string }</code></td><td><code>{ ok: true }</code> or error</td></tr>
+      <tr><td><code>repo.list</code></td><td>&mdash;</td><td><code>RegisteredRepo[]</code></td></tr>
+      <tr><td><code>daemon.status</code></td><td>&mdash;</td><td><code>{ uptime, repos, queueDepth, embeddingsPending }</code></td></tr>
+      <tr><td><code>search.query</code></td><td><code>{ text: string, limit?: number }</code></td><td><code>Entity[]</code> ranked results</td></tr>
+      <tr><td><code>daemon.shutdown</code></td><td>&mdash;</td><td><code>{ ok: true }</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3>Indexing Queue</h3>
+  <p>
+    The daemon maintains an in-memory FIFO queue of indexing jobs. File watcher events and
+    <code>repo.add</code> messages both enqueue jobs. A single async worker drains the queue
+    sequentially to avoid overloading Ollama with concurrent embedding requests.
+  </p>
+  <pre><code>type IndexJob =
+  | { kind: 'full',   repoPath: string }
+  | { kind: 'file',   filePath: string, event: 'create' | 'update' | 'delete' }
+  | { kind: 'reembed', repoPath: string }   // triggered if embedding model changes</code></pre>
+
+  <h2>Architecture</h2>
+
+  <svg viewBox="0 0 760 215" width="100%" xmlns="http://www.w3.org/2000/svg" style="margin: 0.75rem 0; display: block;">
+    <defs>
+      <marker id="pip-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+        <polygon points="0 0, 8 3, 0 6" fill="#4fc3f7"/>
+      </marker>
+    </defs>
+    <rect width="760" height="215" rx="8" fill="#12151e" stroke="#2a2d3a" stroke-width="1"/>
+    <text x="380" y="26" text-anchor="middle" fill="#7c6af7" font-family="system-ui,sans-serif" font-size="11" font-weight="600" letter-spacing="1">INDEXER PIPELINE</text>
+    <!-- Watcher -->
+    <rect x="10" y="42" width="155" height="68" rx="6" fill="#1a1d27" stroke="#7c6af7" stroke-width="1.5"/>
+    <text x="87" y="71" text-anchor="middle" fill="#e2e4ed" font-family="system-ui,sans-serif" font-size="13" font-weight="600">Watcher</text>
+    <text x="87" y="89" text-anchor="middle" fill="#8b8fa8" font-family="system-ui,sans-serif" font-size="10">file events</text>
+    <line x1="165" y1="76" x2="200" y2="76" stroke="#4fc3f7" stroke-width="1.5" marker-end="url(#pip-arr)"/>
+    <!-- Parser -->
+    <rect x="200" y="42" width="155" height="68" rx="6" fill="#1a1d27" stroke="#7c6af7" stroke-width="1.5"/>
+    <text x="277" y="71" text-anchor="middle" fill="#e2e4ed" font-family="system-ui,sans-serif" font-size="13" font-weight="600">Parser</text>
+    <text x="277" y="89" text-anchor="middle" fill="#8b8fa8" font-family="system-ui,sans-serif" font-size="10">AST &#x2192; entities + relations</text>
+    <line x1="355" y1="76" x2="390" y2="76" stroke="#4fc3f7" stroke-width="1.5" marker-end="url(#pip-arr)"/>
+    <!-- Resolver -->
+    <rect x="390" y="42" width="155" height="68" rx="6" fill="#1a1d27" stroke="#7c6af7" stroke-width="1.5"/>
+    <text x="467" y="71" text-anchor="middle" fill="#e2e4ed" font-family="system-ui,sans-serif" font-size="13" font-weight="600">Resolver</text>
+    <text x="467" y="89" text-anchor="middle" fill="#8b8fa8" font-family="system-ui,sans-serif" font-size="10">link imports to known nodes</text>
+    <line x1="545" y1="76" x2="580" y2="76" stroke="#4fc3f7" stroke-width="1.5" marker-end="url(#pip-arr)"/>
+    <!-- Embedder -->
+    <rect x="580" y="42" width="155" height="68" rx="6" fill="#1a1d27" stroke="#7c6af7" stroke-width="1.5"/>
+    <text x="657" y="71" text-anchor="middle" fill="#e2e4ed" font-family="system-ui,sans-serif" font-size="13" font-weight="600">Embedder</text>
+    <text x="657" y="89" text-anchor="middle" fill="#8b8fa8" font-family="system-ui,sans-serif" font-size="10">add vectors via Ollama</text>
+    <line x1="657" y1="110" x2="657" y2="132" stroke="#4fc3f7" stroke-width="1.5" marker-end="url(#pip-arr)"/>
+    <!-- SurrealDB -->
+    <rect x="580" y="132" width="155" height="68" rx="6" fill="#1a1d27" stroke="#4caf7d" stroke-width="1.5"/>
+    <text x="657" y="161" text-anchor="middle" fill="#e2e4ed" font-family="system-ui,sans-serif" font-size="13" font-weight="600">SurrealDB</text>
+    <text x="657" y="179" text-anchor="middle" fill="#8b8fa8" font-family="system-ui,sans-serif" font-size="10">~/.insrc/db/ (embedded)</text>
+  </svg>
+
+  <table>
+    <thead><tr><th>Component</th><th>Responsibility</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Watcher</strong></td><td>Detect file create/modify/delete events across repo(s) using <code>@parcel/watcher</code></td></tr>
+      <tr><td><strong>Parser</strong></td><td>Parse files via tree-sitter, extract entities and raw relations per language</td></tr>
+      <tr><td><strong>Resolver</strong></td><td>Match unresolved import/call targets to known graph nodes</td></tr>
+      <tr><td><strong>Embedder</strong></td><td>Generate vector embeddings for entities via Ollama</td></tr>
+      <tr><td><strong>DB Layer</strong></td><td>Persist and query nodes, edges, and vectors in SurrealDB (embedded)</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Data Model</h2>
+
+  <h3>Entity Node Base Shape</h3>
+  <p>All entity nodes share a common base. Type-specific fields are additive.</p>
+  <pre><code>Base {
+  id:         string       -- globally unique: "&lt;repo&gt;:&lt;file&gt;:&lt;kind&gt;:&lt;name&gt;"
+  kind:       EntityKind   -- 'repo' | 'file' | 'module' | 'function' | 'method'
+                           --  | 'class' | 'interface' | 'type' | 'variable'
+  name:       string
+  language:   Language     -- 'python' | 'go' | 'typescript' | 'javascript'
+  repo:       string       -- repo root path or name
+  file:       string       -- absolute file path
+  startLine:  number
+  endLine:    number
+  body:       string       -- raw source text (used for embedding)
+  embedding:  number[]     -- vector from Ollama qwen3-embedding:0.6b (2048d)
+  indexedAt:  datetime
+}</code></pre>
+
+  <h4>Repo</h4>
+  <pre><code>Repo extends Base {
+  rootPath:  string
+  manifest:  string    -- path to package.json / go.mod / pyproject.toml
+}</code></pre>
+
+  <h4>File</h4>
+  <pre><code>File extends Base {
+  relativePath: string
+  size:         number
+  hash:         string  -- content hash for change detection
+}</code></pre>
+
+  <h4>Function / Method</h4>
+  <pre><code>Function extends Base {
+  signature:  string         -- full signature including params + return type
+  isExported: boolean
+  isAsync:    boolean
+  params:     Param[]
+  returnType: string | null
+}</code></pre>
+
+  <h4>Class</h4>
+  <pre><code>Class extends Base {
+  isExported:  boolean
+  isAbstract:  boolean
+  typeParams:  string[]     -- generic type parameters
+}</code></pre>
+
+  <h4>Interface / Type</h4>
+  <pre><code>Interface extends Base {
+  isExported: boolean
+  typeParams: string[]
+  methods:    MethodSig[]   -- for Go interface satisfaction matching
+}</code></pre>
+
+  <h3>Relation (Edge) Types</h3>
+  <p>Edges are SurrealDB graph relations: <code>entity -[RELATION]-&gt; entity</code></p>
+
+  <table>
+    <thead><tr><th>Relation</th><th>From</th><th>To</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><code>DEFINES</code></td><td>File</td><td>Function | Class | Interface | Type</td><td>File contains the definition</td></tr>
+      <tr><td><code>IMPORTS</code></td><td>File</td><td>File | Module</td><td>Resolved to File when local; Module stub when external</td></tr>
+      <tr><td><code>CALLS</code></td><td>Function</td><td>Function | Method</td><td>Best-effort static call resolution</td></tr>
+      <tr><td><code>INHERITS</code></td><td>Class</td><td>Class</td><td>Direct superclass only; Python supports multiple</td></tr>
+      <tr><td><code>IMPLEMENTS</code></td><td>Class</td><td>Interface</td><td>Explicit (TS) or inferred via method set matching (Go)</td></tr>
+      <tr><td><code>DEPENDS_ON</code></td><td>Repo</td><td>Repo | Module</td><td>Derived from manifest files</td></tr>
+      <tr><td><code>EXPORTS</code></td><td>File | Module</td><td>Function | Class | Interface | Type</td><td>Publicly exposed symbols</td></tr>
+      <tr><td><code>REFERENCES</code></td><td>Function</td><td>Type | Interface</td><td>Uses a type in signature or body</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Language Extraction Rules</h2>
+
+  <h3><span class="badge badge-lang">TypeScript / JavaScript</span></h3>
+
+  <h4>Entity Extraction</h4>
+  <ul>
+    <li><code>function foo()</code> / <code>const foo = () =&gt;</code> &rarr; Function node</li>
+    <li><code>class Foo</code> &rarr; Class node</li>
+    <li><code>class Foo extends Bar</code> &rarr; Class node + <code>INHERITS</code> edge</li>
+    <li><code>class Foo implements IBar</code> &rarr; <code>IMPLEMENTS</code> edge (TypeScript only)</li>
+    <li><code>interface IFoo</code> &rarr; Interface node</li>
+    <li><code>type Foo = ...</code> &rarr; Type node</li>
+    <li><code>export</code> keyword sets <code>isExported: true</code></li>
+  </ul>
+
+  <h4>Import Extraction</h4>
+  <ul>
+    <li><code>import x from './foo'</code> &rarr; <code>IMPORTS</code> edge, resolve to File node</li>
+    <li><code>import { x } from './foo'</code> &rarr; same, record imported symbol</li>
+    <li><code>require('./foo')</code> &rarr; same treatment as ESM import</li>
+    <li><code>import x from 'external-pkg'</code> &rarr; <code>IMPORTS</code> edge to Module stub</li>
+  </ul>
+
+  <h4>Cross-Repo</h4>
+  <ul>
+    <li>Parse <code>package.json</code> <code>dependencies</code> + <code>devDependencies</code></li>
+    <li>Emit <code>DEPENDS_ON</code> edges from Repo to Module stub nodes</li>
+    <li>If a dependency repo is locally indexed, resolve stubs to real Repo nodes</li>
+  </ul>
+
+  <h3><span class="badge badge-lang">Python</span></h3>
+
+  <h4>Entity Extraction</h4>
+  <ul>
+    <li><code>def foo():</code> &rarr; Function node</li>
+    <li><code>async def foo():</code> &rarr; Function node, <code>isAsync: true</code></li>
+    <li><code>class Foo:</code> &rarr; Class node</li>
+    <li><code>class Foo(Bar):</code> &rarr; Class node + <code>INHERITS</code> edge (supports multiple inheritance)</li>
+    <li>Decorators (<code>@dataclass</code>, <code>@abstractmethod</code>) stored as metadata</li>
+    <li>No explicit <code>export</code> &mdash; top-level definitions exported by default; <code>__all__</code> overrides</li>
+  </ul>
+
+  <h4>Import Extraction</h4>
+  <ul>
+    <li><code>import os</code> &rarr; <code>IMPORTS</code> edge to Module stub</li>
+    <li><code>from pathlib import Path</code> &rarr; <code>IMPORTS</code> edge, record imported symbol</li>
+    <li><code>from . import foo</code> / <code>from ..utils import bar</code> &rarr; resolve to File node</li>
+  </ul>
+
+  <h4>Cross-Repo</h4>
+  <ul>
+    <li>Parse <code>requirements.txt</code>, <code>pyproject.toml</code> (<code>[tool.poetry.dependencies]</code>), <code>setup.cfg</code></li>
+    <li>Emit <code>DEPENDS_ON</code> edges</li>
+  </ul>
+
+  <h3><span class="badge badge-lang">Go</span></h3>
+
+  <h4>Entity Extraction</h4>
+  <ul>
+    <li><code>func Foo()</code> &rarr; Function node; exported if name starts with uppercase</li>
+    <li><code>func (r *Receiver) Foo()</code> &rarr; Method node, linked to Receiver type</li>
+    <li><code>type Foo struct { ... }</code> &rarr; Class node</li>
+    <li><code>type Foo interface { ... }</code> &rarr; Interface node with method signatures extracted</li>
+    <li><code>type Foo = Bar</code> &rarr; Type alias node</li>
+  </ul>
+
+  <h4>Import Extraction</h4>
+  <ul>
+    <li><code>import "fmt"</code> &rarr; <code>IMPORTS</code> edge to Module stub</li>
+    <li><code>import "github.com/org/repo/pkg"</code> &rarr; Module stub; resolve if locally indexed</li>
+    <li>Named imports: <code>import alias "pkg"</code> &rarr; same, store alias</li>
+  </ul>
+
+  <h4>Interface Satisfaction (Implicit Implements)</h4>
+  <div class="callout warn">
+    Go has structural typing &mdash; a struct implicitly implements an interface if it has all required methods.
+    This must be computed statically after parsing.
+  </div>
+  <ol>
+    <li>At index time, store all method signatures per struct and per interface</li>
+    <li>After all files in a repo are parsed, run a <strong>method set matching pass</strong>:
+      <ul>
+        <li>For each interface, compute its required method set</li>
+        <li>For each struct, compute its implemented method set</li>
+        <li>If struct methods &supseteq; interface methods &rarr; emit <code>IMPLEMENTS</code> edge</li>
+      </ul>
+    </li>
+    <li>Re-run this pass on incremental updates affecting structs or interfaces</li>
+  </ol>
+
+  <h4>Cross-Repo</h4>
+  <ul>
+    <li>Parse <code>go.mod</code> <code>require</code> directives</li>
+    <li>Emit <code>DEPENDS_ON</code> edges</li>
+  </ul>
+
+  <h2>SurrealDB Schema</h2>
+  <pre><code>-- Entity table with vector index
+DEFINE TABLE entity SCHEMAFULL;
+DEFINE FIELD id         ON entity TYPE string;
+DEFINE FIELD kind       ON entity TYPE string;
+DEFINE FIELD name       ON entity TYPE string;
+DEFINE FIELD language   ON entity TYPE string;
+DEFINE FIELD repo       ON entity TYPE string;
+DEFINE FIELD file       ON entity TYPE string;
+DEFINE FIELD startLine  ON entity TYPE int;
+DEFINE FIELD endLine    ON entity TYPE int;
+DEFINE FIELD body       ON entity TYPE string;
+DEFINE FIELD embedding  ON entity TYPE array&lt;float&gt;;
+DEFINE FIELD indexedAt  ON entity TYPE datetime;
+DEFINE FIELD isExported ON entity TYPE option&lt;bool&gt;;
+DEFINE FIELD isAsync    ON entity TYPE option&lt;bool&gt;;
+DEFINE FIELD signature  ON entity TYPE option&lt;string&gt;;
+
+-- Vector index for semantic search (2048d = qwen3-embedding:0.6b)
+DEFINE INDEX entity_embedding ON entity FIELDS embedding MTREE DIMENSION 2048;
+
+-- Full-text index for exact/prefix name search
+DEFINE INDEX entity_name ON entity FIELDS name SEARCH ANALYZER ascii BM25;
+
+-- Relation tables
+DEFINE TABLE defines    TYPE RELATION IN entity OUT entity;
+DEFINE TABLE imports    TYPE RELATION IN entity OUT entity;
+DEFINE TABLE calls      TYPE RELATION IN entity OUT entity;
+DEFINE TABLE inherits   TYPE RELATION IN entity OUT entity;
+DEFINE TABLE implements TYPE RELATION IN entity OUT entity;
+DEFINE TABLE depends_on TYPE RELATION IN entity OUT entity;
+DEFINE TABLE exports    TYPE RELATION IN entity OUT entity;
+DEFINE TABLE references TYPE RELATION IN entity OUT entity;</code></pre>
+
+  <h2>Search Strategy</h2>
+
+  <p>
+    The agent must search code that spans repositories — a function in the current repo may call
+    into a shared library in another repo. However, searching <em>all registered repos</em> is too broad
+    and returns irrelevant noise. The solution is the <strong>dependency closure</strong>: at session
+    start, resolve the transitive set of repos the current repo depends on, then scope every search
+    to that set.
+  </p>
+
+  <div class="callout info">
+    <strong>Scope rule:</strong> Not "current repo only" — too narrow, misses library code.
+    Not "all registered repos" — too broad, returns unrelated results.
+    Search the <strong>dependency closure</strong> of the active repo.
+  </div>
+
+  <h3>Resolving the Dependency Closure</h3>
+  <p>
+    At agent session start, traverse the <code>DEPENDS_ON</code> graph from the current repo node
+    to collect all transitively reachable repos. This is a one-time startup cost, cached for the
+    session duration.
+  </p>
+  <pre><code>-- Resolve all repos reachable via DEPENDS_ON from the current repo
+LET $closure = SELECT VALUE id FROM entity
+  WHERE kind = 'Repo'
+  AND id IN (
+    SELECT VALUE out FROM depends_on
+    WHERE in = $currentRepoId
+    FETCH out, out-&gt;depends_on-&gt;entity
+  );
+
+-- Include the current repo itself
+LET $closureRepos = array::union([$currentRepoId], $closure);</code></pre>
+
+  <h3>Scoped Vector Search</h3>
+  <p>All semantic searches filter by <code>repo IN $closureRepos</code> to restrict results to the dependency closure.</p>
+  <pre><code>SELECT id, name, kind, file, repo,
+       vector::similarity::cosine(embedding, $query_vec) AS score
+FROM entity
+WHERE repo IN $closureRepos
+  AND score &gt; 0.75
+ORDER BY score DESC
+LIMIT 20</code></pre>
+
+  <h3>Three-Tier Search Strategy</h3>
+  <table>
+    <thead>
+      <tr><th>Tier</th><th>Scope</th><th>Method</th><th>When Used</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>1 — Primary</strong></td>
+        <td>Dependency closure</td>
+        <td>Vector similarity + BM25 hybrid</td>
+        <td>Every query; returns ranked candidates</td>
+      </tr>
+      <tr>
+        <td><strong>2 — Expansion</strong></td>
+        <td>Graph neighbors of Tier 1 hits</td>
+        <td>Graph traversal (<code>CALLS</code>, <code>IMPORTS</code>, <code>DEFINES</code>)</td>
+        <td>When Tier 1 results need deeper context</td>
+      </tr>
+      <tr>
+        <td><strong>3 — Never</strong></td>
+        <td>All registered repos</td>
+        <td>—</td>
+        <td>Not used; avoids noise from unrelated repos</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Query Patterns</h2>
+
+  <h3>Semantic Search (Vector, Closure-Scoped)</h3>
+  <pre><code>LET $closureRepos = [...]; -- resolved at session start
+
+SELECT id, name, kind, file, repo,
+       vector::similarity::cosine(embedding, $query_vec) AS score
+FROM entity
+WHERE repo IN $closureRepos
+  AND score &gt; 0.75
+ORDER BY score DESC
+LIMIT 20</code></pre>
+
+  <h3>Find All Callers of a Function</h3>
+  <pre><code>SELECT &lt;-calls&lt;-entity.* FROM entity WHERE id = $target_id</code></pre>
+
+  <h3>Transitive Call Graph (What Does This Function Depend On?)</h3>
+  <pre><code>SELECT -&gt;calls-&gt;entity.* FROM entity
+WHERE id = $fn_id
+FETCH -&gt;calls-&gt;entity-&gt;calls-&gt;entity</code></pre>
+
+  <h3>Cross-Repo Impact (Who Uses This Exported Type?)</h3>
+  <pre><code>-- Scoped to closure repos for relevance
+SELECT &lt;-references&lt;-entity.*
+FROM entity
+WHERE id = $type_id
+  AND (&lt;-references&lt;-entity.repo) IN $closureRepos</code></pre>
+
+  <h3>Hybrid: Semantic Search + Graph Expansion (Closure-Scoped)</h3>
+  <pre><code>-- Tier 1: vector search within closure
+LET $results = (
+  SELECT id, vector::similarity::cosine(embedding, $query_vec) AS score
+  FROM entity
+  WHERE repo IN $closureRepos AND score &gt; 0.8
+  LIMIT 5
+);
+
+-- Tier 2: expand to graph neighbors
+SELECT *, -&gt;calls-&gt;entity.*, &lt;-defines&lt;-entity.*
+FROM $results</code></pre>
+
+  <h2>Incremental Indexing</h2>
+  <p><code>@parcel/watcher</code> provides native OS-level file system events. On each event:</p>
+
+  <table>
+    <thead><tr><th>Event</th><th>Action</th></tr></thead>
+    <tbody>
+      <tr><td><code>create</code></td><td>Parse file &rarr; insert entities + relations</td></tr>
+      <tr><td><code>update</code></td><td>Parse file &rarr; diff against existing &rarr; upsert changed, delete removed</td></tr>
+      <tr><td><code>delete</code></td><td>Remove all entities and edges originating from that file</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout info">
+    <strong>Change detection:</strong> Each File node stores a content hash. On <code>update</code> events,
+    recompute hash &mdash; skip re-indexing if unchanged. Handles editor save-without-change events.
+  </div>
+
+  <div class="callout warn">
+    <strong>Relation cleanup:</strong> When a file is re-parsed, all edges originating from its entities
+    must be deleted before reinserting to prevent stale call/import edges from removed code.
+  </div>
+
+  <p>
+    After any struct or interface update in a Go repo, re-run the method set matching pass
+    scoped to the affected repo.
+  </p>
+
+  <h2>Embedding Strategy</h2>
+
+  <table>
+    <thead><tr><th>Property</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td>Model</td><td><code>qwen3-embedding:0.6b</code> via Ollama</td></tr>
+      <tr><td>Dimensions</td><td>2048</td></tr>
+      <tr><td>Context window</td><td>32K tokens &mdash; handles entire files without chunking</td></tr>
+      <tr><td>Instruction-aware</td><td>Yes &mdash; query and document embeddings use different prefixes</td></tr>
+      <tr><td>Granularity</td><td>Entity-level (function body, class body)</td></tr>
+      <tr><td>Timing</td><td>After entity extraction, before DB write &mdash; batched per file</td></tr>
+      <tr><td>Fallback</td><td>Write entity without embedding if Ollama unavailable; backfill later via <code>reembed</code> job</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout info">
+    <strong>Why qwen3-embedding:0.6b?</strong> Ollama is already a dependency for the LLM.
+    Qwen3-Embedding adds no new process or library. The 32K context window eliminates the need to
+    chunk large entities. At 0.6B parameters it runs efficiently on CPU alongside the daemon.
+  </div>
+
+  <h4>Input Format — Instruction-Aware</h4>
+  <p>
+    Qwen3-Embedding distinguishes document embeddings (indexed code) from query embeddings (user question).
+    Use the task instruction prefix <strong>only on queries</strong>, not on documents being indexed.
+  </p>
+  <pre><code>// Indexing — no instruction prefix on document text
+const docInput = 'function calculateTotal(items: Item[]): number { return items.reduce(...) }';
+
+// Querying — prepend task instruction to user query
+const queryInput = 'Instruct: Given a user question, retrieve relevant code snippets\nQuery: how is the cart total calculated';
+
+const docVec  = await ollama.embed({ model: 'qwen3-embedding:0.6b', input: docInput });
+const queryVec = await ollama.embed({ model: 'qwen3-embedding:0.6b', input: queryInput });</code></pre>
+
+  <h4>Document Format by Entity Kind</h4>
+  <pre><code>// Functions: signature + body
+"function calculateTotal(items: Item[]): number { return items.reduce(...) }"
+
+// Classes: declaration line + body
+"class OrderService extends BaseService implements IOrderService { ... }"
+
+// Go structs: type declaration + field list
+"type OrderService struct { db *sql.DB; logger *zap.Logger }"
+
+// Interfaces/Types: full declaration
+"interface IOrderService { create(order: Order): Promise&lt;Order&gt;; cancel(id: string): void }"</code></pre>
+
+  <div class="callout warn">
+    Store the embedding model name alongside each entity. If the model changes, all embeddings
+    must be regenerated. The <code>reembed</code> IndexJob handles this: it iterates all entities
+    for a repo, re-embeds, and updates the DB without re-parsing source.
+  </div>
+
+  <h2>File Structure</h2>
+  <pre><code>src/
+  daemon/
+    index.ts              -- Entry point: opens DB, starts watcher + IPC socket
+    server.ts             -- Unix socket JSON-RPC server
+    queue.ts              -- IndexJob FIFO queue + async worker loop
+    lifecycle.ts          -- PID file management, stale PID detection, shutdown
+
+  cli/
+    index.ts              -- CLI entry point (parsed by commander or similar)
+    client.ts             -- Unix socket JSON-RPC client (connects to daemon)
+    commands/
+      repo.ts             -- insrc repo add / remove / list
+      daemon.ts           -- insrc daemon start / stop / status
+
+  indexer/
+    index.ts              -- IndexerService: orchestrates the pipeline
+    watcher.ts            -- Wraps @parcel/watcher, emits typed file events
+    resolver.ts           -- Links unresolved import targets to graph nodes
+    embedder.ts           -- Ollama embedding calls, batching, retry
+    manifest.ts           -- Parses package.json / go.mod / pyproject.toml
+
+    parser/
+      base.ts             -- CodeParser interface + shared Entity/Relation types
+      typescript.ts       -- tree-sitter-typescript + tree-sitter-javascript
+      python.ts           -- tree-sitter-python
+      go.ts               -- tree-sitter-go + Go interface satisfaction pass
+      registry.ts         -- Maps file extension to parser instance
+
+  db/
+    client.ts             -- SurrealDB embedded connection + init
+    schema.ts             -- Schema definition strings (run on startup)
+    entities.ts           -- CRUD for entity nodes
+    relations.ts          -- CRUD for graph edges
+    repos.ts              -- registered_repo CRUD
+    search.ts             -- Vector search + graph traversal queries
+
+  agent/
+    index.ts              -- Agent loop (Phase 6)
+
+  shared/
+    paths.ts              -- ~/.insrc/ path constants (db, pid, sock, logs)
+    types.ts              -- Shared IPC message types + entity types</code></pre>
+
+  <h2>Phased Implementation</h2>
+
+  <div class="phase-grid">
+    <div class="phase-card">
+      <h4><span class="badge badge-phase">Phase 1</span> DB Schema + TS/JS Parser</h4>
+      <ul>
+        <li>Define <code>~/.insrc/</code> directory layout</li>
+        <li>SurrealDB schema + <code>db/</code> layer</li>
+        <li>Implement <code>parser/typescript.ts</code></li>
+        <li>Verify graph queries (callers, imports, defines)</li>
+      </ul>
+    </div>
+    <div class="phase-card">
+      <h4><span class="badge badge-phase">Phase 2</span> Daemon + Repo Registry</h4>
+      <ul>
+        <li>Background daemon process with PID + socket</li>
+        <li>Stale PID detection and recovery</li>
+        <li><code>registered_repo</code> table + CRUD</li>
+        <li>CLI: <code>repo add/remove/list</code>, <code>daemon start/stop/status</code></li>
+        <li>JSON-RPC IPC over Unix socket</li>
+        <li>IndexJob queue + async worker</li>
+      </ul>
+    </div>
+    <div class="phase-card">
+      <h4><span class="badge badge-phase">Phase 3</span> Python Parser</h4>
+      <ul>
+        <li>Implement <code>parser/python.ts</code></li>
+        <li>Handle <code>__all__</code> export semantics</li>
+        <li>Multi-inheritance <code>INHERITS</code> edges</li>
+      </ul>
+    </div>
+    <div class="phase-card">
+      <h4><span class="badge badge-phase">Phase 4</span> Go Parser</h4>
+      <ul>
+        <li>Implement <code>parser/go.ts</code></li>
+        <li>Method set matching pass for <code>IMPLEMENTS</code></li>
+        <li>Handle receiver methods correctly</li>
+      </ul>
+    </div>
+    <div class="phase-card">
+      <h4><span class="badge badge-phase">Phase 5</span> Cross-Repo Linking</h4>
+      <ul>
+        <li>Implement <code>manifest.ts</code> for all three formats</li>
+        <li>Emit <code>DEPENDS_ON</code> edges between repos</li>
+        <li>Resolve external stubs to local Repo nodes</li>
+      </ul>
+    </div>
+    <div class="phase-card">
+      <h4><span class="badge badge-phase">Phase 6</span> Embeddings + Search</h4>
+      <ul>
+        <li>Integrate Ollama embedder into queue worker</li>
+        <li>Backfill embeddings for existing entities</li>
+        <li>Implement hybrid vector + graph queries</li>
+        <li>Expose <code>search.query</code> via IPC</li>
+      </ul>
+    </div>
+    <div class="phase-card">
+      <h4><span class="badge badge-phase">Phase 7</span> Agent Integration</h4>
+      <ul>
+        <li>Agent connects to daemon via IPC client</li>
+        <li>Hybrid search builds context before each LLM call</li>
+        <li>Live index kept fresh by daemon during session</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>Open Questions</h2>
+
+  <ol>
+    <li>
+      <strong>Embedding model versioning</strong> &mdash; If the model changes from <code>qwen3-embedding:0.6b</code>
+      to another, all embeddings must be regenerated. Store model name per entity as a migration signal;
+      trigger a <code>reembed</code> job for all affected repos.
+    </li>
+    <li>
+      <strong>Call resolution accuracy</strong> &mdash; Static call resolution is approximate. Dynamic dispatch,
+      higher-order functions, and monkey-patching cannot be resolved without runtime information.
+      Edges should be treated as best-effort hints, not ground truth.
+    </li>
+    <li>
+      <strong>Go interface pass scaling</strong> &mdash; For large Go repos, method set matching could be
+      expensive. Consider running it as a background job with a dirty-flag mechanism rather than
+      blocking the incremental update path.
+    </li>
+    <li>
+      <strong>Multi-language files</strong> &mdash; <code>.tsx</code>, <code>.vue</code>, <code>.svelte</code>,
+      <code>.mdx</code> contain mixed content. Out of scope for Phase 1 but the parser registry should
+      support compound parsers later.
+    </li>
+    <li>
+      <strong>Symbol re-export chains</strong> &mdash; <code>export { foo } from './bar'</code> creates chains
+      that require multi-hop resolution. Full resolution adds complexity to the resolver; consider deferring to Phase 5.
+    </li>
+    <li>
+      <strong>Daemon auto-start</strong> &mdash; Should the CLI auto-start the daemon if it is not running
+      when a command is issued (e.g. <code>repo add</code>)? Or should it require an explicit
+      <code>daemon start</code> first? Auto-start is more ergonomic but harder to reason about.
+    </li>
+    <li>
+      <strong>Multiple SurrealDB writers</strong> &mdash; SurrealDB embedded (<code>surrealkv</code>) is
+      single-writer. The daemon is the sole writer; the CLI must never open the DB directly. This must be
+      enforced architecturally &mdash; only <code>daemon/</code> imports <code>db/client.ts</code>.
+    </li>
+  </ol>
+
+</body>
+</html>

@@ -113,6 +113,18 @@ const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
 
 ok(`Full index complete in ${elapsed}s`);
 
+// Backfill embeddings for any entities that were stored with a zero-vector
+// sentinel (embeddingModel = '') — happens when Ollama was unavailable on a
+// prior run or when files were skipped due to hash match.
+if (embeddingsReady) {
+  process.stdout.write('  Embedding unembedded entities…');
+  const t1 = Date.now();
+  await indexer.processJob({ kind: 'reembed', repoPath: REPO });
+  const re = ((Date.now() - t1) / 1000).toFixed(1);
+  process.stdout.write(`\r`);
+  ok(`Reembed complete in ${re}s`);
+}
+
 // Count what's in the DB
 const tableNames = await lance.tableNames();
 if (tableNames.includes('entities')) {

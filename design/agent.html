@@ -311,6 +311,111 @@ const KEYWORD_MAP: Record&lt;Intent, string[]&gt; = {
     </tbody>
   </table>
 
+  <h3>Attachment modifier</h3>
+
+  <p>
+    Attachments are not a standalone intent — they are a <strong>context modifier</strong>
+    that augments the following intent turn with additional input material. The user attaches
+    a file (drag-and-drop, paste, or explicit path reference) and the framework resolves
+    how to inject it before the intent pipeline runs.
+  </p>
+
+  <div class="callout warn">
+    <strong>Local LLM cannot process files directly.</strong> Neither text files nor binary
+    files can be passed to the local model as raw bytes. Text-based attachments are read and
+    injected as text into the prompt. Binary attachments (images, PDFs) force escalation to
+    Claude regardless of the classified intent.
+  </div>
+
+  <h4>Attachment type routing</h4>
+  <table>
+    <thead><tr><th>Attachment type</th><th>Handling</th><th>Provider effect</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Text file — <code>.txt</code>, <code>.csv</code>, <code>.log</code>, <code>.md</code>, plain text</td>
+        <td>Framework reads file via <code>Read</code> tool (auto-execute), injects content as text into L4 context. Truncated to L4 budget ceiling if large.</td>
+        <td>No change — normal intent routing applies</td>
+      </tr>
+      <tr>
+        <td>Code file — <code>.ts</code>, <code>.py</code>, <code>.go</code>, etc.</td>
+        <td>Treated as text; also resolved against the graph if the file is indexed. Graph entity body takes precedence over raw file content if available.</td>
+        <td>No change — normal intent routing applies</td>
+      </tr>
+      <tr>
+        <td>Image — <code>.png</code>, <code>.jpg</code>, <code>.gif</code>, <code>.webp</code></td>
+        <td>Cannot be fed to local LLM. Passed to Claude as a base64 image content block.</td>
+        <td><strong>Forces Claude</strong> regardless of intent; uses <code>standard</code> tier unless <code>@opus</code> specified</td>
+      </tr>
+      <tr>
+        <td>PDF</td>
+        <td>Cannot be fed to local LLM. Passed to Claude as a document content block (Files API or inline base64).</td>
+        <td><strong>Forces Claude</strong> regardless of intent; uses <code>standard</code> tier unless <code>@opus</code> specified</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h4>Intent augmentation examples</h4>
+  <pre><code>// Example 1: log dump + debug (text file → local routing preserved)
+User attaches: crash.log (plain text, 120KB)
+User message:  "debug why is the payment service crashing"
+
+Framework:
+  1. Read crash.log → inject truncated content into L4 (~8K chars)
+  2. Classify intent → debug
+  3. Local LLM tool loop begins with log content already in context
+  4. Local LLM correlates log lines with graph entities (graph_search auto-execute)
+  5. Normal debug pipeline continues — no forced Claude escalation
+
+// Example 2: architecture diagram + review (image → forces Claude)
+User attaches: architecture.png
+User message:  "review whether this matches our current service structure"
+
+Framework:
+  1. Detect image attachment → force Claude (standard tier)
+  2. Assemble context: graph entities for known services (L4) + image as vision block
+  3. Claude receives: image + graph summary + user question
+  4. Claude compares diagram against graph-derived service topology
+
+// Example 3: vendor PDF spec + implement (PDF → forces Claude)
+User attaches: stripe-api-spec.pdf
+User message:  "implement the webhook verification handler"
+
+Framework:
+  1. Detect PDF attachment → force Claude (standard tier)
+  2. Upload PDF via Files API → pass file_id in document block
+  3. Classify augmented intent → implement (but provider already forced to Claude)
+  4. Claude acts as both Stage 1 (implementation) and Stage 2 (validation) in one call
+     since the local model cannot participate when it cannot see the PDF
+
+// Example 4: CSV data + research (text file → local routing preserved)
+User attaches: query-results.csv (exported from prod DB)
+User message:  "explain why orders are failing for these customers"
+
+Framework:
+  1. Read query-results.csv → inject as text into L4
+  2. Classify intent → research (debug if failure pattern evident)
+  3. Local LLM analyses CSV rows, correlates with graph entities
+  4. Normal routing — no forced escalation unless stuck</code></pre>
+
+  <h4>Forced-Claude augmentation and the implement pipeline</h4>
+  <p>
+    When an image or PDF forces escalation on an <code>implement</code> or <code>test</code>
+    intent, the normal two-stage local→Claude pipeline collapses into a single Claude call:
+    Claude produces the implementation directly (Stage 1 skipped) and the diff validation
+    (Stage 2) is folded into the same response via a structured output format. The local model
+    is not involved in the turn.
+  </p>
+
+  <h4>Size limits</h4>
+  <table>
+    <thead><tr><th>Type</th><th>Limit</th><th>Overflow behaviour</th></tr></thead>
+    <tbody>
+      <tr><td>Text / code file</td><td>L4 budget ceiling (~16K tokens)</td><td>Truncated from the end; user notified</td></tr>
+      <tr><td>Image</td><td>Anthropic vision limit (5MB / longest edge ≤ 8000px)</td><td>Framework resizes before upload; user notified if still over limit</td></tr>
+      <tr><td>PDF</td><td>Files API limit (32MB, ≤100 pages for inline)</td><td>User warned; large PDFs uploaded via Files API rather than inline</td></tr>
+    </tbody>
+  </table>
+
   <h3>Supported tools</h3>
 
   <p>

@@ -21,7 +21,9 @@ import { IndexQueue } from './queue.js';
 import { IndexerService } from '../indexer/index.js';
 import { IpcServer } from './server.js';
 import { writePid, clearPid, isAlreadyRunning, bootstrapEmbeddingModel, getModelState } from './lifecycle.js';
-import type { RegisteredRepo, DaemonStatus } from '../shared/types.js';
+import { resolveClosure, searchEntities, findCallers, findCallees } from '../db/search.js';
+import { embedQuery } from '../indexer/embedder.js';
+import type { RegisteredRepo, DaemonStatus, Entity } from '../shared/types.js';
 import { basename } from 'node:path';
 
 // ---------------------------------------------------------------------------
@@ -102,9 +104,27 @@ async function main(): Promise<void> {
       return status;
     },
 
-    'search.query': async (_params) => {
-      // Placeholder — full implementation in Phase 6
-      return [];
+    'search.query': async (params) => {
+      const { text, limit } = params as { text: string; limit?: number };
+      const queryVec = await embedQuery(text);
+      // Use all registered repos as the default closure scope
+      const repos = (await listRepos(db)).map(r => r.path);
+      return searchEntities(db, queryVec, repos, limit ?? 10) as Promise<Entity[]>;
+    },
+
+    'search.closure': async (params) => {
+      const { repoPath } = params as { repoPath: string };
+      return resolveClosure(db, repoPath);
+    },
+
+    'search.callers': async (params) => {
+      const { entityId } = params as { entityId: string };
+      return findCallers(db, entityId) as Promise<Entity[]>;
+    },
+
+    'search.callees': async (params) => {
+      const { entityId } = params as { entityId: string };
+      return findCallees(db, entityId) as Promise<Entity[]>;
     },
 
     'daemon.shutdown': async () => {

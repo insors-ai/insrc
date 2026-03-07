@@ -12,6 +12,10 @@ import { parseManifest } from './manifest.js';
 import { resolveRelations } from './resolver.js';
 import { getParser, supportedExtensions } from './parser/registry.js';
 import { makeEntityId } from './parser/base.js';
+// Side-effect imports — registers parsers so getParser() can find them
+import './parser/typescript.js';
+import './parser/python.js';
+import './parser/go.js';
 import { Watcher, IGNORE_DIRS } from './watcher.js';
 import { IndexQueue } from '../daemon/queue.js';
 

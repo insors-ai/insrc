@@ -161,8 +161,9 @@
   <p>
     The indexer is the foundational subsystem of the insrc coding agent. Its responsibility is to
     parse source code across one or more repositories, extract meaningful code entities and their
-    relationships, embed them for semantic search, and persist everything into SurrealDB &mdash;
-    which serves as both a graph database (structural relationships) and a vector store (semantic search).
+    relationships, embed them for semantic search, and persist everything into two complementary
+    embedded databases: <strong>Kuzu</strong> for the property graph (structural relationships)
+    and <strong>LanceDB</strong> for entity storage with vector and full-text search.
   </p>
   <p>
     The result is a living <strong>Code Knowledge Graph</strong> that the agent queries to understand
@@ -193,33 +194,35 @@
     This includes the embedded database, daemon runtime files, and logs.
   </p>
   <pre><code>~/.insrc/
-  db/            &larr; SurrealDB surrealkv embedded store (persistent)
+  graph/         &larr; Kuzu embedded graph database (Code Knowledge Graph)
+  lance/         &larr; LanceDB embedded vector + FTS store (entities + embeddings)
   daemon.pid     &larr; PID of the running background indexer process
   daemon.sock    &larr; Unix domain socket for CLI &harr; daemon IPC
   logs/
     daemon.log   &larr; indexer daemon output</code></pre>
 
   <div class="callout info">
-    SurrealDB is opened exclusively by the daemon process. The CLI communicates with it
-    indirectly via the Unix socket &mdash; it never opens the database directly.
+    Kuzu and LanceDB are opened exclusively by the daemon process. The CLI communicates with them
+    indirectly via the Unix socket &mdash; it never opens either database directly.
   </div>
 
   <h2>Repo Registry</h2>
   <p>
     Users register local repositories for indexing. The registry is stored as a
-    <code>registered_repo</code> table in SurrealDB, so it persists alongside the index itself.
+    <code>Repo</code> node table in Kuzu, so it persists alongside the index itself.
     No separate config file is needed.
   </p>
 
-  <pre><code>-- Repo registry table
-DEFINE TABLE registered_repo SCHEMAFULL;
-DEFINE FIELD path        ON registered_repo TYPE string;   -- absolute path on disk
-DEFINE FIELD name        ON registered_repo TYPE string;   -- display name (inferred or user-set)
-DEFINE FIELD addedAt     ON registered_repo TYPE datetime;
-DEFINE FIELD lastIndexed ON registered_repo TYPE option&lt;datetime&gt;;
-DEFINE FIELD status      ON registered_repo TYPE string;   -- 'pending' | 'indexing' | 'ready' | 'error'
-DEFINE FIELD errorMsg    ON registered_repo TYPE option&lt;string&gt;;
-DEFINE INDEX repo_path   ON registered_repo FIELDS path UNIQUE;</code></pre>
+  <pre><code>-- Kuzu: repo registry node table
+CREATE NODE TABLE Repo (
+  id        STRING,
+  path      STRING,          -- absolute path on disk
+  name      STRING,          -- display name (inferred or user-set)
+  addedAt   STRING,          -- ISO 8601
+  status    STRING,          -- 'pending' | 'indexing' | 'ready' | 'error'
+  errorMsg  STRING,          -- empty string if no error
+  PRIMARY KEY (id)
+);</code></pre>
 
   <h3>CLI Commands</h3>
   <table>
@@ -280,10 +283,10 @@ DEFINE INDEX repo_path   ON registered_repo FIELDS path UNIQUE;</code></pre>
     <text x="487" y="268" text-anchor="middle" fill="#e2e4ed" font-family="system-ui,sans-serif" font-size="13" font-weight="600">Parser &#x2192; Resolver &#x2192; Embedder</text>
     <text x="487" y="287" text-anchor="middle" fill="#8b8fa8" font-family="system-ui,sans-serif" font-size="10">tree-sitter &#xB7; import linking &#xB7; Ollama embeddings</text>
     <line x1="487" y1="300" x2="487" y2="333" stroke="#4fc3f7" stroke-width="1.5" marker-end="url(#da-arr)"/>
-    <!-- Inner Box 4: SurrealDB -->
+    <!-- Inner Box 4: Kuzu + LanceDB -->
     <rect x="305" y="333" width="365" height="56" rx="5" fill="#12151e" stroke="#4caf7d" stroke-width="1"/>
-    <text x="487" y="357" text-anchor="middle" fill="#e2e4ed" font-family="system-ui,sans-serif" font-size="13" font-weight="600">SurrealDB</text>
-    <text x="487" y="376" text-anchor="middle" fill="#8b8fa8" font-family="system-ui,sans-serif" font-size="10">graph + vector store &#xB7; surrealkv://~/.insrc/db/</text>
+    <text x="487" y="357" text-anchor="middle" fill="#e2e4ed" font-family="system-ui,sans-serif" font-size="13" font-weight="600">Kuzu + LanceDB</text>
+    <text x="487" y="376" text-anchor="middle" fill="#8b8fa8" font-family="system-ui,sans-serif" font-size="10">graph store (~/.insrc/graph/) &#xB7; vector+FTS store (~/.insrc/lance/)</text>
   </svg>
 
   <h3>Why a Separate Process (Not a Worker Thread)</h3>
@@ -301,7 +304,7 @@ DEFINE INDEX repo_path   ON registered_repo FIELDS path UNIQUE;</code></pre>
   <h3>Daemon Lifecycle</h3>
   <ol>
     <li><code>insrc daemon start</code> forks a detached child process (<code>process.detach()</code>), redirects stdio to <code>~/.insrc/logs/daemon.log</code>, writes PID to <code>daemon.pid</code></li>
-    <li>Daemon opens SurrealDB at <code>surrealkv://~/.insrc/db</code></li>
+    <li>Daemon opens Kuzu at <code>~/.insrc/graph/</code> and LanceDB at <code>~/.insrc/lance/</code></li>
     <li><strong>Daemon checks Ollama availability and ensures the embedding model is installed</strong> (see below)</li>
     <li>Daemon reads all <code>registered_repo</code> rows, starts <code>@parcel/watcher</code> on each</li>
     <li>Daemon runs an initial full index on any repo with <code>status = 'pending'</code></li>
@@ -410,10 +413,10 @@ async function ensureEmbeddingModel(ollama: Ollama): Promise&lt;void&gt; {
     <text x="657" y="71" text-anchor="middle" fill="#e2e4ed" font-family="system-ui,sans-serif" font-size="13" font-weight="600">Embedder</text>
     <text x="657" y="89" text-anchor="middle" fill="#8b8fa8" font-family="system-ui,sans-serif" font-size="10">add vectors via Ollama</text>
     <line x1="657" y1="110" x2="657" y2="132" stroke="#4fc3f7" stroke-width="1.5" marker-end="url(#pip-arr)"/>
-    <!-- SurrealDB -->
+    <!-- Kuzu + LanceDB -->
     <rect x="580" y="132" width="155" height="68" rx="6" fill="#1a1d27" stroke="#4caf7d" stroke-width="1.5"/>
-    <text x="657" y="161" text-anchor="middle" fill="#e2e4ed" font-family="system-ui,sans-serif" font-size="13" font-weight="600">SurrealDB</text>
-    <text x="657" y="179" text-anchor="middle" fill="#8b8fa8" font-family="system-ui,sans-serif" font-size="10">~/.insrc/db/ (embedded)</text>
+    <text x="657" y="157" text-anchor="middle" fill="#e2e4ed" font-family="system-ui,sans-serif" font-size="12" font-weight="600">Kuzu + LanceDB</text>
+    <text x="657" y="173" text-anchor="middle" fill="#8b8fa8" font-family="system-ui,sans-serif" font-size="9">graph/ &amp; lance/ (embedded)</text>
   </svg>
 
   <table>
@@ -423,7 +426,7 @@ async function ensureEmbeddingModel(ollama: Ollama): Promise&lt;void&gt; {
       <tr><td><strong>Parser</strong></td><td>Parse files via tree-sitter, extract entities and raw relations per language</td></tr>
       <tr><td><strong>Resolver</strong></td><td>Match unresolved import/call targets to known graph nodes</td></tr>
       <tr><td><strong>Embedder</strong></td><td>Generate vector embeddings for entities via Ollama</td></tr>
-      <tr><td><strong>DB Layer</strong></td><td>Persist and query nodes, edges, and vectors in SurrealDB (embedded)</td></tr>
+      <tr><td><strong>DB Layer</strong></td><td>Persist graph edges in Kuzu (Cypher); persist entity records + vectors in LanceDB (ANN + FTS)</td></tr>
     </tbody>
   </table>
 
@@ -483,7 +486,7 @@ async function ensureEmbeddingModel(ollama: Ollama): Promise&lt;void&gt; {
 }</code></pre>
 
   <h3>Relation (Edge) Types</h3>
-  <p>Edges are SurrealDB graph relations: <code>entity -[RELATION]-&gt; entity</code></p>
+  <p>Edges are Kuzu relation tables connecting entity node tables. Queried with Cypher.</p>
 
   <table>
     <thead><tr><th>Relation</th><th>From</th><th>To</th><th>Notes</th></tr></thead>
@@ -595,39 +598,52 @@ async function ensureEmbeddingModel(ollama: Ollama): Promise&lt;void&gt; {
     <li>Emit <code>DEPENDS_ON</code> edges</li>
   </ul>
 
-  <h2>SurrealDB Schema</h2>
-  <pre><code>-- Entity table with vector index
-DEFINE TABLE entity SCHEMAFULL;
-DEFINE FIELD id         ON entity TYPE string;
-DEFINE FIELD kind       ON entity TYPE string;
-DEFINE FIELD name       ON entity TYPE string;
-DEFINE FIELD language   ON entity TYPE string;
-DEFINE FIELD repo       ON entity TYPE string;
-DEFINE FIELD file       ON entity TYPE string;
-DEFINE FIELD startLine  ON entity TYPE int;
-DEFINE FIELD endLine    ON entity TYPE int;
-DEFINE FIELD body       ON entity TYPE string;
-DEFINE FIELD embedding  ON entity TYPE array&lt;float&gt;;
-DEFINE FIELD indexedAt  ON entity TYPE datetime;
-DEFINE FIELD isExported ON entity TYPE option&lt;bool&gt;;
-DEFINE FIELD isAsync    ON entity TYPE option&lt;bool&gt;;
-DEFINE FIELD signature  ON entity TYPE option&lt;string&gt;;
+  <h2>Database Schemas</h2>
 
--- Vector index for semantic search (2048d = qwen3-embedding:0.6b)
-DEFINE INDEX entity_embedding ON entity FIELDS embedding MTREE DIMENSION 2048;
+  <h3>Kuzu — Graph Schema</h3>
+  <p>Node tables hold entity identity and location. Relation tables hold the graph edges.</p>
 
--- Full-text index for exact/prefix name search
-DEFINE INDEX entity_name ON entity FIELDS name SEARCH ANALYZER ascii BM25;
+  <pre><code>-- Entity node tables (one per kind)
+CREATE NODE TABLE File      (id STRING, repo STRING, path STRING, hash STRING, indexedAt STRING, PRIMARY KEY(id));
+CREATE NODE TABLE Function  (id STRING, repo STRING, file STRING, name STRING, language STRING, startLine INT64, endLine INT64, isExported BOOLEAN, isAsync BOOLEAN, PRIMARY KEY(id));
+CREATE NODE TABLE Class     (id STRING, repo STRING, file STRING, name STRING, language STRING, startLine INT64, endLine INT64, isExported BOOLEAN, isAbstract BOOLEAN, PRIMARY KEY(id));
+CREATE NODE TABLE Interface (id STRING, repo STRING, file STRING, name STRING, language STRING, startLine INT64, endLine INT64, isExported BOOLEAN, PRIMARY KEY(id));
+CREATE NODE TABLE TypeAlias (id STRING, repo STRING, file STRING, name STRING, language STRING, startLine INT64, endLine INT64, isExported BOOLEAN, PRIMARY KEY(id));
+CREATE NODE TABLE Module    (id STRING, name STRING, PRIMARY KEY(id));  -- external dependency stub
+CREATE NODE TABLE Repo      (id STRING, path STRING, name STRING, addedAt STRING, status STRING, errorMsg STRING, PRIMARY KEY(id));
 
 -- Relation tables
-DEFINE TABLE defines    TYPE RELATION IN entity OUT entity;
-DEFINE TABLE imports    TYPE RELATION IN entity OUT entity;
-DEFINE TABLE calls      TYPE RELATION IN entity OUT entity;
-DEFINE TABLE inherits   TYPE RELATION IN entity OUT entity;
-DEFINE TABLE implements TYPE RELATION IN entity OUT entity;
-DEFINE TABLE depends_on TYPE RELATION IN entity OUT entity;
-DEFINE TABLE exports    TYPE RELATION IN entity OUT entity;
-DEFINE TABLE references TYPE RELATION IN entity OUT entity;</code></pre>
+CREATE REL TABLE DEFINES    (FROM File TO Function|Class|Interface|TypeAlias);
+CREATE REL TABLE IMPORTS    (FROM File TO File|Module);
+CREATE REL TABLE CALLS      (FROM Function TO Function);
+CREATE REL TABLE INHERITS   (FROM Class TO Class);
+CREATE REL TABLE IMPLEMENTS (FROM Class TO Interface);
+CREATE REL TABLE DEPENDS_ON (FROM Repo TO Module);
+CREATE REL TABLE EXPORTS    (FROM File TO Function|Class|Interface|TypeAlias);
+CREATE REL TABLE REFERENCES (FROM Function TO TypeAlias|Interface);</code></pre>
+
+  <h3>LanceDB — Entity + Vector Schema</h3>
+  <p>One <code>entities</code> table stores all entity kinds with their bodies and embeddings.</p>
+  <pre><code>// entities table — Apache Arrow schema
+{
+  id:             string,          // SHA-256 (repo, file, kind, name)
+  kind:           string,          // 'file' | 'function' | 'class' | 'interface' | 'type' | 'module'
+  name:           string,          // symbol name or file path
+  repo:           string,          // absolute repo root path
+  file:           string,          // absolute file path
+  startLine:      int32,
+  endLine:        int32,
+  body:           string,          // source text (capped at 8 000 chars)
+  language:       string,          // 'typescript' | 'python' | 'go'
+  hash:           string,          // 16-char content hash (change detection)
+  embeddingModel: string,          // 'qwen3-embedding:0.6b' or ''
+  indexedAt:      string,          // ISO 8601
+  vector:         fixed_size_list&lt;float32&gt;[2048]  // zero vector if not yet embedded
+}
+
+// Indexes (created on first write, rebuilt on model change)
+await entityTable.createIndex('body', { config: lancedb.Index.fts() });  // BM25 FTS
+// ANN index built automatically on first vectorSearch()</code></pre>
 
   <h2>Search Strategy</h2>
 
@@ -651,27 +667,27 @@ DEFINE TABLE references TYPE RELATION IN entity OUT entity;</code></pre>
     to collect all transitively reachable repos. This is a one-time startup cost, cached for the
     session duration.
   </p>
-  <pre><code>-- Resolve all repos reachable via DEPENDS_ON from the current repo
-LET $closure = SELECT VALUE id FROM entity
-  WHERE kind = 'Repo'
-  AND id IN (
-    SELECT VALUE out FROM depends_on
-    WHERE in = $currentRepoId
-    FETCH out, out-&gt;depends_on-&gt;entity
-  );
+  <pre><code>// Resolve all repos reachable via DEPENDS_ON from the current repo (Kuzu Cypher)
+MATCH (current:Repo {id: $currentRepoId})-[:DEPENDS_ON*1..10]->(dep:Repo)
+RETURN DISTINCT dep.id
 
--- Include the current repo itself
-LET $closureRepos = array::union([$currentRepoId], $closure);</code></pre>
+// Include the current repo itself in application code:
+// const closureRepos = [currentRepoId, ...depIds];</code></pre>
 
   <h3>Scoped Vector Search</h3>
-  <p>All semantic searches filter by <code>repo IN $closureRepos</code> to restrict results to the dependency closure.</p>
-  <pre><code>SELECT id, name, kind, file, repo,
-       vector::similarity::cosine(embedding, $query_vec) AS score
-FROM entity
-WHERE repo IN $closureRepos
-  AND score &gt; 0.75
-ORDER BY score DESC
-LIMIT 20</code></pre>
+  <p>All semantic searches filter by <code>repo IN closureRepos</code> to restrict results to the dependency closure.</p>
+  <pre><code>// LanceDB vector search scoped to dependency closure
+const results = await entityTable.vectorSearch(queryVec)
+  .where(`repo IN (${closureRepos.map(r => `'${r}'`).join(',')})`)
+  .distanceType('cosine')
+  .limit(20)
+  .toArray();
+
+// Hybrid reranking: combine vector score + BM25 score
+const ftsResults = await entityTable.search(queryText)
+  .where(`repo IN (${closureRepos.map(r => `'${r}'`).join(',')})`)
+  .limit(20)
+  .toArray();</code></pre>
 
   <h3>Three-Tier Search Strategy</h3>
   <table>
@@ -702,44 +718,48 @@ LIMIT 20</code></pre>
 
   <h2>Query Patterns</h2>
 
-  <h3>Semantic Search (Vector, Closure-Scoped)</h3>
-  <pre><code>LET $closureRepos = [...]; -- resolved at session start
+  <h3>Semantic Search (Vector + BM25 Hybrid, Closure-Scoped)</h3>
+  <pre><code>// closureRepos resolved at session start via Kuzu DEPENDS_ON traversal
+const scopeFilter = `repo IN (${closureRepos.map(r => `'${r}'`).join(',')})`;
 
-SELECT id, name, kind, file, repo,
-       vector::similarity::cosine(embedding, $query_vec) AS score
-FROM entity
-WHERE repo IN $closureRepos
-  AND score &gt; 0.75
-ORDER BY score DESC
-LIMIT 20</code></pre>
+// Tier 1a: vector ANN search
+const vecHits = await entityTable.vectorSearch(queryVec)
+  .where(scopeFilter).distanceType('cosine').limit(20).toArray();
 
-  <h3>Find All Callers of a Function</h3>
-  <pre><code>SELECT &lt;-calls&lt;-entity.* FROM entity WHERE id = $target_id</code></pre>
+// Tier 1b: BM25 keyword search
+const ftsHits = await entityTable.search(queryText)
+  .where(scopeFilter).limit(20).toArray();
+
+// Merge and rerank (RRF or score blend)
+const ranked = reciprocalRankFusion(vecHits, ftsHits).slice(0, 10);</code></pre>
+
+  <h3>Find All Callers of a Function (Kuzu)</h3>
+  <pre><code>MATCH (caller:Function)-[:CALLS]->(target:Function {id: $targetId})
+RETURN caller.name, caller.file, caller.startLine</code></pre>
 
   <h3>Transitive Call Graph (What Does This Function Depend On?)</h3>
-  <pre><code>SELECT -&gt;calls-&gt;entity.* FROM entity
-WHERE id = $fn_id
-FETCH -&gt;calls-&gt;entity-&gt;calls-&gt;entity</code></pre>
+  <pre><code>MATCH (fn:Function {id: $fnId})-[:CALLS*1..5]->(dep:Function)
+RETURN DISTINCT dep.name, dep.file</code></pre>
 
   <h3>Cross-Repo Impact (Who Uses This Exported Type?)</h3>
-  <pre><code>-- Scoped to closure repos for relevance
-SELECT &lt;-references&lt;-entity.*
-FROM entity
-WHERE id = $type_id
-  AND (&lt;-references&lt;-entity.repo) IN $closureRepos</code></pre>
+  <pre><code>// Scoped to closure repos for relevance (Kuzu)
+MATCH (user:Function)-[:CALLS]->(fn:Function)-[:DEFINES]->(t:TypeAlias {id: $typeId})
+WHERE user.repo IN $closureRepos
+RETURN user.name, user.file</code></pre>
 
   <h3>Hybrid: Semantic Search + Graph Expansion (Closure-Scoped)</h3>
-  <pre><code>-- Tier 1: vector search within closure
-LET $results = (
-  SELECT id, vector::similarity::cosine(embedding, $query_vec) AS score
-  FROM entity
-  WHERE repo IN $closureRepos AND score &gt; 0.8
-  LIMIT 5
-);
+  <pre><code>// Tier 1: vector search within closure (LanceDB)
+const seedHits = await entityTable.vectorSearch(queryVec)
+  .where(scopeFilter).distanceType('cosine').limit(5).toArray();
 
--- Tier 2: expand to graph neighbors
-SELECT *, -&gt;calls-&gt;entity.*, &lt;-defines&lt;-entity.*
-FROM $results</code></pre>
+// Tier 2: expand to graph neighbors (Kuzu)
+for (const hit of seedHits) {
+  const neighbors = await conn.query(`
+    MATCH (f:Function {id: '${hit.id}'})-[:CALLS|IMPORTS*1..2]->(n)
+    RETURN n.id, n.name, n.file
+  `);
+  // merge neighbors into context
+}</code></pre>
 
   <h2>Incremental Indexing</h2>
   <p><code>@parcel/watcher</code> provides native OS-level file system events. On each event:</p>
@@ -852,18 +872,18 @@ const queryVec = await ollama.embed({ model: 'qwen3-embedding:0.6b', input: quer
       registry.ts         -- Maps file extension to parser instance
 
   db/
-    client.ts             -- SurrealDB embedded connection + init
-    schema.ts             -- Schema definition strings (run on startup)
-    entities.ts           -- CRUD for entity nodes
-    relations.ts          -- CRUD for graph edges
-    repos.ts              -- registered_repo CRUD
-    search.ts             -- Vector search + graph traversal queries
+    client.ts             -- Kuzu + LanceDB connection init (daemon-exclusive)
+    kuzu.ts               -- Kuzu connection + node/relation table setup
+    entities.ts           -- LanceDB entity CRUD (upsert, delete, get by id)
+    relations.ts          -- Kuzu relation CRUD (CALLS, IMPORTS, DEFINES, etc.)
+    repos.ts              -- Kuzu Repo node CRUD + DEPENDS_ON edges
+    search.ts             -- Hybrid vector (LanceDB) + graph (Kuzu) query API
 
   agent/
     index.ts              -- Agent loop (Phase 6)
 
   shared/
-    paths.ts              -- ~/.insrc/ path constants (db, pid, sock, logs)
+    paths.ts              -- ~/.insrc/ path constants (graph, lance, pid, sock, logs)
     types.ts              -- Shared IPC message types + entity types</code></pre>
 
   <h2>Phased Implementation</h2>
@@ -872,10 +892,10 @@ const queryVec = await ollama.embed({ model: 'qwen3-embedding:0.6b', input: quer
     <div class="phase-card">
       <h4><span class="badge badge-phase">Phase 1</span> DB Schema + TS/JS Parser</h4>
       <ul>
-        <li>Define <code>~/.insrc/</code> directory layout</li>
-        <li>SurrealDB schema + <code>db/</code> layer</li>
+        <li>Define <code>~/.insrc/</code> directory layout (<code>graph/</code> + <code>lance/</code>)</li>
+        <li>Kuzu node/relation tables + LanceDB entities table + <code>db/</code> layer</li>
         <li>Implement <code>parser/typescript.ts</code></li>
-        <li>Verify graph queries (callers, imports, defines)</li>
+        <li>Verify graph queries (callers, imports, defines) with Cypher</li>
       </ul>
     </div>
     <div class="phase-card">
@@ -965,9 +985,10 @@ const queryVec = await ollama.embed({ model: 'qwen3-embedding:0.6b', input: quer
       <code>daemon start</code> first? Auto-start is more ergonomic but harder to reason about.
     </li>
     <li>
-      <strong>Multiple SurrealDB writers</strong> &mdash; SurrealDB embedded (<code>surrealkv</code>) is
-      single-writer. The daemon is the sole writer; the CLI must never open the DB directly. This must be
-      enforced architecturally &mdash; only <code>daemon/</code> imports <code>db/client.ts</code>.
+      <strong>Exclusive DB access</strong> &mdash; Kuzu uses a single-process embedded model; concurrent
+      writers will corrupt the database. LanceDB supports concurrent readers but single writer per table.
+      The daemon is the sole writer for both; the CLI must never open either DB directly. Enforced
+      architecturally: only <code>daemon/</code> imports <code>db/client.ts</code>.
     </li>
   </ol>
 

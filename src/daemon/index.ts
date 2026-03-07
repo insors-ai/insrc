@@ -4,7 +4,7 @@
  * Startup sequence:
  *  1. Check for existing daemon (stale PID cleanup)
  *  2. Ensure ~/.insrc/ directories exist
- *  3. Open SurrealDB and run schema migrations
+ *  3. Open Kuzu + LanceDB and run schema migrations
  *  4. Bootstrap embedding model (non-blocking)
  *  5. Load registered repos, start watcher + queue
  *  6. Write PID file
@@ -36,7 +36,8 @@ async function main(): Promise<void> {
   }
 
   // 2. Ensure directories
-  mkdirSync(PATHS.db,     { recursive: true });
+  mkdirSync(PATHS.graph,  { recursive: true });
+  mkdirSync(PATHS.lance,  { recursive: true });
   mkdirSync(PATHS.logDir, { recursive: true });
 
   // 3. Open DB

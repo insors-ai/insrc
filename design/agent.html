@@ -242,7 +242,7 @@
 
   <div class="callout local">
     <strong>Graph queries are free:</strong> Tasks like "find all callers of X" or "what does this repo depend on"
-    are answered directly from SurrealDB with no LLM involved. The agent resolves these as pure
+    are answered directly from Kuzu with no LLM involved. The agent resolves these as pure
     graph traversals and formats the result for the user.
   </div>
 
@@ -376,7 +376,7 @@ function selectProvider(task: Task, config: AgentConfig): LLMProvider {
   <h2>Session Management</h2>
 
   <p>
-    The agent maintains per-session conversation history in two tiers: raw turns stored in SurrealDB
+    The agent maintains per-session conversation history in two tiers: raw turns stored in LanceDB
     during the session (for semantic retrieval), and a session summary promoted to persistent storage
     at session end (for cross-session continuity).
   </p>
@@ -384,8 +384,8 @@ function selectProvider(task: Task, config: AgentConfig): LLMProvider {
   <table>
     <thead><tr><th>Property</th><th>Value</th></tr></thead>
     <tbody>
-      <tr><td>Raw turn storage</td><td>SurrealDB <code>conversation_turn</code> — session duration only, deleted on close</td></tr>
-      <tr><td>Session summary</td><td>Persisted to <code>conversation_session</code> — retained across sessions, pruned by TTL</td></tr>
+      <tr><td>Raw turn storage</td><td>LanceDB <code>conversation_turns</code> table — session duration only, deleted on close</td></tr>
+      <tr><td>Session summary</td><td>Persisted to LanceDB <code>conversation_sessions</code> table — retained across sessions, pruned by TTL</td></tr>
       <tr><td>Context window management</td><td>Layered memory model — see below</td></tr>
       <tr><td>Provider switching</td><td>History is provider-agnostic; can switch mid-session</td></tr>
       <tr><td>Dependency closure</td><td>Resolved once at session start, held for session duration</td></tr>
@@ -409,7 +409,7 @@ function selectProvider(task: Task, config: AgentConfig): LLMProvider {
   </p>
 
   <div class="callout info">
-    <strong>The index is the memory.</strong> The SurrealDB Code Knowledge Graph is the agent's
+    <strong>The index is the memory.</strong> The Kuzu Code Knowledge Graph is the agent's
     persistent long-term memory for code structure. The context window only needs to hold what is
     immediately relevant to the current turn &mdash; everything else is re-queryable on demand.
   </div>
@@ -487,7 +487,7 @@ function selectProvider(task: Task, config: AgentConfig): LLMProvider {
 
   <h3>Semantic History Retrieval (L3b)</h3>
   <p>
-    Every turn is embedded and stored in SurrealDB. When assembling context, the current user message
+    Every turn is embedded and stored in LanceDB. When assembling context, the current user message
     is used to retrieve the most semantically relevant older turns &mdash; regardless of when they
     occurred. A turn from 30 exchanges ago resurfaces if it is relevant to the current question.
   </p>
@@ -503,17 +503,17 @@ async function storeTurn(session: Session, turn: ConversationTurn): Promise&lt;v
 
   const vec = await embed(turn.userMessage);  // embed user message only
 
-  await db.query(`
-    INSERT INTO conversation_turn {
-      session:   $session,
-      idx:       $idx,
-      user:      $user,
-      assistant: $assistant,
-      embedding: $vec,
-      entities:  $entities,   -- graph entity IDs referenced in this turn
-      createdAt: time::now()
-    }
-  `, { session: session.id, idx: session.turnIndex, ...turn, vec });
+  // LanceDB: upsert into conversation_turns table
+  await conversationTurnsTable.add([{
+    id:        `${session.id}:${session.turnIndex}`,
+    sessionId: session.id,
+    idx:       session.turnIndex,
+    user:      turn.userMessage,
+    assistant: turn.assistantResponse,
+    vector:    vec,            // float32[2048] for semantic retrieval
+    entities:  turn.entities, // graph entity IDs referenced in this turn
+    createdAt: new Date().toISOString(),
+  }]);
 }</code></pre>
 
   <h4>Retrieval — per turn (start of turn, on critical path ~5ms)</h4>
@@ -524,16 +524,14 @@ async function retrieveSemanticHistory(
 ): Promise&lt;ConversationTurn[]&gt; {
   if (session.turnIndex &lt; 5) return [];  // nothing stored yet
 
-  return db.query(`
-    SELECT idx, user, assistant,
-           vector::similarity::cosine(embedding, $vec) AS score
-    FROM conversation_turn
-    WHERE session = $session
-      AND idx &lt; $currentIdx - 5   -- exclude what is already in L3a
-      AND score &gt; 0.70
-    ORDER BY score DESC
-    LIMIT 4
-  `, { session: session.id, vec, currentIdx: session.turnIndex });
+  // LanceDB ANN vector search scoped to this session, excluding L3a window
+  const minIdx = session.turnIndex - 5;  // exclude last 5 turns (already in L3a)
+  return conversationTurnsTable
+    .vectorSearch(vec)
+    .where(`sessionId = '${session.id}' AND idx &lt; ${minIdx}`)
+    .distanceType('cosine')
+    .limit(4)
+    .toArray();
 }</code></pre>
 
   <h3>Rolling Summarization (L2)</h3>
@@ -630,32 +628,34 @@ const TOKEN_BUDGET = {
   <h4>Session close</h4>
   <pre><code>// session.ts — on disconnect or explicit /exit
 async function closeSession(session: Session): Promise&lt;void&gt; {
-  // Promote summary to persistent store
-  await db.query(`
-    INSERT INTO conversation_session {
-      id:        $sid,
-      repo:      $repoId,
-      summary:   $summary,
-      entities:  $seenEntities,
-      createdAt: time::now(),
-      expiresAt: time::now() + 30d
-    }
-  `, { sid: session.id, repoId: session.repoId,
-       summary: session.summary, seenEntities: [...session.seenEntities] });
+  const now = new Date().toISOString();
+  const expiresAt = new Date(Date.now() + 30 * 86_400_000).toISOString(); // 30 days
+
+  // Promote summary to persistent LanceDB store
+  await conversationSessionsTable.add([{
+    id:           session.id,
+    repo:         session.repoId,
+    summary:      session.summary,
+    seenEntities: [...session.seenEntities],
+    createdAt:    now,
+    expiresAt:    expiresAt,
+    vector:       await embed(session.summary),  // for semantic cross-session seeding
+  }]);
 
   // Delete all raw turns — summary is the durable artifact
-  await db.query(`DELETE conversation_turn WHERE session = $sid`, { sid: session.id });
+  await conversationTurnsTable.delete(`sessionId = '${session.id}'`);
 }</code></pre>
 
   <h4>Cross-session seeding</h4>
   <p>On session start, recent session summaries for the same repo seed the initial L2:</p>
   <pre><code>// session.ts — on session start
-const priorSummaries = await db.query(`
-  SELECT summary, createdAt FROM conversation_session
-  WHERE repo = $repoId AND expiresAt &gt; time::now()
-  ORDER BY createdAt DESC
-  LIMIT 3
-`, { repoId });
+const now = new Date().toISOString();
+const priorSummaries = await conversationSessionsTable
+  .search('')
+  .where(`repo = '${repoId}' AND expiresAt &gt; '${now}'`)
+  .limit(3)
+  .toArray()
+  .then(rows =&gt; rows.sort((a, b) =&gt; b.createdAt.localeCompare(a.createdAt)));
 
 session.summary = priorSummaries.map(s =&gt; s.summary).join('\n\n');</code></pre>
 
@@ -663,8 +663,8 @@ session.summary = priorSummaries.map(s =&gt; s.summary).join('\n\n');</code></pr
   <table>
     <thead><tr><th>What</th><th>When pruned</th><th>How</th></tr></thead>
     <tbody>
-      <tr><td>Raw turn embeddings (<code>conversation_turn</code>)</td><td>Session end</td><td>Hard delete by session ID</td></tr>
-      <tr><td>Session summaries (<code>conversation_session</code>)</td><td>TTL: 30 days after creation</td><td>Nightly daemon maintenance job</td></tr>
+      <tr><td>Raw turn embeddings (<code>conversation_turns</code>)</td><td>Session end</td><td>Hard delete by sessionId filter</td></tr>
+      <tr><td>Session summaries (<code>conversation_sessions</code>)</td><td>TTL: 30 days after creation</td><td>Nightly daemon maintenance job</td></tr>
       <tr><td>Session summaries (count cap)</td><td>When &gt; 20 summaries per repo</td><td>Delete oldest beyond cap</td></tr>
       <tr><td>Pinned entries</td><td>Manual only</td><td>User command: <code>/forget</code></td></tr>
     </tbody>
@@ -673,22 +673,21 @@ session.summary = priorSummaries.map(s =&gt; s.summary).join('\n\n');</code></pr
   <h4>Nightly daemon maintenance job</h4>
   <pre><code>// lifecycle.ts — runs daily via setInterval
 async function pruneConversationHistory(): Promise&lt;void&gt; {
-  // Delete expired summaries
-  await db.query(`DELETE conversation_session WHERE expiresAt &lt; time::now()`);
+  const now = new Date().toISOString();
+
+  // Delete expired summaries (LanceDB filter delete)
+  await conversationSessionsTable.delete(`expiresAt &lt; '${now}'`);
 
   // Cap at 20 summaries per repo — delete oldest beyond cap
-  const repos = await db.query(`SELECT DISTINCT repo FROM conversation_session`);
-  for (const { repo } of repos) {
-    await db.query(`
-      DELETE conversation_session
-      WHERE repo = $repo
-        AND id NOT IN (
-          SELECT id FROM conversation_session
-          WHERE repo = $repo
-          ORDER BY createdAt DESC
-          LIMIT 20
-        )
-    `, { repo });
+  const allSessions = await conversationSessionsTable.search('').toArray();
+  const byRepo = Map.groupBy(allSessions, s =&gt; s.repo);
+  for (const [repo, sessions] of byRepo) {
+    const sorted = sessions.sort((a, b) =&gt; b.createdAt.localeCompare(a.createdAt));
+    const toDelete = sorted.slice(20).map(s =&gt; s.id);
+    if (toDelete.length &gt; 0) {
+      const ids = toDelete.map(id =&gt; `'${id}'`).join(',');
+      await conversationSessionsTable.delete(`repo = '${repo}' AND id IN (${ids})`);
+    }
   }
 }</code></pre>
 
@@ -735,7 +734,7 @@ async function ensureModels(ollama: Ollama): Promise&lt;void&gt; {
       <tr><td>Local task (qwen3-coder)</td><td>No &mdash; stays on machine</td></tr>
       <tr><td>Claude task</td><td>Yes &mdash; structured context sent to Anthropic API</td></tr>
       <tr><td>Embeddings</td><td>No &mdash; always via Ollama locally</td></tr>
-      <tr><td>Graph queries</td><td>No &mdash; SurrealDB, local only</td></tr>
+      <tr><td>Graph queries</td><td>No &mdash; Kuzu (local) + LanceDB (local), never leaves machine</td></tr>
     </tbody>
   </table>
 
@@ -835,9 +834,9 @@ async function ensureModels(ollama: Ollama): Promise&lt;void&gt; {
       <code>claude-haiku-4-5</code> for lowest cost.
     </li>
     <li>
-      <strong>Session persistence</strong> &mdash; Currently ephemeral. Future option: persist
-      session summaries to SurrealDB as a lightweight "conversation memory" per repo, giving
-      the agent recall across sessions without full history replay.
+      <strong>Session persistence</strong> &mdash; Session summaries are persisted to LanceDB
+      <code>conversation_sessions</code> as a lightweight "conversation memory" per repo, giving
+      the agent recall across sessions without full history replay (30-day TTL, capped at 20 per repo).
     </li>
     <li>
       <strong>Streaming UX</strong> &mdash; Both providers support streaming. The REPL should

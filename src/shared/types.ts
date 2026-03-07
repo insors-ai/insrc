@@ -45,3 +45,114 @@ export interface Task {
   /** Estimated token count of required context */
   tokenEstimate?: number;
 }
+
+// ---------------------------------------------------------------------------
+// Code Knowledge Graph — entity + relation types
+// ---------------------------------------------------------------------------
+
+export type Language = 'python' | 'go' | 'typescript' | 'javascript';
+
+export type EntityKind =
+  | 'repo'
+  | 'file'
+  | 'module'
+  | 'function'
+  | 'method'
+  | 'class'
+  | 'interface'
+  | 'type'
+  | 'variable';
+
+export type RelationKind =
+  | 'DEFINES'
+  | 'IMPORTS'
+  | 'CALLS'
+  | 'INHERITS'
+  | 'IMPLEMENTS'
+  | 'DEPENDS_ON'
+  | 'EXPORTS'
+  | 'REFERENCES';
+
+export interface Entity {
+  /** Stable deterministic ID: SHA256(repo + file + kind + name), hex-32 */
+  id:         string;
+  kind:       EntityKind;
+  name:       string;
+  language:   Language;
+  repo:       string;   // repo root absolute path
+  file:       string;   // absolute file path
+  startLine:  number;
+  endLine:    number;
+  /** Raw source text — used as embedding input */
+  body:       string;
+  /** 2048-dimensional vector from qwen3-embedding:0.6b; [] if not yet embedded */
+  embedding:  number[];
+  indexedAt:  string;   // ISO datetime
+
+  // Optional fields populated by specific entity kinds
+  isExported?:     boolean;
+  isAsync?:        boolean;
+  isAbstract?:     boolean;
+  signature?:      string;
+  hash?:           string;  // content hash for File entities
+  rootPath?:       string;  // for Repo entities
+  embeddingModel?: string;
+}
+
+export interface Relation {
+  kind: RelationKind;
+  /** Source entity id */
+  from: string;
+  /** Target entity id (or raw specifier if unresolved) */
+  to:   string;
+  /** Whether 'to' is a resolved entity id or a raw import specifier */
+  resolved: boolean;
+  meta?: Record<string, unknown>;
+}
+
+// ---------------------------------------------------------------------------
+// Repo registry
+// ---------------------------------------------------------------------------
+
+export interface RegisteredRepo {
+  path:         string;
+  name:         string;
+  addedAt:      string;
+  lastIndexed?: string;
+  status:       'pending' | 'indexing' | 'ready' | 'error';
+  errorMsg?:    string;
+}
+
+// ---------------------------------------------------------------------------
+// Indexer queue
+// ---------------------------------------------------------------------------
+
+export type IndexJob =
+  | { kind: 'full';    repoPath: string }
+  | { kind: 'file';    filePath: string; event: 'create' | 'update' | 'delete' }
+  | { kind: 'reembed'; repoPath: string };
+
+// ---------------------------------------------------------------------------
+// IPC — JSON-RPC over Unix socket
+// ---------------------------------------------------------------------------
+
+export interface IpcRequest {
+  id:     number;
+  method: string;
+  params: unknown;
+}
+
+export interface IpcResponse {
+  id:     number;
+  result?: unknown;
+  error?:  string;
+}
+
+export interface DaemonStatus {
+  uptime:            number;  // seconds
+  repos:             RegisteredRepo[];
+  queueDepth:        number;
+  embeddingsPending: number;
+  modelPullStatus?:  'pulling' | 'ready';
+  modelPullPct?:     number;
+}

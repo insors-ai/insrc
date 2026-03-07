@@ -4,6 +4,9 @@
   "description": "Hybrid Coding agent",
   "main": "dist/index.js",
   "type": "module",
+  "bin": {
+    "insrc": "./src/cli/index.ts"
+  },
   "scripts": {
     "dev": "tsx src/index.ts",
     "build": "tsc",

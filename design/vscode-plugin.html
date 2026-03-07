@@ -522,22 +522,43 @@
   <h3>Chat panel — layout</h3>
   <p>
     The chat panel is split vertically into two sections: <strong>History</strong> (top, scrollable)
-    and <strong>Action</strong> (bottom, fixed height). The split is resizable by dragging the
-    divider. The action panel content is context-driven — it changes based on what the agent is
-    doing. When a plan is active, the action panel is locked to plan progress and cannot be
-    replaced by other content until the plan is complete or cancelled.
+    and <strong>Action</strong> (bottom, fixed height). A persistent <strong>repo indicator</strong>
+    sits in the chat header, always showing the active repo context. The split is resizable by
+    dragging the divider. The action panel content is context-driven — it changes based on what
+    the agent is doing. When a plan is active, the action panel is locked to plan progress and
+    cannot be replaced by other content until the plan is complete or cancelled.
   </p>
 
-  <pre><code>┌─────────────────────┐
-│                     │
-│   History panel     │  ← scrollable message stream
-│   (grows upward)    │
-│                     │
-├─────────────────────┤  ← draggable divider
-│   Action panel      │  ← context-driven (plan / tool / input)
-│                     │
-│  [input box]        │
-└─────────────────────┘</code></pre>
+  <pre><code>┌──────────────────────────────┐
+│ insrc  [insrc ▾]  [Pop out]  │  ← header: repo selector + float button
+├──────────────────────────────┤
+│                              │
+│   History panel              │  ← scrollable message stream
+│   (grows upward)             │
+│                              │
+├──────────────────────────────┤  ← draggable divider
+│   Action panel               │  ← context-driven (plan / tool / input)
+│                              │
+│  [input box]                 │
+└──────────────────────────────┘</code></pre>
+
+  <h4>Repo context indicator</h4>
+  <p>
+    The active repo is shown as a clickable pill in the chat header: <code>[insrc ▾]</code>.
+    Every message sent in the session is scoped to this repo's graph context.
+  </p>
+  <ul>
+    <li>Click the pill → dropdown lists all indexed repos; select one to switch context
+    for subsequent turns in this session</li>
+    <li>Switching repo does <strong>not</strong> start a new session — the history stays; a
+    separator line is inserted: <em>— context switched to api-gateway —</em></li>
+    <li>In the input box, type <code>@repo:&lt;name&gt;</code> to switch context inline without
+    opening the dropdown — fuzzy-matched against known repo names:
+    <pre><code>@repo:api-gateway why does /health return 503?</code></pre></li>
+    <li><code>@repo:</code> with no name opens the dropdown picker at the cursor position</li>
+    <li>The navigation panel highlights the newly active repo node when context switches</li>
+    <li>Repo context is persisted per session — re-opening a session restores the last active repo</li>
+  </ul>
 
   <h4>History panel</h4>
   <ul>
@@ -581,9 +602,9 @@
       <tr>
         <td>Idle</td>
         <td>
-          Input box — supports <code>@file</code> mentions (fuzzy picker), <code>@claude</code> /
-          <code>@opus</code> / <code>@local</code> prefixes, file drag-and-drop attachments,
-          and <code>/</code> command menu.
+          Input box — supports <code>@file</code> mentions (fuzzy picker), <code>@repo:&lt;name&gt;</code>
+          to switch repo context inline, <code>@claude</code> / <code>@opus</code> /
+          <code>@local</code> prefixes, file drag-and-drop attachments, and <code>/</code> command menu.
         </td>
       </tr>
     </tbody>

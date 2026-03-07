@@ -388,7 +388,7 @@ try {
 
   // searchEntities with zero vector — no embeddings indexed so result will be empty
   // but the call should succeed without throwing
-  const zeroVec = new Array<number>(2048).fill(0);
+  const zeroVec = new Array<number>(1024).fill(0);
   const hits    = await searchEntities(db, zeroVec, closure, 5);
   ok(`searchEntities (zero vec): returned ${hits.length} hits without error ✓`);
 

@@ -85,7 +85,7 @@ export interface Entity {
   endLine:    number;
   /** Raw source text — used as embedding input */
   body:       string;
-  /** 2048-dimensional vector from qwen3-embedding:0.6b; [] if not yet embedded */
+  /** 1024-dimensional vector from qwen3-embedding:0.6b; [] if not yet embedded */
   embedding:  number[];
   indexedAt:  string;   // ISO datetime
 

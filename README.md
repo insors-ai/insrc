@@ -96,7 +96,7 @@ RETURN f.path
 ### LanceDB — Entity Store + Search
 
 Stores every entity with its embedding vector and body text. Supports:
-- **Vector similarity search** — ANN over 2048-dim embeddings
+- **Vector similarity search** — ANN over 1024-dim embeddings
 - **Full-text search (BM25)** — keyword search over `name` and `body` fields
 - **Hybrid reranking** — combine vector + FTS scores
 
@@ -116,7 +116,7 @@ Stores every entity with its embedding vector and body text. Supports:
 | `hash` | `string` | Content hash (16-char SHA-256 prefix) |
 | `embeddingModel` | `string` | Model used for embedding |
 | `indexedAt` | `string` | ISO 8601 |
-| `vector` | `fixed_size_list<float32>[2048]` | Embedding — zero vector if not yet embedded |
+| `vector` | `fixed_size_list<float32>[1024]` | Embedding — zero vector if not yet embedded |
 
 ---
 

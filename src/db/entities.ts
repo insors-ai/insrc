@@ -27,7 +27,7 @@ const ENTITIES_SCHEMA = new Schema([
   new Field('signature',      new Utf8(),   false),
   new Field('hash',           new Utf8(),   false),
   new Field('rootPath',       new Utf8(),   false),
-  new Field('vector', new FixedSizeList(2048, new Field('item', new Float32(), true)), false),
+  new Field('vector', new FixedSizeList(1024, new Field('item', new Float32(), true)), false),
 ]);
 
 // Module-level cache — re-used across calls within the same daemon process
@@ -61,7 +61,7 @@ async function kuzuExec(db: DbClient, stmt: string, params?: any): Promise<Recor
 // Row ↔ Entity mapping
 // ---------------------------------------------------------------------------
 
-const ZERO_VEC = new Array<number>(2048).fill(0);
+const ZERO_VEC = new Array<number>(1024).fill(0);
 
 function entityToRow(entity: Entity): Record<string, unknown> {
   return {
@@ -84,7 +84,7 @@ function entityToRow(entity: Entity): Record<string, unknown> {
     hash:           entity.hash        ?? '',
     rootPath:       entity.rootPath    ?? '',
     // Use provided embedding if 2048-dim, otherwise store zero vector as sentinel
-    vector:         entity.embedding.length === 2048 ? entity.embedding : ZERO_VEC,
+    vector:         entity.embedding.length === 1024 ? entity.embedding : ZERO_VEC,
   };
 }
 

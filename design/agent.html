@@ -215,42 +215,1383 @@
   <h2>Task Routing</h2>
 
   <p>
-    Tasks are classified by scope and reasoning depth. Local handles everything it can;
-    Claude is invoked only when the task genuinely exceeds local capability.
+    Every user message is classified into one of the intents below before a provider is selected.
+    Classification uses a combination of keyword signals, cursor context (active file, selected
+    entity), and graph signals (entity count, repo count, graph depth). Local handles everything
+    it can; Claude is invoked only when the task genuinely exceeds local capability.
   </p>
+
+  <div class="callout local">
+    <strong>Graph queries are free:</strong> Tasks like "find all callers of X" or "what does this
+    repo depend on" are answered directly from Kuzu with no LLM involved. The agent resolves these
+    as pure graph traversals and formats the result for the user.
+  </div>
+
+  <h3>Intent taxonomy</h3>
 
   <table>
     <thead>
-      <tr><th>Task</th><th>Provider</th><th>Routing Signal</th></tr>
+      <tr><th>Intent</th><th>Short description</th><th>Default provider</th><th>Claude model</th><th>Claude role</th></tr>
     </thead>
     <tbody>
-      <tr><td>Inline completion / next line</td><td><span class="badge badge-local">LOCAL</span></td><td>Cursor position, single file</td></tr>
-      <tr><td>Explain this function / class</td><td><span class="badge badge-local">LOCAL</span></td><td>Scope &le; 1 file</td></tr>
-      <tr><td>Write unit tests for a function</td><td><span class="badge badge-local">LOCAL</span></td><td>Single entity target</td></tr>
-      <tr><td>Fix a specific bug</td><td><span class="badge badge-local">LOCAL</span></td><td>Error + file pointed at</td></tr>
-      <tr><td>Rename / refactor within a file</td><td><span class="badge badge-local">LOCAL</span></td><td>Single file scope</td></tr>
-      <tr><td>Summarize what a file does</td><td><span class="badge badge-local">LOCAL</span></td><td>Single file scope</td></tr>
-      <tr><td>Find callers / usages</td><td><span class="badge badge-local">LOCAL</span></td><td>Pure graph query — no LLM needed</td></tr>
-      <tr><td>Multi-file refactor</td><td><span class="badge badge-claude">CLAUDE</span></td><td>Entities span &gt; 2 files</td></tr>
-      <tr><td>Architecture / design question</td><td><span class="badge badge-claude">CLAUDE</span></td><td>Task kind = <code>design</code></td></tr>
-      <tr><td>Cross-repo impact analysis</td><td><span class="badge badge-claude">CLAUDE</span></td><td>Entities span &gt; 1 repo</td></tr>
-      <tr><td>Explain a complex interaction</td><td><span class="badge badge-claude">CLAUDE</span></td><td>Graph depth &gt; 2 hops, multi-repo</td></tr>
-      <tr><td>Generate a design document</td><td><span class="badge badge-claude">CLAUDE</span></td><td>Task kind = <code>document</code></td></tr>
-      <tr><td>Code review / tradeoff analysis</td><td><span class="badge badge-claude">CLAUDE</span></td><td>Task kind = <code>review</code></td></tr>
+      <tr><td><code>requirements</code></td><td>Clarify, capture, or refine what needs to be built</td><td><span class="badge badge-claude">CLAUDE</span></td><td>Sonnet</td><td>Enhance local sketch; resolve ambiguities</td></tr>
+      <tr><td><code>design</code></td><td>Architecture, API shape, module boundaries, tradeoff analysis</td><td><span class="badge badge-claude">CLAUDE</span></td><td>Sonnet</td><td>Enhance local sketch; tradeoff reasoning</td></tr>
+      <tr><td><code>plan</code></td><td>Break a feature or change into an ordered implementation checklist</td><td><span class="badge badge-claude">CLAUDE</span></td><td>Sonnet</td><td>Enhance local sketch; order and dependency resolution</td></tr>
+      <tr><td><code>research</code></td><td>Understand existing code &mdash; explain, trace, find usages</td><td><span class="badge badge-local">LOCAL</span></td><td>Sonnet</td><td>Escalation: cross-repo or low-confidence answers</td></tr>
+      <tr><td><code>implement</code></td><td>Write or edit code to satisfy a known specification</td><td><span class="badge badge-local">LOCAL</span></td><td>Haiku</td><td>Validate tool call requests; Stage 2 diff validation; fix direction on 3-failure escalation (summary only)</td></tr>
+      <tr><td><code>refactor</code></td><td>Restructure code without changing observable behaviour</td><td><span class="badge badge-local">LOCAL</span></td><td>Haiku</td><td>Validate tool call requests; Stage 2 diff behaviour-equivalence check</td></tr>
+      <tr><td><code>test</code></td><td>Generate, run, or repair tests</td><td><span class="badge badge-local">LOCAL</span></td><td>Haiku</td><td>Validate tool call requests; Stage 2 test quality check; fix direction on 4th-failure escalation (summary only)</td></tr>
+      <tr><td><code>debug</code></td><td>Diagnose and fix a failing or incorrect behaviour</td><td><span class="badge badge-local">LOCAL</span></td><td>Haiku</td><td>Validate kubectl/shell call requests; direction on stuck escalation (≤200-token summary — raw output stays local)</td></tr>
+      <tr><td><code>review</code></td><td>Critique correctness, style, security, or performance of code</td><td><span class="badge badge-claude">CLAUDE</span></td><td>Sonnet</td><td>Full review; security and performance judgment</td></tr>
+      <tr><td><code>document</code></td><td>Generate or update comments, READMEs, ADRs, changelogs</td><td><span class="badge badge-local">LOCAL</span></td><td>Haiku</td><td>Validate tool call requests; direction on cross-cutting doc escalation (summary only)</td></tr>
+      <tr><td><code>graph</code></td><td>Pure structural query &mdash; callers, dependents, closure</td><td>No LLM</td><td>—</td><td>—</td></tr>
+    </tbody>
+  </table>
+  <p>
+    Opus is not used by default for any intent. It is available only when the user explicitly
+    prefixes with <code>@opus</code> — reserved for cross-repo architectural questions or
+    decisions where maximum reasoning depth is justified.
+  </p>
+
+  <h3>Intent classification</h3>
+
+  <p>
+    Classification runs locally — no LLM call is required to route a message. It is a fast,
+    deterministic two-pass pipeline that produces an <code>Intent</code> with confidence score,
+    used to select the provider and pre-fetch the right graph context.
+  </p>
+
+  <h4>Pass 1 — keyword + prefix signals</h4>
+  <p>
+    A small vocabulary of high-precision trigger phrases is checked against the lowercased message.
+    Hits above a confidence threshold short-circuit to Pass 2 for graph confirmation only.
+  </p>
+  <pre><code>// classifier/keywords.ts
+const KEYWORD_MAP: Record&lt;Intent, string[]&gt; = {
+  graph:        ['callers of', 'dependents of', 'depends on', 'imports of', 'closure of', 'what uses'],
+  implement:    ['implement', 'add support for', 'write a function', 'create a class', 'make', 'build'],
+  refactor:     ['refactor', 'rename', 'extract', 'inline', 'split', 'move', 'restructure'],
+  test:         ['test', 'spec', 'unit test', 'integration test', 'coverage', 'mock'],
+  debug:        ['debug', 'fix', 'broken', 'failing', 'crash', 'error', 'not working', 'exception'],
+  review:       ['review', 'audit', 'check for', 'is this correct', 'what do you think of'],
+  document:     ['document', 'docstring', 'comment', 'readme', 'changelog', 'adr'],
+  research:     ['explain', 'how does', 'what is', 'trace', 'find all', 'show me', 'where is'],
+  design:       ['design', 'architecture', 'api shape', 'interface', 'tradeoff', 'should i'],
+  plan:         ['plan', 'checklist', 'steps to', 'tasks for', 'break down', 'how would i'],
+  requirements: ['requirement', 'spec', 'should', 'must', 'user story', 'acceptance criteria'],
+};</code></pre>
+
+  <h4>Pass 2 — graph signals (tie-breaking)</h4>
+  <p>
+    When keyword confidence is below threshold (&lt; 0.7) or two intents score similarly, graph
+    signals resolve ambiguity:
+  </p>
+  <table>
+    <thead><tr><th>Signal</th><th>Effect</th></tr></thead>
+    <tbody>
+      <tr><td>Active file in open editor</td><td>Boost <code>implement</code>, <code>refactor</code>, <code>debug</code> for file-local messages</td></tr>
+      <tr><td>Selected text / entity name</td><td>Boost <code>research</code> / <code>graph</code> if entity resolves in graph</td></tr>
+      <tr><td>Entity count &gt; 3 in resolved context</td><td>Boost <code>design</code> / <code>plan</code> over <code>implement</code></td></tr>
+      <tr><td>Plan step in <code>in_progress</code> state</td><td>Boost <code>implement</code> — user likely continuing a planned task</td></tr>
+      <tr><td>Recent test failure in session</td><td>Boost <code>debug</code> / <code>test</code></td></tr>
     </tbody>
   </table>
 
-  <div class="callout local">
-    <strong>Graph queries are free:</strong> Tasks like "find all callers of X" or "what does this repo depend on"
-    are answered directly from Kuzu with no LLM involved. The agent resolves these as pure
-    graph traversals and formats the result for the user.
+  <h4>Explicit prefix overrides</h4>
+  <p>
+    User prefixes always win over classification. They bypass both passes entirely:
+  </p>
+  <table>
+    <thead><tr><th>Prefix</th><th>Effect</th></tr></thead>
+    <tbody>
+      <tr><td><code>@claude</code></td><td>Route to Claude regardless of intent; use <code>standard</code> tier model for the classified intent role</td></tr>
+      <tr><td><code>@opus</code></td><td>Route to Claude with <code>powerful</code> tier model (Opus 4.6)</td></tr>
+      <tr><td><code>@local</code></td><td>Force local model even for normally-escalated intents (<code>requirements</code>, <code>design</code>, <code>plan</code>, <code>review</code>); useful offline</td></tr>
+      <tr><td><code>/intent &lt;name&gt;</code></td><td>Override classified intent explicitly — e.g. <code>/intent debug @claude why is this slow?</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3>Supported tools</h3>
+
+  <p>
+    All tool execution happens in the framework — neither the local model nor Claude runs
+    anything directly. Both receive tool schemas, emit tool-call JSON, and the framework
+    executes and returns results.
+  </p>
+  <p>
+    Because <code>insrc</code> is integrated with <strong>Claude Code (Agent SDK)</strong>,
+    most standard tools can be <strong>delegated</strong> to Claude Code's built-in
+    implementations rather than reimplemented. Claude Code already provides Read, Write,
+    Edit, Glob, Grep, Bash, WebSearch, and WebFetch — complete with permission prompting,
+    sandboxing, and confirmation flows. Only the knowledge graph tools are custom to
+    <code>insrc</code> and must be implemented as MCP tools exposed by the daemon.
+  </p>
+
+  <h4>Tool execution pipeline</h4>
+  <p>
+    Claude never sees tool output — it only validates <em>call requests</em> for mutating or
+    high-risk operations before execution. Read-only tool calls auto-execute without any Claude
+    involvement. The local model analyses all output.
+  </p>
+
+  <h5>Validation routing — which calls go to Claude</h5>
+  <table>
+    <tr><th>Tool / command class</th><th>Validate?</th><th>Reason</th></tr>
+    <tr><td><code>Write</code>, <code>Edit</code></td><td><strong>Yes</strong></td><td>File mutation — verify path and intent match</td></tr>
+    <tr><td><code>Bash</code> — kubectl apply / exec / delete</td><td><strong>Yes</strong></td><td>Cluster mutation</td></tr>
+    <tr><td><code>Bash</code> — git commit / push / reset / rebase</td><td><strong>Yes</strong></td><td>Repository mutation</td></tr>
+    <tr><td><code>Bash</code> — arbitrary shell</td><td><strong>Yes</strong></td><td>Unknown risk</td></tr>
+    <tr><td><code>plan_step_update</code></td><td><strong>Yes</strong></td><td>State machine mutation — verify transition is correct</td></tr>
+    <tr><td><code>Read</code>, <code>Glob</code>, <code>Grep</code></td><td>No — auto-execute</td><td>Read-only, harmless</td></tr>
+    <tr><td><code>Bash</code> — kubectl get / logs / describe</td><td>No — auto-execute</td><td>Read-only kubectl</td></tr>
+    <tr><td><code>Bash</code> — git status / log / diff / blame</td><td>No — auto-execute</td><td>Read-only git</td></tr>
+    <tr><td><code>Bash</code> — test runner / build / lint</td><td>No — auto-execute</td><td>No persistent side effects</td></tr>
+    <tr><td><code>graph_*</code>, <code>plan_get</code></td><td>No — auto-execute</td><td>Pure DB reads</td></tr>
+    <tr><td><code>WebSearch</code>, <code>WebFetch</code></td><td>No — auto-execute</td><td>Read-only</td></tr>
+  </table>
+
+  <p>
+    In practice the local LLM runs through most of a debug session — reading logs, grepping
+    files, querying the graph, running tests — with <strong>zero Claude calls</strong>. Claude
+    is only invoked when the local LLM wants to write a file, commit, or run a mutating
+    command.
+  </p>
+
+  <pre><code>// Tool execution pipeline
+[Step 1] Local LLM emits tool_call_request
+         { tool: "Bash", input: "kubectl logs payment-svc --tail=100" }
+
+[Step 2] Framework checks routing table
+         → read-only? auto-execute, skip to Step 4
+         → mutating?  send to Claude/Haiku for validation
+
+[Step 3] Claude/Haiku validates mutating call (~$0.0004)
+         → sees: user intent + tool name + command string only
+         → APPROVED | REJECTED (reason + safer alternative)
+         → rejected calls returned to local LLM; local LLM retries or stops
+
+[Step 4] Execute via Claude Code built-in or insrc MCP
+         → output returned to local LLM for analysis — never sent to Claude
+
+[Step 5] If local LLM stuck after 2 turns with output in hand:
+         → local LLM writes ≤200-token summary of findings + specific question
+         → Claude/Haiku receives summary (~$0.001), responds with direction
+         → raw output never reaches Claude</code></pre>
+
+  <p>
+    The two cases where Claude sees content beyond a call request:
+  </p>
+  <ul>
+    <li><strong>LLM-generated diffs</strong> (implement, refactor, test Stage 2) — the diff
+    is bounded and is exactly what Claude needs to validate correctness</li>
+    <li><strong>Stuck escalation summary</strong> — local LLM authored, ≤200 tokens, never
+    raw tool output</li>
+  </ul>
+
+  <pre><code>// Cost comparison — debug session with 5 tool calls (2 mutating, 3 read-only)
+                          Output-to-Claude    Call-validation routing
+Read-only calls (×3)      3 × $0.007          $0.00   (auto-execute)
+Mutating calls (×2)       2 × $0.007          2 × $0.0004
+─────────────────────────────────────────────────────────────────
+Total (Haiku)             ~$0.035             ~$0.0008  (~44× cheaper)
+Cost if logs are large    ~$0.080+            ~$0.0008  (cost stays flat)</code></pre>
+
+  <table>
+    <tr><th>insrc tool</th><th>Delegated to</th><th>Custom impl needed</th></tr>
+    <tr><td><code>read_file</code></td><td>Claude Code <code>Read</code></td><td>No</td></tr>
+    <tr><td><code>write_file</code></td><td>Claude Code <code>Write</code></td><td>No</td></tr>
+    <tr><td><code>apply_diff</code></td><td>Claude Code <code>Edit</code></td><td>No</td></tr>
+    <tr><td><code>list_dir</code>, <code>glob</code></td><td>Claude Code <code>Glob</code></td><td>No</td></tr>
+    <tr><td><code>grep</code></td><td>Claude Code <code>Grep</code></td><td>No</td></tr>
+    <tr><td><code>run_shell</code>, <code>run_test</code>, <code>run_build</code>, <code>run_linter</code></td><td>Claude Code <code>Bash</code></td><td>No — permission mode handles confirmation</td></tr>
+    <tr><td><code>git_*</code></td><td>Claude Code <code>Bash</code> (<code>git …</code>)</td><td>No</td></tr>
+    <tr><td><code>kube_*</code></td><td>Claude Code <code>Bash</code> (<code>kubectl …</code>)</td><td>No</td></tr>
+    <tr><td><code>web_search</code></td><td>Claude Code <code>WebSearch</code></td><td>No — Brave API key wired in via config</td></tr>
+    <tr><td><code>web_fetch</code></td><td>Claude Code <code>WebFetch</code></td><td>No</td></tr>
+    <tr><td><code>graph_entity</code>, <code>graph_search</code>, <code>graph_callers</code>, <code>graph_callees</code>, <code>graph_query</code></td><td>—</td><td><strong>Yes — MCP tools on the insrc daemon</strong></td></tr>
+  </table>
+
+  <div class="callout info">
+    <strong>Architecture:</strong> The <code>insrc</code> daemon exposes graph tools as an MCP
+    server. Claude Code connects to it via <code>mcpServers</code> in the query options. The
+    local Ollama model calls tools through the same MCP interface — tool calls are routed by
+    the framework to either Claude Code built-ins or the daemon's MCP server depending on the
+    tool name. Confirmation and permission flows for destructive operations (shell commands,
+    git commit, kubectl apply) are handled entirely by Claude Code's existing permission
+    system, with no custom implementation required.
+  </div>
+
+  <p>The only category that warrants further description is the custom MCP tools:</p>
+
+  <h4>File system</h4>
+  <h4>Knowledge graph MCP tools (custom — implemented by insrc daemon)</h4>
+  <table>
+    <tr><th>Tool</th><th>Description</th><th>Used by</th></tr>
+    <tr><td><code>graph_entity</code></td><td>Fetch a single entity by ID — returns body, signature, file, line range, metadata</td><td>all</td></tr>
+    <tr><td><code>graph_search</code></td><td>Vector similarity search over entity embeddings in LanceDB; returns ranked entities with scores</td><td>research, implement, debug</td></tr>
+    <tr><td><code>graph_callers</code></td><td>Return entities that call a given entity up to N hops; signatures by default, full bodies on request</td><td>research, refactor, debug</td></tr>
+    <tr><td><code>graph_callees</code></td><td>Return entities called by a given entity up to N hops</td><td>research, implement, debug</td></tr>
+    <tr><td><code>graph_query</code></td><td>Execute an arbitrary Cypher query against the Kuzu graph for structural queries the above tools do not cover</td><td>graph, research</td></tr>
+    <tr><td><code>plan_get</code></td><td>Fetch the active plan and its steps with current state for a repo</td><td>implement, test, debug</td></tr>
+    <tr><td><code>plan_step_update</code></td><td>Transition a plan step state (<code>pending → in_progress → done/failed/skipped</code>)</td><td>implement, test, debug</td></tr>
+  </table>
+
+  <div class="callout info">
+    <strong>Everything else is Claude Code:</strong> file reads/writes/edits, shell commands,
+    git operations, kubectl, web search, and web fetch are all handled by Claude Code's
+    built-in tools (<code>Read</code>, <code>Write</code>, <code>Edit</code>, <code>Bash</code>,
+    <code>Glob</code>, <code>Grep</code>, <code>WebSearch</code>, <code>WebFetch</code>).
+    Permission prompting, sandboxing, and confirmation for destructive operations (shell
+    commands, git commit, kubectl apply/exec) are inherited from Claude Code's permission
+    system — no custom safety layer needed.
+  </div>
+
+  <h3>requirements</h3>
+
+  <p>
+    The user describes something they want built &mdash; a feature, a change, a constraint. The
+    agent's job is to turn that raw intent into a structured, grounded requirements sketch: what
+    already exists that is relevant, what is missing, what decisions still need to be made.
+  </p>
+  <p>
+    This is a two-stage process. The local model does the groundwork first; Claude enhances it.
+  </p>
+
+  <h4>Stage 1 &mdash; Local sketch</h4>
+  <p>
+    The local model (<code>qwen3-coder</code>) receives the user message plus the L4 graph context
+    assembled for this turn: relevant entities, their signatures, and 1-hop relations. It produces
+    a <em>requirements sketch</em> &mdash; a structured but intentionally rough draft that captures:
+  </p>
+  <ul>
+    <li><strong>What already exists</strong> &mdash; existing entities, patterns, and conventions in the codebase that are relevant to the request</li>
+    <li><strong>What needs to change or be added</strong> &mdash; gaps identified between the request and the current code</li>
+    <li><strong>Open questions</strong> &mdash; ambiguities or decisions the user has not yet made</li>
+    <li><strong>Constraints</strong> &mdash; inferred non-functional requirements (performance, privacy, compatibility) from the codebase context</li>
+  </ul>
+  <p>
+    The local model does not attempt to answer the open questions &mdash; it surfaces them. Its
+    output is intentionally scoped to what it can see and is confident about.
+  </p>
+  <pre><code>// Stage 1 prompt skeleton (system)
+You are a requirements analyst for a software project.
+You have been given the user's request and relevant code context from the codebase.
+
+Your task:
+1. Identify existing code that is relevant to this request.
+2. List what needs to be built or changed.
+3. List open questions — things the user has not specified and that have more than one reasonable answer.
+4. Infer any constraints from the existing code (naming conventions, error handling patterns, etc.)
+
+Be concise. Do not make decisions on behalf of the user. Do not write code.</code></pre>
+
+  <h4>Stage 2 &mdash; Claude enhancement</h4>
+  <p>
+    The sketch is always escalated to Claude regardless of scope. Claude receives the local sketch
+    plus the same graph context and is asked to:
+  </p>
+  <ul>
+    <li>Fill in missing context the local model may have overlooked (cross-repo implications, dependency impacts)</li>
+    <li>Sharpen ambiguous requirements into concrete, testable statements</li>
+    <li>Propose answers to the open questions the local model surfaced, with tradeoffs where relevant</li>
+    <li>Flag any requirements that conflict with existing architecture or introduce significant risk</li>
+  </ul>
+  <p>
+    Claude's output is the final <em>requirements document</em> for this session, which is stored
+    in L2 (session summary) and referenced by subsequent <code>design</code>, <code>plan</code>,
+    and <code>implement</code> tasks in the same session.
+  </p>
+  <pre><code>// Stage 2 prompt skeleton (system)
+You are a senior engineer reviewing a requirements sketch produced by a local model.
+Below is the sketch, the user's original request, and the relevant code context.
+
+Your task:
+1. Sharpen each requirement into a concrete, testable statement.
+2. Propose answers to the open questions, noting tradeoffs where multiple choices exist.
+3. Identify cross-repo or architectural implications not captured in the sketch.
+4. Flag conflicts with existing patterns or risks introduced by this change.
+
+Output a revised requirements document in markdown. Keep it actionable.</code></pre>
+
+  <div class="callout warn">
+    <strong>Always escalated:</strong> Requirements tasks always go through both stages. There is no
+    local-only path. The sketch is Claude's input, not a substitute for Claude's output.
+  </div>
+
+  <h4>Session carry-forward</h4>
+  <p>
+    After Claude returns, the requirements document is compressed into L2 (rolling summary) with a
+    <code>[requirements]</code> tag so subsequent turns in the same session can reference it without
+    repeating the full text. The <code>plan</code> and <code>design</code> intents pick this up
+    automatically.
+  </p>
+
+  <h3>design</h3>
+
+  <p>
+    The user wants to reason about <em>how</em> something should be built: API shape, module
+    boundaries, data flow, tradeoffs between approaches. The agent's job is to produce a concrete
+    design proposal grounded in the existing codebase &mdash; not a blank-sheet architecture, but
+    one that fits the patterns and constraints already in place.
+  </p>
+  <p>
+    Like <code>requirements</code>, this is a two-stage process. The local model drafts a
+    design sketch; Claude elevates it.
+  </p>
+
+  <h4>Stage 1 &mdash; Local sketch</h4>
+  <p>
+    The local model receives the user message, any <code>[requirements]</code> carried forward in
+    L2, and the L4 graph context for this turn. It produces a design sketch covering:
+  </p>
+  <ul>
+    <li><strong>Proposed structure</strong> &mdash; new modules, types, functions, or interfaces needed; how they map onto the existing file/package layout</li>
+    <li><strong>Integration points</strong> &mdash; which existing entities are called, extended, or replaced; relations to adjacent code surfaced from the graph</li>
+    <li><strong>Data flow</strong> &mdash; how data moves through the proposed change (inputs, outputs, side effects)</li>
+    <li><strong>Alternatives considered</strong> &mdash; at least one alternative approach the local model can identify, with a one-line reason it was not chosen</li>
+    <li><strong>Open design questions</strong> &mdash; decisions that depend on context beyond the local model's visibility</li>
+  </ul>
+  <p>
+    The sketch is expressed as prose + pseudocode or interface signatures &mdash; not full
+    implementation. The local model stays within what it can see in the graph and does not
+    speculate about cross-repo implications.
+  </p>
+  <pre><code>// Stage 1 prompt skeleton (system)
+You are a software architect working on an existing codebase.
+You have been given the user's design question, prior requirements context (if any),
+and relevant code entities from the codebase knowledge graph.
+
+Your task:
+1. Propose a concrete design that fits the existing codebase structure.
+2. Identify which existing entities are touched and how.
+3. Describe the data flow for the proposed change.
+4. Name at least one alternative and why it was set aside.
+5. List open design questions that exceed your visibility.
+
+Use interface signatures or pseudocode where helpful. Do not write full implementations.</code></pre>
+
+  <h4>Stage 2 &mdash; Claude enhancement</h4>
+  <p>
+    Claude receives the local sketch, the requirements document (from L2 if present), and the
+    full graph context. It is asked to:
+  </p>
+  <ul>
+    <li>Evaluate the proposed design against the requirements — does it satisfy them?</li>
+    <li>Identify cross-repo impact: which dependent repos would need to change and how</li>
+    <li>Assess tradeoffs between the proposed approach and the alternatives, with concrete reasoning</li>
+    <li>Resolve open design questions where possible, or reframe them as explicit decisions for the user</li>
+    <li>Produce a final design document: chosen approach, rationale, interface contracts, migration notes if applicable</li>
+  </ul>
+  <pre><code>// Stage 2 prompt skeleton (system)
+You are a senior engineer reviewing a design sketch produced by a local model.
+You have the user's original question, the requirements context, the local sketch,
+and the relevant code graph.
+
+Your task:
+1. Validate the sketch against the requirements. Call out gaps or conflicts.
+2. Assess cross-repo impact across the full dependency closure.
+3. Compare the proposed approach against the alternatives with concrete tradeoffs.
+4. Resolve open design questions or frame them as explicit decisions the user must make.
+5. Produce a final design document: chosen approach, rationale, key interfaces, risks.
+
+Be opinionated. Make a recommendation.</code></pre>
+
+  <div class="callout warn">
+    <strong>Always escalated:</strong> Design tasks always go through both stages. The local sketch
+    gives Claude a grounded starting point and reduces hallucination of API shapes that don't exist.
+  </div>
+
+  <h4>Session carry-forward</h4>
+  <p>
+    Claude's design document is stored in L2 with a <code>[design]</code> tag. The <code>plan</code>
+    intent reads both <code>[requirements]</code> and <code>[design]</code> tags from L2 to produce
+    a sequenced implementation plan without re-running these stages.
+  </p>
+
+  <h3>plan</h3>
+
+  <p>
+    The user wants a concrete, ordered checklist of implementation steps for a feature or change.
+    Planning is downstream of requirements and design &mdash; a good plan references both. If
+    neither is present in the session, the agent runs a lightweight inline version before planning.
+  </p>
+  <p>
+    Same two-stage pattern: local draft, Claude refinement.
+  </p>
+
+  <h4>Pre-flight: context check</h4>
+  <p>
+    Before generating a plan, the agent checks L2 for <code>[requirements]</code> and
+    <code>[design]</code> tags. If both are present, they are passed directly to Stage 1.
+    If either is missing, the agent runs a condensed single-turn version of the missing stage
+    (local only, no Claude escalation) to produce a minimal anchor &mdash; just enough context
+    for the plan to be coherent.
+  </p>
+
+  <h4>Stage 1 &mdash; Local draft</h4>
+  <p>
+    The local model receives the requirements and design context plus the L4 graph for this turn.
+    It produces an ordered implementation checklist:
+  </p>
+  <ul>
+    <li><strong>Steps</strong> &mdash; each step is a self-contained unit of work, scoped to a single file or entity where possible</li>
+    <li><strong>Dependencies between steps</strong> &mdash; which steps must precede others and why</li>
+    <li><strong>Test checkpoints</strong> &mdash; after which steps a test can confirm progress</li>
+    <li><strong>Unknowns</strong> &mdash; steps the local model cannot fully specify (e.g. cross-repo changes it cannot see)</li>
+  </ul>
+  <p>
+    Steps are expressed as imperative sentences, not prose. Each step names the file or entity
+    it touches. The local model does not generate code at this stage.
+  </p>
+  <pre><code>// Stage 1 prompt skeleton (system)
+You are a senior engineer breaking a feature into an ordered implementation plan.
+You have the requirements, the design, and the relevant code graph context.
+
+Your task:
+1. Produce a numbered checklist of implementation steps.
+2. Each step must name the file or entity it touches and state what changes.
+3. Mark steps that depend on a prior step completing first.
+4. Insert test checkpoints after steps that produce a verifiable intermediate state.
+5. Flag steps you cannot fully specify due to limited visibility.
+
+Do not write code. Steps should be one sentence each.</code></pre>
+
+  <h4>Stage 2 &mdash; Claude refinement</h4>
+  <p>
+    Claude receives the local draft plan, requirements, design, and graph context. It:
+  </p>
+  <ul>
+    <li>Fills in steps the local model flagged as underspecified, using cross-repo graph visibility</li>
+    <li>Reorders steps if the local model's sequencing is suboptimal (e.g. a shared type should be defined before its consumers)</li>
+    <li>Adds rollback or migration steps if the change touches persistent data, public APIs, or shared contracts</li>
+    <li>Estimates relative complexity per step (simple / moderate / complex) to help the user prioritise or split the work</li>
+    <li>Outputs the final plan as a markdown checklist, ready to be saved or tracked</li>
+  </ul>
+  <pre><code>// Stage 2 prompt skeleton (system)
+You are a senior engineer reviewing an implementation plan drafted by a local model.
+You have the requirements, the design, the draft plan, and the full code graph.
+
+Your task:
+1. Fill in any underspecified steps using your broader context.
+2. Correct the step order if needed, explaining any resequencing.
+3. Add rollback or migration steps where the change touches shared contracts or data.
+4. Label each step: simple / moderate / complex.
+5. Output the final plan as a markdown checklist.
+
+Flag any step that requires a decision from the user before it can be executed.</code></pre>
+
+  <h4>Plan persistence and checkpointing</h4>
+  <p>
+    The plan is a structured artifact — an ordered checklist with step identifiers, complexity
+    labels, dependency annotations, and tick state. Running it through L2 rolling summarization
+    would corrupt all of that: step order, tick state, and structured fields are not preserved
+    by prose compression. The plan must be stored verbatim, outside the L2 pipeline entirely.
+  </p>
+  <p>
+    Plans are stored in <strong>Kuzu</strong> — the embedded property graph already running in the
+    daemon. Plans have no embedding component, so LanceDB (the vector store) is the wrong tool;
+    Kuzu handles structured node tables with Cypher queries and survives daemon restarts without
+    any additional infrastructure.
+  </p>
+  <p>
+    Two node tables are added to the existing Kuzu schema: <code>Plan</code> and
+    <code>PlanStep</code>, connected by a <code>CONTAINS</code> edge. Step dependency edges
+    (<code>DEPENDS_ON</code>) are also stored as graph edges, making dependency resolution a
+    simple Cypher reachability query rather than a string-parsing problem.
+  </p>
+
+  <pre><code>// Kuzu schema additions (src/db/schema.ts)
+
+CREATE NODE TABLE Plan (
+  id          STRING,
+  repo        STRING,
+  title       STRING,
+  createdAt   STRING,
+  updatedAt   STRING,
+  completedAt STRING,   // '' while in progress
+  PRIMARY KEY (id)
+)
+
+CREATE NODE TABLE PlanStep (
+  id          STRING,   // '{planId}:step{seq}' — stable and human-readable
+  planId      STRING,
+  seq         INT32,    // display order (1-based)
+  body        STRING,   // imperative sentence describing the step
+  complexity  STRING,   // 'simple' | 'moderate' | 'complex'
+  checkpoint  BOOLEAN,  // true → test gate required before next step
+  state       STRING,   // 'pending' | 'in_progress' | 'done' | 'skipped' | 'failed'
+  fileHint    STRING,   // file or entity this step touches
+  startedAt   STRING,   // '' until state → in_progress
+  doneAt      STRING,   // '' until state → done | skipped | failed
+  note        STRING,   // one-sentence outcome written by agent on completion
+  PRIMARY KEY (id)
+)
+
+CREATE REL TABLE CONTAINS  (FROM Plan TO PlanStep)
+CREATE REL TABLE DEPENDS_ON (FROM PlanStep TO PlanStep)  // step must complete before target</code></pre>
+
+  <pre><code>// Dependency resolution — Cypher (no string parsing)
+// "Is step X unblocked?" — all predecessors must be done or skipped
+MATCH (s:PlanStep {id: $stepId})
+OPTIONAL MATCH (s)<-[:DEPENDS_ON]-(dep:PlanStep)
+WHERE dep.state NOT IN ['done', 'skipped']
+RETURN count(dep) AS blockers
+// blockers = 0 → step is ready to start</code></pre>
+
+  <pre><code>// L2 carries only a lightweight reference
+[plan:550e8400] "Add multi-provider payment support" — 3/11 steps done, step4 in_progress</code></pre>
+
+  <h4>Step state machine</h4>
+
+  <table>
+    <thead><tr><th>State</th><th>Meaning</th><th>Transition</th></tr></thead>
+    <tbody>
+      <tr><td><code>pending</code></td><td>Not yet started</td><td>→ <code>in_progress</code> when agent begins the turn for this step</td></tr>
+      <tr><td><code>in_progress</code></td><td>Agent is actively working this step in the current turn</td><td>→ <code>done</code> on success, → <code>failed</code> on error, → <code>pending</code> if session ends mid-step (crash recovery)</td></tr>
+      <tr><td><code>done</code></td><td>Step complete and verified</td><td>Terminal — only reversible via explicit <code>/plan undo &lt;step&gt;</code></td></tr>
+      <tr><td><code>skipped</code></td><td>User explicitly skipped this step</td><td>Terminal for this session — does not block downstream steps unless they declare <code>dependsOn</code></td></tr>
+      <tr><td><code>failed</code></td><td>Agent attempted the step but could not complete it</td><td>→ <code>in_progress</code> on retry, or stays <code>failed</code> and blocks dependents</td></tr>
+    </tbody>
+  </table>
+
+  <h4>Pre-turn checkpoint gate</h4>
+  <p>
+    Before any <code>implement</code>, <code>test</code>, or <code>debug</code> turn executes,
+    the agent runs a checkpoint gate against the active plan:
+  </p>
+  <ol>
+    <li>Fetch all steps for the active plan from <code>plan_steps</code>.</li>
+    <li>Find the next <code>pending</code> step whose <code>dependsOn</code> steps are all <code>done</code> or <code>skipped</code>.</li>
+    <li>Confirm no step is currently <code>in_progress</code> from a prior session (crash recovery: reset stale <code>in_progress</code> → <code>pending</code> if <code>startedAt</code> is older than the current session start).</li>
+    <li>Mark the target step <code>in_progress</code> and stamp <code>startedAt</code> <em>before</em> the LLM call, not after. This prevents a crash between generation and commit from leaving a step invisible.</li>
+    <li>Inject only the target step's body and <code>fileHint</code> into L4 — not the entire plan — to keep context tight.</li>
+  </ol>
+
+  <h4>Post-turn commit</h4>
+  <p>
+    After the agent successfully writes or verifies code for a step:
+  </p>
+  <ol>
+    <li>Transition step state → <code>done</code>, stamp <code>doneAt</code>, write a one-sentence <code>note</code> summarising what changed.</li>
+    <li>If the step had <code>checkpoint: true</code>, the agent prompts the user to run tests before proceeding to the next step. The next step remains <code>pending</code> until the user confirms or the agent observes a passing test run.</li>
+    <li>Update the L2 pointer with the new progress count.</li>
+    <li>Surface the next pending step to the user so they can immediately continue or pause.</li>
+  </ol>
+
+  <pre><code>// Checkpoint prompt shown after a checkpoint step completes
+  ✓ step4 done — "Add StripeProvider implementing IPaymentProvider"
+  ⚑ Checkpoint: run tests before continuing.
+  > npm test src/providers/stripe.test.ts
+  Waiting for confirmation or test output…</code></pre>
+
+  <table>
+    <thead><tr><th>Operation</th><th>Where</th></tr></thead>
+    <tbody>
+      <tr><td>Plan header (<code>Plan</code> node)</td><td>Kuzu — embedded graph DB, already running in daemon</td></tr>
+      <tr><td>Step records with state (<code>PlanStep</code> nodes)</td><td>Kuzu — verbatim, never compressed or summarized</td></tr>
+      <tr><td>Step dependency graph (<code>DEPENDS_ON</code> edges)</td><td>Kuzu — resolved via Cypher reachability, no string parsing</td></tr>
+      <tr><td>Active plan reference</td><td>L2 — one-line pointer with progress count only</td></tr>
+      <tr><td>Step locked before LLM call</td><td>Kuzu <code>in_progress</code> stamp written pre-generation to survive crashes</td></tr>
+      <tr><td>Stale lock recovery</td><td>Session start resets <code>in_progress</code> older than session start to <code>pending</code></td></tr>
+      <tr><td>Plan lifetime</td><td>Indefinite — not subject to 30-day session TTL; pruned only on <code>/plan delete</code></td></tr>
+      <tr><td>Cross-session resume</td><td>Plan ID in L2 seed resolves to active step on next session start</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout info">
+    <strong>Active plan on session start:</strong> When seeding L2 from prior session summaries,
+    any <code>[plan:&lt;id&gt;]</code> reference is resolved, stale <code>in_progress</code> locks
+    are cleared, and the next pending step is surfaced to the user so work resumes exactly where
+    it left off — no re-stating of context required.
+  </div>
+
+  <h3>research</h3>
+
+  <p>
+    The user wants to understand something — how a piece of code works, what calls what, why a
+    pattern was chosen, or how an external library or API behaves. Research spans two distinct
+    sources: the <strong>Code Knowledge Graph</strong> (what exists in the codebase) and the
+    <strong>web</strong> (what exists outside it). The agent decides which source to query,
+    or both, based on the nature of the question.
+  </p>
+
+  <h4>Source selection</h4>
+
+  <table>
+    <thead><tr><th>Question type</th><th>Source</th><th>Example</th></tr></thead>
+    <tbody>
+      <tr><td>How does this function/class work?</td><td>Graph only</td><td>"explain <code>IndexerService.processJob</code>"</td></tr>
+      <tr><td>What calls / uses this entity?</td><td>Graph only (pure Kuzu traversal)</td><td>"who calls <code>embedEntities</code>?"</td></tr>
+      <tr><td>What does this repo depend on?</td><td>Graph only</td><td>"show me the dependency closure"</td></tr>
+      <tr><td>How do I use an external library?</td><td>Web only</td><td>"how does LanceDB vector search work?"</td></tr>
+      <tr><td>Is there a known bug in a dependency?</td><td>Web only</td><td>"any issues with kuzu@0.11.3 and node?"</td></tr>
+      <tr><td>How should I integrate X into this codebase?</td><td>Graph + Web</td><td>"how do I add OpenTelemetry tracing to the daemon?"</td></tr>
+      <tr><td>Why does the code do it this way?</td><td>Graph + optionally web</td><td>"why is the embedding dimension 1024?"</td></tr>
+    </tbody>
+  </table>
+
+  <h4>Graph research (local, no LLM for pure structural queries)</h4>
+  <p>
+    Questions scoped to the codebase are resolved from the Code Knowledge Graph first. Pure
+    structural questions (callers, callees, dependents, file contents) are answered directly from
+    Kuzu and LanceDB with no LLM — they are routed as <code>graph</code> intent and the result
+    is formatted and returned immediately.
+  </p>
+  <p>
+    For interpretive questions ("explain", "why", "what does this do"), the graph provides the
+    entity bodies and relations, and the local model narrates them:
+  </p>
+  <pre><code>// Local model prompt skeleton — graph research
+You are explaining code to a developer.
+You have been given the relevant code entities and their relationships from the codebase graph.
+
+Your task:
+1. Explain what the code does in plain language.
+2. Describe how the entities relate to each other (calls, implements, depends on).
+3. If the code has non-obvious behaviour or constraints, call them out.
+4. Do not speculate beyond what the code shows.
+
+Be concise. Use the entity names and file paths provided.</code></pre>
+
+  <h4>Web research</h4>
+  <p>
+    When the question involves external libraries, APIs, tools, known bugs, or patterns outside
+    the codebase, the agent performs a web search. Web search is triggered when the question
+    contains signals that exceed the graph's visibility:
+  </p>
+  <ul>
+    <li>Names of packages, frameworks, or APIs not defined in the codebase (e.g. <code>kuzu</code>, <code>ollama</code>, <code>tree-sitter</code>)</li>
+    <li>Keywords: "documentation", "changelog", "release notes", "known issue", "bug", "how to", "example of"</li>
+    <li>Version-specific questions (e.g. "what changed in X@2.0?")</li>
+    <li>Questions about best practices or conventions not answerable from local code patterns</li>
+  </ul>
+  <pre><code>// Web search flow
+1. Local model generates 1–3 targeted search queries from the user's question
+2. Agent executes searches via SearchProvider and fetches top results (title + snippet, or full page if needed)
+3. Local model synthesises the results into a concise answer grounded in the search findings
+4. Sources are cited inline so the user can follow up directly</code></pre>
+
+  <h4>SearchProvider abstraction</h4>
+  <p>
+    Web search is exposed through a thin <code>SearchProvider</code> interface so the backend
+    can be swapped without touching calling code — analogous to <code>LLMProvider</code>:
+  </p>
+  <pre><code>interface SearchResult {
+  title:   string;
+  url:     string;
+  snippet: string;
+}
+
+interface SearchProvider {
+  search(query: string, limit?: number): Promise&lt;SearchResult[]&gt;;
+}
+</code></pre>
+
+  <h4>Search backend — Brave Search API (preferred) or Claude fallback</h4>
+  <p>
+    The preferred backend is the <strong>Brave Search API</strong>: reliable, structured JSON,
+    2,000 free queries per month, one API key. If no key is configured, all web search turns
+    are automatically escalated to Claude, which uses Anthropic's hosted
+    <code>web_search</code> tool.
+  </p>
+
+  <table>
+    <tr><th>State</th><th>Backend</th><th>Quality</th><th>Privacy</th></tr>
+    <tr>
+      <td><code>BRAVE_API_KEY</code> set</td>
+      <td>Brave Search API — local, structured JSON</td>
+      <td>⭐⭐⭐⭐⭐</td>
+      <td>Only search query leaves machine</td>
+    </tr>
+    <tr>
+      <td>No key configured</td>
+      <td>Claude Code <code>WebSearch</code> (Anthropic-hosted <code>web_search_20260209</code> tool type)</td>
+      <td>⭐⭐⭐⭐⭐</td>
+      <td>Query + results pass through Anthropic</td>
+    </tr>
+  </table>
+
+  <h4>First-run key setup</h4>
+  <p>
+    On first daemon start, if <code>BRAVE_API_KEY</code> is absent, the CLI offers a one-time
+    interactive setup:
+  </p>
+  <pre><code>Web search works best with a free Brave Search API key (2,000 queries/month).
+Without it, web searches will be handled by Claude instead.
+
+Set up Brave Search now? [Y/n] Y
+Opening https://api.search.brave.com in your browser...
+
+Paste your API key: ****************************
+✓ Key validated. Saved to ~/.insrc/config.
+
+(Skip with 'n' — Claude will handle web searches automatically.)</code></pre>
+  <p>
+    The key is validated immediately with a test query before being saved to
+    <code>~/.insrc/config.json</code>. The setup prompt is shown once and never repeated
+    regardless of the user's choice.
+  </p>
+
+  <h4>Combined graph + web research</h4>
+  <p>
+    For questions that require both (e.g. "how do I add tracing to the daemon?"), the agent
+    runs both sources in parallel and merges the results before generating an answer:
+  </p>
+  <ol>
+    <li>Graph query: fetch the daemon's existing entry points, middleware, and dependency injection patterns from Kuzu + LanceDB</li>
+    <li>Web search: find documentation or examples for the tracing library being considered (via Brave or Claude)</li>
+    <li>Local model receives both sets of results and produces an answer that explains how the external approach maps onto the existing codebase structure</li>
+  </ol>
+
+  <h4>Escalation</h4>
+  <p>
+    Research stays local by default. Claude is invoked for web search when no Brave key is
+    configured, and also when:
+  </p>
+  <ul>
+    <li>The question spans more than 2 repos (cross-repo architectural explanation)</li>
+    <li>The user prefixes with <code>@claude</code></li>
+    <li>The local model explicitly signals low confidence after seeing both graph and web results</li>
+  </ul>
+
+  <h3>implement</h3>
+
+  <p>
+    The user wants to write or modify code to satisfy a known specification — either an
+    explicit instruction or an active plan step. Implementation is a two-stage pipeline:
+    the local model writes the code, Claude validates it. The framework is responsible for
+    ensuring Claude receives only the minimal set of code snippets necessary to validate the
+    change — never whole files, never the full codebase.
+  </p>
+
+  <h4>Stage 1 — Local model writes the implementation</h4>
+  <p>
+    The local model receives the task description (from the active plan step body or the user's
+    message), plus a tightly scoped context bundle assembled by the framework from the knowledge
+    graph:
+  </p>
+  <ul>
+    <li><strong>Target entities</strong>: the function(s), class(es), or file(s) to be created or modified — their current <code>body</code> and <code>signature</code> fields from LanceDB</li>
+    <li><strong>Direct neighbours</strong>: callers and callees one hop away in the Kuzu graph (signatures only, not bodies, to keep context small)</li>
+    <li><strong>Type signatures</strong>: any interface or type definitions referenced by the target entities</li>
+    <li><strong>Plan step</strong>: the <code>body</code> and <code>fileHint</code> of the active <code>PlanStep</code> node</li>
+  </ul>
+  <pre><code>// Framework context assembly (Stage 1)
+const target    = await getEntity(db, entityId);              // full body
+const callers   = await getCallers(db, entityId, 1);          // signatures only
+const callees   = await getCallees(db, entityId, 1);          // signatures only
+const types     = await getReferencedTypes(db, entityId);     // full body (usually small)
+const planStep  = await getPlanStep(db, activePlanStepId);    // body + fileHint
+
+// Local model prompt
+`Implement the following change.
+Plan step: ${planStep.body}
+
+Target (full):
+${target.body}
+
+Direct callers (signatures):
+${callers.map(c => c.signature).join('\n')}
+
+Direct callees (signatures):
+${callees.map(c => c.signature).join('\n')}
+
+Types in scope:
+${types.map(t => t.body).join('\n')}
+
+Output a unified diff only. No explanation.`</code></pre>
+  <p>
+    The local model outputs a <strong>unified diff</strong>. The framework applies it to the
+    working tree with a dry-run check before writing, and records the set of touched entity IDs
+    by parsing the diff's <code>---</code>/<code>+++</code> headers against the indexed file
+    paths.
+  </p>
+
+  <h4>Stage 2 — Claude validates the diff</h4>
+  <p>
+    The framework assembles a second, minimal context bundle for Claude — derived entirely from
+    the diff, not from re-reading the codebase. Only entities actually touched or directly
+    affected by the change are included:
+  </p>
+  <ul>
+    <li><strong>The diff itself</strong> — always included in full</li>
+    <li><strong>Bodies of touched entities</strong> — fetched by matching diff hunks to indexed entity ranges (<code>startLine</code>/<code>endLine</code> in LanceDB)</li>
+    <li><strong>Signatures of first-degree neighbours</strong> — callers and callees of any modified entity (signatures only)</li>
+    <li><strong>Relevant type definitions</strong> — only types referenced in the diff, not the whole type graph</li>
+  </ul>
+  <p>
+    Entities that are not touched and not directly adjacent to a touched entity are
+    <strong>never included</strong>. This is enforced by the framework — the validation prompt
+    is constructed programmatically, not handed to Claude to decide what to fetch.
+  </p>
+  <pre><code>// Framework context assembly (Stage 2 — minimal, diff-derived)
+const touchedIds  = parseDiffToEntityIds(diff, db);           // hunk → entity lookup
+const touched     = await getEntities(db, touchedIds);        // full bodies
+const neighbours  = await getNeighbours(db, touchedIds, 1);   // signatures only
+const types       = await getReferencedTypesFromDiff(diff, db); // full bodies
+
+// Claude validation prompt
+`You are reviewing a code change generated by a local model.
+
+Diff:
+${diff}
+
+Touched entities (full):
+${touched.map(e => e.body).join('\n\n')}
+
+Adjacent entities (signatures only — for call-site compatibility):
+${neighbours.map(n => n.signature).join('\n')}
+
+Type definitions referenced in the diff:
+${types.map(t => t.body).join('\n\n')}
+
+Validate the diff. Check for:
+- Correctness: does the implementation match the plan step intent?
+- Compatibility: are all call sites still satisfied?
+- Edge cases: null/undefined, empty collections, error paths
+- Security: injection, unvalidated input, exposed internals
+- Style: consistent with the surrounding code patterns shown
+
+Respond with one of:
+  APPROVED — brief rationale
+  CHANGES_NEEDED — bullet list of specific issues with line references`</code></pre>
+
+  <h4>Outcome handling</h4>
+  <ul>
+    <li><strong>APPROVED</strong>: diff is written to disk, plan step marked <code>done</code> via <code>plan_step_update</code>, index job enqueued for changed files</li>
+    <li><strong>CHANGES_NEEDED</strong>: Claude's bullet-list issues are appended to the local model correction prompt as explicit fix directions (e.g. <em>"Fix null check on line 12 — OrderService.create must throw on null input"</em>); Stage 1 re-runs with these directions. Up to 2 retry rounds.</li>
+    <li><strong>2 retries exhausted</strong>: user is shown the diff, Claude's feedback, and a prompt to decide: <em>accept as-is / reject / edit manually</em>. No further automatic retry.</li>
+  </ul>
+
+  <div class="callout info">
+    <strong>Context budget:</strong> The Stage 2 payload sent to Claude is bounded by the diff
+    size plus one graph hop. For a typical single-function change this is well under 4K tokens.
+    Multi-file changes that touch many entities are split into per-file validation rounds to
+    keep each call focused and cheap.
+  </div>
+
+  <h3>refactor</h3>
+
+  <p>
+    The user wants to restructure existing code without changing observable behaviour — rename,
+    extract, inline, split, or reorganise. Refactor follows the <strong>same two-stage pipeline
+    as <code>implement</code></strong> (local model produces a diff, Claude validates it) with
+    two differences in prompt framing:
+  </p>
+
+  <h4>Stage 1 differences — local model prompt</h4>
+  <ul>
+    <li>The goal is stated as a structural change, not a feature addition</li>
+    <li>The local model is explicitly instructed that <strong>observable behaviour must not change</strong> — same inputs must produce the same outputs, same errors must be thrown</li>
+    <li>Neighbour context is weighted more heavily: because a refactor often ripples into callers (e.g. a rename or signature change), callers are included at <strong>2 hops</strong> rather than 1</li>
+  </ul>
+  <pre><code>// Stage 1 prompt differences for refactor
+`Refactor the following code as described. Do not change observable behaviour.
+Same inputs → same outputs. Same errors → same error types and messages.
+
+Refactor instruction: ${taskDescription}
+
+Target (full):
+${target.body}
+
+Callers up to 2 hops (signatures — must remain compatible):
+${callers2hop.map(c => c.signature).join('\n')}
+
+Callees 1 hop (signatures):
+${callees.map(c => c.signature).join('\n')}
+
+Output a unified diff only.`</code></pre>
+
+  <h4>Stage 2 differences — Claude validation prompt</h4>
+  <ul>
+    <li>Correctness check is replaced with a <strong>behaviour-equivalence check</strong>: Claude is asked to reason about whether the refactored code preserves the contract of the original</li>
+    <li>Call-site compatibility is checked at 2 hops to match the wider context given to the local model</li>
+  </ul>
+  <pre><code>// Stage 2 validation differences for refactor
+`Validate this refactor. The change must preserve observable behaviour.
+
+Check for:
+- Behaviour equivalence: same inputs → same outputs, same error paths
+- Call-site compatibility across all adjacent signatures shown
+- No unintended scope, visibility, or export changes
+- Style consistency with surrounding code
+
+Respond with APPROVED or CHANGES_NEEDED (with line references).`</code></pre>
+
+  <p>
+    Outcome handling, retry logic, and context budget rules are identical to
+    <code>implement</code>.
+  </p>
+
+  <h3>test</h3>
+
+  <p>
+    The user wants test cases written for existing or newly implemented code. The pipeline has
+    four phases that repeat as a loop: <strong>develop → validate → execute → fix</strong>.
+    Test case authoring follows the same two-stage local/Claude pattern as
+    <code>implement</code>. Execution and fixing introduce an additional repair loop with
+    escalation on the 4th consecutive failure.
+  </p>
+
+  <pre><code>// Test intent — overall loop
+while (tests failing) {
+  [Stage 1] Local model writes / rewrites tests
+  [Stage 2] Claude validates test quality
+  [Stage 3] Execute tests locally
+  [Stage 4] Fix loop:
+    for attempt in 1..3:
+      local model fixes → re-execute → if pass: break
+    if still failing:
+      Claude fixes → re-execute → if pass: break
+      // repeat Stage 4 with reset counter
+}</code></pre>
+
+  <h4>Stage 1 — Local model develops test cases</h4>
+  <p>
+    The framework assembles a context bundle from the knowledge graph identical in structure to
+    <code>implement</code> Stage 1, but scoped to the entity under test:
+  </p>
+  <ul>
+    <li>Full body of the entity under test</li>
+    <li>Its type signature and any referenced type definitions</li>
+    <li>Existing test file for that module (if any) — so the local model extends rather than duplicates</li>
+    <li>Active plan step body if the test task came from a plan</li>
+  </ul>
+  <pre><code>// Stage 1 local prompt (test)
+`Write test cases for the following entity.
+Cover: happy path, boundary values, error/exception paths, null/undefined inputs.
+Use the existing test style shown. Add to the existing test file — do not rewrite it.
+
+Entity under test:
+${entity.body}
+
+Existing tests (if any):
+${existingTestBody}
+
+Output a unified diff against the test file only.`</code></pre>
+
+  <h4>Stage 2 — Claude validates test quality</h4>
+  <p>
+    Same diff-derived minimal context as <code>implement</code> Stage 2. Claude receives the
+    test diff, the entity under test (full body), and its type definitions. Claude does
+    <em>not</em> receive the full test suite or unrelated files.
+  </p>
+  <pre><code>// Stage 2 Claude validation prompt (test)
+`Review these test cases. The entity under test is provided in full.
+
+Test diff:
+${diff}
+
+Entity under test:
+${entity.body}
+
+Check for:
+- Coverage: are happy path, boundaries, and error paths all exercised?
+- Assertion correctness: do assertions actually verify the right thing?
+- Independence: do tests share mutable state that could cause order-dependence?
+- Completeness: are there obvious cases missing given the implementation?
+
+Respond with APPROVED or CHANGES_NEEDED (specific gaps with line references).`</code></pre>
+
+  <h4>Stage 3 — Execute tests locally</h4>
+  <p>
+    The framework applies the validated diff and runs only the affected test file (not the full
+    suite) to keep the feedback loop fast. Test runner output — pass/fail counts, failure
+    messages, and stack traces — is captured verbatim for the fix loop.
+  </p>
+
+  <h4>Stage 4 — Fix loop with escalation</h4>
+  <p>
+    On any test failure, the framework enters a repair loop. The local model attempts fixes
+    for up to 3 rounds; the 4th failure escalates to Claude. After Claude's fix is applied
+    and executed, the counter resets and the local-fix cycle resumes for any subsequent
+    failures.
+  </p>
+  <pre><code>// Fix loop state machine
+localAttempts = 0
+
+loop:
+  execute tests
+  if all pass → done
+
+  if localAttempts &lt; 3:
+    // Local fix round
+    local model receives: failing test body, error output + stack trace, entity under test
+    local model produces: fix diff (may fix test OR implementation — model decides)
+    apply diff
+    localAttempts++
+    goto loop
+
+  else:
+    // Escalate to Claude (4th failure)
+    Claude receives:
+      - failing test body (full)
+      - entity under test (full body)
+      - error output + stack trace from all 3 local attempts
+      - each local fix diff that was tried
+    Claude produces: fix diff
+    apply diff
+    localAttempts = 0   // reset — local cycles resume after Claude's fix
+    claudeRounds++
+    goto loop
+
+// Terminal conditions (exit loop without surfacing as error):
+//   all tests pass → done, plan_step_update(status: 'done')
+//
+// Terminal conditions (surface to user):
+//   claudeRounds >= 2 AND tests still fail → show last diff + all errors, ask user to decide:
+//     [a] accept current state  [b] discard changes  [c] open editor
+//   localAttempts >= 3 AND Claude unavailable → same prompt as above</code></pre>
+
+  <p>
+    The fix diff may target either the test file or the implementation — the model decides
+    which is wrong. If the implementation is changed, the indexer re-indexes the affected file
+    before the next execution round.
+  </p>
+
+  <div class="callout info">
+    <strong>Context budget for escalation:</strong> Claude receives only the single failing
+    test, the entity under test, and the three prior diffs with their error outputs — not the
+    full test suite or codebase. Each prior attempt adds roughly one diff + one error block,
+    keeping the escalation payload small even after 3 local rounds.
+  </div>
+
+  <h3>debug</h3>
+
+  <p>
+    The user wants to diagnose and fix a failing or incorrect behaviour — a crash, a test
+    failure, a bad response, or an unexpected side effect. Debug is the most tool-heavy intent:
+    the local model drives a tool loop gathering evidence (logs, traces, code), analyses it
+    locally, and only touches Claude to validate mutating commands or when it is stuck.
+  </p>
+
+  <h4>Tool loop</h4>
+  <p>
+    The local model iterates freely over read-only tools at zero Claude cost, following the
+    tool execution pipeline rules:
+  </p>
+  <ul>
+    <li><strong>Auto-execute (no validation)</strong>: <code>kubectl get/logs/describe</code>,
+    <code>git log/diff/blame</code>, <code>Read</code>, <code>Grep</code>, <code>Glob</code>,
+    <code>graph_*</code>, <code>Bash</code> (test runner / build / lint)</li>
+    <li><strong>Validate before execute</strong>: <code>kubectl apply/exec/delete</code>,
+    <code>git commit/reset</code>, <code>Write</code>, <code>Edit</code>, arbitrary shell</li>
+  </ul>
+  <pre><code>// Typical debug tool sequence — kubectl scenario
+1. graph_search("payment service")          → auto-execute, local analysis
+2. kubectl get pods -n prod                 → auto-execute, local analysis
+3. kubectl logs payment-svc --tail=100      → auto-execute, local analysis
+4. kubectl describe pod payment-svc-7d9f   → auto-execute, local analysis
+5. Read(src/payment/handler.ts)             → auto-execute, local analysis
+6. Grep("processPayment", src/)             → auto-execute, local analysis
+   → local LLM identifies root cause
+7. Edit(src/payment/handler.ts, fix)        → VALIDATE (Claude/Haiku, ~$0.0004)
+8. Bash("kubectl apply -f deploy/...")      → VALIDATE (Claude/Haiku, ~$0.0004)
+   ─────────────────────────────────────────────────────────
+   Total Claude cost for session: ~$0.0008</code></pre>
+
+  <h4>Stuck escalation</h4>
+  <p>
+    If the local model cannot identify a root cause after 2 tool-loop turns with evidence in
+    hand, it writes a ≤200-token summary of what it found and what it needs, which is sent to
+    Claude/Haiku for direction. Raw tool output (logs, traces, file contents) is never
+    forwarded to Claude.
+  </p>
+  <pre><code>// Stuck escalation prompt (local LLM authors this)
+`Debugging: payment-svc pods crash on startup.
+
+Found:
+- OOMKilled in describe output; memory limit 256Mi
+- heap allocation spike in logs at PaymentHandler.processPayment line 42
+- No recent changes to memory limits in git log
+
+Need: guidance on whether to raise the limit, fix the allocation, or both.`
+
+→ Claude/Haiku responds with direction (~200 tokens)
+→ local LLM continues tool loop with that direction</code></pre>
+
+  <h4>Fix validation</h4>
+  <p>
+    Once the local model produces a fix diff, it follows the same Stage 2 validation as
+    <code>implement</code>: Claude/Haiku receives the diff plus the touched entity bodies
+    (diff-derived, minimal context) and checks correctness before the fix is written to disk.
+    If the fix requires a mutating shell command (apply, restart, rollout), that command is
+    validated separately via the call-validation pipeline.
+  </p>
+
+  <h4>Plan step lifecycle in debug</h4>
+  <p>
+    If the session is running under an active plan, the local model calls <code>plan_get</code>
+    at session start (auto-execute, no cost) to identify the relevant plan step. On successful
+    fix: <code>plan_step_update(status: 'done')</code>. If the debug session ends with the bug
+    unresolved, the step remains <code>in_progress</code>; the user is shown the step ID and
+    told they can resume in a new session.
+  </p>
+
+  <h3>review</h3>
+
+  <p>
+    The user wants a critique of existing code — correctness, style, security, or performance.
+    Review is Claude-primary: the local model assembles and scopes the context bundle, Claude
+    does the analysis. The local model never generates a review draft; its only role is
+    deciding what to include.
+  </p>
+
+  <h4>Context assembly (local model)</h4>
+  <p>
+    The local model uses read-only tools (all auto-execute, zero Claude cost) to build the
+    review payload:
+  </p>
+  <ul>
+    <li>If a diff is in scope (staged changes, a PR, a specific commit): <code>git diff</code>
+    or <code>git show</code> — the diff is the primary input</li>
+    <li>Bodies of entities touched by the diff, fetched via <code>graph_entity</code></li>
+    <li>Signatures of first-degree callers and callees (not bodies) — for call-site
+    compatibility context</li>
+    <li>If no diff (reviewing an existing file or function): the entity body + its immediate
+    neighbours' signatures from the graph</li>
+  </ul>
+  <p>
+    The local model does <em>not</em> add commentary, score, or pre-judge the code. It
+    constructs the bundle and forwards it to Claude.
+  </p>
+
+  <h4>Claude review (Sonnet by default)</h4>
+  <pre><code>// Review prompt sent to Claude
+`Review the following code change. Be specific — cite line numbers or entity names.
+
+${diff ? `Diff:\n${diff}` : `Code under review:\n${entityBody}`}
+
+Touched entities (full bodies):
+${touchedEntities.map(e => e.body).join('\n\n')}
+
+Adjacent signatures (call-site context):
+${neighbours.map(n => n.signature).join('\n')}
+
+Review for:
+- Correctness: logic errors, off-by-ones, unhandled edge cases
+- Security: injection, unvalidated input, exposed internals, over-permissive access
+- Performance: unnecessary allocations, N+1 queries, blocking calls in hot paths
+- Style: consistency with surrounding code patterns shown
+- Completeness: missing error handling, missing tests, undocumented public API
+
+Format: one section per category, skip categories with no findings.
+Severity: CRITICAL / WARN / NOTE per finding.`</code></pre>
+
+  <h4>Escalation to Opus</h4>
+  <p>
+    Sonnet handles most reviews well. The user can prefix with <code>@opus</code> to escalate
+    to Opus for deep architectural reviews — large diffs touching many subsystems, security
+    audits, or performance-critical paths where maximum reasoning depth is justified.
+  </p>
+
+  <h3>document</h3>
+
+  <p>
+    The user wants documentation generated or updated — inline comments, JSDoc/docstrings,
+    README sections, ADRs, or changelogs. The local model does all generation; Claude review
+    is available on request but never automatic.
+  </p>
+
+  <h4>Document types and scope</h4>
+  <table>
+    <tr><th>Type</th><th>Scope</th><th>Source context</th></tr>
+    <tr><td>Inline comments / docstrings</td><td>Single entity</td><td>Entity body + callee signatures</td></tr>
+    <tr><td>Module README</td><td>Single file or directory</td><td>All entity signatures in module + DEPENDS_ON edges</td></tr>
+    <tr><td>API documentation</td><td>Exported entities in repo</td><td>All exported signatures + type definitions</td></tr>
+    <tr><td>ADR</td><td>Cross-cutting</td><td>Relevant entities + git log for context</td></tr>
+    <tr><td>Changelog entry</td><td>Recent commits</td><td><code>git log</code> since last tag + touched entity signatures</td></tr>
+  </table>
+
+  <h4>Local generation</h4>
+  <p>
+    The local model receives the entity body (or set of signatures for broader doc types) and
+    produces documentation as a diff. For inline docs it matches the existing comment style
+    found in the same file; for READMEs and ADRs it follows a template inferred from existing
+    docs in the repo.
+  </p>
+  <pre><code>// Local prompt skeleton — inline docstring
+`Generate a docstring for the following function.
+Match the comment style used in the file shown.
+Describe the contract only: inputs, outputs, side effects, throws. Not the implementation.
+
+Function:
+${entity.body}
+
+Existing comment style in this file:
+${existingCommentSample}
+
+Output a unified diff only.`</code></pre>
+
+  <h4>Claude review (opt-in)</h4>
+  <p>
+    The user can request Claude review by appending <code>--review</code> to the command or
+    replying <code>review</code> after seeing the draft. Claude/Haiku checks for accuracy,
+    completeness, and clarity — one round, no retry loop.
+  </p>
+  <pre><code>// Claude/Haiku review prompt (opt-in)
+`Review this generated documentation for accuracy and completeness.
+
+Generated doc diff:
+${diff}
+
+Entity it documents (full body):
+${entity.body}
+
+Respond with APPROVED or CHANGES_NEEDED (accuracy and completeness issues only).`</code></pre>
+  <p>
+    If <code>CHANGES_NEEDED</code>, the local model applies the corrections and the diff is
+    written to disk.
+  </p>
+
+  <h4>Cross-cutting docs (ADRs, changelogs)</h4>
+  <p>
+    For ADRs and changelogs spanning multiple subsystems, the local model produces a draft and
+    flags it as cross-cutting. The user is prompted to optionally escalate to Claude/Sonnet
+    for enhancement — same two-stage local→Claude pattern as <code>requirements</code> and
+    <code>design</code>. Escalation is never automatic.
+  </p>
+
+  <h3>graph</h3>
+
+  <p>
+    The user wants a pure structural answer from the code knowledge graph — who calls this,
+    what does this depend on, what would break if this changed. No LLM is involved at any
+    point. The query is resolved entirely from Kuzu and LanceDB and the result is formatted
+    and returned directly.
+  </p>
+
+  <h4>Query types</h4>
+  <table>
+    <tr><th>User asks</th><th>Tool</th><th>Returns</th></tr>
+    <tr><td>"who calls X"</td><td><code>graph_callers(X, hops=1)</code></td><td>Caller entity names, files, line numbers</td></tr>
+    <tr><td>"what does X call"</td><td><code>graph_callees(X, hops=1)</code></td><td>Callee entity names, files, line numbers</td></tr>
+    <tr><td>"what depends on X"</td><td><code>graph_callers(X, hops=N)</code></td><td>Full transitive caller closure</td></tr>
+    <tr><td>"find X"</td><td><code>graph_search(query)</code></td><td>Top-K entities by vector similarity</td></tr>
+    <tr><td>"show X"</td><td><code>graph_entity(id)</code></td><td>Full entity body, signature, metadata</td></tr>
+    <tr><td>structural / relational question</td><td><code>graph_query(cypher)</code></td><td>Raw Kuzu result rows</td></tr>
+  </table>
+
+  <h4>Pipeline</h4>
+  <pre><code>// graph intent — no LLM at any stage
+1. Intent classifier routes to graph handler
+2. Handler pattern-matches user message to query type (regex + keyword rules)
+3. Executes one or more graph_* MCP tool calls directly
+4. Formats result as a table or tree and returns to user
+
+// Example: "what calls PaymentService.charge?"
+→ graph_callers("PaymentService.charge", hops=2)
+→ returns:
+  PaymentController.handleCheckout  src/controllers/payment.ts:42
+  OrderService.finalise             src/services/order.ts:118
+  SubscriptionService.renew         src/services/subscription.ts:77
+  (via OrderService.finalise)
+
+// No LLM prompt. No API call. Cost: $0.00</code></pre>
+
+  <h4>Escalation</h4>
+  <p>
+    Graph stays LLM-free by design. If the user's question cannot be answered by a structural
+    query alone — e.g. "why does X call Y?" or "is this dependency intentional?" — the
+    handler recognises it as a <code>research</code> intent and re-routes rather than
+    attempting to answer from graph structure alone.
+  </p>
+
+  <h2>Model configuration</h2>
+
+  <p>
+    Claude model selection is configurable per intent role in <code>~/.insrc/config.json</code>.
+    The config uses a two-level structure: <strong>tier defaults</strong> apply to all roles in
+    that tier, and <strong>per-role overrides</strong> take precedence. This lets users tune
+    cost vs. quality globally or surgically.
+  </p>
+
+  <pre><code>// ~/.insrc/config.json — model configuration
+{
+  "models": {
+    // Tier defaults — apply to all roles assigned to that tier
+    "tiers": {
+      "fast":     "claude-haiku-4-5",    // call validation, diff validation, fix escalation
+      "standard": "claude-sonnet-4-6",   // requirements, design, plan, review
+      "powerful": "claude-opus-4-6"      // explicit @opus escalation only
+    },
+
+    // Per-role overrides — take precedence over tier defaults
+    "roles": {
+      "call_validation":       "fast",      // validate mutating tool call requests
+      "implement.validate":    "fast",      // Stage 2 diff correctness check
+      "implement.escalation":  "fast",      // fix direction after 3 local failures
+      "refactor.validate":     "fast",      // Stage 2 behaviour-equivalence check
+      "test.validate":         "fast",      // Stage 2 test quality check
+      "test.escalation":       "fast",      // fix direction on 4th failure
+      "debug.validate":        "fast",      // mutating command validation
+      "debug.escalation":      "fast",      // stuck diagnosis direction
+      "requirements":          "standard",  // sketch enhancement
+      "design":                "standard",  // architecture enhancement
+      "plan":                  "standard",  // plan ordering and dependency resolution
+      "research.escalation":   "standard",  // cross-repo or low-confidence answers
+      "review":                "standard",  // full code review
+      "document.review":       "fast",      // user-requested Claude doc review (opt-in)
+      "document.cross_cutting": "standard"  // cross-cutting doc direction for multi-file doc tasks
+    }
+  }
+}</code></pre>
+
+  <p>
+    To upgrade all validation to Sonnet (higher quality, ~5× more expensive per call):
+  </p>
+  <pre><code>{ "models": { "tiers": { "fast": "claude-sonnet-4-6" } } }</code></pre>
+
+  <p>
+    To upgrade only code review to Opus:
+  </p>
+  <pre><code>{ "models": { "roles": { "review": "powerful" } } }</code></pre>
+
+  <p>
+    To use a specific model ID directly for a role (bypassing tier names):
+  </p>
+  <pre><code>{ "models": { "roles": { "review": "claude-opus-4-6" } } }</code></pre>
+
+  <div class="callout info">
+    <strong>Opus default off:</strong> <code>powerful</code> tier is never assigned to any
+    role by default. It is only reachable via an explicit role override or the
+    <code>@opus</code> user prefix. This prevents accidental Opus spend on routine validation
+    calls.
   </div>
 
   <h2>Escalation Modes</h2>
 
   <h3>1. Explicit — user-directed</h3>
-  <p>User prefixes a message with <code>@claude</code> to bypass routing and always use Claude:</p>
-  <pre><code>&gt; @claude how should I restructure the payment service to support multiple providers?</code></pre>
+  <p>User prefixes a message with <code>@claude</code> or <code>@opus</code> to bypass routing:</p>
+  <table>
+    <thead><tr><th>Prefix</th><th>Model</th><th>When to use</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>@claude</code></td>
+        <td><code>standard</code> tier (Sonnet 4.6 by default)</td>
+        <td>Any task where you want Claude's reasoning without spending Opus credits — the most common explicit escalation</td>
+      </tr>
+      <tr>
+        <td><code>@opus</code></td>
+        <td><code>powerful</code> tier (Opus 4.6)</td>
+        <td>Cross-repo architectural decisions, deep tradeoff analysis, or when Sonnet has given a clearly wrong answer. Announced in output with estimated cost before calling.</td>
+      </tr>
+      <tr>
+        <td><code>@local</code></td>
+        <td>Local model (qwen3-coder)</td>
+        <td>Force local even for normally-escalated intents — useful offline or when code must not leave the machine</td>
+      </tr>
+    </tbody>
+  </table>
+  <pre><code>&gt; @claude how should I restructure the payment service to support multiple providers?
+&gt; @opus I've been back and forth on this — is event sourcing the right choice for billing?
+&gt; @local review this function (offline, code stays on machine)</code></pre>
+
+  <div class="callout warn">
+    <strong>@opus cost announcement:</strong> Before any Opus call, the agent prints the
+    estimated token cost based on assembled context size. The user can confirm or cancel.
+    Example: <em>"@opus call estimated: ~4,200 input tokens ≈ $0.021. Proceed? [Y/n]"</em>
+  </div>
 
   <h3>2. Agent-suggested — local agent defers</h3>
   <p>
@@ -268,7 +1609,7 @@
       <tr><td>Files involved</td><td>&gt; 3 files</td></tr>
       <tr><td>Repos involved</td><td>&gt; 1 repo</td></tr>
       <tr><td>Context tokens needed</td><td>&gt; 8K tokens</td></tr>
-      <tr><td>Task kind</td><td><code>design</code>, <code>review</code>, <code>document</code></td></tr>
+      <tr><td>Task kind</td><td><code>requirements</code>, <code>design</code>, <code>plan</code>, <code>review</code></td></tr>
     </tbody>
   </table>
 
@@ -349,21 +1690,49 @@ interface LLMMessage {
   content: string;
 }
 
+interface ToolDefinition {
+  name: string;
+  description: string;
+  inputSchema: Record&lt;string, unknown&gt;;  // JSON Schema
+}
+
+interface ToolCall {
+  id: string;
+  name: string;
+  input: Record&lt;string, unknown&gt;;
+}
+
+interface ToolResult {
+  toolCallId: string;
+  content: string;
+  isError?: boolean;
+}
+
+interface LLMResponse {
+  text: string;
+  toolCalls?: ToolCall[];
+  stopReason: 'end_turn' | 'tool_use' | 'max_tokens';
+}
+
 interface LLMProvider {
-  complete(messages: LLMMessage[], opts?: { maxTokens?: number }): Promise&lt;string&gt;;
-  stream(messages: LLMMessage[], opts?: { maxTokens?: number }): AsyncIterable&lt;string&gt;;
+  complete(messages: LLMMessage[], opts?: { maxTokens?: number; tools?: ToolDefinition[] }): Promise&lt;LLMResponse&gt;;
+  stream(messages: LLMMessage[], opts?: { maxTokens?: number; tools?: ToolDefinition[] }): AsyncIterable&lt;string&gt;;
+  /** Whether this provider supports structured tool calling natively. */
+  readonly supportsTools: boolean;
 }
 
 // agent/providers/ollama.ts
 class OllamaProvider implements LLMProvider {
+  readonly supportsTools = true;  // Ollama tool calling (model-dependent)
   constructor(private model = 'qwen3-coder:latest') {}
-  // uses ollama npm package
+  // uses ollama npm package; tool calls serialised as JSON in text if model lacks native support
 }
 
 // agent/providers/claude.ts
 class ClaudeProvider implements LLMProvider {
+  readonly supportsTools = true;  // Native Claude tool use
   constructor(private model = 'claude-sonnet-4-6') {}
-  // uses @anthropic-ai/sdk
+  // uses @anthropic-ai/sdk; betaZodTool runner for agentic loops
 }
 
 // agent/router.ts
@@ -401,7 +1770,9 @@ function selectProvider(task: Task, config: AgentConfig): LLMProvider {
   <h2>Context Window &amp; Memory</h2>
 
   <p>
-    Ollama's context window is 64K tokens. This sounds generous but is quickly consumed by system
+    The default agent model (qwen3-coder) runs with a 64K-token context window — a property
+    of the model, configurable in the Ollama Modelfile but defaulting to 64K for this model
+    class. This sounds generous but is quickly consumed by system
     prompt, conversation history, code context, and response headroom all competing for the same
     budget. A naive sliding-window approach discards turns arbitrarily and loses earlier context
     permanently. The layered memory model below allocates the budget deliberately, using
@@ -603,8 +1974,8 @@ async function assembleContext(turn: string, session: Session): Promise&lt;Assem
 
   <h3>Token Budget Enforcement</h3>
   <p>
-    Context assembly respects hard per-layer ceilings. L4 entities are dropped in reverse relevance
-    order (lowest vector score first) if over budget.
+    Context assembly respects hard per-layer ceilings. When a layer overflows, content is dropped
+    in a defined priority order to preserve the most critical context.
   </p>
   <pre><code>// budget.ts
 const TOKEN_BUDGET = {
@@ -616,6 +1987,27 @@ const TOKEN_BUDGET = {
   response: 8_000,   // reserved — never consumed by input
   total:   64_000,
 } as const;</code></pre>
+
+  <h4>Overflow priority (what gets dropped first)</h4>
+  <p>
+    Each layer has a fixed ceiling. When assembling context exceeds the total budget,
+    content is shed in this order — lowest priority first:
+  </p>
+  <table>
+    <thead><tr><th>Priority</th><th>Layer</th><th>Drop strategy</th></tr></thead>
+    <tbody>
+      <tr><td>1st dropped</td><td>L4 — code entities</td><td>Drop lowest vector-score entities first; always keep entities directly named in the current turn</td></tr>
+      <tr><td>2nd dropped</td><td>L3b — semantic history</td><td>Drop lowest-similarity retrieved turns first</td></tr>
+      <tr><td>3rd dropped</td><td>L3a — recent turns</td><td>Drop oldest turns first (beyond the last 2 turns, which are always kept)</td></tr>
+      <tr><td>4th dropped</td><td>L2 — session summary</td><td>Truncate to half; always keep the first sentence (repo + goal context)</td></tr>
+      <tr><td>Never dropped</td><td>L1 — system context</td><td>Hard floor — never truncated. If L1 alone exceeds budget, daemon logs an error.</td></tr>
+    </tbody>
+  </table>
+  <p>
+    When L4 is dropped below 4K tokens due to overflow, the agent prints a notice:
+    <em>"Context tight — some code entities were omitted. Use <code>/intent graph</code> to
+    fetch specific entities by name."</em>
+  </p>
 
   <h3>History Retention &amp; Pruning</h3>
 
@@ -649,13 +2041,16 @@ async function closeSession(session: Session): Promise&lt;void&gt; {
   <h4>Cross-session seeding</h4>
   <p>On session start, recent session summaries for the same repo seed the initial L2:</p>
   <pre><code>// session.ts — on session start
+// Embed the user's opening message as query vector for semantic similarity
 const now = new Date().toISOString();
+const queryVector = await embed(openingMessage);  // embed first user turn for relevance
 const priorSummaries = await conversationSessionsTable
-  .search('')
+  .search(queryVector)                              // nearest-neighbour by summary vector
   .where(`repo = '${repoId}' AND expiresAt &gt; '${now}'`)
   .limit(3)
-  .toArray()
-  .then(rows =&gt; rows.sort((a, b) =&gt; b.createdAt.localeCompare(a.createdAt)));
+  .toArray();
+// Sort by recency (vector search returns by similarity; we prefer recent + relevant)
+priorSummaries.sort((a, b) =&gt; b.createdAt.localeCompare(a.createdAt));
 
 session.summary = priorSummaries.map(s =&gt; s.summary).join('\n\n');</code></pre>
 
@@ -679,7 +2074,8 @@ async function pruneConversationHistory(): Promise&lt;void&gt; {
   await conversationSessionsTable.delete(`expiresAt &lt; '${now}'`);
 
   // Cap at 20 summaries per repo — delete oldest beyond cap
-  const allSessions = await conversationSessionsTable.search('').toArray();
+  // Note: Map.groupBy requires Node.js ≥ 21. Use Object.groupBy polyfill for Node 18/20.
+  const allSessions = await conversationSessionsTable.query().toArray();
   const byRepo = Map.groupBy(allSessions, s =&gt; s.repo);
   for (const [repo, sessions] of byRepo) {
     const sorted = sessions.sort((a, b) =&gt; b.createdAt.localeCompare(a.createdAt));
@@ -809,6 +2205,162 @@ async function ensureModels(ollama: Ollama): Promise&lt;void&gt; {
     </div>
   </div>
 
+  <h2>Fault Tolerance</h2>
+
+  <p>
+    The agent has two critical dependencies that can become unavailable at runtime: the local Ollama
+    service and the insrc daemon (which hosts the graph and plan MCP tools). Both must degrade
+    gracefully without data loss.
+  </p>
+
+  <h3>Ollama unavailability</h3>
+  <table>
+    <thead><tr><th>Scenario</th><th>Detection</th><th>Behaviour</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Ollama not running at session start</td>
+        <td>Connection refused on first health-check ping</td>
+        <td>Print: <em>"Local model (Ollama) is not running. Start it with <code>ollama serve</code>, or use <code>@claude</code> / <code>@opus</code> prefix to route directly to Claude."</em> Session continues in Claude-only mode.</td>
+      </tr>
+      <tr>
+        <td>Ollama goes away mid-session</td>
+        <td>Request timeout or connection reset on tool call</td>
+        <td>Print warning, offer to re-route current turn to Claude. If user declines, abort current turn and preserve session state.</td>
+      </tr>
+      <tr>
+        <td>Model not pulled</td>
+        <td><code>ollama.generate</code> returns 404 model not found</td>
+        <td>Print: <em>"Model qwen3-coder:latest not found. Pull with <code>ollama pull qwen3-coder</code>"</em> and offer Claude fallback for current session.</td>
+      </tr>
+      <tr>
+        <td>Ollama OOM / crash</td>
+        <td>Timeout &gt; 30s on in-flight request</td>
+        <td>Abort request, log error, fall back to Claude for the current turn. User-visible notice printed.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Daemon crash and stale graph</h3>
+  <table>
+    <thead><tr><th>Scenario</th><th>Detection</th><th>Behaviour</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Daemon not running</td>
+        <td>MCP connection refused; <code>graph_*</code> / <code>plan_*</code> tools unavailable</td>
+        <td>Print: <em>"insrc daemon is not running. Start with <code>insrc daemon start</code>."</em> Disable graph and plan tools for session. LLM still functional without graph context.</td>
+      </tr>
+      <tr>
+        <td>Daemon crashes mid-session</td>
+        <td>MCP tool call returns transport error</td>
+        <td>Mark graph tools unavailable. Print warning. Attempt daemon auto-restart if <code>insrc daemon start</code> is in PATH. Resume graph tools if restart succeeds within 10s.</td>
+      </tr>
+      <tr>
+        <td>Stale graph (index behind HEAD)</td>
+        <td>Daemon reports <code>indexStatus: stale</code> (last index SHA ≠ HEAD SHA)</td>
+        <td>Print: <em>"Graph index is behind HEAD by N commits. Re-index with <code>insrc index</code>."</em> Continue with stale graph; annotate graph results with <em>"[stale — may not reflect recent changes]"</em>.</td>
+      </tr>
+      <tr>
+        <td>Kuzu DB corruption</td>
+        <td>Kuzu query throws schema error or SIGABRT in daemon</td>
+        <td>Daemon marks itself unhealthy. CLI prints: <em>"Graph database may be corrupted. Run <code>insrc index --rebuild</code> to rebuild from source."</em></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Plan pre-flight — local-only condensed path</h3>
+  <p>
+    When the user issues a <code>plan</code> intent, the local model runs a condensed pre-flight
+    analysis before Claude is invoked (to assemble the context package):
+  </p>
+  <ol>
+    <li><strong>Entity resolution</strong> — identify entities touched by the feature request using graph traversal only (auto-execute, no LLM)</li>
+    <li><strong>Scope estimate</strong> — count files, repos, and estimate token budget for the full plan context</li>
+    <li><strong>Local sketch</strong> — local model generates a rough ordered list of steps (~200 tokens) to give Claude a starting structure</li>
+    <li><strong>Claude enhancement</strong> — Claude receives: user request + entity signatures + local sketch; produces the final plan with dependencies, estimates, and ordered steps</li>
+    <li><strong>Plan persisted</strong> — plan written to Kuzu <code>Plan</code> / <code>PlanStep</code> tables via <code>plan_step_update</code></li>
+  </ol>
+  <p>
+    If Ollama is unavailable, step 3 is skipped and Claude receives only steps 1–2 output.
+    If the daemon is unavailable, plan persistence is skipped and the plan is printed to the
+    terminal only (user can copy it).
+  </p>
+
+  <h2>CLI / REPL Interface</h2>
+
+  <p>
+    The agent is exposed as an interactive REPL (primary interface) and as a non-interactive
+    one-shot CLI command (for scripting, CI, and editor integration).
+  </p>
+
+  <h3>REPL mode</h3>
+  <pre><code>$ insrc                        # start REPL in current repo
+$ insrc --cwd /path/to/repo    # start REPL for a specific repo
+
+insrc&gt; explain OrderService.create
+insrc&gt; @claude design a payment retry system
+insrc&gt; @opus is event sourcing the right model for billing?
+insrc&gt; /intent debug why are payments failing in prod?
+insrc&gt; /plan add Stripe support to the payment service
+insrc&gt; /forget                 # delete current session summary
+insrc&gt; /cost                   # show Claude spend this session
+insrc&gt; /status                 # show daemon, Ollama, and index health
+insrc&gt; /exit</code></pre>
+
+  <table>
+    <thead><tr><th>Command / prefix</th><th>Behaviour</th></tr></thead>
+    <tbody>
+      <tr><td><code>@claude &lt;msg&gt;</code></td><td>Route to Claude/Sonnet regardless of intent</td></tr>
+      <tr><td><code>@opus &lt;msg&gt;</code></td><td>Route to Claude/Opus with cost confirmation prompt</td></tr>
+      <tr><td><code>@local &lt;msg&gt;</code></td><td>Force local model even for escalated intents</td></tr>
+      <tr><td><code>/intent &lt;name&gt; &lt;msg&gt;</code></td><td>Override classified intent</td></tr>
+      <tr><td><code>/plan &lt;desc&gt;</code></td><td>Shorthand for <code>plan</code> intent</td></tr>
+      <tr><td><code>/cost</code></td><td>Show cumulative Claude API spend this session (input + output tokens × price)</td></tr>
+      <tr><td><code>/status</code></td><td>Show daemon health, Ollama health, index staleness, active plan</td></tr>
+      <tr><td><code>/forget</code></td><td>Delete session summary from <code>conversation_sessions</code> for current repo</td></tr>
+      <tr><td><code>/exit</code></td><td>Close session, promote summary to persistent store, delete raw turns</td></tr>
+    </tbody>
+  </table>
+
+  <h3>One-shot CLI mode</h3>
+  <pre><code># Non-interactive — exits after one response
+$ insrc ask "explain OrderService.create"
+$ insrc ask --intent debug "why are payments failing?"
+$ insrc ask --claude "design a retry system"
+$ insrc plan "add Stripe support"   # shorthand for plan intent
+
+# CI/scripting: exit code 0 = success, 1 = error, 2 = escalated (Claude required but no key)
+$ insrc ask "does this PR touch any auth code?" --json   # structured JSON output</code></pre>
+
+  <h3>Re-indexing handoff</h3>
+  <p>
+    After any <code>implement</code> or <code>refactor</code> turn that writes files to disk,
+    the agent enqueues a background re-index job for the changed files via the daemon. The REPL
+    prints a non-blocking notice:
+  </p>
+  <pre><code>✓ 2 files written. Re-indexing in background (src/payment/handler.ts, src/payment/types.ts)...
+  (graph queries may return stale results until indexing completes — usually &lt;5s)</code></pre>
+  <p>
+    The re-index is file-scoped (only the changed files are re-parsed and their graph nodes
+    updated) rather than a full repo scan, keeping the feedback loop fast.
+  </p>
+
+  <h3>Multi-step plan execution UX</h3>
+  <p>
+    When an active plan exists, the REPL shows plan progress at the start of each turn:
+  </p>
+  <pre><code>insrc&gt; [Plan: Add Stripe support — Step 2/5: implement PaymentGateway interface]
+       What's next? (enter to continue, /plan to view full plan, /skip to skip step)</code></pre>
+  <p>
+    Pressing enter starts the next in-progress step automatically. The agent:
+  </p>
+  <ol>
+    <li>Calls <code>plan_get</code> to fetch the current in-progress step</li>
+    <li>Translates the step description into a task for the appropriate intent pipeline</li>
+    <li>Executes the pipeline (implement / test / debug / etc.)</li>
+    <li>On success: calls <code>plan_step_update(status: 'done')</code> and prints the next pending step</li>
+    <li>On failure: calls <code>plan_step_update(status: 'failed')</code>, shows error, asks user to retry or skip</li>
+  </ol>
+
   <h2>Open Questions</h2>
   <ol>
     <li>
@@ -829,9 +2381,8 @@ async function ensureModels(ollama: Ollama): Promise&lt;void&gt; {
       over time. Consider logging escalation decisions for later review.
     </li>
     <li>
-      <strong>Claude model selection</strong> &mdash; Default is <code>claude-sonnet-4-6</code>
-      (balanced cost/quality). User-configurable; <code>claude-opus-4-6</code> for highest quality,
-      <code>claude-haiku-4-5</code> for lowest cost.
+      <strong>Claude model configuration</strong> &mdash; Models are configurable per intent
+      role in <code>~/.insrc/config.json</code>. See the Model configuration section.
     </li>
     <li>
       <strong>Session persistence</strong> &mdash; Session summaries are persisted to LanceDB

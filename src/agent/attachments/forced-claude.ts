@@ -137,24 +137,24 @@ export async function runForcedClaudePipeline(
   }
 
   // Dry run first
-  const dryResult = applyDiff(parsed, repoPath, true);
+  const dryResult = await applyDiff(parsed, repoPath, true);
   if (!dryResult.success) {
     return {
       accepted: false,
       diff,
       filesWritten: [],
-      message: `Diff dry-run failed: ${dryResult.errors.join(', ')}`,
+      message: `Diff dry-run failed: ${[...dryResult.errors.values()].join(', ')}`,
     };
   }
 
   // Apply for real
-  const applyResult = applyDiff(parsed, repoPath, false);
+  const applyResult = await applyDiff(parsed, repoPath, false);
   if (!applyResult.success) {
     return {
       accepted: false,
       diff,
       filesWritten: [],
-      message: `Diff apply failed: ${applyResult.errors.join(', ')}`,
+      message: `Diff apply failed: ${[...applyResult.errors.values()].join(', ')}`,
     };
   }
 

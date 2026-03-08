@@ -192,7 +192,7 @@ function buildPlan(planId: string, repoPath: string, title: string, rawSteps: Ra
     checkpoint:  raw.checkpoint ?? false,
     status:      'pending' as const,
     complexity:  (raw.complexity as PlanStepComplexity) || 'medium',
-    fileHint:    (raw as Record<string, unknown>)['fileHint'] as string || '',
+    fileHint:    (raw as unknown as Record<string, unknown>)['fileHint'] as string || '',
     notes:       '',
     dependsOn:   (raw.dependsOnIdx ?? [])
       .filter(i => i >= 0 && i < stepIds.length && i !== idx)

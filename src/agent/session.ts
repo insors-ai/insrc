@@ -5,6 +5,7 @@ import { ClaudeProvider } from './providers/claude.js';
 import { ContextManager, initSession } from './context/index.js';
 import { embedText } from './context/semantic.js';
 import { sessionClose, sessionSeed, sessionForget } from './tools/mcp-client.js';
+import { HealthMonitor, type HealthSnapshot, type ComponentState } from './faults/index.js';
 
 export interface SessionOpts {
   repoPath: string;
@@ -44,6 +45,9 @@ export class Session {
   /** Exposed for the router — null when no API key is configured. */
   readonly claudeProvider: ClaudeProvider | null;
 
+  /** Health monitor for Ollama and daemon (Phase 12). */
+  readonly health: HealthMonitor;
+
   constructor(opts: SessionOpts) {
     this.id = randomUUID();
     this.repoPath = opts.repoPath;
@@ -63,6 +67,15 @@ export class Session {
           apiKey: opts.config.keys.anthropic,
         })
       : null;
+
+    // Health monitor — ping functions injected to avoid circular deps
+    this.health = new HealthMonitor({
+      pingOllama: () => this.ollamaProvider.ping(),
+      pingDaemon: async () => {
+        const { ping } = await import('./tools/mcp-client.js');
+        return ping();
+      },
+    });
   }
 
   async init(): Promise<void> {
@@ -72,6 +85,9 @@ export class Session {
       closureRepos: this.closureRepos,
       provider: this.ollamaProvider,
     });
+
+    // Start periodic health checks (30s interval, unref'd)
+    this.health.start();
   }
 
   /** Track entity IDs referenced in a turn. */
@@ -99,6 +115,9 @@ export class Session {
    * Called on /exit or SIGINT.
    */
   async close(): Promise<void> {
+    // Stop periodic health checks
+    this.health.stop();
+
     const summary = this.contextManager.getSummary();
     if (!summary) return; // Nothing to persist if no summary was generated
 
@@ -118,8 +137,19 @@ export class Session {
     await sessionForget(this.repoPath);
   }
 
+  /** Whether Ollama is usable (healthy or degraded). Falls back to live ping. */
   get ollamaAvailable(): Promise<boolean> {
+    // If health monitor has data, use cached state for fast path
+    if (this.health.snapshot().ollama.lastOk > 0 || this.health.snapshot().ollama.lastFail > 0) {
+      return Promise.resolve(this.health.ollamaUsable);
+    }
+    // First call before any health check — do a live ping
     return this.ollamaProvider.ping();
+  }
+
+  /** Get current health snapshot. */
+  healthSnapshot(): HealthSnapshot {
+    return this.health.snapshot();
   }
 
   get hasClaudeKey(): boolean {

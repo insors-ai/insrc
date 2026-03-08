@@ -411,9 +411,9 @@ await test('imports all pipeline modules', () => {
 console.log('\n── Edge Cases ──');
 
 await test('handles missing ollama gracefully', () => {
-  // The source tries ensureAgentModel and catches
+  // The source tries ensureAgentModel and catches — classifies the error with fault handler
   assert.ok(cliSource.includes('ollamaOk = false') || cliSource.includes('ollamaOk'));
-  assert.ok(cliSource.includes('Ollama not available'));
+  assert.ok(cliSource.includes('classifyOllamaError') || cliSource.includes('Ollama not available'));
 });
 
 await test('brave key env injection', () => {

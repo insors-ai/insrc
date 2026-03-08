@@ -1,6 +1,19 @@
 import type { DbClient } from '../../db/client.js';
 import type { Plan, PlanStep, PlanStepStatus, PlanStatus } from '../../shared/types.js';
 
+/**
+ * Execute a parameterized Kuzu query using prepare + execute.
+ * Kuzu's `Connection.query()` doesn't accept params — must use prepare/execute.
+ */
+async function queryWithParams(
+  graph: DbClient['graph'],
+  cypher: string,
+  params: Record<string, unknown>,
+): Promise<unknown> {
+  const stmt = await graph.prepare(cypher);
+  return graph.execute(stmt, params as Record<string, import('kuzu').KuzuValue>);
+}
+
 // ---------------------------------------------------------------------------
 // Plan persistence layer — Kuzu graph operations
 //
@@ -36,7 +49,7 @@ export async function savePlan(db: DbClient, plan: Plan): Promise<void> {
   const now = new Date().toISOString();
 
   // Insert Plan node
-  await db.graph.query(
+  await queryWithParams(db.graph,
     `MERGE (p:Plan {id: $id})
      SET p.repoPath = $repoPath, p.title = $title, p.status = $status,
          p.createdAt = $createdAt, p.updatedAt = $updatedAt`,
@@ -52,7 +65,7 @@ export async function savePlan(db: DbClient, plan: Plan): Promise<void> {
 
   // Insert PlanStep nodes + CONTAINS edges
   for (const step of plan.steps) {
-    await db.graph.query(
+    await queryWithParams(db.graph,
       `MERGE (s:PlanStep {id: $id})
        SET s.planId = $planId, s.idx = $idx, s.title = $title,
            s.description = $description, s.checkpoint = $checkpoint,
@@ -79,7 +92,7 @@ export async function savePlan(db: DbClient, plan: Plan): Promise<void> {
     );
 
     // CONTAINS edge: Plan → PlanStep
-    await db.graph.query(
+    await queryWithParams(db.graph,
       `MATCH (p:Plan {id: $planId}), (s:PlanStep {id: $stepId})
        MERGE (p)-[:CONTAINS]->(s)`,
       { planId: plan.id, stepId: step.id },
@@ -89,7 +102,7 @@ export async function savePlan(db: DbClient, plan: Plan): Promise<void> {
   // Insert STEP_DEPENDS_ON edges
   for (const step of plan.steps) {
     for (const depId of step.dependsOn) {
-      await db.graph.query(
+      await queryWithParams(db.graph,
         `MATCH (s:PlanStep {id: $fromId}), (d:PlanStep {id: $toId})
          MERGE (s)-[:STEP_DEPENDS_ON]->(d)`,
         { fromId: step.id, toId: depId },
@@ -104,7 +117,7 @@ export async function savePlan(db: DbClient, plan: Plan): Promise<void> {
 
 export async function getPlan(db: DbClient, planId: string): Promise<Plan | null> {
   // Fetch plan node
-  const planResult = await db.graph.query(
+  const planResult = await queryWithParams(db.graph,
     `MATCH (p:Plan {id: $id}) RETURN p.id, p.repoPath, p.title, p.status, p.createdAt, p.updatedAt`,
     { id: planId },
   );
@@ -124,7 +137,7 @@ export async function getPlan(db: DbClient, planId: string): Promise<Plan | null
   };
 
   // Fetch steps via CONTAINS
-  const stepResult = await db.graph.query(
+  const stepResult = await queryWithParams(db.graph,
     `MATCH (p:Plan {id: $planId})-[:CONTAINS]->(s:PlanStep)
      RETURN s.id, s.planId, s.idx, s.title, s.description, s.checkpoint,
             s.status, s.complexity, s.fileHint, s.notes,
@@ -136,7 +149,7 @@ export async function getPlan(db: DbClient, planId: string): Promise<Plan | null
   const stepRows = await resultToRows(stepResult);
 
   // Fetch all dependency edges for this plan's steps
-  const depResult = await db.graph.query(
+  const depResult = await queryWithParams(db.graph,
     `MATCH (p:Plan {id: $planId})-[:CONTAINS]->(s:PlanStep)-[:STEP_DEPENDS_ON]->(d:PlanStep)
      RETURN s.id AS fromId, d.id AS toId`,
     { planId },
@@ -181,7 +194,7 @@ export async function getPlan(db: DbClient, planId: string): Promise<Plan | null
 // ---------------------------------------------------------------------------
 
 export async function getActivePlan(db: DbClient, repoPath: string): Promise<Plan | null> {
-  const result = await db.graph.query(
+  const result = await queryWithParams(db.graph,
     `MATCH (p:Plan {repoPath: $repoPath, status: 'active'})
      RETURN p.id ORDER BY p.createdAt DESC LIMIT 1`,
     { repoPath },
@@ -204,7 +217,7 @@ export async function updateStepState(
   note?: string,
 ): Promise<{ ok: boolean; error?: string }> {
   // Fetch current state
-  const result = await db.graph.query(
+  const result = await queryWithParams(db.graph,
     `MATCH (s:PlanStep {id: $id}) RETURN s.status, s.notes`,
     { id: stepId },
   );
@@ -248,7 +261,7 @@ export async function updateStepState(
     params.doneAt = '';
   }
 
-  await db.graph.query(`MATCH (s:PlanStep {id: $id}) ${setCypher}`, params);
+  await queryWithParams(db.graph,`MATCH (s:PlanStep {id: $id}) ${setCypher}`, params);
 
   // If all steps are done/skipped, mark plan as completed
   if (newStatus === 'done' || newStatus === 'skipped') {
@@ -269,7 +282,7 @@ export async function updateStepState(
 
 export async function getNextStep(db: DbClient, planId: string): Promise<PlanStep | null> {
   // Get all pending steps ordered by idx
-  const result = await db.graph.query(
+  const result = await queryWithParams(db.graph,
     `MATCH (p:Plan {id: $planId})-[:CONTAINS]->(s:PlanStep {status: 'pending'})
      RETURN s.id, s.planId, s.idx, s.title, s.description, s.checkpoint,
             s.status, s.complexity, s.fileHint, s.notes,
@@ -283,7 +296,7 @@ export async function getNextStep(db: DbClient, planId: string): Promise<PlanSte
     const stepId = sr['s.id'] as string;
 
     // Check if all dependencies are terminal (done or skipped)
-    const depResult = await db.graph.query(
+    const depResult = await queryWithParams(db.graph,
       `MATCH (s:PlanStep {id: $stepId})-[:STEP_DEPENDS_ON]->(d:PlanStep)
        WHERE d.status <> 'done' AND d.status <> 'skipped'
        RETURN count(d) AS blocking`,
@@ -322,27 +335,27 @@ export async function getNextStep(db: DbClient, planId: string): Promise<PlanSte
 
 export async function deletePlan(db: DbClient, planId: string): Promise<void> {
   // Delete STEP_DEPENDS_ON edges between steps of this plan
-  await db.graph.query(
+  await queryWithParams(db.graph,
     `MATCH (p:Plan {id: $planId})-[:CONTAINS]->(s:PlanStep)-[r:STEP_DEPENDS_ON]->(d:PlanStep)
      DELETE r`,
     { planId },
   );
 
   // Delete CONTAINS edges
-  await db.graph.query(
+  await queryWithParams(db.graph,
     `MATCH (p:Plan {id: $planId})-[r:CONTAINS]->(s:PlanStep)
      DELETE r`,
     { planId },
   );
 
   // Delete step nodes
-  await db.graph.query(
+  await queryWithParams(db.graph,
     `MATCH (s:PlanStep {planId: $planId}) DELETE s`,
     { planId },
   );
 
   // Delete plan node
-  await db.graph.query(
+  await queryWithParams(db.graph,
     `MATCH (p:Plan {id: $planId}) DELETE p`,
     { planId },
   );
@@ -354,7 +367,7 @@ export async function deletePlan(db: DbClient, planId: string): Promise<void> {
 
 async function maybeCompletePlan(db: DbClient, stepId: string): Promise<void> {
   // Find the plan that contains this step
-  const result = await db.graph.query(
+  const result = await queryWithParams(db.graph,
     `MATCH (s:PlanStep {id: $stepId}) RETURN s.planId`,
     { stepId },
   );
@@ -364,7 +377,7 @@ async function maybeCompletePlan(db: DbClient, stepId: string): Promise<void> {
   const planId = rows[0]!['s.planId'] as string;
 
   // Check if any steps are not terminal
-  const remaining = await db.graph.query(
+  const remaining = await queryWithParams(db.graph,
     `MATCH (p:Plan {id: $planId})-[:CONTAINS]->(s:PlanStep)
      WHERE s.status <> 'done' AND s.status <> 'skipped'
      RETURN count(s) AS remaining`,
@@ -375,7 +388,7 @@ async function maybeCompletePlan(db: DbClient, stepId: string): Promise<void> {
 
   if (count === 0) {
     const now = new Date().toISOString();
-    await db.graph.query(
+    await queryWithParams(db.graph,
       `MATCH (p:Plan {id: $planId}) SET p.status = 'completed', p.updatedAt = $now`,
       { planId, now },
     );
@@ -384,7 +397,7 @@ async function maybeCompletePlan(db: DbClient, stepId: string): Promise<void> {
 
 /** Re-activate a plan when a step is reverted to pending. */
 async function reactivatePlan(db: DbClient, stepId: string): Promise<void> {
-  const result = await db.graph.query(
+  const result = await queryWithParams(db.graph,
     `MATCH (s:PlanStep {id: $stepId}) RETURN s.planId`,
     { stepId },
   );
@@ -393,7 +406,7 @@ async function reactivatePlan(db: DbClient, stepId: string): Promise<void> {
 
   const planId = rows[0]!['s.planId'] as string;
   const now = new Date().toISOString();
-  await db.graph.query(
+  await queryWithParams(db.graph,
     `MATCH (p:Plan {id: $planId})
      WHERE p.status <> 'active'
      SET p.status = 'active', p.updatedAt = $now`,
@@ -408,7 +421,7 @@ async function reactivatePlan(db: DbClient, stepId: string): Promise<void> {
 export async function resetStaleLocks(db: DbClient, planId: string): Promise<number> {
   const now = new Date().toISOString();
   // Find all in_progress steps for this plan
-  const result = await db.graph.query(
+  const result = await queryWithParams(db.graph,
     `MATCH (p:Plan {id: $planId})-[:CONTAINS]->(s:PlanStep {status: 'in_progress'})
      RETURN s.id`,
     { planId },
@@ -417,7 +430,7 @@ export async function resetStaleLocks(db: DbClient, planId: string): Promise<num
 
   for (const row of rows) {
     const stepId = row['s.id'] as string;
-    await db.graph.query(
+    await queryWithParams(db.graph,
       `MATCH (s:PlanStep {id: $id})
        SET s.status = 'pending', s.startedAt = '', s.updatedAt = $now,
            s.notes = s.notes + $note`,

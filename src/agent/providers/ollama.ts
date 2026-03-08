@@ -142,7 +142,12 @@ interface OllamaMessage {
 }
 
 function toOllamaMessages(messages: LLMMessage[]): OllamaMessage[] {
-  return messages.map(m => ({ role: m.role, content: m.content }));
+  return messages.map(m => ({
+    role: m.role,
+    content: typeof m.content === 'string'
+      ? m.content
+      : m.content.filter(b => b.type === 'text').map(b => (b as { text: string }).text).join('\n'),
+  }));
 }
 
 interface OllamaTool {

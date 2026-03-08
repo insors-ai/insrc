@@ -100,7 +100,7 @@ export class ContextManager {
 
     // Prepend attachment text to code blocks (counts against L4 budget)
     const codeBlocks = this.attachmentContext
-      ? `## Attached Files\n${this.attachmentContext}\n\n${taskResult.blocks}`
+      ? [`## Attached Files\n${this.attachmentContext}`, ...taskResult.blocks]
       : taskResult.blocks;
 
     // Clear attachment context after use (single-turn only)

@@ -365,10 +365,13 @@ async function applyDebugFix(
 
   // Apply
   const applyResult = await applyDiff(parsedDiffs, repoPath, false);
+  if (applyResult.success) {
+    return { success: true, filesWritten: applyResult.filesWritten };
+  }
   return {
-    success: applyResult.success,
+    success: false,
     filesWritten: applyResult.filesWritten,
-    error: applyResult.success ? undefined : [...applyResult.errors.values()].join('\n'),
+    error: [...applyResult.errors.values()].join('\n'),
   };
 }
 
@@ -392,8 +395,9 @@ function reconstructDiff(diffs: FileDiff[]): string {
 function extractToolCalls(loopResult: ToolLoopResult): ToolCall[] {
   const calls: ToolCall[] = [];
   for (const msg of loopResult.messages) {
-    if (msg.role === 'assistant' && msg.toolCalls) {
-      calls.push(...msg.toolCalls);
+    const tc = (msg as { toolCalls?: ToolCall[] }).toolCalls;
+    if (msg.role === 'assistant' && tc) {
+      calls.push(...tc);
     }
   }
   return calls;

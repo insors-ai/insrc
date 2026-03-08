@@ -12,6 +12,11 @@ import { ClaudeProvider } from './providers/claude.js';
 import { getToolDefinitions } from './tools/registry.js';
 import { runToolLoop } from './tools/loop.js';
 import { ping as pingDaemon, sessionSave, sessionPrune, planGet, planSave, planStepUpdate, planDelete, planNextStep, planResetStale } from './tools/mcp-client.js';
+import {
+  classifyOllamaError, formatOllamaFault, isOllamaDown,
+  classifyDaemonError, formatDaemonFault, attemptRestart, annotateStale, isGraphPotentiallyStale,
+  type ComponentState,
+} from './faults/index.js';
 import { runRequirementsPipeline } from './tasks/requirements.js';
 import { runDesignPipeline } from './tasks/design.js';
 import { runPlanPipeline } from './tasks/plan.js';
@@ -62,6 +67,15 @@ export async function startRepl(cwd?: string): Promise<void> {
   const session = new Session({ repoPath, config });
   await session.init();
 
+  // Health change logging
+  session.health.setOnChange((component, prev, next) => {
+    if (next === 'unavailable') {
+      console.log(`  [health] ${component} is now unavailable (was ${prev})`);
+    } else if (next === 'healthy' && prev !== 'healthy') {
+      console.log(`  [health] ${component} recovered → healthy`);
+    }
+  });
+
   // Best-effort pruning of expired sessions on start (fire-and-forget)
   void sessionPrune();
 
@@ -75,6 +89,11 @@ export async function startRepl(cwd?: string): Promise<void> {
   })();
 
   const ollamaOk = await session.ollamaAvailable;
+  session.health.recordOllamaResult(ollamaOk);
+
+  // Record initial daemon health
+  const daemonInitOk = await pingDaemon();
+  session.health.recordDaemonResult(daemonInitOk);
 
   console.log(`[agent] repo: ${repoPath}`);
   console.log(`[agent] ollama: ${ollamaOk ? 'connected' : 'unavailable'}`);
@@ -123,15 +142,17 @@ export async function startRepl(cwd?: string): Promise<void> {
     }
 
     if (raw === '/status') {
-      const ok = await session.ollamaAvailable;
-      const daemonOk = await pingDaemon();
+      const snap = session.healthSnapshot();
       const age = Math.floor((Date.now() - session.startedAt) / 1000);
       const mins = Math.floor(age / 60);
       const secs = age % 60;
       console.log(`  session: ${session.id.slice(0, 8)}... (${mins}m${secs}s)`);
-      console.log(`  daemon:  ${daemonOk ? 'connected' : 'unavailable'}`);
-      console.log(`  ollama:  ${ok ? 'connected' : 'unavailable'}`);
+      console.log(`  daemon:  ${formatHealthLine(snap.daemon.state, snap.daemon.lastOk)}`);
+      console.log(`  ollama:  ${formatHealthLine(snap.ollama.state, snap.ollama.lastOk)}`);
       console.log(`  claude:  ${session.hasClaudeKey ? 'configured' : 'not configured'}`);
+      if (isGraphPotentiallyStale()) {
+        console.log(`  graph:   [stale] index is being rebuilt`);
+      }
       console.log(`  repo:    ${session.repoPath}`);
       console.log(`  repos:   ${session.closureRepos.join(', ')}`);
       console.log(`  turns:   ${session.turnIndex}`);
@@ -311,7 +332,9 @@ export async function startRepl(cwd?: string): Promise<void> {
             assistantResponse = forcedResult.message;
           }
         } else {
-          assistantResponse = await handlePipelineIntent(classified.intent, classified.message, codeContext);
+          assistantResponse = await handlePipelineIntent(classified.intent, classified.message, codeContext, {
+            explicit: classified.explicit ?? undefined, routeProvider: route.provider, routeTier: route.tier ?? undefined,
+          });
         }
         if (assistantResponse) {
           console.log(assistantResponse);
@@ -377,8 +400,25 @@ export async function startRepl(cwd?: string): Promise<void> {
       }
     }
 
-    // Check daemon availability for MCP tools
-    const mcpAvailable = await pingDaemon();
+    // Check daemon availability for MCP tools (with health tracking)
+    let mcpAvailable: boolean;
+    try {
+      mcpAvailable = await pingDaemon();
+      session.health.recordDaemonResult(mcpAvailable);
+      if (!mcpAvailable && session.health.daemonState === 'unavailable') {
+        console.log('  [daemon] Attempting auto-restart...');
+        const restarted = await attemptRestart(msg => console.log(msg));
+        if (restarted) {
+          mcpAvailable = true;
+          session.health.recordDaemonResult(true);
+        }
+      }
+    } catch (err) {
+      mcpAvailable = false;
+      session.health.recordDaemonResult(false);
+      const fault = classifyDaemonError(err);
+      console.log(formatDaemonFault(fault));
+    }
     const tools = getToolDefinitions({ mcpAvailable });
 
     // Execute via tool loop (if provider supports tools) or plain stream
@@ -451,7 +491,17 @@ export async function startRepl(cwd?: string): Promise<void> {
 
       session.turnIndex++;
     } catch (err) {
-      console.error('\n[error]', err instanceof Error ? err.message : err);
+      // Classify and report Ollama faults with Claude fallback suggestion
+      if (isOllamaDown(err)) {
+        session.health.recordOllamaResult(false);
+        const fault = classifyOllamaError(err);
+        console.log('\n' + formatOllamaFault(fault));
+        if (fault.suggestClaude && session.hasClaudeKey) {
+          console.log('  Retry with @claude prefix to use Claude for this turn.');
+        }
+      } else {
+        console.error('\n[error]', err instanceof Error ? err.message : err);
+      }
     }
 
     rl.prompt();
@@ -478,6 +528,7 @@ export async function startRepl(cwd?: string): Promise<void> {
     intent: string,
     message: string,
     codeContext: string,
+    opts?: { explicit?: import('../shared/types.js').ExplicitProvider | undefined; routeProvider?: import('../shared/types.js').LLMProvider; routeTier?: string | undefined },
   ): Promise<string> {
     if (intent === 'requirements') {
       if (!session.claudeProvider) {
@@ -645,9 +696,9 @@ export async function startRepl(cwd?: string): Promise<void> {
         return '[error] Review pipeline requires Claude. Set ANTHROPIC_API_KEY.';
       }
       // @opus prefix → use Opus provider for deep architectural reviews
-      const isOpus = classified.explicit === 'opus';
-      const reviewProvider = isOpus && route.tier === 'powerful'
-        ? route.provider
+      const isOpus = opts?.explicit === 'opus';
+      const reviewProvider = isOpus && opts?.routeTier === 'powerful' && opts?.routeProvider
+        ? opts.routeProvider
         : session.claudeProvider;
       console.log(`  [pipeline] Running review pipeline (context assembly → Claude review${isOpus ? ' [Opus]' : ''})...`);
 
@@ -692,7 +743,7 @@ export async function startRepl(cwd?: string): Promise<void> {
     }
 
     if (intent === 'research') {
-      const forceEscalate = classified.explicit === 'claude' || classified.explicit === 'opus';
+      const forceEscalate = opts?.explicit === 'claude' || opts?.explicit === 'opus';
       console.log(`  [pipeline] Running research pipeline${forceEscalate ? ' (escalated to Claude)' : ''}...`);
 
       const result = await runResearchPipeline(
@@ -859,6 +910,15 @@ function askOnce(prompt: string): Promise<string> {
 // ---------------------------------------------------------------------------
 // Plan display
 // ---------------------------------------------------------------------------
+
+function formatHealthLine(state: ComponentState, lastOk: number): string {
+  const label = state === 'healthy' ? 'connected' : state;
+  if (lastOk > 0) {
+    const ago = Math.floor((Date.now() - lastOk) / 1000);
+    return `${label} (last ok ${ago}s ago)`;
+  }
+  return label;
+}
 
 function printPlan(plan: import('../shared/types.js').Plan): void {
   const statusIcon: Record<string, string> = {

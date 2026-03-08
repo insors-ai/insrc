@@ -10,6 +10,10 @@ import { ClaudeProvider } from './providers/claude.js';
 import { getToolDefinitions } from './tools/registry.js';
 import { runToolLoop } from './tools/loop.js';
 import { ping as pingDaemon, planGet, planSave } from './tools/mcp-client.js';
+import {
+  classifyOllamaError, formatOllamaFault, isOllamaDown,
+  classifyDaemonError, formatDaemonFault,
+} from './faults/index.js';
 import { runRequirementsPipeline } from './tasks/requirements.js';
 import { runDesignPipeline } from './tasks/design.js';
 import { runPlanPipeline } from './tasks/plan.js';
@@ -102,13 +106,16 @@ export async function runOneShot(
   try {
     await ensureAgentModel(config.ollama.host);
     ollamaOk = true;
-  } catch {
-    log('[cli] Ollama not available — local model disabled.');
+  } catch (err) {
+    const fault = classifyOllamaError(err);
+    log(`[cli] ${fault.message} ${fault.recovery}`);
   }
 
-  // Create session
+  // Create session (no periodic health checks in one-shot mode)
   const session = new Session({ repoPath, config });
   await session.init();
+  session.health.stop(); // No periodic checks for one-shot
+  session.health.recordOllamaResult(ollamaOk);
 
   const ctx = session.contextManager;
 
@@ -257,7 +264,16 @@ export async function runOneShot(
       }
     }
 
-    const mcpAvailable = await pingDaemon();
+    let mcpAvailable: boolean;
+    try {
+      mcpAvailable = await pingDaemon();
+      session.health.recordDaemonResult(mcpAvailable);
+    } catch (err) {
+      mcpAvailable = false;
+      session.health.recordDaemonResult(false);
+      const fault = classifyDaemonError(err);
+      log(formatDaemonFault(fault));
+    }
     const tools = getToolDefinitions({ mcpAvailable });
 
     let assistantResponse = '';
@@ -289,6 +305,17 @@ export async function runOneShot(
 
     return formatResult(assistantResponse, classified.intent, route.tier !== undefined, opts.json);
   } catch (err) {
+    // Classify Ollama faults for better error messages
+    if (isOllamaDown(err)) {
+      session.health.recordOllamaResult(false);
+      const fault = classifyOllamaError(err);
+      const errMsg = `${fault.message} ${fault.recovery}`;
+      if (opts.json) {
+        return { exitCode: 1, output: JSON.stringify({ success: false, error: errMsg, exitCode: 1 }), intent: classified.intent };
+      }
+      return { exitCode: 1, output: errMsg, intent: classified.intent };
+    }
+
     const errMsg = err instanceof Error ? err.message : String(err);
     if (opts.json) {
       return { exitCode: 1, output: JSON.stringify({ success: false, error: errMsg, exitCode: 1 }), intent: classified.intent };

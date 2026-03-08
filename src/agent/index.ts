@@ -1,5 +1,7 @@
 import { createInterface } from 'node:readline';
 import { resolve } from 'node:path';
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
+import { PATHS } from '../shared/paths.js';
 import { loadConfig } from './config.js';
 import { Session } from './session.js';
 import { ensureAgentModel } from './lifecycle.js';
@@ -18,6 +20,10 @@ import { runRefactorPipeline } from './tasks/refactor.js';
 import { runTestPipeline } from './tasks/test.js';
 import { runDebugPipeline } from './tasks/debug.js';
 import { findTestFile } from './tasks/test-runner.js';
+import { runGraphQuery } from './tasks/graph.js';
+import { runResearchPipeline } from './tasks/research.js';
+import { runReviewPipeline } from './tasks/review.js';
+import { runDocumentPipeline } from './tasks/document.js';
 
 /**
  * Start the interactive agent REPL.
@@ -42,6 +48,9 @@ export async function startRepl(cwd?: string): Promise<void> {
   } catch {
     console.warn('[agent] Ollama not available — local model disabled. Use @claude prefix.');
   }
+
+  // 1b. First-run Brave key setup (one-time, skippable)
+  await promptBraveKeySetup(config);
 
   // 2. Create session
   const session = new Session({ repoPath, config });
@@ -209,15 +218,40 @@ export async function startRepl(cwd?: string): Promise<void> {
       announceOpus();
     }
 
-    // Graph-only intents — no LLM call (handled by graph handler in Phase 9)
+    // Graph-only intents — no LLM call
     if (route.graphOnly) {
-      console.log('  [graph] Pure graph queries not yet implemented. Use research intent for now.');
+      try {
+        const graphResult = await runGraphQuery(classified.message);
+        if (!graphResult.handled) {
+          // Re-route interpretive questions to research
+          console.log('  [graph] Interpretive question — routing to research...');
+          const queryEmbedding = await ctx.embedQuery(classified.message);
+          const assembled = await ctx.assemble(classified.message, queryEmbedding);
+          const response = await handlePipelineIntent('research', classified.message, assembled.code.text);
+          if (response) {
+            console.log(response);
+            console.log('');
+            const turn = { userMessage: classified.message, assistantResponse: response, entityIds: [] as string[] };
+            await ctx.recordTurn(turn, queryEmbedding);
+            session.turnIndex++;
+          }
+        } else {
+          console.log(graphResult.response);
+          console.log('');
+          const queryEmbedding = await ctx.embedQuery(classified.message);
+          const turn = { userMessage: classified.message, assistantResponse: graphResult.response, entityIds: [] as string[] };
+          await ctx.recordTurn(turn, queryEmbedding);
+          session.turnIndex++;
+        }
+      } catch (err) {
+        console.error('\n[error]', err instanceof Error ? err.message : err);
+      }
       rl.prompt();
       return;
     }
 
     // Pipeline intents (requirements, design, plan, implement, refactor) — two-stage processing
-    if (['requirements', 'design', 'plan', 'implement', 'refactor', 'test', 'debug'].includes(classified.intent)) {
+    if (['requirements', 'design', 'plan', 'implement', 'refactor', 'test', 'debug', 'review', 'document', 'research'].includes(classified.intent)) {
       try {
         const queryEmbedding = await ctx.embedQuery(classified.message);
         const assembled = await ctx.assemble(classified.message, queryEmbedding);
@@ -538,6 +572,82 @@ export async function startRepl(cwd?: string): Promise<void> {
       return `Debug session completed: ${result.message}`;
     }
 
+    if (intent === 'review') {
+      if (!session.claudeProvider) {
+        return '[error] Review pipeline requires Claude. Set ANTHROPIC_API_KEY.';
+      }
+      // @opus prefix → use Opus provider for deep architectural reviews
+      const isOpus = classified.explicit === 'opus';
+      const reviewProvider = isOpus && route.tier === 'powerful'
+        ? route.provider
+        : session.claudeProvider;
+      console.log(`  [pipeline] Running review pipeline (context assembly → Claude review${isOpus ? ' [Opus]' : ''})...`);
+
+      const result = await runReviewPipeline(
+        message, codeContext, reviewProvider, isOpus,
+      );
+
+      return result.review;
+    }
+
+    if (intent === 'document') {
+      const requestReview = /--review\b/.test(message);
+      const cleanMessage = message.replace(/--review\b/, '').trim();
+      console.log(`  [pipeline] Running document pipeline (local generation${requestReview ? ' + Claude review' : ''})...`);
+
+      // Build Sonnet provider for cross-cutting doc escalation
+      let sonnetProvider: import('../shared/types.js').LLMProvider | null = null;
+      if (session.config.keys.anthropic) {
+        sonnetProvider = new ClaudeProvider({
+          model: session.config.models.tiers.standard,
+          apiKey: session.config.keys.anthropic,
+        });
+      }
+
+      const result = await runDocumentPipeline(
+        cleanMessage, repoPath, codeContext,
+        session.ollamaProvider, session.claudeProvider,
+        requestReview,
+        console.log,
+        sonnetProvider,
+      );
+
+      if (result.applied) {
+        return `${result.message}\n\nFiles:\n${result.filesWritten.map(f => `  - ${f}`).join('\n')}`;
+      }
+
+      if (result.diff) {
+        return `Documentation generated but not applied:\n\n\`\`\`diff\n${result.diff}\n\`\`\`\n\n${result.message}`;
+      }
+
+      return result.message;
+    }
+
+    if (intent === 'research') {
+      const forceEscalate = classified.explicit === 'claude' || classified.explicit === 'opus';
+      console.log(`  [pipeline] Running research pipeline${forceEscalate ? ' (escalated to Claude)' : ''}...`);
+
+      const result = await runResearchPipeline(
+        message, codeContext,
+        session.ollamaProvider, session.claudeProvider,
+        session.config.keys.brave,
+        console.log,
+        session.closureRepos,
+        forceEscalate,
+      );
+
+      let response = result.answer;
+      if (result.webResults.length > 0) {
+        response += '\n\nSources:';
+        for (let i = 0; i < result.webResults.length; i++) {
+          const r = result.webResults[i]!;
+          response += `\n  [${i + 1}] ${r.title} — ${r.url}`;
+        }
+      }
+
+      return response;
+    }
+
     return '';
   }
 
@@ -610,6 +720,72 @@ async function handlePlanCommand(arg: string, repoPath: string): Promise<string 
 
   // /plan <desc> — shorthand for plan intent (not a subcommand)
   return 'plan-intent:' + arg;
+}
+
+// ---------------------------------------------------------------------------
+// First-run Brave API key setup (one-time, skippable)
+// ---------------------------------------------------------------------------
+
+const BRAVE_SETUP_FLAG = '.brave-setup-done';
+
+/**
+ * On first daemon start, if BRAVE_API_KEY is absent, offer one-time interactive setup.
+ * Prompt shown once, never repeated regardless of user choice.
+ * Writes flag file to ~/.insrc/.brave-setup-done.
+ */
+export async function promptBraveKeySetup(config: import('../shared/types.js').AgentConfig): Promise<void> {
+  // Already configured — skip
+  if (config.keys.brave) return;
+
+  const flagPath = resolve(PATHS.insrc, BRAVE_SETUP_FLAG);
+  // Already prompted before — never repeat
+  if (existsSync(flagPath)) return;
+
+  // Ensure directory exists
+  mkdirSync(PATHS.insrc, { recursive: true });
+
+  // Write flag immediately (before prompt) so even if user kills process, we don't re-prompt
+  writeFileSync(flagPath, new Date().toISOString(), 'utf-8');
+
+  console.log('');
+  console.log('[setup] Web search: Brave Search API provides high-quality web search (2,000 free queries/month).');
+  console.log('[setup] Without it, web searches will be handled by Claude (still works, but queries pass through Anthropic).');
+  console.log('[setup] Get a free key at: https://brave.com/search/api/');
+
+  const answer = await askOnce('  Enter Brave API key (or press Enter to skip): ');
+
+  if (answer.trim()) {
+    // Save to config
+    try {
+      const configRaw = existsSync(PATHS.config)
+        ? JSON.parse(readFileSync(PATHS.config, 'utf-8')) as Record<string, unknown>
+        : {};
+      const keys = (typeof configRaw['keys'] === 'object' && configRaw['keys'] !== null)
+        ? configRaw['keys'] as Record<string, string>
+        : {};
+      keys['brave'] = answer.trim();
+      configRaw['keys'] = keys;
+      writeFileSync(PATHS.config, JSON.stringify(configRaw, null, 2), 'utf-8');
+      config.keys.brave = answer.trim();
+      process.env['BRAVE_API_KEY'] = answer.trim();
+      console.log('[setup] Brave API key saved to ~/.insrc/config.json');
+    } catch {
+      console.warn('[setup] Could not save key to config file');
+    }
+  } else {
+    console.log('[setup] Skipped — Claude will handle web searches automatically.');
+  }
+  console.log('');
+}
+
+function askOnce(prompt: string): Promise<string> {
+  return new Promise((resolve) => {
+    const rl = createInterface({ input: process.stdin, output: process.stdout });
+    rl.question(prompt, (answer: string) => {
+      rl.close();
+      resolve(answer);
+    });
+  });
 }
 
 // ---------------------------------------------------------------------------

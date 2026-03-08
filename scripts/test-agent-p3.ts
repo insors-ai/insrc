@@ -315,6 +315,7 @@ function mockProvider(responses: LLMResponse[]): LLMProvider {
     async complete(_msgs: LLMMessage[], _opts?: CompletionOpts): Promise<LLMResponse> {
       return responses[callIdx++]!;
     },
+    async embed(): Promise<number[]> { return []; },
     async *stream(_msgs: LLMMessage[], _opts?: CompletionOpts): AsyncIterable<string> {
       yield responses[callIdx++]!.text;
     },
@@ -400,6 +401,7 @@ section('5.3 Loop — rejected tool call');
     async complete(): Promise<LLMResponse> {
       return { text: 'REJECTED: dangerous command', stopReason: 'end_turn' };
     },
+    async embed(): Promise<number[]> { return []; },
     async *stream(): AsyncIterable<string> { yield ''; },
   };
 

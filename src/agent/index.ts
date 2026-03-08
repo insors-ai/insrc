@@ -1,12 +1,12 @@
 import { createInterface } from 'node:readline';
 import { resolve } from 'node:path';
-import type { LLMMessage } from '../shared/types.js';
 import { loadConfig } from './config.js';
 import { Session } from './session.js';
 import { ensureAgentModel } from './lifecycle.js';
 import { classify } from './classifier/index.js';
 import { selectProvider } from './router.js';
-import { announceRoute, announceCost, announceOpus } from './escalation.js';
+import { announceRoute, announceCost, announceOpus, shouldEscalate } from './escalation.js';
+import { ClaudeProvider } from './providers/claude.js';
 import { getToolDefinitions } from './tools/registry.js';
 import { runToolLoop } from './tools/loop.js';
 import { ping as pingDaemon } from './tools/mcp-client.js';
@@ -57,7 +57,7 @@ export async function startRepl(cwd?: string): Promise<void> {
     prompt: 'insrc> ',
   });
 
-  const history: LLMMessage[] = [];
+  const ctx = session.contextManager;
 
   rl.prompt();
 
@@ -79,6 +79,9 @@ export async function startRepl(cwd?: string): Promise<void> {
       console.log(`  repo:    ${session.repoPath}`);
       console.log(`  repos:   ${session.closureRepos.join(', ')}`);
       console.log(`  turns:   ${session.turnIndex}`);
+      console.log(`  recent:  ${ctx.getRecentCount()} turns`);
+      console.log(`  semantic: ${ctx.getSemanticSize()} stored`);
+      console.log(`  summary: ${ctx.getSummary() ? 'yes' : 'none'}`);
       rl.prompt();
       return;
     }
@@ -102,7 +105,7 @@ export async function startRepl(cwd?: string): Promise<void> {
       ctx: {},
       llmProvider: ollamaOk ? session.ollamaProvider : undefined,
     });
-    const route = selectProvider(classified.intent, classified.explicit, {
+    let route = selectProvider(classified.intent, classified.explicit, {
       ollamaProvider: session.ollamaProvider,
       claudeProvider: session.claudeProvider,
       config: session.config,
@@ -128,12 +131,30 @@ export async function startRepl(cwd?: string): Promise<void> {
       return;
     }
 
-    // Build messages
-    const messages: LLMMessage[] = [
-      session.buildSystemPrompt(),
-      ...history,
-      { role: 'user', content: classified.message },
-    ];
+    // Embed user message once — shared between L3b retrieval and L4 code search
+    const queryEmbedding = await ctx.embedQuery(classified.message);
+
+    // Assemble layered context (L1–L4) with overflow enforcement
+    const assembled = await ctx.assemble(classified.message, queryEmbedding);
+
+    // Check automatic escalation thresholds (only for local routes without explicit prefix)
+    if (!classified.explicit && !route.graphOnly && route.label === 'Local') {
+      const escalation = shouldEscalate(assembled, session.closureRepos);
+      if (escalation.shouldEscalate && session.claudeProvider) {
+        const tier = 'fast' as const;
+        const model = session.config.models.tiers[tier];
+        route = {
+          provider: new ClaudeProvider({ model, apiKey: session.config.keys.anthropic }),
+          label: `Claude Haiku (auto-escalated)`,
+          graphOnly: false,
+          tier,
+        };
+        console.log(`  [escalation] ${escalation.reason} → auto-escalated to Claude`);
+      }
+    }
+
+    // Build LLM messages from assembled context
+    const messages = ctx.buildMessages(assembled, classified.message);
 
     // Check daemon availability for MCP tools
     const mcpAvailable = await pingDaemon();
@@ -141,6 +162,8 @@ export async function startRepl(cwd?: string): Promise<void> {
 
     // Execute via tool loop (if provider supports tools) or plain stream
     try {
+      let assistantResponse = '';
+
       if (route.provider.supportsTools) {
         const result = await runToolLoop(messages, {
           provider: route.provider,
@@ -163,32 +186,30 @@ export async function startRepl(cwd?: string): Promise<void> {
         });
 
         process.stdout.write('\n\n');
-
-        // Track history
-        history.push({ role: 'user', content: classified.message });
-        for (const msg of result.messages) {
-          history.push(msg);
-        }
+        assistantResponse = result.response;
 
         if (result.hitLimit) {
           console.log('  [warning] Tool loop hit max iterations (25)');
         }
       } else {
         // Fallback: plain streaming (no tool use)
-        let response = '';
         for await (const delta of route.provider.stream(messages)) {
           process.stdout.write(delta);
-          response += delta;
+          assistantResponse += delta;
         }
         process.stdout.write('\n\n');
-
-        history.push({ role: 'user', content: classified.message });
-        history.push({ role: 'assistant', content: response });
       }
 
-      // Keep last 10 turns (20 messages) to stay within context limits
-      while (history.length > 20) {
-        history.shift();
+      // Record turn in context manager (handles eviction + summary automatically)
+      await ctx.recordTurn(
+        { userMessage: classified.message, assistantResponse, entityIds: [] },
+        queryEmbedding,
+      );
+
+      if (assembled.dropped.length > 0) {
+        for (const d of assembled.dropped) {
+          console.log(`  [context] dropped ${d.layer}: ${d.reason} (${d.tokensDropped} tokens)`);
+        }
       }
 
       session.turnIndex++;

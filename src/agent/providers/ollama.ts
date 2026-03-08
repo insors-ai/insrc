@@ -98,6 +98,15 @@ export class OllamaProvider implements LLMProvider {
     };
   }
 
+  async embed(text: string): Promise<number[]> {
+    try {
+      const result = await this.client.embed({ model: 'qwen3-embedding:0.6b', input: text });
+      return result.embeddings[0] ?? [];
+    } catch {
+      return [];
+    }
+  }
+
   async *stream(messages: LLMMessage[], opts: CompletionOpts = {}): AsyncIterable<string> {
     const ollamaMessages = toOllamaMessages(messages);
 

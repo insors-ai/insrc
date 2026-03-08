@@ -44,6 +44,8 @@ export interface CompletionOpts {
 export interface LLMProvider {
   complete(messages: LLMMessage[], opts?: CompletionOpts): Promise<LLMResponse>;
   stream(messages: LLMMessage[], opts?: CompletionOpts): AsyncIterable<string>;
+  /** Embed text into a vector. Returns empty array if not supported. */
+  embed(text: string): Promise<number[]>;
   readonly supportsTools: boolean;
 }
 

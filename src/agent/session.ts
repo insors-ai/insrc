@@ -1,8 +1,8 @@
 import { randomUUID } from 'node:crypto';
-import type { LLMMessage, AgentConfig } from '../shared/types.js';
+import type { AgentConfig } from '../shared/types.js';
 import { OllamaProvider } from './providers/ollama.js';
 import { ClaudeProvider } from './providers/claude.js';
-import { initSession } from './context.js';
+import { ContextManager, initSession } from './context/index.js';
 
 export interface SessionOpts {
   repoPath: string;
@@ -19,6 +19,9 @@ export class Session {
 
   /** Runtime permission mode — can be toggled with /toggle-permissions */
   permissionMode: 'validate' | 'auto-accept';
+
+  /** Layered context manager (L1–L4). */
+  contextManager!: ContextManager;
 
   /** Exposed for the router — do not use directly for LLM calls. */
   readonly ollamaProvider: OllamaProvider;
@@ -47,6 +50,11 @@ export class Session {
 
   async init(): Promise<void> {
     this.closureRepos = await initSession(this.repoPath);
+    this.contextManager = new ContextManager({
+      repoPath: this.repoPath,
+      closureRepos: this.closureRepos,
+      provider: this.ollamaProvider,
+    });
   }
 
   get ollamaAvailable(): Promise<boolean> {
@@ -55,23 +63,5 @@ export class Session {
 
   get hasClaudeKey(): boolean {
     return this.claudeProvider !== null;
-  }
-
-  buildSystemPrompt(): LLMMessage {
-    const repos = this.closureRepos.length > 1
-      ? `Repos in scope: ${this.closureRepos.join(', ')}`
-      : `Repo: ${this.repoPath}`;
-
-    return {
-      role: 'system',
-      content: [
-        'You are insrc, a local-first hybrid coding assistant.',
-        'You help developers understand, modify, test, and debug code.',
-        'You have access to a Code Knowledge Graph (Kuzu + LanceDB) for structural queries.',
-        'Be concise. Cite file paths and line numbers when referencing code.',
-        '',
-        repos,
-      ].join('\n'),
-    };
   }
 }

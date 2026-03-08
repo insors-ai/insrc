@@ -73,6 +73,11 @@ export class ClaudeProvider implements LLMProvider {
     }
   }
 
+  async embed(_text: string): Promise<number[]> {
+    // Claude API does not provide embeddings — use Ollama for embedding
+    return [];
+  }
+
   async *stream(messages: LLMMessage[], opts: CompletionOpts = {}): AsyncIterable<string> {
     const { system, apiMessages } = splitMessages(messages);
 

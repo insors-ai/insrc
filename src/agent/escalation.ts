@@ -1,5 +1,52 @@
 import type { Intent } from '../shared/types.js';
 import type { RouteResult } from './router.js';
+import type { AssembledContext } from './context/index.js';
+
+// ---------------------------------------------------------------------------
+// Automatic escalation thresholds (deferred from Phase 2.5)
+//
+// After context assembly, check if the task complexity warrants Claude:
+//   - >3 distinct files referenced in code context → escalate
+//   - >1 repo in closure → escalate
+//   - >8K input tokens assembled → escalate
+// ---------------------------------------------------------------------------
+
+export interface EscalationCheck {
+  shouldEscalate: boolean;
+  reason?: string | undefined;
+}
+
+/**
+ * Check if assembled context suggests this task should escalate to Claude.
+ * Only applies when the initial route was local — explicit routes are not overridden.
+ */
+export function shouldEscalate(
+  assembled: AssembledContext,
+  closureRepos: string[],
+): EscalationCheck {
+  // >1 repo in closure
+  if (closureRepos.length > 1) {
+    return { shouldEscalate: true, reason: `multi-repo task (${closureRepos.length} repos)` };
+  }
+
+  // >8K assembled input tokens
+  if (assembled.totalTokens > 8_000) {
+    return { shouldEscalate: true, reason: `large context (${assembled.totalTokens} tokens)` };
+  }
+
+  // >3 distinct files in code context
+  const filePattern = /\[(?:function|method|class|interface|type|variable) .+ — (.+?):\d+-\d+\]/g;
+  const files = new Set<string>();
+  let match: RegExpExecArray | null;
+  while ((match = filePattern.exec(assembled.code.text)) !== null) {
+    files.add(match[1]!);
+  }
+  if (files.size > 3) {
+    return { shouldEscalate: true, reason: `multi-file task (${files.size} files)` };
+  }
+
+  return { shouldEscalate: false };
+}
 
 // ---------------------------------------------------------------------------
 // Escalation announcements

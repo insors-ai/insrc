@@ -264,32 +264,30 @@ section('4.2 Session — provider exposure');
     `Expected true, got ${sessionWithKey.hasClaudeKey}`);
 }
 
-section('4.3 Session — buildSystemPrompt');
+section('4.3 Session — system context (via context/system.ts)');
 
 {
-  const cfg = loadConfig();
-  const session = new Session({ repoPath: '/tmp/test-repo', config: cfg });
+  const { buildSystemContext } = await import('../src/agent/context/system.js');
 
-  const prompt = session.buildSystemPrompt();
-  assert(prompt.role === 'system',
-    'System prompt has role=system',
-    `Expected system, got ${prompt.role}`);
+  const prompt = buildSystemContext({ repoPath: '/tmp/test-repo', closureRepos: ['/tmp/test-repo'] });
 
-  assert(prompt.content.includes('insrc'),
+  assert(prompt.includes('insrc'),
     'System prompt mentions insrc',
     'Expected insrc in system prompt');
 
-  assert(prompt.content.includes('/tmp/test-repo'),
+  assert(prompt.includes('/tmp/test-repo'),
     'System prompt includes repo path',
     'Expected repo path in system prompt');
 
   // Multi-repo case
-  session.closureRepos = ['/tmp/repo-a', '/tmp/repo-b'];
-  const multiPrompt = session.buildSystemPrompt();
-  assert(multiPrompt.content.includes('Repos in scope'),
+  const multiPrompt = buildSystemContext({
+    repoPath: '/tmp/repo-a',
+    closureRepos: ['/tmp/repo-a', '/tmp/repo-b'],
+  });
+  assert(multiPrompt.includes('Repos in scope'),
     'Multi-repo prompt uses "Repos in scope"',
     'Expected "Repos in scope" for multi-repo');
-  assert(multiPrompt.content.includes('/tmp/repo-a') && multiPrompt.content.includes('/tmp/repo-b'),
+  assert(multiPrompt.includes('/tmp/repo-a') && multiPrompt.includes('/tmp/repo-b'),
     'Multi-repo prompt lists all repos',
     'Expected both repos in prompt');
 }

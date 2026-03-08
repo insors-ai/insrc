@@ -31,7 +31,7 @@ import {
   savePlan, getPlan, getActivePlan, updateStepState, getNextStep, deletePlan, resetStaleLocks,
 } from '../agent/tasks/plan-store.js';
 import type { RegisteredRepo, DaemonStatus, Entity, Plan, PlanStepStatus } from '../shared/types.js';
-import { basename } from 'node:path';
+import { basename, dirname } from 'node:path';
 
 // ---------------------------------------------------------------------------
 // Startup
@@ -45,7 +45,8 @@ async function main(): Promise<void> {
   }
 
   // 2. Ensure directories
-  mkdirSync(PATHS.graph,  { recursive: true });
+  // Kuzu creates the DB directory itself — only ensure the parent exists
+  mkdirSync(dirname(PATHS.graph), { recursive: true });
   mkdirSync(PATHS.lance,  { recursive: true });
   mkdirSync(PATHS.logDir, { recursive: true });
 

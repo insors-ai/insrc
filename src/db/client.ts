@@ -1,6 +1,7 @@
 import kuzu from 'kuzu';
 import * as lancedb from '@lancedb/lancedb';
 import { mkdirSync } from 'node:fs';
+import { dirname } from 'node:path';
 import { PATHS } from '../shared/paths.js';
 import { KUZU_STATEMENTS } from './schema.js';
 
@@ -24,7 +25,8 @@ let _clients: DbClients | null = null;
 export async function getDb(): Promise<DbClients> {
   if (_clients !== null) return _clients;
 
-  mkdirSync(PATHS.graph, { recursive: true });
+  // Kuzu creates the DB directory itself — only ensure the parent exists
+  mkdirSync(dirname(PATHS.graph), { recursive: true });
   mkdirSync(PATHS.lance, { recursive: true });
 
   _kuzuDb = new kuzu.Database(PATHS.graph);

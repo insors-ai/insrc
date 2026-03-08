@@ -771,8 +771,9 @@ await test('Gap 4: REPL passes closureRepos and forceEscalate to research', () =
 });
 
 await test('Gap 4: research detects @claude/@opus as forceEscalate', () => {
-  assert.ok(indexSource.includes("classified.explicit === 'claude'"));
-  assert.ok(indexSource.includes("classified.explicit === 'opus'"));
+  // Phase 12 refactored to opts?.explicit (was classified.explicit)
+  assert.ok(indexSource.includes("explicit === 'claude'"));
+  assert.ok(indexSource.includes("explicit === 'opus'"));
 });
 
 // Gap 5: Brave key first-run setup

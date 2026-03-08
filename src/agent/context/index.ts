@@ -34,6 +34,10 @@ export class ContextManager {
   private readonly provider: LLMProvider;
   /** Entity IDs from the most recent L4 fetch — stored in turn on recordTurn(). */
   private lastEntityIds: string[] = [];
+  /** Tagged outputs from pipelines — stored in L2 for cross-pipeline reference. */
+  private readonly tags = new Map<string, string>();
+  /** Active plan step body injected into L4 context each turn. */
+  private activePlanStepContext = '';
 
   constructor(opts: SystemContextOpts & { closureRepos: string[]; provider: LLMProvider }) {
     this.systemText = buildSystemContext(opts);
@@ -147,6 +151,9 @@ export class ContextManager {
     if (assembled.code.text) {
       contextParts.push(`## Relevant Code\n${assembled.code.text}`);
     }
+    if (this.activePlanStepContext) {
+      contextParts.push(`## Active Plan Step\n${this.activePlanStepContext}`);
+    }
 
     // L3a: Recent turns as alternating user/assistant messages
     // The recent blocks are already formatted — inject as context
@@ -200,11 +207,44 @@ export class ContextManager {
     return this.semanticHistory.size;
   }
 
+  /** Store a tagged output in L2 (e.g. [requirements], [design], [plan:id]). */
+  setTag(tag: string, content: string): void {
+    this.tags.set(tag, content);
+    // Also append tag reference to summary so it persists across evictions
+    if (content) {
+      this.summary = this.summary
+        ? `${this.summary}\n${tag}: (stored)`
+        : `${tag}: (stored)`;
+    }
+  }
+
+  /** Retrieve a tagged output from L2. */
+  getTag(tag: string): string {
+    return this.tags.get(tag) ?? '';
+  }
+
+  /** Check if a tag exists in L2. */
+  hasTag(tag: string): boolean {
+    return this.tags.has(tag) && !!this.tags.get(tag);
+  }
+
+  /** Set the active plan step context for L4 injection. */
+  setActivePlanStep(context: string): void {
+    this.activePlanStepContext = context;
+  }
+
+  /** Get the active plan step context. */
+  getActivePlanStep(): string {
+    return this.activePlanStepContext;
+  }
+
   /** Reset all state (for session restart). */
   reset(): void {
     this.summary = '';
     this.recentTurns.length = 0;
     this.lastEntityIds = [];
+    this.tags.clear();
+    this.activePlanStepContext = '';
     resetSeenCounts();
   }
 }

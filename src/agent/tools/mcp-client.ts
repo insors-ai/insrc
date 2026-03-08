@@ -142,6 +142,61 @@ export async function sessionPrune(): Promise<{ expired: number; capped: number 
 }
 
 // ---------------------------------------------------------------------------
+// Plan graph RPC helpers (Phase 6)
+// ---------------------------------------------------------------------------
+
+import type { Plan, PlanStep, PlanStepStatus } from '../../shared/types.js';
+
+/** Persist a plan and its steps to Kuzu. */
+export async function planSave(plan: Plan): Promise<void> {
+  try { await rpcRaw('plan.save', plan); } catch { /* daemon may be down */ }
+}
+
+/** Fetch a plan by ID or the active plan for a repo. */
+export async function planGet(opts: { planId?: string; repoPath?: string }): Promise<Plan | null> {
+  try {
+    return await rpcRaw<Plan | null>('plan.get', opts);
+  } catch {
+    return null;
+  }
+}
+
+/** Transition a plan step's status. */
+export async function planStepUpdate(
+  stepId: string, status: PlanStepStatus, note?: string,
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    return await rpcRaw('plan.step_update', { stepId, status, note });
+  } catch {
+    return { ok: false, error: 'daemon not available' };
+  }
+}
+
+/** Get next unblocked step for a plan. */
+export async function planNextStep(planId: string): Promise<PlanStep | null> {
+  try {
+    return await rpcRaw<PlanStep | null>('plan.next_step', { planId });
+  } catch {
+    return null;
+  }
+}
+
+/** Delete a plan and all its steps. */
+export async function planDelete(planId: string): Promise<void> {
+  try { await rpcRaw('plan.delete', { planId }); } catch { /* ignore */ }
+}
+
+/** Reset stale in_progress locks to pending (crash recovery). */
+export async function planResetStale(planId: string): Promise<number> {
+  try {
+    const result = await rpcRaw<{ reset: number }>('plan.reset_stale', { planId });
+    return result.reset;
+  } catch {
+    return 0;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // MCP tool calls
 // ---------------------------------------------------------------------------
 

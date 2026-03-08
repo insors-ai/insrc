@@ -9,7 +9,10 @@ import { announceRoute, announceCost, announceOpus, shouldEscalate } from './esc
 import { ClaudeProvider } from './providers/claude.js';
 import { getToolDefinitions } from './tools/registry.js';
 import { runToolLoop } from './tools/loop.js';
-import { ping as pingDaemon, sessionSave, sessionPrune } from './tools/mcp-client.js';
+import { ping as pingDaemon, sessionSave, sessionPrune, planGet, planSave, planStepUpdate, planDelete, planNextStep, planResetStale } from './tools/mcp-client.js';
+import { runRequirementsPipeline } from './tasks/requirements.js';
+import { runDesignPipeline } from './tasks/design.js';
+import { runPlanPipeline } from './tasks/plan.js';
 
 /**
  * Start the interactive agent REPL.
@@ -42,6 +45,15 @@ export async function startRepl(cwd?: string): Promise<void> {
   // Best-effort pruning of expired sessions on start (fire-and-forget)
   void sessionPrune();
 
+  // Reset stale in_progress plan step locks from crashed sessions (fire-and-forget)
+  void (async () => {
+    const plan = await planGet({ repoPath });
+    if (plan?.status === 'active') {
+      const reset = await planResetStale(plan.id);
+      if (reset > 0) console.log(`[agent] reset ${reset} stale plan step lock(s)`);
+    }
+  })();
+
   const ollamaOk = await session.ollamaAvailable;
 
   console.log(`[agent] repo: ${repoPath}`);
@@ -50,7 +62,7 @@ export async function startRepl(cwd?: string): Promise<void> {
   console.log('');
   console.log('Type a message to chat. Prefix with @claude, @opus, @local, or /intent <name> to route.');
   console.log(`[agent] permissions: ${session.permissionMode}`);
-  console.log('Commands: /status, /cost, /forget, /toggle-permissions, /exit');
+  console.log('Commands: /status, /cost, /plan, /forget, /toggle-permissions, /exit');
   console.log('');
 
   // 3. REPL loop
@@ -107,6 +119,14 @@ export async function startRepl(cwd?: string): Promise<void> {
       console.log(`  semantic: ${ctx.getSemanticSize()} stored`);
       console.log(`  summary: ${ctx.getSummary() ? 'yes' : 'none'}`);
       console.log(`  seeded:  ${seeded ? 'yes' : 'no'}`);
+      const activePlan = await planGet({ repoPath });
+      if (activePlan) {
+        const done = activePlan.steps.filter(s => s.status === 'done').length;
+        const total = activePlan.steps.length;
+        console.log(`  plan:    ${activePlan.title} (${done}/${total} done) [${activePlan.status}]`);
+      } else {
+        console.log(`  plan:    none`);
+      }
       rl.prompt();
       return;
     }
@@ -126,6 +146,29 @@ export async function startRepl(cwd?: string): Promise<void> {
     if (raw === '/forget') {
       await session.forget();
       console.log('  All session summaries for this repo deleted from persistent store.');
+      rl.prompt();
+      return;
+    }
+
+    // /plan commands
+    if (raw === '/plan' || raw.startsWith('/plan ')) {
+      const planArg = raw.slice(5).trim();
+      const result = await handlePlanCommand(planArg, session.repoPath);
+      if (result?.startsWith('plan-intent:')) {
+        // /plan <desc> shorthand — treat as plan intent
+        const desc = result.slice('plan-intent:'.length);
+        try {
+          const queryEmbedding = await ctx.embedQuery(desc);
+          const assembled = await ctx.assemble(desc, queryEmbedding);
+          const response = await handlePipelineIntent('plan', desc, assembled.code.text);
+          if (response) { console.log(response); console.log(''); }
+          const turn = { userMessage: desc, assistantResponse: response, entityIds: [] as string[] };
+          await ctx.recordTurn(turn, queryEmbedding);
+          session.turnIndex++;
+        } catch (err) {
+          console.error('\n[error]', err instanceof Error ? err.message : err);
+        }
+      }
       rl.prompt();
       return;
     }
@@ -168,6 +211,27 @@ export async function startRepl(cwd?: string): Promise<void> {
       return;
     }
 
+    // Pipeline intents (requirements, design, plan) — two-stage processing
+    if (['requirements', 'design', 'plan'].includes(classified.intent)) {
+      try {
+        const queryEmbedding = await ctx.embedQuery(classified.message);
+        const assembled = await ctx.assemble(classified.message, queryEmbedding);
+        const codeContext = assembled.code.text;
+        const assistantResponse = await handlePipelineIntent(classified.intent, classified.message, codeContext);
+        if (assistantResponse) {
+          console.log(assistantResponse);
+          console.log('');
+          const turn = { userMessage: classified.message, assistantResponse, entityIds: [] as string[] };
+          await ctx.recordTurn(turn, queryEmbedding);
+          session.turnIndex++;
+        }
+      } catch (err) {
+        console.error('\n[error]', err instanceof Error ? err.message : err);
+      }
+      rl.prompt();
+      return;
+    }
+
     // Cross-session seeding: on the first turn, seed L2 from prior sessions
     if (!seeded) {
       seeded = true;
@@ -177,6 +241,9 @@ export async function startRepl(cwd?: string): Promise<void> {
         console.log('  [context] seeded from prior session');
       }
     }
+
+    // Pre-turn: inject active plan step into L4 context
+    await injectActivePlanStep();
 
     // Embed user message once — shared between L3b retrieval and L4 code search
     const queryEmbedding = await ctx.embedQuery(classified.message);
@@ -283,7 +350,170 @@ export async function startRepl(cwd?: string): Promise<void> {
     rl.prompt();
   });
 
+  // Pre-turn: inject active plan step into L4 context
+  async function injectActivePlanStep(): Promise<void> {
+    const plan = await planGet({ repoPath });
+    if (!plan || plan.status !== 'active') {
+      ctx.setActivePlanStep('');
+      return;
+    }
+    const next = plan.steps.find(s => s.status === 'pending' || s.status === 'in_progress');
+    if (next) {
+      const stepCtx = `Step ${next.idx + 1}/${plan.steps.length}: ${next.title}\n${next.description}\nComplexity: ${next.complexity}${next.checkpoint ? ' (checkpoint — test before continuing)' : ''}`;
+      ctx.setActivePlanStep(stepCtx);
+    } else {
+      ctx.setActivePlanStep('');
+    }
+  }
+
+  // Handle pipeline intents (requirements, design, plan)
+  async function handlePipelineIntent(
+    intent: string,
+    message: string,
+    codeContext: string,
+  ): Promise<string> {
+    if (intent === 'requirements') {
+      if (!session.claudeProvider) {
+        return '[error] Requirements pipeline requires Claude. Set ANTHROPIC_API_KEY.';
+      }
+      console.log('  [pipeline] Running requirements pipeline (local sketch → Claude enhance)...');
+      const result = await runRequirementsPipeline(
+        message, codeContext, session.ollamaProvider, session.claudeProvider,
+      );
+      ctx.setTag('[requirements]', result.enhanced);
+      return result.enhanced;
+    }
+
+    if (intent === 'design') {
+      if (!session.claudeProvider) {
+        return '[error] Design pipeline requires Claude. Set ANTHROPIC_API_KEY.';
+      }
+      const reqContext = ctx.getTag('[requirements]');
+      console.log('  [pipeline] Running design pipeline (local sketch → Claude enhance)...');
+      if (reqContext) console.log('  [pipeline] Using [requirements] from L2');
+      const result = await runDesignPipeline(
+        message, codeContext, reqContext, session.ollamaProvider, session.claudeProvider,
+      );
+      ctx.setTag('[design]', result.enhanced);
+      return result.enhanced;
+    }
+
+    if (intent === 'plan') {
+      const reqContext = ctx.getTag('[requirements]');
+      const desContext = ctx.getTag('[design]');
+      console.log('  [pipeline] Running plan pipeline...');
+      if (reqContext) console.log('  [pipeline] Using [requirements] from L2');
+      if (desContext) console.log('  [pipeline] Using [design] from L2');
+      if (!reqContext && !desContext) console.log('  [pipeline] No prior requirements/design — running condensed mode');
+
+      const result = await runPlanPipeline(
+        message, repoPath, codeContext, reqContext, desContext,
+        session.ollamaProvider, session.claudeProvider,
+      );
+
+      // Persist plan to Kuzu via daemon
+      await planSave(result.plan);
+      ctx.setTag(result.tag, `Plan: ${result.plan.title}`);
+      console.log(`  [pipeline] Plan saved: ${result.plan.steps.length} steps (id: ${result.plan.id.slice(0, 8)}...)`);
+
+      // Display the plan
+      printPlan(result.plan);
+      return result.enhanced;
+    }
+
+    return '';
+  }
+
   rl.on('close', () => {
     void closeSession().finally(() => process.exit(0));
   });
+}
+
+// ---------------------------------------------------------------------------
+// /plan command handler
+// ---------------------------------------------------------------------------
+
+async function handlePlanCommand(arg: string, repoPath: string): Promise<string | void> {
+  // /plan — view active plan
+  if (!arg) {
+    const plan = await planGet({ repoPath });
+    if (!plan) {
+      console.log('  No active plan for this repo.');
+      return;
+    }
+    printPlan(plan);
+    return;
+  }
+
+  // /plan delete
+  if (arg === 'delete') {
+    const plan = await planGet({ repoPath });
+    if (!plan) {
+      console.log('  No active plan to delete.');
+      return;
+    }
+    await planDelete(plan.id);
+    console.log(`  Plan "${plan.title}" deleted.`);
+    return;
+  }
+
+  // /plan skip
+  if (arg === 'skip') {
+    const plan = await planGet({ repoPath });
+    if (!plan) { console.log('  No active plan.'); return; }
+    const next = plan.steps.find(s => s.status === 'pending' || s.status === 'in_progress');
+    if (!next) { console.log('  No pending steps to skip.'); return; }
+    const result = await planStepUpdate(next.id, 'skipped', 'skipped by user');
+    if (result.ok) {
+      console.log(`  Skipped: ${next.title}`);
+    } else {
+      console.log(`  Error: ${result.error}`);
+    }
+    return;
+  }
+
+  // /plan undo <step-number>
+  if (arg.startsWith('undo')) {
+    const stepNum = parseInt(arg.slice(4).trim(), 10);
+    const plan = await planGet({ repoPath });
+    if (!plan) { console.log('  No active plan.'); return; }
+    if (isNaN(stepNum) || stepNum < 1 || stepNum > plan.steps.length) {
+      console.log(`  Usage: /plan undo <step-number> (1-${plan.steps.length})`);
+      return;
+    }
+    const step = plan.steps[stepNum - 1]!;
+    const result = await planStepUpdate(step.id, 'pending', 'reverted by user');
+    if (result.ok) {
+      console.log(`  Reverted step ${stepNum}: ${step.title} → pending`);
+    } else {
+      console.log(`  Error: ${result.error}`);
+    }
+    return;
+  }
+
+  // /plan <desc> — shorthand for plan intent (not a subcommand)
+  return 'plan-intent:' + arg;
+}
+
+// ---------------------------------------------------------------------------
+// Plan display
+// ---------------------------------------------------------------------------
+
+function printPlan(plan: import('../shared/types.js').Plan): void {
+  const statusIcon: Record<string, string> = {
+    pending: ' ', in_progress: '>', done: 'x', failed: '!', skipped: '-',
+  };
+  console.log(`\n  Plan: ${plan.title} [${plan.status}]`);
+  console.log(`  ${'─'.repeat(60)}`);
+  for (const step of plan.steps) {
+    const icon = statusIcon[step.status] ?? '?';
+    const cp = step.checkpoint ? ' [checkpoint]' : '';
+    const cx = ` (${step.complexity})`;
+    console.log(`  [${icon}] ${step.idx + 1}. ${step.title}${cx}${cp}`);
+    if (step.status === 'failed' && step.notes) {
+      const lastNote = step.notes.split('\n').pop() ?? '';
+      console.log(`      ${lastNote}`);
+    }
+  }
+  console.log('');
 }

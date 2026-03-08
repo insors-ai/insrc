@@ -27,7 +27,10 @@ import {
   saveTurn, closeSession, seedFromPrior, deleteSessionsForRepo, pruneConversations,
   type TurnRecord,
 } from '../db/conversations.js';
-import type { RegisteredRepo, DaemonStatus, Entity } from '../shared/types.js';
+import {
+  savePlan, getPlan, getActivePlan, updateStepState, getNextStep, deletePlan, resetStaleLocks,
+} from '../agent/tasks/plan-store.js';
+import type { RegisteredRepo, DaemonStatus, Entity, Plan, PlanStepStatus } from '../shared/types.js';
 import { basename } from 'node:path';
 
 // ---------------------------------------------------------------------------
@@ -162,6 +165,64 @@ async function main(): Promise<void> {
 
     'session.prune': async () => {
       return pruneConversations(db);
+    },
+
+    // ----- Plan graph (Phase 6) -----
+
+    'plan.save': async (params) => {
+      const plan = params as Plan;
+      await savePlan(db, plan);
+      return { ok: true };
+    },
+
+    'plan.get': async (params) => {
+      const { planId, repoPath } = params as { planId?: string; repoPath?: string };
+      if (planId) return getPlan(db, planId);
+      if (repoPath) return getActivePlan(db, repoPath);
+      return null;
+    },
+
+    'plan.step_update': async (params) => {
+      const { stepId, status, note } = params as {
+        stepId: string; status: PlanStepStatus; note?: string;
+      };
+      return updateStepState(db, stepId, status, note);
+    },
+
+    'plan.next_step': async (params) => {
+      const { planId } = params as { planId: string };
+      return getNextStep(db, planId);
+    },
+
+    'plan.delete': async (params) => {
+      const { planId } = params as { planId: string };
+      await deletePlan(db, planId);
+      return { ok: true };
+    },
+
+    // Underscore aliases — match tool names from registry (LLM tool calls)
+    'plan_get': async (params) => {
+      const { repo } = params as { repo?: string };
+      if (repo) return getActivePlan(db, repo);
+      return null;
+    },
+
+    'plan_step_update': async (params) => {
+      const { step_id, status, note } = params as {
+        step_id: string; status: PlanStepStatus; note?: string;
+      };
+      return updateStepState(db, step_id, status, note);
+    },
+
+    'plan_next_step': async (params) => {
+      const { planId } = params as { planId: string };
+      return getNextStep(db, planId);
+    },
+
+    'plan.reset_stale': async (params) => {
+      const { planId } = params as { planId: string };
+      const count = await resetStaleLocks(db, planId);
+      return { reset: count };
     },
 
     'daemon.shutdown': async () => {

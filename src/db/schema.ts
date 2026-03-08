@@ -30,4 +30,36 @@ export const KUZU_STATEMENTS: string[] = [
   'CREATE REL TABLE IF NOT EXISTS DEPENDS_ON(FROM Entity TO Entity)',
   'CREATE REL TABLE IF NOT EXISTS EXPORTS(FROM Entity TO Entity)',
   'CREATE REL TABLE IF NOT EXISTS REFERENCES(FROM Entity TO Entity)',
+
+  // Plan graph — persistent across sessions, NOT subject to TTL pruning
+  `CREATE NODE TABLE IF NOT EXISTS Plan(
+    id        STRING,
+    repoPath  STRING,
+    title     STRING,
+    status    STRING,
+    createdAt STRING,
+    updatedAt STRING,
+    PRIMARY KEY(id)
+  )`,
+
+  `CREATE NODE TABLE IF NOT EXISTS PlanStep(
+    id          STRING,
+    planId      STRING,
+    idx         INT32,
+    title       STRING,
+    description STRING,
+    checkpoint  BOOLEAN,
+    status      STRING,
+    complexity  STRING,
+    fileHint    STRING,
+    notes       STRING,
+    createdAt   STRING,
+    updatedAt   STRING,
+    startedAt   STRING,
+    doneAt      STRING,
+    PRIMARY KEY(id)
+  )`,
+
+  'CREATE REL TABLE IF NOT EXISTS CONTAINS(FROM Plan TO PlanStep)',
+  'CREATE REL TABLE IF NOT EXISTS STEP_DEPENDS_ON(FROM PlanStep TO PlanStep)',
 ];

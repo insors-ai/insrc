@@ -222,3 +222,39 @@ export interface DaemonStatus {
   modelPullStatus?:  'pulling' | 'ready';
   modelPullPct?:     number;
 }
+
+// ---------------------------------------------------------------------------
+// Plan graph — persistent across sessions
+// ---------------------------------------------------------------------------
+
+export type PlanStepStatus = 'pending' | 'in_progress' | 'done' | 'failed' | 'skipped';
+export type PlanStepComplexity = 'low' | 'medium' | 'high';
+export type PlanStatus = 'active' | 'completed' | 'abandoned';
+
+export interface PlanStep {
+  id:          string;
+  planId:      string;
+  idx:         number;
+  title:       string;
+  description: string;
+  checkpoint:  boolean;
+  status:      PlanStepStatus;
+  complexity:  PlanStepComplexity;
+  fileHint:    string;
+  notes:       string;
+  dependsOn:   string[];   // step IDs this step depends on
+  createdAt:   string;
+  updatedAt:   string;
+  startedAt?:  string | undefined;
+  doneAt?:     string | undefined;
+}
+
+export interface Plan {
+  id:        string;
+  repoPath:  string;
+  title:     string;
+  status:    PlanStatus;
+  steps:     PlanStep[];
+  createdAt: string;
+  updatedAt: string;
+}

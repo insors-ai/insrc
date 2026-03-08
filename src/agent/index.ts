@@ -7,6 +7,9 @@ import { ensureAgentModel } from './lifecycle.js';
 import { classify } from './classifier/index.js';
 import { selectProvider } from './router.js';
 import { announceRoute, announceCost, announceOpus } from './escalation.js';
+import { getToolDefinitions } from './tools/registry.js';
+import { runToolLoop } from './tools/loop.js';
+import { ping as pingDaemon } from './tools/mcp-client.js';
 
 /**
  * Start the interactive agent REPL.
@@ -14,6 +17,11 @@ import { announceRoute, announceCost, announceOpus } from './escalation.js';
 export async function startRepl(cwd?: string): Promise<void> {
   const repoPath = resolve(cwd ?? process.cwd());
   const config = loadConfig();
+
+  // Wire config keys into env for executor tools (WebSearch uses BRAVE_API_KEY)
+  if (config.keys.brave && !process.env['BRAVE_API_KEY']) {
+    process.env['BRAVE_API_KEY'] = config.keys.brave;
+  }
 
   // Pre-flight checks
   console.log('[agent] starting...');
@@ -38,7 +46,8 @@ export async function startRepl(cwd?: string): Promise<void> {
   console.log(`[agent] claude: ${session.hasClaudeKey ? 'configured' : 'not configured (set ANTHROPIC_API_KEY or add to ~/.insrc/config.json)'}`);
   console.log('');
   console.log('Type a message to chat. Prefix with @claude, @opus, @local, or /intent <name> to route.');
-  console.log('Commands: /status, /cost, /exit');
+  console.log(`[agent] permissions: ${session.permissionMode}`);
+  console.log('Commands: /status, /cost, /toggle-permissions, /exit');
   console.log('');
 
   // 3. REPL loop
@@ -81,6 +90,13 @@ export async function startRepl(cwd?: string): Promise<void> {
       return;
     }
 
+    if (raw === '/toggle-permissions') {
+      session.permissionMode = session.permissionMode === 'validate' ? 'auto-accept' : 'validate';
+      console.log(`  permissions: ${session.permissionMode}`);
+      rl.prompt();
+      return;
+    }
+
     // Classify intent and select provider
     const classified = await classify(raw, {
       ctx: {},
@@ -119,18 +135,56 @@ export async function startRepl(cwd?: string): Promise<void> {
       { role: 'user', content: classified.message },
     ];
 
-    // Stream response
-    try {
-      let response = '';
-      for await (const delta of route.provider.stream(messages)) {
-        process.stdout.write(delta);
-        response += delta;
-      }
-      process.stdout.write('\n\n');
+    // Check daemon availability for MCP tools
+    const mcpAvailable = await pingDaemon();
+    const tools = getToolDefinitions({ mcpAvailable });
 
-      // Track history (simple sliding window — L3a will replace in Phase 4)
-      history.push({ role: 'user', content: classified.message });
-      history.push({ role: 'assistant', content: response });
+    // Execute via tool loop (if provider supports tools) or plain stream
+    try {
+      if (route.provider.supportsTools) {
+        const result = await runToolLoop(messages, {
+          provider: route.provider,
+          tools,
+          intent: classified.intent,
+          permissionMode: session.permissionMode,
+          validator: session.claudeProvider ?? undefined,
+          onTextDelta: (delta) => process.stdout.write(delta),
+          onToolCall: (call, validation) => {
+            const status = validation.action === 'rejected'
+              ? `rejected: ${validation.reason}`
+              : validation.action;
+            console.log(`  [tool] ${call.name} → ${status}`);
+          },
+          onToolResult: (call, result) => {
+            const preview = result.content.slice(0, 100).replace(/\n/g, ' ');
+            const suffix = result.content.length > 100 ? '...' : '';
+            console.log(`  [result] ${call.name}: ${preview}${suffix}`);
+          },
+        });
+
+        process.stdout.write('\n\n');
+
+        // Track history
+        history.push({ role: 'user', content: classified.message });
+        for (const msg of result.messages) {
+          history.push(msg);
+        }
+
+        if (result.hitLimit) {
+          console.log('  [warning] Tool loop hit max iterations (25)');
+        }
+      } else {
+        // Fallback: plain streaming (no tool use)
+        let response = '';
+        for await (const delta of route.provider.stream(messages)) {
+          process.stdout.write(delta);
+          response += delta;
+        }
+        process.stdout.write('\n\n');
+
+        history.push({ role: 'user', content: classified.message });
+        history.push({ role: 'assistant', content: response });
+      }
 
       // Keep last 10 turns (20 messages) to stay within context limits
       while (history.length > 20) {

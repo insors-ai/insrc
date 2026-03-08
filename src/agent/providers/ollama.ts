@@ -32,6 +32,12 @@ export class OllamaProvider implements LLMProvider {
     const tools = opts.tools ? toOllamaTools(opts.tools) : undefined;
 
     try {
+      // When onToken is provided, stream text token-by-token while
+      // still collecting tool calls for the structured response.
+      if (opts.onToken) {
+        return await this.completeStreaming(ollamaMessages, tools, opts);
+      }
+
       const response = await this.client.chat({
         model: this.model,
         messages: ollamaMessages,
@@ -52,6 +58,44 @@ export class OllamaProvider implements LLMProvider {
     } catch (err) {
       throw wrapOllamaError(err);
     }
+  }
+
+  private async completeStreaming(
+    ollamaMessages: OllamaMessage[],
+    tools: OllamaTool[] | undefined,
+    opts: CompletionOpts,
+  ): Promise<LLMResponse> {
+    const response = await this.client.chat({
+      model: this.model,
+      messages: ollamaMessages,
+      ...(tools ? { tools } : {}),
+      stream: true,
+      options: {
+        num_predict: opts.maxTokens ?? 8_192,
+        ...(opts.temperature !== undefined ? { temperature: opts.temperature } : {}),
+      },
+    });
+
+    let text = '';
+    let allToolCalls: OllamaToolCall[] = [];
+
+    for await (const chunk of response) {
+      if (chunk.message.content) {
+        text += chunk.message.content;
+        opts.onToken!(chunk.message.content);
+      }
+      if (chunk.message.tool_calls) {
+        allToolCalls = allToolCalls.concat(chunk.message.tool_calls as OllamaToolCall[]);
+      }
+    }
+
+    const toolCalls = parseToolCalls(allToolCalls.length > 0 ? allToolCalls : undefined);
+
+    return {
+      text,
+      toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
+      stopReason: toolCalls.length > 0 ? 'tool_use' : 'end_turn',
+    };
   }
 
   async *stream(messages: LLMMessage[], opts: CompletionOpts = {}): AsyncIterable<string> {

@@ -37,6 +37,8 @@ export interface CompletionOpts {
   maxTokens?: number;
   temperature?: number;
   tools?: ToolDefinition[] | undefined;
+  /** If provided, text tokens are streamed via this callback during complete(). */
+  onToken?: ((token: string) => void) | undefined;
 }
 
 export interface LLMProvider {

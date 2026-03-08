@@ -17,6 +17,9 @@ export class Session {
   turnIndex = 0;
   closureRepos: string[] = [];
 
+  /** Runtime permission mode — can be toggled with /toggle-permissions */
+  permissionMode: 'validate' | 'auto-accept';
+
   /** Exposed for the router — do not use directly for LLM calls. */
   readonly ollamaProvider: OllamaProvider;
   /** Exposed for the router — null when no API key is configured. */
@@ -26,6 +29,8 @@ export class Session {
     this.id = randomUUID();
     this.repoPath = opts.repoPath;
     this.config = opts.config;
+
+    this.permissionMode = opts.config.permissions.mode;
 
     this.ollamaProvider = new OllamaProvider(
       opts.config.models.local,

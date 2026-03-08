@@ -15,6 +15,9 @@ import { runDesignPipeline } from './tasks/design.js';
 import { runPlanPipeline } from './tasks/plan.js';
 import { runImplementPipeline } from './tasks/implement.js';
 import { runRefactorPipeline } from './tasks/refactor.js';
+import { runTestPipeline } from './tasks/test.js';
+import { runDebugPipeline } from './tasks/debug.js';
+import { findTestFile } from './tasks/test-runner.js';
 
 /**
  * Start the interactive agent REPL.
@@ -214,7 +217,7 @@ export async function startRepl(cwd?: string): Promise<void> {
     }
 
     // Pipeline intents (requirements, design, plan, implement, refactor) — two-stage processing
-    if (['requirements', 'design', 'plan', 'implement', 'refactor'].includes(classified.intent)) {
+    if (['requirements', 'design', 'plan', 'implement', 'refactor', 'test', 'debug'].includes(classified.intent)) {
       try {
         const queryEmbedding = await ctx.embedQuery(classified.message);
         const assembled = await ctx.assemble(classified.message, queryEmbedding);
@@ -463,6 +466,76 @@ export async function startRepl(cwd?: string): Promise<void> {
       }
 
       return `Refactoring failed: ${result.feedback}`;
+    }
+
+    if (intent === 'test') {
+      const planStepCtx = ctx.getActivePlanStep();
+      console.log('  [pipeline] Running test pipeline (generate → validate → execute → fix loop)...');
+      if (planStepCtx) console.log('  [pipeline] Active plan step injected');
+
+      // Try to find the test file from the message or infer from context
+      // For now, use a heuristic: look for file paths in the message
+      const fileMatch = message.match(/(?:test|spec)\s+(\S+\.\w+)/i)
+        ?? message.match(/(\S+\.(?:test|spec)\.\w+)/i);
+      let testFilePath = fileMatch?.[1] ?? '';
+
+      // If no explicit test file, try to infer from entity context
+      if (!testFilePath && codeContext) {
+        const srcFileMatch = codeContext.match(/(?:File|file):\s*(\S+)/);
+        if (srcFileMatch) {
+          const found = await findTestFile(srcFileMatch[1]!, repoPath);
+          testFilePath = found ?? srcFileMatch[1]!.replace(/\.(\w+)$/, '.test.$1');
+        }
+      }
+
+      if (!testFilePath) {
+        testFilePath = 'test.ts'; // fallback
+      }
+
+      // Make absolute if relative
+      if (!testFilePath.startsWith('/')) {
+        testFilePath = `${repoPath}/${testFilePath}`;
+      }
+
+      const result = await runTestPipeline(
+        message, testFilePath, codeContext, repoPath, planStepCtx,
+        session.ollamaProvider, session.claudeProvider,
+      );
+
+      if (result.needsUserDecision) {
+        return `Tests need your review:\n\n${result.message}\n\nReply with "accept" to keep current state, "discard" to revert, or provide corrections.`;
+      }
+
+      if (result.passed) {
+        return `${result.message}\n\nFiles:\n${result.filesWritten.map(f => `  - ${f}`).join('\n')}`;
+      }
+
+      return `Test pipeline completed: ${result.message}`;
+    }
+
+    if (intent === 'debug') {
+      const planStepCtx = ctx.getActivePlanStep();
+      const mcpUp = await pingDaemon();
+      console.log('  [pipeline] Running debug pipeline (tool loop → stuck escalation → fix)...');
+      if (planStepCtx) console.log('  [pipeline] Active plan step injected');
+
+      const result = await runDebugPipeline(
+        message, repoPath, codeContext, planStepCtx,
+        session.ollamaProvider, session.claudeProvider,
+        console.log,
+        session.permissionMode,
+        mcpUp,
+      );
+
+      if (result.needsUserDecision) {
+        return `Debug session needs your input:\n\n${result.message}`;
+      }
+
+      if (result.fixed) {
+        return `${result.message}\n\nFiles:\n${result.filesWritten.map(f => `  - ${f}`).join('\n')}`;
+      }
+
+      return `Debug session completed: ${result.message}`;
     }
 
     return '';

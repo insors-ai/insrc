@@ -1,5 +1,5 @@
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
-import { dirname } from 'node:path';
+import { dirname, resolve, isAbsolute } from 'node:path';
 
 // ---------------------------------------------------------------------------
 // Unified Diff Utilities
@@ -245,8 +245,15 @@ export async function applyDiff(
 function resolveFilePath(fileDiff: FileDiff, basePath: string): string {
   const relPath = fileDiff.isNew ? fileDiff.newPath : fileDiff.oldPath;
   // If path is already absolute, use it directly
-  if (relPath.startsWith('/')) return relPath;
-  return `${basePath}/${relPath}`;
+  if (isAbsolute(relPath)) return relPath;
+  // LLMs sometimes emit absolute paths after a/ prefix (e.g. --- a/tmp/foo/src/x.ts when
+  // basePath is /tmp/foo). After stripping a/, the path looks relative but already contains
+  // the basePath sans leading /. Detect this and treat as absolute.
+  const baseWithoutSlash = basePath.startsWith('/') ? basePath.slice(1) : basePath;
+  if (baseWithoutSlash && relPath.startsWith(baseWithoutSlash)) {
+    return '/' + relPath;
+  }
+  return resolve(basePath, relPath);
 }
 
 /**

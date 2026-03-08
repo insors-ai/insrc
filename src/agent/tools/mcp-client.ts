@@ -197,6 +197,48 @@ export async function planResetStale(planId: string): Promise<number> {
 }
 
 // ---------------------------------------------------------------------------
+// Re-index RPC helper (Phase 7)
+// ---------------------------------------------------------------------------
+
+/** Request the daemon to re-index a single file (enqueue a file job). */
+export async function reindexFile(filePath: string): Promise<void> {
+  try { await rpcRaw('index.file', { filePath, event: 'update' }); } catch { /* daemon may be down */ }
+}
+
+// ---------------------------------------------------------------------------
+// Graph context helpers (Phase 7 — gaps 1-3)
+// ---------------------------------------------------------------------------
+
+import type { Entity } from '../../shared/types.js';
+
+/** Get all entities in a specific file from LanceDB. */
+export async function searchByFile(filePath: string): Promise<Entity[]> {
+  try {
+    return await rpcRaw<Entity[]>('search.by_file', { filePath });
+  } catch {
+    return [];
+  }
+}
+
+/** Get callers of an entity up to N hops. */
+export async function searchCallersNhop(entityId: string, hops = 1): Promise<Entity[]> {
+  try {
+    return await rpcRaw<Entity[]>('search.callers_nhop', { entityId, hops });
+  } catch {
+    return [];
+  }
+}
+
+/** Get callees of an entity (1-hop). */
+export async function searchCallees(entityId: string): Promise<Entity[]> {
+  try {
+    return await rpcRaw<Entity[]>('search.callees', { entityId });
+  } catch {
+    return [];
+  }
+}
+
+// ---------------------------------------------------------------------------
 // MCP tool calls
 // ---------------------------------------------------------------------------
 

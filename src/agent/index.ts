@@ -13,6 +13,8 @@ import { ping as pingDaemon, sessionSave, sessionPrune, planGet, planSave, planS
 import { runRequirementsPipeline } from './tasks/requirements.js';
 import { runDesignPipeline } from './tasks/design.js';
 import { runPlanPipeline } from './tasks/plan.js';
+import { runImplementPipeline } from './tasks/implement.js';
+import { runRefactorPipeline } from './tasks/refactor.js';
 
 /**
  * Start the interactive agent REPL.
@@ -211,8 +213,8 @@ export async function startRepl(cwd?: string): Promise<void> {
       return;
     }
 
-    // Pipeline intents (requirements, design, plan) — two-stage processing
-    if (['requirements', 'design', 'plan'].includes(classified.intent)) {
+    // Pipeline intents (requirements, design, plan, implement, refactor) — two-stage processing
+    if (['requirements', 'design', 'plan', 'implement', 'refactor'].includes(classified.intent)) {
       try {
         const queryEmbedding = await ctx.embedQuery(classified.message);
         const assembled = await ctx.assemble(classified.message, queryEmbedding);
@@ -366,7 +368,7 @@ export async function startRepl(cwd?: string): Promise<void> {
     }
   }
 
-  // Handle pipeline intents (requirements, design, plan)
+  // Handle pipeline intents (requirements, design, plan, implement, refactor)
   async function handlePipelineIntent(
     intent: string,
     message: string,
@@ -419,6 +421,48 @@ export async function startRepl(cwd?: string): Promise<void> {
       // Display the plan
       printPlan(result.plan);
       return result.enhanced;
+    }
+
+    if (intent === 'implement') {
+      const planStepCtx = ctx.getActivePlanStep();
+      console.log('  [pipeline] Running implement pipeline (local diff → Claude validate)...');
+      if (planStepCtx) console.log('  [pipeline] Active plan step injected');
+
+      const result = await runImplementPipeline(
+        message, repoPath, codeContext, planStepCtx,
+        session.ollamaProvider, session.claudeProvider,
+      );
+
+      if (result.needsUserDecision) {
+        return `Implementation needs your review:\n\n\`\`\`diff\n${result.diff}\n\`\`\`\n\nFeedback from validation:\n${result.feedback}\n\nReply with "accept" to apply, or provide corrections.`;
+      }
+
+      if (result.accepted) {
+        return `Implementation applied (${result.filesWritten.length} file(s) written, ${result.retries} retries).\n\nFiles:\n${result.filesWritten.map(f => `  - ${f}`).join('\n')}`;
+      }
+
+      return `Implementation failed: ${result.feedback}`;
+    }
+
+    if (intent === 'refactor') {
+      const planStepCtx = ctx.getActivePlanStep();
+      console.log('  [pipeline] Running refactor pipeline (local diff → Claude validate)...');
+      if (planStepCtx) console.log('  [pipeline] Active plan step injected');
+
+      const result = await runRefactorPipeline(
+        message, repoPath, codeContext, planStepCtx,
+        session.ollamaProvider, session.claudeProvider,
+      );
+
+      if (result.needsUserDecision) {
+        return `Refactoring needs your review:\n\n\`\`\`diff\n${result.diff}\n\`\`\`\n\nFeedback from validation:\n${result.feedback}\n\nReply with "accept" to apply, or provide corrections.`;
+      }
+
+      if (result.accepted) {
+        return `Refactoring applied (${result.filesWritten.length} file(s) written, ${result.retries} retries).\n\nFiles:\n${result.filesWritten.map(f => `  - ${f}`).join('\n')}`;
+      }
+
+      return `Refactoring failed: ${result.feedback}`;
     }
 
     return '';

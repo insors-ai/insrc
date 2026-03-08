@@ -21,7 +21,7 @@ import { IndexQueue } from './queue.js';
 import { IndexerService } from '../indexer/index.js';
 import { IpcServer } from './server.js';
 import { writePid, clearPid, isAlreadyRunning, bootstrapEmbeddingModel, getModelState } from './lifecycle.js';
-import { resolveClosure, searchEntities, findCallers, findCallees } from '../db/search.js';
+import { resolveClosure, searchEntities, findCallers, findCallees, findDefinedIn } from '../db/search.js';
 import { embedQuery } from '../indexer/embedder.js';
 import {
   saveTurn, closeSession, seedFromPrior, deleteSessionsForRepo, pruneConversations,
@@ -134,6 +134,53 @@ async function main(): Promise<void> {
       return findCallees(db, entityId) as Promise<Entity[]>;
     },
 
+    // ----- Graph context helpers (Phase 7) -----
+
+    'search.by_file': async (params) => {
+      const { filePath } = params as { filePath: string };
+      // Search LanceDB for all entities in this file
+      const table = await (async () => {
+        const names = await db.lance.tableNames();
+        if (!names.includes('entities')) return null;
+        return db.lance.openTable('entities');
+      })();
+      if (!table) return [];
+      const rows = await table.query()
+        .where(`file = '${filePath.replace(/'/g, "''")}'`)
+        .toArray();
+      return rows as Entity[];
+    },
+
+    'search.callers_nhop': async (params) => {
+      const { entityId, hops } = params as { entityId: string; hops?: number };
+      const maxHops = Math.min(hops ?? 1, 3); // cap at 3 to prevent explosion
+      // For 1-hop, use the existing findCallers
+      if (maxHops <= 1) return findCallers(db, entityId) as Promise<Entity[]>;
+
+      // Multi-hop: BFS caller traversal
+      const seen = new Set<string>();
+      let frontier = [entityId];
+      const allCallers: Entity[] = [];
+
+      for (let hop = 0; hop < maxHops && frontier.length > 0; hop++) {
+        const nextFrontier: string[] = [];
+        for (const eid of frontier) {
+          if (seen.has(eid)) continue;
+          seen.add(eid);
+          const callers = await findCallers(db, eid);
+          for (const c of callers) {
+            if (!seen.has(c.id)) {
+              allCallers.push(c);
+              nextFrontier.push(c.id);
+            }
+          }
+        }
+        frontier = nextFrontier;
+      }
+
+      return allCallers;
+    },
+
     // ----- Session lifecycle (Phase 5) -----
 
     'session.save': async (params) => {
@@ -223,6 +270,14 @@ async function main(): Promise<void> {
       const { planId } = params as { planId: string };
       const count = await resetStaleLocks(db, planId);
       return { reset: count };
+    },
+
+    // ----- File re-index (Phase 7) -----
+
+    'index.file': async (params) => {
+      const { filePath, event } = params as { filePath: string; event?: 'create' | 'update' | 'delete' };
+      queue.enqueue({ kind: 'file', filePath, event: event ?? 'update' });
+      return { ok: true };
     },
 
     'daemon.shutdown': async () => {

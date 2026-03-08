@@ -204,6 +204,17 @@ const MCP_TOOLS: ToolDefinition[] = [
       required: ['step_id', 'status'],
     },
   },
+  {
+    name: 'plan_next_step',
+    description: 'Get the next unblocked step for a plan (first pending step with all dependencies satisfied).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        planId: { type: 'string', description: 'Plan ID' },
+      },
+      required: ['planId'],
+    },
+  },
 ];
 
 // ---------------------------------------------------------------------------

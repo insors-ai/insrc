@@ -952,6 +952,367 @@ const queryVec = await ollama.embed({ model: 'qwen3-embedding:0.6b', input: quer
     </div>
   </div>
 
+  <hr />
+
+  <h2>V2 &mdash; Document Indexing &amp; Traceability</h2>
+
+  <p>
+    V1 indexes <em>code</em> &mdash; functions, classes, interfaces, imports, and call graphs.
+    V2 extends the knowledge graph to <strong>non-code artifacts</strong>: requirements documents,
+    design documents, ADRs (Architecture Decision Records), READMEs, changelogs, and other prose
+    that lives alongside code. The goal is <strong>traceability</strong> &mdash; answering questions like
+    <em>&ldquo;which code implements REQ-042?&rdquo;</em> or <em>&ldquo;which requirements are affected
+    if I refactor this module?&rdquo;</em>
+  </p>
+
+  <h3>Goals</h3>
+  <ul>
+    <li>Index Markdown (<code>.md</code>) and HTML (<code>.html</code>) documents in repo scope</li>
+    <li>Extract structured entities: requirements, design decisions, sections, diagrams</li>
+    <li>Build traceability edges linking document entities to code entities</li>
+    <li>Support semantic search across both code and documents in a single query</li>
+    <li>Incremental &mdash; document re-indexing follows the same watcher &rarr; parser &rarr; embedder pipeline</li>
+  </ul>
+
+  <h3>Non-Goals (V2)</h3>
+  <ul>
+    <li>Indexing binary formats (PDF, DOCX, images) &mdash; text-based only</li>
+    <li>Auto-generating traceability from natural language (LLM-assisted linking is a V3 concern)</li>
+    <li>Version-diffing documents &mdash; we index the current state, not the history</li>
+  </ul>
+
+  <h3>Document Discovery</h3>
+  <p>
+    The watcher already monitors the full repo tree. V2 adds document file extensions to the
+    parser registry so they flow through the existing pipeline.
+  </p>
+
+  <table>
+    <thead><tr><th>Pattern</th><th>Format</th><th>Parser</th></tr></thead>
+    <tbody>
+      <tr><td><code>**/*.md</code>, <code>**/*.mdx</code></td><td>Markdown</td><td><code>parser/markdown.ts</code></td></tr>
+      <tr><td><code>**/*.html</code>, <code>**/*.htm</code></td><td>HTML</td><td><code>parser/html.ts</code></td></tr>
+      <tr><td><code>**/*.adoc</code></td><td>AsciiDoc</td><td><code>parser/asciidoc.ts</code> (future)</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout info">
+    <strong>Convention-based detection.</strong> Files in directories named <code>docs/</code>,
+    <code>design/</code>, <code>requirements/</code>, <code>specs/</code>, or <code>adr/</code>
+    are tagged with a <code>docCategory</code> metadata field automatically. Files named
+    <code>README.md</code>, <code>CHANGELOG.md</code>, or <code>ADR-*.md</code> are also
+    auto-categorized regardless of directory.
+  </div>
+
+  <h3>New Entity Kinds</h3>
+
+  <p>V2 adds the following entity kinds to the <code>EntityKind</code> union:</p>
+
+  <pre><code>EntityKind += 'document' | 'section' | 'requirement' | 'decision'</code></pre>
+
+  <h4>Document</h4>
+  <pre><code>Document extends Base {
+  kind:         'document'
+  format:       'markdown' | 'html' | 'asciidoc'
+  docCategory:  'requirements' | 'design' | 'adr' | 'readme' | 'changelog' | 'guide' | 'other'
+  title:        string          -- extracted from first h1 / &lt;title&gt;
+  frontmatter:  Record&lt;string, string&gt;  -- YAML frontmatter (MD) or &lt;meta&gt; tags (HTML)
+}</code></pre>
+
+  <h4>Section</h4>
+  <pre><code>Section extends Base {
+  kind:       'section'
+  level:      number        -- heading level (1-6)
+  heading:    string        -- heading text
+  parentId:   string | null -- parent section id (for nesting)
+  documentId: string        -- owning document id
+}</code></pre>
+
+  <h4>Requirement</h4>
+  <pre><code>Requirement extends Base {
+  kind:       'requirement'
+  reqId:      string         -- extracted identifier, e.g. "REQ-042", "FR-7"
+  priority:   'must' | 'should' | 'could' | 'won't' | null
+  status:     'draft' | 'approved' | 'implemented' | 'verified' | null
+  sectionId:  string         -- section where this requirement appears
+  documentId: string
+}</code></pre>
+
+  <div class="callout">
+    <strong>Requirement ID extraction.</strong> The parser looks for identifiers matching
+    configurable patterns (default: <code>/\b(REQ|FR|NFR|UC|US|SR|TR)-\d+\b/</code>).
+    Users can extend patterns in <code>config.json</code> under
+    <code>indexer.requirementPatterns</code>.
+  </div>
+
+  <h4>Decision (ADR)</h4>
+  <pre><code>Decision extends Base {
+  kind:       'decision'
+  adrId:      string | null   -- e.g. "ADR-003"
+  status:     'proposed' | 'accepted' | 'deprecated' | 'superseded' | null
+  supersedes: string | null   -- id of the decision this one replaces
+  documentId: string
+}</code></pre>
+
+  <h3>New Relation (Edge) Types</h3>
+
+  <table>
+    <thead><tr><th>Relation</th><th>From</th><th>To</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><code>CONTAINS_SECTION</code></td><td>Document</td><td>Section</td><td>Document &rarr; top-level sections; Section &rarr; child sections</td></tr>
+      <tr><td><code>CONTAINS_REQUIREMENT</code></td><td>Section</td><td>Requirement</td><td>Section that contains the requirement definition</td></tr>
+      <tr><td><code>CONTAINS_DECISION</code></td><td>Document</td><td>Decision</td><td>ADR document &rarr; decision record</td></tr>
+      <tr><td><code>TRACES_TO</code></td><td>Requirement | Decision</td><td>Function | Class | File | Module</td><td>Explicit traceability link from doc to code</td></tr>
+      <tr><td><code>SATISFIES</code></td><td>Function | Class | File</td><td>Requirement</td><td>Code entity claims to satisfy a requirement</td></tr>
+      <tr><td><code>REFERENCES_DOC</code></td><td>File</td><td>Document | Section | Requirement</td><td>Code file references a document (via comment markers)</td></tr>
+      <tr><td><code>SUPERSEDES</code></td><td>Decision</td><td>Decision</td><td>ADR supersession chain</td></tr>
+      <tr><td><code>RELATED_TO</code></td><td>Requirement | Decision</td><td>Requirement | Decision</td><td>Cross-references between document entities</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Traceability Link Sources</h3>
+  <p>
+    Traceability edges are established from multiple sources, in priority order:
+  </p>
+
+  <h4>1. Explicit markers in code comments</h4>
+  <p>Developers annotate code with structured comments that the parser extracts:</p>
+  <pre><code>// @req REQ-042  &mdash; implements the retry backoff logic
+// @adr ADR-003  &mdash; chosen approach: exponential backoff
+export async function retryWithBackoff(...) { ... }
+
+# @req FR-7 &mdash; user authentication flow
+def authenticate(user: str, password: str) -> Token: ...</code></pre>
+  <p>
+    The code parser (TS/Python/Go) scans comments for <code>@req &lt;ID&gt;</code> and
+    <code>@adr &lt;ID&gt;</code> markers, emitting <code>SATISFIES</code> / <code>REFERENCES_DOC</code>
+    edges to the matching Requirement or Decision node.
+  </p>
+
+  <h4>2. Explicit links in documents</h4>
+  <p>Documents reference code entities using a link syntax:</p>
+  <pre><code>## REQ-042: Retry Logic
+
+Implemented in `src/network/retry.ts::retryWithBackoff`.
+See also [retry.ts](../src/network/retry.ts).
+
+&lt;!-- @traces src/network/retry.ts:retryWithBackoff --&gt;</code></pre>
+  <p>
+    The document parser extracts:
+  </p>
+  <ul>
+    <li><code>&lt;!-- @traces file:entity --&gt;</code> HTML comments &rarr; <code>TRACES_TO</code> edge</li>
+    <li>Inline code spans matching known entity names &rarr; candidate <code>TRACES_TO</code> edges (confidence-scored)</li>
+    <li>Relative file links (<code>[text](path)</code>) &rarr; <code>TRACES_TO</code> edge to File node</li>
+  </ul>
+
+  <h4>3. Convention-based matching</h4>
+  <p>
+    When a requirement ID (e.g. <code>REQ-042</code>) appears in a code comment without an explicit
+    <code>@req</code> marker, the resolver emits a lower-confidence <code>REFERENCES_DOC</code> edge.
+    These edges are flagged as <code>confidence: 'inferred'</code> vs explicit markers which are
+    <code>confidence: 'explicit'</code>.
+  </p>
+
+  <h3>Document Parsing Pipeline</h3>
+
+  <svg viewBox="0 0 760 215" width="100%" xmlns="http://www.w3.org/2000/svg" style="margin: 0.75rem 0; display: block;">
+    <defs>
+      <marker id="doc-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+        <polygon points="0 0, 8 3, 0 6" fill="#4fc3f7"/>
+      </marker>
+    </defs>
+    <rect width="760" height="215" rx="8" fill="#12151e" stroke="#2a2d3a" stroke-width="1"/>
+    <text x="380" y="26" text-anchor="middle" fill="#7c6af7" font-family="system-ui,sans-serif" font-size="11" font-weight="600" letter-spacing="1">DOCUMENT PIPELINE (V2)</text>
+    <!-- MD/HTML file -->
+    <rect x="10" y="42" width="135" height="68" rx="6" fill="#1a1d27" stroke="#7c6af7" stroke-width="1.5"/>
+    <text x="77" y="68" text-anchor="middle" fill="#e2e4ed" font-family="system-ui,sans-serif" font-size="12" font-weight="600">Watcher</text>
+    <text x="77" y="85" text-anchor="middle" fill="#8b8fa8" font-family="system-ui,sans-serif" font-size="9">.md / .html events</text>
+    <line x1="145" y1="76" x2="175" y2="76" stroke="#4fc3f7" stroke-width="1.5" marker-end="url(#doc-arr)"/>
+    <!-- Doc Parser -->
+    <rect x="175" y="42" width="145" height="68" rx="6" fill="#1a1d27" stroke="#7c6af7" stroke-width="1.5"/>
+    <text x="247" y="68" text-anchor="middle" fill="#e2e4ed" font-family="system-ui,sans-serif" font-size="12" font-weight="600">Doc Parser</text>
+    <text x="247" y="85" text-anchor="middle" fill="#8b8fa8" font-family="system-ui,sans-serif" font-size="9">headings, IDs, links</text>
+    <line x1="320" y1="76" x2="350" y2="76" stroke="#4fc3f7" stroke-width="1.5" marker-end="url(#doc-arr)"/>
+    <!-- Trace Resolver -->
+    <rect x="350" y="42" width="155" height="68" rx="6" fill="#1a1d27" stroke="#7c6af7" stroke-width="1.5"/>
+    <text x="427" y="68" text-anchor="middle" fill="#e2e4ed" font-family="system-ui,sans-serif" font-size="12" font-weight="600">Trace Resolver</text>
+    <text x="427" y="85" text-anchor="middle" fill="#8b8fa8" font-family="system-ui,sans-serif" font-size="9">match IDs &#x2194; code nodes</text>
+    <line x1="505" y1="76" x2="535" y2="76" stroke="#4fc3f7" stroke-width="1.5" marker-end="url(#doc-arr)"/>
+    <!-- Embedder -->
+    <rect x="535" y="42" width="100" height="68" rx="6" fill="#1a1d27" stroke="#7c6af7" stroke-width="1.5"/>
+    <text x="585" y="68" text-anchor="middle" fill="#e2e4ed" font-family="system-ui,sans-serif" font-size="12" font-weight="600">Embedder</text>
+    <text x="585" y="85" text-anchor="middle" fill="#8b8fa8" font-family="system-ui,sans-serif" font-size="9">section vectors</text>
+    <line x1="635" y1="76" x2="655" y2="76" stroke="#4fc3f7" stroke-width="1.5" marker-end="url(#doc-arr)"/>
+    <!-- DB -->
+    <rect x="655" y="42" width="90" height="68" rx="6" fill="#1a1d27" stroke="#4caf7d" stroke-width="1.5"/>
+    <text x="700" y="68" text-anchor="middle" fill="#e2e4ed" font-family="system-ui,sans-serif" font-size="11" font-weight="600">Kuzu</text>
+    <text x="700" y="85" text-anchor="middle" fill="#8b8fa8" font-family="system-ui,sans-serif" font-size="9">+ LanceDB</text>
+    <!-- Code parser feedback arrow -->
+    <rect x="350" y="140" width="155" height="55" rx="6" fill="#1a1d27" stroke="#f5c842" stroke-width="1.5"/>
+    <text x="427" y="163" text-anchor="middle" fill="#e2e4ed" font-family="system-ui,sans-serif" font-size="12" font-weight="600">Code Parser</text>
+    <text x="427" y="178" text-anchor="middle" fill="#8b8fa8" font-family="system-ui,sans-serif" font-size="9">@req / @adr markers</text>
+    <line x1="427" y1="140" x2="427" y2="110" stroke="#f5c842" stroke-width="1.5" marker-end="url(#doc-arr)"/>
+  </svg>
+
+  <table>
+    <thead><tr><th>Component</th><th>Responsibility</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Doc Parser</strong></td><td>Parse MD (via <code>mdast</code>) or HTML (via <code>rehype</code>) into heading tree; extract requirement IDs, decision records, frontmatter, and link targets</td></tr>
+      <tr><td><strong>Trace Resolver</strong></td><td>Match extracted IDs and file references against known code entities in the graph; emit traceability edges with confidence scores</td></tr>
+      <tr><td><strong>Code Parser (extended)</strong></td><td>Existing code parsers gain a comment-scanning pass that extracts <code>@req</code> / <code>@adr</code> markers and emits reverse traceability edges</td></tr>
+      <tr><td><strong>Embedder</strong></td><td>Same Ollama embedder; embeds section body text for semantic search across code + docs</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Markdown Parser Details</h3>
+  <p>
+    The Markdown parser uses <code>mdast-util-from-markdown</code> (or <code>unified</code> + <code>remark-parse</code>)
+    to produce an AST, then walks the tree:
+  </p>
+  <ul>
+    <li><strong>Headings</strong> &rarr; <code>Section</code> entities, nested by level. Each section&rsquo;s
+      <code>body</code> is the text content under the heading (used for embedding).</li>
+    <li><strong>Requirement IDs</strong> &rarr; scanned from heading text and body text via configurable regex.
+      Creates <code>Requirement</code> entity linked to the containing section.</li>
+    <li><strong>Links</strong> &rarr; relative links (<code>[text](./path)</code>) resolved to File entities.
+      External URLs are ignored.</li>
+    <li><strong>HTML comments</strong> &rarr; <code>&lt;!-- @traces file:entity --&gt;</code> parsed for explicit traceability.</li>
+    <li><strong>Frontmatter</strong> &rarr; YAML block at top of file parsed for metadata fields
+      (<code>title</code>, <code>status</code>, <code>priority</code>, <code>tags</code>).</li>
+    <li><strong>Code fences</strong> &rarr; inline code spans matching known entity names
+      (e.g. <code>`retryWithBackoff`</code>) produce candidate trace edges.</li>
+  </ul>
+
+  <h3>HTML Parser Details</h3>
+  <p>
+    The HTML parser uses <code>rehype-parse</code> to produce a <code>hast</code> tree:
+  </p>
+  <ul>
+    <li><strong>Headings</strong> (<code>&lt;h1&gt;</code>&ndash;<code>&lt;h6&gt;</code>) &rarr; <code>Section</code> entities, same nesting logic as MD.</li>
+    <li><strong>&lt;title&gt;</strong> and <code>&lt;meta&gt;</code> tags &rarr; <code>Document</code> metadata.</li>
+    <li><strong>HTML comments</strong> &rarr; same <code>@traces</code> / <code>@req</code> marker extraction.</li>
+    <li><strong>&lt;a href&gt;</strong> &rarr; relative links resolved to File entities.</li>
+    <li><strong>&lt;code&gt;</strong> spans &rarr; candidate entity name matching.</li>
+  </ul>
+
+  <h3>Embedding Strategy for Documents</h3>
+  <p>
+    Documents are embedded at <strong>section granularity</strong>, not whole-document.
+    Each <code>Section</code> entity gets its own embedding vector, enabling fine-grained
+    semantic search that can return &ldquo;the specific section about retry logic&rdquo; rather
+    than an entire 200-line design doc.
+  </p>
+  <ul>
+    <li>Section body text is cleaned (strip markdown syntax, HTML tags) before embedding.</li>
+    <li>Sections shorter than 50 characters are merged with their parent section&rsquo;s embedding.</li>
+    <li><code>Requirement</code> and <code>Decision</code> entities get their own embeddings using
+      the full text of the requirement/decision block.</li>
+    <li>Same embedding model (<code>qwen3-embedding:0.6b</code>) and same LanceDB table &mdash;
+      code and doc entities share the vector space for unified search.</li>
+  </ul>
+
+  <h3>Querying the Unified Graph</h3>
+  <p>Example Cypher queries enabled by V2:</p>
+
+  <pre><code>-- Which code entities satisfy REQ-042?
+MATCH (r:Requirement {reqId: 'REQ-042'})<-[:SATISFIES]-(code)
+RETURN code.kind, code.name, code.file, code.startLine
+
+-- Which requirements are affected if I change retry.ts?
+MATCH (f:File {relativePath: 'src/network/retry.ts'})-[:DEFINES]->(fn)
+MATCH (fn)-[:SATISFIES]->(r:Requirement)
+RETURN r.reqId, r.name, r.documentId
+
+-- What does ADR-003 trace to?
+MATCH (d:Decision {adrId: 'ADR-003'})-[:TRACES_TO]->(code)
+RETURN code.kind, code.name, code.file
+
+-- Orphan requirements (no code satisfies them)
+MATCH (r:Requirement)
+WHERE NOT EXISTS { MATCH (r)<-[:SATISFIES]-() }
+  AND NOT EXISTS { MATCH (r)<-[:TRACES_TO]-() }
+RETURN r.reqId, r.name, r.documentId
+
+-- Semantic search across code + docs
+-- (hybrid: vector similarity in LanceDB + graph traversal in Kuzu)
+-- 1. LanceDB ANN query returns entity IDs ranked by similarity
+-- 2. Kupher query expands neighbors via TRACES_TO / SATISFIES edges</code></pre>
+
+  <h3>Config Extensions</h3>
+  <pre><code>// ~/.insrc/config.json additions for V2
+{
+  "indexer": {
+    "documentGlobs": ["**/*.md", "**/*.html"],
+    "documentIgnore": ["node_modules/**", "**/dist/**", "**/build/**"],
+    "requirementPatterns": ["REQ-\\d+", "FR-\\d+", "NFR-\\d+", "UC-\\d+", "US-\\d+"],
+    "traceMarkers": ["@req", "@adr", "@traces"],
+    "minSectionLength": 50
+  }
+}</code></pre>
+
+  <h3>V2 Implementation Phases</h3>
+
+  <div class="phase-grid">
+    <div class="phase-card">
+      <h4><span class="badge badge-phase">Phase 8</span> Document Entity Schema</h4>
+      <ul>
+        <li>Add <code>Document</code>, <code>Section</code>, <code>Requirement</code>, <code>Decision</code> node tables to Kuzu</li>
+        <li>Add traceability relation tables (<code>TRACES_TO</code>, <code>SATISFIES</code>, <code>REFERENCES_DOC</code>, etc.)</li>
+        <li>Extend <code>EntityKind</code> union in shared types</li>
+        <li>Extend LanceDB entities table to accept new kinds</li>
+      </ul>
+    </div>
+    <div class="phase-card">
+      <h4><span class="badge badge-phase">Phase 9</span> Markdown Parser</h4>
+      <ul>
+        <li>Implement <code>parser/markdown.ts</code> using <code>mdast</code></li>
+        <li>Heading tree &rarr; Section entities with nesting</li>
+        <li>Requirement ID regex extraction</li>
+        <li>Frontmatter parsing (YAML)</li>
+        <li>Link and code-span extraction for trace candidates</li>
+      </ul>
+    </div>
+    <div class="phase-card">
+      <h4><span class="badge badge-phase">Phase 10</span> HTML Parser</h4>
+      <ul>
+        <li>Implement <code>parser/html.ts</code> using <code>rehype-parse</code></li>
+        <li>Heading extraction, <code>&lt;meta&gt;</code> / <code>&lt;title&gt;</code> parsing</li>
+        <li>HTML comment marker extraction</li>
+        <li>Relative link resolution</li>
+      </ul>
+    </div>
+    <div class="phase-card">
+      <h4><span class="badge badge-phase">Phase 11</span> Trace Resolver</h4>
+      <ul>
+        <li>Implement <code>resolver/traces.ts</code></li>
+        <li>Match requirement IDs from doc entities to <code>@req</code> markers in code</li>
+        <li>Resolve file-path links to existing File nodes</li>
+        <li>Confidence scoring (explicit vs inferred)</li>
+        <li>Extend code parsers with <code>@req</code> / <code>@adr</code> comment scanning</li>
+      </ul>
+    </div>
+    <div class="phase-card">
+      <h4><span class="badge badge-phase">Phase 12</span> Document Embeddings + Unified Search</h4>
+      <ul>
+        <li>Section-level embedding via existing Ollama embedder</li>
+        <li>Text cleaning (strip syntax) before embedding</li>
+        <li>Short-section merging logic</li>
+        <li>Unified hybrid search across code + doc entities</li>
+        <li>Expose via <code>search.query</code> with <code>kind</code> filter</li>
+      </ul>
+    </div>
+    <div class="phase-card">
+      <h4><span class="badge badge-phase">Phase 13</span> Traceability Reports</h4>
+      <ul>
+        <li>IPC command: <code>trace.matrix</code> &mdash; requirement &times; code coverage matrix</li>
+        <li>IPC command: <code>trace.orphans</code> &mdash; unlinked requirements and decisions</li>
+        <li>IPC command: <code>trace.impact</code> &mdash; given a file/function, return affected requirements</li>
+        <li>CLI: <code>insrc trace matrix</code>, <code>insrc trace orphans</code>, <code>insrc trace impact &lt;path&gt;</code></li>
+      </ul>
+    </div>
+  </div>
+
   <h2>Open Questions</h2>
 
   <ol>
@@ -989,6 +1350,23 @@ const queryVec = await ollama.embed({ model: 'qwen3-embedding:0.6b', input: quer
       writers will corrupt the database. LanceDB supports concurrent readers but single writer per table.
       The daemon is the sole writer for both; the CLI must never open either DB directly. Enforced
       architecturally: only <code>daemon/</code> imports <code>db/client.ts</code>.
+    </li>
+    <li>
+      <strong>Requirement ID collisions across repos</strong> (V2) &mdash; Two repos may independently use
+      <code>REQ-001</code>. Requirement IDs must be scoped to their document (or repo) when resolving
+      traceability edges. The entity <code>id</code> field already includes the repo prefix, but the
+      resolver must disambiguate when matching <code>@req REQ-001</code> in code across multi-repo closures.
+    </li>
+    <li>
+      <strong>Stale traceability edges</strong> (V2) &mdash; When a requirement is deleted or its ID changes,
+      <code>SATISFIES</code> / <code>TRACES_TO</code> edges become dangling. The incremental update path
+      must garbage-collect edges whose source or target no longer exists. Consider a post-index validation pass.
+    </li>
+    <li>
+      <strong>LLM-assisted trace discovery</strong> (V3) &mdash; Using embeddings to <em>suggest</em>
+      traceability links (e.g. &ldquo;this function&rsquo;s docstring is semantically similar to REQ-042&rdquo;)
+      is powerful but introduces false positives. Deferred to V3; V2 relies on explicit markers and
+      convention-based matching only.
     </li>
   </ol>
 

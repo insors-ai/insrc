@@ -2,8 +2,11 @@ import { createInterface } from 'node:readline';
 import { resolve } from 'node:path';
 import type { LLMMessage } from '../shared/types.js';
 import { loadConfig } from './config.js';
-import { Session, parseInput } from './session.js';
+import { Session } from './session.js';
 import { ensureAgentModel } from './lifecycle.js';
+import { classify } from './classifier/index.js';
+import { selectProvider } from './router.js';
+import { announceRoute, announceCost, announceOpus } from './escalation.js';
 
 /**
  * Start the interactive agent REPL.
@@ -34,7 +37,7 @@ export async function startRepl(cwd?: string): Promise<void> {
   console.log(`[agent] ollama: ${ollamaOk ? 'connected' : 'unavailable'}`);
   console.log(`[agent] claude: ${session.hasClaudeKey ? 'configured' : 'not configured (set ANTHROPIC_API_KEY or add to ~/.insrc/config.json)'}`);
   console.log('');
-  console.log('Type a message to chat. Prefix with @claude, @opus, or @local to route.');
+  console.log('Type a message to chat. Prefix with @claude, @opus, @local, or /intent <name> to route.');
   console.log('Commands: /status, /cost, /exit');
   console.log('');
 
@@ -78,33 +81,55 @@ export async function startRepl(cwd?: string): Promise<void> {
       return;
     }
 
-    // Parse input
-    const { explicit, message } = parseInput(raw);
-    const provider = session.getProvider(explicit);
+    // Classify intent and select provider
+    const classified = await classify(raw, {
+      ctx: {},
+      llmProvider: ollamaOk ? session.ollamaProvider : undefined,
+    });
+    const route = selectProvider(classified.intent, classified.explicit, {
+      ollamaProvider: session.ollamaProvider,
+      claudeProvider: session.claudeProvider,
+      config: session.config,
+    });
 
-    if (explicit) {
-      const label = explicit === 'opus' ? 'Claude Opus' : explicit === 'claude' ? 'Claude Sonnet' : 'Local';
-      console.log(`  [routing → ${label}]`);
+    // Announce routing
+    announceRoute(classified.intent, route, {
+      confidence: classified.confidence,
+      explicit: classified.explicit !== undefined,
+    });
+
+    if (route.tier) {
+      announceCost(route.tier);
+    }
+    if (classified.explicit === 'opus') {
+      announceOpus();
+    }
+
+    // Graph-only intents — no LLM call (handled by graph handler in Phase 9)
+    if (route.graphOnly) {
+      console.log('  [graph] Pure graph queries not yet implemented. Use research intent for now.');
+      rl.prompt();
+      return;
     }
 
     // Build messages
     const messages: LLMMessage[] = [
       session.buildSystemPrompt(),
       ...history,
-      { role: 'user', content: message },
+      { role: 'user', content: classified.message },
     ];
 
     // Stream response
     try {
       let response = '';
-      for await (const delta of provider.stream(messages)) {
+      for await (const delta of route.provider.stream(messages)) {
         process.stdout.write(delta);
         response += delta;
       }
       process.stdout.write('\n\n');
 
-      // Track history (simple sliding window for now — L3a will replace in Phase 4)
-      history.push({ role: 'user', content: message });
+      // Track history (simple sliding window — L3a will replace in Phase 4)
+      history.push({ role: 'user', content: classified.message });
       history.push({ role: 'assistant', content: response });
 
       // Keep last 10 turns (20 messages) to stay within context limits

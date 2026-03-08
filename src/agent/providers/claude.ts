@@ -6,6 +6,7 @@ import type {
   CompletionOpts,
   ToolDefinition,
   ToolCall,
+  ContentBlock,
 } from '../../shared/types.js';
 
 // ---------------------------------------------------------------------------
@@ -117,18 +118,51 @@ function splitMessages(messages: LLMMessage[]): {
 } {
   const systemParts = messages
     .filter(m => m.role === 'system')
-    .map(m => m.content);
+    .map(m => typeof m.content === 'string' ? m.content : m.content.filter((b): b is Extract<ContentBlock, { type: 'text' }> => b.type === 'text').map(b => b.text).join('\n\n'));
 
   const system = systemParts.length > 0 ? systemParts.join('\n\n') : undefined;
 
   const apiMessages: Anthropic.MessageParam[] = messages
     .filter(m => m.role !== 'system')
     .map(m => ({
-      role:    m.role as 'user' | 'assistant',
-      content: m.content,
+      role: m.role as 'user' | 'assistant',
+      content: typeof m.content === 'string'
+        ? m.content
+        : toAnthropicContent(m.content),
     }));
 
   return { system, apiMessages };
+}
+
+/**
+ * Convert our ContentBlock[] to Anthropic SDK content blocks.
+ * Supports text, image (base64), and document (base64 PDF) blocks.
+ */
+function toAnthropicContent(blocks: ContentBlock[]): Anthropic.ContentBlockParam[] {
+  return blocks.map((block): Anthropic.ContentBlockParam => {
+    switch (block.type) {
+      case 'text':
+        return { type: 'text', text: block.text };
+      case 'image':
+        return {
+          type: 'image',
+          source: {
+            type: 'base64',
+            media_type: block.mediaType as 'image/png' | 'image/jpeg' | 'image/gif' | 'image/webp',
+            data: block.data,
+          },
+        };
+      case 'document':
+        return {
+          type: 'document',
+          source: {
+            type: 'base64',
+            media_type: block.mediaType as 'application/pdf',
+            data: block.data,
+          },
+        };
+    }
+  });
 }
 
 function toAnthropicTools(tools: ToolDefinition[]): Anthropic.Tool[] {

@@ -4,9 +4,15 @@
  * never directly against Ollama or Anthropic SDK types.
  */
 
+/** A single content block within a multimodal message. */
+export type ContentBlock =
+  | { type: 'text'; text: string }
+  | { type: 'image'; mediaType: string; data: string }   // base64-encoded
+  | { type: 'document'; mediaType: string; data: string }; // base64-encoded PDF
+
 export interface LLMMessage {
   role: 'system' | 'user' | 'assistant';
-  content: string;
+  content: string | ContentBlock[];
 }
 
 export interface ToolDefinition {

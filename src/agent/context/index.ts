@@ -38,6 +38,8 @@ export class ContextManager {
   private readonly tags = new Map<string, string>();
   /** Active plan step body injected into L4 context each turn. */
   private activePlanStepContext = '';
+  /** Text content from attachments, injected into L4 context for the current turn. */
+  private attachmentContext = '';
 
   constructor(opts: SystemContextOpts & { closureRepos: string[]; provider: LLMProvider }) {
     this.systemText = buildSystemContext(opts);
@@ -96,12 +98,20 @@ export class ContextManager {
     // Extract entity names mentioned in the user message for overflow preservation
     const preservedNames = extractEntityNames(userMessage);
 
+    // Prepend attachment text to code blocks (counts against L4 budget)
+    const codeBlocks = this.attachmentContext
+      ? `## Attached Files\n${this.attachmentContext}\n\n${taskResult.blocks}`
+      : taskResult.blocks;
+
+    // Clear attachment context after use (single-turn only)
+    this.attachmentContext = '';
+
     const raw: RawLayers = {
       system: this.systemText,
       summary: this.summary,
       recent: recentBlocks,
       semantic: semanticBlocks,
-      code: taskResult.blocks,
+      code: codeBlocks,
       preservedNames: preservedNames.size > 0 ? preservedNames : undefined,
     };
 
@@ -236,6 +246,16 @@ export class ContextManager {
   /** Get the active plan step context. */
   getActivePlanStep(): string {
     return this.activePlanStepContext;
+  }
+
+  /** Set text attachment content for L4 injection. Cleared after each assemble(). */
+  setAttachmentContext(text: string): void {
+    this.attachmentContext = text;
+  }
+
+  /** Get the current attachment context. */
+  getAttachmentContext(): string {
+    return this.attachmentContext;
   }
 
   /** Reset all state (for session restart). */

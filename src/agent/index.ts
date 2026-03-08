@@ -24,6 +24,12 @@ import { runGraphQuery } from './tasks/graph.js';
 import { runResearchPipeline } from './tasks/research.js';
 import { runReviewPipeline } from './tasks/review.js';
 import { runDocumentPipeline } from './tasks/document.js';
+import {
+  extractFilePaths, resolveAttachment, hasEscalationAttachment,
+  type ResolvedAttachment,
+} from './attachments/router.js';
+import { runForcedClaudePipeline } from './attachments/forced-claude.js';
+import type { Attachment, ContentBlock } from '../shared/types.js';
 
 /**
  * Start the interactive agent REPL.
@@ -194,8 +200,38 @@ export async function startRepl(cwd?: string): Promise<void> {
       return;
     }
 
+    // Extract file path attachments from input
+    const { paths: attachmentPaths, cleanedMessage: messageWithoutPaths } = extractFilePaths(raw);
+    const resolvedAttachments: ResolvedAttachment[] = [];
+    const attachments: Attachment[] = [];
+    const attachmentContentBlocks: ContentBlock[] = [];
+    const attachmentTextParts: string[] = [];
+
+    for (const p of attachmentPaths) {
+      const resolved = resolveAttachment(
+        p.startsWith('/') ? p : `${repoPath}/${p}`,
+      );
+      resolvedAttachments.push(resolved);
+      attachments.push(resolved.attachment);
+      for (const w of resolved.warnings) console.log(w);
+      if (resolved.textContent) {
+        attachmentTextParts.push(`### ${resolved.attachment.name}\n${resolved.textContent}`);
+      }
+      if (resolved.contentBlocks) {
+        attachmentContentBlocks.push(...resolved.contentBlocks);
+      }
+    }
+
+    // Inject text attachment content into L4 context
+    if (attachmentTextParts.length > 0) {
+      ctx.setAttachmentContext(attachmentTextParts.join('\n\n'));
+    }
+
+    // Use cleaned message (without file paths) for classification if attachments found
+    const classifyInput = attachments.length > 0 ? messageWithoutPaths || raw : raw;
+
     // Classify intent and select provider
-    const classified = await classify(raw, {
+    const classified = await classify(classifyInput, {
       ctx: {},
       llmProvider: ollamaOk ? session.ollamaProvider : undefined,
     });
@@ -203,6 +239,7 @@ export async function startRepl(cwd?: string): Promise<void> {
       ollamaProvider: session.ollamaProvider,
       claudeProvider: session.claudeProvider,
       config: session.config,
+      attachments,
     });
 
     // Announce routing
@@ -256,7 +293,26 @@ export async function startRepl(cwd?: string): Promise<void> {
         const queryEmbedding = await ctx.embedQuery(classified.message);
         const assembled = await ctx.assemble(classified.message, queryEmbedding);
         const codeContext = assembled.code.text;
-        const assistantResponse = await handlePipelineIntent(classified.intent, classified.message, codeContext);
+
+        // Forced-Claude path: when image/PDF attachment forces escalation on implement/test
+        let assistantResponse: string;
+        if (route.attachmentForced && attachmentContentBlocks.length > 0
+            && (classified.intent === 'implement' || classified.intent === 'test')) {
+          const forcedResult = await runForcedClaudePipeline(
+            classified.intent, classified.message, repoPath, codeContext,
+            ctx.getActivePlanStep(), attachmentContentBlocks,
+            route.provider, console.log,
+          );
+          if (forcedResult.accepted) {
+            assistantResponse = `${forcedResult.message}\n\nFiles:\n${forcedResult.filesWritten.map(f => `  - ${f}`).join('\n')}`;
+          } else if (forcedResult.diff) {
+            assistantResponse = `Forced-Claude implementation needs review:\n\n\`\`\`diff\n${forcedResult.diff}\n\`\`\`\n\n${forcedResult.message}`;
+          } else {
+            assistantResponse = forcedResult.message;
+          }
+        } else {
+          assistantResponse = await handlePipelineIntent(classified.intent, classified.message, codeContext);
+        }
         if (assistantResponse) {
           console.log(assistantResponse);
           console.log('');
@@ -308,6 +364,18 @@ export async function startRepl(cwd?: string): Promise<void> {
 
     // Build LLM messages from assembled context
     const messages = ctx.buildMessages(assembled, classified.message);
+
+    // If image/PDF attachments present, inject content blocks into the last user message
+    if (attachmentContentBlocks.length > 0 && messages.length > 0) {
+      const lastMsg = messages[messages.length - 1]!;
+      if (lastMsg.role === 'user') {
+        const textBlock: import('../shared/types.js').ContentBlock = {
+          type: 'text',
+          text: typeof lastMsg.content === 'string' ? lastMsg.content : '',
+        };
+        lastMsg.content = [textBlock, ...attachmentContentBlocks];
+      }
+    }
 
     // Check daemon availability for MCP tools
     const mcpAvailable = await pingDaemon();

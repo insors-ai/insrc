@@ -1,5 +1,6 @@
-import type { AgentConfig, ExplicitProvider, Intent, LLMProvider } from '../shared/types.js';
+import type { AgentConfig, Attachment, ExplicitProvider, Intent, LLMProvider } from '../shared/types.js';
 import { ClaudeProvider } from './providers/claude.js';
+import { hasEscalationAttachment } from './attachments/router.js';
 
 // ---------------------------------------------------------------------------
 // Intent → default provider mapping (from design doc)
@@ -48,12 +49,16 @@ export interface RouteResult {
   graphOnly: boolean;
   /** Claude model tier used (if applicable) */
   tier?: Tier | undefined;
+  /** Whether routing was forced by attachment (image/PDF). */
+  attachmentForced?: boolean | undefined;
 }
 
 export interface RouterDeps {
   ollamaProvider: LLMProvider;
   claudeProvider: ClaudeProvider | null;
   config: AgentConfig;
+  /** Attachments on the current task (if any). */
+  attachments?: Attachment[] | undefined;
 }
 
 /**
@@ -72,7 +77,25 @@ export function selectProvider(
   explicit: ExplicitProvider | undefined,
   deps: RouterDeps,
 ): RouteResult {
-  const { ollamaProvider, claudeProvider, config } = deps;
+  const { ollamaProvider, claudeProvider, config, attachments } = deps;
+
+  // Attachment-forced escalation: image/PDF → Claude (standard tier, unless @opus)
+  if (hasEscalationAttachment(attachments) && explicit !== 'opus') {
+    if (!claudeProvider) {
+      console.warn('[router] Claude not available for attachment processing (no API key). Using local model.');
+      return { provider: ollamaProvider, label: 'Local (Claude unavailable)', graphOnly: false };
+    }
+    const tier: Tier = 'standard';
+    const model = config.models.tiers[tier];
+    const provider = new ClaudeProvider({ model, apiKey: config.keys.anthropic });
+    return {
+      provider,
+      label: `Claude ${tierLabel(tier)} (attachment)`,
+      graphOnly: false,
+      tier,
+      attachmentForced: true,
+    };
+  }
 
   // Explicit @local → always local
   if (explicit === 'local') {

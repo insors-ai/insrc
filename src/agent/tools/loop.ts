@@ -44,6 +44,8 @@ export interface ToolLoopOpts {
   onToolResult?: (call: ToolCall, result: ToolResult) => void;
   /** Max tokens for LLM completions */
   maxTokens?: number | undefined;
+  /** Callback when an LLM response includes usage info (for cost tracking) */
+  onUsage?: ((usage: { inputTokens: number; outputTokens: number }) => void) | undefined;
 }
 
 export interface ToolLoopResult {
@@ -87,6 +89,11 @@ export async function runToolLoop(
       };
     }
     const llmResponse: LLMResponse = await provider.complete(workingMessages, completionOpts);
+
+    // Report usage for cost tracking
+    if (llmResponse.usage && opts.onUsage) {
+      opts.onUsage(llmResponse.usage);
+    }
 
     // If no streaming callback, pick up text from the full response
     if (!onTextDelta && llmResponse.text) {

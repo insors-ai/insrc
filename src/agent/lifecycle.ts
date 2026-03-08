@@ -1,4 +1,5 @@
 import { Ollama } from 'ollama';
+import { sessionPrune } from './tools/mcp-client.js';
 
 const AGENT_MODEL = 'qwen3-coder:latest';
 
@@ -27,4 +28,23 @@ export async function ensureAgentModel(
     }
   }
   console.log(`[agent] ${AGENT_MODEL} ready`);
+}
+
+// ---------------------------------------------------------------------------
+// Session pruning job
+//
+// Deletes expired session summaries (30-day TTL) and caps at 20 per repo.
+// Plan/PlanStep nodes are NOT affected — they live in Kuzu only and are
+// pruned only via explicit /plan delete.
+//
+// Called by the daemon's nightly maintenance job (setInterval in daemon/index.ts).
+// Also exposed for the agent to trigger on session start as a best-effort cleanup.
+// ---------------------------------------------------------------------------
+
+/**
+ * Trigger the pruning job via daemon RPC.
+ * Returns counts of expired and capped session summaries deleted.
+ */
+export async function runPruningJob(): Promise<{ expired: number; capped: number }> {
+  return sessionPrune();
 }

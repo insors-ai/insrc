@@ -9,7 +9,7 @@ import { announceRoute, announceCost, announceOpus, shouldEscalate } from './esc
 import { ClaudeProvider } from './providers/claude.js';
 import { getToolDefinitions } from './tools/registry.js';
 import { runToolLoop } from './tools/loop.js';
-import { ping as pingDaemon } from './tools/mcp-client.js';
+import { ping as pingDaemon, sessionSave, sessionPrune } from './tools/mcp-client.js';
 
 /**
  * Start the interactive agent REPL.
@@ -39,6 +39,9 @@ export async function startRepl(cwd?: string): Promise<void> {
   const session = new Session({ repoPath, config });
   await session.init();
 
+  // Best-effort pruning of expired sessions on start (fire-and-forget)
+  void sessionPrune();
+
   const ollamaOk = await session.ollamaAvailable;
 
   console.log(`[agent] repo: ${repoPath}`);
@@ -47,7 +50,7 @@ export async function startRepl(cwd?: string): Promise<void> {
   console.log('');
   console.log('Type a message to chat. Prefix with @claude, @opus, @local, or /intent <name> to route.');
   console.log(`[agent] permissions: ${session.permissionMode}`);
-  console.log('Commands: /status, /cost, /toggle-permissions, /exit');
+  console.log('Commands: /status, /cost, /forget, /toggle-permissions, /exit');
   console.log('');
 
   // 3. REPL loop
@@ -58,8 +61,21 @@ export async function startRepl(cwd?: string): Promise<void> {
   });
 
   const ctx = session.contextManager;
+  let seeded = false; // cross-session seeding happens on first turn
 
   rl.prompt();
+
+  // Session close helper — used by /exit and SIGINT
+  let closed = false;
+  async function closeSession(): Promise<void> {
+    if (closed) return;
+    closed = true;
+    try {
+      await session.close();
+    } catch {
+      // Daemon may be down — silently skip
+    }
+  }
 
   rl.on('line', async (line: string) => {
     const raw = line.trim();
@@ -67,6 +83,8 @@ export async function startRepl(cwd?: string): Promise<void> {
 
     // Commands
     if (raw === '/exit') {
+      console.log('Closing session...');
+      await closeSession();
       console.log('Session closed.');
       rl.close();
       return;
@@ -74,6 +92,12 @@ export async function startRepl(cwd?: string): Promise<void> {
 
     if (raw === '/status') {
       const ok = await session.ollamaAvailable;
+      const daemonOk = await pingDaemon();
+      const age = Math.floor((Date.now() - session.startedAt) / 1000);
+      const mins = Math.floor(age / 60);
+      const secs = age % 60;
+      console.log(`  session: ${session.id.slice(0, 8)}... (${mins}m${secs}s)`);
+      console.log(`  daemon:  ${daemonOk ? 'connected' : 'unavailable'}`);
       console.log(`  ollama:  ${ok ? 'connected' : 'unavailable'}`);
       console.log(`  claude:  ${session.hasClaudeKey ? 'configured' : 'not configured'}`);
       console.log(`  repo:    ${session.repoPath}`);
@@ -82,13 +106,26 @@ export async function startRepl(cwd?: string): Promise<void> {
       console.log(`  recent:  ${ctx.getRecentCount()} turns`);
       console.log(`  semantic: ${ctx.getSemanticSize()} stored`);
       console.log(`  summary: ${ctx.getSummary() ? 'yes' : 'none'}`);
+      console.log(`  seeded:  ${seeded ? 'yes' : 'no'}`);
       rl.prompt();
       return;
     }
 
     if (raw === '/cost') {
-      // Placeholder — cost tracking will be added in later phases
-      console.log('  Claude spend: $0.00 (cost tracking not yet implemented)');
+      const c = session.cost;
+      // Pricing: Haiku input=$0.25/M output=$1.25/M, Sonnet input=$3/M output=$15/M
+      const estCost = (c.inputTokens * 3 + c.outputTokens * 15) / 1_000_000;
+      console.log(`  Claude turns:   ${c.turns}`);
+      console.log(`  Input tokens:   ${c.inputTokens.toLocaleString()}`);
+      console.log(`  Output tokens:  ${c.outputTokens.toLocaleString()}`);
+      console.log(`  Estimated cost: $${estCost.toFixed(4)}`);
+      rl.prompt();
+      return;
+    }
+
+    if (raw === '/forget') {
+      await session.forget();
+      console.log('  All session summaries for this repo deleted from persistent store.');
       rl.prompt();
       return;
     }
@@ -129,6 +166,16 @@ export async function startRepl(cwd?: string): Promise<void> {
       console.log('  [graph] Pure graph queries not yet implemented. Use research intent for now.');
       rl.prompt();
       return;
+    }
+
+    // Cross-session seeding: on the first turn, seed L2 from prior sessions
+    if (!seeded) {
+      seeded = true;
+      const seed = await session.seedFromPriorSessions(classified.message);
+      if (seed) {
+        ctx.seedSummary(seed);
+        console.log('  [context] seeded from prior session');
+      }
     }
 
     // Embed user message once — shared between L3b retrieval and L4 code search
@@ -183,6 +230,11 @@ export async function startRepl(cwd?: string): Promise<void> {
             const suffix = result.content.length > 100 ? '...' : '';
             console.log(`  [result] ${call.name}: ${preview}${suffix}`);
           },
+          onUsage: (usage) => {
+            session.cost.inputTokens += usage.inputTokens;
+            session.cost.outputTokens += usage.outputTokens;
+            session.cost.turns++;
+          },
         });
 
         process.stdout.write('\n\n');
@@ -201,10 +253,21 @@ export async function startRepl(cwd?: string): Promise<void> {
       }
 
       // Record turn in context manager (handles eviction + summary automatically)
-      await ctx.recordTurn(
-        { userMessage: classified.message, assistantResponse, entityIds: [] },
-        queryEmbedding,
-      );
+      const turn = { userMessage: classified.message, assistantResponse, entityIds: [] as string[] };
+      await ctx.recordTurn(turn, queryEmbedding);
+
+      // Track entity IDs for session close
+      session.trackEntities(turn.entityIds);
+
+      // Persist turn to daemon LanceDB (fire-and-forget)
+      void sessionSave({
+        sessionId: session.id,
+        idx: session.turnIndex,
+        user: classified.message,
+        assistant: assistantResponse,
+        entities: turn.entityIds,
+        vector: queryEmbedding,
+      });
 
       if (assembled.dropped.length > 0) {
         for (const d of assembled.dropped) {
@@ -221,6 +284,6 @@ export async function startRepl(cwd?: string): Promise<void> {
   });
 
   rl.on('close', () => {
-    process.exit(0);
+    void closeSession().finally(() => process.exit(0));
   });
 }

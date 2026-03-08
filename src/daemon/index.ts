@@ -23,6 +23,10 @@ import { IpcServer } from './server.js';
 import { writePid, clearPid, isAlreadyRunning, bootstrapEmbeddingModel, getModelState } from './lifecycle.js';
 import { resolveClosure, searchEntities, findCallers, findCallees } from '../db/search.js';
 import { embedQuery } from '../indexer/embedder.js';
+import {
+  saveTurn, closeSession, seedFromPrior, deleteSessionsForRepo, pruneConversations,
+  type TurnRecord,
+} from '../db/conversations.js';
 import type { RegisteredRepo, DaemonStatus, Entity } from '../shared/types.js';
 import { basename } from 'node:path';
 
@@ -127,6 +131,39 @@ async function main(): Promise<void> {
       return findCallees(db, entityId) as Promise<Entity[]>;
     },
 
+    // ----- Session lifecycle (Phase 5) -----
+
+    'session.save': async (params) => {
+      const turn = params as TurnRecord;
+      await saveTurn(db, turn);
+      return { ok: true };
+    },
+
+    'session.close': async (params) => {
+      const { id, repo, summary, seenEntities, summaryVector } = params as {
+        id: string; repo: string; summary: string; seenEntities: string[]; summaryVector: number[];
+      };
+      await closeSession(db, { id, repo, summary, seenEntities }, summaryVector);
+      return { ok: true };
+    },
+
+    'session.seed': async (params) => {
+      const { repo, queryVector, limit } = params as {
+        repo: string; queryVector: number[]; limit?: number;
+      };
+      return seedFromPrior(db, repo, queryVector, limit);
+    },
+
+    'session.forget': async (params) => {
+      const { repo } = params as { repo: string };
+      await deleteSessionsForRepo(db, repo);
+      return { ok: true };
+    },
+
+    'session.prune': async () => {
+      return pruneConversations(db);
+    },
+
     'daemon.shutdown': async () => {
       console.log('[daemon] shutdown requested');
       shutdown();
@@ -137,9 +174,23 @@ async function main(): Promise<void> {
   await server.listen();
   console.log('[daemon] ready');
 
-  // 8. Graceful shutdown on signals
+  // 8. Nightly pruning job — runs every 24 hours
+  const PRUNE_INTERVAL = 24 * 60 * 60 * 1000; // 24 hours
+  const pruneTimer = setInterval(async () => {
+    try {
+      const result = await pruneConversations(db);
+      if (result.expired > 0 || result.capped > 0) {
+        console.log(`[daemon] pruned ${result.expired} expired + ${result.capped} capped sessions`);
+      }
+    } catch (err) {
+      console.error('[daemon] pruning error:', err);
+    }
+  }, PRUNE_INTERVAL);
+
+  // 9. Graceful shutdown on signals
   function shutdown(): void {
     console.log('[daemon] shutting down...');
+    clearInterval(pruneTimer);
     queue.stop();
     void watcher.close();
     void server.close();

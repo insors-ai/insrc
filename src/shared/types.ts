@@ -31,6 +31,8 @@ export interface LLMResponse {
   text: string;
   toolCalls?: ToolCall[] | undefined;
   stopReason: 'end_turn' | 'tool_use' | 'max_tokens';
+  /** Token usage from the API response (if available). */
+  usage?: { inputTokens: number; outputTokens: number } | undefined;
 }
 
 export interface CompletionOpts {

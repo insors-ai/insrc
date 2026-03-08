@@ -67,6 +67,10 @@ export class ClaudeProvider implements LLMProvider {
           : response.stop_reason === 'max_tokens'
             ? 'max_tokens'
             : 'end_turn',
+        usage: {
+          inputTokens: response.usage.input_tokens,
+          outputTokens: response.usage.output_tokens,
+        },
       };
     } catch (err) {
       throw wrapError(err);

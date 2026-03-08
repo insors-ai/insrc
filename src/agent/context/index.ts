@@ -172,6 +172,19 @@ export class ContextManager {
     return embedText(this.provider, text);
   }
 
+  /**
+   * Seed L2 summary from prior session summaries.
+   * Called once at session start after cross-session retrieval.
+   */
+  seedSummary(text: string): void {
+    if (text) this.summary = text;
+  }
+
+  /** Get the entity IDs from the most recent L4 fetch. */
+  getLastEntityIds(): string[] {
+    return this.lastEntityIds;
+  }
+
   /** Get current summary (for debugging/display). */
   getSummary(): string {
     return this.summary;

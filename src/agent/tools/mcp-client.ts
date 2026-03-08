@@ -95,6 +95,56 @@ export function isAvailable(): boolean | null {
   return _available;
 }
 
+// ---------------------------------------------------------------------------
+// Session lifecycle RPC helpers (Phase 5)
+// ---------------------------------------------------------------------------
+
+/** Persist a turn to daemon LanceDB (fire-and-forget). */
+export async function sessionSave(turn: {
+  sessionId: string; idx: number;
+  user: string; assistant: string;
+  entities: string[]; vector: number[];
+}): Promise<void> {
+  try { await rpcRaw('session.save', turn); } catch { /* daemon may be down */ }
+}
+
+/** Close a session: promote summary, delete raw turns. */
+export async function sessionClose(params: {
+  id: string; repo: string; summary: string;
+  seenEntities: string[]; summaryVector: number[];
+}): Promise<void> {
+  try { await rpcRaw('session.close', params); } catch { /* daemon may be down */ }
+}
+
+/** Seed L2 from prior session summaries for the same repo. */
+export async function sessionSeed(
+  repo: string, queryVector: number[], limit = 3,
+): Promise<Array<{ summary: string; createdAt: string }>> {
+  try {
+    return await rpcRaw('session.seed', { repo, queryVector, limit });
+  } catch {
+    return [];
+  }
+}
+
+/** Delete all session summaries for a repo (for /forget). */
+export async function sessionForget(repo: string): Promise<void> {
+  try { await rpcRaw('session.forget', { repo }); } catch { /* ignore */ }
+}
+
+/** Trigger pruning job. */
+export async function sessionPrune(): Promise<{ expired: number; capped: number }> {
+  try {
+    return await rpcRaw('session.prune');
+  } catch {
+    return { expired: 0, capped: 0 };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// MCP tool calls
+// ---------------------------------------------------------------------------
+
 /**
  * Send an MCP tool call to the daemon.
  *

@@ -108,6 +108,8 @@ export interface AgentConfig {
       powerful: string;
     };
     roles: Record<string, string>;
+    /** Context window sizes (tokens). Auto-detected from Ollama if not set. */
+    context: ModelContextConfig;
   };
   keys: {
     anthropic?: string | undefined;
@@ -116,6 +118,20 @@ export interface AgentConfig {
   permissions: {
     mode: 'validate' | 'auto-accept';
   };
+}
+
+/** Context window and output limits per provider. */
+export interface ModelContextConfig {
+  /** Local model (Ollama) context window in tokens. Default: 131072 (128K). */
+  local: number;
+  /** Local model max output tokens per call. Default: 8192. */
+  localMaxOutput: number;
+  /** Claude context window in tokens. Default: 200000 (200K). */
+  claude: number;
+  /** Claude max output tokens per call. Default: 8192. */
+  claudeMaxOutput: number;
+  /** Chars-per-token ratio for budget estimation. Default: 3. */
+  charsPerToken: number;
 }
 
 // ---------------------------------------------------------------------------

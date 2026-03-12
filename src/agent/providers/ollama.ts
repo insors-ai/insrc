@@ -12,10 +12,12 @@ export class OllamaProvider implements LLMProvider {
   readonly supportsTools = true;
   private readonly client: Ollama;
   private readonly model: string;
+  private readonly numCtx: number;
 
-  constructor(model = 'qwen3-coder:latest', host = 'http://localhost:11434') {
+  constructor(model = 'qwen3-coder:latest', host = 'http://localhost:11434', numCtx = 131_072) {
     this.model = model;
     this.client = new Ollama({ host });
+    this.numCtx = numCtx;
   }
 
   async ping(): Promise<boolean> {
@@ -43,6 +45,7 @@ export class OllamaProvider implements LLMProvider {
         messages: ollamaMessages,
         ...(tools ? { tools } : {}),
         options: {
+          num_ctx: this.numCtx,
           num_predict: opts.maxTokens ?? 8_192,
           ...(opts.temperature !== undefined ? { temperature: opts.temperature } : {}),
         },
@@ -71,6 +74,7 @@ export class OllamaProvider implements LLMProvider {
       ...(tools ? { tools } : {}),
       stream: true,
       options: {
+        num_ctx: this.numCtx,
         num_predict: opts.maxTokens ?? 8_192,
         ...(opts.temperature !== undefined ? { temperature: opts.temperature } : {}),
       },
@@ -116,6 +120,7 @@ export class OllamaProvider implements LLMProvider {
         messages: ollamaMessages,
         stream: true,
         options: {
+          num_ctx: this.numCtx,
           num_predict: opts.maxTokens ?? 8_192,
           ...(opts.temperature !== undefined ? { temperature: opts.temperature } : {}),
         },
@@ -190,7 +195,7 @@ function parseToolCalls(raw?: OllamaToolCall[]): ToolCall[] {
 
 function wrapOllamaError(err: unknown): Error {
   if (err instanceof Error) {
-    if (err.message.includes('ECONNREFUSED') || err.message.includes('fetch failed')) {
+    if (err.message.includes('ECONNREFUSED')) {
       return new Error(
         'Ollama is not running. Start it with: ollama serve',
       );

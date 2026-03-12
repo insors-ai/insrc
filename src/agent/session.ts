@@ -59,6 +59,7 @@ export class Session {
     this.ollamaProvider = new OllamaProvider(
       opts.config.models.local,
       opts.config.ollama.host,
+      opts.config.models.context.local,
     );
 
     this.claudeProvider = opts.config.keys.anthropic

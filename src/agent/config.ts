@@ -2,6 +2,14 @@ import { readFileSync, existsSync } from 'node:fs';
 import { PATHS } from '../shared/paths.js';
 import type { AgentConfig } from '../shared/types.js';
 
+const DEFAULT_CONTEXT = {
+  local: 131_072,       // 128K — conservative default; qwen3-coder supports 262K
+  localMaxOutput: 8_192,
+  claude: 200_000,      // 200K
+  claudeMaxOutput: 8_192,
+  charsPerToken: 3,
+};
+
 const DEFAULT_CONFIG: AgentConfig = {
   ollama: {
     host: 'http://localhost:11434',
@@ -14,6 +22,7 @@ const DEFAULT_CONFIG: AgentConfig = {
       powerful: 'claude-opus-4-6',
     },
     roles: {},
+    context: { ...DEFAULT_CONTEXT },
   },
   keys: {},
   permissions: {
@@ -65,6 +74,21 @@ export function resolveModel(config: AgentConfig, role: string): string {
 // Helpers
 // ---------------------------------------------------------------------------
 
+function mergeContext(
+  defaults: AgentConfig['models']['context'],
+  raw: unknown,
+): AgentConfig['models']['context'] {
+  if (typeof raw !== 'object' || raw === null) return { ...defaults };
+  const ctx = raw as Record<string, unknown>;
+  return {
+    local:          typeof ctx['local'] === 'number' ? ctx['local'] : defaults.local,
+    localMaxOutput: typeof ctx['localMaxOutput'] === 'number' ? ctx['localMaxOutput'] : defaults.localMaxOutput,
+    claude:         typeof ctx['claude'] === 'number' ? ctx['claude'] : defaults.claude,
+    claudeMaxOutput:typeof ctx['claudeMaxOutput'] === 'number' ? ctx['claudeMaxOutput'] : defaults.claudeMaxOutput,
+    charsPerToken:  typeof ctx['charsPerToken'] === 'number' ? ctx['charsPerToken'] : defaults.charsPerToken,
+  };
+}
+
 function mergeConfig(defaults: AgentConfig, raw: Record<string, unknown>): AgentConfig {
   const ollama = typeof raw['ollama'] === 'object' && raw['ollama'] !== null
     ? raw['ollama'] as Record<string, unknown>
@@ -100,6 +124,7 @@ function mergeConfig(defaults: AgentConfig, raw: Record<string, unknown>): Agent
       roles: (typeof models['roles'] === 'object' && models['roles'] !== null
         ? models['roles'] as Record<string, string>
         : defaults.models.roles),
+      context: mergeContext(defaults.models.context, models['context']),
     },
     keys: {
       anthropic: keys['anthropic'] ?? defaults.keys.anthropic,

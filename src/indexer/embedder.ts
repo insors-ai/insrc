@@ -1,14 +1,18 @@
 import { Ollama } from 'ollama';
-import type { Entity } from '../shared/types.js';
+import type { Entity, AgentConfig } from '../shared/types.js';
+import { loadConfig } from '../agent/config.js';
 
-export const EMBEDDING_MODEL = 'qwen3-embedding:0.6b';
+const config = loadConfig();
+
+export const EMBEDDING_MODEL = config.models.embedding;
+export const EMBEDDING_DIM   = config.models.embeddingDim;
 
 const QUERY_PREFIX =
   'Instruct: Given a user question, retrieve relevant code snippets\nQuery: ';
 
 const BATCH_SIZE = 16;
 
-const ollama = new Ollama();
+const ollama = new Ollama({ host: config.ollama.host });
 
 // ---------------------------------------------------------------------------
 // Document / query formatting

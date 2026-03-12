@@ -7,17 +7,29 @@ import type {
   ToolDefinition,
   ToolCall,
 } from '../../shared/types.js';
+import { loadConfig } from '../config.js';
+import { getLogger } from '../../shared/logger.js';
+
+const log = getLogger('ollama');
+
+const _defaults = loadConfig();
 
 export class OllamaProvider implements LLMProvider {
   readonly supportsTools = true;
   private readonly client: Ollama;
   private readonly model: string;
   private readonly numCtx: number;
+  private readonly embeddingModel: string;
 
-  constructor(model = 'qwen3-coder:latest', host = 'http://localhost:11434', numCtx = 131_072) {
+  constructor(
+    model = _defaults.models.local,
+    host = _defaults.ollama.host,
+    numCtx = _defaults.models.context.local,
+  ) {
     this.model = model;
     this.client = new Ollama({ host });
     this.numCtx = numCtx;
+    this.embeddingModel = _defaults.models.embedding;
   }
 
   async ping(): Promise<boolean> {
@@ -32,6 +44,20 @@ export class OllamaProvider implements LLMProvider {
   async complete(messages: LLMMessage[], opts: CompletionOpts = {}): Promise<LLMResponse> {
     const ollamaMessages = toOllamaMessages(messages);
     const tools = opts.tools ? toOllamaTools(opts.tools) : undefined;
+
+    log.debug({
+      model: this.model,
+      numCtx: this.numCtx,
+      maxTokens: opts.maxTokens ?? 8_192,
+      temperature: opts.temperature,
+      messageCount: ollamaMessages.length,
+      messages: ollamaMessages.map(m => ({
+        role: m.role,
+        contentLen: m.content.length,
+        contentPreview: m.content.slice(0, 500),
+      })),
+      toolCount: tools?.length ?? 0,
+    }, 'ollama request');
 
     try {
       // When onToken is provided, stream text token-by-token while
@@ -52,9 +78,17 @@ export class OllamaProvider implements LLMProvider {
       });
 
       const toolCalls = parseToolCalls(response.message.tool_calls);
+      const text = response.message.content ?? '';
+
+      log.debug({
+        model: this.model,
+        textLen: text.length,
+        textPreview: text.slice(0, 500),
+        toolCallCount: toolCalls.length,
+      }, 'ollama response');
 
       return {
-        text: response.message.content ?? '',
+        text,
         toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
         stopReason: toolCalls.length > 0 ? 'tool_use' : 'end_turn',
       };
@@ -104,7 +138,7 @@ export class OllamaProvider implements LLMProvider {
 
   async embed(text: string): Promise<number[]> {
     try {
-      const result = await this.client.embed({ model: 'qwen3-embedding:0.6b', input: text });
+      const result = await this.client.embed({ model: this.embeddingModel, input: text });
       return result.embeddings[0] ?? [];
     } catch {
       return [];

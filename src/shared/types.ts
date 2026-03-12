@@ -131,6 +131,8 @@ export interface AgentConfig {
   };
   models: {
     local: string;
+    embedding: string;
+    embeddingDim: number;
     tiers: {
       fast: string;
       standard: string;
@@ -202,7 +204,7 @@ export interface Entity {
   endLine:    number;
   /** Raw source text — used as embedding input */
   body:       string;
-  /** 1024-dimensional vector from qwen3-embedding:0.6b; [] if not yet embedded */
+  /** Embedding vector from configured model; [] if not yet embedded */
   embedding:  number[];
   indexedAt:  string;   // ISO datetime
 

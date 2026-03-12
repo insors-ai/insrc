@@ -14,6 +14,10 @@
 
 import { mkdirSync } from 'node:fs';
 import { PATHS } from '../shared/paths.js';
+import { setLogMode, getLogger } from '../shared/logger.js';
+
+setLogMode('daemon');
+const log = getLogger('daemon');
 import { getDb, initDb, closeDb } from '../db/client.js';
 import { listRepos, addRepo, removeRepo, updateRepoStatus } from '../db/repos.js';
 import { Watcher } from '../indexer/watcher.js';
@@ -40,7 +44,7 @@ import { basename, dirname } from 'node:path';
 async function main(): Promise<void> {
   // 1. Check for existing daemon
   if (isAlreadyRunning()) {
-    console.error('[daemon] already running — exiting');
+    log.error('already running — exiting');
     process.exit(1);
   }
 
@@ -53,7 +57,7 @@ async function main(): Promise<void> {
   // 3. Open DB
   const db = await getDb();
   await initDb(db);
-  console.log('[daemon] database ready');
+  log.info('database ready');
 
   // 4. Bootstrap embedding model (async, non-blocking)
   void bootstrapEmbeddingModel();
@@ -282,14 +286,14 @@ async function main(): Promise<void> {
     },
 
     'daemon.shutdown': async () => {
-      console.log('[daemon] shutdown requested');
+      log.info('shutdown requested');
       shutdown();
       return { ok: true };
     },
   });
 
   await server.listen();
-  console.log('[daemon] ready');
+  log.info('ready');
 
   // 8. Nightly pruning job — runs every 24 hours
   const PRUNE_INTERVAL = 24 * 60 * 60 * 1000; // 24 hours
@@ -297,16 +301,16 @@ async function main(): Promise<void> {
     try {
       const result = await pruneConversations(db);
       if (result.expired > 0 || result.capped > 0) {
-        console.log(`[daemon] pruned ${result.expired} expired + ${result.capped} capped sessions`);
+        log.info(`pruned ${result.expired} expired + ${result.capped} capped sessions`);
       }
     } catch (err) {
-      console.error('[daemon] pruning error:', err);
+      log.error({ err }, 'pruning error');
     }
   }, PRUNE_INTERVAL);
 
   // 9. Graceful shutdown on signals
   function shutdown(): void {
-    console.log('[daemon] shutting down...');
+    log.info('shutting down...');
     clearInterval(pruneTimer);
     queue.stop();
     void watcher.close();
@@ -314,7 +318,7 @@ async function main(): Promise<void> {
     void queueDone.finally(async () => {
       await closeDb();
       clearPid();
-      console.log('[daemon] bye');
+      log.info('bye');
       process.exit(0);
     });
   }
@@ -324,6 +328,6 @@ async function main(): Promise<void> {
 }
 
 main().catch(err => {
-  console.error('[daemon] fatal:', err);
+  log.fatal({ err }, 'fatal error');
   process.exit(1);
 });

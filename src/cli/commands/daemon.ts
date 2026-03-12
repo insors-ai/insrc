@@ -7,6 +7,9 @@ import type { Command } from 'commander';
 import { rpc } from '../client.js';
 import { PATHS } from '../../shared/paths.js';
 import type { DaemonStatus, RegisteredRepo } from '../../shared/types.js';
+import { getLogger } from '../../shared/logger.js';
+
+const log = getLogger('cli');
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 // Daemon entry point relative to this compiled file's location
@@ -38,7 +41,7 @@ export function registerDaemonCommands(program: Command): void {
 async function cmdStart(): Promise<void> {
   if (existsSync(PATHS.pidFile)) {
     // Let the daemon itself check for a stale PID; just warn here
-    console.log('daemon may already be running (pid file exists)');
+    log.warn('daemon may already be running (pid file exists)');
   }
 
   mkdirSync(PATHS.logDir, { recursive: true });
@@ -60,11 +63,11 @@ async function cmdStart(): Promise<void> {
   for (let i = 0; i < 30; i++) {
     await sleep(100);
     if (existsSync(PATHS.pidFile)) {
-      console.log('daemon started (log: ' + PATHS.daemonLog + ')');
+      log.info('daemon started (log: ' + PATHS.daemonLog + ')');
       return;
     }
   }
-  console.warn('daemon may have failed to start — check ' + PATHS.daemonLog);
+  log.warn('daemon may have failed to start — check ' + PATHS.daemonLog);
 }
 
 async function cmdStop(): Promise<void> {
@@ -74,13 +77,13 @@ async function cmdStop(): Promise<void> {
     for (let i = 0; i < 50; i++) {
       await sleep(100);
       if (!existsSync(PATHS.pidFile)) {
-        console.log('daemon stopped');
+        log.info('daemon stopped');
         return;
       }
     }
-    console.warn('daemon did not stop within 5 s');
+    log.warn('daemon did not stop within 5 s');
   } catch (err) {
-    console.error(String(err));
+    log.error(String(err));
   }
 }
 
@@ -88,21 +91,21 @@ async function cmdStatus(): Promise<void> {
   try {
     const status = await rpc<DaemonStatus>('daemon.status');
     const uptime = formatUptime(status.uptime);
-    console.log(`status:  running  (uptime ${uptime})`);
-    console.log(`queue:   ${status.queueDepth} job(s) pending`);
+    log.info(`status:  running  (uptime ${uptime})`);
+    log.info(`queue:   ${status.queueDepth} job(s) pending`);
     if (status.modelPullStatus === 'pulling') {
-      console.log(`model:   pulling ${status.modelPullPct ?? 0}%`);
+      log.info(`model:   pulling ${status.modelPullPct ?? 0}%`);
     } else {
-      console.log(`model:   ready`);
+      log.info(`model:   ready`);
     }
     if (status.repos.length === 0) {
-      console.log('repos:   none registered');
+      log.info('repos:   none registered');
     } else {
-      console.log('repos:');
+      log.info('repos:');
       for (const r of status.repos) printRepo(r);
     }
   } catch (err) {
-    console.error(String(err));
+    log.error(String(err));
     process.exitCode = 1;
   }
 }
@@ -115,7 +118,7 @@ function printRepo(r: RegisteredRepo): void {
   const when = r.lastIndexed
     ? new Date(r.lastIndexed).toLocaleString()
     : 'never';
-  console.log(`  [${r.status.padEnd(8)}] ${r.path}  (last indexed: ${when})`);
+  log.info(`  [${r.status.padEnd(8)}] ${r.path}  (last indexed: ${when})`);
 }
 
 function formatUptime(seconds: number): string {

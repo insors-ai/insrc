@@ -1,6 +1,7 @@
 import { Schema, Field, Utf8, Int32, Float32, FixedSizeList } from 'apache-arrow';
 import type { Table } from '@lancedb/lancedb';
 import type { DbClient } from './client.js';
+import { loadConfig } from '../agent/config.js';
 
 // ---------------------------------------------------------------------------
 // LanceDB tables for conversation persistence.
@@ -12,7 +13,7 @@ import type { DbClient } from './client.js';
 //   retrieval. Deleted on session close (summary is the durable artifact).
 // ---------------------------------------------------------------------------
 
-const EMBEDDING_DIM = 1024; // qwen3-embedding:0.6b output dimension
+const EMBEDDING_DIM = loadConfig().models.embeddingDim;
 const ZERO_VEC = new Array<number>(EMBEDDING_DIM).fill(0);
 
 const SESSIONS_SCHEMA = new Schema([

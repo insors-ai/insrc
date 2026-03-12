@@ -8,52 +8,46 @@ import type { ContextProvider } from './types.js';
 // Connects to the insrc daemon via Unix socket JSON-RPC to perform
 // vector similarity search and graph traversal over indexed code entities.
 //
-// All methods degrade gracefully — returning empty results when the daemon
-// is unreachable (e.g. not started, socket missing).
+// Errors propagate to the caller — the daemon must be running.
+// Use createNullContextProvider() for testing without a daemon.
 // ---------------------------------------------------------------------------
+
+/**
+ * Verify the daemon is reachable by issuing a lightweight RPC call.
+ * Throws with a descriptive message if the daemon is not running.
+ */
+export async function assertDaemonReachable(): Promise<void> {
+  await rpc('daemon.status');
+}
 
 /**
  * Create a ContextProvider backed by the insrc daemon.
  *
  * This is the production implementation used by the pipeline when
  * the daemon is running and the repo has been indexed.
+ *
+ * Errors are NOT swallowed — callers must handle daemon unavailability.
  */
 export function createDaemonContextProvider(): ContextProvider {
   return {
     async search(query: string, limit = 10): Promise<Entity[]> {
-      try {
-        return await rpc<Entity[]>('search.query', { text: query, limit });
-      } catch {
-        return [];
-      }
+      return rpc<Entity[]>('search.query', { text: query, limit });
     },
 
     async expand(entityId: string): Promise<{ callers: Entity[]; callees: Entity[] }> {
-      try {
-        const [callers, callees] = await Promise.all([
-          rpc<Entity[]>('search.callers', { entityId }),
-          rpc<Entity[]>('search.callees', { entityId }),
-        ]);
-        return { callers, callees };
-      } catch {
-        return { callers: [], callees: [] };
-      }
+      const [callers, callees] = await Promise.all([
+        rpc<Entity[]>('search.callers', { entityId }),
+        rpc<Entity[]>('search.callees', { entityId }),
+      ]);
+      return { callers, callees };
     },
 
     async byFile(filePath: string): Promise<Entity[]> {
-      try {
-        return await rpc<Entity[]>('search.by_file', { filePath });
-      } catch {
-        return [];
-      }
+      return rpc<Entity[]>('search.by_file', { filePath });
     },
 
     async callersNhop(entityId: string, hops: number): Promise<Entity[]> {
-      try {
-        return await rpc<Entity[]>('search.callers_nhop', { entityId, hops });
-      } catch {
-        return [];
-      }
+      return rpc<Entity[]>('search.callers_nhop', { entityId, hops });
     },
   };
 }

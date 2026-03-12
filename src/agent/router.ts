@@ -1,6 +1,9 @@
 import type { AgentConfig, Attachment, ExplicitProvider, Intent, LLMProvider } from '../shared/types.js';
 import { ClaudeProvider } from './providers/claude.js';
 import { hasEscalationAttachment } from './attachments/router.js';
+import { getLogger } from '../shared/logger.js';
+
+const log = getLogger('router');
 
 // ---------------------------------------------------------------------------
 // Intent → default provider mapping (from design doc)
@@ -86,7 +89,7 @@ export function selectProvider(
   // Attachment-forced escalation: image/PDF → Claude (standard tier, unless @opus)
   if (hasEscalationAttachment(attachments) && explicit !== 'opus') {
     if (!claudeProvider) {
-      console.warn('[router] Claude not available for attachment processing (no API key). Using local model.');
+      log.warn('Claude not available for attachment processing (no API key). Using local model.');
       return { provider: ollamaProvider, label: 'Local (Claude unavailable)', graphOnly: false };
     }
     const tier: Tier = 'standard';
@@ -109,7 +112,7 @@ export function selectProvider(
   // Explicit @opus → Claude Opus
   if (explicit === 'opus') {
     if (!claudeProvider) {
-      console.warn('[router] Claude not available (no API key). Using local model.');
+      log.warn('Claude not available (no API key). Using local model.');
       return { provider: ollamaProvider, label: 'Local (Claude unavailable)', graphOnly: false };
     }
     const provider = new ClaudeProvider({
@@ -122,7 +125,7 @@ export function selectProvider(
   // Explicit @claude → Claude at the standard tier for this intent
   if (explicit === 'claude') {
     if (!claudeProvider) {
-      console.warn('[router] Claude not available (no API key). Using local model.');
+      log.warn('Claude not available (no API key). Using local model.');
       return { provider: ollamaProvider, label: 'Local (Claude unavailable)', graphOnly: false };
     }
     const tier = INTENT_TIER[intent] ?? 'standard';
@@ -143,7 +146,7 @@ export function selectProvider(
   // Claude-default intents
   if (CLAUDE_DEFAULT.has(intent)) {
     if (!claudeProvider) {
-      console.warn('[router] Claude not available for', intent, '— using local model.');
+      log.warn(`Claude not available for ${intent} — using local model.`);
       return { provider: ollamaProvider, label: 'Local (Claude unavailable)', graphOnly: false };
     }
     const tier = INTENT_TIER[intent] ?? 'standard';

@@ -17,8 +17,16 @@ import {
   classifyDaemonError, formatDaemonFault, attemptRestart, annotateStale, isGraphPotentiallyStale,
   type ComponentState,
 } from './faults/index.js';
-import { runRequirementsPipeline } from './tasks/requirements.js';
-import { runDesignPipeline } from './tasks/design.js';
+import {
+  runDesignerPipeline,
+  ValidationChannel,
+  renderGate,
+  parseGateResponse,
+  resolveTemplate,
+  parseTemplateFlags,
+  type DesignerInput,
+  type DesignerResult,
+} from './tasks/designer/index.js';
 import { runPlanPipeline } from './tasks/plan.js';
 import { runImplementPipeline } from './tasks/implement.js';
 import { runRefactorPipeline } from './tasks/refactor.js';
@@ -27,7 +35,7 @@ import { runDebugPipeline } from './tasks/debug.js';
 import { findTestFile } from './tasks/test-runner.js';
 import { runGraphQuery } from './tasks/graph.js';
 import { runResearchPipeline } from './tasks/research.js';
-import { runReviewPipeline } from './tasks/review.js';
+// review.ts still used by designer/review.ts for context assembly helpers
 import { runDocumentPipeline } from './tasks/document.js';
 import {
   extractFilePaths, resolveAttachment, hasEscalationAttachment,
@@ -35,6 +43,8 @@ import {
 } from './attachments/router.js';
 import { runForcedClaudePipeline } from './attachments/forced-claude.js';
 import type { Attachment, ContentBlock } from '../shared/types.js';
+import { getLogger, toLogFn } from '../shared/logger.js';
+const log = getLogger('agent');
 
 /**
  * Start the interactive agent REPL.
@@ -49,7 +59,7 @@ export async function startRepl(cwd?: string): Promise<void> {
   }
 
   // Pre-flight checks
-  console.log('[agent] starting...');
+  log.info('starting...');
 
   // 1. Check Ollama and pull agent model if needed
   try {
@@ -57,7 +67,7 @@ export async function startRepl(cwd?: string): Promise<void> {
       process.stdout.write(`\r[agent] pulling model... ${pct}%`);
     });
   } catch {
-    console.warn('[agent] Ollama not available — local model disabled. Use @claude prefix.');
+    log.warn('Ollama not available — local model disabled. Use @claude prefix.');
   }
 
   // 1b. First-run Brave key setup (one-time, skippable)
@@ -70,9 +80,9 @@ export async function startRepl(cwd?: string): Promise<void> {
   // Health change logging
   session.health.setOnChange((component, prev, next) => {
     if (next === 'unavailable') {
-      console.log(`  [health] ${component} is now unavailable (was ${prev})`);
+      log.info(`${component} is now unavailable (was ${prev})`);
     } else if (next === 'healthy' && prev !== 'healthy') {
-      console.log(`  [health] ${component} recovered → healthy`);
+      log.info(`${component} recovered → healthy`);
     }
   });
 
@@ -84,7 +94,7 @@ export async function startRepl(cwd?: string): Promise<void> {
     const plan = await planGet({ repoPath });
     if (plan?.status === 'active') {
       const reset = await planResetStale(plan.id);
-      if (reset > 0) console.log(`[agent] reset ${reset} stale plan step lock(s)`);
+      if (reset > 0) log.info(`reset ${reset} stale plan step lock(s)`);
     }
   })();
 
@@ -95,14 +105,14 @@ export async function startRepl(cwd?: string): Promise<void> {
   const daemonInitOk = await pingDaemon();
   session.health.recordDaemonResult(daemonInitOk);
 
-  console.log(`[agent] repo: ${repoPath}`);
-  console.log(`[agent] ollama: ${ollamaOk ? 'connected' : 'unavailable'}`);
-  console.log(`[agent] claude: ${session.hasClaudeKey ? 'configured' : 'not configured (set ANTHROPIC_API_KEY or add to ~/.insrc/config.json)'}`);
-  console.log('');
-  console.log('Type a message to chat. Prefix with @claude, @opus, @local, or /intent <name> to route.');
-  console.log(`[agent] permissions: ${session.permissionMode}`);
-  console.log('Commands: /status, /cost, /plan, /forget, /toggle-permissions, /exit');
-  console.log('');
+  log.info(`repo: ${repoPath}`);
+  log.info(`ollama: ${ollamaOk ? 'connected' : 'unavailable'}`);
+  log.info(`claude: ${session.hasClaudeKey ? 'configured' : 'not configured (set ANTHROPIC_API_KEY or add to ~/.insrc/config.json)'}`);
+  log.info('');
+  log.info('Type a message to chat. Prefix with @claude, @opus, @local, or /intent <name> to route.');
+  log.info(`permissions: ${session.permissionMode}`);
+  log.info('Commands: /status, /cost, /plan, /forget, /toggle-permissions, /exit');
+  log.info('');
 
   // 3. REPL loop
   const rl = createInterface({
@@ -134,9 +144,9 @@ export async function startRepl(cwd?: string): Promise<void> {
 
     // Commands
     if (raw === '/exit') {
-      console.log('Closing session...');
+      log.info('Closing session...');
       await closeSession();
-      console.log('Session closed.');
+      log.info('Session closed.');
       rl.close();
       return;
     }
@@ -146,27 +156,27 @@ export async function startRepl(cwd?: string): Promise<void> {
       const age = Math.floor((Date.now() - session.startedAt) / 1000);
       const mins = Math.floor(age / 60);
       const secs = age % 60;
-      console.log(`  session: ${session.id.slice(0, 8)}... (${mins}m${secs}s)`);
-      console.log(`  daemon:  ${formatHealthLine(snap.daemon.state, snap.daemon.lastOk)}`);
-      console.log(`  ollama:  ${formatHealthLine(snap.ollama.state, snap.ollama.lastOk)}`);
-      console.log(`  claude:  ${session.hasClaudeKey ? 'configured' : 'not configured'}`);
+      log.info(`session: ${session.id.slice(0, 8)}... (${mins}m${secs}s)`);
+      log.info(`daemon:  ${formatHealthLine(snap.daemon.state, snap.daemon.lastOk)}`);
+      log.info(`ollama:  ${formatHealthLine(snap.ollama.state, snap.ollama.lastOk)}`);
+      log.info(`claude:  ${session.hasClaudeKey ? 'configured' : 'not configured'}`);
       if (isGraphPotentiallyStale()) {
-        console.log(`  graph:   [stale] index is being rebuilt`);
+        log.info(`graph:   [stale] index is being rebuilt`);
       }
-      console.log(`  repo:    ${session.repoPath}`);
-      console.log(`  repos:   ${session.closureRepos.join(', ')}`);
-      console.log(`  turns:   ${session.turnIndex}`);
-      console.log(`  recent:  ${ctx.getRecentCount()} turns`);
-      console.log(`  semantic: ${ctx.getSemanticSize()} stored`);
-      console.log(`  summary: ${ctx.getSummary() ? 'yes' : 'none'}`);
-      console.log(`  seeded:  ${seeded ? 'yes' : 'no'}`);
+      log.info(`repo:    ${session.repoPath}`);
+      log.info(`repos:   ${session.closureRepos.join(', ')}`);
+      log.info(`turns:   ${session.turnIndex}`);
+      log.info(`recent:  ${ctx.getRecentCount()} turns`);
+      log.info(`semantic: ${ctx.getSemanticSize()} stored`);
+      log.info(`summary: ${ctx.getSummary() ? 'yes' : 'none'}`);
+      log.info(`seeded:  ${seeded ? 'yes' : 'no'}`);
       const activePlan = await planGet({ repoPath });
       if (activePlan) {
         const done = activePlan.steps.filter(s => s.status === 'done').length;
         const total = activePlan.steps.length;
-        console.log(`  plan:    ${activePlan.title} (${done}/${total} done) [${activePlan.status}]`);
+        log.info(`plan:    ${activePlan.title} (${done}/${total} done) [${activePlan.status}]`);
       } else {
-        console.log(`  plan:    none`);
+        log.info(`plan:    none`);
       }
       rl.prompt();
       return;
@@ -176,17 +186,17 @@ export async function startRepl(cwd?: string): Promise<void> {
       const c = session.cost;
       // Pricing: Haiku input=$0.25/M output=$1.25/M, Sonnet input=$3/M output=$15/M
       const estCost = (c.inputTokens * 3 + c.outputTokens * 15) / 1_000_000;
-      console.log(`  Claude turns:   ${c.turns}`);
-      console.log(`  Input tokens:   ${c.inputTokens.toLocaleString()}`);
-      console.log(`  Output tokens:  ${c.outputTokens.toLocaleString()}`);
-      console.log(`  Estimated cost: $${estCost.toFixed(4)}`);
+      log.info(`Claude turns:   ${c.turns}`);
+      log.info(`Input tokens:   ${c.inputTokens.toLocaleString()}`);
+      log.info(`Output tokens:  ${c.outputTokens.toLocaleString()}`);
+      log.info(`Estimated cost: $${estCost.toFixed(4)}`);
       rl.prompt();
       return;
     }
 
     if (raw === '/forget') {
       await session.forget();
-      console.log('  All session summaries for this repo deleted from persistent store.');
+      log.info('All session summaries for this repo deleted from persistent store.');
       rl.prompt();
       return;
     }
@@ -202,12 +212,12 @@ export async function startRepl(cwd?: string): Promise<void> {
           const queryEmbedding = await ctx.embedQuery(desc);
           const assembled = await ctx.assemble(desc, queryEmbedding);
           const response = await handlePipelineIntent('plan', desc, assembled.code.text);
-          if (response) { console.log(response); console.log(''); }
+          if (response) { log.info(response); log.info(''); }
           const turn = { userMessage: desc, assistantResponse: response, entityIds: [] as string[] };
           await ctx.recordTurn(turn, queryEmbedding);
           session.turnIndex++;
         } catch (err) {
-          console.error('\n[error]', err instanceof Error ? err.message : err);
+          log.error(err instanceof Error ? err.message : String(err));
         }
       }
       rl.prompt();
@@ -216,7 +226,7 @@ export async function startRepl(cwd?: string): Promise<void> {
 
     if (raw === '/toggle-permissions') {
       session.permissionMode = session.permissionMode === 'validate' ? 'auto-accept' : 'validate';
-      console.log(`  permissions: ${session.permissionMode}`);
+      log.info(`permissions: ${session.permissionMode}`);
       rl.prompt();
       return;
     }
@@ -234,7 +244,7 @@ export async function startRepl(cwd?: string): Promise<void> {
       );
       resolvedAttachments.push(resolved);
       attachments.push(resolved.attachment);
-      for (const w of resolved.warnings) console.log(w);
+      for (const w of resolved.warnings) log.warn(w);
       if (resolved.textContent) {
         attachmentTextParts.push(`### ${resolved.attachment.name}\n${resolved.textContent}`);
       }
@@ -282,27 +292,27 @@ export async function startRepl(cwd?: string): Promise<void> {
         const graphResult = await runGraphQuery(classified.message);
         if (!graphResult.handled) {
           // Re-route interpretive questions to research
-          console.log('  [graph] Interpretive question — routing to research...');
+          log.info('[graph] Interpretive question — routing to research...');
           const queryEmbedding = await ctx.embedQuery(classified.message);
           const assembled = await ctx.assemble(classified.message, queryEmbedding);
           const response = await handlePipelineIntent('research', classified.message, assembled.code.text);
           if (response) {
-            console.log(response);
-            console.log('');
+            log.info(response);
+            log.info('');
             const turn = { userMessage: classified.message, assistantResponse: response, entityIds: [] as string[] };
             await ctx.recordTurn(turn, queryEmbedding);
             session.turnIndex++;
           }
         } else {
-          console.log(graphResult.response);
-          console.log('');
+          log.info(graphResult.response);
+          log.info('');
           const queryEmbedding = await ctx.embedQuery(classified.message);
           const turn = { userMessage: classified.message, assistantResponse: graphResult.response, entityIds: [] as string[] };
           await ctx.recordTurn(turn, queryEmbedding);
           session.turnIndex++;
         }
       } catch (err) {
-        console.error('\n[error]', err instanceof Error ? err.message : err);
+        log.error(err instanceof Error ? err.message : String(err));
       }
       rl.prompt();
       return;
@@ -322,7 +332,7 @@ export async function startRepl(cwd?: string): Promise<void> {
           const forcedResult = await runForcedClaudePipeline(
             classified.intent, classified.message, repoPath, codeContext,
             ctx.getActivePlanStep(), attachmentContentBlocks,
-            route.provider, console.log,
+            route.provider, toLogFn(log),
           );
           if (forcedResult.accepted) {
             assistantResponse = `${forcedResult.message}\n\nFiles:\n${forcedResult.filesWritten.map(f => `  - ${f}`).join('\n')}`;
@@ -337,14 +347,14 @@ export async function startRepl(cwd?: string): Promise<void> {
           });
         }
         if (assistantResponse) {
-          console.log(assistantResponse);
-          console.log('');
+          log.info(assistantResponse);
+          log.info('');
           const turn = { userMessage: classified.message, assistantResponse, entityIds: [] as string[] };
           await ctx.recordTurn(turn, queryEmbedding);
           session.turnIndex++;
         }
       } catch (err) {
-        console.error('\n[error]', err instanceof Error ? err.message : err);
+        log.error(err instanceof Error ? err.message : String(err));
       }
       rl.prompt();
       return;
@@ -356,7 +366,7 @@ export async function startRepl(cwd?: string): Promise<void> {
       const seed = await session.seedFromPriorSessions(classified.message);
       if (seed) {
         ctx.seedSummary(seed);
-        console.log('  [context] seeded from prior session');
+        log.info('[context] seeded from prior session');
       }
     }
 
@@ -381,7 +391,7 @@ export async function startRepl(cwd?: string): Promise<void> {
           graphOnly: false,
           tier,
         };
-        console.log(`  [escalation] ${escalation.reason} → auto-escalated to Claude`);
+        log.info(`[escalation] ${escalation.reason} → auto-escalated to Claude`);
       }
     }
 
@@ -406,8 +416,8 @@ export async function startRepl(cwd?: string): Promise<void> {
       mcpAvailable = await pingDaemon();
       session.health.recordDaemonResult(mcpAvailable);
       if (!mcpAvailable && session.health.daemonState === 'unavailable') {
-        console.log('  [daemon] Attempting auto-restart...');
-        const restarted = await attemptRestart(msg => console.log(msg));
+        log.info('[daemon] Attempting auto-restart...');
+        const restarted = await attemptRestart(toLogFn(log));
         if (restarted) {
           mcpAvailable = true;
           session.health.recordDaemonResult(true);
@@ -417,7 +427,7 @@ export async function startRepl(cwd?: string): Promise<void> {
       mcpAvailable = false;
       session.health.recordDaemonResult(false);
       const fault = classifyDaemonError(err);
-      console.log(formatDaemonFault(fault));
+      log.warn(formatDaemonFault(fault));
     }
     const tools = getToolDefinitions({ mcpAvailable });
 
@@ -437,12 +447,12 @@ export async function startRepl(cwd?: string): Promise<void> {
             const status = validation.action === 'rejected'
               ? `rejected: ${validation.reason}`
               : validation.action;
-            console.log(`  [tool] ${call.name} → ${status}`);
+            log.info(`[tool] ${call.name} → ${status}`);
           },
           onToolResult: (call, result) => {
             const preview = result.content.slice(0, 100).replace(/\n/g, ' ');
             const suffix = result.content.length > 100 ? '...' : '';
-            console.log(`  [result] ${call.name}: ${preview}${suffix}`);
+            log.info(`[result] ${call.name}: ${preview}${suffix}`);
           },
           onUsage: (usage) => {
             session.cost.inputTokens += usage.inputTokens;
@@ -455,7 +465,7 @@ export async function startRepl(cwd?: string): Promise<void> {
         assistantResponse = result.response;
 
         if (result.hitLimit) {
-          console.log('  [warning] Tool loop hit max iterations (25)');
+          log.warn('Tool loop hit max iterations (25)');
         }
       } else {
         // Fallback: plain streaming (no tool use)
@@ -485,7 +495,7 @@ export async function startRepl(cwd?: string): Promise<void> {
 
       if (assembled.dropped.length > 0) {
         for (const d of assembled.dropped) {
-          console.log(`  [context] dropped ${d.layer}: ${d.reason} (${d.tokensDropped} tokens)`);
+          log.info(`[context] dropped ${d.layer}: ${d.reason} (${d.tokensDropped} tokens)`);
         }
       }
 
@@ -495,12 +505,12 @@ export async function startRepl(cwd?: string): Promise<void> {
       if (isOllamaDown(err)) {
         session.health.recordOllamaResult(false);
         const fault = classifyOllamaError(err);
-        console.log('\n' + formatOllamaFault(fault));
+        log.warn(formatOllamaFault(fault));
         if (fault.suggestClaude && session.hasClaudeKey) {
-          console.log('  Retry with @claude prefix to use Claude for this turn.');
+          log.info('Retry with @claude prefix to use Claude for this turn.');
         }
       } else {
-        console.error('\n[error]', err instanceof Error ? err.message : err);
+        log.error(err instanceof Error ? err.message : String(err));
       }
     }
 
@@ -530,39 +540,59 @@ export async function startRepl(cwd?: string): Promise<void> {
     codeContext: string,
     opts?: { explicit?: import('../shared/types.js').ExplicitProvider | undefined; routeProvider?: import('../shared/types.js').LLMProvider; routeTier?: string | undefined },
   ): Promise<string> {
-    if (intent === 'requirements') {
+    if (intent === 'requirements' || intent === 'design') {
       if (!session.claudeProvider) {
-        return '[error] Requirements pipeline requires Claude. Set ANTHROPIC_API_KEY.';
+        return `[error] Designer pipeline requires Claude. Set ANTHROPIC_API_KEY.`;
       }
-      console.log('  [pipeline] Running requirements pipeline (local sketch → Claude enhance)...');
-      const result = await runRequirementsPipeline(
-        message, codeContext, session.ollamaProvider, session.claudeProvider,
-      );
-      ctx.setTag('[requirements]', result.enhanced);
-      return result.enhanced;
-    }
 
-    if (intent === 'design') {
-      if (!session.claudeProvider) {
-        return '[error] Design pipeline requires Claude. Set ANTHROPIC_API_KEY.';
+      const reqContext = intent === 'design' ? ctx.getTag('[requirements]') : undefined;
+      const parsed = parseTemplateFlags(message);
+      const template = resolveTemplate({ ...parsed, repoPath });
+
+      const designerInput: DesignerInput = {
+        message: parsed.message,
+        codeContext,
+        template,
+        intent: intent as 'requirements' | 'design',
+        requirementsDoc: reqContext ?? undefined,
+        session: { repoPath, closureRepos: session.closureRepos },
+      };
+
+      const channel = new ValidationChannel();
+      let finalResult: DesignerResult | null = null;
+
+      for await (const event of runDesignerPipeline(
+        designerInput, session.ollamaProvider, session.claudeProvider, channel,
+      )) {
+        if (event.kind === 'progress') {
+          log.info(event.message);
+        } else if (event.kind === 'gate') {
+          // Render gate and prompt user
+          log.info(renderGate(event.gate));
+          const answer = await askOnce('designer> ');
+          channel.respond(parseGateResponse(answer));
+        } else if (event.kind === 'done') {
+          finalResult = event.result;
+        }
       }
-      const reqContext = ctx.getTag('[requirements]');
-      console.log('  [pipeline] Running design pipeline (local sketch → Claude enhance)...');
-      if (reqContext) console.log('  [pipeline] Using [requirements] from L2');
-      const result = await runDesignPipeline(
-        message, codeContext, reqContext, session.ollamaProvider, session.claudeProvider,
-      );
-      ctx.setTag('[design]', result.enhanced);
-      return result.enhanced;
+
+      if (finalResult) {
+        ctx.setTag('[requirements]', finalResult.summary);
+        if (intent === 'design') {
+          ctx.setTag('[design]', finalResult.output);
+        }
+        return finalResult.output;
+      }
+      return '[error] Designer pipeline produced no output.';
     }
 
     if (intent === 'plan') {
       const reqContext = ctx.getTag('[requirements]');
       const desContext = ctx.getTag('[design]');
-      console.log('  [pipeline] Running plan pipeline...');
-      if (reqContext) console.log('  [pipeline] Using [requirements] from L2');
-      if (desContext) console.log('  [pipeline] Using [design] from L2');
-      if (!reqContext && !desContext) console.log('  [pipeline] No prior requirements/design — running condensed mode');
+      log.info('[pipeline] Running plan pipeline...');
+      if (reqContext) log.info('[pipeline] Using [requirements] from L2');
+      if (desContext) log.info('[pipeline] Using [design] from L2');
+      if (!reqContext && !desContext) log.info('[pipeline] No prior requirements/design — running condensed mode');
 
       const result = await runPlanPipeline(
         message, repoPath, codeContext, reqContext, desContext,
@@ -572,7 +602,7 @@ export async function startRepl(cwd?: string): Promise<void> {
       // Persist plan to Kuzu via daemon
       await planSave(result.plan);
       ctx.setTag(result.tag, `Plan: ${result.plan.title}`);
-      console.log(`  [pipeline] Plan saved: ${result.plan.steps.length} steps (id: ${result.plan.id.slice(0, 8)}...)`);
+      log.info(`[pipeline] Plan saved: ${result.plan.steps.length} steps (id: ${result.plan.id.slice(0, 8)}...)`);
 
       // Display the plan
       printPlan(result.plan);
@@ -581,8 +611,8 @@ export async function startRepl(cwd?: string): Promise<void> {
 
     if (intent === 'implement') {
       const planStepCtx = ctx.getActivePlanStep();
-      console.log('  [pipeline] Running implement pipeline (local diff → Claude validate)...');
-      if (planStepCtx) console.log('  [pipeline] Active plan step injected');
+      log.info('[pipeline] Running implement pipeline (local diff → Claude validate)...');
+      if (planStepCtx) log.info('[pipeline] Active plan step injected');
 
       const result = await runImplementPipeline(
         message, repoPath, codeContext, planStepCtx,
@@ -602,8 +632,8 @@ export async function startRepl(cwd?: string): Promise<void> {
 
     if (intent === 'refactor') {
       const planStepCtx = ctx.getActivePlanStep();
-      console.log('  [pipeline] Running refactor pipeline (local diff → Claude validate)...');
-      if (planStepCtx) console.log('  [pipeline] Active plan step injected');
+      log.info('[pipeline] Running refactor pipeline (local diff → Claude validate)...');
+      if (planStepCtx) log.info('[pipeline] Active plan step injected');
 
       const result = await runRefactorPipeline(
         message, repoPath, codeContext, planStepCtx,
@@ -623,8 +653,8 @@ export async function startRepl(cwd?: string): Promise<void> {
 
     if (intent === 'test') {
       const planStepCtx = ctx.getActivePlanStep();
-      console.log('  [pipeline] Running test pipeline (generate → validate → execute → fix loop)...');
-      if (planStepCtx) console.log('  [pipeline] Active plan step injected');
+      log.info('[pipeline] Running test pipeline (generate → validate → execute → fix loop)...');
+      if (planStepCtx) log.info('[pipeline] Active plan step injected');
 
       // Try to find the test file from the message or infer from context
       // For now, use a heuristic: look for file paths in the message
@@ -669,13 +699,13 @@ export async function startRepl(cwd?: string): Promise<void> {
     if (intent === 'debug') {
       const planStepCtx = ctx.getActivePlanStep();
       const mcpUp = await pingDaemon();
-      console.log('  [pipeline] Running debug pipeline (tool loop → stuck escalation → fix)...');
-      if (planStepCtx) console.log('  [pipeline] Active plan step injected');
+      log.info('[pipeline] Running debug pipeline (tool loop → stuck escalation → fix)...');
+      if (planStepCtx) log.info('[pipeline] Active plan step injected');
 
       const result = await runDebugPipeline(
         message, repoPath, codeContext, planStepCtx,
         session.ollamaProvider, session.claudeProvider,
-        console.log,
+        toLogFn(log),
         session.permissionMode,
         mcpUp,
       );
@@ -695,24 +725,40 @@ export async function startRepl(cwd?: string): Promise<void> {
       if (!session.claudeProvider) {
         return '[error] Review pipeline requires Claude. Set ANTHROPIC_API_KEY.';
       }
-      // @opus prefix → use Opus provider for deep architectural reviews
       const isOpus = opts?.explicit === 'opus';
       const reviewProvider = isOpus && opts?.routeTier === 'powerful' && opts?.routeProvider
         ? opts.routeProvider
         : session.claudeProvider;
-      console.log(`  [pipeline] Running review pipeline (context assembly → Claude review${isOpus ? ' [Opus]' : ''})...`);
 
-      const result = await runReviewPipeline(
-        message, codeContext, reviewProvider, isOpus,
-      );
+      const template = resolveTemplate({ format: 'markdown' });
+      const designerInput: DesignerInput = {
+        message,
+        codeContext,
+        template,
+        intent: 'review',
+        session: { repoPath, closureRepos: session.closureRepos },
+      };
 
-      return result.review;
+      const channel = new ValidationChannel();
+      let reviewOutput = '';
+
+      for await (const event of runDesignerPipeline(
+        designerInput, session.ollamaProvider, reviewProvider, channel,
+      )) {
+        if (event.kind === 'progress') {
+          log.info(event.message);
+        } else if (event.kind === 'done') {
+          reviewOutput = event.result.output;
+        }
+      }
+
+      return reviewOutput || '[error] Review pipeline produced no output.';
     }
 
     if (intent === 'document') {
       const requestReview = /--review\b/.test(message);
       const cleanMessage = message.replace(/--review\b/, '').trim();
-      console.log(`  [pipeline] Running document pipeline (local generation${requestReview ? ' + Claude review' : ''})...`);
+      log.info(`[pipeline] Running document pipeline (local generation${requestReview ? ' + Claude review' : ''})...`);
 
       // Build Sonnet provider for cross-cutting doc escalation
       let sonnetProvider: import('../shared/types.js').LLMProvider | null = null;
@@ -727,7 +773,7 @@ export async function startRepl(cwd?: string): Promise<void> {
         cleanMessage, repoPath, codeContext,
         session.ollamaProvider, session.claudeProvider,
         requestReview,
-        console.log,
+        toLogFn(log),
         sonnetProvider,
       );
 
@@ -744,13 +790,13 @@ export async function startRepl(cwd?: string): Promise<void> {
 
     if (intent === 'research') {
       const forceEscalate = opts?.explicit === 'claude' || opts?.explicit === 'opus';
-      console.log(`  [pipeline] Running research pipeline${forceEscalate ? ' (escalated to Claude)' : ''}...`);
+      log.info(`[pipeline] Running research pipeline${forceEscalate ? ' (escalated to Claude)' : ''}...`);
 
       const result = await runResearchPipeline(
         message, codeContext,
         session.ollamaProvider, session.claudeProvider,
         session.config.keys.brave,
-        console.log,
+        toLogFn(log),
         session.closureRepos,
         forceEscalate,
       );
@@ -784,7 +830,7 @@ async function handlePlanCommand(arg: string, repoPath: string): Promise<string 
   if (!arg) {
     const plan = await planGet({ repoPath });
     if (!plan) {
-      console.log('  No active plan for this repo.');
+      log.info('No active plan for this repo.');
       return;
     }
     printPlan(plan);
@@ -795,25 +841,25 @@ async function handlePlanCommand(arg: string, repoPath: string): Promise<string 
   if (arg === 'delete') {
     const plan = await planGet({ repoPath });
     if (!plan) {
-      console.log('  No active plan to delete.');
+      log.info('No active plan to delete.');
       return;
     }
     await planDelete(plan.id);
-    console.log(`  Plan "${plan.title}" deleted.`);
+    log.info(`Plan "${plan.title}" deleted.`);
     return;
   }
 
   // /plan skip
   if (arg === 'skip') {
     const plan = await planGet({ repoPath });
-    if (!plan) { console.log('  No active plan.'); return; }
+    if (!plan) { log.info('No active plan.'); return; }
     const next = plan.steps.find(s => s.status === 'pending' || s.status === 'in_progress');
-    if (!next) { console.log('  No pending steps to skip.'); return; }
+    if (!next) { log.info('No pending steps to skip.'); return; }
     const result = await planStepUpdate(next.id, 'skipped', 'skipped by user');
     if (result.ok) {
-      console.log(`  Skipped: ${next.title}`);
+      log.info(`Skipped: ${next.title}`);
     } else {
-      console.log(`  Error: ${result.error}`);
+      log.error(`Error: ${result.error}`);
     }
     return;
   }
@@ -822,17 +868,17 @@ async function handlePlanCommand(arg: string, repoPath: string): Promise<string 
   if (arg.startsWith('undo')) {
     const stepNum = parseInt(arg.slice(4).trim(), 10);
     const plan = await planGet({ repoPath });
-    if (!plan) { console.log('  No active plan.'); return; }
+    if (!plan) { log.info('No active plan.'); return; }
     if (isNaN(stepNum) || stepNum < 1 || stepNum > plan.steps.length) {
-      console.log(`  Usage: /plan undo <step-number> (1-${plan.steps.length})`);
+      log.info(`Usage: /plan undo <step-number> (1-${plan.steps.length})`);
       return;
     }
     const step = plan.steps[stepNum - 1]!;
     const result = await planStepUpdate(step.id, 'pending', 'reverted by user');
     if (result.ok) {
-      console.log(`  Reverted step ${stepNum}: ${step.title} → pending`);
+      log.info(`Reverted step ${stepNum}: ${step.title} → pending`);
     } else {
-      console.log(`  Error: ${result.error}`);
+      log.error(`Error: ${result.error}`);
     }
     return;
   }
@@ -866,10 +912,10 @@ export async function promptBraveKeySetup(config: import('../shared/types.js').A
   // Write flag immediately (before prompt) so even if user kills process, we don't re-prompt
   writeFileSync(flagPath, new Date().toISOString(), 'utf-8');
 
-  console.log('');
-  console.log('[setup] Web search: Brave Search API provides high-quality web search (2,000 free queries/month).');
-  console.log('[setup] Without it, web searches will be handled by Claude (still works, but queries pass through Anthropic).');
-  console.log('[setup] Get a free key at: https://brave.com/search/api/');
+  log.info('');
+  log.info('[setup] Web search: Brave Search API provides high-quality web search (2,000 free queries/month).');
+  log.info('[setup] Without it, web searches will be handled by Claude (still works, but queries pass through Anthropic).');
+  log.info('[setup] Get a free key at: https://brave.com/search/api/');
 
   const answer = await askOnce('  Enter Brave API key (or press Enter to skip): ');
 
@@ -887,14 +933,14 @@ export async function promptBraveKeySetup(config: import('../shared/types.js').A
       writeFileSync(PATHS.config, JSON.stringify(configRaw, null, 2), 'utf-8');
       config.keys.brave = answer.trim();
       process.env['BRAVE_API_KEY'] = answer.trim();
-      console.log('[setup] Brave API key saved to ~/.insrc/config.json');
+      log.info('[setup] Brave API key saved to ~/.insrc/config.json');
     } catch {
-      console.warn('[setup] Could not save key to config file');
+      log.warn('[setup] Could not save key to config file');
     }
   } else {
-    console.log('[setup] Skipped — Claude will handle web searches automatically.');
+    log.info('[setup] Skipped — Claude will handle web searches automatically.');
   }
-  console.log('');
+  log.info('');
 }
 
 function askOnce(prompt: string): Promise<string> {
@@ -924,17 +970,17 @@ function printPlan(plan: import('../shared/types.js').Plan): void {
   const statusIcon: Record<string, string> = {
     pending: ' ', in_progress: '>', done: 'x', failed: '!', skipped: '-',
   };
-  console.log(`\n  Plan: ${plan.title} [${plan.status}]`);
-  console.log(`  ${'─'.repeat(60)}`);
+  log.info(`Plan: ${plan.title} [${plan.status}]`);
+  log.info(`${'─'.repeat(60)}`);
   for (const step of plan.steps) {
     const icon = statusIcon[step.status] ?? '?';
     const cp = step.checkpoint ? ' [checkpoint]' : '';
     const cx = ` (${step.complexity})`;
-    console.log(`  [${icon}] ${step.idx + 1}. ${step.title}${cx}${cp}`);
+    log.info(`[${icon}] ${step.idx + 1}. ${step.title}${cx}${cp}`);
     if (step.status === 'failed' && step.notes) {
       const lastNote = step.notes.split('\n').pop() ?? '';
-      console.log(`      ${lastNote}`);
+      log.info(lastNote);
     }
   }
-  console.log('');
+  log.info('');
 }

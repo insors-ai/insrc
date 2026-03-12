@@ -1,6 +1,9 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { PATHS } from '../shared/paths.js';
 import type { AgentConfig } from '../shared/types.js';
+import { getLogger } from '../shared/logger.js';
+
+const log = getLogger('config');
 
 const DEFAULT_CONTEXT = {
   local: 131_072,       // 128K — conservative default; qwen3-coder supports 262K
@@ -16,6 +19,8 @@ const DEFAULT_CONFIG: AgentConfig = {
   },
   models: {
     local: 'qwen3-coder:latest',
+    embedding: 'qwen3-embedding:4b',
+    embeddingDim: 2560,
     tiers: {
       fast: 'claude-haiku-4-5',
       standard: 'claude-sonnet-4-6',
@@ -41,7 +46,7 @@ export function loadConfig(): AgentConfig {
     const raw = JSON.parse(readFileSync(PATHS.config, 'utf8')) as Record<string, unknown>;
     return mergeConfig(DEFAULT_CONFIG, raw);
   } catch (err) {
-    console.warn(`[config] failed to parse ${PATHS.config}:`, err);
+    log.warn({ err }, `failed to parse ${PATHS.config}`);
     return { ...DEFAULT_CONFIG };
   }
 }
@@ -116,6 +121,8 @@ function mergeConfig(defaults: AgentConfig, raw: Record<string, unknown>): Agent
     },
     models: {
       local: (typeof models['local'] === 'string' ? models['local'] : defaults.models.local),
+      embedding: (typeof models['embedding'] === 'string' ? models['embedding'] : defaults.models.embedding),
+      embeddingDim: (typeof models['embeddingDim'] === 'number' ? models['embeddingDim'] : defaults.models.embeddingDim),
       tiers: {
         fast:     tiers['fast']     ?? defaults.models.tiers.fast,
         standard: tiers['standard'] ?? defaults.models.tiers.standard,

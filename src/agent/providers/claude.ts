@@ -8,6 +8,9 @@ import type {
   ToolCall,
   ContentBlock,
 } from '../../shared/types.js';
+import { getLogger } from '../../shared/logger.js';
+
+const log = getLogger('claude');
 
 // ---------------------------------------------------------------------------
 // Configuration
@@ -38,6 +41,21 @@ export class ClaudeProvider implements LLMProvider {
     const { system, apiMessages } = splitMessages(messages);
     const tools = opts.tools ? toAnthropicTools(opts.tools) : undefined;
 
+    log.debug({
+      model: this.model,
+      maxTokens: opts.maxTokens ?? 8_192,
+      temperature: opts.temperature,
+      systemLen: system?.length ?? 0,
+      system: system?.slice(0, 500),
+      messageCount: apiMessages.length,
+      messages: apiMessages.map(m => ({
+        role: m.role,
+        contentLen: typeof m.content === 'string' ? m.content.length : JSON.stringify(m.content).length,
+        contentPreview: typeof m.content === 'string' ? m.content.slice(0, 500) : '[blocks]',
+      })),
+      toolCount: tools?.length ?? 0,
+    }, 'claude request');
+
     try {
       const response = await this.client.messages.create({
         model:      this.model,
@@ -59,6 +77,16 @@ export class ClaudeProvider implements LLMProvider {
           name:  b.name,
           input: b.input as Record<string, unknown>,
         }));
+
+      log.debug({
+        model: this.model,
+        stopReason: response.stop_reason,
+        inputTokens: response.usage.input_tokens,
+        outputTokens: response.usage.output_tokens,
+        textLen: text.length,
+        textPreview: text.slice(0, 500),
+        toolCallCount: toolCalls.length,
+      }, 'claude response');
 
       return {
         text,

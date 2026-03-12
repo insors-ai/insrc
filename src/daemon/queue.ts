@@ -1,4 +1,7 @@
 import type { IndexJob } from '../shared/types.js';
+import { getLogger } from '../shared/logger.js';
+
+const log = getLogger('queue');
 
 type JobProcessor = (job: IndexJob) => Promise<void>;
 
@@ -55,7 +58,7 @@ export class IndexQueue {
       try {
         await processor(job);
       } catch (err) {
-        console.error('[queue] job failed:', err);
+        log.error({ err }, 'job failed');
       } finally {
         this.processing = false;
       }

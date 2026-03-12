@@ -1,4 +1,5 @@
 import type { LLMProvider, LLMMessage } from '../../shared/types.js';
+import { getLogger, toLogFn } from '../../shared/logger.js';
 import {
   parseDiff, applyDiff, extractDiffFromResponse,
 } from './diff-utils.js';
@@ -135,7 +136,7 @@ export async function runDocumentPipeline(
   localProvider: LLMProvider,
   claudeProvider: LLMProvider | null,
   requestReview = false,
-  log: (msg: string) => void = console.log,
+  log: (msg: string) => void = toLogFn(getLogger('document')),
   sonnetProvider: LLMProvider | null = null,
 ): Promise<DocumentResult> {
   const docType = detectDocType(userMessage);

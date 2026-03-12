@@ -15,6 +15,7 @@
 import { execFile } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { PATHS } from '../../shared/paths.js';
+import { getLogger, toLogFn } from '../../shared/logger.js';
 import { resetAvailability, ping } from '../tools/mcp-client.js';
 
 // ---------------------------------------------------------------------------
@@ -105,7 +106,7 @@ const RECONNECT_POLL_MS = 1_000;
  * the restart failed or timed out.
  */
 export async function attemptRestart(
-  log: (msg: string) => void = console.log,
+  log: (msg: string) => void = toLogFn(getLogger('daemon')),
 ): Promise<boolean> {
   // Check if the daemon binary exists via insrc CLI
   const sockPath = PATHS.sockFile;

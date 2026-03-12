@@ -1,6 +1,9 @@
 import { writeFileSync, readFileSync, rmSync, existsSync, mkdirSync } from 'node:fs';
 import { PATHS } from '../shared/paths.js';
 import { ensureEmbeddingModel, isOllamaAvailable } from '../indexer/embedder.js';
+import { getLogger } from '../shared/logger.js';
+
+const log = getLogger('daemon');
 
 // ---------------------------------------------------------------------------
 // PID file management
@@ -76,7 +79,7 @@ export async function bootstrapEmbeddingModel(): Promise<void> {
   const available = await isOllamaAvailable();
   if (!available) {
     modelState = { status: 'unavailable' };
-    console.warn('[daemon] Ollama not reachable — embeddings will be disabled until available');
+    log.warn('Ollama not reachable — embeddings will be disabled until available');
     return;
   }
 
@@ -86,9 +89,9 @@ export async function bootstrapEmbeddingModel(): Promise<void> {
       modelState = { status: 'pulling', pct };
     });
     modelState = { status: 'ready' };
-    console.log('[daemon] embedding model ready');
+    log.info('embedding model ready');
   } catch (err) {
-    console.error('[daemon] failed to bootstrap embedding model:', err);
+    log.error({ err }, 'failed to bootstrap embedding model');
     modelState = { status: 'unavailable' };
   }
 }

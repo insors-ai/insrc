@@ -2,6 +2,9 @@ import { Schema, Field, Utf8, Int32, Bool, Float32, FixedSizeList } from 'apache
 import type { Table } from '@lancedb/lancedb';
 import type { DbClient } from './client.js';
 import type { Entity, EntityKind, Language } from '../shared/types.js';
+import { loadConfig } from '../agent/config.js';
+
+const { embeddingDim: EMBEDDING_DIM } = loadConfig().models;
 
 // ---------------------------------------------------------------------------
 // Apache Arrow schema for the LanceDB 'entities' table.
@@ -27,7 +30,7 @@ const ENTITIES_SCHEMA = new Schema([
   new Field('signature',      new Utf8(),   false),
   new Field('hash',           new Utf8(),   false),
   new Field('rootPath',       new Utf8(),   false),
-  new Field('vector', new FixedSizeList(1024, new Field('item', new Float32(), true)), false),
+  new Field('vector', new FixedSizeList(EMBEDDING_DIM, new Field('item', new Float32(), true)), false),
 ]);
 
 // Module-level cache — re-used across calls within the same daemon process
@@ -61,7 +64,7 @@ async function kuzuExec(db: DbClient, stmt: string, params?: any): Promise<Recor
 // Row ↔ Entity mapping
 // ---------------------------------------------------------------------------
 
-const ZERO_VEC = new Array<number>(1024).fill(0);
+const ZERO_VEC = new Array<number>(EMBEDDING_DIM).fill(0);
 
 function entityToRow(entity: Entity): Record<string, unknown> {
   return {
@@ -83,8 +86,7 @@ function entityToRow(entity: Entity): Record<string, unknown> {
     signature:      entity.signature   ?? '',
     hash:           entity.hash        ?? '',
     rootPath:       entity.rootPath    ?? '',
-    // Use provided embedding if 2048-dim, otherwise store zero vector as sentinel
-    vector:         entity.embedding.length === 1024 ? entity.embedding : ZERO_VEC,
+    vector:         entity.embedding.length === EMBEDDING_DIM ? entity.embedding : ZERO_VEC,
   };
 }
 

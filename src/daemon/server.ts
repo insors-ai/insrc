@@ -2,6 +2,9 @@ import { createServer, type Server, type Socket } from 'node:net';
 import { rmSync } from 'node:fs';
 import type { IpcRequest, IpcResponse } from '../shared/types.js';
 import { PATHS } from '../shared/paths.js';
+import { getLogger } from '../shared/logger.js';
+
+const log = getLogger('ipc');
 
 export type RpcHandlers = Record<
   string,
@@ -33,7 +36,7 @@ export class IpcServer {
       this.server.on('error', reject);
 
       this.server.listen(PATHS.sockFile, () => {
-        console.log(`[ipc] listening on ${PATHS.sockFile}`);
+        log.info(`listening on ${PATHS.sockFile}`);
         resolve();
       });
     });

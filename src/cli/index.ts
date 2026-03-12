@@ -2,6 +2,9 @@
 import { Command } from 'commander';
 import { registerDaemonCommands } from './commands/daemon.js';
 import { registerRepoCommands }   from './commands/repo.js';
+import { getLogger } from '../shared/logger.js';
+
+const log = getLogger('cli');
 
 const program = new Command();
 
@@ -72,6 +75,6 @@ registerDaemonCommands(program);
 registerRepoCommands(program);
 
 program.parseAsync(process.argv).catch(err => {
-  console.error(err);
+  log.error({ err }, 'fatal error');
   process.exit(1);
 });

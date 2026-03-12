@@ -1,4 +1,5 @@
 import type { LLMProvider, LLMMessage } from '../../shared/types.js';
+import { getLogger, toLogFn } from '../../shared/logger.js';
 import { mcpCall, searchByFile, searchCallersNhop, searchCallees } from '../tools/mcp-client.js';
 
 // ---------------------------------------------------------------------------
@@ -159,7 +160,7 @@ export async function runReviewPipeline(
   codeContext: string,
   claudeProvider: LLMProvider,
   isOpus = false,
-  log: (msg: string) => void = console.log,
+  log: (msg: string) => void = toLogFn(getLogger('review')),
 ): Promise<ReviewResult> {
   // Stage 1: Local context assembly (zero Claude cost)
   log('  [review] Stage 1: assembling context...');

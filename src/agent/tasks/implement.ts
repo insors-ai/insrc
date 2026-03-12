@@ -1,4 +1,5 @@
 import type { LLMProvider, LLMMessage } from '../../shared/types.js';
+import { getLogger, toLogFn } from '../../shared/logger.js';
 import {
   parseDiff, applyDiff, splitByFile, extractDiffFromResponse,
   formatDiffForValidation, type FileDiff,
@@ -104,7 +105,7 @@ export async function runImplementPipeline(
   planStepContext: string,
   localProvider: LLMProvider,
   claudeProvider: LLMProvider | null,
-  log: (msg: string) => void = console.log,
+  log: (msg: string) => void = toLogFn(getLogger('implement')),
 ): Promise<ImplementResult> {
   const MAX_RETRIES = 2;
   let retries = 0;

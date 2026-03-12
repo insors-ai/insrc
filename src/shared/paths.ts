@@ -2,6 +2,7 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 
 const INSRC_DIR = join(homedir(), '.insrc');
+const LOG_DIR   = join('/tmp', '.insrc');
 
 export const PATHS = {
   insrc:     INSRC_DIR,
@@ -10,6 +11,7 @@ export const PATHS = {
   lance:     join(INSRC_DIR, 'lance'),   // LanceDB — entity store + embeddings
   pidFile:   join(INSRC_DIR, 'daemon.pid'),
   sockFile:  join(INSRC_DIR, 'daemon.sock'),
-  logDir:    join(INSRC_DIR, 'logs'),
-  daemonLog: join(INSRC_DIR, 'logs', 'daemon.log'),
+  logDir:    LOG_DIR,
+  daemonLog: join(LOG_DIR, 'daemon.log'),
+  agentLog:  join(LOG_DIR, 'agent.log'),
 } as const;

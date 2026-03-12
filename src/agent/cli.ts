@@ -14,8 +14,13 @@ import {
   classifyOllamaError, formatOllamaFault, isOllamaDown,
   classifyDaemonError, formatDaemonFault,
 } from './faults/index.js';
-import { runRequirementsPipeline } from './tasks/requirements.js';
-import { runDesignPipeline } from './tasks/design.js';
+import {
+  runDesignerPipeline,
+  ValidationChannel,
+  resolveTemplate,
+  parseTemplateFlags,
+  type DesignerInput,
+} from './tasks/designer/index.js';
 import { runPlanPipeline } from './tasks/plan.js';
 import { runImplementPipeline } from './tasks/implement.js';
 import { runRefactorPipeline } from './tasks/refactor.js';
@@ -24,7 +29,7 @@ import { runDebugPipeline } from './tasks/debug.js';
 import { findTestFile } from './tasks/test-runner.js';
 import { runGraphQuery } from './tasks/graph.js';
 import { runResearchPipeline } from './tasks/research.js';
-import { runReviewPipeline } from './tasks/review.js';
+// review.ts still used by designer/review.ts for context assembly helpers
 import { runDocumentPipeline } from './tasks/document.js';
 import {
   extractFilePaths, resolveAttachment, hasEscalationAttachment,
@@ -351,19 +356,28 @@ async function handlePipeline(
   ctx: import('./context/index.js').ContextManager,
   forceEscalate = false,
 ): Promise<string> {
-  if (intent === 'requirements') {
-    if (!session.claudeProvider) return '[error] Requirements pipeline requires Claude. Set ANTHROPIC_API_KEY.';
-    log('[cli] Running requirements pipeline...');
-    const result = await runRequirementsPipeline(message, codeContext, session.ollamaProvider, session.claudeProvider);
-    return result.enhanced;
-  }
-
-  if (intent === 'design') {
-    if (!session.claudeProvider) return '[error] Design pipeline requires Claude. Set ANTHROPIC_API_KEY.';
-    const reqContext = ctx.getTag('[requirements]');
-    log('[cli] Running design pipeline...');
-    const result = await runDesignPipeline(message, codeContext, reqContext, session.ollamaProvider, session.claudeProvider);
-    return result.enhanced;
+  if (intent === 'requirements' || intent === 'design') {
+    if (!session.claudeProvider) return `[error] Designer pipeline requires Claude. Set ANTHROPIC_API_KEY.`;
+    log(`[cli] Running designer pipeline (${intent}, auto-approve)...`);
+    const reqContext = intent === 'design' ? ctx.getTag('[requirements]') : undefined;
+    const parsed = parseTemplateFlags(message);
+    const template = resolveTemplate({ ...parsed, repoPath });
+    const designerInput: DesignerInput = {
+      message: parsed.message, codeContext, template,
+      intent: intent as 'requirements' | 'design',
+      requirementsDoc: reqContext ?? undefined,
+      session: { repoPath, closureRepos: session.closureRepos },
+    };
+    const channel = new ValidationChannel();
+    let output = '';
+    for await (const event of runDesignerPipeline(
+      designerInput, session.ollamaProvider, session.claudeProvider, channel,
+      { autoApprove: true, log },
+    )) {
+      if (event.kind === 'progress') log(event.message);
+      else if (event.kind === 'done') output = event.result.output;
+    }
+    return output || '[error] Designer pipeline produced no output.';
   }
 
   if (intent === 'plan') {
@@ -453,9 +467,21 @@ async function handlePipeline(
 
   if (intent === 'review') {
     if (!session.claudeProvider) return '[error] Review pipeline requires Claude. Set ANTHROPIC_API_KEY.';
-    log('[cli] Running review pipeline...');
-    const result = await runReviewPipeline(message, codeContext, session.claudeProvider, false);
-    return result.review;
+    log('[cli] Running designer review pipeline...');
+    const template = resolveTemplate({ format: 'markdown' });
+    const designerInput: DesignerInput = {
+      message, codeContext, template, intent: 'review',
+      session: { repoPath, closureRepos: session.closureRepos },
+    };
+    const channel = new ValidationChannel();
+    let output = '';
+    for await (const event of runDesignerPipeline(
+      designerInput, session.ollamaProvider, session.claudeProvider, channel,
+    )) {
+      if (event.kind === 'progress') log(event.message);
+      else if (event.kind === 'done') output = event.result.output;
+    }
+    return output || '[error] Review pipeline produced no output.';
   }
 
   if (intent === 'document') {

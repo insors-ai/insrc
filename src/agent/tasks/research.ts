@@ -1,4 +1,5 @@
 import type { LLMProvider, LLMMessage } from '../../shared/types.js';
+import { getLogger, toLogFn } from '../../shared/logger.js';
 import { mcpCall } from '../tools/mcp-client.js';
 import {
   createSearchProvider, formatSearchResults,
@@ -156,7 +157,7 @@ export async function runResearchPipeline(
   localProvider: LLMProvider,
   claudeProvider: LLMProvider | null,
   braveApiKey: string | undefined,
-  log: (msg: string) => void = console.log,
+  log: (msg: string) => void = toLogFn(getLogger('research')),
   closureRepos: string[] = [],
   forceEscalate = false,
 ): Promise<ResearchResult> {

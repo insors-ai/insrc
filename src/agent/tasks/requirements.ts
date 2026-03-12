@@ -1,44 +1,22 @@
-import type { LLMProvider, LLMMessage } from '../../shared/types.js';
-
 // ---------------------------------------------------------------------------
-// Requirements Pipeline — two-stage: local sketch -> Claude enhance
+// DEPRECATED — use src/agent/tasks/designer/ instead.
 //
-// Always escalated. No local-only path.
-// Output stored in L2 with [requirements] tag.
+// This module is kept for backward compatibility. The designer pipeline
+// replaces the old two-stage requirements flow with an iterative,
+// user-validated workflow.
 // ---------------------------------------------------------------------------
+
+import type { LLMProvider } from '../../shared/types.js';
 
 export interface RequirementsResult {
   sketch: string;
   enhanced: string;
-  tag: string; // '[requirements]'
+  tag: string;
 }
 
-const SKETCH_SYSTEM = `You are a requirements analyst. Given the user's request and any available code context, produce a structured requirements sketch.
-
-Output format:
-1. **Existing Code** — What exists today (files, functions, behaviors)
-2. **Gaps** — What is missing or broken
-3. **Requirements** — Numbered list of specific, testable requirements
-4. **Open Questions** — Uncertainties that need resolution
-5. **Constraints** — Technical or business constraints
-
-Be specific. Reference file names, function names, and entity names when possible.`;
-
-const ENHANCE_SYSTEM = `You are a senior software architect reviewing a requirements sketch. Your job is to:
-
-1. **Sharpen** vague requirements into specific, testable statements
-2. **Propose answers** to open questions (mark assumptions clearly)
-3. **Identify cross-repo impact** — what other modules/repos are affected
-4. **Add missing requirements** that the sketch overlooked
-5. **Prioritize** — mark each requirement as P0 (must), P1 (should), P2 (nice to have)
-
-Return the enhanced requirements document in the same format as the sketch.`;
-
 /**
- * Run the requirements pipeline.
- *
- * Stage 1: Local model produces requirements sketch
- * Stage 2: Claude enhances — sharpens, answers questions, identifies impact
+ * @deprecated Use runDesignerPipeline with intent='requirements' instead.
+ * Retained for backward compatibility — runs the designer in auto-approve mode.
  */
 export async function runRequirementsPipeline(
   userMessage: string,
@@ -46,39 +24,33 @@ export async function runRequirementsPipeline(
   localProvider: LLMProvider,
   claudeProvider: LLMProvider,
 ): Promise<RequirementsResult> {
-  // Stage 1 — Local sketch
-  const sketchMessages: LLMMessage[] = [
-    { role: 'system', content: SKETCH_SYSTEM },
+  const { runDesignerPipeline, ValidationChannel, resolveTemplate } = await import('./designer/index.js');
+
+  const template = resolveTemplate({ format: 'markdown' });
+  const channel = new ValidationChannel();
+  let output = '';
+
+  for await (const event of runDesignerPipeline(
     {
-      role: 'user',
-      content: codeContext
-        ? `Code context:\n${codeContext}\n\nUser request:\n${userMessage}`
-        : `User request:\n${userMessage}`,
+      message: userMessage,
+      codeContext,
+      template,
+      intent: 'requirements',
+      session: { repoPath: process.cwd(), closureRepos: [process.cwd()] },
     },
-  ];
-
-  const sketchResponse = await localProvider.complete(sketchMessages, {
-    maxTokens: 2000,
-    temperature: 0.3,
-  });
-
-  // Stage 2 — Claude enhancement
-  const enhanceMessages: LLMMessage[] = [
-    { role: 'system', content: ENHANCE_SYSTEM },
-    {
-      role: 'user',
-      content: `Requirements sketch to enhance:\n\n${sketchResponse.text}\n\nOriginal user request:\n${userMessage}`,
-    },
-  ];
-
-  const enhancedResponse = await claudeProvider.complete(enhanceMessages, {
-    maxTokens: 3000,
-    temperature: 0.2,
-  });
+    localProvider,
+    claudeProvider,
+    channel,
+    { autoApprove: true },
+  )) {
+    if (event.kind === 'done') {
+      output = event.result.output;
+    }
+  }
 
   return {
-    sketch: sketchResponse.text,
-    enhanced: enhancedResponse.text,
+    sketch: '',
+    enhanced: output,
     tag: '[requirements]',
   };
 }

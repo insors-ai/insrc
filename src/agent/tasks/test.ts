@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import type { LLMProvider, LLMMessage } from '../../shared/types.js';
+import { getLogger, toLogFn } from '../../shared/logger.js';
 import {
   parseDiff, applyDiff, splitByFile, extractDiffFromResponse,
   formatDiffForValidation, type FileDiff,
@@ -125,7 +126,7 @@ export async function runTestPipeline(
   planStepContext: string,
   localProvider: LLMProvider,
   claudeProvider: LLMProvider | null,
-  log: (msg: string) => void = console.log,
+  log: (msg: string) => void = toLogFn(getLogger('test')),
   framework?: TestFramework,
 ): Promise<TestPipelineResult> {
   const result: TestPipelineResult = {

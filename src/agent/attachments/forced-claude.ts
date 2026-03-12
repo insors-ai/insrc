@@ -1,4 +1,5 @@
 import type { LLMProvider, LLMMessage, ContentBlock } from '../../shared/types.js';
+import { getLogger, toLogFn } from '../../shared/logger.js';
 import {
   parseDiff, applyDiff, extractDiffFromResponse,
 } from '../tasks/diff-utils.js';
@@ -82,7 +83,7 @@ export async function runForcedClaudePipeline(
   planStepContext: string,
   contentBlocks: ContentBlock[],
   claudeProvider: LLMProvider,
-  log: (msg: string) => void = console.log,
+  log: (msg: string) => void = toLogFn(getLogger('forced-claude')),
 ): Promise<ForcedClaudeResult> {
   const systemPrompt = intent === 'implement'
     ? FORCED_IMPLEMENT_SYSTEM

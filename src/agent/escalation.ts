@@ -1,6 +1,9 @@
 import type { Intent } from '../shared/types.js';
 import type { RouteResult } from './router.js';
 import type { AssembledContext } from './context/index.js';
+import { getLogger } from '../shared/logger.js';
+
+const log = getLogger('agent');
 
 // ---------------------------------------------------------------------------
 // Automatic escalation thresholds (deferred from Phase 2.5)
@@ -67,7 +70,7 @@ export function announceRoute(
   const conf = opts.confidence >= 0.7 ? '' : ` (confidence: ${Math.round(opts.confidence * 100)}%)`;
   const prefix = opts.explicit ? ' [explicit]' : '';
 
-  console.log(`  [${intent}] → ${route.label}${prefix}${conf}`);
+  log.info(`[${intent}] → ${route.label}${prefix}${conf}`);
 }
 
 /**
@@ -81,7 +84,7 @@ export function announceCost(tier: string): void {
     powerful: '~$0.05',
   };
   const est = estimates[tier] ?? '(unknown)';
-  console.log(`  [cost] estimated ${est} for this turn`);
+  log.info(`[cost] estimated ${est} for this turn`);
 }
 
 /**
@@ -92,6 +95,6 @@ export function announceCost(tier: string): void {
  * Phase 3 (tool execution) can add interactive confirmation.
  */
 export function announceOpus(): void {
-  console.log('  [cost] Opus is the most expensive tier (~$0.05+/turn).');
-  console.log('  [cost] Use @claude for standard tasks, @opus for deep architectural questions.');
+  log.info('[cost] Opus is the most expensive tier (~$0.05+/turn).');
+  log.info('[cost] Use @claude for standard tasks, @opus for deep architectural questions.');
 }

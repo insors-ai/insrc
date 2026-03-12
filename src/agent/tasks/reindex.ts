@@ -1,4 +1,5 @@
 import { reindexFile as rpcReindexFile } from '../tools/mcp-client.js';
+import { getLogger, toLogFn } from '../../shared/logger.js';
 
 // ---------------------------------------------------------------------------
 // Re-index Handoff
@@ -18,11 +19,11 @@ import { reindexFile as rpcReindexFile } from '../tools/mcp-client.js';
  * we send explicit requests for immediate processing.
  *
  * @param filePaths - Absolute paths to the files that were modified
- * @param log - Optional logger (defaults to console.log)
+ * @param log - Optional logger (defaults to pino 'reindex' logger)
  */
 export async function requestReindex(
   filePaths: string[],
-  log: (msg: string) => void = console.log,
+  log: (msg: string) => void = toLogFn(getLogger('reindex')),
 ): Promise<void> {
   if (filePaths.length === 0) return;
 

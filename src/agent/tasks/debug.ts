@@ -1,4 +1,5 @@
 import type { LLMProvider, LLMMessage, ToolCall, ToolDefinition } from '../../shared/types.js';
+import { getLogger, toLogFn } from '../../shared/logger.js';
 import {
   parseDiff, applyDiff, splitByFile, extractDiffFromResponse,
   formatDiffForValidation, type FileDiff,
@@ -110,7 +111,7 @@ export async function runDebugPipeline(
   planStepContext: string,
   localProvider: LLMProvider,
   claudeProvider: LLMProvider | null,
-  log: (msg: string) => void = console.log,
+  log: (msg: string) => void = toLogFn(getLogger('debug')),
   permissionMode: 'validate' | 'auto-accept' = 'validate',
   mcpAvailable = false,
 ): Promise<DebugResult> {

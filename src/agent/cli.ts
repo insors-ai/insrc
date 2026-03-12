@@ -155,7 +155,7 @@ export async function runOneShot(
 
   // Classify
   const classified = await classify(classifyMessage, {
-    ctx: {},
+    signals: {},
     llmProvider: ollamaOk ? session.ollamaProvider : undefined,
   });
 

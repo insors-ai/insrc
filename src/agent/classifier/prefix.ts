@@ -7,6 +7,7 @@ import type { ExplicitProvider, Intent } from '../../shared/types.js';
 const VALID_INTENTS = new Set<Intent>([
   'implement', 'refactor', 'test', 'debug', 'review',
   'document', 'research', 'graph', 'plan', 'requirements', 'design',
+  'deploy', 'release', 'infra',
 ]);
 
 // ---------------------------------------------------------------------------

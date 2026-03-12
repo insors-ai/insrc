@@ -72,9 +72,38 @@ export type Intent =
   | 'graph'
   | 'plan'
   | 'requirements'
-  | 'design';
+  | 'design'
+  | 'deploy'
+  | 'release'
+  | 'infra';
 
 export type ExplicitProvider = 'claude' | 'opus' | 'local';
+
+// ---------------------------------------------------------------------------
+// Agent personas
+// ---------------------------------------------------------------------------
+
+export type PersonaName = 'designer' | 'developer' | 'tester' | 'deployer';
+
+/** Classification result from the LLM-based intent classifier. */
+export interface ClassificationResult {
+  /** Primary intent — the main thing the user wants */
+  primary: {
+    intent: Intent;
+    confidence: number;
+    /** Verbatim text from the user message that signals this intent */
+    snippet: string;
+    /** One sentence explaining the classification */
+    reasoning: string;
+  };
+  /** Secondary intent, if the message contains a compound request */
+  secondary?: {
+    intent: Intent;
+    confidence: number;
+    snippet: string;
+    reasoning: string;
+  } | undefined;
+}
 
 export interface Task {
   intent: Intent;

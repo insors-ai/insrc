@@ -253,7 +253,7 @@ export async function startRepl(cwd?: string): Promise<void> {
 
     // Classify intent and select provider
     const classified = await classify(classifyInput, {
-      ctx: {},
+      signals: {},
       llmProvider: ollamaOk ? session.ollamaProvider : undefined,
     });
     let route = selectProvider(classified.intent, classified.explicit, {

@@ -1,8 +1,15 @@
-import type { Intent } from '../../shared/types.js';
+import type { ClassificationResult, Intent } from '../../shared/types.js';
 
 // ---------------------------------------------------------------------------
-// Keyword map — high-precision trigger phrases per intent
-// From design/agent.html, intent classification section.
+// Keyword-based intent classification — FALLBACK only
+//
+// Used when the local LLM (Ollama) is unavailable. This is a degraded path
+// that provides basic intent detection from keyword matching. The primary
+// classifier is the LLM-based classifier in llm-classify.ts.
+//
+// From design/agent.html: "If Ollama is not running at classification time,
+// the orchestrator cannot classify" — this fallback provides a best-effort
+// alternative so the system doesn't fully stop.
 // ---------------------------------------------------------------------------
 
 const KEYWORD_MAP: Record<Intent, string[]> = {
@@ -17,6 +24,9 @@ const KEYWORD_MAP: Record<Intent, string[]> = {
   design:       ['design', 'architecture', 'api shape', 'interface', 'tradeoff', 'should i'],
   plan:         ['plan', 'checklist', 'steps to', 'tasks for', 'break down', 'how would i'],
   requirements: ['requirement', 'requirements', 'spec', 'should', 'must', 'user story', 'acceptance criteria'],
+  deploy:       ['deploy', 'rollout', 'push to production', 'push to staging', 'ship'],
+  release:      ['release', 'version bump', 'cut a release', 'publish', 'tag a version'],
+  infra:        ['pod status', 'logs for', 'scale', 'resource', 'cluster', 'kubernetes', 'k8s'],
 };
 
 /**
@@ -30,18 +40,6 @@ function phraseScore(phrase: string): number {
   return 0.7;
 }
 
-export interface KeywordMatch {
-  intent: Intent;
-  confidence: number;
-}
-
-export interface KeywordResult {
-  intent: Intent;
-  confidence: number;
-  /** All intents that matched (for ambiguity detection) */
-  allMatches: KeywordMatch[];
-}
-
 /**
  * Check if a phrase matches in the message.
  *
@@ -52,23 +50,25 @@ export interface KeywordResult {
 function phraseMatches(lower: string, phrase: string): boolean {
   const words = phrase.split(/\s+/).length;
   if (words === 1) {
-    // Word-boundary match for single-word triggers
     return new RegExp(`\\b${phrase}\\b`).test(lower);
   }
   return lower.includes(phrase);
 }
 
 /**
- * Classify a message by matching against the keyword map.
+ * Keyword-based fallback classification.
  *
- * Returns the highest-scoring intent match. If no keywords match,
- * returns `research` as the fallback with low confidence.
+ * Returns a ClassificationResult shaped like the LLM classifier's output,
+ * but with lower confidence (capped at 0.7) and synthetic snippet/reasoning
+ * fields. This ensures the rest of the pipeline can treat fallback results
+ * identically to LLM results.
+ *
+ * Used ONLY when Ollama is unavailable.
  */
-export function classifyKeywords(message: string): KeywordResult {
+export function classifyByKeywords(message: string): ClassificationResult {
   const lower = message.toLowerCase();
 
-  // Track the best score per intent
-  const intentScores = new Map<Intent, number>();
+  const intentScores = new Map<Intent, { score: number; phrase: string }>();
 
   for (const [intent, phrases] of Object.entries(KEYWORD_MAP)) {
     for (const phrase of phrases) {
@@ -79,29 +79,56 @@ export function classifyKeywords(message: string): KeywordResult {
         // test-related qualifiers
         if (phrase === 'spec' && intent === 'requirements') {
           const testQualifiers = /\b(unit|integration|write|add|run|test)\s+spec/;
-          if (testQualifiers.test(lower)) continue; // skip — let test intent win
+          if (testQualifiers.test(lower)) continue;
         }
 
-        const prev = intentScores.get(intent as Intent) ?? 0;
-        if (score > prev) {
-          intentScores.set(intent as Intent, score);
+        const prev = intentScores.get(intent as Intent);
+        if (!prev || score > prev.score) {
+          intentScores.set(intent as Intent, { score, phrase });
         }
       }
     }
   }
 
-  const allMatches: KeywordMatch[] = [...intentScores.entries()]
-    .map(([intent, confidence]) => ({ intent, confidence }))
-    .sort((a, b) => b.confidence - a.confidence);
+  const sorted = [...intentScores.entries()]
+    .sort((a, b) => b[1].score - a[1].score);
 
-  if (allMatches.length === 0) {
-    return { intent: 'research', confidence: 0.3, allMatches: [] };
+  if (sorted.length === 0) {
+    return {
+      primary: {
+        intent: 'research',
+        confidence: 0.3,
+        snippet: '',
+        reasoning: 'No keywords matched — defaulting to research (keyword fallback)',
+      },
+    };
   }
 
-  const top = allMatches[0]!;
-  return {
-    intent: top.intent,
-    confidence: top.confidence,
-    allMatches,
+  const [topIntent, topMatch] = sorted[0]!;
+  // Cap keyword confidence at 0.7 — this is a degraded path
+  const confidence = Math.min(0.7, topMatch.score);
+
+  const result: ClassificationResult = {
+    primary: {
+      intent: topIntent,
+      confidence,
+      snippet: topMatch.phrase,
+      reasoning: `Keyword match: "${topMatch.phrase}" (keyword fallback — Ollama unavailable)`,
+    },
   };
+
+  // If there's a clear second match with a different intent, add as secondary
+  if (sorted.length >= 2) {
+    const [secondIntent, secondMatch] = sorted[1]!;
+    if (secondIntent !== topIntent && secondMatch.score >= 0.7) {
+      result.secondary = {
+        intent: secondIntent,
+        confidence: Math.min(0.6, secondMatch.score),
+        snippet: secondMatch.phrase,
+        reasoning: `Secondary keyword match: "${secondMatch.phrase}" (keyword fallback)`,
+      };
+    }
+  }
+
+  return result;
 }

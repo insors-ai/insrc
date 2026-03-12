@@ -9,6 +9,7 @@ import { hasEscalationAttachment } from './attachments/router.js';
 /** Intents that always escalate to Claude (two-stage: local sketch → Claude enhance) */
 const CLAUDE_DEFAULT: Set<Intent> = new Set([
   'requirements', 'design', 'plan', 'review',
+  'deploy', 'release', 'infra',
 ]);
 
 /** Intent that uses no LLM at all — pure graph queries */
@@ -29,6 +30,9 @@ const INTENT_TIER: Partial<Record<Intent, Tier>> = {
   plan:         'standard',
   review:       'standard',
   research:     'standard',
+  deploy:       'standard',
+  release:      'fast',
+  infra:        'fast',
   implement:    'fast',
   refactor:     'fast',
   test:         'fast',

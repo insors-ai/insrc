@@ -1,91 +1,108 @@
-import type { ExplicitProvider, Intent, LLMProvider } from '../../shared/types.js';
-import { classifyKeywords } from './keywords.js';
-import { classifyWithLLM, isAmbiguous } from './llm-fallback.js';
+import type { ClassificationResult, ExplicitProvider, Intent, LLMProvider } from '../../shared/types.js';
+import { classifyByKeywords } from './keywords.js';
+import { classifyWithLLM } from './llm-classify.js';
 import { parsePrefix } from './prefix.js';
-import { applyGraphSignals, type SignalContext } from './signals.js';
+import type { SessionSignals } from './signals.js';
 
 // ---------------------------------------------------------------------------
-// Classification result
+// Classification result — unified output for the rest of the pipeline
 // ---------------------------------------------------------------------------
 
 export interface ClassifyResult {
-  /** Resolved intent */
+  /** Resolved primary intent (convenience accessor for classification.primary.intent) */
   intent: Intent;
-  /** Classification confidence (0–1) */
+  /** Primary confidence (convenience accessor for classification.primary.confidence) */
   confidence: number;
+  /** Full structured classification (primary + optional secondary) */
+  classification: ClassificationResult;
   /** Explicit provider override, if any */
   explicit?: ExplicitProvider | undefined;
   /** Message body with prefixes stripped */
   message: string;
+  /** Whether the LLM classifier was used (false = keyword fallback) */
+  usedLLM: boolean;
 }
 
 export interface ClassifyOpts {
-  ctx?: SignalContext;
-  /** Local LLM provider for disambiguation. If not provided, LLM fallback is skipped. */
+  /** Session signals for the LLM classifier (active file, selected entity, etc.) */
+  signals?: SessionSignals;
+  /** Local LLM provider for classification. If not provided, falls back to keywords. */
   llmProvider?: LLMProvider | undefined;
 }
 
 /**
  * Full classification pipeline.
  *
- * Pipeline order:
+ * Pipeline order (from design/agent.html):
  *   1. Parse prefixes — /intent and @provider overrides (always win)
- *   2. Keyword pass — match against KEYWORD_MAP
- *   3. If multiple intents tie → LLM disambiguation (local model, ~100-200ms)
- *   4. Graph signal tie-break — boost/suppress based on session context
+ *   2. LLM classification — local model with structured JSON output (primary path)
+ *   3. Keyword fallback — only when LLM is unavailable or returns unparseable output
  *
  * If the user provided an explicit /intent override, that intent is used
- * regardless of keyword or signal scores.
+ * regardless of LLM or keyword scores. The LLM is not called at all.
  */
 export async function classify(
   raw: string,
   opts: ClassifyOpts = {},
 ): Promise<ClassifyResult> {
-  const { ctx = {}, llmProvider } = opts;
+  const { signals = {}, llmProvider } = opts;
 
   // 1. Parse prefixes
   const prefix = parsePrefix(raw);
 
-  // If user explicitly set the intent, skip classification
+  // If user explicitly set the intent, skip classification entirely
   if (prefix.intentOverride) {
+    const classification: ClassificationResult = {
+      primary: {
+        intent: prefix.intentOverride,
+        confidence: 1.0,
+        snippet: '',
+        reasoning: 'Explicit /intent override',
+      },
+    };
     return {
       intent: prefix.intentOverride,
       confidence: 1.0,
+      classification,
       explicit: prefix.explicit,
       message: prefix.message,
+      usedLLM: false,
     };
   }
 
-  // 2. Keyword classification on the stripped message
-  let result = classifyKeywords(prefix.message);
+  // 2. LLM classification — primary path
+  if (llmProvider) {
+    const llmResult = await classifyWithLLM(prefix.message, signals, llmProvider);
+    if (llmResult) {
+      return {
+        intent: llmResult.primary.intent,
+        confidence: llmResult.primary.confidence,
+        classification: llmResult,
+        explicit: prefix.explicit,
+        message: prefix.message,
+        usedLLM: true,
+      };
+    }
+    // LLM call failed (Ollama down, unparseable response) — fall through to keywords
+  }
 
-  // 3. LLM disambiguation — only when multiple intents tie at the top score
-  let { intent, confidence } = result;
-  if (isAmbiguous(result.allMatches) && llmProvider) {
-    const llmResult = await classifyWithLLM(
-      prefix.message,
-      result.allMatches,
-      llmProvider,
-      result.intent,
-    );
-    intent = llmResult.intent;
-    confidence = llmResult.confidence;
-  }
-  if (confidence < 0.7) {
-    const boosted = applyGraphSignals({ intent, confidence }, ctx);
-    intent = boosted.intent;
-    confidence = boosted.confidence;
-  }
+  // 3. Keyword fallback — degraded path
+  // Design: "If Ollama is not running at classification time, the orchestrator
+  // cannot classify." We provide best-effort keyword matching with capped
+  // confidence so callers know this is a degraded result.
+  const keywordResult = classifyByKeywords(prefix.message);
 
   return {
-    intent,
-    confidence,
+    intent: keywordResult.primary.intent,
+    confidence: keywordResult.primary.confidence,
+    classification: keywordResult,
     explicit: prefix.explicit,
     message: prefix.message,
+    usedLLM: false,
   };
 }
 
-// Re-export for convenience
-export type { SignalContext } from './signals.js';
+// Re-exports
+export type { SessionSignals } from './signals.js';
 export type { PrefixResult } from './prefix.js';
-export type { KeywordResult } from './keywords.js';
+export type { ClassificationResult } from '../../shared/types.js';

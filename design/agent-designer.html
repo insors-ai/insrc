@@ -1,0 +1,1371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Designer Agent — Design Document</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --border: #2a2d3a;
+      --text: #e2e4ed;
+      --muted: #8b8fa8;
+      --accent: #7c6af7;
+      --accent2: #4fc3f7;
+      --green: #4caf7d;
+      --yellow: #f5c842;
+      --red: #f47c7c;
+      --code-bg: #12151e;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 15px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; scroll-padding-top: 1rem; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      margin: 0;
+      padding: 0;
+      display: flex;
+    }
+
+    main {
+      flex: 1;
+      min-width: 0;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    @media (min-width: 1100px) {
+      main { margin-left: 280px; }
+    }
+
+    h1 { font-size: 2rem; color: var(--accent); margin-bottom: 0.25rem; }
+    h2 { font-size: 1.3rem; color: var(--accent2); margin: 2.5rem 0 0.75rem; border-bottom: 1px solid var(--border); padding-bottom: 0.4rem; }
+    h3 { font-size: 1.05rem; color: var(--yellow); margin: 1.5rem 0 0.5rem; }
+    h4 { font-size: 0.95rem; color: var(--green); margin: 1rem 0 0.4rem; }
+    h5 { font-size: 0.88rem; color: var(--muted); margin: 0.8rem 0 0.3rem; }
+
+    p { margin: 0.6rem 0; color: var(--text); }
+    .muted { color: var(--muted); font-size: 0.9rem; }
+
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1rem;
+      overflow-x: auto;
+      margin: 0.75rem 0;
+      font-size: 0.82rem;
+      line-height: 1.6;
+    }
+
+    code {
+      font-family: 'Fira Code', 'Cascadia Code', 'JetBrains Mono', monospace;
+      font-size: 0.88em;
+    }
+
+    pre code { font-size: inherit; }
+
+    :not(pre) > code {
+      background: var(--code-bg);
+      padding: 0.15em 0.4em;
+      border-radius: 3px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0.75rem 0;
+      font-size: 0.88rem;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid var(--border);
+    }
+
+    th {
+      background: var(--surface);
+      color: var(--accent2);
+      font-weight: 600;
+    }
+
+    td {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    tr:nth-child(even) td { background: #13161f; }
+
+    ul, ol { padding-left: 1.5rem; margin: 0.5rem 0; }
+    li { margin: 0.25rem 0; }
+
+    .badge {
+      display: inline-block;
+      padding: 0.15em 0.6em;
+      border-radius: 4px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      margin-right: 0.3rem;
+    }
+
+    .badge-local  { background: #1a2d20; color: var(--green); }
+    .badge-claude { background: #2d1a2d; color: #c792ea; }
+
+    .callout {
+      background: var(--surface);
+      border-left: 3px solid var(--accent);
+      border-radius: 0 6px 6px 0;
+      padding: 0.75rem 1rem;
+      margin: 1rem 0;
+      font-size: 0.92rem;
+    }
+
+    .callout.warn  { border-color: var(--yellow); }
+    .callout.info  { border-color: var(--accent2); }
+    .callout.local { border-color: var(--green); }
+    .callout.claude { border-color: #c792ea; }
+
+    hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+
+    .meta { color: var(--muted); font-size: 0.85rem; margin-top: 0.25rem; }
+
+    .back-link {
+      display: inline-block;
+      color: var(--accent2);
+      text-decoration: none;
+      font-size: 0.85rem;
+      margin-bottom: 1rem;
+    }
+    .back-link:hover { text-decoration: underline; }
+    .back-link::before { content: "\2190\00a0"; }
+
+    .flow-diagram {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1.5rem;
+      margin: 1rem 0;
+      font-family: 'Fira Code', 'Cascadia Code', monospace;
+      font-size: 0.8rem;
+      line-height: 1.5;
+      white-space: pre;
+      overflow-x: auto;
+    }
+
+    .gate {
+      display: inline-block;
+      background: #2d2a1a;
+      border: 1px solid var(--yellow);
+      border-radius: 4px;
+      padding: 0.1em 0.5em;
+      font-size: 0.82rem;
+      color: var(--yellow);
+      font-weight: 600;
+    }
+
+    nav.toc {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 260px;
+      height: 100vh;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      padding: 1.2rem 1rem 2rem;
+      z-index: 100;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+
+    nav.toc::-webkit-scrollbar { width: 5px; }
+    nav.toc::-webkit-scrollbar-track { background: transparent; }
+    nav.toc::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    nav.toc h2 {
+      font-size: 0.85rem;
+      color: var(--accent);
+      margin: 0 0 0.75rem;
+      border: none;
+      padding: 0;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    nav.toc ol {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      counter-reset: toc-section;
+    }
+
+    nav.toc > ol > li {
+      counter-increment: toc-section;
+      margin: 0.2rem 0;
+    }
+
+    nav.toc > ol > li > a::before {
+      content: counter(toc-section) ". ";
+      color: var(--muted);
+      font-size: 0.75rem;
+    }
+
+    nav.toc ol ol {
+      padding-left: 1rem;
+      margin: 0.1rem 0 0.25rem;
+    }
+
+    nav.toc a {
+      color: var(--text);
+      text-decoration: none;
+      font-size: 0.8rem;
+      line-height: 1.5;
+      display: block;
+      padding: 0.1rem 0.4rem;
+      border-radius: 3px;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    nav.toc a:hover,
+    nav.toc a.active {
+      color: var(--accent2);
+      background: rgba(79, 195, 247, 0.08);
+    }
+
+    nav.toc ol ol a {
+      color: var(--muted);
+      font-size: 0.75rem;
+    }
+
+    nav.toc ol ol a:hover {
+      color: var(--accent2);
+    }
+
+    @media (max-width: 1099px) {
+      nav.toc {
+        position: static;
+        width: 100%;
+        height: auto;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        border-radius: 0;
+        max-height: 50vh;
+      }
+
+      main { margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="toc">
+    <h2>Designer Agent</h2>
+    <ol>
+      <li><a href="#overview">Overview</a></li>
+      <li>
+        <a href="#settings">Settings</a>
+        <ol>
+          <li><a href="#design-templates">Design templates</a></li>
+          <li><a href="#template-override">Template override</a></li>
+        </ol>
+      </li>
+      <li><a href="#input">Input</a></li>
+      <li>
+        <a href="#flow">Flow</a>
+        <ol>
+          <li><a href="#step-extract">Extract requirements</a></li>
+          <li><a href="#step-validate-reqs">Validate requirements</a></li>
+          <li><a href="#step-todo">Create todos</a></li>
+          <li><a href="#step-iterate">Per-requirement iteration</a></li>
+          <li><a href="#step-sketch">Sketch</a></li>
+          <li><a href="#step-claude-sketch">Claude review sketch</a></li>
+          <li><a href="#step-validate-flow">Validate summary flow</a></li>
+          <li><a href="#step-detail">Detailed section</a></li>
+          <li><a href="#step-claude-detail">Claude review detail</a></li>
+          <li><a href="#step-validate-detail">Validate detail</a></li>
+        </ol>
+      </li>
+      <li>
+        <a href="#validation-gates">Validation Gates</a>
+        <ol>
+          <li><a href="#gate-mechanics">Gate mechanics</a></li>
+          <li><a href="#gate-responses">User responses</a></li>
+          <li><a href="#auto-approve">Auto-approve mode</a></li>
+        </ol>
+      </li>
+      <li>
+        <a href="#codebase-analysis">Codebase Analysis</a>
+        <ol>
+          <li><a href="#local-analysis">Local project</a></li>
+          <li><a href="#cross-project">Cross-project</a></li>
+          <li><a href="#reuse-report">Reuse report</a></li>
+        </ol>
+      </li>
+      <li>
+        <a href="#output">Output</a>
+        <ol>
+          <li><a href="#output-schema">Schema</a></li>
+          <li><a href="#session-carry-forward">Session carry-forward</a></li>
+        </ol>
+      </li>
+      <li><a href="#review-intent">Review Intent</a></li>
+      <li>
+        <a href="#shared-behaviour">Shared Behaviour</a>
+        <ol>
+          <li><a href="#context-budget">Context budget</a></li>
+          <li><a href="#tool-usage">Tool usage</a></li>
+          <li><a href="#error-handling">Error handling</a></li>
+        </ol>
+      </li>
+      <li><a href="#open-questions">Open Questions</a></li>
+    </ol>
+  </nav>
+
+  <main>
+
+  <a href="agent.html#designer-agent" class="back-link">Agent Design Document</a>
+
+  <h1><span class="badge badge-claude">DESIGNER</span> Designer Agent</h1>
+  <p class="meta">insrc coding agent &mdash; persona detail &mdash; March 2026</p>
+
+  <h2 id="overview">Overview</h2>
+
+  <p>
+    The Designer agent produces grounded, validated design documents through an
+    <strong>iterative, user-validated workflow</strong>. Rather than generating a monolithic
+    design in one pass, the Designer breaks the work into individual requirements, sketches
+    each one against the actual codebase, and validates with the user at every significant
+    decision point.
+  </p>
+  <p>
+    The Designer also handles <code>review</code> intents (code critique). The core design
+    flow and review are distinct workflows sharing the same persona and tool restrictions.
+  </p>
+
+  <table>
+    <tr><th>Property</th><th>Value</th></tr>
+    <tr><td>Intents</td><td><code>requirements</code>, <code>design</code>, <code>review</code></td></tr>
+    <tr><td>Default provider</td><td>Claude (always escalated &mdash; both stages)</td></tr>
+    <tr><td>Claude tier</td><td>standard (Sonnet); <code>@opus</code> for deep architectural reviews</td></tr>
+    <tr><td>Output formats</td><td>Markdown or HTML &mdash; configurable via design templates</td></tr>
+    <tr><td>Tool usage</td><td>Read-only &mdash; <code>graph_*</code>, <code>Read</code>, <code>Grep</code>, <code>Glob</code>, <code>git diff/log</code></td></tr>
+    <tr><td>Session carry-forward</td><td>Stores <code>[requirements]</code> and <code>[design]</code> tags in L2</td></tr>
+    <tr><td>Mutations</td><td>None &mdash; the Designer never calls Write, Edit, or Bash with side effects</td></tr>
+  </table>
+
+  <div class="callout info">
+    <strong>Read-only guarantee:</strong> The orchestrator enforces that the Designer agent
+    has no access to mutating tools. Its tool schema omits <code>Write</code>, <code>Edit</code>,
+    and mutating <code>Bash</code> commands entirely. This is a hard constraint, not a prompt
+    instruction &mdash; the agent physically cannot produce a file-write tool call.
+  </div>
+
+  <hr />
+
+  <h2 id="settings">Settings</h2>
+
+  <h3 id="design-templates">Design templates</h3>
+
+  <p>
+    The Designer ships with out-of-the-box templates for Markdown and HTML output. Templates
+    define the document skeleton &mdash; section structure, heading hierarchy, CSS (for HTML),
+    and placeholder slots that the Designer fills during the per-requirement iteration.
+  </p>
+
+  <table>
+    <thead><tr><th>Template</th><th>Format</th><th>When used</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>default-md</code></td>
+        <td>Markdown</td>
+        <td>Default for REPL / inline display. Sections as <code>##</code> headings.</td>
+      </tr>
+      <tr>
+        <td><code>default-html</code></td>
+        <td>HTML</td>
+        <td>When <code>--html</code> flag is set, or user requests HTML. Dark-theme styled document with ToC sidebar.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h4>Template structure</h4>
+  <pre><code>// personas/designer/templates.ts
+interface DesignTemplate {
+  /** Template identifier */
+  id: string;
+  /** Output format */
+  format: 'markdown' | 'html';
+  /** Document skeleton with named slots */
+  skeleton: string;
+  /** Section definitions — order and heading text */
+  sections: Array&lt;{
+    id: string;
+    heading: string;
+    /** Prompt hint for this section (injected into LLM prompt) */
+    guidance: string;
+  }&gt;;
+  /** CSS (HTML templates only) */
+  css?: string;
+  /** Whether this is a built-in or user-defined template */
+  builtin: boolean;
+}</code></pre>
+
+  <h3 id="template-override">Template override</h3>
+
+  <p>
+    Users can override the built-in templates by placing custom templates in the project's
+    <code>.insrc/templates/</code> directory. Custom templates follow the same
+    <code>DesignTemplate</code> schema. The Designer resolves templates in order:
+  </p>
+  <ol>
+    <li>User-specified template via <code>--template &lt;id&gt;</code> flag</li>
+    <li>Project-level template in <code>.insrc/templates/design-*.{md,html}</code></li>
+    <li>Built-in <code>default-md</code> or <code>default-html</code></li>
+  </ol>
+
+  <pre><code>// Template resolution
+function resolveTemplate(opts: { format?: 'markdown' | 'html'; templateId?: string }): DesignTemplate {
+  if (opts.templateId) {
+    const custom = loadTemplate(`.insrc/templates/${opts.templateId}`);
+    if (custom) return custom;
+    throw new Error(`Template "${opts.templateId}" not found`);
+  }
+  const format = opts.format ?? 'markdown';
+  const projectTemplate = loadTemplate(`.insrc/templates/design-default.${format === 'html' ? 'html' : 'md'}`);
+  if (projectTemplate) return projectTemplate;
+  return BUILTIN_TEMPLATES[format === 'html' ? 'default-html' : 'default-md'];
+}</code></pre>
+
+  <hr />
+
+  <h2 id="input">Input</h2>
+
+  <p>
+    The Designer accepts two inputs:
+  </p>
+
+  <table>
+    <thead><tr><th>Input</th><th>Source</th><th>Required</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>User message</strong></td>
+        <td>Direct user input in REPL or CLI</td>
+        <td>Yes</td>
+        <td>What the user wants designed &mdash; a feature description, a change request, a system to architect.</td>
+      </tr>
+      <tr>
+        <td><strong>Requirements document</strong></td>
+        <td>File path, L2 carry-forward (<code>[requirements]</code> tag), or inline</td>
+        <td>No</td>
+        <td>A prior requirements document. If present, the Designer uses it as the basis for requirements extraction instead of generating from scratch. Can be a previous Designer output or a hand-written doc.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <pre><code>// personas/designer.ts — DesignerInput
+interface DesignerInput {
+  /** The user's message / design request */
+  message: string;
+  /** Optional requirements document (file path, L2 content, or raw text) */
+  requirementsDoc?: string;
+  /** Assembled graph context from orchestrator */
+  context: AssembledContext;
+  /** Resolved design template */
+  template: DesignTemplate;
+  /** Session reference for carry-forward */
+  session: SessionRef;
+}</code></pre>
+
+  <div class="callout info">
+    <strong>L2 carry-forward:</strong> If the user ran a requirements task earlier in the
+    session, the compressed requirements are available in L2 under the
+    <code>[requirements]</code> tag. The Designer detects this automatically and uses it
+    as the <code>requirementsDoc</code> input &mdash; no file path needed.
+  </div>
+
+  <hr />
+
+  <h2 id="flow">Flow</h2>
+
+  <p>
+    The Designer follows an iterative workflow with user validation gates. Every significant
+    decision is surfaced to the user before proceeding, ensuring the final design reflects
+    the user's intent rather than the model's assumptions.
+  </p>
+
+  <div class="flow-diagram">
+Input (user message + optional requirements doc)
+  |
+  v
+[1] Extract concise requirements list  <span class="badge badge-local">LOCAL</span> + <span class="badge badge-claude">CLAUDE</span>
+  |
+  v
+<span class="gate">VALIDATE</span>  User confirms / edits requirements
+  |
+  v
+[2] Create a todo for each requirement
+  |
+  v
+[3] For each requirement todo:
+  |   |
+  |   v
+  |  [3a] Write short sketch  <span class="badge badge-local">LOCAL</span>
+  |   |    - Analyze codebase for reusable modules
+  |   |    - Check other indexed projects for services/modules
+  |   |    - Produce summary implementation flow
+  |   |
+  |   v
+  |  [3b] Claude reviews &amp; fixes sketch  <span class="badge badge-claude">CLAUDE</span>
+  |   |    - Validate reuse choices against codebase
+  |   |    - Fix incorrect entity references
+  |   |    - Strengthen or correct summary flow
+  |   |
+  |   v
+  |  <span class="gate">VALIDATE</span>  User confirms summary flow
+  |   |
+  |   v
+  |  [3c] Write detailed design section  <span class="badge badge-local">LOCAL</span>
+  |   |
+  |   v
+  |  [3d] Claude reviews &amp; fixes detail  <span class="badge badge-claude">CLAUDE</span>
+  |   |    - Validate interface contracts
+  |   |    - Fix integration point accuracy
+  |   |    - Ensure cross-requirement consistency
+  |   |
+  |   v
+  |  <span class="gate">VALIDATE</span>  User confirms detail
+  |   |
+  |   v
+  |  [mark todo done]
+  |
+  v
+[4] Assemble final document from template + sections
+  </div>
+
+  <h3 id="step-extract">Step 1 &mdash; Extract requirements</h3>
+
+  <p>
+    The Designer takes the user's message (and optional requirements doc) and produces a
+    <strong>concise, numbered list</strong> of functional and system requirements. This is
+    not a full requirements document &mdash; it is a short, scannable list the user can
+    quickly approve, edit, or reject.
+  </p>
+
+  <h4>Local sketch</h4>
+  <p>
+    The local model (<code>qwen3-coder</code>) receives the user message plus L4 graph
+    context and produces the initial requirements list. If a requirements doc is provided,
+    the local model extracts and condenses rather than generating from scratch.
+  </p>
+
+  <pre><code>// personas/designer.ts — requirements extraction (Stage 1: local)
+const REQ_EXTRACT_SYSTEM = `You are a requirements analyst for a software project.
+You have the user's request and relevant code context from the codebase knowledge graph.
+
+Your task: produce a concise numbered list of functional and system requirements.
+Each requirement should be:
+- One sentence, testable, specific
+- Grounded in the codebase context (reference existing entities where relevant)
+- Classified as FUNCTIONAL or SYSTEM
+
+If a requirements document is provided, extract and condense it — do not regenerate.
+If no requirements document is provided, derive requirements from the user's request
+and the codebase context.
+
+Output format:
+1. [FUNCTIONAL] Requirement statement — references: entity_name, file.ts
+2. [SYSTEM] Requirement statement — references: entity_name
+...
+
+Keep the list to 5–15 items. Merge overlapping requirements. Surface ambiguities
+as open questions at the end (max 3).`;</code></pre>
+
+  <h4>Claude enhancement</h4>
+  <p>
+    Claude receives the local model's list plus the same context and sharpens it:
+    filling gaps, resolving obvious ambiguities, flagging conflicts with existing
+    architecture. The output remains a concise list &mdash; not a full document yet.
+  </p>
+
+  <pre><code>// personas/designer.ts — requirements extraction (Stage 2: Claude)
+const REQ_ENHANCE_SYSTEM = `You are a senior engineer reviewing a requirements list
+produced by a local model. You have the user's original request, the local model's
+list, and the relevant code context.
+
+Your task:
+1. Sharpen each requirement into a concrete, testable statement.
+2. Add missing requirements the local model overlooked (cross-repo impact,
+   edge cases, non-functional concerns).
+3. Remove duplicates or merge overlapping items.
+4. Flag any requirements that conflict with existing architecture.
+5. Keep open questions to genuine ambiguities that need user input.
+
+Output the same numbered format. Keep it concise — this list will be shown to the
+user for validation, not stored as a final document.`;</code></pre>
+
+  <h3 id="step-validate-reqs">Step 2 &mdash; Validate requirements</h3>
+
+  <p>
+    The requirements list is presented to the user. This is the first
+    <span class="gate">VALIDATE</span> gate. The user can:
+  </p>
+  <ul>
+    <li><strong>Approve</strong> &mdash; proceed as-is</li>
+    <li><strong>Edit</strong> &mdash; add, remove, or reword requirements; the Designer re-numbers and continues</li>
+    <li><strong>Reject</strong> &mdash; start over with additional guidance</li>
+  </ul>
+
+  <pre><code>// personas/designer.ts — validation gate for requirements
+interface ValidationGate {
+  /** What is being validated */
+  stage: 'requirements' | 'summary-flow' | 'detail';
+  /** The content presented to the user */
+  content: string;
+  /** Requirement index (for per-requirement gates) */
+  requirementIndex?: number;
+  /** User's response */
+  response: 'approve' | 'edit' | 'reject';
+  /** User's edits or rejection reason */
+  feedback?: string;
+}</code></pre>
+
+  <h3 id="step-todo">Step 3 &mdash; Create todos</h3>
+
+  <p>
+    Once the user approves the requirements list, the Designer creates one todo item per
+    requirement. Each todo tracks the state of that requirement through the sketch &rarr;
+    validate &rarr; detail &rarr; validate cycle.
+  </p>
+
+  <pre><code>// personas/designer.ts — requirement todo
+interface RequirementTodo {
+  /** Requirement index (1-based, matching the validated list) */
+  index: number;
+  /** The requirement statement */
+  statement: string;
+  /** Requirement type */
+  type: 'functional' | 'system';
+  /** Referenced entities from the requirements extraction */
+  references: string[];
+  /** Current state */
+  state: 'pending' | 'sketching' | 'sketch-reviewing' | 'sketch-validated' | 'detailing' | 'detail-reviewing' | 'done' | 'skipped';
+  /** Sketch output (populated after Step 3a) */
+  sketch?: RequirementSketch;
+  /** Detailed section output (populated after Step 3b) */
+  detail?: string;
+}</code></pre>
+
+  <h3 id="step-iterate">Step 4 &mdash; Per-requirement iteration</h3>
+
+  <p>
+    The Designer iterates over each requirement todo sequentially. For each requirement,
+    it performs two sub-steps with a validation gate after each.
+  </p>
+
+  <h3 id="step-sketch">Step 4a &mdash; Sketch</h3>
+
+  <p>
+    For each requirement, the Designer produces a short sketch that answers: <em>how will
+    this be implemented?</em> The sketch is grounded in the actual codebase through two
+    analyses:
+  </p>
+
+  <h4>Codebase analysis</h4>
+  <p>
+    The local model searches the current project's knowledge graph for existing modules,
+    patterns, and utilities that can be reused or extended for this requirement. This
+    prevents the design from proposing new code that duplicates what already exists.
+  </p>
+
+  <h4>Cross-project analysis</h4>
+  <p>
+    Services and external modules may be available in <strong>other indexed projects</strong>
+    in the dependency closure. The Designer queries the graph across all
+    <code>session.closureRepos</code> &mdash; not just the current project. This surfaces
+    reusable services, shared libraries, and API contracts that the design should integrate
+    with rather than rebuild.
+  </p>
+
+  <h4>Summary implementation flow</h4>
+  <p>
+    The sketch concludes with a summary flow: a concise description of how data moves
+    through existing and proposed components to satisfy this requirement.
+  </p>
+
+  <pre><code>// personas/designer.ts — per-requirement sketch
+interface RequirementSketch {
+  /** Requirement index */
+  index: number;
+  /** Existing modules/entities that can be reused */
+  reusable: Array&lt;{
+    entity: string;      // entity ID or name
+    project: string;     // which indexed project it's from
+    relevance: string;   // one-line description of how it's relevant
+  }&gt;;
+  /** Proposed new components (if reuse is insufficient) */
+  proposed: Array&lt;{
+    name: string;
+    kind: 'function' | 'class' | 'module' | 'interface' | 'type';
+    file: string;        // proposed file location
+    purpose: string;
+  }&gt;;
+  /** Summary implementation flow */
+  summaryFlow: string;
+  /** Open concerns surfaced during analysis */
+  concerns: string[];
+}
+
+// Stage 1: local model sketch prompt
+const SKETCH_SYSTEM = `You are a software architect analyzing a single requirement
+against an existing codebase. You have the requirement, the full codebase context
+(including entities from other indexed projects in the dependency closure), and the
+approved requirements list for overall context.
+
+Your task for this ONE requirement:
+1. REUSABLE MODULES — Search the provided context for existing modules, functions,
+   types, or services that can be reused or extended. Include entities from other
+   indexed projects if relevant (name the project). Do not propose new code if
+   existing code already does the job.
+2. PROPOSED COMPONENTS — If reuse is insufficient, propose new components. Name
+   them, specify where they belong in the file tree, and describe their purpose.
+3. SUMMARY FLOW — Describe how data moves through existing + proposed components
+   to satisfy this requirement. Keep it to 3-5 sentences. Name the entities.
+4. CONCERNS — Note any integration risks, performance concerns, or dependencies
+   that the user should be aware of.
+
+Be concrete. Name files, functions, types. Do not be vague.`;</code></pre>
+
+  <h3 id="step-claude-sketch">Step 4b &mdash; Claude reviews sketch</h3>
+
+  <p>
+    Before presenting the sketch to the user, Claude reviews and fixes the local model's
+    output. The local model may misidentify entities, propose reuse of unsuitable modules,
+    or produce an inaccurate summary flow. Claude corrects these issues so the user sees
+    a <strong>high-quality, validated sketch</strong> at the gate &mdash; not a raw local draft.
+  </p>
+
+  <pre><code>// personas/designer.ts — Claude sketch review
+const SKETCH_REVIEW_SYSTEM = `You are a senior engineer reviewing a design sketch produced
+by a local model for a single requirement. You have:
+- The requirement statement
+- The local model's sketch (reusable modules, proposed components, summary flow)
+- The codebase context (entity bodies, signatures, types)
+- The full requirements list for cross-requirement context
+
+Your task:
+1. VALIDATE REUSE — Check that each "reusable" entity actually exists in the context
+   and is genuinely relevant. Remove false positives. Add missed reuse opportunities.
+2. VALIDATE PROPOSALS — Check that proposed new components don't duplicate existing code.
+   Verify proposed file locations match the project's conventions.
+3. FIX SUMMARY FLOW — Correct any inaccurate entity references, wrong call chains, or
+   missing steps. The flow should be traceable through the actual codebase.
+4. FLAG CONCERNS — Add any integration risks or cross-requirement conflicts the local
+   model missed.
+
+Output the corrected sketch in the same format. Mark corrections with [FIXED] and
+additions with [ADDED] so the user can see what changed.`;</code></pre>
+
+  <pre><code>// personas/designer.ts — sketch review execution
+async function reviewSketch(
+  sketch: RequirementSketch,
+  requirement: RequirementTodo,
+  context: AssembledContext,
+): Promise&lt;RequirementSketch&gt; {
+  const messages: LLMMessage[] = [
+    { role: 'system', content: SKETCH_REVIEW_SYSTEM },
+    { role: 'user', content: `## Requirement\n${requirement.statement}` },
+    { role: 'user', content: `## Local Sketch\n${formatSketch(sketch)}` },
+    { role: 'user', content: `## Code Context\n${formatGraphContext(context)}` },
+  ];
+
+  const reviewed = await claudeProvider.complete(messages, {
+    maxTokens: 2048,
+    model: resolveModel('designer.sketch-review'),
+  });
+
+  return parseSketch(reviewed);
+}</code></pre>
+
+  <h3 id="step-validate-flow">Step 4c &mdash; Validate summary flow</h3>
+
+  <p>
+    The Claude-reviewed sketch (reusable modules + proposed components + summary flow) is
+    presented to the user. This is the second <span class="gate">VALIDATE</span> gate
+    (per requirement). Because Claude has already validated and fixed the sketch, the user
+    sees a high-quality proposal &mdash; not a raw local draft.
+  </p>
+  <p>
+    This gate is critical: it is where the user corrects the approach <em>before</em> the
+    detailed design is written. Catching a wrong direction here saves significant LLM cost
+    and user time.
+  </p>
+  <ul>
+    <li><strong>Approve</strong> &mdash; proceed to detailed section</li>
+    <li><strong>Edit</strong> &mdash; user adjusts the approach (e.g., "use X instead of Y",
+    "don't create a new module, extend Z"); the Designer re-runs the local sketch + Claude
+    review cycle with the feedback injected</li>
+    <li><strong>Reject</strong> &mdash; skip this requirement or re-derive it</li>
+  </ul>
+
+  <h3 id="step-detail">Step 4d &mdash; Write detailed section</h3>
+
+  <p>
+    Once the sketch is validated, the Designer generates the full detailed design section
+    for this requirement. The section is scoped to the design template's slot for this
+    requirement and includes:
+  </p>
+  <ul>
+    <li>Interface contracts (TypeScript signatures or pseudocode)</li>
+    <li>Data flow with concrete entity references</li>
+    <li>Integration points with existing code (from the sketch's reuse analysis)</li>
+    <li>Migration notes (if modifying existing entities)</li>
+    <li>Risk callouts (from the sketch's concerns)</li>
+  </ul>
+
+  <pre><code>// personas/designer.ts — detailed section generation
+const DETAIL_SYSTEM = `You are a senior engineer writing one section of a design document.
+You have:
+- The requirement statement
+- The approved sketch (reusable modules, proposed components, summary flow)
+- The codebase context (entity bodies and signatures)
+- The overall requirements list (for cross-requirement context)
+
+Write a detailed design section covering:
+1. INTERFACE CONTRACTS — TypeScript signatures or pseudocode for new/modified entities
+2. DATA FLOW — Concrete path through existing and new components, with entity names
+3. INTEGRATION POINTS — How this connects to existing code. Name the files and functions.
+4. MIGRATION NOTES — If existing entities are modified, describe the change and impact.
+5. RISKS — Anything from the sketch concerns that needs explicit handling.
+
+Output as markdown. Use code blocks for interface definitions. Be specific — name every
+entity, file, and function. Do not repeat the requirement statement as a preamble.`;</code></pre>
+
+  <h3 id="step-claude-detail">Step 4e &mdash; Claude reviews detail</h3>
+
+  <p>
+    Before the user sees the detailed section, Claude reviews and fixes it. This ensures
+    interface contracts are valid, integration points reference real entities, and the
+    section is consistent with other already-completed requirement sections.
+  </p>
+
+  <pre><code>// personas/designer.ts — Claude detail review
+const DETAIL_REVIEW_SYSTEM = `You are a senior engineer reviewing a detailed design section
+produced by a local model. You have:
+- The requirement statement and approved sketch
+- The local model's detailed section
+- The codebase context
+- Previously completed requirement sections (for cross-requirement consistency)
+
+Your task:
+1. VALIDATE INTERFACES — Check that TypeScript signatures are syntactically correct
+   and compatible with existing types in the codebase.
+2. VALIDATE INTEGRATION — Verify that named files, functions, and call chains exist
+   in the context. Fix incorrect references.
+3. CROSS-REQUIREMENT CONSISTENCY — Check for conflicts with previously completed
+   sections (duplicate entity names, incompatible interfaces, contradictory data flows).
+4. COMPLETENESS — Ensure migration notes cover all modified entities. Ensure risks
+   from the sketch concerns are addressed.
+
+Output the corrected section. Mark corrections with [FIXED].`;</code></pre>
+
+  <pre><code>// personas/designer.ts — detail review execution
+async function reviewDetail(
+  detail: string,
+  sketch: RequirementSketch,
+  requirement: RequirementTodo,
+  completedSections: string[],
+  context: AssembledContext,
+): Promise&lt;string&gt; {
+  const messages: LLMMessage[] = [
+    { role: 'system', content: DETAIL_REVIEW_SYSTEM },
+    { role: 'user', content: `## Requirement\n${requirement.statement}` },
+    { role: 'user', content: `## Approved Sketch\n${formatSketch(sketch)}` },
+    { role: 'user', content: `## Local Detail\n${detail}` },
+    { role: 'user', content: `## Code Context\n${formatGraphContext(context)}` },
+    ...(completedSections.length > 0
+      ? [{ role: 'user' as const, content: `## Completed Sections\n${completedSections.join('\n---\n')}` }]
+      : []),
+  ];
+
+  const reviewed = await claudeProvider.complete(messages, {
+    maxTokens: 4096,
+    model: resolveModel('designer.detail-review'),
+  });
+
+  return reviewed;
+}</code></pre>
+
+  <h3 id="step-validate-detail">Step 4f &mdash; Validate detail</h3>
+
+  <p>
+    The Claude-reviewed detailed section is presented to the user. This is the third
+    <span class="gate">VALIDATE</span> gate (per requirement). Claude has already validated
+    interfaces, fixed entity references, and checked cross-requirement consistency.
+  </p>
+  <ul>
+    <li><strong>Approve</strong> &mdash; mark the requirement todo as done, move to next</li>
+    <li><strong>Edit</strong> &mdash; user provides feedback; the Designer revises the section</li>
+    <li><strong>Reject</strong> &mdash; go back to sketch stage for this requirement</li>
+  </ul>
+
+  <p>
+    Once all requirement todos are done, the Designer assembles the final document from
+    the template skeleton plus all validated detail sections.
+  </p>
+
+  <hr />
+
+  <h2 id="validation-gates">Validation Gates</h2>
+
+  <h3 id="gate-mechanics">Gate mechanics</h3>
+
+  <p>
+    Validation gates are the Designer's primary mechanism for keeping the user in the loop.
+    Each gate pauses execution and presents a summary to the user. The orchestrator manages
+    the gate interaction &mdash; the Designer persona itself is stateless and receives the
+    user's response as input to the next step.
+  </p>
+
+  <pre><code>// orchestrator/validation.ts — gate execution
+async function executeGate(gate: ValidationGate): Promise&lt;ValidationGate&gt; {
+  // Present content to user
+  render(gate.stage, gate.content, gate.requirementIndex);
+
+  // Wait for user response
+  const response = await waitForUserInput();
+
+  if (response.type === 'approve') {
+    return { ...gate, response: 'approve' };
+  }
+  if (response.type === 'edit') {
+    return { ...gate, response: 'edit', feedback: response.text };
+  }
+  return { ...gate, response: 'reject', feedback: response.text };
+}</code></pre>
+
+  <h3 id="gate-responses">User responses</h3>
+
+  <table>
+    <thead><tr><th>Response</th><th>Effect</th><th>Available at</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Approve</strong></td>
+        <td>Proceed to next step. Content is accepted as-is.</td>
+        <td>All gates</td>
+      </tr>
+      <tr>
+        <td><strong>Edit</strong></td>
+        <td>User provides textual feedback. The Designer re-runs the current step with the feedback injected as an additional user message. Max 3 edit rounds per gate before the Designer asks for explicit direction.</td>
+        <td>All gates</td>
+      </tr>
+      <tr>
+        <td><strong>Reject</strong></td>
+        <td>At requirements gate: restart extraction with user's rejection reason as guidance. At sketch gate: skip this requirement or re-derive. At detail gate: go back to sketch for this requirement.</td>
+        <td>All gates</td>
+      </tr>
+      <tr>
+        <td><strong>Skip</strong></td>
+        <td>Skip this requirement entirely. The todo is marked <code>skipped</code> and no section is generated for it. Available only at per-requirement gates.</td>
+        <td>Sketch, detail gates</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3 id="auto-approve">Auto-approve mode</h3>
+
+  <p>
+    For batch or CI usage, the Designer supports an <code>--auto-approve</code> flag that
+    skips all validation gates and proceeds with the LLM's output at each step. This is
+    equivalent to approving every gate automatically.
+  </p>
+
+  <div class="callout warn">
+    <strong>Not recommended for first runs:</strong> Auto-approve is useful for regenerating
+    a design with known-good requirements, or for CI pipelines. For initial design work,
+    the validation gates are where most value is created &mdash; catching wrong assumptions
+    early saves significant rework.
+  </div>
+
+  <hr />
+
+  <h2 id="codebase-analysis">Codebase Analysis</h2>
+
+  <p>
+    The sketch step (4a) relies on thorough codebase analysis to ground the design in
+    reality. This analysis happens in two scopes.
+  </p>
+
+  <h3 id="local-analysis">Local project analysis</h3>
+
+  <p>
+    The Designer queries the current project's knowledge graph for entities that match
+    the requirement's domain:
+  </p>
+
+  <pre><code>// personas/designer.ts — local codebase analysis
+async function analyzeLocalCodebase(
+  requirement: RequirementTodo,
+  context: AssembledContext,
+): Promise&lt;ReusableEntity[]&gt; {
+  // Vector search for entities relevant to this requirement
+  const vec = await embed(requirement.statement);
+  const hits = await db.searchCode(vec, {
+    repos: [context.currentRepo],
+    limit: 15,
+  });
+
+  // Expand to neighbours for integration context
+  const neighbours = await db.neighbors(
+    hits.map(h =&gt; h.id),
+    { hops: 1, signaturesOnly: true },
+  );
+
+  // Fetch referenced types for contract compatibility
+  const types = await db.referencedTypes(hits.map(h =&gt; h.id));
+
+  return hits.map(h =&gt; ({
+    entity: h.id,
+    project: context.currentRepo,
+    body: h.body,
+    signature: h.signature,
+    neighbours: neighbours.filter(n =&gt; n.sourceId === h.id),
+    types: types.filter(t =&gt; t.referencedBy === h.id),
+  }));
+}</code></pre>
+
+  <h3 id="cross-project">Cross-project analysis</h3>
+
+  <p>
+    Services, shared libraries, and external modules may live in other indexed projects
+    within the dependency closure. The Designer queries across all closure repos to find
+    reusable components the design should integrate with rather than rebuild.
+  </p>
+
+  <pre><code>// personas/designer.ts — cross-project analysis
+async function analyzeCrossProject(
+  requirement: RequirementTodo,
+  context: AssembledContext,
+): Promise&lt;ReusableEntity[]&gt; {
+  const otherRepos = context.session.closureRepos.filter(
+    r =&gt; r !== context.currentRepo,
+  );
+
+  if (otherRepos.length === 0) return [];
+
+  const vec = await embed(requirement.statement);
+  const hits = await db.searchCode(vec, {
+    repos: otherRepos,
+    limit: 8,
+  });
+
+  // For cross-project hits, fetch signatures only (not full bodies)
+  // to keep context budget manageable
+  return hits.map(h =&gt; ({
+    entity: h.id,
+    project: h.repo,
+    body: null,  // not included — only signatures for cross-project
+    signature: h.signature,
+    neighbours: [],
+    types: [],
+  }));
+}</code></pre>
+
+  <div class="callout info">
+    <strong>Cross-project is signatures-only:</strong> To stay within context budget,
+    cross-project hits include only signatures (not full bodies). If the user approves a
+    sketch that references a cross-project entity, the detail step can fetch the full
+    body on demand.
+  </div>
+
+  <h3 id="reuse-report">Reuse report</h3>
+
+  <p>
+    The local and cross-project analyses are combined into a reuse report that is included
+    in the sketch output. The reuse report makes the sketch grounded and auditable &mdash;
+    the user can see exactly which existing code the design proposes to reuse.
+  </p>
+
+  <pre><code>// Reuse report format (included in sketch output)
+//
+// REUSABLE MODULES
+// ├─ [local]  parseConfig()  — src/config/parser.ts:42  — parses YAML config, can be extended for new fields
+// ├─ [local]  ConfigSchema   — src/config/types.ts:10   — existing Zod schema, add new fields here
+// ├─ [other]  @insrc/shared/validateSchema()  — shared/validation.ts:88  — generic schema validator (signatures only)
+// └─ [other]  @insrc/shared/SchemaError       — shared/errors.ts:15      — error type for validation failures
+//
+// PROPOSED COMPONENTS
+// ├─ NewFeatureHandler  — src/handlers/new-feature.ts (new file)  — handles the new feature request
+// └─ NewFeatureConfig   — src/config/types.ts (extend)            — add config fields for new feature</code></pre>
+
+  <hr />
+
+  <h2 id="output">Output</h2>
+
+  <h3 id="output-schema">Schema</h3>
+
+  <pre><code>// personas/designer.ts — DesignerResult
+interface DesignerResult extends AgentResult {
+  kind: 'document';
+  /** The assembled design document (markdown or HTML) */
+  output: string;
+  /** Output format */
+  format: 'markdown' | 'html';
+  /** Template used */
+  templateId: string;
+  /** File written (HTML only) */
+  files?: string[];
+  /** The validated requirements list */
+  requirements: Array&lt;{
+    index: number;
+    statement: string;
+    type: 'functional' | 'system';
+    state: 'done' | 'skipped';
+  }&gt;;
+  /** Per-requirement sketches (for traceability) */
+  sketches: RequirementSketch[];
+  /** Structured extraction for downstream agents */
+  structured: {
+    /** New entities proposed across all requirements */
+    newEntities: Array&lt;{ name: string; file: string; kind: string }&gt;;
+    /** Existing entities reused or modified */
+    reusedEntities: Array&lt;{ entity: string; project: string; modification: string }&gt;;
+    /** Unresolved decisions requiring user input */
+    userDecisions: string[];
+  };
+  /** L2 tag for session carry-forward */
+  summary: string;
+}</code></pre>
+
+  <h3 id="session-carry-forward">Session carry-forward</h3>
+
+  <p>
+    After all requirements are processed and the document is assembled, the orchestrator
+    compresses the result into L2 with both <code>[requirements]</code> and
+    <code>[design]</code> tags. Downstream agents (Developer's <code>plan</code> and
+    <code>implement</code> intents) read these tags without re-running the Designer.
+  </p>
+
+  <pre><code>// Orchestrator post-turn — designer carry-forward
+session.l2Tags.push('requirements', 'design');
+session.summary += `\n[requirements] ${result.requirements.filter(r =&gt; r.state === 'done').length} requirements validated. ` +
+  `${result.requirements.filter(r =&gt; r.state === 'skipped').length} skipped.\n` +
+  `[design] ${result.structured.newEntities.length} new entities proposed, ` +
+  `${result.structured.reusedEntities.length} existing entities reused. ` +
+  `${result.structured.userDecisions.length} decisions pending.`;</code></pre>
+
+  <hr />
+
+  <h2 id="review-intent">Review Intent</h2>
+
+  <p>
+    The <code>review</code> intent is a separate workflow from the design flow above. It
+    critiques existing code rather than designing new code. The review workflow does
+    <strong>not</strong> use the iterative todo-based pattern &mdash; it is a single-pass
+    Claude analysis.
+  </p>
+
+  <h3>Context assembly</h3>
+
+  <p>
+    The local model uses read-only tools to build the review payload:
+  </p>
+  <ul>
+    <li>If a <strong>diff is in scope</strong> (staged changes, a PR, a specific commit):
+    <code>git diff</code> or <code>git show</code> &mdash; the diff is the primary input</li>
+    <li><strong>Bodies of touched entities</strong> &mdash; fetched by matching diff hunks to
+    indexed entity ranges</li>
+    <li><strong>Signatures of first-degree callers and callees</strong> &mdash; for
+    call-site compatibility context</li>
+    <li>If <strong>no diff</strong> (reviewing an existing file or function): the entity body +
+    its immediate neighbours' signatures</li>
+  </ul>
+
+  <h3>Claude review</h3>
+
+  <pre><code>// personas/designer.ts — review prompt (system)
+const REVIEW_SYSTEM = `You are a senior engineer performing a code review. Be specific —
+cite line numbers or entity names for every finding.
+
+Review for:
+- CORRECTNESS: logic errors, off-by-ones, unhandled edge cases, race conditions
+- SECURITY: injection, unvalidated input, exposed internals, over-permissive access
+- PERFORMANCE: unnecessary allocations, N+1 queries, blocking calls in hot paths
+- STYLE: consistency with surrounding code patterns shown
+- COMPLETENESS: missing error handling, missing tests, undocumented public API
+
+Format: one section per category. Skip categories with no findings.
+Severity for each finding: CRITICAL / WARN / NOTE.
+For CRITICAL and WARN findings, include a suggested fix (code snippet or description).`;</code></pre>
+
+  <h3>Output schema</h3>
+
+  <pre><code>// personas/designer.ts — ReviewResult
+interface ReviewResult extends AgentResult {
+  kind: 'review';
+  /** The full review (markdown with categorised findings) */
+  output: string;
+  structured: {
+    findings: Array&lt;{
+      category: 'correctness' | 'security' | 'performance' | 'style' | 'completeness';
+      severity: 'critical' | 'warn' | 'note';
+      location: string;
+      description: string;
+      suggestedFix?: string;
+    }&gt;;
+    counts: { critical: number; warn: number; note: number };
+  };
+  summary: string;
+}</code></pre>
+
+  <h3>Escalation to Opus</h3>
+
+  <p>
+    Sonnet handles most reviews. The user can prefix with <code>@opus</code> to escalate for
+    large diffs (&gt; 500 lines), security audits, performance-critical paths, or cross-repo
+    changes. Cost estimate shown before any Opus call.
+  </p>
+
+  <hr />
+
+  <h2 id="shared-behaviour">Shared Behaviour</h2>
+
+  <h3 id="context-budget">Context budget</h3>
+
+  <p>
+    Claude calls are bounded to keep costs predictable:
+  </p>
+
+  <table>
+    <thead><tr><th>Component</th><th>Budget</th><th>Contents</th></tr></thead>
+    <tbody>
+      <tr><td>System prompt</td><td>~500 tokens</td><td>Persona + step-specific instructions</td></tr>
+      <tr><td>User request</td><td>~200 tokens</td><td>The user's original message</td></tr>
+      <tr><td>Requirements list</td><td>~300–800 tokens</td><td>The validated requirements (all steps)</td></tr>
+      <tr><td>Local sketch</td><td>~1–2K tokens</td><td>Sketch output for current requirement</td></tr>
+      <tr><td>Graph context</td><td>~4–8K tokens</td><td>Entity bodies + signatures + types</td></tr>
+      <tr><td>Cross-project signatures</td><td>~1–2K tokens</td><td>Signatures from other indexed projects</td></tr>
+      <tr><td>Validation feedback</td><td>~200 tokens</td><td>User edits from prior gate (if any)</td></tr>
+      <tr><td><strong>Total input</strong></td><td><strong>~8–14K tokens</strong></td><td></td></tr>
+      <tr><td>Response budget</td><td>4096 tokens</td><td>Claude's output for this step</td></tr>
+    </tbody>
+  </table>
+
+  <p>
+    A full design run with 10 requirements will make ~40 Claude calls: requirements enhancement
+    + 10 sketch reviews + 10 detail reviews + 10 detail generations + assembly overhead. At
+    Sonnet pricing (~$3/M input, ~$15/M output), a typical full design costs
+    <strong>$0.80–$2.00</strong>. The orchestrator tracks cumulative spend via <code>/cost</code>.
+  </p>
+
+  <h3 id="tool-usage">Tool usage</h3>
+
+  <table>
+    <thead><tr><th>Tool</th><th>Usage</th><th>Validation</th></tr></thead>
+    <tbody>
+      <tr><td><code>graph_entity</code></td><td>Fetch entity body/signature by ID</td><td>Auto-execute</td></tr>
+      <tr><td><code>graph_search</code></td><td>Vector search for relevant entities</td><td>Auto-execute</td></tr>
+      <tr><td><code>graph_callers</code></td><td>Find callers of an entity</td><td>Auto-execute</td></tr>
+      <tr><td><code>graph_callees</code></td><td>Find callees of an entity</td><td>Auto-execute</td></tr>
+      <tr><td><code>Read</code></td><td>Read file contents</td><td>Auto-execute</td></tr>
+      <tr><td><code>Grep</code></td><td>Search for patterns</td><td>Auto-execute</td></tr>
+      <tr><td><code>Glob</code></td><td>Find files by pattern</td><td>Auto-execute</td></tr>
+      <tr><td><code>Bash</code> (git only)</td><td><code>git diff</code>, <code>git log</code>, <code>git show</code>, <code>git blame</code></td><td>Auto-execute (read-only)</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout warn">
+    <strong>No mutating tools:</strong> <code>Write</code>, <code>Edit</code>, mutating
+    <code>Bash</code>, and <code>plan_step_update</code> are not in the Designer's tool
+    schema. The orchestrator enforces this at the tool-routing layer.
+  </div>
+
+  <h3 id="error-handling">Error handling</h3>
+
+  <table>
+    <thead><tr><th>Failure</th><th>Behaviour</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Local sketch fails (Ollama timeout)</td>
+        <td>Skip local stage. Claude works without sketch &mdash; quality degrades but turn completes. User notified.</td>
+      </tr>
+      <tr>
+        <td>Claude fails (API error, timeout)</td>
+        <td>Return local sketch as-is with warning. For per-requirement steps, mark the todo as failed and continue to next requirement.</td>
+      </tr>
+      <tr>
+        <td>Claude returns malformed output</td>
+        <td>Retry once. If still malformed, present raw text to user at the validation gate &mdash; user can edit it into shape.</td>
+      </tr>
+      <tr>
+        <td>Graph context empty</td>
+        <td>Proceed without graph grounding. User warned that results may reference entities that don't exist.</td>
+      </tr>
+      <tr>
+        <td>User abandons mid-flow</td>
+        <td>Completed requirement todos are preserved. The Designer can resume from the last completed todo in a subsequent turn (state stored in session).</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <hr />
+
+  <h2 id="open-questions">Open Questions</h2>
+
+  <ol>
+    <li>
+      <strong>Validation gate UX in REPL vs CLI</strong> &mdash; In the REPL, gates are
+      natural (user types a response). In CLI one-shot mode, how should gates work?
+      Options: <code>--auto-approve</code> for batch, or an interactive prompt sequence.
+    </li>
+    <li>
+      <strong>Parallelism within requirements</strong> &mdash; Some requirements may be
+      independent and could be sketched/detailed in parallel. Should the Designer detect
+      independence (via graph overlap analysis) and parallelise, or always iterate sequentially?
+    </li>
+    <li>
+      <strong>Cross-project index freshness</strong> &mdash; If another indexed project has
+      changed since last indexing, the Designer's cross-project analysis may surface stale
+      signatures. Should the Designer check index freshness and warn, or trigger a re-index?
+    </li>
+    <li>
+      <strong>Design versioning</strong> &mdash; When the user re-runs the Designer on the
+      same topic, should it produce a diff against the previous design (stored in L2), or a
+      fresh document?
+    </li>
+    <li>
+      <strong>Structured output enforcement</strong> &mdash; Should the requirement list and
+      sketch be enforced via Claude's structured output mode, or extracted post-hoc from
+      markdown with a parsing pass?
+    </li>
+  </ol>
+
+  </main>
+
+  <script>
+    const tocLinks = document.querySelectorAll('nav.toc a[href^="#"]');
+    const sections = Array.from(tocLinks).map(a => {
+      const id = a.getAttribute('href').slice(1);
+      return { link: a, el: document.getElementById(id) };
+    }).filter(s => s.el);
+
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        const match = sections.find(s => s.el === entry.target);
+        if (match) match.link.classList.toggle('active', entry.isIntersecting);
+      });
+    }, { rootMargin: '-10% 0px -80% 0px' });
+
+    sections.forEach(s => observer.observe(s.el));
+  </script>
+
+</body>
+</html>

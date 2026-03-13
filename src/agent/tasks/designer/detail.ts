@@ -2,7 +2,7 @@ import type { LLMProvider, LLMMessage } from '../../../shared/types.js';
 import type { DesignerInput, RequirementTodo, ParsedRequirement } from './types.js';
 import { DETAIL_SYSTEM, DETAIL_REVIEW_SYSTEM } from './prompts.js';
 import { formatSketch } from './sketch.js';
-import { formatRequirementsList } from './requirements.js';
+import { compressHistory } from './context.js';
 
 // ---------------------------------------------------------------------------
 // Detail Generation — Step 4d/4e of the Designer pipeline
@@ -17,8 +17,7 @@ import { formatRequirementsList } from './requirements.js';
  */
 export async function writeDetail(
   todo: RequirementTodo,
-  allRequirements: ParsedRequirement[],
-  completedSections: string[],
+  allTodos: RequirementTodo[],
   input: DesignerInput,
   localProvider: LLMProvider,
 ): Promise<string> {
@@ -26,20 +25,18 @@ export async function writeDetail(
     throw new Error(`Cannot write detail for requirement ${todo.index}: no approved sketch`);
   }
 
-  const reqListContext = formatRequirementsList(allRequirements);
-
   const userParts: string[] = [
     `## Requirement ${todo.index}\n${todo.statement}`,
     `## Approved Sketch\n${formatSketch(todo.sketch)}`,
-    `## All Requirements\n${reqListContext}`,
   ];
 
   if (input.codeContext) {
     userParts.push(`## Code Context\n${input.codeContext}`);
   }
 
-  if (completedSections.length > 0) {
-    userParts.push(`## Previously Completed Sections\n${completedSections.join('\n\n---\n\n')}`);
+  const history = compressHistory(allTodos);
+  if (history) {
+    userParts.push(`## Design History\n${history}`);
   }
 
   const messages: LLMMessage[] = [
@@ -62,8 +59,7 @@ export async function writeDetail(
 export async function reviewDetail(
   detail: string,
   todo: RequirementTodo,
-  allRequirements: ParsedRequirement[],
-  completedSections: string[],
+  allTodos: RequirementTodo[],
   input: DesignerInput,
   claudeProvider: LLMProvider,
 ): Promise<string> {
@@ -82,11 +78,9 @@ export async function reviewDetail(
     messages.push({ role: 'user', content: `## Code Context\n${input.codeContext}` });
   }
 
-  if (completedSections.length > 0) {
-    messages.push({
-      role: 'user',
-      content: `## Completed Sections\n${completedSections.join('\n\n---\n\n')}`,
-    });
+  const history = compressHistory(allTodos);
+  if (history) {
+    messages.push({ role: 'user', content: `## Design History\n${history}` });
   }
 
   const response = await claudeProvider.complete(messages, {
@@ -104,12 +98,13 @@ export async function reDetailWithFeedback(
   previousDetail: string,
   feedback: string,
   todo: RequirementTodo,
-  allRequirements: ParsedRequirement[],
-  completedSections: string[],
+  allTodos: RequirementTodo[],
   input: DesignerInput,
   localProvider: LLMProvider,
   claudeProvider: LLMProvider,
 ): Promise<string> {
+  const history = compressHistory(allTodos);
+
   const messages: LLMMessage[] = [
     { role: 'system', content: DETAIL_SYSTEM },
     {
@@ -120,6 +115,7 @@ export async function reDetailWithFeedback(
         `## Previous Detail\n${previousDetail}`,
         `## User Feedback\n${feedback}`,
         input.codeContext ? `## Code Context\n${input.codeContext}` : '',
+        history ? `## Design History\n${history}` : '',
       ].filter(Boolean).join('\n\n'),
     },
   ];
@@ -130,6 +126,6 @@ export async function reDetailWithFeedback(
   });
 
   return reviewDetail(
-    localResponse.text, todo, allRequirements, completedSections, input, claudeProvider,
+    localResponse.text, todo, allTodos, input, claudeProvider,
   );
 }

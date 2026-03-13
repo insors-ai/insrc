@@ -169,7 +169,9 @@ export interface ModelContextConfig {
 // Code Knowledge Graph — entity + relation types
 // ---------------------------------------------------------------------------
 
-export type Language = 'python' | 'go' | 'typescript' | 'javascript';
+export type Language = 'python' | 'go' | 'typescript' | 'javascript'
+  | 'markdown' | 'html' | 'css' | 'yaml' | 'json' | 'toml' | 'shell'
+  | 'sql' | 'proto' | 'graphql' | 'dockerfile' | 'config';
 
 export type EntityKind =
   | 'repo'
@@ -180,7 +182,10 @@ export type EntityKind =
   | 'class'
   | 'interface'
   | 'type'
-  | 'variable';
+  | 'variable'
+  | 'document'
+  | 'section'
+  | 'config';
 
 export type RelationKind =
   | 'DEFINES'
@@ -216,6 +221,8 @@ export interface Entity {
   hash?:           string;  // content hash for File entities
   rootPath?:       string;  // for Repo entities
   embeddingModel?: string;
+  /** True for non-code artifacts (docs, configs, plans). Enables code vs artifact filtering. */
+  artifact?:       boolean;
 }
 
 export interface Relation {

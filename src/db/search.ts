@@ -12,6 +12,9 @@
 
 import type { DbClient } from './client.js';
 import type { Entity } from '../shared/types.js';
+import { getLogger } from '../shared/logger.js';
+
+const log = getLogger('search');
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -54,6 +57,7 @@ function rowToEntity(row: Record<string, unknown>): Entity {
   const sg = row['signature'] as string; if (sg) entity.signature = sg;
   const hh = row['hash']      as string; if (hh) entity.hash      = hh;
   const rp = row['rootPath']  as string; if (rp) entity.rootPath  = rp;
+  if (row['artifact'] === true) entity.artifact = true;
   return entity;
 }
 
@@ -88,6 +92,7 @@ export async function resolveClosure(db: DbClient, repoPath: string): Promise<st
   // Ensure the root repo is always included (even if 0 hops matches nothing)
   if (!ids.includes(repoPath)) ids.unshift(repoPath);
 
+  log.debug({ repo: repoPath, closure: ids.length }, 'resolved dependency closure');
   return ids;
 }
 
@@ -103,30 +108,50 @@ export async function resolveClosure(db: DbClient, repoPath: string): Promise<st
  *  - the entities table doesn't exist yet
  *  - the query vector is empty (embedding unavailable)
  */
+export type SearchFilter = 'all' | 'code' | 'artifact';
+
 export async function searchEntities(
   db:           DbClient,
   queryVec:     number[],
   closureRepos: string[],
   limit         = 10,
+  filter:       SearchFilter = 'all',
 ): Promise<Entity[]> {
-  if (queryVec.length === 0 || closureRepos.length === 0) return [];
+  if (queryVec.length === 0 || closureRepos.length === 0) {
+    log.debug('searchEntities: empty query vector or closure');
+    return [];
+  }
 
   const table = await getEntitiesTable(db);
-  if (!table) return [];
+  if (!table) {
+    log.warn('searchEntities: entities table not found');
+    return [];
+  }
 
   // Build a SQL-style IN clause for repo filtering
   const safeRepos = closureRepos.map(r => r.replace(/'/g, "''"));
   const repoFilter = safeRepos.map(r => `'${r}'`).join(', ');
 
-  // LanceDB vector search with pre-filter on repo
+  // Build WHERE clause with optional artifact filter
+  const conditions = [`repo IN (${repoFilter})`];
+  if (filter === 'code')     conditions.push('artifact = false');
+  if (filter === 'artifact') conditions.push('artifact = true');
+  const where = conditions.join(' AND ');
+
+  const t0 = Date.now();
+  // LanceDB vector search with pre-filter
   const rows = await table
     .vectorSearch(queryVec)
     .distanceType('cosine')
-    .where(`repo IN (${repoFilter})`)
+    .where(where)
     .limit(limit)
     .toArray();
 
-  return rows.map(r => rowToEntity(r as Record<string, unknown>));
+  const results = rows.map(r => rowToEntity(r as Record<string, unknown>));
+  const elapsed = `${Date.now() - t0}ms`;
+  log.info({ hits: results.length, limit, filter, elapsed }, 'vector search');
+  log.debug({ names: results.map(e => `${e.kind}:${e.name}`), where, elapsed }, 'vector search details');
+  return results;
 }
 
 // ---------------------------------------------------------------------------
@@ -160,7 +185,9 @@ export async function findCallers(db: DbClient, entityId: string): Promise<Entit
     'MATCH (caller:Entity)-[:CALLS]->(target:Entity {id: $id}) RETURN caller.id AS id',
     { id: entityId },
   );
-  return hydrateIds(db, rows.map(r => r['id'] as string));
+  const results = await hydrateIds(db, rows.map(r => r['id'] as string));
+  log.debug({ entity: entityId, callers: results.length }, 'findCallers');
+  return results;
 }
 
 /**
@@ -173,7 +200,9 @@ export async function findCallees(db: DbClient, entityId: string): Promise<Entit
     'MATCH (source:Entity {id: $id})-[:CALLS]->(callee:Entity) RETURN callee.id AS id',
     { id: entityId },
   );
-  return hydrateIds(db, rows.map(r => r['id'] as string));
+  const results = await hydrateIds(db, rows.map(r => r['id'] as string));
+  log.debug({ entity: entityId, callees: results.length }, 'findCallees');
+  return results;
 }
 
 /**
@@ -185,7 +214,9 @@ export async function findDefinedIn(db: DbClient, fileEntityId: string): Promise
     'MATCH (f:Entity {id: $id})-[:DEFINES]->(e:Entity) RETURN e.id AS id',
     { id: fileEntityId },
   );
-  return hydrateIds(db, rows.map(r => r['id'] as string));
+  const results = await hydrateIds(db, rows.map(r => r['id'] as string));
+  log.debug({ file: fileEntityId, defined: results.length }, 'findDefinedIn');
+  return results;
 }
 
 /**
@@ -197,5 +228,7 @@ export async function findImports(db: DbClient, fileEntityId: string): Promise<E
     'MATCH (f:Entity {id: $id})-[:IMPORTS]->(target:Entity) RETURN target.id AS id',
     { id: fileEntityId },
   );
-  return hydrateIds(db, rows.map(r => r['id'] as string));
+  const results = await hydrateIds(db, rows.map(r => r['id'] as string));
+  log.debug({ file: fileEntityId, imports: results.length }, 'findImports');
+  return results;
 }

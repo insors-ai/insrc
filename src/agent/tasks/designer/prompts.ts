@@ -30,22 +30,23 @@ Output format:
 Keep the list to 5–15 items. Merge overlapping requirements. Surface ambiguities
 as open questions at the end (max 3).`;
 
-export const REQ_ENHANCE_SYSTEM = `You are a senior engineer reviewing a requirements list
+export const REQ_ENHANCE_SYSTEM = `You are a senior engineer validating a requirements list
 produced by a local model. You have the user's original request, the local model's
 list, and the relevant code context.
 
-Your task:
-1. Ensure every requirement from the user's original request is captured — do not
-   drop, merge away, or rephrase requirements into oblivion.
-2. Make each requirement modular: one concern per item, testable, specific.
-3. Remove exact duplicates but do NOT merge distinct requirements that happen to
-   be related — keep them as separate items.
-4. Flag any requirements that conflict with existing architecture.
-5. Keep open questions to genuine ambiguities that need user input (max 3).
+Your job is to VALIDATE, not extend. The granularity of the input list is correct —
+do not split requirements into finer-grained items.
 
-Do NOT invent new requirements that the user did not ask for. Do NOT split one
-requirement into multiple sub-items. Your job is to clarify and preserve, not expand.
-The output should have roughly the same number of items as the input list.
+Rules:
+1. ENHANCE IN PLACE — If a requirement is missing details, add those details to
+   that existing requirement. Do not create a new item for the missing detail.
+2. ONLY ADD if the user's original request contains a requirement that the local
+   model completely missed. This should be rare (1–2 items at most).
+3. Do not change the granularity. If the input has one item covering "markdown
+   serialization", keep it as one item — do not split into read/write/partial-update.
+4. Remove exact duplicates (keep the better-worded version).
+5. Flag conflicts with existing architecture.
+6. Keep open questions to genuine ambiguities (max 3).
 
 Output the same numbered format. Keep it concise — this list will be shown to the
 user for validation, not stored as a final document.`;
@@ -173,3 +174,33 @@ Format: one section per category. Skip categories with no findings.
 Severity for each finding: CRITICAL / WARN / NOTE.
 
 For CRITICAL and WARN findings, include a suggested fix (concrete code or pseudocode).`;
+
+// ---------------------------------------------------------------------------
+// Search Planning (pre-sketch step)
+// ---------------------------------------------------------------------------
+
+export const SEARCH_PLAN_SYSTEM = `You are a search query planner for a codebase knowledge graph.
+Given a software requirement, generate 3-6 targeted search queries to find relevant
+entities in an indexed codebase.
+
+Each query should target a specific category:
+- code: functions, classes, interfaces, types, methods (filter: "code")
+- config: YAML, JSON, TOML, Dockerfiles, env files (filter: "artifact")
+- docs: markdown docs, design documents, READMEs (filter: "artifact")
+- schema: type definitions, interfaces, data models (filter: "code")
+- library: external module imports, package dependencies (filter: "code")
+- all: broad semantic search when category is unclear (filter: "all")
+
+Output ONLY a JSON array — no markdown fences, no explanation:
+[
+  {"query": "search text", "filter": "code", "category": "interfaces", "limit": 10},
+  {"query": "search text", "filter": "artifact", "category": "config", "limit": 5}
+]
+
+Rules:
+- Extract key nouns, verbs, and domain terms from the requirement
+- Use short, focused queries (2-6 words) — not the full requirement text
+- Include at least one "code" query and one broad "all" query
+- Vary the queries — don't repeat the same terms with different filters
+- filter must be one of: "code", "artifact", "all"
+- limit should be 5-15 per query`;

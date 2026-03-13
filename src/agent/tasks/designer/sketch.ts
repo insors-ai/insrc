@@ -10,6 +10,8 @@ import type {
 import { SKETCH_SYSTEM, SKETCH_REVIEW_SYSTEM } from './prompts.js';
 import { createDaemonContextProvider } from '../../pipeline/context-provider.js';
 import { formatRequirementsList } from './requirements.js';
+import { compressHistory } from './context.js';
+import { planSearches, type PlannedSearch } from './search-planner.js';
 
 // ---------------------------------------------------------------------------
 // Per-requirement Sketch — Step 4a/4b of the Designer pipeline
@@ -27,19 +29,24 @@ import { formatRequirementsList } from './requirements.js';
 export async function writeSketch(
   todo: RequirementTodo,
   allRequirements: ParsedRequirement[],
+  allTodos: RequirementTodo[],
   input: DesignerInput,
   localProvider: LLMProvider,
 ): Promise<RequirementSketch> {
-  // Codebase analysis
+  // LLM plans categorized searches based on the requirement
+  const searches = await planSearches(todo, localProvider);
+
+  // Codebase analysis using planned searches
   const contextProvider = createDaemonContextProvider();
   const [localEntities, crossEntities] = await Promise.all([
-    analyzeLocalCodebase(todo, contextProvider, input.session.repoPath),
-    analyzeCrossProject(todo, contextProvider, input.session.closureRepos, input.session.repoPath),
+    analyzeLocalCodebase(contextProvider, input.session.repoPath, searches),
+    analyzeCrossProject(contextProvider, input.session.closureRepos, input.session.repoPath, searches),
   ]);
 
   // Build context for the LLM
   const analysisContext = formatAnalysisContext(localEntities, crossEntities);
   const reqListContext = formatRequirementsList(allRequirements);
+  const history = compressHistory(allTodos);
 
   const messages: LLMMessage[] = [
     { role: 'system', content: SKETCH_SYSTEM },
@@ -50,6 +57,7 @@ export async function writeSketch(
         `## All Requirements\n${reqListContext}`,
         `## Codebase Analysis\n${analysisContext}`,
         input.codeContext ? `## Additional Code Context\n${input.codeContext}` : '',
+        history ? `## Design History\n${history}` : '',
       ].filter(Boolean).join('\n\n'),
     },
   ];
@@ -101,11 +109,13 @@ export async function reSketchWithFeedback(
   feedback: string,
   todo: RequirementTodo,
   allRequirements: ParsedRequirement[],
+  allTodos: RequirementTodo[],
   input: DesignerInput,
   localProvider: LLMProvider,
   claudeProvider: LLMProvider,
 ): Promise<RequirementSketch> {
   const reqListContext = formatRequirementsList(allRequirements);
+  const history = compressHistory(allTodos);
 
   const messages: LLMMessage[] = [
     { role: 'system', content: SKETCH_SYSTEM },
@@ -117,6 +127,7 @@ export async function reSketchWithFeedback(
         `## User Feedback\n${feedback}`,
         `## All Requirements\n${reqListContext}`,
         input.codeContext ? `## Code Context\n${input.codeContext}` : '',
+        history ? `## Design History\n${history}` : '',
       ].filter(Boolean).join('\n\n'),
     },
   ];
@@ -141,17 +152,29 @@ interface AnalysisEntity {
 
 /**
  * Analyze the local project's knowledge graph for reusable entities.
- * Vector search + 1-hop expansion for top hits.
+ * Executes LLM-planned categorized searches + 1-hop expansion for top hits.
  */
 async function analyzeLocalCodebase(
-  requirement: RequirementTodo,
   provider: ReturnType<typeof createDaemonContextProvider>,
   currentRepo: string,
+  searches: PlannedSearch[],
 ): Promise<AnalysisEntity[]> {
-  const hits = await provider.search(requirement.statement, 15);
+  // Execute all planned searches in parallel
+  const allHits = await Promise.all(
+    searches.map(s => provider.search(s.query, s.limit, s.filter)),
+  );
 
-  // Filter to current repo only
-  const localHits = hits.filter(h => h.repo === currentRepo);
+  // Deduplicate by entity ID, keep first occurrence (highest relevance)
+  const seen = new Set<string>();
+  const localHits: Entity[] = [];
+  for (const hits of allHits) {
+    for (const h of hits) {
+      if (h.repo === currentRepo && !seen.has(h.id)) {
+        seen.add(h.id);
+        localHits.push(h);
+      }
+    }
+  }
 
   // Expand top 5 for neighbour context (keep budget manageable)
   const toExpand = localHits.slice(0, 5);
@@ -173,18 +196,32 @@ async function analyzeLocalCodebase(
 
 /**
  * Analyze cross-project entities in the dependency closure.
- * Returns signatures only (not full bodies) to keep context budget low.
+ * Uses LLM-planned searches, returns signatures only to keep context budget low.
  */
 async function analyzeCrossProject(
-  requirement: RequirementTodo,
   provider: ReturnType<typeof createDaemonContextProvider>,
   closureRepos: string[],
   currentRepo: string,
+  searches: PlannedSearch[],
 ): Promise<AnalysisEntity[]> {
   if (closureRepos.length <= 1) return []; // Only the current repo
 
-  const hits = await provider.search(requirement.statement, 8);
-  const crossHits = hits.filter(h => h.repo !== currentRepo);
+  // Execute all planned searches in parallel
+  const allHits = await Promise.all(
+    searches.map(s => provider.search(s.query, Math.min(s.limit, 8), s.filter)),
+  );
+
+  // Deduplicate and filter to cross-project only
+  const seen = new Set<string>();
+  const crossHits: Entity[] = [];
+  for (const hits of allHits) {
+    for (const h of hits) {
+      if (h.repo !== currentRepo && !seen.has(h.id)) {
+        seen.add(h.id);
+        crossHits.push(h);
+      }
+    }
+  }
 
   return crossHits.map(h => ({
     entity: h,

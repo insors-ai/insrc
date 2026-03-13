@@ -30,6 +30,7 @@ const ENTITIES_SCHEMA = new Schema([
   new Field('signature',      new Utf8(),   false),
   new Field('hash',           new Utf8(),   false),
   new Field('rootPath',       new Utf8(),   false),
+  new Field('artifact',       new Bool(),   false),
   new Field('vector', new FixedSizeList(EMBEDDING_DIM, new Field('item', new Float32(), true)), false),
 ]);
 
@@ -86,6 +87,7 @@ function entityToRow(entity: Entity): Record<string, unknown> {
     signature:      entity.signature   ?? '',
     hash:           entity.hash        ?? '',
     rootPath:       entity.rootPath    ?? '',
+    artifact:       entity.artifact    ?? false,
     vector:         entity.embedding.length === EMBEDDING_DIM ? entity.embedding : ZERO_VEC,
   };
 }
@@ -112,6 +114,7 @@ function rowToEntity(row: Record<string, unknown>): Entity {
   const sg = row['signature'] as string;       if (sg)           entity.signature      = sg;
   const hh = row['hash']      as string;       if (hh)           entity.hash           = hh;
   const rp = row['rootPath']  as string;       if (rp)           entity.rootPath       = rp;
+  if (row['artifact'] === true) entity.artifact = true;
   return entity;
 }
 

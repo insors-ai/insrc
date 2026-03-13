@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 import { resolve, dirname, extname } from 'node:path';
-import type { Relation } from '../shared/types.js';
+import type { Entity, Relation } from '../shared/types.js';
 import { makeEntityId } from './parser/base.js';
 
 /**
@@ -11,6 +11,10 @@ import { makeEntityId } from './parser/base.js';
  *   - Try TypeScript/JavaScript extension variants
  *   - If the file exists on disk, mark the relation resolved with the File entity ID
  *
+ * For CALLS with raw function/method names:
+ *   - Match against entities parsed from the same file
+ *   - If a unique match is found, resolve to the entity ID
+ *
  * For INHERITS / IMPLEMENTS with raw class/interface names:
  *   - Left unresolved for a future cross-file pass (Phase 5)
  *
@@ -20,9 +24,38 @@ export function resolveRelations(
   relations: Relation[],
   filePath:  string,
   repo:      string,
+  entities?: Entity[],
 ): Relation[] {
+  // Build a name→id lookup from entities in this file (for CALLS resolution)
+  const localByName = new Map<string, string>();
+  const ambiguous = new Set<string>();
+  if (entities) {
+    for (const e of entities) {
+      if (e.file !== filePath) continue;
+      if (e.kind === 'file' || e.kind === 'module') continue;
+      if (ambiguous.has(e.name)) continue;
+      if (localByName.has(e.name)) {
+        // Ambiguous: multiple entities with same name in this file
+        localByName.delete(e.name);
+        ambiguous.add(e.name);
+      } else {
+        localByName.set(e.name, e.id);
+      }
+    }
+  }
+
   return relations.map(rel => {
     if (rel.resolved) return rel;
+
+    // CALLS: resolve by matching callee name to local entities
+    if (rel.kind === 'CALLS') {
+      const targetId = localByName.get(rel.to);
+      if (targetId && targetId !== rel.from) {
+        return { ...rel, to: targetId, resolved: true };
+      }
+      return rel; // keep unresolved — may resolve in cross-file pass
+    }
+
     if (rel.kind !== 'IMPORTS') return rel;          // INHERITS/IMPLEMENTS: defer
     if (!rel.meta?.['isRelative']) return rel;       // external module: already handled by parser
 

@@ -235,6 +235,12 @@ function extractFunction(
   relations.push({
     kind: 'DEFINES', from: fileId, to: id, resolved: true,
   });
+
+  // CALLS edges: walk body for call expressions
+  const body = node.childForFieldName('body');
+  if (body) {
+    extractCalls(body, id, repo, filePath, relations);
+  }
 }
 
 function extractClass(
@@ -377,6 +383,12 @@ function extractMethod(
 
   relations.push({ kind: 'DEFINES', from: fileId,  to: id,      resolved: true });
   relations.push({ kind: 'DEFINES', from: classId, to: id,      resolved: true });
+
+  // CALLS edges: walk method body for call expressions
+  const methodBody = node.childForFieldName('body');
+  if (methodBody) {
+    extractCalls(methodBody, id, repo, filePath, relations);
+  }
 }
 
 function extractInterface(
@@ -498,6 +510,12 @@ function extractArrowFunction(
     });
 
     relations.push({ kind: 'DEFINES', from: fileId, to: id, resolved: true });
+
+    // CALLS edges: walk arrow/function body for call expressions
+    const arrowBody = valueNode.childForFieldName('body');
+    if (arrowBody) {
+      extractCalls(arrowBody, id, repo, filePath, relations);
+    }
   }
 }
 
@@ -554,6 +572,121 @@ function extractImport(
       resolved: true,
     });
   }
+}
+
+// ---------------------------------------------------------------------------
+// Call extraction
+// ---------------------------------------------------------------------------
+
+/**
+ * Walk a function/method body to find call_expression nodes and emit
+ * unresolved CALLS relations. The callee name is extracted from:
+ *   - Simple calls: foo()          → "foo"
+ *   - Member calls: this.bar()     → "bar"
+ *   - Chained:      obj.baz()      → "baz"
+ *   - Namespaced:   Mod.run()      → "run"
+ *
+ * Skips built-in noise: console.*, Object.*, Array.*, Promise.*, etc.
+ */
+function extractCalls(
+  bodyNode:   SyntaxNode,
+  callerId:   string,
+  repo:       string,
+  filePath:   string,
+  relations:  Relation[],
+): void {
+  const seen = new Set<string>();
+  walkForCalls(bodyNode, callerId, repo, filePath, relations, seen);
+}
+
+const BUILTIN_OBJECTS = new Set([
+  'console', 'Object', 'Array', 'Promise', 'Math', 'JSON', 'Date',
+  'String', 'Number', 'Boolean', 'RegExp', 'Error', 'Map', 'Set',
+  'WeakMap', 'WeakSet', 'Symbol', 'Proxy', 'Reflect', 'parseInt',
+  'parseFloat', 'setTimeout', 'setInterval', 'clearTimeout',
+  'clearInterval', 'process', 'Buffer', 'require',
+]);
+
+/** Common prototype/built-in methods — never user-defined entities. */
+const BUILTIN_METHODS = new Set([
+  // Array
+  'push', 'pop', 'shift', 'unshift', 'splice', 'slice', 'concat',
+  'join', 'filter', 'map', 'reduce', 'forEach', 'find', 'findIndex',
+  'some', 'every', 'includes', 'indexOf', 'flat', 'flatMap', 'sort',
+  'reverse', 'fill', 'keys', 'values', 'entries', 'at',
+  // String
+  'trim', 'split', 'replace', 'replaceAll', 'match', 'matchAll',
+  'startsWith', 'endsWith', 'padStart', 'padEnd', 'charAt',
+  'substring', 'toUpperCase', 'toLowerCase',
+  // Object/general
+  'toString', 'valueOf', 'hasOwnProperty',
+  'assign', 'freeze', 'create', 'defineProperty',
+  // Promise
+  'then', 'catch', 'finally', 'resolve', 'reject', 'all', 'race',
+  // Function
+  'bind', 'call', 'apply',
+  // Events
+  'emit', 'on', 'once', 'addEventListener', 'removeEventListener',
+  // Console (already filtered by object, but just in case)
+  'log', 'warn', 'error', 'info', 'debug',
+  // JSON
+  'stringify', 'parse',
+]);
+
+function walkForCalls(
+  node:       SyntaxNode,
+  callerId:   string,
+  repo:       string,
+  filePath:   string,
+  relations:  Relation[],
+  seen:       Set<string>,
+): void {
+  if (node.type === 'call_expression') {
+    const funcNode = node.childForFieldName('function');
+    if (funcNode) {
+      const calleeName = resolveCalleeName(funcNode);
+      if (calleeName && !seen.has(calleeName) && !BUILTIN_OBJECTS.has(calleeName) && !BUILTIN_METHODS.has(calleeName)) {
+        seen.add(calleeName);
+        relations.push({
+          kind:     'CALLS',
+          from:     callerId,
+          to:       calleeName,
+          resolved: false,
+          meta:     { file: filePath, repo },
+        });
+      }
+    }
+  }
+
+  for (const child of node.namedChildren) {
+    walkForCalls(child, callerId, repo, filePath, relations, seen);
+  }
+}
+
+/**
+ * Extract the callee name from a call expression's function node.
+ *   identifier           → "foo"
+ *   member_expression     → rightmost property name (e.g., "bar" from "this.bar" or "obj.bar")
+ *   Skips if the object is a built-in (console.log → skip)
+ */
+function resolveCalleeName(node: SyntaxNode): string | null {
+  if (node.type === 'identifier') {
+    return node.text;
+  }
+  if (node.type === 'member_expression') {
+    const object   = node.childForFieldName('object');
+    const property = node.childForFieldName('property');
+    if (!property) return null;
+    const propName = property.text;
+
+    // Skip built-in object methods
+    if (object?.type === 'identifier' && BUILTIN_OBJECTS.has(object.text)) {
+      return null;
+    }
+    // For this.method() or obj.method(), return the method name
+    return propName;
+  }
+  return null;
 }
 
 // ---------------------------------------------------------------------------

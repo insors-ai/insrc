@@ -1,6 +1,7 @@
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync, readdirSync, existsSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { join, extname } from 'node:path';
+import { join, extname, resolve } from 'node:path';
 import type { DbClient } from '../db/client.js';
 import type { RegisteredRepo, IndexJob } from '../shared/types.js';
 import { upsertEntities } from '../db/entities.js';
@@ -16,16 +17,56 @@ import { makeEntityId } from './parser/base.js';
 import './parser/typescript.js';
 import './parser/python.js';
 import './parser/go.js';
+import './parser/artifact.js';
+import { basenameParser } from './parser/artifact.js';
 import { Watcher, IGNORE_DIRS } from './watcher.js';
 import { IndexQueue } from '../daemon/queue.js';
+import { getLogger } from '../shared/logger.js';
+
+const log = getLogger('indexer');
 
 // ---------------------------------------------------------------------------
-// File walker
+// File walker — git-aware (respects .gitignore)
 // ---------------------------------------------------------------------------
 
 const IGNORE_SET = new Set(IGNORE_DIRS);
 
-function* walkFiles(dir: string): Iterable<string> {
+/**
+ * List all files in a repo, respecting .gitignore when inside a git repo.
+ *
+ * Uses `git ls-files` which correctly handles:
+ *   - nested .gitignore files
+ *   - global gitignore (~/.config/git/ignore)
+ *   - .git/info/exclude
+ *
+ * Falls back to the directory walker for non-git repos.
+ */
+function listRepoFiles(repoPath: string): string[] {
+  if (!existsSync(join(repoPath, '.git'))) {
+    log.debug({ repo: repoPath }, 'not a git repo, using directory walker');
+    return [...walkFilesLegacy(repoPath)];
+  }
+
+  try {
+    // --cached: tracked files
+    // --others: untracked files (new files not yet committed)
+    // --exclude-standard: honour .gitignore, .git/info/exclude, global gitignore
+    const stdout = execFileSync(
+      'git',
+      ['ls-files', '--cached', '--others', '--exclude-standard', '-z'],
+      { cwd: repoPath, maxBuffer: 50 * 1024 * 1024, encoding: 'utf8' },
+    );
+    const files = stdout.split('\0').filter(Boolean).map(f => resolve(repoPath, f));
+    log.info({ repo: repoPath, files: files.length }, 'git ls-files');
+    return files;
+  } catch (err) {
+    log.warn({ repo: repoPath, err: String(err) }, 'git ls-files failed, falling back to directory walker');
+    return [...walkFilesLegacy(repoPath)];
+  }
+}
+
+/** Legacy directory walker — used as fallback for non-git repos. */
+function* walkFilesLegacy(dir: string): Iterable<string> {
   let entries;
   try { entries = readdirSync(dir, { withFileTypes: true }); }
   catch { return; }
@@ -34,7 +75,7 @@ function* walkFiles(dir: string): Iterable<string> {
     if (IGNORE_SET.has(entry.name)) continue;
     const full = join(dir, entry.name);
     if (entry.isDirectory()) {
-      yield* walkFiles(full);
+      yield* walkFilesLegacy(full);
     } else if (entry.isFile()) {
       yield full;
     }
@@ -67,9 +108,10 @@ export class IndexerService {
    * Starts watching all repos and enqueues full-index for pending ones.
    */
   async start(repos: RegisteredRepo[]): Promise<void> {
+    log.info({ repos: repos.length }, 'indexer starting');
     this.watcher.onEvents(events => {
       for (const e of events) {
-        if (this.supported.has(extname(e.path).toLowerCase())) {
+        if (this.supported.has(extname(e.path).toLowerCase()) || basenameParser.handles(e.path)) {
           this.queue.enqueue({ kind: 'file', filePath: e.path, event: e.type });
         }
       }
@@ -78,6 +120,7 @@ export class IndexerService {
     for (const repo of repos) {
       await this.watcher.addRepo(repo.path);
       if (repo.status === 'pending') {
+        log.info({ repo: repo.path }, 'enqueuing full index (pending)');
         this.queue.enqueue({ kind: 'full', repoPath: repo.path });
       }
     }
@@ -85,12 +128,14 @@ export class IndexerService {
 
   /** Add a repo: start watching + enqueue full index. */
   async addRepo(repoPath: string): Promise<void> {
+    log.info({ repo: repoPath }, 'repo added, enqueuing full index');
     await this.watcher.addRepo(repoPath);
     this.queue.enqueue({ kind: 'full', repoPath });
   }
 
   /** Remove a repo: stop watching. (DB cleanup handled by repos.removeRepo caller.) */
   async removeRepo(repoPath: string): Promise<void> {
+    log.info({ repo: repoPath }, 'repo removed');
     await this.watcher.removeRepo(repoPath);
   }
 
@@ -108,20 +153,31 @@ export class IndexerService {
   // -------------------------------------------------------------------------
 
   private async fullIndex(repoPath: string): Promise<void> {
+    log.info({ repo: repoPath }, 'full index started');
     await updateRepoStatus(this.db, repoPath, 'indexing');
 
     try {
-      for (const filePath of walkFiles(repoPath)) {
-        if (!this.supported.has(extname(filePath).toLowerCase())) continue;
-        await this.indexFile(filePath, repoPath, false);
+      let fileCount = 0;
+      let skipped = 0;
+      const t0 = Date.now();
+
+      for (const filePath of listRepoFiles(repoPath)) {
+        const ext = extname(filePath).toLowerCase();
+        const hasParser = this.supported.has(ext) || basenameParser.handles(filePath);
+        if (!hasParser) continue;
+        const indexed = await this.indexFile(filePath, repoPath, false);
+        if (indexed) fileCount++; else skipped++;
       }
 
       // Emit DEPENDS_ON edges from repo manifest
       await this.indexManifest(repoPath);
 
+      const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+      log.info({ repo: repoPath, fileCount, skipped, elapsed: `${elapsed}s` }, 'full index complete');
       await updateRepoStatus(this.db, repoPath, 'ready', new Date().toISOString());
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
+      log.error({ repo: repoPath, err: msg }, 'full index failed');
       await updateRepoStatus(this.db, repoPath, 'error', undefined, msg);
       throw err;
     }
@@ -131,9 +187,11 @@ export class IndexerService {
     filePath: string,
     event:    'create' | 'update' | 'delete',
   ): Promise<void> {
+    log.debug({ file: filePath, event }, 'file event');
     if (event === 'delete') {
       await deleteRelationsForFile(this.db, filePath);
       await deleteEntitiesForFile(this.db, filePath);
+      log.info({ file: filePath }, 'file deleted from index');
       return;
     }
     // create or update
@@ -147,42 +205,55 @@ export class IndexerService {
     const { Ollama }                                   = await import('ollama');
 
     const entities = await listUnembeddedEntities(this.db, repoPath);
-    if (entities.length === 0) return;
+    if (entities.length === 0) {
+      log.debug({ repo: repoPath }, 'reembed: no unembedded entities');
+      return;
+    }
 
+    log.info({ repo: repoPath, count: entities.length }, 'reembed started');
+    const t0 = Date.now();
     await embedEntities(entities, { force: true });
 
     const ollama = new Ollama();
     void ollama; // suppress unused warning — embedEntities uses the module-level instance
 
+    let updated = 0;
     for (const e of entities) {
       if (e.embedding.length > 0) {
         await updateEmbedding(this.db, e.id, e.embedding, EMBEDDING_MODEL);
+        updated++;
       }
     }
+    const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+    log.info({ repo: repoPath, updated, total: entities.length, elapsed: `${elapsed}s` }, 'reembed complete');
   }
 
   // -------------------------------------------------------------------------
   // Core indexing pipeline: parse → resolve → embed → upsert
   // -------------------------------------------------------------------------
 
+  /** @returns true if the file was indexed, false if skipped (unchanged or no parser). */
   private async indexFile(
     filePath:   string,
     repoPath:   string,
     cleanFirst: boolean,
-  ): Promise<void> {
-    const parser = getParser(filePath);
-    if (!parser) return;
+  ): Promise<boolean> {
+    const parser = getParser(filePath) ?? (basenameParser.handles(filePath) ? basenameParser : null);
+    if (!parser) return false;
 
     let source: string;
     try { source = readFileSync(filePath, 'utf8'); }
-    catch { return; } // file disappeared between event and read
+    catch { return false; } // file disappeared between event and read
 
     const hash = contentHash(source);
 
     // Skip if unchanged (handles editor save-without-change)
     if (!cleanFirst) {
       const existing = await getEntity(this.db, makeEntityId(repoPath, filePath, 'file', filePath));
-      if (existing?.hash === hash) return;
+      if (existing?.hash === hash) {
+        log.debug({ file: filePath }, 'skipped (unchanged)');
+        return false;
+      }
     } else {
       await deleteRelationsForFile(this.db, filePath);
       await deleteEntitiesForFile(this.db, filePath);
@@ -196,7 +267,8 @@ export class IndexerService {
     if (fileEntity) fileEntity.hash = hash;
 
     // Resolve relative imports
-    const resolved = resolveRelations(result.relations, filePath, repoPath);
+    const resolved = resolveRelations(result.relations, filePath, repoPath, result.entities);
+    const resolvedCount = resolved.filter(r => r.resolved).length;
 
     // Embed entities (no-op if Ollama is unavailable)
     await embedEntities(result.entities);
@@ -204,11 +276,21 @@ export class IndexerService {
     // Persist
     await upsertEntities(this.db, result.entities);
     await upsertRelations(this.db, resolved);
+
+    log.debug(
+      { file: filePath, entities: result.entities.length, relations: resolved.length, resolved: resolvedCount },
+      'indexed',
+    );
+    return true;
   }
 
   private async indexManifest(repoPath: string): Promise<void> {
     const deps = parseManifest(repoPath);
-    if (deps.length === 0) return;
+    if (deps.length === 0) {
+      log.debug({ repo: repoPath }, 'no manifest dependencies');
+      return;
+    }
+    log.info({ repo: repoPath, deps: deps.length }, 'indexing manifest dependencies');
 
     const now      = new Date().toISOString();
     const repoId   = makeEntityId(repoPath, '', 'repo', repoPath);

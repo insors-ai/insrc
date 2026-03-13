@@ -30,8 +30,8 @@ export async function assertDaemonReachable(): Promise<void> {
  */
 export function createDaemonContextProvider(): ContextProvider {
   return {
-    async search(query: string, limit = 10): Promise<Entity[]> {
-      return rpc<Entity[]>('search.query', { text: query, limit });
+    async search(query: string, limit = 10, filter: 'all' | 'code' | 'artifact' = 'all'): Promise<Entity[]> {
+      return rpc<Entity[]>('search.query', { text: query, limit, filter });
     },
 
     async expand(entityId: string): Promise<{ callers: Entity[]; callees: Entity[] }> {

@@ -1,3 +1,4 @@
+import { marked } from 'marked';
 import type {
   DesignTemplate,
   RequirementTodo,
@@ -31,14 +32,17 @@ export function assembleDocument(
   const risks = buildRisks(sketches);
   const overview = buildOverview(title, doneTodos.length, skippedTodos.length);
 
+  // Convert markdown sections to HTML when outputting an HTML template
+  const md = (s: string) => template.format === 'html' ? marked.parse(s) as string : s;
+
   // Fill template
   let output = template.skeleton;
   output = output.replace(/\{\{title\}\}/g, title);
-  output = output.replace(/\{\{overview\}\}/g, overview);
-  output = output.replace(/\{\{requirements_summary\}\}/g, requirementsSummary);
-  output = output.replace(/\{\{requirement_sections\}\}/g, requirementSections);
-  output = output.replace(/\{\{architecture_summary\}\}/g, architectureSummary);
-  output = output.replace(/\{\{risks\}\}/g, risks);
+  output = output.replace(/\{\{overview\}\}/g, md(overview));
+  output = output.replace(/\{\{requirements_summary\}\}/g, md(requirementsSummary));
+  output = output.replace(/\{\{requirement_sections\}\}/g, md(requirementSections));
+  output = output.replace(/\{\{architecture_summary\}\}/g, md(architectureSummary));
+  output = output.replace(/\{\{risks\}\}/g, md(risks));
   if (template.css) {
     output = output.replace(/\{\{css\}\}/g, template.css);
   }

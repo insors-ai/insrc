@@ -1,4 +1,5 @@
 import { Ollama } from 'ollama';
+import { Agent } from 'undici';
 import type {
   LLMMessage,
   LLMProvider,
@@ -27,7 +28,16 @@ export class OllamaProvider implements LLMProvider {
     numCtx = _defaults.models.context.local,
   ) {
     this.model = model;
-    this.client = new Ollama({ host });
+    // Override undici's default headers timeout (300s) which is too short for
+    // CPU-bound large-context inference that can take 5-10 minutes.
+    const agent = new Agent({
+      headersTimeout: 600_000,
+      bodyTimeout: 600_000,
+      connectTimeout: 30_000,
+    });
+    const longTimeoutFetch: typeof globalThis.fetch = (input, init) =>
+      globalThis.fetch(input, { ...init, dispatcher: agent } as RequestInit);
+    this.client = new Ollama({ host, fetch: longTimeoutFetch });
     this.numCtx = numCtx;
     this.embeddingModel = _defaults.models.embedding;
   }

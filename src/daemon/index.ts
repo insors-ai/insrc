@@ -117,11 +117,15 @@ async function main(): Promise<void> {
     },
 
     'search.query': async (params) => {
-      const { text, limit } = params as { text: string; limit?: number };
+      const { text, limit, filter } = params as { text: string; limit?: number; filter?: string };
+      const searchFilter = (filter === 'code' || filter === 'artifact') ? filter : 'all';
+      log.debug({ query: text.slice(0, 120), limit: limit ?? 10, filter: searchFilter }, 'search.query request');
       const queryVec = await embedQuery(text);
       // Use all registered repos as the default closure scope
       const repos = (await listRepos(db)).map(r => r.path);
-      return searchEntities(db, queryVec, repos, limit ?? 10) as Promise<Entity[]>;
+      const results = await searchEntities(db, queryVec, repos, limit ?? 10, searchFilter) as Entity[];
+      log.debug({ query: text.slice(0, 60), hits: results.length, names: results.slice(0, 5).map(e => `${e.kind}:${e.name}`) }, 'search.query response');
+      return results;
     },
 
     'search.closure': async (params) => {

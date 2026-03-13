@@ -145,8 +145,6 @@ export async function* runDesignerPipeline(
 
   yield { kind: 'progress', message: `  [designer] ${todos.length} requirements → starting per-requirement design...` };
 
-  const completedSections: string[] = [];
-
   // =========================================================================
   // STEP 4: Per-requirement iteration
   // =========================================================================
@@ -160,7 +158,7 @@ export async function* runDesignerPipeline(
     // ----- 4a: Write sketch (local) -----
     todo.state = 'sketching';
     yield { kind: 'progress', message: `  [designer] ${todo.index}: Writing sketch (local + codebase analysis)...` };
-    let sketch = await writeSketch(todo, parsedRequirements, input, localProvider);
+    let sketch = await writeSketch(todo, parsedRequirements, todos, input, localProvider);
 
     // ----- 4b: Claude reviews sketch -----
     todo.state = 'sketch-reviewing';
@@ -200,7 +198,7 @@ export async function* runDesignerPipeline(
           } else {
             yield { kind: 'progress', message: `  [designer] ${todo.index}: Re-sketching with feedback (round ${sketchEditRounds}/${MAX_EDIT_ROUNDS})...` };
             sketch = await reSketchWithFeedback(
-              sketch, response.feedback ?? '', todo, parsedRequirements, input, localProvider, claudeProvider,
+              sketch, response.feedback ?? '', todo, parsedRequirements, todos, input, localProvider, claudeProvider,
             );
             todo.sketch = sketch;
           }
@@ -224,7 +222,7 @@ export async function* runDesignerPipeline(
     // the completed-sections context grows.
     todo.state = 'detailing';
     yield { kind: 'progress', message: `  [designer] ${todo.index}: Writing detailed section (local)...` };
-    let detail = await writeDetail(todo, parsedRequirements, completedSections, input, localProvider);
+    let detail = await writeDetail(todo, todos, input, localProvider);
 
     // ----- 4f: VALIDATE detail -----
     if (!autoApprove) {
@@ -258,7 +256,7 @@ export async function* runDesignerPipeline(
           } else {
             yield { kind: 'progress', message: `  [designer] ${todo.index}: Revising detail with feedback (round ${detailEditRounds}/${MAX_EDIT_ROUNDS})...` };
             detail = await reDetailWithFeedback(
-              detail, response.feedback ?? '', todo, parsedRequirements, completedSections, input, localProvider, claudeProvider,
+              detail, response.feedback ?? '', todo, todos, input, localProvider, claudeProvider,
             );
           }
         } else if (response.type === 'reject') {
@@ -271,7 +269,7 @@ export async function* runDesignerPipeline(
           // We handle the re-sketch inline.
           yield { kind: 'progress', message: `  [designer] ${todo.index}: Re-sketching...` };
           todo.state = 'sketching';
-          sketch = await writeSketch(todo, parsedRequirements, input, localProvider);
+          sketch = await writeSketch(todo, parsedRequirements, todos, input, localProvider);
           todo.state = 'sketch-reviewing';
           sketch = await reviewSketch(sketch, todo, parsedRequirements, input, claudeProvider);
           todo.sketch = sketch;
@@ -291,7 +289,6 @@ export async function* runDesignerPipeline(
     if (todo.state !== 'skipped') {
       todo.detail = detail;
       todo.state = 'done';
-      completedSections.push(detail);
       yield { kind: 'progress', message: `  [designer] ${todo.index}: Done.` };
     }
   }

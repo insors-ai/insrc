@@ -23,7 +23,7 @@ import type { Entity, LLMProvider, ModelContextConfig } from '../../shared/types
  */
 export interface ContextProvider {
   /** Vector similarity search — returns entities ranked by relevance. */
-  search(query: string, limit?: number): Promise<Entity[]>;
+  search(query: string, limit?: number, filter?: 'all' | 'code' | 'artifact'): Promise<Entity[]>;
 
   /** 1-hop graph expansion: callers and callees of an entity. */
   expand(entityId: string): Promise<{ callers: Entity[]; callees: Entity[] }>;

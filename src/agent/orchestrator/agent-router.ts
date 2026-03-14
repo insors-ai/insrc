@@ -39,6 +39,7 @@ export function selectAgent(intent: Intent): AgentRouteResult {
     case 'requirements':
     case 'design':
     case 'review':
+    case 'brainstorm':
       return { persona: 'designer', intent };
 
     // Planner persona — plan generation & management

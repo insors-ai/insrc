@@ -15,12 +15,11 @@ import {
   classifyDaemonError, formatDaemonFault,
 } from './faults/index.js';
 import {
-  runDesignerPipeline,
-  ValidationChannel,
   resolveTemplate,
   parseTemplateFlags,
   type DesignerInput,
 } from './tasks/designer/index.js';
+import { runDesignerReview } from './tasks/designer/review.js';
 import { plannerAgent } from './planner/agent.js';
 import type { PlannerInput, PlannerState } from './planner/agent-state.js';
 import { brainstormAgent } from './tasks/brainstorm/agent.js';
@@ -376,16 +375,22 @@ async function handlePipeline(
       requirementsDoc: reqContext ?? undefined,
       session: { repoPath, closureRepos: session.closureRepos },
     };
-    const channel = new ValidationChannel();
-    let output = '';
-    for await (const event of runDesignerPipeline(
-      designerInput, session.resolver.resolve('designer', 'sketch'), designerClaude, channel,
-      { autoApprove: true, log },
-    )) {
-      if (event.kind === 'progress') log(event.message);
-      else if (event.kind === 'done') output = event.result.output;
-    }
-    return output || '[error] Designer pipeline produced no output.';
+    const agentConfig = loadConfig();
+    const replChannel = new ReplChannel({ log: { info: log, debug: log, error: log }, prompt: 'designer> ' });
+    const result: RunResult = await runAgent({
+      definition: (await import('./tasks/designer/agent.js')).designerAgent as unknown as import('./framework/types.js').AgentDefinition,
+      channel: replChannel,
+      options: { input: designerInput, repo: repoPath },
+      config: agentConfig,
+      providers: {
+        local: session.ollamaProvider,
+        claude: session.claudeProvider,
+        resolve: session.activeResolver.resolve.bind(session.activeResolver),
+        resolveOrNull: session.activeResolver.resolveOrNull.bind(session.activeResolver),
+      },
+    });
+    const finalState = result.result as Record<string, unknown>;
+    return (finalState['assembledOutput'] as string | undefined) ?? '[error] Designer agent produced no output.';
   }
 
   if (intent === 'plan') {
@@ -405,8 +410,8 @@ async function handlePipeline(
       providers: {
         local: session.ollamaProvider,
         claude: session.claudeProvider,
-        resolve: session.resolver.resolve.bind(session.resolver),
-        resolveOrNull: session.resolver.resolveOrNull.bind(session.resolver),
+        resolve: session.activeResolver.resolve.bind(session.activeResolver),
+        resolveOrNull: session.activeResolver.resolveOrNull.bind(session.activeResolver),
       },
     });
     const finalState = result.result as PlannerState;
@@ -433,8 +438,8 @@ async function handlePipeline(
       providers: {
         local: session.ollamaProvider,
         claude: session.claudeProvider,
-        resolve: session.resolver.resolve.bind(session.resolver),
-        resolveOrNull: session.resolver.resolveOrNull.bind(session.resolver),
+        resolve: session.activeResolver.resolve.bind(session.activeResolver),
+        resolveOrNull: session.activeResolver.resolveOrNull.bind(session.activeResolver),
       },
     });
     const finalState = result.result as BrainstormState;
@@ -520,15 +525,8 @@ async function handlePipeline(
       message, codeContext, template, intent: 'review',
       session: { repoPath, closureRepos: session.closureRepos },
     };
-    const channel = new ValidationChannel();
-    let output = '';
-    for await (const event of runDesignerPipeline(
-      designerInput, session.resolver.resolve('designer', 'sketch'), reviewClaude, channel,
-    )) {
-      if (event.kind === 'progress') log(event.message);
-      else if (event.kind === 'done') output = event.result.output;
-    }
-    return output || '[error] Review pipeline produced no output.';
+    const reviewResult = await runDesignerReview(designerInput, reviewClaude, false, log);
+    return reviewResult.output || '[error] Review pipeline produced no output.';
   }
 
   if (intent === 'document') {

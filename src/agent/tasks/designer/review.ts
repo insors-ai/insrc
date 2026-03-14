@@ -1,5 +1,5 @@
 import type { LLMProvider, LLMMessage } from '../../../shared/types.js';
-import type { DesignerInput, DesignerEvent, DesignerResult } from './types.js';
+import type { DesignerInput, DesignerResult } from './types.js';
 import { REVIEW_SYSTEM } from './prompts.js';
 import {
   assembleReviewContext,
@@ -42,16 +42,16 @@ function extractEntityFromMessage(message: string): string | null {
 }
 
 /**
- * Run the designer review workflow as an async generator.
- * Yields progress events and a done event with the review result.
+ * Run the designer review workflow.
+ * Single-pass Claude analysis — no gates, no iteration, no checkpointing.
  */
-export async function* runDesignerReview(
+export async function runDesignerReview(
   input: DesignerInput,
   claudeProvider: LLMProvider,
   isOpus: boolean,
   log: (msg: string) => void,
-): AsyncGenerator<DesignerEvent> {
-  yield { kind: 'progress', message: '  [designer/review] Assembling review context...' };
+): Promise<DesignerResult> {
+  log('  [designer/review] Assembling review context...');
 
   // Detect diff vs entity review
   const diff = extractDiffFromMessage(input.message, input.codeContext);
@@ -72,15 +72,8 @@ export async function* runDesignerReview(
     }
   }
 
-  yield {
-    kind: 'progress',
-    message: `  [designer/review] Context: ${reviewCtx.touchedEntities.length} entities, ${reviewCtx.neighbourSignatures.length} neighbour signatures`,
-  };
-
-  yield {
-    kind: 'progress',
-    message: `  [designer/review] Running Claude review${isOpus ? ' (Opus — deep architectural)' : ''}...`,
-  };
+  log(`  [designer/review] Context: ${reviewCtx.touchedEntities.length} entities, ${reviewCtx.neighbourSignatures.length} neighbour signatures`);
+  log(`  [designer/review] Running Claude review${isOpus ? ' (Opus — deep architectural)' : ''}...`);
 
   // Build review prompt
   const parts: string[] = [];
@@ -114,7 +107,7 @@ export async function* runDesignerReview(
     temperature: 0.1,
   });
 
-  const result: DesignerResult = {
+  return {
     kind: 'review',
     output: response.text,
     format: 'markdown',
@@ -128,6 +121,4 @@ export async function* runDesignerReview(
     },
     summary: `Code review completed. ${reviewCtx.touchedEntities.length} entities reviewed.`,
   };
-
-  yield { kind: 'done', result };
 }

@@ -8,6 +8,7 @@ import { ensureAgentModel } from './lifecycle.js';
 import { classify } from './classifier/index.js';
 import { selectProvider } from './router.js';
 import { announceRoute, announceCost, announceOpus, shouldEscalate } from './escalation.js';
+import { buildSignals } from './smart-router.js';
 import { ClaudeProvider } from './providers/claude.js';
 import { getToolDefinitions } from './tools/registry.js';
 import { runToolLoop } from './tools/loop.js';
@@ -18,15 +19,11 @@ import {
   type ComponentState,
 } from './faults/index.js';
 import {
-  runDesignerPipeline,
-  ValidationChannel,
-  renderGate,
-  parseGateResponse,
   resolveTemplate,
   parseTemplateFlags,
   type DesignerInput,
-  type DesignerResult,
 } from './tasks/designer/index.js';
+import { runDesignerReview } from './tasks/designer/review.js';
 import { designerAgent } from './tasks/designer/agent.js';
 import type { DesignerState } from './tasks/designer/agent-state.js';
 import { plannerAgent } from './planner/agent.js';
@@ -121,7 +118,7 @@ export async function startRepl(cwd?: string): Promise<void> {
   log.info('');
   log.info('Type a message to chat. Prefix with @claude, @opus, @local, or /intent <name> to route.');
   log.info(`permissions: ${session.permissionMode}`);
-  log.info('Commands: /status, /cost, /plan, /forget, /toggle-permissions, /exit');
+  log.info('Commands: /status, /cost, /plan, /forget, /toggle-permissions, /auto, /exit');
   log.info('');
 
   // 3. REPL loop
@@ -237,6 +234,17 @@ export async function startRepl(cwd?: string): Promise<void> {
     if (raw === '/toggle-permissions') {
       session.permissionMode = session.permissionMode === 'validate' ? 'auto-accept' : 'validate';
       log.info(`permissions: ${session.permissionMode}`);
+      rl.prompt();
+      return;
+    }
+
+    if (raw === '/auto') {
+      if (!await session.ollamaAvailable) {
+        log.info('Auto routing requires Ollama. Start Ollama first.');
+      } else {
+        const mode = session.toggleRouting();
+        log.info(`routing: ${mode}`);
+      }
       rl.prompt();
       return;
     }
@@ -390,19 +398,40 @@ export async function startRepl(cwd?: string): Promise<void> {
     // Assemble layered context (L1–L4) with overflow enforcement
     const assembled = await ctx.assemble(classified.message, queryEmbedding);
 
-    // Check automatic escalation thresholds (only for local routes without explicit prefix)
-    if (!classified.explicit && !route.graphOnly && route.label === 'Local') {
-      const escalation = shouldEscalate(assembled, session.closureRepos);
-      if (escalation.shouldEscalate && session.claudeProvider) {
-        const tier = 'fast' as const;
-        const model = session.config.models.tiers[tier];
-        route = {
-          provider: new ClaudeProvider({ model, apiKey: session.config.keys.anthropic }),
-          label: `Claude Haiku (auto-escalated)`,
-          graphOnly: false,
-          tier,
-        };
-        log.info(`[escalation] ${escalation.reason} → auto-escalated to Claude`);
+    // Smart routing or static escalation check
+    if (!classified.explicit && !route.graphOnly) {
+      if (session.smartRouter) {
+        // Smart routing: LLM-assessed complexity
+        const filePattern = /\[(?:function|method|class|interface|type|variable) .+ — (.+?):\d+-\d+\]/g;
+        const files = new Set<string>();
+        let fMatch: RegExpExecArray | null;
+        while ((fMatch = filePattern.exec(assembled.code.text)) !== null) {
+          files.add(fMatch[1]!);
+        }
+        const signals = buildSignals(
+          classified.intent, classified.message,
+          assembled.totalTokens, files.size, session.closureRepos.length,
+          attachments.length > 0,
+        );
+        route = await session.smartRouter.route(
+          classified.intent, classified.explicit, signals,
+          classified.message,
+          { ollamaProvider: session.ollamaProvider, claudeProvider: session.claudeProvider, config: session.config, attachments },
+        );
+      } else if (route.label === 'Local') {
+        // Static escalation fallback
+        const escalation = shouldEscalate(assembled, session.closureRepos);
+        if (escalation.shouldEscalate && session.claudeProvider) {
+          const tier = 'fast' as const;
+          const model = session.config.models.tiers[tier];
+          route = {
+            provider: new ClaudeProvider({ model, apiKey: session.config.keys.anthropic }),
+            label: `Claude Haiku (auto-escalated)`,
+            graphOnly: false,
+            tier,
+          };
+          log.info(`[escalation] ${escalation.reason} → auto-escalated to Claude`);
+        }
       }
     }
 
@@ -570,37 +599,7 @@ export async function startRepl(cwd?: string): Promise<void> {
         session: { repoPath, closureRepos: session.closureRepos },
       };
 
-      // Feature-flagged: new agent framework path
-      if (process.env['INSRC_NEW_AGENT']) {
-        return await runDesignerAgent(designerInput, intent);
-      }
-
-      const channel = new ValidationChannel();
-      let finalResult: DesignerResult | null = null;
-
-      for await (const event of runDesignerPipeline(
-        designerInput, session.resolver.resolve('designer', 'sketch'), designerClaude, channel,
-      )) {
-        if (event.kind === 'progress') {
-          log.info(event.message);
-        } else if (event.kind === 'gate') {
-          // Render gate and prompt user
-          log.info(renderGate(event.gate));
-          const answer = await askOnce('designer> ');
-          channel.respond(parseGateResponse(answer));
-        } else if (event.kind === 'done') {
-          finalResult = event.result;
-        }
-      }
-
-      if (finalResult) {
-        ctx.setTag('[requirements]', finalResult.summary);
-        if (intent === 'design') {
-          ctx.setTag('[design]', finalResult.output);
-        }
-        return finalResult.output;
-      }
-      return '[error] Designer pipeline produced no output.';
+      return await runDesignerAgent(designerInput, intent);
     }
 
     if (intent === 'plan') {
@@ -750,20 +749,8 @@ export async function startRepl(cwd?: string): Promise<void> {
         session: { repoPath, closureRepos: session.closureRepos },
       };
 
-      const channel = new ValidationChannel();
-      let reviewOutput = '';
-
-      for await (const event of runDesignerPipeline(
-        designerInput, session.resolver.resolve('designer', 'sketch'), reviewProvider, channel,
-      )) {
-        if (event.kind === 'progress') {
-          log.info(event.message);
-        } else if (event.kind === 'done') {
-          reviewOutput = event.result.output;
-        }
-      }
-
-      return reviewOutput || '[error] Review pipeline produced no output.';
+      const result = await runDesignerReview(designerInput, reviewProvider, isOpus, toLogFn(log));
+      return result.output || '[error] Review pipeline produced no output.';
     }
 
     if (intent === 'document') {
@@ -821,7 +808,7 @@ export async function startRepl(cwd?: string): Promise<void> {
   }
 
   // -----------------------------------------------------------------------
-  // New agent framework path (feature-flagged via INSRC_NEW_AGENT)
+  // Designer agent runner
   // -----------------------------------------------------------------------
 
   async function runDesignerAgent(
@@ -858,8 +845,8 @@ export async function startRepl(cwd?: string): Promise<void> {
         providers: {
           local: session.ollamaProvider,
           claude: session.claudeProvider,
-          resolve: session.resolver.resolve.bind(session.resolver),
-          resolveOrNull: session.resolver.resolveOrNull.bind(session.resolver),
+          resolve: session.activeResolver.resolve.bind(session.activeResolver),
+          resolveOrNull: session.activeResolver.resolveOrNull.bind(session.activeResolver),
         },
       });
 
@@ -926,8 +913,8 @@ export async function startRepl(cwd?: string): Promise<void> {
         providers: {
           local: session.ollamaProvider,
           claude: session.claudeProvider,
-          resolve: session.resolver.resolve.bind(session.resolver),
-          resolveOrNull: session.resolver.resolveOrNull.bind(session.resolver),
+          resolve: session.activeResolver.resolve.bind(session.activeResolver),
+          resolveOrNull: session.activeResolver.resolveOrNull.bind(session.activeResolver),
         },
       });
 
@@ -999,8 +986,8 @@ export async function startRepl(cwd?: string): Promise<void> {
         providers: {
           local: session.ollamaProvider,
           claude: session.claudeProvider,
-          resolve: session.resolver.resolve.bind(session.resolver),
-          resolveOrNull: session.resolver.resolveOrNull.bind(session.resolver),
+          resolve: session.activeResolver.resolve.bind(session.activeResolver),
+          resolveOrNull: session.activeResolver.resolveOrNull.bind(session.activeResolver),
         },
       });
 

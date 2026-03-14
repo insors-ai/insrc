@@ -34,6 +34,9 @@ const DEFAULT_CONFIG: AgentConfig = {
   permissions: {
     mode: 'validate',
   },
+  routing: {
+    mode: 'static',
+  },
 };
 
 /**
@@ -228,6 +231,10 @@ function mergeConfig(defaults: AgentConfig, raw: Record<string, unknown>): Agent
     ? raw['permissions'] as Record<string, unknown>
     : {};
 
+  const routing = typeof raw['routing'] === 'object' && raw['routing'] !== null
+    ? raw['routing'] as Record<string, unknown>
+    : {};
+
   return {
     ollama: {
       host: (typeof ollama['host'] === 'string' ? ollama['host'] : defaults.ollama.host),
@@ -254,6 +261,9 @@ function mergeConfig(defaults: AgentConfig, raw: Record<string, unknown>): Agent
     },
     permissions: {
       mode: permissions['mode'] === 'auto-accept' ? 'auto-accept' : defaults.permissions.mode,
+    },
+    routing: {
+      mode: routing['mode'] === 'auto' ? 'auto' : (defaults.routing?.mode ?? 'static'),
     },
   };
 }

@@ -23,7 +23,7 @@ import {
   ANALYZE_SYSTEM, DRAFT_SYSTEM, ENHANCE_SYSTEM, CONDENSED_SYSTEM,
   DETAIL_SYSTEM, SEARCH_PLAN_SYSTEM,
 } from './prompts.js';
-import { createDaemonContextProvider } from '../pipeline/context-provider.js';
+import { createDaemonContextProvider } from '../tools/context-provider.js';
 
 // ---------------------------------------------------------------------------
 // Constants

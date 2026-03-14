@@ -1,6 +1,5 @@
 import type { Entity } from '../../shared/types.js';
 import { rpc } from '../../cli/client.js';
-import type { ContextProvider } from './types.js';
 
 // ---------------------------------------------------------------------------
 // Daemon-backed ContextProvider
@@ -11,6 +10,20 @@ import type { ContextProvider } from './types.js';
 // Errors propagate to the caller — the daemon must be running.
 // Use createNullContextProvider() for testing without a daemon.
 // ---------------------------------------------------------------------------
+
+export interface ContextProvider {
+  /** Vector similarity search — returns entities ranked by relevance. */
+  search(query: string, limit?: number, filter?: 'all' | 'code' | 'artifact'): Promise<Entity[]>;
+
+  /** 1-hop graph expansion: callers and callees of an entity. */
+  expand(entityId: string): Promise<{ callers: Entity[]; callees: Entity[] }>;
+
+  /** All entities in a specific file. */
+  byFile(filePath: string): Promise<Entity[]>;
+
+  /** N-hop caller traversal (for refactor-style deep impact analysis). */
+  callersNhop?(entityId: string, hops: number): Promise<Entity[]>;
+}
 
 /**
  * Verify the daemon is reachable by issuing a lightweight RPC call.
@@ -23,8 +36,8 @@ export async function assertDaemonReachable(): Promise<void> {
 /**
  * Create a ContextProvider backed by the insrc daemon.
  *
- * This is the production implementation used by the pipeline when
- * the daemon is running and the repo has been indexed.
+ * This is the production implementation used when the daemon is running
+ * and the repo has been indexed.
  *
  * Errors are NOT swallowed — callers must handle daemon unavailability.
  */

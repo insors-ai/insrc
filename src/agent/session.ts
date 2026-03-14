@@ -3,6 +3,7 @@ import type { AgentConfig } from '../shared/types.js';
 import { OllamaProvider } from './providers/ollama.js';
 import { ClaudeProvider } from './providers/claude.js';
 import { ProviderResolver } from './config.js';
+import { SmartRouter, SmartProviderResolver } from './smart-router.js';
 import { ContextManager, initSession } from './context/index.js';
 import { embedText } from './context/semantic.js';
 import { sessionClose, sessionSeed, sessionForget } from './tools/mcp-client.js';
@@ -48,6 +49,13 @@ export class Session {
   /** Per-agent step-level provider resolver. */
   readonly resolver: ProviderResolver;
 
+  /** Smart LLM router (null when auto mode disabled or Ollama unavailable). */
+  smartRouter: SmartRouter | null = null;
+  /** Smart provider resolver wrapping the base resolver (null when auto mode disabled). */
+  smartResolver: SmartProviderResolver | null = null;
+  /** Current routing mode — toggleable at runtime via /auto. */
+  routingMode: 'static' | 'auto';
+
   /** Health monitor for Ollama and daemon (Phase 12). */
   readonly health: HealthMonitor;
 
@@ -73,6 +81,7 @@ export class Session {
       : null;
 
     this.resolver = new ProviderResolver(opts.config, this.ollamaProvider, this.claudeProvider);
+    this.routingMode = opts.config.routing?.mode ?? 'static';
 
     // Health monitor — ping functions injected to avoid circular deps
     this.health = new HealthMonitor({
@@ -92,8 +101,44 @@ export class Session {
       provider: this.ollamaProvider,
     });
 
+    // Initialize smart router if auto mode and Ollama available
+    if (this.routingMode === 'auto' && await this.ollamaProvider.ping()) {
+      this.enableSmartRouting();
+    }
+
     // Start periodic health checks (30s interval, unref'd)
     this.health.start();
+  }
+
+  /** Enable smart routing (creates SmartRouter + SmartProviderResolver). */
+  enableSmartRouting(): void {
+    this.smartRouter = new SmartRouter(this.ollamaProvider, this.config);
+    this.smartResolver = new SmartProviderResolver(
+      this.resolver, this.config, this.ollamaProvider, this.claudeProvider,
+    );
+    this.routingMode = 'auto';
+  }
+
+  /** Disable smart routing (reverts to static). */
+  disableSmartRouting(): void {
+    this.smartRouter = null;
+    this.smartResolver = null;
+    this.routingMode = 'static';
+  }
+
+  /** Toggle routing mode. Returns the new mode. */
+  toggleRouting(): 'static' | 'auto' {
+    if (this.routingMode === 'auto') {
+      this.disableSmartRouting();
+    } else {
+      this.enableSmartRouting();
+    }
+    return this.routingMode;
+  }
+
+  /** Get the active resolver (smart or base depending on mode). */
+  get activeResolver(): ProviderResolver | SmartProviderResolver {
+    return this.smartResolver ?? this.resolver;
   }
 
   /** Track entity IDs referenced in a turn. */

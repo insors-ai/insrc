@@ -12,7 +12,7 @@ import type { AgentStep, StepContext, StepResult } from '../../framework/types.j
 import type { LLMProvider, Entity } from '../../../shared/types.js';
 import type { BrainstormState } from './agent-state.js';
 import type { BrainstormInput, PromotionProposal, MergeProposal } from './types.js';
-import { assertDaemonReachable } from '../../pipeline/context-provider.js';
+import { assertDaemonReachable } from '../../tools/context-provider.js';
 import { planSearches, type PlannedSearch } from '../designer/search-planner.js';
 import { generateSeedIdeas, generateDivergeIdeas, applyIdeaSelections } from './ideas.js';
 import { clusterIdeas, proposePromotions, identifyGaps } from './convergence.js';

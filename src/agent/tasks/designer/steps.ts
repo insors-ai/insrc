@@ -20,7 +20,7 @@ import {
 import { writeSketch, reviewSketch, reSketchWithFeedback, formatSketch } from './sketch.js';
 import { writeDetail, reDetailWithFeedback } from './detail.js';
 import { assembleDocument } from './assembly.js';
-import { assertDaemonReachable } from '../../pipeline/context-provider.js';
+import { assertDaemonReachable } from '../../tools/context-provider.js';
 
 // ---------------------------------------------------------------------------
 // Constants

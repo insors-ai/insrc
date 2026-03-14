@@ -181,6 +181,10 @@ export interface AgentConfig {
   permissions: {
     mode: 'validate' | 'auto-accept';
   };
+  routing?: {
+    /** 'static' = rule-based (default), 'auto' = LLM-assessed complexity routing. */
+    mode: 'static' | 'auto';
+  } | undefined;
 }
 
 /** Context window and output limits per provider. */

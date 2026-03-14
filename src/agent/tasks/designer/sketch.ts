@@ -8,7 +8,7 @@ import type {
   ParsedRequirement,
 } from './types.js';
 import { SKETCH_SYSTEM, SKETCH_REVIEW_SYSTEM } from './prompts.js';
-import { createDaemonContextProvider } from '../../pipeline/context-provider.js';
+import { createDaemonContextProvider } from '../../tools/context-provider.js';
 import { formatRequirementsList } from './requirements.js';
 import { compressHistory } from './context.js';
 import { planSearches, type PlannedSearch } from './search-planner.js';

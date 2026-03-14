@@ -69,7 +69,7 @@ Consider error handling, edge cases (circular dependencies, empty plans), and te
 const input: DesignerInput = {
   message: DESIGN_PROMPT,
   codeContext: '',
-  template: { id: 'default-md', format: 'markdown', sections: [], css: '' },
+  template: { id: 'default-md', format: 'markdown', skeleton: '', sections: [], builtin: true },
   intent: 'design',
   session: { repoPath: process.cwd(), closureRepos: [process.cwd()] },
 };

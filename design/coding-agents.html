@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Coding Agents — Design Document</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --border: #2a2d3a;
+      --text: #e2e4ed;
+      --muted: #8b8fa8;
+      --accent: #7c6af7;
+      --accent2: #4fc3f7;
+      --green: #4caf7d;
+      --yellow: #f5c842;
+      --red: #f47c7c;
+      --code-bg: #12151e;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 15px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; scroll-padding-top: 1rem; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      margin: 0;
+      padding: 0;
+      display: flex;
+    }
+
+    nav.toc {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 260px;
+      height: 100vh;
+      overflow-y: auto;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 1.5rem 1rem;
+      font-size: 0.82rem;
+    }
+
+    nav.toc h2 {
+      font-size: 0.9rem;
+      color: var(--accent2);
+      border: none;
+      margin: 0 0 0.75rem;
+      padding: 0;
+    }
+
+    nav.toc ol {
+      list-style: none;
+      padding: 0;
+      counter-reset: toc;
+    }
+
+    nav.toc > ol > li { counter-increment: toc; margin: 0.35rem 0; }
+    nav.toc > ol > li::before { content: counter(toc) ". "; color: var(--muted); }
+    nav.toc > ol > li > ol { padding-left: 1rem; counter-reset: subtoc; }
+    nav.toc > ol > li > ol > li { counter-increment: subtoc; margin: 0.2rem 0; font-size: 0.78rem; }
+    nav.toc > ol > li > ol > li::before { content: counter(toc) "." counter(subtoc) " "; color: var(--muted); }
+    nav.toc a { color: var(--text); text-decoration: none; }
+    nav.toc a:hover { color: var(--accent); }
+
+    main {
+      flex: 1;
+      min-width: 0;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    @media (min-width: 1100px) {
+      main { margin-left: 280px; }
+    }
+
+    h1 { font-size: 2rem; color: var(--accent); margin-bottom: 0.5rem; }
+    .subtitle { color: var(--muted); font-size: 0.95rem; margin-bottom: 2rem; }
+
+    h2 {
+      font-size: 1.3rem;
+      color: var(--accent2);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.3rem;
+      margin-top: 2.5rem;
+      margin-bottom: 1rem;
+    }
+
+    h3 {
+      font-size: 1.05rem;
+      color: var(--yellow);
+      margin-top: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    p, ul, ol { margin-bottom: 1rem; }
+    ul, ol { padding-left: 1.5rem; }
+    li { margin-bottom: 0.3rem; }
+
+    code {
+      font-family: 'Cascadia Code', 'Fira Code', monospace;
+      background: var(--code-bg);
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      font-size: 0.9em;
+    }
+
+    pre {
+      background: var(--code-bg);
+      padding: 1rem;
+      border-radius: 6px;
+      overflow-x: auto;
+      margin-bottom: 1rem;
+      font-size: 0.88rem;
+      line-height: 1.5;
+      border: 1px solid var(--border);
+    }
+    pre code { background: none; padding: 0; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 1.2rem;
+      font-size: 0.92rem;
+    }
+    th, td {
+      border: 1px solid var(--border);
+      padding: 0.5rem 0.75rem;
+      text-align: left;
+    }
+    th { background: var(--surface); color: var(--accent2); font-size: 0.9rem; }
+
+    .callout {
+      border-left: 3px solid var(--accent2);
+      background: var(--surface);
+      padding: 0.75rem 1rem;
+      margin: 1rem 0;
+      border-radius: 0 6px 6px 0;
+      font-size: 0.93rem;
+    }
+    .callout.warn { border-left-color: var(--yellow); }
+    .callout.info { border-left-color: var(--accent2); }
+    .callout.decision { border-left-color: var(--green); }
+
+    .tag {
+      display: inline-block;
+      font-size: 0.75rem;
+      padding: 0.1rem 0.5rem;
+      border-radius: 3px;
+      font-weight: 600;
+    }
+    .tag.local { background: #1a3a2a; color: var(--green); }
+    .tag.claude { background: #2a1a3a; color: var(--accent); }
+    .tag.gate { background: #3a2a1a; color: var(--yellow); }
+
+    .flow-diagram {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1.2rem;
+      margin: 1rem 0;
+      font-family: 'Cascadia Code', monospace;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      white-space: pre;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+
+<nav class="toc">
+  <h2>Contents</h2>
+  <ol>
+    <li><a href="#overview">Overview</a></li>
+    <li><a href="#architecture">Architecture</a>
+      <ol>
+        <li><a href="#two-agents">Two Agents, Not One</a></li>
+        <li><a href="#bug-fix">Bug Fix Routing</a></li>
+        <li><a href="#shared-infra">Shared Infrastructure</a></li>
+      </ol>
+    </li>
+    <li><a href="#pair">Pair Agent</a>
+      <ol>
+        <li><a href="#pair-flow">Step Flow</a></li>
+        <li><a href="#pair-state">State Shape</a></li>
+        <li><a href="#pair-gates">Gate Actions</a></li>
+        <li><a href="#pair-modes">Operating Modes</a></li>
+        <li><a href="#pair-context">Context Entry</a></li>
+      </ol>
+    </li>
+    <li><a href="#delegate">Delegate Agent</a>
+      <ol>
+        <li><a href="#delegate-flow">Step Flow</a></li>
+        <li><a href="#delegate-state">State Shape</a></li>
+        <li><a href="#delegate-planning">Planning Phase</a></li>
+        <li><a href="#delegate-execution">Execution Phase</a></li>
+        <li><a href="#delegate-gating">Gating Strategy</a></li>
+        <li><a href="#delegate-commits">Commit Strategy</a></li>
+        <li><a href="#delegate-plan-edit">Plan Editing</a></li>
+      </ol>
+    </li>
+    <li><a href="#llm-routing">LLM Routing</a>
+      <ol>
+        <li><a href="#llm-pattern">Universal Pattern</a></li>
+        <li><a href="#llm-escalation">Escalation Triggers</a></li>
+        <li><a href="#llm-config">Config Overrides</a></li>
+        <li><a href="#llm-mentions">Per-Turn Mentions</a></li>
+      </ol>
+    </li>
+    <li><a href="#investigate">Investigate Helper</a></li>
+    <li><a href="#intent-routing">Intent Routing</a></li>
+    <li><a href="#reuse">Reusable Components</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<h1>Coding Agents</h1>
+<p class="subtitle">Pair programming and delegated execution for code tasks</p>
+
+<!-- ================================================================== -->
+<h2 id="overview">1. Overview</h2>
+
+<p>
+  Two coding agents handle all code-producing tasks: <strong>Pair</strong> (collaborative, multi-turn)
+  and <strong>Delegate</strong> (autonomous, plan-driven). They replace the current single-turn
+  pipelines (<code>implement.ts</code>, <code>refactor.ts</code>, <code>debug.ts</code>, <code>test.ts</code>)
+  with checkpointable, resumable agents built on the existing agent framework.
+</p>
+
+<p>Both agents follow a <strong>local-first hybrid</strong> pattern: local model generates code,
+  Claude reviews/validates, escalation to Claude generation only on repeated validation failure.
+  Users can override model assignments per step via config or per-turn via <code>@mentions</code>.</p>
+
+<!-- ================================================================== -->
+<h2 id="architecture">2. Architecture</h2>
+
+<h3 id="two-agents">2.1 Two Agents, Not One</h3>
+
+<p>Pair and Delegate are <strong>separate agents</strong> with fundamentally different interaction models:</p>
+
+<table>
+  <tr>
+    <th></th>
+    <th>Pair Agent</th>
+    <th>Delegate Agent</th>
+  </tr>
+  <tr>
+    <td><strong>Interaction</strong></td>
+    <td>Collaborative, multi-turn</td>
+    <td>Autonomous, plan-driven</td>
+  </tr>
+  <tr>
+    <td><strong>User role</strong></td>
+    <td>Co-driver &mdash; reviews every proposal</td>
+    <td>Observer &mdash; intervenes on failures/ambiguity</td>
+  </tr>
+  <tr>
+    <td><strong>Planning</strong></td>
+    <td>None &mdash; reactive, fluid</td>
+    <td>Planner agent &rarr; approved plan</td>
+  </tr>
+  <tr>
+    <td><strong>State model</strong></td>
+    <td>Working set (files, diffs, focus)</td>
+    <td>Plan + step results</td>
+  </tr>
+  <tr>
+    <td><strong>Gate frequency</strong></td>
+    <td>Every proposal</td>
+    <td>On failure/ambiguity only (configurable)</td>
+  </tr>
+  <tr>
+    <td><strong>Backtracking</strong></td>
+    <td>User redirects freely</td>
+    <td>User edits remaining plan</td>
+  </tr>
+</table>
+
+<h3 id="bug-fix">2.2 Bug Fix Routing</h3>
+
+<div class="callout decision">
+  <strong>Decision:</strong> Bug fixes route to the <strong>Pair Agent</strong>. Diagnosis is inherently
+  interactive &mdash; the user provides symptoms, the agent investigates, proposes hypotheses, and the
+  user confirms or redirects. Batch fixes ("fix all failing tests in indexer") route to Delegate.
+</div>
+
+<p>The <code>debug</code> intent maps to Pair. The classifier distinguishes batch scope
+  ("fix all X", "update every Y") &rarr; Delegate from single-issue scope &rarr; Pair.</p>
+
+<h3 id="shared-infra">2.3 Shared Infrastructure</h3>
+
+<p>Both agents share:</p>
+<ul>
+  <li><strong>Investigate helper</strong> &mdash; reusable tool-calling function for reading files,
+    grepping, graph queries, git operations. Any step can call it.</li>
+  <li><strong>Diff management</strong> &mdash; generate, validate, apply, rollback unified diffs</li>
+  <li><strong>Test execution</strong> &mdash; run tests, parse results, detect regressions</li>
+  <li><strong>LLM routing</strong> &mdash; local generate &rarr; Claude validate &rarr; escalate pattern</li>
+  <li><strong>Context assembly</strong> &mdash; entity lookup, semantic search, graph traversal via daemon RPC</li>
+  <li><strong>Config-driven model overrides</strong> &mdash; per-agent, per-step model bindings</li>
+</ul>
+
+<!-- ================================================================== -->
+<h2 id="pair">3. Pair Agent</h2>
+
+<h3 id="pair-flow">3.1 Step Flow</h3>
+
+<div class="flow-diagram">
+                    +-- design/spec found --+
+                    |                       |
+  entry -----> [check-context]         [analyze]
+                    |                       |
+                    v                       v
+               [propose] <-----------------+
+                    |
+                    |  (simple: single diff)
+                    |  (complex: TODO list + first diff)
+                    v
+              [review-gate] --approve--> [apply] --> [validate]
+                    |                                     |
+                    |  edit/redirect                 pass  |  fail (retry &lt; N)
+                    |     |                           |   |
+                    +-----+                      more TODOs?
+                    |                            yes  |  no
+                    |                             |   |
+               done |                   [next-todo]   +---> [review-gate]
+                    v                       |                (loop continues)
+              [summarize]              [propose]
+                                      (next item)</div>
+
+<table>
+  <tr>
+    <th>Step</th>
+    <th>Type</th>
+    <th>Description</th>
+  </tr>
+  <tr>
+    <td><code>check-context</code></td>
+    <td><span class="tag local">logic</span></td>
+    <td>Look for design doc/spec: explicit attachment, <code>[design]</code> session tag, or artifact store.
+      If found &rarr; <code>propose</code>. If not &rarr; <code>analyze</code>.</td>
+  </tr>
+  <tr>
+    <td><code>analyze</code></td>
+    <td><span class="tag local">LLM + tools</span></td>
+    <td>Investigate: read files, query graph, grep codebase. Build understanding of scope.
+      Uses the <code>investigate</code> helper. Produces scoping summary.</td>
+  </tr>
+  <tr>
+    <td><code>propose</code></td>
+    <td><span class="tag local">LLM</span></td>
+    <td>Generate a proposal: code diff, diagnostic finding, design suggestion, or clarifying question.
+      Local model generates; type depends on current mode. For multi-step changes, generates a
+      TODO list so the user can approve scope and track progress.</td>
+  </tr>
+  <tr>
+    <td><code>review-gate</code></td>
+    <td><span class="tag gate">gate</span></td>
+    <td>User reviews the proposal. Actions: approve, edit (with feedback), reject (try different approach),
+      expand ("also do X"), done (wrap up session).</td>
+  </tr>
+  <tr>
+    <td><code>apply</code></td>
+    <td><span class="tag local">logic</span></td>
+    <td>Apply the approved diff to disk. Track in <code>changesApplied</code>.</td>
+  </tr>
+  <tr>
+    <td><code>validate</code></td>
+    <td><span class="tag claude">Claude</span></td>
+    <td>Claude validates the applied change: type safety, edge cases, integration correctness.
+      Pass &rarr; back to <code>review-gate</code> (loop continues). Fail &rarr; generate refined proposal.</td>
+  </tr>
+  <tr>
+    <td><code>summarize</code></td>
+    <td><span class="tag local">LLM</span></td>
+    <td>Produce session summary: files changed, decisions made, open items. Stored as session L2 tag.</td>
+  </tr>
+</table>
+
+<h3 id="pair-state">3.2 State Shape</h3>
+
+<pre><code>interface PairState extends AgentState {
+  input: {
+    message: string;
+    codeContext: string;
+    designSpec?: string;         // from session tag, attachment, or artifact
+    session: SessionRef;
+  };
+  mode: 'implement' | 'refactor' | 'debug' | 'explore';
+  hasDesignContext: boolean;      // skips analyze if true
+
+  // Working set (grows organically)
+  filesInScope: string[];
+  changesApplied: DiffEntry[];   // accumulated approved diffs
+  pendingProposal: Proposal | null;
+
+  // TODO tracking (per-proposal, not persistent across proposals)
+  activeTodos: TodoItem[] | null;  // generated when proposal has multiple sub-tasks
+  currentTodoIndex: number;
+
+  // Debug mode
+  findings: Finding[];           // diagnostic evidence chain
+  hypotheses: Hypothesis[];      // tracked hypotheses (confirmed/rejected/pending)
+
+  // Context management
+  conversationSummary: string;   // compressed history of prior iterations
+  currentFocus: string;          // what the agent is working on now
+  iterationCount: number;
+
+  // Provider overrides
+  providerOverride?: ProviderOverride;
+  editRounds: Record&lt;string, number&gt;;
+}
+
+interface TodoItem {
+  index: number;
+  description: string;
+  status: 'pending' | 'in-progress' | 'done' | 'skipped';
+  diff?: string;               // generated diff for this item
+}
+
+interface Proposal {
+  summary: string;             // what the agent proposes to do
+  diff?: string;               // for simple single-change proposals
+  todos?: TodoItem[];          // for multi-step proposals
+  findings?: Finding[];        // for debug mode proposals
+  question?: string;           // for clarifying questions
+}</code></pre>
+
+<h3 id="pair-gates">3.3 Gate Actions</h3>
+
+<table>
+  <tr><th>Action</th><th>Effect</th></tr>
+  <tr>
+    <td><code>approve</code></td>
+    <td>Apply the proposed diff. Agent loops back to propose next change or waits for direction.</td>
+  </tr>
+  <tr>
+    <td><code>edit &lt;feedback&gt;</code></td>
+    <td>Agent refines the current proposal using feedback. Does not apply anything.</td>
+  </tr>
+  <tr>
+    <td><code>reject &lt;reason&gt;</code></td>
+    <td>Discard proposal entirely. Agent tries a different approach based on the reason.</td>
+  </tr>
+  <tr>
+    <td><code>expand &lt;request&gt;</code></td>
+    <td>Shift focus to the new request. Prior context carries forward. No re-planning &mdash; pair is fluid.</td>
+  </tr>
+  <tr>
+    <td><code>done</code></td>
+    <td>End the session. Agent produces summary and exits.</td>
+  </tr>
+</table>
+
+<div class="callout info">
+  <strong>Fluid direction, structured execution:</strong> The pair agent has no upfront plan &mdash;
+  "also do X" simply becomes the next iteration, and each gate response reshapes focus. However,
+  when a proposal involves multiple sub-tasks (e.g., "refactor this interface" &rarr; update interface,
+  update 5 callers, update tests), the agent generates a <strong>TODO list</strong> as part of the
+  proposal. The user approves the TODO at the gate, and the agent works through items, reporting
+  progress as each completes. TODOs are ephemeral &mdash; scoped to the current proposal, not
+  carried across gate cycles.
+</div>
+
+<h3 id="pair-modes">3.4 Operating Modes</h3>
+
+<p>Mode is inferred from intent classification but can shift during the session:</p>
+
+<table>
+  <tr><th>Mode</th><th>Proposal Type</th><th>Entry Intent</th></tr>
+  <tr>
+    <td><code>implement</code></td>
+    <td>Code diffs (new code)</td>
+    <td><code>implement</code></td>
+  </tr>
+  <tr>
+    <td><code>refactor</code></td>
+    <td>Code diffs (restructuring)</td>
+    <td><code>refactor</code></td>
+  </tr>
+  <tr>
+    <td><code>debug</code></td>
+    <td>Findings, hypotheses, then fix diffs</td>
+    <td><code>debug</code></td>
+  </tr>
+  <tr>
+    <td><code>explore</code></td>
+    <td>Analysis, questions, suggestions</td>
+    <td><code>research</code> (code-focused)</td>
+  </tr>
+</table>
+
+<p>Mode can shift naturally: a debug session that identifies the bug transitions to
+  <code>implement</code> mode for the fix. An implement session that discovers a design
+  issue might shift to <code>explore</code>.</p>
+
+<h3 id="pair-context">3.5 Context Entry</h3>
+
+<div class="callout decision">
+  <strong>Decision:</strong> If a design doc or spec is available (explicit attachment, session
+  <code>[design]</code> tag from a prior designer run, or matching artifact), skip
+  <code>analyze</code> and go straight to <code>propose</code>. Otherwise, the agent
+  investigates first &mdash; reads files, queries the graph, builds a scoping summary.
+</div>
+
+<p>Context sources checked at entry (in priority order):</p>
+<ol>
+  <li>Explicit attachment (<code>@design spec.md</code>)</li>
+  <li>Session tag <code>[design]</code> or <code>[requirements]</code> from prior designer/brainstorm run</li>
+  <li>Artifact store &mdash; most recent design artifact for the current repo</li>
+</ol>
+
+<!-- ================================================================== -->
+<h2 id="delegate">4. Delegate Agent</h2>
+
+<h3 id="delegate-flow">4.1 Step Flow</h3>
+
+<div class="flow-diagram">
+  entry --> [invoke-planner] --> [approve-plan-gate] --> [execute-step]
+                                       |                      |
+                                  edit plan             pass  |  fail
+                                       |                 |    |
+                                       +------+          v    v
+                                              |     [advance]  [failure-gate]
+                                              |          |          |
+                                              |          v     edit plan / retry / abort
+                                              |     more steps?     |
+                                              |       |    |        |
+                                              |      yes   no       |
+                                              |       |    |        |
+                                              |       v    v        |
+                                              |  [execute] [report] |
+                                              +---------------------+</div>
+
+<table>
+  <tr>
+    <th>Step</th>
+    <th>Type</th>
+    <th>Description</th>
+  </tr>
+  <tr>
+    <td><code>invoke-planner</code></td>
+    <td><span class="tag local">sub-agent</span></td>
+    <td>Run the planner agent as a sub-agent. Receives the approved plan with steps,
+      dependencies, and suggested commit points.</td>
+  </tr>
+  <tr>
+    <td><code>approve-plan-gate</code></td>
+    <td><span class="tag gate">gate</span></td>
+    <td>User reviews the plan. Can approve, edit steps, adjust commit strategy, set gate level.
+      Plan is a living document &mdash; editable at any subsequent gate too.</td>
+  </tr>
+  <tr>
+    <td><code>execute-step</code></td>
+    <td><span class="tag local">LLM + tools</span></td>
+    <td>Execute one plan step: investigate &rarr; generate diff (local) &rarr; validate (Claude) &rarr;
+      apply &rarr; optionally run tests. Retry loop on validation failure.</td>
+  </tr>
+  <tr>
+    <td><code>advance</code></td>
+    <td><span class="tag local">logic</span></td>
+    <td>Record step result. Commit if this is a commit point. Move to next step or report.</td>
+  </tr>
+  <tr>
+    <td><code>failure-gate</code></td>
+    <td><span class="tag gate">gate</span></td>
+    <td>Fires on: validation failure after retries, test failure, scope creep, ambiguity.
+      User can: retry, edit remaining plan, skip step, abort.</td>
+  </tr>
+  <tr>
+    <td><code>report</code></td>
+    <td><span class="tag local">LLM</span></td>
+    <td>Produce execution report: steps completed, files changed, test results, open items.
+      Final commit if pending. Write artifact.</td>
+  </tr>
+</table>
+
+<h3 id="delegate-state">4.2 State Shape</h3>
+
+<pre><code>interface DelegateState extends AgentState {
+  input: {
+    message: string;
+    codeContext: string;
+    designSpec?: string;
+    session: SessionRef;
+  };
+
+  // Plan (from planner agent, editable at gates)
+  plan: DelegatePlan;
+  currentStepIndex: number;
+  stepResults: StepResult[];
+
+  // Configuration
+  gateLevel: 'minimal' | 'normal' | 'cautious';
+  commitStrategy: CommitStrategy;
+  testAfterEach: boolean;
+  rollbackOnFailure: boolean;
+
+  // Execution tracking
+  filesChanged: string[];
+  testsRun: TestRunResult[];
+  pendingCommitFiles: string[];
+
+  // Provider overrides
+  providerOverride?: ProviderOverride;
+}
+
+interface DelegatePlan {
+  steps: DelegatePlanStep[];
+  commitPoints: number[];        // step indices after which to commit
+  estimatedCost?: string;        // pre-assessed LLM cost estimate
+}
+
+interface DelegatePlanStep {
+  index: number;
+  title: string;
+  description: string;
+  status: 'pending' | 'running' | 'done' | 'failed' | 'skipped';
+  commitAfter: boolean;          // suggested by planner, overrideable
+  result?: StepResult;
+}
+
+type CommitStrategy =
+  | { kind: 'per-step' }
+  | { kind: 'at-end' }
+  | { kind: 'at-points'; points: number[] }; // from plan, user-adjusted</code></pre>
+
+<h3 id="delegate-planning">4.3 Planning Phase</h3>
+
+<div class="callout decision">
+  <strong>Decision:</strong> Delegate always invokes the <strong>planner agent</strong> for task
+  decomposition. The planner handles analysis, step ordering, dependency detection, and user
+  validation. Delegate does not reinvent planning &mdash; it is an execution engine.
+</div>
+
+<p>The planner agent runs as a sub-agent within the delegate's <code>invoke-planner</code> step.
+  The planner's output (approved plan) becomes the delegate's execution input. The planner
+  suggests commit points as part of its output; the user can override during plan approval.</p>
+
+<h3 id="delegate-execution">4.4 Execution Phase</h3>
+
+<p>Each plan step executes as a mini-pipeline:</p>
+<ol>
+  <li><strong>Investigate</strong> &mdash; assemble context for this step (files, entities, graph)</li>
+  <li><strong>Generate</strong> &mdash; local model produces unified diff</li>
+  <li><strong>Validate</strong> &mdash; Claude reviews correctness</li>
+  <li><strong>Apply</strong> &mdash; write diff to disk, re-index changed files</li>
+  <li><strong>Test</strong> (if <code>testAfterEach</code>) &mdash; run relevant tests</li>
+  <li><strong>Fix loop</strong> (if tests fail) &mdash; local retries, then Claude escalation</li>
+  <li><strong>Commit</strong> (if commit point) &mdash; stage and commit changed files</li>
+</ol>
+
+<p>Steps 2&ndash;6 reuse the existing implement/refactor pipeline logic as a shared helper,
+  not by calling the pipeline directly.</p>
+
+<h3 id="delegate-gating">4.5 Gating Strategy</h3>
+
+<p>The user is an observer who intervenes when needed. Gate level is configurable:</p>
+
+<table>
+  <tr><th>Level</th><th>Gates on</th></tr>
+  <tr>
+    <td><code>minimal</code></td>
+    <td>Validation failure after all retries. Test failure after fix loop exhausted.</td>
+  </tr>
+  <tr>
+    <td><code>normal</code> (default)</td>
+    <td>Above + scope creep (step touches unexpected files). Ambiguous requirements.</td>
+  </tr>
+  <tr>
+    <td><code>cautious</code></td>
+    <td>Above + every applied diff shown (but auto-proceeds after 10s unless user intervenes).</td>
+  </tr>
+</table>
+
+<h3 id="delegate-commits">4.6 Commit Strategy</h3>
+
+<div class="callout decision">
+  <strong>Decision:</strong> The planner suggests commit frequency as part of the plan. The user
+  can override during plan approval: "commit after every step", "commit at end", or accept
+  the planner's suggestion. The delegate respects this throughout execution.
+</div>
+
+<p>Commit messages are auto-generated from the step description and files changed.
+  The delegate does not push &mdash; commits are local only. The user pushes when ready.</p>
+
+<h3 id="delegate-plan-edit">4.7 Plan Editing at Gates</h3>
+
+<p>When the delegate gates (failure, ambiguity, scope creep), the user sees the current plan
+  state and can modify it:</p>
+
+<ul>
+  <li><strong>Skip step</strong> &mdash; mark as skipped, advance to next</li>
+  <li><strong>Edit step</strong> &mdash; reword description, change scope</li>
+  <li><strong>Reorder</strong> &mdash; move steps</li>
+  <li><strong>Add step</strong> &mdash; insert new step at any position</li>
+  <li><strong>Abort</strong> &mdash; stop execution, keep changes applied so far</li>
+  <li><strong>Retry</strong> &mdash; re-attempt the failed step (possibly with feedback)</li>
+</ul>
+
+<p>The plan is a <strong>living document</strong> throughout execution. The delegate re-reads
+  the plan after every gate interaction.</p>
+
+<!-- ================================================================== -->
+<h2 id="llm-routing">5. LLM Routing</h2>
+
+<h3 id="llm-pattern">5.1 Universal Pattern</h3>
+
+<div class="callout decision">
+  <strong>Decision:</strong> Local generates, Claude validates. Always. Local models like qwen-coder
+  are capable enough for code generation &mdash; even complex multi-file changes. Claude's value
+  is as a reviewer. Claude generates only when local fails validation repeatedly.
+</div>
+
+<table>
+  <tr><th>Phase</th><th>Default Provider</th><th>Escalation</th></tr>
+  <tr>
+    <td>Investigation (tool calls)</td>
+    <td><span class="tag local">Local</span></td>
+    <td>&mdash;</td>
+  </tr>
+  <tr>
+    <td>Code generation</td>
+    <td><span class="tag local">Local</span></td>
+    <td><span class="tag claude">Claude</span> after N validation failures</td>
+  </tr>
+  <tr>
+    <td>Validation / review</td>
+    <td><span class="tag claude">Claude Haiku</span></td>
+    <td><span class="tag claude">Claude Sonnet</span> if Haiku uncertain</td>
+  </tr>
+  <tr>
+    <td>Fix loops</td>
+    <td><span class="tag local">Local</span></td>
+    <td><span class="tag claude">Claude</span> after local retries exhausted</td>
+  </tr>
+</table>
+
+<h3 id="llm-escalation">5.2 Escalation Triggers</h3>
+
+<ul>
+  <li><strong>Validation failure</strong> &mdash; local diff fails Claude review N times &rarr; Claude generates next attempt</li>
+  <li><strong>User rejection</strong> (pair agent) &mdash; if user rejects and local re-proposal is also rejected, escalate</li>
+  <li><strong>Fix loop exhaustion</strong> &mdash; local fix attempts exhausted &rarr; Claude gets full error context</li>
+</ul>
+
+<h3 id="llm-config">5.3 Config Overrides</h3>
+
+<p>Users can override model assignments per agent and per step in <code>~/.insrc/config.json</code>,
+  following the same pattern as designer/brainstorm agents:</p>
+
+<pre><code>{
+  "models": {
+    "agents": {
+      "pair": {
+        "propose": "local",
+        "validate": "claude-haiku-4-5",
+        "escalate": "claude-sonnet-4-5"
+      },
+      "delegate": {
+        "execute": "local",
+        "validate": "claude-haiku-4-5",
+        "fix-escalate": "claude-sonnet-4-5"
+      }
+    }
+  }
+}</code></pre>
+
+<h3 id="llm-mentions">5.4 Per-Turn Mentions</h3>
+
+<p>At any gate, the user can prefix their response with a provider mention to override
+  the model for the next LLM call:</p>
+
+<ul>
+  <li><code>@local</code> &mdash; force local model</li>
+  <li><code>@haiku</code> / <code>@sonnet</code> / <code>@opus</code> &mdash; force specific Claude tier</li>
+  <li><code>@sticky</code> &mdash; make the override persist until cleared</li>
+  <li><code>@clear</code> &mdash; revert to default routing</li>
+</ul>
+
+<p>Same mechanism as the brainstorm agent's <code>parseProviderMention()</code>.</p>
+
+<!-- ================================================================== -->
+<h2 id="investigate">6. Investigate Helper</h2>
+
+<p>A reusable function that both agents call within any step that needs to understand code
+  before acting. Not a step itself &mdash; a building block.</p>
+
+<pre><code>async function investigate(
+  query: string,
+  ctx: StepContext,
+  opts?: {
+    maxToolCalls?: number;     // default 10
+    tools?: ToolFilter;        // subset of tools to expose
+    provider?: LLMProvider;    // default: local
+  },
+): Promise&lt;InvestigationResult&gt;</code></pre>
+
+<p>Internally runs a mini tool loop: the LLM drives tool calls (Read, Grep, Glob,
+  graph_search, graph_callers, git log/diff) to gather information. Returns structured
+  findings:</p>
+
+<pre><code>interface InvestigationResult {
+  summary: string;              // LLM-generated summary of findings
+  filesExamined: string[];      // files read during investigation
+  entitiesFound: Entity[];      // graph entities discovered
+  relevantCode: CodeSnippet[];  // key code sections identified
+  toolCallCount: number;
+}</code></pre>
+
+<p>Used by:</p>
+<ul>
+  <li>Pair agent <code>analyze</code> step &mdash; initial scoping</li>
+  <li>Pair agent <code>propose</code> step (debug mode) &mdash; gathering evidence for hypotheses</li>
+  <li>Delegate agent <code>execute-step</code> &mdash; assembling context per plan step</li>
+</ul>
+
+<!-- ================================================================== -->
+<h2 id="intent-routing">7. Intent Routing</h2>
+
+<p>How intents map to coding agents:</p>
+
+<table>
+  <tr><th>Intent</th><th>Agent</th><th>Mode / Notes</th></tr>
+  <tr>
+    <td><code>implement</code></td>
+    <td>Pair</td>
+    <td>mode: implement</td>
+  </tr>
+  <tr>
+    <td><code>refactor</code></td>
+    <td>Pair</td>
+    <td>mode: refactor</td>
+  </tr>
+  <tr>
+    <td><code>debug</code></td>
+    <td>Pair</td>
+    <td>mode: debug (hypothesis-driven investigation)</td>
+  </tr>
+  <tr>
+    <td><code>test</code></td>
+    <td>Pair</td>
+    <td>mode: implement (test generation is code generation)</td>
+  </tr>
+  <tr>
+    <td><code>implement</code> (batch)</td>
+    <td>Delegate</td>
+    <td>Classifier detects batch scope: "implement all endpoints", "add X to every Y"</td>
+  </tr>
+  <tr>
+    <td><code>refactor</code> (batch)</td>
+    <td>Delegate</td>
+    <td>Classifier detects batch scope: "rename X across all modules"</td>
+  </tr>
+  <tr>
+    <td><code>debug</code> (batch)</td>
+    <td>Delegate</td>
+    <td>"Fix all failing tests", "resolve all lint errors"</td>
+  </tr>
+</table>
+
+<div class="callout info">
+  <strong>Scope detection:</strong> The classifier needs to distinguish single-item from batch-scope
+  requests. Signals: "all", "every", "across", explicit file lists, reference to a plan with
+  multiple steps. Single-item is the default &mdash; Delegate requires clear batch indicators.
+</div>
+
+<!-- ================================================================== -->
+<h2 id="reuse">8. Reusable Components</h2>
+
+<table>
+  <tr><th>Component</th><th>Source</th><th>Usage</th></tr>
+  <tr>
+    <td><code>investigate()</code></td>
+    <td>New shared helper</td>
+    <td>Both agents &mdash; any step needing code understanding</td>
+  </tr>
+  <tr>
+    <td><code>runAgent()</code></td>
+    <td><code>framework/runner.ts</code></td>
+    <td>Both agents + planner sub-agent invocation</td>
+  </tr>
+  <tr>
+    <td><code>ReplChannel</code></td>
+    <td><code>framework/channel.ts</code></td>
+    <td>REPL interactive mode for both agents</td>
+  </tr>
+  <tr>
+    <td><code>TestChannel</code></td>
+    <td><code>framework/test-channel.ts</code></td>
+    <td>Smoke tests</td>
+  </tr>
+  <tr>
+    <td><code>ProviderResolver</code></td>
+    <td><code>config.ts</code></td>
+    <td>Model resolution chain</td>
+  </tr>
+  <tr>
+    <td><code>parseProviderMention()</code></td>
+    <td><code>brainstorm/provider-mention.ts</code></td>
+    <td>Extract <code>@model</code> overrides from gate feedback (move to shared)</td>
+  </tr>
+  <tr>
+    <td><code>assertDaemonReachable()</code></td>
+    <td><code>tools/context-provider.ts</code></td>
+    <td>Pre-check before investigation steps</td>
+  </tr>
+  <tr>
+    <td><code>plannerAgent</code></td>
+    <td><code>planner/agent.ts</code></td>
+    <td>Delegate invokes as sub-agent for planning</td>
+  </tr>
+  <tr>
+    <td>Diff utilities</td>
+    <td><code>tasks/implement.ts</code>, <code>refactor.ts</code></td>
+    <td>Extract into shared: generate, validate, apply, rollback</td>
+  </tr>
+</table>
+
+</main>
+
+</body>
+</html>

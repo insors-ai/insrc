@@ -270,7 +270,10 @@
   <nav class="toc">
     <h2>Designer Agent</h2>
     <ol>
-      <li><a href="#overview">Overview</a></li>
+      <li>
+        <a href="#overview">Overview</a>
+        <ol><li><a href="#agent-framework">Agent framework</a></li></ol>
+      </li>
       <li>
         <a href="#settings">Settings</a>
         <ol>
@@ -282,16 +285,15 @@
       <li>
         <a href="#flow">Flow</a>
         <ol>
-          <li><a href="#step-extract">Extract requirements</a></li>
-          <li><a href="#step-validate-reqs">Validate requirements</a></li>
-          <li><a href="#step-todo">Create todos</a></li>
-          <li><a href="#step-iterate">Per-requirement iteration</a></li>
-          <li><a href="#step-sketch">Sketch</a></li>
-          <li><a href="#step-claude-sketch">Claude review sketch</a></li>
-          <li><a href="#step-validate-flow">Validate summary flow</a></li>
-          <li><a href="#step-detail">Detailed section</a></li>
-          <li><a href="#step-claude-detail">Claude review detail</a></li>
-          <li><a href="#step-validate-detail">Validate detail</a></li>
+          <li><a href="#step-extract">extract-requirements</a></li>
+          <li><a href="#step-validate-reqs">validate-requirements</a></li>
+          <li><a href="#step-todo">parse-requirements</a></li>
+          <li><a href="#step-iterate">pick-next-requirement</a></li>
+          <li><a href="#step-sketch">sketch</a></li>
+          <li><a href="#step-validate-flow">validate-sketch</a></li>
+          <li><a href="#step-detail">detail</a></li>
+          <li><a href="#step-validate-detail">validate-detail</a></li>
+          <li><a href="#step-assemble">assemble</a></li>
         </ol>
       </li>
       <li>
@@ -324,6 +326,7 @@
           <li><a href="#context-budget">Context budget</a></li>
           <li><a href="#tool-usage">Tool usage</a></li>
           <li><a href="#error-handling">Error handling</a></li>
+          <li><a href="#agent-cli">Agent CLI</a></li>
         </ol>
       </li>
       <li><a href="#open-questions">Open Questions</a></li>
@@ -335,16 +338,17 @@
   <a href="agent.html#designer-agent" class="back-link">Agent Design Document</a>
 
   <h1><span class="badge badge-claude">DESIGNER</span> Designer Agent</h1>
-  <p class="meta">insrc coding agent &mdash; persona detail &mdash; March 2026</p>
+  <p class="meta">insrc coding agent &mdash; persona detail &mdash; March 2026 (updated: agent framework v1)</p>
 
   <h2 id="overview">Overview</h2>
 
   <p>
     The Designer agent produces grounded, validated design documents through an
-    <strong>iterative, user-validated workflow</strong>. Rather than generating a monolithic
-    design in one pass, the Designer breaks the work into individual requirements, sketches
-    each one against the actual codebase, and validates with the user at every significant
-    decision point.
+    <strong>iterative, user-validated workflow</strong> built on the <strong>agent framework</strong>
+    &mdash; a step-based state machine with file-based checkpointing, crash recovery, and resume
+    support. Rather than generating a monolithic design in one pass, the Designer breaks the work
+    into individual requirements, sketches each one against the actual codebase, and validates
+    with the user at every significant decision point.
   </p>
   <p>
     The Designer also handles <code>review</code> intents (code critique). The core design
@@ -354,10 +358,14 @@
   <table>
     <tr><th>Property</th><th>Value</th></tr>
     <tr><td>Intents</td><td><code>requirements</code>, <code>design</code>, <code>review</code></td></tr>
-    <tr><td>Default provider</td><td>Claude (always escalated &mdash; both stages)</td></tr>
-    <tr><td>Claude tier</td><td>standard (Sonnet); <code>@opus</code> for deep architectural reviews</td></tr>
+    <tr><td>Agent ID</td><td><code>designer</code> (version 1)</td></tr>
+    <tr><td>Framework</td><td>Step-based state machine (<code>AgentDefinition&lt;DesignerState&gt;</code>)</td></tr>
+    <tr><td>Local provider</td><td>Ollama (<code>qwen3-coder</code>) &mdash; extraction, sketch, detail generation</td></tr>
+    <tr><td>Claude provider</td><td>Enhancement, review, feedback-driven edits (configurable tier)</td></tr>
     <tr><td>Output formats</td><td>Markdown or HTML &mdash; configurable via design templates</td></tr>
     <tr><td>Tool usage</td><td>Read-only &mdash; <code>graph_*</code>, <code>Read</code>, <code>Grep</code>, <code>Glob</code>, <code>git diff/log</code></td></tr>
+    <tr><td>Checkpointing</td><td>After every step &mdash; <code>~/.insrc/agents/&lt;runId&gt;/state.json</code></td></tr>
+    <tr><td>Crash recovery</td><td>PID liveness check + heartbeat staleness (2 min threshold)</td></tr>
     <tr><td>Session carry-forward</td><td>Stores <code>[requirements]</code> and <code>[design]</code> tags in L2</td></tr>
     <tr><td>Mutations</td><td>None &mdash; the Designer never calls Write, Edit, or Bash with side effects</td></tr>
   </table>
@@ -368,6 +376,46 @@
     and mutating <code>Bash</code> commands entirely. This is a hard constraint, not a prompt
     instruction &mdash; the agent physically cannot produce a file-write tool call.
   </div>
+
+  <h3 id="agent-framework">Agent framework architecture</h3>
+
+  <p>
+    The Designer is implemented as an <code>AgentDefinition&lt;DesignerState&gt;</code> driven by
+    the framework's <code>runAgent()</code> step loop. The framework provides:
+  </p>
+
+  <ul>
+    <li><strong>Channel abstraction</strong> &mdash; <code>ReplChannel</code> for terminal I/O,
+        <code>TestChannel</code> for scripted auto-approve in tests</li>
+    <li><strong>Typed message protocol</strong> &mdash; <code>AgentMessage</code> envelopes with
+        kinds: <code>emit</code>, <code>progress</code>, <code>gate</code>, <code>checkpoint</code>,
+        <code>done</code>, <code>error</code></li>
+    <li><strong>Atomic checkpoints</strong> &mdash; temp-file + rename after every step, with
+        heartbeat and run-lock for crash detection</li>
+    <li><strong>Artifact persistence</strong> &mdash; step outputs written to
+        <code>~/.insrc/agents/&lt;runId&gt;/artifacts/</code>, validated on resume</li>
+    <li><strong>CLI management</strong> &mdash; <code>insrc agent list|resume|discard|prune</code>
+        commands for run lifecycle</li>
+  </ul>
+
+  <pre><code>// src/agent/tasks/designer/agent.ts
+export const designerAgent: AgentDefinition&lt;DesignerState&gt; = {
+  id: 'designer',
+  version: 1,
+  firstStep: 'extract-requirements',
+  initialState(input: unknown): DesignerState { ... },
+  steps: {
+    'extract-requirements':   extractRequirementsStep,
+    'validate-requirements':  validateRequirementsStep,
+    'parse-requirements':     parseRequirementsStep,
+    'pick-next-requirement':  pickNextRequirementStep,
+    'sketch':                 sketchStep,
+    'validate-sketch':        validateSketchStep,
+    'detail':                 detailStep,
+    'validate-detail':        validateDetailStep,
+    'assemble':               assembleStep,
+  },
+};</code></pre>
 
   <hr />
 
@@ -471,18 +519,38 @@ function resolveTemplate(opts: { format?: 'markdown' | 'html'; templateId?: stri
     </tbody>
   </table>
 
-  <pre><code>// personas/designer.ts — DesignerInput
+  <pre><code>// src/agent/tasks/designer/types.ts — DesignerInput
 interface DesignerInput {
   /** The user's message / design request */
   message: string;
-  /** Optional requirements document (file path, L2 content, or raw text) */
-  requirementsDoc?: string;
-  /** Assembled graph context from orchestrator */
-  context: AssembledContext;
+  /** Code context from codebase analysis */
+  codeContext: string;
   /** Resolved design template */
   template: DesignTemplate;
-  /** Session reference for carry-forward */
-  session: SessionRef;
+  /** Agent intent */
+  intent: 'requirements' | 'design' | 'review';
+  /** Optional requirements document (file path, L2 content, or raw text) */
+  requirementsDoc?: string;
+  /** Session reference */
+  session: {
+    repoPath: string;
+    closureRepos: string[];
+  };
+}
+
+// src/agent/tasks/designer/agent-state.ts — DesignerState (serializable checkpoint)
+interface DesignerState extends AgentState {
+  input: { message, codeContext, template, intent, requirementsDoc?, repoPath, closureRepos };
+  rawRequirements: string;           // From local extraction
+  enhancedRequirements: string;      // After Claude enhancement
+  parsedRequirements: ParsedRequirement[];
+  todos: RequirementTodo[];          // Core state machine
+  currentTodoIndex: number;
+  editRounds: Record&lt;string, number&gt;; // e.g. 'requirements', 'sketch-2', 'detail-3'
+  completedSketches: RequirementSketch[];
+  compressedHistory: string;
+  assembledOutput?: string;          // Final document
+  summary?: string;                  // For session carry-forward
 }</code></pre>
 
   <div class="callout info">
@@ -503,66 +571,72 @@ interface DesignerInput {
   </p>
 
   <div class="flow-diagram">
-Input (user message + optional requirements doc)
+Input (DesignerInput: message + codeContext + template + session)
   |
   v
-[1] Extract concise requirements list  <span class="badge badge-local">LOCAL</span> + <span class="badge badge-claude">CLAUDE</span>
+<strong>extract-requirements</strong>  <span class="badge badge-local">LOCAL</span> extract + <span class="badge badge-claude">CLAUDE</span> enhance
+  |                         checkpoint &rarr; state.json
+  v
+<strong>validate-requirements</strong>  <span class="gate">GATE</span>  User confirms / edits / rejects
+  |                         (reject: re-extract with guidance)
+  |                         (edit: Claude re-extract with feedback, max 3 rounds)
+  v
+<strong>parse-requirements</strong>  String &rarr; ParsedRequirement[] &rarr; RequirementTodo[]
+  |                    artifact &rarr; requirements.md
+  v
+<strong>pick-next-requirement</strong>  Select next todo with state='pending'
+  |                        (none left &rarr; jump to assemble)
+  v
+  +&mdash;&mdash;&mdash;&mdash; Per-requirement loop &mdash;&mdash;&mdash;&mdash;+
+  |                                       |
+  v                                       |
+<strong>sketch</strong>  <span class="badge badge-local">LOCAL</span> write + <span class="badge badge-claude">CLAUDE</span> review    |
+  |       artifact &rarr; sketch-N.md        |
+  v                                       |
+<strong>validate-sketch</strong>  <span class="gate">GATE</span>  approve/edit/reject/skip  |
+  |                 (skip &rarr; pick-next)    |
+  |                 (edit &rarr; re-sketch)    |
+  v                                       |
+<strong>detail</strong>  <span class="badge badge-local">LOCAL</span> write detailed section   |
+  |       artifact &rarr; detail-N.md        |
+  v                                       |
+<strong>validate-detail</strong>  <span class="gate">GATE</span>  approve/edit/reject/skip  |
+  |                 (reject &rarr; reset to pending, re-sketch)
+  |                 (approve &rarr; mark done) |
+  v                                       |
+  +&mdash;&mdash; back to pick-next-requirement &mdash;+
   |
   v
-<span class="gate">VALIDATE</span>  User confirms / edits requirements
-  |
-  v
-[2] Create a todo for each requirement
-  |
-  v
-[3] For each requirement todo:
-  |   |
-  |   v
-  |  [3a] Write short sketch  <span class="badge badge-local">LOCAL</span>
-  |   |    - Analyze codebase for reusable modules
-  |   |    - Check other indexed projects for services/modules
-  |   |    - Produce summary implementation flow
-  |   |
-  |   v
-  |  [3b] Claude reviews &amp; fixes sketch  <span class="badge badge-claude">CLAUDE</span>
-  |   |    - Validate reuse choices against codebase
-  |   |    - Fix incorrect entity references
-  |   |    - Strengthen or correct summary flow
-  |   |
-  |   v
-  |  <span class="gate">VALIDATE</span>  User confirms summary flow
-  |   |
-  |   v
-  |  [3c] Write detailed design section  <span class="badge badge-local">LOCAL</span>
-  |   |
-  |   v
-  |  [3d] Claude reviews &amp; fixes detail  <span class="badge badge-claude">CLAUDE</span>
-  |   |    - Validate interface contracts
-  |   |    - Fix integration point accuracy
-  |   |    - Ensure cross-requirement consistency
-  |   |
-  |   v
-  |  <span class="gate">VALIDATE</span>  User confirms detail
-  |   |
-  |   v
-  |  [mark todo done]
-  |
-  v
-[4] Assemble final document from template + sections
+<strong>assemble</strong>  Template + all done todos &rarr; final document
+             artifact &rarr; assembled.{md|html}
+             emit &rarr; result output
   </div>
 
-  <h3 id="step-extract">Step 1 &mdash; Extract requirements</h3>
+  <div class="callout info">
+    <strong>Checkpoint after every step:</strong> Each step writes an atomic checkpoint to
+    <code>~/.insrc/agents/&lt;runId&gt;/state.json</code>. On crash or user abort, the run can
+    be resumed from the last checkpoint via <code>insrc agent resume &lt;runId&gt;</code> or
+    the REPL's automatic crash detection. Artifacts are validated on resume &mdash; missing
+    artifacts trigger rollback to the step that produced them.
+  </div>
+
+  <h3 id="step-extract">Step: extract-requirements</h3>
 
   <p>
-    The Designer takes the user's message (and optional requirements doc) and produces a
+    The first step takes the user's message (and optional requirements doc) and produces a
     <strong>concise, numbered list</strong> of functional and system requirements. This is
     not a full requirements document &mdash; it is a short, scannable list the user can
     quickly approve, edit, or reject.
   </p>
 
-  <h4>Local sketch</h4>
   <p>
-    The local model (<code>qwen3-coder</code>) receives the user message plus L4 graph
+    This step checks daemon availability (for codebase analysis) before proceeding, then
+    runs two LLM calls in sequence:
+  </p>
+
+  <h4>Local extraction</h4>
+  <p>
+    The local model (<code>qwen3-coder</code>) receives the user message plus codebase
     context and produces the initial requirements list. If a requirements doc is provided,
     the local model extracts and condenses rather than generating from scratch.
   </p>
@@ -612,38 +686,49 @@ Your task:
 Output the same numbered format. Keep it concise — this list will be shown to the
 user for validation, not stored as a final document.`;</code></pre>
 
-  <h3 id="step-validate-reqs">Step 2 &mdash; Validate requirements</h3>
+  <h3 id="step-validate-reqs">Step: validate-requirements</h3>
 
   <p>
-    The requirements list is presented to the user. This is the first
-    <span class="gate">VALIDATE</span> gate. The user can:
+    The enhanced requirements list is presented to the user via a <span class="gate">GATE</span>.
+    The gate uses the framework's <code>ctx.gate()</code> method, which sends a <code>GatePayload</code>
+    message and blocks until the channel returns a <code>ReplyPayload</code>.
   </p>
   <ul>
-    <li><strong>Approve</strong> &mdash; proceed as-is</li>
-    <li><strong>Edit</strong> &mdash; add, remove, or reword requirements; the Designer re-numbers and continues</li>
-    <li><strong>Reject</strong> &mdash; start over with additional guidance</li>
+    <li><strong>Approve</strong> &mdash; proceed to parse-requirements</li>
+    <li><strong>Edit</strong> &mdash; Claude re-extracts with feedback injected (max 3 rounds per <code>MAX_EDIT_ROUNDS</code>)</li>
+    <li><strong>Reject</strong> &mdash; re-extract from scratch with rejection reason as guidance (resets edit counter)</li>
   </ul>
 
-  <pre><code>// personas/designer.ts — validation gate for requirements
-interface ValidationGate {
-  /** What is being validated */
-  stage: 'requirements' | 'summary-flow' | 'detail';
-  /** The content presented to the user */
+  <pre><code>// src/agent/framework/types.ts — gate protocol
+interface GatePayload {
+  gateId: string;
+  stage: string;
+  title: string;
   content: string;
-  /** Requirement index (for per-requirement gates) */
-  requirementIndex?: number;
-  /** User's response */
-  response: 'approve' | 'edit' | 'reject';
-  /** User's edits or rejection reason */
+  actions: GateAction[];
+  context?: Record&lt;string, unknown&gt;;
+}
+
+interface GateAction {
+  name: string;       // e.g. 'approve', 'edit', 'reject', 'skip'
+  label: string;      // display label
+  hint?: string;      // e.g. '&lt;feedback&gt;'
+  needsInput?: boolean;
+}
+
+interface ReplyPayload {
+  gateId: string;
+  action: string;
   feedback?: string;
 }</code></pre>
 
-  <h3 id="step-todo">Step 3 &mdash; Create todos</h3>
+  <h3 id="step-todo">Step: parse-requirements</h3>
 
   <p>
-    Once the user approves the requirements list, the Designer creates one todo item per
-    requirement. Each todo tracks the state of that requirement through the sketch &rarr;
-    validate &rarr; detail &rarr; validate cycle.
+    Parses the enhanced requirements text into structured <code>ParsedRequirement[]</code>
+    and creates one <code>RequirementTodo</code> per requirement. Writes the
+    <code>requirements.md</code> artifact. If parsing fails (0 items), falls back to a
+    minimal document with the raw enhanced text and terminates.
   </p>
 
   <pre><code>// personas/designer.ts — requirement todo
@@ -664,18 +749,21 @@ interface RequirementTodo {
   detail?: string;
 }</code></pre>
 
-  <h3 id="step-iterate">Step 4 &mdash; Per-requirement iteration</h3>
+  <h3 id="step-iterate">Step: pick-next-requirement</h3>
 
   <p>
-    The Designer iterates over each requirement todo sequentially. For each requirement,
-    it performs two sub-steps with a validation gate after each.
+    Finds the next todo with <code>state === 'pending'</code>. If all todos are done or
+    skipped, transitions to <code>assemble</code>. Otherwise sets <code>currentTodoIndex</code>
+    and transitions to <code>sketch</code>. This step contains no LLM calls &mdash; it is
+    pure state routing.
   </p>
 
-  <h3 id="step-sketch">Step 4a &mdash; Sketch</h3>
+  <h3 id="step-sketch">Step: sketch</h3>
 
   <p>
     For each requirement, the Designer produces a short sketch that answers: <em>how will
-    this be implemented?</em> The sketch is grounded in the actual codebase through two
+    this be implemented?</em> The local model writes the sketch, then Claude reviews and
+    fixes it in the same step. The sketch is grounded in the actual codebase through two
     analyses:
   </p>
 
@@ -744,13 +832,15 @@ Your task for this ONE requirement:
 
 Be concrete. Name files, functions, types. Do not be vague.`;</code></pre>
 
-  <h3 id="step-claude-sketch">Step 4b &mdash; Claude reviews sketch</h3>
+  <h4>Claude review (within sketch step)</h4>
 
   <p>
     Before presenting the sketch to the user, Claude reviews and fixes the local model's
-    output. The local model may misidentify entities, propose reuse of unsuitable modules,
-    or produce an inaccurate summary flow. Claude corrects these issues so the user sees
-    a <strong>high-quality, validated sketch</strong> at the gate &mdash; not a raw local draft.
+    output &mdash; this happens within the same <code>sketch</code> step. The local model may
+    misidentify entities, propose reuse of unsuitable modules, or produce an inaccurate summary
+    flow. Claude corrects these issues so the user sees a <strong>high-quality, validated
+    sketch</strong> at the gate &mdash; not a raw local draft.
+    Artifact: <code>sketch-N.md</code>
   </p>
 
   <pre><code>// personas/designer.ts — Claude sketch review
@@ -795,12 +885,11 @@ async function reviewSketch(
   return parseSketch(reviewed);
 }</code></pre>
 
-  <h3 id="step-validate-flow">Step 4c &mdash; Validate summary flow</h3>
+  <h3 id="step-validate-flow">Step: validate-sketch</h3>
 
   <p>
-    The Claude-reviewed sketch (reusable modules + proposed components + summary flow) is
-    presented to the user. This is the second <span class="gate">VALIDATE</span> gate
-    (per requirement). Because Claude has already validated and fixed the sketch, the user
+    The Claude-reviewed sketch is presented to the user via a <span class="gate">GATE</span>.
+    Because Claude has already validated and fixed the sketch within the sketch step, the user
     sees a high-quality proposal &mdash; not a raw local draft.
   </p>
   <p>
@@ -809,19 +898,17 @@ async function reviewSketch(
     and user time.
   </p>
   <ul>
-    <li><strong>Approve</strong> &mdash; proceed to detailed section</li>
-    <li><strong>Edit</strong> &mdash; user adjusts the approach (e.g., "use X instead of Y",
-    "don't create a new module, extend Z"); the Designer re-runs the local sketch + Claude
-    review cycle with the feedback injected</li>
-    <li><strong>Reject</strong> &mdash; skip this requirement or re-derive it</li>
+    <li><strong>Approve</strong> &mdash; mark <code>sketch-validated</code>, transition to <code>detail</code></li>
+    <li><strong>Edit</strong> &mdash; Claude re-sketches with feedback (max 3 rounds), stays on <code>validate-sketch</code></li>
+    <li><strong>Reject</strong> &mdash; mark <code>skipped</code>, transition to <code>pick-next-requirement</code></li>
+    <li><strong>Skip</strong> &mdash; mark <code>skipped</code>, transition to <code>pick-next-requirement</code></li>
   </ul>
 
-  <h3 id="step-detail">Step 4d &mdash; Write detailed section</h3>
+  <h3 id="step-detail">Step: detail</h3>
 
   <p>
-    Once the sketch is validated, the Designer generates the full detailed design section
-    for this requirement. The section is scoped to the design template's slot for this
-    requirement and includes:
+    Once the sketch is validated, the local model generates the full detailed design section
+    for this requirement. Artifact: <code>detail-N.md</code>. The section includes:
   </p>
   <ul>
     <li>Interface contracts (TypeScript signatures or pseudocode)</li>
@@ -849,12 +936,18 @@ Write a detailed design section covering:
 Output as markdown. Use code blocks for interface definitions. Be specific — name every
 entity, file, and function. Do not repeat the requirement statement as a preamble.`;</code></pre>
 
-  <h3 id="step-claude-detail">Step 4e &mdash; Claude reviews detail</h3>
+  <div class="callout info">
+    <strong>Note:</strong> Unlike the sketch step, the detail step currently uses only the local
+    model. Claude review of details happens only when the user provides edit feedback at the
+    validate-detail gate (via <code>reDetailWithFeedback</code>).
+  </div>
+
+  <h4>Claude review (on edit feedback only)</h4>
 
   <p>
-    Before the user sees the detailed section, Claude reviews and fixes it. This ensures
-    interface contracts are valid, integration points reference real entities, and the
-    section is consistent with other already-completed requirement sections.
+    Claude reviews and revises the detail only when the user provides edit feedback at the
+    validate-detail gate. This saves Claude API calls for the common case where the local
+    model's detail is acceptable.
   </p>
 
   <pre><code>// personas/designer.ts — Claude detail review
@@ -904,22 +997,26 @@ async function reviewDetail(
   return reviewed;
 }</code></pre>
 
-  <h3 id="step-validate-detail">Step 4f &mdash; Validate detail</h3>
+  <h3 id="step-validate-detail">Step: validate-detail</h3>
 
   <p>
-    The Claude-reviewed detailed section is presented to the user. This is the third
-    <span class="gate">VALIDATE</span> gate (per requirement). Claude has already validated
-    interfaces, fixed entity references, and checked cross-requirement consistency.
+    The detailed section is presented to the user via a <span class="gate">GATE</span>.
   </p>
   <ul>
-    <li><strong>Approve</strong> &mdash; mark the requirement todo as done, move to next</li>
-    <li><strong>Edit</strong> &mdash; user provides feedback; the Designer revises the section</li>
-    <li><strong>Reject</strong> &mdash; go back to sketch stage for this requirement</li>
+    <li><strong>Approve</strong> &mdash; mark todo <code>done</code>, transition to <code>pick-next-requirement</code></li>
+    <li><strong>Edit</strong> &mdash; Claude revises the detail with feedback (max 3 rounds), stays on <code>validate-detail</code></li>
+    <li><strong>Reject</strong> &mdash; reset todo to <code>pending</code> (clears sketch and detail), transition to <code>pick-next-requirement</code> which re-selects it for a fresh sketch</li>
+    <li><strong>Skip</strong> &mdash; mark todo <code>skipped</code>, transition to <code>pick-next-requirement</code></li>
   </ul>
 
+  <h3 id="step-assemble">Step: assemble</h3>
+
   <p>
-    Once all requirement todos are done, the Designer assembles the final document from
-    the template skeleton plus all validated detail sections.
+    Once all requirement todos are done or skipped, the Designer assembles the final document
+    from the template skeleton plus all validated detail sections. Derives a title from the
+    user's input message and writes the <code>assembled.{md|html}</code> artifact.
+    Emits the full document via <code>ctx.emit()</code> and sets <code>assembledOutput</code>
+    and <code>summary</code> on the final state.
   </p>
 
   <hr />
@@ -930,26 +1027,36 @@ async function reviewDetail(
 
   <p>
     Validation gates are the Designer's primary mechanism for keeping the user in the loop.
-    Each gate pauses execution and presents a summary to the user. The orchestrator manages
-    the gate interaction &mdash; the Designer persona itself is stateless and receives the
-    user's response as input to the next step.
+    Each gate uses <code>ctx.gate()</code> which sends a <code>GatePayload</code> message through
+    the <code>Channel</code> abstraction and blocks until a <code>ReplyPayload</code> is returned.
+    The channel implementation determines how the gate is presented:
   </p>
+  <ul>
+    <li><strong>ReplChannel</strong> &mdash; renders the gate to terminal with ANSI formatting, prompts via readline</li>
+    <li><strong>TestChannel</strong> &mdash; returns pre-scripted replies (for automated tests and CI)</li>
+  </ul>
 
-  <pre><code>// orchestrator/validation.ts — gate execution
-async function executeGate(gate: ValidationGate): Promise&lt;ValidationGate&gt; {
-  // Present content to user
-  render(gate.stage, gate.content, gate.requirementIndex);
+  <pre><code>// src/agent/framework/channel.ts — ReplChannel gate rendering
+function renderGate(gate: GatePayload): string {
+  // Renders title, content, and action hints: [a]pprove  [e]dit &lt;feedback&gt;  [r]eject  [s]kip
+}
 
-  // Wait for user response
-  const response = await waitForUserInput();
+function parseGateResponse(raw: string, actions: GateAction[]): { action: string; feedback?: string } {
+  // Matches by exact name, first character, or "name feedback"
+  // Empty input = first action (approve)
+  // Unrecognized input = edit feedback
+}
 
-  if (response.type === 'approve') {
-    return { ...gate, response: 'approve' };
-  }
-  if (response.type === 'edit') {
-    return { ...gate, response: 'edit', feedback: response.text };
-  }
-  return { ...gate, response: 'reject', feedback: response.text };
+// src/agent/framework/test-channel.ts — TestChannel for automated tests
+interface ScriptedReply { action: string; feedback?: string; }
+
+class TestChannel implements Channel {
+  constructor(replies: ScriptedReply[]);  // Pre-loaded auto-approve replies
+  get remainingReplies(): number;
+  getGates(): AgentMessage[];
+  getProgress(): AgentMessage[];
+  getCheckpoints(): AgentMessage[];
+  getDone(): AgentMessage | undefined;
 }</code></pre>
 
   <h3 id="gate-responses">User responses</h3>
@@ -980,13 +1087,17 @@ async function executeGate(gate: ValidationGate): Promise&lt;ValidationGate&gt; 
     </tbody>
   </table>
 
-  <h3 id="auto-approve">Auto-approve mode</h3>
+  <h3 id="auto-approve">Auto-approve mode (TestChannel)</h3>
 
   <p>
-    For batch or CI usage, the Designer supports an <code>--auto-approve</code> flag that
-    skips all validation gates and proceeds with the LLM's output at each step. This is
-    equivalent to approving every gate automatically.
+    For batch or CI usage, use a <code>TestChannel</code> pre-loaded with approve replies.
+    This is equivalent to approving every gate automatically. See
+    <code>scripts/test-designer-live.ts</code> for a working example:
   </p>
+
+  <pre><code>const replies: ScriptedReply[] = Array.from({ length: 50 }, () => ({ action: 'approve' }));
+const channel = new TestChannel(replies);
+const result = await runAgent({ definition: designerAgent, channel, ... });</code></pre>
 
   <div class="callout warn">
     <strong>Not recommended for first runs:</strong> Auto-approve is useful for regenerating
@@ -1295,26 +1406,76 @@ interface ReviewResult extends AgentResult {
     <tbody>
       <tr>
         <td>Local sketch fails (Ollama timeout)</td>
-        <td>Skip local stage. Claude works without sketch &mdash; quality degrades but turn completes. User notified.</td>
+        <td>Step throws &mdash; framework writes error checkpoint with <code>status: 'failed'</code>. Run can be resumed after fixing Ollama.</td>
       </tr>
       <tr>
         <td>Claude fails (API error, timeout)</td>
-        <td>Return local sketch as-is with warning. For per-requirement steps, mark the todo as failed and continue to next requirement.</td>
+        <td>Step throws &mdash; error checkpoint written. User can resume from the last successful step.</td>
       </tr>
       <tr>
-        <td>Claude returns malformed output</td>
-        <td>Retry once. If still malformed, present raw text to user at the validation gate &mdash; user can edit it into shape.</td>
+        <td>User cancels mid-flow</td>
+        <td>Framework catches <code>AgentCancelledError</code>, writes checkpoint with <code>status: 'paused'</code>. Resumable via <code>insrc agent resume</code>.</td>
       </tr>
       <tr>
-        <td>Graph context empty</td>
-        <td>Proceed without graph grounding. User warned that results may reference entities that don't exist.</td>
+        <td>Process crash</td>
+        <td>Framework detects via PID liveness check + heartbeat staleness (2 min threshold). Run reclassified as <code>crashed</code>. REPL offers resume on next start. Artifacts validated on resume &mdash; missing artifacts trigger rollback.</td>
       </tr>
       <tr>
-        <td>User abandons mid-flow</td>
-        <td>Completed requirement todos are preserved. The Designer can resume from the last completed todo in a subsequent turn (state stored in session).</td>
+        <td>Graph context empty / daemon down</td>
+        <td><code>assertDaemonReachable()</code> warns but continues. Proceed without graph grounding.</td>
+      </tr>
+      <tr>
+        <td>Run locked by another process</td>
+        <td><code>acquireLock()</code> uses <code>O_CREAT | O_EXCL</code>. If lock held by dead process (stale lock), it is broken and retried once.</td>
       </tr>
     </tbody>
   </table>
+
+  <h4>Checkpoint lifecycle</h4>
+  <pre><code>// Run directory: ~/.insrc/agents/&lt;runId&gt;/
+state.json      // Atomic checkpoint (temp + rename) after every step
+meta.json       // Run metadata (agentId, version, repo, inputHash)
+heartbeat.json  // Updated every 30s while running
+events.jsonl    // Append-only event log (step_start, step_end, error)
+lock            // O_EXCL file lock (PID + acquiredAt)
+artifacts/      // Step outputs (requirements.md, sketch-N.md, detail-N.md, assembled.html)
+
+// Run statuses: running → completed | failed | paused | crashed</code></pre>
+
+  <h3 id="agent-cli">Agent CLI</h3>
+
+  <p>
+    Agent runs are managed through <code>insrc agent</code> subcommands
+    (registered in <code>src/cli/commands/agent.ts</code>):
+  </p>
+
+  <table>
+    <thead><tr><th>Command</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>insrc agent list</code></td>
+        <td>List all runs with status, agent ID, repo, and last update time. Detects crashed runs (stale heartbeat / dead PID).</td>
+      </tr>
+      <tr>
+        <td><code>insrc agent resume &lt;runId&gt;</code></td>
+        <td>Resume a paused, failed, or crashed run from its last checkpoint. Validates artifacts and rolls back if needed.</td>
+      </tr>
+      <tr>
+        <td><code>insrc agent discard &lt;runId&gt;</code></td>
+        <td>Delete a run directory and remove it from the index.</td>
+      </tr>
+      <tr>
+        <td><code>insrc agent prune [--days N]</code></td>
+        <td>Delete completed runs older than N days (default: 7).</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>
+    The REPL integration (gated by <code>INSRC_NEW_AGENT</code> env var) automatically checks
+    for active or crashed designer runs when the user issues a <code>design</code> or
+    <code>requirements</code> command, and offers to resume.
+  </p>
 
   <hr />
 
@@ -1322,14 +1483,16 @@ interface ReviewResult extends AgentResult {
 
   <ol>
     <li>
-      <strong>Validation gate UX in REPL vs CLI</strong> &mdash; In the REPL, gates are
-      natural (user types a response). In CLI one-shot mode, how should gates work?
-      Options: <code>--auto-approve</code> for batch, or an interactive prompt sequence.
+      <del><strong>Validation gate UX in REPL vs CLI</strong></del> &mdash;
+      <strong>Resolved:</strong> <code>ReplChannel</code> handles REPL gates (readline prompt),
+      <code>TestChannel</code> handles batch/CI (scripted replies). CLI management via
+      <code>insrc agent list|resume|discard|prune</code>. Feature-flagged via <code>INSRC_NEW_AGENT</code>.
     </li>
     <li>
       <strong>Parallelism within requirements</strong> &mdash; Some requirements may be
       independent and could be sketched/detailed in parallel. Should the Designer detect
       independence (via graph overlap analysis) and parallelise, or always iterate sequentially?
+      <em>(Currently sequential &mdash; simpler checkpoint model.)</em>
     </li>
     <li>
       <strong>Cross-project index freshness</strong> &mdash; If another indexed project has
@@ -1339,12 +1502,23 @@ interface ReviewResult extends AgentResult {
     <li>
       <strong>Design versioning</strong> &mdash; When the user re-runs the Designer on the
       same topic, should it produce a diff against the previous design (stored in L2), or a
-      fresh document?
+      fresh document? <em>(inputHash in RunMeta could enable dedup detection.)</em>
     </li>
     <li>
-      <strong>Structured output enforcement</strong> &mdash; Should the requirement list and
-      sketch be enforced via Claude's structured output mode, or extracted post-hoc from
-      markdown with a parsing pass?
+      <del><strong>Structured output enforcement</strong></del> &mdash;
+      <strong>Resolved:</strong> Requirements are extracted post-hoc from markdown via
+      <code>parseRequirementsList()</code> in the <code>parse-requirements</code> step.
+      Sketches use structured <code>RequirementSketch</code> type.
+    </li>
+    <li>
+      <strong>Version migration</strong> &mdash; The framework supports <code>migrate(state, fromVersion)</code>
+      for checkpoint schema evolution, but no migrations exist yet (version 1). Define migration
+      strategy before bumping to version 2.
+    </li>
+    <li>
+      <strong>Claude detail review</strong> &mdash; Currently the detail step uses only the local
+      model. Claude only reviews on edit feedback. Should Claude review all details (as the
+      original design specified) for higher quality, at the cost of more API calls?
     </li>
   </ol>
 

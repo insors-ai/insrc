@@ -1,7 +1,7 @@
 #!/usr/bin/env tsx
 /**
- * Live Designer Agent test — runs the full iterative pipeline in auto-approve
- * mode against local Ollama (local model) and Claude (enhancement/review).
+ * Live Designer Agent test — runs the full iterative pipeline using the new
+ * agent framework with auto-approve gates.
  *
  * Designs a generic planning module with:
  *   - Data structures for creating/maintaining plans
@@ -51,16 +51,14 @@ function warn(msg: string) {
 import { OllamaProvider } from '../src/agent/providers/ollama.js';
 import { ClaudeProvider } from '../src/agent/providers/claude.js';
 import { loadConfig } from '../src/agent/config.js';
-import {
-  runDesignerPipeline,
-  ValidationChannel,
-  resolveTemplate,
-} from '../src/agent/tasks/designer/index.js';
-import type {
-  DesignerInput,
-  DesignerEvent,
-  DesignerResult,
-} from '../src/agent/tasks/designer/types.js';
+import { resolveTemplate } from '../src/agent/tasks/designer/index.js';
+import { designerAgent } from '../src/agent/tasks/designer/agent.js';
+import type { DesignerState } from '../src/agent/tasks/designer/agent-state.js';
+import type { DesignerInput, DesignerResult } from '../src/agent/tasks/designer/types.js';
+import { runAgent } from '../src/agent/framework/runner.js';
+import type { AgentDefinition } from '../src/agent/framework/types.js';
+import { TestChannel, type ScriptedReply } from '../src/agent/framework/test-channel.js';
+import { assembleDocument } from '../src/agent/tasks/designer/assembly.js';
 
 // ---------------------------------------------------------------------------
 // Setup providers
@@ -127,7 +125,6 @@ The module should be designed as a standalone TypeScript library within src/agen
 Consider error handling, edge cases (circular dependencies, empty plans), and testability.`;
 
 const template = resolveTemplate({ format: 'html' });
-const channel = new ValidationChannel();
 
 const input: DesignerInput = {
   message: DESIGN_PROMPT,
@@ -141,51 +138,63 @@ const input: DesignerInput = {
 };
 
 // ---------------------------------------------------------------------------
-// Run the pipeline
+// Create auto-approve channel
+//
+// The TestChannel is pre-loaded with enough 'approve' replies to cover
+// all possible gates (requirements + sketch + detail per requirement).
+// Generous count — unused replies are fine.
+// ---------------------------------------------------------------------------
+
+const MAX_GATES = 50;
+const replies: ScriptedReply[] = Array.from({ length: MAX_GATES }, () => ({ action: 'approve' }));
+const channel = new TestChannel(replies);
+
+// Wire progress/emit messages to console
+const origSend = channel.send.bind(channel);
+channel.send = (msg) => {
+  origSend(msg);
+  if (msg.kind === 'progress') {
+    progress((msg.payload as { message: string }).message);
+  } else if (msg.kind === 'emit') {
+    // Don't print full emit during the run (we print the result at the end)
+  } else if (msg.kind === 'checkpoint') {
+    progress(`  checkpoint: ${(msg.payload as { label: string }).label}`);
+  }
+};
+
+// ---------------------------------------------------------------------------
+// Run the agent
 // ---------------------------------------------------------------------------
 
 const startTime = Date.now();
-let result: DesignerResult | null = null;
-let eventCount = 0;
-let gateCount = 0;
-let progressCount = 0;
 
-console.log(`\n${BOLD}Running designer pipeline (autoApprove: true)...${RESET}\n`);
+console.log(`\n${BOLD}Running designer agent (auto-approve via TestChannel)...${RESET}\n`);
+
+let finalState: DesignerState | null = null;
 
 try {
-  for await (const event of runDesignerPipeline(
-    input,
-    ollama,
-    claudeProvider,
+  const runResult = await runAgent({
+    definition: designerAgent as unknown as AgentDefinition,
     channel,
-    { autoApprove: true },
-  )) {
-    eventCount++;
+    options: { input, repo: process.cwd() },
+    config,
+    providers: { local: ollama, claude: claudeProvider },
+  });
 
-    switch (event.kind) {
-      case 'progress':
-        progressCount++;
-        progress(event.message);
-        break;
-
-      case 'gate':
-        gateCount++;
-        warn(`Gate event received (should not happen in autoApprove mode): ${event.gate.stage}`);
-        // Auto-approve anyway just in case
-        channel.respond({ type: 'approve' });
-        break;
-
-      case 'done':
-        result = event.result;
-        break;
-    }
-  }
+  finalState = runResult.result as DesignerState;
+  ok(`Agent completed in ${runResult.steps} steps (runId: ${runResult.runId})`);
 } catch (err) {
-  console.error(`\n${RED}Pipeline error:${RESET}`, err);
+  console.error(`\n${RED}Agent error:${RESET}`, err);
   process.exit(1);
 }
 
 const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+
+// ---------------------------------------------------------------------------
+// Build the DesignerResult from final state for validation
+// ---------------------------------------------------------------------------
+
+const result: DesignerResult = assembleDocument(template, 'Planning Module Design', finalState.todos);
 
 // ---------------------------------------------------------------------------
 // Validate results
@@ -193,8 +202,12 @@ const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
 
 section('Results Validation');
 
+const gateCount = channel.getGates().length;
+const progressCount = channel.getProgress().length;
+const checkpointCount = channel.getCheckpoints().length;
+
 console.log(`${DIM}Pipeline completed in ${elapsed}s${RESET}`);
-console.log(`${DIM}Events: ${eventCount} total (${progressCount} progress, ${gateCount} gates)${RESET}\n`);
+console.log(`${DIM}Messages: ${channel.messages.length} total (${progressCount} progress, ${gateCount} gates, ${checkpointCount} checkpoints)${RESET}\n`);
 
 let passed = 0;
 let failed = 0;
@@ -210,12 +223,7 @@ function check(label: string, condition: boolean, detail?: string) {
   if (detail) console.log(`${DIM}  → ${detail}${RESET}`);
 }
 
-if (!result) {
-  fail('Pipeline returned no result');
-  process.exit(1);
-}
-
-check('Result is present', !!result);
+check('Final state is present', !!finalState);
 check('Result kind is "document"', result.kind === 'document', `got: ${result.kind}`);
 check('Output format is "html"', result.format === 'html', `got: ${result.format}`);
 check('Template ID is "default-html"', result.templateId === 'default-html', `got: ${result.templateId}`);
@@ -298,6 +306,23 @@ check(
   'Output contains <!DOCTYPE html> or <html>',
   /<!doctype html>|<html/i.test(result.output),
   'Valid HTML document',
+);
+
+// Agent framework-specific checks
+check(
+  'Done message was sent',
+  !!channel.getDone(),
+  'Channel received done message',
+);
+check(
+  'Checkpoints were written',
+  checkpointCount > 0,
+  `${checkpointCount} checkpoint(s)`,
+);
+check(
+  'All scripted replies were not exhausted',
+  channel.remainingReplies > 0,
+  `${channel.remainingReplies} unused replies (out of ${MAX_GATES})`,
 );
 
 // ---------------------------------------------------------------------------

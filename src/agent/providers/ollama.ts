@@ -1,5 +1,5 @@
 import { Ollama } from 'ollama';
-import { Agent } from 'undici';
+import { Agent, fetch as undiciFetch } from 'undici';
 import type {
   LLMMessage,
   LLMProvider,
@@ -31,12 +31,13 @@ export class OllamaProvider implements LLMProvider {
     // Override undici's default headers timeout (300s) which is too short for
     // CPU-bound large-context inference that can take 5-10 minutes.
     const agent = new Agent({
-      headersTimeout: 600_000,
-      bodyTimeout: 600_000,
+      headersTimeout: 0,   // disable — streaming returns headers with first token
+      bodyTimeout: 0,      // disable — streaming body arrives incrementally
       connectTimeout: 30_000,
     });
-    const longTimeoutFetch: typeof globalThis.fetch = (input, init) =>
-      globalThis.fetch(input, { ...init, dispatcher: agent } as RequestInit);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const longTimeoutFetch = ((input: any, init?: any) =>
+      undiciFetch(input, { ...init, dispatcher: agent })) as unknown as typeof globalThis.fetch;
     this.client = new Ollama({ host, fetch: longTimeoutFetch });
     this.numCtx = numCtx;
     this.embeddingModel = _defaults.models.embedding;
@@ -70,38 +71,11 @@ export class OllamaProvider implements LLMProvider {
     }, 'ollama request');
 
     try {
-      // When onToken is provided, stream text token-by-token while
-      // still collecting tool calls for the structured response.
-      if (opts.onToken) {
-        return await this.completeStreaming(ollamaMessages, tools, opts);
-      }
-
-      const response = await this.client.chat({
-        model: this.model,
-        messages: ollamaMessages,
-        ...(tools ? { tools } : {}),
-        options: {
-          num_ctx: this.numCtx,
-          num_predict: opts.maxTokens ?? 8_192,
-          ...(opts.temperature !== undefined ? { temperature: opts.temperature } : {}),
-        },
-      });
-
-      const toolCalls = parseToolCalls(response.message.tool_calls);
-      const text = response.message.content ?? '';
-
-      log.debug({
-        model: this.model,
-        textLen: text.length,
-        textPreview: text.slice(0, 500),
-        toolCallCount: toolCalls.length,
-      }, 'ollama response');
-
-      return {
-        text,
-        toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
-        stopReason: toolCalls.length > 0 ? 'tool_use' : 'end_turn',
-      };
+      // Always use streaming internally to avoid headers-timeout on slow
+      // CPU inference. The non-streaming Ollama API waits for the entire
+      // response before sending HTTP headers, which can exceed the timeout
+      // for large-context calls on CPU-only machines.
+      return await this.completeStreaming(ollamaMessages, tools, opts);
     } catch (err) {
       throw wrapOllamaError(err);
     }
@@ -130,7 +104,7 @@ export class OllamaProvider implements LLMProvider {
     for await (const chunk of response) {
       if (chunk.message.content) {
         text += chunk.message.content;
-        opts.onToken!(chunk.message.content);
+        opts.onToken?.(chunk.message.content);
       }
       if (chunk.message.tool_calls) {
         allToolCalls = allToolCalls.concat(chunk.message.tool_calls as OllamaToolCall[]);
@@ -138,6 +112,13 @@ export class OllamaProvider implements LLMProvider {
     }
 
     const toolCalls = parseToolCalls(allToolCalls.length > 0 ? allToolCalls : undefined);
+
+    log.debug({
+      model: this.model,
+      textLen: text.length,
+      textPreview: text.slice(0, 500),
+      toolCallCount: toolCalls.length,
+    }, 'ollama response');
 
     return {
       text,

@@ -64,8 +64,8 @@ export interface ParsedRequirement {
   index: number;
   /** The requirement statement */
   statement: string;
-  /** Requirement type */
-  type: 'functional' | 'system';
+  /** Requirement type — clarifications are open questions, not design targets */
+  type: 'functional' | 'system' | 'clarification';
   /** Referenced entities from the requirements extraction */
   references: string[];
 }
@@ -89,8 +89,8 @@ export interface RequirementTodo {
   index: number;
   /** The requirement statement */
   statement: string;
-  /** Requirement type */
-  type: 'functional' | 'system';
+  /** Requirement type — clarifications are skipped during design */
+  type: 'functional' | 'system' | 'clarification';
   /** Referenced entities from the requirements extraction */
   references: string[];
   /** Current state */
@@ -183,7 +183,7 @@ export interface DesignerResult {
   requirements: Array<{
     index: number;
     statement: string;
-    type: 'functional' | 'system';
+    type: 'functional' | 'system' | 'clarification';
     state: 'done' | 'skipped';
   }>;
   /** Per-requirement sketches (for traceability) */

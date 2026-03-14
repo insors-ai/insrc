@@ -27,6 +27,12 @@ import {
   type DesignerInput,
   type DesignerResult,
 } from './tasks/designer/index.js';
+import { designerAgent } from './tasks/designer/agent.js';
+import type { DesignerState } from './tasks/designer/agent-state.js';
+import { runAgent } from './framework/runner.js';
+import { ReplChannel } from './framework/channel.js';
+import { readIndex, readCheckpoint, resolveRunDir } from './framework/checkpoint.js';
+import type { RunResult } from './framework/types.js';
 import { runPlanPipeline } from './tasks/plan.js';
 import { runImplementPipeline } from './tasks/implement.js';
 import { runRefactorPipeline } from './tasks/refactor.js';
@@ -558,6 +564,11 @@ export async function startRepl(cwd?: string): Promise<void> {
         session: { repoPath, closureRepos: session.closureRepos },
       };
 
+      // Feature-flagged: new agent framework path
+      if (process.env['INSRC_NEW_AGENT']) {
+        return await runDesignerAgent(designerInput, intent);
+      }
+
       const channel = new ValidationChannel();
       let finalResult: DesignerResult | null = null;
 
@@ -814,6 +825,60 @@ export async function startRepl(cwd?: string): Promise<void> {
     }
 
     return '';
+  }
+
+  // -----------------------------------------------------------------------
+  // New agent framework path (feature-flagged via INSRC_NEW_AGENT)
+  // -----------------------------------------------------------------------
+
+  async function runDesignerAgent(
+    designerInput: DesignerInput,
+    intent: string,
+  ): Promise<string> {
+    // Check for active/crashed runs for this repo
+    const activeRuns = readIndex().filter(
+      e => e.agentId === 'designer' && e.repo === repoPath &&
+        (e.status === 'running' || e.status === 'paused' || e.status === 'crashed'),
+    );
+
+    let resumeCheckpoint = null;
+    if (activeRuns.length > 0) {
+      const entry = activeRuns[0]!;
+      log.info(`[designer] Found ${entry.status} run: ${entry.runId}`);
+      const answer = await askOnce('Resume this run? [Y/n] ');
+      if (answer.trim().toLowerCase() !== 'n') {
+        const runDir = resolveRunDir(entry.runId);
+        resumeCheckpoint = readCheckpoint(runDir);
+      }
+    }
+
+    const replChannel = new ReplChannel({ log: { info: (m: string) => log.info(m), debug: (m: string) => log.debug(m), error: (m: string) => log.error(m) }, prompt: 'designer> ' });
+
+    try {
+      const result: RunResult = await runAgent({
+        definition: designerAgent as unknown as import('./framework/types.js').AgentDefinition,
+        channel: replChannel,
+        options: resumeCheckpoint
+          ? { resumeFrom: resumeCheckpoint }
+          : { input: designerInput, repo: repoPath },
+        config,
+        providers: { local: session.ollamaProvider, claude: session.claudeProvider },
+      });
+
+      const finalState = result.result as DesignerState;
+      if (finalState.summary) {
+        ctx.setTag('[requirements]', finalState.summary);
+      }
+      if (intent === 'design' && finalState.assembledOutput) {
+        ctx.setTag('[design]', finalState.assembledOutput);
+      }
+      return finalState.assembledOutput ?? '[error] Designer agent produced no output.';
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AgentCancelledError') {
+        return '[designer] Run paused. Resume with `insrc agent resume <runId>`.';
+      }
+      throw err;
+    }
   }
 
   rl.on('close', () => {

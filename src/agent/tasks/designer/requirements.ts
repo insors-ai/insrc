@@ -127,25 +127,33 @@ export function parseRequirementsList(text: string): ParsedRequirement[] {
   const lines = text.split('\n');
 
   // Track current section type for header-grouped format
-  let currentType: 'functional' | 'system' = 'functional';
+  let currentType: 'functional' | 'system' | 'clarification' = 'functional';
 
   for (const line of lines) {
     // Check for section header: **[FUNCTIONAL]** or [FUNCTIONAL] or **[SYSTEM]** etc.
     const headerMatch = line.match(
-      /^\s*\*{0,2}\[?(FUNCTIONAL|SYSTEM)\]?\*{0,2}\s*$/i,
+      /^\s*\*{0,2}\[?(FUNCTIONAL|SYSTEM|CLARIFICATION|QUESTION)\]?\*{0,2}\s*$/i,
     );
     if (headerMatch) {
-      currentType = headerMatch[1]!.toLowerCase() as 'functional' | 'system';
+      const h = headerMatch[1]!.toLowerCase();
+      currentType = (h === 'question' ? 'clarification' : h) as typeof currentType;
+      continue;
+    }
+
+    // Check for open questions section header (common LLM pattern)
+    if (/^\s*\*{0,2}(open questions?|clarifications?|ambiguities)\*{0,2}\s*:?\s*$/i.test(line)) {
+      currentType = 'clarification';
       continue;
     }
 
     // Format A: "1. [FUNCTIONAL] ..."
     const inlineMatch = line.match(
-      /^\s*(\d+)\.\s*\[(FUNCTIONAL|SYSTEM)\]\s*(.+)$/i,
+      /^\s*(\d+)\.\s*\[(FUNCTIONAL|SYSTEM|CLARIFICATION|QUESTION)\]\s*(.+)$/i,
     );
     if (inlineMatch) {
       const index = parseInt(inlineMatch[1]!, 10);
-      const type = inlineMatch[2]!.toLowerCase() as 'functional' | 'system';
+      const rawType = inlineMatch[2]!.toLowerCase();
+      const type = (rawType === 'question' ? 'clarification' : rawType) as 'functional' | 'system' | 'clarification';
       const rest = inlineMatch[3]!;
       const { statement, references } = extractReferences(rest);
       requirements.push({ index, statement, type, references });
@@ -158,13 +166,29 @@ export function parseRequirementsList(text: string): ParsedRequirement[] {
       const index = parseInt(numberedMatch[1]!, 10);
       const rest = numberedMatch[2]!;
       const { statement, references } = extractReferences(rest);
-      requirements.push({ index, statement, type: currentType, references });
+      // Auto-detect clarifications: statements that are questions
+      const type = isClarification(rest) ? 'clarification' : currentType;
+      requirements.push({ index, statement, type, references });
       continue;
     }
   }
 
   // Re-index if parsing produced gaps
   return requirements.map((r, i) => ({ ...r, index: i + 1 }));
+}
+
+/**
+ * Detect whether a requirement statement is actually a clarifying question.
+ * Matches patterns like "Should X...?", "What X...?", "Does X...?" etc.
+ */
+function isClarification(text: string): boolean {
+  const trimmed = text.trim();
+  // Ends with a question mark (after stripping refs)
+  const withoutRefs = trimmed.replace(/\s*—\s*(?:references?|refs?):\s*.+$/i, '');
+  if (withoutRefs.trimEnd().endsWith('?')) return true;
+  // Starts with a question word
+  if (/^(should|what|which|how|does|do|is|are|can|will|would)\s/i.test(withoutRefs)) return true;
+  return false;
 }
 
 /**

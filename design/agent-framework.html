@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agent Framework — Design Document</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --border: #2a2d3a;
+      --text: #e2e4ed;
+      --muted: #8b8fa8;
+      --accent: #7c6af7;
+      --accent2: #4fc3f7;
+      --green: #4caf7d;
+      --yellow: #f5c842;
+      --red: #f47c7c;
+      --code-bg: #12151e;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 15px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; scroll-padding-top: 1rem; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      margin: 0;
+      padding: 0;
+      display: flex;
+    }
+
+    main {
+      flex: 1;
+      min-width: 0;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    @media (min-width: 1100px) {
+      main { margin-left: 280px; }
+    }
+
+    h1 { font-size: 2rem; color: var(--accent); margin-bottom: 0.25rem; }
+    h2 { font-size: 1.3rem; color: var(--accent2); margin: 2.5rem 0 0.75rem; border-bottom: 1px solid var(--border); padding-bottom: 0.4rem; }
+    h3 { font-size: 1.05rem; color: var(--yellow); margin: 1.5rem 0 0.5rem; }
+    h4 { font-size: 0.95rem; color: var(--green); margin: 1rem 0 0.4rem; }
+    p { margin: 0.6rem 0; }
+    .muted { color: var(--muted); font-size: 0.9rem; }
+
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1rem;
+      overflow-x: auto;
+      font-size: 0.82rem;
+      line-height: 1.6;
+      margin: 0.75rem 0;
+    }
+
+    code { font-family: 'Fira Code', 'Cascadia Code', 'JetBrains Mono', monospace; font-size: 0.88em; }
+    pre code { font-size: inherit; }
+    :not(pre) > code { background: var(--code-bg); padding: 0.15em 0.4em; border-radius: 3px; }
+
+    ul, ol { margin: 0.5rem 0; padding-left: 1.5rem; }
+    li { margin: 0.25rem 0; }
+
+    table { width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-size: 0.88rem; }
+    th, td { border: 1px solid var(--border); padding: 0.5rem 0.75rem; text-align: left; }
+    th { background: var(--surface); color: var(--accent2); font-weight: 600; }
+    td { background: var(--bg); }
+    tr:nth-child(even) td { background: #13161f; }
+
+    hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+
+    .callout {
+      background: var(--surface);
+      border-left: 3px solid var(--accent);
+      border-radius: 0 6px 6px 0;
+      padding: 0.75rem 1rem;
+      margin: 1rem 0;
+      font-size: 0.92rem;
+    }
+    .callout.warn  { border-color: var(--yellow); }
+    .callout.info  { border-color: var(--accent2); }
+
+    /* ── Left nav ── */
+    nav.toc {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 260px;
+      height: 100vh;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      padding: 1.2rem 1rem 2rem;
+      z-index: 100;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+
+    nav.toc::-webkit-scrollbar { width: 5px; }
+    nav.toc::-webkit-scrollbar-track { background: transparent; }
+    nav.toc::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    nav.toc h2 {
+      font-size: 0.85rem;
+      color: var(--accent);
+      margin: 0 0 0.75rem;
+      border: none;
+      padding: 0;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    nav.toc ol {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      counter-reset: toc-section;
+    }
+
+    nav.toc > ol > li {
+      counter-increment: toc-section;
+      margin: 0.2rem 0;
+    }
+
+    nav.toc > ol > li > a::before {
+      content: counter(toc-section) ". ";
+      color: var(--muted);
+      font-size: 0.75rem;
+    }
+
+    nav.toc ol ol {
+      padding-left: 1rem;
+      margin: 0.1rem 0 0.25rem;
+    }
+
+    nav.toc a {
+      color: var(--text);
+      text-decoration: none;
+      font-size: 0.8rem;
+      line-height: 1.5;
+      display: block;
+      padding: 0.1rem 0.4rem;
+      border-radius: 3px;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    nav.toc a:hover,
+    nav.toc a.active {
+      color: var(--accent2);
+      background: rgba(79, 195, 247, 0.08);
+    }
+
+    nav.toc ol ol a {
+      color: var(--muted);
+      font-size: 0.75rem;
+    }
+
+    nav.toc ol ol a:hover {
+      color: var(--accent2);
+    }
+
+    @media (max-width: 1099px) {
+      nav.toc {
+        position: static;
+        width: 100%;
+        height: auto;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        border-radius: 0;
+        max-height: 50vh;
+      }
+      main { margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="toc">
+    <h2>Agent Framework</h2>
+    <ol>
+      <li><a href="#problem">Problem</a></li>
+      <li><a href="#principles">Design Principles</a></li>
+      <li><a href="#architecture">Architecture</a></li>
+      <li>
+        <a href="#storage">Storage Layout</a>
+        <ol>
+          <li><a href="#why-files">Why files, not DB</a></li>
+          <li><a href="#retention">Retention</a></li>
+        </ol>
+      </li>
+      <li>
+        <a href="#abstractions">Core Abstractions</a>
+        <ol>
+          <li><a href="#message-protocol">Message protocol</a></li>
+          <li><a href="#channel-interface">Channel interface</a></li>
+          <li><a href="#agent-interface">Agent interface</a></li>
+          <li><a href="#agent-runner">Agent runner</a></li>
+        </ol>
+      </li>
+      <li>
+        <a href="#channels">Channel Implementations</a>
+        <ol>
+          <li><a href="#repl-channel">ReplChannel</a></li>
+          <li><a href="#test-channel">TestChannel</a></li>
+          <li><a href="#ws-channel">WebSocketChannel</a></li>
+        </ol>
+      </li>
+      <li>
+        <a href="#designer-agent">Designer Agent</a>
+        <ol>
+          <li><a href="#designer-state">State shape</a></li>
+          <li><a href="#designer-steps">Step flow</a></li>
+        </ol>
+      </li>
+      <li>
+        <a href="#resume">Resume Flow</a>
+      </li>
+      <li>
+        <a href="#crash-recovery">Crash Recovery</a>
+        <ol>
+          <li><a href="#crash-mid-step">Mid-step</a></li>
+          <li><a href="#crash-mid-checkpoint">Mid-checkpoint</a></li>
+          <li><a href="#crash-mid-artifact">Mid-artifact</a></li>
+          <li><a href="#run-status">Run status &amp; detection</a></li>
+          <li><a href="#run-lock">Run lock</a></li>
+          <li><a href="#artifact-validation">Artifact validation</a></li>
+        </ol>
+      </li>
+      <li><a href="#migration">Migration &amp; Recovery</a></li>
+      <li>
+        <a href="#coder-agent">Coder Agent</a>
+      </li>
+      <li>
+        <a href="#new-files">New Files</a>
+        <ol>
+          <li><a href="#cli-additions">CLI additions</a></li>
+        </ol>
+      </li>
+      <li><a href="#not-included">Not Included</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <h1>Agent Framework</h1>
+    <p class="muted">Lightweight IPC Agents with Checkpointing</p>
+
+    <h2 id="problem">Problem</h2>
+    <p>The designer pipeline (<code>src/agent/tasks/designer/</code>) uses an async generator + <code>ValidationChannel</code>
+    for 2-way communication. This has fundamental limitations:</p>
+    <ul>
+      <li><strong>No checkpoint/resume</strong> — if the process crashes mid-requirement, all work is lost</li>
+      <li><strong>No cancellation</strong> — once a requirement loop starts, no clean abort</li>
+      <li><strong>Fragile re-entry</strong> — detail rejection rollback is incomplete (TODO in code)</li>
+      <li><strong>Coupled to REPL</strong> — generator ↔ readline tight coupling makes testing and alternate UIs impossible</li>
+      <li><strong>No observability</strong> — no structured event log; progress is ad-hoc <code>log.info()</code> calls</li>
+    </ul>
+    <p>The tool loop (<code>src/agent/tools/loop.ts</code>) has similar issues — 25-iteration hard cap, no checkpointing, no way to pause and resume.</p>
+
+    <h2 id="principles">Design Principles</h2>
+    <ol>
+      <li><strong>Message-based, not call-based</strong> — agents communicate through typed messages, not function calls</li>
+      <li><strong>Checkpoint at every gate</strong> — state is serializable and persisted before any user interaction</li>
+      <li><strong>Resume from any checkpoint</strong> — crashed or abandoned runs can be resumed</li>
+      <li><strong>Transport-agnostic</strong> — the message channel is an interface; REPL readline, WebSocket, or test harness all work</li>
+      <li><strong>Local-first persistence</strong> — checkpoints persist to <code>~/.insrc/agents/&lt;runId&gt;/</code> as plain JSON files, no daemon dependency</li>
+      <li><strong>Single-process agents</strong> — agents run in the REPL process (no new processes), use daemon IPC for DB when available</li>
+    </ol>
+
+    <h2 id="architecture">Architecture</h2>
+<pre><code>┌──────────────────────────────────────────────────────────┐
+│  Transport (implements Channel)                          │
+│  ┌─────────┐  ┌───────────┐  ┌────────────┐             │
+│  │  REPL   │  │ WebSocket │  │ Test Harness│             │
+│  └────┬────┘  └─────┬─────┘  └──────┬─────┘             │
+│       └─────────────┼───────────────┘                    │
+│                     │                                    │
+│              ┌──────▼──────┐                             │
+│              │  Dispatcher │  routes messages to agents   │
+│              └──────┬──────┘                             │
+│          ┌──────────┼──────────┐                         │
+│    ┌─────▼─────┐  ┌─▼────┐  ┌─▼──────┐                  │
+│    │ Designer  │  │ Coder │  │ Tester │  ... agents      │
+│    │  Agent    │  │ Agent │  │ Agent  │                   │
+│    └─────┬─────┘  └──┬───┘  └───┬────┘                   │
+│          └────────────┼─────────┘                        │
+│                  ┌────▼────┐                             │
+│                  │Checkpoint│  serialize + persist        │
+│                  │  Store   │                             │
+│                  └────┬────┘                             │
+└───────────────────────┼──────────────────────────────────┘
+                        │
+                  ~/.insrc/agents/&lt;runId&gt;/
+                        ├── state.json        current checkpoint
+                        ├── events.jsonl      append-only event log
+                        └── artifacts/        step outputs
+</code></pre>
+
+    <h2 id="storage">Storage Layout</h2>
+    <p>All agent state lives under <code>~/.insrc/agents/</code>, owned by the agent process (not the daemon).
+    No DB dependency for core agent operation.</p>
+<pre><code>~/.insrc/
+  agents/
+    index.json                     # registry of all runs
+    &lt;runId&gt;/
+      state.json                   # current checkpoint (AgentState + step cursor)
+      events.jsonl                 # append-only event log
+      artifacts/                   # step-produced files
+        sketch-0.md
+        sketch-1.md
+        detail-0.md
+        assembled.html
+      meta.json                    # { agentId, version, repo, createdAt, input hash }
+</code></pre>
+
+    <h3 id="why-files">Why files, not DB</h3>
+    <ul>
+      <li>Agent must work even if daemon is down (local-first principle)</li>
+      <li>JSON files are inspectable, diffable, and trivially backed up</li>
+      <li>No schema migrations — just version field in <code>meta.json</code></li>
+      <li>Atomic writes via write-to-temp + rename (crash-safe on Linux/macOS)</li>
+      <li>Cleanup is <code>rm -rf ~/.insrc/agents/&lt;runId&gt;</code></li>
+    </ul>
+
+    <h3 id="retention">Retention</h3>
+    <ul>
+      <li>Completed runs: pruned after 7 days (on session start)</li>
+      <li>Active (incomplete) runs: kept indefinitely until resumed or explicitly deleted</li>
+      <li><code>insrc agent list</code> / <code>insrc agent prune</code> CLI commands for management</li>
+    </ul>
+
+    <h2 id="abstractions">Core Abstractions</h2>
+
+    <h3 id="message-protocol">Message Protocol</h3>
+    <p>All communication is typed messages. No function calls cross the agent boundary.</p>
+
+    <h4>Envelope</h4>
+<pre><code class="language-typescript">interface AgentMessage&lt;T = unknown&gt; {
+  id:        string;       // unique message ID (nanoid)
+  agentId:   string;       // source or target agent
+  runId:     string;       // execution run ID
+  kind:      string;       // discriminator for payload type
+  payload:   T;
+  timestamp: string;       // ISO 8601
+  replyTo?:  string;       // if this is a reply
+}
+</code></pre>
+
+    <h4>Agent → Transport (outbound)</h4>
+<pre><code class="language-typescript">/** Agent produced text output (streamable). */
+interface EmitMessage {
+  kind: 'emit';
+  payload: { text: string; stream?: boolean };
+}
+
+/** Agent needs user input. Blocks until a Reply arrives. */
+interface GateMessage {
+  kind: 'gate';
+  payload: {
+    gateId:      string;
+    stage:       string;     // e.g. 'requirements', 'sketch', 'detail'
+    title:       string;
+    content:     string;     // rendered content to show user
+    actions:     GateAction[];
+    context?:    Record&lt;string, unknown&gt;;
+  };
+}
+
+interface GateAction {
+  name:    'approve' | 'edit' | 'reject' | 'skip' | string;  // extensible
+  label:   string;
+  hint?:   string;
+  needsInput?: boolean;
+}
+
+/** Agent completed. */
+interface DoneMessage {
+  kind: 'done';
+  payload: { result: unknown; summary: string };
+}
+
+/** Agent encountered an unrecoverable error. */
+interface ErrorMessage {
+  kind: 'error';
+  payload: { error: string; recoverable: boolean };
+}
+
+/** Checkpoint reached (informational). */
+interface CheckpointMessage {
+  kind: 'checkpoint';
+  payload: { stepIndex: number; label: string };
+}
+
+/** Progress update (non-blocking). */
+interface ProgressMessage {
+  kind: 'progress';
+  payload: { message: string; pct?: number };
+}
+</code></pre>
+
+    <h4>Transport → Agent (inbound)</h4>
+<pre><code class="language-typescript">/** User response to a gate. */
+interface ReplyMessage {
+  kind: 'reply';
+  payload: {
+    gateId:   string;
+    action:   string;
+    feedback?: string;
+  };
+}
+
+/** External request to cancel the run. */
+interface CancelMessage {
+  kind: 'cancel';
+  payload: { reason?: string };
+}
+</code></pre>
+
+    <h3 id="channel-interface">Channel Interface</h3>
+    <p>The transport layer. Decouples agents from the REPL.</p>
+<pre><code class="language-typescript">interface Channel {
+  /** Send a message from agent to transport. Non-blocking for emit/progress/checkpoint. */
+  send(msg: AgentMessage): void;
+
+  /** Send a gate message and wait for a reply. Throws if cancelled. */
+  gate(msg: AgentMessage&lt;GateMessage['payload']&gt;): Promise&lt;ReplyMessage['payload']&gt;;
+
+  /** Subscribe to inbound messages (cancel, etc.). */
+  onMessage(handler: (msg: AgentMessage) =&gt; void): void;
+
+  /** Signal that the agent run is complete. */
+  close(): void;
+}
+</code></pre>
+
+    <h3 id="agent-interface">Agent Interface</h3>
+    <p>Agents are state machines. Each step receives state, does work, returns new state + next step.</p>
+<pre><code class="language-typescript">/** Serializable agent state — must survive JSON round-trip. */
+type AgentState = Record&lt;string, unknown&gt;;
+
+/** A single step in the agent's workflow. */
+interface AgentStep&lt;S extends AgentState = AgentState&gt; {
+  name: string;
+  /** Execute the step. Returns updated state and next step (null = finish). */
+  run(state: S, ctx: StepContext): Promise&lt;{ state: S; next: string | null }&gt;;
+  /** Artifacts this step produces. Checked on resume. */
+  artifacts?: (state: S) =&gt; string[];
+}
+
+interface StepContext {
+  channel:   Channel;
+  runId:     string;
+  agentId:   string;
+  config:    AgentConfig;
+  providers: {
+    local:  LLMProvider;
+    claude: LLMProvider | null;
+  };
+  progress(msg: string, pct?: number): void;
+  gate(opts: Omit&lt;GateMessage['payload'], 'gateId'&gt;): Promise&lt;ReplyMessage['payload']&gt;;
+  emit(text: string, stream?: boolean): void;
+  rpc&lt;T = unknown&gt;(method: string, params?: unknown): Promise&lt;T | null&gt;;
+  writeArtifact(name: string, content: string): Promise&lt;string&gt;;
+  readArtifact(name: string): Promise&lt;string | null&gt;;
+  signal: AbortSignal;
+}
+
+interface AgentDefinition&lt;S extends AgentState = AgentState&gt; {
+  id:          string;
+  version:     number;
+  initialState: (input: unknown) =&gt; S;
+  steps:       Record&lt;string, AgentStep&lt;S&gt;&gt;;
+  firstStep:   string;
+  migrate?:    (state: AgentState, fromVersion: number) =&gt; S;
+}
+</code></pre>
+
+    <h3 id="agent-runner">Agent Runner</h3>
+    <p>The execution engine. Drives the step loop, handles checkpointing, resume, and cancellation.</p>
+<pre><code class="language-typescript">interface RunOptions {
+  resumeFrom?: Checkpoint;
+  input?: unknown;
+}
+
+interface Checkpoint {
+  runId:          string;
+  agentId:        string;
+  version:        number;
+  stepName:       string;
+  stepIndex:      number;
+  state:          AgentState;
+  status:         RunStatus;
+  pid:            number;
+  heartbeat:      string;
+  createdAt:      string;
+  completedSteps: Array&lt;{ name: string; durationMs: number; timestamp: string }&gt;;
+}
+
+interface RunResult {
+  runId:    string;
+  result:   unknown;
+  summary:  string;
+  steps:    number;
+  resumed:  boolean;
+}
+</code></pre>
+
+    <h4>Runner pseudocode</h4>
+<pre><code>function runAgent(definition, channel, options):
+  if options.resumeFrom:
+    state = options.resumeFrom.state
+    step  = options.resumeFrom.stepName
+    index = options.resumeFrom.stepIndex
+    runId = options.resumeFrom.runId
+  else:
+    state = definition.initialState(options.input)
+    step  = definition.firstStep
+    index = 0
+    runId = nanoid()
+    createRunDir(runId)
+    writeMeta(runId, ...)
+
+  ctx = buildStepContext(channel, runId, ...)
+
+  channel.onMessage(msg =&gt; {
+    if msg.kind === 'cancel': ctx.abort()
+  })
+
+  while step !== null:
+    if ctx.signal.aborted: throw Cancelled
+
+    { state, next } = await definition.steps[step].run(state, ctx)
+
+    // Checkpoint after every step (atomic write)
+    checkpoint = { runId, agentId, version, stepName: next ?? step, stepIndex: index, state, ... }
+    atomicWrite('~/.insrc/agents/&lt;runId&gt;/state.json', checkpoint)
+    appendEvent('~/.insrc/agents/&lt;runId&gt;/events.jsonl', { kind: 'checkpoint', step, index })
+    updateIndex(runId, { status: 'active', updatedAt: now })
+    channel.send(CheckpointMessage)
+
+    step = next
+    index++
+
+  updateIndex(runId, { status: 'completed', updatedAt: now })
+  channel.send(DoneMessage { result: state.result, summary: state.summary })
+  channel.close()
+  return { runId, result, summary, steps: index, resumed: !!options.resumeFrom }
+</code></pre>
+    <div class="callout info">
+      <strong>Atomic writes:</strong> <code>writeFileSync</code> to a temp file in the same directory,
+      then <code>renameSync</code> to the target path. Guarantees <code>state.json</code> is always valid JSON —
+      a crash mid-write leaves only the temp file, and the last valid checkpoint is intact.
+    </div>
+
+    <hr>
+
+    <h2 id="channels">Channel Implementations</h2>
+
+    <h3 id="repl-channel">ReplChannel (readline)</h3>
+    <p>The existing REPL path. Maps gates to interactive prompts.</p>
+<pre><code class="language-typescript">class ReplChannel implements Channel {
+  private messageHandlers: Array&lt;(msg: AgentMessage) =&gt; void&gt; = [];
+
+  send(msg: AgentMessage): void {
+    switch (msg.kind) {
+      case 'emit':       process.stdout.write(msg.payload.text); break;
+      case 'progress':   log.info(msg.payload.message); break;
+      case 'checkpoint': log.debug(`checkpoint: ${msg.payload.label}`); break;
+      case 'done':       /* handled by runner */ break;
+      case 'error':      log.error(msg.payload.error); break;
+    }
+  }
+
+  async gate(msg: AgentMessage): Promise&lt;ReplyMessage['payload']&gt; {
+    renderGateToTerminal(msg.payload);
+    const answer = await askOnce('&gt; ');
+    return parseGateResponse(answer, msg.payload.actions);
+  }
+
+  onMessage(handler): void { this.messageHandlers.push(handler); }
+
+  cancel(reason?: string): void {
+    for (const h of this.messageHandlers) {
+      h({ kind: 'cancel', payload: { reason } } as AgentMessage);
+    }
+  }
+
+  close(): void { /* cleanup */ }
+}
+</code></pre>
+
+    <h3 id="test-channel">TestChannel (for tests)</h3>
+    <p>Pre-scripted responses. No readline dependency.</p>
+<pre><code class="language-typescript">class TestChannel implements Channel {
+  constructor(private script: Array&lt;{ gateId: string; reply: ReplyMessage['payload'] }&gt;) {}
+
+  async gate(msg: AgentMessage): Promise&lt;ReplyMessage['payload']&gt; {
+    const entry = this.script.shift();
+    if (!entry) throw new Error('TestChannel: no scripted reply');
+    return entry.reply;
+  }
+  // ...
+}
+</code></pre>
+
+    <h3 id="ws-channel">Future: WebSocketChannel</h3>
+    <p>For a VS Code extension or web UI — same protocol over WebSocket.
+    The message format is already JSON, so no serialization adapter needed.</p>
+
+    <hr>
+
+    <h2 id="designer-agent">Designer Agent: Rewritten as Steps</h2>
+    <p>The current designer pipeline maps to these steps:</p>
+
+    <h3 id="designer-steps">Step Flow</h3>
+<pre><code>┌─────────────┐     ┌──────────────┐     ┌────────────────────┐
+│  extract     │────▶│  enhance     │────▶│  validate-reqs     │──┐
+│  requirements│     │  requirements│     │  (gate)            │  │
+└─────────────┘     └──────────────┘     └────────────────────┘  │
+                                                                  │
+          ┌───────────────────────────────────────────────────────┘
+          │
+          ▼
+    ┌───────────┐     ┌──────────────┐     ┌───────────────┐
+    │  pick-next │────▶│  sketch      │────▶│  review-sketch│
+    │  requirement│    │  (local LLM) │     │  (Claude)     │
+    └───────────┘     └──────────────┘     └───────┬───────┘
+          ▲                                         │
+          │                                         ▼
+          │                                  ┌──────────────┐
+          │                                  │ validate-     │
+          │                                  │ sketch (gate) │
+          │                                  └──────┬───────┘
+          │                                         │
+          │                                         ▼
+          │                                  ┌──────────────┐
+          │                                  │  detail       │
+          │                                  │  (local LLM)  │
+          │                                  └──────┬───────┘
+          │                                         │
+          │                                         ▼
+          │                                  ┌──────────────┐
+          │    (more reqs pending)           │ validate-     │
+          └──────────────────────────────────│ detail (gate) │
+          │                                  └──────┬───────┘
+          │ (all done)                              │
+          ▼                                         │
+    ┌──────────────┐                                │
+    │  assemble    │◀───────────────────────────────┘
+    │  document    │
+    └──────────────┘
+</code></pre>
+
+    <h3 id="designer-state">State Shape</h3>
+<pre><code class="language-typescript">interface DesignerState extends AgentState {
+  // Input (immutable after init)
+  input: {
+    message:          string;
+    codeContext:       string;
+    template:         DesignTemplate;
+    intent:           'requirements' | 'design' | 'review';
+    requirementsDoc?: string;
+    repoPath:         string;
+    closureRepos:     string[];
+  };
+
+  // Evolving state (checkpointed)
+  requirements:       RequirementTodo[];
+  currentReqIndex:    number;
+  editRounds:         Record&lt;string, number&gt;;   // gateId → rounds used
+  completedSketches:  RequirementSketch[];
+  completedDetails:   string[];
+  compressedHistory:  string;
+  assembledOutput?:   string;
+  summary?:           string;
+}
+</code></pre>
+
+    <p><strong>Each step is independently testable.</strong> The <code>pick-next-requirement</code> step just looks at
+    <code>state.requirements</code>, finds the next <code>pending</code> one, and sets <code>currentReqIndex</code>.
+    No step holds a reference to the generator or the REPL.</p>
+
+    <p><strong>Artifacts:</strong> Each sketch and detail is written to <code>artifacts/sketch-N.md</code> and
+    <code>artifacts/detail-N.md</code>. The assemble step reads all artifacts and produces <code>artifacts/assembled.html</code>.
+    On resume, completed artifacts don't need to be regenerated.</p>
+
+    <p><strong>Checkpoint boundaries:</strong> After every step completion. If the process crashes during a sketch LLM call,
+    resume replays from <code>pick-next-requirement</code> for the current requirement. After a gate response, the checkpoint
+    includes the user's decision, so it's never re-asked.</p>
+
+    <hr>
+
+    <h2 id="resume">Resume Flow</h2>
+<pre><code>User: insrc chat
+  → On session start, scan ~/.insrc/agents/index.json for active runs
+  → If found:
+      log: "Found incomplete designer run (3/7 requirements done). Resume? [Y/n]"
+      → User: Y
+      → Read state.json from run directory
+      → runAgent(designerDefinition, channel, { resumeFrom: checkpoint })
+      → Runner skips to stepName from checkpoint, restores state
+      → Continues from requirement 4
+
+User: insrc agent list
+  → Show all active/completed runs with status, age, step progress
+
+User: insrc agent resume &lt;runId&gt;
+  → Resume a specific run by ID
+
+User: insrc agent discard &lt;runId&gt;
+  → rm -rf ~/.insrc/agents/&lt;runId&gt;/, update index
+</code></pre>
+
+    <hr>
+
+    <h2 id="crash-recovery">Crash Recovery</h2>
+    <p>Three categories of crash, each with a defined recovery path.</p>
+
+    <h3 id="crash-mid-step">Scenario 1: Mid-Step (LLM Call or Computation)</h3>
+    <p>The process dies while a step's <code>run()</code> is executing — e.g., during an LLM call, a daemon RPC, or artifact generation.</p>
+    <p><strong>What happens:</strong></p>
+    <ul>
+      <li><code>state.json</code> holds the checkpoint from the <strong>previous completed step</strong></li>
+      <li>The current step produced no checkpoint (steps are atomic: checkpoint only on success)</li>
+      <li>Any partially-written artifact temp files are orphaned</li>
+    </ul>
+    <p><strong>On resume:</strong> Runner reads <code>state.json</code> → re-executes that step from scratch with the same state. Safe because steps are <strong>idempotent</strong>.</p>
+
+    <h3 id="crash-mid-checkpoint">Scenario 2: Mid-Checkpoint Write</h3>
+    <p>The process dies while writing <code>state.json</code> after a step completes.</p>
+<pre><code>1. writeFileSync(runDir + '/state.json.tmp', JSON.stringify(checkpoint))
+2. renameSync(runDir + '/state.json.tmp', runDir + '/state.json')
+</code></pre>
+    <ul>
+      <li>Crash before <code>rename</code>: <code>state.json</code> still holds the previous valid checkpoint</li>
+      <li>Crash after <code>rename</code>: new checkpoint is fully committed</li>
+      <li><strong>There is no state where <code>state.json</code> contains partial or corrupt JSON</strong></li>
+    </ul>
+    <p><strong>On resume:</strong> If <code>state.json.tmp</code> exists, delete it. The step re-executes (idempotent).</p>
+
+    <h3 id="crash-mid-artifact">Scenario 3: Mid-Artifact Write</h3>
+    <p>Artifacts also use atomic write (temp + rename). Even without it, artifacts are <strong>derived from state</strong>,
+    not the source of truth. The step that produces the artifact re-runs and overwrites any corrupt/partial artifact.</p>
+
+    <h3 id="run-status">Run Status and Crash Detection</h3>
+<pre><code class="language-typescript">type RunStatus =
+  | 'running'     // step loop is actively executing (PID recorded)
+  | 'paused'      // user explicitly paused or gate is waiting
+  | 'completed'   // agent finished successfully
+  | 'failed'      // unrecoverable error
+  | 'crashed';    // detected on resume — was 'running' but process is dead
+</code></pre>
+    <p><strong>Crash detection logic</strong> (on session start or <code>insrc agent list</code>):</p>
+<pre><code>for each run in index.json where status === 'running':
+  checkpoint = read(runDir/state.json)
+  if process.kill(checkpoint.pid, 0) throws ESRCH:
+    // Process is dead — this was a crash
+    checkpoint.status = 'crashed'
+  else if (now - checkpoint.heartbeat) &gt; 120_000:
+    // No heartbeat for 2 minutes — treat as stuck/crashed
+    checkpoint.status = 'crashed'
+</code></pre>
+    <p><strong>Heartbeat:</strong> While the runner loop is active, a <code>setInterval</code> (unref'd) writes the current
+    timestamp to <code>state.json</code>'s <code>heartbeat</code> field every 30 seconds. Catches cases where the PID was recycled.</p>
+
+    <h3 id="run-lock">Run Lock: Preventing Concurrent Resume</h3>
+    <p>A lock file prevents two processes from resuming the same run simultaneously:</p>
+<pre><code class="language-typescript">function acquireLock(runDir: string): boolean {
+  try {
+    // O_CREAT | O_EXCL — atomic create-if-not-exists
+    const fd = openSync(join(runDir, 'lock'), O_CREAT | O_EXCL | O_WRONLY);
+    writeSync(fd, JSON.stringify({ pid: process.pid, acquiredAt: new Date().toISOString() }));
+    closeSync(fd);
+    return true;
+  } catch (err) {
+    if (err.code === 'EEXIST') {
+      // Lock exists — check if owner is still alive
+      const lock = JSON.parse(readFileSync(join(runDir, 'lock'), 'utf-8'));
+      try {
+        process.kill(lock.pid, 0);  // probe
+        return false;               // genuinely locked
+      } catch {
+        // Owner is dead — stale lock. Break it.
+        unlinkSync(join(runDir, 'lock'));
+        return acquireLock(runDir);  // retry once
+      }
+    }
+    throw err;
+  }
+}
+
+function releaseLock(runDir: string): void {
+  try { unlinkSync(join(runDir, 'lock')); } catch { /* ok */ }
+}
+</code></pre>
+    <p>The lock is released in a <code>finally</code> block — freed on normal completion, cancellation, and uncaught exceptions.
+    Only a hard crash (SIGKILL, power loss) leaves a stale lock, handled by the detection above.</p>
+
+    <h3 id="artifact-validation">Artifact Validation on Resume</h3>
+    <p>When resuming, the runner verifies that artifacts from completed steps are intact before skipping ahead.</p>
+<pre><code class="language-typescript">interface AgentStep&lt;S extends AgentState = AgentState&gt; {
+  name: string;
+  run(state: S, ctx: StepContext): Promise&lt;{ state: S; next: string | null }&gt;;
+  /** Artifacts this step is expected to produce. Checked on resume. */
+  artifacts?: (state: S) =&gt; string[];
+}
+</code></pre>
+
+    <h4>Resume validation logic</h4>
+<pre><code>function runAgent(definition, channel, options):
+  if options.resumeFrom:
+    checkpoint = options.resumeFrom
+    for step in checkpoint.completedSteps:
+      stepDef = definition.steps[step.name]
+      if stepDef.artifacts:
+        expected = stepDef.artifacts(checkpoint.state)
+        for artifactName in expected:
+          path = join(runDir, 'artifacts', artifactName)
+          if !existsSync(path):
+            log.warn(`artifact missing: ${artifactName}, rolling back to step: ${step.name}`)
+            checkpoint.stepName = step.name
+            checkpoint.stepIndex = step.index
+            checkpoint.completedSteps = checkpoint.completedSteps.slice(0, step.index)
+            break
+</code></pre>
+
+    <h4>Example: designer sketch step</h4>
+<pre><code class="language-typescript">const sketchStep: AgentStep&lt;DesignerState&gt; = {
+  name: 'sketch',
+  artifacts: (state) =&gt; [`sketch-${state.currentReqIndex}.md`],
+  async run(state, ctx) {
+    const sketch = await writeSketch(/* ... */);
+    await ctx.writeArtifact(`sketch-${state.currentReqIndex}.md`, sketch);
+    return { state: { ...state, /* ... */ }, next: 'review-sketch' };
+  },
+};
+</code></pre>
+    <p>If <code>sketch-2.md</code> is missing on resume, the runner rolls back to the <code>sketch</code> step for that requirement and re-generates it.</p>
+
+    <hr>
+
+    <h2 id="migration">Migration &amp; Recovery</h2>
+    <ul>
+      <li><strong>State version mismatch:</strong> If <code>checkpoint.version &lt; definition.version</code>, the runner
+      calls <code>definition.migrate(state, fromVersion)</code> before resuming.</li>
+      <li><strong>Corrupted state:</strong> If <code>migrate</code> throws or <code>state.json</code> fails to parse,
+      the runner offers: discard and restart, or abort.</li>
+      <li><strong>Stale checkpoints:</strong> On session start, prune completed runs older than 7 days.
+      Active runs are kept until explicitly discarded.</li>
+    </ul>
+
+    <hr>
+
+    <h2 id="coder-agent">Coder Agent: Tool Loop as Steps</h2>
+    <p>The current tool loop (25-iteration cap) also benefits from this framework:</p>
+<pre><code class="language-typescript">// steps: 'plan-call' → 'execute-tools' → 'plan-call' (loop) → 'done'
+
+interface CoderState extends AgentState {
+  messages:      LLMMessage[];
+  iterations:    number;
+  maxIterations: number;
+  intent:        string;
+  pendingTools:  ToolCall[];
+  results:       ToolResult[];
+  finalResponse: string;
+}
+</code></pre>
+    <p>The <code>execute-tools</code> step uses gates for mutating tool approval:</p>
+<pre><code class="language-typescript">// In execute-tools step:
+for (const call of state.pendingTools) {
+  if (isMutating(call)) {
+    const reply = await ctx.gate({
+      stage: 'tool-approval',
+      title: `${call.name}`,
+      content: formatToolCallPreview(call),
+      actions: [
+        { name: 'approve', label: 'Execute', needsInput: false },
+        { name: 'reject',  label: 'Skip',    needsInput: true  },
+      ],
+    });
+    if (reply.action === 'reject') {
+      results.push({ toolCallId: call.id, content: `Rejected: ${reply.feedback}`, isError: true });
+      continue;
+    }
+  }
+  results.push(await executeTool(call));
+}
+</code></pre>
+    <p><strong>Checkpoint:</strong> After each tool execution round, not after each individual tool.</p>
+
+    <hr>
+
+    <h2 id="new-files">New Files</h2>
+    <table>
+      <tr><th>File</th><th>Purpose</th></tr>
+      <tr><td><code>src/agent/framework/types.ts</code></td><td>Message types, AgentState, AgentStep, AgentDefinition, Checkpoint</td></tr>
+      <tr><td><code>src/agent/framework/runner.ts</code></td><td><code>runAgent()</code> — step loop, checkpoint, cancel, resume</td></tr>
+      <tr><td><code>src/agent/framework/channel.ts</code></td><td>Channel interface + ReplChannel</td></tr>
+      <tr><td><code>src/agent/framework/test-channel.ts</code></td><td>TestChannel for scripted testing</td></tr>
+      <tr><td><code>src/agent/framework/checkpoint.ts</code></td><td>File-based checkpoint persistence</td></tr>
+      <tr><td><code>src/agent/framework/helpers.ts</code></td><td>StepContext builder, message factories, atomic write utils</td></tr>
+    </table>
+
+    <h4>Paths addition</h4>
+<pre><code class="language-typescript">// src/shared/paths.ts
+export const PATHS = {
+  // ... existing ...
+  agents:    join(INSRC_DIR, 'agents'),
+  agentIndex: join(INSRC_DIR, 'agents', 'index.json'),
+} as const;
+</code></pre>
+
+    <h3 id="cli-additions">CLI Additions</h3>
+<pre><code>insrc agent list              # show all runs
+insrc agent resume &lt;runId&gt;    # resume incomplete run
+insrc agent discard &lt;runId&gt;   # delete run directory
+insrc agent prune             # delete completed runs older than 7 days
+</code></pre>
+
+    <p><strong>Migrated agents:</strong></p>
+    <table>
+      <tr><th>Path</th><th>Change</th></tr>
+      <tr><td><code>src/agent/tasks/designer/</code></td><td>Rewrite steps as AgentStep implementations</td></tr>
+      <tr><td><code>src/agent/tasks/coder.ts</code></td><td>Tool-loop agent using framework</td></tr>
+    </table>
+
+    <hr>
+
+    <h2 id="not-included">What This Does NOT Include</h2>
+    <ul>
+      <li><strong>Multi-agent orchestration</strong> — no agent-to-agent messaging. If needed later, add a <code>dispatch(agentId, message)</code> method to StepContext.</li>
+      <li><strong>Parallel step execution</strong> — steps are sequential. Parallelism happens within a step (e.g., parallel LLM calls).</li>
+      <li><strong>Distributed execution</strong> — all agents run in the REPL process. No remote agents.</li>
+      <li><strong>Event replay</strong> — <code>events.jsonl</code> is append-only for observability/debugging, not for state reconstruction. State lives in <code>state.json</code> checkpoints.</li>
+    </ul>
+
+  </main>
+</body>
+</html>

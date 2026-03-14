@@ -4,85 +4,951 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Design a generic planning module for the insrc agent framework — Design Document</title>
-  <style>:root {
-  --bg: #0f1117;
-  --surface: #1a1d27;
-  --border: #2a2d3a;
-  --text: #e2e4ed;
-  --muted: #8b8fa8;
-  --accent: #7c6af7;
-  --accent2: #4fc3f7;
-  --green: #4caf7d;
-  --yellow: #f5c842;
-  --code-bg: #12151e;
-  font-family: 'Segoe UI', system-ui, sans-serif;
-  font-size: 15px;
-}
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --border: #2a2d3a;
+      --text: #e2e4ed;
+      --muted: #8b8fa8;
+      --accent: #7c6af7;
+      --accent2: #4fc3f7;
+      --green: #4caf7d;
+      --yellow: #f5c842;
+      --code-bg: #12151e;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 15px;
+    }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; scroll-padding-top: 1rem; }
 
-body {
-  background: var(--bg);
-  color: var(--text);
-  line-height: 1.7;
-  padding: 2rem;
-}
+    body {
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      margin: 0;
+      padding: 0;
+      display: flex;
+    }
 
-main {
-  max-width: 960px;
-  margin: 0 auto;
-}
+    main {
+      flex: 1;
+      min-width: 0;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
 
-h1 { font-size: 2rem; color: var(--accent); margin-bottom: 0.25rem; }
-h2 { font-size: 1.3rem; color: var(--accent2); margin: 2.5rem 0 0.75rem; border-bottom: 1px solid var(--border); padding-bottom: 0.4rem; }
-h3 { font-size: 1.05rem; color: var(--yellow); margin: 1.5rem 0 0.5rem; }
-p { margin: 0.6rem 0; }
-.muted { color: var(--muted); font-size: 0.9rem; }
+    @media (min-width: 1100px) {
+      main { margin-left: 280px; }
+    }
 
-pre {
-  background: var(--code-bg);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 1rem;
-  overflow-x: auto;
-  font-size: 0.88rem;
-  margin: 0.8rem 0;
-}
+    h1 { font-size: 2rem; color: var(--accent); margin-bottom: 0.25rem; }
+    h2 { font-size: 1.3rem; color: var(--accent2); margin: 2.5rem 0 0.75rem; border-bottom: 1px solid var(--border); padding-bottom: 0.4rem; }
+    h3 { font-size: 1.05rem; color: var(--yellow); margin: 1.5rem 0 0.5rem; }
+    h4 { font-size: 0.95rem; color: var(--green); margin: 1rem 0 0.4rem; }
+    p { margin: 0.6rem 0; }
+    .muted { color: var(--muted); font-size: 0.9rem; }
 
-code { font-family: 'Fira Code', 'Consolas', monospace; }
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1rem;
+      overflow-x: auto;
+      font-size: 0.82rem;
+      line-height: 1.6;
+      margin: 0.75rem 0;
+    }
 
-ul, ol { margin: 0.5rem 0; padding-left: 1.5rem; }
-li { margin: 0.2rem 0; }
+    code { font-family: 'Fira Code', 'Cascadia Code', 'JetBrains Mono', monospace; font-size: 0.88em; }
+    pre code { font-size: inherit; }
+    :not(pre) > code { background: var(--code-bg); padding: 0.15em 0.4em; border-radius: 3px; }
 
-table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
-th, td { border: 1px solid var(--border); padding: 0.5rem 0.8rem; text-align: left; }
-th { background: var(--surface); color: var(--accent2); font-size: 0.9rem; }</style>
+    ul, ol { margin: 0.5rem 0; padding-left: 1.5rem; }
+    li { margin: 0.25rem 0; }
+
+    table { width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-size: 0.88rem; }
+    th, td { border: 1px solid var(--border); padding: 0.5rem 0.75rem; text-align: left; }
+    th { background: var(--surface); color: var(--accent2); font-weight: 600; }
+    td { background: var(--bg); }
+    tr:nth-child(even) td { background: #13161f; }
+
+    hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+
+    /* ── Left nav ── */
+    nav.toc {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 260px;
+      height: 100vh;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      padding: 1.2rem 1rem 2rem;
+      z-index: 100;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+
+    nav.toc::-webkit-scrollbar { width: 5px; }
+    nav.toc::-webkit-scrollbar-track { background: transparent; }
+    nav.toc::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    nav.toc h2 {
+      font-size: 0.85rem;
+      color: var(--accent);
+      margin: 0 0 0.75rem;
+      border: none;
+      padding: 0;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    nav.toc ol {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      counter-reset: toc-section;
+    }
+
+    nav.toc > ol > li {
+      counter-increment: toc-section;
+      margin: 0.2rem 0;
+    }
+
+    nav.toc > ol > li > a::before {
+      content: counter(toc-section) ". ";
+      color: var(--muted);
+      font-size: 0.75rem;
+    }
+
+    nav.toc ol ol {
+      padding-left: 1rem;
+      margin: 0.1rem 0 0.25rem;
+    }
+
+    nav.toc a {
+      color: var(--text);
+      text-decoration: none;
+      font-size: 0.8rem;
+      line-height: 1.5;
+      display: block;
+      padding: 0.1rem 0.4rem;
+      border-radius: 3px;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    nav.toc a:hover,
+    nav.toc a.active {
+      color: var(--accent2);
+      background: rgba(79, 195, 247, 0.08);
+    }
+
+    nav.toc ol ol a {
+      color: var(--muted);
+      font-size: 0.75rem;
+    }
+
+    nav.toc ol ol a:hover {
+      color: var(--accent2);
+    }
+
+    @media (max-width: 1099px) {
+      nav.toc {
+        position: static;
+        width: 100%;
+        height: auto;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        border-radius: 0;
+        max-height: 50vh;
+      }
+      main { margin-left: 0; }
+    }
+  </style>
 </head>
 <body>
+
+  <nav class="toc">
+    <h2>Planner Module</h2>
+    <ol>
+      <li><a href="#overview">Overview</a></li>
+      <li><a href="#requirements-summary">Requirements Summary</a></li>
+      <li>
+        <a href="#canonical-types">Canonical Types</a>
+        <ol>
+          <li><a href="#public-api">Public API</a></li>
+          <li><a href="#utilities">Utilities</a></li>
+        </ol>
+      </li>
+      <li>
+        <a href="#agent-architecture">Agent Architecture</a>
+        <ol>
+          <li><a href="#module-layout">Module layout</a></li>
+          <li><a href="#planner-input">PlannerInput</a></li>
+          <li><a href="#planner-state">PlannerState</a></li>
+          <li><a href="#agent-definition">Agent definition</a></li>
+          <li><a href="#step-pipeline">Step pipeline</a></li>
+          <li><a href="#step-implementations">Step implementations</a></li>
+          <li><a href="#plan-workflow-integration">Workflow integration</a></li>
+          <li><a href="#plan-update-flow">Update flow</a></li>
+          <li><a href="#barrel-export">Barrel export</a></li>
+        </ol>
+      </li>
+      <li>
+        <a href="#req-sections">Requirement Details</a>
+        <ol>
+          <li><a href="#req-1">Req 1: Generic types</a></li>
+          <li><a href="#req-2">Req 2: Status transitions</a></li>
+          <li><a href="#req-3">Req 3: Markdown serialization</a></li>
+          <li><a href="#req-4">Req 4: Progress tracking</a></li>
+          <li><a href="#req-5">Req 5: Extensible plan types</a></li>
+          <li><a href="#req-6">Req 6: Standalone library</a></li>
+        </ol>
+      </li>
+      <li><a href="#appendix-open-questions">Appendix: Open Questions</a></li>
+      <li>
+        <a href="#arch-summary">Architecture Summary</a>
+        <ol>
+          <li><a href="#module-structure">Module structure</a></li>
+          <li><a href="#dep-direction">Dependency direction</a></li>
+          <li><a href="#codebase-integration">Codebase integration</a></li>
+        </ol>
+      </li>
+      <li>
+        <a href="#risks">Risks &amp; Decisions</a>
+        <ol>
+          <li><a href="#risks-agent">Agent layer</a></li>
+          <li><a href="#risks-utility">Utility layer</a></li>
+        </ol>
+      </li>
+    </ol>
+  </nav>
+
   <main>
     <h1>Design a generic planning module for the insrc agent framework</h1>
     <p class="muted">Generated by insrc Designer Agent</p>
 
-    <h2>Overview</h2>
-    <p>Design document for <strong>Design a generic planning module for the insrc agent framework</strong>. 9 of 9 requirements addressed.</p>
+    <h2 id="overview">Overview</h2>
+    <p>Design document for a <strong>generic planning module</strong> in the insrc agent framework.
+    The module has two layers: a <strong>utility library</strong> (<code>Plan&lt;T&gt;</code> types, status engine,
+    markdown serialization, progress tracking) and a <strong>planner agent</strong> that orchestrates
+    plan creation through an 8-step LLM-driven pipeline with user validation gates.
+    6 requirements addressed; 3 open questions documented in appendix.</p>
 
-
-    <h2>Requirements Summary</h2>
+    <h2 id="requirements-summary">Requirements Summary</h2>
     <ol>
-<li>[FUNCTIONAL] The planner module shall define a generic <code>Plan&lt;T&gt;</code> and <code>Step&lt;T&gt;</code> type with fields for title, description, id, status (<code>pending/in-progress/done/blocked/skipped</code>), dependencies (array of step ids), optional assignee, optional notes, metadata (created/updated timestamps, author), support for nested sub-steps (tree structure), and a derived plan-level status computed from aggregate step statuses — <strong>DONE</strong></li>
+<li>[FUNCTIONAL] The planner module shall define a generic <code>Plan&lt;T&gt;</code> and <code>Step&lt;T&gt;</code> type with fields for title, description, id, status, dependencies (array of step ids on Step only), optional assignee, optional notes, metadata (created/updated timestamps, author), support for nested sub-steps (tree structure), and a derived plan-level status computed from aggregate step statuses — <strong>DONE</strong></li>
 <li>[FUNCTIONAL] The planner module shall implement status transition functions for steps that validate dependencies before allowing status changes to &quot;done&quot;, detect circular dependencies in the dependency graph, and identify blocked steps with their blocking reasons — <strong>DONE</strong></li>
 <li>[FUNCTIONAL] The planner module shall serialize plans to Markdown format with YAML frontmatter (title, author, created, updated) and checkbox lists, support round-trip fidelity for parsing back into the data structure, and support partial in-place updates to a single step&#39;s status without rewriting the entire file — <strong>DONE</strong></li>
 <li>[FUNCTIONAL] The planner module shall provide progress tracking capabilities including step counts by status, percentage complete, and history/changelog of status transitions with timestamps — <strong>DONE</strong></li>
 <li>[SYSTEM] The planner module shall support extensible plan types (<code>ImplementationPlan</code>, <code>TestPlan</code>, <code>MigrationPlan</code>) that inherit core Plan/Step types via generics while adding domain-specific fields: <code>ImplementationPlan</code> adds file paths, code references, and estimated complexity per step; <code>TestPlan</code> adds test categories (unit/integration/e2e), coverage targets, and fixtures; <code>MigrationPlan</code> adds rollback steps and data validation checkpoints — <strong>DONE</strong></li>
 <li>[SYSTEM] The planner module shall be designed as a standalone TypeScript library within <code>src/agent/planner/</code> with a clean public <code>index.ts</code> barrel export, ensuring all core engine behaviors (status transitions, progress tracking, MD serialization) are reusable by specialised plan types without duplication — <strong>DONE</strong></li>
-<li>[FUNCTIONAL] What level of error recovery is expected when parsing malformed or partially-edited Markdown files (strict throw vs. best-effort with warnings)? — <strong>DONE</strong></li>
-<li>[FUNCTIONAL] Should plan-level derived status follow a specific precedence rule (e.g., any <code>blocked</code> → plan is <code>blocked</code>; all <code>done</code> → plan is <code>done</code>), or is this left to the consumer? — <strong>DONE</strong></li>
-<li>[FUNCTIONAL] Is persistence (reading/writing <code>.md</code> files from disk) in scope for this module, or does the serializer only handle string-level conversion with file I/O left to the caller? — <strong>DONE</strong></li>
 </ol>
+    <p class="muted">Open questions (Q7–Q9) are documented in the <a href="#appendix-open-questions">Appendix</a>.</p>
+
+    <h2 id="canonical-types">Canonical Type Definitions</h2>
+    <p>All requirement sections reference these canonical types. Defined in <code>src/agent/planner/types.ts</code>.
+    Aligns with existing <code>PlanStepStatus</code> from <code>src/shared/types.ts</code> (uses <code>in_progress</code> and <code>failed</code> per codebase convention).</p>
+<pre><code class="language-typescript">// File: src/agent/planner/types.ts
+
+// ---------------------------------------------------------------------------
+// Status types — aligned with existing PlanStepStatus in shared/types.ts
+// ---------------------------------------------------------------------------
+
+export type StepStatus = 'pending' | 'in_progress' | 'done' | 'blocked' | 'failed' | 'skipped';
+
+/** Derived from aggregate step statuses */
+export type PlanStatus = 'active' | 'completed' | 'blocked' | 'abandoned';
+
+// ---------------------------------------------------------------------------
+// Metadata
+// ---------------------------------------------------------------------------
+
+export interface PlanMetadata {
+  createdAt: string;   // ISO-8601 UTC
+  updatedAt: string;   // ISO-8601 UTC
+  author?: string | undefined;
+}
+
+// ---------------------------------------------------------------------------
+// Core types — generic data payload via T
+// ---------------------------------------------------------------------------
+
+export interface Step&lt;T = unknown&gt; {
+  id:           string;
+  title:        string;
+  description:  string;
+  status:       StepStatus;
+  dependencies: string[];           // IDs of steps this step depends on
+  assignee?:    string | undefined;
+  notes?:       string | undefined;
+  metadata:     PlanMetadata;
+  subSteps?:    Step&lt;T&gt;[] | undefined;  // Nested steps (tree structure)
+  data?:        T | undefined;          // Domain-specific payload
+  statusHistory?: StatusTransition[] | undefined;
+}
+
+/** Note: Plan does NOT have a `dependencies` field — only steps have dependencies. */
+export interface Plan&lt;T = unknown&gt; {
+  id:          string;
+  repoPath:    string;
+  title:       string;
+  description: string;
+  status:      PlanStatus;
+  steps:       Step&lt;T&gt;[];
+  metadata:    PlanMetadata;
+}
+
+// ---------------------------------------------------------------------------
+// Status transition tracking
+// ---------------------------------------------------------------------------
+
+export interface StatusTransition {
+  stepId:    string;
+  oldStatus: StepStatus;
+  newStatus: StepStatus;
+  timestamp: string;    // ISO-8601 UTC
+  reason?:   string | undefined;
+}
+
+// ---------------------------------------------------------------------------
+// Progress summary
+// ---------------------------------------------------------------------------
+
+export interface ProgressSummary {
+  total:      number;
+  byStatus:   Record&lt;StepStatus, number&gt;;
+  pctComplete: number;  // 0–100
+}
+
+// ---------------------------------------------------------------------------
+// Extensible plan types (see Requirement 5 for details)
+// ---------------------------------------------------------------------------
+
+export interface ImplementationStepData {
+  filePaths:          string[];
+  codeReferences?:    Array&lt;{ file: string; line: number; symbol?: string }&gt; | undefined;
+  estimatedComplexity: 'low' | 'medium' | 'high';
+}
+
+export interface TestStepData {
+  testCategory:   'unit' | 'integration' | 'e2e';
+  coverageTarget?: number | undefined;  // percentage 0–100
+  fixtures?:       string[] | undefined;
+}
+
+export interface MigrationStepData {
+  rollbackSteps?:          string[] | undefined;  // IDs of rollback steps
+  validationCheckpoints?:  Array&lt;{ description: string; query?: string }&gt; | undefined;
+}
+
+export type ImplementationPlan = Plan&lt;ImplementationStepData&gt;;
+export type TestPlan           = Plan&lt;TestStepData&gt;;
+export type MigrationPlan      = Plan&lt;MigrationStepData&gt;;
+</code></pre>
+
+    <h3 id="public-api">Public API — Functional (not class-based)</h3>
+    <p>All functions are standalone exports from <code>src/agent/planner/</code>. No <code>PlanEngine</code> class.</p>
+<pre><code class="language-typescript">// File: src/agent/planner/index.ts
+
+// Status transitions
+export { updateStepStatus }     from './engine.js';
+export { validateDependencies } from './engine.js';
+export { detectBlockedSteps }   from './engine.js';
+export { detectCycles }         from './engine.js';
+
+// Progress tracking
+export { getProgressSummary }   from './progress.js';
+export { getStatusHistory }     from './progress.js';
+
+// Markdown serialization
+export { toMarkdown }           from './markdown.js';
+export { fromMarkdown }         from './markdown.js';
+export { updateStepInMarkdown } from './markdown.js';
+
+// Types (re-export)
+export type { Plan, Step, StepStatus, PlanStatus, PlanMetadata,
+  StatusTransition, ProgressSummary,
+  ImplementationPlan, TestPlan, MigrationPlan,
+  ImplementationStepData, TestStepData, MigrationStepData,
+} from './types.js';
+</code></pre>
+
+    <h3 id="utilities">Utilities to Create</h3>
+    <p class="muted">These do not exist in the codebase yet and must be created as part of this module.</p>
+<pre><code class="language-typescript">// File: src/agent/planner/utils.ts (NEW — to be created)
+
+/** Generate a unique plan/step ID. Uses crypto.randomUUID(). */
+export function generateId(): string;
+
+/** Detect cycles in a step dependency graph using DFS.
+ *  Returns the cycle path if found, or null. */
+export function detectCycle(steps: Step[]): string[] | null;
+</code></pre>
 
 
-    <h3>Requirement 1: The planner module shall define a generic <code>Plan&lt;T&gt;</code> and <code>Step&lt;T&gt;</code> type with fields for title, description, id, status (<code>pending/in-progress/done/blocked/skipped</code>), dependencies (array of step ids), optional assignee, optional notes, metadata (created/updated timestamps, author), support for nested sub-steps (tree structure), and a derived plan-level status computed from aggregate step statuses</h3>
+    <h2 id="agent-architecture">Planner Agent Architecture</h2>
+    <p>The planner is implemented as an agent using the <code>src/agent/framework/</code> runner, following
+    the same patterns as the designer agent. The utility layer (engine, progress, markdown) provides
+    the building blocks; the agent orchestrates plan creation through an iterative, LLM-driven pipeline
+    with user validation gates.</p>
+
+    <h3 id="module-layout">Module Layout</h3>
+    <table>
+      <tr><th>File</th><th>Purpose</th></tr>
+      <tr><td><code>types.ts</code></td><td>Data types: <code>Plan&lt;T&gt;</code>, <code>Step&lt;T&gt;</code>, <code>StepStatus</code>, etc. (see <a href="#canonical-types">Canonical Types</a>)</td></tr>
+      <tr><td><code>engine.ts</code></td><td>Status transitions, dependency validation, cycle detection</td></tr>
+      <tr><td><code>progress.ts</code></td><td>Progress summaries, status history</td></tr>
+      <tr><td><code>markdown.ts</code></td><td>Markdown serialization (toMarkdown, fromMarkdown, updateStepInMarkdown)</td></tr>
+      <tr><td><code>utils.ts</code></td><td>ID generation, cycle detection helper</td></tr>
+      <tr><td><code>agent.ts</code></td><td><strong>NEW:</strong> <code>AgentDefinition&lt;PlannerState&gt;</code> — agent entry point</td></tr>
+      <tr><td><code>agent-state.ts</code></td><td><strong>NEW:</strong> <code>PlannerState</code> interface, <code>PlannerInput</code> type</td></tr>
+      <tr><td><code>steps.ts</code></td><td><strong>NEW:</strong> All step implementations</td></tr>
+      <tr><td><code>prompts.ts</code></td><td><strong>NEW:</strong> LLM prompt templates for analysis, drafting, detailing</td></tr>
+      <tr><td><code>index.ts</code></td><td>Barrel export — utility functions, types, and <code>plannerAgent</code> definition</td></tr>
+    </table>
+
+    <h3 id="planner-input">PlannerInput</h3>
+<pre><code class="language-typescript">// File: src/agent/planner/agent-state.ts
+
+export interface PlannerInput {
+  /** The user's planning request (free-form text). */
+  message:       string;
+
+  /** Pre-fetched code context from the knowledge graph (entity summaries, relations). */
+  codeContext:    string;
+
+  /** Hint for which plan specialization to use. Auto-detected if omitted. */
+  planType?:     'implementation' | 'test' | 'migration' | 'generic' | undefined;
+
+  /** If updating/extending an existing plan rather than creating one from scratch. */
+  existingPlan?: Plan | undefined;
+
+  /** Session context for daemon RPC (repo scoping, closure). */
+  session: {
+    repoPath:     string;
+    closureRepos: string[];
+  };
+}
+</code></pre>
+
+    <h3 id="planner-state">PlannerState</h3>
+<pre><code class="language-typescript">// File: src/agent/planner/agent-state.ts
+
+export interface PlannerState extends AgentState {
+  // --- Frozen input ---
+  input: {
+    message:       string;
+    codeContext:    string;
+    planType:      'implementation' | 'test' | 'migration' | 'generic';
+    existingPlan?: Plan | undefined;
+    repoPath:      string;
+    closureRepos:  string[];
+  };
+
+  // --- Analysis phase ---
+  analysis:          string;   // LLM analysis of the request (goals, constraints, scope)
+  inferredPlanType:  'implementation' | 'test' | 'migration' | 'generic';
+  codebaseFindings:  string;   // Relevant entities/files found via daemon RPC
+
+  // --- Plan construction ---
+  draftSteps:        string;   // Raw LLM output for step generation
+  plan:              Plan | null;       // The constructed plan (generic Plan)
+  dependencyIssues:  string[];          // Cycle/validation issues found
+
+  // --- Iteration tracking ---
+  editRounds:        Record&lt;string, number&gt;;  // Per-stage edit counters (max 3)
+
+  // --- Output ---
+  serializedOutput?: string | undefined;      // Final markdown output
+  outputPath?:       string | undefined;      // Path where plan was written
+  summary?:          string | undefined;
+}
+</code></pre>
+
+    <h3 id="agent-definition">Agent Definition</h3>
+<pre><code class="language-typescript">// File: src/agent/planner/agent.ts
+
+import type { AgentDefinition } from '../../framework/types.js';
+import type { PlannerState } from './agent-state.js';
+import type { PlannerInput } from './agent-state.js';
+import {
+  analyzeRequestStep,
+  gatherContextStep,
+  draftPlanStep,
+  validatePlanStep,
+  resolveDependenciesStep,
+  detailStepsStep,
+  validateDetailsStep,
+  serializeStep,
+} from './steps.js';
+
+export const plannerAgent: AgentDefinition&lt;PlannerState&gt; = {
+  id: 'planner',
+  version: 1,
+  firstStep: 'analyze-request',
+
+  initialState(input: unknown): PlannerState {
+    const pi = input as PlannerInput;
+    return {
+      input: {
+        message:       pi.message,
+        codeContext:    pi.codeContext,
+        planType:      pi.planType ?? 'generic',
+        existingPlan:  pi.existingPlan,
+        repoPath:      pi.session.repoPath,
+        closureRepos:  pi.session.closureRepos,
+      },
+      analysis:          '',
+      inferredPlanType:  pi.planType ?? 'generic',
+      codebaseFindings:  '',
+      draftSteps:        '',
+      plan:              null,
+      dependencyIssues:  [],
+      editRounds:        {},
+    };
+  },
+
+  steps: {
+    'analyze-request':       analyzeRequestStep,
+    'gather-context':        gatherContextStep,
+    'draft-plan':            draftPlanStep,
+    'validate-plan':         validatePlanStep,
+    'resolve-dependencies':  resolveDependenciesStep,
+    'detail-steps':          detailStepsStep,
+    'validate-details':      validateDetailsStep,
+    'serialize':             serializeStep,
+  },
+};
+</code></pre>
+
+    <h3 id="step-pipeline">Step Pipeline</h3>
+    <p>The agent runs an 8-step pipeline. Steps 4 and 7 are user validation gates.
+    Steps 5→4 form a feedback loop when dependency issues are found.</p>
+
+<pre><code>┌─────────────────┐
+│ analyze-request  │  Local LLM: parse user intent, detect plan type,
+│                  │  identify goals and constraints
+└───────┬─────────┘
+        ▼
+┌─────────────────┐
+│ gather-context   │  Daemon RPC: search knowledge graph for relevant
+│                  │  entities, files, dependencies in closure repos
+└───────┬─────────┘
+        ▼
+┌─────────────────┐
+│ draft-plan       │  Local LLM → draft steps with titles, descriptions,
+│                  │  dependencies.  Claude → review and refine.
+│                  │  Populates Plan&lt;T&gt; with typed steps.
+└───────┬─────────┘
+        ▼
+┌─────────────────┐     ┌──────────┐
+│ validate-plan    │◄────│  GATE    │  User reviews plan overview + step list
+│                  │     │ approve  │  approve → resolve-dependencies
+│                  │────►│ edit     │  edit    → re-draft with feedback (max 3)
+│                  │     │ reject   │  reject  → restart from analyze-request
+└───────┬─────────┘     └──────────┘
+        ▼ (approve)
+┌─────────────────┐
+│ resolve-deps     │  detectCycles(), validateDependencies(),
+│                  │  detectBlockedSteps()
+│                  │  If issues → report and loop back to validate-plan
+│                  │  If clean  → detail-steps
+└───────┬─────────┘
+        ▼ (clean)
+┌─────────────────┐
+│ detail-steps     │  Per plan type, enrich steps with domain data:
+│                  │  - Implementation: file paths, code refs, complexity
+│                  │  - Test: categories, coverage targets, fixtures
+│                  │  - Migration: rollback steps, validation checkpoints
+│                  │  Uses local LLM + daemon RPC for code analysis
+└───────┬─────────┘
+        ▼
+┌─────────────────┐     ┌──────────┐
+│ validate-details │◄────│  GATE    │  User reviews detailed plan
+│                  │     │ approve  │  approve → serialize
+│                  │────►│ edit     │  edit    → refine details (max 3)
+│                  │     │ skip     │  skip    → serialize as-is
+└───────┬─────────┘     └──────────┘
+        ▼ (approve/skip)
+┌─────────────────┐
+│ serialize        │  toMarkdown(plan) → write artifact
+│                  │  ctx.emit(output) → send to user
+│                  │  next: null → done
+└─────────────────┘
+</code></pre>
+
+    <h3 id="step-implementations">Step Implementations</h3>
+
+    <h4>1. analyze-request</h4>
+<pre><code class="language-typescript">// File: src/agent/planner/steps.ts
+
+export const analyzeRequestStep: AgentStep&lt;PlannerState&gt; = {
+  name: 'analyze-request',
+  async run(state, ctx) {
+    ctx.progress('Analyzing planning request...');
+
+    const analysis = await ctx.providers.local.complete({
+      system: ANALYZE_SYSTEM_PROMPT,
+      messages: [{ role: 'user', content: buildAnalysisPrompt(state.input) }],
+    });
+
+    // Detect plan type from analysis if not explicitly provided
+    const inferredType = detectPlanType(analysis.text, state.input.planType);
+    ctx.progress(`Plan type: ${inferredType}`);
+
+    return {
+      state: { ...state, analysis: analysis.text, inferredPlanType: inferredType },
+      next: 'gather-context',
+    };
+  },
+};
+</code></pre>
+
+    <h4>2. gather-context</h4>
+<pre><code class="language-typescript">export const gatherContextStep: AgentStep&lt;PlannerState&gt; = {
+  name: 'gather-context',
+  async run(state, ctx) {
+    ctx.progress('Searching codebase for relevant context...');
+
+    // Use daemon RPC to search knowledge graph
+    const entities = await ctx.rpc&lt;SearchResult[]&gt;('search', {
+      query: state.analysis,
+      repos: state.input.closureRepos,
+      limit: 20,
+    });
+
+    const findings = entities
+      ? formatCodebaseFindings(entities)
+      : state.input.codeContext || '(no codebase context available)';
+
+    ctx.progress(`Found ${entities?.length ?? 0} relevant entities`);
+
+    return {
+      state: { ...state, codebaseFindings: findings },
+      next: 'draft-plan',
+    };
+  },
+};
+</code></pre>
+
+    <h4>3. draft-plan</h4>
+<pre><code class="language-typescript">export const draftPlanStep: AgentStep&lt;PlannerState&gt; = {
+  name: 'draft-plan',
+  async run(state, ctx) {
+    ctx.progress('Drafting plan (local model)...');
+
+    const draftSteps = await ctx.providers.local.complete({
+      system: DRAFT_SYSTEM_PROMPT,
+      messages: [{ role: 'user', content: buildDraftPrompt(state) }],
+    });
+
+    // Claude review and refinement
+    ctx.progress('Reviewing plan (Claude)...');
+    const claude = ctx.providers.claude;
+    let refined = draftSteps.text;
+    if (claude) {
+      const review = await claude.complete({
+        system: REVIEW_PLAN_PROMPT,
+        messages: [{ role: 'user', content: refined }],
+      });
+      refined = review.text;
+    }
+
+    // Parse LLM output into Plan&lt;T&gt; structure
+    const plan = parsePlanFromLLM(refined, state.inferredPlanType);
+
+    ctx.writeArtifact('draft-plan.json', JSON.stringify(plan, null, 2));
+
+    return {
+      state: { ...state, draftSteps: refined, plan },
+      next: 'validate-plan',
+    };
+  },
+  artifacts: () =&gt; ['draft-plan.json'],
+};
+</code></pre>
+
+    <h4>4. validate-plan (GATE)</h4>
+<pre><code class="language-typescript">const MAX_EDIT_ROUNDS = 3;
+
+export const validatePlanStep: AgentStep&lt;PlannerState&gt; = {
+  name: 'validate-plan',
+  async run(state, ctx) {
+    const plan = state.plan!;
+    const summary = formatPlanForReview(plan, state.dependencyIssues);
+
+    const reply = await ctx.gate({
+      stage: 'plan-review',
+      title: `Plan Review: ${plan.title}`,
+      content: summary,
+      actions: [
+        { name: 'approve', label: 'Approve' },
+        { name: 'edit',    label: 'Edit', hint: '&lt;feedback&gt;' },
+        { name: 'reject',  label: 'Reject &amp; restart' },
+      ],
+    });
+
+    if (reply.action === 'approve') {
+      return { state: { ...state, dependencyIssues: [] }, next: 'resolve-dependencies' };
+    }
+
+    if (reply.action === 'reject') {
+      return {
+        state: { ...state, plan: null, draftSteps: '', editRounds: {} },
+        next: 'analyze-request',
+      };
+    }
+
+    // Edit loop
+    const rounds = (state.editRounds['plan'] ?? 0) + 1;
+    if (rounds &gt; MAX_EDIT_ROUNDS) {
+      ctx.progress('Max edit rounds reached — proceeding with current plan.');
+      return { state, next: 'resolve-dependencies' };
+    }
+
+    ctx.progress(`Refining plan with feedback (round ${rounds}/${MAX_EDIT_ROUNDS})...`);
+    const refined = await refinePlanWithFeedback(state, reply.feedback ?? '', ctx);
+    const plan2 = parsePlanFromLLM(refined, state.inferredPlanType);
+
+    return {
+      state: {
+        ...state, plan: plan2, draftSteps: refined,
+        editRounds: { ...state.editRounds, plan: rounds },
+      },
+      next: 'validate-plan',
+    };
+  },
+};
+</code></pre>
+
+    <h4>5. resolve-dependencies</h4>
+<pre><code class="language-typescript">export const resolveDependenciesStep: AgentStep&lt;PlannerState&gt; = {
+  name: 'resolve-dependencies',
+  async run(state, ctx) {
+    const plan = state.plan!;
+    ctx.progress('Validating step dependencies...');
+
+    const issues: string[] = [];
+
+    // Check for cycles
+    const cycle = detectCycle(plan.steps);
+    if (cycle) {
+      issues.push(`Circular dependency detected: ${cycle.join(' → ')}`);
+    }
+
+    // Validate each step's dependencies exist
+    for (const step of flattenSteps(plan.steps)) {
+      for (const depId of step.dependencies) {
+        if (!findStepById(plan.steps, depId)) {
+          issues.push(`Step "${step.title}" depends on non-existent step ID: ${depId}`);
+        }
+      }
+    }
+
+    // Detect blocked steps
+    const blocked = detectBlockedSteps(plan);
+    if (blocked.length &gt; 0) {
+      for (const b of blocked) {
+        issues.push(`Step "${b.id}" is blocked: ${b.reasons.join(', ')}`);
+      }
+    }
+
+    if (issues.length &gt; 0) {
+      ctx.progress(`Found ${issues.length} dependency issue(s) — returning to plan review.`);
+      return {
+        state: { ...state, dependencyIssues: issues },
+        next: 'validate-plan',
+      };
+    }
+
+    ctx.progress('Dependencies valid — no cycles or missing references.');
+    return { state: { ...state, dependencyIssues: [] }, next: 'detail-steps' };
+  },
+};
+</code></pre>
+
+    <h4>6. detail-steps</h4>
+<pre><code class="language-typescript">export const detailStepsStep: AgentStep&lt;PlannerState&gt; = {
+  name: 'detail-steps',
+  async run(state, ctx) {
+    const plan = state.plan!;
+    ctx.progress(`Adding domain-specific details (${state.inferredPlanType})...`);
+
+    // Enrich steps based on plan type
+    const enriched = await enrichStepsForType(
+      plan,
+      state.inferredPlanType,
+      state.codebaseFindings,
+      ctx,
+    );
+
+    ctx.writeArtifact('detailed-plan.json', JSON.stringify(enriched, null, 2));
+
+    return {
+      state: { ...state, plan: enriched },
+      next: 'validate-details',
+    };
+  },
+  artifacts: () =&gt; ['detailed-plan.json'],
+};
+</code></pre>
+    <p class="muted">The <code>enrichStepsForType</code> function dispatches to plan-type-specific enrichers:</p>
+    <ul>
+      <li><strong>implementation</strong>: Local LLM + daemon RPC to find file paths, code references, estimate complexity per step</li>
+      <li><strong>test</strong>: Categorize as unit/integration/e2e, set coverage targets, identify test fixtures</li>
+      <li><strong>migration</strong>: Add rollback steps, define data validation checkpoints</li>
+      <li><strong>generic</strong>: No additional enrichment — pass through</li>
+    </ul>
+
+    <h4>7. validate-details (GATE)</h4>
+<pre><code class="language-typescript">export const validateDetailsStep: AgentStep&lt;PlannerState&gt; = {
+  name: 'validate-details',
+  async run(state, ctx) {
+    const plan = state.plan!;
+
+    const reply = await ctx.gate({
+      stage: 'detail-review',
+      title: `Detailed Plan: ${plan.title}`,
+      content: formatDetailedPlanForReview(plan),
+      actions: [
+        { name: 'approve', label: 'Approve' },
+        { name: 'edit',    label: 'Edit', hint: '&lt;feedback&gt;' },
+        { name: 'skip',    label: 'Skip details — serialize as-is' },
+      ],
+    });
+
+    if (reply.action === 'approve' || reply.action === 'skip') {
+      return { state, next: 'serialize' };
+    }
+
+    // Edit loop
+    const rounds = (state.editRounds['details'] ?? 0) + 1;
+    if (rounds &gt; MAX_EDIT_ROUNDS) {
+      ctx.progress('Max edit rounds reached — proceeding.');
+      return { state, next: 'serialize' };
+    }
+
+    ctx.progress(`Refining details with feedback (round ${rounds}/${MAX_EDIT_ROUNDS})...`);
+    const refined = await refineDetailsWithFeedback(state, reply.feedback ?? '', ctx);
+
+    return {
+      state: {
+        ...state, plan: refined,
+        editRounds: { ...state.editRounds, details: rounds },
+      },
+      next: 'validate-details',
+    };
+  },
+};
+</code></pre>
+
+    <h4>8. serialize</h4>
+<pre><code class="language-typescript">export const serializeStep: AgentStep&lt;PlannerState&gt; = {
+  name: 'serialize',
+  async run(state, ctx) {
+    const plan = state.plan!;
+    ctx.progress('Serializing plan to Markdown...');
+
+    const markdown = toMarkdown(plan);
+    const artifactName = 'plan.md';
+
+    ctx.writeArtifact(artifactName, markdown);
+    ctx.emit(markdown);
+
+    // Compute progress summary for the done message
+    const progress = getProgressSummary(plan);
+
+    return {
+      state: {
+        ...state,
+        serializedOutput: markdown,
+        outputPath: artifactName,
+        summary: `${plan.title}: ${plan.steps.length} steps, ${progress.pctComplete}% complete`,
+      },
+      next: null,  // Done
+    };
+  },
+  artifacts: () =&gt; ['plan.md'],
+};
+</code></pre>
+
+    <h3 id="plan-workflow-integration">Integration with Existing Plan Workflow</h3>
+    <p>The planner agent replaces the current <code>buildPlan()</code> function in <code>src/agent/tasks/plan.ts</code>.
+    Where the old flow was a single-shot LLM call, the agent provides:</p>
+    <ul>
+      <li><strong>Iterative refinement</strong> — user validation gates at plan review and detail review stages</li>
+      <li><strong>Dependency validation</strong> — automatic cycle detection and blocked-step analysis before finalization</li>
+      <li><strong>Type-specific enrichment</strong> — domain data added based on plan type (implementation, test, migration)</li>
+      <li><strong>Crash recovery</strong> — checkpointed state with artifact validation on resume</li>
+      <li><strong>Codebase awareness</strong> — daemon RPC searches the knowledge graph for relevant entities</li>
+    </ul>
+    <p>The agent is invoked from the REPL when the classifier detects a <code>plan</code> intent:</p>
+<pre><code class="language-typescript">// In src/agent/index.ts (REPL handler for 'plan' intent)
+import { plannerAgent } from './planner/index.js';
+
+const result = await runAgent({
+  definition: plannerAgent,
+  channel: replChannel,
+  options: { input: plannerInput, repo: session.repoPath },
+  config,
+  providers: { local: ollamaProvider, claude: claudeProvider },
+});
+</code></pre>
+
+    <h3 id="plan-update-flow">Existing Plan Update Flow</h3>
+    <p>When <code>existingPlan</code> is provided in the input, the <code>analyze-request</code> step
+    detects update mode and adjusts the pipeline:</p>
+    <ul>
+      <li><code>analyze-request</code> → diffs the existing plan against the new request to identify what changed</li>
+      <li><code>draft-plan</code> → modifies existing steps rather than creating from scratch</li>
+      <li><code>resolve-dependencies</code> → validates the updated dependency graph</li>
+      <li>All other steps proceed as normal</li>
+    </ul>
+
+    <h3 id="barrel-export">Barrel Export Update</h3>
+<pre><code class="language-typescript">// File: src/agent/planner/index.ts (updated)
+
+// Agent
+export { plannerAgent }           from './agent.js';
+export type { PlannerState }      from './agent-state.js';
+export type { PlannerInput }      from './agent-state.js';
+
+// Status transitions
+export { updateStepStatus }       from './engine.js';
+export { validateDependencies }   from './engine.js';
+export { detectBlockedSteps }     from './engine.js';
+export { detectCycles }           from './engine.js';
+export { computePlanStatus }      from './engine.js';
+
+// Progress tracking
+export { getProgressSummary }     from './progress.js';
+export { getStatusHistory }       from './progress.js';
+
+// Markdown serialization
+export { toMarkdown }             from './markdown.js';
+export { fromMarkdown }           from './markdown.js';
+export { updateStepInMarkdown }   from './markdown.js';
+
+// Types (re-export)
+export type { Plan, Step, StepStatus, PlanStatus, PlanMetadata,
+  StatusTransition, ProgressSummary,
+  ImplementationPlan, TestPlan, MigrationPlan,
+  ImplementationStepData, TestStepData, MigrationStepData,
+} from './types.js';
+</code></pre>
+
+    <hr>
+    <h2 id="req-sections">Requirement Design Details</h2>
+    <p class="muted">Detailed design sketches from the LLM pipeline. Each section preserves the original output with a note referencing the canonical types.</p>
+
+    <h3 id="req-1">Requirement 1: Generic Plan &amp; Step Types</h3>
 <h1>Design Section: Generic Plan and Step Types</h1>
+<p class="muted"><em>Note: Type definitions below are from the original LLM output. See <a href="#canonical-types">Canonical Type Definitions</a> for the authoritative versions.</em></p>
 <h2>1. INTERFACE CONTRACTS</h2>
 <h3>New Generic Plan Type</h3>
 <pre><code class="language-typescript">// File: src/agent/planner/types.ts
@@ -92,7 +958,6 @@ export interface Plan&lt;T = any&gt; {
   title: string;
   description: string;
   status: PlanStatus;
-  dependencies: string[]; // Array of step IDs
   assignee?: string;
   notes?: string;
   metadata: {
@@ -101,10 +966,9 @@ export interface Plan&lt;T = any&gt; {
     author: string;
   };
   steps: PlanStep&lt;T&gt;[];
-  subPlans?: Plan&lt;T&gt;[]; // Optional nested plans for hierarchical structure
 }
 
-export type PlanStatus = &#39;pending&#39; | &#39;in-progress&#39; | &#39;done&#39; | &#39;blocked&#39; | &#39;skipped&#39;;
+export type PlanStatus = &#39;pending&#39; | &#39;in_progress&#39; | &#39;done&#39; | &#39;blocked&#39; | &#39;skipped&#39;;
 
 export interface PlanStep&lt;T = any&gt; {
   id: string;
@@ -126,8 +990,8 @@ export interface PlanStep&lt;T = any&gt; {
 <h3>Existing Reused Types (with verification)</h3>
 <pre><code class="language-typescript">// File: src/shared/types.ts
 
-export type PlanStepStatus = &#39;pending&#39; | &#39;in-progress&#39; | &#39;done&#39; | &#39;blocked&#39; | &#39;skipped&#39;;
-export type PlanStatus = &#39;pending&#39; | &#39;in-progress&#39; | &#39;done&#39; | &#39;blocked&#39; | &#39;skipped&#39;;
+export type PlanStepStatus = &#39;pending&#39; | &#39;in_progress&#39; | &#39;done&#39; | &#39;blocked&#39; | &#39;skipped&#39;;
+export type PlanStatus = &#39;pending&#39; | &#39;in_progress&#39; | &#39;done&#39; | &#39;blocked&#39; | &#39;skipped&#39;;
 
 // Reused from shared types
 export interface Metadata {
@@ -139,14 +1003,14 @@ export interface Metadata {
 <h2>2. DATA FLOW</h2>
 <h3>Creation and Initialization Flow:</h3>
 <ol>
-<li><p><code>PlanEngine.createPlan&lt;T&gt;(planData: Omit&lt;Plan&lt;T&gt;, &#39;id&#39; | &#39;metadata&#39;&gt;)</code> → </p>
+<li><p><code>createPlan&lt;T&gt;(planData: Omit&lt;Plan&lt;T&gt;, &#39;id&#39; | &#39;metadata&#39;&gt;)</code> → </p>
 <ul>
 <li>Generates unique <code>id</code> using <code>generateId()</code> utility</li>
 <li>Populates <code>metadata</code> with <code>createdAt</code>, <code>updatedAt</code>, <code>author</code></li>
 <li>Returns fully initialized <code>Plan&lt;T&gt;</code></li>
 </ul>
 </li>
-<li><p><code>PlanEngine.createStep&lt;T&gt;(stepData: Omit&lt;PlanStep&lt;T&gt;, &#39;id&#39; | &#39;metadata&#39;&gt;)</code> → </p>
+<li><p><code>createStep&lt;T&gt;(stepData: Omit&lt;PlanStep&lt;T&gt;, &#39;id&#39; | &#39;metadata&#39;&gt;)</code> → </p>
 <ul>
 <li>Generates unique <code>id</code> using <code>generateId()</code> utility</li>
 <li>Populates <code>metadata</code> with <code>createdAt</code>, <code>updatedAt</code>, <code>author</code></li>
@@ -156,14 +1020,14 @@ export interface Metadata {
 </ol>
 <h3>Status Computation Flow:</h3>
 <ol>
-<li><p><code>PlanEngine.computePlanStatus(plan: Plan&lt;T&gt;)</code> → </p>
+<li><p><code>computePlanStatus(plan: Plan&lt;T&gt;)</code> → </p>
 <ul>
 <li>Iterates through all steps in <code>plan.steps</code></li>
-<li>Aggregates step statuses using precedence rules (blocked &gt; in-progress &gt; done &gt; skipped &gt; pending)</li>
+<li>Aggregates step statuses using precedence rules (blocked &gt; in_progress &gt; done &gt; skipped &gt; pending)</li>
 <li>Returns derived <code>PlanStatus</code> based on majority or priority logic</li>
 </ul>
 </li>
-<li><p><code>PlanEngine.updateStepStatus(planId: string, stepId: string, newStatus: PlanStepStatus)</code> → </p>
+<li><p><code>updateStepStatus(planId: string, stepId: string, newStatus: PlanStepStatus)</code> → </p>
 <ul>
 <li>Locates plan and step by ID</li>
 <li>Updates step status in-place</li>
@@ -174,14 +1038,14 @@ export interface Metadata {
 </ol>
 <h3>Dependency Resolution Flow:</h3>
 <ol>
-<li><p><code>PlanEngine.detectCircularDependencies(plan: Plan&lt;T&gt;)</code> → </p>
+<li><p><code>detectCircularDependencies(plan: Plan&lt;T&gt;)</code> → </p>
 <ul>
 <li>Uses topological sort algorithm to detect cycles in step dependencies</li>
 <li>Returns boolean indicating circular dependency presence</li>
 <li>Logs warnings if detected</li>
 </ul>
 </li>
-<li><p><code>PlanEngine.validateStepDependencies(plan: Plan&lt;T&gt;, stepId: string)</code> → </p>
+<li><p><code>validateStepDependencies(plan: Plan&lt;T&gt;, stepId: string)</code> → </p>
 <ul>
 <li>Checks that all referenced step IDs exist within the plan</li>
 <li>Ensures no self-references or invalid references</li>
@@ -195,7 +1059,7 @@ export interface Metadata {
 <ul>
 <li><code>maybeCompletePlan()</code> → Will need to be updated to use new <code>updateStepStatus</code></li>
 <li><code>reactivatePlan()</code> → Same update required</li>
-<li>Integration with <code>PlanEngine.computePlanStatus()</code> for derived status</li>
+<li>Integration with <code>computePlanStatus()</code> for derived status</li>
 </ul>
 </li>
 <li><p><strong><code>src/agent/tasks/plan.ts</code></strong> </p>
@@ -212,7 +1076,7 @@ export interface Metadata {
 </li>
 <li><p><strong><code>src/agent/tasks/implement.ts</code></strong></p>
 <ul>
-<li><code>maybeAdvancePlanStep()</code> → Migration target, must be updated to use <code>PlanEngine.updateStepStatus()</code></li>
+<li><code>maybeAdvancePlanStep()</code> → Migration target, must be updated to use <code>updateStepStatus()</code></li>
 </ul>
 </li>
 <li><p><strong><code>src/agent/tasks/test.ts</code></strong></p>
@@ -228,15 +1092,15 @@ export interface Metadata {
 </ol>
 <h3>Shared Utilities:</h3>
 <ol>
-<li><p><strong><code>src/shared/utils/id-generator.ts</code></strong></p>
+<li><p><strong><code>src/agent/planner/utils.ts</code></strong></p>
 <ul>
 <li><code>generateId()</code> → Used for generating unique IDs for steps and plans</li>
 <li>Must be imported and used in <code>createPlan()</code> and <code>createStep()</code></li>
 </ul>
 </li>
-<li><p><strong><code>src/shared/utils/graph-utils.ts</code></strong></p>
+<li><p><strong><code>src/agent/planner/utils.ts</code></strong></p>
 <ul>
-<li><code>topologicalSort()</code> or similar → Used in <code>detectCircularDependencies()</code></li>
+<li><code>detectCycle()</code> → Used in <code>detectCircularDependencies()</code></li>
 <li>May need to be extended or imported</li>
 </ul>
 </li>
@@ -258,11 +1122,11 @@ export interface Metadata {
 <li><strong>Migration Path</strong>: Update all references to <code>PlanStep</code> → <code>PlanStep&lt;any&gt;</code> or typed variants</li>
 </ul>
 </li>
-<li><p><strong><code>PlanEngine</code> class</strong> (new module)</p>
+<li><p><strong><code>engine.ts</code> functional module</strong> (new module)</p>
 <ul>
-<li><strong>Change</strong>: New module implementing status computation, dependency validation, and step management</li>
-<li><strong>Impact</strong>: Existing consumers of <code>maybeAdvancePlanStep()</code> must be updated to use new engine methods</li>
-<li><strong>Migration Path</strong>: Replace direct calls to <code>maybeAdvancePlanStep()</code> with <code>PlanEngine.updateStepStatus()</code></li>
+<li><strong>Change</strong>: New functional module implementing status computation, dependency validation, and step management</li>
+<li><strong>Impact</strong>: Existing consumers of <code>maybeAdvancePlanStep()</code> must be updated to use new engine functions</li>
+<li><strong>Migration Path</strong>: Replace direct calls to <code>maybeAdvancePlanStep()</code> with <code>updateStepStatus()</code></li>
 </ul>
 </li>
 </ol>
@@ -287,7 +1151,7 @@ export interface Metadata {
 <li><p><strong>Status Precedence Rules (Req 8)</strong>: </p>
 <ul>
 <li>Risk of inconsistency between derived plan status and step-level status logic</li>
-<li>Solution: Define clear precedence rules in <code>PlanEngine.computePlanStatus()</code> and document them</li>
+<li>Solution: Define clear precedence rules in <code>computePlanStatus()</code> and document them</li>
 </ul>
 </li>
 <li><p><strong>Integration with <code>maybeCompletePlan</code>/<code>reactivatePlan</code></strong>:</p>
@@ -328,13 +1192,14 @@ export interface Metadata {
 </li>
 </ol>
 <hr>
-<h3>Requirement 2: The planner module shall implement status transition functions for steps that validate dependencies before allowing status changes to &quot;done&quot;, detect circular dependencies in the dependency graph, and identify blocked steps with their blocking reasons</h3>
+<h3 id="req-2">Requirement 2: Status Transition Functions</h3>
 <h1>Design Section: Status Transition Functions for Planner Module</h1>
+<p class="muted"><em>Note: Type definitions below are from the original LLM output. See <a href="#canonical-types">Canonical Type Definitions</a> for the authoritative versions.</em></p>
 <h2>1. INTERFACE CONTRACTS</h2>
 <h3>Types and Interfaces</h3>
 <pre><code class="language-typescript">// File: src/agent/planner/types.ts
 
-export type StepStatus = &#39;pending&#39; | &#39;in-progress&#39; | &#39;done&#39; | &#39;blocked&#39; | &#39;skipped&#39;;
+export type StepStatus = &#39;pending&#39; | &#39;in_progress&#39; | &#39;done&#39; | &#39;blocked&#39; | &#39;skipped&#39;;
 
 export interface Metadata {
   createdAt: Date;
@@ -352,7 +1217,7 @@ export interface Step&lt;T = any&gt; {
 
 export interface Plan&lt;T = any&gt; {
   id: string;
-  status: &#39;pending&#39; | &#39;in-progress&#39; | &#39;done&#39; | &#39;blocked&#39; | &#39;skipped&#39;;
+  status: &#39;pending&#39; | &#39;in_progress&#39; | &#39;done&#39; | &#39;blocked&#39; | &#39;skipped&#39;;
   steps: Step&lt;T&gt;[];
   metadata: Metadata;
 }
@@ -373,7 +1238,7 @@ export function validateDependencies(plan: Plan, stepId: string): boolean;
 export function detectBlockedSteps(plan: Plan): Array&lt;{ id: string; reasons: string[] }&gt;;
 </code></pre>
 <h3>Supporting Functions</h3>
-<pre><code class="language-typescript">// File: src/agent/planner/progress-tracker.ts
+<pre><code class="language-typescript">// File: src/agent/planner/progress.ts
 
 import { StepStatus } from &#39;./types&#39;;
 
@@ -440,7 +1305,7 @@ export function appendStatusTransition(plan: Plan, transition: StatusTransition)
 <li><strong>Dependency Validation</strong>: <code>validateDependencies</code> in <code>src/agent/planner/index.ts</code></li>
 <li><strong>Circular Dependency Detection</strong>: <code>detectCircularDependencies</code> (to be implemented)</li>
 <li><strong>Blocked Step Detection</strong>: <code>detectBlockedSteps</code> in <code>src/agent/planner/index.ts</code></li>
-<li><strong>Progress Tracking</strong>: <code>getStatusHistory</code>, <code>appendStatusTransition</code> in <code>src/agent/planner/progress-tracker.ts</code></li>
+<li><strong>Progress Tracking</strong>: <code>getStatusHistory</code>, <code>appendStatusTransition</code> in <code>src/agent/planner/progress.ts</code></li>
 <li><strong>Type Definitions</strong>: <code>src/agent/planner/types.ts</code></li>
 </ul>
 <h3>Integration Details</h3>
@@ -521,7 +1386,7 @@ export function appendStatusTransition(plan: Plan, transition: StatusTransition)
 </li>
 <li><p><strong>Progress Tracking Interface</strong></p>
 <ul>
-<li>Risk: No defined interface between <code>updateStepStatus</code> and <code>progress-tracker.ts</code></li>
+<li>Risk: No defined interface between <code>updateStepStatus</code> and <code>progress.ts</code></li>
 <li>Mitigation: Define <code>StatusTransition</code> type and ensure <code>appendStatusTransition</code> is called after each status change</li>
 </ul>
 </li>
@@ -538,11 +1403,12 @@ export function appendStatusTransition(plan: Plan, transition: StatusTransition)
 </li>
 </ol>
 <hr>
-<h3>Requirement 3: The planner module shall serialize plans to Markdown format with YAML frontmatter (title, author, created, updated) and checkbox lists, support round-trip fidelity for parsing back into the data structure, and support partial in-place updates to a single step&#39;s status without rewriting the entire file</h3>
+<h3 id="req-3">Requirement 3: Markdown Serialization</h3>
 <h1>Design Section: Markdown Plan Serialization</h1>
+<p class="muted"><em>Note: Type definitions below are from the original LLM output. See <a href="#canonical-types">Canonical Type Definitions</a> for the authoritative versions.</em></p>
 <h2>1. INTERFACE CONTRACTS</h2>
 <h3>New Types and Interfaces</h3>
-<pre><code class="language-typescript">// File: src/agent/planner/markdown-serializer.ts
+<pre><code class="language-typescript">// File: src/agent/planner/markdown.ts
 
 export interface PlanMarkdownMetadata {
   title: string;
@@ -564,7 +1430,7 @@ export interface PlanMarkdown {
 }
 </code></pre>
 <h3>Functions</h3>
-<pre><code class="language-typescript">// File: src/agent/planner/markdown-serializer.ts
+<pre><code class="language-typescript">// File: src/agent/planner/markdown.ts
 
 /**
  * Serializes a Plan&lt;T&gt; instance to Markdown with YAML frontmatter.
@@ -652,7 +1518,7 @@ export function updateStepStatusInMarkdown(
 </tr>
 <tr>
 <td>Status update logic</td>
-<td><code>src/agent/planner/plan-engine.ts</code></td>
+<td><code>src/agent/planner/engine.ts</code></td>
 <td><code>updateStepStatus()</code></td>
 </tr>
 <tr>
@@ -676,11 +1542,11 @@ export function updateStepStatusInMarkdown(
 </tr>
 </thead>
 <tbody><tr>
-<td><code>src/agent/planner/markdown-serializer.ts</code></td>
+<td><code>src/agent/planner/markdown.ts</code></td>
 <td>New module implementing the interface contracts</td>
 </tr>
 <tr>
-<td><code>src/agent/planner/plan-engine.ts</code></td>
+<td><code>src/agent/planner/engine.ts</code></td>
 <td>May call <code>updateStepStatusInMarkdown()</code> for in-place updates</td>
 </tr>
 </tbody></table>
@@ -738,11 +1604,12 @@ export function updateStepStatusInMarkdown(
 <hr>
 <p><em>End of Design Section</em></p>
 <hr>
-<h3>Requirement 4: The planner module shall provide progress tracking capabilities including step counts by status, percentage complete, and history/changelog of status transitions with timestamps</h3>
+<h3 id="req-4">Requirement 4: Progress Tracking</h3>
 <h1>Design Section: Progress Tracking for Planner Module</h1>
+<p class="muted"><em>Note: Type definitions below are from the original LLM output. See <a href="#canonical-types">Canonical Type Definitions</a> for the authoritative versions.</em></p>
 <h2>1. INTERFACE CONTRACTS</h2>
 <h3>Core Types and Interfaces (from <code>src/agent/planner/types.ts</code>)</h3>
-<pre><code class="language-typescript">export type PlanStepStatus = &#39;pending&#39; | &#39;in-progress&#39; | &#39;done&#39; | &#39;blocked&#39; | &#39;skipped&#39;;
+<pre><code class="language-typescript">export type PlanStepStatus = &#39;pending&#39; | &#39;in_progress&#39; | &#39;done&#39; | &#39;blocked&#39; | &#39;skipped&#39;;
 
 export interface Metadata {
   createdAt: string; // ISO-8601 UTC timestamp
@@ -774,7 +1641,7 @@ export interface StatusTransitionEntry {
   reason?: string;
 }
 </code></pre>
-<h3>Functions (from <code>src/agent/planner/progress-tracker.ts</code>)</h3>
+<h3>Functions (from <code>src/agent/planner/progress.ts</code>)</h3>
 <pre><code class="language-typescript">export function getProgressSummary&lt;T&gt;(plan: Plan&lt;T&gt;): ProgressSummary;
 
 export function getStatusHistory&lt;T&gt;(
@@ -782,7 +1649,7 @@ export function getStatusHistory&lt;T&gt;(
   stepId?: string
 ): StatusTransitionEntry[];
 </code></pre>
-<h3>Engine Function (from <code>src/agent/planner/plan-engine.ts</code>)</h3>
+<h3>Engine Function (from <code>src/agent/planner/engine.ts</code>)</h3>
 <pre><code class="language-typescript">export function updateStepStatus&lt;T&gt;(
   plan: Plan&lt;T&gt;,
   stepId: string,
@@ -792,10 +1659,10 @@ export function getStatusHistory&lt;T&gt;(
 </code></pre>
 <h2>2. DATA FLOW</h2>
 <ol>
-<li><strong>Caller invokes <code>updateStepStatus(plan, stepId, newStatus)</code></strong> in <code>plan-engine.ts</code>.</li>
+<li><strong>Caller invokes <code>updateStepStatus(plan, stepId, newStatus)</code></strong> in <code>engine.ts</code>.</li>
 <li><strong>Validation occurs</strong>: <code>validateDependencies(plan, stepId)</code> is called to ensure dependencies are met before transitioning.</li>
 <li><strong>Transition recorded</strong>: On successful validation:<ul>
-<li><code>recordStatusTransition(step, fromStatus, newStatus, author)</code> is invoked from <code>progress-tracker.ts</code>.</li>
+<li><code>recordStatusTransition(step, fromStatus, newStatus, author)</code> is invoked from <code>progress.ts</code>.</li>
 <li>A new <code>StatusTransitionEntry</code> is created with <code>timestamp = new Date().toISOString()</code>.</li>
 <li>The entry is appended to <code>step.statusHistory</code>.</li>
 </ul>
@@ -803,7 +1670,7 @@ export function getStatusHistory&lt;T&gt;(
 <li><strong>Metadata updated</strong>: <code>step.metadata.updated</code> is set to the same timestamp.</li>
 <li><strong>Consumer queries progress</strong>:<ul>
 <li><code>getProgressSummary(plan)</code> walks the tree recursively.</li>
-<li>Counts steps by status (<code>pending</code>, <code>in-progress</code>, <code>done</code>, <code>blocked</code>, <code>skipped</code>).</li>
+<li>Counts steps by status (<code>pending</code>, <code>in_progress</code>, <code>done</code>, <code>blocked</code>, <code>skipped</code>).</li>
 <li>Computes <code>percentageComplete = done / (total − skipped) * 100</code>.</li>
 </ul>
 </li>
@@ -815,16 +1682,16 @@ export function getStatusHistory&lt;T&gt;(
 <h2>3. INTEGRATION POINTS</h2>
 <h3>Files and Functions Involved</h3>
 <ul>
-<li><strong><code>src/agent/planner/plan-engine.ts</code></strong><ul>
+<li><strong><code>src/agent/planner/engine.ts</code></strong><ul>
 <li>Function: <code>updateStepStatus(plan, stepId, newStatus, author)</code></li>
 <li>Calls:<ul>
 <li><code>validateDependencies(plan, stepId)</code> (from same file)</li>
-<li><code>recordStatusTransition(step, fromStatus, newStatus, author)</code> (from <code>progress-tracker.ts</code>)</li>
+<li><code>recordStatusTransition(step, fromStatus, newStatus, author)</code> (from <code>progress.ts</code>)</li>
 </ul>
 </li>
 </ul>
 </li>
-<li><strong><code>src/agent/planner/progress-tracker.ts</code></strong><ul>
+<li><strong><code>src/agent/planner/progress.ts</code></strong><ul>
 <li>Function: <code>getProgressSummary(plan)</code></li>
 <li>Function: <code>getStatusHistory(plan, stepId?)</code></li>
 <li>Function: <code>recordStatusTransition(step, fromStatus, newStatus, author)</code></li>
@@ -843,8 +1710,8 @@ export function getStatusHistory&lt;T&gt;(
 </ul>
 <h3>Cross-Module Dependencies</h3>
 <ul>
-<li><code>plan-engine.ts</code> imports and calls <code>recordStatusTransition</code> from <code>progress-tracker.ts</code>.</li>
-<li>No reverse import (i.e., no <code>progress-tracker.ts</code> importing from <code>plan-engine.ts</code>) to avoid circular dependencies.</li>
+<li><code>engine.ts</code> imports and calls <code>recordStatusTransition</code> from <code>progress.ts</code>.</li>
+<li>No reverse import (i.e., no <code>progress.ts</code> importing from <code>engine.ts</code>) to avoid circular dependencies.</li>
 </ul>
 <h2>4. MIGRATION NOTES</h2>
 <h3>Modified Entities</h3>
@@ -864,7 +1731,7 @@ export function getStatusHistory&lt;T&gt;(
 <h2>5. RISKS</h2>
 <h3>Circular Import Risk</h3>
 <ul>
-<li><strong>Mitigation</strong>: Ensure that <code>progress-tracker.ts</code> does not import from <code>plan-engine.ts</code>. Only <code>plan-engine.ts</code> imports from <code>progress-tracker.ts</code>.</li>
+<li><strong>Mitigation</strong>: Ensure that <code>progress.ts</code> does not import from <code>engine.ts</code>. Only <code>engine.ts</code> imports from <code>progress.ts</code>.</li>
 <li>This prevents a circular dependency and maintains clean module boundaries.</li>
 </ul>
 <h3>Timestamp Consistency</h3>
@@ -889,14 +1756,15 @@ export function getStatusHistory&lt;T&gt;(
 </ul>
 <hr>
 <hr>
-<h3>Requirement 5: The planner module shall support extensible plan types (<code>ImplementationPlan</code>, <code>TestPlan</code>, <code>MigrationPlan</code>) that inherit core Plan/Step types via generics while adding domain-specific fields: <code>ImplementationPlan</code> adds file paths, code references, and estimated complexity per step; <code>TestPlan</code> adds test categories (unit/integration/e2e), coverage targets, and fixtures; <code>MigrationPlan</code> adds rollback steps and data validation checkpoints</h3>
+<h3 id="req-5">Requirement 5: Extensible Plan Types</h3>
 <h1>Design Section: Extensible Plan Types</h1>
+<p class="muted"><em>Note: Type definitions below are from the original LLM output. See <a href="#canonical-types">Canonical Type Definitions</a> for the authoritative versions.</em></p>
 <h2>1. INTERFACE CONTRACTS</h2>
 <h3>Generic Base Types (from <code>src/agent/planner/types.ts</code>)</h3>
 <pre><code class="language-typescript">// File: src/agent/planner/types.ts
 
-export type PlanStatus = &#39;pending&#39; | &#39;in-progress&#39; | &#39;done&#39; | &#39;blocked&#39; | &#39;skipped&#39;;
-export type PlanStepStatus = &#39;pending&#39; | &#39;in-progress&#39; | &#39;done&#39; | &#39;blocked&#39; | &#39;skipped&#39;;
+export type PlanStatus = &#39;pending&#39; | &#39;in_progress&#39; | &#39;done&#39; | &#39;blocked&#39; | &#39;skipped&#39;;
+export type PlanStepStatus = &#39;pending&#39; | &#39;in_progress&#39; | &#39;done&#39; | &#39;blocked&#39; | &#39;skipped&#39;;
 
 export interface Metadata {
   createdAt: Date;
@@ -983,42 +1851,42 @@ export interface MigrationPlan extends Plan&lt;MigrationPlanStep&gt; {
 </ol>
 <h3>Status Transition Flow:</h3>
 <ol>
-<li><strong>updateStepStatus</strong> (<code>src/agent/planner/plan-engine.ts</code>) receives a plan of type <code>Plan&lt;T&gt;</code> and updates the status of a step.</li>
+<li><strong>updateStepStatus</strong> (<code>src/agent/planner/engine.ts</code>) receives a plan of type <code>Plan&lt;T&gt;</code> and updates the status of a step.</li>
 <li>It calls <code>validateDependencies</code> and <code>detectBlockedSteps</code> which operate on base <code>Plan&lt;T&gt;</code> fields.</li>
 <li>The updated status is recorded in <code>getStatusHistory</code>.</li>
 </ol>
 <h3>Serialization Flow:</h3>
 <ol>
-<li><strong>toMarkdown</strong> (<code>src/agent/planner/markdown-serializer.ts</code>) serializes the base plan structure.</li>
+<li><strong>toMarkdown</strong> (<code>src/agent/planner/markdown.ts</code>) serializes the base plan structure.</li>
 <li>Domain-specific fields are either dropped or require custom handling via extension hooks (see integration points).</li>
 <li><strong>fromMarkdown</strong> deserializes and reconstructs the base plan structure.</li>
 </ol>
 <h3>Progress Tracking Flow:</h3>
 <ol>
-<li><strong>getProgressSummary</strong> (<code>src/agent/planner/progress-tracker.ts</code>) aggregates progress across all steps.</li>
+<li><strong>getProgressSummary</strong> (<code>src/agent/planner/progress.ts</code>) aggregates progress across all steps.</li>
 <li>It uses <code>getStatusHistory</code> to determine current status transitions.</li>
 <li>The summary includes domain-specific metrics where applicable (e.g., test coverage, complexity).</li>
 </ol>
 <h2>3. INTEGRATION POINTS</h2>
 <h3>Reused Functions from Existing Code:</h3>
 <ul>
-<li><strong>updateStepStatus</strong> (<code>src/agent/planner/plan-engine.ts:20</code>) - Works on <code>Plan&lt;T&gt;</code> and <code>Step&lt;T&gt;</code>.</li>
-<li><strong>validateDependencies</strong> (<code>src/agent/planner/plan-engine.ts:56</code>) - Operates on base plan structure.</li>
-<li><strong>detectBlockedSteps</strong> (<code>src/agent/planner/plan-engine.ts:70</code>) - Same reasoning as above.</li>
-<li><strong>getStatusHistory</strong> (<code>src/agent/planner/progress-tracker.ts:15</code>) - Works on base step status transitions.</li>
-<li><strong>toMarkdown</strong> and <strong>fromMarkdown</strong> (<code>src/agent/planner/markdown-serializer.ts</code>) - Serialize base plan fields; domain-specific fields may be dropped or require extension hooks.</li>
-<li><strong>updateStepInMarkdown</strong> (<code>src/agent/planner/markdown-serializer.ts:100</code>) - Safe for extended types as it only updates identity/status fields.</li>
+<li><strong>updateStepStatus</strong> (<code>src/agent/planner/engine.ts:20</code>) - Works on <code>Plan&lt;T&gt;</code> and <code>Step&lt;T&gt;</code>.</li>
+<li><strong>validateDependencies</strong> (<code>src/agent/planner/engine.ts:56</code>) - Operates on base plan structure.</li>
+<li><strong>detectBlockedSteps</strong> (<code>src/agent/planner/engine.ts:70</code>) - Same reasoning as above.</li>
+<li><strong>getStatusHistory</strong> (<code>src/agent/planner/progress.ts:15</code>) - Works on base step status transitions.</li>
+<li><strong>toMarkdown</strong> and <strong>fromMarkdown</strong> (<code>src/agent/planner/markdown.ts</code>) - Serialize base plan fields; domain-specific fields may be dropped or require extension hooks.</li>
+<li><strong>updateStepInMarkdown</strong> (<code>src/agent/planner/markdown.ts:100</code>) - Safe for extended types as it only updates identity/status fields.</li>
 </ul>
 <h3>New Functions:</h3>
 <ul>
-<li><strong>getProgressSummary</strong> (<code>src/agent/planner/progress-tracker.ts</code>) - Added to provide plan-type-specific progress views.</li>
+<li><strong>getProgressSummary</strong> (<code>src/agent/planner/progress.ts</code>) - Added to provide plan-type-specific progress views.</li>
 </ul>
 <h3>Files Modified:</h3>
 <ul>
 <li><code>src/agent/planner/types.ts</code> - Defines new generic and concrete plan types.</li>
-<li><code>src/agent/planner/plan-engine.ts</code> - Reused functions remain unchanged but now support extended types.</li>
-<li><code>src/agent/planner/markdown-serializer.ts</code> - May require extension hooks for domain-specific fields.</li>
-<li><code>src/agent/planner/progress-tracker.ts</code> - Added <code>getProgressSummary</code>.</li>
+<li><code>src/agent/planner/engine.ts</code> - Reused functions remain unchanged but now support extended types.</li>
+<li><code>src/agent/planner/markdown.ts</code> - May require extension hooks for domain-specific fields.</li>
+<li><code>src/agent/planner/progress.ts</code> - Added <code>getProgressSummary</code>.</li>
 </ul>
 <h2>4. MIGRATION NOTES</h2>
 <h3>Changes to Existing Entities:</h3>
@@ -1049,12 +1917,13 @@ export interface MigrationPlan extends Plan&lt;MigrationPlanStep&gt; {
 <li><strong>Maintainability</strong>: As more plan types are added, the system should support easy extension without modifying core logic.</li>
 </ul>
 <hr>
-<h3>Requirement 6: The planner module shall be designed as a standalone TypeScript library within <code>src/agent/planner/</code> with a clean public <code>index.ts</code> barrel export, ensuring all core engine behaviors (status transitions, progress tracking, MD serialization) are reusable by specialised plan types without duplication</h3>
+<h3 id="req-6">Requirement 6: Standalone Library Design</h3>
 <h1>Design Section: Planner Module</h1>
+<p class="muted"><em>Note: Type definitions below are from the original LLM output. See <a href="#canonical-types">Canonical Type Definitions</a> for the authoritative versions.</em></p>
 <h2>1. INTERFACE CONTRACTS</h2>
 <h3><code>src/agent/planner/types.ts</code></h3>
-<pre><code class="language-typescript">export type PlanStatus = &#39;pending&#39; | &#39;in-progress&#39; | &#39;done&#39; | &#39;blocked&#39; | &#39;skipped&#39;;
-export type PlanStepStatus = &#39;pending&#39; | &#39;in-progress&#39; | &#39;done&#39; | &#39;blocked&#39; | &#39;skipped&#39;;
+<pre><code class="language-typescript">export type PlanStatus = &#39;pending&#39; | &#39;in_progress&#39; | &#39;done&#39; | &#39;blocked&#39; | &#39;skipped&#39;;
+export type PlanStepStatus = &#39;pending&#39; | &#39;in_progress&#39; | &#39;done&#39; | &#39;blocked&#39; | &#39;skipped&#39;;
 
 export interface Metadata {
   createdAt: string;
@@ -1102,7 +1971,7 @@ export type ImplementationPlan = Plan&lt;ImplementationStepMeta&gt;;
 export type TestPlan = Plan&lt;TestStepMeta&gt;;
 export type MigrationPlan = Plan&lt;MigrationStepMeta&gt;;
 </code></pre>
-<h3><code>src/agent/planner/plan-engine.ts</code></h3>
+<h3><code>src/agent/planner/engine.ts</code></h3>
 <pre><code class="language-typescript">import { Plan, Step, PlanStatus, PlanStepStatus } from &#39;./types&#39;;
 
 export function updateStepStatus&lt;T&gt;(
@@ -1120,7 +1989,7 @@ export function detectBlockedSteps&lt;T&gt;(
   plan: Plan&lt;T&gt;
 ): Array&lt;{ stepId: string; reason: string }&gt;;
 </code></pre>
-<h3><code>src/agent/planner/markdown-serializer.ts</code></h3>
+<h3><code>src/agent/planner/markdown.ts</code></h3>
 <pre><code class="language-typescript">import { Plan, PlanStatus, PlanStepStatus } from &#39;./types&#39;;
 
 export interface PlanMarkdownMetadata {
@@ -1152,7 +2021,7 @@ export function updateStepInMarkdown(
   newStatus: PlanStepStatus
 ): string;
 </code></pre>
-<h3><code>src/agent/planner/progress-tracker.ts</code></h3>
+<h3><code>src/agent/planner/progress.ts</code></h3>
 <pre><code class="language-typescript">import { Plan, PlanStatus, PlanStepStatus } from &#39;./types&#39;;
 
 export interface ProgressSummary {
@@ -1180,26 +2049,26 @@ export function getStatusHistory&lt;T&gt;(plan: Plan&lt;T&gt;): StatusTransition
 <h3><code>src/agent/planner/index.ts</code></h3>
 <pre><code class="language-typescript">// Re-exports all public interfaces and functions from the module
 export * from &#39;./types&#39;;
-export * from &#39;./plan-engine&#39;;
-export * from &#39;./markdown-serializer&#39;;
-export * from &#39;./progress-tracker&#39;;
+export * from &#39;./engine&#39;;
+export * from &#39;./markdown&#39;;
+export * from &#39;./progress&#39;;
 </code></pre>
 <h2>2. DATA FLOW</h2>
 <ol>
 <li><strong>Input</strong>: A <code>Plan&lt;T&gt;</code> object is passed to any function in the planner module.</li>
-<li><strong>Engine Layer</strong> (<code>plan-engine.ts</code>):<ul>
+<li><strong>Engine Layer</strong> (<code>engine.ts</code>):<ul>
 <li><code>validateDependencies(plan, stepId)</code> checks if all dependencies of a given step are satisfied before allowing status transition.</li>
 <li><code>updateStepStatus(plan, stepId, newStatus)</code> updates a step&#39;s status and ensures validity via dependency validation.</li>
 <li><code>detectBlockedSteps(plan)</code> traverses the plan to identify steps that cannot proceed due to unmet dependencies or other conditions.</li>
 </ul>
 </li>
-<li><strong>Serializer Layer</strong> (<code>markdown-serializer.ts</code>):<ul>
+<li><strong>Serializer Layer</strong> (<code>markdown.ts</code>):<ul>
 <li><code>toMarkdown(plan)</code> converts a <code>Plan&lt;T&gt;</code> into a YAML frontmatter + checkbox list Markdown string.</li>
 <li><code>fromMarkdown(markdown)</code> parses a Markdown string back into a <code>Plan&lt;T&gt;</code>.</li>
 <li><code>updateStepInMarkdown(markdown, stepId, newStatus)</code> performs surgical edits to update one step&#39;s status in the Markdown without rewriting the entire document.</li>
 </ul>
 </li>
-<li><strong>Tracker Layer</strong> (<code>progress-tracker.ts</code>):<ul>
+<li><strong>Tracker Layer</strong> (<code>progress.ts</code>):<ul>
 <li><code>getProgressSummary(plan)</code> computes counts and percentages of steps by status from a plan.</li>
 <li><code>getStatusHistory(plan)</code> returns an array of status transitions for tracking changes over time.</li>
 </ul>
@@ -1214,17 +2083,17 @@ export * from &#39;./progress-tracker&#39;;
 <li>Exported by <code>index.ts</code></li>
 </ul>
 </li>
-<li><strong><code>src/agent/planner/plan-engine.ts</code></strong>:<ul>
+<li><strong><code>src/agent/planner/engine.ts</code></strong>:<ul>
 <li>Functions: <code>updateStepStatus</code>, <code>validateDependencies</code>, <code>detectBlockedSteps</code></li>
 <li>Imported by <code>index.ts</code></li>
 </ul>
 </li>
-<li><strong><code>src/agent/planner/markdown-serializer.ts</code></strong>:<ul>
+<li><strong><code>src/agent/planner/markdown.ts</code></strong>:<ul>
 <li>Functions: <code>toMarkdown</code>, <code>fromMarkdown</code>, <code>updateStepInMarkdown</code></li>
 <li>Imported by <code>index.ts</code></li>
 </ul>
 </li>
-<li><strong><code>src/agent/planner/progress-tracker.ts</code></strong>:<ul>
+<li><strong><code>src/agent/planner/progress.ts</code></strong>:<ul>
 <li>Functions: <code>getProgressSummary</code>, <code>getStatusHistory</code></li>
 <li>Imported by <code>index.ts</code></li>
 </ul>
@@ -1249,7 +2118,7 @@ export * from &#39;./progress-tracker&#39;;
 <h2>5. RISKS</h2>
 <h3>Circular Import Risk</h3>
 <ul>
-<li><strong>Risk</strong>: The dependency chain must remain strictly: <code>types.ts</code> ← <code>plan-engine.ts</code> / <code>markdown-serializer.ts</code> / <code>progress-tracker.ts</code> ← <code>index.ts</code>.</li>
+<li><strong>Risk</strong>: The dependency chain must remain strictly: <code>types.ts</code> ← <code>engine.ts</code> / <code>markdown.ts</code> / <code>progress.ts</code> ← <code>index.ts</code>.</li>
 <li><strong>Mitigation</strong>: Ensure no cross-imports between engine, serializer, and tracker modules. Any orchestration logic should be handled at the caller level.</li>
 </ul>
 <h3>Barrel Export Scope Risk</h3>
@@ -1270,14 +2139,18 @@ export * from &#39;./progress-tracker&#39;;
 <h3>Performance of Dependency Graph Traversal</h3>
 <ul>
 <li><strong>Risk</strong>: For large plans, <code>detectBlockedSteps</code> and <code>validateDependencies</code> may become performance bottlenecks.</li>
-<li><strong>Mitigation</strong>: Implement memoization or topological sorting in <code>plan-engine.ts</code> to optimize traversal for large dependency graphs.</li>
+<li><strong>Mitigation</strong>: Implement memoization or topological sorting in <code>engine.ts</code> to optimize traversal for large dependency graphs.</li>
 </ul>
 <hr>
-<h3>Requirement 7: What level of error recovery is expected when parsing malformed or partially-edited Markdown files (strict throw vs. best-effort with warnings)?</h3>
+
+    <h2 id="appendix-open-questions">Appendix: Open Questions</h2>
+    <p class="muted">These items were extracted as requirements by the LLM but are actually clarifying questions that need answers before implementation. The design sketches below explore possible approaches but are not prescriptive.</p>
+
+<h3>Q7: What level of error recovery is expected when parsing malformed or partially-edited Markdown files (strict throw vs. best-effort with warnings)?</h3>
 <h1>Design Section: Error Recovery in Markdown Parsing</h1>
 <h2>1. INTERFACE CONTRACTS</h2>
 <h3><code>fromMarkdown</code> Function Signature</h3>
-<pre><code class="language-typescript">// File: src/agent/planner/markdown-serializer.ts
+<pre><code class="language-typescript">// File: src/agent/planner/markdown.ts
 
 interface ParseWarning {
   message: string;
@@ -1298,7 +2171,7 @@ function fromMarkdown&lt;T&gt;(
 ): ParseResult&lt;T&gt; | Plan&lt;T&gt;;
 </code></pre>
 <h3><code>updateStepInMarkdown</code> Function Signature</h3>
-<pre><code class="language-typescript">// File: src/agent/planner/markdown-serializer.ts
+<pre><code class="language-typescript">// File: src/agent/planner/markdown.ts
 
 function updateStepInMarkdown(
   markdown: string,
@@ -1348,7 +2221,7 @@ export { fromMarkdown, updateStepInMarkdown };
 <li><p><strong>Caller invokes <code>fromMarkdown&lt;T&gt;(content, { recovery: &#39;best-effort&#39; })</code></strong></p>
 <ul>
 <li>Input: raw Markdown string and recovery mode.</li>
-<li>Module: <code>src/agent/planner/markdown-serializer.ts</code>.</li>
+<li>Module: <code>src/agent/planner/markdown.ts</code>.</li>
 </ul>
 </li>
 <li><p><strong>Frontmatter Parsing</strong></p>
@@ -1414,7 +2287,7 @@ export { fromMarkdown, updateStepInMarkdown };
 <h2>3. INTEGRATION POINTS</h2>
 <h3>Key Files and Functions</h3>
 <ul>
-<li><p><strong><code>src/agent/planner/markdown-serializer.ts</code></strong></p>
+<li><p><strong><code>src/agent/planner/markdown.ts</code></strong></p>
 <ul>
 <li>Contains <code>fromMarkdown</code>, <code>updateStepInMarkdown</code>.</li>
 <li>Integrates with YAML parsing via <code>yaml.parse()</code> (assumed to be available or imported).</li>
@@ -1552,7 +2425,7 @@ if (&#39;warnings&#39; in result) {
 </li>
 </ul>
 <hr>
-<h3>Requirement 8: Should plan-level derived status follow a specific precedence rule (e.g., any <code>blocked</code> → plan is <code>blocked</code>; all <code>done</code> → plan is <code>done</code>), or is this left to the consumer?</h3>
+<h3>Q8: Should plan-level derived status follow a specific precedence rule (e.g., any <code>blocked</code> → plan is <code>blocked</code>; all <code>done</code> → plan is <code>done</code>), or is this left to the consumer?</h3>
 <h1>Design Section: Plan Status Aggregation Logic</h1>
 <h2>1. INTERFACE CONTRACTS</h2>
 <pre><code class="language-typescript">// File: src/agent/planner/types.ts
@@ -1597,7 +2470,7 @@ export function computePlanStatus(steps: Array&lt;Step&lt;any&gt;&gt;): PlanStat
 </code></pre>
 <h2>2. DATA FLOW</h2>
 <ol>
-<li><strong>Caller</strong>: <code>getProgressSummary</code> in <code>progress-tracker.ts</code><ul>
+<li><strong>Caller</strong>: <code>getProgressSummary</code> in <code>progress.ts</code><ul>
 <li>Calls <code>computePlanStatus(steps)</code> with the flattened steps from a <code>Plan&lt;T&gt;</code></li>
 </ul>
 </li>
@@ -1619,7 +2492,7 @@ export function computePlanStatus(steps: Array&lt;Step&lt;any&gt;&gt;): PlanStat
 </ol>
 <h2>3. INTEGRATION POINTS</h2>
 <ul>
-<li><p><strong>File</strong>: <code>src/agent/planner/progress-tracker.ts</code></p>
+<li><p><strong>File</strong>: <code>src/agent/planner/progress.ts</code></p>
 <ul>
 <li>Function: <code>getProgressSummary(plan: Plan&lt;T&gt;): ProgressSummary</code><ul>
 <li>Calls <code>computePlanStatus(plan.steps)</code> to populate plan-level status</li>
@@ -1628,7 +2501,7 @@ export function computePlanStatus(steps: Array&lt;Step&lt;any&gt;&gt;): PlanStat
 </li>
 </ul>
 </li>
-<li><p><strong>File</strong>: <code>src/agent/planner/plan-engine.ts</code></p>
+<li><p><strong>File</strong>: <code>src/agent/planner/engine.ts</code></p>
 <ul>
 <li>Function: <code>updateStepStatus(plan: Plan&lt;T&gt;, stepId: string, newStatus: PlanStepStatus): Plan&lt;T&gt;</code><ul>
 <li>Should call <code>computePlanStatus</code> after updating a step&#39;s status</li>
@@ -1647,7 +2520,7 @@ export function computePlanStatus(steps: Array&lt;Step&lt;any&gt;&gt;): PlanStat
 <h3>Modified Entities:</h3>
 <ul>
 <li><strong><code>Plan&lt;T&gt;</code> interface</strong> in <code>types.ts</code>: No change to structure, but now requires a <code>derivedStatus</code> field (already defined)</li>
-<li><strong><code>updateStepStatus</code> function</strong> in <code>plan-engine.ts</code>: Must be updated to call <code>computePlanStatus</code> and write result back to <code>plan.derivedStatus</code><ul>
+<li><strong><code>updateStepStatus</code> function</strong> in <code>engine.ts</code>: Must be updated to call <code>computePlanStatus</code> and write result back to <code>plan.derivedStatus</code><ul>
 <li><strong>Impact</strong>: All existing code calling <code>updateStepStatus</code> will now correctly update derived status</li>
 <li><strong>Change</strong>: Add logic to compute new status and assign it to <code>plan.derivedStatus</code></li>
 </ul>
@@ -1664,7 +2537,7 @@ export function computePlanStatus(steps: Array&lt;Step&lt;any&gt;&gt;): PlanStat
 <ol>
 <li><p><strong>Consistency with <code>detectBlockedSteps</code></strong>:</p>
 <ul>
-<li>Risk: If <code>computePlanStatus</code> does not reuse the blocked detection logic from <code>plan-engine.ts</code>, inconsistencies may arise.</li>
+<li>Risk: If <code>computePlanStatus</code> does not reuse the blocked detection logic from <code>engine.ts</code>, inconsistencies may arise.</li>
 <li>Mitigation: Ensure <code>computePlanStatus</code> either accepts a dependency graph and calls <code>detectBlockedSteps</code>, or that <code>updateStepStatus</code> eagerly propagates blocked status to steps before <code>computePlanStatus</code> is invoked.</li>
 </ul>
 </li>
@@ -1706,10 +2579,10 @@ export function computePlanStatus(steps: Array&lt;Step&lt;any&gt;&gt;): PlanStat
 </li>
 </ol>
 <hr>
-<h3>Requirement 9: Is persistence (reading/writing <code>.md</code> files from disk) in scope for this module, or does the serializer only handle string-level conversion with file I/O left to the caller?</h3>
+<h3>Q9: Is persistence (reading/writing <code>.md</code> files from disk) in scope for this module, or does the serializer only handle string-level conversion with file I/O left to the caller?</h3>
 <h1>Design Section: Persistence Scope for Planner Module</h1>
 <h2>1. INTERFACE CONTRACTS</h2>
-<h3>New Functions in <code>src/agent/planner/markdown-serializer.ts</code></h3>
+<h3>New Functions in <code>src/agent/planner/markdown.ts</code></h3>
 <pre><code class="language-typescript">/**
  * Converts a Plan&lt;T&gt; to a Markdown string representation.
  * Caller is responsible for file I/O.
@@ -1783,7 +2656,7 @@ interface StatusTransition { stepId, oldStatus: PlanStepStatus, newStatus: PlanS
 <h2>3. INTEGRATION POINTS</h2>
 <h3>Current Integration Points (String-Level Only)</h3>
 <ul>
-<li><p><strong>File</strong>: <code>src/agent/planner/markdown-serializer.ts</code></p>
+<li><p><strong>File</strong>: <code>src/agent/planner/markdown.ts</code></p>
 <ul>
 <li>Function: <code>toMarkdown(plan)</code></li>
 <li>Function: <code>fromMarkdown(markdown)</code></li>
@@ -1847,139 +2720,62 @@ interface StatusTransition { stepId, oldStatus: PlanStepStatus, newStatus: PlanS
 <p>The current string-level APIs (<code>toMarkdown</code>, <code>fromMarkdown</code>) do not imply I/O. If persistence is added, this could create confusion for developers expecting a different API contract.</p>
 
 
-    <h2>Architecture Summary</h2>
-    <p><strong>Reused Entities:</strong></p>
-<ul>
-<li>[local] <code>interface Plan</code> — <code>/home/subho/work/dev/insors/insrc/src/shared/types.ts:312</code> — <strong>[FIXED] VERIFY BEFORE REUSE</strong>: The existing <code>Plan</code> interface is non-generic (no <code>&lt;T&gt;</code> parameter). Fields must be audited against requirement (title, description, id, status, dependencies, assignee, notes, metadata, sub-steps). Likely a naming collision risk rather than a true reuse candidate — new <code>Plan&lt;T&gt;</code> may need to supersede or import-alias around it.</li>
-<li>[local] <code>interface PlanStep</code> — <code>/home/subho/work/dev/insors/insrc/src/shared/types.ts:294</code> — <strong>[FIXED] VERIFY BEFORE REUSE</strong>: Same caveat — non-generic, fields unknown. Check whether <code>dependencies</code> (array of step ids) and <code>notes</code> fields already exist. If not, this is reference material only, not direct reuse.</li>
-<li>[local] <code>type PlanStepStatus</code> — <code>/home/subho/work/dev/insors/insrc/src/shared/types.ts:290</code> — <strong>[FIXED] PARTIAL REUSE</strong>: Check that the union covers exactly <code>pending | in-progress | done | blocked | skipped</code>. If it matches, import and re-export rather than redefine. If it differs (e.g., missing <code>skipped</code>), the new <code>PlanStepStatus</code> in <code>src/agent/planner/types.ts</code> must be the canonical definition and the old one deprecated or aliased.</li>
-<li>[local] <code>type PlanStatus</code> — <code>/home/subho/work/dev/insors/insrc/src/shared/types.ts:292</code> — <strong>[FIXED] PARTIAL REUSE</strong>: Same verification needed as <code>PlanStepStatus</code>. Plan-level derived status may differ from step-level status (per Req 8 / open question on precedence rules), so confirm these are intentionally the same type.</li>
-<li>[local] <code>function buildPlan</code> — <code>/home/subho/work/dev/insors/insrc/src/agent/tasks/plan.ts:180</code> — <strong>[FIXED] REMOVE FROM REUSE LIST</strong>: This constructs a non-generic plan for a specific task agent workflow. It does not satisfy the generic <code>Plan&lt;T&gt;</code> factory pattern required here. It is a <strong>consumer</strong> of the new types, not a building block for them. Note as a downstream integration point instead.</li>
-<li>[local] <code>function planSave</code> — <code>/home/subho/work/dev/insors/insrc/src/agent/tools/mcp-client.ts:151</code> — <strong>[FIXED] REMOVE FROM REUSE LIST</strong>: This is MCP transport-layer persistence, not relevant to the type definition requirement (Req 1). File I/O scope is also an open question (Req 9). Flag as integration concern, not reuse.</li>
-<li>[local] <code>function maybeCompletePlan</code> — <code>/home/subho/work/dev/insors/insrc/src/agent/tasks/plan-store.ts:368</code> — <strong>[FIXED] REMOVE FROM REUSE LIST</strong>: Downstream consumer of plan state. Its derived-status logic may conflict with the new <code>PlanEngine</code>&#39;s computed status (cross-requirement risk). Flag as integration concern.</li>
-<li>[local] <code>function reactivatePlan</code> — <code>/home/subho/work/dev/insors/insrc/src/agent/tasks/plan-store.ts:399</code> — <strong>[FIXED] REMOVE FROM REUSE LIST</strong>: Same as above — downstream consumer, not a building block. Flag as integration concern.</li>
-<li>[local] <code>function maybeAdvancePlanStep (implement/test/debug)</code> — <code>implement.ts:305</code>, <code>test.ts:505</code>, <code>debug.ts:408</code> — <strong>[FIXED] REMOVE FROM REUSE LIST</strong>: These are call-site consumers of plan step advancement, implemented across three task modules. They are <strong>not</strong> reusable in the new planner module. They represent the most critical integration risk: they will need to be updated to use <code>updateStepStatus</code> from <code>PlanEngine</code> (Req 2). Flag as downstream migration targets.</li>
-<li>[local] <em>[ADDED] Genuine reuse candidates missed by local model:</em>* — </li>
-<li>[local] Any shared <code>Metadata</code> / timestamp utility (search <code>src/shared/</code> for <code>createdAt</code>, <code>updatedAt</code>, <code>author</code> helpers) — if a <code>Metadata</code> interface or factory already exists, import it for the <code>Plan&lt;T&gt;</code> metadata field rather than redefining.</li>
-<li>[local] Any existing <code>id</code> generation utility (search for <code>uuid</code>, <code>nanoid</code>, <code>generateId</code> in <code>src/shared/</code> or <code>src/utils/</code>) — step <code>id</code> fields will need generation; reuse rather than introduce a new dependency.</li>
-<li>[local] Any existing graph/DAG utility (search <code>src/shared/</code> or <code>src/utils/</code> for cycle detection, topological sort) — <code>detectCircularDependencies</code> in <code>PlanEngine</code> (Req 2) may have existing infrastructure.</li>
-<li>[local] -- — </li>
-<li>[FIXED] <del><code>isValidTransition</code> — /home/subho/work/dev/insors/insrc/src/agent/tasks/plan-store.ts:40</del> — <strong>Removed</strong>: This is from an external <code>insors</code> codebase path (<code>/home/subho/work/dev/insors/</code>) with no confirmed presence in the current project&#39;s <code>src/</code>. The path does not match the project convention (<code>src/agent/planner/</code>), and importing from an unrelated external repo is an integration risk. If a local equivalent exists, it was not surfaced in the provided context.</li>
-<li>[ADDED] <code>Plan&lt;T&gt;</code>, <code>Step&lt;T&gt;</code>, <code>StepStatus</code> types — <code>src/agent/planner/types.ts</code> — relevance: Requirement 1 defines <code>Step&lt;T&gt;</code> with <code>status</code>, <code>dependencies</code> (array of step IDs), and <code>id</code> fields — all directly consumed by <code>validateDependencies</code>, <code>detectCircularDependencies</code>, and <code>identifyBlockedSteps</code>. The <code>StepStatus</code> union (<code>pending/in-progress/done/blocked/skipped</code>) determines what counts as a terminal state.</li>
-<li>[ADDED] <code>getProgressSummary</code>, <code>getStatusHistory</code> — <code>src/agent/planner/progress-tracker.ts</code> — relevance: <code>identifyBlockedSteps</code> producing blocking reasons should integrate with or inform the history/changelog mechanism defined in Requirement 4. Reuse the status-history append logic rather than duplicating timestamped transition records.</li>
-<li>[ADDED] <code>planner/index.ts</code> barrel — <code>src/agent/planner/index.ts</code> — relevance: Requirement 6 mandates all core engine behaviors be exported from the barrel. <code>updateStepStatus</code>, <code>validateDependencies</code>, and <code>detectBlockedSteps</code> must be explicitly re-exported here.</li>
-<li>[insors] interface Plan — /home/subho/work/dev/insors/insrc/src/shared/types.ts:312 — <strong>[FIXED] Reference only; the new module defines its own <code>Plan&lt;T&gt;</code> per Requirement 1. The existing <code>Plan</code> is a concrete type, not the generic used here. Retain as cross-reference for field naming conventions only.</strong></li>
-<li>[insors] interface PlanStep — /home/subho/work/dev/insors/insrc/src/shared/types.ts:294 — <strong>[FIXED] Same caveat as above; informational reference, not direct reuse.</strong></li>
-<li>[insors] type PlanStepStatus — /home/subho/work/dev/insors/insrc/src/shared/types.ts:290 — <strong>[FIXED] The new module defines its own status union per Requirement 1 (<code>pending/in-progress/done/blocked/skipped</code>). Existing type likely differs. Informational only.</strong></li>
-<li>[local] <strong>[FIXED - REMOVED]</strong> <del>function buildPlan — /home/subho/work/dev/insors/insrc/src/agent/tasks/plan.ts:180</del> — Builds plans from agent task context; not relevant to MD serialization format.</li>
-<li>[local] <strong>[FIXED - REMOVED]</strong> <del>function printPlan — /home/subho/work/dev/insors/insrc/src/agent/index.ts:969</del> — Console/UI display helper, unrelated to Markdown serialization.</li>
-<li>[local] <strong>[FIXED - REMOVED]</strong> <del>function planSave — /home/subho/work/dev/insors/insrc/src/agent/tools/mcp-client.ts:151</del> — MCP transport layer; not relevant to serialization format.</li>
-<li>[local] <strong>[FIXED - REMOVED]</strong> <del>function savePlan — /home/subho/work/dev/insors/insrc/src/agent/tasks/plan-store.ts:48</del> — Stores existing JSON-based plans; not relevant to MD serialization.</li>
-<li>[local] <strong>[FIXED - REMOVED]</strong> <del>function planStepUpdate — /home/subho/work/dev/insors/insrc/src/agent/tools/mcp-client.ts:165</del> — MCP transport layer; unrelated.</li>
-<li>[local] <strong>[FIXED - REMOVED]</strong> <del>function updateStepState — /home/subho/work/dev/insors/insrc/src/agent/tasks/plan-store.ts:213</del> — Updates state in the existing store (likely JSON/DB), not MD files.</li>
-<li>[local] <strong>[FIXED - REMOVED]</strong> <del>function maybeCompletePlan — /home/subho/work/dev/insors/insrc/src/agent/tasks/plan-store.ts:368</del> — Store-level lifecycle; unrelated to serialization.</li>
-<li>[local] <strong>[FIXED - REMOVED]</strong> <del>function handlePlanCommand — /home/subho/work/dev/insors/insrc/src/agent/index.ts:828</del> — CLI command handler; unrelated.</li>
-<li>[local] <strong>[FIXED - REMOVED]</strong> <del>function parseStepsJson — /home/subho/work/dev/insors/insrc/src/agent/tasks/plan.ts:145</del> — Parses JSON steps, not MD. No reuse value here.</li>
-<li>[local] <strong>[FIXED - REMOVED]</strong> <del>function parseStepArray — /home/subho/work/dev/insors/insrc/src/agent/pipeline/plan-steps.ts:256</del> — Pipeline-specific step parser; not reusable for MD format.</li>
-<li>[local] <strong>[FIXED - REMOVED]</strong> <del>function toElements — /home/subho/work/dev/insors/insrc/src/agent/pipeline/analyze.ts:268</del> — Analysis pipeline concern; unrelated.</li>
-<li>[local] <strong>[FIXED - REMOVED]</strong> <del>function parseJson — /home/subho/work/dev/insors/insrc/src/agent/pipeline/analyze.ts:227</del> — Generic JSON parse utility. While technically reusable, YAML frontmatter requires a YAML parser (e.g., <code>js-yaml</code>), not a JSON parser.</li>
-<li>[local] <strong>[FIXED - REMOVED]</strong> <del>interface RawStep — /home/subho/work/dev/insors/insrc/src/agent/pipeline/plan-steps.ts:249</del> — Pipeline-internal type; does not match the new <code>Step&lt;T&gt;</code> shape.</li>
-<li>[local] <strong>[FIXED - REMOVED]</strong> <del>function maybeAdvancePlanStep (×4)</del> — Agent task runners; orthogonal to serialization format. No reuse value.</li>
-<li>[local] <strong>[ADDED]</strong> New <code>Plan&lt;T&gt;</code>, <code>Step&lt;T&gt;</code>, <code>PlanStepStatus</code> from <code>src/agent/planner/types.ts</code> (defined by Requirement 1) — <strong>primary types this serializer operates on; direct dependency.</strong></li>
-<li>[local] <strong>[ADDED]</strong> <code>updateStepStatus</code> from <code>src/agent/planner/plan-engine.ts</code> (defined by Requirement 2) — the partial-update flow may call this after parsing a status change from MD; worth coordinating interface.</li>
-<li>[local] <strong>[ADDED]</strong> External dependency <code>js-yaml</code> (or equivalent) — required for YAML frontmatter parsing/serialization. Confirm it is already in <code>package.json</code>; if not, flag as a new dependency.</li>
-<li>[FIXED] <code>src/agent/planner/types.ts</code> — <code>type PlanStepStatus</code>, <code>type PlanStatus</code>, <code>interface Metadata</code>, <code>Plan&lt;T&gt;</code>, <code>Step&lt;T&gt;</code> — defines core status types and metadata structure. <code>PlanStepStatus</code> enumerates <code>pending/in-progress/done/blocked/skipped</code> which directly drives the status-count aggregation. The <code>Metadata</code> interface&#39;s <code>created</code>/<code>updated</code> timestamp fields establish the timestamp pattern to follow for history entries.</li>
-<li>[FIXED] <code>src/agent/planner/progress-tracker.ts</code> — <code>getProgressSummary</code>, <code>getStatusHistory</code> — Per requirement 4&#39;s own references list, <strong>both functions are already declared here</strong>. The local sketch correctly identifies this file but incorrectly implies <code>getProgressSummary</code> and <code>getStatusHistory</code> are fully implemented and extensible; the requirement is defining what these functions <em>shall</em> provide, meaning they are <strong>to be implemented</strong>, not extended. There is no evidence of a pre-existing body to build on.</li>
-<li>[ADDED] <code>src/agent/planner/plan-engine.ts</code> — <code>updateStepStatus</code> — This is the write-path that <em>produces</em> status transitions (requirement 2). The history logger must hook into or be called from <code>updateStepStatus</code> when a transition occurs. Without recognising this dependency, the status-history capture point is unanchored in the flow.</li>
-<li>[ADDED] <code>src/agent/planner/index.ts</code> — barrel export (requirement 6) — <code>getProgressSummary</code> and <code>getStatusHistory</code> must be exported here as part of the public API. The new history types/interfaces also need barrel entries.</li>
-<li>[FIXED] <del>interface Plan</del> — <code>/home/subho/work/dev/insors/insrc/src/shared/types.ts:312</code> — <strong>Exists in shared/types.ts but is the legacy non-generic Plan. Relevant only as a migration reference point; the new generic <code>Plan&lt;T&gt;</code> is being defined fresh in <code>src/agent/planner/types.ts</code> per Requirement 1. Do not extend this directly.</strong></li>
-<li>[FIXED] <del>interface PlanStep</del> — <code>/home/subho/work/dev/insors/insrc/src/shared/types.ts:294</code> — <strong>Same caveat as above — legacy non-generic Step. Reference for field parity, not for inheritance.</strong></li>
-<li>[local] type PlanStatus — <code>/home/subho/work/dev/insors/insrc/src/shared/types.ts:292</code> — May be reusable if its values align with <code>pending/in-progress/done/blocked/skipped</code>; verify before importing. If values differ, a new <code>PlanStatus</code> must be defined in <code>src/agent/planner/types.ts</code> per Requirement 1.</li>
-<li>[local] type PlanStepStatus — <code>/home/subho/work/dev/insors/insrc/src/shared/types.ts:290</code> — Same caveat as PlanStatus above.</li>
-<li>[local] type PlanStepComplexity — <code>/home/subho/work/dev/insors/insrc/src/shared/types.ts:291</code> — <strong>Genuinely reusable</strong> for <code>ImplementationPlan</code>&#39;s &quot;estimated complexity per step&quot; field. Confirm it covers the complexity levels needed.</li>
-<li>[local] function updateStepStatus — <code>/home/subho/work/dev/insors/insrc/src/agent/planner/plan-engine.ts:20</code> — Core reuse; operates on base <code>Step&lt;T&gt;</code> and will work structurally with extended step types.</li>
-<li>[local] function validateDependencies — <code>/home/subho/work/dev/insors/insrc/src/agent/planner/plan-engine.ts:56</code> — Core reuse; dependency graph logic is plan-type-agnostic.</li>
-<li>[local] function detectBlockedSteps — <code>/home/subho/work/dev/insors/insrc/src/agent/planner/plan-engine.ts:70</code> — Core reuse; same reasoning.</li>
-<li>[local] function getStatusHistory — <code>/home/subho/work/dev/insors/insrc/src/agent/planner/progress-tracker.ts:15</code> — Core reuse; works on base step status transitions.</li>
-<li>[local] function toMarkdown — <code>/home/subho/work/dev/insors/insrc/src/agent/planner/markdown-serializer.ts:30</code> — Core reuse; serializes base <code>Plan&lt;T&gt;</code> fields. Domain-specific fields of extended types will need either serializer extension hooks or will be dropped silently — <strong>flag this as an integration concern</strong>.</li>
-<li>[local] function fromMarkdown — <code>/home/subho/work/dev/insors/insrc/src/agent/planner/markdown-serializer.ts:65</code> — Core reuse with same caveat as <code>toMarkdown</code>.</li>
-<li>[local] function updateStepInMarkdown — <code>/home/subho/work/dev/insors/insrc/src/agent/planner/markdown-serializer.ts:100</code> — Core reuse; operates on step identity/status fields only, safe for extended types.</li>
-<li>[FIXED] <del>function buildPlan</del> — <code>/home/subho/work/dev/insors/insrc/src/agent/tasks/plan.ts:180</code> — <strong>Lives outside <code>src/agent/planner/</code>; belongs to the agent task layer, not the planner library. Not directly reusable here — the <code>PlanFactory</code> proposed below supersedes this for the planner module&#39;s own construction logic.</strong></li>
-<li>[FIXED] <del>interface StepResult</del> — <code>/home/subho/work/dev/insors/insrc/src/agent/pipeline/types.ts:133</code> — <strong>Pipeline execution concern, not a planner type. Remove from reuse list; no direct relevance to plan type definitions.</strong></li>
-<li>[FIXED] <del>interface ExecutionStep</del> — <code>/home/subho/work/dev/insors/insrc/src/agent/pipeline/types.ts:96</code> — <strong>Same as StepResult — pipeline layer, not planner layer. Remove.</strong></li>
-<li>[FIXED] <del>function printPlan</del> — <code>/home/subho/work/dev/insors/insrc/src/agent/index.ts:969</code> — <strong>Presentation utility in the agent entry point; not a planner module concern. Remove.</strong></li>
-<li>[FIXED] <del>function planGet / planSave / planDelete / planResetStale</del> — <code>/home/subho/work/dev/insors/insrc/src/agent/tools/mcp-client.ts</code> — <strong>MCP client I/O layer; not relevant to type definitions or the planner library&#39;s internal logic. Requirement 9 (open question) flags that file I/O is likely out of scope for this module. Remove.</strong></li>
-<li>[FIXED] <del>function planStepUpdate / planNextStep</del> — <code>/home/subho/work/dev/insors/insrc/src/agent/tasks/plan-store.ts</code> — <strong>Plan-store layer above the planner library. Not directly reused inside <code>src/agent/planner/</code>.</strong></li>
-<li>[ADDED] function getProgressSummary — <code>/home/subho/work/dev/insors/insrc/src/agent/planner/progress-tracker.ts</code> — <strong>Mentioned in Requirement 4 alongside <code>getStatusHistory</code>; missed by local model. Relevant for surfacing plan-type-specific progress views.</strong></li>
-<li>[local] <code>src/agent/planner/types.ts</code> — <code>interface Plan&lt;T&gt;</code>, <code>interface Step&lt;T&gt;</code>, <code>type PlanStatus</code>, <code>type PlanStepStatus</code>, <code>ImplementationPlan</code>, <code>TestPlan</code>, <code>MigrationPlan</code> — defines core generic types for plans, steps, and specialized plan variants [FIXED: removed bogus <code>insors/</code> path prefix; added specialized plan types which are also defined here per Req 5]</li>
-<li>[local] <code>src/agent/planner/plan-engine.ts</code> — <code>function updateStepStatus</code>, <code>function validateDependencies</code>, <code>function detectBlockedSteps</code> — implements core status transition logic with dependency validation [FIXED: removed bogus path prefix]</li>
-<li>[local] <code>src/agent/planner/markdown-serializer.ts</code> — <code>function toMarkdown</code>, <code>function fromMarkdown</code>, <code>function updateStepInMarkdown</code> — handles MD serialization with YAML frontmatter and round-trip fidelity [FIXED: removed bogus path prefix; note this file is simultaneously listed as &quot;reusable&quot; AND proposed as a new class — see concern below]</li>
-<li>[local] <code>src/agent/planner/progress-tracker.ts</code> — <code>function getProgressSummary</code>, <code>function getStatusHistory</code> — provides progress tracking with step counts, percentages, and status history [FIXED: removed bogus path prefix]</li>
-<li>[FIXED] <del>[insors/insrc] function parseMarkdownSections</del> — <strong>Cannot confirm existence at stated path/line without codebase verification.</strong> If confirmed real, it is relevant for section extraction in <code>fromMarkdown</code>. Mark as conditionally reusable; do not assume the API signature matches.</li>
-<li>[FIXED] <del>[insors/insrc] function parseJson</del> — Lives in <code>src/agent/pipeline/analyze.ts</code>. This is a cross-module dependency from a different domain (pipeline analysis). <strong>Not a safe reuse target</strong> for a standalone library (Requirement 6 mandates standalone design). The <em>pattern</em> is instructive, but importing it would couple <code>src/agent/planner/</code> to <code>src/agent/pipeline/</code>.</li>
-<li>[FIXED] <del>[insors/insrc] function parseStepArray</del> — Same concern as <code>parseJson</code>. Cross-domain import from <code>src/agent/pipeline/plan-steps.ts</code> would violate the standalone constraint in Requirement 6.</li>
-<li>[FIXED] <del>[insors/insrc] function parseSearchPlan</del> — Same cross-domain issue from <code>src/agent/tasks/designer/</code>. Pattern reference only, not a reuse candidate.</li>
-<li>[FIXED] <del>[insors/insrc] function parseClassificationResponse</del> — Same cross-domain issue from <code>src/agent/classifier/</code>. Pattern reference only.</li>
-<li>[ADDED] <strong><code>fromMarkdown</code></strong> — <code>src/agent/planner/markdown-serializer.ts</code> (Requirement 3) — The primary parsing entry point that this requirement directly configures. The error recovery strategy chosen here <em>is</em> the implementation of <code>fromMarkdown</code>&#39;s behaviour contract. Any <code>MarkdownParser</code> helper must be called from or integrated into this function, not alongside it.</li>
-<li>[ADDED] <strong><code>updateStepInMarkdown</code></strong> — <code>src/agent/planner/markdown-serializer.ts</code> (Requirement 3) — The partial in-place update function already scoped to this module. Malformed file handling here is a <em>separate sub-case</em> of the same recovery question: what does <code>updateStepInMarkdown</code> do when the target step&#39;s checkbox line is missing or malformed?</li>
-<li>[ADDED] <strong><code>Plan&lt;T&gt;</code>, <code>Step&lt;T&gt;</code></strong> — <code>src/agent/planner/types.ts</code> (Requirement 1) — The parse result type. Recovery decisions must produce a valid (possibly partially-populated) <code>Plan&lt;T&gt;</code> or throw; the type definition constrains what &quot;partial&quot; means.</li>
-<li>[ADDED] <strong><code>planner/index.ts</code></strong> barrel export (Requirement 6) — Any new types (<code>ErrorRecoveryStrategy</code>, <code>ParseWarning</code>) introduced by this requirement must be exported from here to maintain the clean public API.</li>
-<li>[FIXED] <del><code>markdown-serializer.ts</code></del> — <strong>removed from reusable list</strong>. <code>toMarkdown</code>, <code>fromMarkdown</code>, <code>updateStepInMarkdown</code> operate on serialization and have no bearing on status precedence computation. Including it was a false positive.</li>
-<li>[FIXED] <del>function builtinRead</del> — <strong>REMOVED</strong>. <code>builtinRead</code> at executor.ts:75 is an agent tool executor function for LLM tool-call dispatch, not a reusable file I/O utility. It is unrelated to plan serialization and should not be listed here.</li>
-<li>[FIXED] <del>function builtinWrite</del> — <strong>REMOVED</strong>. Same reasoning as above; <code>builtinWrite</code> at executor.ts:91 is part of the agent tool executor pipeline, not a filesystem utility abstraction.</li>
-<li>[FIXED] <del>function builtinEdit</del> — <strong>REMOVED</strong>. Same reasoning; <code>builtinEdit</code> is part of agent tool dispatch, not a serializer-layer concern.</li>
-<li>[FIXED] <del>function readFile / writeFile</del> — <strong>REMOVED</strong>. These were listed as being at executor.ts:75/91, which is the same location as <code>builtinRead</code>/<code>builtinWrite</code> — they appear to be hallucinated aliases for the same entries. Standard Node.js <code>fs.promises.readFile</code>/<code>writeFile</code> are not codebase entities and should not be listed as reusable modules.</li>
-<li>[local] <code>function updateStepInMarkdown</code> — src/agent/planner/markdown-serializer.ts:237 — confirmed relevant. Performs in-place status update on Markdown string content. Explicitly string-level only; no file I/O. This is the key boundary function for requirement 9.</li>
-<li>[ADDED] <code>function toMarkdown</code> — src/agent/planner/markdown-serializer.ts — confirmed relevant (req 3). Converts a <code>Plan&lt;T&gt;</code> to a Markdown string. Operates at string level; caller owns I/O.</li>
-<li>[ADDED] <code>function fromMarkdown</code> — src/agent/planner/markdown-serializer.ts — confirmed relevant (req 3). Parses a Markdown string back into <code>Plan&lt;T&gt;</code>. Operates at string level; caller owns I/O.</li>
-<li>[ADDED] <code>planner/index.ts</code> barrel export — src/agent/planner/index.ts — confirmed relevant (req 6). Any new persistence component must be explicitly included or excluded from the public surface here.</li>
-</ul>
+    <h2 id="arch-summary">Architecture Summary</h2>
 
+    <h3 id="module-structure">Module Structure</h3>
+    <p>The planner module lives at <code>src/agent/planner/</code> as both an agent and a standalone utility library:</p>
+    <table>
+      <tr><th>File</th><th>Layer</th><th>Purpose</th></tr>
+      <tr><td><code>agent.ts</code></td><td>Agent</td><td><code>plannerAgent</code> definition — <code>AgentDefinition&lt;PlannerState&gt;</code></td></tr>
+      <tr><td><code>agent-state.ts</code></td><td>Agent</td><td><code>PlannerState</code>, <code>PlannerInput</code> types</td></tr>
+      <tr><td><code>steps.ts</code></td><td>Agent</td><td>8 step implementations (analyze → gather → draft → validate → resolve → detail → validate → serialize)</td></tr>
+      <tr><td><code>prompts.ts</code></td><td>Agent</td><td>LLM prompt templates for analysis, drafting, review, enrichment</td></tr>
+      <tr><td><code>types.ts</code></td><td>Utility</td><td><code>Plan&lt;T&gt;</code>, <code>Step&lt;T&gt;</code>, <code>StepStatus</code>, <code>PlanStatus</code>, extensible data types</td></tr>
+      <tr><td><code>engine.ts</code></td><td>Utility</td><td>Status transitions: <code>updateStepStatus</code>, <code>validateDependencies</code>, <code>detectBlockedSteps</code>, <code>detectCycles</code>, <code>computePlanStatus</code></td></tr>
+      <tr><td><code>progress.ts</code></td><td>Utility</td><td>Progress tracking: <code>getProgressSummary</code>, <code>getStatusHistory</code></td></tr>
+      <tr><td><code>markdown.ts</code></td><td>Utility</td><td>Markdown serialization: <code>toMarkdown</code>, <code>fromMarkdown</code>, <code>updateStepInMarkdown</code></td></tr>
+      <tr><td><code>utils.ts</code></td><td>Utility</td><td>Shared helpers: <code>generateId</code>, <code>detectCycle</code></td></tr>
+      <tr><td><code>index.ts</code></td><td>Export</td><td>Barrel — agent definition, utility functions, and all types</td></tr>
+    </table>
 
-    <h2>Risks &amp; Open Questions</h2>
+    <h3 id="dep-direction">Dependency Direction</h3>
+    <p><code>types.ts</code> &larr; <code>engine.ts</code> / <code>markdown.ts</code> / <code>progress.ts</code> / <code>utils.ts</code> &larr; <code>index.ts</code>. No cross-imports between engine, markdown, and progress modules.</p>
+
+    <h3 id="codebase-integration">Existing Codebase Integration</h3>
+    <p><strong>Reference types (not directly reused):</strong></p>
     <ul>
-<li><strong>Req 2</strong>: 1. <strong>[FIXED] False reuse risk removed</strong>: The <code>isValidTransition</code> reference pointed to an external filesystem path outside this project. Pulling it in would introduce an undeclared external dependency. All transition logic must be implemented locally.</li>
-<li><strong>Req 2</strong>: 2. <strong>[ADDED] <code>updateStepStatus</code> was missing from the sketch</strong> but is explicitly named in the requirement&#39;s references. Without it, the other two functions have no clear call site and the API surface is incomplete.</li>
-<li><strong>Req 2</strong>: 3. <strong>Terminal state definition must be locked to <code>types.ts</code></strong>: Both <code>validateDependencies</code> and <code>detectBlockedSteps</code> need to agree on what constitutes &quot;terminal&quot; (<code>done</code>, <code>skipped</code>). This should be a shared constant/type-guard exported from <code>types.ts</code> (e.g., <code>isTerminalStatus(s: StepStatus): boolean</code>) rather than hardcoded in two places. [ADDED risk: duplication if each function defines its own terminal-state check.]</li>
-<li><strong>Req 2</strong>: 4. <strong>[RETAINED] Circular dependency detection performance</strong>: DFS is O(V+E) which is acceptable for typical plan sizes, but if plans nest sub-steps (Requirement 1 tree structure), the traversal must flatten or recurse into sub-step dependency edges. The local model&#39;s sketch did not account for nested steps.</li>
-<li><strong>Req 2</strong>: 5. <strong>[ADDED] Nested sub-step interaction</strong>: Requirement 1 specifies a tree structure for sub-steps. It is unclear whether <code>dependencies</code> can cross sub-tree boundaries (a child step depending on a step in a sibling subtree). <code>detectCircularDependencies</code> and <code>validateDependencies</code> must handle a flattened ID-keyed index of all steps (including nested), not just the top-level array.</li>
-<li><strong>Req 2</strong>: 6. <strong>[ADDED] Cross-requirement conflict — Requirement 3 (Markdown round-trip)</strong>: <code>detectBlockedSteps</code> mutates step statuses to <code>&quot;blocked&quot;</code>. The Markdown serializer in Requirement 3 must reflect these computed <code>blocked</code> statuses on serialization. If <code>updateStepInMarkdown</code> patches only the directly-changed step, downstream steps auto-flipped to <code>blocked</code> by <code>detectBlockedSteps</code> will be stale in the file. The serializer and engine need a coordination contract.</li>
-<li><strong>Req 2</strong>: 7. <strong>[ADDED] Cross-requirement conflict — Requirement 4 (progress tracking)</strong>: <code>getStatusHistory</code> expects a changelog of transitions. <code>updateStepStatus</code> should emit a structured transition event (old status → new status, timestamp, reason) that <code>progress-tracker.ts</code> can record. This interface between modules should be defined before either is implemented.</li>
-<li><strong>Req 2</strong>: 8. <strong>[RETAINED] Distinguishing blocked causes</strong>: <code>detectBlockedSteps</code> must clearly separate (a) waiting on incomplete dependency, (b) transitively blocked through another blocked step, and (c) referential integrity failure (dependency ID not present in plan). These map to different user-facing messages and potentially different recovery paths.</li>
-<li><strong>Req 4</strong>: [FIXED] <strong>Recursive tree traversal is non-optional</strong> — <code>getProgressSummary</code> must walk sub-steps (requirement 1 defines a tree structure). The local sketch made no mention of this. A flat implementation would silently under-count steps in any nested plan.</li>
-<li><strong>Req 4</strong>: [FIXED] <strong><code>StatusHistoryLogger</code> class + separate file is a false proposal</strong> — it conflicts with requirement 6 (no duplication, clean reuse) and the canonical function references in requirement 4. Removed.</li>
-<li><strong>Req 4</strong>: [ADDED] <strong>Circular import risk</strong> — if <code>progress-tracker.ts</code> imports from <code>plan-engine.ts</code> (e.g., to wrap <code>updateStepStatus</code>), and <code>plan-engine.ts</code> calls <code>recordStatusTransition</code> from <code>progress-tracker.ts</code>, a circular dependency forms. Resolution: <code>recordStatusTransition</code> must live in <code>progress-tracker.ts</code> and be called <em>by</em> <code>plan-engine.ts</code> (one-directional import: engine → tracker), not the reverse.</li>
-<li><strong>Req 4</strong>: [ADDED] <strong><code>percentageComplete</code> denominator ambiguity</strong> — should <code>skipped</code> steps count toward the total? If skipped steps are excluded from the denominator, a plan where all non-skipped steps are done correctly reads 100%. This needs a documented convention in the function signature&#39;s JSDoc; the local sketch did not address it.</li>
-<li><strong>Req 4</strong>: [ADDED] <strong>History field in <code>Step&lt;T&gt;</code> must align with requirement 1</strong> — requirement 1 owns the <code>Step&lt;T&gt;</code> field list. Adding <code>statusHistory</code> here is a cross-requirement change that must be reflected back into requirement 1&#39;s definition, or <code>statusHistory</code> must be stored externally (e.g., a <code>Map&lt;stepId, StatusTransitionEntry[]&gt;</code> on <code>Plan&lt;T&gt;</code>). The tree-on-<code>Step</code> approach is simpler but requires explicit sign-off.</li>
-<li><strong>Req 4</strong>: [RETAINED] <strong>Timestamp consistency</strong> — all timestamps (history entries, <code>metadata.updated</code>) should use <code>new Date().toISOString()</code> (ISO-8601 UTC). Define a single <code>now()</code> utility or inline convention to prevent drift between call sites.</li>
-<li><strong>Req 4</strong>: [RETAINED] <strong>Performance for large plans</strong> — <code>getStatusHistory</code> returning full flat history is fine for moderate plans; for very large plans, a paginated or lazily-evaluated form may be needed. Flag as a future concern once plan size characteristics are known.</li>
-<li><strong>Req 6</strong>: 1. <strong>[FIXED] Self-contradiction in sketch</strong>: The original sketch lists <code>markdown-serializer.ts</code> and <code>progress-tracker.ts</code> as both existing reusable modules AND proposed new components. These files already exist per Requirements 3 and 4. The only new artifact this requirement introduces is <code>index.ts</code>.</li>
-<li><strong>Req 6</strong>: 2. <strong>[KEPT, clarified] Duplicate <code>PlanStatus</code>/<code>PlanStepStatus</code> definitions</strong>: If the codebase has these defined in multiple places (e.g., partially in a legacy <code>plan.ts</code> or agent-level types file), this requirement is the right moment to consolidate them into <code>types.ts</code> as the single source of truth. All other modules must import from there. Failure to do this will cause type incompatibilities at the barrel export boundary.</li>
-<li><strong>Req 6</strong>: 3. <strong>[KEPT, refined] Circular import risk</strong>: The dependency direction must be strictly <code>types.ts</code> ← <code>plan-engine.ts</code> / <code>markdown-serializer.ts</code> / <code>progress-tracker.ts</code> ← <code>index.ts</code>. Neither <code>plan-engine.ts</code> nor <code>markdown-serializer.ts</code> should import from each other. If <code>updateStepInMarkdown</code> needs to call <code>updateStepStatus</code> internally, this is a red flag — serialize and engine concerns must remain decoupled, with any orchestration happening at the caller level.</li>
-<li><strong>Req 6</strong>: 4. <strong>[ADDED] Barrel export scope risk</strong>: <code>index.ts</code> must export only the intended public API. Internal utilities (e.g., graph traversal helpers, regex patterns in the serializer) must remain unexported. Accidental re-export of internals creates implicit public contracts that become hard to refactor.</li>
-<li><strong>Req 6</strong>: 5. <strong>[ADDED] Req 7 (malformed Markdown) is unanswered and blocks <code>fromMarkdown</code></strong>: The <code>index.ts</code> barrel cannot expose a stable API contract for <code>fromMarkdown</code> until the error recovery strategy (strict throw vs. best-effort with warnings) is decided. This is an open dependency that should be resolved before finalizing the public export signature.</li>
-<li><strong>Req 6</strong>: 6. <strong>[ADDED] Req 9 (file I/O scope) affects what <code>index.ts</code> exports</strong>: If disk I/O is in scope, a <code>readPlan</code>/<code>writePlan</code> function needs to be added to the barrel. If not, the barrel is purely string/object-level. This must be clarified before the barrel export is considered complete.</li>
-<li><strong>Req 6</strong>: 7. <strong>[KEPT] Performance of dependency graph traversal</strong>: <code>detectBlockedSteps</code> and <code>validateDependencies</code> both traverse the dependency graph. For large plans, these should use memoization or topological sort rather than naive recursion. This is an implementation concern for <code>plan-engine.ts</code> but should be noted in the design.</li>
-<li><strong>Req 7</strong>: [FIXED] Removed: &quot;existing <code>parseJson</code> and <code>parseStepArray</code> functions could be adapted&quot; — these are cross-domain imports incompatible with the standalone library requirement (Req 6). Patterns can be copied, not imported.</li>
-<li><strong>Req 7</strong>: [ADDED] <strong>Requirement 3 round-trip fidelity conflict</strong>: best-effort recovery that silently defaults missing fields may produce a <code>Plan&lt;T&gt;</code> that serialises back to Markdown with synthetic data, silently corrupting the file on next <code>toMarkdown</code> call. The <code>ParseWarning</code> return value must be surfaced to callers who intend to re-persist.</li>
-<li><strong>Req 7</strong>: [ADDED] <strong>Overload complexity vs. two functions</strong>: The dual-signature <code>fromMarkdown</code> overload may confuse TypeScript inference for generic <code>T</code>. Consider whether <code>fromMarkdownStrict&lt;T&gt;</code> and <code>fromMarkdownSafe&lt;T&gt;</code> named exports are cleaner, both exported from <code>index.ts</code>.</li>
-<li><strong>Req 7</strong>: [ADDED] <strong>Sub-step (tree) recovery</strong>: Requirement 1 mandates nested sub-steps. Malformed nesting (e.g., a child step referencing a non-existent parent id) is a non-trivial recovery case not addressed by the sketch. Best-effort mode needs a defined rule: attach orphaned steps at root level? Discard? This must be specified.</li>
-<li><strong>Req 7</strong>: [ADDED] **Interaction with <code>detectBlockedSteps</code> (Req</li>
-<li><strong>Req 8</strong>: [VALIDATED] <strong>Consistency with <code>plan-engine.ts</code></strong>: <code>detectBlockedSteps</code> in <code>plan-engine.ts</code> already identifies blocked steps. <code>computePlanStatus</code> must consume the same blocked-state signal rather than re-deriving it from raw status strings independently, otherwise the two can diverge (e.g., a step blocked by dependency but whose <code>.status</code> hasn&#39;t been updated yet). Coordination strategy — either <code>updateStepStatus</code> eagerly writes <code>blocked</code> to <code>.status</code> before <code>computePlanStatus</code> reads it, or <code>computePlanStatus</code> also accepts the dependency graph and calls <code>detectBlockedSteps</code> internally. This design decision must be resolved before implementation.</li>
-<li><strong>Req 8</strong>: [VALIDATED] <strong>Edge cases</strong>: empty plans, all-skipped plans (no <code>done</code>), single-step plans — all need explicit handling in the precedence table.</li>
-<li><strong>Req 8</strong>: [ADDED] <strong>Recursive sub-step handling is non-trivial</strong>: the <code>Step&lt;T&gt;</code> type supports arbitrary depth nesting. The precedence rules must define whether an intermediate step&#39;s own status or its children&#39;s aggregated status takes precedence. Recommendation: leaf-node statuses drive aggregation bottom-up; intermediate node status is overridden by <code>computePlanStatus</code> output (not its stored <code>.status</code> field) to avoid stale intermediate values.</li>
-<li><strong>Req 8</strong>: [ADDED] <strong><code>skipped</code> precedence is ambiguous in the original proposal</strong>: the sketch listed precedence as <code>blocked &gt; done &gt; in-progress &gt; pending &gt; skipped</code>, implying a plan where all steps are <code>skipped</code> would be considered <code>pending</code>. This is almost certainly wrong. A separate <code>skipped</code> terminal state should be defined.</li>
-<li><strong>Req 8</strong>: [ADDED] <strong>Cross-requirement conflict with Requirement 1</strong>: Requirement 1 states the derived status is a field on <code>Plan&lt;T&gt;</code> itself. If <code>computePlanStatus</code> is pure and stateless, something must call it and update <code>Plan&lt;T&gt;.derivedStatus</code> on every mutation. This write-back responsibility must be assigned explicitly — either inside <code>updateStepStatus</code> (plan-engine) or as a documented caller obligation — to avoid the field going stale. Neither the requirement nor the sketch currently assigns this ownership.</li>
-<li><strong>Req 8</strong>: [VALIDATED] <strong>Performance</strong>: recomputing on every <code>updateStepStatus</code> call is O(n) over all steps. For plans with hundreds of steps or deep nesting this is acceptable, but the recursive sub-step traversal should be noted as a linear scan.</li>
-<li><strong>Req 8</strong>: [ADDED] <strong>Export consistency (Requirement 6)</strong>: <code>src/agent/planner/index.ts</code> must be updated to export <code>computePlanStatus</code> and the <code>PlanStatus</code> type alias (if extracted) to satisfy the &quot;clean public barrel export&quot; constraint. Forgetting this would silently break consumers of the module.</li>
-<li><strong>Req 9</strong>: [FIXED] <strong>Primary concern restated correctly:</strong> Requirement 9 is an <em>open scoping question</em>, not a confirmed feature. The sketch should not answer it by proposing implementation; it should surface the tradeoffs so a decision can be made.</li>
-<li><strong>Req 9</strong>: <strong>Environment portability (retained, sharpened):</strong> If persistence is added to the planner module, it introduces a hard dependency on Node.js <code>fs</code>, breaking compatibility with browser or edge environments. Decision branch A avoids this entirely.</li>
-<li><strong>Req 9</strong>: <strong>Consistency with req 6:</strong> Req 6 explicitly frames the planner as a &quot;standalone TypeScript library.&quot; Standalone libraries conventionally do not own I/O — they transform data. This is a strong architectural signal favoring Branch A (out of scope).</li>
-<li><strong>Req 9</strong>: [ADDED] <strong>Public API surface risk:</strong> If Branch B is chosen, <code>PlanFileStore</code> must be deliberately included in <code>index.ts</code>. If omitted from the barrel, callers cannot access it through the module&#39;s public contract, creating an inconsistency. If included, all consumers transitively depend on Node.js built-ins.</li>
-<li><strong>Req 9</strong>: [ADDED] <strong>Cross-requirement conflict with req 7:</strong> If persistence is in scope, the error-recovery policy (req 7, also unresolved) must be decided first — <code>loadPlan</code> would need to specify whether a malformed <code>.md</code> file throws or returns a partial result.</li>
-<li><strong>Req 9</strong>: [ADDED] <strong>Cross-requirement conflict with req 3 round-trip fidelity:</strong> <code>updateStepInMarkdown</code> does in-place patching rather than full re-serialization. If a caller in Branch B uses <code>loadPlan</code> → mutates → <code>savePlan</code>, they get a full rewrite via <code>toMarkdown</code>, which may not preserve hand-edited Markdown formatting. This is a silent fidelity loss that should be documented.</li>
-<li><strong>Req 9</strong>: <strong>Frequent I/O performance (retained):</strong> If step-status updates are streamed at high frequency (e.g., during active plan execution), patching via <code>updateStepInMarkdown</code> + targeted file write is preferable to full rewrite; the persistence layer must expose both patterns or document the tradeoff explicitly.</li>
-</ul>
+      <li><code>src/shared/types.ts</code> — existing <code>Plan</code>, <code>PlanStep</code>, <code>PlanStepStatus</code>, <code>PlanStatus</code> types. Non-generic; the new <code>Plan&lt;T&gt;</code> supersedes these. Retain as reference for field naming conventions.</li>
+      <li><code>src/shared/types.ts</code> — <code>PlanStepComplexity</code> type. Genuinely reusable for <code>ImplementationStepData.estimatedComplexity</code>.</li>
+    </ul>
+    <p><strong>Downstream consumers (integration targets):</strong></p>
+    <ul>
+      <li><code>src/agent/tasks/plan-store.ts</code> — <code>maybeCompletePlan()</code>, <code>reactivatePlan()</code>, <code>updateStepState()</code> — must be updated to use <code>updateStepStatus()</code> from the new module</li>
+      <li><code>src/agent/tasks/implement.ts</code>, <code>test.ts</code>, <code>debug.ts</code> — <code>maybeAdvancePlanStep()</code> — migration targets for <code>updateStepStatus()</code></li>
+      <li><code>src/agent/tasks/plan.ts</code> — <code>buildPlan()</code> — consumer of new generic types</li>
+    </ul>
+
+    <h2 id="risks">Key Risks &amp; Design Decisions</h2>
+
+    <h3 id="risks-agent">Agent Layer</h3>
+    <ul>
+      <li><strong>LLM plan parsing reliability</strong>: <code>parsePlanFromLLM()</code> must robustly extract structured <code>Plan&lt;T&gt;</code> from free-form LLM output. Expect JSON extraction failures — implement fallback parsing and validation. Consider asking the LLM to output JSON directly with a schema.</li>
+      <li><strong>Plan type auto-detection</strong>: <code>detectPlanType()</code> infers implementation/test/migration/generic from the analysis. If wrong, the detail-steps enricher adds irrelevant data. Mitigate via the validate-plan gate where the user can correct.</li>
+      <li><strong>Dependency loop between resolve-dependencies and validate-plan</strong>: If the LLM keeps generating cycles on re-draft, the pipeline could loop. Limit total resolve→validate iterations (e.g., 2 attempts, then force-proceed with issues flagged).</li>
+      <li><strong>Existing plan update mode</strong>: When <code>existingPlan</code> is provided, the agent must diff and merge rather than replace. This is significantly more complex than fresh creation — consider deferring to a later version.</li>
+      <li><strong>Gate overhead on CPU</strong>: Each gate round-trip adds latency. On CPU-only inference, minimize the number of LLM calls per edit loop. Consider skipping Claude review in draft-plan when no Claude provider is available.</li>
+      <li><strong>State serialization size</strong>: <code>PlannerState</code> includes the full <code>Plan</code> object plus analysis text and codebase findings. For large plans with many steps, checkpoint files could grow large. Monitor and compress if needed.</li>
+    </ul>
+
+    <h3 id="risks-utility">Utility Layer</h3>
+    <ul>
+      <li><strong>Nested sub-step traversal</strong>: All functions (<code>getProgressSummary</code>, <code>detectBlockedSteps</code>, <code>validateDependencies</code>, <code>computePlanStatus</code>) must recursively walk the sub-step tree. A flat implementation would silently under-count steps.</li>
+      <li><strong>Terminal state definition</strong>: <code>validateDependencies</code> and <code>detectBlockedSteps</code> must agree on what constitutes "terminal" (<code>done</code>, <code>skipped</code>). Export an <code>isTerminalStatus()</code> type-guard from <code>types.ts</code>.</li>
+      <li><strong>Circular import prevention</strong>: Dependency direction: <code>types.ts</code> &larr; <code>engine.ts</code> / <code>markdown.ts</code> / <code>progress.ts</code> &larr; <code>steps.ts</code> / <code>agent.ts</code> &larr; <code>index.ts</code>. No cross-imports between engine, markdown, and progress.</li>
+      <li><strong>Status history ownership</strong>: <code>updateStepStatus</code> in <code>engine.ts</code> should call <code>recordStatusTransition</code> from <code>progress.ts</code> (one-directional import: engine &rarr; progress).</li>
+      <li><strong>Plan status write-back</strong>: <code>computePlanStatus</code> is pure — <code>updateStepStatus</code> must call it and update <code>Plan&lt;T&gt;.status</code> on every mutation.</li>
+      <li><strong>Cross-tree dependencies</strong>: <code>detectCycles</code> and <code>validateDependencies</code> must use a flattened ID-keyed index of all steps (including nested).</li>
+      <li><strong>Open questions Q7-Q9</strong> (error recovery strategy, status precedence rules, persistence scope) must be resolved before finalizing the <code>fromMarkdown</code> API contract.</li>
+    </ul>
 
   </main>
 </body>

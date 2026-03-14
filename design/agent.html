@@ -283,6 +283,7 @@
           <li><a href="#personas-summary">Agent personas &mdash; summary</a></li>
           <li><a href="#intent-agent-routing">Intent &rarr; agent routing</a></li>
           <li><a href="#agent-lifecycle">Agent lifecycle (per turn)</a></li>
+          <li><a href="#agent-framework">Agent framework</a></li>
         </ol>
       </li>
       <li><a href="#llm-providers">LLM Providers</a></li>
@@ -299,6 +300,7 @@
         <a href="#agent-personas">Agent Personas</a>
         <ol>
           <li><a href="#designer-agent">Designer Agent</a></li>
+          <li><a href="#planner-agent">Planner Agent</a></li>
           <li><a href="#developer-agent">Developer Agent</a></li>
           <li><a href="#tester-agent">Tester Agent</a></li>
           <li><a href="#deployer-agent">Deployer Agent</a></li>
@@ -410,18 +412,17 @@
 │  4. Delegation (context + task → agent)                  │
 │  5. Post-turn bookkeeping (L2 update, plan state, index) │
 └────────────┬─────────┬──────────┬──────────┬─────────────┘
-             │         │          │          │
-             ▼         ▼          ▼          ▼
-        ┌─────────┐ ┌─────────┐ ┌────────┐ ┌──────────┐
-        │DESIGNER │ │DEVELOPER│ │ TESTER │ │ DEPLOYER │
-        │         │ │         │ │        │ │          │
-        │ require │ │  plan   │ │  test  │ │  deploy  │
-        │ design  │ │implement│ │        │ │ release  │
-        │ review  │ │refactor │ │        │ │ infra    │
-        │         │ │  debug  │ │        │ │          │
-        │         │ │research │ │        │ │          │
-        │         │ │document │ │        │ │          │
-        └─────────┘ └─────────┘ └────────┘ └──────────┘</code></pre>
+             │         │          │          │          │
+             ▼         ▼          ▼          ▼          ▼
+        ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌────────┐ ┌──────────┐
+        │DESIGNER │ │ PLANNER │ │DEVELOPER│ │ TESTER │ │ DEPLOYER │
+        │         │ │         │ │         │ │        │ │          │
+        │ require │ │  plan   │ │implement│ │  test  │ │  deploy  │
+        │ design  │ │         │ │refactor │ │        │ │ release  │
+        │ review  │ │         │ │  debug  │ │        │ │ infra    │
+        │         │ │         │ │research │ │        │ │          │
+        │         │ │         │ │document │ │        │ │          │
+        └─────────┘ └─────────┘ └─────────┘ └────────┘ └──────────┘</code></pre>
 
   <h3 id="orchestrator-responsibilities">Orchestrator responsibilities</h3>
   <p>
@@ -467,8 +468,15 @@
         <td>standard (Sonnet)</td>
       </tr>
       <tr>
+        <td><span class="badge badge-local">PLANNER</span></td>
+        <td><code>plan</code></td>
+        <td>Plan creation &mdash; iterative 8-step pipeline with dependency validation, type-specific enrichment, and user gates</td>
+        <td>Local (qwen3-coder) + Claude review</td>
+        <td>standard (Sonnet) for review</td>
+      </tr>
+      <tr>
         <td><span class="badge badge-local">DEVELOPER</span></td>
-        <td><code>plan</code>, <code>implement</code>, <code>refactor</code>, <code>debug</code>, <code>research</code>, <code>document</code></td>
+        <td><code>implement</code>, <code>refactor</code>, <code>debug</code>, <code>research</code>, <code>document</code></td>
         <td>Code authoring &amp; modification &mdash; writes, restructures, debugs, and documents code</td>
         <td>Local (qwen3-coder)</td>
         <td>fast (Haiku) for validation</td>
@@ -507,6 +515,8 @@ function selectAgent(intent: Intent): AgentPersona {
       return designerAgent;
 
     case 'plan':
+      return plannerAgent;
+
     case 'implement':
     case 'refactor':
     case 'debug':
@@ -582,11 +592,49 @@ interface AgentResult {
   planTransition?: { stepId: string; state: 'done' | 'failed' | 'skipped'; note: string };
 }</code></pre>
 
+  <div class="callout info">
+    <strong>Evolution note:</strong> The <code>AgentPersona</code> interface above describes the
+    original per-turn delegation model. The Designer agent has since been reimplemented using the
+    <a href="agent-framework.html">agent framework</a>'s <code>AgentDefinition</code> pattern,
+    which adds step-based execution, checkpointing, and validation gates. Other agents will
+    migrate to this pattern as their multi-step workflows are implemented.
+  </div>
+
   <div class="callout warn">
-    <strong>Agents are stateless across turns.</strong> An agent does not remember previous turns
-    or maintain its own conversation history. All continuity is handled by the orchestrator via
-    the layered memory model (L2 summary, L3a/L3b history). This keeps agents simple, testable,
-    and replaceable &mdash; a persona can be swapped or upgraded without touching session logic.
+    <strong>Agents are stateless across turns</strong> &mdash; with one exception. Simple agents
+    (Developer, Tester, Deployer) receive a fully assembled context package each turn and
+    return a result, with no cross-turn memory. The Designer uses the <strong>agent framework</strong>
+    for its multi-step pipeline: state is checkpointed after every step and can be resumed across
+    sessions, but the framework &mdash; not the agent itself &mdash; manages persistence. The agent's step
+    functions remain pure: <code>run(state, ctx) &rarr; {state, next}</code>.
+  </div>
+
+  <h3 id="agent-framework">Agent framework</h3>
+
+  <p>
+    Long-running, multi-step agent workflows (e.g. the Designer's iterative per-requirement
+    design pipeline) use the <strong>agent framework</strong> &mdash; a step-based state machine with
+    file-based checkpointing, crash recovery, and resume support. The framework generalises
+    the orchestrator's per-turn lifecycle into a durable, interruptible execution model.
+  </p>
+
+  <table>
+    <thead><tr><th>Concept</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>AgentDefinition&lt;S&gt;</code></td><td>Agent configuration: ID, version, initial state factory, named steps, first step, optional migration function</td></tr>
+      <tr><td><code>AgentStep&lt;S&gt;</code></td><td>Named step with <code>run(state, ctx) &rarr; {state, next}</code> and optional <code>artifacts(state) &rarr; string[]</code></td></tr>
+      <tr><td><code>StepContext</code></td><td>Execution context: <code>channel</code>, <code>progress()</code>, <code>gate()</code>, <code>emit()</code>, <code>rpc()</code>, <code>writeArtifact()</code>, <code>readArtifact()</code>, <code>signal</code></td></tr>
+      <tr><td><code>Channel</code></td><td>Transport abstraction: <code>send()</code>, <code>gate()</code> (blocking validation), <code>onMessage()</code>, <code>close()</code></td></tr>
+      <tr><td>Checkpoint</td><td>Atomic (temp + rename) state snapshot after every step &mdash; <code>~/.insrc/agents/&lt;runId&gt;/state.json</code></td></tr>
+      <tr><td>Crash recovery</td><td>PID liveness check + heartbeat staleness (2 min threshold). Missing artifacts trigger rollback.</td></tr>
+      <tr><td>CLI</td><td><code>insrc agent list|resume|discard|prune</code> &mdash; manage runs from the terminal</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout info">
+    <strong>Full specification:</strong> Core abstractions, channel implementations, checkpoint
+    storage layout, crash recovery scenarios, and migration strategy are detailed in
+    <a href="agent-framework.html">Agent Framework &mdash; Design Document</a>.
   </div>
 
   <h2 id="llm-providers">LLM Providers</h2>
@@ -639,7 +687,7 @@ interface AgentResult {
       <tr><td><code>requirements</code></td><td><span class="badge badge-claude">DESIGNER</span></td><td>Clarify, capture, or refine what needs to be built</td><td><span class="badge badge-claude">CLAUDE</span></td><td>Sonnet</td><td>Enhance local sketch; resolve ambiguities</td></tr>
       <tr><td><code>design</code></td><td><span class="badge badge-claude">DESIGNER</span></td><td>Architecture, API shape, module boundaries, tradeoff analysis</td><td><span class="badge badge-claude">CLAUDE</span></td><td>Sonnet</td><td>Enhance local sketch; tradeoff reasoning</td></tr>
       <tr><td><code>review</code></td><td><span class="badge badge-claude">DESIGNER</span></td><td>Critique correctness, style, security, or performance of code</td><td><span class="badge badge-claude">CLAUDE</span></td><td>Sonnet</td><td>Full review; security and performance judgment</td></tr>
-      <tr><td><code>plan</code></td><td><span class="badge badge-local">DEVELOPER</span></td><td>Break a feature or change into an ordered implementation checklist</td><td><span class="badge badge-claude">CLAUDE</span></td><td>Sonnet</td><td>Enhance local sketch; order and dependency resolution</td></tr>
+      <tr><td><code>plan</code></td><td><span class="badge badge-local">PLANNER</span></td><td>Break a feature or change into an ordered, typed plan with dependency validation</td><td><span class="badge badge-local">LOCAL</span> + <span class="badge badge-claude">CLAUDE</span></td><td>Sonnet</td><td>Review &amp; refine local draft; dependency validation</td></tr>
       <tr><td><code>implement</code></td><td><span class="badge badge-local">DEVELOPER</span></td><td>Write or edit code to satisfy a known specification</td><td><span class="badge badge-local">LOCAL</span></td><td>Haiku</td><td>Validate tool call requests; Stage 2 diff validation; fix direction on 3-failure escalation</td></tr>
       <tr><td><code>refactor</code></td><td><span class="badge badge-local">DEVELOPER</span></td><td>Restructure code without changing observable behaviour</td><td><span class="badge badge-local">LOCAL</span></td><td>Haiku</td><td>Validate tool call requests; Stage 2 diff behaviour-equivalence check</td></tr>
       <tr><td><code>debug</code></td><td><span class="badge badge-local">DEVELOPER</span></td><td>Diagnose and fix a failing or incorrect behaviour</td><td><span class="badge badge-local">LOCAL</span></td><td>Haiku</td><td>Validate kubectl/shell call requests; stuck escalation direction</td></tr>
@@ -1096,25 +1144,105 @@ Cost if logs are large    ~$0.080+            ~$0.0008  (cost stays flat)</code>
   <table>
     <tr><th>Property</th><th>Value</th></tr>
     <tr><td>Intents</td><td><code>requirements</code>, <code>design</code>, <code>review</code></td></tr>
+    <tr><td>Agent ID</td><td><code>designer</code> (version 1)</td></tr>
+    <tr><td>Framework</td><td>Step-based state machine (<code>AgentDefinition&lt;DesignerState&gt;</code>)</td></tr>
     <tr><td>Primary role</td><td>Creative &amp; architectural reasoning &mdash; turns raw user intent into structured requirements, design documents, and code reviews</td></tr>
-    <tr><td>Default provider</td><td>Claude (always escalated &mdash; both stages run for requirements and design; review is Claude-primary)</td></tr>
-    <tr><td>Claude tier</td><td>standard (Sonnet); <code>@opus</code> for deep architectural reviews</td></tr>
-    <tr><td>Output formats</td><td>Markdown (requirements, review), HTML (design documents)</td></tr>
-    <tr><td>Tool usage</td><td>Read-only tools for context assembly (graph_*, Read, Grep, git diff/log); no mutating tools</td></tr>
+    <tr><td>Local provider</td><td>Ollama (<code>qwen3-coder</code>) &mdash; requirements extraction, sketch writing, detail generation, search planning</td></tr>
+    <tr><td>Claude provider</td><td>Requirements enhancement, sketch review, detail review on edit feedback (configurable tier)</td></tr>
+    <tr><td>Output formats</td><td>Markdown or HTML &mdash; configurable via design templates</td></tr>
+    <tr><td>Tool usage</td><td>Read-only &mdash; <code>graph_*</code>, <code>Read</code>, <code>Grep</code>, <code>Glob</code>, <code>git diff/log</code>; no mutating tools</td></tr>
+    <tr><td>Checkpointing</td><td>After every step &mdash; <code>~/.insrc/agents/&lt;runId&gt;/state.json</code></td></tr>
     <tr><td>Session carry-forward</td><td>Stores <code>[requirements]</code> and <code>[design]</code> tags in L2 for downstream agents</td></tr>
+    <tr><td>Mutations</td><td>None &mdash; the Designer never calls Write, Edit, or Bash with side effects</td></tr>
   </table>
 
-  <h4>Capabilities</h4>
+  <h4>Pipeline (9 steps)</h4>
+  <ol>
+    <li><strong>extract-requirements</strong> <span class="badge badge-local">LOCAL</span> extract + <span class="badge badge-claude">CLAUDE</span> enhance</li>
+    <li><strong>validate-requirements</strong> &mdash; user gate (approve / edit / reject)</li>
+    <li><strong>parse-requirements</strong> &mdash; text &rarr; <code>ParsedRequirement[]</code> &rarr; <code>RequirementTodo[]</code></li>
+    <li><strong>pick-next-requirement</strong> &mdash; select next pending todo (or jump to assemble)</li>
+    <li><strong>sketch</strong> <span class="badge badge-local">LOCAL</span> write + <span class="badge badge-claude">CLAUDE</span> review &mdash; LLM-planned codebase search + sketch generation</li>
+    <li><strong>validate-sketch</strong> &mdash; user gate (approve / edit / reject / skip)</li>
+    <li><strong>detail</strong> <span class="badge badge-local">LOCAL</span> &mdash; write detailed section from approved sketch</li>
+    <li><strong>validate-detail</strong> &mdash; user gate (approve / edit / reject / skip)</li>
+    <li><strong>assemble</strong> &mdash; template filling &rarr; final document + structured extraction</li>
+  </ol>
+  <p>
+    Steps 4&ndash;8 loop per requirement. Each gate supports max 3 edit rounds with feedback injection.
+    The <code>review</code> intent bypasses this pipeline entirely &mdash; it runs a single-pass Claude
+    analysis via <code>runDesignerReview()</code>.
+  </p>
+
+  <h4>Key implementation features</h4>
   <ul>
-    <li><strong>requirements</strong> &mdash; local sketch of existing code, gaps, open questions, and constraints; Claude enhances into a concrete, testable requirements document</li>
-    <li><strong>design</strong> &mdash; local sketch of proposed structure, integration points, data flow, and alternatives; Claude produces final design with cross-repo impact analysis and tradeoff reasoning</li>
-    <li><strong>review</strong> &mdash; local model assembles context bundle (diff + touched entities + neighbour signatures); Claude performs full review for correctness, security, performance, and style</li>
+    <li><strong>LLM-driven search planning</strong> &mdash; the local model generates 3&ndash;6 targeted search queries per requirement instead of naively vector-searching the raw text</li>
+    <li><strong>Context compression</strong> &mdash; completed requirements are compressed to ~500&ndash;800 chars each (type signatures + function signatures + key decisions) to keep token budget bounded across requirements</li>
+    <li><strong>Dual execution path</strong> &mdash; agent framework steps (checkpoint/resume) and async generator (direct REPL use) both call the same pure functions</li>
+    <li><strong>Validation gates</strong> &mdash; framework <code>ctx.gate()</code> with <code>GatePayload</code> / <code>ReplyPayload</code> protocol; <code>ReplChannel</code> for terminal, <code>TestChannel</code> for CI</li>
   </ul>
 
   <div class="callout">
-    <strong>Detailed design:</strong> Full prompt skeletons, stage definitions, escalation
-    thresholds, output schemas, and context assembly for the Designer agent are specified in
+    <strong>Full specification:</strong> Prompts, step implementations, state machine, codebase
+    analysis, context compression, gate mechanics, templates, and output schemas are detailed in
     <a href="agent-designer.html">Designer Agent &mdash; Detailed Design</a>.
+  </div>
+
+  <hr />
+
+  <h3 id="planner-agent"><span class="badge badge-local">PLANNER</span> Planner Agent</h3>
+
+  <table>
+    <tr><th>Property</th><th>Value</th></tr>
+    <tr><td>Intents</td><td><code>plan</code></td></tr>
+    <tr><td>Agent ID</td><td><code>planner</code> (version 1)</td></tr>
+    <tr><td>Framework</td><td>Step-based state machine (<code>AgentDefinition&lt;PlannerState&gt;</code>)</td></tr>
+    <tr><td>Primary role</td><td>Plan creation &mdash; iterative pipeline that analyses requests, drafts typed plans, validates dependencies, and enriches steps with domain-specific data</td></tr>
+    <tr><td>Local provider</td><td>Ollama (<code>qwen3-coder</code>) &mdash; request analysis, plan drafting, step enrichment</td></tr>
+    <tr><td>Claude provider</td><td>Plan review &amp; refinement (configurable tier)</td></tr>
+    <tr><td>Output formats</td><td>Markdown with YAML frontmatter (round-trip fidelity via <code>toMarkdown</code> / <code>fromMarkdown</code>)</td></tr>
+    <tr><td>Tool usage</td><td>Read-only &mdash; <code>graph_*</code> via daemon RPC for codebase context; no mutating tools</td></tr>
+    <tr><td>Checkpointing</td><td>After every step &mdash; <code>~/.insrc/agents/&lt;runId&gt;/state.json</code></td></tr>
+    <tr><td>Plan types</td><td><code>implementation</code>, <code>test</code>, <code>migration</code>, <code>generic</code> &mdash; each with typed step data</td></tr>
+    <tr><td>Mutations</td><td>None &mdash; produces a plan document; does not write code or modify files</td></tr>
+  </table>
+
+  <h4>Pipeline (8 steps)</h4>
+  <ol>
+    <li><strong>analyze-request</strong> <span class="badge badge-local">LOCAL</span> &mdash; parse user intent, detect plan type, identify goals and constraints</li>
+    <li><strong>gather-context</strong> &mdash; daemon RPC: search knowledge graph for relevant entities and dependencies</li>
+    <li><strong>draft-plan</strong> <span class="badge badge-local">LOCAL</span> draft + <span class="badge badge-claude">CLAUDE</span> review &mdash; populate <code>Plan&lt;T&gt;</code> with typed steps</li>
+    <li><strong>validate-plan</strong> &mdash; user gate (approve / edit / reject); reject restarts from analyze-request</li>
+    <li><strong>resolve-dependencies</strong> &mdash; cycle detection, dependency validation, blocked step detection; issues loop back to validate-plan</li>
+    <li><strong>detail-steps</strong> &mdash; per-type enrichment (implementation: file paths, complexity; test: categories, coverage; migration: rollback steps)</li>
+    <li><strong>validate-details</strong> &mdash; user gate (approve / edit / skip)</li>
+    <li><strong>serialize</strong> &mdash; <code>toMarkdown(plan)</code> &rarr; write artifact &rarr; emit to user</li>
+  </ol>
+
+  <h4>Dual responsibility</h4>
+  <p>
+    The planner module serves as both an <strong>agent</strong> (the 8-step pipeline above) and a
+    <strong>utility library</strong> reused by other agents:
+  </p>
+  <ul>
+    <li><strong>engine.ts</strong> &mdash; <code>updateStepStatus()</code>, <code>validateDependencies()</code>, <code>detectCycles()</code>, <code>computePlanStatus()</code></li>
+    <li><strong>progress.ts</strong> &mdash; <code>getProgressSummary()</code>, <code>getStatusHistory()</code>, status transition tracking</li>
+    <li><strong>markdown.ts</strong> &mdash; <code>toMarkdown()</code>, <code>fromMarkdown()</code>, <code>updateStepInMarkdown()</code> (surgical updates)</li>
+  </ul>
+
+  <h4>Extensible plan types</h4>
+  <p>
+    Plans are generic: <code>Plan&lt;T&gt;</code> and <code>Step&lt;T&gt;</code> carry a typed <code>data</code>
+    payload. Built-in types: <code>ImplementationStepData</code> (file paths, complexity),
+    <code>TestStepData</code> (category, coverage, fixtures), <code>MigrationStepData</code>
+    (rollback steps, validation checkpoints).
+  </p>
+
+  <div class="callout">
+    <strong>Full specification:</strong> Types, step implementations, dependency resolution,
+    status transitions, progress tracking, markdown serialization, and plan type enrichment
+    are detailed in
+    <a href="planner-module.html">Planner Module &mdash; Design Document</a>.
   </div>
 
   <hr />
@@ -1123,18 +1251,17 @@ Cost if logs are large    ~$0.080+            ~$0.0008  (cost stays flat)</code>
 
   <table>
     <tr><th>Property</th><th>Value</th></tr>
-    <tr><td>Intents</td><td><code>plan</code>, <code>implement</code>, <code>refactor</code>, <code>debug</code>, <code>research</code>, <code>document</code></td></tr>
-    <tr><td>Primary role</td><td>Code authoring &amp; modification &mdash; plans work, writes and restructures code, debugs failures, researches questions, and generates documentation</td></tr>
-    <tr><td>Default provider</td><td>Local (qwen3-coder) for all code-producing intents; Claude for plan enhancement</td></tr>
-    <tr><td>Claude tier</td><td>fast (Haiku) for diff validation, tool-call validation, and stuck escalation; standard (Sonnet) for plan enhancement and research escalation</td></tr>
-    <tr><td>Output formats</td><td>Unified diff (implement, refactor, document), JSON plan (plan), text answer (research, debug)</td></tr>
+    <tr><td>Intents</td><td><code>implement</code>, <code>refactor</code>, <code>debug</code>, <code>research</code>, <code>document</code></td></tr>
+    <tr><td>Primary role</td><td>Code authoring &amp; modification &mdash; writes and restructures code, debugs failures, researches questions, and generates documentation</td></tr>
+    <tr><td>Default provider</td><td>Local (qwen3-coder) for all code-producing intents</td></tr>
+    <tr><td>Claude tier</td><td>fast (Haiku) for diff validation, tool-call validation, and stuck escalation; standard (Sonnet) for research escalation</td></tr>
+    <tr><td>Output formats</td><td>Unified diff (implement, refactor, document), text answer (research, debug)</td></tr>
     <tr><td>Tool usage</td><td>Full tool set &mdash; read-only tools (auto-execute) + mutating tools (Claude-validated): Write, Edit, Bash, git, kubectl</td></tr>
     <tr><td>Plan integration</td><td>Reads active plan step from Kuzu; transitions step state on completion; respects checkpoint gates</td></tr>
   </table>
 
   <h4>Capabilities</h4>
   <ul>
-    <li><strong>plan</strong> &mdash; local draft of ordered implementation steps with dependencies and test checkpoints; Claude refines ordering, fills underspecified steps, adds complexity labels; plan persisted to Kuzu</li>
     <li><strong>implement</strong> &mdash; local model produces unified diff from plan step or user instruction; Claude validates correctness, compatibility, edge cases, and security; up to 2 retry rounds</li>
     <li><strong>refactor</strong> &mdash; same pipeline as implement with behaviour-equivalence validation and 2-hop caller context</li>
     <li><strong>debug</strong> &mdash; local model drives a tool loop (read logs, grep code, query graph); Claude validates mutating fixes; stuck escalation via &le;200-token summary</li>
@@ -1144,7 +1271,7 @@ Cost if logs are large    ~$0.080+            ~$0.0008  (cost stays flat)</code>
 
   <div class="callout">
     <strong>Detail deferred:</strong> Full prompt skeletons, stage definitions, retry logic,
-    plan persistence schema, research source selection, and escalation thresholds for the
+    research source selection, and escalation thresholds for the
     Developer agent will be specified in a dedicated iteration.
   </div>
 
@@ -1258,8 +1385,11 @@ Cost if logs are large    ~$0.080+            ~$0.0008  (cost stays flat)</code>
       "designer.design":              "standard",  // architecture enhancement
       "designer.review":              "standard",  // full code review
 
+      // Planner agent
+      "planner.plan":                 "standard",  // plan ordering and dependency resolution
+      "planner.detail":               "fast",      // step detail review
+
       // Developer agent
-      "developer.plan":               "standard",  // plan ordering and dependency resolution
       "developer.implement.validate": "fast",      // Stage 2 diff correctness check
       "developer.implement.escalation": "fast",    // fix direction after 3 local failures
       "developer.refactor.validate":  "fast",      // Stage 2 behaviour-equivalence check
@@ -1889,37 +2019,73 @@ async function ensureModels(ollama: Ollama): Promise&lt;void&gt; {
   agent/
     index.ts              -- Session entry point: connect to daemon, resolve closure, start REPL
     session.ts            -- Conversation history, context window management
-    context.ts            -- Assembles structured graph context (L1–L4) for each turn
-    escalation.ts         -- Escalation signals, user prompt, cost announcement
-    memory.ts             -- Turn storage, semantic retrieval (L3b), rolling summarization (L2)
-    budget.ts             -- Token budget enforcement and overflow priority
+    config.ts             -- AgentConfig loading from ~/.insrc/config.json
+    router.ts             -- Provider selection (local vs Claude)
+    escalation.ts         -- Auto-escalation to Claude based on scope signals
 
-    orchestrator/
-      pipeline.ts         -- Orchestrator pipeline: classify → assemble → delegate → commit
-      router.ts           -- Intent classification (local LLM structured output + session signals)
-      agent-router.ts     -- Intent → agent persona mapping
-      graph-handler.ts    -- Direct graph query handler (no LLM, orchestrator-owned)
-      plan-gate.ts        -- Pre-turn checkpoint gate and plan step lifecycle
-      types.ts            -- AgentPersona, AgentTask, AgentResult, Intent, PipelineEvent
+    classifier/           -- Intent classification (LLM-based with keyword fallback)
+      index.ts            -- Classifier entry point
+      prompts.ts          -- Classification system prompt
+      types.ts            -- ClassificationResult, SessionContext
+
+    context/              -- Layered context management (L1-L5 budget system)
+      index.ts            -- Context assembly entry point
+      budget.ts           -- Token budget enforcement and overflow priority
 
     providers/
       ollama.ts           -- OllamaProvider: wraps ollama npm package (qwen3-coder:latest)
       claude.ts           -- ClaudeProvider: wraps @anthropic-ai/sdk
-      search.ts           -- SearchProvider: Brave Search API or Claude WebSearch fallback
 
-    personas/
-      designer.ts         -- Designer agent: requirements, design, review
-      developer.ts        -- Developer agent: plan, implement, refactor, debug, research, document
-      tester.ts           -- Tester agent: test (develop → validate → execute → fix loop)
-      deployer.ts         -- Deployer agent: deploy, release, infra
+    framework/            -- Agent framework: step-based state machine with checkpoint/resume
+      types.ts            -- AgentDefinition, AgentStep, StepContext, Channel, Checkpoint
+      runner.ts           -- runAgent() execution loop, checkpoint persistence, crash recovery
+      channel.ts          -- ReplChannel (terminal I/O), TestChannel (scripted auto-approve)
 
-    pipeline/             -- Pipeline V2: 4-stage incremental architecture (see pipeline-v2-plan.md)
+    pipeline/             -- 4-stage pipeline: analyze &rarr; plan &rarr; execute &rarr; assemble
+      context-provider.ts -- DaemonContextProvider (IPC search + expand)
       analyze.ts          -- Stage 1: input analysis and chunking
       plan.ts             -- Stage 2: execution plan generation
       execute.ts          -- Stage 3: per-step execution with streaming
       assemble.ts         -- Stage 4: output assembly
-      types.ts            -- Shared pipeline types (AnalysisResult, ExecutionPlan, etc.)
-      chunker.ts          -- Input chunking logic (token estimation, overlap)</code></pre>
+      types.ts            -- Shared pipeline types
+
+    tasks/
+      designer/           -- Designer agent: requirements, design, review (15 files)
+        agent.ts          -- AgentDefinition&lt;DesignerState&gt; wiring
+        agent-state.ts    -- DesignerState extends AgentState
+        steps.ts          -- 9 AgentStep implementations
+        types.ts          -- DesignerInput, RequirementTodo, RequirementSketch, DesignerResult
+        prompts.ts        -- 8 system prompts
+        requirements.ts   -- extractRequirements, enhanceRequirements, parseRequirementsList
+        sketch.ts         -- writeSketch, reviewSketch, codebase analysis
+        detail.ts         -- writeDetail, reviewDetail
+        assembly.ts       -- assembleDocument (template filling + structured extraction)
+        context.ts        -- compressHistory (type signatures + decisions)
+        search-planner.ts -- planSearches (LLM-driven categorized search queries)
+        validation.ts     -- ValidationChannel, renderGate, parseGateResponse
+        templates.ts      -- resolveTemplate, built-in MD and HTML templates
+        review.ts         -- runDesignerReview (single-pass code review)
+        index.ts          -- Barrel export + runDesignerPipeline async generator
+
+    planner/              -- Planner agent: plan generation, dependency resolution (10 files)
+        agent.ts          -- AgentDefinition&lt;PlannerState&gt; wiring
+        agent-state.ts    -- PlannerState extends AgentState
+        steps.ts          -- 8 AgentStep implementations
+        types.ts          -- PlannerInput, Plan&lt;T&gt;, Step&lt;T&gt;, typed step data payloads
+        prompts.ts        -- System prompts (analysis, planning, dependency, detail)
+        engine.ts         -- Plan engine: dependency graph, topological sort, cycle detection
+        progress.ts       -- Step progress tracking and status rendering
+        markdown.ts       -- Plan &rarr; Markdown serialization
+        utils.ts          -- Shared planner utilities
+        index.ts          -- Barrel export + runPlannerPipeline async generator
+
+    tools/                -- Agent tool system
+      registry.ts         -- Tool registration and lookup
+      executor.ts         -- Tool execution pipeline
+      validator.ts        -- Tool call validation routing
+
+    faults/               -- Health monitoring and fault classification
+      index.ts            -- Fault detection and classification</code></pre>
 
   <h2 id="implementation-phases">Implementation Phases</h2>
 
@@ -1951,10 +2117,14 @@ async function ensureModels(ollama: Ollama): Promise&lt;void&gt; {
     <div class="phase-card">
       <h4><span class="badge badge-phase">Phase 3</span> Designer Agent</h4>
       <ul>
-        <li>Requirements intent: local sketch + Claude enhancement</li>
-        <li>Design intent: local sketch + Claude architecture enhancement</li>
-        <li>Review intent: context assembly + Claude review</li>
+        <li>Agent framework: step-based state machine, checkpointing, crash recovery, resume</li>
+        <li>Designer agent: 9-step iterative pipeline with per-requirement validation gates</li>
+        <li>LLM-driven search planning + codebase analysis via DaemonContextProvider</li>
+        <li>Context compression for cross-requirement token budget management</li>
+        <li>Design templates (Markdown + HTML) with project-level overrides</li>
+        <li>Review intent: single-pass Claude code review</li>
         <li>Session carry-forward: <code>[requirements]</code> / <code>[design]</code> tags in L2</li>
+        <li>CLI: <code>insrc agent list|resume|discard|prune</code></li>
       </ul>
     </div>
     <div class="phase-card">

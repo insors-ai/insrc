@@ -151,6 +151,8 @@ export interface AgentProviderConfigs {
   document?: AgentStepConfig | undefined;
   research?: AgentStepConfig | undefined;
   brainstorm?: AgentStepConfig | undefined;
+  pair?: AgentStepConfig | undefined;
+  delegate?: AgentStepConfig | undefined;
 }
 
 export interface AgentConfig {

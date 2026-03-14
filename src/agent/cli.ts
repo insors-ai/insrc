@@ -25,8 +25,14 @@ import type { PlannerInput, PlannerState } from './planner/agent-state.js';
 import { brainstormAgent } from './tasks/brainstorm/agent.js';
 import type { BrainstormState } from './tasks/brainstorm/agent-state.js';
 import type { BrainstormInput } from './tasks/brainstorm/types.js';
+import { pairAgent } from './tasks/pair/agent.js';
+import type { PairInput } from './tasks/pair/types.js';
+import { delegateAgent } from './tasks/delegate/agent.js';
+import type { DelegateInput } from './tasks/delegate/types.js';
+import { detectScope } from './classifier/scope.js';
 import { runAgent } from './framework/runner.js';
 import { ReplChannel } from './framework/channel.js';
+import { TestChannel } from './framework/test-channel.js';
 import type { RunResult } from './framework/types.js';
 import { runImplementPipeline } from './tasks/implement.js';
 import { runRefactorPipeline } from './tasks/refactor.js';
@@ -446,33 +452,17 @@ async function handlePipeline(
     return finalState.assembledOutput ?? '[error] Brainstorm agent produced no output.';
   }
 
-  if (intent === 'implement') {
-    log('[cli] Running implement pipeline...');
-    const result = await runImplementPipeline(
-      message, repoPath, codeContext, '',
-      session.resolver.resolve('implement', 'generate'),
-      session.resolver.resolveOrNull('implement', 'validate'), log,
-    );
-    if (result.accepted) {
-      return `Implementation applied (${result.filesWritten.length} file(s)).\n\nFiles:\n${result.filesWritten.map(f => `  - ${f}`).join('\n')}`;
-    }
-    if (result.needsUserDecision) {
-      return `Implementation needs review:\n\n\`\`\`diff\n${result.diff}\n\`\`\`\n\nFeedback:\n${result.feedback}`;
-    }
-    return `Implementation failed: ${result.feedback}`;
-  }
+  if (intent === 'implement' || intent === 'refactor') {
+    const scope = detectScope(message);
+    const mode = intent as 'implement' | 'refactor';
 
-  if (intent === 'refactor') {
-    log('[cli] Running refactor pipeline...');
-    const result = await runRefactorPipeline(
-      message, repoPath, codeContext, '',
-      session.resolver.resolve('refactor', 'generate'),
-      session.resolver.resolveOrNull('refactor', 'validate'), log,
-    );
-    if (result.accepted) {
-      return `Refactoring applied (${result.filesWritten.length} file(s)).\n\nFiles:\n${result.filesWritten.map(f => `  - ${f}`).join('\n')}`;
+    if (scope === 'batch') {
+      log(`[cli] Running delegate agent (${intent}, batch scope)...`);
+      return runDelegateCli(message, codeContext, session, repoPath, ctx);
     }
-    return `Refactoring failed: ${result.feedback}`;
+
+    log(`[cli] Running pair agent (${mode})...`);
+    return runPairCli(message, codeContext, mode, session, repoPath, ctx);
   }
 
   if (intent === 'test') {
@@ -502,18 +492,8 @@ async function handlePipeline(
   }
 
   if (intent === 'debug') {
-    const mcpUp = await pingDaemon();
-    log('[cli] Running debug pipeline...');
-    const result = await runDebugPipeline(
-      message, repoPath, codeContext, '',
-      session.resolver.resolve('debug', 'investigate'),
-      session.resolver.resolveOrNull('debug', 'validate'),
-      log, 'auto-accept', mcpUp,
-    );
-    if (result.fixed) {
-      return `${result.message}\n\nFiles:\n${result.filesWritten.map(f => `  - ${f}`).join('\n')}`;
-    }
-    return result.message;
+    log('[cli] Running pair agent (debug)...');
+    return runPairCli(message, codeContext, 'debug', session, repoPath, ctx);
   }
 
   if (intent === 'review') {
@@ -568,6 +548,98 @@ async function handlePipeline(
   }
 
   return '';
+}
+
+// ---------------------------------------------------------------------------
+// Pair / Delegate CLI runners (non-interactive, auto-approve gates)
+// ---------------------------------------------------------------------------
+
+async function runPairCli(
+  message: string,
+  codeContext: string,
+  mode: 'implement' | 'refactor' | 'debug' | 'explore',
+  session: Session,
+  repoPath: string,
+  ctx: import('./context/index.js').ContextManager,
+): Promise<string> {
+  const designSpec = ctx.getTag('[design]') ?? undefined;
+  const pairInput: PairInput = {
+    message, codeContext, designSpec, mode,
+    session: { repoPath, closureRepos: session.closureRepos },
+  };
+  const agentConfig = loadConfig();
+  // CLI is non-interactive — use TestChannel with auto-approve for gates
+  const channel = new TestChannel([
+    { action: 'approve' },   // review-gate: approve first proposal
+    { action: 'done' },      // review-gate: done after first apply
+  ]);
+
+  const result: RunResult = await runAgent({
+    definition: pairAgent as unknown as import('./framework/types.js').AgentDefinition,
+    channel,
+    options: { input: pairInput, repo: repoPath },
+    config: agentConfig,
+    providers: {
+      local: session.ollamaProvider,
+      claude: session.claudeProvider,
+      resolve: session.activeResolver.resolve.bind(session.activeResolver),
+      resolveOrNull: session.activeResolver.resolveOrNull.bind(session.activeResolver),
+    },
+  });
+
+  const finalState = result.result as import('./tasks/pair/agent-state.js').PairState;
+  const summary = finalState.conversationSummary || 'Pair session completed.';
+
+  if (finalState.changesApplied.length > 0) {
+    const files = finalState.changesApplied.map(c => c.file).join('\n  - ');
+    return `${summary}\n\nFiles changed:\n  - ${files}`;
+  }
+  return summary;
+}
+
+async function runDelegateCli(
+  message: string,
+  codeContext: string,
+  session: Session,
+  repoPath: string,
+  ctx: import('./context/index.js').ContextManager,
+): Promise<string> {
+  const designSpec = ctx.getTag('[design]') ?? undefined;
+  const delegateInput: DelegateInput = {
+    message, codeContext, designSpec,
+    session: { repoPath, closureRepos: session.closureRepos },
+  };
+  const agentConfig = loadConfig();
+  // CLI is non-interactive — auto-approve plan and continue through execution
+  const channel = new TestChannel([
+    { action: 'approve' },   // approve-plan-gate
+    // failure-gate responses — retry then skip if still failing
+    { action: 'retry' },
+    { action: 'skip' },
+    { action: 'skip' },
+    { action: 'skip' },
+  ]);
+
+  const result: RunResult = await runAgent({
+    definition: delegateAgent as unknown as import('./framework/types.js').AgentDefinition,
+    channel,
+    options: { input: delegateInput, repo: repoPath },
+    config: agentConfig,
+    providers: {
+      local: session.ollamaProvider,
+      claude: session.claudeProvider,
+      resolve: session.activeResolver.resolve.bind(session.activeResolver),
+      resolveOrNull: session.activeResolver.resolveOrNull.bind(session.activeResolver),
+    },
+  });
+
+  const finalState = result.result as import('./tasks/delegate/agent-state.js').DelegateState;
+  const summary = `Delegate execution complete: ${finalState.stepResults.length} steps executed, ${finalState.filesChanged.length} files changed.`;
+
+  if (finalState.commits.length > 0) {
+    return `${summary}\n\nCommits:\n${finalState.commits.map(c => `  - ${c}`).join('\n')}`;
+  }
+  return summary;
 }
 
 // ---------------------------------------------------------------------------

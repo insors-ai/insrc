@@ -31,6 +31,13 @@ import type { PlannerState, PlannerInput } from './planner/agent-state.js';
 import { brainstormAgent } from './tasks/brainstorm/agent.js';
 import type { BrainstormState } from './tasks/brainstorm/agent-state.js';
 import type { BrainstormInput } from './tasks/brainstorm/types.js';
+import { pairAgent } from './tasks/pair/agent.js';
+import type { PairState } from './tasks/pair/agent-state.js';
+import type { PairInput, PairMode } from './tasks/pair/types.js';
+import { delegateAgent } from './tasks/delegate/agent.js';
+import type { DelegateState } from './tasks/delegate/agent-state.js';
+import type { DelegateInput } from './tasks/delegate/types.js';
+import { detectScope } from './classifier/scope.js';
 import { runAgent } from './framework/runner.js';
 import { ReplChannel } from './framework/channel.js';
 import { readIndex, readCheckpoint, resolveRunDir } from './framework/checkpoint.js';
@@ -615,47 +622,23 @@ export async function startRepl(cwd?: string): Promise<void> {
     }
 
     if (intent === 'implement') {
-      const planStepCtx = ctx.getActivePlanStep();
-      log.info('[pipeline] Running implement pipeline (local diff → Claude validate)...');
-      if (planStepCtx) log.info('[pipeline] Active plan step injected');
-
-      const result = await runImplementPipeline(
-        message, repoPath, codeContext, planStepCtx,
-        session.resolver.resolve('implement', 'generate'),
-        session.resolver.resolveOrNull('implement', 'validate'),
-      );
-
-      if (result.needsUserDecision) {
-        return `Implementation needs your review:\n\n\`\`\`diff\n${result.diff}\n\`\`\`\n\nFeedback from validation:\n${result.feedback}\n\nReply with "accept" to apply, or provide corrections.`;
+      const scope = detectScope(message);
+      if (scope === 'batch') {
+        log.info('[pipeline] Batch scope detected — routing to Delegate agent');
+        return await runDelegateAgent(message, codeContext);
       }
-
-      if (result.accepted) {
-        return `Implementation applied (${result.filesWritten.length} file(s) written, ${result.retries} retries).\n\nFiles:\n${result.filesWritten.map(f => `  - ${f}`).join('\n')}`;
-      }
-
-      return `Implementation failed: ${result.feedback}`;
+      log.info('[pipeline] Running Pair agent (implement mode)...');
+      return await runPairAgent(message, codeContext, 'implement');
     }
 
     if (intent === 'refactor') {
-      const planStepCtx = ctx.getActivePlanStep();
-      log.info('[pipeline] Running refactor pipeline (local diff → Claude validate)...');
-      if (planStepCtx) log.info('[pipeline] Active plan step injected');
-
-      const result = await runRefactorPipeline(
-        message, repoPath, codeContext, planStepCtx,
-        session.resolver.resolve('refactor', 'generate'),
-        session.resolver.resolveOrNull('refactor', 'validate'),
-      );
-
-      if (result.needsUserDecision) {
-        return `Refactoring needs your review:\n\n\`\`\`diff\n${result.diff}\n\`\`\`\n\nFeedback from validation:\n${result.feedback}\n\nReply with "accept" to apply, or provide corrections.`;
+      const scope = detectScope(message);
+      if (scope === 'batch') {
+        log.info('[pipeline] Batch scope detected — routing to Delegate agent');
+        return await runDelegateAgent(message, codeContext);
       }
-
-      if (result.accepted) {
-        return `Refactoring applied (${result.filesWritten.length} file(s) written, ${result.retries} retries).\n\nFiles:\n${result.filesWritten.map(f => `  - ${f}`).join('\n')}`;
-      }
-
-      return `Refactoring failed: ${result.feedback}`;
+      log.info('[pipeline] Running Pair agent (refactor mode)...');
+      return await runPairAgent(message, codeContext, 'refactor');
     }
 
     if (intent === 'test') {
@@ -705,29 +688,8 @@ export async function startRepl(cwd?: string): Promise<void> {
     }
 
     if (intent === 'debug') {
-      const planStepCtx = ctx.getActivePlanStep();
-      const mcpUp = await pingDaemon();
-      log.info('[pipeline] Running debug pipeline (tool loop → stuck escalation → fix)...');
-      if (planStepCtx) log.info('[pipeline] Active plan step injected');
-
-      const result = await runDebugPipeline(
-        message, repoPath, codeContext, planStepCtx,
-        session.resolver.resolve('debug', 'investigate'),
-        session.resolver.resolveOrNull('debug', 'validate'),
-        toLogFn(log),
-        session.permissionMode,
-        mcpUp,
-      );
-
-      if (result.needsUserDecision) {
-        return `Debug session needs your input:\n\n${result.message}`;
-      }
-
-      if (result.fixed) {
-        return `${result.message}\n\nFiles:\n${result.filesWritten.map(f => `  - ${f}`).join('\n')}`;
-      }
-
-      return `Debug session completed: ${result.message}`;
+      log.info('[pipeline] Running Pair agent (debug mode)...');
+      return await runPairAgent(message, codeContext, 'debug');
     }
 
     if (intent === 'review') {
@@ -1000,6 +962,152 @@ export async function startRepl(cwd?: string): Promise<void> {
     } catch (err) {
       if (err instanceof Error && err.name === 'AgentCancelledError') {
         return '[brainstorm] Run paused. Resume with `insrc agent resume <runId>`.';
+      }
+      throw err;
+    }
+  }
+
+  // -----------------------------------------------------------------------
+  // Pair coding agent runner
+  // -----------------------------------------------------------------------
+
+  async function runPairAgent(
+    message: string,
+    codeContext: string,
+    mode: PairMode,
+  ): Promise<string> {
+    // Check for active/crashed runs for this repo
+    const activeRuns = readIndex().filter(
+      e => e.agentId === 'pair' && e.repo === repoPath &&
+        (e.status === 'running' || e.status === 'paused' || e.status === 'crashed'),
+    );
+
+    let resumeCheckpoint = null;
+    if (activeRuns.length > 0) {
+      const entry = activeRuns[0]!;
+      log.info(`[pair] Found ${entry.status} run: ${entry.runId}`);
+      const answer = await askOnce('Resume this run? [Y/n] ');
+      if (answer.trim().toLowerCase() !== 'n') {
+        const runDir = resolveRunDir(entry.runId);
+        resumeCheckpoint = readCheckpoint(runDir);
+      }
+    }
+
+    // Check for design context
+    const designSpec = ctx.getTag('[design]') ?? undefined;
+
+    const replChannel = new ReplChannel({ log: { info: (m: string) => log.info(m), debug: (m: string) => log.debug(m), error: (m: string) => log.error(m) }, prompt: `pair(${mode})> ` });
+
+    const pairInput: PairInput = {
+      message,
+      codeContext,
+      designSpec,
+      mode,
+      session: {
+        repoPath,
+        closureRepos: session.closureRepos,
+      },
+    };
+
+    try {
+      const result: RunResult = await runAgent({
+        definition: pairAgent as unknown as import('./framework/types.js').AgentDefinition,
+        channel: replChannel,
+        options: resumeCheckpoint
+          ? { resumeFrom: resumeCheckpoint }
+          : { input: pairInput, repo: repoPath },
+        config,
+        providers: {
+          local: session.ollamaProvider,
+          claude: session.claudeProvider,
+          resolve: session.activeResolver.resolve.bind(session.activeResolver),
+          resolveOrNull: session.activeResolver.resolveOrNull.bind(session.activeResolver),
+        },
+      });
+
+      const finalState = result.result as PairState;
+      const summary = finalState.conversationSummary || 'Pair session completed.';
+
+      if (finalState.changesApplied.length > 0) {
+        const files = finalState.changesApplied.map(c => c.file).join('\n  - ');
+        return `${summary}\n\nFiles changed:\n  - ${files}`;
+      }
+
+      return summary;
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AgentCancelledError') {
+        return '[pair] Run paused. Resume with `insrc agent resume <runId>`.';
+      }
+      throw err;
+    }
+  }
+
+  // -----------------------------------------------------------------------
+  // Delegate coding agent runner
+  // -----------------------------------------------------------------------
+
+  async function runDelegateAgent(
+    message: string,
+    codeContext: string,
+  ): Promise<string> {
+    // Check for active/crashed runs for this repo
+    const activeRuns = readIndex().filter(
+      e => e.agentId === 'delegate' && e.repo === repoPath &&
+        (e.status === 'running' || e.status === 'paused' || e.status === 'crashed'),
+    );
+
+    let resumeCheckpoint = null;
+    if (activeRuns.length > 0) {
+      const entry = activeRuns[0]!;
+      log.info(`[delegate] Found ${entry.status} run: ${entry.runId}`);
+      const answer = await askOnce('Resume this run? [Y/n] ');
+      if (answer.trim().toLowerCase() !== 'n') {
+        const runDir = resolveRunDir(entry.runId);
+        resumeCheckpoint = readCheckpoint(runDir);
+      }
+    }
+
+    const designSpec = ctx.getTag('[design]') ?? undefined;
+
+    const replChannel = new ReplChannel({ log: { info: (m: string) => log.info(m), debug: (m: string) => log.debug(m), error: (m: string) => log.error(m) }, prompt: 'delegate> ' });
+
+    const delegateInput: DelegateInput = {
+      message,
+      codeContext,
+      designSpec,
+      session: {
+        repoPath,
+        closureRepos: session.closureRepos,
+      },
+    };
+
+    try {
+      const result: RunResult = await runAgent({
+        definition: delegateAgent as unknown as import('./framework/types.js').AgentDefinition,
+        channel: replChannel,
+        options: resumeCheckpoint
+          ? { resumeFrom: resumeCheckpoint }
+          : { input: delegateInput, repo: repoPath },
+        config,
+        providers: {
+          local: session.ollamaProvider,
+          claude: session.claudeProvider,
+          resolve: session.activeResolver.resolve.bind(session.activeResolver),
+          resolveOrNull: session.activeResolver.resolveOrNull.bind(session.activeResolver),
+        },
+      });
+
+      const finalState = result.result as DelegateState;
+      const summary = `Delegate execution complete: ${finalState.stepResults.length} steps executed, ${finalState.filesChanged.length} files changed.`;
+
+      if (finalState.commits.length > 0) {
+        return `${summary}\n\nCommits:\n${finalState.commits.map(c => `  - ${c}`).join('\n')}`;
+      }
+
+      return summary;
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AgentCancelledError') {
+        return '[delegate] Run paused. Resume with `insrc agent resume <runId>`.';
       }
       throw err;
     }

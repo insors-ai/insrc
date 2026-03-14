@@ -92,13 +92,10 @@ export interface SpecRevision {
 }
 
 // ---------------------------------------------------------------------------
-// Provider override (@-mention)
+// Provider override (@-mention) — re-exported from shared framework
 // ---------------------------------------------------------------------------
 
-export interface ProviderOverride {
-  provider: { kind: 'local' } | { kind: 'claude'; tier: string } | null;
-  sticky: boolean;
-}
+export type { ProviderOverride } from '../../framework/provider-mention.js';
 
 // ---------------------------------------------------------------------------
 // Promotion / merge proposals (used between converge and update-spec)

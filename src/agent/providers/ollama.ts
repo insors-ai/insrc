@@ -56,6 +56,16 @@ export class OllamaProvider implements LLMProvider {
     const ollamaMessages = toOllamaMessages(messages);
     const tools = opts.tools ? toOllamaTools(opts.tools) : undefined;
 
+    // qwen3-coder: disable thinking mode when tools are provided so the model
+    // uses Ollama's structured tool_calls wire format instead of emitting a
+    // text-formatted JSON "tool call" inside <think> tags.
+    if (tools && tools.length > 0 && ollamaMessages.length > 0 && ollamaMessages[0]!.role === 'system') {
+      const sys = ollamaMessages[0]!;
+      if (!sys.content.startsWith('/no_think')) {
+        sys.content = `/no_think\n${sys.content}`;
+      }
+    }
+
     log.debug({
       model: this.model,
       numCtx: this.numCtx,

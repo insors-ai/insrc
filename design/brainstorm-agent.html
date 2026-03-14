@@ -1,0 +1,1801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Brainstorm Agent — Design Document</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --border: #2a2d3a;
+      --text: #e2e4ed;
+      --muted: #8b8fa8;
+      --accent: #7c6af7;
+      --accent2: #4fc3f7;
+      --green: #4caf7d;
+      --yellow: #f5c842;
+      --red: #f47c7c;
+      --code-bg: #12151e;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 15px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; scroll-padding-top: 1rem; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      margin: 0;
+      padding: 0;
+      display: flex;
+    }
+
+    nav.toc {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 260px;
+      height: 100vh;
+      overflow-y: auto;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 1.5rem 1rem;
+      font-size: 0.82rem;
+    }
+
+    nav.toc h2 {
+      font-size: 0.9rem;
+      color: var(--accent2);
+      border: none;
+      margin: 0 0 0.75rem;
+      padding: 0;
+    }
+
+    nav.toc ol {
+      list-style: none;
+      padding: 0;
+      counter-reset: toc;
+    }
+
+    nav.toc > ol > li { counter-increment: toc; margin: 0.35rem 0; }
+    nav.toc > ol > li::before { content: counter(toc) ". "; color: var(--muted); }
+    nav.toc > ol > li > ol { padding-left: 1rem; counter-reset: subtoc; }
+    nav.toc > ol > li > ol > li { counter-increment: subtoc; margin: 0.2rem 0; font-size: 0.78rem; }
+    nav.toc > ol > li > ol > li::before { content: counter(toc) "." counter(subtoc) " "; color: var(--muted); }
+    nav.toc a { color: var(--text); text-decoration: none; }
+    nav.toc a:hover { color: var(--accent); }
+
+    main {
+      flex: 1;
+      min-width: 0;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    @media (min-width: 1100px) {
+      main { margin-left: 280px; }
+    }
+
+    @media (max-width: 1099px) {
+      nav.toc { position: static; width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+    }
+
+    h1 { font-size: 2rem; color: var(--accent); margin-bottom: 0.25rem; }
+    h2 { font-size: 1.3rem; color: var(--accent2); margin: 2.5rem 0 0.75rem; border-bottom: 1px solid var(--border); padding-bottom: 0.4rem; }
+    h3 { font-size: 1.05rem; color: var(--yellow); margin: 1.5rem 0 0.5rem; }
+    h4 { font-size: 0.95rem; color: var(--green); margin: 1rem 0 0.4rem; }
+    h5 { font-size: 0.88rem; color: var(--muted); margin: 0.8rem 0 0.3rem; }
+
+    p { margin: 0.6rem 0; color: var(--text); }
+    .muted { color: var(--muted); font-size: 0.9rem; }
+    .meta { color: var(--muted); font-size: 0.85rem; margin-top: 0.25rem; }
+
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1rem;
+      overflow-x: auto;
+      margin: 0.75rem 0;
+      font-size: 0.82rem;
+      line-height: 1.6;
+    }
+
+    code {
+      font-family: 'Fira Code', 'Cascadia Code', 'JetBrains Mono', monospace;
+      font-size: 0.88em;
+    }
+
+    pre code { font-size: inherit; }
+
+    :not(pre) > code {
+      background: var(--code-bg);
+      padding: 0.15em 0.4em;
+      border-radius: 3px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0.75rem 0;
+      font-size: 0.88rem;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid var(--border);
+    }
+
+    th {
+      background: var(--surface);
+      color: var(--accent2);
+      font-weight: 600;
+    }
+
+    td {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    tr:nth-child(even) td { background: #13161f; }
+
+    ul, ol { padding-left: 1.5rem; margin: 0.5rem 0; }
+    li { margin: 0.25rem 0; }
+
+    .badge {
+      display: inline-block;
+      padding: 0.15em 0.6em;
+      border-radius: 4px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      margin-right: 0.3rem;
+    }
+
+    .badge-local  { background: #1a2d20; color: var(--green); }
+    .badge-claude { background: #2d1a2d; color: #c792ea; }
+    .badge-brainstorm { background: #1a2030; color: var(--accent); }
+
+    .callout {
+      background: var(--surface);
+      border-left: 3px solid var(--accent);
+      border-radius: 0 6px 6px 0;
+      padding: 0.75rem 1rem;
+      margin: 1rem 0;
+      font-size: 0.92rem;
+    }
+
+    .callout.warn  { border-color: var(--yellow); }
+    .callout.info  { border-color: var(--accent2); }
+    .callout.local { border-color: var(--green); }
+    .callout.claude { border-color: #c792ea; }
+
+    hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+
+    .flow-diagram {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1.5rem;
+      white-space: pre;
+      font-family: 'Fira Code', 'Cascadia Code', monospace;
+      font-size: 0.8rem;
+      line-height: 1.5;
+      overflow-x: auto;
+      margin: 0.75rem 0;
+    }
+
+    .back-link {
+      display: inline-block;
+      color: var(--accent2);
+      text-decoration: none;
+      font-size: 0.85rem;
+      margin-bottom: 1rem;
+    }
+    .back-link:hover { text-decoration: underline; }
+    .back-link::before { content: "\2190\00a0"; }
+  </style>
+</head>
+<body>
+
+<nav class="toc">
+  <h2>Contents</h2>
+  <ol>
+    <li><a href="#overview">Overview</a>
+      <ol>
+        <li><a href="#motivation">Motivation</a></li>
+        <li><a href="#design-goals">Design Goals</a></li>
+      </ol>
+    </li>
+    <li><a href="#concepts">Core Concepts</a>
+      <ol>
+        <li><a href="#idea-lifecycle">Idea Lifecycle</a></li>
+        <li><a href="#live-spec">Live Requirements Spec</a></li>
+        <li><a href="#thinking-modes">Thinking Modes</a></li>
+      </ol>
+    </li>
+    <li><a href="#data-model">Data Model</a>
+      <ol>
+        <li><a href="#types">Types</a></li>
+        <li><a href="#state">BrainstormState</a></li>
+      </ol>
+    </li>
+    <li><a href="#pipeline">Agent Pipeline</a>
+      <ol>
+        <li><a href="#step-overview">Step Overview</a></li>
+        <li><a href="#step-flow">Step Flow Diagram</a></li>
+        <li><a href="#step-details">Step Details</a></li>
+      </ol>
+    </li>
+    <li><a href="#gates">Validation Gates</a></li>
+    <li><a href="#incremental-spec">Incremental Spec Building</a>
+      <ol>
+        <li><a href="#spec-evolution">Spec Evolution Strategy</a></li>
+        <li><a href="#conflict-resolution">Conflict Resolution</a></li>
+      </ol>
+    </li>
+    <li><a href="#provider-resolution">Provider Resolution</a>
+      <ol>
+        <li><a href="#resolution-priority">Resolution Priority</a></li>
+        <li><a href="#at-mentions">@-Mention Overrides</a></li>
+        <li><a href="#config-binding">Config Binding</a></li>
+      </ol>
+    </li>
+    <li><a href="#context-handoff">Context Handoff</a>
+      <ol>
+        <li><a href="#handoff-protocol">Handoff Protocol</a></li>
+        <li><a href="#context-layers">Context Layers per Provider</a></li>
+        <li><a href="#handoff-examples">Handoff Examples</a></li>
+      </ol>
+    </li>
+    <li><a href="#prompts">Prompt Design</a></li>
+    <li><a href="#codebase-integration">Codebase Integration</a></li>
+    <li><a href="#output">Output Format</a></li>
+    <li><a href="#file-layout">File Layout</a></li>
+    <li><a href="#downstream">Downstream Integration</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<a href="agent.html#personas" class="back-link">Agent Personas</a>
+
+<h1><span class="badge badge-brainstorm">BRAINSTORM</span> Brainstorm Agent</h1>
+<p class="meta">insrc coding agent &mdash; persona detail &mdash; March 2026</p>
+
+<!-- ================================================================== -->
+<h2 id="overview">Overview</h2>
+
+<p>
+  The brainstorm agent facilitates interactive idea exploration sessions that
+  <strong>incrementally build a structured requirements specification</strong> as
+  the conversation unfolds. Unlike the designer agent (which refines a fixed set
+  of requirements) or the planner (which produces a step-by-step execution plan),
+  the brainstorm agent operates in a fluid, iterative loop where ideas are
+  generated, explored, challenged, and gradually crystallized into formal
+  requirements.
+</p>
+
+<p>
+  The key insight: brainstorming and requirements capture are not sequential
+  phases&mdash;they happen simultaneously. Every idea explored either strengthens
+  an existing requirement, spawns a new one, or gets discarded. The running
+  requirements spec is a live artifact that evolves with each brainstorming
+  round.
+</p>
+
+<h3 id="motivation">Motivation</h3>
+
+<p>
+  The current designer agent assumes the user already knows roughly what they
+  want&mdash;it extracts, refines, and details pre-formed requirements.
+  But many engineering tasks start with a vague problem statement:
+  <em>"we need better error handling"</em>, <em>"auth is broken"</em>,
+  <em>"the indexer is too slow"</em>. These need exploratory thinking before
+  requirements can be written.
+</p>
+
+<p>
+  The brainstorm agent fills this gap by providing structured divergent/convergent
+  thinking cycles that produce a requirements document ready for the designer or
+  planner pipelines.
+</p>
+
+<h3 id="design-goals">Design Goals</h3>
+
+<ul>
+  <li><strong>Interactive, not batch</strong> &mdash; the user is an active participant, not a reviewer of finished output</li>
+  <li><strong>Incremental spec</strong> &mdash; a requirements document builds up live during the session, never assembled after-the-fact</li>
+  <li><strong>Codebase-grounded</strong> &mdash; ideas are anchored to real entities, not hypothetical abstractions</li>
+  <li><strong>Diverge then converge</strong> &mdash; explicit thinking modes prevent premature commitment</li>
+  <li><strong>Composable output</strong> &mdash; the resulting spec feeds directly into the designer or planner agent</li>
+  <li><strong>Resumable</strong> &mdash; sessions can be paused and continued via the framework checkpoint system</li>
+</ul>
+
+<!-- ================================================================== -->
+<h2 id="concepts">Core Concepts</h2>
+
+<h3 id="idea-lifecycle">Idea Lifecycle</h3>
+
+<p>Every idea in the brainstorming session follows a lifecycle:</p>
+
+<div class="flow-diagram">
+                                    +-----------+
+                                    |  proposed  |   &lt;-- generated by LLM or user
+                                    +-----+-----+
+                                          |
+                          +---------------+---------------+
+                          |               |               |
+                    +-----v-----+   +-----v-----+   +----v------+
+                    |  accepted  |   |  rejected  |   |  parked   |
+                    +-----+-----+   +-----------+   +-----------+
+                          |                           (revisit later)
+                    +-----v-----+
+                    | refinement |   &lt;-- explored further, challenged
+                    +-----+-----+
+                          |
+                +------- -+--------+
+                |                  |
+          +-----v-----+     +-----v-----+
+          | promoted   |     |  merged   |   &lt;-- absorbed into existing req
+          +-----+-----+     +-----------+
+                |
+          +-----v-----+
+          | requirement |   &lt;-- now part of the live spec
+          +-----------+
+</div>
+
+<p>
+  <strong>Proposed</strong>: initial idea from LLM divergent generation or user input.<br>
+  <strong>Accepted</strong>: user signals interest; idea enters the active exploration pool.<br>
+  <strong>Rejected</strong>: explicitly discarded; stored for context but not explored further.<br>
+  <strong>Parked</strong>: interesting but not now; may be revisited in a later round.<br>
+  <strong>Refinement</strong>: accepted idea is challenged, deepened, and sharpened.<br>
+  <strong>Promoted</strong>: refined idea graduates to a formal requirement in the spec.<br>
+  <strong>Merged</strong>: idea is absorbed into an existing requirement (strengthens it, adds acceptance criteria).
+</p>
+
+<h3 id="live-spec">Live Requirements Spec</h3>
+
+<p>
+  The requirements spec is a structured document that grows incrementally:
+</p>
+
+<ul>
+  <li>Each <strong>promoted idea</strong> becomes a numbered requirement with type, rationale, and acceptance criteria</li>
+  <li>Each <strong>merged idea</strong> appends criteria or notes to an existing requirement</li>
+  <li>Requirements are grouped into <strong>themes</strong> discovered during clustering</li>
+  <li>The spec maintains a <strong>revision log</strong> showing when and why each requirement was added or modified</li>
+  <li>At any gate, the user sees the current spec alongside new proposals</li>
+</ul>
+
+<h3 id="thinking-modes">Thinking Modes</h3>
+
+<p>
+  The agent alternates between two explicit thinking modes, preventing premature
+  convergence:
+</p>
+
+<table>
+  <tr>
+    <th>Mode</th>
+    <th>Goal</th>
+    <th>LLM Behavior</th>
+    <th>User Role</th>
+  </tr>
+  <tr>
+    <td><strong>Diverge</strong></td>
+    <td>Maximize idea surface area</td>
+    <td>Generate provocations, what-ifs, edge cases, analogies, inversions</td>
+    <td>React, add own ideas, pick directions to explore</td>
+  </tr>
+  <tr>
+    <td><strong>Converge</strong></td>
+    <td>Cluster, refine, and promote</td>
+    <td>Find patterns, propose themes, sharpen ideas into requirements</td>
+    <td>Approve/reject promotions, merge duplicates, prioritize</td>
+  </tr>
+</table>
+
+<div class="callout info">
+  The agent starts in <strong>diverge</strong> mode and switches to
+  <strong>converge</strong> after each idea burst. Multiple diverge/converge
+  cycles can occur in a single session. The user can also explicitly request a
+  mode switch at any gate.
+</div>
+
+<!-- ================================================================== -->
+<h2 id="data-model">Data Model</h2>
+
+<h3 id="types">Types</h3>
+
+<pre><code>/** Input from the REPL to start a brainstorming session. */
+interface BrainstormInput {
+  message: string;                    // problem statement or seed topic
+  codeContext: string;                // pre-fetched code context from graph
+  existingSpec?: string;              // optional: continue from prior spec
+  session: {
+    repoPath: string;
+    closureRepos: string[];
+  };
+}
+
+/** A single idea in the brainstorming pool. */
+interface Idea {
+  id: string;                         // deterministic: SHA256(session + index)
+  index: number;                      // 1-based insertion order
+  text: string;                       // the idea statement
+  status: IdeaStatus;
+  source: 'llm' | 'user';            // who proposed it
+  round: number;                      // which diverge round produced it
+  parentId?: string;                  // if refined from another idea
+  promotedTo?: string;                // requirement ID if promoted
+  mergedInto?: string;                // requirement ID if merged
+  tags: string[];                     // freeform labels for clustering
+  rationale?: string;                 // why this idea matters (from refinement)
+  codeRefs: string[];                 // entity IDs grounding the idea
+}
+
+type IdeaStatus =
+  | 'proposed'
+  | 'accepted'
+  | 'rejected'
+  | 'parked'
+  | 'refining'
+  | 'promoted'
+  | 'merged';
+
+/** A theme grouping related ideas. */
+interface Theme {
+  id: string;
+  name: string;
+  description: string;
+  ideaIds: string[];                  // ideas belonging to this theme
+  requirementIds: string[];           // requirements generated from this theme
+}
+
+/** A requirement in the live spec. */
+interface SpecRequirement {
+  id: string;                         // deterministic: SHA256(session + 'req' + index)
+  index: number;                      // display order
+  statement: string;                  // formal requirement text
+  type: 'functional' | 'non-functional' | 'constraint';
+  priority: 'must' | 'should' | 'could';
+  themeId: string;                    // parent theme
+  acceptanceCriteria: string[];       // testable conditions
+  rationale: string;                  // why this requirement exists
+  sourceIdeaIds: string[];            // traceability back to ideas
+  codeRefs: string[];                 // grounding entities
+  revision: number;                   // bumped on each modification
+  addedInRound: number;               // brainstorm round when first created
+}
+
+/** Revision log entry. */
+interface SpecRevision {
+  round: number;
+  requirementId: string;
+  action: 'added' | 'modified' | 'removed' | 'merged';
+  detail: string;                     // human-readable change description
+}
+
+/** Final output of the brainstorm agent. */
+interface BrainstormResult {
+  kind: 'brainstorm-spec';
+  output: string;                     // rendered HTML/markdown spec document
+  requirements: SpecRequirement[];
+  themes: Theme[];
+  ideas: Idea[];                      // full idea pool for traceability
+  revisions: SpecRevision[];
+  summary: string;                    // L2 carry-forward tag
+  stats: {
+    rounds: number;
+    totalIdeas: number;
+    promoted: number;
+    merged: number;
+    rejected: number;
+    parked: number;
+  };
+}</code></pre>
+
+<h3 id="state">BrainstormState</h3>
+
+<pre><code>/** Agent state — serialized at each checkpoint. */
+interface BrainstormState extends AgentState {
+  input: {
+    message: string;
+    codeContext: string;
+    existingSpec?: string;
+    repoPath: string;
+    closureRepos: string[];
+  };
+
+  // Session tracking
+  round: number;                      // current diverge/converge cycle (1-based)
+  mode: 'diverge' | 'converge';      // current thinking mode
+  maxRounds: number;                  // configured limit (default: 5)
+
+  // Idea pool
+  ideas: Idea[];
+  nextIdeaIndex: number;              // monotonic counter
+
+  // Themes (populated after first converge)
+  themes: Theme[];
+
+  // Live requirements spec
+  requirements: SpecRequirement[];
+  nextReqIndex: number;
+  revisions: SpecRevision[];
+
+  // Context management
+  codebaseFindings: string;           // daemon search results
+  compressedHistory: string;          // prior round summaries for context budget
+  seedAnalysis: string;               // initial problem decomposition
+  recentFeedback?: string;            // last user direction from gate feedback
+
+  // Provider override (@-mention)
+  providerOverride?: ProviderOverride;  // set by @haiku/@sonnet/@opus/@local at gates
+
+  // Edit tracking
+  editRounds: Record&lt;string, number&gt;;
+
+  // Output
+  assembledOutput?: string;
+  summary?: string;
+}</code></pre>
+
+<!-- ================================================================== -->
+<h2 id="pipeline">Agent Pipeline</h2>
+
+<h3 id="step-overview">Step Overview</h3>
+
+<table>
+  <tr>
+    <th>Step</th>
+    <th>Mode</th>
+    <th>Provider</th>
+    <th>Description</th>
+  </tr>
+  <tr>
+    <td><code>seed</code></td>
+    <td>&mdash;</td>
+    <td><span class="badge badge-local">LOCAL</span></td>
+    <td>Decompose problem, search codebase, generate initial idea burst</td>
+  </tr>
+  <tr>
+    <td><code>validate-seed</code></td>
+    <td>&mdash;</td>
+    <td><em>gate</em></td>
+    <td>User reviews seed ideas: accept/reject/add own, set initial direction</td>
+  </tr>
+  <tr>
+    <td><code>diverge</code></td>
+    <td>diverge</td>
+    <td><span class="badge badge-local">LOCAL</span></td>
+    <td>Generate new ideas via provocations, what-ifs, edge cases, analogies</td>
+  </tr>
+  <tr>
+    <td><code>react</code></td>
+    <td>diverge</td>
+    <td><em>gate</em></td>
+    <td>User reacts to new ideas: accept/reject/park/add, steer exploration</td>
+  </tr>
+  <tr>
+    <td><code>converge</code></td>
+    <td>converge</td>
+    <td><span class="badge badge-local">LOCAL</span> + <span class="badge badge-claude">CLAUDE</span></td>
+    <td>Cluster accepted ideas into themes, propose requirement promotions</td>
+  </tr>
+  <tr>
+    <td><code>validate-convergence</code></td>
+    <td>converge</td>
+    <td><em>gate</em></td>
+    <td>User approves themes, accepts/rejects promotions, merges duplicates</td>
+  </tr>
+  <tr>
+    <td><code>update-spec</code></td>
+    <td>converge</td>
+    <td><span class="badge badge-claude">CLAUDE</span></td>
+    <td>Write/update requirements in the live spec based on approved promotions</td>
+  </tr>
+  <tr>
+    <td><code>review-spec</code></td>
+    <td>converge</td>
+    <td><em>gate</em></td>
+    <td>User reviews updated spec: approve, edit, request another round</td>
+  </tr>
+  <tr>
+    <td><code>iterate</code></td>
+    <td>&mdash;</td>
+    <td>&mdash;</td>
+    <td>Decision point: loop back to diverge or proceed to finalize</td>
+  </tr>
+  <tr>
+    <td><code>finalize</code></td>
+    <td>&mdash;</td>
+    <td><span class="badge badge-claude">CLAUDE</span></td>
+    <td>Polish spec, add cross-cutting concerns, assemble final document</td>
+  </tr>
+</table>
+
+<h3 id="step-flow">Step Flow Diagram</h3>
+
+<div class="flow-diagram">
+  +---------+     +----------------+
+  |  seed   +----&gt;| validate-seed  |
+  +---------+     +-------+--------+
+                          |
+              +-----------v-----------+
+              |                       |
+        +-----v-----+          +-----v-----+
+  +----&gt;|  diverge   |          |  converge  |&lt;------+
+  |     +-----+-----+          +-----+-----+        |
+  |           |                       |              |
+  |     +-----v-----+          +-----v-----------+  |
+  |     |   react    |          | validate-convg  |  |
+  |     +-----+-----+          +-----+-----------+  |
+  |           |                       |              |
+  |           +-----------+-----------+              |
+  |                       |                          |
+  |                 +-----v------+                   |
+  |                 | update-spec |                   |
+  |                 +-----+------+                   |
+  |                       |                          |
+  |                 +-----v------+                   |
+  |                 | review-spec |                   |
+  |                 +-----+------+                   |
+  |                       |                          |
+  |                 +-----v-----+                    |
+  |                 |  iterate   +----+"more"--------+
+  |                 +-----+-----+
+  |                       |
+  |                  "done"|
+  |                 +-----v-----+
+  +---"diverge"----+|  finalize  |
+                    +-----------+
+
+  Note: After react, if accepted ideas &gt; threshold,
+  flow proceeds to converge. Otherwise loops to diverge.
+  iterate checks: round &lt; maxRounds AND user wants more.
+</div>
+
+<h3 id="step-details">Step Details</h3>
+
+<h4>seed</h4>
+<p>
+  The seed step decomposes the user's problem statement into a structured analysis
+  and generates an initial burst of 5&ndash;10 ideas:
+</p>
+<ol>
+  <li><strong>Analyze problem</strong>: local model parses the message into problem facets
+    (scope, stakeholders, constraints, ambiguities)</li>
+  <li><strong>Search codebase</strong>: LLM plans categorized searches (reusing
+    <code>search-planner.ts</code> from the designer), daemon returns relevant entities</li>
+  <li><strong>Generate seed ideas</strong>: local model produces initial idea burst,
+    grounded in codebase findings</li>
+  <li><strong>Write seed analysis</strong>: stored as <code>state.seedAnalysis</code>
+    for context in subsequent rounds</li>
+</ol>
+
+<div class="callout local">
+  <strong>Provider:</strong> <code>resolveStepProvider(ctx, state, 'seed')</code><br>
+  Resolution: @-mention override → config <code>brainstorm.seed</code> → default: local.<br>
+  Recommended: local (fast iteration, broad idea generation).
+</div>
+
+<h4>validate-seed</h4>
+<p>Gate where the user reviews the initial idea burst and problem decomposition.</p>
+<p><strong>Actions:</strong></p>
+<ul>
+  <li><code>approve</code> &mdash; accept all seed ideas, start diverging</li>
+  <li><code>select</code> &mdash; user marks individual ideas as accepted/rejected/parked
+    and may add their own ideas (provided as feedback text)</li>
+  <li><code>reframe</code> &mdash; user provides a different angle; agent re-seeds</li>
+</ul>
+
+<h4>diverge</h4>
+<p>
+  The divergent thinking step generates new ideas using multiple provocation
+  techniques. For each round, the LLM applies 2&ndash;3 techniques selected based
+  on the current idea landscape:
+</p>
+
+<table>
+  <tr>
+    <th>Technique</th>
+    <th>Description</th>
+  </tr>
+  <tr>
+    <td>What-if inversion</td>
+    <td>Flip an assumption: <em>"what if we didn't have X?"</em></td>
+  </tr>
+  <tr>
+    <td>Edge case mining</td>
+    <td>Explore boundaries: <em>"what happens when input is empty / huge / malformed?"</em></td>
+  </tr>
+  <tr>
+    <td>Analogy transfer</td>
+    <td>Borrow from a similar domain: <em>"how does X solve this in their context?"</em></td>
+  </tr>
+  <tr>
+    <td>Stakeholder lens</td>
+    <td>View from different users: <em>"what does the admin / new user / API consumer need?"</em></td>
+  </tr>
+  <tr>
+    <td>Constraint relaxation</td>
+    <td>Remove a constraint: <em>"if performance didn't matter, what would we build?"</em></td>
+  </tr>
+  <tr>
+    <td>Failure mode analysis</td>
+    <td>Anticipate failures: <em>"how could this go wrong in production?"</em></td>
+  </tr>
+  <tr>
+    <td>Decomposition</td>
+    <td>Break a large idea into smaller pieces</td>
+  </tr>
+</table>
+
+<div class="callout local">
+  <strong>Provider:</strong> <code>resolveStepProvider(ctx, state, 'diverge')</code><br>
+  Resolution: @-mention override → config <code>brainstorm.diverge</code> → default: local.<br>
+  Higher temperature (0.8&ndash;0.9) for creative generation.
+</div>
+
+<h4>react</h4>
+<p>Gate where the user reacts to newly generated ideas.</p>
+<p><strong>Actions:</strong></p>
+<ul>
+  <li><code>approve</code> &mdash; accept all new ideas as-is</li>
+  <li><code>select</code> &mdash; per-idea accept/reject/park decisions + user's own ideas (feedback text)</li>
+  <li><code>focus</code> &mdash; user narrows the direction (feedback text steers next diverge round)</li>
+  <li><code>converge</code> &mdash; user explicitly requests switching to converge mode</li>
+</ul>
+
+<div class="callout info">
+  <strong>Auto-converge heuristic:</strong> if accepted ideas &ge; 8 or the user
+  has done 2+ diverge rounds without converging, the agent suggests switching to
+  converge mode. The user can override this at the gate.
+</div>
+
+<h4>converge</h4>
+<p>
+  The convergent thinking step analyzes the accepted idea pool and proposes
+  structure:
+</p>
+<ol>
+  <li><strong>Cluster</strong>: local model groups ideas by affinity into themes</li>
+  <li><strong>Deduplicate</strong>: identify overlapping ideas, propose merges</li>
+  <li><strong>Propose promotions</strong>: Claude evaluates which ideas are mature enough
+    to become formal requirements, drafts requirement text + acceptance criteria</li>
+  <li><strong>Identify gaps</strong>: flag themes with thin coverage, suggest areas for
+    further divergence</li>
+</ol>
+
+<div class="callout">
+  <strong>Dual-model strategy:</strong>
+  <span class="badge badge-local">LOCAL</span> handles clustering via <code>resolveStepProvider(ctx, state, 'cluster')</code>.<br>
+  <span class="badge badge-claude">CLAUDE</span> handles promotion via <code>resolveStepProvider(ctx, state, 'promote')</code>.<br>
+  Both are overridable via @-mentions or config. When the provider changes between
+  cluster and promote, a full context handoff is built from state (see
+  <a href="#context-handoff">Context Handoff</a>).
+</div>
+
+<h4>validate-convergence</h4>
+<p>Gate where the user reviews proposed themes and promotions.</p>
+<p><strong>Actions:</strong></p>
+<ul>
+  <li><code>approve</code> &mdash; accept all proposed themes and promotions</li>
+  <li><code>edit</code> &mdash; modify themes, accept/reject individual promotions, merge ideas (feedback text)</li>
+  <li><code>diverge</code> &mdash; user wants more exploration before committing; loop back to diverge</li>
+</ul>
+
+<h4>update-spec</h4>
+<p>
+  Writes approved promotions into the live requirements spec. This is where the
+  incremental spec building happens:
+</p>
+<ol>
+  <li>Promoted ideas become new <code>SpecRequirement</code> entries</li>
+  <li>Merged ideas append acceptance criteria to existing requirements</li>
+  <li>Theme assignments are updated</li>
+  <li>Revision log entries are written</li>
+  <li>Claude polishes requirement text for clarity and consistency with existing spec entries</li>
+</ol>
+
+<div class="callout claude">
+  <strong>Provider:</strong> <code>resolveStepProvider(ctx, state, 'update-spec')</code><br>
+  Resolution: @-mention override → config <code>brainstorm.update-spec</code> → default: Claude (fast).<br>
+  Requirement writing quality matters for downstream consumption. Full context
+  handoff includes current spec, approved promotions, revision log, and codebase findings.
+</div>
+
+<h4>review-spec</h4>
+<p>Gate where the user reviews the updated requirements spec.</p>
+<p><strong>Actions:</strong></p>
+<ul>
+  <li><code>approve</code> &mdash; spec is good; proceed to iterate decision</li>
+  <li><code>edit</code> &mdash; user modifies requirement text directly (feedback contains edits)</li>
+  <li><code>continue</code> &mdash; spec is fine, want more brainstorming rounds</li>
+</ul>
+
+<h4>iterate</h4>
+<p>
+  Decision point that determines whether to loop or finalize:
+</p>
+<ul>
+  <li>If <code>state.round &lt; state.maxRounds</code> AND (user chose "continue" OR parked ideas remain OR gap analysis found thin themes): loop to <code>diverge</code></li>
+  <li>If user chose "approve" at review-spec OR round limit reached: proceed to <code>finalize</code></li>
+  <li>Compress current round into <code>state.compressedHistory</code> for context budget before next round</li>
+</ul>
+
+<h4>finalize</h4>
+<p>
+  Assembles the complete requirements specification document:
+</p>
+<ol>
+  <li>Claude reviews full spec for cross-cutting concerns (consistency, completeness, contradictions)</li>
+  <li>Adds non-functional requirements inferred from the discussion (performance, security, etc.)</li>
+  <li>Generates a prioritized summary</li>
+  <li>Renders into the output template (HTML or markdown)</li>
+  <li>Writes artifact and emits done message</li>
+</ol>
+
+<!-- ================================================================== -->
+<h2 id="gates">Validation Gates</h2>
+
+<p>The brainstorm agent has 4 gate stages, compared to the designer's 3:</p>
+
+<table>
+  <tr>
+    <th>Gate</th>
+    <th>Stage Tag</th>
+    <th>Frequency</th>
+    <th>Actions</th>
+  </tr>
+  <tr>
+    <td>validate-seed</td>
+    <td><code>seed</code></td>
+    <td>Once</td>
+    <td>approve, select, reframe</td>
+  </tr>
+  <tr>
+    <td>react</td>
+    <td><code>diverge-N</code></td>
+    <td>1&ndash;3 per round</td>
+    <td>approve, select, focus, converge</td>
+  </tr>
+  <tr>
+    <td>validate-convergence</td>
+    <td><code>converge-N</code></td>
+    <td>Once per round</td>
+    <td>approve, edit, diverge</td>
+  </tr>
+  <tr>
+    <td>review-spec</td>
+    <td><code>spec-N</code></td>
+    <td>Once per round</td>
+    <td>approve, edit, continue</td>
+  </tr>
+</table>
+
+<div class="callout warn">
+  <strong>Edit round limits:</strong> Each gate stage tracks edit rounds via
+  <code>state.editRounds[stageTag]</code>. Maximum 3 edit rounds per stage per
+  brainstorm round, consistent with the designer agent. After 3 edits, the gate
+  auto-approves with a warning.
+</div>
+
+<h3>Gate Content Format</h3>
+
+<p>
+  Gates present rich content to the user. The <strong>react</strong> gate is
+  particularly important because it's the primary interaction point during diverge
+  mode:
+</p>
+
+<pre><code>// react gate content structure
+{
+  gateId: `react-${round}-${burst}`,
+  stage: `diverge-${round}`,
+  title: `Round ${round} — New Ideas`,
+  content: `
+    ## Provocation: ${technique}
+    ${provocationText}
+
+    ## New Ideas
+    ${newIdeas.map(i => `${i.index}. ${i.text} [${i.tags.join(', ')}]`).join('\n')}
+
+    ## Current Pool
+    Accepted: ${accepted}  Parked: ${parked}  Rejected: ${rejected}
+    Themes emerging: ${themeHints.join(', ')}
+    Provider: ${currentProvider}
+
+    ---
+    Reply with idea numbers to accept/reject, or type new ideas.
+    "converge" to switch to convergence mode.
+    Prefix with @haiku/@sonnet/@opus/@local to override the next step's provider.
+    Use @sticky &lt;provider&gt; to lock provider for the rest of the session.
+  `,
+  actions: [
+    { name: 'approve', label: 'Accept all' },
+    { name: 'select', label: 'Select/Add', hint: '&lt;feedback&gt;' },
+    { name: 'focus', label: 'Focus direction', hint: '&lt;feedback&gt;' },
+    { name: 'converge', label: 'Converge now' },
+  ],
+}</code></pre>
+
+<!-- ================================================================== -->
+<h2 id="incremental-spec">Incremental Spec Building</h2>
+
+<h3 id="spec-evolution">Spec Evolution Strategy</h3>
+
+<p>
+  The spec is not written once&mdash;it evolves through multiple update cycles.
+  Each <code>update-spec</code> step receives the full current spec plus the
+  batch of approved promotions/merges from the latest converge round.
+</p>
+
+<div class="flow-diagram">
+  Round 1                    Round 2                    Round 3
+  ┌──────────┐              ┌──────────┐              ┌──────────┐
+  │ diverge  │              │ diverge  │              │ diverge  │
+  │ 8 ideas  │              │ 6 ideas  │              │ 4 ideas  │
+  └────┬─────┘              └────┬─────┘              └────┬─────┘
+       │                         │                         │
+  ┌────v─────┐              ┌────v─────┐              ┌────v─────┐
+  │ converge │              │ converge │              │ converge │
+  │ 3 themes │              │ +1 theme │              │ refine   │
+  │ 4 promos │              │ 3 promos │              │ 2 promos │
+  └────┬─────┘              └────┬─────┘              └────┬─────┘
+       │                         │                         │
+  ┌────v──────────┐    ┌────────v──────────┐    ┌─────────v─────────┐
+  │ Spec v1       │    │ Spec v2           │    │ Spec v3 (final)   │
+  │ 3 themes      │    │ 4 themes          │    │ 4 themes          │
+  │ 4 requirements│    │ 7 requirements    │    │ 9 requirements    │
+  │ 0 revisions   │    │ 3 revisions       │    │ 5 revisions       │
+  └───────────────┘    └───────────────────┘    └───────────────────┘
+</div>
+
+<p>
+  The <code>update-spec</code> step uses Claude to ensure new requirements are
+  consistent with existing ones. The prompt includes:
+</p>
+<ul>
+  <li>The full current spec (themes + requirements)</li>
+  <li>The batch of promoted/merged ideas with their rationale</li>
+  <li>Instructions to check for contradictions, redundancy, and gaps</li>
+  <li>The revision log so far (for traceability)</li>
+</ul>
+
+<h3 id="conflict-resolution">Conflict Resolution</h3>
+
+<p>
+  When a new idea contradicts an existing requirement:
+</p>
+<ol>
+  <li>Claude flags the conflict in the convergence output</li>
+  <li>The <code>validate-convergence</code> gate presents both sides to the user</li>
+  <li>User decides: keep original, replace, split into alternatives, or park for later</li>
+  <li>Decision is recorded in the revision log</li>
+</ol>
+
+<!-- ================================================================== -->
+<h2 id="provider-resolution">Provider Resolution</h2>
+
+<p>
+  Every LLM call in the brainstorm agent goes through a <strong>three-tier
+  resolution chain</strong> that determines which provider and model to use.
+  This is critical because brainstorming sessions are long-running and interactive
+  &mdash; the user may want to switch providers mid-session based on how the
+  conversation is going.
+</p>
+
+<h3 id="resolution-priority">Resolution Priority</h3>
+
+<p>Provider resolution follows a strict priority order:</p>
+
+<div class="flow-diagram">
+  Priority 1: @-mention override (user typed @haiku, @sonnet, @opus, @local at a gate)
+       │
+       │ not present?
+       ▼
+  Priority 2: config binding (config.models.agents.brainstorm.&lt;step&gt;)
+       │
+       │ not configured?
+       ▼
+  Priority 3: step default (hardcoded per step — local or claude)
+</div>
+
+<table>
+  <tr>
+    <th>Priority</th>
+    <th>Source</th>
+    <th>Scope</th>
+    <th>Persistence</th>
+  </tr>
+  <tr>
+    <td>1 (highest)</td>
+    <td>@-mention at gate</td>
+    <td>Next LLM step only (one-shot), or <code>@sticky</code> for remainder of session</td>
+    <td>Stored in <code>state.providerOverride</code></td>
+  </tr>
+  <tr>
+    <td>2</td>
+    <td><code>~/.insrc/config.json</code></td>
+    <td>Permanent per-step binding</td>
+    <td>Config file</td>
+  </tr>
+  <tr>
+    <td>3 (lowest)</td>
+    <td>Step default</td>
+    <td>Hardcoded in step implementation</td>
+    <td>Code</td>
+  </tr>
+</table>
+
+<h3 id="at-mentions">@-Mention Overrides</h3>
+
+<p>
+  At any validation gate, the user can prefix their feedback with a provider
+  @-mention to override the provider for the next LLM step:
+</p>
+
+<table>
+  <tr>
+    <th>Mention</th>
+    <th>Resolves To</th>
+    <th>Use Case</th>
+  </tr>
+  <tr>
+    <td><code>@local</code></td>
+    <td>Ollama (config.models.local)</td>
+    <td>Fast iteration, keep it local</td>
+  </tr>
+  <tr>
+    <td><code>@haiku</code></td>
+    <td>Claude Haiku (tiers.fast)</td>
+    <td>Quick Claude assist without heavy cost</td>
+  </tr>
+  <tr>
+    <td><code>@sonnet</code></td>
+    <td>Claude Sonnet (tiers.standard)</td>
+    <td>Balanced quality for requirement writing</td>
+  </tr>
+  <tr>
+    <td><code>@opus</code></td>
+    <td>Claude Opus (tiers.powerful)</td>
+    <td>Maximum quality for complex analysis</td>
+  </tr>
+  <tr>
+    <td><code>@sticky &lt;provider&gt;</code></td>
+    <td>Any of the above</td>
+    <td>Lock provider for all remaining steps until cleared</td>
+  </tr>
+  <tr>
+    <td><code>@clear</code></td>
+    <td>&mdash;</td>
+    <td>Remove sticky override, revert to config/defaults</td>
+  </tr>
+</table>
+
+<p><strong>Examples at gates:</strong></p>
+<pre><code>// At the react gate — user wants Claude to do the next diverge
+> @sonnet focus on error handling edge cases
+
+// At validate-convergence — user wants local for the next cluster pass
+> @local approve
+
+// Lock all subsequent steps to Haiku for the rest of the session
+> @sticky haiku approve
+
+// Clear a sticky override
+> @clear continue</code></pre>
+
+<h4>Parsing @-mentions from gate feedback</h4>
+
+<pre><code>/** Parse provider override from gate reply feedback text. */
+function parseProviderMention(feedback: string): {
+  override: ProviderOverride | null;
+  cleanFeedback: string;         // feedback with @-mention stripped
+} {
+  const mentionRe = /^@(local|haiku|sonnet|opus|sticky|clear)\b\s*/i;
+  const stickyRe = /^@sticky\s+(local|haiku|sonnet|opus)\b\s*/i;
+
+  const stickyMatch = feedback.match(stickyRe);
+  if (stickyMatch) {
+    return {
+      override: { provider: resolveProvider(stickyMatch[1]), sticky: true },
+      cleanFeedback: feedback.slice(stickyMatch[0].length),
+    };
+  }
+
+  const match = feedback.match(mentionRe);
+  if (!match) return { override: null, cleanFeedback: feedback };
+
+  if (match[1] === 'clear') {
+    return { override: { provider: null, sticky: false }, cleanFeedback: feedback.slice(match[0].length) };
+  }
+
+  return {
+    override: { provider: resolveProvider(match[1]), sticky: false },
+    cleanFeedback: feedback.slice(match[0].length),
+  };
+}
+
+interface ProviderOverride {
+  provider: { kind: 'local' } | { kind: 'claude'; tier: string } | null;
+  sticky: boolean;
+}</code></pre>
+
+<h4>Resolution in step implementation</h4>
+
+<pre><code>/** Resolve the LLM provider for this step, respecting override chain. */
+function resolveStepProvider(
+  ctx: StepContext,
+  state: BrainstormState,
+  stepName: string,
+): LLMProvider {
+  // Priority 1: @-mention override (one-shot or sticky)
+  const override = state.providerOverride;
+  if (override?.provider) {
+    if (override.provider.kind === 'local') {
+      return ctx.providers.local;
+    }
+    // Claude with specific tier
+    const apiKey = ctx.config.keys.anthropic ?? process.env['ANTHROPIC_API_KEY'];
+    if (apiKey) {
+      return new ClaudeProvider({
+        model: ctx.config.models.tiers[override.provider.tier as keyof typeof ctx.config.models.tiers],
+        apiKey,
+      });
+    }
+    // Fall through to config/default if no API key
+  }
+
+  // Priority 2 + 3: config binding → step default (handled by ProviderResolver)
+  return ctx.providers.resolve('brainstorm', stepName);
+}</code></pre>
+
+<div class="callout warn">
+  <strong>One-shot vs sticky:</strong> After a non-sticky @-mention is consumed
+  by one LLM call, <code>state.providerOverride</code> is cleared. Sticky
+  overrides persist across all subsequent steps until the user sends
+  <code>@clear</code> or the session ends.
+</div>
+
+<h3 id="config-binding">Config Binding</h3>
+
+<p>
+  Per-step provider binding via <code>AgentProviderConfigs</code>, consistent
+  with the designer and planner agents:
+</p>
+
+<pre><code>// In AgentProviderConfigs (src/shared/types.ts)
+interface AgentProviderConfigs {
+  // ... existing agents ...
+  brainstorm?: AgentStepConfig | undefined;
+}
+
+// Example ~/.insrc/config.json
+{
+  "models": {
+    "agents": {
+      "brainstorm": {
+        "seed": "local",
+        "diverge": "local",
+        "cluster": "local",
+        "promote": "fast",
+        "update-spec": "fast",
+        "finalize": "standard"
+      }
+    }
+  }
+}</code></pre>
+
+<h4>Step Name Registry</h4>
+<table>
+  <tr>
+    <th>Step</th>
+    <th>Config Key</th>
+    <th>Default</th>
+    <th>Rationale</th>
+  </tr>
+  <tr>
+    <td>seed</td>
+    <td><code>seed</code></td>
+    <td>local</td>
+    <td>Fast, broad idea generation; quantity over polish</td>
+  </tr>
+  <tr>
+    <td>diverge</td>
+    <td><code>diverge</code></td>
+    <td>local</td>
+    <td>Creative generation; local model fine for brainstorming</td>
+  </tr>
+  <tr>
+    <td>converge (cluster)</td>
+    <td><code>cluster</code></td>
+    <td>local</td>
+    <td>Pattern matching; straightforward grouping task</td>
+  </tr>
+  <tr>
+    <td>converge (promote)</td>
+    <td><code>promote</code></td>
+    <td>Claude (fast)</td>
+    <td>Judgment call; evaluate idea maturity, write quality requirements</td>
+  </tr>
+  <tr>
+    <td>update-spec</td>
+    <td><code>update-spec</code></td>
+    <td>Claude (fast)</td>
+    <td>Requirement writing quality; consistency checking across full spec</td>
+  </tr>
+  <tr>
+    <td>finalize</td>
+    <td><code>finalize</code></td>
+    <td>Claude (standard)</td>
+    <td>Cross-cutting review; highest quality for final output</td>
+  </tr>
+</table>
+
+<!-- ================================================================== -->
+<h2 id="context-handoff">Context Handoff</h2>
+
+<p>
+  When the brainstorm agent switches between providers &mdash; whether due to
+  config bindings (e.g., <code>cluster</code> on local, <code>promote</code> on
+  Claude) or @-mention overrides &mdash; it must build a complete, self-contained
+  context for the target provider. <strong>The target provider has no memory of
+  prior steps.</strong> Each LLM call is stateless; continuity lives in the agent
+  state, not in message history.
+</p>
+
+<div class="callout warn">
+  <strong>Anti-pattern:</strong> Forwarding only the last step's output to the
+  next provider. If the diverge step ran on local and produced 5 ideas, and
+  the converge step runs on Claude, Claude needs the full session context &mdash;
+  not just the 5 new ideas.
+</div>
+
+<h3 id="handoff-protocol">Handoff Protocol</h3>
+
+<p>
+  Every LLM call in the brainstorm agent builds its context from the agent state
+  using a <strong>context builder</strong> function specific to the step. The
+  context builder assembles a message array tailored to:
+</p>
+
+<ol>
+  <li><strong>The target provider's context window</strong> &mdash; local (128K) vs Claude (200K)</li>
+  <li><strong>The step's information needs</strong> &mdash; what this step actually requires</li>
+  <li><strong>Budget-aware truncation</strong> &mdash; compress or omit lower-priority context to fit</li>
+</ol>
+
+<pre><code>/** Build context messages for an LLM call, adapted to the target provider. */
+function buildStepContext(
+  state: BrainstormState,
+  stepName: string,
+  provider: LLMProvider,
+  config: AgentConfig,
+): LLMMessage[] {
+  const isLocal = !(provider instanceof ClaudeProvider);
+  const contextWindow = isLocal
+    ? config.models.context.local
+    : config.models.context.claude;
+  const maxOutput = isLocal
+    ? config.models.context.localMaxOutput
+    : config.models.context.claudeMaxOutput;
+  const charBudget = (contextWindow - maxOutput) * config.models.context.charsPerToken;
+
+  // Assemble context layers with priority-based truncation
+  const layers = buildContextLayers(state, stepName, charBudget);
+  return layers.toMessages();
+}</code></pre>
+
+<h3 id="context-layers">Context Layers per Provider</h3>
+
+<p>
+  Each step defines which context layers it needs. Layers are assembled in
+  priority order; lower-priority layers are truncated or omitted when the
+  budget is tight (especially on local's smaller 128K window):
+</p>
+
+<table>
+  <tr>
+    <th>Layer</th>
+    <th>Priority</th>
+    <th>Content</th>
+    <th>Needed By</th>
+  </tr>
+  <tr>
+    <td><strong>System prompt</strong></td>
+    <td>1 (always)</td>
+    <td>Step-specific system prompt with role and format instructions</td>
+    <td>All steps</td>
+  </tr>
+  <tr>
+    <td><strong>Problem statement</strong></td>
+    <td>2 (always)</td>
+    <td><code>state.input.message</code> + <code>state.seedAnalysis</code></td>
+    <td>All steps</td>
+  </tr>
+  <tr>
+    <td><strong>Current spec</strong></td>
+    <td>3 (high)</td>
+    <td>Serialized requirements + themes from <code>state.requirements</code></td>
+    <td>converge, update-spec, finalize</td>
+  </tr>
+  <tr>
+    <td><strong>Active ideas</strong></td>
+    <td>4 (high)</td>
+    <td>Current round's accepted/proposed ideas (full text)</td>
+    <td>diverge, converge</td>
+  </tr>
+  <tr>
+    <td><strong>Codebase findings</strong></td>
+    <td>5 (medium)</td>
+    <td><code>state.codebaseFindings</code> &mdash; entity signatures and relationships</td>
+    <td>seed, diverge, converge</td>
+  </tr>
+  <tr>
+    <td><strong>Compressed history</strong></td>
+    <td>6 (medium)</td>
+    <td><code>state.compressedHistory</code> &mdash; summaries of prior rounds</td>
+    <td>diverge (round &gt; 1), converge, finalize</td>
+  </tr>
+  <tr>
+    <td><strong>Rejected/parked ideas</strong></td>
+    <td>7 (low)</td>
+    <td>Summary of rejected ideas (to avoid regenerating them)</td>
+    <td>diverge</td>
+  </tr>
+  <tr>
+    <td><strong>Revision log</strong></td>
+    <td>8 (low)</td>
+    <td><code>state.revisions</code> &mdash; spec change history</td>
+    <td>update-spec, finalize</td>
+  </tr>
+  <tr>
+    <td><strong>User feedback trail</strong></td>
+    <td>9 (low)</td>
+    <td>Recent gate feedback from the user (last 2&ndash;3 interactions)</td>
+    <td>diverge, converge (steers direction)</td>
+  </tr>
+</table>
+
+<h4>Budget allocation example</h4>
+
+<div class="flow-diagram">
+  Step: converge (promote)
+  Target: Claude Haiku (200K context, 8K output → 192K input → ~576K chars)
+
+  Layer                    Chars    Priority  Status
+  ─────────────────────────────────────────────────────
+  System prompt            2,000    1         ✓ included
+  Problem statement        1,500    2         ✓ included
+  Current spec (3 reqs)    4,200    3         ✓ included
+  Active ideas (12)        6,800    4         ✓ included
+  Codebase findings        8,400    5         ✓ included
+  Compressed history       3,200    6         ✓ included
+  Rejected ideas (summary)   800    7         ✓ included
+  Revision log               600    8         ✓ included
+  User feedback trail        400    9         ✓ included
+  ─────────────────────────────────────────────────────
+  Total                   27,900             well within 576K budget
+
+  ---
+
+  Step: diverge (round 4)
+  Target: Local Ollama (128K context, 8K output → 120K input → ~360K chars)
+
+  Layer                    Chars    Priority  Status
+  ─────────────────────────────────────────────────────
+  System prompt            2,000    1         ✓ included
+  Problem statement        1,500    2         ✓ included
+  Active ideas (22)       14,800    4         ✓ included
+  Codebase findings       12,400    5         ✓ included
+  Compressed history      18,600    6         ✓ included (3 prior rounds)
+  Rejected ideas (summary) 2,100    7         ✓ included
+  User feedback trail        800    9         ✓ included
+  ─────────────────────────────────────────────────────
+  Total                   52,200             fits in 360K budget
+  Note: Current spec (layer 3) omitted — diverge doesn't need it
+</div>
+
+<h3 id="handoff-examples">Handoff Examples</h3>
+
+<h4>Local → Claude: diverge → converge (promote)</h4>
+
+<p>
+  The diverge step ran on local and produced 5 new ideas. Now the converge step's
+  promotion sub-step runs on Claude. Claude needs to understand the full picture:
+</p>
+
+<pre><code>// Context built for Claude promote step
+const messages: LLMMessage[] = [
+  {
+    role: 'system',
+    content: CONVERGE_PROMOTE_SYSTEM_PROMPT,
+  },
+  {
+    role: 'user',
+    content: [
+      '## Problem Statement',
+      state.seedAnalysis,
+      '',
+      '## Prior Rounds Summary',
+      state.compressedHistory,             // summaries of rounds 1..N-1
+      '',
+      '## Current Requirements Spec',
+      formatSpecForContext(state),          // full spec so far
+      '',
+      '## All Accepted Ideas (This Session)',
+      formatIdeasForContext(state.ideas.filter(i => i.status === 'accepted')),
+      '',
+      '## Themes Identified So Far',
+      formatThemesForContext(state.themes),
+      '',
+      '## Ideas Proposed This Round (Pending Triage)',
+      formatIdeasForContext(state.ideas.filter(i =>
+        i.status === 'proposed' && i.round === state.round)),
+      '',
+      '## Recent User Direction',
+      state.recentFeedback ?? '(no specific direction given)',
+      '',
+      '## Codebase Context',
+      state.codebaseFindings,
+    ].join('\n'),
+  },
+];
+</code></pre>
+
+<h4>Claude → Local: update-spec → diverge (next round)</h4>
+
+<p>
+  The update-spec step ran on Claude and updated the requirements. Now a new
+  diverge round starts on local. The local model needs to know what was just
+  decided so it doesn't regenerate already-promoted ideas:
+</p>
+
+<pre><code>// Context built for local diverge step (new round)
+const messages: LLMMessage[] = [
+  {
+    role: 'system',
+    content: DIVERGE_SYSTEM_PROMPT,
+  },
+  {
+    role: 'user',
+    content: [
+      '## Problem Statement',
+      state.seedAnalysis,
+      '',
+      '## Session History (Compressed)',
+      state.compressedHistory,             // includes latest round's outcome
+      '',
+      '## Current Accepted Ideas',
+      formatIdeasForContext(                // only accepted, not promoted/merged
+        state.ideas.filter(i => i.status === 'accepted')),
+      '',
+      '## Already Promoted (Do NOT Regenerate)',
+      formatIdeasForContext(
+        state.ideas.filter(i => i.status === 'promoted' || i.status === 'merged')),
+      '',
+      '## Rejected Ideas (Avoid Similar)',
+      formatIdeasBrief(
+        state.ideas.filter(i => i.status === 'rejected')),
+      '',
+      '## Gaps Identified',
+      formatGaps(state),                   // thin themes, unexplored areas
+      '',
+      '## Codebase Context',
+      truncateToFit(state.codebaseFindings, remainingBudget),
+      '',
+      '## User Direction',
+      state.recentFeedback ?? 'Continue exploring broadly.',
+    ].join('\n'),
+  },
+];
+</code></pre>
+
+<h4>@-Mention mid-session: user forces @opus for finalize</h4>
+
+<pre><code>// User at review-spec gate: "@opus approve"
+// → state.providerOverride = { provider: { kind: 'claude', tier: 'powerful' }, sticky: false }
+// → finalize step resolves to Claude Opus instead of default Claude Sonnet
+
+// The context is built the SAME way — from state, not from prior messages.
+// Opus gets the full picture regardless of what model ran previous steps.
+const provider = resolveStepProvider(ctx, state, 'finalize');
+// → ClaudeProvider({ model: 'claude-opus-4-6', apiKey })
+const messages = buildStepContext(state, 'finalize', provider, ctx.config);
+// → Full context with spec, all ideas, revision log, codebase findings
+const result = await provider.complete(messages, { maxTokens: maxOutput });
+</code></pre>
+
+<div class="callout info">
+  <strong>Key principle:</strong> Context is always built from
+  <code>BrainstormState</code>, never from the prior step's raw LLM
+  output. The state is the single source of truth. When a step completes,
+  its results are parsed and stored in state fields (ideas, themes,
+  requirements). The next step reads state, not message history. This
+  makes provider switching seamless &mdash; the target provider gets
+  exactly the context it needs, formatted for its strengths.
+</div>
+
+<h4>Round compression for context budget</h4>
+
+<p>
+  After each round, the iterate step compresses the round's activity into a
+  concise summary appended to <code>state.compressedHistory</code>. This
+  prevents context from growing unboundedly across rounds:
+</p>
+
+<pre><code>/** Compress a completed round into a history summary. */
+function compressRound(state: BrainstormState, round: number): string {
+  const roundIdeas = state.ideas.filter(i => i.round === round);
+  const promoted = roundIdeas.filter(i => i.status === 'promoted');
+  const rejected = roundIdeas.filter(i => i.status === 'rejected');
+  const newReqs = state.revisions
+    .filter(r => r.round === round && r.action === 'added')
+    .map(r => state.requirements.find(req => req.id === r.requirementId)?.statement)
+    .filter(Boolean);
+
+  return [
+    `## Round ${round}`,
+    `Generated ${roundIdeas.length} ideas, promoted ${promoted.length}, rejected ${rejected.length}.`,
+    newReqs.length > 0
+      ? `New requirements:\n${newReqs.map((r, i) => `  ${i + 1}. ${r}`).join('\n')}`
+      : 'No new requirements this round.',
+    state.recentFeedback
+      ? `User direction: ${state.recentFeedback}`
+      : '',
+  ].filter(Boolean).join('\n');
+}</code></pre>
+
+<!-- ================================================================== -->
+<h2 id="prompts">Prompt Design</h2>
+
+<h3>Seed System Prompt</h3>
+<pre><code>You are a brainstorming facilitator analyzing a software engineering problem.
+
+Decompose the problem into facets:
+- Core challenge: what is the fundamental issue?
+- Stakeholders: who is affected?
+- Constraints: what limits the solution space?
+- Ambiguities: what is unclear or underspecified?
+
+Then generate 5-10 initial ideas. Each idea should:
+- Be a single, concrete suggestion (not vague)
+- Reference existing code entities where relevant
+- Include 1-2 tags for later clustering
+
+Format each idea as:
+[N] IDEA_TEXT — tags: tag1, tag2 — refs: entity1, entity2</code></pre>
+
+<h3>Diverge System Prompt</h3>
+<pre><code>You are a creative thinking partner in a brainstorming session.
+
+Current accepted ideas:
+{acceptedIdeas}
+
+Apply these provocation techniques to generate 3-5 new ideas:
+{selectedTechniques}
+
+Rules:
+- Each idea must be DISTINCT from existing accepted ideas
+- Ground ideas in the codebase where possible
+- Be specific and concrete, not generic
+- It's OK to suggest unconventional or ambitious ideas
+- Tag each idea for clustering
+
+Format: [N] IDEA_TEXT — tags: tag1, tag2 — refs: entity1, entity2</code></pre>
+
+<h3>Converge System Prompt</h3>
+<pre><code>You are organizing brainstorming results into a coherent structure.
+
+## All Accepted Ideas
+{acceptedIdeas}
+
+## Existing Themes (if any)
+{existingThemes}
+
+## Existing Requirements (if any)
+{existingRequirements}
+
+Tasks:
+1. GROUP ideas into themes (reuse existing themes where they fit)
+2. IDENTIFY duplicates or near-duplicates → propose merges
+3. EVALUATE which ideas are mature enough to become requirements
+4. FLAG any ideas that contradict existing requirements
+5. IDENTIFY gaps: themes with fewer than 2 ideas
+
+For each promotion candidate, draft:
+- Requirement statement (formal, testable)
+- Type: functional | non-functional | constraint
+- Priority: must | should | could
+- Acceptance criteria (2-3 testable conditions)
+- Rationale (why this matters)</code></pre>
+
+<h3>Update-Spec System Prompt</h3>
+<pre><code>You are updating a requirements specification with new entries.
+
+## Current Spec
+{currentSpec}
+
+## Approved Promotions
+{promotions}
+
+## Approved Merges
+{merges}
+
+## Revision Log
+{revisionLog}
+
+Tasks:
+1. ADD new requirements from promotions, assigned to their themes
+2. UPDATE existing requirements with merged idea content (acceptance criteria, notes)
+3. CHECK for contradictions between new and existing requirements — flag any found
+4. ENSURE consistent language and format across all requirements
+5. WRITE revision log entries for each change
+
+Return the updated requirements and revision entries as structured JSON.</code></pre>
+
+<!-- ================================================================== -->
+<h2 id="codebase-integration">Codebase Integration</h2>
+
+<p>
+  The brainstorm agent leverages the code knowledge graph to ground ideas
+  in reality:
+</p>
+
+<h4>Seed Phase</h4>
+<ul>
+  <li>Reuses <code>search-planner.ts</code> from the designer to plan categorized searches based on the problem statement</li>
+  <li>Daemon returns relevant entities (functions, classes, modules) with signatures and relationships</li>
+  <li>Entity context included in the seed prompt so initial ideas reference real code</li>
+</ul>
+
+<h4>Diverge Phase</h4>
+<ul>
+  <li>When an accepted idea references entities, follow 1-hop relationships (callers, callees, implementors) to discover related code</li>
+  <li>Feed discovered entities into the next diverge prompt as "nearby code" to spark grounded ideas</li>
+</ul>
+
+<h4>Converge Phase</h4>
+<ul>
+  <li>Cross-reference proposed requirements against the entity graph to validate feasibility</li>
+  <li>Flag requirements that reference non-existent entities or impossible relationships</li>
+</ul>
+
+<h4>RPC Calls</h4>
+<pre><code>// Search for entities related to an idea
+ctx.rpc('search', {
+  query: idea.text,
+  repos: state.input.closureRepos,
+  kinds: ['function', 'class', 'module', 'interface'],
+  limit: 10,
+});
+
+// Expand entity relationships
+ctx.rpc('expand', {
+  entityId: ref,
+  hops: 1,
+  relations: ['CALLS', 'IMPLEMENTS', 'DEPENDS_ON'],
+});</code></pre>
+
+<!-- ================================================================== -->
+<h2 id="output">Output Format</h2>
+
+<p>The brainstorm agent produces two artifacts:</p>
+
+<h4>1. Requirements Specification (primary output)</h4>
+<p>A structured HTML or markdown document with:</p>
+<ul>
+  <li><strong>Problem Statement</strong> &mdash; seed analysis</li>
+  <li><strong>Themes</strong> &mdash; each theme with its requirements grouped</li>
+  <li><strong>Requirements</strong> &mdash; numbered, typed, prioritized, with acceptance criteria</li>
+  <li><strong>Traceability Matrix</strong> &mdash; mapping requirements back to source ideas</li>
+  <li><strong>Parked Ideas</strong> &mdash; ideas deferred for future sessions</li>
+  <li><strong>Session Statistics</strong> &mdash; rounds, idea counts, promotion rates</li>
+</ul>
+
+<h4>2. Session Log (artifact)</h4>
+<p>A JSON artifact containing the full idea pool, themes, revision log, and round
+summaries for session resumption or audit.</p>
+
+<h4>Template Slots</h4>
+<pre><code>const BRAINSTORM_TEMPLATE = {
+  format: 'html',
+  slots: [
+    'title',
+    'problem_statement',
+    'themes_overview',
+    'requirements_by_theme',    // repeated per theme
+    'traceability_matrix',
+    'parked_ideas',
+    'session_stats',
+    'css',
+  ],
+};</code></pre>
+
+<!-- ================================================================== -->
+<h2 id="file-layout">File Layout</h2>
+
+<pre><code>src/agent/tasks/brainstorm/
+  agent.ts              # AgentDefinition — 10-step state machine
+  agent-state.ts        # BrainstormState interface
+  types.ts              # Idea, Theme, SpecRequirement, ProviderOverride, BrainstormResult
+  steps.ts              # AgentStep implementations (seed, diverge, converge, etc.)
+  ideas.ts              # Idea generation, provocation techniques, clustering
+  convergence.ts        # Theme clustering, promotion evaluation, gap analysis
+  spec-builder.ts       # Incremental spec update logic, conflict detection
+  context-builder.ts    # Per-step context assembly, budget-aware truncation, handoff
+  provider-mention.ts   # @-mention parsing from gate feedback, override management
+  assembly.ts           # Final document assembly from themes + requirements
+  prompts.ts            # System prompts for each LLM step
+  templates.ts          # Output template definitions (HTML, markdown)
+  index.ts              # Public exports: brainstormAgent, BrainstormResult</code></pre>
+
+<!-- ================================================================== -->
+<h2 id="downstream">Downstream Integration</h2>
+
+<h3>Into Designer Agent</h3>
+<p>
+  The brainstorm output's <code>requirements</code> array maps directly to the
+  designer's <code>DesignerInput.requirementsDoc</code>. The designer skips its
+  extraction step and uses the pre-validated requirements from the brainstorm
+  session.
+</p>
+<pre><code>// REPL dispatch: brainstorm → designer handoff
+const brainstormResult = await runAgent({ definition: brainstormAgent, ... });
+const specDoc = brainstormResult.result.assembledOutput;
+
+// Feed into designer
+const designerInput: DesignerInput = {
+  message: originalMessage,
+  requirementsDoc: specDoc,       // &lt;-- brainstorm output
+  codeContext: ctx,
+  template: resolveTemplate({ format: 'html' }),
+  intent: 'design',
+  session: { repoPath, closureRepos },
+};</code></pre>
+
+<h3>Into Planner Agent</h3>
+<p>
+  Each requirement can be converted to a planning task. The brainstorm themes
+  map to plan phases:
+</p>
+<pre><code>// brainstorm → planner handoff
+const plannerInput: PlannerInput = {
+  message: `Implement the following requirements:\n${specDoc}`,
+  codeContext: ctx,
+  planType: 'implementation',
+  session: { repoPath, closureRepos },
+};</code></pre>
+
+<h3>Session Carry-Forward</h3>
+<p>
+  The <code>BrainstormResult.summary</code> is stored as an L2 tag in the session,
+  allowing the agent REPL to maintain context across follow-up turns:
+</p>
+<pre><code>// L2 summary format
+"Brainstormed 24 ideas across 3 rounds → 4 themes, 9 requirements (5 must, 3 should, 1 could).
+ Key themes: auth middleware, token storage, session management, admin controls.
+ 3 ideas parked for future exploration."</code></pre>
+
+<hr>
+
+<p class="muted">
+  This agent extends the insrc agent framework with a new persona focused on
+  exploratory thinking. It reuses the existing checkpoint, gate, and provider
+  infrastructure while introducing the novel concept of a live, incrementally-built
+  requirements specification that evolves during the brainstorming session.
+</p>
+
+</main>
+</body>
+</html>

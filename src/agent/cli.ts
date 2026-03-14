@@ -165,7 +165,7 @@ export async function runOneShot(
   // Classify
   const classified = await classify(classifyMessage, {
     signals: {},
-    llmProvider: ollamaOk ? session.ollamaProvider : undefined,
+    llmProvider: ollamaOk ? session.resolver.resolve('classifier', 'classify') : undefined,
   });
 
   // Force --claude if flag set but no @claude prefix was used
@@ -361,7 +361,8 @@ async function handlePipeline(
   forceEscalate = false,
 ): Promise<string> {
   if (intent === 'requirements' || intent === 'design') {
-    if (!session.claudeProvider) return `[error] Designer pipeline requires Claude. Set ANTHROPIC_API_KEY.`;
+    const designerClaude = session.resolver.resolveOrNull('designer', 'review');
+    if (!designerClaude) return `[error] Designer pipeline requires Claude. Set ANTHROPIC_API_KEY.`;
     log(`[cli] Running designer pipeline (${intent}, auto-approve)...`);
     const reqContext = intent === 'design' ? ctx.getTag('[requirements]') : undefined;
     const parsed = parseTemplateFlags(message);
@@ -375,7 +376,7 @@ async function handlePipeline(
     const channel = new ValidationChannel();
     let output = '';
     for await (const event of runDesignerPipeline(
-      designerInput, session.ollamaProvider, session.claudeProvider, channel,
+      designerInput, session.resolver.resolve('designer', 'sketch'), designerClaude, channel,
       { autoApprove: true, log },
     )) {
       if (event.kind === 'progress') log(event.message);
@@ -398,7 +399,12 @@ async function handlePipeline(
       channel: replChannel,
       options: { input: plannerInput, repo: repoPath },
       config: agentConfig,
-      providers: { local: session.ollamaProvider, claude: session.claudeProvider },
+      providers: {
+        local: session.ollamaProvider,
+        claude: session.claudeProvider,
+        resolve: session.resolver.resolve.bind(session.resolver),
+        resolveOrNull: session.resolver.resolveOrNull.bind(session.resolver),
+      },
     });
     const finalState = result.result as PlannerState;
     if (finalState.plan) {
@@ -411,7 +417,8 @@ async function handlePipeline(
     log('[cli] Running implement pipeline...');
     const result = await runImplementPipeline(
       message, repoPath, codeContext, '',
-      session.ollamaProvider, session.claudeProvider, log,
+      session.resolver.resolve('implement', 'generate'),
+      session.resolver.resolveOrNull('implement', 'validate'), log,
     );
     if (result.accepted) {
       return `Implementation applied (${result.filesWritten.length} file(s)).\n\nFiles:\n${result.filesWritten.map(f => `  - ${f}`).join('\n')}`;
@@ -426,7 +433,8 @@ async function handlePipeline(
     log('[cli] Running refactor pipeline...');
     const result = await runRefactorPipeline(
       message, repoPath, codeContext, '',
-      session.ollamaProvider, session.claudeProvider, log,
+      session.resolver.resolve('refactor', 'generate'),
+      session.resolver.resolveOrNull('refactor', 'validate'), log,
     );
     if (result.accepted) {
       return `Refactoring applied (${result.filesWritten.length} file(s)).\n\nFiles:\n${result.filesWritten.map(f => `  - ${f}`).join('\n')}`;
@@ -451,7 +459,8 @@ async function handlePipeline(
 
     const result = await runTestPipeline(
       message, testFilePath, codeContext, repoPath, '',
-      session.ollamaProvider, session.claudeProvider, log,
+      session.resolver.resolve('test', 'generate'),
+      session.resolver.resolveOrNull('test', 'validate'), log,
     );
     if (result.passed) {
       return `${result.message}\n\nFiles:\n${result.filesWritten.map(f => `  - ${f}`).join('\n')}`;
@@ -464,7 +473,8 @@ async function handlePipeline(
     log('[cli] Running debug pipeline...');
     const result = await runDebugPipeline(
       message, repoPath, codeContext, '',
-      session.ollamaProvider, session.claudeProvider,
+      session.resolver.resolve('debug', 'investigate'),
+      session.resolver.resolveOrNull('debug', 'validate'),
       log, 'auto-accept', mcpUp,
     );
     if (result.fixed) {
@@ -474,7 +484,8 @@ async function handlePipeline(
   }
 
   if (intent === 'review') {
-    if (!session.claudeProvider) return '[error] Review pipeline requires Claude. Set ANTHROPIC_API_KEY.';
+    const reviewClaude = session.resolver.resolveOrNull('designer', 'review');
+    if (!reviewClaude) return '[error] Review pipeline requires Claude. Set ANTHROPIC_API_KEY.';
     log('[cli] Running designer review pipeline...');
     const template = resolveTemplate({ format: 'markdown' });
     const designerInput: DesignerInput = {
@@ -484,7 +495,7 @@ async function handlePipeline(
     const channel = new ValidationChannel();
     let output = '';
     for await (const event of runDesignerPipeline(
-      designerInput, session.ollamaProvider, session.claudeProvider, channel,
+      designerInput, session.resolver.resolve('designer', 'sketch'), reviewClaude, channel,
     )) {
       if (event.kind === 'progress') log(event.message);
       else if (event.kind === 'done') output = event.result.output;
@@ -496,8 +507,10 @@ async function handlePipeline(
     log('[cli] Running document pipeline...');
     const result = await runDocumentPipeline(
       message, repoPath, codeContext,
-      session.ollamaProvider, session.claudeProvider,
-      false, log, null,
+      session.resolver.resolve('document', 'generate'),
+      session.resolver.resolveOrNull('document', 'review'),
+      false, log,
+      session.resolver.resolveOrNull('document', 'escalate'),
     );
     if (result.applied) {
       return `${result.message}\n\nFiles:\n${result.filesWritten.map(f => `  - ${f}`).join('\n')}`;
@@ -512,7 +525,8 @@ async function handlePipeline(
     log('[cli] Running research pipeline...');
     const result = await runResearchPipeline(
       message, codeContext,
-      session.ollamaProvider, session.claudeProvider,
+      session.resolver.resolve('research', 'query'),
+      session.resolver.resolveOrNull('research', 'synthesize'),
       session.config.keys.brave,
       log, session.closureRepos, forceEscalate,
     );

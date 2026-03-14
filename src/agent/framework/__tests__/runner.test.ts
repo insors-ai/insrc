@@ -112,7 +112,12 @@ function makeRunnerOpts(
     channel: new TestChannel(),
     options: { input: { target: 3 } },
     config: mockConfig,
-    providers: { local: mockLLM, claude: null },
+    providers: {
+      local: mockLLM,
+      claude: null,
+      resolve: (_agent: string, _step: string) => mockLLM,
+      resolveOrNull: (_agent: string, _step: string) => null,
+    },
     ...overrides,
   };
 }

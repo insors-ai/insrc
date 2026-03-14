@@ -28,7 +28,7 @@ export interface RunnerOpts {
   channel:    Channel;
   options:    RunOptions;
   config:     AgentConfig;
-  providers:  { local: LLMProvider; claude: LLMProvider | null };
+  providers:  { local: LLMProvider; claude: LLMProvider | null; resolve: (agent: string, step: string) => LLMProvider; resolveOrNull: (agent: string, step: string) => LLMProvider | null };
   /** Optional RPC function for daemon IPC. */
   rpcFn?:     (<T>(method: string, params?: unknown) => Promise<T>) | undefined;
 }

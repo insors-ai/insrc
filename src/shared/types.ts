@@ -125,6 +125,32 @@ export interface Attachment {
 // Agent config
 // ---------------------------------------------------------------------------
 
+/** Provider binding for a single LLM operation within an agent. */
+export interface StepBinding {
+  provider: 'local' | 'claude';
+  /** Explicit model name override (e.g. 'claude-sonnet-4-6', 'qwen3-coder:latest'). */
+  model?: string | undefined;
+  /** Claude tier — ignored for local provider. */
+  tier?: 'fast' | 'standard' | 'powerful' | undefined;
+}
+
+/** Per-agent step-level provider config. Keys are step names, values are bindings. */
+export type AgentStepConfig = Record<string, string | StepBinding>;
+
+/** All agent configs keyed by agent/persona name. */
+export interface AgentProviderConfigs {
+  classifier?: AgentStepConfig | undefined;
+  context?: AgentStepConfig | undefined;
+  designer?: AgentStepConfig | undefined;
+  planner?: AgentStepConfig | undefined;
+  implement?: AgentStepConfig | undefined;
+  refactor?: AgentStepConfig | undefined;
+  test?: AgentStepConfig | undefined;
+  debug?: AgentStepConfig | undefined;
+  document?: AgentStepConfig | undefined;
+  research?: AgentStepConfig | undefined;
+}
+
 export interface AgentConfig {
   ollama: {
     host: string;
@@ -139,6 +165,10 @@ export interface AgentConfig {
       powerful: string;
     };
     roles: Record<string, string>;
+    /** Per-agent step-level provider overrides. */
+    agents?: AgentProviderConfigs | undefined;
+    /** Override which intents default to Claude vs local. */
+    intentDefaults?: Partial<Record<Intent, 'local' | 'claude'>> | undefined;
     /** Context window sizes (tokens). Auto-detected from Ollama if not set. */
     context: ModelContextConfig;
   };

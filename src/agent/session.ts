@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { AgentConfig } from '../shared/types.js';
 import { OllamaProvider } from './providers/ollama.js';
 import { ClaudeProvider } from './providers/claude.js';
+import { ProviderResolver } from './config.js';
 import { ContextManager, initSession } from './context/index.js';
 import { embedText } from './context/semantic.js';
 import { sessionClose, sessionSeed, sessionForget } from './tools/mcp-client.js';
@@ -44,6 +45,8 @@ export class Session {
   readonly ollamaProvider: OllamaProvider;
   /** Exposed for the router — null when no API key is configured. */
   readonly claudeProvider: ClaudeProvider | null;
+  /** Per-agent step-level provider resolver. */
+  readonly resolver: ProviderResolver;
 
   /** Health monitor for Ollama and daemon (Phase 12). */
   readonly health: HealthMonitor;
@@ -68,6 +71,8 @@ export class Session {
           apiKey: opts.config.keys.anthropic,
         })
       : null;
+
+    this.resolver = new ProviderResolver(opts.config, this.ollamaProvider, this.claudeProvider);
 
     // Health monitor — ping functions injected to avoid circular deps
     this.health = new HealthMonitor({

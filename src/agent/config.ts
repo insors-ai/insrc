@@ -1,7 +1,8 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { PATHS } from '../shared/paths.js';
-import type { AgentConfig } from '../shared/types.js';
+import type { AgentConfig, AgentProviderConfigs, Intent, LLMProvider, StepBinding } from '../shared/types.js';
 import { getLogger } from '../shared/logger.js';
+import { ClaudeProvider } from './providers/claude.js';
 
 const log = getLogger('config');
 
@@ -76,8 +77,120 @@ export function resolveModel(config: AgentConfig, role: string): string {
 }
 
 // ---------------------------------------------------------------------------
+// Provider resolver — per-agent step-level provider selection
+// ---------------------------------------------------------------------------
+
+/**
+ * Resolves LLM providers for agent steps based on config.
+ *
+ * Each agent has named steps (e.g. 'implement'/'generate', 'designer'/'review').
+ * Steps can be bound to 'local' or 'claude' via `config.models.agents`.
+ * Unbound steps fall back to the local provider.
+ */
+export class ProviderResolver {
+  constructor(
+    private readonly config: AgentConfig,
+    private readonly local: LLMProvider,
+    private readonly claude: LLMProvider | null,
+  ) {}
+
+  /**
+   * Resolve provider for an agent step. Returns local provider as fallback
+   * when Claude is configured but unavailable (no API key).
+   */
+  resolve(agent: string, step: string): LLMProvider {
+    return this.doResolve(agent, step, false) ?? this.local;
+  }
+
+  /**
+   * Like resolve() but returns null when the step maps to Claude and Claude
+   * is unavailable. Used for optional-Claude slots (validate, enhance).
+   */
+  resolveOrNull(agent: string, step: string): LLMProvider | null {
+    return this.doResolve(agent, step, true);
+  }
+
+  private doResolve(agent: string, step: string, nullOnMissing: boolean): LLMProvider | null {
+    const agentCfg = this.config.models.agents;
+    const binding = agentCfg?.[agent as keyof AgentProviderConfigs]?.[step];
+
+    // No binding → default behavior (local, or null for optional slots)
+    if (binding === undefined) {
+      return nullOnMissing ? this.claude : this.local;
+    }
+
+    const parsed = parseBinding(binding, this.config);
+
+    if (parsed.provider === 'local') {
+      return this.local;
+    }
+
+    // Claude requested — need API key (from config or environment)
+    const apiKey = this.config.keys.anthropic ?? process.env['ANTHROPIC_API_KEY'];
+    if (!apiKey) {
+      if (nullOnMissing) return null;
+      log.warn(`Claude configured for ${agent}.${step} but no API key — falling back to local`);
+      return this.local;
+    }
+
+    return new ClaudeProvider({
+      model: parsed.model,
+      apiKey,
+    });
+  }
+}
+
+/** Parse a string or StepBinding into a resolved { provider, model }. */
+function parseBinding(
+  binding: string | StepBinding,
+  config: AgentConfig,
+): { provider: 'local' | 'claude'; model: string } {
+  if (typeof binding === 'string') {
+    if (binding === 'local') {
+      return { provider: 'local', model: config.models.local };
+    }
+    if (binding === 'claude') {
+      return { provider: 'claude', model: config.models.tiers.standard };
+    }
+    // Tier name → Claude with that tier
+    if (binding in config.models.tiers) {
+      const tier = binding as keyof typeof config.models.tiers;
+      return { provider: 'claude', model: config.models.tiers[tier] };
+    }
+    // Explicit model name
+    if (binding.includes('claude-')) {
+      return { provider: 'claude', model: binding };
+    }
+    // Unknown string → treat as local model name
+    return { provider: 'local', model: binding };
+  }
+
+  // StepBinding object
+  if (binding.provider === 'local') {
+    return { provider: 'local', model: binding.model ?? config.models.local };
+  }
+
+  // Claude binding
+  const model = binding.model
+    ?? (binding.tier ? config.models.tiers[binding.tier] : undefined)
+    ?? config.models.tiers.standard;
+  return { provider: 'claude', model };
+}
+
+// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+function mergeAgents(raw: unknown): AgentProviderConfigs | undefined {
+  if (typeof raw !== 'object' || raw === null) return undefined;
+  // Pass through — runtime validation happens in ProviderResolver.parseBinding
+  return raw as AgentProviderConfigs;
+}
+
+function mergeIntentDefaults(raw: unknown): Partial<Record<Intent, 'local' | 'claude'>> | undefined {
+  if (typeof raw !== 'object' || raw === null) return undefined;
+  return raw as Partial<Record<Intent, 'local' | 'claude'>>;
+}
 
 function mergeContext(
   defaults: AgentConfig['models']['context'],
@@ -131,6 +244,8 @@ function mergeConfig(defaults: AgentConfig, raw: Record<string, unknown>): Agent
       roles: (typeof models['roles'] === 'object' && models['roles'] !== null
         ? models['roles'] as Record<string, string>
         : defaults.models.roles),
+      agents: mergeAgents(models['agents']),
+      intentDefaults: mergeIntentDefaults(models['intentDefaults']),
       context: mergeContext(defaults.models.context, models['context']),
     },
     keys: {

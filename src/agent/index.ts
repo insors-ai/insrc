@@ -269,9 +269,10 @@ export async function startRepl(cwd?: string): Promise<void> {
     const classifyInput = attachments.length > 0 ? messageWithoutPaths || raw : raw;
 
     // Classify intent and select provider
+    const classifyProvider = session.resolver.resolve('classifier', 'classify');
     const classified = await classify(classifyInput, {
       signals: {},
-      llmProvider: ollamaOk ? session.ollamaProvider : undefined,
+      llmProvider: ollamaOk ? classifyProvider : undefined,
     });
     let route = selectProvider(classified.intent, classified.explicit, {
       ollamaProvider: session.ollamaProvider,
@@ -548,7 +549,8 @@ export async function startRepl(cwd?: string): Promise<void> {
     opts?: { explicit?: import('../shared/types.js').ExplicitProvider | undefined; routeProvider?: import('../shared/types.js').LLMProvider; routeTier?: string | undefined },
   ): Promise<string> {
     if (intent === 'requirements' || intent === 'design') {
-      if (!session.claudeProvider) {
+      const designerClaude = session.resolver.resolveOrNull('designer', 'review');
+      if (!designerClaude) {
         return `[error] Designer pipeline requires Claude. Set ANTHROPIC_API_KEY.`;
       }
 
@@ -574,7 +576,7 @@ export async function startRepl(cwd?: string): Promise<void> {
       let finalResult: DesignerResult | null = null;
 
       for await (const event of runDesignerPipeline(
-        designerInput, session.ollamaProvider, session.claudeProvider, channel,
+        designerInput, session.resolver.resolve('designer', 'sketch'), designerClaude, channel,
       )) {
         if (event.kind === 'progress') {
           log.info(event.message);
@@ -611,7 +613,8 @@ export async function startRepl(cwd?: string): Promise<void> {
 
       const result = await runImplementPipeline(
         message, repoPath, codeContext, planStepCtx,
-        session.ollamaProvider, session.claudeProvider,
+        session.resolver.resolve('implement', 'generate'),
+        session.resolver.resolveOrNull('implement', 'validate'),
       );
 
       if (result.needsUserDecision) {
@@ -632,7 +635,8 @@ export async function startRepl(cwd?: string): Promise<void> {
 
       const result = await runRefactorPipeline(
         message, repoPath, codeContext, planStepCtx,
-        session.ollamaProvider, session.claudeProvider,
+        session.resolver.resolve('refactor', 'generate'),
+        session.resolver.resolveOrNull('refactor', 'validate'),
       );
 
       if (result.needsUserDecision) {
@@ -677,7 +681,8 @@ export async function startRepl(cwd?: string): Promise<void> {
 
       const result = await runTestPipeline(
         message, testFilePath, codeContext, repoPath, planStepCtx,
-        session.ollamaProvider, session.claudeProvider,
+        session.resolver.resolve('test', 'generate'),
+        session.resolver.resolveOrNull('test', 'validate'),
       );
 
       if (result.needsUserDecision) {
@@ -699,7 +704,8 @@ export async function startRepl(cwd?: string): Promise<void> {
 
       const result = await runDebugPipeline(
         message, repoPath, codeContext, planStepCtx,
-        session.ollamaProvider, session.claudeProvider,
+        session.resolver.resolve('debug', 'investigate'),
+        session.resolver.resolveOrNull('debug', 'validate'),
         toLogFn(log),
         session.permissionMode,
         mcpUp,
@@ -717,13 +723,14 @@ export async function startRepl(cwd?: string): Promise<void> {
     }
 
     if (intent === 'review') {
-      if (!session.claudeProvider) {
+      const reviewClaude = session.resolver.resolveOrNull('designer', 'review');
+      if (!reviewClaude) {
         return '[error] Review pipeline requires Claude. Set ANTHROPIC_API_KEY.';
       }
       const isOpus = opts?.explicit === 'opus';
       const reviewProvider = isOpus && opts?.routeTier === 'powerful' && opts?.routeProvider
         ? opts.routeProvider
-        : session.claudeProvider;
+        : reviewClaude;
 
       const template = resolveTemplate({ format: 'markdown' });
       const designerInput: DesignerInput = {
@@ -738,7 +745,7 @@ export async function startRepl(cwd?: string): Promise<void> {
       let reviewOutput = '';
 
       for await (const event of runDesignerPipeline(
-        designerInput, session.ollamaProvider, reviewProvider, channel,
+        designerInput, session.resolver.resolve('designer', 'sketch'), reviewProvider, channel,
       )) {
         if (event.kind === 'progress') {
           log.info(event.message);
@@ -755,21 +762,13 @@ export async function startRepl(cwd?: string): Promise<void> {
       const cleanMessage = message.replace(/--review\b/, '').trim();
       log.info(`[pipeline] Running document pipeline (local generation${requestReview ? ' + Claude review' : ''})...`);
 
-      // Build Sonnet provider for cross-cutting doc escalation
-      let sonnetProvider: import('../shared/types.js').LLMProvider | null = null;
-      if (session.config.keys.anthropic) {
-        sonnetProvider = new ClaudeProvider({
-          model: session.config.models.tiers.standard,
-          apiKey: session.config.keys.anthropic,
-        });
-      }
-
       const result = await runDocumentPipeline(
         cleanMessage, repoPath, codeContext,
-        session.ollamaProvider, session.claudeProvider,
+        session.resolver.resolve('document', 'generate'),
+        session.resolver.resolveOrNull('document', 'review'),
         requestReview,
         toLogFn(log),
-        sonnetProvider,
+        session.resolver.resolveOrNull('document', 'escalate'),
       );
 
       if (result.applied) {
@@ -789,7 +788,8 @@ export async function startRepl(cwd?: string): Promise<void> {
 
       const result = await runResearchPipeline(
         message, codeContext,
-        session.ollamaProvider, session.claudeProvider,
+        session.resolver.resolve('research', 'query'),
+        session.resolver.resolveOrNull('research', 'synthesize'),
         session.config.keys.brave,
         toLogFn(log),
         session.closureRepos,
@@ -846,7 +846,12 @@ export async function startRepl(cwd?: string): Promise<void> {
           ? { resumeFrom: resumeCheckpoint }
           : { input: designerInput, repo: repoPath },
         config,
-        providers: { local: session.ollamaProvider, claude: session.claudeProvider },
+        providers: {
+          local: session.ollamaProvider,
+          claude: session.claudeProvider,
+          resolve: session.resolver.resolve.bind(session.resolver),
+          resolveOrNull: session.resolver.resolveOrNull.bind(session.resolver),
+        },
       });
 
       const finalState = result.result as DesignerState;
@@ -909,7 +914,12 @@ export async function startRepl(cwd?: string): Promise<void> {
           ? { resumeFrom: resumeCheckpoint }
           : { input: plannerInput, repo: repoPath },
         config,
-        providers: { local: session.ollamaProvider, claude: session.claudeProvider },
+        providers: {
+          local: session.ollamaProvider,
+          claude: session.claudeProvider,
+          resolve: session.resolver.resolve.bind(session.resolver),
+          resolveOrNull: session.resolver.resolveOrNull.bind(session.resolver),
+        },
       });
 
       const finalState = result.result as PlannerState;

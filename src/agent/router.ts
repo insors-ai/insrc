@@ -9,11 +9,18 @@ const log = getLogger('router');
 // Intent → default provider mapping (from design doc)
 // ---------------------------------------------------------------------------
 
-/** Intents that always escalate to Claude (two-stage: local sketch → Claude enhance) */
-const CLAUDE_DEFAULT: Set<Intent> = new Set([
+/** Base set of intents that default to Claude (overridable via config.models.intentDefaults). */
+const CLAUDE_DEFAULT_BASE: ReadonlySet<Intent> = new Set([
   'requirements', 'design', 'plan', 'review',
   'deploy', 'release', 'infra',
 ]);
+
+/** Check whether an intent defaults to Claude, respecting config overrides. */
+function isClaudeDefault(intent: Intent, config: AgentConfig): boolean {
+  const override = config.models.intentDefaults?.[intent];
+  if (override !== undefined) return override === 'claude';
+  return CLAUDE_DEFAULT_BASE.has(intent);
+}
 
 /** Intent that uses no LLM at all — pure graph queries */
 const NO_LLM: Set<Intent> = new Set(['graph']);
@@ -144,7 +151,7 @@ export function selectProvider(
   }
 
   // Claude-default intents
-  if (CLAUDE_DEFAULT.has(intent)) {
+  if (isClaudeDefault(intent, config)) {
     if (!claudeProvider) {
       log.warn(`Claude not available for ${intent} — using local model.`);
       return { provider: ollamaProvider, label: 'Local (Claude unavailable)', graphOnly: false };

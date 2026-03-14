@@ -59,11 +59,11 @@ export const extractRequirementsStep: AgentStep<DesignerState> = {
 
     const input = toDesignerInput(state);
 
-    ctx.progress('Extracting requirements (local model)...');
-    const rawList = await extractRequirements(input, ctx.providers.local);
+    ctx.progress('Extracting requirements...');
+    const rawList = await extractRequirements(input, ctx.providers.resolve('designer', 'extract'));
 
-    ctx.progress('Enhancing requirements (Claude)...');
-    const claude = ctx.providers.claude;
+    ctx.progress('Enhancing requirements...');
+    const claude = ctx.providers.resolveOrNull('designer', 'enhance');
     if (!claude) throw new Error('Claude provider required for requirements enhancement');
     const enhancedList = await enhanceRequirements(rawList, input, claude);
 
@@ -104,8 +104,8 @@ export const validateRequirementsStep: AgentStep<DesignerState> = {
         message: `${input.message}\n\nAdditional guidance: ${reply.feedback ?? 'Start over with a different approach.'}`,
       };
       ctx.progress('Requirements rejected. Re-extracting...');
-      const rawList = await extractRequirements(augmented, ctx.providers.local);
-      const claude = ctx.providers.claude;
+      const rawList = await extractRequirements(augmented, ctx.providers.resolve('designer', 'extract'));
+      const claude = ctx.providers.resolveOrNull('designer', 'enhance');
       if (!claude) throw new Error('Claude provider required');
       const enhancedList = await enhanceRequirements(rawList, augmented, claude);
 
@@ -129,7 +129,7 @@ export const validateRequirementsStep: AgentStep<DesignerState> = {
     }
 
     ctx.progress(`Re-extracting with feedback (round ${rounds}/${MAX_EDIT_ROUNDS})...`);
-    const claude = ctx.providers.claude;
+    const claude = ctx.providers.resolveOrNull('designer', 'enhance');
     if (!claude) throw new Error('Claude provider required');
     const enhancedList = await reExtractWithFeedback(
       state.enhancedRequirements, reply.feedback ?? '', toDesignerInput(state), claude,
@@ -242,11 +242,11 @@ export const sketchStep: AgentStep<DesignerState> = {
     const updatedTodos = [...state.todos];
     updatedTodos[idx] = { ...todo, state: 'sketching' as const };
 
-    ctx.progress(`${todo.index}: Writing sketch (local + codebase analysis)...`);
-    let sketch = await writeSketch(todo, state.parsedRequirements, updatedTodos, input, ctx.providers.local);
+    ctx.progress(`${todo.index}: Writing sketch...`);
+    let sketch = await writeSketch(todo, state.parsedRequirements, updatedTodos, input, ctx.providers.resolve('designer', 'sketch'));
 
-    ctx.progress(`${todo.index}: Claude reviewing sketch...`);
-    const claude = ctx.providers.claude;
+    ctx.progress(`${todo.index}: Reviewing sketch...`);
+    const claude = ctx.providers.resolveOrNull('designer', 'review');
     if (!claude) throw new Error('Claude provider required for sketch review');
     sketch = await reviewSketch(sketch, todo, state.parsedRequirements, input, claude);
 
@@ -322,11 +322,11 @@ export const validateSketchStep: AgentStep<DesignerState> = {
     }
 
     ctx.progress(`${todo.index}: Re-sketching with feedback (round ${rounds}/${MAX_EDIT_ROUNDS})...`);
-    const claude = ctx.providers.claude;
+    const claude = ctx.providers.resolveOrNull('designer', 'review');
     if (!claude) throw new Error('Claude provider required');
     const newSketch = await reSketchWithFeedback(
       sketch, reply.feedback ?? '', todo, state.parsedRequirements,
-      state.todos, toDesignerInput(state), ctx.providers.local, claude,
+      state.todos, toDesignerInput(state), ctx.providers.resolve('designer', 'sketch'), claude,
     );
 
     const updatedTodos = [...state.todos];
@@ -358,8 +358,8 @@ export const detailStep: AgentStep<DesignerState> = {
     const updatedTodos = [...state.todos];
     updatedTodos[idx] = { ...todo, state: 'detailing' as const };
 
-    ctx.progress(`${todo.index}: Writing detailed section (local)...`);
-    const detail = await writeDetail(todo, updatedTodos, input, ctx.providers.local);
+    ctx.progress(`${todo.index}: Writing detailed section...`);
+    const detail = await writeDetail(todo, updatedTodos, input, ctx.providers.resolve('designer', 'detail'));
 
     updatedTodos[idx] = { ...updatedTodos[idx]!, detail };
 
@@ -437,11 +437,11 @@ export const validateDetailStep: AgentStep<DesignerState> = {
     }
 
     ctx.progress(`${todo.index}: Revising detail with feedback (round ${rounds}/${MAX_EDIT_ROUNDS})...`);
-    const claude = ctx.providers.claude;
+    const claude = ctx.providers.resolveOrNull('designer', 'review');
     if (!claude) throw new Error('Claude provider required');
     const revisedDetail = await reDetailWithFeedback(
       todo.detail!, reply.feedback ?? '', todo, state.todos, toDesignerInput(state),
-      ctx.providers.local, claude,
+      ctx.providers.resolve('designer', 'detail'), claude,
     );
 
     const updatedTodos = [...state.todos];

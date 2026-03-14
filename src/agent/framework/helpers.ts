@@ -50,7 +50,7 @@ export interface StepContextOpts {
   agentId:         string;
   runDir:          string;
   config:          AgentConfig;
-  providers:       { local: LLMProvider; claude: LLMProvider | null };
+  providers:       { local: LLMProvider; claude: LLMProvider | null; resolve: (agent: string, step: string) => LLMProvider; resolveOrNull: (agent: string, step: string) => LLMProvider | null };
   abortController: AbortController;
   /** Optional RPC function for daemon IPC. */
   rpcFn?:          (<T>(method: string, params?: unknown) => Promise<T>) | undefined;

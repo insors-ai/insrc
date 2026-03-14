@@ -32,7 +32,7 @@ function warn(msg: string) { console.log(`${YELLOW}⚠${RESET} ${msg}`); }
 
 import { OllamaProvider } from '../src/agent/providers/ollama.js';
 import { ClaudeProvider } from '../src/agent/providers/claude.js';
-import { loadConfig } from '../src/agent/config.js';
+import { loadConfig, ProviderResolver } from '../src/agent/config.js';
 import { resolveTemplate } from '../src/agent/tasks/designer/index.js';
 import { designerAgent } from '../src/agent/tasks/designer/agent.js';
 import type { DesignerState } from '../src/agent/tasks/designer/agent-state.js';
@@ -68,6 +68,9 @@ if (anthropicKey) {
   warn('No Anthropic key — using Ollama for Claude role too');
   claudeProvider = new OllamaProvider();
 }
+
+const resolver = new ProviderResolver(config, ollama, anthropicKey ? claudeProvider as ClaudeProvider : null);
+ok(`ProviderResolver created (agents config: ${config.models.agents ? 'present' : 'none'})`);
 
 // ---------------------------------------------------------------------------
 // Small design prompt — should yield 2-3 requirements
@@ -113,7 +116,12 @@ try {
       repo: process.cwd(),
     },
     config,
-    providers: { local: ollama, claude: claudeProvider },
+    providers: {
+      local: ollama,
+      claude: claudeProvider,
+      resolve: resolver.resolve.bind(resolver),
+      resolveOrNull: resolver.resolveOrNull.bind(resolver),
+    },
   });
 
   finalState = runResult.result as DesignerState;

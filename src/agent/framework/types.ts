@@ -136,6 +136,10 @@ export interface StepContext {
   providers: {
     local:  LLMProvider;
     claude: LLMProvider | null;
+    /** Resolve provider for an agent step. Falls back to local if Claude unavailable. */
+    resolve: (agent: string, step: string) => LLMProvider;
+    /** Like resolve() but returns null when Claude is unavailable for optional slots. */
+    resolveOrNull: (agent: string, step: string) => LLMProvider | null;
   };
   /** Emit progress update (non-blocking). */
   progress(msg: string, pct?: number): void;

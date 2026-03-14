@@ -178,7 +178,12 @@ try {
     channel,
     options: { input, repo: process.cwd() },
     config,
-    providers: { local: ollama, claude: claudeProvider },
+    providers: {
+      local: ollama,
+      claude: claudeProvider,
+      resolve: (_agent: string, _step: string) => ollama,
+      resolveOrNull: (_agent: string, _step: string) => claudeProvider,
+    },
   });
 
   finalState = runResult.result as DesignerState;

@@ -45,7 +45,7 @@ export const analyzeRequestStep: AgentStep<PlannerState> = {
       { role: 'user', content: state.input.message },
     ];
 
-    const response = await ctx.providers.local.complete(messages, {
+    const response = await ctx.providers.resolve('planner', 'analyze').complete(messages, {
       maxTokens: 1000,
       temperature: 0.3,
     });
@@ -89,7 +89,7 @@ export const gatherContextStep: AgentStep<PlannerState> = {
         { role: 'system', content: SEARCH_PLAN_SYSTEM },
         { role: 'user', content: state.input.message },
       ];
-      const planResponse = await ctx.providers.local.complete(planMessages, {
+      const planResponse = await ctx.providers.resolve('planner', 'search').complete(planMessages, {
         maxTokens: 800,
         temperature: 0.2,
       });
@@ -160,23 +160,24 @@ export const draftPlanStep: AgentStep<PlannerState> = {
       ? `${contextParts.join('\n\n')}\n\nUser request:\n${state.input.message}`
       : `User request:\n${state.input.message}`;
 
-    // Stage 1 — Local sketch
-    ctx.progress('Drafting plan (local model)...');
+    // Stage 1 — Draft plan
+    ctx.progress('Drafting plan...');
     const sketchMessages: LLMMessage[] = [
       { role: 'system', content: hasContext ? DRAFT_SYSTEM : CONDENSED_SYSTEM },
       { role: 'user', content: userContent },
     ];
 
-    const sketchResponse = await ctx.providers.local.complete(sketchMessages, {
+    const sketchResponse = await ctx.providers.resolve('planner', 'draft').complete(sketchMessages, {
       maxTokens: 3000,
       temperature: 0.3,
     });
 
     let enhancedText = sketchResponse.text;
 
-    // Stage 2 — Claude enhancement
-    if (ctx.providers.claude) {
-      ctx.progress('Refining plan (Claude)...');
+    // Stage 2 — Enhancement
+    const enhanceProvider = ctx.providers.resolveOrNull('planner', 'enhance');
+    if (enhanceProvider) {
+      ctx.progress('Refining plan...');
       const enhanceMessages: LLMMessage[] = [
         { role: 'system', content: ENHANCE_SYSTEM },
         {
@@ -189,7 +190,7 @@ export const draftPlanStep: AgentStep<PlannerState> = {
         },
       ];
 
-      const enhanced = await ctx.providers.claude.complete(enhanceMessages, {
+      const enhanced = await enhanceProvider.complete(enhanceMessages, {
         maxTokens: 4000,
         temperature: 0.2,
       });
@@ -365,7 +366,7 @@ export const detailStepsStep: AgentStep<PlannerState> = {
       },
     ];
 
-    const provider = ctx.providers.claude ?? ctx.providers.local;
+    const provider = ctx.providers.resolveOrNull('planner', 'detail') ?? ctx.providers.resolve('planner', 'draft');
     const response = await provider.complete(messages, {
       maxTokens: 3000,
       temperature: 0.2,

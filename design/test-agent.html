@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Test Agent — Design Document</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --border: #2a2d3a;
+      --text: #e2e4ed;
+      --muted: #8b8fa8;
+      --accent: #7c6af7;
+      --accent2: #4fc3f7;
+      --green: #4caf7d;
+      --yellow: #f5c842;
+      --red: #f47c7c;
+      --code-bg: #12151e;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 15px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; scroll-padding-top: 1rem; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      margin: 0;
+      padding: 0;
+      display: flex;
+    }
+
+    nav.toc {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 260px;
+      height: 100vh;
+      overflow-y: auto;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 1.5rem 1rem;
+      font-size: 0.82rem;
+    }
+
+    nav.toc h2 {
+      font-size: 0.9rem;
+      color: var(--accent2);
+      border: none;
+      margin: 0 0 0.75rem;
+      padding: 0;
+    }
+
+    nav.toc ol {
+      list-style: none;
+      padding: 0;
+      counter-reset: toc;
+    }
+
+    nav.toc > ol > li { counter-increment: toc; margin: 0.35rem 0; }
+    nav.toc > ol > li::before { content: counter(toc) ". "; color: var(--muted); }
+    nav.toc > ol > li > ol { padding-left: 1rem; counter-reset: subtoc; }
+    nav.toc > ol > li > ol > li { counter-increment: subtoc; margin: 0.2rem 0; font-size: 0.78rem; }
+    nav.toc > ol > li > ol > li::before { content: counter(toc) "." counter(subtoc) " "; color: var(--muted); }
+    nav.toc a { color: var(--text); text-decoration: none; }
+    nav.toc a:hover { color: var(--accent); }
+
+    main {
+      flex: 1;
+      min-width: 0;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    @media (min-width: 1100px) {
+      main { margin-left: 280px; }
+    }
+
+    h1 { font-size: 2rem; color: var(--accent); margin-bottom: 0.5rem; }
+    .subtitle { color: var(--muted); font-size: 0.95rem; margin-bottom: 2rem; }
+
+    h2 {
+      font-size: 1.3rem;
+      color: var(--accent2);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.3rem;
+      margin-top: 2.5rem;
+      margin-bottom: 1rem;
+    }
+
+    h3 {
+      font-size: 1.05rem;
+      color: var(--yellow);
+      margin-top: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    p, ul, ol { margin-bottom: 1rem; }
+    ul, ol { padding-left: 1.5rem; }
+    li { margin-bottom: 0.3rem; }
+
+    code {
+      font-family: 'Cascadia Code', 'Fira Code', monospace;
+      background: var(--code-bg);
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      font-size: 0.9em;
+    }
+
+    pre {
+      background: var(--code-bg);
+      padding: 1rem;
+      border-radius: 6px;
+      overflow-x: auto;
+      margin-bottom: 1rem;
+      font-size: 0.88rem;
+      line-height: 1.5;
+      border: 1px solid var(--border);
+    }
+    pre code { background: none; padding: 0; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 1.2rem;
+      font-size: 0.92rem;
+    }
+    th, td {
+      border: 1px solid var(--border);
+      padding: 0.5rem 0.75rem;
+      text-align: left;
+    }
+    th { background: var(--surface); color: var(--accent2); font-size: 0.9rem; }
+
+    .callout {
+      border-left: 3px solid var(--accent2);
+      background: var(--surface);
+      padding: 0.75rem 1rem;
+      margin: 1rem 0;
+      border-radius: 0 6px 6px 0;
+      font-size: 0.93rem;
+    }
+    .callout.warn { border-left-color: var(--yellow); }
+    .callout.info { border-left-color: var(--accent2); }
+    .callout.decision { border-left-color: var(--green); }
+
+    .tag {
+      display: inline-block;
+      font-size: 0.75rem;
+      padding: 0.1rem 0.5rem;
+      border-radius: 3px;
+      font-weight: 600;
+    }
+    .tag.local { background: #1a3a2a; color: var(--green); }
+    .tag.claude { background: #2a1a3a; color: var(--accent); }
+    .tag.gate { background: #3a2a1a; color: var(--yellow); }
+
+    .flow-diagram {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+      font-family: 'Cascadia Code', 'Fira Code', monospace;
+      font-size: 0.85rem;
+      line-height: 1.8;
+      overflow-x: auto;
+      white-space: pre;
+    }
+  </style>
+</head>
+<body>
+
+<nav class="toc">
+  <h2>Test Agent</h2>
+  <ol>
+    <li><a href="#overview">Overview</a></li>
+    <li><a href="#principles">Design Principles</a></li>
+    <li><a href="#flow">Agent Flow</a>
+      <ol>
+        <li><a href="#step-analyze">analyze</a></li>
+        <li><a href="#step-generate">generate-test-plan</a></li>
+        <li><a href="#step-review">review-test-plan</a></li>
+        <li><a href="#step-write">write-tests</a></li>
+        <li><a href="#step-execute">execute-tests</a></li>
+        <li><a href="#step-report">report</a></li>
+      </ol>
+    </li>
+    <li><a href="#test-plan">Test Plan Structure</a></li>
+    <li><a href="#unit-vs-live">Unit vs Live Tests</a></li>
+    <li><a href="#failure-classification">Failure Classification</a></li>
+    <li><a href="#pair-handoff">Pair Agent Handoff</a></li>
+    <li><a href="#review-strategy">Review Strategy</a></li>
+    <li><a href="#types">Types and State</a></li>
+    <li><a href="#reuse">Reused Infrastructure</a></li>
+    <li><a href="#integration">REPL/CLI Integration</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<h1>Test Agent</h1>
+<p class="subtitle">Step-based testing agent with scenario-level planning, failure classification, and Pair agent handoff for implementation bugs.</p>
+
+<!-- ================================================================== -->
+<h2 id="overview">1. Overview</h2>
+
+<p>The Test Agent replaces the single-turn <code>runTestPipeline</code> with a checkpointable, resumable agent on the existing framework. It generates, writes, and executes tests for user-specified files or modules, iterating until all tests pass or surfacing implementation bugs to the Pair agent.</p>
+
+<p>The agent operates on <strong>user-directed scope</strong> &mdash; the user requests tests for specific files, modules, or components (e.g., "write real tests for the planner agent"). The agent does not autonomously discover untested code across the repo.</p>
+
+<div class="callout decision">
+  <strong>Key decision:</strong> The test agent <strong>never modifies implementation code</strong>. When it detects an implementation bug, it invokes the Pair agent (debug mode) as a sub-agent with full context, after user approval.
+</div>
+
+<!-- ================================================================== -->
+<h2 id="principles">2. Design Principles</h2>
+
+<ol>
+  <li><strong>Test code only.</strong> The agent owns test files exclusively. Implementation bugs are handed off to the Pair agent.</li>
+  <li><strong>Scenario-level planning.</strong> Test plans enumerate specific scenarios (happy path, edge cases, error conditions) &mdash; not just "test file X."</li>
+  <li><strong>Mock vs live decision up front.</strong> The agent asks the user whether mock or real tests are needed (if not already specified). This fundamentally changes the test plan shape.</li>
+  <li><strong>Claude reviews the plan.</strong> The generated test plan is validated by Claude for coverage and correctness before user review.</li>
+  <li><strong>Per-file write+execute.</strong> Tests are grouped by file. Each file is written and executed to green before moving to the next.</li>
+  <li><strong>One gate, then autonomous.</strong> The user reviews the test plan once. After approval, the agent runs autonomously (unless it needs to hand off an implementation bug).</li>
+  <li><strong>Optional test code review.</strong> If the user requests it at the gate, Claude reviews generated test code before execution.</li>
+</ol>
+
+<!-- ================================================================== -->
+<h2 id="flow">3. Agent Flow</h2>
+
+<div class="flow-diagram">
+                           +─────────+
+                           │ analyze │
+                           +────┬────+
+                                │
+                    +───────────▼────────────+
+                    │ generate-test-plan     │
+                    │ (LLM + Claude review)  │
+                    +───────────┬────────────+
+                                │
+                    +───────────▼────────────+
+                    │ review-test-plan       │◄──── edit feedback
+                    │ (user gate)            │────► reject → analyze
+                    +───────────┬────────────+
+                                │ approve
+                    ┌───────────▼────────────┐
+                    │                        │
+              ┌─────▼─────┐                  │
+              │write-tests │ per file        │
+              │(codegen)   │ loop            │
+              +─────┬──────+                 │
+                    │                        │
+              ┌─────▼──────┐                 │
+              │execute-tests│                │
+              │(fix loop)  │                 │
+              +─────┬──────+                 │
+                    │                        │
+                    ├── test passes ──► next file
+                    │                        │
+                    ├── test issue ──► fix test ──► re-run
+                    │                        │
+                    └── impl bug ──► gate ──► Pair agent ──► re-run
+                                             │
+                    ┌────────────────────────-┘
+                    │ all files done
+              ┌─────▼─────┐
+              │  report   │
+              +───────────+
+</div>
+
+<!-- ------------------------------------------------------------------ -->
+<h3 id="step-analyze">3.1 analyze</h3>
+<p><span class="tag local">local</span> LLM + tools</p>
+
+<p>Investigates the user-specified files/modules to understand what needs testing.</p>
+
+<ul>
+  <li>Uses <code>investigate()</code> helper with a test-focused query built from the user's message</li>
+  <li>Calls <code>detectFramework(repoPath)</code> to identify the test framework (vitest, jest, pytest, go, etc.)</li>
+  <li>For each source file in scope, calls <code>findTestFile()</code> to discover existing tests</li>
+  <li>Reads existing test files to understand current coverage and test style</li>
+  <li>For live tests: queries the daemon to discover config patterns, service URLs, DB setup</li>
+</ul>
+
+<p><strong>State updates:</strong> <code>investigationSummary</code>, <code>detectedFramework</code>, <code>existingTests[]</code>, <code>sourceFiles[]</code></p>
+<p><strong>Next:</strong> <code>generate-test-plan</code></p>
+
+<!-- ------------------------------------------------------------------ -->
+<h3 id="step-generate">3.2 generate-test-plan</h3>
+<p><span class="tag local">local</span> generate &rarr; <span class="tag claude">Claude</span> review</p>
+
+<p>LLM generates a structured test plan at scenario-level granularity, then Claude reviews it.</p>
+
+<p><strong>Generation:</strong></p>
+<ul>
+  <li>Builds prompt from investigation summary, source files, existing tests, detected framework, and user message</li>
+  <li>LLM produces JSON matching the <code>TestPlan</code> schema</li>
+  <li>Each entry specifies: target file, test file, kind (unit/live), scenarios, fixtures/setup, priority</li>
+  <li>For live tests: auto-populates setup config (service URLs, env vars, DB paths) discovered during analysis</li>
+  <li>Retry up to 2x on malformed JSON; fallback: one entry per source file</li>
+</ul>
+
+<p><strong>Claude review:</strong></p>
+<ul>
+  <li>Claude validates the plan for: scenario completeness, edge case coverage, correct test categorization, realistic fixtures</li>
+  <li>If <code>CHANGES_NEEDED</code>: feeds Claude's feedback back to local LLM for refinement (up to 2 rounds)</li>
+  <li>Writes <code>test-plan.json</code> artifact</li>
+</ul>
+
+<p><strong>Mock vs live decision:</strong> If the user hasn't specified, the agent asks at this stage (or infers from the message and confirms). This determination drives the <code>kind</code> field on each <code>TestPlanEntry</code>.</p>
+
+<p><strong>Next:</strong> <code>review-test-plan</code></p>
+
+<!-- ------------------------------------------------------------------ -->
+<h3 id="step-review">3.3 review-test-plan</h3>
+<p><span class="tag gate">gate</span></p>
+
+<p>Presents the test plan to the user for review.</p>
+
+<p><strong>Gate display:</strong> Formatted markdown showing each entry with target file, test file, kind, scenarios, setup config (for live tests), and priority.</p>
+
+<p><strong>Actions:</strong></p>
+<table>
+  <tr><th>Action</th><th>Behavior</th><th>Next step</th></tr>
+  <tr><td><strong>approve</strong></td><td>Accept plan, execute autonomously</td><td><code>write-tests</code></td></tr>
+  <tr><td><strong>approve with review</strong></td><td>Accept plan, but Claude reviews each test file before execution</td><td><code>write-tests</code> (with <code>reviewTests: true</code>)</td></tr>
+  <tr><td><strong>edit</strong> <code>&lt;feedback&gt;</code></td><td>Refine plan with user feedback, re-generate</td><td><code>generate-test-plan</code></td></tr>
+  <tr><td><strong>reject</strong></td><td>Re-analyze with rejection reason</td><td><code>analyze</code></td></tr>
+</table>
+
+<p>Supports <code>@mention</code> provider overrides. Max 3 edit rounds before forcing a decision.</p>
+
+<!-- ------------------------------------------------------------------ -->
+<h3 id="step-write">3.4 write-tests</h3>
+<p><span class="tag local">local</span> generate &rarr; <span class="tag claude">Claude</span> validate (optional review)</p>
+
+<p>Iterates over test plan entries, generating and applying test code one file at a time.</p>
+
+<p>For the current entry:</p>
+<ol>
+  <li>Read the target source file and existing test file (if any) for context</li>
+  <li>Build prompt from: entry scenarios, fixtures, setup config, test framework conventions</li>
+  <li>Call <code>generateAndValidate()</code> &mdash; local generates unified diff, Claude validates</li>
+  <li>Call <code>applyApprovedDiff()</code> to write the test file to disk</li>
+  <li>If <code>reviewTests</code> flag set: Claude reviews the written test code for quality, correctness, and completeness. On issues: re-generate with feedback.</li>
+  <li>Record <code>TestFileResult</code> with <code>status: 'written'</code></li>
+  <li>Proceed to <code>execute-tests</code> for this file</li>
+</ol>
+
+<p><strong>On codegen failure:</strong> Record error in <code>TestFileResult</code>, skip to next entry. Don't block the pipeline.</p>
+
+<p><strong>Self-loop:</strong> After a file passes execution, returns to <code>write-tests</code> for the next entry. When all entries are done, proceeds to <code>report</code>.</p>
+
+<!-- ------------------------------------------------------------------ -->
+<h3 id="step-execute">3.5 execute-tests</h3>
+<p><span class="tag local">local</span> fix &rarr; <span class="tag claude">Claude</span> escalation</p>
+
+<p>Runs the current test file. On failure, classifies the failure and either fixes the test or hands off to Pair.</p>
+
+<p><strong>Flow per file:</strong></p>
+<ol>
+  <li><strong>Run tests</strong> via <code>runTests()</code></li>
+  <li>If all pass &rarr; mark <code>status: 'passing'</code>, return to <code>write-tests</code> for next file</li>
+  <li><strong>Classify failure</strong> (see <a href="#failure-classification">Section 6</a>):
+    <ul>
+      <li><strong>Test issue</strong> (wrong assertion, bad mock, missing import) &rarr; fix the test code, re-run</li>
+      <li><strong>Implementation bug</strong> (function returns wrong result, missing error handling) &rarr; <a href="#pair-handoff">Pair agent handoff</a></li>
+      <li><strong>Setup/config issue</strong> (live tests: service unreachable, wrong URL) &rarr; fix test setup or skip with message</li>
+    </ul>
+  </li>
+  <li><strong>Test fix loop:</strong> Local fix attempts (max 3) &rarr; Claude escalation (max 2 rounds) &rarr; if exhausted, mark <code>fix-exhausted</code></li>
+</ol>
+
+<p><strong>For live tests:</strong> Prerequisite check before execution. If required infrastructure is unavailable (Ollama down, daemon unreachable, DB not connected), skip with a clear message rather than failing.</p>
+
+<!-- ------------------------------------------------------------------ -->
+<h3 id="step-report">3.6 report</h3>
+<p><span class="tag local">local</span></p>
+
+<p>Produces a final summary after all test files have been processed.</p>
+
+<ul>
+  <li>Summary of: files tested, scenarios covered, pass/fail counts per file</li>
+  <li>List of any implementation bugs found and whether they were fixed (via Pair agent)</li>
+  <li>List of skipped live tests with prerequisite failures</li>
+  <li>Writes <code>test-report.md</code> artifact</li>
+  <li>Emits done message</li>
+</ul>
+
+<!-- ================================================================== -->
+<h2 id="test-plan">4. Test Plan Structure</h2>
+
+<p>The test plan is a scenario-level specification of what to test, grouped by file.</p>
+
+<pre><code>{
+  "framework": "vitest",
+  "summary": "Unit tests for planner agent steps and cycle detection",
+  "entries": [
+    {
+      "index": 1,
+      "targetFile": "src/agent/planner/steps.ts",
+      "testFile": "src/agent/planner/__tests__/steps.test.ts",
+      "kind": "unit",
+      "scenarios": [
+        "analyzeRequestStep classifies 'implementation' plan type from code-related prompt",
+        "analyzeRequestStep classifies 'test' plan type from test-related prompt",
+        "analyzeRequestStep handles empty codeContext gracefully",
+        "draftPlanStep produces a Plan with valid step IDs",
+        "draftPlanStep generates dependencies that reference existing step IDs",
+        "resolveDepsStep detects and breaks circular dependencies"
+      ],
+      "fixtures": ["mock LLMProvider returning scripted responses"],
+      "setup": null,
+      "priority": "high"
+    },
+    {
+      "index": 2,
+      "targetFile": "src/agent/planner/index.ts",
+      "testFile": "src/agent/planner/__tests__/index.test.ts",
+      "kind": "unit",
+      "scenarios": [
+        "detectCycles returns null for acyclic plan",
+        "detectCycles returns cycle path for circular dependencies",
+        "toMarkdown produces valid markdown with checkboxes"
+      ],
+      "fixtures": ["sample Plan objects with known structures"],
+      "setup": null,
+      "priority": "high"
+    }
+  ]
+}</code></pre>
+
+<p><strong>For live tests,</strong> the <code>setup</code> field contains infrastructure config:</p>
+
+<pre><code>{
+  "index": 3,
+  "targetFile": "src/agent/planner/agent.ts",
+  "testFile": "src/agent/planner/__tests__/agent.live.test.ts",
+  "kind": "live",
+  "scenarios": [
+    "plannerAgent produces a valid implementation plan for a simple feature",
+    "plannerAgent handles planner steps with tool-calling investigation",
+    "plannerAgent resumes from checkpoint after interruption"
+  ],
+  "fixtures": ["real Ollama provider", "real Claude provider (Haiku)"],
+  "setup": {
+    "services": {
+      "ollama": { "url": "http://localhost:11434", "check": "ollama.ping()" },
+      "claude": { "envVar": "ANTHROPIC_API_KEY", "check": "claudeProvider exists" }
+    },
+    "config": "loadConfig() from ~/.insrc/config.json",
+    "envVars": ["ANTHROPIC_API_KEY"]
+  },
+  "priority": "medium"
+}</code></pre>
+
+<!-- ================================================================== -->
+<h2 id="unit-vs-live">5. Unit vs Live Tests</h2>
+
+<p>The agent handles these as fundamentally different execution strategies:</p>
+
+<table>
+  <tr><th></th><th>Unit / Mock Tests</th><th>Live / Integration Tests</th></tr>
+  <tr>
+    <td><strong>Dependencies</strong></td>
+    <td>None &mdash; self-contained with mocks/stubs</td>
+    <td>External services (Ollama, daemon, Claude API, DB)</td>
+  </tr>
+  <tr>
+    <td><strong>Setup</strong></td>
+    <td>Standard test framework setup</td>
+    <td>Service connectivity, env vars, config loading</td>
+  </tr>
+  <tr>
+    <td><strong>Prerequisites</strong></td>
+    <td>None</td>
+    <td>Ping services, verify connectivity. Skip if unavailable.</td>
+  </tr>
+  <tr>
+    <td><strong>Execution</strong></td>
+    <td>Generate &rarr; run &rarr; fix loop &rarr; done</td>
+    <td>Generate &rarr; check prereqs &rarr; run &rarr; fix loop &rarr; done</td>
+  </tr>
+  <tr>
+    <td><strong>Fix targets</strong></td>
+    <td>Test code only (assertions, mocks, imports)</td>
+    <td>Test setup/config, or report as infra issue</td>
+  </tr>
+  <tr>
+    <td><strong>Failure mode</strong></td>
+    <td>Test issue or implementation bug</td>
+    <td>Test issue, implementation bug, or infra/config issue</td>
+  </tr>
+  <tr>
+    <td><strong>Config discovery</strong></td>
+    <td>N/A</td>
+    <td>Auto-populated via daemon search during analyze step</td>
+  </tr>
+</table>
+
+<div class="callout info">
+  <strong>Mock vs live decision:</strong> If the user hasn't specified, the agent infers from the message and confirms at the test plan review gate. Keywords like "real tests", "integration", "live", "end-to-end" signal live tests. Default is unit/mock.
+</div>
+
+<!-- ================================================================== -->
+<h2 id="failure-classification">6. Failure Classification</h2>
+
+<p>When a test fails, the agent must classify the failure before deciding how to fix it. This is a critical capability that distinguishes the test agent from a simple generate-and-run pipeline.</p>
+
+<h3>Classification Strategy</h3>
+
+<p>The agent sends the failing test output, test code, and implementation code to the LLM with a classification prompt. The LLM determines:</p>
+
+<table>
+  <tr><th>Category</th><th>Signal</th><th>Action</th></tr>
+  <tr>
+    <td><strong>Test issue</strong></td>
+    <td>Wrong expected value, bad mock setup, missing import, incorrect assertion syntax</td>
+    <td>Fix the test code (local fix loop, Claude escalation)</td>
+  </tr>
+  <tr>
+    <td><strong>Implementation bug</strong></td>
+    <td>Function returns unexpected result, missing error handling, wrong logic, null where value expected</td>
+    <td>Surface to user &rarr; gate &rarr; invoke Pair agent (debug mode)</td>
+  </tr>
+  <tr>
+    <td><strong>Setup/config issue</strong></td>
+    <td>Connection refused, timeout, missing env var, wrong URL (live tests only)</td>
+    <td>Fix test setup, or skip with prerequisite-not-met message</td>
+  </tr>
+</table>
+
+<h3>Classification Prompt</h3>
+
+<p>The LLM receives: failing test output, test code snippet, implementation code snippet, and the original test scenario description. It must respond with a JSON classification:</p>
+
+<pre><code>{
+  "category": "test_issue" | "implementation_bug" | "setup_issue",
+  "confidence": "high" | "medium" | "low",
+  "reasoning": "The test expects X but the function returns Y because...",
+  "suggestedFix": "Change the assertion from X to Y" | "The function has a bug in..."
+}</code></pre>
+
+<div class="callout warn">
+  <strong>Low confidence:</strong> When classification confidence is low, the agent defaults to assuming a test issue first. If the test fix loop exhausts without success, it reclassifies as a potential implementation bug.
+</div>
+
+<!-- ================================================================== -->
+<h2 id="pair-handoff">7. Pair Agent Handoff</h2>
+
+<p>When the test agent detects an implementation bug, it orchestrates a handoff to the Pair agent (debug mode).</p>
+
+<h3>Handoff Flow</h3>
+
+<ol>
+  <li><strong>Report:</strong> The test agent surfaces the bug with full context:
+    <ul>
+      <li>Failing test name and output</li>
+      <li>Expected vs actual behavior</li>
+      <li>Relevant implementation code</li>
+      <li>Classification reasoning</li>
+    </ul>
+  </li>
+  <li><strong>Gate:</strong> The user can:
+    <ul>
+      <li><strong>fix</strong> &mdash; invoke Pair agent with the bug context (user-approved)</li>
+      <li><strong>auto-fix</strong> &mdash; invoke Pair agent without further approval</li>
+      <li><strong>skip</strong> &mdash; mark test as known-failing, continue to next file</li>
+    </ul>
+  </li>
+  <li><strong>Pair execution:</strong> Pair agent runs in debug mode with:
+    <ul>
+      <li><code>message</code>: bug description + failing test context</li>
+      <li><code>codeContext</code>: implementation source + test source + failure output</li>
+      <li><code>mode</code>: <code>'debug'</code></li>
+    </ul>
+  </li>
+  <li><strong>Re-run:</strong> After Pair completes, re-execute the failing test to verify the fix</li>
+  <li><strong>Continue:</strong> If passing, proceed to next file. If still failing, reclassify.</li>
+</ol>
+
+<div class="callout decision">
+  <strong>Sub-agent invocation:</strong> The Pair agent is invoked via <code>runAgent()</code> with a <code>TestChannel</code> (auto-approve) when the user selects "auto-fix", or with a <code>ReplChannel</code> (interactive) when the user selects "fix". This allows the user to participate in the debugging if they want to.
+</div>
+
+<!-- ================================================================== -->
+<h2 id="review-strategy">8. Review Strategy</h2>
+
+<h3>Test Plan Review (always)</h3>
+<p>The generated test plan is always reviewed by Claude before presentation to the user. Claude checks for:</p>
+<ul>
+  <li>Scenario completeness &mdash; missing edge cases, error paths, boundary conditions</li>
+  <li>Correct categorization &mdash; unit vs live correctly assigned</li>
+  <li>Realistic fixtures &mdash; mock strategies that match the actual code</li>
+  <li>Setup correctness &mdash; for live tests, valid service URLs and config</li>
+</ul>
+
+<h3>Test Code Review (on request)</h3>
+<p>If the user selects "approve with review" at the gate, Claude reviews each generated test file before execution. Claude checks for:</p>
+<ul>
+  <li>Assertion correctness &mdash; are the expected values realistic?</li>
+  <li>Test independence &mdash; no shared mutable state between tests</li>
+  <li>Coverage of specified scenarios &mdash; does the code match the plan?</li>
+  <li>Framework conventions &mdash; correct use of describe/it/beforeEach etc.</li>
+</ul>
+
+<p>On issues, feedback is fed back to the local LLM for revision before execution.</p>
+
+<!-- ================================================================== -->
+<h2 id="types">9. Types and State</h2>
+
+<h3>TesterInput</h3>
+<pre><code>interface TesterInput {
+  message:     string;              // User's request
+  codeContext:  string;              // Pre-assembled entity context
+  session: {
+    repoPath:      string;
+    closureRepos:  string[];
+  };
+}</code></pre>
+
+<h3>TesterState</h3>
+<pre><code>interface TesterState extends AgentState, HasProviderOverride {
+  input: {
+    message:       string;
+    codeContext:    string;
+    repoPath:      string;
+    closureRepos:  string[];
+  };
+
+  // Analyze
+  investigationSummary:  string;
+  detectedFramework:     TestFramework;
+  existingTests:         string[];
+  sourceFiles:           string[];
+
+  // Test plan
+  testPlan:              TestPlan | null;
+
+  // Execution
+  currentEntryIndex:     number;
+  fileResults:           TestFileResult[];
+  reviewTests:           boolean;        // Claude reviews test code before execution
+  allPassing:            boolean;
+
+  // Bug tracking
+  implementationBugs:    ImplementationBug[];
+
+  // Tracking
+  editRounds:            Record&lt;string, number&gt;;
+  filesChanged:          string[];
+  summary?:              string | undefined;
+}</code></pre>
+
+<h3>ImplementationBug</h3>
+<pre><code>interface ImplementationBug {
+  testFile:         string;
+  testName:         string;
+  sourceFile:       string;
+  description:      string;
+  classification:   FailureClassification;
+  status:           'detected' | 'fixing' | 'fixed' | 'skipped';
+  pairRunId?:       string | undefined;   // Pair agent run ID if invoked
+}</code></pre>
+
+<!-- ================================================================== -->
+<h2 id="reuse">10. Reused Infrastructure</h2>
+
+<table>
+  <tr><th>Function</th><th>From</th><th>Used in</th></tr>
+  <tr><td><code>investigate()</code></td><td><code>shared/investigate.ts</code></td><td>analyze</td></tr>
+  <tr><td><code>detectFramework()</code></td><td><code>test-runner.ts</code></td><td>analyze</td></tr>
+  <tr><td><code>findTestFile()</code></td><td><code>test-runner.ts</code></td><td>analyze, generate-test-plan</td></tr>
+  <tr><td><code>generateAndValidate()</code></td><td><code>shared/codegen.ts</code></td><td>write-tests</td></tr>
+  <tr><td><code>applyApprovedDiff()</code></td><td><code>shared/codegen.ts</code></td><td>write-tests</td></tr>
+  <tr><td><code>runTests()</code></td><td><code>test-runner.ts</code></td><td>execute-tests</td></tr>
+  <tr><td><code>runTestsAndFix()</code></td><td><code>shared/test-runner-helper.ts</code></td><td>execute-tests (test-issue fixes)</td></tr>
+  <tr><td><code>formatTestResultForLLM()</code></td><td><code>test-runner.ts</code></td><td>execute-tests, failure classification</td></tr>
+  <tr><td><code>pairAgent</code> + <code>runAgent()</code></td><td><code>tasks/pair/</code>, <code>framework/runner.ts</code></td><td>execute-tests (impl bug handoff)</td></tr>
+  <tr><td><code>resolveStepProvider()</code></td><td><code>framework/provider-mention.ts</code></td><td>all LLM steps</td></tr>
+</table>
+
+<!-- ================================================================== -->
+<h2 id="integration">11. REPL/CLI Integration</h2>
+
+<h3>REPL (<code>src/agent/index.ts</code>)</h3>
+<p>Replace the existing <code>test</code> intent handler with <code>runTesterAgent(message, codeContext)</code> following the <code>runPairAgent</code> pattern: check active runs, create <code>ReplChannel</code>, call <code>runAgent()</code>, extract result. Support resume from checkpoint.</p>
+
+<h3>CLI (<code>src/agent/cli.ts</code>)</h3>
+<p>Replace with <code>runTesterCli()</code> using <code>TestChannel</code> with auto-approve for gates (non-interactive one-shot). The "approve with review" flag can be set via a CLI option.</p>
+
+<h3>Provider routing</h3>
+<table>
+  <tr><th>Step</th><th>Default</th><th>Claude needed?</th></tr>
+  <tr><td>analyze</td><td>local</td><td>No</td></tr>
+  <tr><td>generate-test-plan</td><td>local (generate), Claude (review)</td><td>Yes (review)</td></tr>
+  <tr><td>review-test-plan</td><td>N/A (gate)</td><td>No</td></tr>
+  <tr><td>write-tests</td><td>local (generate), Claude (validate + optional review)</td><td>Optional</td></tr>
+  <tr><td>execute-tests</td><td>local (fix), Claude (classify + escalation)</td><td>Optional</td></tr>
+  <tr><td>report</td><td>local</td><td>No</td></tr>
+</table>
+
+</main>
+</body>
+</html>

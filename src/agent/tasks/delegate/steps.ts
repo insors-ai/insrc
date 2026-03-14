@@ -22,7 +22,7 @@ import type { Plan, Step } from '../../planner/types.js';
 import { TestChannel } from '../../framework/test-channel.js';
 import { investigate } from '../shared/investigate.js';
 import { generateAndValidate, applyApprovedDiff } from '../shared/codegen.js';
-import { autoCommit } from './git-ops.js';
+import { autoCommit } from '../shared/git-ops.js';
 import { EXECUTE_SYSTEM, REPORT_SYSTEM } from './prompts.js';
 
 // ---------------------------------------------------------------------------
@@ -281,11 +281,12 @@ export const advanceStep: AgentStep<DelegateState> = {
       const title = currentStep?.title ?? `Step ${state.currentStepIndex + 1}`;
 
       ctx.progress(`Committing changes for: ${title}`);
-      const commitResult = await autoCommit(
-        state.pendingCommitFiles,
+      const commitResult = await autoCommit({
+        files: state.pendingCommitFiles,
         title,
-        state.input.repoPath,
-      );
+        repoPath: state.input.repoPath,
+        prefix: 'feat(delegate)',
+      });
 
       if (commitResult.success) {
         ctx.progress(`Committed: ${commitResult.commitHash ?? 'ok'}`);
@@ -404,11 +405,12 @@ export const reportStep: AgentStep<DelegateState> = {
     // Final commit if pending
     if (state.pendingCommitFiles.length > 0) {
       ctx.progress('Committing remaining changes...');
-      const commitResult = await autoCommit(
-        state.pendingCommitFiles,
-        'final changes',
-        state.input.repoPath,
-      );
+      const commitResult = await autoCommit({
+        files: state.pendingCommitFiles,
+        title: 'final changes',
+        repoPath: state.input.repoPath,
+        prefix: 'feat(delegate)',
+      });
       if (commitResult.success) {
         state = {
           ...state,

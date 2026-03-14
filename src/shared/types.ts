@@ -83,7 +83,7 @@ export type ExplicitProvider = 'claude' | 'opus' | 'local';
 // Agent personas
 // ---------------------------------------------------------------------------
 
-export type PersonaName = 'designer' | 'developer' | 'tester' | 'deployer';
+export type PersonaName = 'designer' | 'planner' | 'developer' | 'tester' | 'deployer';
 
 /** Classification result from the LLM-based intent classifier. */
 export interface ClassificationResult {
@@ -287,8 +287,10 @@ export interface DaemonStatus {
 // Plan graph — persistent across sessions
 // ---------------------------------------------------------------------------
 
+/** @deprecated Use StepStatus from '../agent/planner/types.js' for new code. */
 export type PlanStepStatus = 'pending' | 'in_progress' | 'done' | 'failed' | 'skipped';
 export type PlanStepComplexity = 'low' | 'medium' | 'high';
+/** @deprecated Use PlanStatus from '../agent/planner/types.js' for new code. */
 export type PlanStatus = 'active' | 'completed' | 'abandoned';
 
 export interface PlanStep {

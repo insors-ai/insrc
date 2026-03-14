@@ -27,6 +27,3 @@ export interface SessionSignals {
   l2Tags?: string[] | undefined;
 }
 
-// Re-export old name for backward compatibility during migration
-/** @deprecated Use SessionSignals instead */
-export type SignalContext = SessionSignals;

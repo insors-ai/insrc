@@ -29,11 +29,12 @@ import {
 } from './tasks/designer/index.js';
 import { designerAgent } from './tasks/designer/agent.js';
 import type { DesignerState } from './tasks/designer/agent-state.js';
+import { plannerAgent } from './planner/agent.js';
+import type { PlannerState, PlannerInput } from './planner/agent-state.js';
 import { runAgent } from './framework/runner.js';
 import { ReplChannel } from './framework/channel.js';
 import { readIndex, readCheckpoint, resolveRunDir } from './framework/checkpoint.js';
 import type { RunResult } from './framework/types.js';
-import { runPlanPipeline } from './tasks/plan.js';
 import { runImplementPipeline } from './tasks/implement.js';
 import { runRefactorPipeline } from './tasks/refactor.js';
 import { runTestPipeline } from './tasks/test.js';
@@ -598,26 +599,9 @@ export async function startRepl(cwd?: string): Promise<void> {
     }
 
     if (intent === 'plan') {
-      const reqContext = ctx.getTag('[requirements]');
-      const desContext = ctx.getTag('[design]');
-      log.info('[pipeline] Running plan pipeline...');
-      if (reqContext) log.info('[pipeline] Using [requirements] from L2');
-      if (desContext) log.info('[pipeline] Using [design] from L2');
-      if (!reqContext && !desContext) log.info('[pipeline] No prior requirements/design — running condensed mode');
-
-      const result = await runPlanPipeline(
-        message, repoPath, codeContext, reqContext, desContext,
-        session.ollamaProvider, session.claudeProvider,
-      );
-
-      // Persist plan to Kuzu via daemon
-      await planSave(result.plan);
-      ctx.setTag(result.tag, `Plan: ${result.plan.title}`);
-      log.info(`[pipeline] Plan saved: ${result.plan.steps.length} steps (id: ${result.plan.id.slice(0, 8)}...)`);
-
-      // Display the plan
-      printPlan(result.plan);
-      return result.enhanced;
+      log.info('[pipeline] Running planner agent...');
+      const planResult = await runPlannerAgent(message, codeContext);
+      return planResult;
     }
 
     if (intent === 'implement') {
@@ -876,6 +860,78 @@ export async function startRepl(cwd?: string): Promise<void> {
     } catch (err) {
       if (err instanceof Error && err.name === 'AgentCancelledError') {
         return '[designer] Run paused. Resume with `insrc agent resume <runId>`.';
+      }
+      throw err;
+    }
+  }
+
+  // -----------------------------------------------------------------------
+  // Planner agent runner
+  // -----------------------------------------------------------------------
+
+  async function runPlannerAgent(
+    message: string,
+    codeContext: string,
+  ): Promise<string> {
+    // Check for active/crashed runs for this repo
+    const activeRuns = readIndex().filter(
+      e => e.agentId === 'planner' && e.repo === repoPath &&
+        (e.status === 'running' || e.status === 'paused' || e.status === 'crashed'),
+    );
+
+    let resumeCheckpoint = null;
+    if (activeRuns.length > 0) {
+      const entry = activeRuns[0]!;
+      log.info(`[planner] Found ${entry.status} run: ${entry.runId}`);
+      const answer = await askOnce('Resume this run? [Y/n] ');
+      if (answer.trim().toLowerCase() !== 'n') {
+        const runDir = resolveRunDir(entry.runId);
+        resumeCheckpoint = readCheckpoint(runDir);
+      }
+    }
+
+    const replChannel = new ReplChannel({ log: { info: (m: string) => log.info(m), debug: (m: string) => log.debug(m), error: (m: string) => log.error(m) }, prompt: 'planner> ' });
+
+    const plannerInput: PlannerInput = {
+      message,
+      codeContext,
+      session: {
+        repoPath,
+        closureRepos: session.closureRepos,
+      },
+    };
+
+    try {
+      const result: RunResult = await runAgent({
+        definition: plannerAgent as unknown as import('./framework/types.js').AgentDefinition,
+        channel: replChannel,
+        options: resumeCheckpoint
+          ? { resumeFrom: resumeCheckpoint }
+          : { input: plannerInput, repo: repoPath },
+        config,
+        providers: { local: session.ollamaProvider, claude: session.claudeProvider },
+      });
+
+      const finalState = result.result as PlannerState;
+      if (finalState.summary) {
+        ctx.setTag(`[plan:${finalState.plan?.id ?? 'unknown'}]`, finalState.summary);
+      }
+
+      // Persist plan to Kuzu if available
+      if (finalState.plan) {
+        try {
+          await planSave(finalState.plan as unknown as import('../shared/types.js').Plan);
+          log.info(`[planner] Plan saved to Kuzu: ${finalState.plan.steps.length} steps`);
+        } catch (err) {
+          log.debug(`[planner] Could not save plan to Kuzu: ${err instanceof Error ? err.message : String(err)}`);
+        }
+        printPlan(finalState.plan as unknown as import('../shared/types.js').Plan);
+      }
+
+      return finalState.serializedOutput ?? '[error] Planner agent produced no output.';
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AgentCancelledError') {
+        return '[planner] Run paused. Resume with `insrc agent resume <runId>`.';
       }
       throw err;
     }

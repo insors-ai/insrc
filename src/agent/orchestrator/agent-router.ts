@@ -27,7 +27,8 @@ export interface AgentRouteResult {
  *
  * From design/agent.html intent taxonomy:
  *   Designer:  requirements, design, review
- *   Developer: plan, implement, refactor, debug, research, document
+ *   Planner:   plan
+ *   Developer: implement, refactor, debug, research, document
  *   Tester:    test
  *   Deployer:  deploy, release, infra
  *   Orchestrator (null): graph
@@ -40,8 +41,11 @@ export function selectAgent(intent: Intent): AgentRouteResult {
     case 'review':
       return { persona: 'designer', intent };
 
-    // Developer persona — code production & exploration intents
+    // Planner persona — plan generation & management
     case 'plan':
+      return { persona: 'planner', intent };
+
+    // Developer persona — code production & exploration intents
     case 'implement':
     case 'refactor':
     case 'debug':
@@ -71,7 +75,8 @@ export function selectAgent(intent: Intent): AgentRouteResult {
  */
 export const PERSONA_INTENTS: Record<PersonaName, readonly Intent[]> = {
   designer:  ['requirements', 'design', 'review'],
-  developer: ['plan', 'implement', 'refactor', 'debug', 'research', 'document'],
+  planner:   ['plan'],
+  developer: ['implement', 'refactor', 'debug', 'research', 'document'],
   tester:    ['test'],
   deployer:  ['deploy', 'release', 'infra'],
 } as const;

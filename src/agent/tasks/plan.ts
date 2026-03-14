@@ -1,3 +1,11 @@
+// ---------------------------------------------------------------------------
+// DEPRECATED — use src/agent/planner/ instead.
+//
+// This module is kept for backward compatibility. The planner agent pipeline
+// replaces the old two-stage plan flow with an iterative, agent-framework
+// workflow including validation gates, cycle detection, and markdown serialization.
+// ---------------------------------------------------------------------------
+
 import { randomUUID } from 'node:crypto';
 import type { LLMProvider, LLMMessage, Plan, PlanStep, PlanStepComplexity } from '../../shared/types.js';
 
@@ -54,6 +62,8 @@ Output a JSON array of steps:
 Output ONLY the JSON array, no other text.`;
 
 /**
+ * @deprecated Use plannerAgent from '../planner/agent.js' instead.
+ *
  * Run the plan pipeline.
  *
  * Pre-flight: checks for [requirements] and [design] in L2.

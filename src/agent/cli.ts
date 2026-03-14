@@ -21,7 +21,11 @@ import {
   parseTemplateFlags,
   type DesignerInput,
 } from './tasks/designer/index.js';
-import { runPlanPipeline } from './tasks/plan.js';
+import { plannerAgent } from './planner/agent.js';
+import type { PlannerInput, PlannerState } from './planner/agent-state.js';
+import { runAgent } from './framework/runner.js';
+import { ReplChannel } from './framework/channel.js';
+import type { RunResult } from './framework/types.js';
 import { runImplementPipeline } from './tasks/implement.js';
 import { runRefactorPipeline } from './tasks/refactor.js';
 import { runTestPipeline } from './tasks/test.js';
@@ -381,22 +385,26 @@ async function handlePipeline(
   }
 
   if (intent === 'plan') {
-    const reqContext = ctx.getTag('[requirements]');
-    const desContext = ctx.getTag('[design]');
-    log('[cli] Running plan pipeline...');
-    const result = await runPlanPipeline(
-      message, repoPath, codeContext, reqContext, desContext,
-      session.ollamaProvider, session.claudeProvider,
-    );
-    await planSave(result.plan);
-    // Format as markdown checklist
-    const lines: string[] = [`# ${result.plan.title}`, ''];
-    for (const step of result.plan.steps) {
-      const checkbox = step.status === 'done' ? '[x]' : '[ ]';
-      lines.push(`- ${checkbox} ${step.idx + 1}. ${step.title} (${step.complexity})`);
-      if (step.description) lines.push(`  ${step.description}`);
+    log('[cli] Running planner agent...');
+    const plannerInput: PlannerInput = {
+      message,
+      codeContext,
+      session: { repoPath, closureRepos: session.closureRepos },
+    };
+    const agentConfig = loadConfig();
+    const replChannel = new ReplChannel({ log: { info: log, debug: log, error: log }, prompt: 'planner> ' });
+    const result: RunResult = await runAgent({
+      definition: plannerAgent as unknown as import('./framework/types.js').AgentDefinition,
+      channel: replChannel,
+      options: { input: plannerInput, repo: repoPath },
+      config: agentConfig,
+      providers: { local: session.ollamaProvider, claude: session.claudeProvider },
+    });
+    const finalState = result.result as PlannerState;
+    if (finalState.plan) {
+      await planSave(finalState.plan as unknown as import('../shared/types.js').Plan);
     }
-    return lines.join('\n');
+    return finalState.serializedOutput ?? '[error] Planner agent produced no output.';
   }
 
   if (intent === 'implement') {

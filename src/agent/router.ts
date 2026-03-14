@@ -11,7 +11,7 @@ const log = getLogger('router');
 
 /** Base set of intents that default to Claude (overridable via config.models.intentDefaults). */
 const CLAUDE_DEFAULT_BASE: ReadonlySet<Intent> = new Set([
-  'requirements', 'design', 'plan', 'review',
+  'requirements', 'design', 'brainstorm', 'plan', 'review',
   'deploy', 'release', 'infra',
 ]);
 
@@ -37,6 +37,7 @@ type Tier = 'fast' | 'standard' | 'powerful';
 const INTENT_TIER: Partial<Record<Intent, Tier>> = {
   requirements: 'standard',
   design:       'standard',
+  brainstorm:   'standard',
   plan:         'standard',
   review:       'standard',
   research:     'standard',

@@ -73,6 +73,7 @@ export type Intent =
   | 'plan'
   | 'requirements'
   | 'design'
+  | 'brainstorm'
   | 'deploy'
   | 'release'
   | 'infra';
@@ -149,6 +150,7 @@ export interface AgentProviderConfigs {
   debug?: AgentStepConfig | undefined;
   document?: AgentStepConfig | undefined;
   research?: AgentStepConfig | undefined;
+  brainstorm?: AgentStepConfig | undefined;
 }
 
 export interface AgentConfig {

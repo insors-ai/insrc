@@ -31,6 +31,9 @@ import { designerAgent } from './tasks/designer/agent.js';
 import type { DesignerState } from './tasks/designer/agent-state.js';
 import { plannerAgent } from './planner/agent.js';
 import type { PlannerState, PlannerInput } from './planner/agent-state.js';
+import { brainstormAgent } from './tasks/brainstorm/agent.js';
+import type { BrainstormState } from './tasks/brainstorm/agent-state.js';
+import type { BrainstormInput } from './tasks/brainstorm/types.js';
 import { runAgent } from './framework/runner.js';
 import { ReplChannel } from './framework/channel.js';
 import { readIndex, readCheckpoint, resolveRunDir } from './framework/checkpoint.js';
@@ -327,7 +330,7 @@ export async function startRepl(cwd?: string): Promise<void> {
     }
 
     // Pipeline intents (requirements, design, plan, implement, refactor) — two-stage processing
-    if (['requirements', 'design', 'plan', 'implement', 'refactor', 'test', 'debug', 'review', 'document', 'research'].includes(classified.intent)) {
+    if (['requirements', 'design', 'plan', 'brainstorm', 'implement', 'refactor', 'test', 'debug', 'review', 'document', 'research'].includes(classified.intent)) {
       try {
         const queryEmbedding = await ctx.embedQuery(classified.message);
         const assembled = await ctx.assemble(classified.message, queryEmbedding);
@@ -604,6 +607,12 @@ export async function startRepl(cwd?: string): Promise<void> {
       log.info('[pipeline] Running planner agent...');
       const planResult = await runPlannerAgent(message, codeContext);
       return planResult;
+    }
+
+    if (intent === 'brainstorm') {
+      log.info('[pipeline] Running brainstorm agent...');
+      const brainstormResult = await runBrainstormAgent(message, codeContext);
+      return brainstormResult;
     }
 
     if (intent === 'implement') {
@@ -942,6 +951,68 @@ export async function startRepl(cwd?: string): Promise<void> {
     } catch (err) {
       if (err instanceof Error && err.name === 'AgentCancelledError') {
         return '[planner] Run paused. Resume with `insrc agent resume <runId>`.';
+      }
+      throw err;
+    }
+  }
+
+  async function runBrainstormAgent(
+    message: string,
+    codeContext: string,
+  ): Promise<string> {
+    // Check for active/crashed runs for this repo
+    const activeRuns = readIndex().filter(
+      e => e.agentId === 'brainstorm' && e.repo === repoPath &&
+        (e.status === 'running' || e.status === 'paused' || e.status === 'crashed'),
+    );
+
+    let resumeCheckpoint = null;
+    if (activeRuns.length > 0) {
+      const entry = activeRuns[0]!;
+      log.info(`[brainstorm] Found ${entry.status} run: ${entry.runId}`);
+      const answer = await askOnce('Resume this run? [Y/n] ');
+      if (answer.trim().toLowerCase() !== 'n') {
+        const runDir = resolveRunDir(entry.runId);
+        resumeCheckpoint = readCheckpoint(runDir);
+      }
+    }
+
+    const replChannel = new ReplChannel({ log: { info: (m: string) => log.info(m), debug: (m: string) => log.debug(m), error: (m: string) => log.error(m) }, prompt: 'brainstorm> ' });
+
+    const brainstormInput: BrainstormInput = {
+      message,
+      codeContext,
+      session: {
+        repoPath,
+        closureRepos: session.closureRepos,
+      },
+    };
+
+    try {
+      const result: RunResult = await runAgent({
+        definition: brainstormAgent as unknown as import('./framework/types.js').AgentDefinition,
+        channel: replChannel,
+        options: resumeCheckpoint
+          ? { resumeFrom: resumeCheckpoint }
+          : { input: brainstormInput, repo: repoPath },
+        config,
+        providers: {
+          local: session.ollamaProvider,
+          claude: session.claudeProvider,
+          resolve: session.resolver.resolve.bind(session.resolver),
+          resolveOrNull: session.resolver.resolveOrNull.bind(session.resolver),
+        },
+      });
+
+      const finalState = result.result as BrainstormState;
+      if (finalState.summary) {
+        ctx.setTag('[brainstorm]', finalState.summary);
+      }
+
+      return finalState.assembledOutput ?? '[error] Brainstorm agent produced no output.';
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AgentCancelledError') {
+        return '[brainstorm] Run paused. Resume with `insrc agent resume <runId>`.';
       }
       throw err;
     }

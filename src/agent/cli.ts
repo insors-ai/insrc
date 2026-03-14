@@ -23,6 +23,9 @@ import {
 } from './tasks/designer/index.js';
 import { plannerAgent } from './planner/agent.js';
 import type { PlannerInput, PlannerState } from './planner/agent-state.js';
+import { brainstormAgent } from './tasks/brainstorm/agent.js';
+import type { BrainstormState } from './tasks/brainstorm/agent-state.js';
+import type { BrainstormInput } from './tasks/brainstorm/types.js';
 import { runAgent } from './framework/runner.js';
 import { ReplChannel } from './framework/channel.js';
 import type { RunResult } from './framework/types.js';
@@ -411,6 +414,31 @@ async function handlePipeline(
       await planSave(finalState.plan as unknown as import('../shared/types.js').Plan);
     }
     return finalState.serializedOutput ?? '[error] Planner agent produced no output.';
+  }
+
+  if (intent === 'brainstorm') {
+    log('[cli] Running brainstorm agent...');
+    const brainstormInput: BrainstormInput = {
+      message,
+      codeContext,
+      session: { repoPath, closureRepos: session.closureRepos },
+    };
+    const agentConfig = loadConfig();
+    const replChannel = new ReplChannel({ log: { info: log, debug: log, error: log }, prompt: 'brainstorm> ' });
+    const result: RunResult = await runAgent({
+      definition: brainstormAgent as unknown as import('./framework/types.js').AgentDefinition,
+      channel: replChannel,
+      options: { input: brainstormInput, repo: repoPath },
+      config: agentConfig,
+      providers: {
+        local: session.ollamaProvider,
+        claude: session.claudeProvider,
+        resolve: session.resolver.resolve.bind(session.resolver),
+        resolveOrNull: session.resolver.resolveOrNull.bind(session.resolver),
+      },
+    });
+    const finalState = result.result as BrainstormState;
+    return finalState.assembledOutput ?? '[error] Brainstorm agent produced no output.';
   }
 
   if (intent === 'implement') {

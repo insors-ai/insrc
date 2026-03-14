@@ -21,6 +21,7 @@ const KEYWORD_MAP: Record<Intent, string[]> = {
   review:       ['review', 'audit', 'check for', 'is this correct', 'what do you think of'],
   document:     ['document', 'docstring', 'comment', 'readme', 'changelog', 'adr'],
   research:     ['explain', 'how does', 'what is', 'trace', 'find all', 'show me', 'where is'],
+  brainstorm:   ['brainstorm', 'ideate', 'explore ideas', 'what if', 'possibilities', 'brainstorming'],
   design:       ['design', 'architecture', 'api shape', 'interface', 'tradeoff', 'should i'],
   plan:         ['plan', 'checklist', 'steps to', 'tasks for', 'break down', 'how would i'],
   requirements: ['requirement', 'requirements', 'spec', 'should', 'must', 'user story', 'acceptance criteria'],

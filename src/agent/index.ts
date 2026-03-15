@@ -929,9 +929,13 @@ export async function startRepl(cwd?: string): Promise<void> {
 
     const replChannel = new ReplChannel({ log: { info: (m: string) => log.info(m), debug: (m: string) => log.debug(m), error: (m: string) => log.error(m) }, prompt: 'brainstorm> ' });
 
+    // Load prior brainstorm spec if available (for continuation)
+    const priorBrainstorm = ctx.getTag('[brainstorm]') || undefined;
+
     const brainstormInput: BrainstormInput = {
       message,
       codeContext,
+      existingSpec: priorBrainstorm,
       session: {
         repoPath,
         closureRepos: session.closureRepos,

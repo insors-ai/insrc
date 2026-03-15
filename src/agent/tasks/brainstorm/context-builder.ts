@@ -47,7 +47,7 @@ type LayerName =
 
 /** Which layers each step needs, in priority order. */
 const STEP_LAYERS: Record<string, LayerName[]> = {
-  seed:          ['problem', 'codebaseFindings'],
+  seed:          ['problem', 'codebaseFindings', 'configContext'],
   diverge:       ['problem', 'activeIdeas', 'codebaseFindings', 'compressedHistory', 'rejectedIdeas', 'userFeedback', 'configContext'],
   cluster:       ['problem', 'activeIdeas', 'currentSpec', 'compressedHistory'],
   promote:       ['problem', 'currentSpec', 'activeIdeas', 'codebaseFindings', 'compressedHistory', 'userFeedback', 'configContext'],

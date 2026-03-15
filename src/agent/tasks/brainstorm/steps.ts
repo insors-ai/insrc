@@ -78,7 +78,26 @@ export const seedStep: AgentStep<BrainstormState> = {
     const codebaseFindings = await executeSearches(searches, ctx);
 
     // Load config context (conventions, feedback, templates)
-    const configContext = await loadConfigContext(ctx, 'common', 'all', state.input.repoPath);
+    let configContext = await loadConfigContext(ctx, 'common', 'all', state.input.repoPath);
+
+    // Search for brainstorm-specific feedback from prior sessions
+    if (ctx.searchConfig) {
+      try {
+        const brainstormFeedback = await ctx.searchConfig({
+          query: 'brainstorm idea generation quality feedback',
+          namespace: ['common'],
+          category: 'feedback',
+          limit: 3,
+          boostProject: true,
+        });
+        if (brainstormFeedback.length > 0) {
+          const feedbackText = brainstormFeedback.map(f => f.entry.body).join('\n');
+          configContext = configContext
+            ? `${configContext}\n\n### Brainstorm Learnings\n${feedbackText}`
+            : `## Brainstorm Learnings\n${feedbackText}`;
+        }
+      } catch { /* config search unavailable */ }
+    }
 
     // Generate seed ideas
     ctx.progress('Generating seed ideas...');

@@ -1,0 +1,1327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Config Management Framework — Design Document</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --border: #2a2d3a;
+      --text: #e2e4ed;
+      --muted: #8b8fa8;
+      --accent: #7c6af7;
+      --accent2: #4fc3f7;
+      --green: #4caf7d;
+      --yellow: #f5c842;
+      --red: #f47c7c;
+      --code-bg: #12151e;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 15px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; scroll-padding-top: 1rem; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      margin: 0;
+      padding: 0;
+      display: flex;
+    }
+
+    nav.toc {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 260px;
+      height: 100vh;
+      overflow-y: auto;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 1.5rem 1rem;
+      font-size: 0.82rem;
+    }
+
+    nav.toc h2 {
+      font-size: 0.9rem;
+      color: var(--accent2);
+      border: none;
+      margin: 0 0 0.75rem;
+      padding: 0;
+    }
+
+    nav.toc ol {
+      list-style: none;
+      padding: 0;
+      counter-reset: toc;
+    }
+
+    nav.toc > ol > li { counter-increment: toc; margin: 0.35rem 0; }
+    nav.toc > ol > li::before { content: counter(toc) ". "; color: var(--muted); }
+    nav.toc > ol > li > ul { padding-left: 1rem; list-style: none; }
+    nav.toc > ol > li > ul > li { margin: 0.2rem 0; font-size: 0.78rem; }
+    nav.toc a { color: var(--text); text-decoration: none; }
+    nav.toc a:hover { color: var(--accent); }
+
+    main {
+      flex: 1;
+      min-width: 0;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    @media (min-width: 1100px) {
+      main { margin-left: 280px; }
+    }
+
+    h1 { font-size: 2rem; color: var(--accent); margin-bottom: 0.5rem; }
+    .subtitle { color: var(--muted); font-size: 0.95rem; margin-bottom: 2rem; }
+
+    h2 {
+      font-size: 1.3rem;
+      color: var(--accent2);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.3rem;
+      margin-top: 2.5rem;
+      margin-bottom: 1rem;
+    }
+
+    h3 {
+      font-size: 1.05rem;
+      color: var(--yellow);
+      margin-top: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    h4 {
+      font-size: 0.95rem;
+      color: var(--text);
+      margin-top: 1rem;
+      margin-bottom: 0.4rem;
+    }
+
+    p, ul, ol { margin-bottom: 1rem; }
+    ul, ol { padding-left: 1.5rem; }
+    li { margin-bottom: 0.3rem; }
+
+    code {
+      font-family: 'Cascadia Code', 'Fira Code', monospace;
+      background: var(--code-bg);
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      font-size: 0.9em;
+    }
+
+    pre {
+      background: var(--code-bg);
+      padding: 1rem;
+      border-radius: 6px;
+      overflow-x: auto;
+      margin-bottom: 1rem;
+      font-size: 0.88rem;
+      line-height: 1.5;
+      border: 1px solid var(--border);
+    }
+    pre code { background: none; padding: 0; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 1.2rem;
+      font-size: 0.92rem;
+    }
+    th, td {
+      border: 1px solid var(--border);
+      padding: 0.5rem 0.75rem;
+      text-align: left;
+    }
+    th { background: var(--surface); color: var(--accent2); font-size: 0.9rem; }
+
+    .callout {
+      border-left: 3px solid var(--accent2);
+      background: var(--surface);
+      padding: 0.75rem 1rem;
+      margin: 1rem 0;
+      border-radius: 0 6px 6px 0;
+      font-size: 0.93rem;
+    }
+    .callout.warn { border-left-color: var(--yellow); }
+    .callout.info { border-left-color: var(--accent2); }
+    .callout.decision { border-left-color: var(--green); }
+
+    .flow-diagram {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+      font-family: 'Cascadia Code', 'Fira Code', monospace;
+      font-size: 0.85rem;
+      line-height: 1.8;
+      overflow-x: auto;
+      white-space: pre;
+    }
+  </style>
+</head>
+<body>
+
+<nav class="toc">
+  <h2>Config Management</h2>
+  <ol>
+    <li><a href="#overview">Overview</a></li>
+    <li><a href="#hierarchy">Config Hierarchy</a>
+      <ul>
+        <li><a href="#global-config">Global Config</a></li>
+        <li><a href="#project-config">Project Config</a></li>
+        <li><a href="#merge-strategy">Merge Strategy</a></li>
+      </ul>
+    </li>
+    <li><a href="#directory-layout">Directory Layout</a></li>
+    <li><a href="#config-store">Config Vector Store</a>
+      <ul>
+        <li><a href="#store-schema">Schema</a></li>
+        <li><a href="#entry-types">Entry Types</a></li>
+        <li><a href="#indexing">Indexing Pipeline</a></li>
+        <li><a href="#search-api">Search API</a></li>
+      </ul>
+    </li>
+    <li><a href="#feedback">Feedback System</a>
+      <ul>
+        <li><a href="#feedback-sources">Sources</a></li>
+        <li><a href="#feedback-recording">Recording</a></li>
+        <li><a href="#feedback-retrieval">Retrieval</a></li>
+      </ul>
+    </li>
+    <li><a href="#templates">Templates</a>
+      <ul>
+        <li><a href="#template-types">Types</a></li>
+        <li><a href="#template-resolution">Resolution</a></li>
+      </ul>
+    </li>
+    <li><a href="#agent-integration">Agent Integration</a></li>
+    <li><a href="#types">Types</a></li>
+    <li><a href="#cli">CLI Commands</a></li>
+    <li><a href="#implementation">Implementation Plan</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<h1>Config Management Framework</h1>
+<p class="subtitle">Hierarchical config with vector-indexed templates, feedback, and conventions</p>
+
+<!-- ================================================================== -->
+<h2 id="overview">1. Overview</h2>
+
+<p>insrc currently has a single flat config at <code>~/.insrc/config.json</code> loaded by <code>loadConfig()</code> in <code>src/agent/config.ts</code>. This works for LLM provider settings and model routing, but doesn't support:</p>
+
+<ul>
+  <li><strong>Project-level overrides</strong> &mdash; different repos need different test conventions, provider preferences, or agent behavior</li>
+  <li><strong>Accumulated knowledge</strong> &mdash; test feedback, coding conventions, learned patterns that should influence agent behavior</li>
+  <li><strong>Searchable content</strong> &mdash; templates, feedback, and conventions need semantic retrieval, not just flat file reads</li>
+  <li><strong>Cross-project transfer</strong> &mdash; language-level patterns (vitest conventions, Go test idioms) apply across repos</li>
+</ul>
+
+<p>This design introduces a two-tier config hierarchy (global + project) with a dedicated vector store for indexing config entries, templates, and feedback. The existing code entity store (<code>~/.insrc/lance/</code>) remains untouched &mdash; config content lives in a separate LanceDB table.</p>
+
+<!-- ================================================================== -->
+<h2 id="hierarchy">2. Config Hierarchy</h2>
+
+<div class="flow-diagram">
+  Lookup order (most specific wins):
+
+  1. Project config    &lt;project&gt;/.insrc/
+  2. Global config     ~/.insrc/
+  3. Hardcoded defaults
+
+  Merge: deep merge with project overriding global.
+  Vector store: entries from both levels indexed together,
+                tagged with scope (global vs project).
+</div>
+
+<!-- ------------------------------------------------------------------ -->
+<h3 id="global-config">2.1 Global Config (<code>~/.insrc/</code>)</h3>
+
+<p>User-wide settings, cross-project knowledge, and language-level conventions. This is the existing <code>~/.insrc/</code> directory, extended with new subdirectories.</p>
+
+<p><strong>Owns:</strong></p>
+<ul>
+  <li>LLM provider config (Ollama host, API keys, model tiers)</li>
+  <li>Default agent behavior (permission mode, routing mode)</li>
+  <li>Language-level templates and feedback (vitest patterns, pytest conventions, Go idioms)</li>
+  <li>The config vector store (shared across all projects)</li>
+</ul>
+
+<!-- ------------------------------------------------------------------ -->
+<h3 id="project-config">2.2 Project Config (<code>&lt;project&gt;/.insrc/</code>)</h3>
+
+<p>Per-repo overrides and project-specific knowledge. Created on demand (not required). Can be checked into the repo or gitignored &mdash; up to the team.</p>
+
+<p><strong>Owns:</strong></p>
+<ul>
+  <li>Project-specific model overrides (e.g., always use Claude for this repo's tests)</li>
+  <li>Project-specific conventions (entity ID format, custom logger API, internal service URLs)</li>
+  <li>Project-specific templates (test setup patterns for this repo's DB layer)</li>
+  <li>Project-specific feedback (lessons learned from testing this codebase)</li>
+</ul>
+
+<!-- ------------------------------------------------------------------ -->
+<h3 id="merge-strategy">2.3 Merge Strategy</h3>
+
+<p>Config resolution uses deep merge with project overriding global:</p>
+
+<pre><code>function resolveConfig(repoPath: string): ResolvedConfig {
+  const global = loadGlobalConfig();          // ~/.insrc/config.json
+  const project = loadProjectConfig(repoPath); // &lt;repo&gt;/.insrc/config.json
+
+  return deepMerge(global, project);
+  // Arrays: project replaces global (no concat)
+  // Objects: recursive merge, project keys win
+  // Primitives: project wins
+}</code></pre>
+
+<p><strong>For non-JSON content</strong> (templates, feedback, conventions): both levels are indexed into the vector store with a <code>scope</code> tag. At query time, project-scoped entries rank higher than global entries via a boost factor.</p>
+
+<table>
+  <tr><th>Content type</th><th>Merge behavior</th></tr>
+  <tr><td>JSON config</td><td>Deep merge, project wins</td></tr>
+  <tr><td>Templates</td><td>Project shadows global by name; both searchable</td></tr>
+  <tr><td>Feedback</td><td>Both levels returned; project entries ranked higher</td></tr>
+  <tr><td>Conventions</td><td>Both levels returned; project entries ranked higher</td></tr>
+</table>
+
+<!-- ================================================================== -->
+<h2 id="directory-layout">3. Directory Layout</h2>
+
+<pre><code>~/.insrc/                              # Global config root
+├── config.json                        # AgentConfig (existing)
+├── graph/                             # Kuzu (existing)
+├── lance/                             # LanceDB — code entities (existing)
+├── config-store/                      # LanceDB — config vector store (NEW)
+├── daemon.pid                         # (existing)
+├── daemon.sock                        # (existing)
+├── agents/                            # (existing)
+│
+├── templates/                         # Global templates
+│   ├── tester/                        # Tester agent namespace
+│   │   ├── vitest-unit.md
+│   │   ├── vitest-live.md
+│   │   ├── pytest-unit.md
+│   │   ├── pytest-live.md
+│   │   ├── go-unit.md
+│   │   └── go-live.md
+│   ├── pair/                          # Pair agent namespace
+│   │   ├── error-handling.md
+│   │   └── logging-patterns.md
+│   ├── designer/                      # Designer agent namespace
+│   │   ├── design-doc.md
+│   │   └── review-checklist.md
+│   ├── planner/                       # Planner agent namespace
+│   │   └── plan-structure.md
+│   └── common/                        # Shared across agents (default namespace)
+│       ├── typescript-conventions.md
+│       ├── python-conventions.md
+│       └── go-conventions.md
+│
+├── feedback/                          # Global feedback (cross-project)
+│   ├── tester/
+│   │   ├── typescript.md
+│   │   ├── python.md
+│   │   └── go.md
+│   ├── pair/
+│   │   ├── typescript.md
+│   │   └── python.md
+│   └── common/
+│       └── typescript.md              # Cross-agent language patterns
+│
+└── conventions/                       # Global conventions
+    ├── common/
+    │   ├── typescript.md
+    │   ├── python.md
+    │   └── go.md
+    └── tester/
+        └── file-naming.md             # Test file naming conventions
+
+
+&lt;project&gt;/.insrc/                      # Project config root
+├── config.json                        # Project overrides (partial AgentConfig)
+│
+├── templates/
+│   └── tester/
+│       └── db-integration.md          # How to test this project's DB layer
+│
+├── feedback/
+│   ├── tester/
+│   │   └── typescript.md              # Lessons from testing this codebase
+│   └── pair/
+│       └── typescript.md              # Coding lessons for this codebase
+│
+└── conventions/
+    └── common/
+        └── project.md                 # Entity ID format, logger API, etc.</code></pre>
+
+<div class="callout info">
+  <strong>Separation from code store:</strong> Config content lives in <code>~/.insrc/config-store/</code> (a separate LanceDB database), not in the existing <code>~/.insrc/lance/</code> entity store. This avoids polluting code search results with config/template content and allows independent schema evolution. The code store indexes <em>source entities</em>; the config store indexes <em>knowledge entries</em>. Both stores are managed by the same <code>IndexerService</code> in the daemon &mdash; the indexer holds two store handles and routes jobs by kind.
+</div>
+
+<!-- ================================================================== -->
+<h2 id="config-store">4. Config Vector Store</h2>
+
+<p>A dedicated LanceDB database at <code>~/.insrc/config-store/</code> that indexes all templates, feedback, and conventions from both global and project scopes. Enables semantic search over accumulated knowledge.</p>
+
+<!-- ------------------------------------------------------------------ -->
+<h3 id="store-schema">4.1 Schema</h3>
+
+<p>Single table: <code>config_entries</code></p>
+
+<pre><code>// Apache Arrow schema (LanceDB)
+{
+  id:           Utf8,          // SHA256(scope + namespace + category + path), 32 hex chars
+  scope:        Utf8,          // 'global' | 'project:&lt;repoPath&gt;'
+  namespace:    Utf8,          // 'tester' | 'pair' | 'delegate' | 'designer' | 'planner' | 'common'
+  category:     Utf8,          // 'template' | 'feedback' | 'convention'
+  language:     Utf8,          // 'typescript' | 'python' | 'go' | 'all'
+  name:         Utf8,          // Human-readable name (e.g., 'vitest-unit', 'db-integration')
+  filePath:     Utf8,          // Source file path (for change detection)
+  body:         Utf8,          // Full markdown content (max 16K chars)
+  tags:         Utf8,          // Comma-separated tags for filtering
+  updatedAt:    Utf8,          // ISO datetime
+  contentHash:  Utf8,          // SHA256 of body (change detection)
+  vector:       FixedSizeList[Float32 x DIM]   // Embedding vector
+}</code></pre>
+
+<div class="callout decision">
+  <strong>ID generation:</strong> <code>SHA256(scope + '\x00' + namespace + '\x00' + category + '\x00' + filePath)</code> truncated to 32 hex chars. Deterministic: re-indexing the same file produces the same ID, enabling upsert semantics.
+</div>
+
+<h4>Namespaces</h4>
+
+<p>Namespaces partition config entries by the agent that produces and consumes them. This enables agents to search only their own config space (fast, focused) or widen to include shared conventions (<code>common</code>).</p>
+
+<table>
+  <tr><th>Namespace</th><th>Owner</th><th>Contains</th></tr>
+  <tr>
+    <td><code>tester</code></td>
+    <td>Tester agent</td>
+    <td>Test templates (vitest-unit, pytest-live, ...), test feedback (fix loop patterns, classification corrections), test conventions (file naming, framework idioms)</td>
+  </tr>
+  <tr>
+    <td><code>pair</code></td>
+    <td>Pair agent</td>
+    <td>Coding templates (error handling, logging patterns), coding feedback (validation loop outcomes), implementation conventions</td>
+  </tr>
+  <tr>
+    <td><code>delegate</code></td>
+    <td>Delegate agent</td>
+    <td>Batch execution templates, planning feedback, commit conventions</td>
+  </tr>
+  <tr>
+    <td><code>designer</code></td>
+    <td>Designer agent</td>
+    <td>Design document templates, review checklists, architecture patterns</td>
+  </tr>
+  <tr>
+    <td><code>planner</code></td>
+    <td>Planner agent</td>
+    <td>Plan structure templates, step granularity feedback, dependency patterns</td>
+  </tr>
+  <tr>
+    <td><code>common</code></td>
+    <td>All agents</td>
+    <td>Language conventions, project-wide patterns, import style, logging rules &mdash; anything not specific to one agent</td>
+  </tr>
+</table>
+
+<p><strong>Search behavior:</strong> An agent queries its own namespace plus <code>common</code> by default. The <code>namespace</code> field on <code>ConfigSearchOpts</code> accepts a single namespace or an array for multi-namespace search:</p>
+
+<pre><code>// Tester agent's analyze step — searches tester + common
+const results = await searchConfig({
+  query: 'vitest mock patterns',
+  namespace: ['tester', 'common'],
+  language: 'typescript',
+  boostProject: repoPath,
+});
+
+// Explicit single-namespace lookup
+const results = await searchConfig({
+  query: 'commit message format',
+  namespace: 'delegate',
+  category: 'convention',
+});</code></pre>
+
+<div class="callout info">
+  <strong>Namespace from directory:</strong> The namespace is derived from the directory structure (<code>templates/tester/</code>, <code>feedback/pair/</code>) or from the frontmatter <code>namespace</code> field. Directory takes precedence. Files directly under <code>templates/</code> or <code>feedback/</code> (no agent subdirectory) default to <code>common</code>.
+</div>
+
+<!-- ------------------------------------------------------------------ -->
+<h3 id="entry-types">4.2 Entry Types</h3>
+
+<table>
+  <tr><th>Category</th><th>Namespace</th><th>Description</th><th>Example</th></tr>
+  <tr>
+    <td><strong>template</strong></td>
+    <td><code>tester</code></td>
+    <td>Test generation templates: structure, imports, setup/teardown patterns</td>
+    <td>"vitest unit tests use <code>describe/it/expect</code>, import from <code>vitest</code>, use <code>vi.mock()</code>"</td>
+  </tr>
+  <tr>
+    <td><strong>template</strong></td>
+    <td><code>pair</code></td>
+    <td>Code generation patterns: error handling, logging, API conventions</td>
+    <td>"Use <code>getLogger('module')</code>, never <code>console.log</code>. Error types extend <code>BaseError</code>."</td>
+  </tr>
+  <tr>
+    <td><strong>template</strong></td>
+    <td><code>designer</code></td>
+    <td>Design document templates, review checklists</td>
+    <td>Design doc structure: overview, principles, flow, types, integration</td>
+  </tr>
+  <tr>
+    <td><strong>feedback</strong></td>
+    <td><code>tester</code></td>
+    <td>Accumulated lessons from test generation and execution</td>
+    <td>"Don't mock pino logger internals; <code>LLMProvider.chat()</code> returns <code>LLMResponse</code> not <code>string</code>"</td>
+  </tr>
+  <tr>
+    <td><strong>feedback</strong></td>
+    <td><code>pair</code></td>
+    <td>Accumulated lessons from code generation and validation</td>
+    <td>"Always use <code>.js</code> extension in imports (NodeNext). Use <code>import type</code> for type-only."</td>
+  </tr>
+  <tr>
+    <td><strong>convention</strong></td>
+    <td><code>common</code></td>
+    <td>Language or project conventions shared across all agents</td>
+    <td>"Entity IDs are SHA-256 hex-32. Daemon owns DB access. IPC only from agent/CLI."</td>
+  </tr>
+  <tr>
+    <td><strong>convention</strong></td>
+    <td><code>tester</code></td>
+    <td>Test-specific conventions: file naming, framework setup</td>
+    <td>"Unit: <code>*.test.ts</code>. Live: <code>*.live.test.ts</code>. Always <code>beforeAll</code> ping for live tests."</td>
+  </tr>
+</table>
+
+<!-- ------------------------------------------------------------------ -->
+<h3 id="indexing">4.3 Indexing Pipeline</h3>
+
+<p>Config entries are indexed by the <strong>same background daemon indexer</strong> (<code>IndexerService</code>) that indexes code entities. The indexer holds a separate LanceDB store handle for config content &mdash; same infrastructure, different table, no cross-contamination with code search.</p>
+
+<h4>Integration with <code>IndexerService</code></h4>
+
+<p>The existing indexer processes jobs via <code>processJob()</code> dispatching on <code>job.kind</code> (<code>'full'</code>, <code>'file'</code>, <code>'reembed'</code>). Config indexing adds two new job kinds:</p>
+
+<pre><code>// Extended IndexJob union
+type IndexJob =
+  | { kind: 'full';        repoPath: string }
+  | { kind: 'file';        filePath: string; event: 'create'|'update'|'delete' }
+  | { kind: 'reembed';     repoPath: string }
+  | { kind: 'config-full';    scope: ConfigScope }           // NEW: full config index
+  | { kind: 'config-file';    filePath: string; scope: ConfigScope;
+      event: 'create'|'update'|'delete' }                   // NEW: single config file event
+  | { kind: 'config-reindex'; scope: ConfigScope }          // NEW: drop + re-index all config</code></pre>
+
+<p>The <code>IndexerService</code> constructor receives both store handles:</p>
+
+<pre><code>class IndexerService {
+  private readonly db:          DbClient;      // Kuzu + code LanceDB (existing)
+  private readonly configStore: ConfigStore;    // Config LanceDB (new)
+  private readonly queue:       IndexQueue;
+  private readonly watcher:     Watcher;
+  // ...
+
+  async processJob(job: IndexJob): Promise&lt;void&gt; {
+    switch (job.kind) {
+      case 'full':        await this.fullIndex(job.repoPath);                  break;
+      case 'file':        await this.fileEvent(job.filePath, job.event);       break;
+      case 'reembed':     await this.reembed(job.repoPath);                   break;
+      case 'config-full':    await this.configFullIndex(job.scope);              break;
+      case 'config-file':    await this.configFileEvent(job.filePath, job.scope, job.event); break;
+      case 'config-reindex': await this.configReindex(job.scope);               break;
+    }
+  }
+}</code></pre>
+
+<h4>Watched directories</h4>
+
+<p>On daemon startup, the watcher registers config directories alongside repo directories:</p>
+
+<pre><code>async start(repos: RegisteredRepo[]): Promise&lt;void&gt; {
+  // Existing: watch repos
+  for (const repo of repos) {
+    await this.watcher.addRepo(repo.path);
+  }
+
+  // NEW: watch global config directories
+  await this.watcher.addConfigDir(join(PATHS.insrc, 'templates'));
+  await this.watcher.addConfigDir(join(PATHS.insrc, 'feedback'));
+  await this.watcher.addConfigDir(join(PATHS.insrc, 'conventions'));
+
+  // NEW: watch project config directories for each registered repo
+  for (const repo of repos) {
+    const projectConfig = join(repo.path, '.insrc');
+    if (await dirExists(projectConfig)) {
+      await this.watcher.addConfigDir(projectConfig);
+    }
+  }
+
+  // Enqueue initial config index
+  this.queue.enqueue({ kind: 'config-full', scope: { kind: 'global' } });
+}</code></pre>
+
+<p>When a repo is added via <code>addRepo()</code>, its <code>&lt;repo&gt;/.insrc/</code> directory is also watched (if it exists). File events from config directories are routed to <code>config-file</code> jobs instead of code <code>file</code> jobs.</p>
+
+<h4>Config file event routing</h4>
+
+<p>The watcher's <code>onEvents</code> callback distinguishes config files from code files by path:</p>
+
+<pre><code>this.watcher.onEvents(events =&gt; {
+  for (const e of events) {
+    const scope = classifyConfigPath(e.path);
+    if (scope) {
+      // Config file — route to config indexer
+      this.queue.enqueue({ kind: 'config-file', filePath: e.path, scope, event: e.type });
+    } else if (this.supported.has(extname(e.path).toLowerCase()) || basenameParser.handles(e.path)) {
+      // Code file — existing behavior
+      this.queue.enqueue({ kind: 'file', filePath: e.path, event: e.type });
+    }
+  }
+});
+
+function classifyConfigPath(filePath: string): ConfigScope | null {
+  // Global: ~/.insrc/{templates,feedback,conventions}/...
+  if (filePath.startsWith(join(PATHS.insrc, 'templates')) ||
+      filePath.startsWith(join(PATHS.insrc, 'feedback')) ||
+      filePath.startsWith(join(PATHS.insrc, 'conventions'))) {
+    return { kind: 'global' };
+  }
+  // Project: &lt;repo&gt;/.insrc/{templates,feedback,conventions}/...
+  const insrcMatch = filePath.match(/^(.+)\/.insrc\/(templates|feedback|conventions)\//);
+  if (insrcMatch) {
+    return { kind: 'project', repoPath: insrcMatch[1]! };
+  }
+  return null;
+}</code></pre>
+
+<h4>Single file indexing</h4>
+
+<pre><code>private async configFileEvent(
+  filePath: string, scope: ConfigScope, event: 'create'|'update'|'delete',
+): Promise&lt;void&gt; {
+  if (event === 'delete') {
+    await this.configStore.deleteEntry(configEntryId(scope, filePath));
+    return;
+  }
+
+  // create or update
+  await this.indexConfigFile(filePath, scope);
+}
+
+private async indexConfigFile(filePath: string, scope: ConfigScope): Promise&lt;void&gt; {
+  const body = await readFile(filePath, 'utf-8');
+  const hash = sha256(body).slice(0, 16);
+
+  // Parse YAML frontmatter (category, namespace, language, name, tags)
+  const meta = parseConfigFrontmatter(body);
+  const content = stripFrontmatter(body);
+
+  // Namespace: frontmatter field takes precedence, else derive from directory
+  // e.g., templates/tester/vitest-unit.md → namespace 'tester'
+  //        feedback/common/typescript.md  → namespace 'common'
+  const namespace = meta.namespace ?? inferNamespaceFromPath(filePath);
+
+  // Check if unchanged
+  const id = configEntryId(scope, namespace, filePath);
+  const existing = await this.configStore.getEntry(id);
+  if (existing?.contentHash === hash) return;
+
+  // Embed using same embedder as code entities
+  const vector = await embedQuery(content);
+
+  // Upsert into config store
+  await this.configStore.upsertEntry({
+    id,
+    scope: formatScope(scope),
+    category: meta.category,
+    namespace,
+    language: meta.language,
+    name: meta.name,
+    filePath,
+    body: content.slice(0, 16_384),
+    tags: meta.tags.join(','),
+    updatedAt: new Date().toISOString(),
+    contentHash: hash,
+    vector,
+  });
+}</code></pre>
+
+<h4>Full config index</h4>
+
+<pre><code>private async configFullIndex(scope: ConfigScope): Promise&lt;void&gt; {
+  const dirs = scope.kind === 'global'
+    ? [join(PATHS.insrc, 'templates'), join(PATHS.insrc, 'feedback'), join(PATHS.insrc, 'conventions')]
+    : [join(scope.repoPath, '.insrc', 'templates'),
+       join(scope.repoPath, '.insrc', 'feedback'),
+       join(scope.repoPath, '.insrc', 'conventions')];
+
+  for (const dir of dirs) {
+    if (!await dirExists(dir)) continue;
+    for (const filePath of walkConfigDir(dir)) {
+      await this.indexConfigFile(filePath, scope);
+    }
+  }
+}
+
+function walkConfigDir(dir: string): string[] {
+  // Recursively list .md files in the config directory
+  // Much simpler than code indexing — no git ls-files, no extension filtering
+  // Just markdown files with frontmatter
+}</code></pre>
+
+<h4>Config reindex</h4>
+
+<p>The <code>config-reindex</code> job drops all existing entries for the given scope and re-indexes from scratch. This handles stale entries from deleted files, renamed templates, or corrupted embeddings &mdash; cases where incremental indexing via <code>config-full</code> (which skips unchanged files) would leave orphans.</p>
+
+<pre><code>private async configReindex(scope: ConfigScope): Promise&lt;void&gt; {
+  const scopeKey = formatScope(scope);
+  log.info({ scope: scopeKey }, 'config reindex: dropping existing entries');
+
+  // 1. Delete all entries for this scope
+  await this.configStore.deleteByScope(scopeKey);
+
+  // 2. Re-index everything (same as configFullIndex but no hash-skip)
+  const dirs = scope.kind === 'global'
+    ? [join(PATHS.insrc, 'templates'), join(PATHS.insrc, 'feedback'), join(PATHS.insrc, 'conventions')]
+    : [join(scope.repoPath, '.insrc', 'templates'),
+       join(scope.repoPath, '.insrc', 'feedback'),
+       join(scope.repoPath, '.insrc', 'conventions')];
+
+  let count = 0;
+  for (const dir of dirs) {
+    if (!await dirExists(dir)) continue;
+    for (const filePath of walkConfigDir(dir)) {
+      await this.indexConfigFile(filePath, scope);  // hash will differ since entry was deleted
+      count++;
+    }
+  }
+
+  log.info({ scope: scopeKey, count }, 'config reindex complete');
+}</code></pre>
+
+<p><strong>Difference from <code>config-full</code>:</strong> <code>config-full</code> is incremental &mdash; it skips files whose content hash hasn't changed. <code>config-reindex</code> deletes first, then re-indexes everything. Use <code>config-full</code> on startup (fast, skips unchanged); use <code>config-reindex</code> for explicit <code>insrc config reindex</code> CLI commands or when the store may be out of sync.</p>
+
+<div class="callout decision">
+  <strong>Same queue, same worker loop.</strong> Config jobs share the <code>IndexQueue</code> with code jobs. This means config re-indexing is naturally throttled alongside code re-indexing and doesn't compete for resources. The queue processes jobs sequentially, so a large code re-index won't block a config update for long (config files are small and fast to embed).
+</div>
+
+<h4>Feedback write-back trigger</h4>
+
+<p>When an agent calls <code>recordFeedback()</code> to append new feedback, the function writes the file and then enqueues a <code>config-file</code> job via IPC to the daemon. This ensures the feedback is immediately searchable without waiting for the file watcher's debounce window:</p>
+
+<pre><code>async function recordFeedback(opts: RecordFeedbackOpts): Promise&lt;void&gt; {
+  // ... generalize, deduplicate, append to file ...
+
+  // Notify daemon to re-index this file immediately
+  await ipcClient.call('enqueueConfigFile', {
+    filePath: feedbackFile,
+    scope: formatScope(scope),
+    event: 'update',
+  });
+}</code></pre>
+
+<h4>File format</h4>
+
+<p>Config content files are markdown with YAML frontmatter:</p>
+
+<pre><code>---
+category: template
+namespace: tester
+language: typescript
+name: vitest-unit
+tags: [vitest, unit, mock, typescript]
+---
+
+# Vitest Unit Test Template
+
+## Imports
+Always import test utilities from `vitest`:
+```typescript
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+```
+
+## Structure
+- One `describe` block per function/class under test
+- Use `beforeEach` for mock reset: `vi.clearAllMocks()`
+- Group related scenarios in nested `describe` blocks
+...</code></pre>
+
+<div class="callout warn">
+  <strong>Embedding model:</strong> Config entries use the same embedding model as code entities (<code>qwen3-embedding</code> via Ollama). The <code>embedQuery()</code> function from <code>src/indexer/embedder.ts</code> is reused directly &mdash; its instruction prefix ("retrieve relevant code snippets") is generic enough for config content. If retrieval quality is poor, a config-specific prefix can be added later.
+</div>
+
+<!-- ------------------------------------------------------------------ -->
+<h3 id="search-api">4.4 Search API</h3>
+
+<p>The config store exposes a search API parallel to the entity search in <code>src/db/search.ts</code>, but operating on the <code>config_entries</code> table.</p>
+
+<pre><code>interface ConfigSearchOpts {
+  query:         string;                           // Natural language query
+  namespace?:    string | string[];                // 'tester' | ['tester', 'common'] | ...
+  category?:     'template' | 'feedback' | 'convention';
+  language?:     Language;
+  scope?:        ConfigScope;                      // filter to global or specific project
+  limit?:        number;                           // default: 10
+  boostProject?: string;                           // repoPath — boost project-scoped results
+}
+
+interface ConfigSearchResult {
+  entry:    ConfigEntry;
+  score:    number;       // cosine similarity
+  boosted:  boolean;      // true if project boost applied
+}
+
+async function searchConfig(opts: ConfigSearchOpts): Promise&lt;ConfigSearchResult[]&gt;</code></pre>
+
+<h4>Search modes</h4>
+
+<table>
+  <tr><th>Mode</th><th>Use case</th><th>How it works</th></tr>
+  <tr>
+    <td><strong>Semantic</strong></td>
+    <td>"How should I mock the database layer?"</td>
+    <td>Embed query &rarr; vector search on <code>config_entries</code> with pre-filter on namespace/category/language</td>
+  </tr>
+  <tr>
+    <td><strong>Filtered lookup</strong></td>
+    <td>Get all tester feedback for TypeScript</td>
+    <td>SQL filter: <code>namespace IN ('tester','common') AND category = 'feedback' AND language = 'typescript'</code></td>
+  </tr>
+  <tr>
+    <td><strong>Project-boosted</strong></td>
+    <td>Agent loading context for current repo</td>
+    <td>Vector search with namespace filter, then re-rank: project-scoped results get 1.5x score boost</td>
+  </tr>
+</table>
+
+<h4>Project boost</h4>
+
+<p>When an agent searches config in the context of a specific project, project-scoped entries are boosted:</p>
+
+<pre><code>// Post-search re-ranking
+results.sort((a, b) => {
+  const aScore = a.scope.startsWith('project:' + repoPath)
+    ? a.score * PROJECT_BOOST   // 1.5x
+    : a.score;
+  const bScore = b.scope.startsWith('project:' + repoPath)
+    ? b.score * PROJECT_BOOST
+    : b.score;
+  return bScore - aScore;
+});</code></pre>
+
+<div class="callout info">
+  <strong>Relationship to code search:</strong> Config search is a separate function from <code>searchEntities()</code> in <code>src/db/search.ts</code>. They operate on different LanceDB databases (<code>config-store/</code> vs <code>lance/</code>) and return different types (<code>ConfigEntry</code> vs <code>Entity</code>). An agent may call both in the same step &mdash; e.g., the test agent's <code>analyze</code> step searches code entities for source structure and config entries for test feedback.
+</div>
+
+<!-- ================================================================== -->
+<h2 id="feedback">5. Feedback System</h2>
+
+<p>Agents accumulate feedback from user corrections, fix loop outcomes, review comments, and classification corrections. Feedback is persisted as markdown files and indexed into the config vector store for semantic retrieval.</p>
+
+<!-- ------------------------------------------------------------------ -->
+<h3 id="feedback-sources">5.1 Sources</h3>
+
+<table>
+  <tr><th>Source</th><th>Agent</th><th>When</th><th>What gets recorded</th></tr>
+  <tr>
+    <td><strong>User gate edits</strong></td>
+    <td>Tester, Pair, Delegate</td>
+    <td>User provides edit feedback at any gate</td>
+    <td>Generalized rule, not the specific instance</td>
+  </tr>
+  <tr>
+    <td><strong>Claude review corrections</strong></td>
+    <td>Tester</td>
+    <td>Claude flags issues during test/code review</td>
+    <td>Pattern that led to successful fix (discard false positives)</td>
+  </tr>
+  <tr>
+    <td><strong>Fix loop outcomes</strong></td>
+    <td>Tester, Pair</td>
+    <td>Fix attempt succeeds after specific change</td>
+    <td>Root cause pattern (skip one-off typos)</td>
+  </tr>
+  <tr>
+    <td><strong>Fix loop exhaustion</strong></td>
+    <td>Tester</td>
+    <td>Fix loop exhausts without resolution</td>
+    <td>Failure pattern + what was tried (avoid repeating dead ends)</td>
+  </tr>
+  <tr>
+    <td><strong>Classification corrections</strong></td>
+    <td>Tester</td>
+    <td>Re-classification changes category</td>
+    <td>Misclassification pattern</td>
+  </tr>
+  <tr>
+    <td><strong>Code generation patterns</strong></td>
+    <td>Pair, Delegate</td>
+    <td>Validate-and-fix loop succeeds</td>
+    <td>Pattern the validator caught (import style, type errors, missing <code>await</code>)</td>
+  </tr>
+</table>
+
+<!-- ------------------------------------------------------------------ -->
+<h3 id="feedback-recording">5.2 Recording</h3>
+
+<p>Feedback recording happens at two points in an agent's lifecycle:</p>
+
+<h4>Inline (during execution)</h4>
+<p>When a user provides gate feedback or a fix loop reveals a generalizable pattern, the agent appends to the appropriate feedback file immediately. This ensures feedback survives even if the agent crashes later.</p>
+
+<pre><code>async function recordFeedback(opts: RecordFeedbackOpts): Promise&lt;void&gt; {
+  const { content, namespace, language, repoPath, provider } = opts;
+
+  // Determine scope and file path
+  const isProjectSpecific = classifyFeedbackScope(content, repoPath);
+  const dir = isProjectSpecific
+    ? join(repoPath, '.insrc', 'feedback', namespace)
+    : join(PATHS.insrc, 'feedback', namespace);
+  const file = join(dir, `${language}.md`);
+
+  // Generalize: ask LLM to extract the rule from the instance
+  const generalized = await provider.chat({
+    messages: [{
+      role: 'system',
+      content: GENERALIZE_FEEDBACK_SYSTEM,
+    }, {
+      role: 'user',
+      content: `Raw feedback: ${content}\nExisting rules:\n${await readFileIfExists(file)}`,
+    }],
+  });
+
+  // Deduplicate: LLM also checks if rule already exists
+  if (generalized.text === 'DUPLICATE') return;
+
+  // Append
+  await appendFile(file, '\n' + generalized.text);
+
+  // Re-index this file in config store
+  const scope = isProjectSpecific
+    ? { kind: 'project' as const, repoPath }
+    : { kind: 'global' as const };
+  await indexConfigEntry(file, scope);
+}</code></pre>
+
+<h4>Batch (during report step)</h4>
+<p>The agent's report step reviews all outcomes from the run and extracts generalizable patterns that weren't caught inline. The LLM receives the full run summary and existing feedback, and produces only net-new rules.</p>
+
+<h4>Scope classification</h4>
+
+<p>Not all feedback belongs at the same level:</p>
+
+<table>
+  <tr><th>Signal</th><th>Scope</th><th>Example</th></tr>
+  <tr>
+    <td>References framework API, language syntax, standard library</td>
+    <td><strong>Global</strong></td>
+    <td>"Use <code>vi.mock()</code> not <code>jest.mock()</code> in vitest"</td>
+  </tr>
+  <tr>
+    <td>References project-specific types, internal APIs, custom patterns</td>
+    <td><strong>Project</strong></td>
+    <td>"<code>LLMProvider.chat()</code> returns <code>LLMResponse</code> not <code>string</code>"</td>
+  </tr>
+  <tr>
+    <td>References specific file paths, repo structure, internal service URLs</td>
+    <td><strong>Project</strong></td>
+    <td>"Config is at <code>~/.insrc/config.json</code>, never import directly"</td>
+  </tr>
+  <tr>
+    <td>Ambiguous</td>
+    <td><strong>Global</strong> (default)</td>
+    <td>Framework conventions are more broadly useful</td>
+  </tr>
+</table>
+
+<!-- ------------------------------------------------------------------ -->
+<h3 id="feedback-retrieval">5.3 Retrieval</h3>
+
+<p>Agents retrieve relevant feedback during their analysis/setup phase using semantic search:</p>
+
+<pre><code>// In tester agent's analyze step — searches tester + common namespaces
+const feedback = await searchConfig({
+  query: `test generation patterns for ${state.detectedFramework}`,
+  namespace: ['tester', 'common'],
+  category: 'feedback',
+  language: frameworkToLanguage(state.detectedFramework),
+  boostProject: state.input.repoPath,
+  limit: 5,
+});
+
+// Inject into state for use in generation prompts
+state.configContext = feedback.map(r => r.entry.body).join('\n\n---\n\n');</code></pre>
+
+<p>The retrieved feedback is injected into LLM prompts as a "Previous learnings" section, scoped to the relevant language and task.</p>
+
+<!-- ================================================================== -->
+<h2 id="templates">6. Templates</h2>
+
+<p>Templates are structured markdown documents that provide generation scaffolding for agents. Unlike feedback (which is accumulated), templates are authored &mdash; either bundled with insrc or created by the user.</p>
+
+<!-- ------------------------------------------------------------------ -->
+<h3 id="template-types">6.1 Types</h3>
+
+<table>
+  <tr><th>Subcategory</th><th>Purpose</th><th>Used by</th></tr>
+  <tr>
+    <td><strong>testing</strong></td>
+    <td>Test file structure, imports, setup/teardown, assertion style per framework</td>
+    <td>Tester agent (write-tests prompt)</td>
+  </tr>
+  <tr>
+    <td><strong>coding</strong></td>
+    <td>Code generation patterns: error handling, logging, API wrappers</td>
+    <td>Pair agent (propose step), Delegate agent (execute-step)</td>
+  </tr>
+  <tr>
+    <td><strong>review</strong></td>
+    <td>Review checklists, quality criteria, security checks</td>
+    <td>Pair agent (review-gate context), Tester (review-tests)</td>
+  </tr>
+</table>
+
+<h4>Template file format</h4>
+
+<pre><code>---
+category: template
+namespace: tester
+language: typescript
+name: vitest-unit
+tags: [vitest, unit, mock, typescript, node]
+---
+
+# Vitest Unit Test Template
+
+## File structure
+```typescript
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { FunctionUnderTest } from '../source-file.js';
+
+// Mock dependencies
+vi.mock('../dependency.js', () => ({
+  dep: vi.fn(),
+}));
+
+describe('FunctionUnderTest', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should handle the happy path', () => {
+    // Arrange
+    // Act
+    // Assert
+  });
+});
+```
+
+## Conventions
+- One describe per exported function/class
+- Use `vi.fn()` for function mocks, `vi.spyOn()` for method mocks
+- Always `clearAllMocks()` in `beforeEach`
+- Use `toEqual` for objects, `toBe` for primitives
+- Name test files: `*.test.ts` (unit), `*.live.test.ts` (integration)</code></pre>
+
+<!-- ------------------------------------------------------------------ -->
+<h3 id="template-resolution">6.2 Resolution</h3>
+
+<p>Template lookup uses a combination of exact match and semantic search:</p>
+
+<pre><code>async function resolveTemplate(opts: TemplateQuery): Promise&lt;ConfigEntry | null&gt; {
+  const { namespace, language, name, repoPath } = opts;
+
+  // 1. Exact match: project-level template by name
+  if (repoPath) {
+    const projectPath = join(repoPath, '.insrc', 'templates', namespace, `${name}.md`);
+    if (await fileExists(projectPath)) {
+      return loadConfigEntry(projectPath, { kind: 'project', repoPath });
+    }
+  }
+
+  // 2. Exact match: global template by name
+  const globalPath = join(PATHS.insrc, 'templates', namespace, `${name}.md`);
+  if (await fileExists(globalPath)) {
+    return loadConfigEntry(globalPath, { kind: 'global' });
+  }
+
+  // 3. Semantic fallback: search config store (own namespace + common)
+  const results = await searchConfig({
+    query: `${name} template for ${language}`,
+    namespace: [namespace, 'common'],
+    category: 'template',
+    language,
+    boostProject: repoPath,
+    limit: 1,
+  });
+
+  return results[0]?.entry ?? null;
+}</code></pre>
+
+<p><strong>Shadowing:</strong> If a project template has the same name as a global template (e.g., both have <code>templates/tester/vitest-unit.md</code>), the project version is used for exact lookup. Both remain searchable in semantic search, but the project version ranks higher due to the project boost.</p>
+
+<!-- ================================================================== -->
+<h2 id="agent-integration">7. Agent Integration</h2>
+
+<p>Each agent loads relevant config context during its setup/analyze phase. The config store is queried for templates, feedback, and conventions matching the agent's task.</p>
+
+<h3>Per-agent config loading</h3>
+
+<table>
+  <tr><th>Agent</th><th>Step</th><th>Namespaces queried</th><th>What it loads</th></tr>
+  <tr>
+    <td><strong>Tester</strong></td>
+    <td><code>analyze</code></td>
+    <td><code>['tester', 'common']</code></td>
+    <td>Test templates (by framework), test feedback (by language), language conventions</td>
+  </tr>
+  <tr>
+    <td><strong>Pair</strong></td>
+    <td><code>propose</code></td>
+    <td><code>['pair', 'common']</code></td>
+    <td>Coding templates (by language), coding feedback, language conventions</td>
+  </tr>
+  <tr>
+    <td><strong>Delegate</strong></td>
+    <td><code>invoke-planner</code></td>
+    <td><code>['delegate', 'common']</code></td>
+    <td>Execution conventions, project conventions (for plan context)</td>
+  </tr>
+  <tr>
+    <td><strong>Planner</strong></td>
+    <td><code>analyze</code></td>
+    <td><code>['planner', 'common']</code></td>
+    <td>Plan structure templates, step granularity feedback</td>
+  </tr>
+  <tr>
+    <td><strong>Designer</strong></td>
+    <td><code>analyze</code></td>
+    <td><code>['designer', 'common']</code></td>
+    <td>Design document templates, review checklists, project conventions</td>
+  </tr>
+</table>
+
+<div class="callout info">
+  <strong>Default namespace resolution:</strong> Each agent definition includes a <code>configNamespace</code> field (e.g., <code>testerAgent.configNamespace = 'tester'</code>). The framework runner automatically queries <code>[agent.configNamespace, 'common']</code> unless the step overrides it. This means agents don't need to hard-code their namespace in every search call.
+</div>
+
+<h3>Config context injection</h3>
+
+<p>Loaded config content is assembled into a <code>configContext</code> string on agent state and injected into LLM prompts:</p>
+
+<pre><code>// Prompt assembly (in write-tests, propose, execute-step, etc.)
+const systemPrompt = [
+  STEP_SYSTEM_PROMPT,
+  state.configContext
+    ? `\n## Project conventions and learnings\n${state.configContext}`
+    : '',
+].join('\n');</code></pre>
+
+<div class="callout decision">
+  <strong>Token budget:</strong> Config context is capped at 2,000 tokens (~6,000 chars). If the combined templates + feedback + conventions exceed this, the agent prioritizes: (1) project conventions, (2) language-specific feedback, (3) templates. Lower-priority content is truncated.
+</div>
+
+<h3>Feedback write-back</h3>
+
+<p>Agents that generate feedback (tester, pair) call <code>recordFeedback()</code> to persist and re-index. The recording function is passed via the step context:</p>
+
+<pre><code>// In StepContext (framework/types.ts)
+interface StepContext&lt;S&gt; {
+  // ... existing fields ...
+  recordFeedback?: (opts: RecordFeedbackOpts) => Promise&lt;void&gt;;
+}</code></pre>
+
+<!-- ================================================================== -->
+<h2 id="types">8. Types</h2>
+
+<h3>ConfigScope</h3>
+<pre><code>type ConfigScope =
+  | { kind: 'global' }
+  | { kind: 'project'; repoPath: string };</code></pre>
+
+<h3>ConfigNamespace</h3>
+<pre><code>type ConfigNamespace = 'tester' | 'pair' | 'delegate' | 'designer' | 'planner' | 'common';</code></pre>
+
+<h3>ConfigEntry</h3>
+<pre><code>interface ConfigEntry {
+  id:           string;            // SHA256-based, 32 hex chars
+  scope:        string;            // 'global' | 'project:&lt;repoPath&gt;'
+  namespace:    ConfigNamespace;   // agent that owns this entry, or 'common'
+  category:     'template' | 'feedback' | 'convention';
+  language:     Language;          // 'typescript' | 'python' | 'go' | 'all'
+  name:         string;            // Human-readable identifier
+  filePath:     string;            // Source file (for change detection / re-index)
+  body:         string;            // Markdown content (max 16K)
+  tags:         string[];          // For filtering
+  updatedAt:    string;            // ISO datetime
+  contentHash:  string;            // SHA256 of body (change detection)
+  embedding:    number[];          // Vector embedding
+}</code></pre>
+
+<h3>ConfigSearchOpts</h3>
+<pre><code>interface ConfigSearchOpts {
+  query:          string;
+  namespace?:     ConfigNamespace | ConfigNamespace[];   // default: agent's own + 'common'
+  category?:      'template' | 'feedback' | 'convention';
+  language?:      Language;
+  scope?:         ConfigScope;
+  limit?:         number;      // default: 10
+  boostProject?:  string;      // repoPath for project boost
+}</code></pre>
+
+<h3>ConfigSearchResult</h3>
+<pre><code>interface ConfigSearchResult {
+  entry:   ConfigEntry;
+  score:   number;
+  boosted: boolean;
+}</code></pre>
+
+<h3>RecordFeedbackOpts</h3>
+<pre><code>interface RecordFeedbackOpts {
+  content:     string;             // Raw feedback content
+  namespace:   ConfigNamespace;    // 'tester' | 'pair' | 'delegate' | ...
+  language:    Language;
+  repoPath:    string;             // Current repo (for scope classification)
+  provider:    LLMProvider;        // For generalization
+  agentId?:    string;             // Source agent run ID
+}</code></pre>
+
+<h3>TemplateQuery</h3>
+<pre><code>interface TemplateQuery {
+  namespace:    ConfigNamespace;   // 'tester' | 'pair' | 'designer' | ...
+  language:     Language;
+  name:         string;            // Template name (e.g., 'vitest-unit')
+  repoPath?:    string;            // For project-level lookup
+}</code></pre>
+
+<!-- ================================================================== -->
+<h2 id="cli">9. CLI Commands</h2>
+
+<pre><code># Config management
+insrc config show                          # Show resolved config (global + project merged)
+insrc config show --global                 # Show global config only
+insrc config show --project                # Show project overrides only
+insrc config reindex                       # Drop + re-index all config (global + project) via daemon
+insrc config reindex --global              # Drop + re-index global config only
+insrc config reindex --project             # Drop + re-index project config only
+insrc config reindex --namespace tester    # Drop + re-index only tester namespace
+
+# Template management
+insrc config templates list                # List all templates (global + project)
+insrc config templates list --namespace pair  # List templates for pair agent only
+insrc config templates init                # Bootstrap default templates for detected language
+insrc config templates init typescript     # Bootstrap TypeScript templates
+insrc config templates init python         # Bootstrap Python templates
+insrc config templates init go             # Bootstrap Go templates
+
+# Feedback management
+insrc config feedback list                 # List all feedback files
+insrc config feedback show testing-typescript  # Show specific feedback file
+insrc config feedback clear testing-typescript # Clear feedback (with confirmation)
+
+# Search
+insrc config search "how to mock database"                    # Semantic search across all config
+insrc config search "vitest setup" --namespace tester          # Search within tester namespace
+insrc config search "vitest setup" --category template --language typescript
+
+# Project config init
+insrc config init                          # Create &lt;project&gt;/.insrc/ with scaffolding</code></pre>
+
+<!-- ================================================================== -->
+<h2 id="implementation">10. Implementation Plan</h2>
+
+<h3>File structure</h3>
+
+<pre><code>src/
+  config/                              # New module
+    index.ts                           # Barrel exports
+    types.ts                           # ConfigEntry, ConfigScope, ConfigSearchOpts, etc.
+    paths.ts                           # Config directory path helpers (global + project)
+    loader.ts                          # loadGlobalConfig, loadProjectConfig, resolveConfig
+    store.ts                           # ConfigStore class — LanceDB wrapper for config_entries
+    search.ts                          # searchConfig, resolveTemplate
+    feedback.ts                        # recordFeedback, classifyFeedbackScope, generalize
+    templates.ts                       # Template bootstrap / scaffolding
+    frontmatter.ts                     # YAML frontmatter parser (simple regex, no dep)
+  cli/
+    commands/
+      config.ts                        # CLI command handlers
+</code></pre>
+
+<h3>Changes to existing code</h3>
+
+<table>
+  <tr><th>File</th><th>Change</th></tr>
+  <tr>
+    <td><code>src/shared/paths.ts</code></td>
+    <td>Add <code>configStore</code>, <code>templates</code>, <code>feedback</code>, <code>conventions</code> paths</td>
+  </tr>
+  <tr>
+    <td><code>src/shared/types.ts</code></td>
+    <td>Add <code>ConfigEntry</code>, <code>ConfigScope</code>, <code>ConfigSearchOpts</code>, <code>RecordFeedbackOpts</code>, extend <code>IndexJob</code> union with <code>'config-full'</code> and <code>'config-file'</code></td>
+  </tr>
+  <tr>
+    <td><code>src/agent/config.ts</code></td>
+    <td>Update <code>loadConfig()</code> to merge project config from <code>&lt;repo&gt;/.insrc/config.json</code></td>
+  </tr>
+  <tr>
+    <td><code>src/agent/framework/types.ts</code></td>
+    <td>Add <code>recordFeedback</code> to <code>StepContext</code></td>
+  </tr>
+  <tr>
+    <td><code>src/agent/framework/runner.ts</code></td>
+    <td>Wire <code>recordFeedback</code> into step context</td>
+  </tr>
+  <tr>
+    <td><code>src/indexer/index.ts</code></td>
+    <td>Add <code>ConfigStore</code> handle to <code>IndexerService</code> constructor. Add <code>configFullIndex()</code>, <code>configFileEvent()</code>, <code>indexConfigFile()</code> methods. Extend <code>processJob()</code> switch for new job kinds. Update watcher <code>onEvents</code> to route config paths via <code>classifyConfigPath()</code>.</td>
+  </tr>
+  <tr>
+    <td><code>src/indexer/watcher.ts</code></td>
+    <td>Add <code>addConfigDir()</code> method to watch non-repo config directories</td>
+  </tr>
+  <tr>
+    <td><code>src/daemon/server.ts</code></td>
+    <td>Initialize <code>ConfigStore</code> and pass to <code>IndexerService</code>. Watch global config dirs on startup. Add IPC methods: <code>enqueueConfigFile</code> (single file re-index), <code>configReindex</code> (drop + re-index for a scope), <code>searchConfig</code> (vector search).</td>
+  </tr>
+  <tr>
+    <td><code>src/daemon/lifecycle.ts</code></td>
+    <td>Ensure <code>~/.insrc/{templates,feedback,conventions}/</code> dirs exist on daemon start</td>
+  </tr>
+  <tr>
+    <td><code>src/cli/index.ts</code></td>
+    <td>Add <code>config</code> subcommand group</td>
+  </tr>
+</table>
+
+<h3>Dependencies</h3>
+
+<p>No new dependencies. Reuses:</p>
+<ul>
+  <li>LanceDB (already a dependency) &mdash; new database at <code>~/.insrc/config-store/</code></li>
+  <li>Ollama embedding (existing <code>embedQuery()</code>) &mdash; for config entry embeddings</li>
+  <li>YAML frontmatter parsing &mdash; simple regex parser in <code>config/frontmatter.ts</code> (no <code>gray-matter</code> dependency needed)</li>
+  <li><code>@parcel/watcher</code> (already a dependency) &mdash; extended to watch config dirs alongside repos</li>
+</ul>
+
+<div class="callout info">
+  <strong>Backward compatibility:</strong> Existing <code>~/.insrc/config.json</code> continues to work exactly as before. The config store and project overrides are additive. An insrc installation with no templates, feedback, or project <code>.insrc/</code> directory behaves identically to current behavior.
+</div>
+
+</main>
+</body>
+</html>

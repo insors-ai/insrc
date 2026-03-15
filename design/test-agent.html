@@ -186,15 +186,26 @@
         <li><a href="#step-generate">generate-test-plan</a></li>
         <li><a href="#step-review">review-test-plan</a></li>
         <li><a href="#step-write">write-tests</a></li>
+        <li><a href="#step-review-tests">review-tests</a></li>
         <li><a href="#step-execute">execute-tests</a></li>
+        <li><a href="#step-impl-bug-gate">impl-bug-gate</a></li>
         <li><a href="#step-report">report</a></li>
       </ol>
     </li>
     <li><a href="#test-plan">Test Plan Structure</a></li>
-    <li><a href="#unit-vs-live">Unit vs Live Tests</a></li>
-    <li><a href="#failure-classification">Failure Classification</a></li>
+    <li><a href="#unit-vs-live">Unit vs Live Tests</a>
+      <ul>
+        <li><a href="#test-naming">Test File Naming</a></li>
+      </ul>
+    </li>
+    <li><a href="#failure-classification">Failure Classification</a>
+      <ul>
+        <li><a href="#test-execution-framework">Test Execution Framework</a></li>
+      </ul>
+    </li>
     <li><a href="#pair-handoff">Pair Agent Handoff</a></li>
     <li><a href="#review-strategy">Review Strategy</a></li>
+    <li><a href="#test-feedback">Test Feedback Loop</a></li>
     <li><a href="#types">Types and State</a></li>
     <li><a href="#reuse">Reused Infrastructure</a></li>
     <li><a href="#integration">REPL/CLI Integration</a></li>
@@ -249,28 +260,44 @@
                     +───────────┬────────────+
                                 │ approve
                     ┌───────────▼────────────┐
-                    │                        │
-              ┌─────▼─────┐                  │
-              │write-tests │ per file        │
-              │(codegen)   │ loop            │
-              +─────┬──────+                 │
+                    │   per-group loop       │
                     │                        │
               ┌─────▼──────┐                 │
-              │execute-tests│                │
-              │(fix loop)  │                 │
-              +─────┬──────+                 │
+              │ write-tests │                │
+              │ (codegen)   │                │
+              +─────┬───────+                │
                     │                        │
-                    ├── test passes ──► next file
+              ┌─────▼──────┐                 │
+              │ review-tests│ Claude + user  │
+              │ (gate)      │ (can be auto)  │
+              +─────┬───────+                │
+                    │ approve                │
+              ┌─────▼──────┐                 │
+              │execute-tests│                │
+              │ (fix loop)  │                │
+              +─────┬───────+                │
+                    │                        │
+                    ├── all pass ──► next group
                     │                        │
                     ├── test issue ──► fix test ──► re-run
                     │                        │
-                    └── impl bug ──► gate ──► Pair agent ──► re-run
+                    └── impl bug ──► accumulate, next group
                                              │
                     ┌────────────────────────-┘
-                    │ all files done
+                    │ all groups done
+                    │
+              ┌─────▼──────────┐
+              │ impl-bug gate  │ (if any accumulated)
+              │ → Pair handoff │
+              +─────┬──────────+
+                    │
               ┌─────▼─────┐
-              │  report   │
-              +───────────+
+              │  report    │
+              +────────────+
+</div>
+
+<div class="callout info">
+  <strong>Per-group loop and checkpoints:</strong> Each step transition writes a framework checkpoint, so a group cycles through 3 checkpoints: <code>write-tests</code> → <code>review-tests</code> → <code>execute-tests</code>. This is by design — if the agent is interrupted mid-group, it resumes at the last completed step rather than re-doing all prior groups.
 </div>
 
 <!-- ------------------------------------------------------------------ -->
@@ -285,9 +312,10 @@
   <li>For each source file in scope, calls <code>findTestFile()</code> to discover existing tests</li>
   <li>Reads existing test files to understand current coverage and test style</li>
   <li>For live tests: queries the daemon to discover config patterns, service URLs, DB setup</li>
+  <li>Loads test feedback from <code>~/.insrc/testing/feedback-{language}.md</code> if it exists (see <a href="#test-feedback">Section 9</a>). This feedback is carried on state and injected into prompts for <code>generate-test-plan</code> and <code>write-tests</code>.</li>
 </ul>
 
-<p><strong>State updates:</strong> <code>investigationSummary</code>, <code>detectedFramework</code>, <code>existingTests[]</code>, <code>sourceFiles[]</code></p>
+<p><strong>State updates:</strong> <code>investigationSummary</code>, <code>detectedFramework</code>, <code>existingTests[]</code>, <code>sourceFiles[]</code>, <code>configContext</code></p>
 <p><strong>Next:</strong> <code>generate-test-plan</code></p>
 
 <!-- ------------------------------------------------------------------ -->
@@ -337,49 +365,94 @@
 
 <!-- ------------------------------------------------------------------ -->
 <h3 id="step-write">3.4 write-tests</h3>
-<p><span class="tag local">local</span> generate &rarr; <span class="tag claude">Claude</span> validate (optional review)</p>
+<p><span class="tag local">local</span> generate &rarr; <span class="tag claude">Claude</span> validate</p>
 
-<p>Iterates over test plan entries, generating and applying test code one file at a time.</p>
+<p>Generates test code for the current group of test plan entries and writes it to disk.</p>
 
-<p>For the current entry:</p>
+<p>For the current group:</p>
 <ol>
-  <li>Read the target source file and existing test file (if any) for context</li>
+  <li>Read the target source file(s) and existing test file(s) for context</li>
   <li>Build prompt from: entry scenarios, fixtures, setup config, test framework conventions</li>
   <li>Call <code>generateAndValidate()</code> &mdash; local generates unified diff, Claude validates</li>
   <li>Call <code>applyApprovedDiff()</code> to write the test file to disk</li>
-  <li>If <code>reviewTests</code> flag set: Claude reviews the written test code for quality, correctness, and completeness. On issues: re-generate with feedback.</li>
   <li>Record <code>TestFileResult</code> with <code>status: 'written'</code></li>
-  <li>Proceed to <code>execute-tests</code> for this file</li>
 </ol>
 
-<p><strong>On codegen failure:</strong> Record error in <code>TestFileResult</code>, skip to next entry. Don't block the pipeline.</p>
+<p><strong>On codegen failure:</strong> Record error in <code>TestFileResult</code>, skip to next group. Don't block the pipeline.</p>
 
-<p><strong>Self-loop:</strong> After a file passes execution, returns to <code>write-tests</code> for the next entry. When all entries are done, proceeds to <code>report</code>.</p>
+<p><strong>Next step return values:</strong></p>
+<ul>
+  <li>Codegen succeeds &rarr; <code>next: 'review-tests'</code></li>
+  <li>Codegen fails &rarr; <code>next: 'write-tests'</code> (advance to next group) or <code>next: 'report'</code> (last group)</li>
+</ul>
 
 <!-- ------------------------------------------------------------------ -->
-<h3 id="step-execute">3.5 execute-tests</h3>
-<p><span class="tag local">local</span> fix &rarr; <span class="tag claude">Claude</span> escalation</p>
+<h3 id="step-review-tests">3.5 review-tests</h3>
+<p><span class="tag claude">Claude</span> review &rarr; <span class="tag gate">gate</span></p>
 
-<p>Runs the current test file. On failure, classifies the failure and either fixes the test or hands off to Pair.</p>
+<p>Reviews the generated test code before execution. This step always runs but the gate can be auto-approved.</p>
 
-<p><strong>Flow per file:</strong></p>
+<p><strong>Claude review:</strong> Checks test code for assertion correctness, test independence, scenario coverage vs plan, framework conventions.</p>
+
+<p><strong>Gate display:</strong> Shows the test file diff with Claude's review summary (issues found or "looks good").</p>
+
+<p><strong>Actions:</strong></p>
+<table>
+  <tr><th>Action</th><th>Behavior</th><th>Next step</th></tr>
+  <tr><td><strong>approve</strong></td><td>Proceed to execution</td><td><code>execute-tests</code></td></tr>
+  <tr><td><strong>edit</strong> <code>&lt;feedback&gt;</code></td><td>Re-generate with feedback</td><td><code>write-tests</code> (same group)</td></tr>
+  <tr><td><strong>skip</strong></td><td>Skip this group's tests</td><td><code>write-tests</code> (next group) or <code>report</code></td></tr>
+</table>
+
+<div class="callout info">
+  <strong>Auto-approve:</strong> When the user selected "approve" (not "approve with review") at the test plan gate, the <code>review-tests</code> gate is auto-approved — Claude's review still runs and its feedback is logged, but the gate doesn't pause for user input. When the user selected "approve with review" at the plan gate, each group's test code is presented for explicit user approval.
+</div>
+
+<!-- ------------------------------------------------------------------ -->
+<h3 id="step-execute">3.6 execute-tests</h3>
+<p><span class="tag local">local</span> fix &rarr; <span class="tag claude">Claude</span> classify + escalation</p>
+
+<p>Runs the current group's test file. On failure, <strong>classifies first</strong>, then routes to the appropriate fix strategy. This step does NOT use the existing <code>runTestsAndFix()</code> helper — it implements its own classify-then-fix loop (see <a href="#test-execution-framework">Section 6.1</a>).</p>
+
+<p><strong>For live tests:</strong> Prerequisite check before execution. If required infrastructure is unavailable (Ollama down, daemon unreachable, DB not connected), skip with a clear message rather than running and failing.</p>
+
+<p><strong>Flow per group:</strong></p>
 <ol>
-  <li><strong>Run tests</strong> via <code>runTests()</code></li>
-  <li>If all pass &rarr; mark <code>status: 'passing'</code>, return to <code>write-tests</code> for next file</li>
-  <li><strong>Classify failure</strong> (see <a href="#failure-classification">Section 6</a>):
+  <li><strong>Run tests</strong> via <code>runTests()</code> (from <code>test-runner.ts</code>)</li>
+  <li>If all pass &rarr; mark <code>status: 'passing'</code>, proceed to next group</li>
+  <li><strong>Classify each failure</strong> (see <a href="#failure-classification">Section 6</a>) — sends test output, test code, and implementation code to LLM</li>
+  <li><strong>Route by classification:</strong>
     <ul>
-      <li><strong>Test issue</strong> (wrong assertion, bad mock, missing import) &rarr; fix the test code, re-run</li>
-      <li><strong>Implementation bug</strong> (function returns wrong result, missing error handling) &rarr; <a href="#pair-handoff">Pair agent handoff</a></li>
-      <li><strong>Setup/config issue</strong> (live tests: service unreachable, wrong URL) &rarr; fix test setup or skip with message</li>
+      <li><strong>Test issue</strong> &rarr; enter test fix loop (local fix up to 3 attempts, Claude escalation up to 2 rounds)</li>
+      <li><strong>Implementation bug</strong> &rarr; accumulate in <code>implementationBugs[]</code>, mark <code>status: 'impl-bug'</code>, move on</li>
+      <li><strong>Setup/config issue</strong> &rarr; attempt config fix (1 try), else skip with <code>status: 'setup-skipped'</code></li>
     </ul>
   </li>
-  <li><strong>Test fix loop:</strong> Local fix attempts (max 3) &rarr; Claude escalation (max 2 rounds) &rarr; if exhausted, mark <code>fix-exhausted</code></li>
+  <li><strong>After fix attempt:</strong> re-run tests, <strong>re-classify</strong> if still failing (classification may change — what looked like a test issue may reveal an impl bug after the obvious test error is fixed)</li>
+  <li><strong>Exhaustion:</strong> If test fix loop exhausts (3 local + 2 Claude rounds) without passing, mark <code>status: 'fix-exhausted'</code></li>
 </ol>
 
-<p><strong>For live tests:</strong> Prerequisite check before execution. If required infrastructure is unavailable (Ollama down, daemon unreachable, DB not connected), skip with a clear message rather than failing.</p>
+<p><strong>Next step return values:</strong></p>
+<ul>
+  <li>More groups remaining &rarr; <code>next: 'write-tests'</code> (advance <code>currentEntryIndex</code>)</li>
+  <li>Last group done, impl bugs accumulated &rarr; <code>next: 'impl-bug-gate'</code></li>
+  <li>Last group done, no impl bugs &rarr; <code>next: 'report'</code></li>
+</ul>
 
 <!-- ------------------------------------------------------------------ -->
-<h3 id="step-report">3.6 report</h3>
+<h3 id="step-impl-bug-gate">3.7 impl-bug-gate</h3>
+<p><span class="tag gate">gate</span></p>
+
+<p>Presents accumulated implementation bugs and offers Pair agent handoff. Only reached if <code>implementationBugs.length > 0</code> after all groups are done. See <a href="#pair-handoff">Section 7</a> for full details.</p>
+
+<p><strong>Next step return values:</strong></p>
+<ul>
+  <li>User selects fix/auto-fix and Pair completes &rarr; <code>next: 'report'</code></li>
+  <li>User selects skip &rarr; <code>next: 'report'</code></li>
+</ul>
+
+<!-- ------------------------------------------------------------------ -->
+<h3 id="step-report">3.8 report</h3>
 <p><span class="tag local">local</span></p>
 
 <p>Produces a final summary after all test files have been processed.</p>
@@ -507,6 +580,55 @@
   <strong>Mock vs live decision:</strong> If the user hasn't specified, the agent infers from the message and confirms at the test plan review gate. Keywords like "real tests", "integration", "live", "end-to-end" signal live tests. Default is unit/mock.
 </div>
 
+<!-- ------------------------------------------------------------------ -->
+<h3 id="test-naming">5.1 Test File Naming Conventions</h3>
+
+<p>The agent enforces language-specific naming conventions that distinguish unit from live test files. This is not cosmetic &mdash; the <code>execute-tests</code> step uses the file name pattern to decide whether to run prerequisite checks before execution.</p>
+
+<table>
+  <tr><th>Language</th><th>Unit tests</th><th>Live / integration tests</th><th>Location</th></tr>
+  <tr>
+    <td><strong>TypeScript / Node</strong></td>
+    <td><code>*.test.ts</code>, <code>*.spec.ts</code></td>
+    <td><code>*.live.test.ts</code>, <code>*.live.spec.ts</code></td>
+    <td><code>__tests__/</code> alongside source, or <code>tests/</code> at repo root</td>
+  </tr>
+  <tr>
+    <td><strong>Python</strong></td>
+    <td><code>test_*.py</code></td>
+    <td><code>test_*_live.py</code></td>
+    <td><code>tests/</code> at package root, mirroring source structure</td>
+  </tr>
+  <tr>
+    <td><strong>Go</strong></td>
+    <td><code>*_test.go</code></td>
+    <td><code>*_live_test.go</code></td>
+    <td>Same package directory (Go convention)</td>
+  </tr>
+</table>
+
+<p><strong>Detection logic in <code>execute-tests</code>:</strong></p>
+
+<pre><code>function isLiveTest(testFile: string): boolean {
+  // Node / TypeScript
+  if (/\.live\.(test|spec)\.[tj]sx?$/.test(testFile)) return true;
+  // Python
+  if (/test_\w+_live\.py$/.test(testFile))            return true;
+  // Go
+  if (/_live_test\.go$/.test(testFile))                return true;
+  return false;
+}</code></pre>
+
+<p>When <code>isLiveTest()</code> returns <code>true</code>, the step runs prerequisite checks (service pings, env var presence, DB connectivity) <em>before</em> test execution. If prerequisites fail, the file is skipped with <code>status: 'prereq-not-met'</code> rather than run-and-fail.</p>
+
+<div class="callout warn">
+  <strong>Generation enforcement:</strong> The <code>generate-test-plan</code> step includes the naming convention in its prompt, and the <code>review-tests</code> step validates that generated file names match the convention for their <code>kind</code>. If a live test is named <code>steps.test.ts</code> (missing <code>.live</code> infix), the review flags it for correction before execution.
+</div>
+
+<div class="callout info">
+  <strong>Existing test discovery:</strong> The <code>analyze</code> step's <code>findTestFile()</code> call discovers existing tests regardless of naming. The convention applies only to <em>generated</em> test files. If the project has pre-existing live tests under a different naming scheme, the agent matches the existing pattern instead.
+</div>
+
 <!-- ================================================================== -->
 <h2 id="failure-classification">6. Failure Classification</h2>
 
@@ -550,42 +672,178 @@
   <strong>Low confidence:</strong> When classification confidence is low, the agent defaults to assuming a test issue first. If the test fix loop exhausts without success, it reclassifies as a potential implementation bug.
 </div>
 
+<!-- ------------------------------------------------------------------ -->
+<h3 id="test-execution-framework">6.1 Test Execution Framework</h3>
+
+<p>The test agent does <strong>not</strong> use the existing <code>runTestsAndFix()</code> from <code>shared/test-runner-helper.ts</code>. That helper has a blind fix loop: it treats every failure as a test issue and applies diffs without classification. The test agent needs classification-first routing, so it builds its own execution loop from lower-level primitives.</p>
+
+<h4>Why not <code>runTestsAndFix()</code></h4>
+
+<table>
+  <tr><th><code>runTestsAndFix()</code> behavior</th><th>Test agent needs</th></tr>
+  <tr>
+    <td>Runs fix loop immediately on any failure</td>
+    <td>Classify failure <em>before</em> deciding whether to fix</td>
+  </tr>
+  <tr>
+    <td>Always targets test code (or impl code blindly)</td>
+    <td>Route test issues to fix loop, impl bugs to Pair, setup issues to config fix or skip</td>
+  </tr>
+  <tr>
+    <td>Escalates to Claude only after N local fix attempts</td>
+    <td>Uses Claude for classification on <em>first</em> failure, not just escalation</td>
+  </tr>
+  <tr>
+    <td>No re-classification after fix attempt</td>
+    <td>Re-classifies after each fix attempt (category may change)</td>
+  </tr>
+  <tr>
+    <td>Tracks fix history internally, returns single result</td>
+    <td>Agent state tracks per-failure classification, fix attempts, category transitions</td>
+  </tr>
+</table>
+
+<h4>Primitives reused from existing code</h4>
+
+<p>The execution framework reuses these functions directly:</p>
+<ul>
+  <li><code>runTests(testFile, repoPath, framework)</code> — execute tests and get structured <code>TestResult</code></li>
+  <li><code>formatTestResultForLLM(result)</code> — format failures for LLM consumption</li>
+  <li><code>applyFixDiff(diff, repoPath)</code> — apply a unified diff from an LLM fix response</li>
+  <li><code>detectFramework(repoPath)</code> — auto-detect test framework</li>
+</ul>
+
+<h4>Classify-then-fix loop</h4>
+
+<pre><code>function executeAndFix(testFile, repoPath, state):
+  result = runTests(testFile, repoPath, state.detectedFramework)
+  if result.passed → return 'passing'
+
+  for attempt in 1..MAX_ATTEMPTS:
+    classification = classifyFailure(result, testCode, implCode)
+
+    switch classification.category:
+      'implementation_bug':
+        accumulate(state.implementationBugs, classification)
+        return 'impl-bug'
+
+      'setup_issue':
+        if attempt === 1:
+          tryFixSetup(classification.suggestedFix)
+          result = runTests(...)
+          if result.passed → return 'passing'
+        return 'setup-skipped'
+
+      'test_issue':
+        diff = generateTestFix(result, testCode, classification)
+        applyFixDiff(diff, repoPath)
+        result = runTests(...)
+        if result.passed → return 'passing'
+        // re-classify on next iteration (category may have changed)
+
+  // Exhausted — try Claude escalation
+  for round in 1..MAX_CLAUDE_ROUNDS:
+    diff = claudeEscalation(result, testCode, fixHistory)
+    applyFixDiff(diff, repoPath)
+    result = runTests(...)
+    if result.passed → return 'passing'
+    // re-classify after Claude fix too
+    classification = classifyFailure(result, testCode, implCode)
+    if classification.category !== 'test_issue':
+      accumulate(state.implementationBugs, classification)
+      return 'impl-bug'
+
+  return 'fix-exhausted'</code></pre>
+
+<div class="callout decision">
+  <strong>Constants:</strong> <code>MAX_ATTEMPTS = 3</code> (local fix attempts per test issue), <code>MAX_CLAUDE_ROUNDS = 2</code> (Claude escalation rounds). These match the existing <code>runTestsAndFix()</code> defaults for consistency, but are now applied only to test-issue failures rather than all failures.
+</div>
+
 <!-- ================================================================== -->
 <h2 id="pair-handoff">7. Pair Agent Handoff</h2>
 
-<p>When the test agent detects an implementation bug, it orchestrates a handoff to the Pair agent (debug mode).</p>
+<p>When the test agent detects implementation bugs, it <strong>accumulates them</strong> across all test files and hands them off to the Pair agent as a single consolidated batch. This avoids N separate Pair invocations and gives Pair the full picture of related bugs.</p>
 
-<h3>Handoff Flow</h3>
+<h3>Accumulation</h3>
+
+<p>During the <code>execute-tests</code> loop, when a failure is classified as an implementation bug:</p>
+<ol>
+  <li>Record the bug in <code>implementationBugs[]</code> with full context (test file, test name, source file, expected vs actual, classification reasoning)</li>
+  <li>Mark the test file as <code>status: 'impl-bug'</code></li>
+  <li><strong>Do not invoke Pair immediately</strong> &mdash; continue to the next test file</li>
+</ol>
+
+<h3>Batch Handoff Gate</h3>
+
+<p>After all test files have been processed through write+execute, if <code>implementationBugs.length > 0</code>, the agent presents a single gate:</p>
+
+<p><strong>Gate display:</strong></p>
+<pre><code>## Implementation Bugs Found (3)
+
+1. [src/agent/planner/steps.ts] analyzeRequestStep
+   Test: "classifies 'test' plan type from test-related prompt"
+   Expected: planType === 'test'
+   Actual: planType === 'implementation'
+   Confidence: high — function lacks keyword matching for test-related prompts
+
+2. [src/agent/planner/steps.ts] draftPlanStep
+   Test: "generates dependencies that reference existing step IDs"
+   Expected: all deps in stepIds set
+   Actual: dep "step-0" not found — off-by-one in ID generation
+   Confidence: high — step ID prefix mismatch
+
+3. [src/db/search.ts] hybridSearch
+   Test: "returns empty array for zero-match query"
+   Expected: []
+   Actual: throws NullReferenceError
+   Confidence: high — missing null check on empty result set</code></pre>
+
+<p><strong>Actions:</strong></p>
+<table>
+  <tr><th>Action</th><th>Behavior</th></tr>
+  <tr><td><strong>fix</strong></td><td>Invoke Pair agent (interactive) with full bug TODO &mdash; user participates in debugging</td></tr>
+  <tr><td><strong>auto-fix</strong></td><td>Invoke Pair agent (auto-approve) with full bug TODO &mdash; autonomous debugging</td></tr>
+  <tr><td><strong>skip</strong></td><td>Mark all bugs as known-failing, proceed to report</td></tr>
+</table>
+
+<h3>Single Pair Invocation</h3>
+
+<p>The Pair agent is invoked <strong>once</strong> in debug mode with a consolidated TODO:</p>
+
+<pre><code>PairInput {
+  message: `Fix the following implementation bugs found by test execution:
+
+  TODO:
+  1. [ ] [src/agent/planner/steps.ts:42] analyzeRequestStep — lacks keyword
+       matching for test-related prompts, returns 'implementation' instead of 'test'
+  2. [ ] [src/agent/planner/steps.ts:108] draftPlanStep — off-by-one in step
+       ID generation, dep "step-0" not found
+  3. [ ] [src/db/search.ts:67] hybridSearch — missing null check on empty
+       LanceDB result set, throws NullReferenceError
+
+  Fix each bug. The associated tests will be re-run after all fixes are applied.`,
+
+  codeContext: /* concatenated: all affected source files + test files + failure output */,
+  mode: 'debug',
+}</code></pre>
+
+<p>Pair works through the TODO items sequentially using its standard propose &rarr; review-gate &rarr; apply &rarr; validate loop.</p>
+
+<h3>Re-run After Fix</h3>
 
 <ol>
-  <li><strong>Report:</strong> The test agent surfaces the bug with full context:
-    <ul>
-      <li>Failing test name and output</li>
-      <li>Expected vs actual behavior</li>
-      <li>Relevant implementation code</li>
-      <li>Classification reasoning</li>
-    </ul>
-  </li>
-  <li><strong>Gate:</strong> The user can:
-    <ul>
-      <li><strong>fix</strong> &mdash; invoke Pair agent with the bug context (user-approved)</li>
-      <li><strong>auto-fix</strong> &mdash; invoke Pair agent without further approval</li>
-      <li><strong>skip</strong> &mdash; mark test as known-failing, continue to next file</li>
-    </ul>
-  </li>
-  <li><strong>Pair execution:</strong> Pair agent runs in debug mode with:
-    <ul>
-      <li><code>message</code>: bug description + failing test context</li>
-      <li><code>codeContext</code>: implementation source + test source + failure output</li>
-      <li><code>mode</code>: <code>'debug'</code></li>
-    </ul>
-  </li>
-  <li><strong>Re-run:</strong> After Pair completes, re-execute the failing test to verify the fix</li>
-  <li><strong>Continue:</strong> If passing, proceed to next file. If still failing, reclassify.</li>
+  <li>After Pair completes, re-execute <strong>only the previously-failing test files</strong> (those with <code>status: 'impl-bug'</code>)</li>
+  <li>Update <code>TestFileResult</code> statuses based on results</li>
+  <li>If still failing: reclassify &mdash; may now be a test issue that needs fixing, or Pair's fix was incomplete</li>
+  <li>One re-run cycle only &mdash; if bugs persist after Pair's fix, they're surfaced in the report as unresolved</li>
 </ol>
 
 <div class="callout decision">
   <strong>Sub-agent invocation:</strong> The Pair agent is invoked via <code>runAgent()</code> with a <code>TestChannel</code> (auto-approve) when the user selects "auto-fix", or with a <code>ReplChannel</code> (interactive) when the user selects "fix". This allows the user to participate in the debugging if they want to.
+</div>
+
+<div class="callout info">
+  <strong>Why batch, not per-file:</strong> Related bugs often share root causes (e.g., two tests fail because the same utility function has a bug). A single Pair invocation with full context can fix the root cause once rather than patching symptoms file-by-file. It also avoids the overhead of N sub-agent launches with separate investigation phases.
 </div>
 
 <!-- ================================================================== -->
@@ -600,8 +858,8 @@
   <li>Setup correctness &mdash; for live tests, valid service URLs and config</li>
 </ul>
 
-<h3>Test Code Review (on request)</h3>
-<p>If the user selects "approve with review" at the gate, Claude reviews each generated test file before execution. Claude checks for:</p>
+<h3>Test Code Review (every group)</h3>
+<p>Claude reviews every generated test file at the <code>review-tests</code> step (<a href="#step-review-tests">Section 3.5</a>). Claude checks for:</p>
 <ul>
   <li>Assertion correctness &mdash; are the expected values realistic?</li>
   <li>Test independence &mdash; no shared mutable state between tests</li>
@@ -609,10 +867,90 @@
   <li>Framework conventions &mdash; correct use of describe/it/beforeEach etc.</li>
 </ul>
 
-<p>On issues, feedback is fed back to the local LLM for revision before execution.</p>
+<p>The review always runs. What differs is the gate behavior:</p>
+<ul>
+  <li><strong>"approve"</strong> at plan gate &rarr; <code>review-tests</code> gate auto-approves (Claude's feedback is logged but doesn't pause)</li>
+  <li><strong>"approve with review"</strong> at plan gate &rarr; <code>review-tests</code> gate pauses for user input on each group</li>
+</ul>
+
+<p>On issues (whether from Claude or user feedback), the test is re-generated via <code>write-tests</code> with the feedback incorporated.</p>
 
 <!-- ================================================================== -->
-<h2 id="types">9. Types and State</h2>
+<h2 id="test-feedback">9. Test Feedback Loop</h2>
+
+<p>The test agent uses the <strong>Config Management Framework</strong> (see <a href="config-management.html">design/config-management.html</a>) for storing and retrieving test feedback, templates, and conventions. This section describes how the tester agent specifically integrates with that framework.</p>
+
+<h3>What the tester records</h3>
+
+<p>The tester agent calls <code>recordFeedback()</code> (from the config framework) with <code>category: 'testing'</code> at these points:</p>
+
+<table>
+  <tr><th>Source</th><th>When</th><th>What gets recorded</th></tr>
+  <tr>
+    <td><strong>User edits at <code>review-tests</code> gate</strong></td>
+    <td>User provides edit feedback on generated tests</td>
+    <td>Generalized rule (e.g., "don't mock the database" &rarr; "use real DB connections for integration tests")</td>
+  </tr>
+  <tr>
+    <td><strong>Claude review corrections</strong></td>
+    <td>Claude flags issues during test code review</td>
+    <td>Pattern that led to successful fix (discard false positives)</td>
+  </tr>
+  <tr>
+    <td><strong>Fix loop outcomes</strong></td>
+    <td>Fix attempt succeeds after specific change</td>
+    <td>Root cause pattern (skip one-off typos)</td>
+  </tr>
+  <tr>
+    <td><strong>Fix loop exhaustion</strong></td>
+    <td>Fix loop exhausts without resolution</td>
+    <td>Failure pattern + what was tried (avoid repeating dead ends)</td>
+  </tr>
+  <tr>
+    <td><strong>Classification corrections</strong></td>
+    <td>Re-classification changes category after fix attempt</td>
+    <td>Misclassification pattern</td>
+  </tr>
+</table>
+
+<h3>What the tester retrieves</h3>
+
+<p>During the <code>analyze</code> step, the tester loads config context via the config store search API:</p>
+
+<pre><code>// In analyze step, after detectFramework()
+const configContext = await searchConfig({
+  query: `test generation patterns for ${state.detectedFramework}`,
+  category: 'feedback',
+  subcategory: 'testing',
+  language: frameworkToLanguage(state.detectedFramework),
+  boostProject: state.input.repoPath,
+  limit: 5,
+});
+
+// Also load testing templates
+const template = await resolveTemplate({
+  subcategory: 'testing',
+  language: frameworkToLanguage(state.detectedFramework),
+  name: `${state.detectedFramework}-unit`,
+  repoPath: state.input.repoPath,
+});
+
+state.configContext = assembleConfigContext(configContext, template);</code></pre>
+
+<p>The assembled config context is injected into prompts for <code>generate-test-plan</code> (scenario design, fixture choices) and <code>write-tests</code> (code patterns, import style, framework conventions).</p>
+
+<h3>Feedback file layout</h3>
+
+<p>Test feedback files follow the config framework's markdown-with-frontmatter format and are stored at:</p>
+<ul>
+  <li><strong>Global:</strong> <code>~/.insrc/feedback/testing-{language}.md</code> &mdash; framework-level patterns (vitest conventions, pytest idioms)</li>
+  <li><strong>Project:</strong> <code>&lt;project&gt;/.insrc/feedback/testing.md</code> &mdash; project-specific patterns (custom types, internal API quirks)</li>
+</ul>
+
+<p>The config framework handles scope classification, deduplication, generalization, and indexing into the config vector store. See <a href="config-management.html#feedback">Config Management &sect;5</a> for details.</p>
+
+<!-- ================================================================== -->
+<h2 id="types">10. Types and State</h2>
 
 <h3>TesterInput</h3>
 <pre><code>interface TesterInput {
@@ -641,6 +979,7 @@
 
   // Test plan
   testPlan:              TestPlan | null;
+  configContext?:        string | undefined;  // assembled from config store (feedback + templates)
 
   // Execution
   currentEntryIndex:     number;
@@ -657,6 +996,33 @@
   summary?:              string | undefined;
 }</code></pre>
 
+<h3>TestFileResult</h3>
+<pre><code>interface TestFileResult {
+  testFile:       string;
+  targetFile:     string;
+  kind:           'unit' | 'live';
+  status:         'pending' | 'written' | 'passing' | 'failing'
+                  | 'impl-bug' | 'fix-exhausted'
+                  | 'prereq-not-met'     // live test: infrastructure unavailable
+                  | 'setup-skipped'      // setup/config fix failed
+                  | 'codegen-failed'     // write-tests couldn't generate code
+                  | 'skipped';           // user skipped at review-tests gate
+  scenarios:      string[];              // from test plan entry
+  fixAttempts:    number;
+  claudeRounds:   number;
+  testResult?:    TestResult | undefined;
+  error?:         string | undefined;
+  filesWritten:   string[];
+}</code></pre>
+
+<h3>FailureClassification</h3>
+<pre><code>interface FailureClassification {
+  category:      'test_issue' | 'implementation_bug' | 'setup_issue';
+  confidence:    'high' | 'medium' | 'low';
+  reasoning:     string;
+  suggestedFix:  string;
+}</code></pre>
+
 <h3>ImplementationBug</h3>
 <pre><code>interface ImplementationBug {
   testFile:         string;
@@ -669,7 +1035,7 @@
 }</code></pre>
 
 <!-- ================================================================== -->
-<h2 id="reuse">10. Reused Infrastructure</h2>
+<h2 id="reuse">11. Reused Infrastructure</h2>
 
 <table>
   <tr><th>Function</th><th>From</th><th>Used in</th></tr>
@@ -678,15 +1044,15 @@
   <tr><td><code>findTestFile()</code></td><td><code>test-runner.ts</code></td><td>analyze, generate-test-plan</td></tr>
   <tr><td><code>generateAndValidate()</code></td><td><code>shared/codegen.ts</code></td><td>write-tests</td></tr>
   <tr><td><code>applyApprovedDiff()</code></td><td><code>shared/codegen.ts</code></td><td>write-tests</td></tr>
-  <tr><td><code>runTests()</code></td><td><code>test-runner.ts</code></td><td>execute-tests</td></tr>
-  <tr><td><code>runTestsAndFix()</code></td><td><code>shared/test-runner-helper.ts</code></td><td>execute-tests (test-issue fixes)</td></tr>
-  <tr><td><code>formatTestResultForLLM()</code></td><td><code>test-runner.ts</code></td><td>execute-tests, failure classification</td></tr>
-  <tr><td><code>pairAgent</code> + <code>runAgent()</code></td><td><code>tasks/pair/</code>, <code>framework/runner.ts</code></td><td>execute-tests (impl bug handoff)</td></tr>
+  <tr><td><code>runTests()</code></td><td><code>test-runner.ts</code></td><td>execute-tests (run + re-run)</td></tr>
+  <tr><td><code>formatTestResultForLLM()</code></td><td><code>test-runner.ts</code></td><td>execute-tests (classification + fix prompts)</td></tr>
+  <tr><td><code>applyFixDiff()</code></td><td><code>shared/test-runner-helper.ts</code></td><td>execute-tests (apply test fixes)</td></tr>
+  <tr><td><code>pairAgent</code> + <code>runAgent()</code></td><td><code>tasks/pair/</code>, <code>framework/runner.ts</code></td><td>impl-bug-gate (batch handoff)</td></tr>
   <tr><td><code>resolveStepProvider()</code></td><td><code>framework/provider-mention.ts</code></td><td>all LLM steps</td></tr>
 </table>
 
 <!-- ================================================================== -->
-<h2 id="integration">11. REPL/CLI Integration</h2>
+<h2 id="integration">12. REPL/CLI Integration</h2>
 
 <h3>REPL (<code>src/agent/index.ts</code>)</h3>
 <p>Replace the existing <code>test</code> intent handler with <code>runTesterAgent(message, codeContext)</code> following the <code>runPairAgent</code> pattern: check active runs, create <code>ReplChannel</code>, call <code>runAgent()</code>, extract result. Support resume from checkpoint.</p>
@@ -700,8 +1066,10 @@
   <tr><td>analyze</td><td>local</td><td>No</td></tr>
   <tr><td>generate-test-plan</td><td>local (generate), Claude (review)</td><td>Yes (review)</td></tr>
   <tr><td>review-test-plan</td><td>N/A (gate)</td><td>No</td></tr>
-  <tr><td>write-tests</td><td>local (generate), Claude (validate + optional review)</td><td>Optional</td></tr>
+  <tr><td>write-tests</td><td>local (generate), Claude (validate)</td><td>Optional</td></tr>
+  <tr><td>review-tests</td><td>Claude (review) + gate</td><td>Yes (review)</td></tr>
   <tr><td>execute-tests</td><td>local (fix), Claude (classify + escalation)</td><td>Optional</td></tr>
+  <tr><td>impl-bug-gate</td><td>N/A (gate)</td><td>No</td></tr>
   <tr><td>report</td><td>local</td><td>No</td></tr>
 </table>
 

@@ -30,8 +30,10 @@ import { resolveClosure, searchEntities, findCallers, findCallees, findDefinedIn
 import { embedQuery } from '../indexer/embedder.js';
 import {
   saveTurn, closeSession, seedFromPrior, deleteSessionsForRepo, pruneConversations,
+  searchTurnsByRepo, getConversationStats,
   type TurnRecord,
 } from '../db/conversations.js';
+import { compactConversations, type CompactionOpts } from '../db/compaction.js';
 import {
   savePlan, getPlan, getActivePlan, updateStepState, getNextStep, deletePlan, resetStaleLocks,
 } from '../agent/tasks/plan-store.js';
@@ -234,6 +236,25 @@ async function main(): Promise<void> {
       return pruneConversations(db);
     },
 
+    'session.history': async (params) => {
+      const { repo, queryVector, limit } = params as {
+        repo: string; queryVector: number[]; limit?: number;
+      };
+      return searchTurnsByRepo(db, repo, queryVector, limit ?? 20);
+    },
+
+    // ----- Conversation management -----
+
+    'conversation.compact': async (params) => {
+      const opts = params as CompactionOpts;
+      return compactConversations(db, async (text) => embedQuery(text), opts);
+    },
+
+    'conversation.stats': async (params) => {
+      const { repo } = params as { repo?: string };
+      return getConversationStats(db, repo);
+    },
+
     // ----- Plan graph (Phase 6) -----
 
     'plan.save': async (params) => {
@@ -354,8 +375,14 @@ async function main(): Promise<void> {
       if (result.expired > 0 || result.capped > 0) {
         log.info(`pruned ${result.expired} expired + ${result.capped} capped sessions`);
       }
+      // Also run conversation compaction
+      const compactResult = await compactConversations(db, async (text) => embedQuery(text));
+      const totalCompacted = compactResult.warmCompressed + compactResult.coldMerged + compactResult.archived;
+      if (totalCompacted > 0 || compactResult.directives > 0) {
+        log.info({ ...compactResult }, 'conversation compaction');
+      }
     } catch (err) {
-      log.error({ err }, 'pruning error');
+      log.error({ err }, 'pruning/compaction error');
     }
   }, PRUNE_INTERVAL);
 

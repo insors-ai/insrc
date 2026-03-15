@@ -9,9 +9,16 @@ import { loadConfig } from '../agent/config.js';
 // conversation_sessions — one row per closed session, retained for cross-
 //   session seeding. Pruned by 30-day TTL and 20-per-repo cap.
 //
-// conversation_turns — raw turns stored during the session for semantic
-//   retrieval. Deleted on session close (summary is the durable artifact).
+// conversation_turns — persistent turn store. Turns survive session close
+//   and are compacted over time via tiered compression.
 // ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// Entry types and tiers for compaction
+// ---------------------------------------------------------------------------
+
+export type ConversationEntryType = 'turn' | 'directive' | 'summary' | 'merged';
+export type ConversationTier = 'hot' | 'warm' | 'cold' | 'archive';
 
 const EMBEDDING_DIM = loadConfig().models.embeddingDim;
 const ZERO_VEC = new Array<number>(EMBEDDING_DIM).fill(0);
@@ -27,13 +34,18 @@ const SESSIONS_SCHEMA = new Schema([
 ]);
 
 const TURNS_SCHEMA = new Schema([
-  new Field('id',        new Utf8(),  false), // sessionId:idx
-  new Field('sessionId', new Utf8(),  false),
-  new Field('idx',       new Int32(), false),
-  new Field('user',      new Utf8(),  false),
-  new Field('assistant', new Utf8(),  false),
-  new Field('entities',  new Utf8(),  false), // JSON-encoded string[]
-  new Field('createdAt', new Utf8(),  false),
+  new Field('id',          new Utf8(),  false), // sessionId:idx
+  new Field('sessionId',   new Utf8(),  false),
+  new Field('idx',         new Int32(), false),
+  new Field('user',        new Utf8(),  false),
+  new Field('assistant',   new Utf8(),  false),
+  new Field('entities',    new Utf8(),  false), // JSON-encoded string[]
+  new Field('createdAt',   new Utf8(),  false),
+  new Field('repo',        new Utf8(),  false), // repo path for per-repo queries
+  new Field('type',        new Utf8(),  false), // 'turn' | 'directive' | 'summary' | 'merged'
+  new Field('tier',        new Utf8(),  false), // 'hot' | 'warm' | 'cold' | 'archive'
+  new Field('compactedAt', new Utf8(),  false), // ISO timestamp, empty if not compacted
+  new Field('sourceIds',   new Utf8(),  false), // JSON string[] of merged source turn IDs
   new Field('vector', new FixedSizeList(EMBEDDING_DIM, new Field('item', new Float32(), true)), false),
 ]);
 
@@ -93,6 +105,12 @@ export interface TurnRecord {
   assistant: string;
   entities: string[];
   vector: number[];
+  repo: string;
+  type?: ConversationEntryType | undefined;
+  tier?: ConversationTier | undefined;
+  compactedAt?: string | undefined;
+  sourceIds?: string[] | undefined;
+  createdAt?: string | undefined;
 }
 
 /**
@@ -102,24 +120,29 @@ export interface TurnRecord {
 export async function saveTurn(db: DbClient, turn: TurnRecord): Promise<void> {
   const table = await getTurnsTable(db);
   await table.add([{
-    id:        `${turn.sessionId}:${turn.idx}`,
-    sessionId: turn.sessionId,
-    idx:       turn.idx,
-    user:      turn.user,
-    assistant: turn.assistant,
-    entities:  JSON.stringify(turn.entities),
-    createdAt: new Date().toISOString(),
-    vector:    turn.vector.length === EMBEDDING_DIM ? turn.vector : ZERO_VEC,
+    id:          `${turn.sessionId}:${turn.idx}`,
+    sessionId:   turn.sessionId,
+    idx:         turn.idx,
+    user:        turn.user,
+    assistant:   turn.assistant,
+    entities:    JSON.stringify(turn.entities),
+    createdAt:   new Date().toISOString(),
+    repo:        turn.repo,
+    type:        turn.type ?? 'turn',
+    tier:        turn.tier ?? 'hot',
+    compactedAt: turn.compactedAt ?? '',
+    sourceIds:   JSON.stringify(turn.sourceIds ?? []),
+    vector:      turn.vector.length === EMBEDDING_DIM ? turn.vector : ZERO_VEC,
   }]);
 }
 
 // ---------------------------------------------------------------------------
-// Session close — promote summary, delete raw turns
+// Session close — promote summary, retain raw turns
 // ---------------------------------------------------------------------------
 
 /**
- * Close a session: persist the final summary to conversation_sessions
- * and delete all raw turns for this session.
+ * Close a session: persist the final summary to conversation_sessions.
+ * Raw turns are retained for compaction and cross-session L3b hydration.
  */
 export async function closeSession(
   db: DbClient,
@@ -140,8 +163,7 @@ export async function closeSession(
     vector:       summaryVector.length === EMBEDDING_DIM ? summaryVector : ZERO_VEC,
   }]);
 
-  // Delete raw turns — summary is the durable artifact
-  await deleteTurnsForSession(db, session.id);
+  // Raw turns are retained — compaction manages lifecycle
 }
 
 // ---------------------------------------------------------------------------
@@ -271,8 +293,180 @@ export async function pruneConversations(db: DbClient): Promise<{ expired: numbe
 }
 
 // ---------------------------------------------------------------------------
+// Turn search (for L3b hydration and compaction)
+// ---------------------------------------------------------------------------
+
+/**
+ * Search turns by repo using vector similarity.
+ * Returns turns ordered by relevance to the query vector.
+ */
+export async function searchTurnsByRepo(
+  db: DbClient,
+  repo: string,
+  queryVector: number[],
+  limit = 20,
+): Promise<TurnRecord[]> {
+  const table = await getTurnsTable(db);
+  const safeRepo = repo.replace(/'/g, "''");
+
+  try {
+    const rows = await table
+      .search(queryVector)
+      .where(`repo = '${safeRepo}' AND type IN ('turn', 'directive', 'merged')`)
+      .limit(limit)
+      .toArray();
+
+    return rows.map(rowToTurnRecord);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Get all turns for a repo (for compaction). No vector search — returns all.
+ */
+export async function getAllTurnsForRepo(
+  db: DbClient,
+  repo: string,
+): Promise<TurnRecord[]> {
+  const table = await getTurnsTable(db);
+  const safeRepo = repo.replace(/'/g, "''");
+
+  try {
+    const rows = await table.query().where(`repo = '${safeRepo}'`).toArray();
+    return rows.map(rowToTurnRecord);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Get all turns across all repos (for compaction without repo filter).
+ */
+export async function getAllTurns(db: DbClient): Promise<TurnRecord[]> {
+  const table = await getTurnsTable(db);
+  try {
+    const rows = await table.query().toArray();
+    return rows.map(rowToTurnRecord);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Delete specific turns by ID.
+ */
+export async function deleteTurnsByIds(db: DbClient, ids: string[]): Promise<void> {
+  if (ids.length === 0) return;
+  const table = await getTurnsTable(db);
+  const idList = ids.map(id => `'${id.replace(/'/g, "''")}'`).join(',');
+  try {
+    await table.delete(`id IN (${idList})`);
+  } catch {
+    // Ignore errors
+  }
+}
+
+/**
+ * Add compacted turn entries (for compaction output).
+ */
+export async function addCompactedTurns(db: DbClient, turns: TurnRecord[]): Promise<void> {
+  if (turns.length === 0) return;
+  const table = await getTurnsTable(db);
+  await table.add(turns.map(t => ({
+    id:          `${t.sessionId}:${t.idx}`,
+    sessionId:   t.sessionId,
+    idx:         t.idx,
+    user:        t.user,
+    assistant:   t.assistant,
+    entities:    JSON.stringify(t.entities),
+    createdAt:   new Date().toISOString(),
+    repo:        t.repo,
+    type:        t.type ?? 'merged',
+    tier:        t.tier ?? 'cold',
+    compactedAt: new Date().toISOString(),
+    sourceIds:   JSON.stringify(t.sourceIds ?? []),
+    vector:      t.vector.length === EMBEDDING_DIM ? t.vector : ZERO_VEC,
+  })));
+}
+
+// ---------------------------------------------------------------------------
+// Statistics
+// ---------------------------------------------------------------------------
+
+export interface ConversationStats {
+  totalTurns: number;
+  byType: Record<string, number>;
+  byTier: Record<string, number>;
+  byRepo: Record<string, number>;
+  sessions: number;
+}
+
+/**
+ * Get conversation storage statistics for monitoring.
+ */
+export async function getConversationStats(
+  db: DbClient,
+  repo?: string,
+): Promise<ConversationStats> {
+  const turns = repo ? await getAllTurnsForRepo(db, repo) : await getAllTurns(db);
+
+  const byType: Record<string, number> = {};
+  const byTier: Record<string, number> = {};
+  const byRepo: Record<string, number> = {};
+
+  for (const t of turns) {
+    const type = t.type ?? 'turn';
+    const tier = t.tier ?? 'hot';
+    byType[type] = (byType[type] ?? 0) + 1;
+    byTier[tier] = (byTier[tier] ?? 0) + 1;
+    byRepo[t.repo] = (byRepo[t.repo] ?? 0) + 1;
+  }
+
+  const sessionsTable = await getSessionsTable(db);
+  let sessions = 0;
+  try {
+    const allSessions = await sessionsTable.query().toArray();
+    sessions = repo
+      ? allSessions.filter(s => (s['repo'] as string) === repo).length
+      : allSessions.length;
+  } catch { /* ignore */ }
+
+  return { totalTurns: turns.length, byType, byTier, byRepo, sessions };
+}
+
+// ---------------------------------------------------------------------------
 // Row mapping
 // ---------------------------------------------------------------------------
+
+function rowToTurnRecord(row: Record<string, unknown>): TurnRecord {
+  let entities: string[] = [];
+  try {
+    const raw = row['entities'] as string;
+    if (raw) entities = JSON.parse(raw) as string[];
+  } catch { /* ignore */ }
+
+  let sourceIds: string[] = [];
+  try {
+    const raw = row['sourceIds'] as string;
+    if (raw) sourceIds = JSON.parse(raw) as string[];
+  } catch { /* ignore */ }
+
+  return {
+    sessionId:   (row['sessionId']   as string) ?? '',
+    idx:         (row['idx']         as number) ?? 0,
+    user:        (row['user']        as string) ?? '',
+    assistant:   (row['assistant']   as string) ?? '',
+    entities,
+    vector:      (row['vector']      as number[]) ?? [],
+    repo:        (row['repo']        as string) ?? '',
+    type:        ((row['type']       as string) ?? 'turn') as ConversationEntryType,
+    tier:        ((row['tier']       as string) ?? 'hot') as ConversationTier,
+    compactedAt: (row['compactedAt'] as string) ?? '',
+    sourceIds,
+    createdAt:   (row['createdAt']   as string) ?? '',
+  };
+}
 
 function rowToSessionRecord(row: Record<string, unknown>): SessionRecord {
   let seenEntities: string[] = [];

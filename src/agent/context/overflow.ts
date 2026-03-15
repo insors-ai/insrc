@@ -1,6 +1,7 @@
 import {
   TOKEN_BUDGET,
   countTokens,
+  type TokenBudget,
   type LayerContent,
   type AssembledContext,
   type DroppedInfo,
@@ -18,8 +19,6 @@ import {
 //   4th dropped: L2 — session summary (truncate to half, keep first sentence)
 //   Never:       L1 — system context
 // ---------------------------------------------------------------------------
-
-const INPUT_BUDGET = TOKEN_BUDGET.total - TOKEN_BUDGET.response;
 
 /** Raw layer inputs before overflow enforcement. */
 export interface RawLayers {
@@ -41,20 +40,22 @@ export interface RawLayers {
  * Each layer is first trimmed to its own ceiling, then if the total still
  * exceeds the input budget, layers are dropped in priority order.
  */
-export function fitToBudget(raw: RawLayers): AssembledContext {
+export function fitToBudget(raw: RawLayers, budget?: TokenBudget): AssembledContext {
+  const b = budget ?? TOKEN_BUDGET;
+  const inputBudget = b.total - b.response;
   const dropped: DroppedInfo[] = [];
 
   // 1. Enforce per-layer ceilings
-  const system  = enforceceiling(raw.system, TOKEN_BUDGET.system);
-  const summary = enforceBlockCeiling(raw.summary, TOKEN_BUDGET.summary);
-  const recent  = enforceArrayCeiling(raw.recent, TOKEN_BUDGET.recent);
-  const semantic = enforceArrayCeiling(raw.semantic, TOKEN_BUDGET.semantic);
-  const code    = enforceArrayCeiling(raw.code, TOKEN_BUDGET.code);
+  const system  = enforceceiling(raw.system, b.system);
+  const summary = enforceBlockCeiling(raw.summary, b.summary);
+  const recent  = enforceArrayCeiling(raw.recent, b.recent);
+  const semantic = enforceArrayCeiling(raw.semantic, b.semantic);
+  const code    = enforceArrayCeiling(raw.code, b.code);
 
   let total = system.tokens + summary.tokens + recent.tokens + semantic.tokens + code.tokens;
 
   // 2. If within budget, done
-  if (total <= INPUT_BUDGET) {
+  if (total <= inputBudget) {
     return buildResult(system, summary, recent, semantic, code, dropped);
   }
 
@@ -65,7 +66,7 @@ export function fitToBudget(raw: RawLayers): AssembledContext {
   {
     // Walk backwards, skipping blocks whose header contains a preserved entity name
     let i = code.blocks.length - 1;
-    while (total > INPUT_BUDGET && i >= 0) {
+    while (total > inputBudget && i >= 0) {
       const block = code.blocks[i]!;
       if (preserved && preserved.size > 0 && isPreserved(block, preserved)) {
         i--; // skip — this entity was directly named by the user
@@ -80,12 +81,12 @@ export function fitToBudget(raw: RawLayers): AssembledContext {
     }
   }
 
-  if (total <= INPUT_BUDGET) {
+  if (total <= inputBudget) {
     return buildResult(system, summary, recent, semantic, code, dropped);
   }
 
   // 3b. Drop semantic history (lowest similarity = last in array)
-  while (total > INPUT_BUDGET && semantic.blocks.length > 0) {
+  while (total > inputBudget && semantic.blocks.length > 0) {
     const removed = semantic.blocks.pop()!;
     const removedTokens = countTokens(removed);
     semantic.tokens -= removedTokens;
@@ -93,12 +94,12 @@ export function fitToBudget(raw: RawLayers): AssembledContext {
     dropped.push({ layer: 'semantic', reason: 'overflow — lowest similarity', tokensDropped: removedTokens });
   }
 
-  if (total <= INPUT_BUDGET) {
+  if (total <= inputBudget) {
     return buildResult(system, summary, recent, semantic, code, dropped);
   }
 
   // 3c. Drop recent turns (oldest = last in array, but keep last 2 = first 2)
-  while (total > INPUT_BUDGET && recent.blocks.length > 2) {
+  while (total > inputBudget && recent.blocks.length > 2) {
     const removed = recent.blocks.pop()!;
     const removedTokens = countTokens(removed);
     recent.tokens -= removedTokens;
@@ -106,7 +107,7 @@ export function fitToBudget(raw: RawLayers): AssembledContext {
     dropped.push({ layer: 'recent', reason: 'overflow — oldest turn', tokensDropped: removedTokens });
   }
 
-  if (total <= INPUT_BUDGET) {
+  if (total <= inputBudget) {
     return buildResult(system, summary, recent, semantic, code, dropped);
   }
 

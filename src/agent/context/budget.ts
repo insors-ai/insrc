@@ -1,24 +1,62 @@
 // ---------------------------------------------------------------------------
 // Token Budget — per-layer ceilings for the layered context model
 //
-// From design/agent.html:
-//   L1 System ~1K, L2 Summary ~3K, L3a Recent ~4K, L3b Semantic ~4K,
-//   L4 Task ~16K, L5 Response ~8K (reserved), L6 Overflow ~28K (elastic)
+// Supports configurable budget shapes: 16K, 32K, 64K (default), 128K.
+// L1 is fixed at 1K. All other layers scale proportionally.
 // ---------------------------------------------------------------------------
 
 /** Approximate chars → tokens ratio (conservative: 1 token ≈ 3 chars for code). */
 const CHARS_PER_TOKEN = 3;
 
-/** Per-layer token ceilings. */
-export const TOKEN_BUDGET = {
-  system:   1_000,   // L1
-  summary:  3_000,   // L2
-  recent:   4_000,   // L3a
-  semantic: 4_000,   // L3b
-  code:    16_000,   // L4
-  response: 8_000,   // L5 — reserved for output, never consumed by input
-  total:   64_000,
-} as const;
+// ---------------------------------------------------------------------------
+// Budget shapes
+// ---------------------------------------------------------------------------
+
+export type BudgetShape = '16k' | '32k' | '64k' | '128k';
+
+export interface TokenBudget {
+  system:   number;   // L1
+  summary:  number;   // L2
+  recent:   number;   // L3a
+  semantic: number;   // L3b
+  code:     number;   // L4
+  response: number;   // L5 — reserved for output, never consumed by input
+  total:    number;
+}
+
+const BUDGET_TOTALS: Record<BudgetShape, number> = {
+  '16k':  16_000,
+  '32k':  32_000,
+  '64k':  64_000,
+  '128k': 128_000,
+};
+
+/**
+ * Create a token budget for a given context window size.
+ *
+ * L1 (system) is fixed at 1K. Other layers scale proportionally:
+ *   L2 summary:  ~4.7% of total
+ *   L3a recent:  ~6.3% of total
+ *   L3b semantic: ~6.3% of total
+ *   L4 code:     ~25% of total
+ *   L5 response: ~12.5% of total
+ *   L6 overflow:  remainder (elastic)
+ */
+export function createBudget(shape: BudgetShape = '64k'): TokenBudget {
+  const total = BUDGET_TOTALS[shape];
+  return {
+    system:   1_000,                          // L1: fixed
+    summary:  Math.round(total * 0.047),      // L2
+    recent:   Math.round(total * 0.063),      // L3a
+    semantic: Math.round(total * 0.063),      // L3b
+    code:     Math.round(total * 0.25),       // L4
+    response: Math.round(total * 0.125),      // L5
+    total,
+  };
+}
+
+/** Default 64K budget — backward compatible with existing code. */
+export const TOKEN_BUDGET: TokenBudget = createBudget('64k');
 
 /**
  * Approximate token count for a string.

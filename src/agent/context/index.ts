@@ -14,14 +14,15 @@
 
 import type { LLMProvider, LLMMessage } from '../../shared/types.js';
 import type { AssembledContext } from './budget.js';
+import { createBudget, type BudgetShape, type TokenBudget } from './budget.js';
 import { buildSystemContext, type SystemContextOpts } from './system.js';
 import { evictToSummary, type ConversationTurn } from './summary.js';
-import { weightedRecent, getEvictable, MAX_RECENT_TURNS } from './recent.js';
+import { weightedRecent, weightedRecentTurns, getEvictable, MAX_RECENT_TURNS } from './recent.js';
 import { SemanticHistory, embedText } from './semantic.js';
 import { fetchTaskContext, initSession, resetSeenCounts, type DisclosureContext } from './task.js';
 import { fitToBudget, type RawLayers } from './overflow.js';
 
-export { type AssembledContext } from './budget.js';
+export { type AssembledContext, type BudgetShape } from './budget.js';
 export { type ConversationTurn } from './summary.js';
 export { initSession } from './task.js';
 
@@ -32,6 +33,7 @@ export class ContextManager {
   private readonly semanticHistory = new SemanticHistory();
   private readonly closureRepos: string[];
   private readonly provider: LLMProvider;
+  private readonly budget: TokenBudget;
   /** Entity IDs from the most recent L4 fetch — stored in turn on recordTurn(). */
   private lastEntityIds: string[] = [];
   /** Tagged outputs from pipelines — stored in L2 for cross-pipeline reference. */
@@ -41,10 +43,11 @@ export class ContextManager {
   /** Text content from attachments, injected into L4 context for the current turn. */
   private attachmentContext = '';
 
-  constructor(opts: SystemContextOpts & { closureRepos: string[]; provider: LLMProvider }) {
+  constructor(opts: SystemContextOpts & { closureRepos: string[]; provider: LLMProvider; budgetShape?: BudgetShape | undefined }) {
     this.systemText = buildSystemContext(opts);
     this.closureRepos = opts.closureRepos;
     this.provider = opts.provider;
+    this.budget = createBudget(opts.budgetShape ?? '64k');
   }
 
   /**
@@ -115,7 +118,7 @@ export class ContextManager {
       preservedNames: preservedNames.size > 0 ? preservedNames : undefined,
     };
 
-    return fitToBudget(raw);
+    return fitToBudget(raw, this.budget);
   }
 
   /** Build disclosure context from L3a and L3b entity IDs. */
@@ -150,7 +153,7 @@ export class ContextManager {
     // L1: System
     messages.push({ role: 'system', content: assembled.system.text });
 
-    // L2 + L3b: Summary and semantic history as context preamble
+    // L2 + L3b + L4: Summary, semantic history, and code as context preamble
     const contextParts: string[] = [];
     if (assembled.summary.text) {
       contextParts.push(`## Session Summary\n${assembled.summary.text}`);
@@ -165,15 +168,20 @@ export class ContextManager {
       contextParts.push(`## Active Plan Step\n${this.activePlanStepContext}`);
     }
 
-    // L3a: Recent turns as alternating user/assistant messages
-    // The recent blocks are already formatted — inject as context
-    if (assembled.recent.text) {
-      contextParts.push(`## Recent Conversation\n${assembled.recent.text}`);
-    }
-
     if (contextParts.length > 0) {
       messages.push({ role: 'user', content: contextParts.join('\n\n') });
       messages.push({ role: 'assistant', content: 'Understood. I have the context.' });
+    }
+
+    // L3a: Recent turns as structured alternating user/assistant messages
+    const structuredTurns = weightedRecentTurns(this.recentTurns);
+    // Reverse to oldest-first for natural conversation flow
+    for (let i = structuredTurns.length - 1; i >= 0; i--) {
+      const turn = structuredTurns[i]!;
+      messages.push({ role: 'user', content: turn.userMessage });
+      if (turn.assistantResponse) {
+        messages.push({ role: 'assistant', content: turn.assistantResponse });
+      }
     }
 
     // Current user message
@@ -195,6 +203,21 @@ export class ContextManager {
    */
   seedSummary(text: string): void {
     if (text) this.summary = text;
+  }
+
+  /**
+   * Hydrate L3b semantic history from persisted turns.
+   * Called once at session start to populate semantic history from prior sessions.
+   */
+  hydrateFromHistory(turns: Array<{ user: string; assistant: string; entities: string[]; vector: number[] }>): void {
+    for (const t of turns) {
+      const turn: ConversationTurn = {
+        userMessage: t.user,
+        assistantResponse: t.assistant,
+        entityIds: t.entities,
+      };
+      this.semanticHistory.add(turn, t.vector);
+    }
   }
 
   /** Get the entity IDs from the most recent L4 fetch. */

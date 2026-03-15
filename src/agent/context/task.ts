@@ -128,8 +128,9 @@ function formatEntity(
     return header;
   }
 
-  // Level 2: Visible in L3a (recent turns) or seen before → signature only
-  if (disclosure?.recentEntityIds.has(entity.id) || totalSeen >= 1) {
+  // Level 2: Visible in L3a (recent turns) → signature only
+  // Body is already in the recent conversation — no need to repeat it
+  if (disclosure?.recentEntityIds.has(entity.id)) {
     const sig = entity.signature ?? entity.body.split('\n')[0] ?? '';
     return `${header}\n${sig}`;
   }

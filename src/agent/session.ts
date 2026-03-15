@@ -6,7 +6,7 @@ import { ProviderResolver } from './config.js';
 import { SmartRouter, SmartProviderResolver } from './smart-router.js';
 import { ContextManager, initSession } from './context/index.js';
 import { embedText } from './context/semantic.js';
-import { sessionClose, sessionSeed, sessionForget } from './tools/mcp-client.js';
+import { sessionClose, sessionSeed, sessionForget, sessionHistory } from './tools/mcp-client.js';
 import { HealthMonitor, type HealthSnapshot, type ComponentState } from './faults/index.js';
 
 export interface SessionOpts {
@@ -99,6 +99,7 @@ export class Session {
       repoPath: this.repoPath,
       closureRepos: this.closureRepos,
       provider: this.ollamaProvider,
+      budgetShape: this.config.contextBudget,
     });
 
     // Initialize smart router if auto mode and Ollama available
@@ -155,6 +156,13 @@ export class Session {
     if (queryVector.length === 0) return null;
 
     const priors = await sessionSeed(this.repoPath, queryVector);
+
+    // Hydrate L3b semantic history from persisted turns
+    const history = await sessionHistory(this.repoPath, queryVector, 20);
+    if (history.length > 0 && this.contextManager) {
+      this.contextManager.hydrateFromHistory(history);
+    }
+
     if (priors.length === 0) return null;
 
     const seed = priors.map(s => s.summary).filter(Boolean).join('\n\n');

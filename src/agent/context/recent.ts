@@ -82,5 +82,33 @@ function formatWeightedTurn(turn: ConversationTurn, age: number): string {
   }
 }
 
+/**
+ * Return recent turns with recency-weighted truncation applied.
+ * Unlike weightedRecent() which returns formatted strings, this returns
+ * structured turns for use as alternating user/assistant messages.
+ */
+export function weightedRecentTurns(turns: ConversationTurn[]): ConversationTurn[] {
+  const result: ConversationTurn[] = [];
+  for (let i = 0; i < Math.min(turns.length, MAX_RECENT); i++) {
+    const turn = turns[i]!;
+    result.push(truncateTurnByAge(turn, i));
+  }
+  return result;
+}
+
+function truncateTurnByAge(turn: ConversationTurn, age: number): ConversationTurn {
+  switch (age) {
+    case 0: return turn; // full
+    case 1: return { ...turn, assistantResponse: turn.assistantResponse.slice(0, Math.floor(turn.assistantResponse.length * 0.75)) };
+    case 2: return { ...turn, assistantResponse: turn.assistantResponse.slice(0, Math.floor(turn.assistantResponse.length * 0.5)) };
+    case 3: {
+      const firstPara = turn.assistantResponse.split('\n\n')[0] ?? '';
+      const cutoff = Math.floor(turn.assistantResponse.length * 0.25);
+      return { ...turn, assistantResponse: firstPara.length < cutoff ? firstPara : turn.assistantResponse.slice(0, cutoff) };
+    }
+    default: return { ...turn, assistantResponse: '' }; // user message only
+  }
+}
+
 /** Maximum number of recent turns to keep. */
 export const MAX_RECENT_TURNS = MAX_RECENT;

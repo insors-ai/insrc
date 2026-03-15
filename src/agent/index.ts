@@ -538,6 +538,7 @@ export async function startRepl(cwd?: string): Promise<void> {
         assistant: assistantResponse,
         entities: turn.entityIds,
         vector: queryEmbedding,
+        repo: session.repoPath,
       });
 
       if (assembled.dropped.length > 0) {

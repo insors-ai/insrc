@@ -104,6 +104,7 @@ export async function sessionSave(turn: {
   sessionId: string; idx: number;
   user: string; assistant: string;
   entities: string[]; vector: number[];
+  repo: string;
 }): Promise<void> {
   try { await rpcRaw('session.save', turn); } catch { /* daemon may be down */ }
 }
@@ -130,6 +131,17 @@ export async function sessionSeed(
 /** Delete all session summaries for a repo (for /forget). */
 export async function sessionForget(repo: string): Promise<void> {
   try { await rpcRaw('session.forget', { repo }); } catch { /* ignore */ }
+}
+
+/** Retrieve relevant past turns from persisted history for L3b hydration. */
+export async function sessionHistory(
+  repo: string, queryVector: number[], limit = 20,
+): Promise<Array<{ user: string; assistant: string; entities: string[]; vector: number[] }>> {
+  try {
+    return await rpcRaw('session.history', { repo, queryVector, limit });
+  } catch {
+    return [];
+  }
 }
 
 /** Trigger pruning job. */

@@ -1,0 +1,215 @@
+{
+  "name": "insrc",
+  "displayName": "insrc — local-first coding agent",
+  "description": "AI coding assistant with local LLM, code knowledge graph, and selective Claude escalation",
+  "version": "0.0.1",
+  "publisher": "insors",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/insors-ai/insrc"
+  },
+  "engines": {
+    "vscode": "^1.98.0"
+  },
+  "categories": [
+    "AI",
+    "Programming Languages",
+    "Other"
+  ],
+  "extensionKind": [
+    "workspace"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "insrc.openPanel",
+        "title": "insrc: Open Chat Panel",
+        "icon": "$(sparkle)"
+      },
+      {
+        "command": "insrc.newSession",
+        "title": "insrc: New Session"
+      },
+      {
+        "command": "insrc.openSettings",
+        "title": "insrc: Open Settings"
+      },
+      {
+        "command": "insrc.addRepo",
+        "title": "insrc: Add Repo for Indexing"
+      },
+      {
+        "command": "insrc.reindex",
+        "title": "insrc: Re-index Current Workspace"
+      },
+      {
+        "command": "insrc.restartDaemon",
+        "title": "insrc: Restart Daemon"
+      },
+      {
+        "command": "insrc.togglePermissionMode",
+        "title": "insrc: Toggle Permission Mode"
+      },
+      {
+        "command": "insrc.openSetupWizard",
+        "title": "insrc: Open Setup Wizard"
+      },
+      {
+        "command": "insrc.addAnnotation",
+        "title": "insrc: Add Annotation"
+      },
+      {
+        "command": "insrc.sendAnnotations",
+        "title": "insrc: Send Annotations to Chat"
+      },
+      {
+        "command": "insrc.showCost",
+        "title": "insrc: Show Session Cost"
+      },
+      {
+        "command": "insrc.testRun",
+        "title": "insrc: Run Tests"
+      },
+      {
+        "command": "insrc.testPlan",
+        "title": "insrc: Generate Test Plan"
+      },
+      {
+        "command": "insrc.agentList",
+        "title": "insrc: List Agent Runs"
+      },
+      {
+        "command": "insrc.agentResume",
+        "title": "insrc: Resume Agent Run"
+      },
+      {
+        "command": "insrc.configSearch",
+        "title": "insrc: Search Config"
+      },
+      {
+        "command": "insrc.conversationCompact",
+        "title": "insrc: Compact Conversation History"
+      },
+      {
+        "command": "insrc.conversationStats",
+        "title": "insrc: Conversation Stats"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "insrc.openPanel",
+        "key": "ctrl+shift+i",
+        "mac": "cmd+shift+i"
+      },
+      {
+        "command": "insrc.addAnnotation",
+        "key": "ctrl+shift+a",
+        "mac": "cmd+shift+a",
+        "when": "editorHasSelection"
+      },
+      {
+        "command": "insrc.newSession",
+        "key": "ctrl+shift+n",
+        "mac": "cmd+shift+n"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "insrc",
+          "title": "insrc",
+          "icon": "assets/icon-insrc.svg"
+        }
+      ]
+    },
+    "views": {
+      "insrc": [
+        {
+          "type": "tree",
+          "id": "insrc.navigation",
+          "name": "Repos & Sessions"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "insrc.navigation",
+        "contents": "No repos indexed yet.\n[Add Repo](command:insrc.addRepo)"
+      }
+    ],
+    "configuration": {
+      "title": "insrc",
+      "properties": {
+        "insrc.ollama.host": {
+          "type": "string",
+          "default": "http://localhost:11434",
+          "description": "Ollama server URL"
+        },
+        "insrc.model.local": {
+          "type": "string",
+          "default": "qwen3-coder:latest",
+          "description": "Local Ollama model for code generation"
+        },
+        "insrc.model.tiers.fast": {
+          "type": "string",
+          "default": "claude-haiku-4-5",
+          "enum": ["claude-haiku-4-5", "claude-sonnet-4-6", "claude-opus-4-6"],
+          "description": "Claude fast tier model"
+        },
+        "insrc.model.tiers.standard": {
+          "type": "string",
+          "default": "claude-haiku-4-5",
+          "enum": ["claude-haiku-4-5", "claude-sonnet-4-6", "claude-opus-4-6"],
+          "description": "Claude standard tier model"
+        },
+        "insrc.model.tiers.powerful": {
+          "type": "string",
+          "default": "claude-sonnet-4-6",
+          "enum": ["claude-sonnet-4-6", "claude-opus-4-6"],
+          "description": "Claude powerful tier model"
+        },
+        "insrc.model.context.local": {
+          "type": "number",
+          "default": 16384,
+          "description": "Local model context window in tokens (drives budget shapes: 16K/32K/64K/128K)"
+        },
+        "insrc.permissions.mode": {
+          "type": "string",
+          "default": "validate",
+          "enum": ["validate", "auto-accept"],
+          "description": "Tool execution permission mode"
+        },
+        "insrc.routing.mode": {
+          "type": "string",
+          "default": "static",
+          "enum": ["static", "auto"],
+          "description": "Intent routing mode"
+        },
+        "insrc.daemon.autoStart": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically start daemon on extension activation"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "node esbuild.config.mjs",
+    "watch": "node esbuild.config.mjs --watch",
+    "package": "vsce package",
+    "lint": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.98.0",
+    "@vscode/test-electron": "^2.4.0",
+    "@vscode/vsce": "^3.0.0",
+    "esbuild": "^0.24.0",
+    "typescript": "^5.7.0"
+  }
+}

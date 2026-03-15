@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <rect width="128" height="128" rx="16" fill="none"/>
+  <g transform="translate(4, 0)">
+    <!-- Left brace — Pear -->
+    <text x="0" y="88" font-size="84" fill="#D1E736" font-family="'Poppins', 'Segoe UI', sans-serif" font-weight="300">{</text>
+    <!-- "in" large — Crayola -->
+    <text x="26" y="84" font-size="72" fill="#C2E484" font-family="'Poppins', 'Segoe UI', sans-serif" font-weight="700">in</text>
+    <!-- "src" superimposed on bottom-right of "in" — Wintergreen Dream -->
+    <text x="102" y="84" font-size="24" fill="#4B9988" font-family="'Poppins', 'Segoe UI', sans-serif" font-weight="600" opacity="0.9" transform="rotate(-90, 102, 84)">src</text>
+    <!-- Right brace — Iguana Green -->
+    <text x="94" y="88" font-size="84" fill="#6AB489" font-family="'Poppins', 'Segoe UI', sans-serif" font-weight="300">}</text>
+  </g>
+</svg>

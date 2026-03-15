@@ -33,6 +33,43 @@ export class IndexQueue {
       if (already) return;
     }
 
+    // Deduplicate config-full jobs for the same scope
+    if (job.kind === 'config-full') {
+      const scopeKey = job.scope.kind === 'global' ? 'global' : `project:${job.scope.repoPath}`;
+      const already = this.queue.some(j => {
+        if (j.kind === 'config-full' || j.kind === 'config-reindex') {
+          const jKey = j.scope.kind === 'global' ? 'global' : `project:${j.scope.repoPath}`;
+          return jKey === scopeKey;
+        }
+        return false;
+      });
+      if (already) return;
+    }
+
+    // config-reindex supersedes config-full for the same scope
+    if (job.kind === 'config-reindex') {
+      const scopeKey = job.scope.kind === 'global' ? 'global' : `project:${job.scope.repoPath}`;
+      // Remove any pending config-full for the same scope
+      for (let i = this.queue.length - 1; i >= 0; i--) {
+        const j = this.queue[i];
+        if (j && j.kind === 'config-full') {
+          const jKey = j.scope.kind === 'global' ? 'global' : `project:${j.scope.repoPath}`;
+          if (jKey === scopeKey) {
+            this.queue.splice(i, 1);
+          }
+        }
+      }
+      // Also dedup against existing config-reindex
+      const already = this.queue.some(j => {
+        if (j.kind === 'config-reindex') {
+          const jKey = j.scope.kind === 'global' ? 'global' : `project:${j.scope.repoPath}`;
+          return jKey === scopeKey;
+        }
+        return false;
+      });
+      if (already) return;
+    }
+
     this.queue.push(job);
     this.resolve?.(); // wake up the drain loop if it's waiting
   }

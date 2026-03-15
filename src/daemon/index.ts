@@ -13,6 +13,7 @@
  */
 
 import { mkdirSync } from 'node:fs';
+import * as lancedb from '@lancedb/lancedb';
 import { PATHS } from '../shared/paths.js';
 import { setLogMode, getLogger } from '../shared/logger.js';
 
@@ -34,8 +35,11 @@ import {
 import {
   savePlan, getPlan, getActivePlan, updateStepState, getNextStep, deletePlan, resetStaleLocks,
 } from '../agent/tasks/plan-store.js';
-import type { RegisteredRepo, DaemonStatus, Entity, Plan, PlanStepStatus } from '../shared/types.js';
+import type { RegisteredRepo, DaemonStatus, Entity, Plan, PlanStepStatus, ConfigScope, ConfigSearchOpts } from '../shared/types.js';
 import { basename, dirname } from 'node:path';
+import { ConfigStore } from '../config/store.js';
+import { searchConfig } from '../config/search.js';
+import { formatScope } from '../config/paths.js';
 
 // ---------------------------------------------------------------------------
 // Startup
@@ -51,8 +55,12 @@ async function main(): Promise<void> {
   // 2. Ensure directories
   // Kuzu creates the DB directory itself — only ensure the parent exists
   mkdirSync(dirname(PATHS.graph), { recursive: true });
-  mkdirSync(PATHS.lance,  { recursive: true });
-  mkdirSync(PATHS.logDir, { recursive: true });
+  mkdirSync(PATHS.lance,       { recursive: true });
+  mkdirSync(PATHS.configStore, { recursive: true });
+  mkdirSync(PATHS.templates,   { recursive: true });
+  mkdirSync(PATHS.feedback,    { recursive: true });
+  mkdirSync(PATHS.conventions, { recursive: true });
+  mkdirSync(PATHS.logDir,      { recursive: true });
 
   // 3. Open DB
   const db = await getDb();
@@ -63,10 +71,13 @@ async function main(): Promise<void> {
   void bootstrapEmbeddingModel();
 
   // 5. Load repos, start indexer
+  const configLance = await lancedb.connect(PATHS.configStore);
+  const configStore = new ConfigStore(configLance);
+
   const repos   = await listRepos(db);
   const watcher = new Watcher();
   const queue   = new IndexQueue();
-  const indexer = new IndexerService(db, queue, watcher);
+  const indexer = new IndexerService(db, queue, watcher, configStore);
 
   await indexer.start(repos);
 
@@ -287,6 +298,36 @@ async function main(): Promise<void> {
       const { filePath, event } = params as { filePath: string; event?: 'create' | 'update' | 'delete' };
       queue.enqueue({ kind: 'file', filePath, event: event ?? 'update' });
       return { ok: true };
+    },
+
+    // ----- Config management -----
+
+    'config.enqueue': async (params) => {
+      const { filePath, scope, event } = params as {
+        filePath: string; scope: ConfigScope; event: 'create' | 'update' | 'delete';
+      };
+      queue.enqueue({ kind: 'config-file', filePath, scope, event });
+      return { ok: true };
+    },
+
+    'config.reindex': async (params) => {
+      const { scope } = params as { scope: ConfigScope };
+      queue.enqueue({ kind: 'config-reindex', scope });
+      return { ok: true };
+    },
+
+    'config.search': async (params) => {
+      const opts = params as ConfigSearchOpts;
+      const queryVec = await embedQuery(opts.query);
+      const results = await searchConfig(configStore, queryVec, opts);
+      return results;
+    },
+
+    'config.list': async (params) => {
+      const { namespace, category, scope } = params as {
+        namespace?: string; category?: string; scope?: string;
+      };
+      return configStore.listEntries({ namespace, category, scope });
     },
 
     'daemon.shutdown': async () => {

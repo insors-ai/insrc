@@ -5,7 +5,7 @@
  * Agents are step-based state machines with serializable checkpoints.
  */
 
-import type { AgentConfig, LLMProvider } from '../../shared/types.js';
+import type { AgentConfig, LLMProvider, RecordFeedbackOpts } from '../../shared/types.js';
 
 // ---------------------------------------------------------------------------
 // Message envelope
@@ -153,6 +153,8 @@ export interface StepContext {
   writeArtifact(name: string, content: string): string;
   /** Read an artifact from a prior step. Returns null if not found. */
   readArtifact(name: string): string | null;
+  /** Record feedback to the config management system. */
+  recordFeedback?: ((opts: RecordFeedbackOpts) => Promise<void>) | undefined;
   /** AbortSignal — set when a cancel message is received. */
   signal: AbortSignal;
 }

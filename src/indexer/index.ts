@@ -1,14 +1,14 @@
-import { readFileSync, readdirSync, existsSync } from 'node:fs';
+import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { join, extname, resolve } from 'node:path';
 import type { DbClient } from '../db/client.js';
-import type { RegisteredRepo, IndexJob } from '../shared/types.js';
+import type { RegisteredRepo, IndexJob, ConfigScope } from '../shared/types.js';
 import { upsertEntities } from '../db/entities.js';
 import { upsertRelations, deleteRelationsForFile } from '../db/relations.js';
 import { deleteEntitiesForFile, getEntity } from '../db/entities.js';
 import { updateRepoStatus } from '../db/repos.js';
-import { embedEntities } from './embedder.js';
+import { embedEntities, embedText } from './embedder.js';
 import { parseManifest } from './manifest.js';
 import { resolveRelations } from './resolver.js';
 import { getParser, supportedExtensions } from './parser/registry.js';
@@ -22,6 +22,19 @@ import { basenameParser } from './parser/artifact.js';
 import { Watcher, IGNORE_DIRS } from './watcher.js';
 import { IndexQueue } from '../daemon/queue.js';
 import { getLogger } from '../shared/logger.js';
+import type { ConfigStore } from '../config/store.js';
+import {
+  parseConfigFrontmatter,
+  stripFrontmatter,
+} from '../config/frontmatter.js';
+import {
+  classifyConfigPath,
+  configEntryId,
+  inferNamespaceFromPath,
+  formatScope,
+  globalConfigDirs,
+  projectConfigBase,
+} from '../config/paths.js';
 
 const log = getLogger('indexer');
 
@@ -95,12 +108,14 @@ export class IndexerService {
   private readonly queue:   IndexQueue;
   private readonly watcher: Watcher;
   private readonly supported: Set<string>;
+  private readonly configStore: ConfigStore | null;
 
-  constructor(db: DbClient, queue: IndexQueue, watcher: Watcher) {
-    this.db        = db;
-    this.queue     = queue;
-    this.watcher   = watcher;
-    this.supported = new Set(supportedExtensions());
+  constructor(db: DbClient, queue: IndexQueue, watcher: Watcher, configStore?: ConfigStore | undefined) {
+    this.db          = db;
+    this.queue       = queue;
+    this.watcher     = watcher;
+    this.supported   = new Set(supportedExtensions());
+    this.configStore = configStore ?? null;
   }
 
   /**
@@ -111,6 +126,18 @@ export class IndexerService {
     log.info({ repos: repos.length }, 'indexer starting');
     this.watcher.onEvents(events => {
       for (const e of events) {
+        // Check if this is a config file event
+        const configScope = classifyConfigPath(e.path);
+        if (configScope && e.path.endsWith('.md')) {
+          this.queue.enqueue({
+            kind: 'config-file',
+            filePath: e.path,
+            scope: configScope,
+            event: e.type,
+          });
+          continue;
+        }
+
         if (this.supported.has(extname(e.path).toLowerCase()) || basenameParser.handles(e.path)) {
           this.queue.enqueue({ kind: 'file', filePath: e.path, event: e.type });
         }
@@ -123,6 +150,22 @@ export class IndexerService {
         log.info({ repo: repo.path }, 'enqueuing full index (pending)');
         this.queue.enqueue({ kind: 'full', repoPath: repo.path });
       }
+
+      // Watch project config dir if it exists
+      const projectConfig = projectConfigBase(repo.path);
+      if (existsSync(projectConfig)) {
+        await this.watcher.addConfigDir(projectConfig);
+      }
+    }
+
+    // Watch global config dirs and enqueue initial config index
+    if (this.configStore) {
+      for (const dir of globalConfigDirs()) {
+        if (existsSync(dir)) {
+          await this.watcher.addConfigDir(dir);
+        }
+      }
+      this.queue.enqueue({ kind: 'config-full', scope: { kind: 'global' } });
     }
   }
 
@@ -131,6 +174,13 @@ export class IndexerService {
     log.info({ repo: repoPath }, 'repo added, enqueuing full index');
     await this.watcher.addRepo(repoPath);
     this.queue.enqueue({ kind: 'full', repoPath });
+
+    // Watch project config dir if it exists
+    const projectConfig = projectConfigBase(repoPath);
+    if (existsSync(projectConfig) && this.configStore) {
+      await this.watcher.addConfigDir(projectConfig);
+      this.queue.enqueue({ kind: 'config-full', scope: { kind: 'project', repoPath } });
+    }
   }
 
   /** Remove a repo: stop watching. (DB cleanup handled by repos.removeRepo caller.) */
@@ -142,9 +192,12 @@ export class IndexerService {
   /** Process a single IndexJob — called by the queue worker loop. */
   async processJob(job: IndexJob): Promise<void> {
     switch (job.kind) {
-      case 'full':   await this.fullIndex(job.repoPath);            break;
-      case 'file':   await this.fileEvent(job.filePath, job.event); break;
-      case 'reembed': await this.reembed(job.repoPath);             break;
+      case 'full':           await this.fullIndex(job.repoPath);            break;
+      case 'file':           await this.fileEvent(job.filePath, job.event); break;
+      case 'reembed':        await this.reembed(job.repoPath);             break;
+      case 'config-full':    await this.configFullIndex(job.scope);         break;
+      case 'config-file':    await this.configFileEvent(job.filePath, job.scope, job.event); break;
+      case 'config-reindex': await this.configReindex(job.scope);           break;
     }
   }
 
@@ -306,6 +359,144 @@ export class IndexerService {
         kind: 'DEPENDS_ON', from: repoId, to: moduleId, resolved: true,
       }]);
     }
+  }
+
+  // -------------------------------------------------------------------------
+  // Config indexing
+  // -------------------------------------------------------------------------
+
+  /** Walk config directories for a scope and index each .md file. */
+  private async configFullIndex(scope: ConfigScope): Promise<void> {
+    if (!this.configStore) return;
+    const scopeStr = formatScope(scope);
+    log.info({ scope: scopeStr }, 'config full index started');
+    const t0 = Date.now();
+
+    const dirs = scope.kind === 'global'
+      ? globalConfigDirs()
+      : [join(projectConfigBase(scope.repoPath), 'templates'),
+         join(projectConfigBase(scope.repoPath), 'feedback'),
+         join(projectConfigBase(scope.repoPath), 'conventions')];
+
+    let indexed = 0;
+    let skipped = 0;
+    for (const dir of dirs) {
+      for (const filePath of this.walkConfigDir(dir)) {
+        const result = await this.indexConfigFile(filePath, scope);
+        if (result) indexed++; else skipped++;
+      }
+    }
+
+    const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+    log.info({ scope: scopeStr, indexed, skipped, elapsed: `${elapsed}s` }, 'config full index complete');
+  }
+
+  /** Handle a single config file create/update/delete event. */
+  private async configFileEvent(
+    filePath: string,
+    scope: ConfigScope,
+    event: 'create' | 'update' | 'delete',
+  ): Promise<void> {
+    if (!this.configStore) return;
+    log.debug({ file: filePath, event, scope: formatScope(scope) }, 'config file event');
+
+    if (event === 'delete') {
+      // We need the namespace to compute the ID — infer from path
+      const namespace = inferNamespaceFromPath(filePath);
+      const id = configEntryId(scope, namespace, filePath);
+      await this.configStore.deleteEntry(id);
+      log.info({ file: filePath }, 'config entry deleted');
+      return;
+    }
+
+    await this.indexConfigFile(filePath, scope);
+  }
+
+  /** Drop all config entries for a scope, then re-index from scratch. */
+  private async configReindex(scope: ConfigScope): Promise<void> {
+    if (!this.configStore) return;
+    const scopeStr = formatScope(scope);
+    log.info({ scope: scopeStr }, 'config reindex: dropping entries');
+    await this.configStore.deleteByScope(scopeStr);
+    await this.configFullIndex(scope);
+  }
+
+  /**
+   * Parse, embed, and upsert a single config markdown file.
+   * Skips unchanged files (content hash check).
+   * @returns true if indexed, false if skipped.
+   */
+  private async indexConfigFile(filePath: string, scope: ConfigScope): Promise<boolean> {
+    if (!this.configStore) return false;
+    if (!filePath.endsWith('.md')) return false;
+
+    let content: string;
+    try { content = readFileSync(filePath, 'utf8'); }
+    catch { return false; }
+
+    const hash = contentHash(content);
+
+    // Parse frontmatter
+    let frontmatter;
+    try {
+      frontmatter = parseConfigFrontmatter(content);
+    } catch (err) {
+      log.warn({ file: filePath, err: String(err) }, 'config frontmatter parse failed');
+      return false;
+    }
+
+    const namespace = frontmatter.namespace ?? inferNamespaceFromPath(filePath);
+    const id = configEntryId(scope, namespace, filePath);
+
+    // Skip if unchanged
+    const existing = await this.configStore.getEntry(id);
+    if (existing?.contentHash === hash) {
+      log.debug({ file: filePath }, 'config entry skipped (unchanged)');
+      return false;
+    }
+
+    const body = stripFrontmatter(content);
+
+    // Embed the body text
+    const embedding = await embedText(body);
+
+    await this.configStore.upsertEntry({
+      id,
+      scope,
+      namespace,
+      category:    frontmatter.category,
+      language:    frontmatter.language,
+      name:        frontmatter.name,
+      filePath,
+      body,
+      tags:        frontmatter.tags,
+      updatedAt:   new Date().toISOString(),
+      contentHash: hash,
+      embedding,
+    });
+
+    log.debug({ file: filePath, namespace, category: frontmatter.category }, 'config entry indexed');
+    return true;
+  }
+
+  /** Recursively list .md files in a config directory. */
+  private walkConfigDir(dir: string): string[] {
+    const results: string[] = [];
+    if (!existsSync(dir)) return results;
+
+    try {
+      const entries = readdirSync(dir, { withFileTypes: true });
+      for (const entry of entries) {
+        const full = join(dir, entry.name);
+        if (entry.isDirectory()) {
+          results.push(...this.walkConfigDir(full));
+        } else if (entry.isFile() && entry.name.endsWith('.md')) {
+          results.push(full);
+        }
+      }
+    } catch { /* ignore unreadable dirs */ }
+
+    return results;
   }
 
   // Infer repo root from a file path (walks up to find package.json / go.mod / .git)

@@ -87,6 +87,26 @@ export async function embedQuery(text: string): Promise<number[]> {
   }
 }
 
+/**
+ * Embed raw text as a document (no query instruction prefix).
+ * Used for config entry indexing.
+ * Returns an empty array if Ollama is unavailable.
+ */
+export async function embedText(text: string): Promise<number[]> {
+  if (!text) return [];
+  // Cap at ~8000 chars same as entity documents
+  const input = text.length > 8_000 ? text.slice(0, 8_000) : text;
+  try {
+    const result = await ollama.embed({
+      model: EMBEDDING_MODEL,
+      input,
+    });
+    return result.embeddings[0] ?? [];
+  } catch {
+    return [];
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Health / bootstrap
 // ---------------------------------------------------------------------------

@@ -7,7 +7,8 @@ import type {
   AgentMessage, Channel, StepContext, GateOpts, GatePayload,
   ReplyPayload, EmitPayload, ProgressPayload, CheckpointPayload,
 } from './types.js';
-import type { AgentConfig, LLMProvider } from '../../shared/types.js';
+import type { AgentConfig, LLMProvider, RecordFeedbackOpts } from '../../shared/types.js';
+import { recordFeedback as recordFeedbackImpl } from '../../config/feedback.js';
 import { writeArtifact as writeArtifactFile, readArtifact as readArtifactFile } from './checkpoint.js';
 
 // ---------------------------------------------------------------------------
@@ -101,5 +102,11 @@ export function buildStepContext(opts: StepContextOpts): StepContext {
     readArtifact(name: string): string | null {
       return readArtifactFile(runDir, name);
     },
+
+    recordFeedback: rpcFn
+      ? async (feedbackOpts: RecordFeedbackOpts): Promise<void> => {
+          await recordFeedbackImpl({ ...feedbackOpts, rpcFn });
+        }
+      : undefined,
   };
 }

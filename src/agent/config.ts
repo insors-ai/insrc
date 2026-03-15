@@ -56,6 +56,15 @@ export function loadConfig(): AgentConfig {
 }
 
 /**
+ * Load config with project-level overrides merged in.
+ * Falls back to global config if no project config exists.
+ */
+export async function loadConfigForRepo(repoPath: string): Promise<AgentConfig> {
+  const { resolveConfig } = await import('../config/loader.js');
+  return resolveConfig(repoPath);
+}
+
+/**
  * Resolve the Claude model name for a given role.
  *
  * Lookup order:

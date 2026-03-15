@@ -54,6 +54,14 @@ export class Watcher {
     this.subscriptions.set(repoPath, sub);
   }
 
+  /**
+   * Start watching a config directory (templates, feedback, conventions).
+   * Alias for addRepo — same watcher infrastructure, just a semantic distinction.
+   */
+  async addConfigDir(dirPath: string): Promise<void> {
+    await this.addRepo(dirPath);
+  }
+
   /** Stop watching a repo directory. */
   async removeRepo(repoPath: string): Promise<void> {
     const sub = this.subscriptions.get(repoPath);

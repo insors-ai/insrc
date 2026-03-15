@@ -3,6 +3,7 @@ import { Command } from 'commander';
 import { registerDaemonCommands } from './commands/daemon.js';
 import { registerRepoCommands }   from './commands/repo.js';
 import { registerAgentCommands }  from './commands/agent.js';
+import { registerConfigCommands } from './commands/config.js';
 import { getLogger } from '../shared/logger.js';
 
 const log = getLogger('cli');
@@ -75,6 +76,7 @@ program
 registerDaemonCommands(program);
 registerRepoCommands(program);
 registerAgentCommands(program);
+registerConfigCommands(program);
 
 program.parseAsync(process.argv).catch(err => {
   log.error({ err }, 'fatal error');

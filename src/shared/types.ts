@@ -153,6 +153,7 @@ export interface AgentProviderConfigs {
   brainstorm?: AgentStepConfig | undefined;
   pair?: AgentStepConfig | undefined;
   delegate?: AgentStepConfig | undefined;
+  tester?: AgentStepConfig | undefined;
 }
 
 export interface AgentConfig {
@@ -294,7 +295,70 @@ export interface RegisteredRepo {
 export type IndexJob =
   | { kind: 'full';    repoPath: string }
   | { kind: 'file';    filePath: string; event: 'create' | 'update' | 'delete' }
-  | { kind: 'reembed'; repoPath: string };
+  | { kind: 'reembed'; repoPath: string }
+  | { kind: 'config-full';    scope: ConfigScope }
+  | { kind: 'config-file';    filePath: string; scope: ConfigScope; event: 'create' | 'update' | 'delete' }
+  | { kind: 'config-reindex'; scope: ConfigScope };
+
+// ---------------------------------------------------------------------------
+// Config management
+// ---------------------------------------------------------------------------
+
+export type ConfigScope =
+  | { kind: 'global' }
+  | { kind: 'project'; repoPath: string };
+
+export type ConfigNamespace =
+  | 'tester' | 'pair' | 'delegate' | 'designer' | 'planner' | 'common';
+
+export type ConfigCategory = 'template' | 'feedback' | 'convention';
+
+export interface ConfigEntry {
+  id:          string;
+  scope:       ConfigScope;
+  namespace:   ConfigNamespace;
+  category:    ConfigCategory;
+  language:    Language | 'all';
+  name:        string;
+  filePath:    string;
+  body:        string;
+  tags:        string[];
+  updatedAt:   string;   // ISO datetime
+  contentHash: string;
+  embedding:   number[];
+}
+
+export interface ConfigSearchOpts {
+  query: string;
+  namespace?: ConfigNamespace | ConfigNamespace[] | undefined;
+  category?: ConfigCategory | undefined;
+  language?: Language | 'all' | undefined;
+  scope?: ConfigScope | undefined;
+  limit?: number | undefined;
+  boostProject?: boolean | undefined;
+}
+
+export interface ConfigSearchResult {
+  entry: ConfigEntry;
+  score: number;
+  boosted: boolean;
+}
+
+export interface RecordFeedbackOpts {
+  content: string;
+  namespace: ConfigNamespace;
+  language: Language | 'all';
+  repoPath: string;
+  provider: LLMProvider;
+  agentId?: string | undefined;
+}
+
+export interface TemplateQuery {
+  namespace: ConfigNamespace;
+  language: Language | 'all';
+  name: string;
+  repoPath?: string | undefined;
+}
 
 // ---------------------------------------------------------------------------
 // IPC — JSON-RPC over Unix socket

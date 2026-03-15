@@ -187,7 +187,23 @@
     <strong>Architecture boundary:</strong> The extension owns UI only — chat panel, diff review,
     status bar, settings UI, and setup wizard. The daemon owns everything else: intent
     classification, LLM routing, tool execution, graph queries, session memory. The extension
-    communicates with the daemon exclusively over a local WebSocket or Unix socket.
+    communicates with the daemon exclusively over a Unix socket (<code>~/.insrc/daemon.sock</code>).
+  </div>
+
+  <div class="callout ok">
+    <strong>Plugin-only approach (no VS Code fork):</strong> All intelligence lives in the daemon
+    — the extension is a thin rendering layer. Key UI features are achievable within standard
+    extension APIs:
+    <ul>
+      <li><strong>Inline diff:</strong> Virtual document + <code>vscode.diff</code> in inline mode
+        (single-column, red/green lines) with CodeLens accept/reject buttons</li>
+      <li><strong>Cross-repo navigation:</strong> TreeView backed by daemon registry — shows all
+        indexed repos regardless of which folder VS Code has open</li>
+      <li><strong>Chat, sessions, status bar:</strong> WebviewView, TreeView, StatusBarItem</li>
+      <li><strong>Code annotations:</strong> CodeLens + TextEditorDecorationType</li>
+    </ul>
+    A fork would only be justified for Cursor-style inline ghost-text autocomplete, which
+    insrc does not need — it uses a propose-then-review pattern (diff → approve → apply).
   </div>
 
   <h2>Architecture</h2>
@@ -237,7 +253,7 @@
   │         ✓ continue
   │         ✗ → show setup wizard step: "Install Ollama"
   │
-  ├─ 3. Check: qwen3-coder + qwen3-embedding:0.6b pulled?
+  ├─ 3. Check: qwen3-coder + qwen3-embedding:4b pulled?
   │         ✓ continue
   │         ✗ → daemon pulls both automatically, extension shows per-model progress bars
   │
@@ -268,7 +284,7 @@
       <tr><td>Kuzu + LanceDB</td><td><span class="badge badge-ok">Yes</span></td><td>npm dependencies bundled with daemon</td></tr>
       <tr><td>Ollama binary</td><td><span class="badge badge-warn">No</span></td><td>Detected; setup wizard links to <code>ollama.com/download</code> or runs install script</td></tr>
       <tr><td>qwen3-coder model</td><td><span class="badge badge-warn">No</span></td><td>Pulled automatically via <code>ollama pull</code> once Ollama is present; progress shown in extension</td></tr>
-      <tr><td>qwen3-embedding:0.6b model</td><td><span class="badge badge-warn">No</span></td><td>Pulled automatically alongside qwen3-coder; required for graph search and session memory embeddings</td></tr>
+      <tr><td>qwen3-embedding:4b model</td><td><span class="badge badge-warn">No</span></td><td>Pulled automatically alongside qwen3-coder; required for graph search and session memory embeddings</td></tr>
       <tr><td>Anthropic API key</td><td><span class="badge badge-warn">No</span></td><td>First-run wizard; stored in <code>~/.insrc/config.json</code>; skippable for local-only mode</td></tr>
       <tr><td>Brave Search API key</td><td><span class="badge badge-warn">No</span></td><td>Optional; setup wizard offers signup link; skippable (falls back to Claude web search)</td></tr>
     </tbody>
@@ -294,7 +310,7 @@
       <h4><span class="badge badge-phase">Step 2</span> Local models</h4>
       <ul>
         <li>Check if <code>qwen3-coder:latest</code> is pulled — agent model</li>
-        <li>Check if <code>qwen3-embedding:0.6b</code> is pulled — embedding model (graph search + session memory)</li>
+        <li>Check if <code>qwen3-embedding:4b</code> is pulled — embedding model (graph search + session memory)</li>
         <li>If either missing: pull automatically with per-model progress bars in wizard</li>
         <li>Custom agent model: dropdown to select any installed Ollama model</li>
       </ul>
@@ -384,12 +400,12 @@
       </tr>
       <tr>
         <td><code>insrc.model.tiers.standard</code></td>
-        <td><code>claude-sonnet-4-6</code></td>
+        <td><code>claude-haiku-4-5</code></td>
         <td>Model for requirements, design, plan, review. Dropdown: Haiku / Sonnet / Opus.</td>
       </tr>
       <tr>
         <td><code>insrc.model.tiers.powerful</code></td>
-        <td><code>claude-opus-4-6</code></td>
+        <td><code>claude-sonnet-4-6</code></td>
         <td>Model for explicit <code>@opus</code> escalation only. Dropdown: Sonnet / Opus.</td>
       </tr>
       <tr>
@@ -423,6 +439,55 @@
         <td>
           Brave Search API key. Optional. If empty, web searches fall back to Claude's hosted
           <code>WebSearch</code> tool. Validated with a test query on save.
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Context window &amp; budget</h3>
+  <table>
+    <thead><tr><th>Setting</th><th>Default</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>insrc.model.context.local</code></td>
+        <td><code>16384</code></td>
+        <td>
+          Local model context window in tokens. Drives the layered memory budget system
+          — all layer ceilings scale proportionally. Valid shapes: 16K, 32K, 64K, 128K
+          or any custom token count. Higher values use more GPU VRAM.
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Agent step provider overrides</h3>
+  <p>
+    Per-agent, per-step model bindings. Each agent's steps can be routed to local or Claude
+    independently. Stored in <code>~/.insrc/config.json</code> under <code>models.agents.*</code>.
+    See <code>scripts/config/config.sample.json</code> for all agents and steps.
+  </p>
+  <table>
+    <thead><tr><th>Agent</th><th>Steps</th></tr></thead>
+    <tbody>
+      <tr><td><code>designer</code></td><td>extract, enhance, sketch, review, detail</td></tr>
+      <tr><td><code>planner</code></td><td>analyze, search, draft, enhance, detail</td></tr>
+      <tr><td><code>brainstorm</code></td><td>seed, diverge, cluster, promote, update-spec</td></tr>
+      <tr><td><code>pair</code></td><td>analyze, propose, validate, summarize</td></tr>
+      <tr><td><code>delegate</code></td><td>execute, validate, report</td></tr>
+      <tr><td><code>tester</code></td><td>analyze, generate-test-plan, validate-plan, write-tests, validate-tests, review-tests, execute, fix-escalation, report</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Routing mode</h3>
+  <table>
+    <thead><tr><th>Setting</th><th>Default</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>insrc.routing.mode</code></td>
+        <td><code>static</code></td>
+        <td>
+          <strong><code>static</code></strong> — rule-based intent routing (default).<br>
+          <strong><code>auto</code></strong> — LLM-assessed complexity routing.
         </td>
       </tr>
     </tbody>
@@ -711,28 +776,57 @@
     preference is remembered.
   </div>
 
-  <h3>implement / refactor</h3>
-  <p>Primary artifact: <strong>file diff</strong></p>
+  <h3>implement / refactor / pair</h3>
+  <p>Primary artifact: <strong>inline diff (single-column)</strong></p>
   <ul>
-    <li>Split view: chat stream on left, native VS Code diff editor on right</li>
-    <li>Pipeline status bar above the diff: <code>Stage 1 — local generating…</code> →
-    <code>Stage 2 — Claude validating…</code> → <code>APPROVED</code> / <code>CHANGES_NEEDED (retry 1/2)</code></li>
+    <li><strong>Inline diff mode:</strong> Uses a virtual document (<code>TextDocumentContentProvider</code>)
+    showing the proposed file content, opened via <code>vscode.diff(original, proposed)</code> in inline
+    mode — single column with red (deleted) and green (added) line backgrounds. No side-by-side split.</li>
+    <li><strong>Auto-configured:</strong> On extension activation, writes
+    <code>"diffEditor.renderSideBySide": false</code> to <code>.vscode/settings.json</code>
+    via <code>ConfigurationTarget.Workspace</code> to ensure inline mode by default.</li>
+    <li>Pipeline status bar above the diff: <code>local generating…</code> →
+    <code>Claude validating…</code> → <code>APPROVED</code> / <code>CHANGES_NEEDED (retry 1/2)</code></li>
     <li>Per-file diff tabs when multiple files are changed</li>
-    <li>Accept / Reject / Edit buttons pinned to the bottom of the diff panel</li>
+    <li><strong>Accept / Reject / Edit</strong> via CodeLens above the diff. Accept = write virtual doc
+    content to disk. Reject = close diff tab, restore original.</li>
     <li>On exhausted retries: diff border turns yellow, manual decision prompt appears inline</li>
+    <li><strong>Pair agent:</strong> Same inline diff for propose → review-gate → apply loop. User sees
+    proposal as inline diff, approves/edits/rejects at the CodeLens. TODO tracking shown in action panel.</li>
   </ul>
 
+  <pre><code>// Virtual document inline diff implementation
+const provider = new class implements vscode.TextDocumentContentProvider {
+  provideTextDocumentContent(uri: vscode.Uri): string {
+    return proposedContentMap.get(uri.path) ?? '';
+  }
+};
+vscode.workspace.registerTextDocumentContentProvider('insrc-proposed', provider);
+
+// Open inline diff in the active editor column
+await vscode.commands.executeCommand('vscode.diff',
+  originalUri,
+  vscode.Uri.parse(`insrc-proposed:${filePath}`),
+  `insrc: ${basename(filePath)}`,
+  { viewColumn: vscode.ViewColumn.Active }
+);</code></pre>
+
   <h3>test</h3>
-  <p>Primary artifact: <strong>test run results</strong></p>
+  <p>Primary artifact: <strong>test plan + per-file execution results</strong></p>
+  <p>The tester agent (8 steps) has its own rich UI flow:</p>
   <ul>
-    <li>Test results panel (VS Code native Testing API) shows pass / fail per test case</li>
-    <li>Fix loop counter shown in panel header: <code>Fix loop — attempt 2/3 (local)</code> or
-    <code>Escalating to Claude…</code></li>
-    <li>Failing test highlighted with the current error and stack trace inline</li>
-    <li>Fix diff shown in a secondary split alongside the failing test body so the user can
-    see what the model is changing and why</li>
-    <li>Terminal condition prompt appears inline when claudeRounds cap is reached:
-    <em>accept / discard / open editor</em></li>
+    <li><strong>Test plan view:</strong> Formatted plan with scenarios, fixtures, priorities per target file.
+    Gate actions: approve / approve-with-review / edit / reject</li>
+    <li><strong>Per-file progress:</strong> Status badges for each entry: pending → written → passing / failing / impl-bug / fix-exhausted / skipped</li>
+    <li><strong>Failure classification:</strong> Each failure is classified as <code>test_issue</code>,
+    <code>implementation_bug</code>, or <code>setup_issue</code> — shown as color-coded badges</li>
+    <li><strong>Fix loop counter:</strong> <code>Local attempt 2/3</code> → <code>Claude escalation 1/2</code>.
+    Re-classification after each attempt (category may change)</li>
+    <li><strong>Implementation bug gate:</strong> Accumulated bugs shown as numbered list with
+    auto-fix (Pair agent) / skip options</li>
+    <li><strong>Fix diff:</strong> Shown as inline diff (same virtual document approach) alongside
+    the failing test body</li>
+    <li><strong>Report:</strong> Final summary with pass/fail counts, bugs found/fixed, skipped entries</li>
   </ul>
 
   <h3>debug</h3>
@@ -983,9 +1077,11 @@ src/auth/middleware.ts  line 12
   <h2>IPC Protocol</h2>
 
   <p>
-    The extension and daemon communicate over a local WebSocket (TCP on <code>localhost:&lt;port&gt;</code>,
-    port stored in <code>~/.insrc/daemon.json</code>) or a Unix domain socket
-    (<code>~/.insrc/daemon.sock</code>). All messages are newline-delimited JSON.
+    The extension and daemon communicate over a Unix domain socket
+    (<code>~/.insrc/daemon.sock</code>) using JSON-RPC. The daemon already exposes all
+    methods needed by the extension: session management, search, config, conversation,
+    plan operations. Streaming messages (token deltas, tool calls) use the agent framework's
+    Channel abstraction layered over the same socket.
   </p>
 
   <h3>Message types (extension → daemon)</h3>
@@ -1042,6 +1138,79 @@ src/auth/middleware.ts  line 12
   "indexStatus": "current" | "stale",
   "permissionMode": "validate" | "auto-accept" }</code></pre>
 
+  <h3>brainstorm</h3>
+  <p>Primary artifact: <strong>diverge/converge flow + live spec</strong></p>
+  <ul>
+    <li><strong>Round indicator:</strong> Round N, mode (diverge/converge), max rounds countdown</li>
+    <li><strong>Idea pool:</strong> Scrollable list with status badges — proposed (blue), accepted (green),
+    rejected (red), parked (yellow), promoted (purple), merged (purple)</li>
+    <li><strong>Theme clustering:</strong> After converge, themes shown as grouped cards with idea counts</li>
+    <li><strong>Live spec builder:</strong> Requirements spec updates in real-time as ideas are promoted.
+    Revision log tracks each change</li>
+    <li><strong>Gates:</strong> seed validation, react (idea selection), convergence review, spec review —
+    all shown as action panel cards with approve/edit/select actions</li>
+  </ul>
+
+  <h2>Cross-Repo Navigation</h2>
+
+  <div class="callout info">
+    <strong>TreeView is independent of VS Code workspace folders.</strong> The navigation panel
+    lists repos from the daemon's registry (<code>insrc repo list</code>), not from VS Code's
+    open folder. All indexed repos appear regardless of which folder is open. The daemon tracks
+    them via its own <code>@parcel/watcher</code> — not VS Code's workspace watcher.
+  </div>
+
+  <p>When the user clicks a session under a non-workspace repo (e.g. <code>api-gateway</code>):</p>
+  <ul>
+    <li>Chat panel switches context to that repo (daemon RPC: context switch)</li>
+    <li>Code panel opens files via <code>vscode.workspace.openTextDocument(Uri.file(...))</code>
+    — works for any local path, even if the folder isn't in the workspace</li>
+    <li>Daemon scopes graph queries to that repo's dependency closure</li>
+    <li>File watching handled by daemon's <code>@parcel/watcher</code>, not VS Code's workspace watcher</li>
+  </ul>
+
+  <h2>Agent Run Management</h2>
+
+  <p>
+    Agent runs (designer, planner, brainstorm, pair, delegate, tester) are managed through
+    the navigation panel's context menu and a dedicated <strong>Runs</strong> section.
+    Maps to <code>insrc agent list/resume/discard/prune</code> CLI commands.
+  </p>
+  <ul>
+    <li><strong>Run list:</strong> Shows all runs with agent type, status badge (running/paused/crashed/completed), last update time</li>
+    <li><strong>Resume:</strong> Right-click a paused/crashed run → Resume. Restores from last checkpoint.</li>
+    <li><strong>Discard:</strong> Right-click → Discard. Deletes run and artifacts.</li>
+    <li><strong>Progress:</strong> Active runs show step-by-step progress in the action panel</li>
+  </ul>
+
+  <h2>Config Management Panel</h2>
+
+  <p>
+    Accessible via <code>insrc: Open Config</code> command or navigation panel. A webview panel
+    for browsing and editing the config store (templates, feedback, conventions).
+    Maps to <code>insrc config show/search/list/init/reindex</code> CLI commands.
+  </p>
+  <ul>
+    <li><strong>Browse:</strong> Tree view grouped by namespace (tester, pair, designer, etc.) and category (template, feedback, convention)</li>
+    <li><strong>Search:</strong> Semantic search across all config entries</li>
+    <li><strong>Edit:</strong> Markdown editor with frontmatter validation for creating/editing entries</li>
+    <li><strong>Reindex:</strong> Button to rebuild the config vector store after manual edits</li>
+  </ul>
+
+  <h2>Conversation History</h2>
+
+  <p>
+    Persistent conversation turns are browsable in the navigation panel under each repo's sessions.
+    Maps to <code>insrc conversation compact/stats</code> CLI commands.
+  </p>
+  <ul>
+    <li><strong>Turn browser:</strong> Scrollable list of past turns with user message preview</li>
+    <li><strong>Tier badges:</strong> hot (blue), warm (yellow), cold (gray), archive (dim) — showing compaction status</li>
+    <li><strong>Directive badges:</strong> User preferences (e.g. "never use opus") highlighted with a pin icon — these survive all compaction tiers</li>
+    <li><strong>Stats:</strong> Total turns, sessions, breakdown by type/tier displayed in status panel</li>
+    <li><strong>Compact:</strong> Button to trigger manual compaction with dry-run preview</li>
+  </ul>
+
   <h2>Extension Commands</h2>
 
   <table>
@@ -1059,6 +1228,15 @@ src/auth/middleware.ts  line 12
       <tr><td><code>insrc.togglePermissionMode</code></td><td>—</td><td>Toggle between <code>validate</code> and <code>auto-accept</code> for the current session</td></tr>
       <tr><td><code>insrc.openSetupWizard</code></td><td>—</td><td>Re-open the first-run setup wizard</td></tr>
       <tr><td><code>insrc.showCost</code></td><td>—</td><td>Show Claude API spend for the current session</td></tr>
+      <tr><td><code>insrc.testRun</code></td><td>—</td><td>Run tester agent on selected files</td></tr>
+      <tr><td><code>insrc.testPlan</code></td><td>—</td><td>Generate test plan for selected files</td></tr>
+      <tr><td><code>insrc.agentList</code></td><td>—</td><td>List all agent runs</td></tr>
+      <tr><td><code>insrc.agentResume</code></td><td>—</td><td>Resume a paused/crashed agent run</td></tr>
+      <tr><td><code>insrc.agentDiscard</code></td><td>—</td><td>Discard an agent run</td></tr>
+      <tr><td><code>insrc.configSearch</code></td><td>—</td><td>Search config entries (templates, feedback, conventions)</td></tr>
+      <tr><td><code>insrc.configInit</code></td><td>—</td><td>Scaffold project config directory</td></tr>
+      <tr><td><code>insrc.conversationCompact</code></td><td>—</td><td>Compact conversation history</td></tr>
+      <tr><td><code>insrc.conversationStats</code></td><td>—</td><td>Show conversation storage statistics</td></tr>
     </tbody>
   </table>
 
@@ -1082,8 +1260,10 @@ src/auth/middleware.ts  line 12
         "insrc.ollama.host":             { "type": "string",  "default": "http://localhost:11434" },
         "insrc.model.local":             { "type": "string",  "default": "qwen3-coder:latest" },
         "insrc.model.tiers.fast":        { "type": "string",  "default": "claude-haiku-4-5",  "enum": ["claude-haiku-4-5", "claude-sonnet-4-6", "claude-opus-4-6"] },
-        "insrc.model.tiers.standard":    { "type": "string",  "default": "claude-sonnet-4-6", "enum": ["claude-haiku-4-5", "claude-sonnet-4-6", "claude-opus-4-6"] },
-        "insrc.model.tiers.powerful":    { "type": "string",  "default": "claude-opus-4-6",   "enum": ["claude-sonnet-4-6", "claude-opus-4-6"] },
+        "insrc.model.tiers.standard":    { "type": "string",  "default": "claude-haiku-4-5",  "enum": ["claude-haiku-4-5", "claude-sonnet-4-6", "claude-opus-4-6"] },
+        "insrc.model.tiers.powerful":    { "type": "string",  "default": "claude-sonnet-4-6", "enum": ["claude-sonnet-4-6", "claude-opus-4-6"] },
+        "insrc.model.context.local":     { "type": "number",  "default": 16384,                "description": "Context window in tokens (drives budget shapes)" },
+        "insrc.routing.mode":            { "type": "string",  "default": "static",              "enum": ["static", "auto"] },
         "insrc.permissions.mode":        { "type": "string",  "default": "validate",           "enum": ["validate", "auto-accept"] },
         "insrc.daemon.autoStart":        { "type": "boolean", "default": true },
         "insrc.daemon.port":             { "type": "number",  "default": 0, "description": "0 = auto-assign" }
@@ -1110,39 +1290,72 @@ src/auth/middleware.ts  line 12
 
   <div class="phase-grid">
     <div class="phase-card">
-      <h4><span class="badge badge-phase">Phase 1</span> Scaffold + Daemon lifecycle</h4>
+      <h4><span class="badge badge-phase">Phase 1</span> Core + daemon lifecycle</h4>
       <ul>
         <li>Extension activates, spawns daemon</li>
-        <li>WebSocket IPC established</li>
+        <li>Unix socket IPC (<code>daemon.sock</code>)</li>
         <li>Status bar connected to daemon status</li>
-        <li>Setup wizard (Ollama + model pull)</li>
+        <li>Setup wizard (Ollama + model pull + API key)</li>
+        <li>TreeView navigation — cross-repo, session list</li>
+        <li>Chat WebviewView with streaming</li>
       </ul>
     </div>
     <div class="phase-card">
-      <h4><span class="badge badge-phase">Phase 2</span> Chat panel</h4>
+      <h4><span class="badge badge-phase">Phase 2</span> Inline diff</h4>
       <ul>
-        <li>Webview chat UI with streaming</li>
-        <li>Tool call blocks (collapsible)</li>
-        <li>Escalation notices inline</li>
-        <li>@file mentions + attachments</li>
+        <li>Virtual document <code>TextDocumentContentProvider</code></li>
+        <li><code>vscode.diff</code> in inline mode (single-column)</li>
+        <li>Auto-configure <code>renderSideBySide: false</code> in workspace</li>
+        <li>CodeLens accept / reject / edit above diffs</li>
+        <li>Multi-file diff tabs</li>
+        <li>Permission mode toggle in action panel</li>
       </ul>
     </div>
     <div class="phase-card">
-      <h4><span class="badge badge-phase">Phase 3</span> Diff viewer + permissions</h4>
+      <h4><span class="badge badge-phase">Phase 3</span> Intent views</h4>
       <ul>
-        <li>Native VS Code diff editor for patches</li>
-        <li>Accept / reject / edit controls</li>
-        <li>Permission mode toggle in panel</li>
-        <li>@opus cost confirmation flow</li>
+        <li>Test results — plan view, per-file progress, failure classification</li>
+        <li>Plan tracker — kanban step cards</li>
+        <li>Review report — structured findings</li>
+        <li>Brainstorm — diverge/converge flow, idea pool, spec builder</li>
+        <li>Requirements/design — split panel (preview + raw)</li>
       </ul>
     </div>
     <div class="phase-card">
-      <h4><span class="badge badge-phase">Phase 4</span> Settings panel + polish</h4>
+      <h4><span class="badge badge-phase">Phase 4</span> Agent management</h4>
       <ul>
-        <li>Webview settings form</li>
-        <li>Per-role model override table</li>
-        <li>API key validation UI</li>
-        <li>Plan progress header</li>
+        <li>Run list in navigation panel</li>
+        <li>Resume/discard from context menu</li>
+        <li>Step-by-step progress indicator</li>
+        <li>Crash detection and recovery</li>
+      </ul>
+    </div>
+    <div class="phase-card">
+      <h4><span class="badge badge-phase">Phase 5</span> Config &amp; Memory UI</h4>
+      <ul>
+        <li>Settings webview — all config sections</li>
+        <li>Config browser — templates, feedback, conventions</li>
+        <li>Conversation history — turn browser, tier badges, directives</li>
+        <li>Context budget display — L1-L4 layer utilization</li>
+      </ul>
+    </div>
+    <div class="phase-card">
+      <h4><span class="badge badge-phase">Phase 6</span> Annotations</h4>
+      <ul>
+        <li>CodeLens annotations on any file</li>
+        <li>Gutter decorations + amber highlights</li>
+        <li>Batch send to chat as structured context</li>
+        <li>Canvas annotations (design view)</li>
+      </ul>
+    </div>
+    <div class="phase-card">
+      <h4><span class="badge badge-phase">Phase 7</span> Polish</h4>
+      <ul>
+        <li>Setup wizard flow refinement</li>
+        <li>Keyboard shortcuts</li>
+        <li>Theme integration</li>
+        <li>@opus cost confirmation</li>
+        <li>Floating chat (pop-out to second monitor)</li>
       </ul>
     </div>
   </div>

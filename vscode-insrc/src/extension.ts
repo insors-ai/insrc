@@ -1,89 +1,60 @@
 import * as vscode from 'vscode';
+import { createDaemonManager, type DaemonManager, type DaemonStatus } from './daemon/lifecycle';
+
+// ---------------------------------------------------------------------------
+// Extension state
+// ---------------------------------------------------------------------------
+
+let daemonManager: DaemonManager | null = null;
 
 // ---------------------------------------------------------------------------
 // Extension lifecycle
 // ---------------------------------------------------------------------------
 
-export function activate(context: vscode.ExtensionContext): void {
+export async function activate(context: vscode.ExtensionContext): Promise<void> {
   const outputChannel = vscode.window.createOutputChannel('insrc');
-  outputChannel.appendLine('insrc extension activated');
+  outputChannel.appendLine('insrc extension activating...');
 
-  // Register placeholder commands
-  context.subscriptions.push(
-    vscode.commands.registerCommand('insrc.openPanel', () => {
-      vscode.window.showInformationMessage('insrc: Chat panel coming in Segment 5');
-    }),
+  // Initialize daemon manager
+  daemonManager = createDaemonManager(outputChannel);
 
-    vscode.commands.registerCommand('insrc.newSession', () => {
-      vscode.window.showInformationMessage('insrc: New session coming in Segment 5');
-    }),
+  // Auto-start daemon if configured
+  const autoStart = vscode.workspace.getConfiguration('insrc.daemon').get<boolean>('autoStart', true);
+  if (autoStart) {
+    await vscode.window.withProgress(
+      {
+        location: vscode.ProgressLocation.Notification,
+        title: 'insrc: Starting daemon...',
+        cancellable: false,
+      },
+      async () => {
+        const started = await daemonManager!.ensureDaemon();
+        if (started) {
+          outputChannel.appendLine('daemon connected');
+        } else {
+          outputChannel.appendLine('daemon failed to start');
+          vscode.window.showWarningMessage(
+            'insrc daemon could not be started. Some features will be unavailable.',
+            'Retry',
+          ).then((action) => {
+            if (action === 'Retry') {
+              daemonManager?.ensureDaemon();
+            }
+          });
+        }
+      },
+    );
+  }
 
-    vscode.commands.registerCommand('insrc.openSettings', () => {
-      vscode.window.showInformationMessage('insrc: Settings panel coming in Segment 9');
-    }),
+  // Start health polling
+  daemonManager.startHealthPolling((status: DaemonStatus) => {
+    outputChannel.appendLine(
+      `health: running=${status.running} queue=${status.queueDepth ?? '?'} ollama=${status.ollamaAvailable ?? '?'}`,
+    );
+  });
 
-    vscode.commands.registerCommand('insrc.addRepo', () => {
-      vscode.window.showInformationMessage('insrc: Add repo coming in Segment 4');
-    }),
-
-    vscode.commands.registerCommand('insrc.reindex', () => {
-      vscode.window.showInformationMessage('insrc: Re-index coming in Segment 4');
-    }),
-
-    vscode.commands.registerCommand('insrc.restartDaemon', () => {
-      vscode.window.showInformationMessage('insrc: Daemon restart coming in Segment 2');
-    }),
-
-    vscode.commands.registerCommand('insrc.togglePermissionMode', () => {
-      vscode.window.showInformationMessage('insrc: Permission toggle coming in Segment 3');
-    }),
-
-    vscode.commands.registerCommand('insrc.openSetupWizard', () => {
-      vscode.window.showInformationMessage('insrc: Setup wizard coming in Segment 8');
-    }),
-
-    vscode.commands.registerCommand('insrc.addAnnotation', () => {
-      vscode.window.showInformationMessage('insrc: Annotations coming in Segment 17');
-    }),
-
-    vscode.commands.registerCommand('insrc.sendAnnotations', () => {
-      vscode.window.showInformationMessage('insrc: Send annotations coming in Segment 17');
-    }),
-
-    vscode.commands.registerCommand('insrc.showCost', () => {
-      vscode.window.showInformationMessage('insrc: Cost display coming in Segment 6');
-    }),
-
-    vscode.commands.registerCommand('insrc.testRun', () => {
-      vscode.window.showInformationMessage('insrc: Test run coming in Segment 10');
-    }),
-
-    vscode.commands.registerCommand('insrc.testPlan', () => {
-      vscode.window.showInformationMessage('insrc: Test plan coming in Segment 10');
-    }),
-
-    vscode.commands.registerCommand('insrc.agentList', () => {
-      vscode.window.showInformationMessage('insrc: Agent list coming in Segment 14');
-    }),
-
-    vscode.commands.registerCommand('insrc.agentResume', () => {
-      vscode.window.showInformationMessage('insrc: Agent resume coming in Segment 14');
-    }),
-
-    vscode.commands.registerCommand('insrc.configSearch', () => {
-      vscode.window.showInformationMessage('insrc: Config search coming in Segment 15');
-    }),
-
-    vscode.commands.registerCommand('insrc.conversationCompact', () => {
-      vscode.window.showInformationMessage('insrc: Conversation compact coming in Segment 16');
-    }),
-
-    vscode.commands.registerCommand('insrc.conversationStats', () => {
-      vscode.window.showInformationMessage('insrc: Conversation stats coming in Segment 16');
-    }),
-
-    outputChannel,
-  );
+  // Register commands
+  registerCommands(context, outputChannel);
 
   // Register empty TreeDataProvider for navigation panel
   const treeProvider = new PlaceholderTreeProvider();
@@ -91,11 +62,79 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.window.registerTreeDataProvider('insrc.navigation', treeProvider),
   );
 
-  outputChannel.appendLine('insrc: all commands registered');
+  // Register daemon manager for cleanup
+  context.subscriptions.push({ dispose: () => daemonManager?.dispose() });
+  context.subscriptions.push(outputChannel);
+
+  outputChannel.appendLine('insrc extension activated');
 }
 
 export function deactivate(): void {
-  // Cleanup handled by disposables in context.subscriptions
+  daemonManager?.dispose();
+  daemonManager = null;
+}
+
+// ---------------------------------------------------------------------------
+// Command registration
+// ---------------------------------------------------------------------------
+
+function registerCommands(context: vscode.ExtensionContext, outputChannel: vscode.OutputChannel): void {
+  // Daemon commands (functional in Segment 2)
+  context.subscriptions.push(
+    vscode.commands.registerCommand('insrc.restartDaemon', async () => {
+      if (!daemonManager) return;
+      outputChannel.appendLine('restarting daemon...');
+      await vscode.window.withProgress(
+        {
+          location: vscode.ProgressLocation.Notification,
+          title: 'insrc: Restarting daemon...',
+          cancellable: false,
+        },
+        async () => {
+          daemonManager!.dispose();
+          daemonManager = createDaemonManager(outputChannel);
+          const started = await daemonManager.ensureDaemon();
+          if (started) {
+            vscode.window.showInformationMessage('insrc daemon restarted');
+            daemonManager.startHealthPolling((status) => {
+              outputChannel.appendLine(`health: running=${status.running}`);
+            });
+          } else {
+            vscode.window.showErrorMessage('insrc daemon failed to restart');
+          }
+        },
+      );
+    }),
+  );
+
+  // Placeholder commands (future segments)
+  const placeholders: Array<[string, string]> = [
+    ['insrc.openPanel', 'Chat panel coming in Segment 5'],
+    ['insrc.newSession', 'New session coming in Segment 5'],
+    ['insrc.openSettings', 'Settings panel coming in Segment 9'],
+    ['insrc.addRepo', 'Add repo coming in Segment 4'],
+    ['insrc.reindex', 'Re-index coming in Segment 4'],
+    ['insrc.togglePermissionMode', 'Permission toggle coming in Segment 3'],
+    ['insrc.openSetupWizard', 'Setup wizard coming in Segment 8'],
+    ['insrc.addAnnotation', 'Annotations coming in Segment 17'],
+    ['insrc.sendAnnotations', 'Send annotations coming in Segment 17'],
+    ['insrc.showCost', 'Cost display coming in Segment 6'],
+    ['insrc.testRun', 'Test run coming in Segment 10'],
+    ['insrc.testPlan', 'Test plan coming in Segment 10'],
+    ['insrc.agentList', 'Agent list coming in Segment 14'],
+    ['insrc.agentResume', 'Agent resume coming in Segment 14'],
+    ['insrc.configSearch', 'Config search coming in Segment 15'],
+    ['insrc.conversationCompact', 'Conversation compact coming in Segment 16'],
+    ['insrc.conversationStats', 'Conversation stats coming in Segment 16'],
+  ];
+
+  for (const [command, message] of placeholders) {
+    context.subscriptions.push(
+      vscode.commands.registerCommand(command, () => {
+        vscode.window.showInformationMessage(`insrc: ${message}`);
+      }),
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------

@@ -1,12 +1,15 @@
 import * as esbuild from 'esbuild';
+import * as path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const watch = process.argv.includes('--watch');
 
 /** @type {esbuild.BuildOptions} */
 const config = {
-  entryPoints: ['src/extension.ts'],
+  entryPoints: [path.join(__dirname, 'src/extension.ts')],
   bundle: true,
-  outfile: 'dist/extension.js',
+  outfile: path.join(__dirname, 'dist/extension.js'),
   external: ['vscode'],
   format: 'cjs',
   platform: 'node',

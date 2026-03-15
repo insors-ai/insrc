@@ -42,15 +42,16 @@ type LayerName =
   | 'rejectedIdeas'
   | 'revisionLog'
   | 'userFeedback'
-  | 'pendingProposals';
+  | 'pendingProposals'
+  | 'configContext';
 
 /** Which layers each step needs, in priority order. */
 const STEP_LAYERS: Record<string, LayerName[]> = {
   seed:          ['problem', 'codebaseFindings'],
-  diverge:       ['problem', 'activeIdeas', 'codebaseFindings', 'compressedHistory', 'rejectedIdeas', 'userFeedback'],
+  diverge:       ['problem', 'activeIdeas', 'codebaseFindings', 'compressedHistory', 'rejectedIdeas', 'userFeedback', 'configContext'],
   cluster:       ['problem', 'activeIdeas', 'currentSpec', 'compressedHistory'],
-  promote:       ['problem', 'currentSpec', 'activeIdeas', 'codebaseFindings', 'compressedHistory', 'userFeedback'],
-  'update-spec': ['problem', 'currentSpec', 'pendingProposals', 'revisionLog', 'codebaseFindings'],
+  promote:       ['problem', 'currentSpec', 'activeIdeas', 'codebaseFindings', 'compressedHistory', 'userFeedback', 'configContext'],
+  'update-spec': ['problem', 'currentSpec', 'pendingProposals', 'revisionLog', 'codebaseFindings', 'configContext'],
   finalize:      ['problem', 'currentSpec', 'compressedHistory', 'revisionLog', 'codebaseFindings'],
 };
 
@@ -145,6 +146,8 @@ function renderLayer(state: BrainstormState, layer: LayerName): string | null {
         : null;
     case 'pendingProposals':
       return renderPendingProposals(state);
+    case 'configContext':
+      return state.configContext ?? null;
     default:
       return null;
   }

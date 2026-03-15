@@ -37,6 +37,7 @@ import {
 export const brainstormAgent: AgentDefinition<BrainstormState> = {
   id: 'brainstorm',
   version: 1,
+  configNamespace: 'common',
   firstStep: 'seed',
 
   initialState(input: unknown): BrainstormState {

@@ -15,9 +15,12 @@ import { BRAINSTORM_HTML_TEMPLATE } from './templates.js';
 /**
  * Assemble the final brainstorm output from agent state.
  */
-export function assembleDocument(state: BrainstormState): BrainstormResult {
+export function assembleDocument(
+  state: BrainstormState,
+  customTemplate?: string,
+): BrainstormResult {
   const stats = computeStats(state);
-  const output = renderHTML(state, stats);
+  const output = renderHTML(state, stats, customTemplate);
   const summary = compressForL2(state, stats);
 
   return {
@@ -51,9 +54,13 @@ function computeStats(state: BrainstormState): BrainstormResult['stats'] {
 // HTML rendering
 // ---------------------------------------------------------------------------
 
-function renderHTML(state: BrainstormState, stats: BrainstormResult['stats']): string {
+function renderHTML(
+  state: BrainstormState,
+  stats: BrainstormResult['stats'],
+  customTemplate?: string,
+): string {
   const title = deriveTitle(state.input.message);
-  let html = BRAINSTORM_HTML_TEMPLATE;
+  let html = customTemplate ?? BRAINSTORM_HTML_TEMPLATE;
 
   html = html.replace(/\{\{title\}\}/g, escapeHtml(title));
   html = html.replace('{{stats}}', renderStatsHTML(stats));

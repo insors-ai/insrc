@@ -5,7 +5,11 @@
  * Agents are step-based state machines with serializable checkpoints.
  */
 
-import type { AgentConfig, LLMProvider, RecordFeedbackOpts } from '../../shared/types.js';
+import type {
+  AgentConfig, LLMProvider, RecordFeedbackOpts,
+  ConfigNamespace, ConfigSearchOpts, ConfigSearchResult,
+  TemplateQuery, ConfigEntry,
+} from '../../shared/types.js';
 
 // ---------------------------------------------------------------------------
 // Message envelope
@@ -155,6 +159,10 @@ export interface StepContext {
   readArtifact(name: string): string | null;
   /** Record feedback to the config management system. */
   recordFeedback?: ((opts: RecordFeedbackOpts) => Promise<void>) | undefined;
+  /** Search config entries (templates, feedback, conventions). */
+  searchConfig?: ((opts: ConfigSearchOpts) => Promise<ConfigSearchResult[]>) | undefined;
+  /** Resolve a specific template by name with semantic fallback. */
+  resolveTemplate?: ((opts: TemplateQuery) => Promise<ConfigEntry | null>) | undefined;
   /** AbortSignal — set when a cancel message is received. */
   signal: AbortSignal;
 }
@@ -176,6 +184,8 @@ export interface AgentDefinition<S extends AgentState = AgentState> {
   id:      string;
   /** State schema version. Incremented when state shape changes. */
   version: number;
+  /** Config namespace for loading templates/conventions/feedback. */
+  configNamespace?: ConfigNamespace | undefined;
   /** Create initial state from user-provided input. */
   initialState: (input: unknown) => S;
   /** All steps keyed by name. */

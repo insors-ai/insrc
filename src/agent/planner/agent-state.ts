@@ -53,6 +53,8 @@ export interface PlannerState extends AgentState {
   analysis:          string;   // Raw LLM analysis output (JSON)
   inferredPlanType:  InferredPlanType;
   codebaseFindings:  string;   // Formatted entity context from daemon search
+  /** Config context loaded from conventions/feedback/templates (loaded once in gather-context). */
+  configContext?:    string | undefined;
 
   // --- Plan construction ---
   draftSteps:        string;   // Raw LLM output for step generation

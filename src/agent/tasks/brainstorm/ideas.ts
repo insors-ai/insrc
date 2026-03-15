@@ -21,6 +21,7 @@ export async function generateSeedIdeas(
   input: BrainstormInput,
   codebaseFindings: string,
   provider: LLMProvider,
+  configContext?: string,
 ): Promise<{ analysis: string; ideas: Idea[] }> {
   const userParts = ['## Problem Statement', input.message];
 
@@ -32,6 +33,9 @@ export async function generateSeedIdeas(
   }
   if (input.existingSpec) {
     userParts.push('', '## Existing Spec (Continue From)', input.existingSpec);
+  }
+  if (configContext) {
+    userParts.push('', configContext);
   }
 
   const response = await provider.complete(

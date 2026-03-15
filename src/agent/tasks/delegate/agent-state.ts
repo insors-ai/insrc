@@ -10,6 +10,7 @@ import type { HasProviderOverride } from '../../framework/provider-mention.js';
 import type {
   DelegatePlan, StepResult, CommitStrategy, GateLevel,
 } from './types.js';
+import type { TestRunResult } from '../shared/test-runner-helper.js';
 
 // ---------------------------------------------------------------------------
 // Delegate agent state
@@ -47,8 +48,8 @@ export interface DelegateState extends AgentState, HasProviderOverride {
   // Aggregate tracking
   /** All files changed across all steps. */
   filesChanged: string[];
-  /** Number of test runs executed. */
-  testsRun: number;
+  /** Test run results across all steps. */
+  testsRun: TestRunResult[];
   /** Files staged but not yet committed. */
   pendingCommitFiles: string[];
   /** Commit messages for commits made during execution. */
@@ -56,4 +57,6 @@ export interface DelegateState extends AgentState, HasProviderOverride {
 
   // Iteration tracking
   editRounds: Record<string, number>;
+  /** Current focus / feedback for retries. */
+  currentFocus?: string | undefined;
 }

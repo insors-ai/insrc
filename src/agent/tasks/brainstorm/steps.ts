@@ -20,6 +20,7 @@ import { updateSpec, applySpecEdits, detectConflicts, renderSpecMarkdown } from 
 import { formatIdeasForContext, formatThemesForContext, formatGaps, compressRound } from './context-builder.js';
 import { parseProviderMention, resolveStepProvider, consumeOverride, applyOverride } from './provider-mention.js';
 import { assembleDocument } from './assembly.js';
+import { loadConfigContext } from '../shared/config-context.js';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -76,6 +77,9 @@ export const seedStep: AgentStep<BrainstormState> = {
     ctx.progress(`Searching codebase (${searches.length} queries)...`);
     const codebaseFindings = await executeSearches(searches, ctx);
 
+    // Load config context (conventions, feedback, templates)
+    const configContext = await loadConfigContext(ctx, 'common', 'all', state.input.repoPath);
+
     // Generate seed ideas
     ctx.progress('Generating seed ideas...');
     const provider = resolveStepProvider(ctx, state, 'seed');
@@ -88,11 +92,12 @@ export const seedStep: AgentStep<BrainstormState> = {
         closureRepos: state.input.closureRepos,
       },
     };
-    const { analysis, ideas } = await generateSeedIdeas(input, codebaseFindings, provider);
+    const { analysis, ideas } = await generateSeedIdeas(input, codebaseFindings, provider, configContext);
 
     const newState = consumeOverride({
       ...state,
       codebaseFindings,
+      configContext: configContext || undefined,
       seedAnalysis: analysis,
       ideas,
       nextIdeaIndex: ideas.length + 1,
@@ -135,6 +140,16 @@ export const validateSeedStep: AgentStep<BrainstormState> = {
     }
 
     if (reply.action === 'reframe') {
+      // Record reframe direction as feedback
+      if (ctx.recordFeedback && cleanFeedback) {
+        ctx.recordFeedback({
+          content: `User reframed brainstorm problem: ${cleanFeedback}`,
+          namespace: 'common',
+          language: 'all',
+          repoPath: state.input.repoPath,
+          provider: ctx.providers.local,
+        }).catch(() => {});
+      }
       const key = 'seed';
       const rounds = (state.editRounds[key] ?? 0) + 1;
       if (rounds > MAX_EDIT_ROUNDS) {
@@ -271,6 +286,16 @@ export const reactStep: AgentStep<BrainstormState> = {
     }
 
     if (reply.action === 'focus') {
+      // Record focus direction as feedback
+      if (ctx.recordFeedback && (cleanFeedback || reply.feedback)) {
+        ctx.recordFeedback({
+          content: `Brainstorm focus direction: ${cleanFeedback || reply.feedback}`,
+          namespace: 'common',
+          language: 'all',
+          repoPath: state.input.repoPath,
+          provider: ctx.providers.local,
+        }).catch(() => {});
+      }
       // Accept all proposed but steer next round
       const ideas = newState.ideas.map(i =>
         i.status === 'proposed' ? { ...i, status: 'accepted' as const } : i,
@@ -412,6 +437,15 @@ export const validateConvergenceStep: AgentStep<BrainstormState> = {
     }
 
     // Edit — re-run convergence with feedback
+    if (ctx.recordFeedback && (cleanFeedback || reply.feedback)) {
+      ctx.recordFeedback({
+        content: `User corrected convergence grouping: ${cleanFeedback || reply.feedback}`,
+        namespace: 'common',
+        language: 'all',
+        repoPath: state.input.repoPath,
+        provider: ctx.providers.local,
+      }).catch(() => {});
+    }
     const key = `convergence-${state.round}`;
     const rounds = (state.editRounds[key] ?? 0) + 1;
     if (rounds > MAX_EDIT_ROUNDS) {
@@ -539,6 +573,15 @@ export const reviewSpecStep: AgentStep<BrainstormState> = {
     }
 
     // Edit — direct spec edits
+    if (ctx.recordFeedback && (cleanFeedback || reply.feedback)) {
+      ctx.recordFeedback({
+        content: `User edited requirement statements: ${cleanFeedback || reply.feedback}`,
+        namespace: 'common',
+        language: 'all',
+        repoPath: state.input.repoPath,
+        provider: ctx.providers.local,
+      }).catch(() => {});
+    }
     const key = `spec-${state.round}`;
     const rounds = (state.editRounds[key] ?? 0) + 1;
     if (rounds > MAX_EDIT_ROUNDS) {
@@ -615,7 +658,38 @@ export const finalizeStep: AgentStep<BrainstormState> = {
   async run(state, ctx) {
     ctx.progress('Assembling final brainstorm output...');
 
-    const result = assembleDocument(state);
+    // Record session-level feedback if rejection rate is high
+    if (ctx.recordFeedback && state.round > 1) {
+      const rejected = state.ideas.filter(i => i.status === 'rejected').length;
+      const total = state.ideas.length;
+      if (total > 0 && rejected > total * 0.5) {
+        ctx.recordFeedback({
+          content: `High rejection rate in brainstorm (${rejected}/${total} rejected). Ideas may be too generic or off-topic for this project's domain.`,
+          namespace: 'common',
+          language: 'all',
+          repoPath: state.input.repoPath,
+          provider: ctx.providers.local,
+        }).catch(() => {});
+      }
+    }
+
+    // Resolve custom output template from config (fallback to hardcoded)
+    let customTemplate: string | undefined;
+    if (ctx.resolveTemplate) {
+      try {
+        const tmpl = await ctx.resolveTemplate({
+          namespace: 'common',
+          language: 'all',
+          name: 'brainstorm-html',
+          repoPath: state.input.repoPath,
+        });
+        if (tmpl) customTemplate = tmpl.body;
+      } catch {
+        // Fall back to hardcoded template
+      }
+    }
+
+    const result = assembleDocument(state, customTemplate);
 
     const ext = 'html';
     ctx.writeArtifact(`brainstorm.${ext}`, result.output);

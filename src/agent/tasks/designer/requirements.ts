@@ -16,6 +16,7 @@ import { REQ_EXTRACT_SYSTEM, REQ_ENHANCE_SYSTEM } from './prompts.js';
 export async function extractRequirements(
   input: DesignerInput,
   localProvider: LLMProvider,
+  configContext?: string,
 ): Promise<string> {
   const userParts: string[] = [];
 
@@ -26,6 +27,9 @@ export async function extractRequirements(
     userParts.push(`Code context:\n${input.codeContext}`);
   }
   userParts.push(`User request:\n${input.message}`);
+  if (configContext) {
+    userParts.push(configContext);
+  }
 
   const messages: LLMMessage[] = [
     { role: 'system', content: REQ_EXTRACT_SYSTEM },

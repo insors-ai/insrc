@@ -24,6 +24,7 @@ import {
   SUMMARIZE_SYSTEM,
 } from './prompts.js';
 import { extractDiffFromResponse } from '../diff-utils.js';
+import { loadConfigContext } from '../shared/config-context.js';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -134,6 +135,10 @@ export const proposeStep: AgentStep<PairState> = {
       userParts.push(`Files already changed this session:\n${changesSummary}`);
     }
 
+    // Load config context (conventions + feedback + templates)
+    const configContext = await loadConfigContext(ctx, 'pair', 'all', state.input.repoPath);
+    if (configContext) userParts.push(configContext);
+
     userParts.push(`User request:\n${state.input.message}`);
 
     const messages: LLMMessage[] = [
@@ -215,8 +220,19 @@ export const reviewGateStep: AgentStep<PairState> = {
         const key = `propose-${newState.iterationCount}`;
         const rounds = (newState.editRounds[key] ?? 0) + 1;
         if (rounds > MAX_EDIT_ROUNDS) {
-          ctx.progress(`Max edit rounds (${MAX_EDIT_ROUNDS}) reached.`);
-          return { state: newState, next: 'apply' };
+          const exhaustedReply = await ctx.gate({
+            stage: 'edit-exhausted',
+            title: 'Edit Rounds Exhausted',
+            content: `Maximum edit rounds (${MAX_EDIT_ROUNDS}) reached. The current proposal is the best available.`,
+            actions: [
+              { name: 'approve', label: 'Approve current proposal' },
+              { name: 'done', label: 'Done (discard)' },
+            ],
+          });
+          if (exhaustedReply.action === 'approve') {
+            return { state: newState, next: 'apply' };
+          }
+          return { state: { ...newState, pendingProposal: null }, next: 'summarize' };
         }
         return {
           state: {
@@ -369,8 +385,26 @@ export const validateStep: AgentStep<PairState> = {
     const key = `validate-${state.iterationCount}`;
     const rounds = (state.editRounds[key] ?? 0) + 1;
     if (rounds > MAX_VALIDATION_RETRIES) {
-      ctx.progress(`Validation retries exhausted — proceeding anyway.`);
-      return { state, next: nextAfterValidation(state) };
+      const valReply = await ctx.gate({
+        stage: 'validation-exhausted',
+        title: 'Validation Failed',
+        content: `Validation failed after ${MAX_VALIDATION_RETRIES} retries.\n\nFeedback: ${result.feedback ?? 'none'}`,
+        actions: [
+          { name: 'proceed', label: 'Proceed anyway' },
+          { name: 'reject', label: 'Reject changes' },
+        ],
+      });
+      if (valReply.action === 'proceed') {
+        return { state, next: nextAfterValidation(state) };
+      }
+      return {
+        state: {
+          ...state,
+          pendingProposal: null,
+          currentFocus: 'Validation rejected. Try a different approach.',
+        },
+        next: 'propose',
+      };
     }
 
     ctx.progress(`Validation: CHANGES_NEEDED — re-proposing (round ${rounds}).`);

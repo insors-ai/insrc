@@ -35,6 +35,7 @@ import {
 export const plannerAgent: AgentDefinition<PlannerState> = {
   id: 'planner',
   version: 1,
+  configNamespace: 'planner',
   firstStep: 'analyze-request',
 
   initialState(input: unknown): PlannerState {

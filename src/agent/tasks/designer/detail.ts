@@ -20,6 +20,7 @@ export async function writeDetail(
   allTodos: RequirementTodo[],
   input: DesignerInput,
   localProvider: LLMProvider,
+  configContext?: string,
 ): Promise<string> {
   if (!todo.sketch) {
     throw new Error(`Cannot write detail for requirement ${todo.index}: no approved sketch`);
@@ -37,6 +38,9 @@ export async function writeDetail(
   const history = compressHistory(allTodos);
   if (history) {
     userParts.push(`## Design History\n${history}`);
+  }
+  if (configContext) {
+    userParts.push(configContext);
   }
 
   const messages: LLMMessage[] = [

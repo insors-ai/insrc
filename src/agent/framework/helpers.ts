@@ -7,7 +7,10 @@ import type {
   AgentMessage, Channel, StepContext, GateOpts, GatePayload,
   ReplyPayload, EmitPayload, ProgressPayload, CheckpointPayload,
 } from './types.js';
-import type { AgentConfig, LLMProvider, RecordFeedbackOpts } from '../../shared/types.js';
+import type {
+  AgentConfig, LLMProvider, RecordFeedbackOpts,
+  ConfigSearchOpts, ConfigSearchResult, TemplateQuery, ConfigEntry,
+} from '../../shared/types.js';
 import { recordFeedback as recordFeedbackImpl } from '../../config/feedback.js';
 import { writeArtifact as writeArtifactFile, readArtifact as readArtifactFile } from './checkpoint.js';
 
@@ -106,6 +109,19 @@ export function buildStepContext(opts: StepContextOpts): StepContext {
     recordFeedback: rpcFn
       ? async (feedbackOpts: RecordFeedbackOpts): Promise<void> => {
           await recordFeedbackImpl({ ...feedbackOpts, rpcFn });
+        }
+      : undefined,
+
+    searchConfig: rpcFn
+      ? async (searchOpts: ConfigSearchOpts): Promise<ConfigSearchResult[]> => {
+          const result = await rpcFn<ConfigSearchResult[]>('config.search', searchOpts);
+          return result ?? [];
+        }
+      : undefined,
+
+    resolveTemplate: rpcFn
+      ? async (templateOpts: TemplateQuery): Promise<ConfigEntry | null> => {
+          return rpcFn<ConfigEntry | null>('config.resolveTemplate', templateOpts);
         }
       : undefined,
   };

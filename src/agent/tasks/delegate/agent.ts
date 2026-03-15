@@ -23,6 +23,7 @@ import {
 export const delegateAgent: AgentDefinition<DelegateState> = {
   id: 'delegate',
   version: 1,
+  configNamespace: 'delegate',
   firstStep: 'invoke-planner',
 
   steps: {
@@ -48,11 +49,11 @@ export const delegateAgent: AgentDefinition<DelegateState> = {
       currentStepIndex: 0,
       stepResults: [],
       gateLevel: 'normal',
-      commitStrategy: { kind: 'at-points', points: [] },
+      commitStrategy: { kind: 'per-step' },
       testAfterEach: false,
       rollbackOnFailure: false,
       filesChanged: [],
-      testsRun: 0,
+      testsRun: [],
       pendingCommitFiles: [],
       commits: [],
       editRounds: {},

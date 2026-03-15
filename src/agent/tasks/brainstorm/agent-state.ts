@@ -55,6 +55,8 @@ export interface BrainstormState extends AgentState {
   compressedHistory: string;
   /** Initial problem decomposition from seed phase. */
   seedAnalysis:      string;
+  /** Config context loaded from conventions/feedback/templates (loaded once in seed). */
+  configContext?:    string | undefined;
   /** Last user direction from gate feedback. */
   recentFeedback?:   string | undefined;
 

@@ -24,6 +24,7 @@ import {
 export const pairAgent: AgentDefinition<PairState> = {
   id: 'pair',
   version: 1,
+  configNamespace: 'pair',
   firstStep: 'check-context',
 
   steps: {

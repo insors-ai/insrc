@@ -35,10 +35,10 @@ import {
 import {
   savePlan, getPlan, getActivePlan, updateStepState, getNextStep, deletePlan, resetStaleLocks,
 } from '../agent/tasks/plan-store.js';
-import type { RegisteredRepo, DaemonStatus, Entity, Plan, PlanStepStatus, ConfigScope, ConfigSearchOpts } from '../shared/types.js';
+import type { RegisteredRepo, DaemonStatus, Entity, Plan, PlanStepStatus, ConfigScope, ConfigSearchOpts, TemplateQuery } from '../shared/types.js';
 import { basename, dirname } from 'node:path';
 import { ConfigStore } from '../config/store.js';
-import { searchConfig } from '../config/search.js';
+import { searchConfig, resolveTemplate } from '../config/search.js';
 import { formatScope } from '../config/paths.js';
 
 // ---------------------------------------------------------------------------
@@ -328,6 +328,12 @@ async function main(): Promise<void> {
         namespace?: string; category?: string; scope?: string;
       };
       return configStore.listEntries({ namespace, category, scope });
+    },
+
+    'config.resolveTemplate': async (params) => {
+      const opts = params as TemplateQuery;
+      const queryVec = await embedQuery(opts.name);
+      return resolveTemplate(configStore, queryVec, opts);
     },
 
     'daemon.shutdown': async () => {

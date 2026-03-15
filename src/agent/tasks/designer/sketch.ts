@@ -32,6 +32,7 @@ export async function writeSketch(
   allTodos: RequirementTodo[],
   input: DesignerInput,
   localProvider: LLMProvider,
+  configContext?: string,
 ): Promise<RequirementSketch> {
   // LLM plans categorized searches based on the requirement
   const searches = await planSearches(todo, localProvider);
@@ -58,6 +59,7 @@ export async function writeSketch(
         `## Codebase Analysis\n${analysisContext}`,
         input.codeContext ? `## Additional Code Context\n${input.codeContext}` : '',
         history ? `## Design History\n${history}` : '',
+        configContext ?? '',
       ].filter(Boolean).join('\n\n'),
     },
   ];

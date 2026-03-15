@@ -22,8 +22,15 @@ import type { Plan, Step } from '../../planner/types.js';
 import { TestChannel } from '../../framework/test-channel.js';
 import { investigate } from '../shared/investigate.js';
 import { generateAndValidate, applyApprovedDiff } from '../shared/codegen.js';
+import { runTestsAndFix } from '../shared/test-runner-helper.js';
 import { autoCommit } from '../shared/git-ops.js';
 import { EXECUTE_SYSTEM, REPORT_SYSTEM } from './prompts.js';
+import { loadConfigContext } from '../shared/config-context.js';
+import { existsSync } from 'node:fs';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+
+const execFileAsync = promisify(execFile);
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -81,7 +88,11 @@ export const invokePlannerStep: AgentStep<DelegateState> = {
 
     ctx.progress(`Plan created: "${delegatePlan.title}" with ${delegatePlan.steps.length} steps.`);
     return {
-      state: { ...state, plan: delegatePlan },
+      state: {
+        ...state,
+        plan: delegatePlan,
+        commitStrategy: { kind: 'at-points', points: delegatePlan.commitPoints },
+      },
       next: 'approve-plan-gate',
     };
   },
@@ -174,6 +185,10 @@ export const executeStepStep: AgentStep<DelegateState> = {
     if (investigation.summary) extraContext.push(`Investigation:\n${investigation.summary}`);
     if (state.input.designSpec) extraContext.push(`Design spec:\n${state.input.designSpec}`);
 
+    // Load config context (conventions + feedback + templates)
+    const configContext = await loadConfigContext(ctx, 'delegate', 'all', state.input.repoPath);
+    if (configContext) extraContext.push(configContext);
+
     // Include plan context
     const planContext = plan.steps
       .map(s => `${s.index + 1}. [${s.status}] ${s.title}`)
@@ -249,13 +264,59 @@ export const executeStepStep: AgentStep<DelegateState> = {
 
     const donePlan = updateStepStatus(updatedPlan, state.currentStepIndex, 'done');
 
-    const newState = consumeOverride({
+    let newState = consumeOverride({
       ...state,
       plan: donePlan,
       stepResults: [...state.stepResults, stepResult],
       filesChanged: [...state.filesChanged, ...applyResult.filesWritten],
       pendingCommitFiles: [...state.pendingCommitFiles, ...applyResult.filesWritten],
     });
+
+    // Test after each (if enabled)
+    if (state.testAfterEach) {
+      const testFiles = findTestFilesForChanges(applyResult.filesWritten);
+      if (testFiles.length > 0) {
+        ctx.progress('  Running tests...');
+        const claudeProv = ctx.providers.resolveOrNull('delegate', 'validate');
+        for (const testFile of testFiles) {
+          const testResult = await runTestsAndFix({
+            testFilePath: testFile,
+            repoPath: state.input.repoPath,
+            entityContext: state.input.codeContext,
+            localProvider: provider,
+            claudeProvider: claudeProv,
+            log: (msg) => ctx.progress(msg),
+          });
+          newState = {
+            ...newState,
+            testsRun: [...newState.testsRun, testResult],
+          };
+          if (!testResult.passed) {
+            ctx.progress(`  Tests failed: ${testFile}`);
+            if (state.rollbackOnFailure) {
+              await rollbackFiles(applyResult.filesWritten, state.input.repoPath, (msg) => ctx.progress(msg));
+            }
+            const failedResult: StepResult = {
+              status: 'failed',
+              diff: codegenResult.diff,
+              filesChanged: applyResult.filesWritten,
+              testResult: { passed: false, output: testResult.output },
+              error: `Tests failed: ${testResult.output.slice(0, 200)}`,
+            };
+            const failedPlan = updateStepStatus(donePlan, state.currentStepIndex, 'failed');
+            return {
+              state: {
+                ...newState,
+                plan: failedPlan,
+                stepResults: [...newState.stepResults.slice(0, -1), failedResult],
+              },
+              next: 'failure-gate',
+            };
+          }
+        }
+        ctx.progress('  Tests passed.');
+      }
+    }
 
     ctx.progress(`  Step ${planStep.index + 1} complete (${applyResult.filesWritten.length} files).`);
     return { state: newState, next: 'advance' };
@@ -330,6 +391,28 @@ export const failureGateStep: AgentStep<DelegateState> = {
 
     const remaining = plan.steps.filter(s => s.status === 'pending');
 
+    // Minimal gateLevel: auto-retry on first failure
+    if (state.gateLevel === 'minimal') {
+      const stepKey = `step-${state.currentStepIndex}`;
+      const retryCount = (state.editRounds[stepKey] ?? 0) + 1;
+      if (retryCount <= MAX_STEP_RETRIES) {
+        ctx.progress(`Minimal gate: auto-retrying step (attempt ${retryCount}/${MAX_STEP_RETRIES})...`);
+        if (state.rollbackOnFailure && lastResult?.filesChanged?.length) {
+          await rollbackFiles(lastResult.filesChanged, state.input.repoPath, (msg) => ctx.progress(msg));
+        }
+        const retryPlan = updateStepStatus(plan, state.currentStepIndex, 'pending');
+        return {
+          state: {
+            ...state,
+            plan: retryPlan,
+            editRounds: { ...state.editRounds, [stepKey]: retryCount },
+          },
+          next: 'execute-step',
+        };
+      }
+      // Fall through to gate after retries exhausted
+    }
+
     const content = [
       `## Step Failed: ${failedStep?.title ?? 'Unknown'}`,
       '',
@@ -346,6 +429,7 @@ export const failureGateStep: AgentStep<DelegateState> = {
       actions: [
         { name: 'retry', label: 'Retry', hint: '<feedback>' },
         { name: 'skip', label: 'Skip step' },
+        { name: 'edit', label: 'Edit step', hint: '<new description>' },
         { name: 'abort', label: 'Abort remaining' },
       ],
     });
@@ -355,14 +439,44 @@ export const failureGateStep: AgentStep<DelegateState> = {
 
     switch (reply.action) {
       case 'retry': {
-        // Reset step status to pending and retry
+        if (state.rollbackOnFailure && lastResult?.filesChanged?.length) {
+          await rollbackFiles(lastResult.filesChanged, state.input.repoPath, (msg) => ctx.progress(msg));
+        }
         const retryPlan = updateStepStatus(plan, state.currentStepIndex, 'pending');
         return {
           state: {
             ...newState,
             plan: retryPlan,
-            currentFocus: cleanFeedback || reply.feedback,
-          } as DelegateState,
+            currentFocus: cleanFeedback || reply.feedback || undefined,
+          },
+          next: 'execute-step',
+        };
+      }
+
+      case 'edit': {
+        const feedback = cleanFeedback || reply.feedback || '';
+        if (state.rollbackOnFailure && lastResult?.filesChanged?.length) {
+          await rollbackFiles(lastResult.filesChanged, state.input.repoPath, (msg) => ctx.progress(msg));
+        }
+        if (feedback && failedStep) {
+          const editedPlan: DelegatePlan = {
+            ...plan,
+            steps: plan.steps.map((s, i) =>
+              i === state.currentStepIndex
+                ? { ...s, description: feedback, status: 'pending' as const }
+                : s,
+            ),
+          };
+          ctx.progress(`Step description updated. Retrying...`);
+          return {
+            state: { ...newState, plan: editedPlan },
+            next: 'execute-step',
+          };
+        }
+        // No feedback — treat as retry
+        const retryPlan = updateStepStatus(plan, state.currentStepIndex, 'pending');
+        return {
+          state: { ...newState, plan: retryPlan },
           next: 'execute-step',
         };
       }
@@ -571,6 +685,39 @@ function parseGateFeedback(feedback: string): {
   }
 
   return result;
+}
+
+/** Find test files corresponding to changed implementation files. */
+function findTestFilesForChanges(files: string[]): string[] {
+  const testFiles: string[] = [];
+  for (const f of files) {
+    if (/\.(test|spec)\.(ts|js|tsx|jsx)$/.test(f)) {
+      testFiles.push(f);
+    } else {
+      const ext = f.match(/\.(ts|js|tsx|jsx)$/)?.[0] ?? '.ts';
+      const base = f.replace(/\.(ts|js|tsx|jsx)$/, '');
+      for (const suffix of [`.test${ext}`, `.spec${ext}`]) {
+        const candidate = `${base}${suffix}`;
+        if (existsSync(candidate)) testFiles.push(candidate);
+      }
+    }
+  }
+  return [...new Set(testFiles)];
+}
+
+/** Rollback files via git checkout. */
+async function rollbackFiles(
+  files: string[],
+  repoPath: string,
+  log: (msg: string) => void,
+): Promise<void> {
+  if (files.length === 0) return;
+  log(`  Rolling back ${files.length} file(s)...`);
+  try {
+    await execFileAsync('git', ['checkout', '--', ...files], { cwd: repoPath });
+  } catch (err) {
+    log(`  Rollback failed: ${String(err)}`);
+  }
 }
 
 /** Check if we should commit based on the current strategy and step. */

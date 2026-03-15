@@ -24,6 +24,10 @@ export interface InvestigationResult {
   hitLimit: boolean;
   /** Raw messages produced during investigation (for context injection) */
   messages: LLMMessage[];
+  /** Files examined during investigation (from Read/Glob tool calls) */
+  filesExamined: string[];
+  /** Entity queries made via graph_search calls */
+  entitiesFound: string[];
 }
 
 export interface InvestigateOpts {
@@ -183,6 +187,20 @@ export async function investigate(
     { role: 'user', content: query },
   ];
 
+  const filesExamined: string[] = [];
+  const entitiesFound: string[] = [];
+
+  const trackToolCall = (call: { name: string; input: Record<string, unknown> }): void => {
+    if (call.name === 'Read' && typeof call.input['file_path'] === 'string') {
+      filesExamined.push(call.input['file_path']);
+    } else if (call.name === 'Glob' && typeof call.input['pattern'] === 'string') {
+      filesExamined.push(`glob:${call.input['pattern']}`);
+    }
+    if (call.name === 'graph_search' && typeof call.input['query'] === 'string') {
+      entitiesFound.push(call.input['query']);
+    }
+  };
+
   const loopOpts: Parameters<typeof runToolLoop>[1] = {
     provider,
     tools,
@@ -190,9 +208,10 @@ export async function investigate(
     permissionMode: 'auto-accept',
     maxTokens: 4000,
   };
-  if (opts?.onProgress) {
-    loopOpts.onToolCall = (call) => opts.onProgress!(`  [investigate] ${call.name}(${summariseInput(call.input)})`);
-  }
+  loopOpts.onToolCall = (call) => {
+    trackToolCall(call);
+    opts?.onProgress?.(`  [investigate] ${call.name}(${summariseInput(call.input)})`);
+  };
 
   const result: ToolLoopResult = await runToolLoop(messages, loopOpts);
 
@@ -201,6 +220,8 @@ export async function investigate(
     toolCallCount: result.iterations,
     hitLimit: result.hitLimit,
     messages: result.messages,
+    filesExamined,
+    entitiesFound,
   };
 }
 

@@ -21,6 +21,7 @@ import { writeSketch, reviewSketch, reSketchWithFeedback, formatSketch } from '.
 import { writeDetail, reDetailWithFeedback } from './detail.js';
 import { assembleDocument } from './assembly.js';
 import { assertDaemonReachable } from '../../tools/context-provider.js';
+import { loadConfigContext } from '../shared/config-context.js';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -59,8 +60,11 @@ export const extractRequirementsStep: AgentStep<DesignerState> = {
 
     const input = toDesignerInput(state);
 
+    // Load config context (conventions, feedback, templates)
+    const configContext = await loadConfigContext(ctx, 'designer', 'all', state.input.repoPath);
+
     ctx.progress('Extracting requirements...');
-    const rawList = await extractRequirements(input, ctx.providers.resolve('designer', 'extract'));
+    const rawList = await extractRequirements(input, ctx.providers.resolve('designer', 'extract'), configContext);
 
     ctx.progress('Enhancing requirements...');
     const claude = ctx.providers.resolveOrNull('designer', 'enhance');
@@ -68,7 +72,12 @@ export const extractRequirementsStep: AgentStep<DesignerState> = {
     const enhancedList = await enhanceRequirements(rawList, input, claude);
 
     return {
-      state: { ...state, rawRequirements: rawList, enhancedRequirements: enhancedList },
+      state: {
+        ...state,
+        rawRequirements: rawList,
+        enhancedRequirements: enhancedList,
+        configContext: configContext || undefined,
+      },
       next: 'validate-requirements',
     };
   },
@@ -97,6 +106,16 @@ export const validateRequirementsStep: AgentStep<DesignerState> = {
     }
 
     if (reply.action === 'reject') {
+      // Record feedback about rejected requirements
+      if (ctx.recordFeedback && reply.feedback) {
+        ctx.recordFeedback({
+          content: `User rejected requirements: ${reply.feedback}`,
+          namespace: 'designer',
+          language: 'all',
+          repoPath: state.input.repoPath,
+          provider: ctx.providers.local,
+        }).catch(() => {});
+      }
       // Re-extract from scratch with rejection reason as guidance
       const input = toDesignerInput(state);
       const augmented: DesignerInput = {
@@ -121,6 +140,15 @@ export const validateRequirementsStep: AgentStep<DesignerState> = {
     }
 
     // Edit
+    if (ctx.recordFeedback && reply.feedback) {
+      ctx.recordFeedback({
+        content: `User edited requirements: ${reply.feedback}`,
+        namespace: 'designer',
+        language: 'all',
+        repoPath: state.input.repoPath,
+        provider: ctx.providers.local,
+      }).catch(() => {});
+    }
     const key = 'requirements';
     const rounds = (state.editRounds[key] ?? 0) + 1;
     if (rounds > MAX_EDIT_ROUNDS) {
@@ -243,7 +271,7 @@ export const sketchStep: AgentStep<DesignerState> = {
     updatedTodos[idx] = { ...todo, state: 'sketching' as const };
 
     ctx.progress(`${todo.index}: Writing sketch...`);
-    let sketch = await writeSketch(todo, state.parsedRequirements, updatedTodos, input, ctx.providers.resolve('designer', 'sketch'));
+    let sketch = await writeSketch(todo, state.parsedRequirements, updatedTodos, input, ctx.providers.resolve('designer', 'sketch'), state.configContext);
 
     ctx.progress(`${todo.index}: Reviewing sketch...`);
     const claude = ctx.providers.resolveOrNull('designer', 'review');
@@ -305,6 +333,15 @@ export const validateSketchStep: AgentStep<DesignerState> = {
     }
 
     if (reply.action === 'reject') {
+      if (ctx.recordFeedback && reply.feedback) {
+        ctx.recordFeedback({
+          content: `User rejected sketch for requirement ${todo.index}: ${reply.feedback}`,
+          namespace: 'designer',
+          language: 'all',
+          repoPath: state.input.repoPath,
+          provider: ctx.providers.local,
+        }).catch(() => {});
+      }
       const updatedTodos = [...state.todos];
       updatedTodos[idx] = { ...todo, state: 'skipped' as const };
       ctx.progress(`${todo.index}: Rejected — skipping.`);
@@ -312,6 +349,15 @@ export const validateSketchStep: AgentStep<DesignerState> = {
     }
 
     // Edit
+    if (ctx.recordFeedback && reply.feedback) {
+      ctx.recordFeedback({
+        content: `User edited sketch for requirement ${todo.index}: ${reply.feedback}`,
+        namespace: 'designer',
+        language: 'all',
+        repoPath: state.input.repoPath,
+        provider: ctx.providers.local,
+      }).catch(() => {});
+    }
     const key = `sketch-${todo.index}`;
     const rounds = (state.editRounds[key] ?? 0) + 1;
     if (rounds > MAX_EDIT_ROUNDS) {
@@ -359,7 +405,7 @@ export const detailStep: AgentStep<DesignerState> = {
     updatedTodos[idx] = { ...todo, state: 'detailing' as const };
 
     ctx.progress(`${todo.index}: Writing detailed section...`);
-    const detail = await writeDetail(todo, updatedTodos, input, ctx.providers.resolve('designer', 'detail'));
+    const detail = await writeDetail(todo, updatedTodos, input, ctx.providers.resolve('designer', 'detail'), state.configContext);
 
     updatedTodos[idx] = { ...updatedTodos[idx]!, detail };
 
@@ -414,6 +460,15 @@ export const validateDetailStep: AgentStep<DesignerState> = {
     }
 
     if (reply.action === 'reject') {
+      if (ctx.recordFeedback && reply.feedback) {
+        ctx.recordFeedback({
+          content: `User rejected detail for requirement ${todo.index}: ${reply.feedback}`,
+          namespace: 'designer',
+          language: 'all',
+          repoPath: state.input.repoPath,
+          provider: ctx.providers.local,
+        }).catch(() => {});
+      }
       // Reset to pending — pick-next-requirement will re-select it
       const updatedTodos = [...state.todos];
       updatedTodos[idx] = {
@@ -427,6 +482,15 @@ export const validateDetailStep: AgentStep<DesignerState> = {
     }
 
     // Edit
+    if (ctx.recordFeedback && reply.feedback) {
+      ctx.recordFeedback({
+        content: `User edited detail for requirement ${todo.index}: ${reply.feedback}`,
+        namespace: 'designer',
+        language: 'all',
+        repoPath: state.input.repoPath,
+        provider: ctx.providers.local,
+      }).catch(() => {});
+    }
     const key = `detail-${todo.index}`;
     const rounds = (state.editRounds[key] ?? 0) + 1;
     if (rounds > MAX_EDIT_ROUNDS) {
@@ -466,10 +530,42 @@ export const validateDetailStep: AgentStep<DesignerState> = {
 export const assembleStep: AgentStep<DesignerState> = {
   name: 'assemble',
   async run(state, ctx) {
+    // Record session-level feedback if skip/reject rate is high
+    if (ctx.recordFeedback && state.todos.length > 0) {
+      const skipped = state.todos.filter(t => t.state === 'skipped').length;
+      if (skipped > state.todos.length * 0.5) {
+        ctx.recordFeedback({
+          content: `High skip/reject rate in designer (${skipped}/${state.todos.length}). Sketches may not match project architecture patterns.`,
+          namespace: 'designer',
+          language: 'all',
+          repoPath: state.input.repoPath,
+          provider: ctx.providers.local,
+        }).catch(() => {});
+      }
+    }
+
     ctx.progress('Assembling final document...');
 
+    // Try resolving a custom template from config store
+    let template = state.input.template;
+    if (ctx.resolveTemplate && template.format === 'html') {
+      try {
+        const customCss = await ctx.resolveTemplate({
+          namespace: 'designer',
+          language: 'all',
+          name: 'design-css',
+          repoPath: state.input.repoPath,
+        });
+        if (customCss) {
+          template = { ...template, css: customCss.body };
+        }
+      } catch {
+        // Fall back to default template
+      }
+    }
+
     const title = deriveTitle(state.input.message);
-    const result = assembleDocument(state.input.template, title, state.todos);
+    const result = assembleDocument(template, title, state.todos);
 
     const ext = result.format === 'html' ? 'html' : 'md';
     ctx.writeArtifact(`assembled.${ext}`, result.output);

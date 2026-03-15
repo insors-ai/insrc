@@ -24,6 +24,7 @@ import {
   DETAIL_SYSTEM, SEARCH_PLAN_SYSTEM,
 } from './prompts.js';
 import { createDaemonContextProvider } from '../tools/context-provider.js';
+import { loadConfigContext } from '../tasks/shared/config-context.js';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -134,8 +135,15 @@ export const gatherContextStep: AgentStep<PlannerState> = {
     // Format findings
     const findings = formatFindings(allEntities, topN, expansions);
 
+    // Load config context (conventions, feedback, templates)
+    const configContext = await loadConfigContext(ctx, 'planner', 'all', state.input.repoPath);
+
     return {
-      state: { ...state, codebaseFindings: findings },
+      state: {
+        ...state,
+        codebaseFindings: findings,
+        configContext: configContext || undefined,
+      },
       next: 'draft-plan',
     };
   },
@@ -155,6 +163,7 @@ export const draftPlanStep: AgentStep<PlannerState> = {
     if (state.analysis) contextParts.push(`Analysis:\n${state.analysis}`);
     if (state.codebaseFindings) contextParts.push(`Codebase context:\n${state.codebaseFindings}`);
     if (state.input.codeContext) contextParts.push(`Additional context:\n${state.input.codeContext}`);
+    if (state.configContext) contextParts.push(state.configContext);
 
     const userContent = contextParts.length > 0
       ? `${contextParts.join('\n\n')}\n\nUser request:\n${state.input.message}`
@@ -239,6 +248,15 @@ export const validatePlanStep: AgentStep<PlannerState> = {
     }
 
     if (reply.action === 'reject') {
+      if (ctx.recordFeedback && reply.feedback) {
+        ctx.recordFeedback({
+          content: `User rejected plan: ${reply.feedback}`,
+          namespace: 'planner',
+          language: 'all',
+          repoPath: state.input.repoPath,
+          provider: ctx.providers.local,
+        }).catch(() => {});
+      }
       // Re-draft with rejection feedback
       const roundKey = 'plan-draft';
       const rounds = (state.editRounds[roundKey] ?? 0) + 1;
@@ -262,6 +280,13 @@ export const validatePlanStep: AgentStep<PlannerState> = {
 
     // Edit: re-draft with feedback
     if (reply.action === 'edit' && reply.feedback) {
+      ctx.recordFeedback?.({
+        content: `User edited plan: ${reply.feedback}`,
+        namespace: 'planner',
+        language: 'all',
+        repoPath: state.input.repoPath,
+        provider: ctx.providers.local,
+      }).catch(() => {});
       const roundKey = 'plan-draft';
       const rounds = (state.editRounds[roundKey] ?? 0) + 1;
       if (rounds >= MAX_EDIT_ROUNDS) {
@@ -362,6 +387,7 @@ export const detailStepsStep: AgentStep<PlannerState> = {
           `Plan type: ${planType}`,
           `Steps:\n${stepDescriptions}`,
           state.codebaseFindings ? `Codebase context:\n${state.codebaseFindings}` : '',
+          state.configContext ?? '',
         ].filter(Boolean).join('\n\n'),
       },
     ];
@@ -424,6 +450,13 @@ export const validateDetailsStep: AgentStep<PlannerState> = {
     }
 
     if (reply.action === 'edit' && reply.feedback) {
+      ctx.recordFeedback?.({
+        content: `User edited plan details: ${reply.feedback}`,
+        namespace: 'planner',
+        language: 'all',
+        repoPath: state.input.repoPath,
+        provider: ctx.providers.local,
+      }).catch(() => {});
       const roundKey = 'plan-detail';
       const rounds = (state.editRounds[roundKey] ?? 0) + 1;
       if (rounds >= MAX_EDIT_ROUNDS) {

@@ -36,6 +36,7 @@ import {
 export const designerAgent: AgentDefinition<DesignerState> = {
   id: 'designer',
   version: 1,
+  configNamespace: 'designer',
   firstStep: 'extract-requirements',
 
   initialState(input: unknown): DesignerState {

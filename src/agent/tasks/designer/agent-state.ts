@@ -46,6 +46,8 @@ export interface DesignerState extends AgentState {
 
   /** Compressed design history for later requirements. */
   compressedHistory:     string;
+  /** Config context loaded from conventions/feedback/templates (loaded once in extract-requirements). */
+  configContext?:        string | undefined;
 
   /** Assembled final output. */
   assembledOutput?:      string | undefined;

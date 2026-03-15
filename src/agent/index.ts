@@ -44,7 +44,10 @@ import { readIndex, readCheckpoint, resolveRunDir } from './framework/checkpoint
 import type { RunResult } from './framework/types.js';
 import { runImplementPipeline } from './tasks/implement.js';
 import { runRefactorPipeline } from './tasks/refactor.js';
-import { runTestPipeline } from './tasks/test.js';
+import { runTestPipeline } from './tasks/test.js'; // legacy — kept for fallback
+import { testerAgent } from './tasks/tester/agent.js';
+import type { TesterState } from './tasks/tester/agent-state.js';
+import type { TesterInput } from './tasks/tester/types.js';
 import { runDebugPipeline } from './tasks/debug.js';
 import { findTestFile } from './tasks/test-runner.js';
 import { runGraphQuery } from './tasks/graph.js';
@@ -643,49 +646,8 @@ export async function startRepl(cwd?: string): Promise<void> {
     }
 
     if (intent === 'test') {
-      const planStepCtx = ctx.getActivePlanStep();
-      log.info('[pipeline] Running test pipeline (generate → validate → execute → fix loop)...');
-      if (planStepCtx) log.info('[pipeline] Active plan step injected');
-
-      // Try to find the test file from the message or infer from context
-      // For now, use a heuristic: look for file paths in the message
-      const fileMatch = message.match(/(?:test|spec)\s+(\S+\.\w+)/i)
-        ?? message.match(/(\S+\.(?:test|spec)\.\w+)/i);
-      let testFilePath = fileMatch?.[1] ?? '';
-
-      // If no explicit test file, try to infer from entity context
-      if (!testFilePath && codeContext) {
-        const srcFileMatch = codeContext.match(/(?:File|file):\s*(\S+)/);
-        if (srcFileMatch) {
-          const found = await findTestFile(srcFileMatch[1]!, repoPath);
-          testFilePath = found ?? srcFileMatch[1]!.replace(/\.(\w+)$/, '.test.$1');
-        }
-      }
-
-      if (!testFilePath) {
-        testFilePath = 'test.ts'; // fallback
-      }
-
-      // Make absolute if relative
-      if (!testFilePath.startsWith('/')) {
-        testFilePath = `${repoPath}/${testFilePath}`;
-      }
-
-      const result = await runTestPipeline(
-        message, testFilePath, codeContext, repoPath, planStepCtx,
-        session.resolver.resolve('test', 'generate'),
-        session.resolver.resolveOrNull('test', 'validate'),
-      );
-
-      if (result.needsUserDecision) {
-        return `Tests need your review:\n\n${result.message}\n\nReply with "accept" to keep current state, "discard" to revert, or provide corrections.`;
-      }
-
-      if (result.passed) {
-        return `${result.message}\n\nFiles:\n${result.filesWritten.map(f => `  - ${f}`).join('\n')}`;
-      }
-
-      return `Test pipeline completed: ${result.message}`;
+      log.info('[pipeline] Running Tester agent...');
+      return await runTesterAgent(message, codeContext);
     }
 
     if (intent === 'debug') {
@@ -1147,6 +1109,87 @@ export async function startRepl(cwd?: string): Promise<void> {
     } catch (err) {
       if (err instanceof Error && err.name === 'AgentCancelledError') {
         return '[delegate] Run paused. Resume with `insrc agent resume <runId>`.';
+      }
+      throw err;
+    }
+  }
+
+  // -----------------------------------------------------------------------
+  // Tester agent runner
+  // -----------------------------------------------------------------------
+
+  async function runTesterAgent(
+    message: string,
+    codeContext: string,
+  ): Promise<string> {
+    // Check for active/crashed tester runs for this repo
+    let resumeCheckpoint: import('./framework/types.js').Checkpoint | undefined;
+    const runs = readIndex().filter(
+      e => e.agentId === 'tester' && e.repo === repoPath && (e.status === 'running' || e.status === 'paused' || e.status === 'crashed'),
+    );
+    if (runs.length > 0) {
+      const entry = runs[0]!;
+      log.info(`[tester] Found ${entry.status} run: ${entry.runId}. Resuming...`);
+      const { readCheckpoint, resolveRunDir } = await import('./framework/checkpoint.js');
+      const runDir = resolveRunDir(entry.runId);
+      resumeCheckpoint = readCheckpoint(runDir) ?? undefined;
+    }
+
+    const replChannel = new ReplChannel({ log: { info: (m: string) => log.info(m), debug: (m: string) => log.debug(m), error: (m: string) => log.error(m) }, prompt: 'tester> ' });
+
+    // Enrich with prior session context
+    let enrichedMessage = message;
+    const designSpec = ctx.getTag('[design]') ?? undefined;
+    const reqCtx = ctx.getTag('[requirements]');
+    if (reqCtx && !designSpec) {
+      enrichedMessage += `\n\n## Prior Requirements\n${reqCtx}`;
+    }
+
+    const testerInput: TesterInput = {
+      message: enrichedMessage,
+      codeContext,
+      designSpec,
+      session: {
+        repoPath,
+        closureRepos: session.closureRepos,
+      },
+    };
+
+    try {
+      const result: RunResult = await runAgent({
+        definition: testerAgent as unknown as import('./framework/types.js').AgentDefinition,
+        channel: replChannel,
+        options: resumeCheckpoint
+          ? { resumeFrom: resumeCheckpoint }
+          : { input: testerInput, repo: repoPath },
+        config: session.config,
+        providers: {
+          local: session.ollamaProvider,
+          claude: session.claudeProvider,
+          resolve: session.activeResolver.resolve.bind(session.activeResolver),
+          resolveOrNull: session.activeResolver.resolveOrNull.bind(session.activeResolver),
+        },
+        // rpcFn: not yet wired at REPL level — config context degrades gracefully
+      });
+
+      const finalState = result.result as TesterState;
+
+      // Set session tag
+      ctx.setTag('[test]', finalState.summary ?? 'Test session completed.');
+
+      const passing = finalState.fileResults.filter(r => r.status === 'passing').length;
+      const total = finalState.fileResults.length;
+      const summary = finalState.summary ?? `Test session: ${passing}/${total} passing.`;
+
+      if (finalState.filesChanged.length > 0) {
+        const files = [...new Set(finalState.filesChanged)].join('\n  - ');
+        return `${summary}\n\nFiles changed:\n  - ${files}`;
+      }
+
+      return summary;
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AgentCancelledError') {
+        return '[tester] Run paused. Resume with `insrc agent resume <runId>`.';
       }
       throw err;
     }

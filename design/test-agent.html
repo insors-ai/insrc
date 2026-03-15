@@ -1133,8 +1133,44 @@ if (ctx.recordFeedback && feedback) {
   <li>Pass <code>rpcFn</code> to <code>RunnerOpts</code> so the agent has daemon access for config context loading, feedback recording, and codebase search</li>
 </ul>
 
-<h3>CLI (<code>src/agent/cli.ts</code>)</h3>
-<p>Replace with <code>runTesterCli()</code> using <code>TestChannel</code> with auto-approve for gates (non-interactive one-shot). The "approve with review" flag can be set via a CLI option.</p>
+<h3>CLI (<code>src/cli/commands/test.ts</code>)</h3>
+
+<p>Register a <code>test</code> subcommand group in the CLI for non-interactive one-shot usage:</p>
+
+<pre><code>insrc test run &lt;files...&gt;              # generate + execute tests (auto-approve plan)
+insrc test run --review &lt;files...&gt;     # generate + execute with code review gates
+insrc test plan &lt;files...&gt;             # generate plan only (no execution), output JSON
+insrc test plan --format md &lt;files...&gt; # generate plan, output as markdown</code></pre>
+
+<p>All commands:</p>
+<table>
+  <tr><th>Command</th><th>Description</th><th>Channel</th></tr>
+  <tr>
+    <td><code>insrc test run &lt;files...&gt;</code></td>
+    <td>Run full tester pipeline (plan + write + execute + fix). Auto-approves plan and test review gates.</td>
+    <td><code>TestChannel</code> with all-approve</td>
+  </tr>
+  <tr>
+    <td><code>insrc test run --review</code></td>
+    <td>Same as above but each test file is presented for review before execution.</td>
+    <td><code>TestChannel</code> with approve-with-review at plan gate</td>
+  </tr>
+  <tr>
+    <td><code>insrc test plan &lt;files...&gt;</code></td>
+    <td>Generate test plan only &mdash; stops after <code>generate-test-plan</code>. Outputs plan JSON or markdown.</td>
+    <td><code>TestChannel</code> (analyze + plan only, abort after plan)</td>
+  </tr>
+</table>
+
+<p><strong>Common options:</strong></p>
+<ul>
+  <li><code>--cwd &lt;path&gt;</code> &mdash; repo path (defaults to current directory)</li>
+  <li><code>--framework &lt;name&gt;</code> &mdash; override auto-detected test framework</li>
+  <li><code>--kind &lt;unit|live&gt;</code> &mdash; override test kind for all entries</li>
+  <li><code>--timeout &lt;ms&gt;</code> &mdash; per-test execution timeout (default: 60000)</li>
+</ul>
+
+<p><strong>Implementation:</strong> Uses <code>runAgent()</code> with <code>TestChannel</code> (scripted auto-approve replies) for non-interactive mode. The <code>test plan</code> command aborts after the plan step by providing a <code>TestChannel</code> that responds to <code>review-test-plan</code> gate with a custom action that triggers early termination via the report step.</p>
 
 <h3>Provider routing</h3>
 <table>

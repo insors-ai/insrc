@@ -5,6 +5,7 @@ import { registerRepoCommands }   from './commands/repo.js';
 import { registerAgentCommands }  from './commands/agent.js';
 import { registerConfigCommands } from './commands/config.js';
 import { registerConversationCommands } from './commands/conversation.js';
+import { registerTestCommands } from './commands/test.js';
 import { getLogger } from '../shared/logger.js';
 
 const log = getLogger('cli');
@@ -79,6 +80,7 @@ registerRepoCommands(program);
 registerAgentCommands(program);
 registerConfigCommands(program);
 registerConversationCommands(program);
+registerTestCommands(program);
 
 program.parseAsync(process.argv).catch(err => {
   log.error({ err }, 'fatal error');

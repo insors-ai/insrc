@@ -14,7 +14,7 @@
 
 import type { LLMProvider, LLMMessage } from '../../shared/types.js';
 import type { AssembledContext } from './budget.js';
-import { createBudget, type BudgetShape, type TokenBudget } from './budget.js';
+import { createBudget, type TokenBudget } from './budget.js';
 import { buildSystemContext, type SystemContextOpts } from './system.js';
 import { evictToSummary, type ConversationTurn } from './summary.js';
 import { weightedRecent, weightedRecentTurns, getEvictable, MAX_RECENT_TURNS } from './recent.js';
@@ -22,7 +22,7 @@ import { SemanticHistory, embedText } from './semantic.js';
 import { fetchTaskContext, initSession, resetSeenCounts, type DisclosureContext } from './task.js';
 import { fitToBudget, type RawLayers } from './overflow.js';
 
-export { type AssembledContext, type BudgetShape } from './budget.js';
+export { type AssembledContext } from './budget.js';
 export { type ConversationTurn } from './summary.js';
 export { initSession } from './task.js';
 
@@ -43,11 +43,11 @@ export class ContextManager {
   /** Text content from attachments, injected into L4 context for the current turn. */
   private attachmentContext = '';
 
-  constructor(opts: SystemContextOpts & { closureRepos: string[]; provider: LLMProvider; budgetShape?: BudgetShape | undefined }) {
+  constructor(opts: SystemContextOpts & { closureRepos: string[]; provider: LLMProvider; contextWindowSize?: number | undefined }) {
     this.systemText = buildSystemContext(opts);
     this.closureRepos = opts.closureRepos;
     this.provider = opts.provider;
-    this.budget = createBudget(opts.budgetShape ?? '64k');
+    this.budget = createBudget(opts.contextWindowSize ?? 32_768);
   }
 
   /**

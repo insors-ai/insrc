@@ -50,7 +50,7 @@ import {
 import { SemanticHistory, embedText } from '../src/agent/context/semantic.js';
 import {
   TOKEN_BUDGET, createBudget, countTokens,
-  type BudgetShape, type TokenBudget,
+  type TokenBudget,
 } from '../src/agent/context/budget.js';
 import { fitToBudget, type RawLayers } from '../src/agent/context/overflow.js';
 import { ContextManager, type AssembledContext } from '../src/agent/context/index.js';
@@ -243,32 +243,39 @@ section('4. L3b Semantic History');
 section('5. Budget Shapes');
 
 {
-  // Default 64K budget
-  check('TOKEN_BUDGET.total is 64000', TOKEN_BUDGET.total === 64000);
+  // Default 32K budget
+  check('TOKEN_BUDGET.total is 32768', TOKEN_BUDGET.total === 32768);
   check('TOKEN_BUDGET.system is 1000', TOKEN_BUDGET.system === 1000);
-  check('TOKEN_BUDGET.code is 16000', TOKEN_BUDGET.code === 16000);
-  check('TOKEN_BUDGET.response is 8000', TOKEN_BUDGET.response === 8000);
 
-  // Create all shapes and verify scaling
-  const shapes: BudgetShape[] = ['16k', '32k', '64k', '128k'];
-  for (const shape of shapes) {
-    const b = createBudget(shape);
-    const total = parseInt(shape.replace('k', '')) * 1000;
-    check(`${shape}: total is ${total}`, b.total === total);
-    check(`${shape}: system is always 1000`, b.system === 1000);
-    check(`${shape}: response < total/2`, b.response < b.total / 2);
-    check(`${shape}: code is ~25% of total`, Math.abs(b.code - total * 0.25) < 100);
+  // Create budgets with named shapes and raw token counts
+  const sizes = [16_000, 32_000, 64_000, 128_000];
+  for (const total of sizes) {
+    const label = `${total / 1000}K`;
+    const b = createBudget(total);
+    check(`${label}: total is ${total}`, b.total === total);
+    check(`${label}: system is always 1000`, b.system === 1000);
+    check(`${label}: response < total/2`, b.response < b.total / 2);
+    check(`${label}: code is ~25% of total`, Math.abs(b.code - total * 0.25) < 100);
 
     // All layers fit within total
     const layerSum = b.system + b.summary + b.recent + b.semantic + b.code + b.response;
-    check(`${shape}: layer sum (${layerSum}) < total (${total})`, layerSum < total);
+    check(`${label}: layer sum (${layerSum}) < total (${total})`, layerSum < total);
   }
 
+  // Named shapes still work
+  const b32 = createBudget('32k');
+  check('named shape 32k works', b32.total === 32_000);
+
   // Verify proportional scaling
-  const b16 = createBudget('16k');
-  const b128 = createBudget('128k');
+  const b16 = createBudget(16_000);
+  const b128 = createBudget(128_000);
   check('128K code budget is ~8x 16K code budget', b128.code >= b16.code * 7);
   check('128K recent budget is ~8x 16K recent budget', b128.recent >= b16.recent * 7);
+
+  // Arbitrary context window size (e.g. 48K)
+  const b48 = createBudget(48_000);
+  check('48K: total is 48000', b48.total === 48_000);
+  check('48K: code scales to ~12K', Math.abs(b48.code - 12_000) < 100);
 
   // countTokens heuristic
   check('countTokens: 300 chars ≈ 100 tokens', countTokens('x'.repeat(300)) === 100);
@@ -371,7 +378,7 @@ section('7. ContextManager Orchestration');
     repoPath: '/home/user/project',
     closureRepos: ['/home/user/project'],
     provider,
-    budgetShape: '64k',
+    contextWindowSize: 64_000,
   });
 
   // Initial state
@@ -501,13 +508,13 @@ section('8. Directive Detection');
 section('9. Token Budget Math');
 
 {
-  // Verify budget integrity for all shapes
-  const shapes: BudgetShape[] = ['16k', '32k', '64k', '128k'];
-  for (const shape of shapes) {
-    const b = createBudget(shape);
+  // Verify budget integrity for various sizes
+  for (const total of [16_000, 32_000, 64_000, 128_000]) {
+    const label = `${total / 1000}K`;
+    const b = createBudget(total);
     const inputBudget = b.total - b.response;
     const layerCeilings = b.system + b.summary + b.recent + b.semantic + b.code;
-    check(`${shape}: layer ceilings fit in input budget`, layerCeilings <= inputBudget,
+    check(`${label}: layer ceilings fit in input budget`, layerCeilings <= inputBudget,
       `ceilings ${layerCeilings} vs input ${inputBudget}`);
   }
 

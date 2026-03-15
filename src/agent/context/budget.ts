@@ -1,17 +1,19 @@
 // ---------------------------------------------------------------------------
 // Token Budget — per-layer ceilings for the layered context model
 //
-// Supports configurable budget shapes: 16K, 32K, 64K (default), 128K.
-// L1 is fixed at 1K. All other layers scale proportionally.
+// Supports any context window size. L1 is fixed at 1K.
+// Other layers scale proportionally.
+// Named shapes ('16k', '32k', '64k', '128k') are convenience aliases.
 // ---------------------------------------------------------------------------
 
 /** Approximate chars → tokens ratio (conservative: 1 token ≈ 3 chars for code). */
 const CHARS_PER_TOKEN = 3;
 
 // ---------------------------------------------------------------------------
-// Budget shapes
+// Budget types
 // ---------------------------------------------------------------------------
 
+/** Named convenience shapes. */
 export type BudgetShape = '16k' | '32k' | '64k' | '128k';
 
 export interface TokenBudget {
@@ -24,7 +26,7 @@ export interface TokenBudget {
   total:    number;
 }
 
-const BUDGET_TOTALS: Record<BudgetShape, number> = {
+const SHAPE_TOTALS: Record<BudgetShape, number> = {
   '16k':  16_000,
   '32k':  32_000,
   '64k':  64_000,
@@ -34,29 +36,34 @@ const BUDGET_TOTALS: Record<BudgetShape, number> = {
 /**
  * Create a token budget for a given context window size.
  *
- * L1 (system) is fixed at 1K. Other layers scale proportionally:
- *   L2 summary:  ~4.7% of total
- *   L3a recent:  ~6.3% of total
- *   L3b semantic: ~6.3% of total
- *   L4 code:     ~25% of total
- *   L5 response: ~12.5% of total
- *   L6 overflow:  remainder (elastic)
+ * Accepts either a named shape ('32k') or a raw token count (32768).
+ * The budget is derived from the context window size:
+ *   L1 (system):   fixed 1K
+ *   L2 (summary):  ~4.7% of total
+ *   L3a (recent):  ~6.3% of total
+ *   L3b (semantic): ~6.3% of total
+ *   L4 (code):     ~25% of total
+ *   L5 (response): ~12.5% of total
+ *   L6 (overflow):  remainder (elastic)
  */
-export function createBudget(shape: BudgetShape = '64k'): TokenBudget {
-  const total = BUDGET_TOTALS[shape];
+export function createBudget(sizeOrShape: number | BudgetShape = 32_768): TokenBudget {
+  const total = typeof sizeOrShape === 'number'
+    ? sizeOrShape
+    : SHAPE_TOTALS[sizeOrShape];
+
   return {
     system:   1_000,                          // L1: fixed
-    summary:  Math.round(total * 0.047),      // L2
-    recent:   Math.round(total * 0.063),      // L3a
-    semantic: Math.round(total * 0.063),      // L3b
-    code:     Math.round(total * 0.25),       // L4
-    response: Math.round(total * 0.125),      // L5
+    summary:  Math.max(500, Math.round(total * 0.047)),   // L2
+    recent:   Math.max(500, Math.round(total * 0.063)),   // L3a
+    semantic: Math.max(500, Math.round(total * 0.063)),   // L3b
+    code:     Math.max(1_000, Math.round(total * 0.25)),  // L4
+    response: Math.max(1_000, Math.round(total * 0.125)), // L5
     total,
   };
 }
 
-/** Default 64K budget — backward compatible with existing code. */
-export const TOKEN_BUDGET: TokenBudget = createBudget('64k');
+/** Default 32K budget. */
+export const TOKEN_BUDGET: TokenBudget = createBudget(32_768);
 
 /**
  * Approximate token count for a string.

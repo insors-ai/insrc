@@ -7,7 +7,7 @@ import { ClaudeProvider } from './providers/claude.js';
 const log = getLogger('config');
 
 const DEFAULT_CONTEXT = {
-  local: 131_072,       // 128K — conservative default; qwen3-coder supports 262K
+  local: 32_768,        // 32K — conservative default; adjust in config.json for larger models
   localMaxOutput: 8_192,
   claude: 200_000,      // 200K
   claudeMaxOutput: 8_192,

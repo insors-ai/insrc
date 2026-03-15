@@ -188,8 +188,6 @@ export interface AgentConfig {
     /** 'static' = rule-based (default), 'auto' = LLM-assessed complexity routing. */
     mode: 'static' | 'auto';
   } | undefined;
-  /** Context window budget shape. Default: '64k'. */
-  contextBudget?: '16k' | '32k' | '64k' | '128k' | undefined;
 }
 
 /** Context window and output limits per provider. */

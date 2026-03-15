@@ -99,7 +99,7 @@ export class Session {
       repoPath: this.repoPath,
       closureRepos: this.closureRepos,
       provider: this.ollamaProvider,
-      budgetShape: this.config.contextBudget,
+      contextWindowSize: this.config.models.context.local,
     });
 
     // Initialize smart router if auto mode and Ollama available

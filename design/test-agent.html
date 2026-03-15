@@ -328,7 +328,7 @@
 
 <p><strong>Generation:</strong></p>
 <ul>
-  <li>Builds prompt from investigation summary, source files, existing tests, detected framework, and user message</li>
+  <li>Builds prompt from investigation summary, source files, existing tests, detected framework, user message, and <code>state.configContext</code> (conventions + feedback from config store)</li>
   <li>LLM produces JSON matching the <code>TestPlan</code> schema</li>
   <li>Each entry specifies: target file, test file, kind (unit/live), scenarios, fixtures/setup, priority</li>
   <li>For live tests: auto-populates setup config (service URLs, env vars, DB paths) discovered during analysis</li>
@@ -365,6 +365,8 @@
 
 <p>Supports <code>@mention</code> provider overrides. Max 3 edit rounds before forcing a decision.</p>
 
+<p><strong>Feedback recording:</strong> When the user selects <strong>edit</strong> or <strong>reject</strong>, the feedback is recorded via <code>ctx.recordFeedback({ namespace: 'tester', ... })</code> (fire-and-forget). Plan-level feedback (e.g., "don't test private methods", "focus on error paths") is valuable for future test plan generation.</p>
+
 <!-- ------------------------------------------------------------------ -->
 <h3 id="step-write">3.4 write-tests</h3>
 <p><span class="tag local">local</span> generate &rarr; <span class="tag claude">Claude</span> validate</p>
@@ -374,7 +376,7 @@
 <p>For the current group:</p>
 <ol>
   <li>Read the target source file(s) and existing test file(s) for context</li>
-  <li>Build prompt from: entry scenarios, fixtures, setup config, test framework conventions</li>
+  <li>Build prompt from: entry scenarios, fixtures, setup config, test framework conventions, and <code>state.configContext</code> (project conventions and learnings from prior test sessions)</li>
   <li>Call <code>generateAndValidate()</code> &mdash; local generates unified diff, Claude validates</li>
   <li>Call <code>applyApprovedDiff()</code> to write the test file to disk</li>
   <li>Record <code>TestFileResult</code> with <code>status: 'written'</code></li>
@@ -464,6 +466,7 @@
   <li>List of any implementation bugs found and whether they were fixed (via Pair agent)</li>
   <li>List of skipped live tests with prerequisite failures</li>
   <li>Writes <code>test-report.md</code> artifact</li>
+  <li>Records session-level feedback if &gt;50% of test entries failed or were skipped (quality signal for future test generation)</li>
   <li>Emits done message</li>
 </ul>
 
@@ -737,7 +740,7 @@
         return 'setup-skipped'
 
       'test_issue':
-        diff = generateTestFix(result, testCode, classification)
+        diff = generateTestFix(result, testCode, classification, state.configContext)
         applyFixDiff(diff, repoPath)
         result = runTests(...)
         if result.passed → return 'passing'
@@ -745,7 +748,7 @@
 
   // Exhausted — try Claude escalation
   for round in 1..MAX_CLAUDE_ROUNDS:
-    diff = claudeEscalation(result, testCode, fixHistory)
+    diff = claudeEscalation(result, testCode, fixHistory, state.configContext)
     applyFixDiff(diff, repoPath)
     result = runTests(...)
     if result.passed → return 'passing'
@@ -841,7 +844,7 @@
 </ol>
 
 <div class="callout decision">
-  <strong>Sub-agent invocation:</strong> The Pair agent is invoked via <code>runAgent()</code> with a <code>TestChannel</code> (auto-approve) when the user selects "auto-fix", or with a <code>ReplChannel</code> (interactive) when the user selects "fix". This allows the user to participate in the debugging if they want to.
+  <strong>Sub-agent invocation:</strong> The Pair agent is invoked via <code>runAgent()</code> with a <code>TestChannel</code> (auto-approve) when the user selects "auto-fix", or with a <code>ReplChannel</code> (interactive) when the user selects "fix". The <code>RunnerOpts</code> must include <code>rpcFn</code> (wrap <code>ctx.rpc</code>) so the Pair sub-agent has daemon access for config search, feedback recording, and codebase queries &mdash; same pattern used by the Delegate agent's planner sub-agent invocation.
 </div>
 
 <div class="callout info">
@@ -919,12 +922,27 @@ state.configContext = configContext;</code></pre>
 
 <p>The config context is stored on <code>state.configContext</code> (loaded once in analyze, reused across generate-test-plan, write-tests, and fix loop steps). The <code>loadConfigContext()</code> helper from <code>src/agent/tasks/shared/config-context.ts</code> applies a 6,000-char cap with priority ordering: conventions &gt; feedback &gt; templates.</p>
 
+<p><strong><code>frameworkToLanguage()</code> helper:</strong> Maps detected test frameworks to the <code>Language</code> type used by the config store:</p>
+<pre><code>function frameworkToLanguage(framework: TestFramework): Language | 'all' {
+  switch (framework) {
+    case 'vitest': case 'jest': case 'mocha': return 'typescript';
+    case 'pytest':                             return 'python';
+    case 'go':                                 return 'go';
+    default:                                   return 'all';
+  }
+}</code></pre>
+
 <h3>9.2 What the tester records</h3>
 
 <p>The tester agent calls <code>ctx.recordFeedback()</code> with <code>namespace: 'tester'</code> at these points (fire-and-forget, never blocks the agent):</p>
 
 <table>
   <tr><th>Source</th><th>When</th><th>What gets recorded</th></tr>
+  <tr>
+    <td><strong>User edits at <code>review-test-plan</code> gate</strong></td>
+    <td>User provides edit/reject feedback on test plan</td>
+    <td>Plan-level preferences (e.g., "don't test private methods", "focus on error paths not happy paths")</td>
+  </tr>
   <tr>
     <td><strong>User edits at <code>review-tests</code> gate</strong></td>
     <td>User provides edit feedback on generated tests</td>
@@ -997,13 +1015,16 @@ if (ctx.recordFeedback && feedback) {
 
 <h3>TesterInput</h3>
 <pre><code>interface TesterInput {
-  message:     string;              // User's request
-  codeContext:  string;              // Pre-assembled entity context
+  message:      string;              // User's request (enriched with [requirements] tag if available)
+  codeContext:   string;              // Pre-assembled entity context
+  designSpec?:   string | undefined;  // Prior [design] tag from session (if available)
   session: {
     repoPath:      string;
     closureRepos:  string[];
   };
 }</code></pre>
+
+<p><strong>Prior session context:</strong> The REPL enriches the tester's <code>message</code> with the <code>[requirements]</code> tag (if present, and no designSpec) so the tester understands what specifications the tests should cover. The <code>designSpec</code> field carries the <code>[design]</code> tag for architecture-aware test generation.</p>
 
 <h3>TesterState</h3>
 <pre><code>interface TesterState extends AgentState, HasProviderOverride {
@@ -1092,7 +1113,7 @@ if (ctx.recordFeedback && feedback) {
   <tr><td><code>applyFixDiff()</code></td><td><code>shared/test-runner-helper.ts</code></td><td>execute-tests (apply test fixes)</td></tr>
   <tr><td><code>pairAgent</code> + <code>runAgent()</code></td><td><code>tasks/pair/</code>, <code>framework/runner.ts</code></td><td>impl-bug-gate (batch handoff)</td></tr>
   <tr><td><code>resolveStepProvider()</code></td><td><code>framework/provider-mention.ts</code></td><td>all LLM steps</td></tr>
-  <tr><td><code>loadConfigContext()</code></td><td><code>shared/config-context.ts</code></td><td>analyze (loads conventions + feedback + templates)</td></tr>
+  <tr><td><code>loadConfigContext()</code></td><td><code>shared/config-context.ts</code></td><td>analyze (loads conventions + feedback + templates, 6K cap)</td></tr>
   <tr><td><code>ctx.searchConfig()</code></td><td><code>framework/types.ts</code> (StepContext)</td><td>analyze (targeted feedback search)</td></tr>
   <tr><td><code>ctx.resolveTemplate()</code></td><td><code>framework/types.ts</code> (StepContext)</td><td>analyze (test template resolution)</td></tr>
   <tr><td><code>ctx.recordFeedback()</code></td><td><code>framework/types.ts</code> (StepContext)</td><td>review-tests gate, execute-tests fix loop, report step</td></tr>

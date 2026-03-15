@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>insrc CLI Reference</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --border: #2a2d3a;
+      --text: #e2e4ed;
+      --muted: #8b8fa8;
+      --accent: #7c6af7;
+      --accent2: #4fc3f7;
+      --green: #4caf7d;
+      --yellow: #f5c842;
+      --red: #f47c7c;
+      --code-bg: #12151e;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 15px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; scroll-padding-top: 1rem; }
+    body { background: var(--bg); color: var(--text); line-height: 1.7; display: flex; }
+
+    nav.toc {
+      position: fixed; top: 0; left: 0; width: 240px; height: 100vh;
+      overflow-y: auto; background: var(--surface); border-right: 1px solid var(--border);
+      padding: 1.5rem 1rem; font-size: 0.82rem;
+    }
+    nav.toc h2 { font-size: 0.9rem; color: var(--accent2); margin: 0 0 0.75rem; }
+    nav.toc a { color: var(--text); text-decoration: none; display: block; padding: 0.15rem 0; }
+    nav.toc a:hover { color: var(--accent2); }
+    nav.toc .group { color: var(--accent); font-weight: 600; margin-top: 0.8rem; font-size: 0.85rem; }
+    nav.toc .sub { padding-left: 1rem; font-size: 0.78rem; color: var(--muted); }
+    nav.toc .sub:hover { color: var(--accent2); }
+
+    main { flex: 1; max-width: 900px; margin: 0 auto; padding: 2rem; }
+    @media (min-width: 1100px) { main { margin-left: 260px; } }
+
+    h1 { font-size: 2rem; color: var(--accent); margin-bottom: 0.3rem; }
+    .subtitle { color: var(--muted); font-size: 0.95rem; margin-bottom: 2rem; }
+    h2 { font-size: 1.3rem; color: var(--accent2); border-bottom: 1px solid var(--border); padding-bottom: 0.3rem; margin: 2.5rem 0 1rem; }
+    h3 { font-size: 1.05rem; color: var(--yellow); margin: 1.5rem 0 0.5rem; }
+    h4 { font-size: 0.95rem; color: var(--text); margin: 1rem 0 0.4rem; }
+    p, ul, ol { margin-bottom: 0.8rem; }
+    ul, ol { padding-left: 1.5rem; }
+    li { margin-bottom: 0.2rem; }
+    code { font-family: 'Cascadia Code', 'Fira Code', monospace; background: var(--code-bg); padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.9em; }
+    pre { background: var(--code-bg); padding: 1rem; border-radius: 6px; overflow-x: auto; margin-bottom: 1rem; font-size: 0.88rem; line-height: 1.5; border: 1px solid var(--border); }
+    pre code { background: none; padding: 0; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 1.2rem; font-size: 0.92rem; }
+    th, td { border: 1px solid var(--border); padding: 0.5rem 0.75rem; text-align: left; }
+    th { background: var(--surface); color: var(--accent2); font-size: 0.9rem; }
+    .cmd { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.8rem 1rem; margin: 0.8rem 0; font-family: monospace; font-size: 0.9rem; }
+    .callout { border-left: 3px solid var(--accent2); background: var(--surface); padding: 0.75rem 1rem; margin: 1rem 0; border-radius: 0 6px 6px 0; font-size: 0.93rem; }
+    .tag { display: inline-block; font-size: 0.72rem; padding: 0.1rem 0.5rem; border-radius: 3px; font-weight: 600; }
+    .tag-req { background: #3a1a1a; color: var(--red); }
+    .tag-opt { background: #1a3a2a; color: var(--green); }
+    hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+  </style>
+</head>
+<body>
+
+<nav class="toc">
+  <h2>insrc CLI</h2>
+  <a href="#quickstart">Quick Start</a>
+  <div class="group">Commands</div>
+  <a href="#default">insrc (REPL)</a>
+  <a href="#ask">insrc ask</a>
+  <a href="#plan">insrc plan</a>
+  <div class="group">Daemon</div>
+  <a class="sub" href="#daemon-start">daemon start</a>
+  <a class="sub" href="#daemon-stop">daemon stop</a>
+  <a class="sub" href="#daemon-status">daemon status</a>
+  <div class="group">Repo</div>
+  <a class="sub" href="#repo-add">repo add</a>
+  <a class="sub" href="#repo-remove">repo remove</a>
+  <a class="sub" href="#repo-list">repo list</a>
+  <div class="group">Agent</div>
+  <a class="sub" href="#agent-list">agent list</a>
+  <a class="sub" href="#agent-resume">agent resume</a>
+  <a class="sub" href="#agent-discard">agent discard</a>
+  <a class="sub" href="#agent-prune">agent prune</a>
+  <div class="group">Config</div>
+  <a class="sub" href="#config-show">config show</a>
+  <a class="sub" href="#config-reindex">config reindex</a>
+  <a class="sub" href="#config-search">config search</a>
+  <a class="sub" href="#config-list">config list</a>
+  <a class="sub" href="#config-init">config init</a>
+  <div class="group">Conversation</div>
+  <a class="sub" href="#conv-compact">conversation compact</a>
+  <a class="sub" href="#conv-stats">conversation stats</a>
+  <div class="group">Test</div>
+  <a class="sub" href="#test-run">test run</a>
+  <a class="sub" href="#test-plan">test plan</a>
+  <div class="group">Reference</div>
+  <a href="#config-file">Configuration</a>
+  <a href="#env-vars">Environment</a>
+  <a href="#exit-codes">Exit Codes</a>
+</nav>
+
+<main>
+
+<h1>insrc CLI Reference</h1>
+<p class="subtitle">Local-first hybrid coding agent &mdash; command reference</p>
+
+<!-- ================================================================== -->
+<h2 id="quickstart">Quick Start</h2>
+
+<pre><code>insrc                          # Start interactive REPL
+insrc "explain the auth flow"  # One-shot question
+insrc ask "refactor utils.ts"  # Classify + execute + exit
+insrc plan "add caching layer" # Generate implementation plan
+insrc daemon start             # Start background indexer
+insrc repo add .               # Register current repo</code></pre>
+
+<!-- ================================================================== -->
+<h2 id="default">Default Command &mdash; REPL</h2>
+
+<div class="cmd">insrc [message] [--cwd &lt;path&gt;]</div>
+
+<p>Start the interactive REPL agent. If <code>message</code> is provided, processes it as a single turn and exits.</p>
+
+<table>
+  <tr><th>Argument</th><th>Required</th><th>Description</th></tr>
+  <tr><td><code>message</code></td><td><span class="tag tag-opt">optional</span></td><td>One-shot question or task</td></tr>
+</table>
+
+<pre><code>insrc                                    # Interactive REPL
+insrc "how does the indexer work?"       # One-shot, then exit
+insrc --cwd /path/to/repo               # REPL in specific repo</code></pre>
+
+<!-- ================================================================== -->
+<h2 id="ask">insrc ask</h2>
+
+<div class="cmd">insrc ask &lt;message&gt; [--intent &lt;name&gt;] [--claude] [--json] [--cwd &lt;path&gt;]</div>
+
+<p>Classify intent, execute one turn, print result, and exit.</p>
+
+<table>
+  <tr><th>Option</th><th>Description</th><th>Default</th></tr>
+  <tr><td><code>--intent &lt;name&gt;</code></td><td>Override classified intent</td><td>auto-detect</td></tr>
+  <tr><td><code>--claude</code></td><td>Force Claude routing</td><td>false</td></tr>
+  <tr><td><code>--json</code></td><td>Output structured JSON</td><td>false</td></tr>
+  <tr><td><code>--cwd &lt;path&gt;</code></td><td>Repo path</td><td>cwd</td></tr>
+</table>
+
+<!-- ================================================================== -->
+<h2 id="plan">insrc plan</h2>
+
+<div class="cmd">insrc plan &lt;description&gt; [--claude] [--json] [--cwd &lt;path&gt;]</div>
+
+<p>Generate an implementation plan as a markdown checklist.</p>
+
+<table>
+  <tr><th>Option</th><th>Description</th><th>Default</th></tr>
+  <tr><td><code>--claude</code></td><td>Force Claude routing</td><td>false</td></tr>
+  <tr><td><code>--json</code></td><td>Output structured JSON</td><td>false</td></tr>
+  <tr><td><code>--cwd &lt;path&gt;</code></td><td>Repo path</td><td>cwd</td></tr>
+</table>
+
+<!-- ================================================================== -->
+<h2>Daemon Commands</h2>
+
+<h3 id="daemon-start">insrc daemon start</h3>
+<div class="cmd">insrc daemon start</div>
+<p>Start the background indexer/search daemon. The daemon:</p>
+<ul>
+  <li>Parses and indexes repos via tree-sitter (TypeScript, Python, Go)</li>
+  <li>Stores entities in Kuzu (graph) and LanceDB (vector)</li>
+  <li>Watches for file changes, re-indexes incrementally</li>
+  <li>Delta-indexes on startup (mtime-based) for files changed while stopped</li>
+  <li>Listens on <code>~/.insrc/daemon.sock</code> for JSON-RPC</li>
+</ul>
+
+<h3 id="daemon-stop">insrc daemon stop</h3>
+<div class="cmd">insrc daemon stop</div>
+<p>Gracefully stop the running daemon.</p>
+
+<h3 id="daemon-status">insrc daemon status</h3>
+<div class="cmd">insrc daemon status</div>
+<p>Display daemon health: uptime, queue depth, model readiness, and registered repos.</p>
+
+<!-- ================================================================== -->
+<h2>Repo Commands</h2>
+
+<h3 id="repo-add">insrc repo add &lt;path&gt;</h3>
+<div class="cmd">insrc repo add &lt;path&gt;</div>
+<p>Register a repo for indexing. Triggers a full index on first registration.</p>
+
+<h3 id="repo-remove">insrc repo remove &lt;path&gt;</h3>
+<div class="cmd">insrc repo remove &lt;path&gt;</div>
+<p>Unregister a repo and remove all its graph/vector data.</p>
+
+<h3 id="repo-list">insrc repo list</h3>
+<div class="cmd">insrc repo list</div>
+<p>List registered repos with status and last indexed time.</p>
+<p><strong>Statuses:</strong> <code>pending</code>, <code>indexing</code>, <code>ready</code>, <code>error</code></p>
+
+<!-- ================================================================== -->
+<h2>Agent Commands</h2>
+
+<h3 id="agent-list">insrc agent list</h3>
+<div class="cmd">insrc agent list &nbsp;&nbsp;<em>(alias: insrc agent ls)</em></div>
+<p>List all agent runs. Shows run ID, agent type, status, last update, and repo. Auto-detects crashed runs.</p>
+
+<h3 id="agent-resume">insrc agent resume &lt;runId&gt;</h3>
+<div class="cmd">insrc agent resume &lt;runId&gt;</div>
+<p>Resume a paused or crashed run from its last checkpoint.</p>
+
+<h3 id="agent-discard">insrc agent discard &lt;runId&gt;</h3>
+<div class="cmd">insrc agent discard &lt;runId&gt;</div>
+<p>Delete a run and all its artifacts.</p>
+
+<h3 id="agent-prune">insrc agent prune</h3>
+<div class="cmd">insrc agent prune [--days &lt;n&gt;]</div>
+<p>Remove completed runs older than <code>n</code> days (default: 7).</p>
+
+<!-- ================================================================== -->
+<h2>Config Commands</h2>
+
+<h3 id="config-show">insrc config show</h3>
+<div class="cmd">insrc config show [--global | --project]</div>
+<p>Display resolved config JSON (global + project merged).</p>
+
+<h3 id="config-reindex">insrc config reindex</h3>
+<div class="cmd">insrc config reindex [--global | --project &lt;path&gt;]</div>
+<p>Drop and rebuild the config vector store.</p>
+
+<h3 id="config-search">insrc config search &lt;query&gt;</h3>
+<div class="cmd">insrc config search &lt;query&gt; [--namespace &lt;ns&gt;] [--category &lt;cat&gt;] [--language &lt;lang&gt;] [--limit &lt;n&gt;]</div>
+<p>Semantic search over config entries (templates, feedback, conventions).</p>
+<table>
+  <tr><th>Option</th><th>Values</th><th>Default</th></tr>
+  <tr><td><code>--namespace</code></td><td><code>tester</code>, <code>pair</code>, <code>delegate</code>, <code>designer</code>, <code>planner</code>, <code>common</code></td><td>all</td></tr>
+  <tr><td><code>--category</code></td><td><code>template</code>, <code>feedback</code>, <code>convention</code></td><td>all</td></tr>
+  <tr><td><code>--language</code></td><td><code>typescript</code>, <code>python</code>, <code>go</code></td><td>all</td></tr>
+  <tr><td><code>--limit</code></td><td>integer</td><td>10</td></tr>
+</table>
+
+<h3 id="config-list">insrc config list</h3>
+<div class="cmd">insrc config list [--namespace &lt;ns&gt;] [--category &lt;cat&gt;] [--scope &lt;scope&gt;]</div>
+<p>List config entries with filtering. Scope: <code>global</code> or <code>project:&lt;path&gt;</code>.</p>
+
+<h3 id="config-init">insrc config init</h3>
+<div class="cmd">insrc config init [--path &lt;path&gt;]</div>
+<p>Scaffold a project config directory (<code>.insrc/templates/</code>, <code>.insrc/feedback/</code>, <code>.insrc/conventions/</code>).</p>
+
+<!-- ================================================================== -->
+<h2>Conversation Commands</h2>
+
+<h3 id="conv-compact">insrc conversation compact</h3>
+<div class="cmd">insrc conversation compact [--repo &lt;path&gt;] [--hot-days &lt;n&gt;] [--warm-days &lt;n&gt;] [--cold-days &lt;n&gt;] [--dry-run]</div>
+<p>Run tiered compression on stored conversation turns.</p>
+<table>
+  <tr><th>Option</th><th>Description</th><th>Default</th></tr>
+  <tr><td><code>--repo &lt;path&gt;</code></td><td>Scope to one repo</td><td>all repos</td></tr>
+  <tr><td><code>--hot-days &lt;n&gt;</code></td><td>Days to keep verbatim</td><td>7</td></tr>
+  <tr><td><code>--warm-days &lt;n&gt;</code></td><td>Days before cold compression</td><td>30</td></tr>
+  <tr><td><code>--cold-days &lt;n&gt;</code></td><td>Days before archive</td><td>90</td></tr>
+  <tr><td><code>--dry-run</code></td><td>Preview without applying</td><td>false</td></tr>
+</table>
+
+<div class="callout">
+  <strong>Compaction tiers:</strong> Hot (&lt;7d, verbatim) &rarr; Warm (7-30d, truncated) &rarr; Cold (30-90d, merged) &rarr; Archive (&gt;90d, summary). User directives ("never use opus") are preserved across all tiers.
+</div>
+
+<h3 id="conv-stats">insrc conversation stats</h3>
+<div class="cmd">insrc conversation stats [--repo &lt;path&gt;]</div>
+<p>Display conversation storage statistics: total turns, sessions, breakdown by type/tier/repo.</p>
+
+<!-- ================================================================== -->
+<h2>Test Commands</h2>
+
+<h3 id="test-run">insrc test run &lt;files...&gt;</h3>
+<div class="cmd">insrc test run &lt;files...&gt; [--review] [--framework &lt;name&gt;] [--kind &lt;type&gt;] [--timeout &lt;ms&gt;] [--cwd &lt;path&gt;]</div>
+<p>Run the full tester pipeline: analyze &rarr; plan &rarr; write &rarr; execute &rarr; fix.</p>
+<table>
+  <tr><th>Option</th><th>Description</th><th>Default</th></tr>
+  <tr><td><code>--review</code></td><td>Enable code review gates per test file</td><td>false</td></tr>
+  <tr><td><code>--framework</code></td><td>Override: <code>vitest</code>, <code>jest</code>, <code>pytest</code>, <code>go</code></td><td>auto-detect</td></tr>
+  <tr><td><code>--kind</code></td><td><code>unit</code> or <code>live</code></td><td>unit</td></tr>
+  <tr><td><code>--timeout</code></td><td>Per-test timeout (ms)</td><td>60000</td></tr>
+</table>
+<p>Non-interactive &mdash; auto-approves all gates. Exits 0 if all pass, 1 otherwise.</p>
+
+<pre><code>insrc test run src/agent/planner/steps.ts
+insrc test run --review src/db/search.ts src/db/entities.ts
+insrc test run --framework vitest --kind unit src/utils/</code></pre>
+
+<h3 id="test-plan">insrc test plan &lt;files...&gt;</h3>
+<div class="cmd">insrc test plan &lt;files...&gt; [--format &lt;fmt&gt;] [--framework &lt;name&gt;] [--kind &lt;type&gt;] [--cwd &lt;path&gt;]</div>
+<p>Generate a test plan without executing. Outputs JSON or markdown.</p>
+<table>
+  <tr><th>Option</th><th>Description</th><th>Default</th></tr>
+  <tr><td><code>--format</code></td><td><code>json</code> or <code>md</code></td><td>json</td></tr>
+  <tr><td><code>--framework</code></td><td>Override framework</td><td>auto-detect</td></tr>
+  <tr><td><code>--kind</code></td><td><code>unit</code> or <code>live</code></td><td>unit</td></tr>
+</table>
+
+<!-- ================================================================== -->
+<h2 id="config-file">Configuration</h2>
+
+<p>Config file: <code>~/.insrc/config.json</code></p>
+<p>See <code>scripts/config/config.sample.json</code> for a complete example.</p>
+
+<table>
+  <tr><th>Key</th><th>Description</th><th>Default</th></tr>
+  <tr><td><code>ollama.host</code></td><td>Ollama server URL</td><td><code>http://localhost:11434</code></td></tr>
+  <tr><td><code>models.local</code></td><td>Local model name</td><td><code>qwen3-coder:latest</code></td></tr>
+  <tr><td><code>models.tiers.fast</code></td><td>Claude fast tier</td><td><code>claude-haiku-4-5</code></td></tr>
+  <tr><td><code>models.tiers.standard</code></td><td>Claude standard tier</td><td><code>claude-haiku-4-5</code></td></tr>
+  <tr><td><code>models.tiers.powerful</code></td><td>Claude powerful tier</td><td><code>claude-sonnet-4-6</code></td></tr>
+  <tr><td><code>models.context.local</code></td><td>Context window (tokens)</td><td><code>16384</code></td></tr>
+  <tr><td><code>models.agents.*</code></td><td>Per-agent step provider overrides</td><td>see sample</td></tr>
+  <tr><td><code>keys.anthropic</code></td><td>Anthropic API key</td><td>&mdash;</td></tr>
+  <tr><td><code>permissions.mode</code></td><td><code>validate</code> or <code>auto-accept</code></td><td><code>validate</code></td></tr>
+  <tr><td><code>routing.mode</code></td><td><code>static</code> or <code>auto</code></td><td><code>static</code></td></tr>
+</table>
+
+<!-- ================================================================== -->
+<h2 id="env-vars">Environment Variables</h2>
+
+<table>
+  <tr><th>Variable</th><th>Description</th></tr>
+  <tr><td><code>ANTHROPIC_API_KEY</code></td><td>Anthropic API key (overrides config file)</td></tr>
+  <tr><td><code>INSRC_LOG_LEVEL</code></td><td>Log level: <code>debug</code>, <code>info</code> (default), <code>warn</code>, <code>error</code></td></tr>
+  <tr><td><code>INSRC_LOG_DIR</code></td><td>Override log directory</td></tr>
+</table>
+
+<!-- ================================================================== -->
+<h2 id="exit-codes">Exit Codes</h2>
+
+<table>
+  <tr><th>Code</th><th>Meaning</th></tr>
+  <tr><td><code>0</code></td><td>Success</td></tr>
+  <tr><td><code>1</code></td><td>Error or test failure</td></tr>
+</table>
+
+</main>
+</body>
+</html>

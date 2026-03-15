@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VS Code Plugin — Implementation Plan</title>
+  <style>
+    :root {
+      --bg: #0f1117; --surface: #1a1d27; --border: #2a2d3a; --text: #e2e4ed;
+      --muted: #8b8fa8; --accent: #7c6af7; --accent2: #4fc3f7;
+      --green: #4caf7d; --yellow: #f5c842; --red: #f47c7c; --code-bg: #12151e;
+      font-family: 'Segoe UI', system-ui, sans-serif; font-size: 15px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; scroll-padding-top: 1rem; }
+    body { background: var(--bg); color: var(--text); line-height: 1.7; display: flex; }
+
+    nav.toc {
+      position: fixed; top: 0; left: 0; width: 250px; height: 100vh;
+      overflow-y: auto; background: var(--surface); border-right: 1px solid var(--border);
+      padding: 1.5rem 1rem; font-size: 0.82rem;
+    }
+    nav.toc h2 { font-size: 0.9rem; color: var(--accent2); margin: 0 0 0.75rem; }
+    nav.toc a { color: var(--text); text-decoration: none; display: block; padding: 0.15rem 0; }
+    nav.toc a:hover { color: var(--accent2); }
+    nav.toc .group { color: var(--accent); font-weight: 600; margin-top: 0.8rem; font-size: 0.85rem; }
+    nav.toc .sub { padding-left: 1rem; font-size: 0.78rem; color: var(--muted); }
+
+    main { flex: 1; max-width: 920px; margin: 0 auto; padding: 2rem; }
+    @media (min-width: 1100px) { main { margin-left: 270px; } }
+
+    h1 { font-size: 2rem; color: var(--accent); margin-bottom: 0.3rem; }
+    .subtitle { color: var(--muted); font-size: 0.95rem; margin-bottom: 2rem; }
+    h2 { font-size: 1.3rem; color: var(--accent2); border-bottom: 1px solid var(--border); padding-bottom: 0.3rem; margin: 2.5rem 0 1rem; }
+    h3 { font-size: 1.05rem; color: var(--yellow); margin: 1.5rem 0 0.5rem; }
+    h4 { font-size: 0.95rem; color: var(--text); margin: 1rem 0 0.4rem; }
+    p, ul, ol { margin-bottom: 0.8rem; }
+    ul, ol { padding-left: 1.5rem; }
+    li { margin-bottom: 0.3rem; }
+    code { font-family: 'Cascadia Code', 'Fira Code', monospace; background: var(--code-bg); padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.9em; }
+    pre { background: var(--code-bg); padding: 1rem; border-radius: 6px; overflow-x: auto; margin-bottom: 1rem; font-size: 0.85rem; line-height: 1.5; border: 1px solid var(--border); }
+    pre code { background: none; padding: 0; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 1.2rem; font-size: 0.92rem; }
+    th, td { border: 1px solid var(--border); padding: 0.5rem 0.75rem; text-align: left; }
+    th { background: var(--surface); color: var(--accent2); font-size: 0.9rem; }
+    .callout { border-left: 3px solid var(--accent2); background: var(--surface); padding: 0.75rem 1rem; margin: 1rem 0; border-radius: 0 6px 6px 0; font-size: 0.93rem; }
+    .callout.warn { border-left-color: var(--yellow); }
+    .callout.decision { border-left-color: var(--green); }
+    .milestone { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; margin: 1rem 0; }
+    .milestone h4 { color: var(--accent2); margin: 0 0 0.5rem; }
+    .tag { display: inline-block; font-size: 0.72rem; padding: 0.1rem 0.5rem; border-radius: 3px; font-weight: 600; }
+    .tag-est { background: #2d2460; color: var(--accent); }
+    .tag-dep { background: #1a2d20; color: var(--green); }
+    .tag-test { background: #2d2410; color: var(--yellow); }
+    hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+  </style>
+</head>
+<body>
+
+<nav class="toc">
+  <h2>Plugin Implementation Plan</h2>
+  <a href="#overview">Overview</a>
+  <a href="#tech-stack">Tech Stack</a>
+  <a href="#repo-structure">Repo Structure</a>
+  <div class="group">Segments</div>
+  <a class="sub" href="#seg1">1. Scaffold + build pipeline</a>
+  <a class="sub" href="#seg2">2. Daemon lifecycle</a>
+  <a class="sub" href="#seg3">3. Status bar</a>
+  <a class="sub" href="#seg4">4. TreeView navigation</a>
+  <a class="sub" href="#seg5">5. Chat panel (basic)</a>
+  <a class="sub" href="#seg6">6. Chat streaming + tool blocks</a>
+  <a class="sub" href="#seg7">7. Inline diff</a>
+  <a class="sub" href="#seg8">8. Setup wizard</a>
+  <a class="sub" href="#seg9">9. Settings panel</a>
+  <a class="sub" href="#seg10">10. Test view</a>
+  <a class="sub" href="#seg11">11. Plan tracker</a>
+  <a class="sub" href="#seg12">12. Requirements/design view</a>
+  <a class="sub" href="#seg13">13. Brainstorm view</a>
+  <a class="sub" href="#seg14">14. Agent run management</a>
+  <a class="sub" href="#seg15">15. Config management panel</a>
+  <a class="sub" href="#seg16">16. Conversation history</a>
+  <a class="sub" href="#seg17">17. Code annotations</a>
+  <a class="sub" href="#seg18">18. Polish + packaging</a>
+  <div class="group">Reference</div>
+  <a href="#dependencies">Dependencies</a>
+  <a href="#testing">Testing Strategy</a>
+  <a href="#timeline">Timeline</a>
+</nav>
+
+<main>
+
+<h1>VS Code Plugin &mdash; Implementation Plan</h1>
+<p class="subtitle">18 installable, testable segments &mdash; from scaffold to marketplace</p>
+
+<!-- ================================================================== -->
+<h2 id="overview">Overview</h2>
+
+<p>
+  The insrc VS Code extension is a <strong>thin UI layer</strong> over the insrc daemon.
+  All intelligence (LLM routing, tool execution, graph queries, memory) lives in the daemon.
+  The extension owns: chat panel, inline diff, status bar, navigation, settings, and setup wizard.
+</p>
+
+<p>
+  Each segment below is independently installable via <code>code --install-extension insrc-X.X.X.vsix</code>
+  and testable. Segments build on each other but each produces a working extension with
+  incremental functionality.
+</p>
+
+<div class="callout decision">
+  <strong>Key decisions:</strong>
+  Plugin-only (no VS Code fork).
+  Inline diff via virtual document + <code>vscode.diff</code> inline mode.
+  Cross-repo navigation via daemon-backed TreeView.
+  Daemon auto-managed by extension (spawn, health poll, auto-restart).
+</div>
+
+<!-- ================================================================== -->
+<h2 id="tech-stack">Tech Stack</h2>
+
+<table>
+  <tr><th>Component</th><th>Technology</th></tr>
+  <tr><td>Extension language</td><td>TypeScript (strict, ESM)</td></tr>
+  <tr><td>Bundler</td><td>esbuild (fast builds, single-file output)</td></tr>
+  <tr><td>Webview UI</td><td>Vanilla HTML/CSS/JS in webviews (no React/Svelte &mdash; keep bundle small)</td></tr>
+  <tr><td>IPC</td><td>Unix domain socket (<code>~/.insrc/daemon.sock</code>), JSON-RPC</td></tr>
+  <tr><td>Testing</td><td>VS Code Extension Test Runner (<code>@vscode/test-electron</code>)</td></tr>
+  <tr><td>Packaging</td><td><code>vsce package</code> &rarr; VSIX</td></tr>
+  <tr><td>Min VS Code</td><td>1.98.0+</td></tr>
+</table>
+
+<!-- ================================================================== -->
+<h2 id="repo-structure">Repo Structure</h2>
+
+<pre><code>vscode-insrc/                    # Separate repo (or packages/vscode-insrc/ in monorepo)
+  src/
+    extension.ts                 # activate() / deactivate() entry point
+    daemon/
+      lifecycle.ts               # spawn, connect, health poll, auto-restart
+      rpc.ts                     # JSON-RPC client over Unix socket
+    ui/
+      statusBar.ts               # StatusBarItem management
+      treeView.ts                # TreeDataProvider for navigation panel
+      chatPanel.ts               # WebviewViewProvider for chat
+      diffManager.ts             # Virtual document + inline diff + CodeLens
+      settingsPanel.ts           # Webview settings form
+      setupWizard.ts             # First-run wizard webview
+    views/
+      testView.ts                # Tester agent view
+      planView.ts                # Plan tracker view
+      docView.ts                 # Requirements/design split view
+      brainstormView.ts          # Brainstorm flow view
+      reviewView.ts              # Review report view
+    annotations/
+      annotationManager.ts       # CodeLens + decorations + batch send
+    webview/
+      chat.html + chat.css + chat.js        # Chat panel webview assets
+      settings.html + settings.css          # Settings panel assets
+      wizard.html + wizard.css              # Setup wizard assets
+  test/
+    suite/
+      lifecycle.test.ts          # Daemon spawn/connect/health tests
+      statusBar.test.ts          # Status bar state tests
+      treeView.test.ts           # Navigation panel tests
+      diff.test.ts               # Inline diff tests
+      chat.test.ts               # Chat panel message tests
+  package.json                   # Extension manifest
+  tsconfig.json
+  esbuild.config.ts
+  .vscodeignore</code></pre>
+
+<!-- ================================================================== -->
+<h2>Implementation Segments</h2>
+
+<p>Each segment has: scope, files created/modified, testable outcome, and dependencies on prior segments.</p>
+
+<!-- ------------------------------------------------------------------ -->
+<h3 id="seg1">Segment 1: Scaffold + Build Pipeline</h3>
+<p><span class="tag tag-est">~2 days</span> <span class="tag tag-dep">no deps</span></p>
+
+<h4>Scope</h4>
+<ul>
+  <li>Initialize extension project with <code>yo code</code> or manual setup</li>
+  <li>TypeScript + esbuild bundler configuration</li>
+  <li><code>package.json</code> manifest with activation event, commands, views container</li>
+  <li><code>extension.ts</code> with minimal <code>activate()</code> / <code>deactivate()</code></li>
+  <li>VSIX packaging via <code>vsce package</code></li>
+</ul>
+
+<h4>Files</h4>
+<pre><code>package.json, tsconfig.json, esbuild.config.ts, .vscodeignore
+src/extension.ts</code></pre>
+
+<div class="milestone">
+  <h4><span class="tag tag-test">Test</span> Milestone</h4>
+  <p><code>code --install-extension insrc-0.0.1.vsix</code> &mdash; extension activates without errors.
+  "insrc" appears in Extensions panel. <code>Developer: Show Running Extensions</code> lists it.</p>
+</div>
+
+<!-- ------------------------------------------------------------------ -->
+<h3 id="seg2">Segment 2: Daemon Lifecycle</h3>
+<p><span class="tag tag-est">~3 days</span> <span class="tag tag-dep">depends: Seg 1</span></p>
+
+<h4>Scope</h4>
+<ul>
+  <li><code>daemon/lifecycle.ts</code> &mdash; <code>ensureDaemon()</code>: check socket, check PID, spawn detached, poll for ready</li>
+  <li><code>daemon/rpc.ts</code> &mdash; JSON-RPC client: <code>call(method, params)</code> over Unix socket with timeout</li>
+  <li>On activation: call <code>ensureDaemon()</code>, show progress notification</li>
+  <li>Health polling: 30s interval via <code>daemon.status</code> RPC</li>
+  <li>Auto-restart on crash (3 attempts, then notification)</li>
+  <li>On deactivation: disconnect (do NOT stop daemon &mdash; shared across windows)</li>
+</ul>
+
+<h4>Files</h4>
+<pre><code>src/daemon/lifecycle.ts, src/daemon/rpc.ts
+src/extension.ts (updated)</code></pre>
+
+<div class="milestone">
+  <h4><span class="tag tag-test">Test</span> Milestone</h4>
+  <ol>
+    <li>Stop daemon manually (<code>insrc daemon stop</code>). Open VS Code. Extension auto-starts daemon.
+    Verify with <code>insrc daemon status</code>.</li>
+    <li>Kill daemon process (<code>kill -9</code>). Extension auto-restarts within 30s.</li>
+    <li>Open two VS Code windows. Both connect to the same daemon (check PID).</li>
+    <li>Close all VS Code windows. Daemon keeps running (detached).</li>
+  </ol>
+</div>
+
+<!-- ------------------------------------------------------------------ -->
+<h3 id="seg3">Segment 3: Status Bar</h3>
+<p><span class="tag tag-est">~1 day</span> <span class="tag tag-dep">depends: Seg 2</span></p>
+
+<h4>Scope</h4>
+<ul>
+  <li><code>ui/statusBar.ts</code> &mdash; create <code>StatusBarItem</code>, update from health poll</li>
+  <li>10 states: running, processing, indexing, Ollama down, auto-accept, stopped, crashed, stale, delta indexing, setup required</li>
+  <li>Tooltip with daemon health details (uptime, queue, Ollama, embedding, repos)</li>
+  <li>Left-click: open chat panel. Right-click: context menu (restart, settings, logs)</li>
+</ul>
+
+<h4>Files</h4>
+<pre><code>src/ui/statusBar.ts
+src/extension.ts (updated)</code></pre>
+
+<div class="milestone">
+  <h4><span class="tag tag-test">Test</span> Milestone</h4>
+  <p>Status bar shows <code>✱ insrc</code> in accent colour when daemon is healthy.
+  Hover shows uptime + queue. Stop daemon &rarr; bar turns red with ✗. Auto-restart &rarr; bar recovers.</p>
+</div>
+
+<!-- ------------------------------------------------------------------ -->
+<h3 id="seg4">Segment 4: TreeView Navigation</h3>
+<p><span class="tag tag-est">~3 days</span> <span class="tag tag-dep">depends: Seg 2</span></p>
+
+<h4>Scope</h4>
+<ul>
+  <li><code>ui/treeView.ts</code> &mdash; <code>TreeDataProvider</code> backed by daemon RPC</li>
+  <li>Top level: repos from <code>repo.list</code> RPC (not workspace folders)</li>
+  <li>Nested: sessions grouped by date (Today, Yesterday, This week, Older)</li>
+  <li>Repo status badges: indexed, indexing, stale, error</li>
+  <li>Context menu: re-index, remove repo</li>
+  <li>"+ Add repo" button &rarr; folder picker &rarr; <code>repo.add</code> RPC</li>
+  <li>Click session &rarr; switch daemon context + load into chat panel</li>
+  <li>Cross-repo file opening via <code>vscode.workspace.openTextDocument(Uri.file(...))</code></li>
+</ul>
+
+<h4>Files</h4>
+<pre><code>src/ui/treeView.ts
+package.json (viewsContainers, views updated)</code></pre>
+
+<div class="milestone">
+  <h4><span class="tag tag-test">Test</span> Milestone</h4>
+  <ol>
+    <li>Navigation panel shows all repos from <code>insrc repo list</code> (not just open folder).</li>
+    <li>Add a repo via the + button &mdash; appears in tree, indexing starts.</li>
+    <li>Click a session under a non-workspace repo &mdash; files open in editor from that repo's path.</li>
+    <li>Right-click repo &rarr; Re-index &mdash; triggers reindex via RPC.</li>
+  </ol>
+</div>
+
+<!-- ------------------------------------------------------------------ -->
+<h3 id="seg5">Segment 5: Chat Panel (Basic)</h3>
+<p><span class="tag tag-est">~4 days</span> <span class="tag tag-dep">depends: Seg 2</span></p>
+
+<h4>Scope</h4>
+<ul>
+  <li><code>ui/chatPanel.ts</code> &mdash; <code>WebviewViewProvider</code> registered in secondary sidebar</li>
+  <li>Webview HTML/CSS/JS: message list, input box, send button</li>
+  <li>Send user message &rarr; RPC to daemon &rarr; display response</li>
+  <li>Repo context indicator in header (clickable pill to switch repos)</li>
+  <li><code>@repo:name</code> inline switch in input box</li>
+  <li>Session persistence: <code>retainContextWhenHidden: true</code></li>
+  <li>Pop-out to floating window (drag tab outside VS Code)</li>
+</ul>
+
+<h4>Files</h4>
+<pre><code>src/ui/chatPanel.ts
+src/webview/chat.html, chat.css, chat.js
+package.json (views updated)</code></pre>
+
+<div class="milestone">
+  <h4><span class="tag tag-test">Test</span> Milestone</h4>
+  <p>Type a message in the chat panel. Agent responds. Repo pill shows current repo.
+  Pop out the chat tab to a floating window &mdash; session continues.</p>
+</div>
+
+<!-- ------------------------------------------------------------------ -->
+<h3 id="seg6">Segment 6: Chat Streaming + Tool Blocks</h3>
+<p><span class="tag tag-est">~3 days</span> <span class="tag tag-dep">depends: Seg 5</span></p>
+
+<h4>Scope</h4>
+<ul>
+  <li>Token-by-token streaming display (daemon sends deltas)</li>
+  <li>Tool call blocks: collapsible cards showing tool name + input summary + output</li>
+  <li>Escalation notices: provider badge, model name, estimated tokens before each Claude call</li>
+  <li><code>@opus</code> cost confirmation as inline card (confirm/cancel)</li>
+  <li>Intent badge on each agent response</li>
+  <li>Cancel button during processing (sends cancel RPC)</li>
+  <li><code>@file</code> mentions with fuzzy file picker</li>
+  <li>File drag-and-drop attachments</li>
+  <li><code>/</code> command menu (slash commands)</li>
+</ul>
+
+<h4>Files</h4>
+<pre><code>src/ui/chatPanel.ts (updated)
+src/webview/chat.js (updated &mdash; streaming, tool blocks, mentions)</code></pre>
+
+<div class="milestone">
+  <h4><span class="tag tag-test">Test</span> Milestone</h4>
+  <p>Ask agent to read a file &mdash; see streaming response + tool call block.
+  Type <code>@file:</code> &mdash; file picker appears. Drag a file into chat &mdash; attached.
+  See escalation notice before Claude call.</p>
+</div>
+
+<!-- ------------------------------------------------------------------ -->
+<h3 id="seg7">Segment 7: Inline Diff</h3>
+<p><span class="tag tag-est">~4 days</span> <span class="tag tag-dep">depends: Seg 5</span></p>
+
+<h4>Scope</h4>
+<ul>
+  <li><code>ui/diffManager.ts</code> &mdash; <code>TextDocumentContentProvider</code> for proposed content</li>
+  <li>On activation: write <code>"diffEditor.renderSideBySide": false</code> to <code>.vscode/settings.json</code></li>
+  <li>When daemon sends a diff: register virtual document, open with <code>vscode.diff(original, proposed)</code></li>
+  <li>CodeLens provider: Accept / Reject / Edit buttons above the diff</li>
+  <li>Accept: write virtual doc to disk, close diff tab, notify daemon</li>
+  <li>Reject: close diff tab, restore original, notify daemon</li>
+  <li>Edit: open input box, send feedback to daemon, re-propose</li>
+  <li>Multi-file diffs: one tab per file, progress indicator in chat</li>
+  <li>Pipeline status in editor title: "local generating..." &rarr; "Claude validating..." &rarr; "APPROVED"</li>
+</ul>
+
+<h4>Files</h4>
+<pre><code>src/ui/diffManager.ts
+package.json (TextDocumentContentProvider, CodeLensProvider registered)</code></pre>
+
+<div class="milestone">
+  <h4><span class="tag tag-test">Test</span> Milestone</h4>
+  <ol>
+    <li>Ask agent to implement a function &mdash; inline diff opens in single column (red/green lines).</li>
+    <li>Click "Accept" CodeLens &mdash; file updated on disk, diff closes.</li>
+    <li>Click "Reject" &mdash; diff closes, file unchanged.</li>
+    <li>Multi-file change &mdash; multiple diff tabs open.</li>
+    <li>Verify <code>.vscode/settings.json</code> has <code>renderSideBySide: false</code>.</li>
+  </ol>
+</div>
+
+<!-- ------------------------------------------------------------------ -->
+<h3 id="seg8">Segment 8: Setup Wizard</h3>
+<p><span class="tag tag-est">~3 days</span> <span class="tag tag-dep">depends: Seg 2, 3</span></p>
+
+<h4>Scope</h4>
+<ul>
+  <li><code>ui/setupWizard.ts</code> &mdash; multi-step webview wizard</li>
+  <li>Step 1: Ollama detection + install link</li>
+  <li>Step 2: Model pull (qwen3-coder + qwen3-embedding:4b) with progress bars</li>
+  <li>Step 3: Anthropic API key (validate with test call, skippable for local-only)</li>
+  <li>Step 4: Brave Search key (optional, skippable)</li>
+  <li>Trigger: auto on first activation when any component missing</li>
+  <li>Re-openable from status bar context menu or command palette</li>
+</ul>
+
+<h4>Files</h4>
+<pre><code>src/ui/setupWizard.ts
+src/webview/wizard.html, wizard.css</code></pre>
+
+<div class="milestone">
+  <h4><span class="tag tag-test">Test</span> Milestone</h4>
+  <p>Unset ANTHROPIC_API_KEY. Activate extension &mdash; wizard opens.
+  Skip API key step &mdash; extension works in local-only mode with badge.
+  Re-open wizard from command palette &mdash; validates existing config.</p>
+</div>
+
+<!-- ------------------------------------------------------------------ -->
+<h3 id="seg9">Segment 9: Settings Panel</h3>
+<p><span class="tag tag-est">~3 days</span> <span class="tag tag-dep">depends: Seg 2</span></p>
+
+<h4>Scope</h4>
+<ul>
+  <li><code>ui/settingsPanel.ts</code> &mdash; webview with form sections</li>
+  <li>Sections: Ollama, Local model, Claude tiers, Context window, Agent step overrides, API keys, Permissions, Routing</li>
+  <li>Writes to correct backing store: API keys &rarr; <code>~/.insrc/config.json</code>, IDE prefs &rarr; VS Code settings</li>
+  <li>Model dropdown populated from Ollama <code>GET /api/tags</code></li>
+  <li>Agent step overrides as expandable table per agent</li>
+  <li>Validation on save (API key test call, Ollama ping)</li>
+</ul>
+
+<h4>Files</h4>
+<pre><code>src/ui/settingsPanel.ts
+src/webview/settings.html, settings.css</code></pre>
+
+<div class="milestone">
+  <h4><span class="tag tag-test">Test</span> Milestone</h4>
+  <p>Open settings via command palette. Change local model &mdash; verified in daemon.
+  Change API key &mdash; validates with test call. Change context window &mdash; reflected in status bar tooltip.</p>
+</div>
+
+<!-- ------------------------------------------------------------------ -->
+<h3 id="seg10">Segment 10: Test View</h3>
+<p><span class="tag tag-est">~4 days</span> <span class="tag tag-dep">depends: Seg 5, 7</span></p>
+
+<h4>Scope</h4>
+<ul>
+  <li><code>views/testView.ts</code> &mdash; webview for tester agent flow</li>
+  <li>Test plan display: entries with scenarios, fixtures, priorities</li>
+  <li>Plan gate actions: approve / approve-with-review / edit / reject</li>
+  <li>Per-file progress: status badges (pending &rarr; written &rarr; passing/failing/impl-bug)</li>
+  <li>Failure classification badges: test_issue (blue), implementation_bug (red), setup_issue (yellow)</li>
+  <li>Fix loop counter + Claude escalation indicator</li>
+  <li>Implementation bug gate: batch list with auto-fix/skip actions</li>
+  <li>Test report summary</li>
+</ul>
+
+<h4>Files</h4>
+<pre><code>src/views/testView.ts</code></pre>
+
+<div class="milestone">
+  <h4><span class="tag tag-test">Test</span> Milestone</h4>
+  <p>Run <code>test</code> intent in chat. Test plan appears in code panel with approve button.
+  Approve &mdash; per-file progress shows. Failures show classification badges.</p>
+</div>
+
+<!-- ------------------------------------------------------------------ -->
+<h3 id="seg11">Segment 11: Plan Tracker</h3>
+<p><span class="tag tag-est">~3 days</span> <span class="tag tag-dep">depends: Seg 5</span></p>
+
+<h4>Scope</h4>
+<ul>
+  <li><code>views/planView.ts</code> &mdash; kanban-style step tracker</li>
+  <li>Columns: Pending, In Progress, Done, Failed, Skipped</li>
+  <li>Step cards: title, description, dependencies, effort estimate</li>
+  <li>Active step highlighted with pulsing border</li>
+  <li>Real-time updates as step status changes arrive from daemon</li>
+  <li>Toolbar: Start next, Skip step, View full plan</li>
+  <li>Action panel always shows plan progress (pinned during plan execution)</li>
+</ul>
+
+<h4>Files</h4>
+<pre><code>src/views/planView.ts</code></pre>
+
+<div class="milestone">
+  <h4><span class="tag tag-test">Test</span> Milestone</h4>
+  <p>Run <code>plan</code> intent. Kanban board appears with steps. Execute a step &mdash;
+  card moves from Pending to In Progress to Done with animation.</p>
+</div>
+
+<!-- ------------------------------------------------------------------ -->
+<h3 id="seg12">Segment 12: Requirements / Design View</h3>
+<p><span class="tag tag-est">~4 days</span> <span class="tag tag-dep">depends: Seg 5</span></p>
+
+<h4>Scope</h4>
+<ul>
+  <li><code>views/docView.ts</code> &mdash; split panel: preview (top) + raw Monaco editor (bottom)</li>
+  <li>Format toggle: MD / HTML</li>
+  <li>Preview renders via <code>markdown-it</code> (MD) or direct HTML injection</li>
+  <li>Raw pane: editable, changes re-render preview live</li>
+  <li>Swap button (⇅) flips pane positions</li>
+  <li>Design view adds Canvas tab (graph entities as nodes, proposed as dashed overlays)</li>
+  <li>Revision history: each agent response is a named revision</li>
+  <li>Save to <code>docs/</code> directory</li>
+</ul>
+
+<h4>Files</h4>
+<pre><code>src/views/docView.ts</code></pre>
+
+<div class="milestone">
+  <h4><span class="tag tag-test">Test</span> Milestone</h4>
+  <p>Run <code>design</code> intent. Split panel shows rendered design (top) + raw markdown (bottom).
+  Toggle to HTML. Edit raw &mdash; preview updates. Save to file.</p>
+</div>
+
+<!-- ------------------------------------------------------------------ -->
+<h3 id="seg13">Segment 13: Brainstorm View</h3>
+<p><span class="tag tag-est">~3 days</span> <span class="tag tag-dep">depends: Seg 5</span></p>
+
+<h4>Scope</h4>
+<ul>
+  <li><code>views/brainstormView.ts</code> &mdash; webview for brainstorm agent flow</li>
+  <li>Round indicator: Round N, mode (diverge/converge)</li>
+  <li>Idea pool: scrollable cards with status badges (proposed/accepted/rejected/parked/promoted/merged)</li>
+  <li>Theme clustering: grouped cards after converge</li>
+  <li>Live spec builder: requirements spec updates in real-time</li>
+  <li>Gate cards in action panel for each brainstorm gate</li>
+</ul>
+
+<h4>Files</h4>
+<pre><code>src/views/brainstormView.ts</code></pre>
+
+<div class="milestone">
+  <h4><span class="tag tag-test">Test</span> Milestone</h4>
+  <p>Run <code>brainstorm</code> intent. See diverge round with idea cards.
+  Accept ideas &mdash; converge shows themes. Spec builds incrementally.</p>
+</div>
+
+<!-- ------------------------------------------------------------------ -->
+<h3 id="seg14">Segment 14: Agent Run Management</h3>
+<p><span class="tag tag-est">~2 days</span> <span class="tag tag-dep">depends: Seg 4</span></p>
+
+<h4>Scope</h4>
+<ul>
+  <li>Add "Runs" section to TreeView navigation panel</li>
+  <li>List active/paused/crashed/completed runs with agent type + status badge</li>
+  <li>Context menu: Resume, Discard, Open logs</li>
+  <li>Active run shows step-by-step progress inline in tree node</li>
+  <li>Commands: <code>insrc.agentList</code>, <code>insrc.agentResume</code>, <code>insrc.agentDiscard</code></li>
+</ul>
+
+<h4>Files</h4>
+<pre><code>src/ui/treeView.ts (updated &mdash; add runs section)</code></pre>
+
+<div class="milestone">
+  <h4><span class="tag tag-test">Test</span> Milestone</h4>
+  <p>Start a designer run, pause it (Ctrl+C in REPL). Open VS Code &mdash; run appears as "paused" in tree.
+  Right-click &rarr; Resume. Run continues from checkpoint.</p>
+</div>
+
+<!-- ------------------------------------------------------------------ -->
+<h3 id="seg15">Segment 15: Config Management Panel</h3>
+<p><span class="tag tag-est">~3 days</span> <span class="tag tag-dep">depends: Seg 2, 9</span></p>
+
+<h4>Scope</h4>
+<ul>
+  <li>Webview panel for browsing config store entries</li>
+  <li>Tree: namespace (tester/pair/designer/...) &rarr; category (template/feedback/convention)</li>
+  <li>Search bar: semantic search via <code>config.search</code> RPC</li>
+  <li>Entry detail: rendered markdown with frontmatter</li>
+  <li>Edit: Monaco editor with frontmatter validation</li>
+  <li>Reindex button</li>
+</ul>
+
+<h4>Files</h4>
+<pre><code>src/ui/configPanel.ts (or integrated into settingsPanel.ts)</code></pre>
+
+<div class="milestone">
+  <h4><span class="tag tag-test">Test</span> Milestone</h4>
+  <p>Open config panel. Browse tester templates. Search "vitest mock" &mdash; results appear.
+  Click an entry &mdash; see rendered markdown. Edit &mdash; reindex updates vector store.</p>
+</div>
+
+<!-- ------------------------------------------------------------------ -->
+<h3 id="seg16">Segment 16: Conversation History</h3>
+<p><span class="tag tag-est">~2 days</span> <span class="tag tag-dep">depends: Seg 4</span></p>
+
+<h4>Scope</h4>
+<ul>
+  <li>Expand session nodes in TreeView to show past turns</li>
+  <li>Turn preview: user message first line + timestamp</li>
+  <li>Tier badges: hot (blue), warm (yellow), cold (gray), archive (dim)</li>
+  <li>Directive badges: pin icon for preserved user preferences</li>
+  <li>Stats panel: total turns, sessions, by-type, by-tier</li>
+  <li>Compact button with dry-run preview</li>
+</ul>
+
+<h4>Files</h4>
+<pre><code>src/ui/treeView.ts (updated &mdash; expand sessions with turns)</code></pre>
+
+<div class="milestone">
+  <h4><span class="tag tag-test">Test</span> Milestone</h4>
+  <p>Expand a session in tree &mdash; see past turns with tier badges. A directive turn
+  shows pin icon. Click "Compact" &mdash; dry-run shows what would be compressed.</p>
+</div>
+
+<!-- ------------------------------------------------------------------ -->
+<h3 id="seg17">Segment 17: Code Annotations</h3>
+<p><span class="tag tag-est">~3 days</span> <span class="tag tag-dep">depends: Seg 5</span></p>
+
+<h4>Scope</h4>
+<ul>
+  <li><code>annotations/annotationManager.ts</code></li>
+  <li>Select text in any editor &rarr; CodeLens "＋ Add insrc annotation" or context menu or <code>Ctrl+Shift+A</code></li>
+  <li>InputBox for annotation text</li>
+  <li>Amber highlight decoration + gutter icon on annotated range</li>
+  <li>Annotation preview CodeLens above the range</li>
+  <li>Multiple annotations accumulate across files</li>
+  <li>Badge in chat action panel: "N annotations pending"</li>
+  <li>"Send annotations to chat" button &mdash; compiles structured message</li>
+  <li>Also works on requirements/design preview pane and canvas</li>
+</ul>
+
+<h4>Files</h4>
+<pre><code>src/annotations/annotationManager.ts
+package.json (CodeLensProvider, keybindings)</code></pre>
+
+<div class="milestone">
+  <h4><span class="tag tag-test">Test</span> Milestone</h4>
+  <p>Select code in editor. Ctrl+Shift+A &mdash; annotation input appears. Type note.
+  Amber highlight appears. Add 3 annotations across 2 files.
+  Click "Send to chat" &mdash; structured message appears in chat. Agent responds to each point.</p>
+</div>
+
+<!-- ------------------------------------------------------------------ -->
+<h3 id="seg18">Segment 18: Polish + Packaging</h3>
+<p><span class="tag tag-est">~4 days</span> <span class="tag tag-dep">depends: all</span></p>
+
+<h4>Scope</h4>
+<ul>
+  <li>Theme integration: webviews use VS Code CSS variables</li>
+  <li>Keyboard shortcuts table (Ctrl+Shift+I for chat, etc.)</li>
+  <li>Icon set for activity bar, tree nodes, status bar</li>
+  <li>Extension README with screenshots + feature list</li>
+  <li>CHANGELOG.md</li>
+  <li>Marketplace metadata (categories, badges, preview images)</li>
+  <li>CI: build + test + package on push</li>
+  <li>Final VSIX package for distribution</li>
+</ul>
+
+<h4>Files</h4>
+<pre><code>README.md, CHANGELOG.md, icons/, .github/workflows/build.yml</code></pre>
+
+<div class="milestone">
+  <h4><span class="tag tag-test">Test</span> Milestone</h4>
+  <p>Install VSIX on a clean VS Code. Full flow: daemon starts, wizard runs, chat works,
+  inline diff works, navigation shows repos, annotations work. All on light + dark themes.</p>
+</div>
+
+<!-- ================================================================== -->
+<h2 id="dependencies">Segment Dependencies</h2>
+
+<pre><code>Seg 1 (scaffold)
+  ├── Seg 2 (daemon lifecycle)
+  │     ├── Seg 3 (status bar)
+  │     ├── Seg 4 (tree view)
+  │     │     ├── Seg 14 (agent runs)
+  │     │     └── Seg 16 (conversation history)
+  │     ├── Seg 5 (chat basic)
+  │     │     ├── Seg 6 (streaming + tools)
+  │     │     ├── Seg 7 (inline diff)
+  │     │     │     └── Seg 10 (test view)
+  │     │     ├── Seg 11 (plan tracker)
+  │     │     ├── Seg 12 (docs view)
+  │     │     ├── Seg 13 (brainstorm view)
+  │     │     └── Seg 17 (annotations)
+  │     ├── Seg 8 (setup wizard)
+  │     └── Seg 9 (settings panel)
+  │           └── Seg 15 (config management)
+  └── Seg 18 (polish — depends on all)</code></pre>
+
+<p><strong>Critical path:</strong> 1 &rarr; 2 &rarr; 5 &rarr; 7 (inline diff) and 1 &rarr; 2 &rarr; 5 &rarr; 6 (streaming chat).
+These deliver the core value (chat + code changes) in 4 segments.</p>
+
+<!-- ================================================================== -->
+<h2 id="testing">Testing Strategy</h2>
+
+<table>
+  <tr><th>Layer</th><th>Tool</th><th>What it tests</th></tr>
+  <tr>
+    <td>Unit</td>
+    <td>vitest</td>
+    <td>RPC client, daemon lifecycle logic, diff manager logic (no VS Code API)</td>
+  </tr>
+  <tr>
+    <td>Integration</td>
+    <td><code>@vscode/test-electron</code></td>
+    <td>Extension activation, command registration, status bar states, tree view data</td>
+  </tr>
+  <tr>
+    <td>E2E</td>
+    <td>Manual + screenshot comparison</td>
+    <td>Full flow: daemon spawn &rarr; chat &rarr; inline diff &rarr; accept. Light + dark themes.</td>
+  </tr>
+  <tr>
+    <td>Daemon mock</td>
+    <td>Mock Unix socket server</td>
+    <td>Extension behavior when daemon returns errors, slow responses, or disconnects</td>
+  </tr>
+</table>
+
+<!-- ================================================================== -->
+<h2 id="timeline">Estimated Timeline</h2>
+
+<table>
+  <tr><th>Segment</th><th>Est. Days</th><th>Cumulative</th><th>Deliverable</th></tr>
+  <tr><td>1. Scaffold</td><td>2</td><td>2</td><td>Installable empty extension</td></tr>
+  <tr><td>2. Daemon lifecycle</td><td>3</td><td>5</td><td>Auto-start/restart daemon</td></tr>
+  <tr><td>3. Status bar</td><td>1</td><td>6</td><td>Health display</td></tr>
+  <tr><td>5. Chat (basic)</td><td>4</td><td>10</td><td>Send/receive messages</td></tr>
+  <tr><td>6. Streaming + tools</td><td>3</td><td>13</td><td>Real-time chat with tool blocks</td></tr>
+  <tr><td>7. Inline diff</td><td>4</td><td>17</td><td>Accept/reject code changes</td></tr>
+  <tr><td>4. TreeView</td><td>3</td><td>20</td><td>Cross-repo navigation</td></tr>
+  <tr><td>8. Setup wizard</td><td>3</td><td>23</td><td>First-run experience</td></tr>
+  <tr><td>9. Settings</td><td>3</td><td>26</td><td>Full configuration UI</td></tr>
+  <tr><td>10-13. Intent views</td><td>14</td><td>40</td><td>Test, plan, docs, brainstorm views</td></tr>
+  <tr><td>14-16. Management</td><td>7</td><td>47</td><td>Agent runs, config, conversation</td></tr>
+  <tr><td>17. Annotations</td><td>3</td><td>50</td><td>Code annotations</td></tr>
+  <tr><td>18. Polish</td><td>4</td><td>54</td><td>Marketplace-ready VSIX</td></tr>
+</table>
+
+<div class="callout">
+  <strong>MVP at segment 7:</strong> After 17 days, you have a working extension with daemon auto-management,
+  health monitoring, streaming chat, and inline diff with accept/reject. This covers the core value proposition
+  and is usable for day-to-day coding.
+</div>
+
+</main>
+</body>
+</html>

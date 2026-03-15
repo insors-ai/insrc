@@ -245,23 +245,102 @@
   <pre><code>Extension activated (VS Code opens workspace)
   │
   ├─ 1. Check: is daemon running?
-  │         ping localhost:&lt;port&gt; or ~/.insrc/daemon.sock
-  │         ✓ already running → connect
-  │         ✗ not running    → spawn daemon process
+  │         Method A: connect to ~/.insrc/daemon.sock (preferred — confirms IPC works)
+  │         Method B: read ~/.insrc/daemon.pid → process.kill(pid, 0) (fallback)
+  │         ✓ already running → connect, update status bar to ✓
+  │         ✗ not running    → spawn daemon (see below)
   │
-  ├─ 2. Check: Ollama installed?
+  ├─ 2. Spawn daemon if not running
+  │         spawn('npx', ['tsx', 'daemon', 'start'], { detached: true, stdio: 'ignore' })
+  │         child.unref() — daemon outlives VS Code window
+  │         Poll socket every 500ms, timeout 10s
+  │         Show VS Code notification: "Starting insrc daemon..."
+  │         On success → connect, update status bar to ✓
+  │         On timeout → status bar shows ✗, offer "Retry" button
+  │
+  ├─ 3. Check: Ollama installed?
   │         ✓ continue
   │         ✗ → show setup wizard step: "Install Ollama"
   │
-  ├─ 3. Check: qwen3-coder + qwen3-embedding:4b pulled?
+  ├─ 4. Check: qwen3-coder + qwen3-embedding:4b pulled?
   │         ✓ continue
   │         ✗ → daemon pulls both automatically, extension shows per-model progress bars
   │
-  ├─ 4. Check: ANTHROPIC_API_KEY configured?
+  ├─ 5. Check: ANTHROPIC_API_KEY configured?
   │         ✓ continue
   │         ✗ → show setup wizard step: "Add API key" (skippable — local-only mode)
   │
-  └─ 5. Ready → show status bar ✓, enable chat panel</code></pre>
+  └─ 6. Ready → show status bar ✓, enable chat panel, start health polling</code></pre>
+
+  <h4>Daemon auto-management implementation</h4>
+
+  <pre><code>// Extension activation — daemon lifecycle management
+import { connect } from 'node:net';
+import { spawn } from 'node:child_process';
+import { readFileSync, existsSync } from 'node:fs';
+
+const SOCKET_PATH = path.join(homedir(), '.insrc', 'daemon.sock');
+const PID_PATH = path.join(homedir(), '.insrc', 'daemon.pid');
+
+async function ensureDaemon(): Promise&lt;void&gt; {
+  // 1. Try connecting to existing daemon
+  if (await tryConnect(SOCKET_PATH)) return;
+
+  // 2. Check stale PID file
+  if (existsSync(PID_PATH)) {
+    const pid = parseInt(readFileSync(PID_PATH, 'utf-8').trim(), 10);
+    try { process.kill(pid, 0); } // alive check
+    catch { /* stale PID — clean up and spawn */ }
+  }
+
+  // 3. Spawn daemon as detached process
+  const child = spawn('npx', ['tsx', 'src/cli/index.ts', 'daemon', 'start'], {
+    detached: true,
+    stdio: 'ignore',
+    cwd: extensionDaemonPath,
+  });
+  child.unref();
+
+  // 4. Wait for socket to become available
+  await waitForSocket(SOCKET_PATH, 10_000); // poll 500ms, timeout 10s
+}
+
+function waitForSocket(path: string, timeoutMs: number): Promise&lt;void&gt; {
+  return new Promise((resolve, reject) =&gt; {
+    const start = Date.now();
+    const poll = () =&gt; {
+      const sock = connect(path);
+      sock.on('connect', () =&gt; { sock.destroy(); resolve(); });
+      sock.on('error', () =&gt; {
+        if (Date.now() - start &gt; timeoutMs) reject(new Error('Daemon start timeout'));
+        else setTimeout(poll, 500);
+      });
+    };
+    poll();
+  });
+}</code></pre>
+
+  <h4>Health polling</h4>
+  <p>
+    After connection, the extension polls daemon health every 30 seconds via the
+    <code>daemon.status</code> RPC method. The response includes:
+  </p>
+  <ul>
+    <li><strong>Daemon uptime</strong> — shown in status bar tooltip</li>
+    <li><strong>Queue depth</strong> — index jobs pending; shown as badge on status bar if &gt; 0</li>
+    <li><strong>Ollama status</strong> — available / unavailable; drives Claude fallback badge</li>
+    <li><strong>Model readiness</strong> — embedding model loaded and responsive</li>
+    <li><strong>Repo index status</strong> — per-repo: ready / indexing / stale / error</li>
+  </ul>
+  <p>
+    If health polling fails (socket closed, daemon crashed), the extension:
+  </p>
+  <ol>
+    <li>Updates status bar to <code>✱ insrc ✗</code> (red)</li>
+    <li>Attempts auto-restart (same <code>ensureDaemon()</code> flow)</li>
+    <li>If restart fails after 3 attempts, shows notification: "insrc daemon unavailable — click to retry"</li>
+    <li>Chat panel remains open but shows "Reconnecting..." overlay</li>
+  </ol>
 
   <div class="callout warn">
     <strong>Daemon is shared across windows:</strong> If the user opens multiple VS Code windows,
@@ -739,13 +818,38 @@
     <tbody>
       <tr><td>Daemon running, Ollama available</td><td><code>✱ insrc</code> (accent colour)</td></tr>
       <tr><td>Processing a turn</td><td><code>✱ insrc ⟳</code> (spinning)</td></tr>
+      <tr><td>Indexing in progress</td><td><code>✱ insrc ↻ 42</code> (accent) — queue depth badge</td></tr>
       <tr><td>Ollama unavailable, Claude fallback active</td><td><code>✱ insrc ☁</code> (yellow)</td></tr>
       <tr><td>auto-accept mode active</td><td><code>✱ insrc AUTO-ACCEPT</code> (yellow)</td></tr>
       <tr><td>Daemon not running</td><td><code>✱ insrc ✗</code> (red) — click to restart</td></tr>
+      <tr><td>Daemon crashed, auto-restarting</td><td><code>✱ insrc ⟳</code> (red) — auto-restart in progress</td></tr>
       <tr><td>Graph index stale</td><td><code>✱ insrc △</code> (yellow) — click to re-index</td></tr>
+      <tr><td>Delta indexing on startup</td><td><code>✱ insrc ↻</code> (accent) — delta index running</td></tr>
       <tr><td>Setup wizard incomplete</td><td><code>✱ insrc setup required</code> (yellow)</td></tr>
     </tbody>
   </table>
+
+  <h4>Status bar tooltip</h4>
+  <p>Hover on the status bar item to see a detailed tooltip with daemon health:</p>
+  <pre><code>insrc daemon
+  Status:    running (uptime 2h 15m)
+  Queue:     0 jobs pending
+  Ollama:    ✓ available (qwen3-coder-64k)
+  Embedding: ✓ ready (qwen3-embedding:4b)
+  Context:   16K budget (L4: 4K code)
+
+  Repos:
+    insrc          ready   (last: 2m ago)
+    api-gateway    ready   (last: 1h ago)
+    ml-pipeline    stale ⚠ (last: 3d ago)</code></pre>
+
+  <h4>Status bar click actions</h4>
+  <ul>
+    <li><strong>Left click:</strong> Open/focus chat panel</li>
+    <li><strong>Right click:</strong> Context menu — Restart daemon · Open settings · Open setup wizard · Show logs</li>
+    <li><strong>Click when ✗ (stopped):</strong> Attempt daemon restart with progress notification</li>
+    <li><strong>Click when △ (stale):</strong> Trigger re-index for stale repos</li>
+  </ul>
 
   <h3>Settings panel</h3>
   <p>

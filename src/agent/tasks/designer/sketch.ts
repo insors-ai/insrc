@@ -82,6 +82,7 @@ export async function reviewSketch(
   allRequirements: ParsedRequirement[],
   input: DesignerInput,
   claudeProvider: LLMProvider,
+  configContext?: string,
 ): Promise<RequirementSketch> {
   const reqListContext = formatRequirementsList(allRequirements);
 
@@ -92,6 +93,9 @@ export async function reviewSketch(
     { role: 'user', content: `## All Requirements\n${reqListContext}` },
     ...(input.codeContext
       ? [{ role: 'user' as const, content: `## Code Context\n${input.codeContext}` }]
+      : []),
+    ...(configContext
+      ? [{ role: 'user' as const, content: configContext }]
       : []),
   ];
 
@@ -115,6 +119,7 @@ export async function reSketchWithFeedback(
   input: DesignerInput,
   localProvider: LLMProvider,
   claudeProvider: LLMProvider,
+  configContext?: string,
 ): Promise<RequirementSketch> {
   const reqListContext = formatRequirementsList(allRequirements);
   const history = compressHistory(allTodos);
@@ -130,6 +135,7 @@ export async function reSketchWithFeedback(
         `## All Requirements\n${reqListContext}`,
         input.codeContext ? `## Code Context\n${input.codeContext}` : '',
         history ? `## Design History\n${history}` : '',
+        configContext ?? '',
       ].filter(Boolean).join('\n\n'),
     },
   ];
@@ -140,7 +146,7 @@ export async function reSketchWithFeedback(
   });
 
   const newSketch = parseSketch(localResponse.text, todo.index);
-  return reviewSketch(newSketch, todo, allRequirements, input, claudeProvider);
+  return reviewSketch(newSketch, todo, allRequirements, input, claudeProvider, configContext);
 }
 
 // ---------------------------------------------------------------------------

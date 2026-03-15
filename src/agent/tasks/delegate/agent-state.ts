@@ -55,6 +55,10 @@ export interface DelegateState extends AgentState, HasProviderOverride {
   /** Commit messages for commits made during execution. */
   commits: string[];
 
+  // Context
+  /** Config context loaded from conventions/feedback/templates. */
+  configContext?: string | undefined;
+
   // Iteration tracking
   editRounds: Record<string, number>;
   /** Current focus / feedback for retries. */

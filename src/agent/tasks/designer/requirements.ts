@@ -52,6 +52,7 @@ export async function enhanceRequirements(
   rawList: string,
   input: DesignerInput,
   claudeProvider: LLMProvider,
+  configContext?: string,
 ): Promise<string> {
   const userParts: string[] = [
     `Requirements list to enhance:\n\n${rawList}`,
@@ -61,6 +62,9 @@ export async function enhanceRequirements(
     userParts.push(`Code context:\n${input.codeContext}`);
   }
   userParts.push(`Original user request:\n${input.message}`);
+  if (configContext) {
+    userParts.push(configContext);
+  }
 
   const messages: LLMMessage[] = [
     { role: 'system', content: REQ_ENHANCE_SYSTEM },
@@ -83,6 +87,7 @@ export async function reExtractWithFeedback(
   feedback: string,
   input: DesignerInput,
   claudeProvider: LLMProvider,
+  configContext?: string,
 ): Promise<string> {
   const messages: LLMMessage[] = [
     { role: 'system', content: REQ_ENHANCE_SYSTEM },
@@ -93,6 +98,7 @@ export async function reExtractWithFeedback(
         `User feedback:\n${feedback}`,
         input.codeContext ? `Code context:\n${input.codeContext}` : '',
         `Original request:\n${input.message}`,
+        configContext ?? '',
       ].filter(Boolean).join('\n\n'),
     },
   ];

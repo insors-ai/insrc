@@ -136,7 +136,26 @@ export const gatherContextStep: AgentStep<PlannerState> = {
     const findings = formatFindings(allEntities, topN, expansions);
 
     // Load config context (conventions, feedback, templates)
-    const configContext = await loadConfigContext(ctx, 'planner', 'all', state.input.repoPath);
+    let configContext = await loadConfigContext(ctx, 'planner', 'all', state.input.repoPath);
+
+    // Search for planner-specific feedback from prior sessions
+    if (ctx.searchConfig) {
+      try {
+        const plannerFeedback = await ctx.searchConfig({
+          query: 'plan validation step dependency complexity feedback',
+          namespace: ['planner', 'common'],
+          category: 'feedback',
+          limit: 3,
+          boostProject: true,
+        });
+        if (plannerFeedback.length > 0) {
+          const feedbackText = plannerFeedback.map(f => f.entry.body).join('\n');
+          configContext = configContext
+            ? `${configContext}\n\n### Planner Learnings\n${feedbackText}`
+            : `## Planner Learnings\n${feedbackText}`;
+        }
+      } catch { /* config search unavailable */ }
+    }
 
     return {
       state: {

@@ -205,7 +205,7 @@
     </li>
     <li><a href="#pair-handoff">Pair Agent Handoff</a></li>
     <li><a href="#review-strategy">Review Strategy</a></li>
-    <li><a href="#test-feedback">Test Feedback Loop</a></li>
+    <li><a href="#test-feedback">Test Feedback, Config &amp; Memory</a></li>
     <li><a href="#types">Types and State</a></li>
     <li><a href="#reuse">Reused Infrastructure</a></li>
     <li><a href="#integration">REPL/CLI Integration</a></li>
@@ -312,7 +312,9 @@
   <li>For each source file in scope, calls <code>findTestFile()</code> to discover existing tests</li>
   <li>Reads existing test files to understand current coverage and test style</li>
   <li>For live tests: queries the daemon to discover config patterns, service URLs, DB setup</li>
-  <li>Loads test feedback from <code>~/.insrc/testing/feedback-{language}.md</code> if it exists (see <a href="#test-feedback">Section 9</a>). This feedback is carried on state and injected into prompts for <code>generate-test-plan</code> and <code>write-tests</code>.</li>
+  <li>Loads config context via <code>loadConfigContext(ctx, 'tester', language, repoPath)</code> &mdash; retrieves conventions, feedback, and templates from the config vector store (see <a href="#test-feedback">Section 9</a>)</li>
+  <li>Performs targeted feedback search via <code>ctx.searchConfig({ query: 'test generation patterns for ${framework}', namespace: ['tester', 'common'], category: 'feedback', ... })</code> for framework-specific learnings</li>
+  <li>Config context is stored on <code>state.configContext</code> and injected into prompts for <code>generate-test-plan</code> and <code>write-tests</code></li>
 </ul>
 
 <p><strong>State updates:</strong> <code>investigationSummary</code>, <code>detectedFramework</code>, <code>existingTests[]</code>, <code>sourceFiles[]</code>, <code>configContext</code></p>
@@ -876,13 +878,50 @@
 <p>On issues (whether from Claude or user feedback), the test is re-generated via <code>write-tests</code> with the feedback incorporated.</p>
 
 <!-- ================================================================== -->
-<h2 id="test-feedback">9. Test Feedback Loop</h2>
+<h2 id="test-feedback">9. Test Feedback, Config &amp; Memory Integration</h2>
 
-<p>The test agent uses the <strong>Config Management Framework</strong> (see <a href="config-management.html">design/config-management.html</a>) for storing and retrieving test feedback, templates, and conventions. This section describes how the tester agent specifically integrates with that framework.</p>
+<p>The test agent uses the <strong>Config Management Framework</strong> (see <a href="config-management.html">design/config-management.html</a>) and the <strong>Memory Framework</strong> (see <a href="agent.html#context-window">agent.html &sect;Context Window &amp; Memory</a>) for storing and retrieving test feedback, templates, and conventions. The agent definition sets <code>configNamespace: 'tester'</code>.</p>
 
-<h3>What the tester records</h3>
+<h3>9.1 Config Context Loading</h3>
 
-<p>The tester agent calls <code>recordFeedback()</code> (from the config framework) with <code>category: 'testing'</code> at these points:</p>
+<p>During the <code>analyze</code> step, the tester loads config context using the same pattern as other agents:</p>
+
+<pre><code>// 1. Load general conventions + feedback + templates
+let configContext = await loadConfigContext(ctx, 'tester', language, state.input.repoPath);
+
+// 2. Targeted feedback search for framework-specific learnings
+if (ctx.searchConfig) {
+  const feedback = await ctx.searchConfig({
+    query: `test generation patterns for ${state.detectedFramework}`,
+    namespace: ['tester', 'common'],
+    category: 'feedback',
+    language: frameworkToLanguage(state.detectedFramework),
+    limit: 5,
+    boostProject: true,
+  });
+  if (feedback.length > 0) {
+    configContext += '\n\n### Tester Learnings\n' + feedback.map(f => f.entry.body).join('\n');
+  }
+}
+
+// 3. Resolve testing template (e.g., vitest-unit, pytest-live)
+if (ctx.resolveTemplate) {
+  const template = await ctx.resolveTemplate({
+    namespace: 'tester',
+    language: frameworkToLanguage(state.detectedFramework),
+    name: `${state.detectedFramework}-unit`,
+    repoPath: state.input.repoPath,
+  });
+  if (template) configContext += '\n\n### Test Template\n' + template.body;
+}
+
+state.configContext = configContext;</code></pre>
+
+<p>The config context is stored on <code>state.configContext</code> (loaded once in analyze, reused across generate-test-plan, write-tests, and fix loop steps). The <code>loadConfigContext()</code> helper from <code>src/agent/tasks/shared/config-context.ts</code> applies a 6,000-char cap with priority ordering: conventions &gt; feedback &gt; templates.</p>
+
+<h3>9.2 What the tester records</h3>
+
+<p>The tester agent calls <code>ctx.recordFeedback()</code> with <code>namespace: 'tester'</code> at these points (fire-and-forget, never blocks the agent):</p>
 
 <table>
   <tr><th>Source</th><th>When</th><th>What gets recorded</th></tr>
@@ -911,43 +950,47 @@
     <td>Re-classification changes category after fix attempt</td>
     <td>Misclassification pattern</td>
   </tr>
+  <tr>
+    <td><strong>High failure rate (report step)</strong></td>
+    <td>Session-level: &gt;50% of test entries failed or were skipped</td>
+    <td>Quality signal about test generation approach for this project</td>
+  </tr>
 </table>
 
-<h3>What the tester retrieves</h3>
+<pre><code>// Example: recording feedback at review-tests gate edit action
+if (ctx.recordFeedback && feedback) {
+  ctx.recordFeedback({
+    content: `User edited test code: ${feedback}`,
+    namespace: 'tester',
+    language: frameworkToLanguage(state.detectedFramework),
+    repoPath: state.input.repoPath,
+    provider: ctx.providers.local,
+  }).catch(() => {});  // fire-and-forget
+}</code></pre>
 
-<p>During the <code>analyze</code> step, the tester loads config context via the config store search API:</p>
+<h3>9.3 Feedback storage</h3>
 
-<pre><code>// In analyze step, after detectFramework()
-const configContext = await searchConfig({
-  query: `test generation patterns for ${state.detectedFramework}`,
-  category: 'feedback',
-  subcategory: 'testing',
-  language: frameworkToLanguage(state.detectedFramework),
-  boostProject: state.input.repoPath,
-  limit: 5,
-});
-
-// Also load testing templates
-const template = await resolveTemplate({
-  subcategory: 'testing',
-  language: frameworkToLanguage(state.detectedFramework),
-  name: `${state.detectedFramework}-unit`,
-  repoPath: state.input.repoPath,
-});
-
-state.configContext = assembleConfigContext(configContext, template);</code></pre>
-
-<p>The assembled config context is injected into prompts for <code>generate-test-plan</code> (scenario design, fixture choices) and <code>write-tests</code> (code patterns, import style, framework conventions).</p>
-
-<h3>Feedback file layout</h3>
-
-<p>Test feedback files follow the config framework's markdown-with-frontmatter format and are stored at:</p>
+<p>Feedback files follow the config framework's markdown-with-frontmatter format, organized by namespace:</p>
 <ul>
-  <li><strong>Global:</strong> <code>~/.insrc/feedback/testing-{language}.md</code> &mdash; framework-level patterns (vitest conventions, pytest idioms)</li>
-  <li><strong>Project:</strong> <code>&lt;project&gt;/.insrc/feedback/testing.md</code> &mdash; project-specific patterns (custom types, internal API quirks)</li>
+  <li><strong>Global:</strong> <code>~/.insrc/feedback/tester/{language}.md</code> &mdash; framework-level patterns (vitest conventions, pytest idioms)</li>
+  <li><strong>Project:</strong> <code>&lt;project&gt;/.insrc/feedback/tester/{language}.md</code> &mdash; project-specific patterns (custom types, internal API quirks)</li>
 </ul>
 
-<p>The config framework handles scope classification, deduplication, generalization, and indexing into the config vector store. See <a href="config-management.html#feedback">Config Management &sect;5</a> for details.</p>
+<p>The <code>recordFeedback()</code> function handles: LLM-based generalization (extracts the rule from the instance), deduplication (checks if rule already exists), scope classification (global vs project), file persistence with frontmatter, and immediate re-indexing into the config vector store. See <a href="config-management.html#feedback">Config Management &sect;5</a> for details.</p>
+
+<h3>9.4 Conversation persistence &amp; session tags</h3>
+
+<p>The tester agent integrates with the <strong>persistent conversation store</strong> and <strong>session tagging</strong>:</p>
+
+<ul>
+  <li><strong>Turn recording:</strong> The REPL records the tester's output as a conversation turn (same as all pipeline agents). This persists in the <code>conversation_turns</code> LanceDB table and is available for L3b semantic retrieval in future turns.</li>
+  <li><strong>Session tag:</strong> After completion, the REPL sets <code>ctx.setTag('[test]', summary)</code> with test outcome details. Downstream agents (e.g., Pair debug mode) can retrieve this via <code>ctx.getTag('[test]')</code>.</li>
+  <li><strong>Compaction safety:</strong> Conversation turns with directive patterns (e.g., "never mock the database in tests") are preserved during compaction as <code>type: 'directive'</code> entries that survive all tier transitions.</li>
+</ul>
+
+<h3>9.5 Configurable budget</h3>
+
+<p>The tester agent's context window budget is derived from <code>config.models.context.local</code> (default 32K) via <code>createBudget(contextWindowSize)</code>. Budget layers scale proportionally: L4 (code entities) gets ~25% of the window, ensuring sufficient room for source files + test files + investigation results.</p>
 
 <!-- ================================================================== -->
 <h2 id="types">10. Types and State</h2>
@@ -1049,6 +1092,10 @@ state.configContext = assembleConfigContext(configContext, template);</code></pr
   <tr><td><code>applyFixDiff()</code></td><td><code>shared/test-runner-helper.ts</code></td><td>execute-tests (apply test fixes)</td></tr>
   <tr><td><code>pairAgent</code> + <code>runAgent()</code></td><td><code>tasks/pair/</code>, <code>framework/runner.ts</code></td><td>impl-bug-gate (batch handoff)</td></tr>
   <tr><td><code>resolveStepProvider()</code></td><td><code>framework/provider-mention.ts</code></td><td>all LLM steps</td></tr>
+  <tr><td><code>loadConfigContext()</code></td><td><code>shared/config-context.ts</code></td><td>analyze (loads conventions + feedback + templates)</td></tr>
+  <tr><td><code>ctx.searchConfig()</code></td><td><code>framework/types.ts</code> (StepContext)</td><td>analyze (targeted feedback search)</td></tr>
+  <tr><td><code>ctx.resolveTemplate()</code></td><td><code>framework/types.ts</code> (StepContext)</td><td>analyze (test template resolution)</td></tr>
+  <tr><td><code>ctx.recordFeedback()</code></td><td><code>framework/types.ts</code> (StepContext)</td><td>review-tests gate, execute-tests fix loop, report step</td></tr>
 </table>
 
 <!-- ================================================================== -->
@@ -1056,6 +1103,14 @@ state.configContext = assembleConfigContext(configContext, template);</code></pr
 
 <h3>REPL (<code>src/agent/index.ts</code>)</h3>
 <p>Replace the existing <code>test</code> intent handler with <code>runTesterAgent(message, codeContext)</code> following the <code>runPairAgent</code> pattern: check active runs, create <code>ReplChannel</code>, call <code>runAgent()</code>, extract result. Support resume from checkpoint.</p>
+
+<p><strong>Session integration:</strong></p>
+<ul>
+  <li>After completion, set <code>ctx.setTag('[test]', finalState.summary)</code> so downstream agents can reference test outcomes</li>
+  <li>The REPL's <code>handlePipelineIntent</code> caller records the tester output as a conversation turn (automatic for all pipeline agents)</li>
+  <li>Enrich the tester's message with prior <code>[requirements]</code> and <code>[design]</code> tags when available, so the tester understands what it's testing against</li>
+  <li>Pass <code>rpcFn</code> to <code>RunnerOpts</code> so the agent has daemon access for config context loading, feedback recording, and codebase search</li>
+</ul>
 
 <h3>CLI (<code>src/agent/cli.ts</code>)</h3>
 <p>Replace with <code>runTesterCli()</code> using <code>TestChannel</code> with auto-approve for gates (non-interactive one-shot). The "approve with review" flag can be set via a CLI option.</p>

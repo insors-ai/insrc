@@ -61,7 +61,26 @@ export const extractRequirementsStep: AgentStep<DesignerState> = {
     const input = toDesignerInput(state);
 
     // Load config context (conventions, feedback, templates)
-    const configContext = await loadConfigContext(ctx, 'designer', 'all', state.input.repoPath);
+    let configContext = await loadConfigContext(ctx, 'designer', 'all', state.input.repoPath);
+
+    // Search for designer-specific feedback from prior sessions
+    if (ctx.searchConfig) {
+      try {
+        const designerFeedback = await ctx.searchConfig({
+          query: 'designer sketch detail requirements quality feedback',
+          namespace: ['designer', 'common'],
+          category: 'feedback',
+          limit: 3,
+          boostProject: true,
+        });
+        if (designerFeedback.length > 0) {
+          const feedbackText = designerFeedback.map(f => f.entry.body).join('\n');
+          configContext = configContext
+            ? `${configContext}\n\n### Designer Learnings\n${feedbackText}`
+            : `## Designer Learnings\n${feedbackText}`;
+        }
+      } catch { /* config search unavailable */ }
+    }
 
     ctx.progress('Extracting requirements...');
     const rawList = await extractRequirements(input, ctx.providers.resolve('designer', 'extract'), configContext);
@@ -69,7 +88,7 @@ export const extractRequirementsStep: AgentStep<DesignerState> = {
     ctx.progress('Enhancing requirements...');
     const claude = ctx.providers.resolveOrNull('designer', 'enhance');
     if (!claude) throw new Error('Claude provider required for requirements enhancement');
-    const enhancedList = await enhanceRequirements(rawList, input, claude);
+    const enhancedList = await enhanceRequirements(rawList, input, claude, configContext);
 
     return {
       state: {
@@ -160,7 +179,7 @@ export const validateRequirementsStep: AgentStep<DesignerState> = {
     const claude = ctx.providers.resolveOrNull('designer', 'enhance');
     if (!claude) throw new Error('Claude provider required');
     const enhancedList = await reExtractWithFeedback(
-      state.enhancedRequirements, reply.feedback ?? '', toDesignerInput(state), claude,
+      state.enhancedRequirements, reply.feedback ?? '', toDesignerInput(state), claude, state.configContext,
     );
 
     return {
@@ -276,7 +295,7 @@ export const sketchStep: AgentStep<DesignerState> = {
     ctx.progress(`${todo.index}: Reviewing sketch...`);
     const claude = ctx.providers.resolveOrNull('designer', 'review');
     if (!claude) throw new Error('Claude provider required for sketch review');
-    sketch = await reviewSketch(sketch, todo, state.parsedRequirements, input, claude);
+    sketch = await reviewSketch(sketch, todo, state.parsedRequirements, input, claude, state.configContext);
 
     // Update todo with sketch
     updatedTodos[idx] = { ...updatedTodos[idx]!, state: 'sketch-reviewing' as const, sketch };
@@ -373,6 +392,7 @@ export const validateSketchStep: AgentStep<DesignerState> = {
     const newSketch = await reSketchWithFeedback(
       sketch, reply.feedback ?? '', todo, state.parsedRequirements,
       state.todos, toDesignerInput(state), ctx.providers.resolve('designer', 'sketch'), claude,
+      state.configContext,
     );
 
     const updatedTodos = [...state.todos];
@@ -505,7 +525,7 @@ export const validateDetailStep: AgentStep<DesignerState> = {
     if (!claude) throw new Error('Claude provider required');
     const revisedDetail = await reDetailWithFeedback(
       todo.detail!, reply.feedback ?? '', todo, state.todos, toDesignerInput(state),
-      ctx.providers.resolve('designer', 'detail'), claude,
+      ctx.providers.resolve('designer', 'detail'), claude, state.configContext,
     );
 
     const updatedTodos = [...state.todos];

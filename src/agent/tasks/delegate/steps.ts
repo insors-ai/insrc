@@ -63,12 +63,20 @@ export const invokePlannerStep: AgentStep<DelegateState> = {
       { action: 'approve' }, // validate-details gate
     ]);
 
+    // Wrap ctx.rpc as rpcFn so sub-agent can access daemon (config search, etc.)
+    const rpcFn = <T>(method: string, params?: unknown): Promise<T> =>
+      ctx.rpc<T>(method, params).then(r => {
+        if (r === null) throw new Error('RPC returned null');
+        return r;
+      });
+
     const plannerOpts: RunnerOpts = {
       definition: plannerAgent as unknown as RunnerOpts['definition'],
       channel: subChannel,
       options: { input: plannerInput, repo: state.input.repoPath },
       config: ctx.config,
       providers: ctx.providers,
+      rpcFn,
     };
 
     const result = await runAgent(plannerOpts);
@@ -131,6 +139,15 @@ export const approvePlanGateStep: AgentStep<DelegateState> = {
         return { state: newState, next: 'execute-step' };
 
       case 'edit': {
+        if (ctx.recordFeedback && (cleanFeedback || reply.feedback)) {
+          ctx.recordFeedback({
+            content: `User edited delegate plan: ${cleanFeedback || reply.feedback}`,
+            namespace: 'delegate',
+            language: 'all',
+            repoPath: state.input.repoPath,
+            provider: ctx.providers.local,
+          }).catch(() => {});
+        }
         // Parse commit strategy and gate level from feedback if present
         const parsed = parseGateFeedback(cleanFeedback || reply.feedback || '');
         const updatedState = {
@@ -185,8 +202,30 @@ export const executeStepStep: AgentStep<DelegateState> = {
     if (investigation.summary) extraContext.push(`Investigation:\n${investigation.summary}`);
     if (state.input.designSpec) extraContext.push(`Design spec:\n${state.input.designSpec}`);
 
-    // Load config context (conventions + feedback + templates)
-    const configContext = await loadConfigContext(ctx, 'delegate', 'all', state.input.repoPath);
+    // Load config context (reuse from state if already loaded)
+    let configContext = state.configContext;
+    if (!configContext) {
+      configContext = await loadConfigContext(ctx, 'delegate', 'all', state.input.repoPath) || undefined;
+
+      // Search for delegate-specific feedback
+      if (ctx.searchConfig) {
+        try {
+          const delegateFeedback = await ctx.searchConfig({
+            query: 'delegate execution step validation feedback',
+            namespace: ['delegate', 'common'],
+            category: 'feedback',
+            limit: 3,
+            boostProject: true,
+          });
+          if (delegateFeedback.length > 0) {
+            const feedbackText = delegateFeedback.map(f => f.entry.body).join('\n');
+            configContext = configContext
+              ? `${configContext}\n\n### Delegate Learnings\n${feedbackText}`
+              : `## Delegate Learnings\n${feedbackText}`;
+          }
+        } catch { /* config search unavailable */ }
+      }
+    }
     if (configContext) extraContext.push(configContext);
 
     // Include plan context
@@ -266,6 +305,7 @@ export const executeStepStep: AgentStep<DelegateState> = {
 
     let newState = consumeOverride({
       ...state,
+      configContext,
       plan: donePlan,
       stepResults: [...state.stepResults, stepResult],
       filesChanged: [...state.filesChanged, ...applyResult.filesWritten],
@@ -439,6 +479,15 @@ export const failureGateStep: AgentStep<DelegateState> = {
 
     switch (reply.action) {
       case 'retry': {
+        if (ctx.recordFeedback && (cleanFeedback || reply.feedback)) {
+          ctx.recordFeedback({
+            content: `Delegate step failed, user retried: ${cleanFeedback || reply.feedback}`,
+            namespace: 'delegate',
+            language: 'all',
+            repoPath: state.input.repoPath,
+            provider: ctx.providers.local,
+          }).catch(() => {});
+        }
         if (state.rollbackOnFailure && lastResult?.filesChanged?.length) {
           await rollbackFiles(lastResult.filesChanged, state.input.repoPath, (msg) => ctx.progress(msg));
         }
@@ -454,6 +503,15 @@ export const failureGateStep: AgentStep<DelegateState> = {
       }
 
       case 'edit': {
+        if (ctx.recordFeedback && (cleanFeedback || reply.feedback)) {
+          ctx.recordFeedback({
+            content: `Delegate step failed, user edited step: ${cleanFeedback || reply.feedback}`,
+            namespace: 'delegate',
+            language: 'all',
+            repoPath: state.input.repoPath,
+            provider: ctx.providers.local,
+          }).catch(() => {});
+        }
         const feedback = cleanFeedback || reply.feedback || '';
         if (state.rollbackOnFailure && lastResult?.filesChanged?.length) {
           await rollbackFiles(lastResult.filesChanged, state.input.repoPath, (msg) => ctx.progress(msg));

@@ -44,8 +44,6 @@ export interface DesignerState extends AgentState {
   /** Collected sketches from completed requirements. */
   completedSketches:     RequirementSketch[];
 
-  /** Compressed design history for later requirements. */
-  compressedHistory:     string;
   /** Config context loaded from conventions/feedback/templates (loaded once in extract-requirements). */
   configContext?:        string | undefined;
 

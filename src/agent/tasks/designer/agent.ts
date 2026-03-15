@@ -58,7 +58,6 @@ export const designerAgent: AgentDefinition<DesignerState> = {
       currentTodoIndex: 0,
       editRounds: {},
       completedSketches: [],
-      compressedHistory: '',
     };
   },
 

@@ -106,6 +106,7 @@ export async function reDetailWithFeedback(
   input: DesignerInput,
   localProvider: LLMProvider,
   claudeProvider: LLMProvider,
+  configContext?: string,
 ): Promise<string> {
   const history = compressHistory(allTodos);
 
@@ -120,6 +121,7 @@ export async function reDetailWithFeedback(
         `## User Feedback\n${feedback}`,
         input.codeContext ? `## Code Context\n${input.codeContext}` : '',
         history ? `## Design History\n${history}` : '',
+        configContext ?? '',
       ].filter(Boolean).join('\n\n'),
     },
   ];

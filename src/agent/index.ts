@@ -856,8 +856,19 @@ export async function startRepl(cwd?: string): Promise<void> {
 
     const replChannel = new ReplChannel({ log: { info: (m: string) => log.info(m), debug: (m: string) => log.debug(m), error: (m: string) => log.error(m) }, prompt: 'planner> ' });
 
+    // Enrich planner message with prior session context (requirements, design)
+    let enrichedMessage = message;
+    const reqContext = ctx.getTag('[requirements]');
+    if (reqContext) {
+      enrichedMessage += `\n\n## Prior Requirements\n${reqContext}`;
+    }
+    const designContext = ctx.getTag('[design]');
+    if (designContext) {
+      enrichedMessage += `\n\n## Prior Design Summary\n${designContext.slice(0, 2000)}`;
+    }
+
     const plannerInput: PlannerInput = {
-      message,
+      message: enrichedMessage,
       codeContext,
       session: {
         repoPath,
@@ -1003,8 +1014,15 @@ export async function startRepl(cwd?: string): Promise<void> {
 
     const replChannel = new ReplChannel({ log: { info: (m: string) => log.info(m), debug: (m: string) => log.debug(m), error: (m: string) => log.error(m) }, prompt: `pair(${mode})> ` });
 
+    // Enrich message with prior session context
+    let enrichedMessage = message;
+    const reqCtx = ctx.getTag('[requirements]');
+    if (reqCtx && !designSpec) {
+      enrichedMessage += `\n\n## Prior Requirements\n${reqCtx}`;
+    }
+
     const pairInput: PairInput = {
-      message,
+      message: enrichedMessage,
       codeContext,
       designSpec,
       mode,
@@ -1032,6 +1050,12 @@ export async function startRepl(cwd?: string): Promise<void> {
 
       const finalState = result.result as PairState;
       const summary = finalState.conversationSummary || 'Pair session completed.';
+
+      // Set session tag for downstream agents
+      const pairSummary = finalState.changesApplied.length > 0
+        ? `${summary} Files: ${finalState.changesApplied.map(c => c.file).join(', ')}`
+        : summary;
+      ctx.setTag('[pair]', pairSummary);
 
       if (finalState.changesApplied.length > 0) {
         const files = finalState.changesApplied.map(c => c.file).join('\n  - ');
@@ -1076,8 +1100,15 @@ export async function startRepl(cwd?: string): Promise<void> {
 
     const replChannel = new ReplChannel({ log: { info: (m: string) => log.info(m), debug: (m: string) => log.debug(m), error: (m: string) => log.error(m) }, prompt: 'delegate> ' });
 
+    // Enrich message with prior session context
+    let enrichedDelegateMessage = message;
+    const delegateReqCtx = ctx.getTag('[requirements]');
+    if (delegateReqCtx && !designSpec) {
+      enrichedDelegateMessage += `\n\n## Prior Requirements\n${delegateReqCtx}`;
+    }
+
     const delegateInput: DelegateInput = {
-      message,
+      message: enrichedDelegateMessage,
       codeContext,
       designSpec,
       session: {
@@ -1104,6 +1135,9 @@ export async function startRepl(cwd?: string): Promise<void> {
 
       const finalState = result.result as DelegateState;
       const summary = `Delegate execution complete: ${finalState.stepResults.length} steps executed, ${finalState.filesChanged.length} files changed.`;
+
+      // Set session tag for downstream agents
+      ctx.setTag('[delegate]', summary);
 
       if (finalState.commits.length > 0) {
         return `${summary}\n\nCommits:\n${finalState.commits.map(c => `  - ${c}`).join('\n')}`;

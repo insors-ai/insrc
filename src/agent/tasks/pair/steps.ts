@@ -135,8 +135,30 @@ export const proposeStep: AgentStep<PairState> = {
       userParts.push(`Files already changed this session:\n${changesSummary}`);
     }
 
-    // Load config context (conventions + feedback + templates)
-    const configContext = await loadConfigContext(ctx, 'pair', 'all', state.input.repoPath);
+    // Load config context (reuse from state if already loaded, otherwise load fresh)
+    let configContext = state.configContext;
+    if (!configContext) {
+      configContext = await loadConfigContext(ctx, 'pair', 'all', state.input.repoPath) || undefined;
+
+      // Search for pair-specific feedback from prior sessions
+      if (ctx.searchConfig) {
+        try {
+          const pairFeedback = await ctx.searchConfig({
+            query: `pair ${state.mode} code generation validation feedback`,
+            namespace: ['pair', 'common'],
+            category: 'feedback',
+            limit: 3,
+            boostProject: true,
+          });
+          if (pairFeedback.length > 0) {
+            const feedbackText = pairFeedback.map(f => f.entry.body).join('\n');
+            configContext = configContext
+              ? `${configContext}\n\n### Pair Learnings\n${feedbackText}`
+              : `## Pair Learnings\n${feedbackText}`;
+          }
+        } catch { /* config search unavailable */ }
+      }
+    }
     if (configContext) userParts.push(configContext);
 
     userParts.push(`User request:\n${state.input.message}`);
@@ -155,6 +177,7 @@ export const proposeStep: AgentStep<PairState> = {
 
     const newState = consumeOverride({
       ...state,
+      configContext,
       pendingProposal: proposal,
       activeTodos: proposal.todos ?? state.activeTodos,
       iterationCount: state.iterationCount + 1,
@@ -217,6 +240,15 @@ export const reviewGateStep: AgentStep<PairState> = {
       }
 
       case 'edit': {
+        if (ctx.recordFeedback && (cleanFeedback || reply.feedback)) {
+          ctx.recordFeedback({
+            content: `User edited pair ${state.mode} proposal: ${cleanFeedback || reply.feedback}`,
+            namespace: 'pair',
+            language: 'all',
+            repoPath: state.input.repoPath,
+            provider: ctx.providers.local,
+          }).catch(() => {});
+        }
         const key = `propose-${newState.iterationCount}`;
         const rounds = (newState.editRounds[key] ?? 0) + 1;
         if (rounds > MAX_EDIT_ROUNDS) {
@@ -246,6 +278,15 @@ export const reviewGateStep: AgentStep<PairState> = {
       }
 
       case 'reject': {
+        if (ctx.recordFeedback && (cleanFeedback || reply.feedback)) {
+          ctx.recordFeedback({
+            content: `User rejected pair ${state.mode} proposal: ${cleanFeedback || reply.feedback}`,
+            namespace: 'pair',
+            language: 'all',
+            repoPath: state.input.repoPath,
+            provider: ctx.providers.local,
+          }).catch(() => {});
+        }
         return {
           state: {
             ...newState,

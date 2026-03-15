@@ -53,6 +53,8 @@ export interface PairState extends AgentState, HasProviderOverride {
   hypotheses: Hypothesis[];
 
   // Context management
+  /** Config context loaded from conventions/feedback/templates (loaded once in propose). */
+  configContext?: string | undefined;
   /** Rolling summary of the conversation. */
   conversationSummary: string;
   /** Current focus area (updated when user expands scope). */

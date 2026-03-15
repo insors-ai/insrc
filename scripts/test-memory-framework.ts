@@ -243,8 +243,8 @@ section('4. L3b Semantic History');
 section('5. Budget Shapes');
 
 {
-  // Default 32K budget
-  check('TOKEN_BUDGET.total is 32768', TOKEN_BUDGET.total === 32768);
+  // Default 16K budget
+  check('TOKEN_BUDGET.total is 16384', TOKEN_BUDGET.total === 16384);
   check('TOKEN_BUDGET.system is 1000', TOKEN_BUDGET.system === 1000);
 
   // Create budgets with named shapes and raw token counts

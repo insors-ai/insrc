@@ -62,8 +62,8 @@ export function createBudget(sizeOrShape: number | BudgetShape = 32_768): TokenB
   };
 }
 
-/** Default 32K budget. */
-export const TOKEN_BUDGET: TokenBudget = createBudget(32_768);
+/** Default 16K budget (matches config default for RTX 4060 Ti 16GB). */
+export const TOKEN_BUDGET: TokenBudget = createBudget(16_384);
 
 /**
  * Approximate token count for a string.

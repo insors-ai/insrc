@@ -7,7 +7,7 @@ import { ClaudeProvider } from './providers/claude.js';
 const log = getLogger('config');
 
 const DEFAULT_CONTEXT = {
-  local: 32_768,        // 32K — conservative default; adjust in config.json for larger models
+  local: 16_384,        // 16K — fits RTX 4060 Ti 16GB without layer spill; adjust in config.json
   localMaxOutput: 8_192,
   claude: 200_000,      // 200K
   claudeMaxOutput: 8_192,

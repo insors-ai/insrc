@@ -1,0 +1,125 @@
+{
+  "//": "insrc configuration — copy to ~/.insrc/config.json and customize",
+  "//": "all fields are optional — missing fields use defaults shown here",
+
+  "ollama": {
+    "host": "http://localhost:11434"
+  },
+
+  "models": {
+    "local": "qwen3-coder:latest",
+    "embedding": "qwen3-embedding:4b",
+    "embeddingDim": 2560,
+
+    "tiers": {
+      "fast": "claude-haiku-4-5",
+      "standard": "claude-sonnet-4-6",
+      "powerful": "claude-opus-4-6"
+    },
+
+    "//roles": "Map of named roles to model IDs for custom routing",
+    "roles": {},
+
+    "context": {
+      "local": 16384,
+      "localMaxOutput": 8192,
+      "claude": 200000,
+      "claudeMaxOutput": 8192,
+      "charsPerToken": 3
+    },
+
+    "//intentDefaults": "Override which intents default to Claude vs local",
+    "intentDefaults": {
+      "implement": "local",
+      "refactor": "local",
+      "test": "local",
+      "debug": "local",
+      "review": "claude",
+      "document": "claude",
+      "research": "local",
+      "plan": "local",
+      "requirements": "claude",
+      "design": "claude",
+      "brainstorm": "local",
+      "deploy": "claude",
+      "release": "claude",
+      "infra": "claude"
+    },
+
+    "//agents": "Per-agent step-level provider overrides",
+    "//agents-format": "Each step value is 'local' | 'claude' or { provider, model?, tier? }",
+    "agents": {
+
+      "designer": {
+        "extract": "local",
+        "enhance": "claude",
+        "sketch": "local",
+        "review": "claude",
+        "detail": "local",
+        "validate-plan": "claude"
+      },
+
+      "planner": {
+        "analyze": "local",
+        "search": "local",
+        "draft": "local",
+        "enhance": "claude",
+        "detail": "local"
+      },
+
+      "brainstorm": {
+        "seed": "local",
+        "diverge": "local",
+        "cluster": "local",
+        "promote": "claude",
+        "update-spec": "claude"
+      },
+
+      "pair": {
+        "analyze": "local",
+        "propose": "local",
+        "validate": "claude",
+        "summarize": "local"
+      },
+
+      "delegate": {
+        "execute": "local",
+        "validate": "claude",
+        "report": "local"
+      },
+
+      "tester": {
+        "analyze": "local",
+        "generate-test-plan": "local",
+        "validate-plan": "claude",
+        "write-tests": "local",
+        "validate-tests": "claude",
+        "review-tests": "claude",
+        "execute": "local",
+        "fix-escalation": "claude",
+        "report": "local"
+      },
+
+      "classifier": {
+        "classify": "local"
+      }
+    }
+  },
+
+  "keys": {
+    "//anthropic": "Set via ANTHROPIC_API_KEY env var or here",
+    "anthropic": "",
+    "//brave": "Optional: Brave Search API key for web search",
+    "brave": ""
+  },
+
+  "permissions": {
+    "//mode": "'validate' = prompt before tool execution, 'auto-accept' = execute without prompting",
+    "mode": "validate"
+  },
+
+  "routing": {
+    "//mode": "'static' = rule-based intent routing, 'auto' = LLM-assessed complexity routing",
+    "mode": "static"
+  }
+}

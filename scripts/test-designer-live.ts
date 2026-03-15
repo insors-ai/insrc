@@ -66,16 +66,16 @@ import { assembleDocument } from '../src/agent/tasks/designer/assembly.js';
 
 section('Provider Setup');
 
-const ollama = new OllamaProvider();
+const config = loadConfig();
+const ollama = new OllamaProvider(config.models.local, config.ollama.host, config.models.context.local);
 const alive = await ollama.ping();
 if (!alive) {
   console.error(`${RED}Ollama is not running. Start it with: ollama serve${RESET}`);
   process.exit(1);
 }
-ok('Ollama reachable');
+ok(`Ollama reachable (model: ${config.models.local}, context: ${config.models.context.local})`);
 
 let claudeProvider: InstanceType<typeof ClaudeProvider> | OllamaProvider;
-const config = loadConfig();
 const anthropicKey = process.env.ANTHROPIC_API_KEY ?? config.keys.anthropic;
 
 if (anthropicKey) {
@@ -338,7 +338,7 @@ section('Generated Design Document');
 
 // Write HTML output to design/
 import { writeFileSync } from 'node:fs';
-const outPath = new URL('../design/planner-module.html', import.meta.url).pathname;
+const outPath = new URL('../design/planner-module-test.html', import.meta.url).pathname;
 writeFileSync(outPath, result.output, 'utf-8');
 ok(`Written to ${outPath}`);
 

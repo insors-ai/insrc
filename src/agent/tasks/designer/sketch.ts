@@ -12,6 +12,9 @@ import { createDaemonContextProvider } from '../../tools/context-provider.js';
 import { formatRequirementsList } from './requirements.js';
 import { compressHistory } from './context.js';
 import { planSearches, type PlannedSearch } from './search-planner.js';
+import { getLogger } from '../../../shared/logger.js';
+
+const log = getLogger('sketch');
 
 // ---------------------------------------------------------------------------
 // Per-requirement Sketch — Step 4a/4b of the Designer pipeline
@@ -37,7 +40,9 @@ export async function writeSketch(
   // 1. Classify which design concepts this requirement needs
   const { classifyConcepts, runConceptExploration } = await import('./concepts.js');
   type ConceptAnalysis = import('./concepts.js').ConceptAnalysis;
+  log.debug({ requirement: todo.index, statement: todo.statement.slice(0, 80) }, 'classifying concepts');
   const classification = await classifyConcepts(todo, localProvider);
+  log.debug({ requirement: todo.index, concepts: classification.concepts, reasoning: classification.reasoning }, 'concepts classified');
 
   // 2. Generic codebase analysis (always runs — covers code-reuse)
   const searches = await planSearches(todo, localProvider);
@@ -49,11 +54,15 @@ export async function writeSketch(
 
   // 3. Concept-specific explorations (parallel, skip code-reuse — covered by generic)
   const nonGenericConcepts = classification.concepts.filter(c => c !== 'code-reuse');
+  log.debug({ requirement: todo.index, conceptCount: nonGenericConcepts.length, concepts: nonGenericConcepts }, 'running concept explorations');
   const conceptAnalyses: ConceptAnalysis[] = nonGenericConcepts.length > 0
     ? await Promise.all(
-        nonGenericConcepts.map(concept =>
-          runConceptExploration(concept, todo, input.session.repoPath, input.session.closureRepos, localProvider),
-        ),
+        nonGenericConcepts.map(async concept => {
+          log.debug({ requirement: todo.index, concept }, 'concept exploration started');
+          const result = await runConceptExploration(concept, todo, input.session.repoPath, input.session.closureRepos, localProvider);
+          log.debug({ requirement: todo.index, concept, entities: result.entities.length, findingsLen: result.findings.length }, 'concept exploration done');
+          return result;
+        }),
       )
     : [];
 

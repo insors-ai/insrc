@@ -34,20 +34,40 @@ export async function writeSketch(
   localProvider: LLMProvider,
   configContext?: string,
 ): Promise<RequirementSketch> {
-  // LLM plans categorized searches based on the requirement
-  const searches = await planSearches(todo, localProvider);
+  // 1. Classify which design concepts this requirement needs
+  const { classifyConcepts, runConceptExploration } = await import('./concepts.js');
+  type ConceptAnalysis = import('./concepts.js').ConceptAnalysis;
+  const classification = await classifyConcepts(todo, localProvider);
 
-  // Codebase analysis using planned searches
+  // 2. Generic codebase analysis (always runs — covers code-reuse)
+  const searches = await planSearches(todo, localProvider);
   const contextProvider = createDaemonContextProvider();
   const [localEntities, crossEntities] = await Promise.all([
     analyzeLocalCodebase(contextProvider, input.session.repoPath, searches),
     analyzeCrossProject(contextProvider, input.session.closureRepos, input.session.repoPath, searches),
   ]);
 
-  // Build context for the LLM
+  // 3. Concept-specific explorations (parallel, skip code-reuse — covered by generic)
+  const nonGenericConcepts = classification.concepts.filter(c => c !== 'code-reuse');
+  const conceptAnalyses: ConceptAnalysis[] = nonGenericConcepts.length > 0
+    ? await Promise.all(
+        nonGenericConcepts.map(concept =>
+          runConceptExploration(concept, todo, input.session.repoPath, input.session.closureRepos, localProvider),
+        ),
+      )
+    : [];
+
+  // 4. Build context for the LLM
   const analysisContext = formatAnalysisContext(localEntities, crossEntities);
   const reqListContext = formatRequirementsList(allRequirements);
   const history = compressHistory(allTodos);
+
+  // Format concept exploration findings
+  const conceptSection = conceptAnalyses.length > 0
+    ? '## Concept Explorations\n\n' + conceptAnalyses
+        .map(a => `### ${a.concept}\n${a.findings}`)
+        .join('\n\n')
+    : '';
 
   const messages: LLMMessage[] = [
     { role: 'system', content: SKETCH_SYSTEM },
@@ -55,8 +75,10 @@ export async function writeSketch(
       role: 'user',
       content: [
         `## Requirement ${todo.index}\n${todo.statement}`,
+        `## Applicable Concepts: ${classification.concepts.join(', ')}`,
         `## All Requirements\n${reqListContext}`,
         `## Codebase Analysis\n${analysisContext}`,
+        conceptSection,
         input.codeContext ? `## Additional Code Context\n${input.codeContext}` : '',
         history ? `## Design History\n${history}` : '',
         configContext ?? '',
@@ -65,11 +87,30 @@ export async function writeSketch(
   ];
 
   const response = await localProvider.complete(messages, {
-    maxTokens: 2000,
+    maxTokens: 2500,
     temperature: 0.3,
   });
 
-  return parseSketch(response.text, todo.index);
+  const sketch = parseSketch(response.text, todo.index);
+
+  // Enrich sketch with concept metadata
+  sketch.conceptsExplored = classification.concepts;
+  if (conceptAnalyses.length > 0) {
+    sketch.conceptNotes = {};
+    for (const a of conceptAnalyses) {
+      sketch.conceptNotes[a.concept] = a.findings;
+    }
+    // Merge concept entities into sketch reusable list
+    for (const a of conceptAnalyses) {
+      for (const e of a.entities) {
+        if (!sketch.reusable.some(r => r.entity === e.entity)) {
+          sketch.reusable.push(e);
+        }
+      }
+    }
+  }
+
+  return sketch;
 }
 
 /**

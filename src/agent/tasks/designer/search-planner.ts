@@ -53,7 +53,7 @@ export async function planSearches(
  * Parse the LLM's JSON output into validated PlannedSearch entries.
  * Falls back to a single broad search if parsing fails.
  */
-function parseSearchPlan(text: string, statement: string): PlannedSearch[] {
+export function parseSearchPlan(text: string, statement: string): PlannedSearch[] {
   // Strip markdown fences if present
   const cleaned = text.replace(/```(?:json)?\s*/g, '').replace(/```\s*/g, '').trim();
 
@@ -99,6 +99,6 @@ function parseSearchPlan(text: string, statement: string): PlannedSearch[] {
   return searches.slice(0, 8);
 }
 
-function fallbackSearch(statement: string): PlannedSearch {
+export function fallbackSearch(statement: string): PlannedSearch {
   return { query: statement, filter: 'all', category: 'general', limit: 15 };
 }

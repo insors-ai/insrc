@@ -136,6 +136,10 @@ export interface RequirementSketch {
   summaryFlow: string;
   /** Open concerns surfaced during analysis */
   concerns: string[];
+  /** Design concepts explored for this requirement */
+  conceptsExplored?: string[] | undefined;
+  /** Per-concept analysis notes */
+  conceptNotes?: Record<string, string> | undefined;
 }
 
 // ---------------------------------------------------------------------------

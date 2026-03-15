@@ -71,6 +71,15 @@ Your task for this ONE requirement:
    to satisfy this requirement. Keep it to 3-5 sentences. Name the entities.
 4. CONCERNS — Note any integration risks, performance concerns, or dependencies
    that the user should be aware of.
+5. CONCEPT-SPECIFIC NOTES — If concept exploration findings are provided below,
+   address each explored concept area specifically:
+   - Persistence: schema changes, migration strategy, query patterns
+   - Integrations: API contracts, auth flow, error handling
+   - Deployment: container changes, config updates, infrastructure needs
+   - Logging: what to instrument, metric names, trace spans
+   - Security: validation needs, rate limiting, secrets
+   - Error handling: error types, retry strategies, fallback patterns
+   (Only address concepts that have exploration findings in the context.)
 
 Output as structured sections:
 
@@ -85,6 +94,9 @@ Narrative description...
 
 ## Concerns
 - Concern description
+
+## Concept Notes
+(Per-concept notes, only for concepts with exploration findings)
 
 Be concrete. Name files, functions, types. Do not be vague.`;
 

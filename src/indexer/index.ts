@@ -146,9 +146,23 @@ export class IndexerService {
 
     for (const repo of repos) {
       await this.watcher.addRepo(repo.path);
+
       if (repo.status === 'pending') {
         log.info({ repo: repo.path }, 'enqueuing full index (pending)');
         this.queue.enqueue({ kind: 'full', repoPath: repo.path });
+      } else if (repo.status === 'ready' && repo.lastIndexed) {
+        // Delta indexing: find files modified since last index
+        const delta = this.detectDelta(repo.path, repo.lastIndexed);
+        if (delta.length > 0) {
+          log.info({ repo: repo.path, changed: delta.length }, 'delta index on startup');
+          for (const filePath of delta) {
+            this.queue.enqueue({ kind: 'file', filePath, event: 'update' });
+          }
+          // Update lastIndexed so next startup doesn't re-scan the same files
+          await updateRepoStatus(this.db, repo.path, 'ready', new Date().toISOString());
+        } else {
+          log.info({ repo: repo.path }, 'no changes since last index');
+        }
       }
 
       // Watch project config dir if it exists
@@ -167,6 +181,36 @@ export class IndexerService {
       }
       this.queue.enqueue({ kind: 'config-full', scope: { kind: 'global' } });
     }
+  }
+
+  /**
+   * Detect files modified since last index using mtime comparison.
+   * Returns absolute paths of files that need re-indexing.
+   * Content-hash check in indexFile() will skip files that were
+   * touched but not actually changed (e.g. `touch` or save-without-edit).
+   */
+  private detectDelta(repoPath: string, lastIndexed: string): string[] {
+    const sinceMs = new Date(lastIndexed).getTime();
+    if (Number.isNaN(sinceMs)) return [];
+
+    const allFiles = listRepoFiles(repoPath);
+    const changed: string[] = [];
+
+    for (const filePath of allFiles) {
+      const ext = extname(filePath).toLowerCase();
+      if (!this.supported.has(ext) && !basenameParser.handles(filePath)) continue;
+
+      try {
+        const mtime = statSync(filePath).mtimeMs;
+        if (mtime > sinceMs) {
+          changed.push(filePath);
+        }
+      } catch {
+        // File may have been deleted between ls-files and stat — skip
+      }
+    }
+
+    return changed;
   }
 
   /** Add a repo: start watching + enqueue full index. */

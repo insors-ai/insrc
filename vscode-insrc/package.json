@@ -98,6 +98,10 @@
       {
         "command": "insrc.conversationStats",
         "title": "insrc: Conversation Stats"
+      },
+      {
+        "command": "insrc.showLogs",
+        "title": "insrc: Show Daemon Logs"
       }
     ],
     "keybindings": [

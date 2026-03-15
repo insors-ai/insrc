@@ -1,11 +1,13 @@
 import * as vscode from 'vscode';
 import { createDaemonManager, type DaemonManager, type DaemonStatus } from './daemon/lifecycle';
+import { createStatusBar, type StatusBarManager } from './ui/statusBar';
 
 // ---------------------------------------------------------------------------
 // Extension state
 // ---------------------------------------------------------------------------
 
 let daemonManager: DaemonManager | null = null;
+let statusBar: StatusBarManager | null = null;
 
 // ---------------------------------------------------------------------------
 // Extension lifecycle
@@ -14,6 +16,10 @@ let daemonManager: DaemonManager | null = null;
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   const outputChannel = vscode.window.createOutputChannel('insrc');
   outputChannel.appendLine('insrc extension activating...');
+
+  // Initialize status bar
+  statusBar = createStatusBar();
+  context.subscriptions.push({ dispose: () => statusBar?.dispose() });
 
   // Initialize daemon manager
   daemonManager = createDaemonManager(outputChannel);
@@ -46,11 +52,18 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     );
   }
 
-  // Start health polling
+  // Initial status bar update
+  if (autoStart) {
+    const initialStatus = await daemonManager.getStatus();
+    statusBar.update(initialStatus);
+  }
+
+  // Start health polling — updates both log and status bar
   daemonManager.startHealthPolling((status: DaemonStatus) => {
     outputChannel.appendLine(
       `health: running=${status.running} queue=${status.queueDepth ?? '?'} ollama=${status.ollamaAvailable ?? '?'}`,
     );
+    statusBar?.update(status);
   });
 
   // Register commands
@@ -70,6 +83,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 }
 
 export function deactivate(): void {
+  statusBar?.dispose();
+  statusBar = null;
   daemonManager?.dispose();
   daemonManager = null;
 }
@@ -96,14 +111,45 @@ function registerCommands(context: vscode.ExtensionContext, outputChannel: vscod
           const started = await daemonManager.ensureDaemon();
           if (started) {
             vscode.window.showInformationMessage('insrc daemon restarted');
+            const newStatus = await daemonManager.getStatus();
+            statusBar?.update(newStatus);
             daemonManager.startHealthPolling((status) => {
               outputChannel.appendLine(`health: running=${status.running}`);
+              statusBar?.update(status);
             });
           } else {
             vscode.window.showErrorMessage('insrc daemon failed to restart');
           }
         },
       );
+    }),
+  );
+
+  // Permission mode toggle (functional in Segment 3)
+  context.subscriptions.push(
+    vscode.commands.registerCommand('insrc.togglePermissionMode', async () => {
+      const config = vscode.workspace.getConfiguration('insrc.permissions');
+      const current = config.get<string>('mode', 'validate');
+      const options = ['validate', 'auto-accept', 'strict'];
+      const picked = await vscode.window.showQuickPick(options, {
+        placeHolder: `Current: ${current}. Select permission mode`,
+      });
+      if (picked && picked !== current) {
+        await config.update('mode', picked, vscode.ConfigurationTarget.Global);
+        vscode.window.showInformationMessage(`insrc permission mode: ${picked}`);
+        // Re-query status to update status bar state
+        if (daemonManager) {
+          const status = await daemonManager.getStatus();
+          statusBar?.update(status);
+        }
+      }
+    }),
+  );
+
+  // Show daemon logs (functional in Segment 3)
+  context.subscriptions.push(
+    vscode.commands.registerCommand('insrc.showLogs', () => {
+      outputChannel.show(true);
     }),
   );
 
@@ -114,7 +160,6 @@ function registerCommands(context: vscode.ExtensionContext, outputChannel: vscod
     ['insrc.openSettings', 'Settings panel coming in Segment 9'],
     ['insrc.addRepo', 'Add repo coming in Segment 4'],
     ['insrc.reindex', 'Re-index coming in Segment 4'],
-    ['insrc.togglePermissionMode', 'Permission toggle coming in Segment 3'],
     ['insrc.openSetupWizard', 'Setup wizard coming in Segment 8'],
     ['insrc.addAnnotation', 'Annotations coming in Segment 17'],
     ['insrc.sendAnnotations', 'Send annotations coming in Segment 17'],

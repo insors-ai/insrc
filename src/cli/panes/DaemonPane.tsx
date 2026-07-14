@@ -14,7 +14,7 @@ import { useState } from 'react';
 import type { ReactElement } from 'react';
 
 import type { DaemonState } from '../hooks/useDaemonStatus.js';
-import { useServices, useUi } from '../ui/context.js';
+import { useServices, useUi, useCaptured } from '../ui/context.js';
 import { Panel, KeyHints, LogView, TextPrompt } from '../ui/widgets.js';
 import { formatBytes, formatUptime } from '../ui/format.js';
 
@@ -23,6 +23,7 @@ type Modal = 'none' | 'busy' | 'backup';
 export function DaemonPane(props: { daemon: DaemonState; nonce: number }): ReactElement {
 	const svc = useServices();
 	const ui = useUi();
+	const captured = useCaptured();
 	const [modal, setModal] = useState<Modal>('none');
 	const [log, setLog] = useState<string[]>([]);
 
@@ -60,7 +61,7 @@ export function DaemonPane(props: { daemon: DaemonState; nonce: number }): React
 			return `compacted: saved ${formatBytes(r.savedBytes)} in ${(r.elapsedMs / 1000).toFixed(1)}s`;
 		});
 		else if (input === 'b') { setModal('backup'); ui.capture(true); }
-	}, { isActive: modal === 'none' });
+	}, { isActive: modal === 'none' && !captured });
 
 	return (
 		<Panel title="Daemon" active>

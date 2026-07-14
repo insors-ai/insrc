@@ -15,12 +15,13 @@ import type { ReactElement } from 'react';
 
 import type { SystemInfo } from '../../shared/system-info.js';
 import type { ModelRecommendation } from '../../shared/model-recommender.js';
-import { useServices, useUi } from '../ui/context.js';
+import { useServices, useUi, useCaptured } from '../ui/context.js';
 import { Panel, KeyHints, LogView } from '../ui/widgets.js';
 
 export function SetupPane(): ReactElement {
 	const svc = useServices();
 	const ui = useUi();
+	const captured = useCaptured();
 	const [busy, setBusy] = useState(false);
 	const [log, setLog] = useState<string[]>([]);
 
@@ -42,7 +43,7 @@ export function SetupPane(): ReactElement {
 				})
 				.finally(() => { setBusy(false); ui.capture(false); });
 		}
-	}, { isActive: !busy });
+	}, { isActive: !busy && !captured });
 
 	return (
 		<Panel title="Setup" active>

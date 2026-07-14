@@ -153,6 +153,22 @@ It opens a dashboard with four panes (switch with `1`–`4`/`Tab`, `r` refresh,
 - **Setup** — hardware detection + model recommendation; `a` apply config · `p`
   pull missing models (progress streamed inline).
 
+Press **`:`** anywhere to open a vim-style **command bar** and type the
+operations instead of navigating to them (REPL-style; `Esc` closes):
+
+```
+repo     add <path> | remove <path> | reindex <path> | list
+daemon   start | stop | restart | update | backup <dir> | compact | status
+workflow list | chain <hash> | approve <path> | reject <path> <reason> | ack-stale <path> <reason>
+config   list | get <key> | set <key> <value> | reload    # key is a dot-path, e.g. models.embeddingDim
+setup    show | apply | pull
+pane <name> · help · quit
+```
+
+`config set` parses the value as JSON when it can (`config set
+models.embeddingDim 768` stores a number) and otherwise as a string; writes go
+through the daemon into `~/.insrc/config.json`.
+
 It requires an interactive TTY (it exits with a message when stdin/stdout isn't
 one). Programmatic callers should talk to the daemon over the IPC socket
 directly rather than driving the UI.

@@ -84,6 +84,11 @@ function fakeServices(): Services {
 			modelsToPull: () => [],
 			pullModels:   async () => [],
 		},
+		config: {
+			show:   async () => ({}),
+			write:  async () => ({ ok: true }),
+			reload: async () => ({ ok: true }),
+		},
 	};
 }
 
@@ -179,5 +184,23 @@ test('Setup pane renders system + recommendation without crashing', async () => 
 	assert.match(frame, /Recommendation/);
 	assert.match(frame, /qwen3-coder/);
 	assert.match(frame, /pull models \(1\)/);
+	unmount();
+});
+
+test("':' opens the command bar and runs a typed command", async () => {
+	const svc = fakeServices();
+	const addCalls: string[] = [];
+	svc.repo.add = async p => { addCalls.push(p); return p; };
+	const { lastFrame, stdin, unmount } = render(createElement(App, { services: svc, pollMs: 0 }));
+	await settle();
+	stdin.write(':');                    // open the command bar
+	await settle();
+	assert.match(lastFrame() ?? '', /Enter run/);   // command bar is showing
+	stdin.write('repo add /tmp/viacmd');
+	await settle();
+	stdin.write('\r');                   // run it
+	await settle();
+	assert.deepEqual(addCalls, ['/tmp/viacmd']);
+	assert.match(lastFrame() ?? '', /registered \/tmp\/viacmd/);   // output rendered inline
 	unmount();
 });

@@ -15,7 +15,7 @@ import type { ReactElement } from 'react';
 
 import type { RegisteredRepo } from '../../shared/types.js';
 import type { DaemonState } from '../hooks/useDaemonStatus.js';
-import { useServices, useUi } from '../ui/context.js';
+import { useServices, useUi, useCaptured } from '../ui/context.js';
 import { Panel, KeyHints, TextPrompt, ConfirmPrompt } from '../ui/widgets.js';
 import { formatWhen } from '../ui/format.js';
 
@@ -33,6 +33,7 @@ export function ReposPane(props: {
 }): ReactElement {
 	const svc = useServices();
 	const ui = useUi();
+	const captured = useCaptured();
 	const [cursor, setCursor] = useState(0);
 	const [modal, setModal] = useState<Modal>('none');
 
@@ -55,7 +56,7 @@ export function ReposPane(props: {
 		else if (input === 'a') { setModal('add'); ui.capture(true); }
 		else if (input === 'i' && current !== undefined) act('reindex', async () => `reindexing ${await svc.repo.reindex(current.path)}`);
 		else if (input === 'd' && current !== undefined) { setModal('confirm-remove'); ui.capture(true); }
-	}, { isActive: modal === 'none' });
+	}, { isActive: modal === 'none' && !captured });
 
 	if (modal === 'add') {
 		return (

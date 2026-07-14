@@ -18,7 +18,7 @@ import type { ReactElement } from 'react';
 import type { ChainReport } from '../../workflow/chain.js';
 import type { AmendmentRecord } from '../../workflow/amendments/types.js';
 import type { EpicSummary } from '../services/workflow.js';
-import { useServices, useUi } from '../ui/context.js';
+import { useServices, useUi, useCaptured } from '../ui/context.js';
 import { Panel, KeyHints, TextPrompt } from '../ui/widgets.js';
 
 const APPROVER = process.env['USER'] ?? 'unknown';
@@ -29,6 +29,7 @@ type ActionItem =
 
 export function WorkflowsPane(props: { repoPath: string; nonce: number }): ReactElement {
 	const svc = useServices();
+	const captured = useCaptured();
 	const [epics, setEpics] = useState<EpicSummary[]>([]);
 	const [listCursor, setListCursor] = useState(0);
 	const [openHash, setOpenHash] = useState<string | undefined>(undefined);
@@ -47,7 +48,7 @@ export function WorkflowsPane(props: { repoPath: string; nonce: number }): React
 		if (key.upArrow)   setListCursor(c => Math.max(0, c - 1));
 		else if (key.downArrow) setListCursor(c => Math.min(epics.length - 1, c + 1));
 		else if (key.return && epics[clamped] !== undefined) setOpenHash(epics[clamped]!.epicHash);
-	}, { isActive: inList });
+	}, { isActive: inList && !captured });
 
 	if (!inList) {
 		return (
@@ -86,6 +87,7 @@ function EpicDetail(props: {
 }): ReactElement {
 	const svc = useServices();
 	const ui = useUi();
+	const captured = useCaptured();
 	const [report, setReport] = useState<ChainReport | undefined>(undefined);
 	const [pending, setPending] = useState<AmendmentRecord[]>([]);
 	const [cursor, setCursor] = useState(0);
@@ -136,7 +138,7 @@ function EpicDetail(props: {
 		else if (key.downArrow) setCursor(c => Math.min(actions.length - 1, c + 1));
 		else if (input === 'a' && focused !== undefined) doApprove(focused);
 		else if (input === 'x' && focused !== undefined) { setRejecting(focused); ui.capture(true); }
-	}, { isActive: rejecting === undefined });
+	}, { isActive: rejecting === undefined && !captured });
 
 	if (rejecting !== undefined) {
 		const target = rejecting;

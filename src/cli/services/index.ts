@@ -22,6 +22,7 @@ import * as daemon from './daemon.js';
 import * as repo from './repo.js';
 import * as workflow from './workflow.js';
 import * as setup from './setup.js';
+import * as config from './config.js';
 import * as maintenance from './maintenance.js';
 import { isRunning } from './lifecycle.js';
 import type { EpicSummary, ApproveOutcome } from './workflow.js';
@@ -64,6 +65,11 @@ export interface Services {
 		modelsToPull(rec: ModelRecommendation): string[];
 		pullModels(models: readonly string[], onProgress: (tick: PullTick) => void): Promise<PullResult[]>;
 	};
+	readonly config: {
+		show(): Promise<Record<string, unknown>>;
+		write(path: string, value: unknown): Promise<{ ok: boolean }>;
+		reload(): Promise<{ ok: boolean; reloaded?: unknown }>;
+	};
 }
 
 export function makeServices(): Services {
@@ -102,6 +108,11 @@ export function makeServices(): Services {
 			apply:        setup.apply,
 			modelsToPull: setup.modelsToPull,
 			pullModels:   setup.pullModels,
+		},
+		config: {
+			show:   config.showConfig,
+			write:  config.writeConfig,
+			reload: config.reloadConfig,
 		},
 	};
 }

@@ -16,9 +16,11 @@ import { useMemo, useState } from 'react';
 import type { ReactElement } from 'react';
 
 import type { Services } from './services/index.js';
-import { ServicesContext, UiContext, type Ui } from './ui/context.js';
+import { ServicesContext, UiContext, CaptureContext, useServices, type Ui } from './ui/context.js';
 import { KeyHints } from './ui/widgets.js';
+import { CommandBar } from './ui/CommandBar.js';
 import { formatUptime } from './ui/format.js';
+import { runCommand } from './command.js';
 import { useDaemonStatus } from './hooks/useDaemonStatus.js';
 import { DaemonPane } from './panes/DaemonPane.js';
 import { ReposPane } from './panes/ReposPane.js';
@@ -38,12 +40,16 @@ export function App(props: { services: Services; pollMs?: number; initialPane?: 
 }
 
 function AppBody(props: { pollMs?: number; initialPane?: number }): ReactElement {
+	const services = useServices();
 	const { exit } = useApp();
 	const [pane, setPane] = useState(props.initialPane ?? 0);
 	const [nonce, setNonce] = useState(0);
 	const [toast, setToast] = useState<string | undefined>(undefined);
 	const [captured, setCaptured] = useState(false);
 	const [selectedRepo, setSelectedRepo] = useState<string>(process.cwd());
+	const [cmdMode, setCmdMode] = useState(false);
+	const [cmdOutput, setCmdOutput] = useState<string[]>([]);
+	const [cmdRunning, setCmdRunning] = useState(false);
 
 	const pollMs = props.pollMs ?? 2000;
 	const daemon = useDaemonStatus(pollMs, nonce);
@@ -53,30 +59,57 @@ function AppBody(props: { pollMs?: number; initialPane?: number }): ReactElement
 		capture: (on: boolean) => setCaptured(on),
 	}), []);
 
+	const openCmd = (): void => { setCmdOutput([]); setCmdMode(true); setCaptured(true); };
+	const closeCmd = (): void => { setCmdMode(false); setCaptured(false); setCmdOutput([]); };
+
+	const runCmd = async (line: string): Promise<void> => {
+		if (line.trim().length === 0) return;
+		const append = (lines: readonly string[]): void => setCmdOutput(o => [...o, ...lines]);
+		append([`: ${line}`]);
+		setCmdRunning(true);
+		try {
+			const result = await runCommand(line, {
+				services, repoPath: selectedRepo, setPane,
+				onLog: l => append([l]), exit,
+			});
+			append(result);
+		} catch (err) {
+			append([`✗ ${err instanceof Error ? err.message : String(err)}`]);
+		}
+		setCmdRunning(false);
+	};
+
 	useInput((input, key) => {
+		if (input === ':') { openCmd(); return; }
 		if (input === 'q') { exit(); return; }
 		if (input >= '1' && input <= '4') { setPane(Number(input) - 1); return; }
 		if (key.tab && key.shift) { setPane(p => (p + TABS.length - 1) % TABS.length); return; }
 		if (key.tab)              { setPane(p => (p + 1) % TABS.length); return; }
 		if (input === 'r') { setNonce(n => n + 1); setToast('refreshed'); return; }
-		if (input === '?') { setToast('1-4/Tab switch · r refresh · q quit · pane keys shown below'); return; }
+		if (input === '?') { setToast(': command · 1-4/Tab switch · r refresh · q quit'); return; }
 	}, { isActive: !captured });
 
 	return (
 		<UiContext.Provider value={ui}>
-			<Box flexDirection="column" paddingX={1}>
-				<Header pane={pane} daemon={daemon} />
-				<Box flexGrow={1}>
-					{pane === 0 && <DaemonPane daemon={daemon} nonce={nonce} />}
-					{pane === 1 && <ReposPane daemon={daemon} nonce={nonce} selectedRepo={selectedRepo} onSelectRepo={setSelectedRepo} />}
-					{pane === 2 && <WorkflowsPane repoPath={selectedRepo} nonce={nonce} />}
-					{pane === 3 && <SetupPane />}
+			<CaptureContext.Provider value={captured}>
+				<Box flexDirection="column" paddingX={1}>
+					<Header pane={pane} daemon={daemon} />
+					<Box flexGrow={1}>
+						{pane === 0 && <DaemonPane daemon={daemon} nonce={nonce} />}
+						{pane === 1 && <ReposPane daemon={daemon} nonce={nonce} selectedRepo={selectedRepo} onSelectRepo={setSelectedRepo} />}
+						{pane === 2 && <WorkflowsPane repoPath={selectedRepo} nonce={nonce} />}
+						{pane === 3 && <SetupPane />}
+					</Box>
+					<Box marginTop={1} flexDirection="column">
+						{cmdMode
+							? <CommandBar output={cmdOutput} running={cmdRunning} onSubmit={runCmd} onClose={closeCmd} />
+							: <>
+									<Text>{toast !== undefined ? <Text color="green">{toast}</Text> : <Text> </Text>}</Text>
+									<KeyHints hints={[[':', 'command'], ['1-4/Tab', 'switch'], ['r', 'refresh'], ['q', 'quit']]} />
+								</>}
+					</Box>
 				</Box>
-				<Box marginTop={1} flexDirection="column">
-					<Text>{toast !== undefined ? <Text color="green">{toast}</Text> : <Text> </Text>}</Text>
-					<KeyHints hints={[['1-4/Tab', 'switch'], ['r', 'refresh'], ['q', 'quit'], ['?', 'help']]} />
-				</Box>
-			</Box>
+			</CaptureContext.Provider>
 		</UiContext.Provider>
 	);
 }

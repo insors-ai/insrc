@@ -27,6 +27,13 @@ export interface Ui {
 export const ServicesContext = createContext<Services | null>(null);
 export const UiContext = createContext<Ui | null>(null);
 
+/** True while a modal / the command bar is capturing keys; panes read
+ *  this to suspend their own `useInput` so keystrokes don't leak. */
+export const CaptureContext = createContext<boolean>(false);
+export function useCaptured(): boolean {
+	return useContext(CaptureContext);
+}
+
 export function useServices(): Services {
 	const s = useContext(ServicesContext);
 	if (s === null) throw new Error('ServicesContext not provided');

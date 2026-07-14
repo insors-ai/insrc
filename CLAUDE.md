@@ -21,7 +21,8 @@ the IDE consumes.
 - `OllamaProvider` (local LLM + embeddings)
 - Analyze framework (`insrc_analyze` + `insrc_analyze_step` MCP tools; 10 exploration recipes; context builder)
 - Workflow framework (`define` → `design.epic` → `design.story` → `tracker` chain; `insrc_workflow_step` MCP tool)
-- `insrc` CLI (commander; `workflow`, `daemon`, `repo`, `setup`)
+- `insrc` interactive CLI — a full-screen ink (React) TUI with Daemon /
+  Repos / Workflows / Setup panes (replaced the old commander subcommands)
 
 The IDE fork owns: the VSCode workbench + `src/vs/workbench/contrib/insrc/`
 IDE contributions (sidebar panes, service impls, RPC clients) +
@@ -39,7 +40,7 @@ lock-step across the two repos via mirrored types.
 - **Parsing**: tree-sitter (TypeScript, Python, Go, Java, Scala)
 - **LLM providers**: Ollama (local, qwen3-coder + qwen3-embedding) + `CliProvider`. Cloud auth is delegated to the CLI's OAuth session — no API keys stored on our side.
 - **Logging**: pino + pino-pretty (CLI) + pino-roll (file rotation)
-- **CLI framework**: commander
+- **CLI**: ink + react — the `insrc` CLI is a full-screen interactive TUI (no commander/subcommands)
 - **HTTP**: undici
 
 ## Project structure
@@ -67,7 +68,7 @@ src/
   analyze/         Analyze framework (10 exploration recipes, decomposer, synthesizer, context builder)
   workflow/        Workflow framework (define, design.epic, design.story, tracker, amendments, gates)
   mcp/             MCP servers (insrc_analyze_step, insrc_workflow_step)
-  cli/             `insrc` CLI (workflow, daemon, repo, setup commands)
+  cli/             `insrc` interactive TUI (ink): panes/ services/ hooks/ ui/
   bin/             Executable entrypoints
   prompts/         Shaper / analyze / workflow prompt templates
   assets/          Non-TS runtime resources (shipped by copy-assets.mjs)
@@ -221,5 +222,5 @@ to a server-side run.
 
 If not passed, the tool uses `$INSRC_REPO` from the MCP server's
 environment. Explicit `repo` overrides it. The repo must be
-registered with the insrc daemon (`insrc repo add /path/to/repo`)
-and finished indexing.
+registered with the insrc daemon (add it via the `insrc` TUI —
+Repos pane → `a` — or the `repo.add` IPC) and finished indexing.

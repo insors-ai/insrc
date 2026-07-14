@@ -83,7 +83,7 @@ src/
   analyze/    Analyze framework (recipes, decomposer, synthesizer, context builder)
   workflow/   Workflow framework (define, design.epic, design.story, tracker, gates)
   mcp/        MCP servers (insrc_analyze_step, insrc_workflow_step)
-  cli/        `insrc` CLI (commander)
+  cli/        `insrc` interactive TUI (ink) — panes, services, hooks
   bin/        Executable entrypoints
   prompts/    Shaper / analyze / workflow prompt templates
   assets/     Non-TS runtime resources (copied by copy-assets.mjs)
@@ -102,7 +102,7 @@ the MCP binary is `out/bin/insrc-mcp.js` (registered as `insrc-mcp`).
 - **LLM providers** — Ollama (local, qwen3-coder + qwen3-embedding) +
   `CliProvider` (claude + codex CLI subprocesses)
 - **Logging** — pino (+ pino-pretty, pino-roll)
-- **CLI** — commander · **HTTP** — undici
+- **CLI** — ink + react (full-screen TUI) · **HTTP** — undici
 
 ## Build
 
@@ -130,21 +130,32 @@ CliProvider suites) and skip cleanly when unset.
 
 ## CLI
 
+`insrc` is a **full-screen interactive terminal UI** (built on
+[ink](https://github.com/vadimdemedes/ink)) — there are no subcommands. Run it
+in a terminal:
+
 ```bash
-insrc setup [--detect|--recommend|--apply]   # detect hardware, recommend model config
-
-insrc daemon start|stop|status               # manage the background daemon
-insrc daemon backup <path>                   # snapshot LMDB + Lance (daemon stays up)
-insrc daemon compact                         # reclaim LMDB pages (daemon must be idle)
-
-insrc repo add <path>                        # register a local repo for indexing
-insrc repo remove <path>                     # unregister + drop its graph data
-insrc repo list                              # list registered repos + status
-
-insrc workflow list|runs                     # inspect workflows and run logs
-insrc workflow approve|reject <artifact>     # gate HLD/LLD artifacts (auto-creates GitHub issues)
-insrc workflow chain <epic-hash>             # report Epic state + suggest next action
+npm run insrc        # dev (tsx); or `insrc` once built + linked
 ```
+
+It opens a dashboard with four panes (switch with `1`–`4`/`Tab`, `r` refresh,
+`q` quit):
+
+- **Daemon** — live health (uptime, queue, model-pull, LMDB size) and the full
+  maintenance lifecycle: `s` start · `x` stop · `R` restart · `u` update
+  (git fast-forward → `npm install` if the lockfile changed → build, mirroring
+  `daemon-ctl.sh`) · `b` backup · `c` compact.
+- **Repos** — registered repositories with indexing status; `a` add · `d` remove
+  · `i` reindex. The highlighted repo is what the Workflows pane targets.
+- **Workflows** — the Epic chain for the selected repo; open an Epic to approve
+  / reject the next pending artifact (HLD/LLD approvals auto-push to the GitHub
+  tracker) and approve / reject pending HLD amendments.
+- **Setup** — hardware detection + model recommendation; `a` apply config · `p`
+  pull missing models (progress streamed inline).
+
+It requires an interactive TTY (it exits with a message when stdin/stdout isn't
+one). Programmatic callers should talk to the daemon over the IPC socket
+directly rather than driving the UI.
 
 ## MCP server
 
@@ -163,7 +174,8 @@ in `~/.claude/settings.json`):
 ```
 
 `INSRC_REPO` is optional — callers may pass `repo` on each tool call instead.
-The repo must be registered (`insrc repo add`) and finished indexing. When the
+The repo must be registered (Repos pane → `a` add in the `insrc` TUI) and
+finished indexing. When the
 client declares the `sampling` capability, inner LLM calls route back through
 MCP `sampling/createMessage` (single session, no subprocess); otherwise they
 fall back to the daemon's configured `shaperProvider`.

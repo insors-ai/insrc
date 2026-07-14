@@ -17,10 +17,12 @@
     "moduleDetection": "force",
     "skipLibCheck": true,
     "moduleResolution": "nodenext",
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "jsx": "react-jsx"
   },
   "include": [
-    "src/**/*.ts"
+    "src/**/*.ts",
+    "src/**/*.tsx"
   ],
   "exclude": [
     "**/__tests__/**",

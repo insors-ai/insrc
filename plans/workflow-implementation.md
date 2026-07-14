@@ -1,10 +1,21 @@
 # Workflow framework — implementation plan
 
-Plan doc. Status: **implementation plan**. Parents:
+Plan doc. Status: **implemented (Phases A–G)**. Parents:
 
 - [`plans/meta-workflow-framework.md`](meta-workflow-framework.md) — architecture
 - [`plans/workflow-define.md`](workflow-define.md) — `define` workflow
 - [`plans/workflow-design.md`](workflow-design.md) — `design.epic` + `design.story`
+
+> **As-built deltas.** `define`, `design.epic`, `design.story`,
+> amendments, and the GitHub tracker are implemented under `src/workflow/`
+> + `src/mcp/workflow-step/`. Notable divergences from the phased plan:
+> paths in this doc predate the repo split — everything now lives under
+> `src/…`, **not** `src/…`, and there is no `main` branch
+> (work landed on `main`). Workflows are driven by the `insrc_workflow_step`
+> MCP tool, not an `insrc workflow start` CLI. Tracker push/post is
+> automatic on `insrc workflow approve` (`tracker-auto.ts`, opt out with
+> `--no-tracker`) rather than a standalone `insrc workflow push`. `plan` /
+> `build` / `test` remain out of scope, as planned.
 
 This doc breaks the framework down into shippable phases. Each
 phase is 2-4 days of work, produces something demonstrable
@@ -77,14 +88,14 @@ We do NOT rebuild these. The workflow framework consumes them:
 
 | Reused | Source | How the workflow framework uses it |
 | :--- | :--- | :--- |
-| Multi-turn state store | [`mcp/analyze-step/state-store.ts`](../src/insrc/mcp/analyze-step/state-store.ts) | Copy the pattern (LRU + TTL + 22-char tokens) into `mcp/workflow-step/state-store.ts`. Same contract. |
-| `stepPlan` executor pattern | [`analyze/explore/executor.ts`](../src/insrc/analyze/explore/executor.ts) | Copy the pause/resume shape for workflow step execution. Placeholder substitution (`$s1.<accessor>`) works the same way. |
-| Structured-output retry + ajv | [`agent/providers/structured-output.ts`](../src/insrc/agent/providers/structured-output.ts) | Reuse `withStructuredRetry` and `validateAgainstSchema` verbatim for step output validation. |
-| MCP server registration | [`mcp/server.ts`](../src/insrc/mcp/server.ts) | Add a second tool (`insrc_workflow_step`) alongside `insrc_analyze_step`. Same server, same subprocess. |
-| Analyze framework | [`analyze/`](../src/insrc/analyze/) | Every workflow's `context.assemble` step calls `analyze.query` (a thin wrapper around `insrc_analyze_step`) to build the citation-grounded context bundle. |
-| Repo ignore filter | [`analyze/context/repo-ignore-filter.ts`](../src/insrc/analyze/context/repo-ignore-filter.ts) | Any file-writing step reuses this to avoid writing under gitignored paths. |
-| Config surface | [`config/analyze.ts`](../src/insrc/config/analyze.ts) | Extend for workflow-specific config (shaper choice, retry counts). |
-| CLI framework (commander) | [`cli/index.ts`](../src/insrc/cli/index.ts) | Add `insrc workflow` command group. |
+| Multi-turn state store | [`mcp/analyze-step/state-store.ts`](../src/mcp/analyze-step/state-store.ts) | Copy the pattern (LRU + TTL + 22-char tokens) into `mcp/workflow-step/state-store.ts`. Same contract. |
+| `stepPlan` executor pattern | [`analyze/explore/executor.ts`](../src/analyze/explore/executor.ts) | Copy the pause/resume shape for workflow step execution. Placeholder substitution (`$s1.<accessor>`) works the same way. |
+| Structured-output retry + ajv | [`agent/providers/structured-output.ts`](../src/agent/providers/structured-output.ts) | Reuse `withStructuredRetry` and `validateAgainstSchema` verbatim for step output validation. |
+| MCP server registration | [`mcp/server.ts`](../src/mcp/server.ts) | Add a second tool (`insrc_workflow_step`) alongside `insrc_analyze_step`. Same server, same subprocess. |
+| Analyze framework | [`analyze/`](../src/analyze/) | Every workflow's `context.assemble` step calls `analyze.query` (a thin wrapper around `insrc_analyze_step`) to build the citation-grounded context bundle. |
+| Repo ignore filter | [`analyze/context/repo-ignore-filter.ts`](../src/analyze/context/repo-ignore-filter.ts) | Any file-writing step reuses this to avoid writing under gitignored paths. |
+| Config surface | [`config/analyze.ts`](../src/config/analyze.ts) | Extend for workflow-specific config (shaper choice, retry counts). |
+| CLI framework (commander) | [`cli/index.ts`](../src/cli/index.ts) | Add `insrc workflow` command group. |
 
 ## 4. New infrastructure
 
@@ -110,7 +121,7 @@ We do NOT rebuild these. The workflow framework consumes them:
 ## 5. Repository layout after Phase F
 
 ```
-src/insrc/
+src/
 ├── workflow/
 │   ├── types.ts                       # shared types
 │   ├── executor.ts                    # sequential + pause/resume
@@ -172,7 +183,7 @@ src/insrc/
 ## 6. Phases
 
 Each phase's deliverable is shippable in isolation. Each ends with
-a live-test demonstration and a commit range on `release/1.96`.
+a live-test demonstration and a commit range on `main`.
 
 ### Phase A — Framework skeleton (~3-4 days)
 
@@ -721,7 +732,7 @@ Every phase produces:
   parseParams, schema validation, applier invariants, hash
   determinism, gate enforcement.
 - **Integration tests** using a fixture repo committed under
-  `src/insrc/workflow/__tests__/fixtures/`. Run against a
+  `src/workflow/__tests__/fixtures/`. Run against a
   hermetic LMDB + Lance store in a tmp dir. LLM-shaped steps
   use a mock stepRunner registered by the test harness.
 - **Live smoke tests** gated behind `INSRC_LIVE_TESTS=1`. Talk
@@ -912,7 +923,7 @@ A (skeleton) ──► B (define) ──► C (HLD) ──► D (LLD) ──► 
 
 If we start today:
 
-1. Create the `src/insrc/workflow/` directory + skeleton files
+1. Create the `src/workflow/` directory + skeleton files
    listed in §5.
 2. Copy `mcp/analyze-step/state-store.ts` verbatim to
    `mcp/workflow-step/state-store.ts` (module-local; do not

@@ -1,6 +1,15 @@
 # `design` workflow — HLD + LLD
 
-Plan doc. Status: **design proposal**. Parent: [`plans/meta-workflow-framework.md`](meta-workflow-framework.md). Sibling: [`plans/workflow-define.md`](workflow-define.md).
+Plan doc. Status: **implemented**. Parent: [`plans/meta-workflow-framework.md`](meta-workflow-framework.md). Sibling: [`plans/workflow-define.md`](workflow-define.md).
+
+> **As-built deltas.** Design (`design.epic` + `design.story`) and
+> amendments are implemented. Two facts differ from this proposal:
+> workflows run via the `insrc_workflow_step` MCP tool (there is no
+> `insrc workflow start` / `post` CLI command — design summaries attach
+> to the tracker through the tracker workflow), and rendered markdown is
+> named by the epic **slug** while canonical JSON is named by the
+> **hash** (§8 below is updated to match). Gate/approve/amend CLI
+> (`approve`, `reject`, `status`, `amend`, `ack-stale`) is as described.
 
 `design` produces design artifacts at two altitudes matching the
 industry-standard **HLD** (High-Level Design) / **LLD** (Low-Level
@@ -543,26 +552,32 @@ compares against every LLD's stored hash. Mismatches get marked
 
 Every workflow artifact carries a 16-char Epic hash (see
 `workflow/hash.ts`). Filenames are typed by workflow (`DEF-`,
-`HLD-`, `LLD-`, `AMD-`, `TRK-`) followed by the hash. The hash
-is the same across every artifact belonging to one Epic, so
+`HLD-`, `LLD-`, `AMD-`). **Canonical JSON is named by the hash**
+(the stable identity); **human-facing markdown is named by the
+`meta.epicSlug`** (readability). The hash is the same across every
+JSON artifact belonging to one Epic, so
 `grep -l a3f4b8c9d1e2f3a4 .insrc/artifacts/` returns every file
 for that Epic.
 
 Human-facing markdown lives under `docs/`; canonical JSON lives
 under `.insrc/artifacts/` (hidden, git-tracked) so `docs/` stays
-clean of machine-serialized content.
+clean of machine-serialized content. Because the markdown basename
+(slug) differs from the JSON basename (hash), each rendered markdown
+file embeds an `<!-- insrc:artifact <ID> -->` marker at its top so
+the slug-named `.md` resolves back to its hash-named canonical
+`.json` (see `gates.jsonPathForMd`, which `approve` / `reject` use).
 
 ```
 <repo>/
-├── docs/                                # human-facing markdown only
+├── docs/                                # human-facing markdown, slug-named
 │   ├── defines/
-│   │   └── DEF-<h16>.md
+│   │   └── DEF-<slug>.md
 │   └── designs/
-│       ├── HLD-<h16>.md
-│       ├── LLD-<h16>-s1.md
-│       └── LLD-<h16>-s2.md
+│       ├── HLD-<slug>.md
+│       ├── LLD-<slug>-s1.md
+│       └── LLD-<slug>-s2.md
 │
-└── .insrc/artifacts/                    # canonical JSON, hidden, git-tracked
+└── .insrc/artifacts/                    # canonical JSON, hidden, hash-named
     ├── DEF-<h16>.json
     ├── HLD-<h16>.json
     ├── LLD-<h16>-s1.json
@@ -580,7 +595,8 @@ clean of machine-serialized content.
 The Epic hash is derived from the Define workflow's runId
 (`sha256(defineRunId).slice(0, 16)`) at start time. The
 human-readable slug derived from the focus stays in
-`meta.epicSlug` for display; it never appears in filenames.
+`meta.epicSlug` for display and names the markdown files; it never
+appears in a JSON filename.
 
 ## 9. Verification checklists
 

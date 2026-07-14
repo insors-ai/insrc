@@ -1,6 +1,32 @@
 # `define` workflow
 
-Plan doc. Status: **design proposal**. Parent: [`plans/meta-workflow-framework.md`](meta-workflow-framework.md).
+Plan doc. Status: **implemented**. Parent: [`plans/meta-workflow-framework.md`](meta-workflow-framework.md).
+
+> **As-built deltas (read before trusting the sections below).** The
+> shipped implementation diverges from this original proposal in a few
+> places; the divergences are authoritative:
+>
+> - **Storage.** Artifacts are named by the 16-char Epic **hash**, not
+>   the slug, and split across two roots: human-facing markdown under
+>   `docs/` and canonical JSON under `.insrc/artifacts/`. The markdown
+>   file is named by the **slug** (`DEF-<slug>.md`) and the JSON by the
+>   **hash** (`DEF-<hash>.json`); the markdown embeds an
+>   `<!-- insrc:artifact DEF-<hash> -->` marker so the slug-named `.md`
+>   resolves back to its hash-named `.json`. The single-directory,
+>   slug-in-JSON-filename layout in §10 below is superseded — see
+>   [`workflow-design.md` §8](workflow-design.md) for the canonical
+>   layout.
+> - **No `insrc workflow start`.** Workflows run through the
+>   `insrc_workflow_step` MCP tool (multi-turn), not a CLI `start`
+>   subcommand. The CLI covers out-of-band ops only: `approve`,
+>   `reject`, `list`, `runs`, `status`, `amend`, `ack-stale`, `chain`,
+>   `derive-slug`, `gh-config`, `unlink`.
+> - **Tracker push is automatic on approve.** There is no
+>   `insrc workflow push` / `sync` command. Approving an HLD auto-creates
+>   the GitHub Epic issue; approving an LLD auto-creates its Story issue
+>   (`tracker-auto.ts`), with `--no-tracker` to opt out. §11's manual
+>   `push` / `sync` commands describe the original design, not the
+>   shipped CLI.
 
 `define` is stage zero of the workflow chain. It takes a vague user
 ask and produces:
@@ -472,22 +498,28 @@ Every item is a yes/no question with a required evidence citation.
   unless `--reopen <epicSlug>` is passed. Re-run updates in place;
   diff recorded in `-runs/<runId>.jsonl`.
 
-### Storage layout
+### Storage layout (as-built)
+
+Markdown is named by slug and lives under `docs/`; canonical JSON is
+named by the Epic hash and lives under `.insrc/artifacts/`; per-run
+jsonl traces live outside the repo under `~/.insrc/workflow-runs/`.
 
 ```
-docs/defines/
-├── <epic-slug>.md              # human-readable
-├── <epic-slug>.json            # canonical
-└── <epic-slug>-runs/
-    └── <runId>.jsonl           # ephemeral per-run log
+<repo>/docs/defines/
+└── DEF-<epic-slug>.md              # human-readable (embeds the artifact marker)
+
+<repo>/.insrc/artifacts/
+└── DEF-<epic-hash>.json            # canonical
+
+~/.insrc/workflow-runs/<epic-hash>/
+└── define-<runId>.jsonl            # ephemeral per-run log
 ```
 
-Story ids (`s1`, `s2`, ...) are scoped to the Epic. When
-downstream workflows write their own artifacts, they nest under
-the epic-slug directory (meta doc §8), so a whole Epic's paper
-trail lives at `docs/defines/<epic-slug>.md`,
-`docs/designs/<epic-slug>/*.md`, `plans/<epic-slug>/*.md`,
-`docs/test-runs/<epic-slug>/*.md`.
+Story ids (`s1`, `s2`, ...) are scoped to the Epic. Every artifact
+belonging to one Epic shares the same 16-char hash, so
+`grep -l <hash> .insrc/artifacts/` returns the whole Epic. See
+[`workflow-design.md` §8](workflow-design.md) for the full cross-workflow
+layout (DEF- / HLD- / LLD- / AMD- files).
 
 ## 11. Interaction
 

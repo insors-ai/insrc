@@ -169,6 +169,10 @@ if [ -e "$INSTALL_ROOT" ]; then
 	confirm "update it (fast-forward to origin/$BRANCH)" || die "user declined" 1
 	log "fetching origin..."
 	git -C "$INSTALL_ROOT" fetch --quiet origin "$BRANCH"
+	# A prior `npm install` rewrites package-lock.json; the install
+	# mirrors origin exactly, so discard that churn before the ff-merge
+	# (otherwise `git merge --ff-only` refuses on the local change).
+	git -C "$INSTALL_ROOT" checkout -- package-lock.json 2>/dev/null || true
 	CURRENT=$(git -C "$INSTALL_ROOT" rev-parse HEAD)
 	INCOMING=$(git -C "$INSTALL_ROOT" rev-parse "origin/$BRANCH")
 	if [ "$CURRENT" != "$INCOMING" ]; then

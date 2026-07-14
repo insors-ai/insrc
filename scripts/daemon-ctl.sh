@@ -80,6 +80,11 @@ sync_repo() {
 	log "syncing $DAEMON_ROOT against origin/$branch"
 	git -C "$DAEMON_ROOT" fetch --quiet origin "$branch"
 
+	# `npm install` rewrites package-lock.json; the install mirrors
+	# origin exactly, so discard that churn before the cleanliness check
+	# (otherwise every post-install update would refuse as "dirty").
+	git -C "$DAEMON_ROOT" checkout -- package-lock.json 2>/dev/null || true
+
 	if ! git -C "$DAEMON_ROOT" diff --quiet || ! git -C "$DAEMON_ROOT" diff --cached --quiet; then
 		die "$DAEMON_ROOT has uncommitted local changes; refusing to overwrite" 3
 	fi

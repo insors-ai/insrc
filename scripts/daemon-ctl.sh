@@ -119,10 +119,19 @@ npm_build() {
 # Spawn the compiled daemon detached, the same way the TUI's start
 # action does: `node --import tsx/esm out/daemon/index.js`. The daemon
 # writes its own pid file + socket and sets its own (file) log mode.
+#
+# Detachment is deliberate + complete: stdin from /dev/null, stdout +
+# stderr to the log, and `disown` so this shell keeps NO file descriptor
+# to the daemon and exits cleanly even when its own stdout is a pipe
+# (e.g. the installer runs `daemon-ctl.sh start | tail`). Without the
+# full detach the shell lingers holding the pipe, and the caller's
+# reader never sees EOF -- the daemon comes up but the installer hangs.
+# `cd`+`exec` keeps cwd = repo root so `--import tsx/esm` resolves tsx.
 spawn_daemon() {
 	[ -f "$DAEMON_ENTRY" ] || die "built daemon not found at $DAEMON_ENTRY -- run '$0 update' first" 4
 	log "spawning daemon ($DAEMON_ENTRY)"
-	( cd "$DAEMON_ROOT" && INSRC_MODE=daemon nohup node --import tsx/esm "$DAEMON_ENTRY" >>"$DAEMON_LOG" 2>&1 & )
+	( cd "$DAEMON_ROOT" && exec env INSRC_MODE=daemon node --import tsx/esm "$DAEMON_ENTRY" >>"$DAEMON_LOG" 2>&1 </dev/null ) &
+	disown 2>/dev/null || true
 }
 
 # SIGTERM the running daemon (graceful drain; the daemon handles the

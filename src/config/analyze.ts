@@ -89,7 +89,16 @@ export type AnalyzeShaperProviderKind = 'ollama' | 'cli-claude' | 'cli-codex';
 
 export interface AnalyzeConfig {
 	readonly shaperProvider: AnalyzeShaperProviderKind;
+	/** True when `models.analyze.shaperProvider` was set to a recognized
+	 *  value in config.json (vs. defaulted). When false, the shaper
+	 *  factory may auto-pick a provider from the invoking MCP client
+	 *  (claude → cli-claude, codex → cli-codex). See shaper-provider.ts. */
+	readonly shaperProviderExplicit: boolean;
 	readonly shaperModel:    string;
+	/** True when `models.analyze.shaperModel` was set in config.json.
+	 *  The default (`qwen3.6:35b-a3b`) is an Ollama id, so it must NOT be
+	 *  forwarded to a CLI provider unless the operator explicitly set it. */
+	readonly shaperModelExplicit: boolean;
 	readonly shaper:         AnalyzeShaperConfig;
 	readonly maxPlanDepth:   MaxPlanDepthMap;
 }
@@ -153,7 +162,9 @@ export function loadAnalyzeConfig(): AnalyzeConfig {
 	if (!existsSync(PATHS.config)) {
 		cached = {
 			shaperProvider: 'ollama',
+			shaperProviderExplicit: false,
 			shaperModel:    fallbackModel,
+			shaperModelExplicit: false,
 			shaper:         DEFAULT_SHAPER,
 			maxPlanDepth:   DEFAULT_MAX_PLAN_DEPTH,
 		};
@@ -173,12 +184,15 @@ export function loadAnalyzeConfig(): AnalyzeConfig {
 			? (analyze['maxPlanDepth'] as Record<string, unknown>)
 			: {};
 
+		const rawShaper = analyze['shaperProvider'];
 		cached = {
-			shaperProvider: parseShaperProvider(analyze['shaperProvider']),
+			shaperProvider: parseShaperProvider(rawShaper),
+			shaperProviderExplicit: rawShaper === 'ollama' || rawShaper === 'cli-claude' || rawShaper === 'cli-codex',
 			shaperModel:
 				typeof analyze['shaperModel'] === 'string'
 					? (analyze['shaperModel'] as string)
 					: fallbackModel,
+			shaperModelExplicit: typeof analyze['shaperModel'] === 'string',
 			shaper: {
 				maxToolTurns:
 					typeof shaperObj['maxToolTurns'] === 'number'
@@ -213,7 +227,9 @@ export function loadAnalyzeConfig(): AnalyzeConfig {
 		);
 		cached = {
 			shaperProvider: 'ollama',
+			shaperProviderExplicit: false,
 			shaperModel:    fallbackModel,
+			shaperModelExplicit: false,
 			shaper:         DEFAULT_SHAPER,
 			maxPlanDepth:   DEFAULT_MAX_PLAN_DEPTH,
 		};

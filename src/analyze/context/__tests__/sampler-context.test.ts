@@ -20,7 +20,9 @@ import {
 function cfg(): AnalyzeConfig {
 	return {
 		shaperProvider: 'ollama',
+		shaperProviderExplicit: false,
 		shaperModel:    'qwen3.6:35b-a3b',
+		shaperModelExplicit: false,
 		shaper: {
 			maxToolTurns:            40,
 			structuredOutputRetries: 3,

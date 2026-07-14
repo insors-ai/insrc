@@ -274,6 +274,11 @@ esac
 if [ "$RESOLVED_EMBEDDER" = "onnx" ]; then
 	if [ ! -f "$CONFIG_FILE" ]; then
 		mkdir -p "$HOME/.insrc"
+		# NOTE: we deliberately do NOT pin models.analyze.shaperProvider.
+		# When invoked over MCP the daemon auto-routes the analyze shaper
+		# to the calling CLI (Claude Code -> claude, Codex -> codex); an
+		# explicit value here would override that. Set one manually only
+		# if you want to force a specific backend.
 		cat > "$CONFIG_FILE" <<'CFG'
 {
 	"models": {
@@ -285,15 +290,11 @@ if [ "$RESOLVED_EMBEDDER" = "onnx" ]; then
 				"coreModel":      "qwen3-coder:latest",
 				"charsPerToken":  3
 			}
-		},
-		"analyze": {
-			"shaperProvider": "cli-claude",
-			"shaperModel":    "qwen3.6:35b-a3b"
 		}
 	}
 }
 CFG
-		ok "wrote $CONFIG_FILE (ONNX embedder + shaperProvider=cli-claude)"
+		ok "wrote $CONFIG_FILE (ONNX embedder; analyze shaper auto-routes to the invoking CLI)"
 	else
 		if ! grep -q 'nomic-embed-text' "$CONFIG_FILE" 2>/dev/null; then
 			warn "existing $CONFIG_FILE does not appear to reference the ONNX embedder"

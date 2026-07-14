@@ -35,7 +35,7 @@
 
 import { AsyncLocalStorage } from 'node:async_hooks';
 
-import type { AnalyzeConfig } from '../../config/analyze.js';
+import type { AnalyzeConfig, AnalyzeShaperProviderKind } from '../../config/analyze.js';
 import { loadLocalProviderConfig } from '../../config/local.js';
 import { CliProvider } from '../../agent/providers/cli-provider.js';
 import {
@@ -61,6 +61,11 @@ export interface ShaperProviderOverrides {
 	/** Optional model-preference hints forwarded on every sampling
 	 *  request. Ignored when `sampler` is undefined. */
 	readonly modelHints?: readonly string[] | undefined;
+	/** Provider to use when config does NOT explicitly pin one — set by
+	 *  the MCP server from the invoking client (Claude Code → 'cli-claude',
+	 *  Codex → 'cli-codex'). Falls back to the ambient client-provider
+	 *  context (below). An explicit `cfg.shaperProvider` always wins. */
+	readonly clientDefault?: AnalyzeShaperProviderKind | undefined;
 }
 
 /**
@@ -107,6 +112,24 @@ export function currentSamplerContext(): SamplerContext | undefined {
 }
 
 /**
+ * Ambient "which CLI invoked us" context. The MCP server wraps each
+ * tool call in `runWithClientProviderContext('cli-claude' | 'cli-codex',
+ * …)` based on the client's initialize `clientInfo.name`, so that when
+ * config does NOT pin a shaperProvider the analyze pipeline defaults to
+ * the matching CLI (Claude Code → claude CLI, Codex → codex CLI) instead
+ * of local Ollama. Only meaningful for cli-* kinds; an explicit
+ * `cfg.shaperProvider` still overrides it.
+ */
+const clientProviderContextStorage = new AsyncLocalStorage<{ kind: AnalyzeShaperProviderKind }>();
+
+export function runWithClientProviderContext<T>(
+	kind: AnalyzeShaperProviderKind,
+	fn:   () => Promise<T>,
+): Promise<T> {
+	return clientProviderContextStorage.run({ kind }, fn);
+}
+
+/**
  * Return the `LLMProvider` implementation the analyze framework
  * should use for its structured-output calls.
  *
@@ -146,20 +169,27 @@ export function buildShaperProvider(
 			modelHints: ambient.modelHints,
 		});
 	}
-	if (cfg.shaperProvider === 'cli-claude' || cfg.shaperProvider === 'cli-codex') {
-		const kind = cfg.shaperProvider === 'cli-claude' ? 'claude' : 'codex';
+	// Effective provider: an explicit config `shaperProvider` always
+	// wins; otherwise auto-pick from the invoking CLI (via override arg
+	// or the ambient client-provider context); otherwise the config
+	// default ('ollama').
+	const clientDefault = overrides?.clientDefault ?? clientProviderContextStorage.getStore()?.kind;
+	const effective: AnalyzeShaperProviderKind = cfg.shaperProviderExplicit
+		? cfg.shaperProvider
+		: (clientDefault ?? cfg.shaperProvider);
+
+	if (effective === 'cli-claude' || effective === 'cli-codex') {
+		const kind = effective === 'cli-claude' ? 'claude' : 'codex';
+		// The default `shaperModel` (`qwen3.6:35b-a3b`) is an Ollama id —
+		// never forward it to a CLI. Only pin a CLI model when the operator
+		// set `shaperModel` explicitly (e.g. `claude-haiku-4-5` for
+		// cost-sensitive inner calls); otherwise use the CLI's own default.
+		const model = cfg.shaperModelExplicit && cfg.shaperModel !== '' ? cfg.shaperModel : undefined;
 		log.info(
-			{ kind, model: cfg.shaperModel },
+			{ kind, model: model ?? '(cli default)', source: cfg.shaperProviderExplicit ? 'config' : 'client' },
 			'shaper provider: routing through CliProvider',
 		);
-		return new CliProvider({
-			kind,
-			// `cfg.shaperModel` is honoured verbatim when set; the CLI's
-			// own default applies otherwise. This lets an operator pin
-			// (e.g.) `claude-haiku-4-5` for cost-sensitive inner calls
-			// while the outer Claude Code session runs Opus.
-			model: cfg.shaperModel === '' ? undefined : cfg.shaperModel,
-		});
+		return new CliProvider(model !== undefined ? { kind, model } : { kind });
 	}
 	// Default + explicit 'ollama'.
 	log.info(

@@ -28,7 +28,7 @@ export const COMMAND_HELP: readonly string[] = [
 	'repo     add <path> | remove <path> | reindex <path> | list',
 	'daemon   start | stop | restart | update | backup <dir> | compact | status',
 	'workflow list | chain <hash> | approve <path> | reject <path> <reason> | ack-stale <path> <reason>',
-	'config   list [search] | get <key> | set <key> <value> | reload   (dot-path keys; list shows all known + set options)',
+	'config   list [search] | get <key> | set <key> <value> | unset <key> | reload   (dot-path keys)',
 	'setup    show | apply | pull',
 	'pane daemon|repos|workflows|setup   ·   help   ·   quit',
 ];
@@ -198,6 +198,11 @@ async function runConfig(sub: string | undefined, rest: readonly string[], svc: 
 			const value = parseValue(rest.slice(1).join(' '));
 			await svc.config.write(key, value);
 			return [`set ${key} = ${render(value)}`];
+		}
+		case 'unset': case 'clear': {
+			if (rest[0] === undefined) return ['usage: config unset <key>   (clears the key → falls back to default / auto)'];
+			await svc.config.write(rest[0], null);
+			return [`unset ${rest[0]} (cleared → default/auto)`];
 		}
 		case 'reload': {
 			await svc.config.reload();

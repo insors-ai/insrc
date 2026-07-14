@@ -17,12 +17,14 @@ import { CliProvider } from '../../../agent/providers/cli-provider.js';
 import { McpSamplingProvider } from '../../../agent/providers/mcp-sampling-provider.js';
 import { OllamaProvider } from '../../../agent/providers/ollama.js';
 import type { AnalyzeConfig } from '../../../config/analyze.js';
-import { buildShaperProvider } from '../shaper-provider.js';
+import { buildShaperProvider, runWithClientProviderContext } from '../shaper-provider.js';
 
 function makeCfg(overrides: Partial<AnalyzeConfig>): AnalyzeConfig {
 	return {
 		shaperProvider: 'ollama',
+		shaperProviderExplicit: true,
 		shaperModel:    'qwen3.6:35b-a3b',
+		shaperModelExplicit: true,
 		shaper: {
 			maxToolTurns:            40,
 			structuredOutputRetries: 3,
@@ -115,4 +117,34 @@ test('sampler override forwards modelHints into the provider', () => {
 	// hint should appear in a request the provider forwards to the
 	// sampler. The provider's own test file covers that path in detail;
 	// here we only care that the factory wired the option through.
+});
+
+// ---------------------------------------------------------------------------
+// Client-inferred default (Claude Code / Codex invoking the MCP server)
+// ---------------------------------------------------------------------------
+
+test('clientDefault picks the matching CLI when config does NOT pin a provider', () => {
+	const cfg = makeCfg({ shaperProvider: 'ollama', shaperProviderExplicit: false });
+	assert.ok(buildShaperProvider(cfg, { clientDefault: 'cli-claude' }) instanceof CliProvider);
+	assert.ok(buildShaperProvider(cfg, { clientDefault: 'cli-codex' }) instanceof CliProvider);
+});
+
+test('explicit config shaperProvider overrides the clientDefault', () => {
+	// User pinned ollama; a Claude Code invocation must still get Ollama.
+	const cfg = makeCfg({ shaperProvider: 'ollama', shaperProviderExplicit: true });
+	assert.ok(buildShaperProvider(cfg, { clientDefault: 'cli-claude' }) instanceof OllamaProvider);
+});
+
+test('ambient runWithClientProviderContext supplies the default', async () => {
+	const cfg = makeCfg({ shaperProvider: 'ollama', shaperProviderExplicit: false });
+	const p = await runWithClientProviderContext('cli-codex', async () => buildShaperProvider(cfg));
+	assert.ok(p instanceof CliProvider);
+	// outside the context, the config default (ollama) applies again
+	assert.ok(buildShaperProvider(cfg) instanceof OllamaProvider);
+});
+
+test('sampler still beats a clientDefault', () => {
+	const sampler = async () => ({ role: 'assistant' as const, content: '' });
+	const cfg = makeCfg({ shaperProvider: 'ollama', shaperProviderExplicit: false });
+	assert.ok(buildShaperProvider(cfg, { sampler, clientDefault: 'cli-claude' }) instanceof McpSamplingProvider);
 });

@@ -38,7 +38,8 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { z } from 'zod';
 
 import { buildRun } from '../daemon/analyze-rpc.js';
-import { runWithSamplerContext } from '../analyze/context/shaper-provider.js';
+import { runWithSamplerContext, runWithClientProviderContext } from '../analyze/context/shaper-provider.js';
+import type { AnalyzeShaperProviderKind } from '../config/analyze.js';
 import { getLogger } from '../shared/logger.js';
 
 import { handleAnalyzeStep } from './analyze-step/handler.js';
@@ -463,12 +464,16 @@ async function handleAnalyze(
 		reasoning: `MCP invocation: ${args.focus}`,
 	};
 
-	// Sampling handoff: if the client declared `sampling`, thread the
-	// callback through the analyze pipeline via runWithSamplerContext.
-	// If it didn't, the analyze factory falls back to the daemon's
-	// shaperProvider config -- CliProvider subprocess or Ollama.
+	// Provider routing for the in-process analyze pipeline:
+	//   1. Client declared `sampling` -> route inner calls back to it.
+	//   2. Else default to the CLI that invoked us (Claude Code ->
+	//      cli-claude, Codex -> cli-codex) so `claude`/`codex` power the
+	//      shaper without any config. An explicit config `shaperProvider`
+	//      still overrides this (handled in buildShaperProvider).
+	//   3. Unknown client -> the analyze factory's config default.
 	const clientCaps = server.server.getClientCapabilities();
 	const samplingSupported = clientCaps?.sampling !== undefined;
+	const clientDefault = detectClientProvider(server.server.getClientVersion()?.name);
 
 	log.info(
 		{
@@ -477,7 +482,9 @@ async function handleAnalyze(
 			target: intent.target,
 			scope:  intent.scope,
 			focus:  intent.focus.slice(0, 80),
+			client: server.server.getClientVersion()?.name ?? '(unknown)',
 			samplingSupported,
+			clientDefault: clientDefault ?? '(none)',
 		},
 		'insrc_analyze: dispatching',
 	);
@@ -489,7 +496,9 @@ async function handleAnalyze(
 			[],
 			() => buildRun(rpcParams),
 		)
-		: buildRun(rpcParams);
+		: clientDefault !== undefined
+			? runWithClientProviderContext(clientDefault, () => buildRun(rpcParams))
+			: buildRun(rpcParams);
 
 	const result = await rpc;
 	if (!result.ok) {
@@ -507,6 +516,18 @@ async function handleAnalyze(
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+/** Map an MCP client's initialize `clientInfo.name` to the CLI shaper
+ *  provider it implies: Claude Code → 'cli-claude', Codex → 'cli-codex'.
+ *  Undefined for unknown clients (analyze then uses the config default).
+ *  An explicit `models.analyze.shaperProvider` overrides this downstream. */
+function detectClientProvider(name: string | undefined): AnalyzeShaperProviderKind | undefined {
+	if (name === undefined) return undefined;
+	const n = name.toLowerCase();
+	if (n.includes('codex'))  return 'cli-codex';
+	if (n.includes('claude')) return 'cli-claude';
+	return undefined;
+}
 
 function resolveRepoPath(explicit: string | undefined): string | undefined {
 	if (explicit !== undefined && explicit.length > 0) return explicit;

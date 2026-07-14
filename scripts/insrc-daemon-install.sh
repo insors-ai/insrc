@@ -387,12 +387,16 @@ codex mcp add insrc \\
 
 2. Add repos + manage the daemon in the interactive TUI:
 
-cd $INSTALL_ROOT
-npm run insrc          # full-screen dashboard (needs a terminal / TTY)
+$INSTALL_ROOT/scripts/insrc          # full-screen dashboard (needs a terminal / TTY)
 
-   In the TUI: 1-4 / Tab switch panes, q quits.
+   Optionally put it on PATH so you can just run 'insrc':
+   ln -s $INSTALL_ROOT/scripts/insrc /usr/local/bin/insrc
+
+   In the TUI: 1-4 / Tab switch panes, q quits, ':' opens a command bar.
    - Repos pane   : press 'a' to register a repo for indexing.
    - Daemon pane  : start / stop / restart / update / backup / compact.
+   - Command bar  : type e.g. 'repo add <path>', 'daemon restart',
+                    'config list', 'config set <key> <value>'.
 
    Headless equivalents (for scripts / CI):
    $CTL status         # health check over the socket

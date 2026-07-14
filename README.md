@@ -131,11 +131,13 @@ CliProvider suites) and skip cleanly when unset.
 ## CLI
 
 `insrc` is a **full-screen interactive terminal UI** (built on
-[ink](https://github.com/vadimdemedes/ink)) — there are no subcommands. Run it
-in a terminal:
+[ink](https://github.com/vadimdemedes/ink)) — there are no subcommands. Launch
+it in a terminal with the wrapper (no `node`/`npm` needed; runs from any
+directory):
 
 ```bash
-npm run insrc        # dev (tsx); or `insrc` once built + linked
+scripts/insrc                 # or `npm run insrc`
+# put it on PATH once:  ln -s "$PWD/scripts/insrc" /usr/local/bin/insrc  →  then just `insrc`
 ```
 
 It opens a dashboard with four panes (switch with `1`–`4`/`Tab`, `r` refresh,

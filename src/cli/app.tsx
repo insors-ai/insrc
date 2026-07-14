@@ -46,7 +46,9 @@ function AppBody(props: { pollMs?: number; initialPane?: number }): ReactElement
 	const [nonce, setNonce] = useState(0);
 	const [toast, setToast] = useState<string | undefined>(undefined);
 	const [captured, setCaptured] = useState(false);
-	const [selectedRepo, setSelectedRepo] = useState<string>(process.cwd());
+	// INSRC_CWD lets the `scripts/insrc` wrapper preserve the launch
+	// directory even though it cd's to the repo root for module resolution.
+	const [selectedRepo, setSelectedRepo] = useState<string>(process.env['INSRC_CWD'] ?? process.cwd());
 	const [cmdMode, setCmdMode] = useState(false);
 	const [cmdOutput, setCmdOutput] = useState<string[]>([]);
 	const [cmdRunning, setCmdRunning] = useState(false);

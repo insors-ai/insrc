@@ -12,6 +12,7 @@
 
 import type { Services } from './services/index.js';
 import { formatBytes, formatUptime } from './ui/format.js';
+import { CONFIG_CATALOG } from './config-catalog.js';
 
 export interface CommandCtx {
 	readonly services: Services;
@@ -27,7 +28,7 @@ export const COMMAND_HELP: readonly string[] = [
 	'repo     add <path> | remove <path> | reindex <path> | list',
 	'daemon   start | stop | restart | update | backup <dir> | compact | status',
 	'workflow list | chain <hash> | approve <path> | reject <path> <reason> | ack-stale <path> <reason>',
-	'config   list | get <key> | set <key> <value> | reload      (key is a dot-path, e.g. models.embeddingDim)',
+	'config   list [search] | get <key> | set <key> <value> | reload   (dot-path keys; list shows all known + set options)',
 	'setup    show | apply | pull',
 	'pane daemon|repos|workflows|setup   ·   help   ·   quit',
 ];
@@ -170,8 +171,20 @@ async function runConfig(sub: string | undefined, rest: readonly string[], svc: 
 	switch (sub) {
 		case undefined: case 'list': case 'ls': case 'show': {
 			const cfg = await svc.config.show();
-			const lines = flatten(cfg);
-			return lines.length > 0 ? lines : ['(config is empty — nothing set)'];
+			const set = new Map(flattenEntries(cfg));
+			const query = rest[0]?.toLowerCase();
+			const seen = new Set<string>();
+			const rows: Array<{ path: string; value: unknown; tag: string }> = [];
+			for (const opt of CONFIG_CATALOG) {
+				seen.add(opt.path);
+				const isSet = set.has(opt.path);
+				rows.push({ path: opt.path, value: isSet ? set.get(opt.path) : opt.default, tag: isSet ? 'set' : 'default' });
+			}
+			for (const [p, v] of set) if (!seen.has(p)) rows.push({ path: p, value: v, tag: 'set,unrecognized' });
+			const filtered = query === undefined ? rows : rows.filter(r => r.path.toLowerCase().includes(query));
+			if (filtered.length === 0) return [`no config options match '${rest[0] ?? ''}'`];
+			const width = Math.max(...filtered.map(r => r.path.length));
+			return filtered.map(r => `${r.path.padEnd(width)} = ${render(r.value)}   (${r.tag})`);
 		}
 		case 'get': {
 			if (rest[0] === undefined) return ['usage: config get <key>   (dot-path, e.g. models.embeddingDim)'];
@@ -194,17 +207,17 @@ async function runConfig(sub: string | undefined, rest: readonly string[], svc: 
 	}
 }
 
-/** Flatten a nested config object into `a.b.c = value` lines (leaves
- *  only; arrays / null render as JSON). */
-function flatten(obj: unknown, prefix = ''): string[] {
+/** Flatten a nested config object into `[dotPath, leafValue]` entries
+ *  (arrays / null count as leaves). */
+function flattenEntries(obj: unknown, prefix = ''): Array<[string, unknown]> {
 	if (obj === null || typeof obj !== 'object' || Array.isArray(obj)) {
-		return prefix === '' ? [] : [`${prefix} = ${render(obj)}`];
+		return prefix === '' ? [] : [[prefix, obj]];
 	}
-	const out: string[] = [];
+	const out: Array<[string, unknown]> = [];
 	for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
 		const path = prefix === '' ? k : `${prefix}.${k}`;
-		if (v !== null && typeof v === 'object' && !Array.isArray(v)) out.push(...flatten(v, path));
-		else out.push(`${path} = ${render(v)}`);
+		if (v !== null && typeof v === 'object' && !Array.isArray(v)) out.push(...flattenEntries(v, path));
+		else out.push([path, v]);
 	}
 	return out;
 }

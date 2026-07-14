@@ -62,7 +62,7 @@ function ctxWith(overrides: Partial<Services> = {}): { ctx: CommandCtx; spies: S
 			pullModels: async () => [],
 		},
 		config: {
-			show: async () => ({ models: { embeddingDim: 768, local: 'qwen3-coder' }, flag: true }),
+			show: async () => ({ models: { providers: { local: { embeddingDim: 768 } }, analyze: { shaperProvider: 'cli-claude' } } }),
 			write: async (path, value) => { spies.configWrite.push({ path, value }); return { ok: true }; },
 			reload: async () => ({ ok: true }),
 		},
@@ -96,17 +96,30 @@ test('daemon status renders a one-line summary', async () => {
 	assert.match(out[0] ?? '', /uptime 1m 1s · queue 3/);
 });
 
-test('config list flattens the config to dot-path lines', async () => {
+test('config list shows known options (default) merged with set values', async () => {
 	const { ctx } = ctxWith();
 	const out = await runCommand('config list', ctx);
-	assert.ok(out.includes('models.embeddingDim = 768'));
-	assert.ok(out.includes('models.local = qwen3-coder'));
-	assert.ok(out.includes('flag = true'));
+	// a set value is tagged (set) with its current value
+	assert.ok(out.some(l => l.includes('models.providers.local.embeddingDim') && l.includes('= 768') && l.includes('(set)')));
+	assert.ok(out.some(l => l.includes('models.analyze.shaperProvider') && l.includes('cli-claude') && l.includes('(set)')));
+	// an unset known option is tagged (default) with its default value
+	assert.ok(out.some(l => l.includes('models.providers.local.host') && l.includes('http://localhost:11434') && l.includes('(default)')));
+	assert.ok(out.some(l => l.includes('models.providers.local.coreModel') && l.includes('(default)')));
+});
+
+test('config list <search> filters options by substring', async () => {
+	const { ctx } = ctxWith();
+	const out = await runCommand('config list analyze', ctx);
+	assert.ok(out.length > 0);
+	assert.ok(out.every(l => l.includes('analyze')));
+	assert.ok(out.some(l => l.includes('models.analyze.shaperProvider')));
+	// a non-matching known option is excluded
+	assert.ok(!out.some(l => l.includes('providers.local.host')));
 });
 
 test('config get navigates a dot-path', async () => {
 	const { ctx } = ctxWith();
-	assert.deepEqual(await runCommand('config get models.embeddingDim', ctx), ['models.embeddingDim = 768']);
+	assert.deepEqual(await runCommand('config get models.providers.local.embeddingDim', ctx), ['models.providers.local.embeddingDim = 768']);
 	assert.deepEqual(await runCommand('config get models.missing', ctx), ['models.missing = (unset)']);
 });
 

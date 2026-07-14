@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+#
+# insrc — launcher for the interactive TUI, so you don't have to type
+# `npm run insrc` / `node …`. Runs from any directory: prefers the
+# compiled entry (out/cli/index.js) and falls back to the TypeScript
+# source via tsx when the repo hasn't been built yet.
+#
+# Your current directory is preserved (passed through as INSRC_CWD) so
+# the Workflows pane defaults to the repo you launched from, even though
+# the launcher cd's to the repo root so Node can resolve tsx / modules.
+#
+# Put it on PATH once, e.g.:
+#   ln -s "$HOME/.insrc/daemon/scripts/insrc" /usr/local/bin/insrc
+# then just run:  insrc
+#
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+USER_CWD="$PWD"
+
+command -v node >/dev/null 2>&1 || { echo "insrc: node not found on PATH (need Node.js >= 20)" >&2; exit 2; }
+
+cd "$ROOT"
+if [ -f out/cli/index.js ]; then
+	exec env INSRC_CWD="$USER_CWD" node out/cli/index.js "$@"
+else
+	exec env INSRC_CWD="$USER_CWD" node --import tsx/esm src/cli/index.tsx "$@"
+fi

@@ -18,6 +18,7 @@
 
 import { createHash } from 'node:crypto';
 
+import { artifactIdMarker, lldArtifactId } from '../storage.js';
 import type { Alternative, HldArtifact, SharedContract, StoryBoundary } from './hld.js';
 import type { ArtifactMetaBase, Citation, WorkflowArtifact } from '../types.js';
 
@@ -215,6 +216,10 @@ export function extractHldContextSlice(hld: HldArtifact, storyId: string): HldCo
 export function renderLldMarkdown(artifact: LldArtifact): string {
 	const { body, meta } = artifact;
 	const lines: string[] = [];
+	if (typeof meta.epicHash === 'string' && meta.epicHash.length > 0) {
+		lines.push(artifactIdMarker(lldArtifactId(meta.epicHash, meta.storyId)));
+		lines.push('');
+	}
 	lines.push(`# LLD: ${meta.storyId}`);
 	lines.push('');
 	lines.push(`**Epic:** \`${meta.epicSlug}\``);

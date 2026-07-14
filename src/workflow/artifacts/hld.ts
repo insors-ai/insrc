@@ -15,6 +15,7 @@
  * boundaries, rollout overview.
  */
 
+import { artifactIdMarker, hldArtifactId } from '../storage.js';
 import type { Citation, WorkflowArtifact } from '../types.js';
 
 // ---------------------------------------------------------------------------
@@ -102,6 +103,10 @@ export const HLD_SCHEMA_VERSION = 1;
 export function renderHldMarkdown(artifact: HldArtifact): string {
 	const { body } = artifact;
 	const lines: string[] = [];
+	if (typeof artifact.meta.epicHash === 'string' && artifact.meta.epicHash.length > 0) {
+		lines.push(artifactIdMarker(hldArtifactId(artifact.meta.epicHash)));
+		lines.push('');
+	}
 	lines.push(`# HLD: ${firstLine(body.frameworkSummary)}`);
 	lines.push('');
 	lines.push('## Framework summary');

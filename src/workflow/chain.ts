@@ -130,23 +130,25 @@ interface HldState {
 }
 
 function readDefineIfPresent(repoPath: string, epicHash: string): DefineState {
-	const paths = defineArtifactPaths(repoPath, epicHash);
-	if (!existsSync(paths.json)) return { exists: false, approved: false, rejected: false };
-	const raw = readFileSync(paths.json, 'utf8');
+	const jsonPath = defineArtifactPaths(repoPath, epicHash).json;
+	if (!existsSync(jsonPath)) return { exists: false, approved: false, rejected: false };
+	const raw = readFileSync(jsonPath, 'utf8');
 	const artifact = JSON.parse(raw) as DefineArtifact;
 	const approved = typeof artifact.meta.approvedAt === 'string' && artifact.meta.approvedAt.length > 0;
 	const rejected = typeof artifact.meta.rejectedAt === 'string' && artifact.meta.rejectedAt.length > 0;
-	return { exists: true, approved, rejected, path: paths.md, artifact };
+	const mdPath = defineArtifactPaths(repoPath, epicHash, artifact.meta.epicSlug).md;
+	return { exists: true, approved, rejected, path: mdPath, artifact };
 }
 
 function readHldIfPresent(repoPath: string, epicHash: string): HldState {
-	const paths = hldArtifactPaths(repoPath, epicHash);
-	if (!existsSync(paths.json)) return { exists: false, approved: false, rejected: false };
-	const raw = readFileSync(paths.json, 'utf8');
+	const jsonPath = hldArtifactPaths(repoPath, epicHash).json;
+	if (!existsSync(jsonPath)) return { exists: false, approved: false, rejected: false };
+	const raw = readFileSync(jsonPath, 'utf8');
 	const artifact = JSON.parse(raw) as HldArtifact;
 	const approved = typeof artifact.meta.approvedAt === 'string' && artifact.meta.approvedAt.length > 0;
 	const rejected = typeof artifact.meta.rejectedAt === 'string' && artifact.meta.rejectedAt.length > 0;
-	return { exists: true, approved, rejected, path: paths.md, artifact };
+	const mdPath = hldArtifactPaths(repoPath, epicHash, artifact.meta.epicSlug).md;
+	return { exists: true, approved, rejected, path: mdPath, artifact };
 }
 
 function readStoryLldStatus(
@@ -159,13 +161,14 @@ function readStoryLldStatus(
 	const stories = define.artifact.body.stories;
 	const staleness = hld.artifact === undefined ? new Map<string, { stale: boolean; staleReason?: string }>()
 		: staleByStory(scanLldStaleness(repoPath, epicHash, hld.artifact));
+	const epicSlug = define.artifact.meta.epicSlug;
 	return stories.map(s => {
-		const paths = lldArtifactPaths(repoPath, epicHash, s.id);
-		const hasLld = existsSync(paths.json);
+		const jsonPath = lldArtifactPaths(repoPath, epicHash, s.id).json;
+		const hasLld = existsSync(jsonPath);
 		let approved = false;
 		if (hasLld) {
 			try {
-				const raw = readFileSync(paths.json, 'utf8');
+				const raw = readFileSync(jsonPath, 'utf8');
 				const lld = JSON.parse(raw) as { meta: { approvedAt?: string } };
 				approved = typeof lld.meta.approvedAt === 'string' && lld.meta.approvedAt.length > 0;
 			} catch { /* malformed — treat as unapproved */ }
@@ -176,7 +179,7 @@ function readStoryLldStatus(
 			hasLld, approved,
 			stale: stale?.stale === true,
 			...(stale?.staleReason !== undefined ? { staleReason: stale.staleReason } : {}),
-			...(hasLld ? { path: paths.md } : {}),
+			...(hasLld ? { path: lldArtifactPaths(repoPath, epicHash, s.id, epicSlug).md } : {}),
 		};
 	});
 }

@@ -232,7 +232,9 @@ test('design.epic: happy path writes _hld.md under docs/designs/<slug>/', async 
 		}));
 		assert.equal(done['next'], 'done', JSON.stringify(done));
 		const outPath = done['path'] as string;
-		assert.ok(outPath.endsWith(`/docs/designs/HLD-${HASH}.md`), outPath);
+		// Markdown is named by the epicSlug ('tag-filtering'); the
+		// canonical JSON stays hash-named.
+		assert.ok(outPath.endsWith(`/docs/designs/HLD-tag-filtering.md`), outPath);
 		assert.ok(existsSync(outPath));
 		const md = readFileSync(outPath, 'utf8');
 		assert.ok(md.includes('## Framework summary'));

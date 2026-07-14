@@ -18,12 +18,19 @@
  */
 
 import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 import { getEffectiveHld } from './amendments/effective.js';
 import { makeStaleAck } from './amendments/staleness.js';
 import type { DefineArtifact } from './artifacts/define.js';
 import type { HldArtifact }    from './artifacts/hld.js';
-import { defineArtifactPaths, hldArtifactPaths, writeAtomic } from './storage.js';
+import {
+	ARTIFACT_ID_MARKER_RE,
+	ARTIFACTS_DIR,
+	defineArtifactPaths,
+	hldArtifactPaths,
+	writeAtomic,
+} from './storage.js';
 
 // ---------------------------------------------------------------------------
 // Read + require-approved helpers
@@ -62,7 +69,7 @@ export function requireApprovedEpic(repoPath: string, epicHash: string): DefineA
 	const define = readDefineArtifact(repoPath, epicHash);
 	const label  = define.meta.epicSlug ?? epicHash;
 	if (define.meta.approvedAt === undefined || define.meta.approvedAt.length === 0) {
-		const path = defineArtifactPaths(repoPath, epicHash).md;
+		const path = defineArtifactPaths(repoPath, epicHash, define.meta.epicSlug).md;
 		throw new ArtifactNotApprovedError(
 			`Epic '${label}' (${epicHash}) is not approved. ` +
 			`Run \`insrc workflow approve ${path}\` before starting design.epic.`,
@@ -101,7 +108,7 @@ export function requireApprovedHld(repoPath: string, epicHash: string): HldArtif
 	const hld   = readHldArtifact(repoPath, epicHash);
 	const label = hld.meta.epicSlug ?? epicHash;
 	if (hld.meta.approvedAt === undefined || hld.meta.approvedAt.length === 0) {
-		const path = hldArtifactPaths(repoPath, epicHash).md;
+		const path = hldArtifactPaths(repoPath, epicHash, hld.meta.epicSlug).md;
 		throw new ArtifactNotApprovedError(
 			`HLD for Epic '${label}' (${epicHash}) is not approved. ` +
 			`Run \`insrc workflow approve ${path}\` before starting design.story.`,
@@ -200,20 +207,64 @@ export function rejectArtifactByJsonPath(jsonPath: string, reason: string): Reje
 	return { workflow: nextMeta.workflow ?? 'unknown', path: jsonPath, rejectedAt, rejectReason: reason };
 }
 
-/** Given an md path (which the CLI accepts), resolve the sibling
- *  .json. Users almost always have the md path handy. With the hash
- *  layout, md lives under `docs/` and json under `.insrc/artifacts/`,
- *  so we swap the parent directory as well as the extension. */
+/** Given a human-facing artifact path (which the CLI accepts),
+ *  resolve the canonical `.json`. Users almost always have the `.md`
+ *  path handy.
+ *
+ *  The markdown is named by SLUG while the JSON is named by HASH, so
+ *  we can't just swap the extension — the basenames differ. Instead we
+ *  read the `<!-- insrc:artifact <ID> -->` marker the renderer embeds
+ *  and rebuild the JSON path from the repo root. Falls back to the
+ *  legacy dir+extension swap when the marker is absent (a hand-written
+ *  or pre-slug `.md`) and for the `docs/stub/*` layout, where md + json
+ *  sit side by side under the same slug basename. */
 export function jsonPathForMd(mdPath: string): string {
 	if (mdPath.endsWith('.json')) return mdPath;
-	if (!mdPath.endsWith('.md')) {
-		throw new Error(`Expected a .md or .json path, got '${mdPath}'`);
+	if (!mdPath.endsWith('.md') && !mdPath.endsWith('.html')) {
+		throw new Error(`Expected a .md, .html, or .json path, got '${mdPath}'`);
 	}
-	const swapped = swapDocsToArtifacts(mdPath);
-	return swapped.slice(0, -3) + '.json';
+	// Stub artifacts keep md + json side by side, both slug-named.
+	if (mdPath.includes('/docs/stub/')) {
+		return swapExt(mdPath);
+	}
+	// Designs / defines: slug-named md → hash-named json via the marker.
+	const id = readArtifactIdMarker(mdPath);
+	const repoRoot = repoRootFromDocsPath(mdPath);
+	if (id !== undefined && repoRoot !== undefined) {
+		return join(repoRoot, ARTIFACTS_DIR, `${id}.json`);
+	}
+	// Fallback: legacy hash-named md — swap dir + extension.
+	return swapExt(swapDocsToArtifacts(mdPath));
 }
 
-/** `.../docs/defines/DEF-<h>.md` → `.../.insrc/artifacts/DEF-<h>.md`.
+/** Reads the embedded `insrc:artifact` marker from a rendered md/html
+ *  file. Returns undefined if the file can't be read or has no marker. */
+function readArtifactIdMarker(mdPath: string): string | undefined {
+	try {
+		const head = readFileSync(mdPath, 'utf8').slice(0, 4096);
+		const m = ARTIFACT_ID_MARKER_RE.exec(head);
+		return m?.[1];
+	} catch {
+		return undefined;
+	}
+}
+
+/** `.../docs/defines/DEF-<slug>.md` → `.../` (the repo root). Returns
+ *  undefined when the path has no recognised `docs/` segment. */
+function repoRootFromDocsPath(p: string): string | undefined {
+	for (const seg of ['/docs/defines/', '/docs/designs/', '/docs/stub/']) {
+		const i = p.indexOf(seg);
+		if (i >= 0) return p.slice(0, i);
+	}
+	return undefined;
+}
+
+/** Swap a trailing `.md` / `.html` for `.json`. */
+function swapExt(p: string): string {
+	return p.replace(/\.(md|html)$/, '.json');
+}
+
+/** `.../docs/defines/DEF-<x>.md` → `.../.insrc/artifacts/DEF-<x>.md`.
  *  Only the first matching `docs/{defines,designs}/` segment gets
  *  swapped. If no such segment is present, the path is returned as-
  *  is (older layouts / non-standard callers). */

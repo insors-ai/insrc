@@ -85,6 +85,25 @@ test('lldArtifactPaths — md in docs/, json in .insrc/artifacts/', () => {
 	assert.equal(p.json, `/repo/.insrc/artifacts/LLD-${HASH}-s3.json`);
 });
 
+test('markdown is named by slug; json stays named by hash', () => {
+	const d = defineArtifactPaths('/repo', HASH, 'add-tag-filter');
+	assert.equal(d.md,   `/repo/docs/defines/DEF-add-tag-filter.md`);
+	assert.equal(d.json, `/repo/.insrc/artifacts/DEF-${HASH}.json`);
+
+	const h = hldArtifactPaths('/repo', HASH, 'add-tag-filter');
+	assert.equal(h.md,   `/repo/docs/designs/HLD-add-tag-filter.md`);
+	assert.equal(h.json, `/repo/.insrc/artifacts/HLD-${HASH}.json`);
+
+	const l = lldArtifactPaths('/repo', HASH, 's3', 'add-tag-filter');
+	assert.equal(l.md,   `/repo/docs/designs/LLD-add-tag-filter-s3.md`);
+	assert.equal(l.json, `/repo/.insrc/artifacts/LLD-${HASH}-s3.json`);
+});
+
+test('slug segment is sanitised against path separators', () => {
+	const p = defineArtifactPaths('/repo', HASH, 'a/b evil');
+	assert.equal(p.md, `/repo/docs/defines/DEF-a-b-evil.md`);
+});
+
 test('amendmentArtifactPath uses the AMD- prefix inside .insrc/artifacts/', () => {
 	assert.equal(
 		amendmentArtifactPath('/repo', `AMD-${HASH}-1`),

@@ -17,6 +17,7 @@
  * grounding.
  */
 
+import { artifactIdMarker, defineArtifactId } from '../storage.js';
 import type { Citation, WorkflowArtifact } from '../types.js';
 
 // ---------------------------------------------------------------------------
@@ -83,6 +84,10 @@ export const DEFINE_SCHEMA_VERSION = 1;
 export function renderDefineMarkdown(artifact: DefineArtifact): string {
 	const { body } = artifact;
 	const lines: string[] = [];
+	if (typeof artifact.meta.epicHash === 'string' && artifact.meta.epicHash.length > 0) {
+		lines.push(artifactIdMarker(defineArtifactId(artifact.meta.epicHash)));
+		lines.push('');
+	}
 	lines.push(`# Epic: ${firstSentence(body.problem)}`);
 	lines.push('');
 	lines.push(`**Flavor:** ${body.flavor}`);

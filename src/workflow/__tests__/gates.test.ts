@@ -58,6 +58,29 @@ test('jsonPathForMd rejects unknown extensions', () => {
 	assert.throws(() => jsonPathForMd('/a/b/c.txt'));
 });
 
+test('jsonPathForMd resolves a slug-named md to its hash-named json via the marker', () => {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-marker-'));
+	try {
+		const mdPath = join(repo, 'docs/defines/DEF-add-tag-filter.md');
+		mkdirSync(dirname(mdPath), { recursive: true });
+		writeFileSync(mdPath, `<!-- insrc:artifact DEF-${HASH} -->\n\n# Epic: x\n`);
+		assert.equal(
+			jsonPathForMd(mdPath),
+			join(repo, `.insrc/artifacts/DEF-${HASH}.json`),
+		);
+	} finally {
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
+test('jsonPathForMd falls back to dir+ext swap when no marker is present', () => {
+	// Legacy / hand-written md with no marker (file does not exist).
+	assert.equal(
+		jsonPathForMd(`/repo/docs/designs/LLD-${HASH}-s3.md`),
+		`/repo/.insrc/artifacts/LLD-${HASH}-s3.json`,
+	);
+});
+
 // ---------------------------------------------------------------------------
 // approve / reject round-trip
 // ---------------------------------------------------------------------------

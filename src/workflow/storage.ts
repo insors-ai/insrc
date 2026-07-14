@@ -8,12 +8,13 @@
  *
  * Split between two on-disk locations:
  *
- *   docs/                    — human-facing markdown only
- *     defines/DEF-<h16>.md
- *     designs/HLD-<h16>.md
- *     designs/LLD-<h16>-<storyId>.md
+ *   docs/                    — human-facing markdown, named by SLUG
+ *     defines/DEF-<slug>.md
+ *     designs/HLD-<slug>.md
+ *     designs/LLD-<slug>-<storyId>.md
  *
- *   .insrc/artifacts/        — canonical JSON, hidden, git-tracked
+ *   .insrc/artifacts/        — canonical JSON, hidden, git-tracked,
+ *                              named by HASH (the stable identity)
  *     DEF-<h16>.json
  *     HLD-<h16>.json
  *     LLD-<h16>-<storyId>.json
@@ -22,7 +23,13 @@
  *   ~/.insrc/workflow-runs/  — trace logs, OUTSIDE the repo, ephemeral
  *     <epicHash>/<workflow>-<runId>.jsonl
  *
- * `<h16>` is the canonical 16-char Epic hash (see `workflow/hash.ts`).
+ * `<h16>` is the canonical 16-char Epic hash (see `workflow/hash.ts`);
+ * `<slug>` is the human-readable `meta.epicSlug`. The markdown carries
+ * an `<!-- insrc:artifact <ID> -->` marker (see `artifactIdMarker`) so
+ * a slug-named `.md` still resolves back to its hash-named canonical
+ * `.json` (see `gates.jsonPathForMd`). Callers that only need the JSON
+ * omit the slug and the `.md` half falls back to the hash.
+ *
  * Every write goes through `writeAtomic` — write to `<path>.tmp` then
  * rename — so a mid-write crash leaves the previous version intact.
  * Directories are created on demand.
@@ -109,6 +116,39 @@ export function appendRunLog(
 }
 
 // ---------------------------------------------------------------------------
+// Canonical artifact IDs (hash-based) + in-markdown resolution marker
+// ---------------------------------------------------------------------------
+
+/** Filename-safe segment. Slugs from `deriveSlug` are already
+ *  `[a-z0-9-]`; this only guards the hash fallback and any stray
+ *  caller input against path separators / odd characters. */
+function fileSeg(s: string): string {
+	const cleaned = s.replace(/[^A-Za-z0-9._-]+/g, '-').replace(/^-+|-+$/g, '');
+	return cleaned.length > 0 ? cleaned : 'artifact';
+}
+
+/** Canonical `.json` basename ID for a Define artifact (hash-based —
+ *  this is the stable identity, independent of the display slug). */
+export function defineArtifactId(epicHash: string): string { return `DEF-${epicHash}`; }
+/** Canonical `.json` basename ID for an HLD artifact. */
+export function hldArtifactId(epicHash: string): string { return `HLD-${epicHash}`; }
+/** Canonical `.json` basename ID for an LLD artifact. */
+export function lldArtifactId(epicHash: string, storyId: string): string {
+	return `LLD-${epicHash}-${storyId}`;
+}
+
+/** HTML-comment marker embedded at the top of every rendered markdown
+ *  artifact. Because the `.md` is named by slug while the `.json` is
+ *  named by hash, the marker is what lets `gates.jsonPathForMd` map a
+ *  slug-named `.md` back to its canonical hash-named `.json`. */
+export function artifactIdMarker(id: string): string {
+	return `<!-- insrc:artifact ${id} -->`;
+}
+
+/** Extracts the `<ID>` from an `artifactIdMarker` line. */
+export const ARTIFACT_ID_MARKER_RE = /<!--\s*insrc:artifact\s+([A-Za-z0-9._-]+)\s*-->/;
+
+// ---------------------------------------------------------------------------
 // Artifact paths — per workflow shape
 // ---------------------------------------------------------------------------
 
@@ -119,46 +159,53 @@ export function stubArtifactPaths(repoPath: string, slug: string): {
 	readonly json: string;
 } {
 	return {
-		md:   join(repoPath, STUB_DIR, `${slug}.md`),
-		json: join(repoPath, STUB_DIR, `${slug}.json`),
+		md:   join(repoPath, STUB_DIR, `${fileSeg(slug)}.md`),
+		json: join(repoPath, STUB_DIR, `${fileSeg(slug)}.json`),
 	};
 }
 
-/** Paths for a Define artifact: markdown in `docs/defines/`,
- *  canonical JSON in `.insrc/artifacts/`. */
-export function defineArtifactPaths(repoPath: string, epicHash: string): {
+/** Paths for a Define artifact: markdown (named by `epicSlug`) in
+ *  `docs/defines/`, canonical JSON (named by `epicHash`) in
+ *  `.insrc/artifacts/`. Omit `epicSlug` when only the JSON is needed —
+ *  the markdown half then falls back to the hash. */
+export function defineArtifactPaths(repoPath: string, epicHash: string, epicSlug?: string): {
 	readonly md:   string;
 	readonly json: string;
 } {
 	return {
-		md:   join(repoPath, DEFINES_DIR,   `DEF-${epicHash}.md`),
-		json: join(repoPath, ARTIFACTS_DIR, `DEF-${epicHash}.json`),
+		md:   join(repoPath, DEFINES_DIR,   `DEF-${fileSeg(epicSlug ?? epicHash)}.md`),
+		json: join(repoPath, ARTIFACTS_DIR, `${defineArtifactId(epicHash)}.json`),
 	};
 }
 
-/** Paths for an HLD (design.epic) artifact. */
-export function hldArtifactPaths(repoPath: string, epicHash: string): {
+/** Paths for an HLD (design.epic) artifact. See `defineArtifactPaths`
+ *  for the slug-vs-hash split. */
+export function hldArtifactPaths(repoPath: string, epicHash: string, epicSlug?: string): {
 	readonly md:   string;
 	readonly json: string;
 } {
 	return {
-		md:   join(repoPath, DESIGNS_DIR,   `HLD-${epicHash}.md`),
-		json: join(repoPath, ARTIFACTS_DIR, `HLD-${epicHash}.json`),
+		md:   join(repoPath, DESIGNS_DIR,   `HLD-${fileSeg(epicSlug ?? epicHash)}.md`),
+		json: join(repoPath, ARTIFACTS_DIR, `${hldArtifactId(epicHash)}.json`),
 	};
 }
 
-/** Paths for an LLD (design.story) artifact — one per Story. */
+/** Paths for an LLD (design.story) artifact — one per Story. See
+ *  `defineArtifactPaths` for the slug-vs-hash split; `epicSlug` is the
+ *  trailing optional so existing `(repo, hash, storyId)` callers that
+ *  only read the JSON keep working. */
 export function lldArtifactPaths(
 	repoPath: string,
 	epicHash: string,
 	storyId:  string,
+	epicSlug?: string,
 ): {
 	readonly md:   string;
 	readonly json: string;
 } {
 	return {
-		md:   join(repoPath, DESIGNS_DIR,   `LLD-${epicHash}-${storyId}.md`),
-		json: join(repoPath, ARTIFACTS_DIR, `LLD-${epicHash}-${storyId}.json`),
+		md:   join(repoPath, DESIGNS_DIR,   `LLD-${fileSeg(epicSlug ?? epicHash)}-${storyId}.md`),
+		json: join(repoPath, ARTIFACTS_DIR, `${lldArtifactId(epicHash, storyId)}.json`),
 	};
 }
 

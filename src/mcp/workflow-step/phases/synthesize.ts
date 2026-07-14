@@ -68,8 +68,8 @@ export async function handleSynthesize(
 	// The finalized artifact carries the definitive epicHash in its
 	// meta (Define mints it; downstream workflows echo it). Read it
 	// back to pick paths, so we never diverge from the artifact.
-	const finalizedMeta = (result.finalized.artifact as { meta?: { epicHash?: string } }).meta ?? {};
-	const paths = pathsForWorkflow(state.intent, state.epicKey, state.runId, finalizedMeta.epicHash);
+	const finalizedMeta = (result.finalized.artifact as { meta?: { epicHash?: string; epicSlug?: string } }).meta ?? {};
+	const paths = pathsForWorkflow(state.intent, state.epicKey, state.runId, finalizedMeta.epicHash, finalizedMeta.epicSlug);
 	writeAtomic(paths.md,   result.finalized.renderedMd);
 	writeAtomic(paths.json, result.finalized.renderedJson);
 	appendRunLog(state.epicKey, state.intent.workflow, state.runId, {
@@ -97,24 +97,26 @@ function pathsForWorkflow(
 	epicKey:  string,
 	runId:    string,
 	epicHash: string | undefined,
+	epicSlug: string | undefined,
 ): { readonly md: string; readonly json: string } {
 	const { workflow, repoPath } = intent;
 	if (workflow === 'stub') return stubArtifactPaths(repoPath, epicKey);
 	// Every Epic-scoped workflow reads the hash from the finalized
 	// artifact's meta. `epicKey` is the trace-log dir key — for
 	// Epic-scoped workflows it equals the Epic hash, but we prefer
-	// the meta value so the two can't diverge.
+	// the meta value so the two can't diverge. `epicSlug` names the
+	// human-facing markdown; the JSON stays hash-named.
 	if (epicHash === undefined) {
 		throw new Error(`pathsForWorkflow: workflow '${workflow}' finalized without meta.epicHash`);
 	}
-	if (workflow === 'define')      return defineArtifactPaths(repoPath, epicHash);
-	if (workflow === 'design.epic') return hldArtifactPaths(repoPath, epicHash);
+	if (workflow === 'define')      return defineArtifactPaths(repoPath, epicHash, epicSlug);
+	if (workflow === 'design.epic') return hldArtifactPaths(repoPath, epicHash, epicSlug);
 	if (workflow === 'design.story') {
 		const storyId = intent.params['storyId'];
 		if (typeof storyId !== 'string' || storyId.length === 0) {
 			throw new Error(`design.story synthesize requires params.storyId`);
 		}
-		return lldArtifactPaths(repoPath, epicHash, storyId);
+		return lldArtifactPaths(repoPath, epicHash, storyId, epicSlug);
 	}
 	if (workflow === 'tracker.push' || workflow === 'tracker.sync' || workflow === 'tracker.post') {
 		const dir = runsDirFor(epicHash);

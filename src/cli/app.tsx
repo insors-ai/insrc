@@ -96,20 +96,22 @@ function AppBody(props: { pollMs?: number; initialPane?: number }): ReactElement
 			<CaptureContext.Provider value={captured}>
 				<Box flexDirection="column" paddingX={1}>
 					<Header pane={pane} daemon={daemon} />
-					<Box flexGrow={1}>
-						{pane === 0 && <DaemonPane daemon={daemon} nonce={nonce} />}
-						{pane === 1 && <ReposPane daemon={daemon} nonce={nonce} selectedRepo={selectedRepo} onSelectRepo={setSelectedRepo} />}
-						{pane === 2 && <WorkflowsPane repoPath={selectedRepo} nonce={nonce} />}
-						{pane === 3 && <SetupPane />}
-					</Box>
-					<Box marginTop={1} flexDirection="column">
-						{cmdMode
-							? <CommandBar output={cmdOutput} running={cmdRunning} onSubmit={runCmd} onClose={closeCmd} />
-							: <>
+					{cmdMode
+						? <Box flexGrow={1} flexDirection="column">
+								<CommandBar output={cmdOutput} running={cmdRunning} onSubmit={runCmd} onClose={closeCmd} />
+							</Box>
+						: <>
+								<Box flexGrow={1}>
+									{pane === 0 && <DaemonPane daemon={daemon} nonce={nonce} />}
+									{pane === 1 && <ReposPane daemon={daemon} nonce={nonce} selectedRepo={selectedRepo} onSelectRepo={setSelectedRepo} />}
+									{pane === 2 && <WorkflowsPane repoPath={selectedRepo} nonce={nonce} />}
+									{pane === 3 && <SetupPane />}
+								</Box>
+								<Box marginTop={1} flexDirection="column">
 									<Text>{toast !== undefined ? <Text color="green">{toast}</Text> : <Text> </Text>}</Text>
 									<KeyHints hints={[[':', 'command'], ['1-4/Tab', 'switch'], ['r', 'refresh'], ['q', 'quit']]} />
-								</>}
-					</Box>
+								</Box>
+							</>}
 				</Box>
 			</CaptureContext.Provider>
 		</UiContext.Provider>

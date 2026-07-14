@@ -10,7 +10,7 @@
  * by a `running…` marker.
  */
 
-import { Box, Text, useInput } from 'ink';
+import { Box, Text, useInput, useStdout } from 'ink';
 import TextInput from 'ink-text-input';
 import { useState } from 'react';
 import type { ReactElement } from 'react';
@@ -22,12 +22,21 @@ export function CommandBar(props: {
 	onClose: () => void;
 }): ReactElement {
 	const [value, setValue] = useState('');
+	const { stdout } = useStdout();
 	useInput((_input, key) => { if (key.escape) props.onClose(); });
+	// Show as much output as the terminal has room for (leave space for
+	// the header, input line, and hints). Truncate from the TOP so the
+	// most recent lines stay visible; note how many were hidden.
+	const rows = stdout?.rows ?? 24;
+	const maxLines = Math.max(6, rows - 7);
+	const hidden = Math.max(0, props.output.length - maxLines);
+	const shown = props.output.slice(-maxLines);
 	return (
 		<Box flexDirection="column">
 			{props.output.length > 0 && (
 				<Box flexDirection="column" marginBottom={1}>
-					{props.output.slice(-14).map((line, i) => <Text key={i} dimColor>{line}</Text>)}
+					{hidden > 0 && <Text dimColor>… {hidden} more line{hidden === 1 ? '' : 's'} above (narrow with a search term, e.g. `config list models.tiers`)</Text>}
+					{shown.map((line, i) => <Text key={i} dimColor>{line}</Text>)}
 				</Box>
 			)}
 			<Box>

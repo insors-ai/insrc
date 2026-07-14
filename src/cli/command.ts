@@ -180,7 +180,7 @@ async function runConfig(sub: string | undefined, rest: readonly string[], svc: 
 				const isSet = set.has(opt.path);
 				rows.push({ path: opt.path, value: isSet ? set.get(opt.path) : opt.default, tag: isSet ? 'set' : 'default' });
 			}
-			for (const [p, v] of set) if (!seen.has(p)) rows.push({ path: p, value: v, tag: 'set,unrecognized' });
+			for (const [p, v] of set) if (!seen.has(p)) rows.push({ path: p, value: v, tag: 'set' });
 			const filtered = query === undefined ? rows : rows.filter(r => r.path.toLowerCase().includes(query));
 			if (filtered.length === 0) return [`no config options match '${rest[0] ?? ''}'`];
 			const width = Math.max(...filtered.map(r => r.path.length));

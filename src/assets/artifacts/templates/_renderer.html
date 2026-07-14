@@ -1,0 +1,37 @@
+<!--
+  Standalone-mode renderer script. The binder inlines the body of this
+  file at the @@RENDERER_SCRIPT@@ slot when rendering in standalone
+  mode; for embedded mode the slot is replaced with the empty string.
+
+  The actual src URL + SRI integrity hash come from
+  src/insrc/assets/artifacts/mermaid-cdn.json at render time, so
+  version bumps are a JSON edit.
+
+  For wireframe artifacts (which emit raw SVG, not Mermaid text) the
+  binder substitutes the empty string here regardless of mode -- no
+  external renderer is needed to display an <svg>.
+
+  @@MERMAID_SCRIPT_TAG@@ is the binder's inner slot for this file:
+  it expands to
+    <script src="@@MERMAID_SRC@@" integrity="@@MERMAID_INTEGRITY@@"
+            crossorigin="@@MERMAID_CROSSORIGIN@@"></script>
+  before substitution runs, with values taken from mermaid-cdn.json.
+-->
+@@MERMAID_SCRIPT_TAG@@
+<script>
+  (function () {
+    if (typeof window === 'undefined') { return; }
+    var run = function () {
+      if (typeof window.mermaid === 'undefined') { return; }
+      try {
+        window.mermaid.initialize({ startOnLoad: false, theme: 'dark', securityLevel: 'strict' });
+        window.mermaid.run({ querySelector: '.insrc-artifact pre.mermaid' });
+      } catch (_e) { /* no-op: surface is read-only */ }
+    };
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+      setTimeout(run, 0);
+    } else {
+      document.addEventListener('DOMContentLoaded', run, { once: true });
+    }
+  })();
+</script>

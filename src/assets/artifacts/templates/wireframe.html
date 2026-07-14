@@ -1,0 +1,22 @@
+<div class="insrc-artifact insrc-artifact-wireframe" data-artifact-id="@@ID@@" data-artifact-kind="wireframe">
+  <header class="insrc-artifact-header">
+    <h3 class="insrc-artifact-title">@@TITLE@@</h3>
+    <span class="insrc-artifact-meta">@@META_LINE@@</span>
+  </header>
+  <div class="insrc-artifact-canvas">@@SOURCE@@</div>
+  @@LEGEND@@
+  <footer class="insrc-artifact-footer">
+    <span class="insrc-artifact-provenance">source: @@PROVENANCE@@</span>
+    <span class="insrc-artifact-generated">@@GENERATED_AT@@</span>
+  </footer>
+</div>
+<style>
+  .insrc-artifact-wireframe { font-family: var(--vscode-font-family, 'Segoe UI', system-ui, sans-serif); border: 1px solid var(--vscode-panel-border, #2a2d3a); border-radius: 6px; padding: 1rem; margin: 0.75rem 0; background: var(--vscode-editor-background, #12151e); color: var(--vscode-editor-foreground, #e2e4ed); }
+  .insrc-artifact-wireframe .insrc-artifact-header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 0.5rem; gap: 1rem; }
+  .insrc-artifact-wireframe .insrc-artifact-title { font-size: 0.95rem; margin: 0; color: var(--vscode-foreground, #e2e4ed); }
+  .insrc-artifact-wireframe .insrc-artifact-meta { font-size: 0.78rem; color: var(--vscode-descriptionForeground, #8b8fa8); }
+  .insrc-artifact-wireframe .insrc-artifact-canvas { margin: 0.5rem 0; overflow: auto; }
+  .insrc-artifact-wireframe .insrc-artifact-canvas svg { display: block; max-width: 100%; height: auto; }
+  .insrc-artifact-wireframe .insrc-artifact-footer { display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--vscode-descriptionForeground, #8b8fa8); margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px dashed var(--vscode-panel-border, #2a2d3a); }
+</style>
+@@RENDERER_SCRIPT@@

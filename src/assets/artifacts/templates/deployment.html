@@ -1,0 +1,21 @@
+<div class="insrc-artifact insrc-artifact-deployment" data-artifact-id="@@ID@@" data-artifact-kind="deployment">
+  <header class="insrc-artifact-header">
+    <h3 class="insrc-artifact-title">@@TITLE@@</h3>
+    <span class="insrc-artifact-meta">@@META_LINE@@</span>
+  </header>
+  <pre class="mermaid">@@SOURCE@@</pre>
+  @@LEGEND@@
+  <footer class="insrc-artifact-footer">
+    <span class="insrc-artifact-provenance">source: @@PROVENANCE@@</span>
+    <span class="insrc-artifact-generated">@@GENERATED_AT@@</span>
+  </footer>
+</div>
+<style>
+  .insrc-artifact-deployment { font-family: var(--vscode-font-family, 'Segoe UI', system-ui, sans-serif); border: 1px solid var(--vscode-panel-border, #2a2d3a); border-radius: 6px; padding: 1rem; margin: 0.75rem 0; background: var(--vscode-editor-background, #12151e); color: var(--vscode-editor-foreground, #e2e4ed); }
+  .insrc-artifact-deployment .insrc-artifact-header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 0.5rem; gap: 1rem; }
+  .insrc-artifact-deployment .insrc-artifact-title { font-size: 0.95rem; margin: 0; color: var(--vscode-foreground, #e2e4ed); }
+  .insrc-artifact-deployment .insrc-artifact-meta { font-size: 0.78rem; color: var(--vscode-descriptionForeground, #8b8fa8); }
+  .insrc-artifact-deployment pre.mermaid { background: transparent; margin: 0.5rem 0; }
+  .insrc-artifact-deployment .insrc-artifact-footer { display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--vscode-descriptionForeground, #8b8fa8); margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px dashed var(--vscode-panel-border, #2a2d3a); }
+</style>
+@@RENDERER_SCRIPT@@

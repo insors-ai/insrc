@@ -71,6 +71,7 @@ export const WORKFLOW_NAMES = [
 	'define',          // Phase B
 	'design.epic',     // Phase C
 	'design.story',   // Phase D
+	'plan',            // Phase G — Story LLD → N ordered/sized/dependency-labelled Tasks
 	'tracker.push',    // Phase F
 	'tracker.sync',    // Phase F
 	'tracker.post',    // Phase F

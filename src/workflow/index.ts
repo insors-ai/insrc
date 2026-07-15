@@ -12,6 +12,7 @@
 import { registerDefineRunners }      from './runners/define/index.js';
 import { registerDesignEpicRunners }  from './runners/design-epic/index.js';
 import { registerDesignStoryRunners } from './runners/design-story/index.js';
+import { registerPlanRunners }        from './runners/plan/index.js';
 import { registerStubRunners }        from './runners/stub/index.js';
 import { registerTrackerRunners }     from './runners/tracker/index.js';
 
@@ -25,6 +26,7 @@ export function registerWorkflowRunners(): void {
 	registerDefineRunners();
 	registerDesignEpicRunners();
 	registerDesignStoryRunners();
+	registerPlanRunners();
 	registerTrackerRunners();
 	registered = true;
 }

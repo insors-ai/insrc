@@ -52,6 +52,7 @@ export const ARTIFACTS_DIR = '.insrc/artifacts';
 /** Human-facing markdown roots. */
 export const DEFINES_DIR = 'docs/defines';
 export const DESIGNS_DIR = 'docs/designs';
+export const PLANS_DIR   = 'docs/plans';
 export const STUB_DIR    = 'docs/stub';
 
 // ---------------------------------------------------------------------------
@@ -136,6 +137,10 @@ export function hldArtifactId(epicHash: string): string { return `HLD-${epicHash
 export function lldArtifactId(epicHash: string, storyId: string): string {
 	return `LLD-${epicHash}-${storyId}`;
 }
+/** Canonical `.json` basename ID for a Plan artifact — one per Story. */
+export function planArtifactId(epicHash: string, storyId: string): string {
+	return `PLAN-${epicHash}-${storyId}`;
+}
 
 /** HTML-comment marker embedded at the top of every rendered markdown
  *  artifact. Because the `.md` is named by slug while the `.json` is
@@ -207,6 +212,31 @@ export function lldArtifactPaths(
 		md:   join(repoPath, DESIGNS_DIR,   `LLD-${fileSeg(epicSlug ?? epicHash)}-${storyId}.md`),
 		json: join(repoPath, ARTIFACTS_DIR, `${lldArtifactId(epicHash, storyId)}.json`),
 	};
+}
+
+/** Paths for a Plan (`plan`) artifact — one per Story. Slug-named
+ *  markdown under `docs/plans/`, canonical hash-named JSON under
+ *  `.insrc/artifacts/`. The direct peer of `lldArtifactPaths`; `epicSlug`
+ *  is the trailing optional so `(repo, hash, storyId)` JSON-only callers
+ *  keep working. */
+export function planArtifactPaths(
+	repoPath: string,
+	epicHash: string,
+	storyId:  string,
+	epicSlug?: string,
+): {
+	readonly md:   string;
+	readonly json: string;
+} {
+	return {
+		md:   join(repoPath, PLANS_DIR,     `PLAN-${fileSeg(epicSlug ?? epicHash)}-${storyId}.md`),
+		json: join(repoPath, ARTIFACTS_DIR, `${planArtifactId(epicHash, storyId)}.json`),
+	};
+}
+
+/** Filename prefix that identifies every Plan belonging to an Epic. */
+export function planFilenamePrefix(epicHash: string): string {
+	return `PLAN-${epicHash}-`;
 }
 
 /** Canonical id + paths for an Extend artifact (`define` extend branch).

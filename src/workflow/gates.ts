@@ -22,14 +22,18 @@ import { join } from 'node:path';
 
 import { getEffectiveHld } from './amendments/effective.js';
 import { makeStaleAck } from './amendments/staleness.js';
+import { listApprovedAmendments } from './amendments/store.js';
 import { renderDefineMarkdown } from './artifacts/define.js';
 import type { DefineArtifact, DefineStory } from './artifacts/define.js';
 import type { HldArtifact }    from './artifacts/hld.js';
+import { computeHldEffectiveHash, extractHldContextSlice } from './artifacts/lld.js';
+import type { HldContextSlice, LldArtifact } from './artifacts/lld.js';
 import {
 	ARTIFACT_ID_MARKER_RE,
 	ARTIFACTS_DIR,
 	defineArtifactPaths,
 	hldArtifactPaths,
+	lldArtifactPaths,
 	writeAtomic,
 } from './storage.js';
 
@@ -184,6 +188,87 @@ export function readBaseHld(repoPath: string, epicHash: string): HldArtifact {
 }
 
 // ---------------------------------------------------------------------------
+// LLD gate (sc3 — the `plan` workflow's upstream gate)
+// ---------------------------------------------------------------------------
+
+/** Read the canonical LLD JSON for a Story from disk. */
+export function readLldArtifact(repoPath: string, epicHash: string, storyId: string): LldArtifact {
+	const paths = lldArtifactPaths(repoPath, epicHash, storyId);
+	if (!existsSync(paths.json)) {
+		throw new ArtifactMissingError(
+			`LLD not found at ${paths.json}. Run design.story for Story '${storyId}' before plan.`,
+		);
+	}
+	return JSON.parse(readFileSync(paths.json, 'utf8')) as LldArtifact;
+}
+
+/** Same as `readLldArtifact` but refuses when the LLD is unapproved,
+ *  rejected, OR stale. Staleness is defined in exactly ONE place:
+ *  this reuses `computeHldEffectiveHash` + the same base-runId/approved-
+ *  amendment comparison `scanLldStaleness` uses, and honours a
+ *  `meta.staleAckedAt` override. The `plan` workflow's upstream gate —
+ *  the throwing peer of `requireApprovedHld`. */
+export function requireApprovedLld(repoPath: string, epicHash: string, storyId: string): LldArtifact {
+	const lld   = readLldArtifact(repoPath, epicHash, storyId);
+	const label = lld.meta.epicSlug ?? epicHash;
+	if (lld.meta.approvedAt === undefined || lld.meta.approvedAt.length === 0) {
+		const path = lldArtifactPaths(repoPath, epicHash, storyId, lld.meta.epicSlug).md;
+		throw new ArtifactNotApprovedError(
+			`LLD for Story '${storyId}' of Epic '${label}' (${epicHash}) is not approved. ` +
+			`Run \`insrc workflow approve ${path}\` before starting plan.`,
+		);
+	}
+	if (lld.meta.rejectedAt !== undefined && lld.meta.rejectedAt.length > 0) {
+		throw new ArtifactNotApprovedError(
+			`LLD for Story '${storyId}' of Epic '${label}' (${epicHash}) was rejected on ${lld.meta.rejectedAt}. ` +
+			`Re-run design.story before plan.`,
+		);
+	}
+	// Staleness — recompute the current effective HLD hash the same way
+	// `scanLldStaleness` does, and compare to the LLD's stored value.
+	const staleAckedAt = (lld.meta as { staleAckedAt?: string }).staleAckedAt;
+	if (staleAckedAt === undefined || staleAckedAt.length === 0) {
+		const baseHld = readBaseHld(repoPath, epicHash);
+		const amendmentIds = listApprovedAmendments(repoPath, epicHash).map(a => a.id);
+		const currentEffective = computeHldEffectiveHash(baseHld.meta.runId, amendmentIds);
+		if (lld.meta.hldEffectiveHash !== currentEffective) {
+			const reason = lld.meta.hldBaseRunId !== baseHld.meta.runId ? 'hld-rerun' : 'hld-amended';
+			const path = lldArtifactPaths(repoPath, epicHash, storyId, lld.meta.epicSlug).md;
+			throw new ArtifactNotApprovedError(
+				`LLD for Story '${storyId}' of Epic '${label}' (${epicHash}) is stale (${reason}): ` +
+				`its HLD effective state changed after approval. Re-run design.story against the current HLD, ` +
+				`or ack-stale \`${path}\` before plan.`,
+			);
+		}
+	}
+	return lld;
+}
+
+/** The in-memory read-model the `plan` workflow's `context.assemble`
+ *  step consumes: the approved+non-stale LLD, the Story's HLD context
+ *  slice, and the Story's define dependency edges. Not persisted. */
+export interface PlanUpstream {
+	readonly lld:            LldArtifact;
+	readonly hldSlice:       HldContextSlice;
+	readonly storyDependsOn: readonly string[];
+}
+
+/** Compose the plan's upstream inputs: `requireApprovedLld` (gates the
+ *  LLD) + `requireApprovedHld` (for the HLD slice) + the Story's define
+ *  `dependsOn`. Every input is sourced from the same approved
+ *  DEF-/HLD-/LLD- artifacts the other gates read — no new data source.
+ *  Throws (via the gates) when any upstream artifact is unusable. */
+export function readPlanUpstream(repoPath: string, epicHash: string, storyId: string): PlanUpstream {
+	const lld = requireApprovedLld(repoPath, epicHash, storyId);
+	const hld = requireApprovedHld(repoPath, epicHash);
+	const hldSlice = extractHldContextSlice(hld, storyId);
+	const define = requireApprovedEpic(repoPath, epicHash);
+	const story = define.body.stories.find(s => s.id === storyId);
+	const storyDependsOn = story?.dependsOn ?? [];
+	return { lld, hldSlice, storyDependsOn };
+}
+
+// ---------------------------------------------------------------------------
 // Stale-ack helper
 // ---------------------------------------------------------------------------
 
@@ -310,7 +395,7 @@ function readArtifactIdMarker(mdPath: string): string | undefined {
 /** `.../docs/defines/DEF-<slug>.md` → `.../` (the repo root). Returns
  *  undefined when the path has no recognised `docs/` segment. */
 function repoRootFromDocsPath(p: string): string | undefined {
-	for (const seg of ['/docs/defines/', '/docs/designs/', '/docs/stub/']) {
+	for (const seg of ['/docs/defines/', '/docs/designs/', '/docs/plans/', '/docs/stub/']) {
 		const i = p.indexOf(seg);
 		if (i >= 0) return p.slice(0, i);
 	}
@@ -327,7 +412,7 @@ function swapExt(p: string): string {
  *  swapped. If no such segment is present, the path is returned as-
  *  is (older layouts / non-standard callers). */
 function swapDocsToArtifacts(p: string): string {
-	for (const seg of ['/docs/defines/', '/docs/designs/']) {
+	for (const seg of ['/docs/defines/', '/docs/designs/', '/docs/plans/']) {
 		const i = p.indexOf(seg);
 		if (i >= 0) {
 			return p.slice(0, i) + '/.insrc/artifacts/' + p.slice(i + seg.length);

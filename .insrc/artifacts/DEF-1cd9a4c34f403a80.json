@@ -1,0 +1,351 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "wf-1784120166194-9ivywg",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-07-15T13:13:12.159Z",
+    "model": "client",
+    "elapsedMs": 1025964,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1cd9a4c34f403a80",
+    "epicSlug": "add-plan-workflow-insrc-framework-4th",
+    "approvedAt": "2026-07-15T13:20:56.895Z"
+  },
+  "body": {
+    "flavor": "enhancement",
+    "problem": "The insrc workflow chain frames a problem (define) and designs each Story at two altitudes (design.epic HLD and design.story LLD), but there is no stage that turns an approved Story design into a persistent, reviewable breakdown of that Story into concrete units of work. The Epic/Story/Task hierarchy the framework promises end-to-end is therefore missing its third tier in practice: once a Story design is approved, the discrete, right-sized, correctly-ordered pieces of work needed to realize that Story are never captured as first-class, cited artifacts. Instead they live informally (for example as ad-hoc checkboxes in a tracker issue) or are re-derived from scratch by whoever implements the Story, so the handoff into implementation is inconsistent, un-auditable, and disconnected from the design's contracts, error paths, and test strategy. This gap blocks task-level progress tracking and leaves the fourth rung of the designed five-stage ladder empty, so downstream implementation has no stable, approved, ordered contract describing what to build and in what sequence.",
+    "nonGoals": [
+      {
+        "text": "Implementing the `build` workflow or executing/realizing any Task (writing code, opening branches or PRs).",
+        "rationale": "build is a separate downstream stage that consumes one Task at a time; this Epic only produces the task breakdown, it never carries out the work."
+      },
+      {
+        "text": "Pushing Tasks to the GitHub tracker as first-class issues.",
+        "rationale": "Tracker integration for the Task tier is a distinct concern the framework deliberately deferred; Tasks are not modelled as issues today, and coupling that in would widen scope."
+      },
+      {
+        "text": "Re-opening, re-deciding, or re-architecting the Story's design.",
+        "rationale": "The breakdown consumes an approved design verbatim; architecture/API/algorithm choices belong to design.story. A discovered design gap is handled by the existing amendment / back-flow mechanism, not by re-designing inside this stage."
+      },
+      {
+        "text": "Supporting task-list amendments (editing an approved breakdown in place without a re-run).",
+        "rationale": "Amendments are opt-in per workflow and not required for a first version; today only the HLD supports them, and adding it here would be premature."
+      },
+      {
+        "text": "Accepting any input other than a single Story's approved design.",
+        "rationale": "The breakdown is per-Story and consumes exactly one approved Story design; multi-Story or Epic-level planning is out of scope."
+      }
+    ],
+    "assumptions": [
+      {
+        "text": "The approved Story design (LLD) already carries a handoff payload sufficient to derive concrete units of work — its contract details, data-model changes, error paths, test strategy, and (for enhancement flavor) migration.",
+        "confidence": "high",
+        "source": "c5"
+      },
+      {
+        "text": "An approved Story design and a staleness signal already exist in the framework, so this stage can gate on an approved and non-stale design without inventing new approval machinery.",
+        "confidence": "high",
+        "source": "c5"
+      },
+      {
+        "text": "The Story dependency graph established by define is available on the approved upstream artifacts at breakdown time, so ordering can respect it.",
+        "confidence": "med",
+        "source": "c4"
+      },
+      {
+        "text": "The downstream consumer (build) is not yet implemented, so the consumer contract for this stage's output is defined by the written specification rather than by existing code.",
+        "confidence": "med",
+        "source": "c8"
+      }
+    ],
+    "constraints": [
+      {
+        "id": "k1",
+        "text": "The output must populate the Task tier of the shared Epic/Story/Task hierarchy, which maps 1:1 to the standard software-engineering ladder and must remain addressable end to end as <epic-slug>/<story-id>/<task-id>.",
+        "type": "invariant",
+        "source": "c1"
+      },
+      {
+        "id": "k2",
+        "text": "The breakdown is derived from exactly ONE approved Story design and must be consumable one unit at a time by the downstream build stage.",
+        "type": "contract",
+        "source": "c2"
+      },
+      {
+        "id": "k3",
+        "text": "Each unit of work must be ordered, right-sized, and dependency-labelled, and every unit must carry its own acceptance checks.",
+        "type": "contract",
+        "source": "c2"
+      },
+      {
+        "id": "k4",
+        "text": "Ordering of the units must respect the Story dependency graph established by define; the breakdown reads both the Epic HLD (for cross-cutting context) and the specific Story's LLD (for what to break down).",
+        "type": "contract",
+        "source": "c4"
+      },
+      {
+        "id": "k5",
+        "text": "The stage must refuse to run against an unapproved or rejected upstream design — downstream stages treat an unapproved/rejected artifact as absent — and against a stale design whose upstream effective state has changed.",
+        "type": "invariant",
+        "source": "c6"
+      },
+      {
+        "id": "k6",
+        "text": "Any artifact this stage produces must follow the as-built storage convention: a canonical hash-named JSON plus a slug-named human-readable markdown carrying the insrc:artifact resolution marker, and the stage must be driven through the multi-turn insrc_workflow_step interface (not a bespoke command).",
+        "type": "convention",
+        "source": "c3"
+      },
+      {
+        "id": "k7",
+        "text": "The stage must be implemented as an instance of the shared workflow framework skeleton (per-workflow step-runner registry, central decompose/synthesize/finalize seams, gates, storage) rather than as a bespoke pipeline.",
+        "type": "convention",
+        "source": "c7"
+      },
+      {
+        "id": "k8",
+        "text": "Every claim in the produced artifact must cite its inputs (the approved design, the HLD, or an analyze bundle); uncited material is not permitted, consistent with the framework-wide grounding rule.",
+        "type": "invariant",
+        "source": "c7"
+      }
+    ],
+    "stories": [
+      {
+        "id": "s1",
+        "title": "Break an approved Story design into an ordered, sized, dependency-labelled task list",
+        "userValue": "Whoever will implement a Story receives a concrete, right-sized, correctly-ordered set of work units derived directly from the approved design, instead of re-deriving the breakdown by hand every time. The breakdown becomes the single source of truth for what work the Story entails.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "an approved Story design carrying its handoff payload",
+            "when": "the plan stage runs for that Story",
+            "then": "it produces one or more work units that together cover the Story's design",
+            "operationalizes": [
+              "k2"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "the produced work units",
+            "when": "any unit is inspected",
+            "then": "it carries a size, an explicit position in the overall order, and its dependencies on other units of the same Story",
+            "operationalizes": [
+              "k3"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "the Story's dependency context established by define",
+            "when": "the units are ordered",
+            "then": "the ordering is consistent with that dependency context and the units' own dependency graph is acyclic",
+            "operationalizes": [
+              "k4"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "the produced set of work units",
+            "when": "a single unit is referenced",
+            "then": "it is addressable within the hierarchy as epic-slug/story-id/task-id",
+            "operationalizes": [
+              "k1"
+            ]
+          }
+        ],
+        "existingCapabilityRefs": [
+          "c9"
+        ],
+        "sizeEstimate": "L"
+      },
+      {
+        "id": "s2",
+        "title": "Refuse to break down an unapproved or stale Story design",
+        "userValue": "A reviewer can trust that any task breakdown was produced only from an approved, current design, so no one plans — and later builds — against a draft, rejected, or superseded design.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a Story whose design is not approved or has been rejected",
+            "when": "the plan stage is invoked for that Story",
+            "then": "the stage refuses to produce work units and reports the design as absent/unapproved",
+            "operationalizes": [
+              "k5"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "a Story whose approved design has since become stale because its upstream effective state changed",
+            "when": "the plan stage is invoked for that Story",
+            "then": "the stage refuses to produce work units and reports the staleness instead",
+            "operationalizes": [
+              "k5"
+            ]
+          }
+        ],
+        "dependsOn": [
+          "s1"
+        ],
+        "sizeEstimate": "M"
+      },
+      {
+        "id": "s3",
+        "title": "Persist the breakdown as a reviewable, approvable, cited artifact",
+        "userValue": "The team can read the breakdown as human-readable documentation, approve or reject it through the same gate as every other stage, and have downstream work consume the canonical form. The breakdown outlives the session and every claim in it is traceable to its inputs.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a completed breakdown",
+            "when": "it is saved",
+            "then": "a human-readable document and a canonical machine-readable record are written following the framework's storage convention, with the human document resolvable back to its canonical record",
+            "operationalizes": [
+              "k6"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "the persisted breakdown",
+            "when": "a reader inspects any unit or ordering claim",
+            "then": "that claim is traceable to the approved design, the HLD, or an analyze bundle it was derived from",
+            "operationalizes": [
+              "k8"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "the persisted breakdown",
+            "when": "it is reviewed",
+            "then": "it can be approved or rejected through the same review gate the other stages use, and an unapproved breakdown is treated as absent by anything downstream",
+            "operationalizes": [
+              "k6"
+            ]
+          }
+        ],
+        "existingCapabilityRefs": [
+          "c9"
+        ],
+        "dependsOn": [
+          "s1"
+        ],
+        "sizeEstimate": "M"
+      },
+      {
+        "id": "s4",
+        "title": "State the tests each unit of work should produce",
+        "userValue": "Whoever implements and verifies a unit of work knows up front which tests demonstrate it is done, so verification is planned alongside the work rather than improvised afterward.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a produced unit of work",
+            "when": "its acceptance is described in the breakdown",
+            "then": "the breakdown names the tests (across levels such as unit, integration, live, and smoke) that would validate that unit",
+            "operationalizes": [
+              "k3"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "the whole breakdown and the Story design's test strategy",
+            "when": "the two are compared",
+            "then": "the per-unit tests collectively cover the design's stated test strategy",
+            "operationalizes": [
+              "k2"
+            ]
+          }
+        ],
+        "dependsOn": [
+          "s1"
+        ],
+        "sizeEstimate": "M"
+      },
+      {
+        "id": "s5",
+        "title": "Drive the breakdown through the standard multi-turn workflow interface",
+        "userValue": "A user drives the plan stage exactly like the other stages — through the same multi-turn interface with a fixed, ordered step sequence — so it composes into the existing chain with no new tooling or invocation style to learn.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "the workflow chain",
+            "when": "a user invokes the plan stage for a Story",
+            "then": "it runs through the same multi-turn step interface (start, plan, steps, synthesize) as the other stages and returns the persisted breakdown",
+            "operationalizes": [
+              "k7"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "the plan stage",
+            "when": "it is invoked",
+            "then": "it presents a fixed, ordered sequence of steps consistent with the other fine-grained stages of the framework",
+            "operationalizes": [
+              "k7"
+            ]
+          }
+        ],
+        "existingCapabilityRefs": [
+          "c9"
+        ],
+        "dependsOn": [
+          "s1",
+          "s3"
+        ],
+        "sizeEstimate": "M"
+      }
+    ],
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": "plans/meta-workflow-framework.md#2-overview",
+      "quotedText": "Artifacts follow a shared Epic / Story / Task hierarchy that maps 1:1 to the standard software-engineering ladder; the whole hierarchy is addressable as <epic-slug>/<story-id>[/<task-id>] end to end."
+    },
+    {
+      "id": "c2",
+      "kind": "doc",
+      "ref": "plans/meta-workflow-framework.md#plan",
+      "quotedText": "plan: ONE Design in; N Tasks for that Story out, ordered + sized + dependency-labelled with per-Task acceptance checks; Handoff to build: Task list, build operates on ONE Task at a time."
+    },
+    {
+      "id": "c3",
+      "kind": "doc",
+      "ref": "plans/workflow-define.md#as-built-deltas",
+      "quotedText": "AS-BUILT: canonical JSON named by 16-char Epic hash under .insrc/artifacts/, human markdown named by slug under docs/ with an <!-- insrc:artifact --> marker; workflows run via the insrc_workflow_step MCP tool."
+    },
+    {
+      "id": "c4",
+      "kind": "doc",
+      "ref": "plans/meta-workflow-framework.md#design",
+      "quotedText": "Plan reads BOTH the HLD (for cross-cutting choices) AND the specific Story's LLD (for what to task-ify). Task-level ordering respects the Story dependency graph from define."
+    },
+    {
+      "id": "c5",
+      "kind": "doc",
+      "ref": "plans/workflow-design.md#7.2-lld-artifact",
+      "quotedText": "LLD.handoff { contractDetails, dataModelChanges, errorPaths, testStrategy, migration? } is what plan reads to enumerate Tasks; meta carries hldEffectiveHash for staleness detection."
+    },
+    {
+      "id": "c6",
+      "kind": "doc",
+      "ref": "plans/workflow-design.md#10.2-approval",
+      "quotedText": "Downstream (plan / build / test) treats an unapproved / rejected artifact as absent."
+    },
+    {
+      "id": "c7",
+      "kind": "doc",
+      "ref": "plans/meta-workflow-framework.md#1-motivation",
+      "quotedText": "If we build that skeleton once as workflow/, each of the five becomes a small specialisation (recipe library, step-runner registry, artifact shape) rather than a bespoke pipeline; every claim cites its inputs."
+    },
+    {
+      "id": "c8",
+      "kind": "doc",
+      "ref": "plans/workflow-implementation.md#1-scope",
+      "quotedText": "Out of scope (later phases): plan workflow; build workflow; Pushing Tasks to the tracker (Tasks live in the Story issue body as a checkbox list until plan workflow is designed)."
+    },
+    {
+      "id": "c9",
+      "kind": "analyze-bundle",
+      "ref": "how-does-it-work: src/workflow framework seams",
+      "quotedText": "design.story registers llm-pause runners via executor.registerRunner; orchestrator.ts prepareDecompose/prepareSynthesize/finalizeArtifact switch on workflow; gates.requireApprovedHld gates upstream; storage.lldArtifactPaths gives slug-md + hash-json."
+    }
+  ]
+}

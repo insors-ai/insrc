@@ -1,0 +1,509 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1784127494297-ayj5ky",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-07-15T15:08:33.330Z",
+    "model": "client",
+    "elapsedMs": 619027,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1cd9a4c34f403a80",
+    "epicSlug": "add-plan-workflow-insrc-framework-4th",
+    "storyId": "s5",
+    "hldBaseRunId": "wf-1784121669696-i1rc6r",
+    "hldEffectiveHash": "c7645d42a9f5e691c82633a1edd384aede04bf62007cfc744076c8decb49d90c",
+    "hldAmendmentsApplied": [],
+    "approvedAt": "2026-07-15T15:11:10.914Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Implement `plan` as a new fine-grained instance of the shared workflow skeleton, peer to define/design.epic/design.story. A single runner module registers a fixed six-step recipe (context.assemble -> tasks.enumerate -> tasks.critique -> tasks.finalize -> test-strategy.write -> checklist.verify) whose outputs the orchestrator's three per-workflow arms turn into a persisted, cited PlanArtifact for exactly one Story. A new gate reads the Story's approved, non-stale LLD (adding requireApprovedLld by mirroring requireApprovedHld and reusing the existing effective-hash/staleness machinery), and a new storage helper writes the artifact under the as-built slug-md + hash-json convention. Nothing about the executor, state store, approval flow, or MCP phase loop changes except a single 'plan' arm added at each existing seam.",
+      "ownedContracts": [
+        {
+          "id": "sc5",
+          "name": "PlanOrchestration",
+          "purpose": "The fixed step plan for the plan workflow and the three orchestrator arm signatures + MCP path arm that make it drivable through the standard multi-turn interface.",
+          "interfaceSketch": "type PlanStepId =\n  | 'context.assemble'\n  | 'tasks.enumerate'\n  | 'tasks.critique'\n  | 'tasks.finalize'\n  | 'test-strategy.write'\n  | 'checklist.verify';\n// orchestrator arms (declarations only, no bodies):\nfunction planDecomposer(intent: WorkflowIntent): DecomposerPrompt;\nfunction planSynthesizer(intent: WorkflowIntent, stepOutputs: Readonly<Record<string, unknown>>): SynthesizerPrompt;\nfunction finalizePlan(intent: WorkflowIntent, stepOutputs: Readonly<Record<string, unknown>>, runId: string, elapsedMs: number, llmResponse: Record<string, unknown>): FinalizeResult;",
+          "ownedByStory": "s5",
+          "consumedByStories": [
+            "s1"
+          ],
+          "assumptions": [
+            "c7"
+          ]
+        }
+      ],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "PlanTask",
+          "purpose": "The shape of a single work unit in a Story's breakdown: ordered, sized, dependency-labelled, with its own acceptance checks and provenance. This is the atomic Task-tier record the whole Epic exists to produce.",
+          "interfaceSketch": "interface PlanTask {\n  readonly id: string;                 // 't1','t2',... scoped to the Story\n  readonly title: string;\n  readonly summary: string;\n  readonly size: 'S' | 'M' | 'L';\n  readonly order: number;              // 1-based position in execution order\n  readonly dependsOn: readonly string[];       // other PlanTask ids in this Story\n  readonly acceptanceChecks: readonly string[];// per-Task done conditions\n  readonly derivedFrom: readonly string[];     // citation ids grounding this Task\n  readonly tests: readonly TaskTestRef[];      // named tests (owned by s4 / sc4)\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c5"
+          ]
+        },
+        {
+          "id": "sc2",
+          "name": "PlanArtifact",
+          "purpose": "The persisted, reviewable breakdown for one Story: meta (pinning the Epic, Story, and the LLD/effective-hash it was authored against), a Task list, test-strategy coverage, and citations. This is the canonical unit build consumes one Task at a time.",
+          "interfaceSketch": "interface PlanMeta extends ArtifactMetaBase {\n  readonly epicHash: string;\n  readonly epicSlug: string;\n  readonly storyId: string;\n  readonly lldRunId: string;           // the LLD this plan was authored against\n  readonly lldEffectiveHash: string;   // for staleness of the plan vs its LLD/HLD\n  readonly approvedAt?: string;\n}\ninterface PlanBody {\n  readonly tasks: readonly PlanTask[];\n  readonly testStrategyCoverage: readonly TestStrategyCoverage[]; // from sc4\n}\ninterface PlanArtifact {\n  readonly meta: PlanMeta;\n  readonly body: PlanBody;\n  readonly citations: readonly Citation[];\n}",
+          "ownedByStory": "s3",
+          "consumedByStories": [
+            "s5"
+          ],
+          "assumptions": [
+            "c3"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s5",
+        "owns": [
+          "sc5"
+        ],
+        "depends": [
+          "sc1",
+          "sc2"
+        ],
+        "internal": "Private to s5: the exact prompt/schema content of the fixed step plan and the wiring of the three orchestrator arms + the MCP pathsForWorkflow branch. Other Stories run inside this orchestration but do not see its registration/wiring details."
+      },
+      "rolloutPhase": "Phase C — Multi-turn interface wiring",
+      "nonFunctional": {
+        "performance": "No new hard latency target; plan runs are LLM-bound like the other fine-grained workflows. The deterministic parts (gate read, staleness recompute, atomic persist) must stay O(size of one LLD + one Story's Tasks) and sub-second, matching design.story's gate/persist cost.",
+        "durability": "The PlanArtifact JSON + markdown are written atomically (write-temp-then-rename, as the existing storage layer does) so a crash mid-write never leaves a partial artifact; the canonical JSON is the source of truth and the markdown is regenerable from it.",
+        "observability": "Each plan run appends a per-step jsonl trace under the existing workflow-runs log keyed by Epic hash, identical to the other workflows, so a run is fully reconstructable.",
+        "security": "No new external surface: plan reads and writes only local repo files through the existing storage helpers and never calls the network or a tracker during the run; approval and tracker-push stay out-of-band exactly as for the other artifacts."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "PlanStepId",
+          "signature": "type PlanStepId =\n  | 'context.assemble'\n  | 'tasks.enumerate'\n  | 'tasks.critique'\n  | 'tasks.finalize'\n  | 'test-strategy.write'\n  | 'checklist.verify';",
+          "parameters": [],
+          "returns": {
+            "type": "PlanStepId",
+            "meaning": "The fixed, ordered set of step ids the plan workflow always runs — sc5 verbatim. prepareDecompose's 'plan' case emits exactly this sequence, symmetric with the other fine-grained workflows (ac2)."
+          },
+          "errors": [],
+          "preconditions": [
+            "The six ids are registered as StepRunners via registerPlanRunners"
+          ],
+          "postconditions": [
+            "A plan run's step plan is exactly these six ids in this order"
+          ]
+        },
+        {
+          "name": "planDecomposer",
+          "signature": "function planDecomposer(intent: WorkflowIntent): DecomposerPrompt",
+          "parameters": [
+            {
+              "name": "intent",
+              "type": "WorkflowIntent",
+              "purpose": "the plan invocation (workflow='plan', epicHash, storyId)",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "DecomposerPrompt",
+            "meaning": "The fixed six-step plan + schema for the plan workflow; the 'plan' case of prepareDecompose (orchestrator.ts:119) delegates here, matching the DecomposerPrompt shape define/design.epic/design.story already return."
+          },
+          "errors": [],
+          "preconditions": [
+            "intent.workflow === 'plan'"
+          ],
+          "postconditions": [
+            "Returns a DecomposerPrompt whose steps are the six PlanStepId values in order"
+          ]
+        },
+        {
+          "name": "planSynthesizer",
+          "signature": "function planSynthesizer(intent: WorkflowIntent, stepOutputs: Readonly<Record<string, unknown>>): SynthesizerPrompt",
+          "parameters": [
+            {
+              "name": "intent",
+              "type": "WorkflowIntent",
+              "purpose": "the plan invocation",
+              "optional": false
+            },
+            {
+              "name": "stepOutputs",
+              "type": "Readonly<Record<string, unknown>>",
+              "purpose": "the six step outputs (context/tasks/critique/finalize/test-strategy/checklist)",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "SynthesizerPrompt",
+            "meaning": "The synthesizer prompt + PlanArtifact schema; the 'plan' case of prepareSynthesize (orchestrator.ts:186) delegates here, mirroring the other workflows' synthesizer arms."
+          },
+          "errors": [],
+          "preconditions": [
+            "intent.workflow === 'plan'",
+            "stepOutputs carries the tasks.finalize + test-strategy.write outputs"
+          ],
+          "postconditions": [
+            "Returns a SynthesizerPrompt that instructs assembly of a PlanArtifact (sc2)"
+          ]
+        },
+        {
+          "name": "finalizePlan",
+          "signature": "function finalizePlan(intent: WorkflowIntent, stepOutputs: Readonly<Record<string, unknown>>, runId: string, elapsedMs: number, llmResponse: Record<string, unknown>): FinalizeResult",
+          "parameters": [
+            {
+              "name": "intent",
+              "type": "WorkflowIntent",
+              "purpose": "the plan invocation",
+              "optional": false
+            },
+            {
+              "name": "stepOutputs",
+              "type": "Readonly<Record<string, unknown>>",
+              "purpose": "the six step outputs",
+              "optional": false
+            },
+            {
+              "name": "runId",
+              "type": "string",
+              "purpose": "the plan run id, stamped into PlanMeta",
+              "optional": false
+            },
+            {
+              "name": "elapsedMs",
+              "type": "number",
+              "purpose": "run duration for meta",
+              "optional": false
+            },
+            {
+              "name": "llmResponse",
+              "type": "Record<string, unknown>",
+              "purpose": "the synthesized PlanArtifact body+citations from the LLM turn",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "FinalizeResult",
+            "meaning": "The finalized PlanArtifact (PlanMeta+PlanBody+citations) ready to persist; the 'plan' case of finalizeArtifact (orchestrator.ts:282) delegates here. It stamps PlanMeta (epicHash/epicSlug/storyId/lldRunId/lldEffectiveHash), validates body+citations, and runs checkTestStrategyCoverage (sc4) — mirroring how finalizeArtifact validates the LLD."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "body/citation validation fails or checkTestStrategyCoverage (sc4) returns issues — surfaced as a retryable synthesize failure"
+            }
+          ],
+          "preconditions": [
+            "intent.workflow === 'plan'",
+            "the upstream gate (sc3) already confirmed an approved, non-stale LLD"
+          ],
+          "postconditions": [
+            "Returns a FinalizeResult carrying a valid PlanArtifact whose meta pins the LLD run + effective hash"
+          ]
+        },
+        {
+          "name": "registerPlanRunners",
+          "signature": "function registerPlanRunners(): void",
+          "parameters": [],
+          "returns": {
+            "type": "void",
+            "meaning": "Registers one StepRunner per PlanStepId via registerRunner (executor.ts:57); called by registerWorkflowRunners (index.ts:22) alongside the existing register*Runners, exactly as registerDesignStoryRunners is."
+          },
+          "errors": [],
+          "preconditions": [
+            "Called once at startup from registerWorkflowRunners"
+          ],
+          "postconditions": [
+            "The six plan step ids resolve to runners in the executor's registry"
+          ]
+        },
+        {
+          "name": "pathsForWorkflow",
+          "signature": "// existing private fn (synthesize.ts:96) gains one branch:\n// if (workflow === 'plan') return planArtifactPaths(repoPath, epicHash, storyId, epicSlug);",
+          "parameters": [],
+          "returns": {
+            "type": "ArtifactPaths",
+            "meaning": "The 'plan' branch maps a finalized plan run to its on-disk PlanArtifact paths (hash-json + slug-md) via planArtifactPaths (sc2/s3), inserted before the 'not yet supported' throw at synthesize.ts:137."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "unchanged: throws if a plan finalized without meta.epicHash (synthesize.ts:112)"
+            }
+          ],
+          "preconditions": [
+            "workflow === 'plan' and meta.epicHash/storyId are present"
+          ],
+          "postconditions": [
+            "Returns planArtifactPaths(...) for the plan run"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "PlanStepId",
+        "change": "new",
+        "details": "New union type naming the six fixed plan steps; drives the plan runner registration + prepareDecompose 'plan' case. Reuses the existing StepRunner/DecomposerPrompt types.",
+        "schemaDiff": "+ type PlanStepId = 'context.assemble'|'tasks.enumerate'|'tasks.critique'|'tasks.finalize'|'test-strategy.write'|'checklist.verify'",
+        "callSites": [
+          "src/workflow/runners/plan/index.ts (registerPlanRunners registers one StepRunner per PlanStepId)",
+          "src/workflow/orchestrator.ts (prepareDecompose 'plan' case emits the sequence)"
+        ]
+      },
+      {
+        "entity": "planDecomposer / planSynthesizer / finalizePlan",
+        "change": "new",
+        "details": "Three orchestrator arms added as new 'plan' cases in the existing prepareDecompose (L119) / prepareSynthesize (L186) / finalizeArtifact (L282) switches; each keeps the seam's existing signature and delegates to the plan module.",
+        "schemaDiff": "+ case 'plan': return planDecomposer(intent) // in prepareDecompose\n+ case 'plan': return planSynthesizer(intent, stepOutputs) // in prepareSynthesize\n+ case 'plan': return finalizePlan(intent, stepOutputs, runId, elapsedMs, llmResponse) // in finalizeArtifact",
+        "callSites": [
+          "src/workflow/orchestrator.ts:119 (prepareDecompose)",
+          "src/workflow/orchestrator.ts:186 (prepareSynthesize)",
+          "src/workflow/orchestrator.ts:282 (finalizeArtifact)"
+        ]
+      },
+      {
+        "entity": "pathsForWorkflow 'plan' branch",
+        "change": "field-add",
+        "details": "One added branch in the existing pathsForWorkflow switch mapping workflow='plan' to planArtifactPaths, before the terminal 'not yet supported' throw.",
+        "schemaDiff": "+ if (workflow === 'plan') return planArtifactPaths(repoPath, epicHash, storyId, epicSlug);",
+        "callSites": [
+          "src/mcp/workflow-step/phases/synthesize.ts:96 (pathsForWorkflow)",
+          "src/mcp/workflow-step/phases/synthesize.ts:73 (invocation)"
+        ]
+      },
+      {
+        "entity": "registerWorkflowRunners",
+        "change": "field-add",
+        "details": "One added call to registerPlanRunners() inside the existing aggregator, alongside the other register*Runners.",
+        "schemaDiff": "+ registerPlanRunners(); // in registerWorkflowRunners",
+        "callSites": [
+          "src/workflow/index.ts:22 (registerWorkflowRunners)"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc5",
+        "role": "implements",
+        "howDetails": "s5 owns and implements sc5: PlanStepId + planDecomposer/planSynthesizer/finalizePlan wired as one 'plan' arm at each of the three orchestrator seams, registerPlanRunners in the runner aggregator, and the pathsForWorkflow 'plan' branch. The exact prompt/schema content + wiring detail stays private to s5."
+      },
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "planSynthesizer instructs assembly of PlanTask[] and finalizePlan validates/carries them into PlanBody; s5 never reshapes PlanTask (owned by s1)."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "finalizePlan produces a PlanArtifact (PlanMeta+PlanBody+citations, owned by s3) and pathsForWorkflow routes it to planArtifactPaths; s5 wires the production + persistence but does not define the PlanArtifact shape."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A user invokes workflow='plan' but the runner module was never registered (registerPlanRunners not called from registerWorkflowRunners).",
+          "detection": "The executor looks up each PlanStepId in its StepRunner registry and finds no runner for the step id, throwing the existing 'no runner registered' error at step-plan execution.",
+          "response": "Surface the executor's unregistered-step error; the fix is wiring registerPlanRunners() into registerWorkflowRunners (index.ts:22) — a startup wiring bug, not a runtime user error.",
+          "userImpact": "The plan run fails immediately at the first step with a clear 'runner not registered' message; no partial artifact.",
+          "recoverable": false
+        },
+        {
+          "scenario": "A workflow='plan' run reaches synthesize but pathsForWorkflow has no 'plan' branch.",
+          "detection": "pathsForWorkflow (synthesize.ts:96) falls through its switch to the terminal throw `pathsForWorkflow: workflow 'plan' not yet supported` (synthesize.ts:137).",
+          "response": "Add the 'plan'→planArtifactPaths branch before the throw; until then the run raises the explicit not-yet-supported error rather than writing to a wrong path.",
+          "userImpact": "Synthesize fails loudly with a named error; nothing is persisted.",
+          "recoverable": false
+        },
+        {
+          "scenario": "finalizePlan receives an llmResponse whose PlanBody fails body/citation validation or checkTestStrategyCoverage (sc4) returns issues.",
+          "detection": "finalizePlan runs the same validate-body-and-citations pass finalizeArtifact uses for the LLD, plus checkTestStrategyCoverage; a non-empty issue list or a validation failure is caught before persistence.",
+          "response": "Return a retryable synthesize failure naming the offending citation/coverage gap so the synthesize turn is re-emitted; no PlanArtifact is written.",
+          "userImpact": "None visible beyond an internal retry; the persisted plan is always valid + fully cited (k8).",
+          "recoverable": true
+        },
+        {
+          "scenario": "A workflow='plan' run finalizes without meta.epicHash (e.g. intent lacked the Epic anchor).",
+          "detection": "pathsForWorkflow throws the existing guard `workflow 'plan' finalized without meta.epicHash` (synthesize.ts:112) before attempting to compute paths.",
+          "response": "Reuse the existing guard unchanged; the plan intent must carry epicHash/storyId (as design.story does).",
+          "userImpact": "Synthesize fails with the explicit missing-epicHash error; nothing persisted.",
+          "recoverable": false
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A plan invoked for a Story whose LLD is approved but stale (upstream HLD/LLD effective hash changed).",
+          "expected": "The upstream gate (sc3, s2) refuses before any step runs — s5's wiring never reaches the runners; consistent with how requireApprovedHld gates design.story."
+        },
+        {
+          "input": "A second plan run for the same Story after the first was approved.",
+          "expected": "The wiring is idempotent on paths (planArtifactPaths is deterministic from epicHash/storyId/slug); a re-run overwrites/refreshes the same hash-json + slug-md atomically, exactly like re-running design.story."
+        },
+        {
+          "input": "A plan whose tasks.finalize produced zero Tasks.",
+          "expected": "The wiring still drives all six steps and finalizePlan runs validation; an empty Task list is a body-validation/coverage concern owned by s1/s4 finalize checks, not an s5 wiring failure — s5 surfaces whatever finalize decides."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The plan workflow adds exactly one 'plan' arm at each existing seam (prepareDecompose:119 / prepareSynthesize:186 / finalizeArtifact:282 / registerWorkflowRunners:22 / pathsForWorkflow:96) and changes nothing else in the executor, state store, approval flow, or MCP phase loop — each arm keeps the seam's existing signature.",
+          "source": "c1"
+        },
+        {
+          "text": "The plan stage is driven through the same multi-turn insrc_workflow_step phase loop (start→plan→steps→synthesize) as define/design.epic/design.story; it is a registered workflow name, not a bespoke pipeline (k7/ac1).",
+          "source": "c2"
+        },
+        {
+          "text": "The fixed PlanStepId sequence (context.assemble→tasks.enumerate→tasks.critique→tasks.finalize→test-strategy.write→checklist.verify) is presented in a fixed order consistent with the other fine-grained stages (ac2), matching the recipe the meta doc fixes.",
+          "source": "c3"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Exercise the three orchestrator arms + pathsForWorkflow branch directly, asserting the plan seam behaves like the others.",
+          "subjects": [
+            "prepareDecompose(intent{workflow:'plan'}) returns a DecomposerPrompt whose steps are exactly the six PlanStepId values in order",
+            "prepareSynthesize(intent{workflow:'plan'}, stepOutputs) returns a SynthesizerPrompt (delegates to planSynthesizer)",
+            "finalizeArtifact(intent{workflow:'plan'}, ...) delegates to finalizePlan and returns a FinalizeResult with a valid PlanArtifact",
+            "pathsForWorkflow(workflow='plan') returns planArtifactPaths and no longer hits the 'not yet supported' throw",
+            "registerWorkflowRunners registers all six plan step ids in the executor registry"
+          ],
+          "fixturesNeeded": [
+            "a WorkflowIntent with workflow='plan', epicHash, storyId",
+            "a stepOutputs fixture carrying tasks.finalize + test-strategy.write outputs"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Drive a full plan run through the real insrc_workflow_step phase loop (start→plan→steps→synthesize) and assert it behaves identically to the other workflows, mirroring the existing design-story-e2e test.",
+          "subjects": [
+            "a workflow='plan' run walks start→plan→(six steps)→synthesize and writes a persisted PlanArtifact (hash-json + slug-md) via the standard loop",
+            "the emitted step plan is the fixed six-step sequence in order (no bespoke invocation path)",
+            "the run reuses the same phase handlers as design.story with only the 'plan' arm differing"
+          ],
+          "fixturesNeeded": [
+            "a seeded approved+non-stale LLD for the target Story (so the sc3 gate passes)",
+            "an offline/stubbed synthesize LLM turn returning a valid PlanArtifact body"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "integration: a workflow='plan' run completes start→plan→steps→synthesize through the shared loop and returns the persisted breakdown",
+            "unit: pathsForWorkflow(workflow='plan') returns planArtifactPaths so the run persists rather than throwing"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "unit: prepareDecompose(workflow='plan') emits exactly the six PlanStepId values in fixed order",
+            "integration: the run's step plan matches the fixed ordered sequence consistent with the other fine-grained stages"
+          ]
+        }
+      ],
+      "testFramework": "node:test (tsx --test), mirroring src/mcp/workflow-step/__tests__/design-story-e2e.test.ts and src/workflow/__tests__/chain.test.ts"
+    },
+    "migration": {
+      "stateBefore": "Today the orchestrator's three seams (prepareDecompose:119-132, prepareSynthesize:186-202, finalizeArtifact:282-301) switch on workflow name across define/design.epic/design.story/tracker/stub; registerWorkflowRunners (index.ts:22-30) aggregates the per-workflow register*Runners via registerRunner (executor.ts:57); and pathsForWorkflow (synthesize.ts:96) maps those workflow names to artifact-path helpers, throwing 'not yet supported' (synthesize.ts:137) for anything else [[c1]]. There is NO 'plan' arm at any seam, no registerPlanRunners, and no plan branch in pathsForWorkflow — invoking workflow='plan' would fail at the executor (no runners) or at the pathsForWorkflow throw.",
+      "stateAfter": "A new runner module (src/workflow/runners/plan/index.ts, registerPlanRunners) registers the six PlanStepId runners; registerWorkflowRunners calls it alongside the others; each of the three orchestrator seams gains one 'plan' case delegating to planDecomposer/planSynthesizer/finalizePlan; and pathsForWorkflow gains one 'plan'→planArtifactPaths branch before its throw. workflow='plan' then runs through the unchanged start→plan→steps→synthesize phase loop exactly like design.story. Every existing workflow's seam behaviour is untouched.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the plan runner module (src/workflow/runners/plan/index.ts) exporting registerPlanRunners, registering one StepRunner per PlanStepId. Pure addition; no existing runner touched.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add a registerPlanRunners() call inside registerWorkflowRunners (index.ts:22-30), alongside the existing register*Runners. Additive; other workflows' registration unchanged.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add a 'plan' case to each of prepareDecompose (L119), prepareSynthesize (L186), and finalizeArtifact (L282) delegating to planDecomposer/planSynthesizer/finalizePlan. Each is a new switch branch; existing cases are not modified.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Add the 'plan'→planArtifactPaths branch to pathsForWorkflow (synthesize.ts:96) before the terminal 'not yet supported' throw. Additive branch; existing branches unchanged.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "No data backfill or artifact rewrite: existing define/HLD/LLD artifacts and their paths are untouched; the plan arm only activates for workflow='plan'.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No existing public API changes. The three seam signatures (prepareDecompose/prepareSynthesize/finalizeArtifact), registerWorkflowRunners, registerRunner, and pathsForWorkflow keep their signatures; only new switch branches / a new register call are added. define/design.epic/design.story/tracker/stub behave identically, and the MCP phase loop, executor, state store, and approval flow are unchanged. Reached only when workflow==='plan'.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Mirror the design.story wiring exactly: dedicated plan runner module + three named orchestrator arms + one pathsForWorkflow branch",
+        "oneLineSummary": "Add src/workflow/runners/plan/index.ts (registerPlanRunners) registering the six PlanStepId runners, three new cases planDecomposer/planSynthesizer/finalizePlan in the existing orchestrator switches, and a single 'plan'→planArtifactPaths branch in pathsForWorkflow — structurally identical to how design.story is wired.",
+        "approach": "sc5 is realized by replicating the proven design.story shape. (1) A new runner module src/workflow/runners/plan/index.ts exports registerPlanRunners(), registering one StepRunner per PlanStepId ('context.assemble','tasks.enumerate','tasks.critique','tasks.finalize','test-strategy.write','checklist.verify') via registerRunner; registerWorkflowRunners (index.ts:22-30) calls it alongside the others. (2) The three orchestrator seams gain a 'plan' case each: prepareDecompose returns the fixed six-step DecomposerPrompt (plan + schema), prepareSynthesize returns the SynthesizerPrompt from step outputs, finalizeArtifact delegates to finalizePlan which assembles PlanMeta+PlanBody+citations (calling checkTestStrategyCoverage from sc4) and returns FinalizeResult. planDecomposer/planSynthesizer/finalizePlan are the three named arms sc5 declares, each keeping the existing seam signature (WorkflowIntent / stepOutputs / runId+elapsedMs+llmResponse). (3) pathsForWorkflow (synthesize.ts:96) gains 'if (workflow === \"plan\") return planArtifactPaths(...)' before the 'not yet supported' throw. Nothing else in executor/state-store/approval/MCP loop changes.",
+        "pros": [
+          "Uses the exact seam signatures verified in the graph (prepareDecompose:119/prepareSynthesize:186/finalizeArtifact:282, registerRunner:57, pathsForWorkflow:96) — zero new seam concepts.",
+          "One arm per seam keeps the switch statements symmetric with define/design.epic/design.story, so a reader who knows one workflow knows plan (ac2: fixed ordered sequence consistent with the other stages).",
+          "The multi-turn interface (start→plan→steps→synthesize) is driven unchanged by the shared MCP phase loop (ac1) — plan is just another registered workflow name."
+        ],
+        "cons": [
+          "Adds a case to three central switch functions, so the orchestrator file keeps growing (mitigated: each arm is a thin delegation to the plan module, matching the existing pattern)."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Generic table-driven workflow registry (replace the per-workflow switches with a lookup)",
+        "oneLineSummary": "Refactor prepareDecompose/prepareSynthesize/finalizeArtifact and pathsForWorkflow to dispatch through a WorkflowSpec registry keyed by name, then register 'plan' as one more table entry.",
+        "approach": "Instead of adding a 'plan' case to each switch, introduce a WorkflowSpec { decompose, synthesize, finalize, paths } registry; the orchestrator seams and pathsForWorkflow become thin lookups (registry[intent.workflow].decompose(intent), etc.). 'plan' is then registered as a single WorkflowSpec entry. sc5's three arm functions still exist but are wired via the table rather than switch cases.",
+        "pros": [
+          "Eliminates the repeated switch-per-seam; adding future workflows (build/test) becomes a single table entry.",
+          "Slightly less edit surface in orchestrator.ts per new workflow after the refactor."
+        ],
+        "cons": [
+          "Contradicts the HLD's 'add a single plan arm at each existing seam' and 'nothing about the executor/loop changes' — this reshapes the shared seams for every existing workflow, an HLD deviation needing an amendment, not an s5-local choice.",
+          "Much larger blast radius: define/design.epic/design.story/tracker/stub all get rewired and re-tested for zero plan-specific benefit; violates the enhancement flavor + k-constraint of following existing framework patterns.",
+          "Higher regression risk against the existing green e2e suites for no accuracy gain (project rule: accuracy first, but this adds risk without adding correctness)."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Only partial on sc5 + k7: it rewrites the shared orchestrator seams for every existing workflow, contradicting the HLD's 'add a single plan arm at each existing seam / nothing else changes'. That is an HLD deviation (amendment territory), carries L cost + regression risk against green e2e suites, and buys no accuracy — so it loses to a1."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 how-does-it-work: exact orchestrator seam signatures + pathsForWorkflow switch (orchestrator.ts:119/186/282, index.ts:22, executor.ts:57, synthesize.ts:96/112/137)",
+      "quotedText": "prepareDecompose(intent: WorkflowIntent): DecomposerPrompt (L119); prepareSynthesize(...): SynthesizerPrompt (L186); finalizeArtifact(...): FinalizeResult (L282); pathsForWorkflow switch throws 'not yet supported' (L137); a 'plan' arm inserts at each seam."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 how-does-it-work: design.story end-to-end wiring template (runner module + registration + gate + storage + MCP loop)",
+      "quotedText": "design.story is one runner file aggregated by registerWorkflowRunners; per-workflow branching is centralized in orchestrator.ts; driven through the shared multi-turn phase loop. A new 'plan' workflow adds one runner module + one arm per seam."
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1 prose-retrieval: meta-workflow-framework.md §plan fixed step recipe",
+      "quotedText": "meta §plan fixes the fine-grained recipe tasks.enumerate→tasks.critique→tasks.finalize→test-strategy.write→checklist.verify(forced); sc5's PlanStepId sequence matches, prefixed with context.assemble as the other fine-grained workflows begin."
+    }
+  ]
+}

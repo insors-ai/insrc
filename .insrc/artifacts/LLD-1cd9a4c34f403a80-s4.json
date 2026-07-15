@@ -1,0 +1,376 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1784126969342-k8m5l2",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-07-15T14:53:32.781Z",
+    "model": "client",
+    "elapsedMs": 243422,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1cd9a4c34f403a80",
+    "epicSlug": "add-plan-workflow-insrc-framework-4th",
+    "storyId": "s4",
+    "hldBaseRunId": "wf-1784121669696-i1rc6r",
+    "hldEffectiveHash": "c7645d42a9f5e691c82633a1edd384aede04bf62007cfc744076c8decb49d90c",
+    "hldAmendmentsApplied": [],
+    "approvedAt": "2026-07-15T14:57:42.478Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Implement `plan` as a new fine-grained instance of the shared workflow skeleton, peer to define/design.epic/design.story. A single runner module registers a fixed six-step recipe (context.assemble -> tasks.enumerate -> tasks.critique -> tasks.finalize -> test-strategy.write -> checklist.verify) whose outputs the orchestrator's three per-workflow arms turn into a persisted, cited PlanArtifact for exactly one Story. A new gate reads the Story's approved, non-stale LLD (adding requireApprovedLld by mirroring requireApprovedHld and reusing the existing effective-hash/staleness machinery), and a new storage helper writes the artifact under the as-built slug-md + hash-json convention. Nothing about the executor, state store, approval flow, or MCP phase loop changes except a single 'plan' arm added at each existing seam.",
+      "ownedContracts": [
+        {
+          "id": "sc4",
+          "name": "TaskTestPlan",
+          "purpose": "The per-Task named tests and the mapping proving the Story design's test strategy is collectively covered by the Tasks' tests.",
+          "interfaceSketch": "type TestLevel = 'unit' | 'integration' | 'live' | 'smoke';\ninterface TaskTestRef {\n  readonly level: TestLevel;\n  readonly name: string;                 // human-readable test name/subject\n}\ninterface TestStrategyCoverage {\n  readonly lldStrategyItem: string;      // an item from the LLD testStrategy\n  readonly coveredByTaskIds: readonly string[];\n}",
+          "ownedByStory": "s4",
+          "consumedByStories": [
+            "s1"
+          ],
+          "assumptions": [
+            "c5"
+          ]
+        }
+      ],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "PlanTask",
+          "purpose": "The shape of a single work unit in a Story's breakdown: ordered, sized, dependency-labelled, with its own acceptance checks and provenance. This is the atomic Task-tier record the whole Epic exists to produce.",
+          "interfaceSketch": "interface PlanTask {\n  readonly id: string;                 // 't1','t2',... scoped to the Story\n  readonly title: string;\n  readonly summary: string;\n  readonly size: 'S' | 'M' | 'L';\n  readonly order: number;              // 1-based position in execution order\n  readonly dependsOn: readonly string[];       // other PlanTask ids in this Story\n  readonly acceptanceChecks: readonly string[];// per-Task done conditions\n  readonly derivedFrom: readonly string[];     // citation ids grounding this Task\n  readonly tests: readonly TaskTestRef[];      // named tests (owned by s4 / sc4)\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c5"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s4",
+        "owns": [
+          "sc4"
+        ],
+        "depends": [
+          "sc1"
+        ],
+        "internal": "Private to s4: how the LLD test strategy is decomposed into per-Task named tests and how the coverage mapping is computed. Consumers see only the TaskTestRef[] embedded in each Task and the TestStrategyCoverage list."
+      },
+      "rolloutPhase": "Phase B — Gate, persistence, and test naming",
+      "nonFunctional": {
+        "performance": "No new hard latency target; plan runs are LLM-bound like the other fine-grained workflows. The deterministic parts (gate read, staleness recompute, atomic persist) must stay O(size of one LLD + one Story's Tasks) and sub-second, matching design.story's gate/persist cost.",
+        "durability": "The PlanArtifact JSON + markdown are written atomically (write-temp-then-rename, as the existing storage layer does) so a crash mid-write never leaves a partial artifact; the canonical JSON is the source of truth and the markdown is regenerable from it.",
+        "observability": "Each plan run appends a per-step jsonl trace under the existing workflow-runs log keyed by Epic hash, identical to the other workflows, so a run is fully reconstructable.",
+        "security": "No new external surface: plan reads and writes only local repo files through the existing storage helpers and never calls the network or a tracker during the run; approval and tracker-push stay out-of-band exactly as for the other artifacts."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "TaskTestRef",
+          "signature": "type TestLevel = 'unit' | 'integration' | 'live' | 'smoke';\ninterface TaskTestRef { readonly level: TestLevel; readonly name: string; }",
+          "parameters": [],
+          "returns": {
+            "type": "TaskTestRef",
+            "meaning": "One named test at a given level (unit/integration/live/smoke) that validates a Task; the test-strategy.write step fills each PlanTask.tests[] with these — sc4 verbatim."
+          },
+          "errors": [],
+          "preconditions": [
+            "level is one of the four TestLevel values",
+            "name is a human-readable test subject drawn from the LLD testStrategy"
+          ],
+          "postconditions": [
+            "each PlanTask carries >=1 TaskTestRef in its tests[] slot (which sc1 reserves for s4)"
+          ]
+        },
+        {
+          "name": "TestStrategyCoverage",
+          "signature": "interface TestStrategyCoverage { readonly lldStrategyItem: string; readonly coveredByTaskIds: readonly string[]; }",
+          "parameters": [],
+          "returns": {
+            "type": "TestStrategyCoverage",
+            "meaning": "One row of the coverage map: an item drawn from the approved LLD's testStrategy and the PlanTask ids whose tests[] cover it. The full list is PlanBody.testStrategyCoverage — sc4 verbatim."
+          },
+          "errors": [],
+          "preconditions": [
+            "lldStrategyItem is a verbatim item from the LLD's testStrategy (a testLevels.subject or acceptanceMapping.provingTest)",
+            "every coveredByTaskId is a real PlanTask id"
+          ],
+          "postconditions": [
+            "every LLD testStrategy item appears exactly once as an lldStrategyItem",
+            "every lldStrategyItem has >=1 coveredByTaskId"
+          ]
+        },
+        {
+          "name": "checkTestStrategyCoverage",
+          "signature": "function checkTestStrategyCoverage(tasks: readonly PlanTask[], coverage: readonly TestStrategyCoverage[], lldTestStrategy: LldTestStrategy): readonly string[]",
+          "parameters": [
+            {
+              "name": "tasks",
+              "type": "readonly PlanTask[]",
+              "purpose": "the finalized Task list (each with its tests[])",
+              "optional": false
+            },
+            {
+              "name": "coverage",
+              "type": "readonly TestStrategyCoverage[]",
+              "purpose": "the emitted coverage map",
+              "optional": false
+            },
+            {
+              "name": "lldTestStrategy",
+              "type": "LldTestStrategy",
+              "purpose": "the approved LLD's testStrategy (items to cover)",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "readonly string[]",
+            "meaning": "A list of coverage issues (empty = ok): an uncovered LLD strategy item, a coverage row referencing an unknown Task id, or a Task id whose tests[] does not actually match its claimed coverage. Non-empty fails synthesize, mirroring the existing constraint/acceptance coverage checks."
+          },
+          "errors": [],
+          "preconditions": [
+            "the plan finalize has assembled tasks + coverage from the step outputs"
+          ],
+          "postconditions": [
+            "an empty return means every LLD strategy item is covered by a real Task carrying matching tests (ac2)"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "TaskTestRef",
+        "change": "new",
+        "details": "New per-Task test reference (level + name) filling the sc1 PlanTask.tests[] slot; the TestLevel enum reuses the LLD's unit/integration/live/smoke vocabulary.",
+        "schemaDiff": "+ type TestLevel = 'unit'|'integration'|'live'|'smoke'\n+ interface TaskTestRef { level: TestLevel; name: string }",
+        "callSites": [
+          "src/workflow/artifacts/plan.ts (PlanTask.tests[] holds TaskTestRef[], defined in the new plan artifact module)",
+          "src/workflow/orchestrator.ts (finalizePlan runs checkTestStrategyCoverage)"
+        ]
+      },
+      {
+        "entity": "TestStrategyCoverage",
+        "change": "new",
+        "details": "New coverage-map row (lldStrategyItem -> coveredByTaskIds); the list is PlanBody.testStrategyCoverage. Its coverage-in-finalize validation mirrors the existing constraint-coverage / acceptance-mapping checks.",
+        "schemaDiff": "+ interface TestStrategyCoverage { lldStrategyItem: string; coveredByTaskIds: string[] }",
+        "callSites": [
+          "src/workflow/artifacts/plan.ts (PlanBody.testStrategyCoverage)",
+          "src/workflow/orchestrator.ts (the finalizePlan coverage check, mirroring checkConstraintCoverage/checkAcceptanceMapping)"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc4",
+        "role": "implements",
+        "howDetails": "s4 owns and implements sc4: it defines TestLevel/TaskTestRef/TestStrategyCoverage, the test-strategy.write step that names per-Task tests from the LLD testStrategy, and checkTestStrategyCoverage in finalizePlan that proves every LLD strategy item is covered. How the strategy is decomposed into tests + the coverage computation stay private to s4."
+      },
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "s4 fills the tests[] slot that sc1's PlanTask reserves (owned by s1, filled by s4); it references PlanTask ids in coverageByTaskIds but never reshapes the PlanTask structure."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "An LLD testStrategy item is not covered by any Task's tests.",
+          "detection": "checkTestStrategyCoverage diffs the set of LLD testStrategy items against the union of lldStrategyItem keys with >=1 coveredByTaskId and finds an uncovered item.",
+          "response": "Return a retryable synthesize failure naming the uncovered strategy item so tasks.finalize/test-strategy.write can add a covering test.",
+          "userImpact": "None visible; the run retries. A persisted plan never under-covers the design test strategy (ac2).",
+          "recoverable": true
+        },
+        {
+          "scenario": "A TestStrategyCoverage row references a coveredByTaskId that is not a real PlanTask.",
+          "detection": "checkTestStrategyCoverage checks each coveredByTaskId against the Task id set and finds an unknown id.",
+          "response": "Return a retryable schema failure listing the dangling task id.",
+          "userImpact": "None visible; internal retry.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A coverage row claims a Task covers an item, but that Task's tests[] contains no matching test.",
+          "detection": "checkTestStrategyCoverage cross-checks the claimed Task's tests[] against the strategy item and finds no matching TaskTestRef.",
+          "response": "Return a retryable failure (the coverage claim is unsupported by the Task's own tests).",
+          "userImpact": "None visible; internal retry.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A Task has an empty tests[] after test-strategy.write.",
+          "detection": "checkTestStrategyCoverage (or the plan finalize) finds a PlanTask whose tests[] is empty.",
+          "response": "Return a retryable failure requiring at least one TaskTestRef per Task (ac1).",
+          "userImpact": "None visible; internal retry.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "An LLD whose testStrategy has only unit-level items (no integration/live/smoke).",
+          "expected": "Only unit TaskTestRefs are named; coverage is total over the present items — absent levels are not treated as gaps."
+        },
+        {
+          "input": "A single strategy item legitimately covered by tests across several Tasks.",
+          "expected": "coveredByTaskIds lists all covering Task ids (a one-to-many mapping is valid)."
+        },
+        {
+          "input": "One Task whose tests validate multiple distinct strategy items.",
+          "expected": "That Task id appears in several TestStrategyCoverage rows; a many-to-one mapping is valid."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The coverage check is deterministic and lives in the plan finalize, mirroring the existing constraint-coverage / acceptance-mapping checks; it must not be weakened to an LLM self-assertion.",
+          "source": "c1"
+        },
+        {
+          "text": "TestLevel reuses the LLD's own unit/integration/live/smoke vocabulary and lldStrategyItem is drawn verbatim from the approved LLD testStrategy; s4 must not invent new levels or paraphrase strategy items.",
+          "source": "c2"
+        },
+        {
+          "text": "s4 fills only the tests[] slot sc1 reserves and adds the PlanBody.testStrategyCoverage list; it must not reshape PlanTask or re-validate the Task graph (that is s1's responsibility).",
+          "source": "c3"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Exercise checkTestStrategyCoverage over hand-built (tasks, coverage, lldTestStrategy) fixtures.",
+          "subjects": [
+            "checkTestStrategyCoverage returns [] for a total coverage map",
+            "returns an issue for an uncovered LLD strategy item",
+            "returns an issue for a coverage row referencing an unknown task id",
+            "returns an issue when a coverage row claims a Task that has no matching TaskTestRef",
+            "returns an issue for a Task with an empty tests[]",
+            "accepts one-to-many (item covered by several tasks) and many-to-one (task covering several items)"
+          ],
+          "fixturesNeeded": [
+            "a LLD testStrategy fixture",
+            "PlanTask[] fixtures with tests[] variants (full, empty, mismatched)",
+            "TestStrategyCoverage fixtures: total, gap, dangling-id, unsupported-claim"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Confirm the plan workflow emits per-Task tests + a total coverage map through the MCP loop.",
+          "subjects": [
+            "a full plan run produces PlanTasks each with >=1 TaskTestRef and a PlanBody.testStrategyCoverage covering every LLD strategy item",
+            "a plan whose test-strategy.write leaves an item uncovered fails synthesize"
+          ],
+          "fixturesNeeded": [
+            "seeded approved+non-stale LLD with a multi-level testStrategy"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "unit: checkTestStrategyCoverage flags a Task with empty tests[]",
+            "integration: produced PlanTasks each carry >=1 TaskTestRef across the LLD's levels"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "unit: checkTestStrategyCoverage returns an issue for an uncovered strategy item and [] for a total map",
+            "integration: the produced PlanBody.testStrategyCoverage covers every LLD testStrategy item"
+          ]
+        }
+      ],
+      "testFramework": "node:test (tsx --test), mirroring the coverage-check unit tests for define/HLD/LLD in src/workflow/__tests__"
+    },
+    "migration": {
+      "stateBefore": "Today the LLD carries a testStrategy (testLevels/acceptanceMapping/testFramework) and finalize enforces coverage-style invariants for define/HLD/LLD (constraint coverage, acceptance mapping) [[c1]] — but there is NO TaskTestPlan: no TestLevel/TaskTestRef/TestStrategyCoverage types and no checkTestStrategyCoverage, and Tasks have no per-Task test naming. Test planning for a Task tier does not exist.",
+      "stateAfter": "The plan artifact gains the sc4 types (TestLevel/TaskTestRef in each PlanTask.tests[] + PlanBody.testStrategyCoverage), the plan recipe's test-strategy.write step names per-Task tests from the LLD testStrategy, and finalizePlan gains checkTestStrategyCoverage (mirroring the existing coverage checks) so every LLD strategy item maps to a Task's tests. All existing artifacts + coverage checks are untouched.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add TestLevel/TaskTestRef/TestStrategyCoverage to the new artifacts/plan.ts (PlanTask.tests[] + PlanBody.testStrategyCoverage). Pure addition within the plan module s3 introduces.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add the test-strategy.write step prompt/schema to the plan runner module, naming per-Task TaskTestRefs from the LLD testStrategy. Additive step registration; other workflows unaffected.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add checkTestStrategyCoverage to the plan finalize (finalizePlan), invoked exactly like the existing checkConstraintCoverage/checkAcceptanceMapping. Additive; existing coverage checks unchanged.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "No data backfill: existing LLDs already carry the testStrategy s4 reads; no existing artifact is rewritten.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No existing public API changes: the LLD testStrategy shape, the existing checkConstraintCoverage/checkAcceptanceMapping validators, and every other artifact keep their signatures + behaviour. The sc4 types + checkTestStrategyCoverage live only in the new plan module + plan finalize arm and are reached only for the 'plan' workflow.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Per-Task TaskTestRef[] + a top-level TestStrategyCoverage[], validated in finalize",
+        "oneLineSummary": "test-strategy.write fills each PlanTask.tests[] with TaskTestRef{level,name} and emits a TestStrategyCoverage[] mapping every LLD testStrategy item to the Task ids that cover it; finalizePlan checks the mapping is total.",
+        "approach": "The test-strategy.write step reads the approved LLD's testStrategy (testLevels.subjects + acceptanceMapping.provingTests) and, for each PlanTask, names the TaskTestRef{level,name} that validate it (satisfying ac1). It then emits PlanBody.testStrategyCoverage: one TestStrategyCoverage{lldStrategyItem, coveredByTaskIds} per LLD strategy item. finalizePlan runs checkTestStrategyCoverage: every lldStrategyItem must have >=1 coveredByTaskId AND every coveredByTaskId must be a real Task carrying >=1 matching test (satisfying ac2), mirroring the existing constraint/acceptance coverage checks; a gap is a retryable failure.",
+        "pros": [
+          "ac1 lives on the Task (tests[]) so build sees the tests inline with the unit; ac2 lives in the coverage list validated deterministically in finalize (no LLM self-policing).",
+          "TestStrategyCoverage is the exact sc4 shape; TestLevel reuses the LLD's own unit/integration/live/smoke vocabulary.",
+          "Coverage validation mirrors the proven constraint-coverage / acceptance-mapping checks, so it reuses a known pattern."
+        ],
+        "cons": [
+          "The coverage list duplicates information already implicit in the Tasks' tests[]; finalize must cross-check the two are consistent."
+        ],
+        "costEstimate": "S"
+      },
+      {
+        "id": "a2",
+        "name": "Coverage derived implicitly from Task tests (no explicit TestStrategyCoverage list)",
+        "oneLineSummary": "Only fill PlanTask.tests[]; compute coverage on the fly in finalize by matching test names to LLD strategy items, without persisting a TestStrategyCoverage[].",
+        "approach": "test-strategy.write fills each Task's tests[] but does not emit a separate coverage list; finalizePlan derives coverage by fuzzy-matching each Task test name against the LLD testStrategy items and fails if any item is unmatched. sc4's TestStrategyCoverage would then be a computed view rather than a persisted field.",
+        "pros": [
+          "No duplicated coverage data; the Task tests[] are the single source.",
+          "Slightly smaller artifact."
+        ],
+        "cons": [
+          "Contradicts sc4, which declares TestStrategyCoverage as a persisted contract field (the HLD says PlanBody.testStrategyCoverage exists) — dropping it is an HLD deviation.",
+          "Fuzzy name-matching to infer coverage is unreliable and non-auditable; a reviewer cannot see which Task covers which strategy item without recomputing.",
+          "Weakens ac2's traceability (the mapping is not persisted or citable)."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Violates sc4 (drops the declared TestStrategyCoverage field) and only partially meets ac2 via unreliable, non-auditable fuzzy matching; not viable without an HLD amendment, so a1 wins on contract-fidelity + traceability."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 how-does-it-work: existing coverage-check pattern (constraint/acceptance/rollout coverage in finalize)",
+      "quotedText": "The existing artifacts enforce coverage-style invariants in finalize (constraint coverage in define, acceptance mapping + rollout coverage in HLD, acceptance-mapping in the LLD); s4's checkTestStrategyCoverage mirrors this deterministically."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 how-does-it-work: LLD testStrategy shape s4 reads (artifacts/lld.ts + design-story schemas)",
+      "quotedText": "The LLD carries a testStrategy (testLevels{level,subjects}/acceptanceMapping/testFramework); s4 reads these items as lldStrategyItems to cover, and TestLevel mirrors the LLD's unit/integration/live/smoke vocabulary."
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1 prose-retrieval: plan test-strategy.write step + Task tests[] slot (meta-workflow-framework.md)",
+      "quotedText": "meta §plan lists test-strategy.write ('names the tests the Tasks should produce — unit/integration/live/smoke'); s1's PlanTask reserves a tests[] slot for s4 to fill."
+    }
+  ]
+}

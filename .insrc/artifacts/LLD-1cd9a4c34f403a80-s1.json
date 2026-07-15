@@ -1,0 +1,452 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1784124151609-yv2r50",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-07-15T14:08:34.924Z",
+    "model": "client",
+    "elapsedMs": 363292,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1cd9a4c34f403a80",
+    "epicSlug": "add-plan-workflow-insrc-framework-4th",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1784121669696-i1rc6r",
+    "hldEffectiveHash": "c7645d42a9f5e691c82633a1edd384aede04bf62007cfc744076c8decb49d90c",
+    "hldAmendmentsApplied": [],
+    "approvedAt": "2026-07-15T14:30:59.241Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Implement `plan` as a new fine-grained instance of the shared workflow skeleton, peer to define/design.epic/design.story. A single runner module registers a fixed six-step recipe (context.assemble -> tasks.enumerate -> tasks.critique -> tasks.finalize -> test-strategy.write -> checklist.verify) whose outputs the orchestrator's three per-workflow arms turn into a persisted, cited PlanArtifact for exactly one Story. A new gate reads the Story's approved, non-stale LLD (adding requireApprovedLld by mirroring requireApprovedHld and reusing the existing effective-hash/staleness machinery), and a new storage helper writes the artifact under the as-built slug-md + hash-json convention. Nothing about the executor, state store, approval flow, or MCP phase loop changes except a single 'plan' arm added at each existing seam.",
+      "ownedContracts": [
+        {
+          "id": "sc1",
+          "name": "PlanTask",
+          "purpose": "The shape of a single work unit in a Story's breakdown: ordered, sized, dependency-labelled, with its own acceptance checks and provenance. This is the atomic Task-tier record the whole Epic exists to produce.",
+          "interfaceSketch": "interface PlanTask {\n  readonly id: string;                 // 't1','t2',... scoped to the Story\n  readonly title: string;\n  readonly summary: string;\n  readonly size: 'S' | 'M' | 'L';\n  readonly order: number;              // 1-based position in execution order\n  readonly dependsOn: readonly string[];       // other PlanTask ids in this Story\n  readonly acceptanceChecks: readonly string[];// per-Task done conditions\n  readonly derivedFrom: readonly string[];     // citation ids grounding this Task\n  readonly tests: readonly TaskTestRef[];      // named tests (owned by s4 / sc4)\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c5"
+          ]
+        }
+      ],
+      "consumedContracts": [
+        {
+          "id": "sc3",
+          "name": "PlanUpstreamGate",
+          "purpose": "The read+gate boundary: obtain the Story's approved, non-stale LLD plus the cross-cutting context needed to enumerate Tasks, or refuse. Isolates every 'is the design usable?' decision behind one contract.",
+          "interfaceSketch": "interface PlanUpstream {\n  readonly lld: LldArtifact;                 // approved + non-stale\n  readonly hldSlice: HldContextSlice;        // cross-cutting context for this Story\n  readonly storyDependsOn: readonly string[];// define Story dependency edges\n}\n// declarations only (no bodies):\nfunction requireApprovedLld(repoPath: string, epicHash: string, storyId: string): LldArtifact;\nfunction readPlanUpstream(repoPath: string, epicHash: string, storyId: string): PlanUpstream;",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s1"
+          ],
+          "assumptions": [
+            "c5",
+            "c6"
+          ]
+        },
+        {
+          "id": "sc4",
+          "name": "TaskTestPlan",
+          "purpose": "The per-Task named tests and the mapping proving the Story design's test strategy is collectively covered by the Tasks' tests.",
+          "interfaceSketch": "type TestLevel = 'unit' | 'integration' | 'live' | 'smoke';\ninterface TaskTestRef {\n  readonly level: TestLevel;\n  readonly name: string;                 // human-readable test name/subject\n}\ninterface TestStrategyCoverage {\n  readonly lldStrategyItem: string;      // an item from the LLD testStrategy\n  readonly coveredByTaskIds: readonly string[];\n}",
+          "ownedByStory": "s4",
+          "consumedByStories": [
+            "s1"
+          ],
+          "assumptions": [
+            "c5"
+          ]
+        },
+        {
+          "id": "sc5",
+          "name": "PlanOrchestration",
+          "purpose": "The fixed step plan for the plan workflow and the three orchestrator arm signatures + MCP path arm that make it drivable through the standard multi-turn interface.",
+          "interfaceSketch": "type PlanStepId =\n  | 'context.assemble'\n  | 'tasks.enumerate'\n  | 'tasks.critique'\n  | 'tasks.finalize'\n  | 'test-strategy.write'\n  | 'checklist.verify';\n// orchestrator arms (declarations only, no bodies):\nfunction planDecomposer(intent: WorkflowIntent): DecomposerPrompt;\nfunction planSynthesizer(intent: WorkflowIntent, stepOutputs: Readonly<Record<string, unknown>>): SynthesizerPrompt;\nfunction finalizePlan(intent: WorkflowIntent, stepOutputs: Readonly<Record<string, unknown>>, runId: string, elapsedMs: number, llmResponse: Record<string, unknown>): FinalizeResult;",
+          "ownedByStory": "s5",
+          "consumedByStories": [
+            "s1"
+          ],
+          "assumptions": [
+            "c7"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [
+          "sc1"
+        ],
+        "depends": [
+          "sc3",
+          "sc4",
+          "sc5"
+        ],
+        "internal": "Private to s1: the enumeration/critique/finalize prompts and the internal reasoning that turns the LLD handoff into candidate Tasks, plus the acyclicity + dependency-consistency validation logic over the Task graph. Nothing outside s1 sees how Tasks are derived; other Stories only consume the resulting PlanTask shape."
+      },
+      "rolloutPhase": "Phase A — Core breakdown + contract shapes",
+      "nonFunctional": {
+        "performance": "No new hard latency target; plan runs are LLM-bound like the other fine-grained workflows. The deterministic parts (gate read, staleness recompute, atomic persist) must stay O(size of one LLD + one Story's Tasks) and sub-second, matching design.story's gate/persist cost.",
+        "durability": "The PlanArtifact JSON + markdown are written atomically (write-temp-then-rename, as the existing storage layer does) so a crash mid-write never leaves a partial artifact; the canonical JSON is the source of truth and the markdown is regenerable from it.",
+        "observability": "Each plan run appends a per-step jsonl trace under the existing workflow-runs log keyed by Epic hash, identical to the other workflows, so a run is fully reconstructable.",
+        "security": "No new external surface: plan reads and writes only local repo files through the existing storage helpers and never calls the network or a tracker during the run; approval and tracker-push stay out-of-band exactly as for the other artifacts."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "PlanTask",
+          "signature": "interface PlanTask { readonly id: string; readonly title: string; readonly summary: string; readonly size: 'S'|'M'|'L'; readonly order: number; readonly dependsOn: readonly string[]; readonly acceptanceChecks: readonly string[]; readonly derivedFrom: readonly string[]; readonly tests: readonly TaskTestRef[]; }",
+          "parameters": [],
+          "returns": {
+            "type": "PlanTask",
+            "meaning": "One atomic, ordered, sized, dependency-labelled unit of work with its own acceptance checks and provenance; the enumerate/critique/finalize steps produce a PlanTask[] for the Story."
+          },
+          "errors": [],
+          "preconditions": [
+            "id is unique within the Story and matches /^t\\d+$/",
+            "every dependsOn id references another PlanTask id in the same Story",
+            "derivedFrom is non-empty (each Task is grounded in an LLD handoff item / citation)"
+          ],
+          "postconditions": [
+            "order is a valid 1-based topological position over the dependsOn edges",
+            "the PlanTask[] dependency graph is acyclic",
+            "the union of derivedFrom covers the approved LLD's handoff items (design coverage)"
+          ]
+        },
+        {
+          "name": "readPlanUpstream",
+          "signature": "function readPlanUpstream(repoPath: string, epicHash: string, storyId: string): PlanUpstream",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "repo root",
+              "optional": false
+            },
+            {
+              "name": "epicHash",
+              "type": "string",
+              "purpose": "16-hex Epic hash",
+              "optional": false
+            },
+            {
+              "name": "storyId",
+              "type": "string",
+              "purpose": "the Story to plan",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "PlanUpstream",
+            "meaning": "The approved+non-stale LLD, the HLD context slice, and the define storyDependsOn edges — the only input s1 reads to enumerate Tasks."
+          },
+          "errors": [
+            {
+              "type": "ArtifactNotApprovedError",
+              "condition": "raised by the sc3 gate when the LLD is unapproved/rejected/stale (s1 never sees an unusable design)"
+            }
+          ],
+          "preconditions": [
+            "the sc3 gate (requireApprovedLld) has been satisfied"
+          ],
+          "postconditions": [
+            "s1 consumes only the returned PlanUpstream; it never re-reads or re-validates the design"
+          ]
+        },
+        {
+          "name": "finalizePlan",
+          "signature": "function finalizePlan(intent: WorkflowIntent, stepOutputs: Readonly<Record<string, unknown>>, runId: string, elapsedMs: number, llmResponse: Record<string, unknown>): FinalizeResult",
+          "parameters": [
+            {
+              "name": "stepOutputs",
+              "type": "Readonly<Record<string, unknown>>",
+              "purpose": "prior step outputs incl. the enumerated/critiqued/finalized tasks",
+              "optional": false
+            },
+            {
+              "name": "llmResponse",
+              "type": "Record<string, unknown>",
+              "purpose": "the synthesized PlanArtifact body",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "FinalizeResult",
+            "meaning": "ok with the validated PlanArtifact, or a retryable schema failure when the Task graph is cyclic, mis-ordered, has dangling dependsOn, or under-covers the design."
+          },
+          "errors": [
+            {
+              "type": "schema-failure (retryable)",
+              "condition": "PlanTask graph is not acyclic, order is not a valid topo order, a dependsOn id is unknown, or derivedFrom does not cover the LLD handoff items"
+            }
+          ],
+          "preconditions": [
+            "the enumerate/critique/finalize steps have produced a PlanTask[]"
+          ],
+          "postconditions": [
+            "s1's acyclic + design-coverage + storyDependsOn-consistency validation runs here, mirroring the existing finalize dependency-DAG check pattern"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "PlanTask",
+        "change": "new",
+        "details": "New Task-tier record introduced by sc1; carries id/title/summary/size/order/dependsOn/acceptanceChecks/derivedFrom, with tests[] filled by s4. It is the atomic element of PlanBody.tasks and the unit build consumes one at a time.",
+        "schemaDiff": "+ interface PlanTask { id; title; summary; size; order; dependsOn[]; acceptanceChecks[]; derivedFrom[]; tests[] }",
+        "callSites": [
+          "src/workflow/orchestrator.ts (the new finalizePlan arm validates PlanTask[])",
+          "src/workflow/artifacts/plan.ts (new artifact module defining PlanTask, mirroring artifacts/lld.ts)"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "implements",
+        "howDetails": "s1 owns and produces the PlanTask shape; the enumerate step emits PlanTask[] and finalizePlan enforces its invariants (acyclic, topo order, coverage) before the artifact is accepted."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "s1 calls readPlanUpstream to obtain the approved+non-stale LLD + HLD slice + storyDependsOn; it never re-reads or re-validates the design, delegating all approval/staleness decisions to the gate."
+      },
+      {
+        "contractId": "sc4",
+        "role": "consumes",
+        "howDetails": "s1 leaves each PlanTask's tests[] empty for s4 (TaskTestPlan) to populate; it does not name tests itself, keeping the test contract owned by s4."
+      },
+      {
+        "contractId": "sc5",
+        "role": "consumes",
+        "howDetails": "s1's enumerate/critique/finalize logic runs as steps within the fixed PlanOrchestration step plan, and its Task-graph validation is invoked from the finalizePlan arm sc5 defines."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The enumerated PlanTask[] contains a dependency cycle.",
+          "detection": "finalizePlan runs a topological sort over the dependsOn edges and detects a back-edge (unresolved nodes remain after Kahn's algorithm).",
+          "response": "Return a retryable schema failure naming the cycle members; the LLM re-emits corrected tasks. No artifact is written.",
+          "userImpact": "None visible — the run retries internally; only a persistent failure surfaces to the user.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A PlanTask.dependsOn references a Task id that does not exist in the Story.",
+          "detection": "finalizePlan checks every dependsOn id against the set of emitted Task ids and finds an unknown id.",
+          "response": "Return a retryable schema failure listing the dangling id.",
+          "userImpact": "None visible; internal retry.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The Tasks under-cover the approved design (a handoff item has no covering Task).",
+          "detection": "finalizePlan diffs the union of tasks' derivedFrom against the LLD handoff item set (contractDetails/dataModelChanges/errorPaths/testStrategy) and finds an uncovered item.",
+          "response": "Return a retryable schema failure naming the uncovered handoff item so tasks.critique/finalize can add a Task.",
+          "userImpact": "None visible; internal retry.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Task ordering contradicts the define Story dependency context.",
+          "detection": "finalizePlan checks the Task order against the storyDependsOn edges from the PlanUpstream and finds an inconsistency.",
+          "response": "Return a retryable schema failure.",
+          "userImpact": "None visible; internal retry.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The Story's LLD is unapproved, rejected, or stale when planning starts.",
+          "detection": "readPlanUpstream/requireApprovedLld (sc3) raises ArtifactNotApprovedError before s1 enumerates anything.",
+          "response": "The run terminates with the gate's message; no PlanTasks are produced.",
+          "userImpact": "The user must approve or refresh (re-run/ack-stale) the design before planning.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A tiny LLD whose handoff describes a single change.",
+          "expected": "Exactly one PlanTask, order 1, empty dependsOn; passes the acyclic + coverage checks trivially."
+        },
+        {
+          "input": "A Story whose Tasks are fully parallel (no inter-Task dependencies).",
+          "expected": "All Tasks have empty dependsOn and distinct order values; any topological order is accepted as valid."
+        },
+        {
+          "input": "A new-capability-flavor LLD with no migration section.",
+          "expected": "No migration-derived Tasks; coverage is computed only over the present handoff items, and the absence of migration is not treated as under-coverage."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "s1 never re-reads or re-validates the approved design; every approval/staleness decision stays behind the sc3 gate, so the enumeration always operates on an already-validated PlanUpstream.",
+          "source": "c2"
+        },
+        {
+          "text": "The plan's finalize Task-graph validation mirrors the existing finalizeArtifact cross-artifact-invariant pattern and must not alter or weaken the existing define/design.story dependency-DAG checks it sits beside.",
+          "source": "c1"
+        },
+        {
+          "text": "Task-level ordering must respect the define Story dependency graph; the plan may sub-order within the Story but must never contradict the Story's place in that graph.",
+          "source": "c3"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Exercise the deterministic finalizePlan validation over hand-crafted PlanTask[] fixtures without any LLM.",
+          "subjects": [
+            "finalizePlan: acyclic check rejects a cyclic dependsOn graph",
+            "finalizePlan: rejects dangling dependsOn ids",
+            "finalizePlan: rejects order that is not a valid topological order",
+            "finalizePlan: rejects design under-coverage (a handoff item with no covering derivedFrom)",
+            "finalizePlan: accepts a valid single-task and a valid multi-task graph",
+            "PlanTask id/shape validation (t\\d+ ids, non-empty derivedFrom)"
+          ],
+          "fixturesNeeded": [
+            "a valid approved LLD fixture with a small handoff",
+            "PlanTask[] fixtures: valid, cyclic, dangling-dep, mis-ordered, under-covering"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Walk the plan workflow end-to-end through the MCP phase loop with canned LLM step responses (the design.story-e2e pattern).",
+          "subjects": [
+            "start->plan->step(context.assemble..checklist.verify)->synthesize writes a PlanArtifact under the plan paths",
+            "the produced PlanArtifact.body.tasks is ordered/sized/dependency-labelled and addressable as epic-slug/story-id/task-id",
+            "a plan run over an unapproved/stale LLD is refused by the sc3 gate"
+          ],
+          "fixturesNeeded": [
+            "seeded approved+non-stale LLD on disk",
+            "seeded unapproved and stale LLD variants"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "unit: finalizePlan rejects design under-coverage",
+            "integration: e2e run produces a PlanArtifact whose tasks' derivedFrom covers the LLD handoff items"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "unit: PlanTask shape validation (size/order/dependsOn present)",
+            "integration: produced tasks each carry size, order, and dependsOn"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "unit: finalizePlan acyclic check rejects a cycle",
+            "unit: finalizePlan rejects order inconsistent with storyDependsOn",
+            "integration: e2e produced task graph is acyclic and consistent with the define Story dependency context"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "unit: PlanTask ids are Story-scoped t\\d+",
+            "integration: the persisted artifact resolves as epic-slug/story-id/task-id via the plan storage paths"
+          ]
+        }
+      ],
+      "testFramework": "node:test (tsx --test), mirroring the existing src/workflow/**/__tests__ and src/mcp/workflow-step/__tests__ suites"
+    },
+    "migration": {
+      "stateBefore": "Today the workflow framework has no `plan` stage: the WorkflowName union covers stub/define/design.epic/design.story/tracker, the orchestrator's prepareDecompose/prepareSynthesize/finalizeArtifact seams have no 'plan' arm, and there is no PlanTask type or artifacts/plan.ts module [[c1]]. Task-tier work is not captured as a first-class artifact.",
+      "stateAfter": "The framework gains an additive 'plan' member in the WorkflowName union, a new artifacts/plan.ts defining PlanTask/PlanArtifact, and a 'plan' arm on each orchestrator seam whose finalizePlan validates the PlanTask graph. Existing workflows and their artifacts are byte-for-byte unaffected; only new code paths are added.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the new artifacts/plan.ts module (PlanTask + PlanArtifact types + renderer). Pure addition; nothing imports it yet.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add 'plan' to the WorkflowName union and register the plan runner set via registerWorkflowRunners. Additive; the executor gains new runner keys but existing keys are untouched.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add the 'plan' arm to prepareDecompose/prepareSynthesize/finalizeArtifact (and the MCP pathsForWorkflow) as new switch cases; do not edit existing cases.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "No data backfill: existing DEF-/HLD-/LLD- artifacts are not touched. The first PlanArtifact is written only when a user runs the plan stage.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No existing public API changes: the orchestrator seam signatures are unchanged (only new switch branches are added), and no existing artifact schema is modified. Every existing workflow (stub/define/design.epic/design.story/tracker) must continue to behave identically; the plan additions are guarded by the new 'plan' workflow name and never execute for other workflows.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Direct enumerate + deterministic finalize-validate",
+        "oneLineSummary": "tasks.enumerate emits fully-formed PlanTasks; tasks.critique/finalize are LLM refinement turns; finalizePlan deterministically validates the graph (acyclic + consistent + covers the design) and fails synthesize on violation.",
+        "approach": "s1's enumeration produces PlanTask[] directly in one LLM step, each Task already carrying id/title/summary/size/order/dependsOn/acceptanceChecks/derivedFrom (tests are filled by s4). tasks.critique flags missing/over-sized/misordered tasks; tasks.finalize applies fixes. All hard guarantees live in finalizePlan (deterministic): acyclic dependsOn, order is a valid topological order, every dependsOn id exists, and derivedFrom covers the LLD handoff items and is consistent with the define storyDependsOn context. A failure returns a retryable synthesize error, mirroring the existing finalizers.",
+        "pros": [
+          "Puts every acceptance criterion behind a single deterministic gate in finalizePlan, so correctness does not depend on the LLM self-policing.",
+          "Mirrors the existing finalize dependency-DAG check pattern.",
+          "Simplest fit to the HLD's fixed six-step recipe — no extra schema."
+        ],
+        "cons": [
+          "A single enumerate turn can under-cover the design; relies on tasks.critique + the finalize coverage check.",
+          "derivedFrom coverage is only as good as the LLD handoff structure."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Coverage-matrix-first enumeration",
+        "oneLineSummary": "tasks.enumerate first builds a matrix mapping each LLD handoff item to one or more Tasks, then derives the PlanTask[] from the matrix so design coverage is structural.",
+        "approach": "The enumerate step emits an intermediate coverage matrix keyed by LLD handoff item; every handoff item must map to at least one Task before Tasks are materialised. PlanTasks inherit derivedFrom from the matrix keys; finalizePlan still runs the acyclic + consistency checks, but coverage is by construction.",
+        "pros": [
+          "Design coverage is structural: no handoff item can be silently dropped.",
+          "derivedFrom provenance is precise — each Task's grounding is its matrix key."
+        ],
+        "cons": [
+          "Adds an intermediate matrix schema beyond sc1 PlanTask, widening s1's private surface.",
+          "Over-granulates small Stories, forcing tasks.critique to merge."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Strongest structural coverage but adds an intermediate matrix schema (partial on sc1) and over-granulates small Stories; its coverage benefit is captured by folding the item->Task coverage requirement into a1's deterministic finalize check, so a1 wins without a2's added surface."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 how-does-it-work: workflow skeleton + finalizeArtifact seam + acyclic dependency-check pattern",
+      "quotedText": "finalizeArtifact switches on workflow and validates cross-artifact invariants (Story dependency DAG + coverage) before an artifact is accepted; finalizePlan mirrors this pattern."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 how-does-it-work: LLD handoff + sc3 gate/staleness",
+      "quotedText": "LldBody/LldArtifact carry the handoff block; the approved+non-stale LLD arrives via requireApprovedLld/readPlanUpstream (reusing computeHldEffectiveHash + scanLldStaleness); s1 never re-reads or re-validates the design."
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1 prose-retrieval: Task shape + ordering rule (meta-workflow-framework.md)",
+      "quotedText": "The Task shape is ordered + sized (S/M/L) + dependency-labelled + per-Task acceptance checks; Task-level ordering must respect define's Story dependency graph."
+    }
+  ]
+}

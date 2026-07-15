@@ -1,0 +1,383 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1784125878231-vwfaxe",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-07-15T14:38:16.418Z",
+    "model": "client",
+    "elapsedMs": 418180,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1cd9a4c34f403a80",
+    "epicSlug": "add-plan-workflow-insrc-framework-4th",
+    "storyId": "s2",
+    "hldBaseRunId": "wf-1784121669696-i1rc6r",
+    "hldEffectiveHash": "c7645d42a9f5e691c82633a1edd384aede04bf62007cfc744076c8decb49d90c",
+    "hldAmendmentsApplied": [],
+    "approvedAt": "2026-07-15T14:40:12.587Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Implement `plan` as a new fine-grained instance of the shared workflow skeleton, peer to define/design.epic/design.story. A single runner module registers a fixed six-step recipe (context.assemble -> tasks.enumerate -> tasks.critique -> tasks.finalize -> test-strategy.write -> checklist.verify) whose outputs the orchestrator's three per-workflow arms turn into a persisted, cited PlanArtifact for exactly one Story. A new gate reads the Story's approved, non-stale LLD (adding requireApprovedLld by mirroring requireApprovedHld and reusing the existing effective-hash/staleness machinery), and a new storage helper writes the artifact under the as-built slug-md + hash-json convention. Nothing about the executor, state store, approval flow, or MCP phase loop changes except a single 'plan' arm added at each existing seam.",
+      "ownedContracts": [
+        {
+          "id": "sc3",
+          "name": "PlanUpstreamGate",
+          "purpose": "The read+gate boundary: obtain the Story's approved, non-stale LLD plus the cross-cutting context needed to enumerate Tasks, or refuse. Isolates every 'is the design usable?' decision behind one contract.",
+          "interfaceSketch": "interface PlanUpstream {\n  readonly lld: LldArtifact;                 // approved + non-stale\n  readonly hldSlice: HldContextSlice;        // cross-cutting context for this Story\n  readonly storyDependsOn: readonly string[];// define Story dependency edges\n}\n// declarations only (no bodies):\nfunction requireApprovedLld(repoPath: string, epicHash: string, storyId: string): LldArtifact;\nfunction readPlanUpstream(repoPath: string, epicHash: string, storyId: string): PlanUpstream;",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s1"
+          ],
+          "assumptions": [
+            "c5",
+            "c6"
+          ]
+        }
+      ],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s2",
+        "owns": [
+          "sc3"
+        ],
+        "depends": [],
+        "internal": "Private to s2: how approval is checked and how staleness is recomputed (reading meta.approvedAt, recomputing the effective hash, honoring staleAckedAt). Callers only see either a usable PlanUpstream or a typed refusal; the comparison mechanics stay inside the gate."
+      },
+      "rolloutPhase": "Phase B — Gate, persistence, and test naming",
+      "nonFunctional": {
+        "performance": "No new hard latency target; plan runs are LLM-bound like the other fine-grained workflows. The deterministic parts (gate read, staleness recompute, atomic persist) must stay O(size of one LLD + one Story's Tasks) and sub-second, matching design.story's gate/persist cost.",
+        "durability": "The PlanArtifact JSON + markdown are written atomically (write-temp-then-rename, as the existing storage layer does) so a crash mid-write never leaves a partial artifact; the canonical JSON is the source of truth and the markdown is regenerable from it.",
+        "observability": "Each plan run appends a per-step jsonl trace under the existing workflow-runs log keyed by Epic hash, identical to the other workflows, so a run is fully reconstructable.",
+        "security": "No new external surface: plan reads and writes only local repo files through the existing storage helpers and never calls the network or a tracker during the run; approval and tracker-push stay out-of-band exactly as for the other artifacts."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "requireApprovedLld",
+          "signature": "function requireApprovedLld(repoPath: string, epicHash: string, storyId: string): LldArtifact",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "repo root",
+              "optional": false
+            },
+            {
+              "name": "epicHash",
+              "type": "string",
+              "purpose": "16-hex Epic hash",
+              "optional": false
+            },
+            {
+              "name": "storyId",
+              "type": "string",
+              "purpose": "the Story whose LLD is being gated",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "LldArtifact",
+            "meaning": "The approved, non-stale LLD; the function throws rather than returns when the design is unusable, mirroring requireApprovedHld."
+          },
+          "errors": [
+            {
+              "type": "ArtifactMissingError",
+              "condition": "no LLD JSON exists at the lldArtifactPaths location for (epicHash, storyId)"
+            },
+            {
+              "type": "ArtifactNotApprovedError",
+              "condition": "meta.approvedAt is missing, meta.rejectedAt is set, OR the recomputed effective hash differs from meta.hldEffectiveHash and meta.staleAckedAt is absent (stale)"
+            }
+          ],
+          "preconditions": [
+            "the Story exists in the approved Define and its LLD has been produced"
+          ],
+          "postconditions": [
+            "the returned LldArtifact is approved AND either non-stale or stale-acked"
+          ]
+        },
+        {
+          "name": "readPlanUpstream",
+          "signature": "function readPlanUpstream(repoPath: string, epicHash: string, storyId: string): PlanUpstream",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "repo root",
+              "optional": false
+            },
+            {
+              "name": "epicHash",
+              "type": "string",
+              "purpose": "16-hex Epic hash",
+              "optional": false
+            },
+            {
+              "name": "storyId",
+              "type": "string",
+              "purpose": "the Story to plan",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "PlanUpstream",
+            "meaning": "{ lld, hldSlice, storyDependsOn } — the approved+non-stale LLD, the HLD context slice for this Story, and the define Story dependency edges."
+          },
+          "errors": [
+            {
+              "type": "ArtifactNotApprovedError",
+              "condition": "propagated from requireApprovedLld (or requireApprovedHld) when the LLD or its HLD is unusable"
+            }
+          ],
+          "preconditions": [
+            "requireApprovedLld and requireApprovedHld both succeed for (epicHash, storyId)"
+          ],
+          "postconditions": [
+            "the PlanUpstream contains only approved, current inputs; s1 can enumerate directly from it without any further approval/staleness check"
+          ]
+        },
+        {
+          "name": "computeHldEffectiveHash",
+          "signature": "function computeHldEffectiveHash(baseRunId: string, approvedAmendmentIds: readonly string[]): string",
+          "parameters": [
+            {
+              "name": "baseRunId",
+              "type": "string",
+              "purpose": "the LLD's hldBaseRunId",
+              "optional": false
+            },
+            {
+              "name": "approvedAmendmentIds",
+              "type": "readonly string[]",
+              "purpose": "currently-approved HLD amendment ids",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "The current effective hash of the HLD; compared against the LLD's stored meta.hldEffectiveHash to detect staleness. Reused verbatim from lld.ts."
+          },
+          "errors": [],
+          "preconditions": [
+            "the LLD meta carries hldBaseRunId + hldEffectiveHash"
+          ],
+          "postconditions": [
+            "equality with meta.hldEffectiveHash means non-stale; inequality means stale unless staleAckedAt is set"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "PlanUpstream",
+        "change": "new",
+        "details": "New in-memory read-model (not persisted) bundling the approved LLD, the HLD context slice (via extractHldContextSlice), and the define Story dependsOn edges. It is sc3's return type and s1's sole input.",
+        "schemaDiff": "+ interface PlanUpstream { lld: LldArtifact; hldSlice: HldContextSlice; storyDependsOn: readonly string[] }",
+        "callSites": [
+          "src/workflow/gates.ts (new requireApprovedLld + readPlanUpstream live beside requireApprovedHld)",
+          "src/workflow/artifacts/lld.ts (extractHldContextSlice reused to build hldSlice)"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc3",
+        "role": "implements",
+        "howDetails": "s2 owns and implements sc3: requireApprovedLld is the throwing gate (mirroring requireApprovedHld) and readPlanUpstream composes it with requireApprovedHld + extractHldContextSlice + the Define storyDependsOn to return the PlanUpstream. All approval/staleness mechanics stay private to these two functions; s1 sees only the assembled PlanUpstream or a thrown ArtifactNotApprovedError."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The Story's LLD is not approved yet (meta.approvedAt missing).",
+          "detection": "requireApprovedLld reads the LLD JSON and finds meta.approvedAt absent.",
+          "response": "Throw ArtifactNotApprovedError naming the Story + the approve command, exactly as requireApprovedHld does.",
+          "userImpact": "The plan run stops before enumeration; the user is told to approve the LLD.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The Story's LLD was rejected (meta.rejectedAt set).",
+          "detection": "requireApprovedLld sees meta.rejectedAt present.",
+          "response": "Throw ArtifactNotApprovedError reporting the rejection.",
+          "userImpact": "The plan run stops; the user must re-run/re-approve design.story.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The LLD is approved but stale (its HLD effective state changed after approval).",
+          "detection": "requireApprovedLld recomputes computeHldEffectiveHash(meta.hldBaseRunId, currentApprovedAmendmentIds) and finds it differs from meta.hldEffectiveHash, with meta.staleAckedAt absent.",
+          "response": "Throw ArtifactNotApprovedError reporting the staleness (same reason string shape scanLldStaleness emits).",
+          "userImpact": "The plan run stops; the user re-runs design.story against the current HLD or ack-stales it.",
+          "recoverable": true
+        },
+        {
+          "scenario": "No LLD JSON exists for the Story at all.",
+          "detection": "requireApprovedLld finds no file at the lldArtifactPaths(epicHash, storyId) location.",
+          "response": "Throw ArtifactMissingError telling the user to run design.story first.",
+          "userImpact": "The plan run stops; the user must design the Story before planning it.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "An approved-but-stale LLD whose meta.staleAckedAt is set (a human consciously overrode the staleness).",
+          "expected": "requireApprovedLld returns the LLD (stale-ack allows it), so planning proceeds — identical to how scanLldStaleness treats an acked-stale artifact."
+        },
+        {
+          "input": "An approved, non-stale LLD with zero approved HLD amendments (Phase D case: hldEffectiveHash == sha256(hldBaseRunId)).",
+          "expected": "computeHldEffectiveHash matches meta.hldEffectiveHash; the gate passes and readPlanUpstream assembles the PlanUpstream."
+        },
+        {
+          "input": "An approved LLD whose Story has no dependsOn edges in the Define.",
+          "expected": "readPlanUpstream returns storyDependsOn = [] (empty is valid, not an error)."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Staleness is defined in exactly one place: requireApprovedLld reuses computeHldEffectiveHash + the scanLldStaleness comparison and honors meta.staleAckedAt; it must never introduce a second, divergent notion of 'stale'.",
+          "source": "c1"
+        },
+        {
+          "text": "The gate signals refusal by THROWING ArtifactNotApprovedError, exactly like requireApprovedEpic/requireApprovedHld, so downstream error handling stays uniform across all gates.",
+          "source": "c1"
+        },
+        {
+          "text": "readPlanUpstream sources every input from the same approved DEF-/HLD-/LLD- artifacts the other gates read (via extractHldContextSlice + the Define story.dependsOn); it introduces no new data source.",
+          "source": "c2"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Exercise requireApprovedLld directly over seeded LLD-meta fixtures, mirroring effective-and-staleness.test.ts.",
+          "subjects": [
+            "requireApprovedLld returns the LLD when approved + non-stale",
+            "requireApprovedLld throws ArtifactNotApprovedError when meta.approvedAt is missing",
+            "requireApprovedLld throws ArtifactNotApprovedError when meta.rejectedAt is set",
+            "requireApprovedLld throws when the recomputed effective hash != meta.hldEffectiveHash and staleAckedAt is absent",
+            "requireApprovedLld returns the LLD when stale but meta.staleAckedAt is set",
+            "requireApprovedLld throws ArtifactMissingError when no LLD file exists",
+            "readPlanUpstream assembles { lld, hldSlice, storyDependsOn } from approved artifacts (storyDependsOn defaults to [])"
+          ],
+          "fixturesNeeded": [
+            "seeded LLD metas: approved/non-stale, unapproved, rejected, stale, stale-acked",
+            "an approved HLD + Define fixture so extractHldContextSlice + story.dependsOn resolve"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Confirm the plan workflow refuses at the gate through the MCP phase loop.",
+          "subjects": [
+            "a plan run whose Story LLD is unapproved returns an error (no PlanArtifact written)",
+            "a plan run whose Story LLD is stale (no ack) returns an error",
+            "a plan run whose Story LLD is approved+non-stale proceeds past the gate"
+          ],
+          "fixturesNeeded": [
+            "seeded approved+non-stale, unapproved, and stale LLD variants on disk"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "unit: requireApprovedLld throws ArtifactNotApprovedError on missing approvedAt",
+            "unit: requireApprovedLld throws on rejectedAt",
+            "integration: plan run over an unapproved LLD errors with no artifact written"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "unit: requireApprovedLld throws when effective hash differs and staleAckedAt is absent",
+            "unit: requireApprovedLld allows a stale-acked LLD",
+            "integration: plan run over a stale (un-acked) LLD errors"
+          ]
+        }
+      ],
+      "testFramework": "node:test (tsx --test), extending src/workflow/amendments/__tests__/effective-and-staleness.test.ts + the gates test patterns"
+    },
+    "migration": {
+      "stateBefore": "Today gates.ts has requireApprovedEpic + requireApprovedHld (throwing ArtifactNotApprovedError) and ackStaleArtifact, and LLD staleness is computed by scanLldStaleness in amendments/staleness.ts against computeHldEffectiveHash — but there is NO requireApprovedLld and no PlanUpstream read-model [[c1]]. Nothing gates an LLD for downstream consumption by a plan stage.",
+      "stateAfter": "gates.ts gains two additive functions — requireApprovedLld (a throwing peer of requireApprovedHld that also checks staleness via the existing computeHldEffectiveHash comparison, honoring staleAckedAt) and readPlanUpstream (composing them into the PlanUpstream read-model). No existing gate is modified.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the PlanUpstream interface (in-memory read-model) beside the existing gate types. Pure addition.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add requireApprovedLld to gates.ts, reusing readHldArtifact-style reads, the ArtifactNotApprovedError type, and computeHldEffectiveHash + the scanLldStaleness comparison (honoring staleAckedAt). Additive; existing gates untouched.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add readPlanUpstream to gates.ts, composing requireApprovedLld + requireApprovedHld + extractHldContextSlice + the Define story.dependsOn. Additive.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "No data backfill: existing LLD/HLD/Define artifacts already carry hldBaseRunId/hldEffectiveHash, so the staleness recompute works on them as-is.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No existing public API changes: requireApprovedEpic/requireApprovedHld/ackStaleArtifact/scanLldStaleness keep their signatures and behaviour. The two new functions are purely additive and only invoked by the plan runner; nothing else calls them, so no existing caller is affected.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Two functions: strict requireApprovedLld + composing readPlanUpstream",
+        "oneLineSummary": "requireApprovedLld does the throw-on-unusable check (unapproved/rejected/stale, honoring staleAckedAt); readPlanUpstream calls it then assembles the PlanUpstream (LLD + HLD slice + storyDependsOn).",
+        "approach": "requireApprovedLld(repoPath, epicHash, storyId) reads the LLD JSON, throws ArtifactNotApprovedError when meta.approvedAt is missing or meta.rejectedAt is set, then recomputes the effective hash via computeHldEffectiveHash and compares it to meta.hldEffectiveHash exactly as scanLldStaleness does; on mismatch it throws unless meta.staleAckedAt is present. readPlanUpstream calls requireApprovedLld, then reads the approved HLD (via requireApprovedHld) to build the HLD slice with extractHldContextSlice, and reads the approved Define's story.dependsOn, returning a PlanUpstream. The two mirror the existing requireApprovedHld / readUpstream split in design.story.",
+        "pros": [
+          "requireApprovedLld is a drop-in peer of requireApprovedHld: same signature shape, same error type, so callers and tests read identically.",
+          "Staleness is a verbatim reuse of computeHldEffectiveHash + the scanLldStaleness comparison — no second definition of 'stale' (honors invariant).",
+          "Clean separation: the throw/refuse decision (requireApprovedLld) is independently unit-testable from the assembly (readPlanUpstream)."
+        ],
+        "cons": [
+          "Two functions instead of one; a caller could misuse requireApprovedLld without the full PlanUpstream, though that is the same shape design.story already uses."
+        ],
+        "costEstimate": "S"
+      },
+      {
+        "id": "a2",
+        "name": "Single readPlanUpstream that returns a discriminated result",
+        "oneLineSummary": "One function returns { ok: true, upstream } | { ok: false, reason: 'unapproved'|'rejected'|'stale' } instead of throwing.",
+        "approach": "readPlanUpstream performs the approval + staleness checks inline and returns a discriminated union rather than throwing; the plan runner branches on ok. Staleness still reuses computeHldEffectiveHash + the scanLldStaleness comparison and honors staleAckedAt.",
+        "pros": [
+          "No exception control-flow; the refusal reason is a typed value the runner can render directly.",
+          "One entry point for s1 to consume."
+        ],
+        "cons": [
+          "Diverges from the framework convention: every existing gate (requireApprovedEpic/requireApprovedHld) signals refusal by throwing ArtifactNotApprovedError, so a result-union gate would be the odd one out and complicate uniform error handling.",
+          "Harder to reuse the existing gate-refusal test/asserting patterns that expect throws."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Functionally refuses correctly but diverges from sc3's declared throwing requireApprovedLld (returns LldArtifact) and the framework-wide throw-based gate convention (partial on sc3/k7); a1 wins on contract-fidelity and convention-consistency."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 how-does-it-work: requireApprovedHld + LLD staleness machinery (gates.ts, staleness.ts, lld.ts)",
+      "quotedText": "gates.ts has requireApprovedHld (throws ArtifactNotApprovedError); LLD staleness is recomputed via scanLldStaleness + computeHldEffectiveHash, honoring meta.staleAckedAt/staleAckedReason; there is NO requireApprovedLld today."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 how-does-it-work: PlanUpstream assembly (extractHldContextSlice + Define story.dependsOn)",
+      "quotedText": "readPlanUpstream returns the approved LLD + a HLD context slice (extractHldContextSlice) + the define Story dependsOn edges, all from the same approved DEF-/HLD-/LLD- artifacts."
+    }
+  ]
+}

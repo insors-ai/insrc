@@ -70,7 +70,17 @@ import {
 	type LldArtifact,
 	type LldBody,
 } from './artifacts/lld.js';
-import { appendStoryToDefine, nextStoryId, readBaseHld, readDefineArtifact, requireApprovedEpic, requireApprovedHld } from './gates.js';
+import {
+	checkPlanTaskGraph,
+	checkTestStrategyCoverage,
+	isCitationArray as isPlanCitationArray,
+	isPlanBody,
+	PLAN_SCHEMA_VERSION,
+	renderPlanMarkdown,
+	type PlanArtifact,
+	type PlanBody,
+} from './artifacts/plan.js';
+import { appendStoryToDefine, nextStoryId, readBaseHld, readDefineArtifact, requireApprovedEpic, requireApprovedHld, requireApprovedLld } from './gates.js';
 import {
 	isTrackerChecklistResult,
 	isTrackerPostRefs,
@@ -122,6 +132,7 @@ export function prepareDecompose(intent: WorkflowIntent): DecomposerPrompt {
 		case 'define':       return defineDecomposer(intent);
 		case 'design.epic':  return designEpicDecomposer(intent);
 		case 'design.story': return designStoryDecomposer(intent);
+		case 'plan':         return planDecomposer(intent);
 		case 'tracker.push':
 		case 'tracker.sync':
 		case 'tracker.post':
@@ -192,6 +203,7 @@ export function prepareSynthesize(
 		case 'define':       return defineSynthesizer(intent, stepOutputs);
 		case 'design.epic':  return designEpicSynthesizer(intent, stepOutputs);
 		case 'design.story': return designStorySynthesizer(intent, stepOutputs);
+		case 'plan':         return planSynthesizer(intent, stepOutputs);
 		case 'tracker.push':
 		case 'tracker.sync':
 		case 'tracker.post':
@@ -291,6 +303,7 @@ export function finalizeArtifact(
 		case 'define':       return finalizeDefine(intent, stepOutputs, runId, elapsedMs, llmResponse);
 		case 'design.epic':  return finalizeDesignEpic(intent, stepOutputs, runId, elapsedMs, llmResponse);
 		case 'design.story': return finalizeDesignStory(intent, stepOutputs, runId, elapsedMs, llmResponse);
+		case 'plan':         return finalizePlan(intent, stepOutputs, runId, elapsedMs, llmResponse);
 		case 'tracker.push':
 		case 'tracker.sync':
 		case 'tracker.post':
@@ -1324,6 +1337,189 @@ function requireStoryId(intent: WorkflowIntent): string {
 		throw new Error(`design.story requires intent.params.storyId`);
 	}
 	return id;
+}
+
+// ---------------------------------------------------------------------------
+// plan workflow (Story LLD -> N Tasks)
+// ---------------------------------------------------------------------------
+
+function planDecomposer(intent: WorkflowIntent): DecomposerPrompt {
+	const epicHash = requireEpicHash(intent);
+	const storyId  = requireStoryId(intent);
+	const systemPrompt = [
+		'You are the workflow decomposer for the `plan` workflow.',
+		'',
+		'The `plan` workflow always runs the SAME six steps in the SAME order:',
+		'  s1: `context.assemble`     — read the approved LLD handoff + HLD slice',
+		'  s2: `tasks.enumerate`      — PlanTask[] (ordered / sized / dependency-labelled)',
+		'  s3: `tasks.critique`       — flag missing / over-sized / mis-ordered Tasks',
+		'  s4: `tasks.finalize`       — apply the critique',
+		'  s5: `test-strategy.write`  — name per-Task tests + coverage',
+		'  s6: `checklist.verify`     — plan audit',
+		'',
+		'Params are `{}` on every step. Runners read prior step outputs via the executor.',
+	].join('\n');
+	const userTurn = `Focus: ${intent.focus}\nEpic hash: ${epicHash}   Story: ${storyId}\nEmit the plan JSON now.`;
+	const schema = {
+		type: 'object',
+		required: ['workflow', 'steps'],
+		properties: {
+			workflow:  { const: 'plan' },
+			rationale: { type: 'string' },
+			steps: {
+				type:     'array',
+				minItems: 6,
+				maxItems: 6,
+				items: {
+					type: 'object',
+					required: ['id', 'runner', 'params'],
+					properties: {
+						id:     { type: 'string', pattern: '^s[1-6]$' },
+						runner: { enum: ['context.assemble', 'tasks.enumerate', 'tasks.critique', 'tasks.finalize', 'test-strategy.write', 'checklist.verify'] },
+						params: { type: 'object' },
+						note:   { type: 'string' },
+					},
+					additionalProperties: false,
+				},
+			},
+		},
+		additionalProperties: false,
+	} as const;
+	return { systemPrompt, userTurn, schema: schema as unknown as Record<string, unknown> };
+}
+
+function planSynthesizer(
+	intent:      WorkflowIntent,
+	stepOutputs: Readonly<Record<string, unknown>>,
+): SynthesizerPrompt {
+	const epicHash = requireEpicHash(intent);
+	const storyId  = requireStoryId(intent);
+	const systemPrompt = [
+		'You are the synthesizer for the `plan` workflow.',
+		'',
+		'Read s5 (`test-strategy.write` — the FINAL tasks + coverage) and emit a PlanArtifact JSON matching the schema.',
+		'',
+		'HARD RULES:',
+		'- `body.tasks` MUST be the s5 tasks verbatim (each with its `tests[]` filled).',
+		'- `body.testStrategyCoverage` MUST be the s5 testStrategyCoverage verbatim.',
+		'- `citations[]` define the `derivedFrom` grounding ids (c1, c2, ...). Every id used in any Task\'s `derivedFrom` MUST appear in `citations[]`, and every citation MUST be referenced by at least one Task (no dead citations). Each citation grounds an LLD handoff item — cite it as { kind: "prior-artifact", ref: "LLD <storyId> <handoff item>" } or an analyze bundle from s1.',
+	].join('\n');
+	const userTurn = [
+		`Focus: ${intent.focus}   Epic: ${epicHash}   Story: ${storyId}`,
+		'',
+		'Final tasks + coverage (s5 test-strategy.write):',
+		'```json',
+		JSON.stringify(stepOutputs['s5'], null, 2),
+		'```',
+		'',
+		'Emit the PlanArtifact JSON now.',
+	].join('\n');
+	const schema = {
+		type: 'object',
+		required: ['body', 'citations'],
+		properties: {
+			body: {
+				type: 'object',
+				required: ['tasks', 'testStrategyCoverage'],
+				additionalProperties: false,
+				properties: {
+					tasks:                { type: 'array', minItems: 1 },
+					testStrategyCoverage: { type: 'array' },
+				},
+			},
+			citations: {
+				type: 'array',
+				minItems: 1,
+				items: {
+					type: 'object',
+					required: ['id', 'kind', 'ref'],
+					properties: {
+						id:         { type: 'string', pattern: '^c\\d+$' },
+						kind:       { enum: ['step-output', 'analyze-bundle', 'doc', 'code', 'stakeholder', 'convention', 'prior-artifact'] },
+						ref:        { type: 'string', minLength: 1 },
+						quotedText: { type: 'string' },
+					},
+					additionalProperties: false,
+				},
+			},
+		},
+		additionalProperties: false,
+	} as const;
+	return { systemPrompt, userTurn, schema: schema as unknown as Record<string, unknown> };
+}
+
+function finalizePlan(
+	intent:      WorkflowIntent,
+	_stepOutputs: Readonly<Record<string, unknown>>,
+	runId:       string,
+	elapsedMs:   number,
+	llmResponse: Record<string, unknown>,
+): FinalizeResult {
+	if (typeof llmResponse !== 'object' || llmResponse === null) {
+		return { ok: false, failure: schemaFailure(`synthesizer response is not an object`) };
+	}
+	const body      = (llmResponse as { body?: unknown }).body;
+	const citations = (llmResponse as { citations?: unknown }).citations;
+	if (!isPlanBody(body)) {
+		return { ok: false, failure: schemaFailure(`body does not match PlanBody shape`) };
+	}
+	if (!isPlanCitationArray(citations)) {
+		return { ok: false, failure: schemaFailure(`citations must be an array of { id, kind, ref }`) };
+	}
+
+	// Upstream must still be approved + non-stale (gate throws otherwise);
+	// the LLD supplies the plan's anchor + the coverage target.
+	const epicHash = requireEpicHash(intent);
+	const storyId  = requireStoryId(intent);
+	const lld = requireApprovedLld(intent.repoPath, epicHash, storyId);
+	const epicSlug = lld.meta.epicSlug ?? safeDeriveSlug(intent.focus);
+
+	// Deterministic cross-artifact checks — the plan peers of the
+	// define/LLD invariant validators.
+	const graphIssues    = checkPlanTaskGraph(body.tasks, citations);
+	const coverageIssues = checkTestStrategyCoverage(body.tasks, body.testStrategyCoverage, lld.body.testStrategy);
+	const combined = [...graphIssues, ...coverageIssues];
+	if (combined.length > 0) {
+		return { ok: false, failure: { ok: false, kind: 'schema', message: 'Plan cross-artifact checks failed', details: combined } };
+	}
+
+	const artifact: PlanArtifact = {
+		meta: {
+			workflow:      'plan',
+			runId,
+			repoPath:      intent.repoPath,
+			createdAt:     new Date().toISOString(),
+			model:         'client',
+			elapsedMs,
+			repoIndexedAt: intent.repoIndexedAt,
+			schemaVersion: PLAN_SCHEMA_VERSION,
+			epicHash,
+			epicSlug,
+			storyId,
+			lldRunId:         lld.meta.runId,
+			lldEffectiveHash: lld.meta.hldEffectiveHash,
+		},
+		body,
+		citations,
+	};
+	const renderedBody = renderPlanMarkdown(artifact);
+	const check = validateBodyAndCitations({ meta: artifact.meta, body: artifact.body as PlanBody, citations: artifact.citations }, renderedBody);
+	if (!check.ok) return { ok: false, failure: check };
+	const renderedMd = renderedBody + renderCitationBlock(citations);
+	const renderedJson = JSON.stringify(artifact, null, 2) + '\n';
+	log.info(
+		{ workflow: 'plan', runId, epicHash, storyId, tasks: body.tasks.length, citations: citations.length },
+		'finalizePlan: artifact ready',
+	);
+	return {
+		ok: true,
+		finalized: {
+			workflow:   'plan',
+			renderedMd,
+			renderedJson,
+			artifact,
+		},
+	};
 }
 
 // ---------------------------------------------------------------------------

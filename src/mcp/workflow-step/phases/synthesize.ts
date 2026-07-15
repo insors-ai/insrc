@@ -25,6 +25,7 @@ import {
 	extendArtifactPaths,
 	hldArtifactPaths,
 	lldArtifactPaths,
+	planArtifactPaths,
 	runsDirFor,
 	stubArtifactPaths,
 	writeAtomic,
@@ -126,6 +127,13 @@ function pathsForWorkflow(
 			throw new Error(`design.story synthesize requires params.storyId`);
 		}
 		return lldArtifactPaths(repoPath, epicHash, storyId, epicSlug);
+	}
+	if (workflow === 'plan') {
+		const sid = storyId ?? intent.params['storyId'];
+		if (typeof sid !== 'string' || sid.length === 0) {
+			throw new Error(`plan synthesize requires params.storyId`);
+		}
+		return planArtifactPaths(repoPath, epicHash, sid, epicSlug);
 	}
 	if (workflow === 'tracker.push' || workflow === 'tracker.sync' || workflow === 'tracker.post') {
 		const dir = runsDirFor(epicHash);

@@ -16,7 +16,7 @@
  */
 
 import { getLogger } from '../shared/logger.js';
-import type { WorkflowIntent, WorkflowName, WorkflowPlan } from './types.js';
+import type { Citation, WorkflowIntent, WorkflowName, WorkflowPlan } from './types.js';
 import type { ValidationResult } from './synthesizer.js';
 import { renderCitationBlock, validateBodyAndCitations } from './synthesizer.js';
 import {
@@ -36,7 +36,15 @@ import {
 	renderDefineMarkdown,
 	type DefineArtifact,
 	type DefineBody,
+	type DefineStory,
 } from './artifacts/define.js';
+import {
+	EXTEND_SCHEMA_VERSION,
+	renderExtendMarkdown,
+	type ExtendArtifact,
+	type ExtendEvidence,
+	type ExtendScope,
+} from './artifacts/extend.js';
 import {
 	checkInterfaceSketchTypeLevel,
 	checkOwnershipConsistency,
@@ -62,7 +70,7 @@ import {
 	type LldArtifact,
 	type LldBody,
 } from './artifacts/lld.js';
-import { readBaseHld, readDefineArtifact, requireApprovedEpic, requireApprovedHld } from './gates.js';
+import { appendStoryToDefine, nextStoryId, readBaseHld, readDefineArtifact, requireApprovedEpic, requireApprovedHld } from './gates.js';
 import {
 	isTrackerChecklistResult,
 	isTrackerPostRefs,
@@ -76,7 +84,7 @@ import {
 	type TrackerPushRefs,
 	type TrackerSyncRefs,
 } from './artifacts/tracker.js';
-import { defineArtifactPaths, writeAtomic } from './storage.js';
+import { defineArtifactPaths, scopeAnalyzeCachePath, writeAtomic } from './storage.js';
 import { linkDocsToIssues } from './tracker/link.js';
 import { readFileSync } from 'node:fs';
 import {
@@ -363,10 +371,10 @@ function defineDecomposer(intent: WorkflowIntent): DecomposerPrompt {
 		'You are the workflow decomposer for the `define` workflow.',
 		'',
 		'The `define` workflow always runs the SAME four steps in the SAME order:',
-		'  s1: `context.assemble`  — discovery via insrc_analyze_step + flavor detection',
-		'  s2: `epic.frame`        — problem + non-goals + assumptions + constraints',
-		'  s3: `stories.compose`   — Stories with Given/When/Then acceptance criteria',
-		'  s4: `checklist.verify`  — audit against the fixed §9 checklist',
+		'  s1: `scope.assess`      — discovery via insrc_analyze_step + new-vs-extend decision + flavor',
+		'  s2: `epic.frame`        — problem + non-goals + assumptions + constraints (NEW only; skips on extend)',
+		'  s3: `stories.compose`   — Stories with Given/When/Then acceptance criteria (NEW only; skips on extend)',
+		'  s4: `checklist.verify`  — audit against the fixed §9 checklist (new) or the extension (extend)',
 		'',
 		'Emit the plan JSON verbatim. Params are `{}` for every step; the runners read prior step outputs via the executor. Do not deviate.',
 	].join('\n');
@@ -386,7 +394,7 @@ function defineDecomposer(intent: WorkflowIntent): DecomposerPrompt {
 					required: ['id', 'runner', 'params'],
 					properties: {
 						id:     { type: 'string', pattern: '^s[1-4]$' },
-						runner: { enum: ['context.assemble', 'epic.frame', 'stories.compose', 'checklist.verify'] },
+						runner: { enum: ['scope.assess', 'epic.frame', 'stories.compose', 'checklist.verify'] },
 						params: { type: 'object' },
 						note:   { type: 'string' },
 					},
@@ -403,6 +411,31 @@ function defineSynthesizer(
 	intent:      WorkflowIntent,
 	stepOutputs: Readonly<Record<string, unknown>>,
 ): SynthesizerPrompt {
+	// EXTEND branch: the scope decision + new Story already live in s1;
+	// the framework executes the extension deterministically in finalize.
+	// The synthesize turn is a cheap acknowledgement — the LLM does not
+	// reconstruct any artifact (there is no s2/s3 on the extend path).
+	if (defineDecisionOf(stepOutputs) === 'extend') {
+		return {
+			systemPrompt: [
+				'You are the synthesizer for the `define` workflow (EXTEND branch).',
+				'',
+				'The scope classifier (s1 `scope.assess`) already decided this ask EXTENDS an existing Epic',
+				'and composed the new Story. The framework will append the Story to that Epic, propose the HLD',
+				'`storyBoundary.addStory` amendment, and write the ExtendArtifact deterministically — you do NOT',
+				'reconstruct anything here.',
+				'',
+				'Emit exactly `{ "acknowledged": true }`.',
+			].join('\n'),
+			userTurn: 'Emit `{ "acknowledged": true }` now.',
+			schema: {
+				type: 'object',
+				required: ['acknowledged'],
+				properties: { acknowledged: { const: true } },
+				additionalProperties: false,
+			} as unknown as Record<string, unknown>,
+		};
+	}
 	const systemPrompt = [
 		'You are the synthesizer for the `define` workflow.',
 		'',
@@ -465,6 +498,40 @@ function defineSynthesizer(
 	return { systemPrompt, userTurn, schema: schema as unknown as Record<string, unknown> };
 }
 
+// ---------------------------------------------------------------------------
+// scope.assess (s1) output shape + new-vs-extend branch
+// ---------------------------------------------------------------------------
+
+interface ScopeAssessOutput {
+	readonly decision: 'new' | 'extend';
+	readonly scope?:   ExtendScope;
+	readonly notify?:  string;
+	readonly evidence?: readonly { readonly kind?: string; readonly ref?: string; readonly quote?: string }[];
+	readonly target?:  { readonly epicHash?: string; readonly epicSlug?: string };
+	readonly newStory?: {
+		readonly title?:     string;
+		readonly userValue?: string;
+		readonly acceptanceCriteria?: readonly { readonly given?: string; readonly when?: string; readonly then?: string }[];
+	};
+	readonly analyzeBundles?: unknown;
+}
+
+/** Read the s1 scope decision (default `new`). */
+function defineDecisionOf(stepOutputs: Readonly<Record<string, unknown>>): 'new' | 'extend' {
+	const s1 = stepOutputs['s1'] as { decision?: string } | undefined;
+	return s1?.decision === 'extend' ? 'extend' : 'new';
+}
+
+/** Persist the s1 analyze bundles (keyed by Epic hash) so the later
+ *  design phase can reuse the exploration instead of re-running analyze.
+ *  Best-effort: a cache-write failure never aborts the workflow. */
+function persistScopeAnalyzeCache(epicHash: string, bundles: unknown): void {
+	if (bundles === undefined) return;
+	try {
+		writeAtomic(scopeAnalyzeCachePath(epicHash), JSON.stringify({ epicHash, analyzeBundles: bundles }, null, 2) + '\n');
+	} catch { /* cache is best-effort */ }
+}
+
 function finalizeDefine(
 	intent:      WorkflowIntent,
 	stepOutputs: Readonly<Record<string, unknown>>,
@@ -472,6 +539,9 @@ function finalizeDefine(
 	elapsedMs:   number,
 	llmResponse: Record<string, unknown>,
 ): FinalizeResult {
+	if (defineDecisionOf(stepOutputs) === 'extend') {
+		return finalizeDefineExtend(intent, stepOutputs, runId, elapsedMs);
+	}
 	if (typeof llmResponse !== 'object' || llmResponse === null) {
 		return { ok: false, failure: schemaFailure(`synthesizer response is not an object`) };
 	}
@@ -532,9 +602,159 @@ function finalizeDefine(
 	if (!check.ok) return { ok: false, failure: check };
 	const renderedMd = renderedBody + renderCitationBlock(citations);
 	const renderedJson = JSON.stringify(artifact, null, 2) + '\n';
+	// Cache the s1 analyze bundles for the design phase to reuse.
+	persistScopeAnalyzeCache(epicHash, (stepOutputs['s1'] as ScopeAssessOutput | undefined)?.analyzeBundles);
 	log.info(
 		{ workflow: 'define', runId, size: renderedMd.length, citations: citations.length, stories: body.stories.length },
 		'finalizeDefine: artifact ready',
+	);
+	return {
+		ok: true,
+		finalized: {
+			workflow:   'define',
+			renderedMd,
+			renderedJson,
+			artifact,
+		},
+	};
+}
+
+/** EXTEND branch of `define`: deterministically append the new Story to
+ *  the target Epic's Define, propose the HLD `storyBoundary.addStory`
+ *  amendment, and emit an ExtendArtifact. All validation returns happen
+ *  BEFORE any side effect, so a retryable failure never leaves a partial
+ *  write behind. */
+function finalizeDefineExtend(
+	intent:      WorkflowIntent,
+	stepOutputs: Readonly<Record<string, unknown>>,
+	runId:       string,
+	elapsedMs:   number,
+): FinalizeResult {
+	const s1 = stepOutputs['s1'] as ScopeAssessOutput | undefined;
+	if (s1 === undefined || s1.decision !== 'extend') {
+		return { ok: false, failure: schemaFailure(`extend finalize requires s1.decision='extend'`) };
+	}
+	const epicHash = s1.target?.epicHash;
+	if (typeof epicHash !== 'string' || !/^[0-9a-f]{16}$/.test(epicHash)) {
+		return { ok: false, failure: schemaFailure(`extend requires s1.target.epicHash (16-hex); got '${epicHash ?? ''}'`) };
+	}
+	const ns = s1.newStory;
+	if (ns === undefined || typeof ns.title !== 'string' || typeof ns.userValue !== 'string' ||
+		!Array.isArray(ns.acceptanceCriteria) || ns.acceptanceCriteria.length === 0) {
+		return { ok: false, failure: schemaFailure(`extend requires s1.newStory with title, userValue, and >=1 acceptanceCriteria`) };
+	}
+	// s4 scope-boundary hard-fail — a solution-leaking newStory is refused
+	// (same contract as the new branch's sb* items).
+	const s4 = stepOutputs['s4'] as { results?: Array<{ itemId?: string; verdict?: string }> } | undefined;
+	if (s4 !== undefined && Array.isArray(s4.results)) {
+		const boundaryIds = new Set(['sb1', 'sb2', 'sb3']);
+		const failed = s4.results.filter(r =>
+			r.itemId !== undefined && boundaryIds.has(r.itemId) &&
+			(r.verdict === 'missed' || r.verdict === 'ambiguous'),
+		);
+		if (failed.length > 0) {
+			return { ok: false, failure: schemaFailure(`s4 scope-boundary hard-fail on: ${failed.map(f => f.itemId).join(', ')}`) };
+		}
+	}
+	// Target Epic must exist + be approved; its design (HLD) must exist +
+	// be approved so the amendment has a base to attach to.
+	let define: DefineArtifact;
+	let baseHld: HldArtifact;
+	try {
+		define = requireApprovedEpic(intent.repoPath, epicHash);
+		requireApprovedHld(intent.repoPath, epicHash);   // asserts approval
+		baseHld = readBaseHld(intent.repoPath, epicHash); // base runId for the amendment
+	} catch (e) {
+		return { ok: false, failure: schemaFailure(`extend target invalid: ${(e as Error).message}`) };
+	}
+	const epicSlug = define.meta.epicSlug ?? s1.target?.epicSlug ?? epicHash;
+	const storyId  = nextStoryId(define);
+	const story: DefineStory = {
+		id:        storyId,
+		title:     ns.title,
+		userValue: ns.userValue,
+		acceptanceCriteria: ns.acceptanceCriteria.map((ac, i) => ({
+			id:              `ac${i + 1}`,
+			given:           ac.given ?? '',
+			when:            ac.when ?? '',
+			then:            ac.then ?? '',
+			operationalizes: [],
+		})),
+	};
+	const evidence: ExtendEvidence[] = (s1.evidence ?? [])
+		.filter((e): e is { kind?: string; ref?: string; quote?: string } => typeof e === 'object' && e !== null)
+		.map(e => ({
+			kind: typeof e.kind === 'string' ? e.kind : 'ref',
+			ref:  typeof e.ref === 'string' ? e.ref : '',
+			...(typeof e.quote === 'string' ? { quote: e.quote } : {}),
+		}))
+		.filter(e => e.ref.length > 0);
+	const citations: Citation[] = evidence.map((e, i) => ({
+		id:   `c${i + 1}`,
+		kind: (e.kind === 'doc' || e.kind === 'code') ? e.kind : 'analyze-bundle',
+		ref:  e.ref,
+		...(e.quote !== undefined ? { quotedText: e.quote } : {}),
+	}));
+	const scope: ExtendScope = s1.scope ?? 'S';
+	const notify = typeof s1.notify === 'string' && s1.notify.length > 0
+		? s1.notify
+		: `Extends Epic \`${epicSlug}\` — building on existing docs + code; no new Epic created.`;
+
+	// ---- side effects (past every validation return) ----
+	const nextDefine = appendStoryToDefine(intent.repoPath, epicHash, story);
+	void nextDefine;
+	const amendmentId = nextAmendmentId(intent.repoPath, epicHash);
+	const amendmentRec: AmendmentRecord = {
+		id:           amendmentId,
+		epicHash,
+		epicSlug,
+		hldBaseRunId: baseHld.meta.runId,
+		amendment: {
+			type:     'storyBoundary.addStory',
+			storyId,
+			internal: `Private implementation of ${storyId}: ${story.title}`,
+		},
+		rationale: notify,
+		citations,
+		proposedBy: { workflow: 'define', runId, storyId, stepId: 'scope.assess' },
+		proposedAt: new Date().toISOString(),
+		status:     'pending',
+	};
+	proposeAmendment(intent.repoPath, amendmentRec);
+	persistScopeAnalyzeCache(epicHash, s1.analyzeBundles);
+
+	const artifact: ExtendArtifact = {
+		meta: {
+			workflow:      'define',
+			runId,
+			repoPath:      intent.repoPath,
+			createdAt:     new Date().toISOString(),
+			model:         'client',
+			elapsedMs,
+			repoIndexedAt: intent.repoIndexedAt,
+			schemaVersion: EXTEND_SCHEMA_VERSION,
+			epicHash,
+			epicSlug,
+			storyId,
+		},
+		body: {
+			scope,
+			notify,
+			addedStory:  story,
+			amendmentId,
+			evidence,
+			nextAction: {
+				command: `insrc_workflow_step phase=start workflow=design.story params={"epicHash":"${epicHash}","storyId":"${storyId}"}`,
+				description: `Approve the HLD amendment (\`${amendmentId}\`) and the updated Epic, then run \`design.story\` for the new Story \`${storyId}\` to produce its LLD.`,
+			},
+		},
+		citations,
+	};
+	const renderedMd   = renderExtendMarkdown(artifact);
+	const renderedJson = JSON.stringify(artifact, null, 2) + '\n';
+	log.info(
+		{ workflow: 'define', runId, epicHash, storyId, amendmentId },
+		'finalizeDefineExtend: extend executed — Story appended, amendment proposed',
 	);
 	return {
 		ok: true,

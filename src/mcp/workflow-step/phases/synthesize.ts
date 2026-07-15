@@ -22,6 +22,7 @@ import { finalizeArtifact } from '../../../workflow/orchestrator.js';
 import {
 	appendRunLog,
 	defineArtifactPaths,
+	extendArtifactPaths,
 	hldArtifactPaths,
 	lldArtifactPaths,
 	runsDirFor,
@@ -68,8 +69,8 @@ export async function handleSynthesize(
 	// The finalized artifact carries the definitive epicHash in its
 	// meta (Define mints it; downstream workflows echo it). Read it
 	// back to pick paths, so we never diverge from the artifact.
-	const finalizedMeta = (result.finalized.artifact as { meta?: { epicHash?: string; epicSlug?: string } }).meta ?? {};
-	const paths = pathsForWorkflow(state.intent, state.epicKey, state.runId, finalizedMeta.epicHash, finalizedMeta.epicSlug);
+	const finalizedMeta = (result.finalized.artifact as { meta?: { epicHash?: string; epicSlug?: string; storyId?: string } }).meta ?? {};
+	const paths = pathsForWorkflow(state.intent, state.epicKey, state.runId, finalizedMeta.epicHash, finalizedMeta.epicSlug, finalizedMeta.storyId);
 	writeAtomic(paths.md,   result.finalized.renderedMd);
 	writeAtomic(paths.json, result.finalized.renderedJson);
 	appendRunLog(state.epicKey, state.intent.workflow, state.runId, {
@@ -98,6 +99,7 @@ function pathsForWorkflow(
 	runId:    string,
 	epicHash: string | undefined,
 	epicSlug: string | undefined,
+	storyId:  string | undefined,
 ): { readonly md: string; readonly json: string } {
 	const { workflow, repoPath } = intent;
 	if (workflow === 'stub') return stubArtifactPaths(repoPath, epicKey);
@@ -109,7 +111,14 @@ function pathsForWorkflow(
 	if (epicHash === undefined) {
 		throw new Error(`pathsForWorkflow: workflow '${workflow}' finalized without meta.epicHash`);
 	}
-	if (workflow === 'define')      return defineArtifactPaths(repoPath, epicHash, epicSlug);
+	if (workflow === 'define') {
+		// The `define` extend branch emits an ExtendArtifact whose meta
+		// carries a storyId — route those to the EXT-* paths, not DEF-*.
+		if (typeof storyId === 'string' && storyId.length > 0) {
+			return extendArtifactPaths(repoPath, epicHash, storyId, epicSlug);
+		}
+		return defineArtifactPaths(repoPath, epicHash, epicSlug);
+	}
 	if (workflow === 'design.epic') return hldArtifactPaths(repoPath, epicHash, epicSlug);
 	if (workflow === 'design.story') {
 		const storyId = intent.params['storyId'];

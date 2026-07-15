@@ -32,6 +32,7 @@ import type {
 	SharedContractMethodAdd,
 	SharedContractRename,
 	StoryBoundaryAddConsumer,
+	StoryBoundaryAddStory,
 	StoryBoundaryReassignOwnership,
 } from './types.js';
 
@@ -74,6 +75,7 @@ function applyOne(body: HldBody, rec: AmendmentRecord): HldBody {
 		case 'sharedContract.methodAdd':         return applyMethodAdd(body, a, rec.id);
 		case 'storyBoundary.reassignOwnership':  return applyReassignOwnership(body, a, rec.id);
 		case 'storyBoundary.addConsumer':        return applyAddConsumer(body, a, rec.id);
+		case 'storyBoundary.addStory':           return applyAddStory(body, a, rec.id);
 		case 'nonFunctional.retarget':           return applyNonFunctional(body, a, rec.id);
 		case 'rollout.reorder':                  return applyRolloutReorder(body, a, rec.id);
 		case 'rollout.splitPhase':               return applyRolloutSplit(body, a, rec.id);
@@ -198,6 +200,22 @@ function applyReassignOwnership(body: HldBody, a: StoryBoundaryReassignOwnership
 // ---------------------------------------------------------------------------
 // storyBoundary.addConsumer
 // ---------------------------------------------------------------------------
+
+function applyAddStory(body: HldBody, a: StoryBoundaryAddStory, id: string): HldBody {
+	if (body.storyBoundaries.some(sb => sb.storyId === a.storyId)) {
+		throw new AmendmentApplyError(id, `story '${a.storyId}' already has a boundary in the HLD`);
+	}
+	// Any contracts it consumes must already exist (owns is usually empty
+	// for an extending Story — it consumes the Epic's shared framework).
+	for (const c of a.depends ?? []) findContract(body, c, id);
+	const boundary: StoryBoundary = {
+		storyId:  a.storyId,
+		owns:     [...(a.owns ?? [])],
+		depends:  [...(a.depends ?? [])],
+		internal: a.internal,
+	};
+	return { ...body, storyBoundaries: [...body.storyBoundaries, boundary] };
+}
 
 function applyAddConsumer(body: HldBody, a: StoryBoundaryAddConsumer, id: string): HldBody {
 	const sc = findContract(body, a.contractId, id);

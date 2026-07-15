@@ -47,6 +47,7 @@ export type Amendment =
 	| SharedContractMethodAdd
 	| StoryBoundaryReassignOwnership
 	| StoryBoundaryAddConsumer
+	| StoryBoundaryAddStory
 	| NonFunctionalRetarget
 	| RolloutReorder
 	| RolloutSplitPhase
@@ -105,6 +106,20 @@ export interface StoryBoundaryAddConsumer {
 	// Framework checks the consumer's Story has a dependsOn edge
 	// to the owner; if not, this amendment implicitly adds the
 	// edge (recorded in AmendmentRecord.sideEffects).
+}
+
+/** Adds a brand-new Story's boundary to the HLD — the escape hatch for
+ *  extending an approved Epic with a new Story WITHOUT re-running the HLD
+ *  (design/§12 open question). Proposed by the `define` workflow's extend
+ *  branch; once approved, the effective HLD carries the boundary so
+ *  `design.story` can produce the LLD. The Story is added to the Define's
+ *  `body.stories` separately (see `appendStoryToDefine`). */
+export interface StoryBoundaryAddStory {
+	readonly type:      'storyBoundary.addStory';
+	readonly storyId:   string;
+	readonly owns?:     readonly string[];          // shared-contract ids this Story owns (usually none)
+	readonly depends?:  readonly string[];          // shared-contract ids it consumes
+	readonly internal:  string;                     // one-line "what's private to this Story"
 }
 
 // ---------------------------------------------------------------------------
@@ -189,6 +204,7 @@ const AMENDMENT_TYPES = new Set<Amendment['type']>([
 	'sharedContract.methodAdd',
 	'storyBoundary.reassignOwnership',
 	'storyBoundary.addConsumer',
+	'storyBoundary.addStory',
 	'nonFunctional.retarget',
 	'rollout.reorder',
 	'rollout.splitPhase',

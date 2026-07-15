@@ -209,6 +209,27 @@ export function lldArtifactPaths(
 	};
 }
 
+/** Canonical id + paths for an Extend artifact (`define` extend branch).
+ *  One per (Epic, new Story). Markdown under `docs/designs/` (slug), JSON
+ *  under `.insrc/artifacts/` (hash). */
+export function extendArtifactId(epicHash: string, storyId: string): string { return `EXT-${epicHash}-${storyId}`; }
+export function extendArtifactPaths(repoPath: string, epicHash: string, storyId: string, epicSlug?: string): {
+	readonly md:   string;
+	readonly json: string;
+} {
+	return {
+		md:   join(repoPath, DESIGNS_DIR,   `EXT-${fileSeg(epicSlug ?? epicHash)}-${storyId}.md`),
+		json: join(repoPath, ARTIFACTS_DIR, `${extendArtifactId(epicHash, storyId)}.json`),
+	};
+}
+
+/** Where the `scope.assess` step caches its analyze bundles (outside the
+ *  repo, keyed by Epic hash) so the later design phase can reuse the
+ *  exploration instead of re-running analyze. */
+export function scopeAnalyzeCachePath(epicHash: string): string {
+	return join(runsDirFor(epicHash), 'scope-analyze.json');
+}
+
 /** Repo-relative markdown paths (slug-based), for links embedded in
  *  GitHub issue bodies. Single source of the doc-path naming so the
  *  links can't drift from the actual filenames. */

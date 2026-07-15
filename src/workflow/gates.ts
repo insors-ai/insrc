@@ -17,12 +17,13 @@
  * artifact's own meta.
  */
 
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { getEffectiveHld } from './amendments/effective.js';
 import { makeStaleAck } from './amendments/staleness.js';
-import type { DefineArtifact } from './artifacts/define.js';
+import { renderDefineMarkdown } from './artifacts/define.js';
+import type { DefineArtifact, DefineStory } from './artifacts/define.js';
 import type { HldArtifact }    from './artifacts/hld.js';
 import {
 	ARTIFACT_ID_MARKER_RE,
@@ -61,6 +62,63 @@ export function readDefineArtifact(repoPath: string, epicHash: string): DefineAr
 	}
 	const raw = readFileSync(paths.json, 'utf8');
 	return JSON.parse(raw) as DefineArtifact;
+}
+
+export interface EpicCatalogEntry {
+	readonly epicHash: string;
+	readonly epicSlug?: string;
+	readonly problem:  string;
+	readonly approved: boolean;
+	readonly stories:  readonly { readonly id: string; readonly title: string }[];
+}
+
+/** Enumerate every Epic in the repo with its problem + story list — the
+ *  catalog the `scope.assess` step hands the LLM to decide new-vs-extend. */
+export function epicCatalog(repoPath: string): EpicCatalogEntry[] {
+	const dir = join(repoPath, ARTIFACTS_DIR);
+	if (!existsSync(dir)) return [];
+	const out: EpicCatalogEntry[] = [];
+	for (const name of readdirSync(dir).sort()) {
+		const m = /^DEF-([0-9a-f]{16})\.json$/.exec(name);
+		if (m === null) continue;
+		try {
+			const d = JSON.parse(readFileSync(join(dir, name), 'utf8')) as DefineArtifact;
+			out.push({
+				epicHash: m[1]!,
+				...(d.meta.epicSlug !== undefined ? { epicSlug: d.meta.epicSlug } : {}),
+				problem:  d.body.problem,
+				approved: typeof d.meta.approvedAt === 'string' && d.meta.approvedAt.length > 0,
+				stories:  d.body.stories.map(s => ({ id: s.id, title: s.title })),
+			});
+		} catch { /* skip malformed */ }
+	}
+	return out;
+}
+
+/** Next unused Story id (`s1`, `s2`, …) for a Define. */
+export function nextStoryId(define: DefineArtifact): string {
+	let max = 0;
+	for (const s of define.body.stories) {
+		const m = /^s(\d+)$/.exec(s.id);
+		if (m !== null) max = Math.max(max, Number(m[1]));
+	}
+	return `s${max + 1}`;
+}
+
+/** Append a new Story to an approved Epic's Define (the extend path).
+ *  Writes the JSON + re-renders the markdown; PRESERVES `meta.approvedAt`
+ *  (the extend is the sanctioned edit). Throws on a duplicate story id. */
+export function appendStoryToDefine(repoPath: string, epicHash: string, story: DefineStory): DefineArtifact {
+	const paths = defineArtifactPaths(repoPath, epicHash);
+	if (!existsSync(paths.json)) throw new ArtifactMissingError(`Define not found at ${paths.json}`);
+	const define = JSON.parse(readFileSync(paths.json, 'utf8')) as DefineArtifact;
+	if (define.body.stories.some(s => s.id === story.id)) {
+		throw new Error(`Story '${story.id}' already exists in Epic '${epicHash}'`);
+	}
+	const next: DefineArtifact = { ...define, body: { ...define.body, stories: [...define.body.stories, story] } };
+	writeAtomic(paths.json, JSON.stringify(next, null, 2) + '\n');
+	writeAtomic(defineArtifactPaths(repoPath, epicHash, next.meta.epicSlug).md, renderDefineMarkdown(next));
+	return next;
 }
 
 /** Same as `readDefineArtifact` but refuses when the artifact is

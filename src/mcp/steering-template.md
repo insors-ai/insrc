@@ -123,7 +123,19 @@ HLD, LLD, GitHub tracker integration). Reach for
 `insrc_workflow_step` when the user asks you to:
 
 - **Define** what to build ("frame an Epic for X", "define stories
-  for Y") — runs `workflow=define`.
+  for Y", "add feature Z") — runs `workflow=define`. Its FIRST step
+  (`scope.assess`) is the scope classifier: it runs `insrc_analyze_step`
+  over the existing docs + code and decides **new** vs **extend**:
+    - **new** — no existing Epic fits; it frames a fresh Epic (Stories
+      etc.) as usual.
+    - **extend** — the ask builds on an existing Epic/design. The
+      framework then SKIPS `epic.frame`/`stories.compose`, appends the
+      new Story to that Epic's Define, files a pending
+      `storyBoundary.addStory` HLD amendment, and writes an
+      **ExtendArtifact** (`EXT-…`). Do NOT force a new Epic. Relay its
+      `notify` line (what it builds on) to the user, then follow its
+      `nextAction`: approve the amendment + updated Epic, then run
+      `workflow=design.story` for the new Story to produce the LLD.
 - **Design HLD** ("HLD for tag filtering") — runs
   `workflow=design.epic`. Requires an approved Define.
 - **Design LLD** ("LLD for Story s1") — runs

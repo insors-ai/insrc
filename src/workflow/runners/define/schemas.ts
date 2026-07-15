@@ -16,9 +16,47 @@
 
 export const defineContextSchema = {
 	type: 'object',
-	required: ['flavor', 'flavorEvidence', 'analyzeBundles'],
+	required: ['decision', 'scope', 'notify', 'flavor', 'flavorEvidence', 'analyzeBundles'],
 	additionalProperties: false,
 	properties: {
+		// --- scoping decision (the FIRST-STEP scope classifier) ---
+		decision: { enum: ['new', 'extend'] },
+		scope:    { enum: ['XS', 'S', 'M', 'L', 'XL'] },
+		notify:   { type: 'string', minLength: 1 },   // user-facing: what this builds on
+		evidence: {
+			type: 'array',
+			items: {
+				type: 'object',
+				required: ['kind', 'ref'],
+				properties: { kind: { type: 'string' }, ref: { type: 'string' }, quote: { type: 'string' } },
+				additionalProperties: false,
+			},
+		},
+		// extend only: the existing Epic to attach to + the new Story to add.
+		target: {
+			type: 'object',
+			required: ['epicHash', 'epicSlug'],
+			properties: { epicHash: { type: 'string', pattern: '^[0-9a-f]{16}$' }, epicSlug: { type: 'string' } },
+			additionalProperties: false,
+		},
+		newStory: {
+			type: 'object',
+			required: ['title', 'userValue', 'acceptanceCriteria'],
+			properties: {
+				title:     { type: 'string', minLength: 1 },
+				userValue: { type: 'string', minLength: 1 },
+				acceptanceCriteria: {
+					type: 'array', minItems: 1,
+					items: {
+						type: 'object',
+						required: ['given', 'when', 'then'],
+						properties: { given: { type: 'string', minLength: 1 }, when: { type: 'string', minLength: 1 }, then: { type: 'string', minLength: 1 } },
+						additionalProperties: false,
+					},
+				},
+			},
+			additionalProperties: false,
+		},
 		flavor: { enum: ['enhancement', 'new-capability'] },
 		flavorEvidence: {
 			type: 'object',

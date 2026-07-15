@@ -22,10 +22,13 @@
  * so the plan shape stays uniform.
  */
 
+import { existsSync, readFileSync } from 'node:fs';
+
 import { registerRunner } from '../../executor.js';
 import { requireApprovedEpic, requireApprovedHld } from '../../gates.js';
 import { extractHldContextSlice } from '../../artifacts/lld.js';
 import { assertEpicHash } from '../../hash.js';
+import { scopeAnalyzeCachePath } from '../../storage.js';
 import type { StepRunner, StepRunnerContext } from '../../types.js';
 import {
 	alternativesEnumerateSchema,
@@ -55,6 +58,26 @@ function storyIdFrom(ctx: StepRunnerContext): string {
 		throw new Error(`design.story requires intent.params.storyId`);
 	}
 	return id;
+}
+
+/** Embed the `define` scope phase's cached analyze bundles (keyed by Epic
+ *  hash) so the LLD's context.assemble reuses that exploration instead of
+ *  re-running the same analyze passes. Returns '' when no cache exists. */
+function priorScopeAnalyzeBlock(ctx: StepRunnerContext): string {
+	const path = scopeAnalyzeCachePath(epicHashFrom(ctx));
+	if (!existsSync(path)) return '';
+	let bundles: unknown;
+	try { bundles = (JSON.parse(readFileSync(path, 'utf8')) as { analyzeBundles?: unknown }).analyzeBundles; }
+	catch { return ''; }
+	if (bundles === undefined) return '';
+	return [
+		'',
+		'Prior analyze bundles from the scope phase (REUSE these — only run additional',
+		'`insrc_analyze_step` passes for Story-specific gaps they do not already cover):',
+		'```json',
+		JSON.stringify(bundles, null, 2),
+		'```',
+	].join('\n');
 }
 
 /** Return `{ epic, hld, story, hldSlice }` — all the upstream
@@ -145,6 +168,7 @@ const contextAssemble = llmPauseRunner({
 				'```json',
 				JSON.stringify(story, null, 2),
 				'```',
+				priorScopeAnalyzeBlock(ctx),
 				'',
 				'Emit the LldContext JSON now.',
 			].join('\n'),

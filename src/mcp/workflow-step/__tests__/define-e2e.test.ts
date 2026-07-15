@@ -44,6 +44,9 @@ function payload(env: Envelope): Record<string, unknown> {
 // ---------------------------------------------------------------------------
 
 const s1Context = {
+	decision: 'new' as const,
+	scope: 'S' as const,
+	notify: 'New capability — no existing Epic matches; framing a fresh Epic.',
 	flavor: 'enhancement' as const,
 	flavorEvidence: {
 		classifierHint: 'ambiguous' as const,
@@ -147,7 +150,7 @@ async function walkToSynthesize(repo: string, s4: Record<string, unknown>): Prom
 		plan: {
 			workflow: 'define',
 			steps: [
-				{ id: 's1', runner: 'context.assemble', params: {} },
+				{ id: 's1', runner: 'scope.assess',     params: {} },
 				{ id: 's2', runner: 'epic.frame',       params: {} },
 				{ id: 's3', runner: 'stories.compose',  params: {} },
 				{ id: 's4', runner: 'checklist.verify', params: {} },

@@ -209,6 +209,13 @@ export function lldArtifactPaths(
 	};
 }
 
+/** Repo-relative markdown paths (slug-based), for links embedded in
+ *  GitHub issue bodies. Single source of the doc-path naming so the
+ *  links can't drift from the actual filenames. */
+export function defineMdRel(epicSlug: string): string { return `${DEFINES_DIR}/DEF-${fileSeg(epicSlug)}.md`; }
+export function hldMdRel(epicSlug: string): string { return `${DESIGNS_DIR}/HLD-${fileSeg(epicSlug)}.md`; }
+export function lldMdRel(epicSlug: string, storyId: string): string { return `${DESIGNS_DIR}/LLD-${fileSeg(epicSlug)}-${storyId}.md`; }
+
 /** Path for a single amendment record. The amendmentId is already
  *  `AMD-<epicHash>-<n>` (see `amendments/store.ts`). */
 export function amendmentArtifactPath(repoPath: string, amendmentId: string): string {

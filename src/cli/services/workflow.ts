@@ -46,6 +46,7 @@ import { scanLldStaleness, type StaleLldEntry } from '../../workflow/amendments/
 import type { AmendmentRecord } from '../../workflow/amendments/types.js';
 import { deriveSlug } from '../../workflow/slug.js';
 import { ARTIFACTS_DIR } from '../../workflow/storage.js';
+import { syncTracker, type SyncResult } from '../../workflow/tracker/sync.js';
 
 export interface EpicSummary {
 	readonly epicHash: string;
@@ -137,4 +138,10 @@ export function staleness(repoPath: string, epicHash: string): readonly StaleLld
 
 export function slugFor(focus: string): string {
 	return deriveSlug(focus);
+}
+
+/** Pull GitHub issue state for an Epic + its Stories into meta.tracker
+ *  (read by the chain report). Deterministic; read-only against GitHub. */
+export function sync(repoPath: string, epicHash: string): SyncResult {
+	return syncTracker(repoPath, epicHash);
 }

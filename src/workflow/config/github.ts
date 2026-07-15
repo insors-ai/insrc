@@ -36,11 +36,15 @@
  * aborts cleanly.
  */
 
-import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { PATHS } from '../../shared/paths.js';
+import { gitOriginOwnerRepo, parseGithubRemoteUrl } from '../tracker/github.js';
+
+// Re-exported for back-compat (tests + callers import these here).
+export { parseGithubRemoteUrl };
+export { gitOriginOwnerRepo as parseGitRemoteOwnerRepo };
 
 // ---------------------------------------------------------------------------
 // Types
@@ -207,7 +211,7 @@ function resolveEntry(
 		// User explicitly asked for github but did not name a target.
 		// Fall back to the git origin remote, or throw with a
 		// specific reason so the misconfiguration surfaces.
-		const remote = parseGitRemoteOwnerRepo(repoPath);
+		const remote = gitOriginOwnerRepo(repoPath);
 		if (remote === null) {
 			throw new GithubConfigError(
 				`GitHub tracker requested (type: 'github') for repo '${repoPath}' but no ` +
@@ -226,35 +230,5 @@ function resolveEntry(
 		};
 	}
 	// Empty entry with no `type`, no owner, no repo — nothing to do; let the caller fall through.
-	return null;
-}
-
-/** Parse `git remote get-url origin` for a GitHub owner/repo pair.
- *  Supports both SSH (`git@github.com:owner/repo.git`) and HTTPS
- *  (`https://github.com/owner/repo(.git)?`) forms. Returns null
- *  when parsing fails. */
-export function parseGitRemoteOwnerRepo(repoPath: string): { readonly owner: string; readonly repo: string } | null {
-	let url: string;
-	try {
-		url = execFileSync('git', ['-C', repoPath, 'remote', 'get-url', 'origin'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
-	} catch {
-		return null;
-	}
-	return parseGithubRemoteUrl(url);
-}
-
-/** Pure parser separated from the git call so tests don't need a
- *  real repo. */
-export function parseGithubRemoteUrl(url: string): { readonly owner: string; readonly repo: string } | null {
-	// SSH: git@github.com:owner/repo(.git)?
-	{
-		const m = /^git@github\.com:([^/]+)\/([^/.]+)(?:\.git)?$/.exec(url);
-		if (m !== null) return { owner: m[1]!, repo: m[2]! };
-	}
-	// HTTPS: https://github.com/owner/repo(.git)?
-	{
-		const m = /^https?:\/\/github\.com\/([^/]+)\/([^/.]+)(?:\.git)?$/.exec(url);
-		if (m !== null) return { owner: m[1]!, repo: m[2]! };
-	}
 	return null;
 }

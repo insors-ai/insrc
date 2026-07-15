@@ -4,21 +4,15 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * Tests for the approve-time tracker auto-integration.
+ * Integration tests for the deterministic approve-time tracker push,
+ * driven against a FAKE `gh`/`git` (injected via _setTrackerExecForTests)
+ * so no network/real repo is needed.
  *
- * Only cover the pure pieces that DO NOT touch gh:
- *   - `renderEpicBody` / `renderStoryBody` shape
- *   - `updateEpicTaskList` idempotence + placeholder matching
- *   - `autoPushEpicOnHld` idempotence when meta already has epicRef
- *   - `autoPushStoryOnLld` idempotence when meta already has storyRef
- *   - skipped-reason path when HLD parent lacks epicRef
- *   - skipped-reason path when meta is missing required fields
+ * Covers: Epic + Story creation, nested `meta.tracker` writes, doc→issue
+ * linkage (the `.md` gets a `**Tracker:**` line), slug-based doc links in
+ * the issue body, the duplicate-adopt guard, and idempotence.
  *
- * A live gh-invoking path is NOT covered here — that would require a
- * network-touching integration harness.
- *
- * Run:
- *   npx tsx --test src/insrc/workflow/__tests__/tracker-auto.test.ts
+ * Run: npx tsx --test src/workflow/__tests__/tracker-auto.test.ts
  */
 
 import { test } from 'node:test';
@@ -27,228 +21,176 @@ import { mkdirSync, mkdtempSync, readFileSync, writeFileSync, rmSync } from 'nod
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
-import {
-	autoPushEpicOnHld,
-	autoPushStoryOnLld,
-	renderEpicBody,
-	renderStoryBody,
-	updateEpicTaskList,
-} from '../tracker-auto.js';
-import type { DefineArtifact, DefineStory } from '../artifacts/define.js';
+import { autoPushEpicOnHld, autoPushStoryOnLld } from '../tracker-auto.js';
+import { _setTrackerExecForTests, type TrackerExec } from '../tracker/github.js';
 
 const HASH = 'a1b2c3d4e5f60718';
 const SLUG = 'demo-feature';
 
 // ---------------------------------------------------------------------------
-// Fixture helpers
+// Fake gh/git
 // ---------------------------------------------------------------------------
 
-function makeDefineArtifact(): DefineArtifact {
-	return {
-		meta: {
-			workflow:  'define',
-			runId:     'wf-1',
-			repoPath:  '/repo',
-			focus:     'demo',
-			epicHash:  HASH,
-			epicSlug:  SLUG,
-			createdAt: '2026-07-14T00:00:00.000Z',
-			schemaVersion: 1,
-		},
-		body: {
-			flavor:  'new-capability',
-			problem: 'Users cannot filter results. This blocks the onboarding flow.',
-			nonGoals: [{ text: 'Redesign UI', rationale: 'Out of scope' }],
-			assumptions: [],
-			constraints: [
-				{ id: 'c1', text: 'Must respect existing auth', type: 'invariant', source: 'c-01' },
-			],
-			stories: [
-				{
-					id: 's1', title: 'Add filter field', userValue: 'A user can type a filter',
-					acceptanceCriteria: [
-						{ id: 'ac1', given: 'the results page', when: 'I type "foo"', then: 'only matching rows show', operationalizes: [] },
-					],
-					sizeEstimate: 'S',
-				},
-				{
-					id: 's2', title: 'Persist last filter', userValue: 'The filter survives reload',
-					acceptanceCriteria: [
-						{ id: 'ac1', given: 'a filter is set', when: 'I reload', then: 'the same filter is active', operationalizes: [] },
-					],
-				},
-			],
-			openQuestions: [],
-		},
-		citations: [],
+function makeFakeGh() {
+	let counter = 0;
+	let findResult = '';                          // dup-guard: '' = none, '<n>' = adopt
+	const bodies = new Map<string, string>();
+	const calls: string[][] = [];
+	const fn: TrackerExec = (cmd, args) => {
+		calls.push([cmd, ...args]);
+		if (cmd === 'git') return 'git@github.com:acme/demo.git\n';
+		const [sub0, sub1] = args;
+		if (sub0 === 'auth' || sub0 === 'label' || sub0 === 'api') return '';
+		if (sub0 === 'issue') {
+			if (sub1 === 'create') {
+				counter += 1;
+				const bi = args.indexOf('--body');
+				bodies.set(String(counter), bi >= 0 ? String(args[bi + 1]) : '');
+				return `https://github.com/acme/demo/issues/${counter}\n`;
+			}
+			if (sub1 === 'list') return findResult;
+			if (sub1 === 'view') return args.includes('body') ? (bodies.get(String(args[2])) ?? '') : JSON.stringify({ state: 'OPEN', labels: [] });
+			if (sub1 === 'edit') { const bi = args.indexOf('--body'); if (bi >= 0) bodies.set(String(args[2]), String(args[bi + 1])); return ''; }
+			if (sub1 === 'comment') return '';
+		}
+		return '';
 	};
+	return { fn, calls, bodies, setFind: (r: string) => { findResult = r; }, createCount: () => counter };
 }
 
-function makeStory(id: string, title: string, sizeEstimate?: 'S' | 'M' | 'L' | 'XL'): DefineStory {
-	const base: DefineStory = {
-		id, title,
-		userValue: `value for ${id}`,
-		acceptanceCriteria: [{ id: 'ac1', given: 'x', when: 'y', then: 'z', operationalizes: [] }],
-	};
-	if (sizeEstimate !== undefined) return { ...base, sizeEstimate };
-	return base;
-}
-
-function makeTmpRepo(): string {
-	const dir = mkdtempSync(join(tmpdir(), 'insrc-tracker-auto-'));
-	mkdirSync(join(dir, 'docs/defines'), { recursive: true });
-	mkdirSync(join(dir, 'docs/designs'), { recursive: true });
-	mkdirSync(join(dir, '.insrc/artifacts'), { recursive: true });
-	return dir;
-}
+// ---------------------------------------------------------------------------
+// Fixtures
+// ---------------------------------------------------------------------------
 
 function writeJson(path: string, obj: unknown): void {
 	mkdirSync(dirname(path), { recursive: true });
 	writeFileSync(path, JSON.stringify(obj, null, 2) + '\n');
 }
 
-// ---------------------------------------------------------------------------
-// renderEpicBody
-// ---------------------------------------------------------------------------
+/** tmp repo with a github.json (type: github → git-remote fallback) and
+ *  the Define/HLD/LLD artifact JSONs. */
+function setup(): { repo: string; hldJson: string; lldJson: string; defineJson: string; cleanup: () => void } {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-tracker-'));
+	mkdirSync(join(repo, 'docs/defines'), { recursive: true });
+	mkdirSync(join(repo, 'docs/designs'), { recursive: true });
+	const ghCfg = join(repo, 'github.json');
+	writeFileSync(ghCfg, JSON.stringify({ default: { type: 'github' } }));
+	process.env['INSRC_GITHUB_CONFIG'] = ghCfg;
 
-test('renderEpicBody includes problem, non-goals, constraints, stories, references', () => {
-	const body = renderEpicBody(makeDefineArtifact(), HASH, SLUG);
-	assert.match(body, /## Problem/);
-	assert.match(body, /Users cannot filter results/);
-	assert.match(body, /## Non-goals/);
-	assert.match(body, /\*\*Redesign UI\*\* — Out of scope/);
-	assert.match(body, /## Constraints/);
-	assert.match(body, /\*\*c1\*\* \(invariant\): Must respect existing auth/);
-	assert.match(body, /## Stories/);
-	assert.match(body, /- \[ \] s1: Add filter field \(S\)/);
-	assert.match(body, /- \[ \] s2: Persist last filter$/m);
-	assert.match(body, /## Design references/);
-	assert.match(body, new RegExp(`HLD-${HASH}\\.md`));
-	assert.match(body, new RegExp(`DEF-${HASH}\\.md`));
-	assert.match(body, /_epic slug: demo-feature_/);
-});
+	const defineJson = join(repo, '.insrc/artifacts', `DEF-${HASH}.json`);
+	writeJson(defineJson, {
+		meta: { workflow: 'define', runId: 'd1', repoPath: repo, focus: 'demo', epicHash: HASH, epicSlug: SLUG, createdAt: '', schemaVersion: 1 },
+		body: {
+			flavor: 'new-capability',
+			problem: 'Users cannot filter results. This blocks onboarding.',
+			nonGoals: [], assumptions: [],
+			constraints: [{ id: 'c1', text: 'Respect auth', type: 'invariant', source: 'c-01' }],
+			stories: [{ id: 's1', title: 'Add filter field', userValue: 'type a filter', acceptanceCriteria: [], sizeEstimate: 'S' }],
+			openQuestions: [],
+		},
+		citations: [],
+	});
+	const hldJson = join(repo, '.insrc/artifacts', `HLD-${HASH}.json`);
+	writeJson(hldJson, { meta: { workflow: 'design.epic', runId: 'h1', repoPath: repo, epicHash: HASH, epicSlug: SLUG, schemaVersion: 1 }, body: {} });
+	const lldJson = join(repo, '.insrc/artifacts', `LLD-${HASH}-s1.json`);
+	writeJson(lldJson, { meta: { workflow: 'design.story', runId: 'l1', repoPath: repo, epicHash: HASH, epicSlug: SLUG, storyId: 's1', hldBaseRunId: 'h1', hldEffectiveHash: 'deadbeefcafe', hldAmendmentsApplied: [], schemaVersion: 1 }, body: {} });
 
-// ---------------------------------------------------------------------------
-// renderStoryBody
-// ---------------------------------------------------------------------------
+	return { repo, hldJson, lldJson, defineJson, cleanup: () => { delete process.env['INSRC_GITHUB_CONFIG']; _setTrackerExecForTests(); rmSync(repo, { recursive: true, force: true }); } };
+}
 
-test('renderStoryBody back-refs the Epic and lists acceptance criteria', () => {
-	const story = makeStory('s3', 'Third story', 'M');
-	const body = renderStoryBody('acme/demo#42', story, HASH);
-	assert.match(body, /^\*\*Epic:\*\* #42$/m);
-	assert.match(body, /## User value/);
-	assert.match(body, /value for s3/);
-	assert.match(body, /## Acceptance criteria/);
-	assert.match(body, /- \*\*ac1:\*\* Given x, when y, then z\./);
-	assert.match(body, new RegExp(`LLD-${HASH}-s3\\.md`));
-	assert.match(body, /Size: M/);
-});
+function trackerOf(jsonPath: string): Record<string, unknown> {
+	return (JSON.parse(readFileSync(jsonPath, 'utf8')) as { meta: { tracker?: Record<string, unknown> } }).meta.tracker ?? {};
+}
 
 // ---------------------------------------------------------------------------
-// updateEpicTaskList
+// Tests
 // ---------------------------------------------------------------------------
 
-test('updateEpicTaskList replaces the placeholder line with the linked form', () => {
-	const before = ['## Stories', '', '- [ ] s1: Add filter field (S)', '- [ ] s2: Persist last filter', ''].join('\n');
-	const after = updateEpicTaskList(before, 's1', 'acme/demo#7', 'Add filter field');
-	assert.match(after, /- \[ \] #7 — s1: Add filter field \(S\)/);
-	// s2 untouched
-	assert.match(after, /- \[ \] s2: Persist last filter/);
-});
-
-test('updateEpicTaskList is idempotent when the line is already linked', () => {
-	const alreadyLinked = ['## Stories', '', '- [ ] #7 — s1: Add filter field (S)', ''].join('\n');
-	const after = updateEpicTaskList(alreadyLinked, 's1', 'acme/demo#7', 'Add filter field');
-	assert.equal(after, alreadyLinked);
-});
-
-test('updateEpicTaskList returns the input unchanged when no placeholder matches', () => {
-	const noMatch = ['## Stories', '', '- [ ] s99: Some other story', ''].join('\n');
-	const after = updateEpicTaskList(noMatch, 's1', 'acme/demo#7', 'Add filter field');
-	assert.equal(after, noMatch);
-});
-
-// ---------------------------------------------------------------------------
-// autoPushEpicOnHld: idempotence + missing-fields skips (do NOT hit gh)
-// ---------------------------------------------------------------------------
-
-test('autoPushEpicOnHld returns already-exists when epicRef is already set', () => {
-	const repo = makeTmpRepo();
+test('HLD approve creates the Epic issue, links docs, and writes nested meta.tracker', () => {
+	const gh = makeFakeGh();
+	_setTrackerExecForTests(gh.fn);
+	const s = setup();
 	try {
-		const hldPath = join(repo, '.insrc/artifacts', `HLD-${HASH}.json`);
-		writeJson(hldPath, {
-			meta: {
-				workflow: 'design.epic', runId: 'wf-2', repoPath: repo,
-				epicHash: HASH, epicSlug: SLUG,
-				epicRef: 'acme/demo#5',
-			},
-			body: {},
-		});
-		const r = autoPushEpicOnHld(hldPath);
+		const r = autoPushEpicOnHld(s.hldJson);
+		assert.equal(r.status, 'created');
+		assert.equal(r.status === 'created' ? r.epicRef : '', 'acme/demo#1');
+
+		// nested meta.tracker on BOTH the HLD and the Define (aggregate).
+		assert.equal(trackerOf(s.hldJson)['epicRef'], 'acme/demo#1');
+		assert.equal(trackerOf(s.defineJson)['epicRef'], 'acme/demo#1');
+
+		// doc → issue: the Define markdown gained a Tracker link.
+		const defineMd = readFileSync(join(s.repo, 'docs/defines', `DEF-${SLUG}.md`), 'utf8');
+		assert.match(defineMd, /\*\*Tracker:\*\* \[acme\/demo#1\]/);
+
+		// issue body carries slug-based doc links (not hash).
+		const epicBody = gh.bodies.get('1') ?? '';
+		assert.match(epicBody, new RegExp(`docs/designs/HLD-${SLUG}\\.md`));
+		assert.doesNotMatch(epicBody, /HLD-a1b2c3d4e5f60718\.md/);
+	} finally { s.cleanup(); }
+});
+
+test('LLD approve creates the Story issue + aggregates into the Define; links the LLD doc', () => {
+	const gh = makeFakeGh();
+	_setTrackerExecForTests(gh.fn);
+	const s = setup();
+	try {
+		autoPushEpicOnHld(s.hldJson);           // epic first (LLD needs the epicRef)
+		const r = autoPushStoryOnLld(s.lldJson);
+		assert.equal(r.status, 'created');
+		assert.equal(r.status === 'created' ? r.storyRef : '', 'acme/demo#2');
+
+		assert.equal(trackerOf(s.lldJson)['storyRef'], 'acme/demo#2');
+		assert.deepEqual(trackerOf(s.defineJson)['storyRefs'], { s1: 'acme/demo#2' });
+	} finally { s.cleanup(); }
+});
+
+test('re-approving the HLD is idempotent (no second issue)', () => {
+	const gh = makeFakeGh();
+	_setTrackerExecForTests(gh.fn);
+	const s = setup();
+	try {
+		autoPushEpicOnHld(s.hldJson);
+		const before = gh.createCount();
+		const r = autoPushEpicOnHld(s.hldJson);
 		assert.equal(r.status, 'already-exists');
-		if (r.status === 'already-exists') assert.equal(r.epicRef, 'acme/demo#5');
-	} finally {
-		rmSync(repo, { recursive: true, force: true });
-	}
+		assert.equal(gh.createCount(), before);   // no new create
+	} finally { s.cleanup(); }
 });
 
-test('autoPushEpicOnHld returns skipped when meta is missing epicHash', () => {
-	const repo = makeTmpRepo();
+test('duplicate guard adopts an existing Epic issue instead of creating one', () => {
+	const gh = makeFakeGh();
+	gh.setFind('9');                             // an epic issue already exists
+	_setTrackerExecForTests(gh.fn);
+	const s = setup();
 	try {
-		const hldPath = join(repo, '.insrc/artifacts', `HLD-${HASH}.json`);
-		writeJson(hldPath, {
-			meta: {
-				workflow: 'design.epic', runId: 'wf-2', repoPath: repo,
-			},
-			body: {},
-		});
-		const r = autoPushEpicOnHld(hldPath);
-		assert.equal(r.status, 'skipped');
-		if (r.status === 'skipped') assert.match(r.reason, /missing epicHash/);
-	} finally {
-		rmSync(repo, { recursive: true, force: true });
-	}
-});
-
-// ---------------------------------------------------------------------------
-// autoPushStoryOnLld: idempotence + missing-fields + missing-parent skips
-// ---------------------------------------------------------------------------
-
-test('autoPushStoryOnLld returns already-exists when storyRef is already set', () => {
-	const repo = makeTmpRepo();
-	try {
-		const lldPath = join(repo, '.insrc/artifacts', `LLD-${HASH}-s1.json`);
-		writeJson(lldPath, {
-			meta: {
-				workflow: 'design.story', runId: 'wf-3', repoPath: repo,
-				epicHash: HASH, epicSlug: SLUG, storyId: 's1',
-				storyRef: 'acme/demo#11',
-			},
-			body: {},
-		});
-		const r = autoPushStoryOnLld(lldPath);
+		const r = autoPushEpicOnHld(s.hldJson);
 		assert.equal(r.status, 'already-exists');
-		if (r.status === 'already-exists') assert.equal(r.storyRef, 'acme/demo#11');
-	} finally {
-		rmSync(repo, { recursive: true, force: true });
-	}
+		assert.equal(r.status === 'already-exists' ? r.epicRef : '', 'acme/demo#9');
+		assert.equal(gh.createCount(), 0);       // adopted, not created
+		assert.equal(trackerOf(s.hldJson)['epicRef'], 'acme/demo#9');
+	} finally { s.cleanup(); }
 });
 
-test('autoPushStoryOnLld returns skipped when meta is missing storyId', () => {
-	const repo = makeTmpRepo();
+test('tracker disabled (no config) skips cleanly', () => {
+	const gh = makeFakeGh();
+	_setTrackerExecForTests(gh.fn);
+	const s = setup();
+	delete process.env['INSRC_GITHUB_CONFIG'];   // no config → type: none
 	try {
-		const lldPath = join(repo, '.insrc/artifacts', `LLD-${HASH}-s1.json`);
-		writeJson(lldPath, {
-			meta: {
-				workflow: 'design.story', runId: 'wf-3', repoPath: repo,
-				epicHash: HASH, epicSlug: SLUG,
-			},
-			body: {},
-		});
-		const r = autoPushStoryOnLld(lldPath);
+		const r = autoPushEpicOnHld(s.hldJson);
 		assert.equal(r.status, 'skipped');
-		if (r.status === 'skipped') assert.match(r.reason, /storyId/);
-	} finally {
-		rmSync(repo, { recursive: true, force: true });
-	}
+	} finally { s.cleanup(); }
+});
+
+test('missing required meta fields skip', () => {
+	const gh = makeFakeGh();
+	_setTrackerExecForTests(gh.fn);
+	const s = setup();
+	try {
+		writeJson(s.hldJson, { meta: { workflow: 'design.epic', runId: 'h1', repoPath: s.repo }, body: {} });
+		const r = autoPushEpicOnHld(s.hldJson);
+		assert.equal(r.status, 'skipped');
+		assert.equal(r.status === 'skipped' && /missing epicHash/.test(r.reason), true);
+	} finally { s.cleanup(); }
 });

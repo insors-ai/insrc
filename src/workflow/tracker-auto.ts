@@ -4,45 +4,48 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * Approve-time GitHub tracker integration.
+ * Approve-time GitHub tracker integration — the DETERMINISTIC path
+ * (used when there's no capable LLM agent driving GitHub, e.g. Ollama
+ * or a human `insrc workflow approve`). It shells out to `gh` directly
+ * via the shared `tracker/` module (`github.ts` ops, `conventions.ts`
+ * renderers) so it produces the same issues as the LLM coarse-handoff
+ * path.
  *
- * When `insrc workflow approve` succeeds on an HLD or LLD artifact,
- * the CLI calls into this module to create the corresponding GitHub
- * issue directly (via `gh`) and patches the artifact's meta with the
- * resulting ref. Idempotent: an artifact whose meta already carries
- * `epicRef` / `storyRef` is skipped without touching GitHub.
+ * On HLD approve → create/adopt the Epic issue; on LLD approve →
+ * create/adopt the Story issue + splice it into the Epic task list.
+ * In both cases the framework then:
+ *   - writes the ref into the artifact's `meta.tracker` (nested; the
+ *     chain report + coarse-handoff runners read there too),
+ *   - RE-RENDERS the human-facing `.md` so the doc shows a
+ *     `**Tracker:** owner/repo#N` link back to the issue (doc → issue),
+ *   - posts the design summary as an issue comment.
  *
- * Design shape:
- *   - `autoPushEpicOnHld(hldJsonPath)` reads the HLD meta + its parent
- *     Define (for the Epic problem + Story titles), creates labels,
- *     creates the Epic issue, and writes `meta.epicRef` back into the
- *     HLD JSON.
- *   - `autoPushStoryOnLld(lldJsonPath)` reads the LLD meta + parent
- *     HLD (for the Epic ref) + parent Define (for the Story detail),
- *     creates the Story issue with an `**Epic:** #N` back-ref, edits
- *     the Epic body to replace the placeholder task-list line for
- *     this Story with a `#N —` prefix, and writes `meta.storyRef`
- *     back into the LLD JSON.
- *
- * Fail-open: gh unavailable, github config missing, or gh API errors
- * do NOT undo the approve. The CLI surfaces a short warning and the
- * user can push manually later via the batch `tracker.push` workflow.
+ * Idempotent + fail-open: an existing ref (in meta or discoverable by
+ * label) is adopted, not duplicated; missing `gh`/config/auth → skip
+ * without undoing the approve.
  */
 
-import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 
 import { getLogger } from '../shared/logger.js';
-import { readDefineArtifact } from './gates.js';
-import { hldArtifactPaths, writeAtomic } from './storage.js';
+import { readDefineArtifact, readHldArtifact } from './gates.js';
+import { readLldArtifact } from './artifacts/lld-io.js';
+import { renderDefineMarkdown, type DefineArtifact } from './artifacts/define.js';
+import { renderHldMarkdown } from './artifacts/hld.js';
+import { renderLldMarkdown } from './artifacts/lld.js';
+import { defineArtifactPaths, hldArtifactPaths, lldArtifactPaths, writeAtomic } from './storage.js';
 import { GithubConfigError, resolveGithubConfig, type ResolvedGithubConfig } from './config/github.js';
-import type { DefineArtifact, DefineStory } from './artifacts/define.js';
+import {
+	ghAttachMilestone, ghAuthOk, ghComment, ghCreateIssue, ghCreateLabel,
+	ghEditIssueBody, ghEnsureMilestone, ghFindIssueByLabels, ghGetIssueBody,
+} from './tracker/github.js';
+import {
+	allTrackerLabels, epicMembershipLabel, renderEpicBody, renderStoryBody,
+	renderTrackerHldSummary, renderTrackerLldSummary, updateEpicTaskList,
+} from './tracker/conventions.js';
+import { patchTrackerMeta, type TrackerMeta } from './tracker/refs.js';
 
 const log = getLogger('workflow:tracker-auto');
-
-// ---------------------------------------------------------------------------
-// Result shape
-// ---------------------------------------------------------------------------
 
 export type AutoPushResult =
 	| { readonly status: 'created';        readonly epicRef?: string; readonly storyRef?: string; readonly labelsCreated?: readonly string[] }
@@ -50,363 +53,172 @@ export type AutoPushResult =
 	| { readonly status: 'skipped';        readonly reason: string }
 	| { readonly status: 'failed';         readonly reason: string };
 
-// ---------------------------------------------------------------------------
-// gh helpers (thin wrappers around execFileSync)
-// ---------------------------------------------------------------------------
-
-function ghAvailable(): { readonly ok: true } | { readonly ok: false; readonly reason: string } {
-	try {
-		execFileSync('gh', ['auth', 'status'], { stdio: 'ignore' });
-		return { ok: true };
-	} catch {
-		return { ok: false, reason: 'gh CLI not available or not authenticated (run `gh auth login`)' };
-	}
+interface MetaShape {
+	readonly repoPath?:  string;
+	readonly epicHash?:  string;
+	readonly epicSlug?:  string;
+	readonly storyId?:   string;
+	readonly tracker?:   TrackerMeta;
+	readonly [k: string]: unknown;
 }
 
-function ghCreateLabelIdempotent(owner: string, repo: string, name: string): boolean {
+function readMeta(path: string): MetaShape {
+	const parsed = JSON.parse(readFileSync(path, 'utf8')) as { meta?: MetaShape };
+	if (typeof parsed !== 'object' || parsed === null || typeof parsed.meta !== 'object' || parsed.meta === null) {
+		throw new Error(`file at ${path} has no meta object`);
+	}
+	return parsed.meta;
+}
+
+/** Resolve config + gh-auth gates shared by both entry points. Returns
+ *  a github config or a skip result. */
+function gate(repoPath: string): { cfg: Extract<ResolvedGithubConfig, { type: 'github' }> } | { skip: AutoPushResult } {
+	let cfg: ResolvedGithubConfig;
 	try {
-		execFileSync('gh', ['label', 'create', name, '--repo', `${owner}/${repo}`, '--force'], { stdio: 'ignore' });
-		return true;
+		cfg = resolveGithubConfig(repoPath);
 	} catch (err) {
-		log.warn({ label: name, err: (err as Error).message }, 'failed to create label');
-		return false;
+		if (err instanceof GithubConfigError) return { skip: { status: 'skipped', reason: err.message } };
+		throw err;
 	}
-}
-
-function ghCreateIssue(
-	owner: string,
-	repo: string,
-	title: string,
-	body: string,
-	labels: readonly string[],
-): string {
-	const url = execFileSync(
-		'gh',
-		[
-			'issue', 'create',
-			'--repo', `${owner}/${repo}`,
-			'--title', title,
-			'--body', body,
-			'--label', labels.join(','),
-		],
-		{ encoding: 'utf8' },
-	).trim();
-	const m = /\/(\d+)$/.exec(url);
-	if (m === null) {
-		throw new Error(`gh issue create returned an unrecognized URL: '${url}'`);
-	}
-	return `${owner}/${repo}#${m[1]!}`;
-}
-
-function ghGetIssueBody(owner: string, repo: string, ref: string): string {
-	const num = extractIssueNumber(ref);
-	return execFileSync(
-		'gh',
-		['issue', 'view', num, '--repo', `${owner}/${repo}`, '--json', 'body', '-q', '.body'],
-		{ encoding: 'utf8' },
-	);
-}
-
-function ghEditIssueBody(owner: string, repo: string, ref: string, body: string): void {
-	const num = extractIssueNumber(ref);
-	execFileSync(
-		'gh',
-		['issue', 'edit', num, '--repo', `${owner}/${repo}`, '--body', body],
-		{ stdio: 'ignore' },
-	);
-}
-
-function extractIssueNumber(ref: string): string {
-	const idx = ref.indexOf('#');
-	if (idx < 0) throw new Error(`invalid issue ref: '${ref}' (expected owner/repo#N)`);
-	return ref.slice(idx + 1);
+	if (cfg.type === 'none') return { skip: { status: 'skipped', reason: `tracker disabled via config (source: ${cfg.source})` } };
+	const auth = ghAuthOk();
+	if (!auth.ok) return { skip: { status: 'skipped', reason: auth.reason } };
+	return { cfg };
 }
 
 // ---------------------------------------------------------------------------
-// Public entry: HLD → Epic issue
+// HLD → Epic issue
 // ---------------------------------------------------------------------------
 
 export function autoPushEpicOnHld(hldJsonPath: string): AutoPushResult {
-	const hld = readJson(hldJsonPath);
-	const meta = hld.meta;
-
-	if (typeof meta.epicRef === 'string' && meta.epicRef.length > 0) {
-		return { status: 'already-exists', epicRef: meta.epicRef };
+	const meta = readMeta(hldJsonPath);
+	if (typeof meta.tracker?.epicRef === 'string' && meta.tracker.epicRef.length > 0) {
+		return { status: 'already-exists', epicRef: meta.tracker.epicRef };
 	}
 	if (typeof meta.epicHash !== 'string' || typeof meta.epicSlug !== 'string' || typeof meta.repoPath !== 'string') {
 		return { status: 'skipped', reason: 'HLD meta is missing epicHash / epicSlug / repoPath' };
 	}
+	const { epicHash, epicSlug, repoPath } = { epicHash: meta.epicHash, epicSlug: meta.epicSlug, repoPath: meta.repoPath };
 
-	let cfg: ResolvedGithubConfig;
-	try {
-		cfg = resolveGithubConfig(meta.repoPath);
-	} catch (err) {
-		if (err instanceof GithubConfigError) {
-			return { status: 'skipped', reason: err.message };
-		}
-		throw err;
-	}
-	if (cfg.type === 'none') {
-		return { status: 'skipped', reason: `tracker disabled via config (type: none, source: ${cfg.source})` };
-	}
-
-	const avail = ghAvailable();
-	if (!avail.ok) return { status: 'skipped', reason: avail.reason };
+	const g = gate(repoPath);
+	if ('skip' in g) return g.skip;
+	const cfg = g.cfg;
 
 	let define: DefineArtifact;
-	try {
-		define = readDefineArtifact(meta.repoPath, meta.epicHash);
-	} catch (err) {
-		return { status: 'failed', reason: `cannot read parent Define: ${(err as Error).message}` };
-	}
+	try { define = readDefineArtifact(repoPath, epicHash); }
+	catch (err) { return { status: 'failed', reason: `cannot read parent Define: ${(err as Error).message}` }; }
 
-	// Create labels idempotently.
-	const labels: readonly string[] = [
-		cfg.epicLabel,
-		cfg.storyLabel,
-		`epic:${meta.epicSlug}`,
-		'insrc:in-progress',
-		'insrc:blocked',
-	];
-	const created: string[] = [];
-	for (const label of labels) {
-		if (ghCreateLabelIdempotent(cfg.owner, cfg.repo, label)) created.push(label);
-	}
-
-	// Build + create the Epic issue.
-	const title = `Epic: ${firstSentence(define.body.problem)}`;
-	const body  = renderEpicBody(define, meta.epicHash, meta.epicSlug);
+	// Duplicate guard: adopt an existing Epic issue (unique by epic +
+	// epic-membership labels) rather than creating a second one.
+	const membership = epicMembershipLabel(epicSlug);
+	const adopted = ghFindIssueByLabels(cfg.owner, cfg.repo, [cfg.epicLabel, membership]);
 	let epicRef: string;
-	try {
-		epicRef = ghCreateIssue(cfg.owner, cfg.repo, title, body, [cfg.epicLabel, `epic:${meta.epicSlug}`]);
-	} catch (err) {
-		return { status: 'failed', reason: `gh issue create failed: ${(err as Error).message}` };
+	let created: string[] = [];
+	if (adopted !== undefined) {
+		epicRef = adopted;
+	} else {
+		for (const label of allTrackerLabels(cfg.epicLabel, cfg.storyLabel, epicSlug)) {
+			if (ghCreateLabel(cfg.owner, cfg.repo, label)) created.push(label);
+		}
+		try {
+			epicRef = ghCreateIssue(cfg.owner, cfg.repo, `Epic: ${firstSentence(define.body.problem)}`,
+				renderEpicBody(define, epicSlug), [cfg.epicLabel, membership]);
+		} catch (err) { return { status: 'failed', reason: `gh issue create failed: ${(err as Error).message}` }; }
+		if (cfg.useMilestones) bestEffort('milestone', () => { ghEnsureMilestone(cfg.owner, cfg.repo, epicSlug); ghAttachMilestone(cfg.owner, cfg.repo, epicRef, epicSlug); });
 	}
 
-	patchArtifactMeta(hldJsonPath, { epicRef, epicPushedAt: new Date().toISOString() });
-	return { status: 'created', epicRef, labelsCreated: created };
+	// Persist the ref (firm): on the HLD (its own doc link) and on the
+	// Define (the Epic-level aggregate the chain report + LLD flow read).
+	const now = new Date().toISOString();
+	patchTrackerMeta(hldJsonPath, { epicRef, pushedAt: now, ...(created.length > 0 ? { labelsCreated: created } : {}) });
+	const definePaths = defineArtifactPaths(repoPath, epicHash, epicSlug);
+	patchTrackerMeta(definePaths.json, { epicRef, pushedAt: now });
+	// Re-render both docs so each shows the `**Tracker:** owner/repo#N` link.
+	relink(hldArtifactPaths(repoPath, epicHash, epicSlug).md, () => renderHldMarkdown(readHldArtifact(repoPath, epicHash)));
+	relink(definePaths.md, () => renderDefineMarkdown(readDefineArtifact(repoPath, epicHash)));
+
+	if (adopted === undefined) bestEffort('comment', () => ghComment(cfg.owner, cfg.repo, epicRef, renderTrackerHldSummary(readHldArtifact(repoPath, epicHash))));
+
+	return adopted !== undefined ? { status: 'already-exists', epicRef } : { status: 'created', epicRef, labelsCreated: created };
 }
 
 // ---------------------------------------------------------------------------
-// Public entry: LLD → Story issue + Epic body update
+// LLD → Story issue + Epic task-list splice
 // ---------------------------------------------------------------------------
 
 export function autoPushStoryOnLld(lldJsonPath: string): AutoPushResult {
-	const lld = readJson(lldJsonPath);
-	const meta = lld.meta;
-
-	if (typeof meta.storyRef === 'string' && meta.storyRef.length > 0) {
-		return { status: 'already-exists', storyRef: meta.storyRef };
+	const meta = readMeta(lldJsonPath);
+	if (typeof meta.tracker?.storyRef === 'string' && meta.tracker.storyRef.length > 0) {
+		return { status: 'already-exists', storyRef: meta.tracker.storyRef };
 	}
 	if (typeof meta.epicHash !== 'string' || typeof meta.epicSlug !== 'string' || typeof meta.storyId !== 'string' || typeof meta.repoPath !== 'string') {
 		return { status: 'skipped', reason: 'LLD meta is missing epicHash / epicSlug / storyId / repoPath' };
 	}
+	const { epicHash, epicSlug, storyId, repoPath } = { epicHash: meta.epicHash, epicSlug: meta.epicSlug, storyId: meta.storyId, repoPath: meta.repoPath };
 
-	let cfg: ResolvedGithubConfig;
-	try {
-		cfg = resolveGithubConfig(meta.repoPath);
-	} catch (err) {
-		if (err instanceof GithubConfigError) {
-			return { status: 'skipped', reason: err.message };
-		}
-		throw err;
-	}
-	if (cfg.type === 'none') {
-		return { status: 'skipped', reason: `tracker disabled via config (type: none, source: ${cfg.source})` };
-	}
+	const g = gate(repoPath);
+	if ('skip' in g) return g.skip;
+	const cfg = g.cfg;
 
-	const avail = ghAvailable();
-	if (!avail.ok) return { status: 'skipped', reason: avail.reason };
-
-	// Read parent HLD for the Epic ref.
-	const hldPaths = hldArtifactPaths(meta.repoPath, meta.epicHash);
-	let hld: { meta: MetaShape };
-	try {
-		hld = readJson(hldPaths.json);
-	} catch (err) {
-		return { status: 'failed', reason: `cannot read parent HLD at ${hldPaths.json}: ${(err as Error).message}` };
-	}
-	const epicRef = hld.meta.epicRef;
-	if (typeof epicRef !== 'string' || epicRef.length === 0) {
-		return { status: 'skipped', reason: `parent HLD has no epicRef; approve the HLD (with tracker) first` };
-	}
-
-	// Read Define for the Story details.
 	let define: DefineArtifact;
-	try {
-		define = readDefineArtifact(meta.repoPath, meta.epicHash);
-	} catch (err) {
-		return { status: 'failed', reason: `cannot read parent Define: ${(err as Error).message}` };
-	}
-	const story = define.body.stories.find(s => s.id === meta.storyId);
-	if (story === undefined) {
-		return { status: 'failed', reason: `Story '${meta.storyId}' not present in Define body` };
+	try { define = readDefineArtifact(repoPath, epicHash); }
+	catch (err) { return { status: 'failed', reason: `cannot read parent Define: ${(err as Error).message}` }; }
+	const story = define.body.stories.find(s => s.id === storyId);
+	if (story === undefined) return { status: 'failed', reason: `Story '${storyId}' not present in Define body` };
+
+	// The Define carries the Epic-level aggregate (epicRef + storyRefs),
+	// written when the HLD was approved. It must have the Epic ref first.
+	const defineTracker = (define.meta as { tracker?: TrackerMeta }).tracker;
+	const epicRef = defineTracker?.epicRef;
+	if (typeof epicRef !== 'string' || epicRef.length === 0) {
+		return { status: 'skipped', reason: 'Epic not pushed yet; approve the HLD (with tracker) first' };
 	}
 
-	// Create the Story issue.
-	const title = `${meta.storyId}: ${story.title}`;
-	const body  = renderStoryBody(epicRef, story, meta.epicHash);
+	// Duplicate guard: adopt from the Epic's storyRefs map if present.
+	const adopted = defineTracker?.storyRefs?.[storyId];
 	let storyRef: string;
-	try {
-		storyRef = ghCreateIssue(cfg.owner, cfg.repo, title, body, [cfg.storyLabel, `epic:${meta.epicSlug}`]);
-	} catch (err) {
-		return { status: 'failed', reason: `gh issue create failed: ${(err as Error).message}` };
+	if (typeof adopted === 'string' && adopted.length > 0) {
+		storyRef = adopted;
+	} else {
+		try {
+			storyRef = ghCreateIssue(cfg.owner, cfg.repo, `${storyId}: ${story.title}`,
+				renderStoryBody(epicRef, story, epicSlug), [cfg.storyLabel, epicMembershipLabel(epicSlug)]);
+		} catch (err) { return { status: 'failed', reason: `gh issue create failed: ${(err as Error).message}` }; }
+		if (cfg.useMilestones) bestEffort('milestone', () => ghAttachMilestone(cfg.owner, cfg.repo, storyRef, epicSlug));
 	}
 
-	// Edit the Epic body's task list to insert the Story ref. Best-
-	// effort: a failure here does not block the Story creation.
-	try {
-		const currentBody = ghGetIssueBody(cfg.owner, cfg.repo, epicRef);
-		const updated = updateEpicTaskList(currentBody, meta.storyId, storyRef, story.title);
-		if (updated !== currentBody) {
-			ghEditIssueBody(cfg.owner, cfg.repo, epicRef, updated);
-		}
-	} catch (err) {
-		log.warn(
-			{ epicRef, storyRef, err: (err as Error).message },
-			'failed to update Epic body task list; Story issue still created',
-		);
+	// Persist: storyRef on the LLD (its doc link) + aggregate into the
+	// Define's storyRefs map. Re-render the LLD doc with the issue link.
+	patchTrackerMeta(lldJsonPath, { storyRef, pushedAt: new Date().toISOString() });
+	relink(lldArtifactPaths(repoPath, epicHash, storyId, epicSlug).md, () => renderLldMarkdown(readLldArtifact(repoPath, epicHash, storyId)));
+	patchTrackerMeta(defineArtifactPaths(repoPath, epicHash, epicSlug).json, { storyRefs: { ...(defineTracker?.storyRefs ?? {}), [storyId]: storyRef } });
+
+	if (adopted === undefined) {
+		bestEffort('tasklist', () => {
+			const current = ghGetIssueBody(cfg.owner, cfg.repo, epicRef);
+			const updated = updateEpicTaskList(current, storyId, storyRef, story.title);
+			if (updated !== current) ghEditIssueBody(cfg.owner, cfg.repo, epicRef, updated);
+		});
+		bestEffort('comment', () => ghComment(cfg.owner, cfg.repo, storyRef, renderTrackerLldSummary(readLldArtifact(repoPath, epicHash, storyId))));
 	}
 
-	patchArtifactMeta(lldJsonPath, { storyRef, storyPushedAt: new Date().toISOString() });
-	return { status: 'created', storyRef };
-}
-
-// ---------------------------------------------------------------------------
-// Body renderers
-// ---------------------------------------------------------------------------
-
-/** Renders the initial Epic issue body — problem, non-goals,
- *  constraints, and a `## Stories` task-list with placeholder entries
- *  that later Story pushes replace in-place. */
-export function renderEpicBody(define: DefineArtifact, epicHash: string, epicSlug: string): string {
-	const body = define.body;
-	const lines: string[] = [];
-	lines.push('## Problem');
-	lines.push('');
-	lines.push(body.problem);
-	lines.push('');
-	if (body.nonGoals.length > 0) {
-		lines.push('## Non-goals');
-		lines.push('');
-		for (const ng of body.nonGoals) lines.push(`- **${ng.text}** — ${ng.rationale}`);
-		lines.push('');
-	}
-	if (body.constraints.length > 0) {
-		lines.push('## Constraints');
-		lines.push('');
-		for (const c of body.constraints) lines.push(`- **${c.id}** (${c.type}): ${c.text}`);
-		lines.push('');
-	}
-	lines.push('## Stories');
-	lines.push('');
-	for (const s of body.stories) {
-		const size = s.sizeEstimate !== undefined ? ` (${s.sizeEstimate})` : '';
-		lines.push(`- [ ] ${s.id}: ${s.title}${size}`);
-	}
-	lines.push('');
-	lines.push('## Design references');
-	lines.push('');
-	lines.push(`- HLD: \`docs/designs/HLD-${epicHash}.md\``);
-	lines.push(`- Define: \`docs/defines/DEF-${epicHash}.md\``);
-	lines.push('');
-	lines.push(`_epic slug: ${epicSlug}_`);
-	return lines.join('\n');
-}
-
-/** Renders a Story issue body, back-referencing the Epic. */
-export function renderStoryBody(epicRef: string, story: DefineStory, epicHash: string): string {
-	const num = extractIssueNumber(epicRef);
-	const lines: string[] = [];
-	lines.push(`**Epic:** #${num}`);
-	lines.push('');
-	lines.push('## User value');
-	lines.push('');
-	lines.push(story.userValue);
-	lines.push('');
-	if (story.acceptanceCriteria.length > 0) {
-		lines.push('## Acceptance criteria');
-		lines.push('');
-		for (const ac of story.acceptanceCriteria) {
-			lines.push(`- **${ac.id}:** Given ${ac.given}, when ${ac.when}, then ${ac.then}.`);
-		}
-		lines.push('');
-	}
-	lines.push('## Design references');
-	lines.push('');
-	lines.push(`- LLD: \`docs/designs/LLD-${epicHash}-${story.id}.md\``);
-	if (story.sizeEstimate !== undefined) {
-		lines.push('');
-		lines.push(`Size: ${story.sizeEstimate}`);
-	}
-	return lines.join('\n');
-}
-
-/** In-place update of the Epic body's task-list line for one Story.
- *  Matches the placeholder `- [ ] {storyId}: {title}` (optionally
- *  followed by a size suffix) and replaces the prefix with
- *  `- [ ] #{issueNumber} — `.
- *
- *  The match is line-anchored + prefix-based to survive small title
- *  drift; if no matching line is found the body is returned
- *  unchanged and the caller logs a warning. */
-export function updateEpicTaskList(currentBody: string, storyId: string, storyRef: string, storyTitle: string): string {
-	const num = extractIssueNumber(storyRef);
-	const lines = currentBody.split('\n');
-	const placeholderPrefix = `- [ ] ${storyId}: ${storyTitle}`;
-	const alreadyLinkedPrefix = `- [ ] #${num} — ${storyId}:`;
-	for (let i = 0; i < lines.length; i += 1) {
-		const line = lines[i]!;
-		if (line.startsWith(alreadyLinkedPrefix)) {
-			// Already updated on a prior run; leave the body alone.
-			return currentBody;
-		}
-		if (line.startsWith(placeholderPrefix)) {
-			// Preserve any trailing size suffix.
-			const suffix = line.slice(placeholderPrefix.length);
-			lines[i] = `- [ ] #${num} — ${storyId}: ${storyTitle}${suffix}`;
-			return lines.join('\n');
-		}
-	}
-	// No matching placeholder — return unchanged; caller warns.
-	return currentBody;
+	return adopted !== undefined ? { status: 'already-exists', storyRef } : { status: 'created', storyRef };
 }
 
 // ---------------------------------------------------------------------------
 // Internals
 // ---------------------------------------------------------------------------
 
-interface MetaShape {
-	readonly workflow?:     string;
-	readonly runId?:        string;
-	readonly repoPath?:     string;
-	readonly epicHash?:     string;
-	readonly epicSlug?:     string;
-	readonly storyId?:      string;
-	readonly epicRef?:      string;
-	readonly storyRef?:     string;
-	readonly epicPushedAt?: string;
-	readonly storyPushedAt?: string;
-	readonly [k: string]:   unknown;
+/** Re-render + atomically write a doc's markdown (the JSON meta.tracker
+ *  must already be patched so the render picks up the tracker link). */
+function relink(mdPath: string, render: () => string): void {
+	try { writeAtomic(mdPath, render()); }
+	catch (err) { log.warn({ mdPath, err: (err as Error).message }, 'failed to re-render doc with tracker link'); }
 }
 
-function readJson(path: string): { readonly meta: MetaShape; readonly [k: string]: unknown } {
-	const raw = readFileSync(path, 'utf8');
-	const parsed = JSON.parse(raw) as { meta?: MetaShape };
-	if (typeof parsed !== 'object' || parsed === null || typeof parsed.meta !== 'object' || parsed.meta === null) {
-		throw new Error(`file at ${path} has no meta object`);
-	}
-	return parsed as { readonly meta: MetaShape };
-}
-
-function patchArtifactMeta(jsonPath: string, patch: Readonly<Record<string, unknown>>): void {
-	const raw = readFileSync(jsonPath, 'utf8');
-	const artifact = JSON.parse(raw) as { meta?: Record<string, unknown> };
-	if (typeof artifact.meta !== 'object' || artifact.meta === null) {
-		throw new Error(`Artifact at ${jsonPath} has no meta`);
-	}
-	artifact.meta = { ...artifact.meta, ...patch };
-	writeAtomic(jsonPath, JSON.stringify(artifact, null, 2) + '\n');
+/** Run a non-critical side effect; log + swallow failures. */
+function bestEffort(what: string, fn: () => void): void {
+	try { fn(); } catch (err) { log.warn({ what, err: (err as Error).message }, 'tracker side-effect failed'); }
 }
 
 function firstSentence(s: string): string {

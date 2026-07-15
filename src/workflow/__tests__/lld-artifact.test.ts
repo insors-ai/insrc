@@ -318,6 +318,18 @@ test('renderLldMarkdown emits all sections', () => {
 	assert.ok(md.includes('**CHOSEN**'));
 });
 
+test('renderLldMarkdown adds a Tracker link only when meta.tracker.storyRef is set', () => {
+	const meta = {
+		workflow: 'design.story', runId: 'lld-run-1', repoPath: '/', createdAt: '', model: 'client',
+		elapsedMs: 0, repoIndexedAt: null, schemaVersion: 1, epicSlug: 'tag-filtering', storyId: 's1',
+		hldBaseRunId: 'hld-run-1', hldEffectiveHash: computeHldEffectiveHash('hld-run-1', []), hldAmendmentsApplied: [],
+	};
+	const base = { meta, body: lldBodyFixture(), citations: [] } as unknown as LldArtifact;
+	assert.doesNotMatch(renderLldMarkdown(base), /\*\*Tracker:\*\*/);
+	const linked = { meta: { ...meta, tracker: { storyRef: 'acme/demo#11' } }, body: lldBodyFixture(), citations: [] } as unknown as LldArtifact;
+	assert.match(renderLldMarkdown(linked), /\*\*Tracker:\*\* \[acme\/demo#11\]/);
+});
+
 test('renderLldMarkdown includes Migration section for enhancement (when present)', () => {
 	const body: LldBody = {
 		...lldBodyFixture(),

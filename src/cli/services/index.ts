@@ -57,6 +57,7 @@ export interface Services {
 		approveAmendment(repoPath: string, amendmentId: string, approvedBy: string): AmendmentRecord;
 		rejectAmendment(repoPath: string, amendmentId: string, reason: string): AmendmentRecord;
 		staleness(repoPath: string, epicHash: string): readonly StaleLldEntry[];
+		sync(repoPath: string, epicHash: string): import('../../workflow/tracker/sync.js').SyncResult;
 	};
 	readonly setup: {
 		detect(): SystemInfo;
@@ -101,6 +102,7 @@ export function makeServices(): Services {
 			approveAmendment: workflow.approveAmendmentById,
 			rejectAmendment:  workflow.rejectAmendmentById,
 			staleness:        workflow.staleness,
+			sync:             workflow.sync,
 		},
 		setup: {
 			detect:       setup.detect,

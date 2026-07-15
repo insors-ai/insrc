@@ -20,7 +20,7 @@
 import { readAmendment } from '../../amendments/store.js';
 import { readBaseHld, readDefineArtifact, requireApprovedEpic } from '../../gates.js';
 import { readLldArtifact } from '../../artifacts/lld-io.js';
-import { renderTrackerHldSummary, renderTrackerLldSummary, renderTrackerAmendmentSummary } from './summaries.js';
+import { renderEpicBody, renderTrackerHldSummary, renderTrackerLldSummary, renderTrackerAmendmentSummary } from '../../tracker/conventions.js';
 import { resolveGithubConfig, type ResolvedGithubConfig } from '../../config/github.js';
 import { assertEpicHash } from '../../hash.js';
 import type { StepRunnerContext } from '../../types.js';
@@ -37,14 +37,10 @@ export function assemblePushContext(ctx: StepRunnerContext): PushContext {
 	const gh   = requireGithubAdapter(resolveGithubConfig(ctx.intent.repoPath), ctx.intent.workflow);
 	const force = ctx.intent.params['force'] === true;
 
-	// Compose Epic issue body from the define artifact.
-	const epicBodyMd = [
-		`## Problem`, epic.body.problem, '',
-		`## Stories`,
-		...epic.body.stories.map(s => `- [ ] ${s.id}: ${s.title}`),
-		'',
-		`_flavor: ${epic.body.flavor}_`,
-	].join('\n');
+	// Compose the Epic issue body via the SHARED renderer so a
+	// coarse-handoff push matches a deterministic push byte-for-byte
+	// (same task-list + slug-based doc links).
+	const epicBodyMd = renderEpicBody(epic, epicSlug);
 
 	const stories = epic.body.stories.map(s => ({
 		id: s.id, title: s.title,

@@ -77,6 +77,7 @@ import {
 	type TrackerSyncRefs,
 } from './artifacts/tracker.js';
 import { defineArtifactPaths, writeAtomic } from './storage.js';
+import { linkDocsToIssues } from './tracker/link.js';
 import { readFileSync } from 'node:fs';
 import {
 	AmendmentApplyError,
@@ -1294,9 +1295,10 @@ function mutateEpicTrackerMeta(
 	if (workflow === 'tracker.post') return;   // no-op for post
 	const paths = defineArtifactPaths(repoPath, epicHash);
 	const raw = readFileSync(paths.json, 'utf8');
-	const artifact = JSON.parse(raw) as { meta?: { tracker?: Record<string, unknown> } };
+	const artifact = JSON.parse(raw) as { meta?: { epicSlug?: string; tracker?: Record<string, unknown> } };
 	if (artifact.meta === undefined) artifact.meta = {};
 	if (artifact.meta.tracker === undefined) artifact.meta.tracker = {};
+	const epicSlug = artifact.meta.epicSlug ?? epicHash;
 	if (workflow === 'tracker.push') {
 		const push = refs as TrackerPushRefs;
 		artifact.meta.tracker = {
@@ -1308,6 +1310,11 @@ function mutateEpicTrackerMeta(
 			labelsCreated: push.labelsCreated,
 			pushedAt:  new Date().toISOString(),
 		};
+		writeAtomic(paths.json, JSON.stringify(artifact, null, 2) + '\n');
+		// Framework-owned doc↔issue linkage (same as the deterministic path):
+		// re-render each doc's markdown with a `**Tracker:**` link.
+		linkDocsToIssues(repoPath, epicHash, epicSlug, { epicRef: push.epicRef, storyRefs: push.storyRefs });
+		return;
 	} else {
 		const sync = refs as TrackerSyncRefs;
 		artifact.meta.tracker = {

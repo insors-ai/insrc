@@ -96,6 +96,13 @@ test('renderDefineMarkdown produces expected sections', () => {
 	assert.ok(md.includes('**Extends:**'));
 });
 
+test('renderDefineMarkdown adds a Tracker link only when meta.tracker.epicRef is set', () => {
+	const meta = { workflow: 'define', runId: 'run-1', repoPath: '/tmp/x', createdAt: '', model: 'client', elapsedMs: 0, repoIndexedAt: null, schemaVersion: 1 };
+	assert.doesNotMatch(renderDefineMarkdown({ meta, body: fixture(), citations: [] } as unknown as Parameters<typeof renderDefineMarkdown>[0]), /\*\*Tracker:\*\*/);
+	const linked = { meta: { ...meta, tracker: { epicRef: 'acme/demo#3' } }, body: fixture(), citations: [] } as unknown as Parameters<typeof renderDefineMarkdown>[0];
+	assert.match(renderDefineMarkdown(linked), /\*\*Tracker:\*\* \[acme\/demo#3\]/);
+});
+
 test('renderDefineMarkdown escapes pipes in constraint text', () => {
 	const body = fixture();
 	const dirty: DefineBody = {

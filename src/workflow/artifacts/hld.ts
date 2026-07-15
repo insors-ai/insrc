@@ -16,6 +16,7 @@
  */
 
 import { artifactIdMarker, hldArtifactId } from '../storage.js';
+import { trackerRefLine } from '../tracker/refs.js';
 import type { Citation, WorkflowArtifact } from '../types.js';
 
 // ---------------------------------------------------------------------------
@@ -109,6 +110,11 @@ export function renderHldMarkdown(artifact: HldArtifact): string {
 	}
 	lines.push(`# HLD: ${firstLine(body.frameworkSummary)}`);
 	lines.push('');
+	const epicRef = (artifact.meta as { tracker?: { epicRef?: string } }).tracker?.epicRef;
+	if (typeof epicRef === 'string' && epicRef.includes('#')) {
+		lines.push(trackerRefLine(epicRef));
+		lines.push('');
+	}
 	lines.push('## Framework summary');
 	lines.push('');
 	lines.push(body.frameworkSummary);

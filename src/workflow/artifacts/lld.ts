@@ -19,6 +19,7 @@
 import { createHash } from 'node:crypto';
 
 import { artifactIdMarker, lldArtifactId } from '../storage.js';
+import { trackerRefLine } from '../tracker/refs.js';
 import type { Alternative, HldArtifact, SharedContract, StoryBoundary } from './hld.js';
 import type { ArtifactMetaBase, Citation, WorkflowArtifact } from '../types.js';
 
@@ -225,6 +226,10 @@ export function renderLldMarkdown(artifact: LldArtifact): string {
 	lines.push(`**Epic:** \`${meta.epicSlug}\``);
 	lines.push(`**HLD base run:** \`${meta.hldBaseRunId}\``);
 	lines.push(`**HLD effective hash:** \`${meta.hldEffectiveHash.slice(0, 12)}...\``);
+	const storyRef = (meta as { tracker?: { storyRef?: string } }).tracker?.storyRef;
+	if (typeof storyRef === 'string' && storyRef.includes('#')) {
+		lines.push(trackerRefLine(storyRef));
+	}
 	lines.push('');
 
 	lines.push('## HLD context');

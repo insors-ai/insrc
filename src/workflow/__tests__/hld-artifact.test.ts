@@ -92,6 +92,14 @@ test('renderHldMarkdown emits all sections', () => {
 	assert.ok(md.includes('**Rejected because:**'));
 });
 
+test('renderHldMarkdown adds a Tracker link only when meta.tracker.epicRef is set', () => {
+	const meta = { workflow: 'design.epic', runId: 'r', repoPath: '/', createdAt: '', model: 'client', elapsedMs: 0, repoIndexedAt: null, schemaVersion: 1 };
+	const base = { meta, body: fixtureBody(), citations: [] } as unknown as HldArtifact;
+	assert.doesNotMatch(renderHldMarkdown(base), /\*\*Tracker:\*\*/);
+	const linked = { meta: { ...meta, tracker: { epicRef: 'acme/demo#7' } }, body: fixtureBody(), citations: [] } as unknown as HldArtifact;
+	assert.match(renderHldMarkdown(linked), /\*\*Tracker:\*\* \[acme\/demo#7\]\(https:\/\/github\.com\/acme\/demo\/issues\/7\)/);
+});
+
 // ---------------------------------------------------------------------------
 // isHldBody
 // ---------------------------------------------------------------------------

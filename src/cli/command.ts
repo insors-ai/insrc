@@ -27,7 +27,7 @@ const PANES: Record<string, number> = { daemon: 0, repos: 1, workflows: 2, setup
 export const COMMAND_HELP: readonly string[] = [
 	'repo     add <path> | remove <path> | reindex <path> | list',
 	'daemon   start | stop | restart | update | backup <dir> | compact | status',
-	'workflow list | chain <hash> | approve <path> | reject <path> <reason> | ack-stale <path> <reason>',
+	'workflow list | chain <hash> | approve <path> | reject <path> <reason> | ack-stale <path> <reason> | sync <hash>',
 	'config   list [search] | get <key> | set <key> <value> | unset <key> | reload   (dot-path keys)',
 	'setup    show | apply | pull',
 	'pane daemon|repos|workflows|setup   ·   help   ·   quit',
@@ -144,7 +144,13 @@ function runWorkflow(sub: string | undefined, rest: readonly string[], svc: Serv
 			const r = svc.workflow.ackStale(rest[0], rest.slice(1).join(' '));
 			return [`acked ${r.path}`];
 		}
-		default: return ['usage: workflow list|chain <hash>|approve <path>|reject <path> <reason>|ack-stale <path> <reason>'];
+		case 'sync': {
+			if (rest[0] === undefined) return ['usage: workflow sync <epic-hash>'];
+			const r = svc.workflow.sync(ctx.repoPath, rest[0]);
+			if (r.status === 'synced') return [`synced · epic=${r.epicStatus}`, ...Object.entries(r.storyStatus).map(([s, st]) => `  ${s}: ${st}`)];
+			return [`${r.status}: ${r.reason}`];
+		}
+		default: return ['usage: workflow list|chain <hash>|approve <path>|reject <path> <reason>|ack-stale <path> <reason>|sync <hash>'];
 	}
 }
 

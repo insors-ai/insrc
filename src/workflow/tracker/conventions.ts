@@ -15,10 +15,11 @@
  */
 
 import { issueNumber } from './refs.js';
-import { defineMdRel, hldMdRel, lldMdRel } from '../storage.js';
+import { defineMdRel, hldMdRel, lldMdRel, planMdRel } from '../storage.js';
 import type { DefineArtifact, DefineStory } from '../artifacts/define.js';
 import type { HldArtifact } from '../artifacts/hld.js';
 import type { LldArtifact } from '../artifacts/lld.js';
+import type { PlanTask } from '../artifacts/plan.js';
 import type { AmendmentRecord } from '../amendments/types.js';
 
 // ---------------------------------------------------------------------------
@@ -112,6 +113,33 @@ export function updateEpicTaskList(currentBody: string, storyId: string, storyRe
 		}
 	}
 	return currentBody;
+}
+
+/** Task issue body — Story back-ref, size, summary, per-Task acceptance
+ *  checks + named tests, and a slug-based link to the plan doc. Rendered
+ *  for each PlanTask when `pushTasks` is enabled. */
+export function renderTaskBody(storyRef: string, storyId: string, task: PlanTask, epicSlug: string): string {
+	const lines: string[] = [];
+	lines.push(`**Story:** #${issueNumber(storyRef)} (${storyId})`, '');
+	lines.push(`**Size:** ${task.size}`, '');
+	lines.push('## Summary', '', task.summary, '');
+	if (task.dependsOn.length > 0) {
+		lines.push(`**Depends on:** ${task.dependsOn.map(d => `\`${d}\``).join(', ')}`, '');
+	}
+	if (task.acceptanceChecks.length > 0) {
+		lines.push('## Acceptance checks', '');
+		for (const ac of task.acceptanceChecks) lines.push(`- [ ] ${ac}`);
+		lines.push('');
+	}
+	if (task.tests.length > 0) {
+		lines.push('## Tests', '');
+		for (const t of task.tests) lines.push(`- **${t.level}:** ${t.name}`);
+		lines.push('');
+	}
+	lines.push('## Design references', '');
+	lines.push(`- Plan: \`${planMdRel(epicSlug, storyId)}\``);
+	lines.push('', `_task: ${storyId}/${task.id}_`);
+	return lines.join('\n');
 }
 
 // ---------------------------------------------------------------------------

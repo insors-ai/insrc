@@ -95,6 +95,46 @@ export function ghCreateIssue(owner: string, repo: string, title: string, body: 
 	return buildRef(owner, repo, m[1]!);
 }
 
+export interface CreatedIssue {
+	readonly ref:   string;    // owner/repo#N
+	readonly id:    number;    // REST database id (needed for sub-issue linking)
+	readonly typed: boolean;   // whether the native issue type was applied
+}
+
+/** Create an issue via the REST API (so the numeric database `id` comes
+ *  back for sub-issue linking) with an optional native issue TYPE. When
+ *  a type is given but rejected (org without issue types enabled), retries
+ *  once WITHOUT the type so the issue is still created — fail-open. */
+export function ghCreateIssueTyped(
+	owner: string, repo: string, title: string, body: string,
+	labels: readonly string[], issueType?: string,
+): CreatedIssue {
+	const base = ['api', '-X', 'POST', `repos/${owner}/${repo}/issues`, '-f', `title=${title}`, '-f', `body=${body}`];
+	for (const l of labels) base.push('-f', `labels[]=${l}`);
+	const parse = (raw: string): { number: number; id: number } => {
+		const j = JSON.parse(raw) as { number?: number; id?: number };
+		if (typeof j.number !== 'number' || typeof j.id !== 'number') {
+			throw new Error(`gh api issue create returned unexpected JSON: '${raw.slice(0, 120)}'`);
+		}
+		return { number: j.number, id: j.id };
+	};
+	if (typeof issueType === 'string' && issueType.length > 0) {
+		try {
+			const r = parse(out('gh', [...base, '-f', `type=${issueType}`]));
+			return { ref: buildRef(owner, repo, r.number), id: r.id, typed: true };
+		} catch { /* org may not have issue types — fall through untyped */ }
+	}
+	const r = parse(out('gh', base));
+	return { ref: buildRef(owner, repo, r.number), id: r.id, typed: false };
+}
+
+/** Link an existing issue (`childId` = its REST database id) as a
+ *  sub-issue of `parentRef`. Throws on API error (the caller wraps this
+ *  in a best-effort guard since sub-issues may be disabled). */
+export function ghLinkSubIssue(owner: string, repo: string, parentRef: string, childId: number): void {
+	silent('gh', ['api', '-X', 'POST', `repos/${owner}/${repo}/issues/${parseIssueRef(parentRef).number}/sub_issues`, '-F', `sub_issue_id=${childId}`]);
+}
+
 export function ghGetIssueBody(owner: string, repo: string, ref: string): string {
 	return out('gh', ['issue', 'view', parseIssueRef(ref).number, '--repo', `${owner}/${repo}`, '--json', 'body', '-q', '.body']);
 }

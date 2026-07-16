@@ -34,6 +34,7 @@ import {
 import {
 	autoPushEpicOnHld,
 	autoPushStoryOnLld,
+	autoPushTasksOnPlan,
 	type AutoPushResult,
 } from '../../workflow/tracker-auto.js';
 import {
@@ -101,6 +102,7 @@ export function approve(artifactPath: string, withTracker = true): ApproveOutcom
 	let tracker: AutoPushResult | undefined;
 	if (approval.workflow === 'design.epic')       tracker = autoPushEpicOnHld(approval.path);
 	else if (approval.workflow === 'design.story') tracker = autoPushStoryOnLld(approval.path);
+	else if (approval.workflow === 'plan')         tracker = autoPushTasksOnPlan(approval.path);
 	return tracker !== undefined ? { approval, tracker } : { approval };
 }
 

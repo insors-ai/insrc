@@ -33,23 +33,25 @@ import { readLldArtifact } from './artifacts/lld-io.js';
 import { renderDefineMarkdown, type DefineArtifact } from './artifacts/define.js';
 import { renderHldMarkdown } from './artifacts/hld.js';
 import { renderLldMarkdown } from './artifacts/lld.js';
+import type { PlanArtifact, PlanTask } from './artifacts/plan.js';
 import { defineArtifactPaths, hldArtifactPaths, lldArtifactPaths, writeAtomic } from './storage.js';
 import { GithubConfigError, resolveGithubConfig, type ResolvedGithubConfig } from './config/github.js';
 import {
-	ghAttachMilestone, ghAuthOk, ghComment, ghCreateIssue, ghCreateLabel,
-	ghEditIssueBody, ghEnsureMilestone, ghFindIssueByLabels, ghGetIssueBody,
+	ghAttachMilestone, ghAuthOk, ghComment, ghCreateIssue, ghCreateIssueTyped, ghCreateLabel,
+	ghEditIssueBody, ghEnsureMilestone, ghFindIssueByLabels, ghGetIssueBody, ghLinkSubIssue,
+	type CreatedIssue,
 } from './tracker/github.js';
 import {
-	allTrackerLabels, epicMembershipLabel, renderEpicBody, renderStoryBody,
+	allTrackerLabels, epicMembershipLabel, renderEpicBody, renderStoryBody, renderTaskBody,
 	renderTrackerHldSummary, renderTrackerLldSummary, updateEpicTaskList,
 } from './tracker/conventions.js';
-import { patchTrackerMeta, type TrackerMeta } from './tracker/refs.js';
+import { patchTrackerMeta, readTrackerMeta, type TrackerMeta } from './tracker/refs.js';
 
 const log = getLogger('workflow:tracker-auto');
 
 export type AutoPushResult =
-	| { readonly status: 'created';        readonly epicRef?: string; readonly storyRef?: string; readonly labelsCreated?: readonly string[] }
-	| { readonly status: 'already-exists'; readonly epicRef?: string; readonly storyRef?: string }
+	| { readonly status: 'created';        readonly epicRef?: string; readonly storyRef?: string; readonly taskRefs?: Readonly<Record<string, string>>; readonly labelsCreated?: readonly string[] }
+	| { readonly status: 'already-exists'; readonly epicRef?: string; readonly storyRef?: string; readonly taskRefs?: Readonly<Record<string, string>> }
 	| { readonly status: 'skipped';        readonly reason: string }
 	| { readonly status: 'failed';         readonly reason: string };
 
@@ -203,6 +205,85 @@ export function autoPushStoryOnLld(lldJsonPath: string): AutoPushResult {
 	}
 
 	return adopted !== undefined ? { status: 'already-exists', storyRef } : { status: 'created', storyRef };
+}
+
+// ---------------------------------------------------------------------------
+// Plan → Task issues (sub-issues of the Story, native issue type Task)
+// ---------------------------------------------------------------------------
+
+/** On plan approve, create one GitHub issue per PlanTask — typed `Task`
+ *  (best-effort) and linked as a sub-issue of the Story issue. Opt-in via
+ *  `pushTasks` in the github config. Idempotent: adopts refs already in
+ *  `meta.tracker.taskRefs`; requires the Story issue to exist first. */
+export function autoPushTasksOnPlan(planJsonPath: string): AutoPushResult {
+	const meta = readMeta(planJsonPath);
+	if (typeof meta.epicHash !== 'string' || typeof meta.epicSlug !== 'string' || typeof meta.storyId !== 'string' || typeof meta.repoPath !== 'string') {
+		return { status: 'skipped', reason: 'Plan meta is missing epicHash / epicSlug / storyId / repoPath' };
+	}
+	const { epicHash, epicSlug, storyId, repoPath } = { epicHash: meta.epicHash, epicSlug: meta.epicSlug, storyId: meta.storyId, repoPath: meta.repoPath };
+
+	const g = gate(repoPath);
+	if ('skip' in g) return g.skip;
+	const cfg = g.cfg;
+	if (!cfg.pushTasks) {
+		return { status: 'skipped', reason: 'task push disabled (set "pushTasks": true in ~/.insrc/github.json to enable)' };
+	}
+
+	// Resolve the parent Story issue: prefer the Epic-level aggregate on the
+	// Define, fall back to the LLD's own storyRef. Tasks can't be pushed
+	// before their Story exists.
+	let define: DefineArtifact;
+	try { define = readDefineArtifact(repoPath, epicHash); }
+	catch (err) { return { status: 'failed', reason: `cannot read parent Define: ${(err as Error).message}` }; }
+	const defineTracker = (define.meta as { tracker?: TrackerMeta }).tracker;
+	let storyRef = defineTracker?.storyRefs?.[storyId];
+	if (typeof storyRef !== 'string' || storyRef.length === 0) {
+		storyRef = readTrackerMeta(lldArtifactPaths(repoPath, epicHash, storyId).json)?.storyRef;
+	}
+	if (typeof storyRef !== 'string' || storyRef.length === 0) {
+		return { status: 'skipped', reason: 'Story not pushed yet; approve the LLD (with tracker) first' };
+	}
+	const parentStoryRef = storyRef;
+
+	// Read the finalized Tasks off the plan artifact.
+	let tasks: readonly PlanTask[];
+	try {
+		const plan = JSON.parse(readFileSync(planJsonPath, 'utf8')) as PlanArtifact;
+		tasks = plan.body?.tasks ?? [];
+	} catch (err) { return { status: 'failed', reason: `cannot read plan tasks: ${(err as Error).message}` }; }
+	if (tasks.length === 0) return { status: 'skipped', reason: 'plan has no tasks' };
+
+	// Ensure the task + membership labels exist (idempotent, best-effort).
+	const membership = epicMembershipLabel(epicSlug);
+	const created: string[] = [];
+	for (const label of [cfg.taskLabel, membership]) {
+		if (ghCreateLabel(cfg.owner, cfg.repo, label)) created.push(label);
+	}
+
+	const taskRefs: Record<string, string> = { ...(meta.tracker?.taskRefs ?? {}) };
+	let createdCount = 0;
+	for (const task of [...tasks].sort((a, b) => a.order - b.order)) {
+		const existing = taskRefs[task.id];
+		if (typeof existing === 'string' && existing.length > 0) continue;   // adopt
+		let issue: CreatedIssue;
+		try {
+			issue = ghCreateIssueTyped(
+				cfg.owner, cfg.repo, `${storyId}/${task.id}: ${task.title}`,
+				renderTaskBody(parentStoryRef, storyId, task, epicSlug),
+				[cfg.taskLabel, membership], cfg.taskIssueType,
+			);
+		} catch (err) { return { status: 'failed', reason: `gh issue create (task ${task.id}) failed: ${(err as Error).message}` }; }
+		taskRefs[task.id] = issue.ref;
+		createdCount += 1;
+		bestEffort(`sub-issue ${task.id}`, () => ghLinkSubIssue(cfg.owner, cfg.repo, parentStoryRef, issue.id));
+		if (!issue.typed) log.info({ task: task.id, type: cfg.taskIssueType }, 'task issue created untyped (org may not have the issue type)');
+	}
+
+	patchTrackerMeta(planJsonPath, { taskRefs, pushedAt: new Date().toISOString(), ...(created.length > 0 ? { labelsCreated: created } : {}) });
+
+	return createdCount > 0
+		? { status: 'created', taskRefs, ...(created.length > 0 ? { labelsCreated: created } : {}) }
+		: { status: 'already-exists', taskRefs };
 }
 
 // ---------------------------------------------------------------------------

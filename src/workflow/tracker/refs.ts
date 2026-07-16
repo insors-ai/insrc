@@ -26,6 +26,7 @@ export interface TrackerMeta {
 	readonly epicRef?:       string;                        // on HLD / Define
 	readonly storyRef?:      string;                        // on LLD
 	readonly storyRefs?:     Readonly<Record<string, string>>;  // aggregate on the Epic (batch push)
+	readonly taskRefs?:      Readonly<Record<string, string>>;  // on the Plan: taskId → ref (sub-issues of the Story)
 	readonly milestoneRef?:  string;
 	readonly labelsCreated?: readonly string[];
 	readonly epicStatus?:    string;

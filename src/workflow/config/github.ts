@@ -68,7 +68,17 @@ export interface GithubEntry {
 	readonly repo?:         string;
 	readonly epicLabel?:    string;      // default 'insrc:epic'
 	readonly storyLabel?:   string;      // default 'insrc:story'
+	readonly taskLabel?:    string;      // default 'insrc:task'
 	readonly useMilestones?: boolean;    // default false
+	/** Push Task-tier issues (one per PlanTask) as native GitHub issues,
+	 *  sub-issues of the Story, when a plan is approved. Opt-in (default
+	 *  false) — Task issues can be numerous and lean on org features
+	 *  (issue types + sub-issues) that not every org enables. */
+	readonly pushTasks?:    boolean;     // default false
+	/** Native GitHub issue-type name applied to Task issues. Set to ''
+	 *  to create untyped Task issues. Default 'Task'. Falls back to an
+	 *  untyped issue when the org has no such type. */
+	readonly taskIssueType?: string;    // default 'Task'
 }
 
 export interface GithubConfigFile {
@@ -89,7 +99,10 @@ export type ResolvedGithubConfig =
 		readonly repo:          string;
 		readonly epicLabel:     string;
 		readonly storyLabel:    string;
+		readonly taskLabel:     string;
 		readonly useMilestones: boolean;
+		readonly pushTasks:     boolean;
+		readonly taskIssueType: string;
 		readonly source:        ResolvedGithubConfigSource;
 	}
 	| {
@@ -103,6 +116,8 @@ export type ResolvedGithubConfig =
 
 const DEFAULT_EPIC_LABEL:  string = 'insrc:epic';
 const DEFAULT_STORY_LABEL: string = 'insrc:story';
+const DEFAULT_TASK_LABEL:  string = 'insrc:task';
+const DEFAULT_TASK_ISSUE_TYPE: string = 'Task';
 
 // ---------------------------------------------------------------------------
 // Config path
@@ -203,7 +218,10 @@ function resolveEntry(
 			repo:          entry.repo!,
 			epicLabel:     entry.epicLabel  ?? fallbackDefaults?.epicLabel  ?? DEFAULT_EPIC_LABEL,
 			storyLabel:    entry.storyLabel ?? fallbackDefaults?.storyLabel ?? DEFAULT_STORY_LABEL,
+			taskLabel:     entry.taskLabel  ?? fallbackDefaults?.taskLabel  ?? DEFAULT_TASK_LABEL,
 			useMilestones: entry.useMilestones ?? fallbackDefaults?.useMilestones ?? false,
+			pushTasks:     entry.pushTasks ?? fallbackDefaults?.pushTasks ?? false,
+			taskIssueType: entry.taskIssueType ?? fallbackDefaults?.taskIssueType ?? DEFAULT_TASK_ISSUE_TYPE,
 			source,
 		};
 	}
@@ -225,7 +243,10 @@ function resolveEntry(
 			repo:          remote.repo,
 			epicLabel:     entry.epicLabel  ?? fallbackDefaults?.epicLabel  ?? DEFAULT_EPIC_LABEL,
 			storyLabel:    entry.storyLabel ?? fallbackDefaults?.storyLabel ?? DEFAULT_STORY_LABEL,
+			taskLabel:     entry.taskLabel  ?? fallbackDefaults?.taskLabel  ?? DEFAULT_TASK_LABEL,
 			useMilestones: entry.useMilestones ?? fallbackDefaults?.useMilestones ?? false,
+			pushTasks:     entry.pushTasks ?? fallbackDefaults?.pushTasks ?? false,
+			taskIssueType: entry.taskIssueType ?? fallbackDefaults?.taskIssueType ?? DEFAULT_TASK_ISSUE_TYPE,
 			source:        'git-remote',
 		};
 	}

@@ -266,6 +266,7 @@ export function scopeAnalyzeCachePath(epicHash: string): string {
 export function defineMdRel(epicSlug: string): string { return `${DEFINES_DIR}/DEF-${fileSeg(epicSlug)}.md`; }
 export function hldMdRel(epicSlug: string): string { return `${DESIGNS_DIR}/HLD-${fileSeg(epicSlug)}.md`; }
 export function lldMdRel(epicSlug: string, storyId: string): string { return `${DESIGNS_DIR}/LLD-${fileSeg(epicSlug)}-${storyId}.md`; }
+export function planMdRel(epicSlug: string, storyId: string): string { return `${PLANS_DIR}/PLAN-${fileSeg(epicSlug)}-${storyId}.md`; }
 
 /** Path for a single amendment record. The amendmentId is already
  *  `AMD-<epicHash>-<n>` (see `amendments/store.ts`). */

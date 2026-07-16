@@ -17,14 +17,18 @@
  * issue ref + a comment summary.
  */
 
+import { existsSync, readFileSync } from 'node:fs';
+
 import { readAmendment } from '../../amendments/store.js';
 import { readBaseHld, readDefineArtifact, requireApprovedEpic } from '../../gates.js';
 import { readLldArtifact } from '../../artifacts/lld-io.js';
 import { renderEpicBody, renderTrackerHldSummary, renderTrackerLldSummary, renderTrackerAmendmentSummary } from '../../tracker/conventions.js';
+import type { PlanArtifact } from '../../artifacts/plan.js';
 import { resolveGithubConfig, type ResolvedGithubConfig } from '../../config/github.js';
+import { planArtifactPaths, planMdRel } from '../../storage.js';
 import { assertEpicHash } from '../../hash.js';
 import type { StepRunnerContext } from '../../types.js';
-import type { PostContext, PushContext, SyncContext } from './schemas.js';
+import type { PostContext, PushContext, PushTaskInfo, SyncContext } from './schemas.js';
 
 // ---------------------------------------------------------------------------
 // tracker.push
@@ -51,21 +55,49 @@ export function assemblePushContext(ctx: StepRunnerContext): PushContext {
 		].join('\n'),
 	}));
 
-	const existing: { epicRef?: string; storyRefs?: Record<string, string> } = {};
+	const existing: { epicRef?: string; storyRefs?: Record<string, string>; taskRefs?: Record<string, Record<string, string>> } = {};
 	const trackerMeta = (epic.meta as { tracker?: { epicRef?: string; storyRefs?: Record<string, string> } }).tracker;
 	if (trackerMeta !== undefined) {
 		if (typeof trackerMeta.epicRef === 'string') existing.epicRef = trackerMeta.epicRef;
 		if (typeof trackerMeta.storyRefs === 'object' && trackerMeta.storyRefs !== null) existing.storyRefs = trackerMeta.storyRefs;
 	}
 
+	// Task tier (opt-in): for each Story that has an APPROVED plan, surface
+	// its Tasks so the execute step can create typed Task sub-issues. Also
+	// carry any taskRefs already recorded on each plan (dedup on re-push).
+	const plans: { storyId: string; planDocRel: string; tasks: PushTaskInfo[] }[] = [];
+	if (gh.pushTasks) {
+		for (const s of epic.body.stories) {
+			const planJson = planArtifactPaths(ctx.intent.repoPath, epicHash, s.id).json;
+			if (!existsSync(planJson)) continue;
+			let plan: PlanArtifact & { meta: { approvedAt?: string; tracker?: { taskRefs?: Record<string, string> } } };
+			try { plan = JSON.parse(readFileSync(planJson, 'utf8')) as typeof plan; } catch { continue; }
+			if (typeof plan.meta?.approvedAt !== 'string' || plan.meta.approvedAt.length === 0) continue;   // unapproved plan → skip
+			plans.push({
+				storyId:    s.id,
+				planDocRel: planMdRel(epicSlug, s.id),
+				tasks: [...(plan.body?.tasks ?? [])].sort((a, b) => a.order - b.order).map(t => ({
+					id: t.id, title: t.title, size: t.size, summary: t.summary,
+					dependsOn: t.dependsOn, acceptanceChecks: t.acceptanceChecks,
+					tests: t.tests.map(x => ({ level: x.level, name: x.name })),
+				})),
+			});
+			const priorTaskRefs = plan.meta.tracker?.taskRefs;
+			if (priorTaskRefs !== undefined && Object.keys(priorTaskRefs).length > 0) {
+				(existing.taskRefs ??= {})[s.id] = priorTaskRefs;
+			}
+		}
+	}
+
 	return {
 		kind: 'push',
 		epicHash,
 		epicSlug,
-		gh: { owner: gh.owner, repo: gh.repo, epicLabel: gh.epicLabel, storyLabel: gh.storyLabel, useMilestones: gh.useMilestones },
+		gh: { owner: gh.owner, repo: gh.repo, epicLabel: gh.epicLabel, storyLabel: gh.storyLabel, taskLabel: gh.taskLabel, useMilestones: gh.useMilestones, pushTasks: gh.pushTasks, taskIssueType: gh.taskIssueType },
 		epicTitle: firstSentence(epic.body.problem),
 		epicBodyMd,
 		stories,
+		...(plans.length > 0 ? { plans } : {}),
 		force,
 		...(Object.keys(existing).length > 0 ? { existingRefs: existing } : {}),
 	};

@@ -29,6 +29,10 @@ export interface TrackerPushRefs {
 	readonly storyRefs:     Readonly<Record<string, string>>;          // storyId → ref
 	readonly milestoneRef?: string;                                    // optional; only when useMilestones=true
 	readonly labelsCreated: readonly string[];
+	/** storyId → (taskId → ref). Present only when `pushTasks` is enabled
+	 *  and the Story has an approved plan; each Task is a sub-issue of the
+	 *  Story issue, typed `Task`. */
+	readonly taskRefs?:     Readonly<Record<string, Readonly<Record<string, string>>>>;
 }
 
 export interface TrackerSyncRefs {
@@ -102,6 +106,15 @@ export function renderTrackerMarkdown(a: TrackerArtifact): string {
 		}
 		if (refs.milestoneRef !== undefined) {
 			lines.push(`- **Milestone:** \`${refs.milestoneRef}\``);
+		}
+		if (refs.taskRefs !== undefined && Object.keys(refs.taskRefs).length > 0) {
+			lines.push('');
+			lines.push('### Task issues');
+			for (const [storyId, tasks] of Object.entries(refs.taskRefs)) {
+				for (const [taskId, ref] of Object.entries(tasks)) {
+					lines.push(`- **${storyId}/${taskId}:** \`${ref}\``);
+				}
+			}
 		}
 		if (refs.labelsCreated.length > 0) {
 			lines.push('');

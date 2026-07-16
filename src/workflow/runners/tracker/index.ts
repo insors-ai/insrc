@@ -265,35 +265,68 @@ const CONVENTIONS_BLOCK = [
 ].join('\n');
 
 function pushPrompt(c: ReturnType<typeof assemblePushContext>): string {
+	const tasksOn = c.gh.pushTasks && c.plans !== undefined && c.plans.length > 0;
+	const notUsed = [
+		'DELIBERATELY NOT USED (per plan):',
+		'  - Projects v2 (workspace scope + OAuth surface).',
+		...(tasksOn ? [] : ['  - Sub-issues + issue types (enable with `pushTasks` in the github config).']),
+		'  - Cross-repo Epics.',
+	];
 	return [
 		'You are running the `execute` step of `tracker.push`.',
 		'',
-		`Push Epic \`${c.epicSlug}\` + Stories to \`${c.gh.owner}/${c.gh.repo}\`.`,
+		`Push Epic \`${c.epicSlug}\` + Stories${tasksOn ? ' + Tasks' : ''} to \`${c.gh.owner}/${c.gh.repo}\`.`,
 		'',
 		CONVENTIONS_BLOCK,
 		'',
 		'ORDER OF OPERATIONS:',
-		`  1. Ensure the labels \`${c.gh.epicLabel}\`, \`${c.gh.storyLabel}\`, \`epic:${c.epicSlug}\`, ` +
+		`  1. Ensure the labels \`${c.gh.epicLabel}\`, \`${c.gh.storyLabel}\`, ${tasksOn ? `\`${c.gh.taskLabel}\`, ` : ''}\`epic:${c.epicSlug}\`, ` +
 		'`insrc:in-progress`, `insrc:blocked` exist. Create the missing ones idempotently ' +
 		'(`gh label create --force` is fine for labels you own).',
 		'  2. Create ONE Story issue at a time (Epic body needs their #numbers).',
 		'  3. Create the Epic issue with a body containing the `## Stories` task list.',
 		`  4. ${c.gh.useMilestones ? `Create milestone \`${c.epicSlug}\` and attach every issue.` : 'Skip milestone creation (useMilestones=false).'}`,
-		`  5. ${c.force ? 'FORCE MODE: edit existing issues (do not create duplicates); overwrite bodies to match.' : 'If existing refs are present in `existingRefs`, treat as an error unless the user re-runs with --force.'}`,
+		...(tasksOn ? [`  5. ${taskPushBlock(c)}`] : []),
+		`  ${tasksOn ? '6' : '5'}. ${c.force ? 'FORCE MODE: edit existing issues (do not create duplicates); overwrite bodies to match.' : 'If existing refs are present in `existingRefs`, treat as an error unless the user re-runs with --force.'}`,
 		'',
-		'DELIBERATELY NOT USED (per plan):',
-		'  - Sub-issues (Projects-only, 100-child cap).',
-		'  - Projects v2 (workspace scope + OAuth surface).',
-		'  - Issue types (inconsistent across orgs).',
-		'  - Cross-repo Epics.',
+		...notUsed,
 		'',
 		'RETURN:',
-		'  Emit the refs JSON matching the schema. `epicRef` = `<owner>/<repo>#<N>`; `storyRefs` = { storyId: ref }.',
+		'  Emit the refs JSON matching the schema. `epicRef` = `<owner>/<repo>#<N>`; `storyRefs` = { storyId: ref }.' +
+		(tasksOn ? ' `taskRefs` = { storyId: { taskId: ref } } for every Task you created or adopted.' : ''),
 		'  Do not print anything else.',
 	].join('\n');
 }
 
+/** The Task-tier instructions for the push execute step — only emitted
+ *  when `pushTasks` is on and at least one Story has an approved plan.
+ *  Spells out the exact `gh api` calls for a typed Task sub-issue. */
+function taskPushBlock(c: ReturnType<typeof assemblePushContext>): string {
+	const plans = c.plans ?? [];
+	const lines: string[] = [
+		'TASK TIER — for each Story that has an entry in `plans` below, after its Story issue exists,',
+		'   create ONE issue per Task, typed and linked as a sub-issue of the Story:',
+		'     a. Create via the REST API (so you get the numeric id needed for sub-issue linking) and set the type:',
+		`          gh api -X POST repos/${c.gh.owner}/${c.gh.repo}/issues \\`,
+		`            -f 'title=<storyId>/<taskId>: <task title>' -f 'body=<task body>' \\`,
+		`            -f 'labels[]=${c.gh.taskLabel}' -f 'labels[]=epic:${c.epicSlug}' -f 'type=${c.gh.taskIssueType}'`,
+		'        The response JSON has `.number` (issue number) and `.id` (database id).',
+		`        If the org has no \`${c.gh.taskIssueType}\` issue type (HTTP 422), retry WITHOUT \`-f 'type=...'\` — the issue is still created, untyped.`,
+		'     b. Link it as a sub-issue of the Story issue (skip cleanly if sub-issues are unavailable):',
+		`          gh api -X POST repos/${c.gh.owner}/${c.gh.repo}/issues/<storyIssueNumber>/sub_issues -F sub_issue_id=<task database id>`,
+		'     Task body: `**Story:** #<storyIssueNumber> (<storyId>)`, `**Size:** <size>`, `## Summary` + summary,',
+		'       `## Acceptance checks` (as `- [ ]` items), `## Tests` (`- **<level>:** <name>`), and `## Design references` → the plan doc (`planDocRel`).',
+		'     Idempotency: if `existingRefs.taskRefs[storyId][taskId]` is present, ADOPT it — do not create a duplicate.',
+		'   Plans:',
+		'```json',
+		JSON.stringify(plans, null, 2),
+		'```',
+	];
+	return lines.join('\n');
+}
+
 function pushVerifyPrompt(c: ReturnType<typeof assemblePushContext>): string {
+	const tasksOn = c.gh.pushTasks && c.plans !== undefined && c.plans.length > 0;
 	return [
 		'You are running the `checklist.verify` step of `tracker.push`.',
 		'',
@@ -305,6 +338,11 @@ function pushVerifyPrompt(c: ReturnType<typeof assemblePushContext>): string {
 		`  taskList:        Epic body contains a \`## Stories\` task list referencing every Story issue.`,
 		`  backRef:         Every Story body starts with \`**Epic:** #\` referencing the Epic.`,
 		`  ${c.gh.useMilestones ? `milestone:       Milestone \`${c.epicSlug}\` exists and every issue is attached.` : 'milestone:       (skipped — useMilestones=false)'}`,
+		...(tasksOn ? [
+			`  taskLabelled:    Every Task issue in \`taskRefs\` has \`${c.gh.taskLabel}\` and \`epic:${c.epicSlug}\` labels.`,
+			`  subIssue:        Every Task issue is a sub-issue of its Story issue (\`gh api repos/${c.gh.owner}/${c.gh.repo}/issues/<storyN>/sub_issues\` lists it). Grade PASS if the org has sub-issues disabled and you skipped linking.`,
+			`  taskCoverage:    \`taskRefs[storyId]\` has an entry for every Task in that Story's plan (from the \`plans\` context).`,
+		] : []),
 		'',
 		'RETURN:',
 		'  Emit `{ items: [{ itemId, verdict, notes? }], failedCount }`.',

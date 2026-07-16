@@ -94,9 +94,10 @@ import {
 	type TrackerPushRefs,
 	type TrackerSyncRefs,
 } from './artifacts/tracker.js';
-import { defineArtifactPaths, scopeAnalyzeCachePath, writeAtomic } from './storage.js';
+import { defineArtifactPaths, planArtifactPaths, scopeAnalyzeCachePath, writeAtomic } from './storage.js';
 import { linkDocsToIssues } from './tracker/link.js';
-import { readFileSync } from 'node:fs';
+import { patchTrackerMeta } from './tracker/refs.js';
+import { existsSync, readFileSync } from 'node:fs';
 import {
 	AmendmentApplyError,
 	applyAmendments,
@@ -1730,6 +1731,16 @@ function mutateEpicTrackerMeta(
 		// Framework-owned doc↔issue linkage (same as the deterministic path):
 		// re-render each doc's markdown with a `**Tracker:**` link.
 		linkDocsToIssues(repoPath, epicHash, epicSlug, { epicRef: push.epicRef, storyRefs: push.storyRefs });
+		// Task tier: record each Story's taskRefs onto its plan artifact so a
+		// re-push adopts them (and downstream `build` can find its issues).
+		if (push.taskRefs !== undefined) {
+			for (const [storyId, taskRefs] of Object.entries(push.taskRefs)) {
+				const planJson = planArtifactPaths(repoPath, epicHash, storyId).json;
+				if (!existsSync(planJson)) continue;
+				try { patchTrackerMeta(planJson, { taskRefs, pushedAt: new Date().toISOString() }); }
+				catch { /* plan meta patch is best-effort */ }
+			}
+		}
 		return;
 	} else {
 		const sync = refs as TrackerSyncRefs;

@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>insrc — Installation &amp; Setup</title>
+<meta name="description" content="Install and configure insrc: the local-first code-knowledge daemon for citation-grounded code exploration and multi-step engineering workflows.">
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1c2024; --muted: #5b6570; --border: #e5e8eb;
+    --card: #f7f8f9; --code-bg: #f4f5f7; --code-fg: #1c2024;
+    --accent: #2f6f4f; --accent-soft: #e7f2ec; --link: #1f6feb;
+    --warn-bg: #fff7e6; --warn-border: #f0c36d; --warn-fg: #6b4e00;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1115; --fg: #e6e9ec; --muted: #9aa4ae; --border: #262b31;
+      --card: #161a20; --code-bg: #12151a; --code-fg: #e6e9ec;
+      --accent: #62c08b; --accent-soft: #16241d; --link: #6cb0ff;
+      --warn-bg: #251f10; --warn-border: #5c4a1e; --warn-fg: #e8c874;
+    }
+  }
+  :root[data-theme="light"] {
+    --bg:#ffffff;--fg:#1c2024;--muted:#5b6570;--border:#e5e8eb;--card:#f7f8f9;--code-bg:#f4f5f7;--code-fg:#1c2024;--accent:#2f6f4f;--accent-soft:#e7f2ec;--link:#1f6feb;--warn-bg:#fff7e6;--warn-border:#f0c36d;--warn-fg:#6b4e00;
+  }
+  :root[data-theme="dark"] {
+    --bg:#0f1115;--fg:#e6e9ec;--muted:#9aa4ae;--border:#262b31;--card:#161a20;--code-bg:#12151a;--code-fg:#e6e9ec;--accent:#62c08b;--accent-soft:#16241d;--link:#6cb0ff;--warn-bg:#251f10;--warn-border:#5c4a1e;--warn-fg:#e8c874;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font-family: var(--sans); font-size: 16px; line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .wrap { display: grid; grid-template-columns: 250px minmax(0,1fr); gap: 0; max-width: 1180px; margin: 0 auto; }
+  /* Sidebar */
+  nav.toc {
+    position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto;
+    padding: 28px 20px; border-right: 1px solid var(--border);
+  }
+  nav.toc .brand { font-weight: 700; font-size: 1.15rem; letter-spacing: -0.01em; margin-bottom: 4px; }
+  nav.toc .brand .dot { color: var(--accent); }
+  nav.toc .tag { color: var(--muted); font-size: 0.8rem; margin-bottom: 20px; }
+  nav.toc ol { list-style: none; margin: 0; padding: 0; }
+  nav.toc li { margin: 2px 0; }
+  nav.toc a { color: var(--muted); display: block; padding: 5px 10px; border-radius: 6px; font-size: 0.9rem; }
+  nav.toc a:hover { background: var(--card); color: var(--fg); text-decoration: none; }
+  main { padding: 40px 44px 96px; min-width: 0; }
+  header.hero { border-bottom: 1px solid var(--border); padding-bottom: 24px; margin-bottom: 8px; }
+  header.hero h1 { font-size: 2.1rem; letter-spacing: -0.02em; margin: 0 0 8px; }
+  header.hero p { color: var(--muted); margin: 0; font-size: 1.05rem; max-width: 62ch; }
+  .pill { display:inline-block; background: var(--accent-soft); color: var(--accent); border:1px solid var(--border);
+    font-size: 0.72rem; font-weight: 600; padding: 2px 9px; border-radius: 999px; margin-bottom: 14px; letter-spacing: 0.02em; }
+  h2 { font-size: 1.5rem; letter-spacing: -0.01em; margin: 44px 0 14px; padding-top: 8px; }
+  h3 { font-size: 1.12rem; margin: 28px 0 10px; }
+  p, li { max-width: 74ch; }
+  code { font-family: var(--mono); font-size: 0.86em; background: var(--code-bg); padding: 0.12em 0.4em; border-radius: 5px; border: 1px solid var(--border); }
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; overflow-x: auto; margin: 16px 0; }
+  pre code { background: none; border: none; padding: 0; font-size: 0.85rem; line-height: 1.55; color: var(--code-fg); }
+  .table-scroll { overflow-x: auto; margin: 16px 0; border: 1px solid var(--border); border-radius: 10px; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { background: var(--card); font-weight: 600; }
+  tr:last-child td { border-bottom: none; }
+  .note { background: var(--warn-bg); border: 1px solid var(--warn-border); color: var(--warn-fg);
+    border-radius: 10px; padding: 14px 16px; margin: 18px 0; font-size: 0.94rem; }
+  .note strong { color: var(--warn-fg); }
+  .callout { background: var(--card); border: 1px solid var(--border); border-left: 3px solid var(--accent);
+    border-radius: 8px; padding: 14px 16px; margin: 18px 0; font-size: 0.94rem; }
+  .req td:first-child { white-space: nowrap; font-weight: 600; }
+  .yes { color: var(--accent); font-weight: 600; }
+  .opt { color: var(--muted); }
+  ul.clean { padding-left: 1.2em; }
+  footer { color: var(--muted); font-size: 0.85rem; border-top: 1px solid var(--border); margin-top: 56px; padding-top: 18px; }
+  .theme-toggle { position: fixed; top: 16px; right: 18px; z-index: 10; background: var(--card); border: 1px solid var(--border);
+    color: var(--fg); border-radius: 8px; padding: 6px 10px; font-size: 0.8rem; cursor: pointer; }
+  @media (max-width: 820px) {
+    .wrap { grid-template-columns: 1fr; }
+    nav.toc { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+    nav.toc ol { columns: 2; }
+    main { padding: 28px 20px 72px; }
+  }
+</style>
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">◐ theme</button>
+<div class="wrap">
+  <nav class="toc">
+    <div class="brand">ins<span class="dot">rc</span></div>
+    <div class="tag">Installation &amp; Setup</div>
+    <ol>
+      <li><a href="#requirements">1 · Requirements</a></li>
+      <li><a href="#install">2 · Install</a></li>
+      <li><a href="#models">3 · Ollama models</a></li>
+      <li><a href="#config">4 · Configuration</a></li>
+      <li><a href="#agent">5 · Connect an agent</a></li>
+      <li><a href="#tui">6 · Using the TUI</a></li>
+      <li><a href="#verify">7 · Verify</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <header class="hero">
+      <div class="pill">LOCAL-FIRST</div>
+      <h1>insrc — Installation &amp; Setup</h1>
+      <p>insrc indexes your repos into a structural graph + vector store and serves citation-grounded
+      exploration (<code>analyze</code>) and multi-step engineering workflows
+      (<code>define → design → plan → build → test</code>) to a coding agent over a local socket.</p>
+    </header>
+
+    <h2 id="requirements">1 · Requirements</h2>
+    <div class="table-scroll">
+      <table class="req">
+        <thead><tr><th>Component</th><th>Role</th><th>Required?</th></tr></thead>
+        <tbody>
+          <tr><td>Node.js ≥ 20</td><td>Runtime. Native modules build against Node 22.22.1 headers; the daemon spawns under Node 22.</td><td class="yes">Mandatory</td></tr>
+          <tr><td>Ollama <span class="opt">(running, <code>http://localhost:11434</code>)</span></td><td>The <strong>semantic layer</strong>: entity + query embeddings, and the analyze tool-loop. Cloud CLIs can't do these.</td><td class="yes">Mandatory</td></tr>
+          <tr><td><code>claude</code> / <code>codex</code> CLI</td><td>Cloud <strong>reasoning</strong> for analyze synthesis + workflow generation (higher accuracy). Uses the CLI's own OAuth — no API keys stored.</td><td>Recommended</td></tr>
+          <tr><td><code>git</code></td><td>Repo indexing + tracker linkage.</td><td class="yes">Mandatory (indexing)</td></tr>
+          <tr><td><code>gh</code> CLI</td><td>GitHub tracker integration (<code>tracker.push/sync/post</code>, Task sub-issues).</td><td class="opt">Optional</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note">
+      <strong>Why Ollama is mandatory even when reasoning runs on the cloud CLI.</strong>
+      insrc is local-first by design: <strong>embeddings never leave your machine</strong> — the
+      <code>claude</code>/<code>codex</code> CLIs expose no embeddings API, so the vector index + semantic
+      search (<code>concept.resolve</code>, <code>capability.reuse-check</code>) can only run through a local embedder.
+      Separately, the analyze <strong>tool-loop</strong> (<code>freeform.probe</code>) needs a tool-calling provider,
+      which the one-shot CLI wrapper can't drive — so that path is Ollama-only too. Cloud CLIs do the
+      <em>reasoning</em>; Ollama does the <em>semantic layer</em>. Both are needed.
+    </div>
+
+    <h2 id="install">2 · Install</h2>
+    <p>The daemon lives at <code>~/.insrc/daemon</code>. Two paths:</p>
+    <h3>A · Release installer (recommended)</h3>
+    <pre><code>./insrc-daemon-install.sh      # clones + builds into ~/.insrc/daemon</code></pre>
+    <h3>B · From source (developers / IDE fork)</h3>
+    <pre><code>git clone https://github.com/insors-ai/insrc ~/.insrc/daemon
+cd ~/.insrc/daemon
+npm install                    # builds native modules against Node 22 headers
+npm run build                  # tsc + copy-assets → out/</code></pre>
+    <p>Binaries after build:</p>
+    <ul class="clean">
+      <li><code>out/cli/index.js</code> — the <code>insrc</code> interactive TUI</li>
+      <li><code>out/bin/insrc-mcp.js</code> — the MCP server a coding agent connects to</li>
+      <li><code>out/daemon/index.js</code> — the background daemon</li>
+    </ul>
+    <div class="callout">The IDE fork (<code>insors-ai/insrc-ide</code>) performs path B automatically and spawns the
+      compiled daemon; the IPC socket at <code>~/.insrc/daemon.sock</code> is the only surface it consumes.</div>
+
+    <h2 id="models">3 · Ollama models</h2>
+    <p>Pull these, or let the <strong>Setup</strong> pane (§6) recommend + pull them for your hardware.</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Model</th><th>Purpose</th><th>Required?</th><th>Default id</th></tr></thead>
+        <tbody>
+          <tr><td>Embedding</td><td>Semantic index + query embeddings (1024-dim)</td><td class="yes">Mandatory</td><td><code>qwen3-embedding:0.6b</code></td></tr>
+          <tr><td>Coder (indexer core)</td><td>The indexer's local core model</td><td class="yes">Mandatory</td><td><code>qwen3-coder:latest</code></td></tr>
+          <tr><td>Shaper (reasoning)</td><td>Local reasoning <em>when <code>shaperProvider: "ollama"</code></em></td><td class="opt">Only if not using a CLI</td><td><code>qwen3.6:35b-a3b</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <pre><code>ollama pull qwen3-embedding:0.6b
+ollama pull qwen3-coder:latest
+ollama pull qwen3.6:35b-a3b        # skip if reasoning runs on claude/codex</code></pre>
+    <div class="callout">Using a CLI for reasoning (<code>cli-claude</code>/<code>cli-codex</code>) means you don't need
+      the shaper model — but you <strong>still need the embedding model</strong> (the semantic layer is always local).</div>
+
+    <h2 id="config">4 · Configuration</h2>
+    <p>Two files under <code>~/.insrc/</code>.</p>
+
+    <h3><code>~/.insrc/config.json</code> — models</h3>
+    <pre><code>{
+  "models": {
+    "providers": {
+      "local": {
+        "host":           "http://localhost:11434",
+        "embeddingModel": "qwen3-embedding:0.6b",
+        "embeddingDim":   1024,
+        "coreModel":      "qwen3-coder:latest"
+      }
+    },
+    "analyze": {
+      // Reasoning provider. Default "ollama".
+      //   "ollama"     — local shaperModel below
+      //   "cli-claude" — the claude CLI
+      //   "cli-codex"  — the codex CLI
+      "shaperProvider": "ollama",
+      "shaperModel":    "qwen3.6:35b-a3b",   // Ollama id; OMIT for a cli-* provider
+      "shaper": { "ollamaNumCtx": 32768, "maxToolTurns": 8, "structuredOutputRetries": 3 }
+    }
+  }
+}</code></pre>
+    <p><strong>Provider selection — one decision, applied consistently:</strong></p>
+    <ul class="clean">
+      <li><strong>Explicit <code>shaperProvider</code></strong> → that provider is used for all reasoning.</li>
+      <li><strong>Not set</strong> → reasoning follows the invoking agent (Claude Code → claude, Codex → codex); Ollama is the standalone fallback.</li>
+      <li>Regardless, <strong>Ollama is always used for embeddings + the tool-loop</strong> (see §1).</li>
+    </ul>
+    <div class="note"><strong>Local (Ollama) structured output:</strong> the local path constrains JSON via Ollama's
+      grammar engine, which can reject some strict schemas (<code>"failed to parse grammar"</code>). For analyze/workflow
+      reasoning, prefer a <code>cli-*</code> provider until that's hardened; embeddings are unaffected.</div>
+
+    <h3><code>~/.insrc/github.json</code> — tracker (optional)</h3>
+    <p>GitHub Issues integration. <strong>Opt-in</strong> — absent / <code>"type": "none"</code> disables it.</p>
+    <pre><code>{
+  "default": {
+    "type":  "github",          // or "none" to disable
+    "owner": "myorg",
+    "repo":  "myrepo",
+    "epicLabel": "insrc:epic", "storyLabel": "insrc:story", "taskLabel": "insrc:task",
+    "useMilestones": false,
+    "pushTasks":     false,     // push Task-tier issues (type Task, sub-issues of the Story)
+    "taskIssueType": "Task"     // org must have this issue type; falls back to untyped
+  },
+  "repos": { "/abs/path/to/repo": { "type": "github", "owner": "…", "repo": "…" } }
+}</code></pre>
+    <p>Requires an authenticated <code>gh</code> CLI. <code>pushTasks</code> + typed sub-issues also need the org to have
+      GitHub <strong>issue types</strong> + <strong>sub-issues</strong> enabled (both degrade gracefully if absent).</p>
+
+    <h2 id="agent">5 · Connect a coding agent (Claude Code / Codex)</h2>
+    <p>Register the insrc MCP server so the agent can call <code>insrc_analyze</code> / <code>insrc_analyze_step</code> /
+      <code>insrc_workflow_step</code>:</p>
+    <pre><code># Claude Code (per-project, from the repo root):
+claude mcp add insrc --scope local --env INSRC_REPO="$PWD" \
+  -- node "$HOME/.insrc/daemon/out/bin/insrc-mcp.js"</code></pre>
+    <p>Then paste the steering block from <code>src/mcp/steering-template.md</code> into the repo's <code>CLAUDE.md</code>
+      (Claude Code) or <code>AGENTS.md</code> (Codex).</p>
+    <div class="callout">MCP tools load on a <strong>fresh</strong> agent session — after registering, restart Claude Code / Codex.</div>
+
+    <h2 id="tui">6 · Using the <code>insrc</code> TUI</h2>
+    <p>Launch the interactive TUI (requires a real terminal / TTY):</p>
+    <pre><code>insrc                 # if built + on PATH
+# or, from ~/.insrc/daemon:
+npm run insrc         # dev (tsx)</code></pre>
+    <p><strong>Global keys:</strong> <code>Tab</code> / <code>Shift+Tab</code> or <code>1</code>–<code>4</code> switch panes ·
+      <code>r</code> refresh · <code>:</code> command · <code>?</code> help · <code>q</code> quit.</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Pane</th><th>Purpose</th><th>Keys</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Daemon</strong></td><td>Health + lifecycle.</td><td><code>s</code> start · <code>x</code> stop · <code>u</code> update (FF → install-if-changed → build → restart) · <code>b</code> backup · <code>c</code> compact</td></tr>
+          <tr><td><strong>Repos</strong></td><td>Register + index repositories.</td><td><code>a</code> add · <code>i</code> reindex · <code>d</code> remove</td></tr>
+          <tr><td><strong>Workflows</strong></td><td>Per-Epic chain status; approve/reject artifacts.</td><td><code>a</code> approve · <code>x</code> reject</td></tr>
+          <tr><td><strong>Setup</strong></td><td>Detects CPU/RAM/Ollama, recommends models, writes config + pulls models.</td><td><code>a</code> apply config · <code>p</code> pull models</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout"><strong>Fastest first run:</strong> <strong>Setup</strong> → <code>a</code> (write hardware-matched config) →
+      <code>p</code> (pull missing models) → <strong>Daemon</strong> → <code>s</code> (start) → <strong>Repos</strong> →
+      <code>a</code> (add + index your repo).</div>
+
+    <h2 id="verify">7 · Verify</h2>
+    <ul class="clean">
+      <li><strong>Daemon</strong> pane shows <em>running</em> + a bound socket (<code>~/.insrc/daemon.sock</code>).</li>
+      <li><strong>Repos</strong> pane shows your repo <em>indexed</em> (queue depth 0).</li>
+      <li>From a registered agent session, ask a codebase question — <code>insrc_analyze</code> returns a
+        citation-grounded bundle with real file paths.</li>
+    </ul>
+    <p>If analyze returns <em>"Local Ollama unavailable"</em>, confirm <code>ollama serve</code> is running and the
+      embedding model is pulled (§3).</p>
+
+    <footer>
+      insrc · local-first code-knowledge daemon ·
+      <a href="https://github.com/insors-ai/insrc">github.com/insors-ai/insrc</a> ·
+      <a href="installation.md">Markdown version</a>
+    </footer>
+  </main>
+</div>
+<script>
+  (function () {
+    var btn = document.getElementById('themeToggle');
+    var root = document.documentElement;
+    function cur() {
+      return root.getAttribute('data-theme') ||
+        (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    }
+    btn.addEventListener('click', function () {
+      var next = cur() === 'dark' ? 'light' : 'dark';
+      root.setAttribute('data-theme', next);
+      try { localStorage.setItem('insrc-theme', next); } catch (e) {}
+    });
+    try {
+      var saved = localStorage.getItem('insrc-theme');
+      if (saved) root.setAttribute('data-theme', saved);
+    } catch (e) {}
+  })();
+</script>
+</body>
+</html>

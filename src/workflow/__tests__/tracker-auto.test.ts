@@ -176,7 +176,10 @@ test('tracker disabled (no config) skips cleanly', () => {
 	const gh = makeFakeGh();
 	_setTrackerExecForTests(gh.fn);
 	const s = setup();
-	delete process.env['INSRC_GITHUB_CONFIG'];   // no config → type: none
+	// Point at a path that does not exist → the loader returns {} → type: none.
+	// (Deleting the env var would fall back to the user's real ~/.insrc/github.json,
+	// making the test non-hermetic — it fails whenever a real tracker is configured.)
+	process.env['INSRC_GITHUB_CONFIG'] = join(s.repo, 'no-such-github.json');
 	try {
 		const r = autoPushEpicOnHld(s.hldJson);
 		assert.equal(r.status, 'skipped');

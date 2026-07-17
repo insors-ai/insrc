@@ -98,11 +98,13 @@ export function validateCitations(
 			details.push(`body references '[[${id}]]' but no citation with that id exists`);
 		}
 	}
-	for (const c of citations) {
-		if (!refIds.has(c.id)) {
-			details.push(`citation '${c.id}' is defined but never referenced in body`);
-		}
-	}
+	// NOTE: a citation that is DEFINED but never referenced is tolerated. It is
+	// harmless — grounding of the body's CLAIMS is guaranteed by the dangling-ref
+	// check above (every `[[cN]]` resolves). Hard-failing on an unreferenced
+	// citation only punished long, expensive artifact synthesizes (an LLM leaving
+	// one source in the list it didn't end up citing) without improving grounding,
+	// so it is no longer an error. Unreferenced citations render harmlessly in the
+	// footer.
 	if (details.length > 0) {
 		return { ok: false, kind: 'citations', message: 'citations do not ground the body', details };
 	}

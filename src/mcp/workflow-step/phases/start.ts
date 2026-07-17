@@ -95,7 +95,7 @@ function resolveRepoPath(explicit: string | undefined): string | undefined {
  *  workflow for the same Epic writes into the same trace dir.
  *  `define` mints its own hash from the runId (the Define IS the
  *  Epic). `stub` has no Epic scope so it derives a display slug. */
-function epicKeyFor(
+export function epicKeyFor(
 	workflow: string,
 	focus:    string,
 	params:   Record<string, unknown>,

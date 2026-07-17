@@ -1416,6 +1416,14 @@ async function main(): Promise<void> {
 			const mod = await import('./analyze-rpc.js');
 			return mod.runStart(params, send, signal);
 		},
+		// Daemon-side workflow runner: drives one workflow (define / design.* /
+		// plan / stub) end-to-end through the LLMProvider (config → invoking
+		// CLI → Ollama), stamping meta.model with the resolved provider id.
+		// Emits `progress` frames per phase, then terminal `done`/`error`.
+		'workflow.run': async (params, send, signal) => {
+			const mod = await import('./workflow-rpc.js');
+			return mod.runStart(params, send, signal);
+		},
 		'ollama.pull': async (params, send, signal) => {
 			const { model } = params as { model: string };
 			const { Ollama } = await import('ollama');

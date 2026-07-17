@@ -298,17 +298,21 @@ export function finalizeArtifact(
 	runId:        string,
 	elapsedMs:    number,
 	llmResponse:  Record<string, unknown>,
+	/** Driver id stamped into the artifact's `meta.model`. Defaults to
+	 *  `'client'` (the outer MCP client drove); the daemon workflow runner
+	 *  passes `'ollama:<model>'` (or another provider id) when it drives. */
+	model:        string = 'client',
 ): FinalizeResult {
 	switch (intent.workflow) {
-		case 'stub':         return finalizeStub(intent, stepOutputs, runId, elapsedMs, llmResponse);
-		case 'define':       return finalizeDefine(intent, stepOutputs, runId, elapsedMs, llmResponse);
-		case 'design.epic':  return finalizeDesignEpic(intent, stepOutputs, runId, elapsedMs, llmResponse);
-		case 'design.story': return finalizeDesignStory(intent, stepOutputs, runId, elapsedMs, llmResponse);
-		case 'plan':         return finalizePlan(intent, stepOutputs, runId, elapsedMs, llmResponse);
+		case 'stub':         return finalizeStub(intent, stepOutputs, runId, elapsedMs, llmResponse, model);
+		case 'define':       return finalizeDefine(intent, stepOutputs, runId, elapsedMs, llmResponse, model);
+		case 'design.epic':  return finalizeDesignEpic(intent, stepOutputs, runId, elapsedMs, llmResponse, model);
+		case 'design.story': return finalizeDesignStory(intent, stepOutputs, runId, elapsedMs, llmResponse, model);
+		case 'plan':         return finalizePlan(intent, stepOutputs, runId, elapsedMs, llmResponse, model);
 		case 'tracker.push':
 		case 'tracker.sync':
 		case 'tracker.post':
-			return finalizeTracker(intent, stepOutputs, runId, elapsedMs, llmResponse);
+			return finalizeTracker(intent, stepOutputs, runId, elapsedMs, llmResponse, model);
 		default:
 			throw new Error(`finalizeArtifact: workflow '${intent.workflow}' not yet supported`);
 	}
@@ -320,6 +324,7 @@ function finalizeStub(
 	runId:       string,
 	elapsedMs:   number,
 	llmResponse: Record<string, unknown>,
+	model:       string,
 ): FinalizeResult {
 	// Basic JSON shape check via runtime guards.
 	if (typeof llmResponse !== 'object' || llmResponse === null) {
@@ -336,7 +341,7 @@ function finalizeStub(
 			runId,
 			repoPath:      intent.repoPath,
 			createdAt:     new Date().toISOString(),
-			model:         'client',
+			model,
 			elapsedMs,
 			repoIndexedAt: intent.repoIndexedAt,
 			schemaVersion: STUB_SCHEMA_VERSION,
@@ -552,9 +557,10 @@ function finalizeDefine(
 	runId:       string,
 	elapsedMs:   number,
 	llmResponse: Record<string, unknown>,
+	model:       string,
 ): FinalizeResult {
 	if (defineDecisionOf(stepOutputs) === 'extend') {
-		return finalizeDefineExtend(intent, stepOutputs, runId, elapsedMs);
+		return finalizeDefineExtend(intent, stepOutputs, runId, elapsedMs, model);
 	}
 	if (typeof llmResponse !== 'object' || llmResponse === null) {
 		return { ok: false, failure: schemaFailure(`synthesizer response is not an object`) };
@@ -601,7 +607,7 @@ function finalizeDefine(
 			runId,
 			repoPath:      intent.repoPath,
 			createdAt:     new Date().toISOString(),
-			model:         'client',
+			model,
 			elapsedMs,
 			repoIndexedAt: intent.repoIndexedAt,
 			schemaVersion: DEFINE_SCHEMA_VERSION,
@@ -643,6 +649,7 @@ function finalizeDefineExtend(
 	stepOutputs: Readonly<Record<string, unknown>>,
 	runId:       string,
 	elapsedMs:   number,
+	model:       string,
 ): FinalizeResult {
 	const s1 = stepOutputs['s1'] as ScopeAssessOutput | undefined;
 	if (s1 === undefined || s1.decision !== 'extend') {
@@ -743,7 +750,7 @@ function finalizeDefineExtend(
 			runId,
 			repoPath:      intent.repoPath,
 			createdAt:     new Date().toISOString(),
-			model:         'client',
+			model,
 			elapsedMs,
 			repoIndexedAt: intent.repoIndexedAt,
 			schemaVersion: EXTEND_SCHEMA_VERSION,
@@ -903,6 +910,7 @@ function finalizeDesignEpic(
 	runId:       string,
 	elapsedMs:   number,
 	llmResponse: Record<string, unknown>,
+	model:       string,
 ): FinalizeResult {
 	if (typeof llmResponse !== 'object' || llmResponse === null) {
 		return { ok: false, failure: schemaFailure(`synthesizer response is not an object`) };
@@ -964,7 +972,7 @@ function finalizeDesignEpic(
 			runId,
 			repoPath:      intent.repoPath,
 			createdAt:     new Date().toISOString(),
-			model:         'client',
+			model,
 			elapsedMs,
 			repoIndexedAt: intent.repoIndexedAt,
 			schemaVersion: HLD_SCHEMA_VERSION,
@@ -1153,6 +1161,7 @@ function finalizeDesignStory(
 	runId:       string,
 	elapsedMs:   number,
 	llmResponse: Record<string, unknown>,
+	model:       string,
 ): FinalizeResult {
 	if (typeof llmResponse !== 'object' || llmResponse === null) {
 		return { ok: false, failure: schemaFailure(`synthesizer response is not an object`) };
@@ -1231,7 +1240,7 @@ function finalizeDesignStory(
 			runId,
 			repoPath:      intent.repoPath,
 			createdAt:     new Date().toISOString(),
-			model:         'client',
+			model,
 			elapsedMs,
 			repoIndexedAt: intent.repoIndexedAt,
 			schemaVersion: LLD_SCHEMA_VERSION,
@@ -1455,6 +1464,7 @@ function finalizePlan(
 	runId:       string,
 	elapsedMs:   number,
 	llmResponse: Record<string, unknown>,
+	model:       string,
 ): FinalizeResult {
 	if (typeof llmResponse !== 'object' || llmResponse === null) {
 		return { ok: false, failure: schemaFailure(`synthesizer response is not an object`) };
@@ -1490,7 +1500,7 @@ function finalizePlan(
 			runId,
 			repoPath:      intent.repoPath,
 			createdAt:     new Date().toISOString(),
-			model:         'client',
+			model,
 			elapsedMs,
 			repoIndexedAt: intent.repoIndexedAt,
 			schemaVersion: PLAN_SCHEMA_VERSION,
@@ -1612,6 +1622,7 @@ function finalizeTracker(
 	runId:       string,
 	elapsedMs:   number,
 	llmResponse: Record<string, unknown>,
+	model:       string,
 ): FinalizeResult {
 	if (typeof llmResponse !== 'object' || llmResponse === null) {
 		return { ok: false, failure: schemaFailure(`synthesizer response is not an object`) };
@@ -1662,7 +1673,7 @@ function finalizeTracker(
 			runId,
 			repoPath:      intent.repoPath,
 			createdAt:     new Date().toISOString(),
-			model:         'client',
+			model,
 			elapsedMs,
 			repoIndexedAt: intent.repoIndexedAt,
 			schemaVersion: TRACKER_SCHEMA_VERSION,

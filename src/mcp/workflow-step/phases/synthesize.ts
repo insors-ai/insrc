@@ -15,22 +15,9 @@
  *   4. Release the state token + return `next: 'done'`.
  */
 
-import { join } from 'node:path';
-
 import { getLogger } from '../../../shared/logger.js';
 import { finalizeArtifact } from '../../../workflow/orchestrator.js';
-import {
-	appendRunLog,
-	defineArtifactPaths,
-	extendArtifactPaths,
-	hldArtifactPaths,
-	lldArtifactPaths,
-	planArtifactPaths,
-	runsDirFor,
-	stubArtifactPaths,
-	writeAtomic,
-} from '../../../workflow/storage.js';
-import type { WorkflowIntent } from '../../../workflow/types.js';
+import { appendRunLog, pathsForWorkflow, writeAtomic } from '../../../workflow/storage.js';
 import { assertStage, decodeState } from '../state.js';
 import { releaseState } from '../state-store.js';
 import type {
@@ -71,7 +58,13 @@ export async function handleSynthesize(
 	// meta (Define mints it; downstream workflows echo it). Read it
 	// back to pick paths, so we never diverge from the artifact.
 	const finalizedMeta = (result.finalized.artifact as { meta?: { epicHash?: string; epicSlug?: string; storyId?: string } }).meta ?? {};
-	const paths = pathsForWorkflow(state.intent, state.epicKey, state.runId, finalizedMeta.epicHash, finalizedMeta.epicSlug, finalizedMeta.storyId);
+	const storyIdParam = typeof state.intent.params['storyId'] === 'string' ? state.intent.params['storyId'] as string : undefined;
+	const paths = pathsForWorkflow({
+		workflow: state.intent.workflow, repoPath: state.intent.repoPath,
+		epicKey: state.epicKey, runId: state.runId,
+		epicHash: finalizedMeta.epicHash, epicSlug: finalizedMeta.epicSlug,
+		storyId: finalizedMeta.storyId, storyIdParam,
+	});
 	writeAtomic(paths.md,   result.finalized.renderedMd);
 	writeAtomic(paths.json, result.finalized.renderedJson);
 	appendRunLog(state.epicKey, state.intent.workflow, state.runId, {
@@ -92,57 +85,6 @@ export async function handleSynthesize(
 		markdown: result.finalized.renderedMd,
 		artifact: result.finalized.artifact,
 	};
-}
-
-function pathsForWorkflow(
-	intent:   WorkflowIntent,
-	epicKey:  string,
-	runId:    string,
-	epicHash: string | undefined,
-	epicSlug: string | undefined,
-	storyId:  string | undefined,
-): { readonly md: string; readonly json: string } {
-	const { workflow, repoPath } = intent;
-	if (workflow === 'stub') return stubArtifactPaths(repoPath, epicKey);
-	// Every Epic-scoped workflow reads the hash from the finalized
-	// artifact's meta. `epicKey` is the trace-log dir key — for
-	// Epic-scoped workflows it equals the Epic hash, but we prefer
-	// the meta value so the two can't diverge. `epicSlug` names the
-	// human-facing markdown; the JSON stays hash-named.
-	if (epicHash === undefined) {
-		throw new Error(`pathsForWorkflow: workflow '${workflow}' finalized without meta.epicHash`);
-	}
-	if (workflow === 'define') {
-		// The `define` extend branch emits an ExtendArtifact whose meta
-		// carries a storyId — route those to the EXT-* paths, not DEF-*.
-		if (typeof storyId === 'string' && storyId.length > 0) {
-			return extendArtifactPaths(repoPath, epicHash, storyId, epicSlug);
-		}
-		return defineArtifactPaths(repoPath, epicHash, epicSlug);
-	}
-	if (workflow === 'design.epic') return hldArtifactPaths(repoPath, epicHash, epicSlug);
-	if (workflow === 'design.story') {
-		const storyId = intent.params['storyId'];
-		if (typeof storyId !== 'string' || storyId.length === 0) {
-			throw new Error(`design.story synthesize requires params.storyId`);
-		}
-		return lldArtifactPaths(repoPath, epicHash, storyId, epicSlug);
-	}
-	if (workflow === 'plan') {
-		const sid = storyId ?? intent.params['storyId'];
-		if (typeof sid !== 'string' || sid.length === 0) {
-			throw new Error(`plan synthesize requires params.storyId`);
-		}
-		return planArtifactPaths(repoPath, epicHash, sid, epicSlug);
-	}
-	if (workflow === 'tracker.push' || workflow === 'tracker.sync' || workflow === 'tracker.post') {
-		const dir = runsDirFor(epicHash);
-		return {
-			md:   join(dir, `${workflow}-${runId}.md`),
-			json: join(dir, `${workflow}-${runId}.json`),
-		};
-	}
-	throw new Error(`pathsForWorkflow: workflow '${workflow}' not yet supported`);
 }
 
 function formatFailure(f: import('../../../workflow/synthesizer.js').ValidationResult): string {

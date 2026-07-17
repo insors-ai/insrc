@@ -35,7 +35,7 @@
  *   - embeddings:       depends on whether embedDelegate is wired
  */
 
-import { spawn } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -288,7 +288,42 @@ interface SubprocessResult {
 	readonly durationMs: number;
 }
 
-function runSubprocess(
+/** Resolve a bare CLI name (`claude`/`codex`) to its absolute path ONCE,
+ *  memoized. Spawning the absolute path avoids per-spawn PATH resolution,
+ *  which on macOS `posix_spawnp` can spuriously fail with ENOENT under many
+ *  rapid spawns (a full workflow run fires 8+ CLI calls). Falls back to the
+ *  bare name (PATH lookup at spawn) when `which` can't resolve it. */
+const resolvedBinCache = new Map<string, string>();
+function resolveBin(command: string): string {
+	if (command.includes('/')) return command;                 // already an explicit path
+	const cached = resolvedBinCache.get(command);
+	if (cached !== undefined) return cached;
+	let resolved = command;
+	try {
+		const out = execFileSync('which', [command], { encoding: 'utf8' }).trim().split('\n')[0];
+		if (out !== undefined && out.length > 0) resolved = out;
+	} catch { /* not on PATH via `which`; fall back to the bare name */ }
+	resolvedBinCache.set(command, resolved);
+	return resolved;
+}
+
+/** Run the CLI, retrying ONCE on a spurious spawn ENOENT (macOS posix_spawn
+ *  race under load): drop the cached path + re-resolve + re-spawn. */
+async function runSubprocess(
+	command: string,
+	args: readonly string[],
+	stdin: string,
+	timeoutMs: number,
+): Promise<SubprocessResult> {
+	let result = await spawnOnce(resolveBin(command), args, stdin, timeoutMs);
+	if (result.exitCode === -1 && /ENOENT/.test(result.stderr)) {
+		resolvedBinCache.delete(command);
+		result = await spawnOnce(resolveBin(command), args, stdin, timeoutMs);
+	}
+	return result;
+}
+
+function spawnOnce(
 	command: string,
 	args: readonly string[],
 	stdin: string,

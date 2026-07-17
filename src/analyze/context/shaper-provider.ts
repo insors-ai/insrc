@@ -66,6 +66,11 @@ export interface ShaperProviderOverrides {
 	 *  Codex → 'cli-codex'). Falls back to the ambient client-provider
 	 *  context (below). An explicit `cfg.shaperProvider` always wins. */
 	readonly clientDefault?: AnalyzeShaperProviderKind | undefined;
+	/** Override the CLI subprocess timeout (ms) when the resolved provider is
+	 *  `cli-claude`/`cli-codex`. The default (120 s) is fine for analyze's
+	 *  narrow calls but too short for a workflow's full-artifact synthesize;
+	 *  the daemon workflow runner passes a generous value. Ignored for Ollama. */
+	readonly cliTimeoutMs?: number | undefined;
 }
 
 /**
@@ -186,10 +191,14 @@ export function buildShaperProvider(
 		// cost-sensitive inner calls); otherwise use the CLI's own default.
 		const model = cfg.shaperModelExplicit && cfg.shaperModel !== '' ? cfg.shaperModel : undefined;
 		log.info(
-			{ kind, model: model ?? '(cli default)', source: cfg.shaperProviderExplicit ? 'config' : 'client' },
+			{ kind, model: model ?? '(cli default)', source: cfg.shaperProviderExplicit ? 'config' : 'client', timeoutMs: overrides?.cliTimeoutMs },
 			'shaper provider: routing through CliProvider',
 		);
-		return new CliProvider(model !== undefined ? { kind, model } : { kind });
+		return new CliProvider({
+			kind,
+			...(model !== undefined ? { model } : {}),
+			...(overrides?.cliTimeoutMs !== undefined ? { timeoutMs: overrides.cliTimeoutMs } : {}),
+		});
 	}
 	// Default + explicit 'ollama'.
 	log.info(

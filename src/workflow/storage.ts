@@ -293,3 +293,61 @@ export function amendmentFilenamePrefix(epicHash: string): string {
 export function lldFilenamePrefix(epicHash: string): string {
 	return `LLD-${epicHash}-`;
 }
+
+// ---------------------------------------------------------------------------
+// Workflow → on-disk artifact paths (shared router)
+// ---------------------------------------------------------------------------
+
+/** Route a finalized workflow run to its `{md, json}` paths. The single
+ *  source of truth for where each workflow's artifact lands — used by both
+ *  the MCP `synthesize` phase and the daemon workflow runner so the two
+ *  can't diverge. `epicHash`/`epicSlug`/`storyId` come from the finalized
+ *  artifact's meta; `storyIdParam` is `intent.params.storyId` (design.story
+ *  reads it from params). `epicKey` is the trace-log dir key (stub uses it
+ *  as the slug). */
+export function pathsForWorkflow(args: {
+	readonly workflow:      string;
+	readonly repoPath:      string;
+	readonly epicKey:       string;
+	readonly runId:         string;
+	readonly epicHash?:     string | undefined;
+	readonly epicSlug?:     string | undefined;
+	readonly storyId?:      string | undefined;   // from finalized meta
+	readonly storyIdParam?: string | undefined;   // from intent.params
+}): { readonly md: string; readonly json: string } {
+	const { workflow, repoPath, epicKey, runId, epicHash, epicSlug, storyId, storyIdParam } = args;
+	if (workflow === 'stub') return stubArtifactPaths(repoPath, epicKey);
+	if (epicHash === undefined) {
+		throw new Error(`pathsForWorkflow: workflow '${workflow}' finalized without meta.epicHash`);
+	}
+	if (workflow === 'define') {
+		// The `define` extend branch emits an ExtendArtifact (meta carries a
+		// storyId) → route to EXT-*, not DEF-*.
+		if (typeof storyId === 'string' && storyId.length > 0) {
+			return extendArtifactPaths(repoPath, epicHash, storyId, epicSlug);
+		}
+		return defineArtifactPaths(repoPath, epicHash, epicSlug);
+	}
+	if (workflow === 'design.epic') return hldArtifactPaths(repoPath, epicHash, epicSlug);
+	if (workflow === 'design.story') {
+		if (typeof storyIdParam !== 'string' || storyIdParam.length === 0) {
+			throw new Error(`design.story synthesize requires params.storyId`);
+		}
+		return lldArtifactPaths(repoPath, epicHash, storyIdParam, epicSlug);
+	}
+	if (workflow === 'plan') {
+		const sid = storyId ?? storyIdParam;
+		if (typeof sid !== 'string' || sid.length === 0) {
+			throw new Error(`plan synthesize requires params.storyId`);
+		}
+		return planArtifactPaths(repoPath, epicHash, sid, epicSlug);
+	}
+	if (workflow === 'tracker.push' || workflow === 'tracker.sync' || workflow === 'tracker.post') {
+		const dir = runsDirFor(epicHash);
+		return {
+			md:   join(dir, `${workflow}-${runId}.md`),
+			json: join(dir, `${workflow}-${runId}.json`),
+		};
+	}
+	throw new Error(`pathsForWorkflow: workflow '${workflow}' not yet supported`);
+}

@@ -107,27 +107,66 @@ export class CliProvider implements LLMProvider {
 	// -- complete -------------------------------------------------------
 
 	async complete(messages: LLMMessage[], opts?: CompletionOpts): Promise<LLMResponse> {
-		const prompt = serialiseMessages(messages);
-		if (this.kind === 'claude') {
-			const args = ['--print', '--output-format', 'json', ...this.modelArgs(opts)];
-			const { envelope } = await this.runClaude(args, prompt);
+		return this.withTransientRetry('complete', async () => {
+			const prompt = serialiseMessages(messages);
+			if (this.kind === 'claude') {
+				const args = ['--print', '--output-format', 'json', ...this.modelArgs(opts)];
+				const { envelope } = await this.runClaude(args, prompt);
+				return {
+					text: envelope.result ?? '',
+					stopReason: 'end_turn' as const,
+				};
+			}
+			const args = ['exec', '--json', ...this.modelArgs(opts)];
+			const { agentText } = await this.runCodex(args, prompt);
 			return {
-				text: envelope.result ?? '',
-				stopReason: 'end_turn',
+				text: agentText ?? '',
+				stopReason: 'end_turn' as const,
 			};
+		});
+	}
+
+
+	/** Re-issue a CLI call when it fails with a TRANSIENT upstream error —
+	 *  the `claude`/`codex` binary's own connection to the model API dropped
+	 *  mid-response, hit a rate limit, or got a 5xx. These are not our bug and
+	 *  not fixable by changing the prompt, so a fresh subprocess usually
+	 *  succeeds. Deterministic failures (bad schema, non-transient exit) are
+	 *  re-thrown on the first attempt. Accuracy over cost: a long synthesize is
+	 *  worth re-running rather than failing the whole workflow. */
+	private async withTransientRetry<T>(label: string, op: () => Promise<T>): Promise<T> {
+		const maxAttempts = 3;
+		let lastErr: unknown;
+		for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+			try {
+				return await op();
+			} catch (err) {
+				lastErr = err;
+				const msg = err instanceof Error ? err.message : String(err);
+				if (attempt >= maxAttempts || !isTransientCliError(msg)) throw err;
+				const backoffMs = 2000 * attempt;
+				log.warn(
+					{ provider: this.kind, attempt, maxAttempts, backoffMs, err: msg.slice(0, 200) },
+					`${label}: transient CLI error; retrying after backoff`,
+				);
+				await delay(backoffMs);
+			}
 		}
-		const args = ['exec', '--json', ...this.modelArgs(opts)];
-		const { agentText } = await this.runCodex(args, prompt);
-		return {
-			text: agentText ?? '',
-			stopReason: 'end_turn',
-		};
+		throw lastErr;
 	}
 
 
 	// -- completeStructured ---------------------------------------------
 
 	async completeStructured<T>(
+		messages: LLMMessage[],
+		schema: StructuredSchema,
+		opts?: StructuredCompletionOpts,
+	): Promise<T> {
+		return this.withTransientRetry('completeStructured', () => this.completeStructuredOnce<T>(messages, schema, opts));
+	}
+
+	private async completeStructuredOnce<T>(
 		messages: LLMMessage[],
 		schema: StructuredSchema,
 		opts?: StructuredCompletionOpts,
@@ -289,6 +328,22 @@ interface SubprocessResult {
 	readonly stderr: string;
 	readonly exitCode: number;
 	readonly durationMs: number;
+}
+
+/** Await `ms` milliseconds. */
+function delay(ms: number): Promise<void> {
+	return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/** True when a CLI failure message looks like a TRANSIENT upstream error from
+ *  the model API — a dropped connection, rate limit, overload, or 5xx — as
+ *  opposed to a deterministic failure (bad args, unparseable schema). These
+ *  are worth re-issuing on a fresh subprocess. The claude CLI surfaces the
+ *  upstream text inside its envelope (`API Error: Connection closed
+ *  mid-response`), which is echoed into our thrown message, so matching the
+ *  string is sufficient. */
+function isTransientCliError(message: string): boolean {
+	return /connection closed mid-response|api error|overloaded|rate.?limit|too many requests|internal server error|service unavailable|timeout|\b(429|500|502|503|504|529)\b/i.test(message);
 }
 
 /** Resolve a bare CLI name (`claude`/`codex`) to its absolute path ONCE,

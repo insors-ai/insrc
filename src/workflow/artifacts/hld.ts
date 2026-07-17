@@ -251,7 +251,76 @@ export function isHldBody(v: unknown): v is HldBody {
 	if (!Array.isArray(r['alternativesConsidered'])) return false;
 	if (typeof r['chosenAlternative'] !== 'string') return false;
 	if (!Array.isArray(r['openQuestions']))         return false;
+	// Deep-validate the nested arrays/strings the renderer + structural
+	// checks dereference — a shallow guard lets a body with a missing nested
+	// field (e.g. an omitted `consumedByStories`) crash the renderer instead
+	// of failing validation cleanly.
+	if (!(r['sharedContracts'] as unknown[]).every(isSharedContract)) return false;
+	if (!(r['storyBoundaries'] as unknown[]).every(isStoryBoundary))  return false;
+	if (!(r['alternativesConsidered'] as unknown[]).every(isAlternative)) return false;
+	if (!isRolloutOverview(r['rolloutOverview']))                     return false;
+	if (!(r['openQuestions'] as unknown[]).every(x => typeof x === 'string')) return false;
 	return true;
+}
+
+function isStringArray(v: unknown): boolean {
+	return Array.isArray(v) && v.every(x => typeof x === 'string');
+}
+
+function isSharedContract(v: unknown): boolean {
+	if (typeof v !== 'object' || v === null) return false;
+	const r = v as Record<string, unknown>;
+	return typeof r['id'] === 'string'
+		&& typeof r['name'] === 'string'
+		&& typeof r['purpose'] === 'string'
+		&& typeof r['interfaceSketch'] === 'string'
+		&& typeof r['ownedByStory'] === 'string'
+		&& isStringArray(r['consumedByStories'])
+		&& isStringArray(r['assumptions']);
+}
+
+function isStoryBoundary(v: unknown): boolean {
+	if (typeof v !== 'object' || v === null) return false;
+	const r = v as Record<string, unknown>;
+	return typeof r['storyId'] === 'string'
+		&& isStringArray(r['owns'])
+		&& isStringArray(r['depends'])
+		&& typeof r['internal'] === 'string';
+}
+
+function isAlternative(v: unknown): boolean {
+	if (typeof v !== 'object' || v === null) return false;
+	const r = v as Record<string, unknown>;
+	return typeof r['id'] === 'string'
+		&& typeof r['name'] === 'string'
+		&& typeof r['oneLineSummary'] === 'string'
+		&& typeof r['approach'] === 'string'
+		&& isStringArray(r['pros'])
+		&& isStringArray(r['cons'])
+		&& typeof r['costEstimate'] === 'string';
+}
+
+function isRolloutPhase(v: unknown): boolean {
+	if (typeof v !== 'object' || v === null) return false;
+	const r = v as Record<string, unknown>;
+	return typeof r['name'] === 'string'
+		&& isStringArray(r['includesStories'])
+		&& typeof r['rationale'] === 'string'
+		&& typeof r['backwardCompat'] === 'string'
+		&& (r['featureFlag'] === null || typeof r['featureFlag'] === 'string');
+}
+
+function isRolloutOverview(v: unknown): boolean {
+	if (typeof v !== 'object' || v === null) return false;
+	const r = v as Record<string, unknown>;
+	if (!Array.isArray(r['phases']) || !r['phases'].every(isRolloutPhase)) return false;
+	if (typeof r['orderingRationale'] !== 'string') return false;
+	if (!Array.isArray(r['riskyBits'])) return false;
+	return r['riskyBits'].every(rb => {
+		if (typeof rb !== 'object' || rb === null) return false;
+		const x = rb as Record<string, unknown>;
+		return typeof x['area'] === 'string' && typeof x['why'] === 'string' && typeof x['mitigation'] === 'string';
+	});
 }
 
 export function isCitationArray(v: unknown): v is Citation[] {

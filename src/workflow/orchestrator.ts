@@ -303,18 +303,28 @@ export function finalizeArtifact(
 	 *  passes `'ollama:<model>'` (or another provider id) when it drives. */
 	model:        string = 'client',
 ): FinalizeResult {
-	switch (intent.workflow) {
-		case 'stub':         return finalizeStub(intent, stepOutputs, runId, elapsedMs, llmResponse, model);
-		case 'define':       return finalizeDefine(intent, stepOutputs, runId, elapsedMs, llmResponse, model);
-		case 'design.epic':  return finalizeDesignEpic(intent, stepOutputs, runId, elapsedMs, llmResponse, model);
-		case 'design.story': return finalizeDesignStory(intent, stepOutputs, runId, elapsedMs, llmResponse, model);
-		case 'plan':         return finalizePlan(intent, stepOutputs, runId, elapsedMs, llmResponse, model);
-		case 'tracker.push':
-		case 'tracker.sync':
-		case 'tracker.post':
-			return finalizeTracker(intent, stepOutputs, runId, elapsedMs, llmResponse, model);
-		default:
-			throw new Error(`finalizeArtifact: workflow '${intent.workflow}' not yet supported`);
+	try {
+		switch (intent.workflow) {
+			case 'stub':         return finalizeStub(intent, stepOutputs, runId, elapsedMs, llmResponse, model);
+			case 'define':       return finalizeDefine(intent, stepOutputs, runId, elapsedMs, llmResponse, model);
+			case 'design.epic':  return finalizeDesignEpic(intent, stepOutputs, runId, elapsedMs, llmResponse, model);
+			case 'design.story': return finalizeDesignStory(intent, stepOutputs, runId, elapsedMs, llmResponse, model);
+			case 'plan':         return finalizePlan(intent, stepOutputs, runId, elapsedMs, llmResponse, model);
+			case 'tracker.push':
+			case 'tracker.sync':
+			case 'tracker.post':
+				return finalizeTracker(intent, stepOutputs, runId, elapsedMs, llmResponse, model);
+			default:
+				throw new Error(`finalizeArtifact: workflow '${intent.workflow}' not yet supported`);
+		}
+	} catch (err) {
+		// A structural check or renderer threw — almost always because the
+		// LLM body slipped past the shape guard with a missing/mistyped nested
+		// field (e.g. an array left undefined). Convert it to a RETRYABLE
+		// schema failure so the driver re-prompts instead of the whole run
+		// aborting on an uncaught TypeError.
+		const msg = err instanceof Error ? err.message : String(err);
+		return { ok: false, failure: { ok: false, kind: 'schema', message: `finalize threw while rendering/validating the artifact (likely a malformed or incomplete body): ${msg}`, retryable: true } };
 	}
 }
 
@@ -926,7 +936,13 @@ function finalizeDesignEpic(
 	const body      = (llmResponse as { body?: unknown }).body;
 	const citations = (llmResponse as { citations?: unknown }).citations;
 	if (!isHldBody(body)) {
-		return { ok: false, failure: schemaFailure(`body does not match HldBody shape`) };
+		return { ok: false, failure: schemaFailure(
+			`body does not match HldBody shape. Every field is REQUIRED, including nested arrays — ` +
+			`each sharedContracts[] entry needs {id,name,purpose,interfaceSketch,ownedByStory,consumedByStories[],assumptions[]}; ` +
+			`each storyBoundaries[] entry needs {storyId,owns[],depends[],internal}; ` +
+			`each alternativesConsidered[] entry needs {id,name,oneLineSummary,approach,pros[],cons[],costEstimate}; ` +
+			`rolloutOverview needs {phases[]:{name,includesStories[],rationale,backwardCompat,featureFlag},orderingRationale,riskyBits[]:{area,why,mitigation}}. ` +
+			`Emit empty arrays [] where you have no items — never omit a field.`) };
 	}
 	if (!isHldCitationArray(citations)) {
 		return { ok: false, failure: schemaFailure(`citations must be an array of { id, kind, ref }`) };

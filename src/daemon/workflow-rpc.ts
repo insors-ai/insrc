@@ -139,7 +139,9 @@ export async function runWorkflowServerSide(
 	// 3. Synthesize with a validation-feedback retry loop (mirrors the MCP
 	//    retryable-failure contract + withStructuredRetry).
 	const synth = prepareSynthesize(intent, stepOutputs);
-	const maxAttempts = opts.maxSynthAttempts ?? 3;
+	// 4 attempts: a long artifact commonly needs one citation-grounding retry
+	// AND may need one shape retry, leaving a genuine final attempt.
+	const maxAttempts = opts.maxSynthAttempts ?? 4;
 	let feedback = '';
 	let finalized: FinalizedArtifact | undefined;
 	for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {

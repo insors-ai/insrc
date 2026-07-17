@@ -88,7 +88,10 @@ export class CliProvider implements LLMProvider {
 		this.kind = opts.kind;
 		this.defaultModel = opts.model;
 		this.binPath = opts.binPath ?? opts.kind;
-		this.timeoutMs = opts.timeoutMs ?? 120_000;
+		// 10 min default: agentic `claude`/`codex --print` calls that generate a
+		// full artifact or a deep analyze bundle routinely exceed the old 120 s
+		// (which SIGKILLed legit-but-slow syntheses). Callers can still tighten it.
+		this.timeoutMs = opts.timeoutMs ?? 600_000;
 		this.embedDelegate = opts.embedDelegate;
 		this.capabilities = {
 			structuredOutput: true,

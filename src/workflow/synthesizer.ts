@@ -43,6 +43,12 @@ export interface ValidationFailure {
 	readonly message: string;
 	/** Per-check details for the retry prompt. */
 	readonly details?: ReadonlyArray<string>;
+	/** Whether re-emitting the synthesize artifact can fix this. Defaults to
+	 *  true (absent). Set `false` for failures that derive from a FIXED step
+	 *  output — e.g. a checklist scope-boundary hard-fail — which re-emitting
+	 *  the artifact cannot change; an automated driver surfaces those
+	 *  immediately instead of wasting retries. */
+	readonly retryable?: boolean;
 }
 
 export type ValidationResult = ValidationOk | ValidationFailure;

@@ -150,6 +150,12 @@ export async function runWorkflowServerSide(
 		);
 		const result = finalizeArtifact(intent, stepOutputs, runId, Date.now() - startedAtMs, artifactJson, opts.modelLabel);
 		if (result.ok) { finalized = result.finalized; break; }
+		// A non-retryable failure derives from a fixed step output (e.g. a
+		// checklist scope-boundary hard-fail) — re-emitting the artifact can't
+		// change it, so surface immediately rather than burn the retry budget.
+		if (!result.failure.ok && result.failure.retryable === false) {
+			throw new Error(`workflow.run: synthesize failed (non-retryable — fix the upstream step): ${formatFailure(result.failure)}`);
+		}
 		if (attempt === maxAttempts) {
 			throw new Error(`workflow.run: synthesize rejected after ${maxAttempts} attempts: ${formatFailure(result.failure)}`);
 		}

@@ -52,7 +52,10 @@ export async function handleSynthesize(
 	if (!result.ok) {
 		const failure = result.failure;
 		const code = failure.ok ? 'synthesize-unknown' : `synthesize-${failure.kind}`;
-		return errorResult(code, formatFailure(failure), true);
+		// Non-retryable failures (e.g. a checklist scope-boundary hard-fail)
+		// derive from a fixed step output — re-emitting won't fix them.
+		const retryable = failure.ok ? true : (failure.retryable ?? true);
+		return errorResult(code, formatFailure(failure), retryable);
 	}
 	// The finalized artifact carries the definitive epicHash in its
 	// meta (Define mints it; downstream workflows echo it). Read it

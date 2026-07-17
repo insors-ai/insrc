@@ -376,6 +376,14 @@ function schemaFailure(message: string): ValidationResult {
 	return { ok: false, kind: 'schema', message };
 }
 
+/** A synthesize failure that re-emitting the artifact CANNOT fix — it derives
+ *  from a fixed step output (a checklist scope-boundary hard-fail), not the
+ *  emitted JSON. Marked non-retryable so an automated driver surfaces it
+ *  immediately instead of wasting synthesize attempts. */
+function boundaryHardFailure(message: string): ValidationResult {
+	return { ok: false, kind: 'boundary', message, retryable: false };
+}
+
 // Kept as an unused import guard: STUB_ARTIFACT_JSON_SCHEMA is
 // referenced by the MCP tool descriptions in Phase B; export it
 // through this module so consumers only pull from `orchestrator`.
@@ -583,7 +591,7 @@ function finalizeDefine(
 		);
 		if (failed.length > 0) {
 			const items = failed.map(f => f.itemId).join(', ');
-			return { ok: false, failure: schemaFailure(`s4 scope-boundary hard-fail on: ${items}`) };
+			return { ok: false, failure: boundaryHardFailure(`s4 scope-boundary hard-fail on: ${items}`) };
 		}
 	}
 	// Cross-artifact invariants: dependency DAG + constraint coverage.
@@ -674,7 +682,7 @@ function finalizeDefineExtend(
 			(r.verdict === 'missed' || r.verdict === 'ambiguous'),
 		);
 		if (failed.length > 0) {
-			return { ok: false, failure: schemaFailure(`s4 scope-boundary hard-fail on: ${failed.map(f => f.itemId).join(', ')}`) };
+			return { ok: false, failure: boundaryHardFailure(`s4 scope-boundary hard-fail on: ${failed.map(f => f.itemId).join(', ')}`) };
 		}
 	}
 	// Target Epic must exist + be approved; its design (HLD) must exist +
@@ -934,7 +942,7 @@ function finalizeDesignEpic(
 		);
 		if (failed.length > 0) {
 			const items = failed.map(f => f.itemId).join(', ');
-			return { ok: false, failure: schemaFailure(`s6 scope-boundary hard-fail on: ${items}`) };
+			return { ok: false, failure: boundaryHardFailure(`s6 scope-boundary hard-fail on: ${items}`) };
 		}
 	}
 
@@ -1185,7 +1193,7 @@ function finalizeDesignStory(
 		);
 		if (failed.length > 0) {
 			const items = failed.map(f => f.itemId).join(', ');
-			return { ok: false, failure: schemaFailure(`s8 scope-boundary hard-fail on: ${items}`) };
+			return { ok: false, failure: boundaryHardFailure(`s8 scope-boundary hard-fail on: ${items}`) };
 		}
 	}
 

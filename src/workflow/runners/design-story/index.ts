@@ -288,6 +288,7 @@ const contractDetail = llmPauseRunner({
 				'',
 				'HLD AMENDMENT PROPOSAL (optional):',
 				'  If designing this contract reveals a small, localised HLD change (a shared contract needs one more field, a method signature needs to add a parameter, ownership of one contract needs to move between Stories, etc.), you MAY emit `hld.amendmentProposal` with `{ amendment: <typed>, rationale: <string>, citations: [] }`. Do NOT propose an amendment for a fundamental HLD rework — those need a back-flow, not an amendment. Rough threshold: if >30% of shared contracts would need changing, do NOT amend.',
+				'  BREAKING FLAG (required for the two removal/rename amendment types): a `sharedContract.fieldRemove` and a `sharedContract.rename` amendment MUST include `"breaking": true` — the applier REJECTS them otherwise. A `sharedContract.fieldAdd` MUST include `"breaking": false` (it is additive). The other amendment types carry no `breaking` field. If in doubt, prefer `fieldAdd` (additive, non-breaking) over `fieldRemove`.',
 			].join('\n'),
 			userTurn: [
 				's1 LldContext:',

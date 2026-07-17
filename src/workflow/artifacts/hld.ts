@@ -419,6 +419,133 @@ export function checkOwnershipConsistency(body: HldBody): readonly string[] {
 	return details;
 }
 
+/** A minimal view of an Epic Story for the contract-graph check: its id
+ *  and the Stories it directly depends on. */
+export interface EpicStoryDep {
+	readonly id:        string;
+	readonly dependsOn?: readonly string[] | undefined;
+}
+
+/** Validate the shared-contract dependency graph — the checks that were
+ *  MISSING when an HLD shipped an inverted, cyclic `consumedByStories`:
+ *
+ *   (cg1) The induced Story graph (a consumer Story depends on the owner
+ *         Story of each contract it consumes) must be ACYCLIC. A cycle means
+ *         two Stories each need the other's contract — unbuildable in order.
+ *   (cg2) Every consumer must be DOWNSTREAM of the owner in the Epic's Story
+ *         dependency graph — a Story cannot consume a contract owned by a
+ *         Story it does not (transitively) depend on. Catches inversions.
+ *   (cg3) `storyBoundaries[].depends` must be the exact INVERSE of
+ *         `sharedContracts[].consumedByStories` — the two encode the same
+ *         relation and must not drift.
+ *
+ *  Returns human-readable issue strings (empty ⇒ consistent). The messages
+ *  tell the LLM how to fix it (narrow consumedByStories, or amend the Epic). */
+export function checkContractDependencyGraph(
+	body:        HldBody,
+	epicStories: readonly EpicStoryDep[],
+): readonly string[] {
+	const details: string[] = [];
+	const storyIds = body.storyBoundaries.map(s => s.storyId);
+
+	// Induced Story graph: consumer -> owner (consumer depends on owner).
+	const edges: Record<string, Set<string>> = {};
+	for (const sc of body.sharedContracts) {
+		for (const consumer of sc.consumedByStories) {
+			if (consumer === sc.ownedByStory) continue;   // self-consumption is a no-op
+			(edges[consumer] ??= new Set()).add(sc.ownedByStory);
+		}
+	}
+
+	// (cg1) acyclicity
+	const cycle = findGraphCycle(edges, storyIds);
+	if (cycle !== null) {
+		details.push(`shared-contract consumption forms a Story dependency cycle: ${cycle.join(' → ')} (cg1). Narrow consumedByStories so no two Stories consume each other's contracts.`);
+	}
+
+	// (cg2) consumers must be downstream of the owner in the Epic Story DAG
+	const downstream = transitiveDependents(epicStories);
+	for (const sc of body.sharedContracts) {
+		const down = downstream[sc.ownedByStory] ?? new Set<string>();
+		for (const consumer of sc.consumedByStories) {
+			if (consumer === sc.ownedByStory) continue;
+			if (!down.has(consumer)) {
+				details.push(`shared contract '${sc.id}' (owned by '${sc.ownedByStory}') is consumed by '${consumer}', which is NOT downstream of '${sc.ownedByStory}' in the Epic Story graph (cg2). A Story cannot consume a contract owned by a Story it does not depend on. Either drop '${consumer}' from consumedByStories, or propose an Epic amendment so '${consumer}' dependsOn '${sc.ownedByStory}'.`);
+			}
+		}
+	}
+
+	// (cg3) storyBoundaries.depends must equal the inverse of consumedByStories
+	const expected: Record<string, Set<string>> = {};
+	for (const id of storyIds) expected[id] = new Set();
+	for (const sc of body.sharedContracts) {
+		for (const consumer of sc.consumedByStories) {
+			if (consumer === sc.ownedByStory) continue;
+			(expected[consumer] ??= new Set()).add(sc.id);
+		}
+	}
+	for (const sb of body.storyBoundaries) {
+		const want = expected[sb.storyId] ?? new Set<string>();
+		const have = new Set(sb.depends);
+		for (const d of have) {
+			if (!want.has(d)) details.push(`storyBoundary '${sb.storyId}' lists depends on '${d}' but '${sb.storyId}' is not in that contract's consumedByStories (cg3). depends must be the exact inverse of consumedByStories.`);
+		}
+		for (const d of want) {
+			if (!have.has(d)) details.push(`storyBoundary '${sb.storyId}' consumes '${d}' (per consumedByStories) but omits it from depends (cg3). depends must be the exact inverse of consumedByStories.`);
+		}
+	}
+
+	return details;
+}
+
+/** DFS cycle detection on the induced Story graph. Returns the cycle as a
+ *  path (…→ repeated-node) or null when acyclic. */
+function findGraphCycle(edges: Record<string, Set<string>>, nodes: readonly string[]): string[] | null {
+	const GREY = 1, BLACK = 2;
+	const color: Record<string, number> = {};
+	const stack: string[] = [];
+	const dfs = (n: string): string[] | null => {
+		color[n] = GREY; stack.push(n);
+		for (const m of edges[n] ?? []) {
+			if (color[m] === GREY) { return [...stack.slice(stack.indexOf(m)), m]; }
+			if (color[m] === undefined) { const r = dfs(m); if (r !== null) return r; }
+		}
+		color[n] = BLACK; stack.pop(); return null;
+	};
+	for (const n of nodes) {
+		if (color[n] === undefined) { const r = dfs(n); if (r !== null) return r; }
+	}
+	return null;
+}
+
+/** For each Story, the set of Stories that transitively depend on it
+ *  ("downstream"). Used to check a contract consumer is downstream of the
+ *  owner. Guards against cycles in the Epic graph (should not occur). */
+function transitiveDependents(stories: readonly EpicStoryDep[]): Record<string, Set<string>> {
+	const deps: Record<string, readonly string[]> = {};
+	for (const s of stories) deps[s.id] = s.dependsOn ?? [];
+	const ancestors: Record<string, Set<string>> = {};
+	const compute = (id: string, path: Set<string>): Set<string> => {
+		const cached = ancestors[id];
+		if (cached !== undefined) return cached;
+		const acc = new Set<string>();
+		for (const d of deps[id] ?? []) {
+			if (path.has(d)) continue;                 // cycle guard
+			acc.add(d);
+			for (const a of compute(d, new Set(path).add(d))) acc.add(a);
+		}
+		ancestors[id] = acc;
+		return acc;
+	};
+	for (const s of stories) compute(s.id, new Set([s.id]));
+	const downstream: Record<string, Set<string>> = {};
+	for (const s of stories) downstream[s.id] = new Set();
+	for (const s of stories) {
+		for (const a of ancestors[s.id] ?? []) (downstream[a] ??= new Set()).add(s.id);
+	}
+	return downstream;
+}
+
 /** Type-level-only interfaceSketch heuristic: no `return`, no `{`
  *  after a `)`, no clearly-imperative statements. Flags obvious
  *  implementation leaks in the sharedContract sketches. */

@@ -46,6 +46,7 @@ import {
 	type ExtendScope,
 } from './artifacts/extend.js';
 import {
+	checkContractDependencyGraph,
 	checkInterfaceSketchTypeLevel,
 	checkOwnershipConsistency,
 	checkRolloutCoverage,
@@ -975,6 +976,10 @@ function finalizeDesignEpic(
 	const ownIssues = checkOwnershipConsistency(body);
 	if (ownIssues.length > 0) {
 		return { ok: false, failure: { ok: false, kind: 'schema', message: 'HLD ownership inconsistent', details: ownIssues } };
+	}
+	const graphIssues = checkContractDependencyGraph(body, epic.body.stories);
+	if (graphIssues.length > 0) {
+		return { ok: false, failure: { ok: false, kind: 'schema', message: 'HLD contract dependency graph inconsistent (inverted/cyclic consumedByStories)', details: graphIssues } };
 	}
 	const rolloutIssues = checkRolloutCoverage(body, epicStoryIds);
 	if (rolloutIssues.length > 0) {

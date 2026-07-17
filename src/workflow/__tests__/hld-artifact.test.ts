@@ -14,6 +14,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+	checkContractDependencyGraph,
 	checkInterfaceSketchTypeLevel,
 	checkOwnershipConsistency,
 	checkRolloutCoverage,
@@ -126,6 +127,51 @@ test('checkStoryCoverage flags orphan Epic Stories', () => {
 	const issues = checkStoryCoverage(fixtureBody(), ['s1', 's2', 's3']);
 	assert.equal(issues.length, 1);
 	assert.match(issues[0]!, /s3/);
+});
+
+// ---------------------------------------------------------------------------
+// checkContractDependencyGraph
+// ---------------------------------------------------------------------------
+
+// s2 dependsOn s1 — matches the fixture (s2 consumes s1's sc1).
+const EPIC_DAG = [{ id: 's1', dependsOn: [] as string[] }, { id: 's2', dependsOn: ['s1'] }];
+
+test('checkContractDependencyGraph passes on a consistent, acyclic graph', () => {
+	assert.deepEqual(checkContractDependencyGraph(fixtureBody(), EPIC_DAG), []);
+});
+
+test('checkContractDependencyGraph flags a cycle (mutual consumption)', () => {
+	const body: HldBody = {
+		...fixtureBody(),
+		sharedContracts: [
+			...fixtureBody().sharedContracts,
+			{ id: 'sc2', name: 'Rev', purpose: 'p', interfaceSketch: 'interface Rev { x(): void }', ownedByStory: 's2', consumedByStories: ['s1'], assumptions: [] },
+		],
+		storyBoundaries: [
+			{ storyId: 's1', owns: ['sc1'], depends: ['sc2'], internal: '' },
+			{ storyId: 's2', owns: ['sc2'], depends: ['sc1'], internal: '' },
+		],
+	};
+	const issues = checkContractDependencyGraph(body, EPIC_DAG);
+	assert.ok(issues.some(i => /cg1/.test(i)), issues.join(' | '));
+});
+
+test('checkContractDependencyGraph flags an inversion (consumer not downstream of owner)', () => {
+	// s2 does NOT depend on s1, yet consumes s1's sc1.
+	const issues = checkContractDependencyGraph(fixtureBody(), [{ id: 's1', dependsOn: [] as string[] }, { id: 's2', dependsOn: [] as string[] }]);
+	assert.ok(issues.some(i => /cg2/.test(i)), issues.join(' | '));
+});
+
+test('checkContractDependencyGraph flags depends drift from consumedByStories', () => {
+	const body: HldBody = {
+		...fixtureBody(),
+		storyBoundaries: [
+			{ storyId: 's1', owns: ['sc1'], depends: ['sc1'], internal: '' }, // phantom: owns sc1, cannot depend on it
+			{ storyId: 's2', owns: [], depends: [], internal: '' },            // omits sc1 it actually consumes
+		],
+	};
+	const issues = checkContractDependencyGraph(body, EPIC_DAG);
+	assert.ok(issues.some(i => /cg3/.test(i)), issues.join(' | '));
 });
 
 test('checkStoryCoverage flags shared contract owned by unknown Story', () => {

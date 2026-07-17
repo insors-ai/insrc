@@ -59,7 +59,7 @@ function seedApprovedDefine(repo: string, epicHash: string): void {
 			constraints: [{ id: 'k1', text: 'Reuse sidebar', type: 'convention', source: 'c1' }],
 			stories: [
 				{ id: 's1', title: 'Filter by tag', userValue: 'v', acceptanceCriteria: [{ id: 'ac1', given: 'x', when: 'y', then: 'z', operationalizes: ['k1'] }] },
-				{ id: 's2', title: 'Clear filter',  userValue: 'v', acceptanceCriteria: [{ id: 'ac1', given: 'x', when: 'y', then: 'z', operationalizes: ['k1'] }] },
+				{ id: 's2', title: 'Clear filter',  userValue: 'v', dependsOn: ['s1'], acceptanceCriteria: [{ id: 'ac1', given: 'x', when: 'y', then: 'z', operationalizes: ['k1'] }] },
 			],
 			openQuestions: [],
 		},

@@ -285,7 +285,10 @@ test('LLD s4 amendment proposal lands as pending AmendmentRecord', async () => {
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
-test('Bad proposal that would fail applier is refused at synthesize', async () => {
+test('Bad amendment proposal is dropped; the LLD still synthesizes', async () => {
+	// An amendment proposal is OPTIONAL back-flow. A malformed one that the
+	// applier would reject must NOT fail the otherwise-valid (expensive) LLD —
+	// it is dropped with a warning and the LLD is written, with no record.
 	_clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-amend-e2e-'));
@@ -293,12 +296,12 @@ test('Bad proposal that would fail applier is refused at synthesize', async () =
 	try {
 		seed(repo, slug);
 		const state = await walkLld(repo, slug, 's1', S4_BAD_PROPOSAL);
-		const errOut = payload(await handleWorkflowStep({
+		const out = payload(await handleWorkflowStep({
 			phase: 'synthesize', artifact: makeArtifact(), state,
 		}));
-		assert.equal(errOut['next'], 'error');
-		assert.match((errOut['error'] as { message: string }).message, /applier/);
-		// AND no record was persisted:
+		assert.equal(out['next'], 'done');
+		assert.ok(existsSync(out['path'] as string));
+		// AND the invalid proposal was dropped, not persisted:
 		const amendments = listAmendments(repo, slug);
 		assert.equal(amendments.length, 0);
 	} finally { rmSync(repo, { recursive: true, force: true }); }

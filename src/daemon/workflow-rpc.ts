@@ -46,8 +46,10 @@ const log = getLogger('daemon:workflow-rpc');
 const ANALYZE_STEP_RUNNERS: ReadonlySet<string> = new Set(['scope.assess', 'context.assemble']);
 
 /** CLI-provider subprocess timeout for workflow turns. A full-artifact
- *  synthesize can run several minutes; the CLI default (120 s) SIGKILLs it. */
-const WORKFLOW_CLI_TIMEOUT_MS = 600_000;
+ *  synthesize can run many minutes — an XL Story LLD (full HLD + every step
+ *  output in the prompt) has been observed near ten; the CLI default (120 s)
+ *  SIGKILLs it, and even 600 s clipped the largest ones. */
+const WORKFLOW_CLI_TIMEOUT_MS = 900_000;
 
 // ---------------------------------------------------------------------------
 // Pure driver

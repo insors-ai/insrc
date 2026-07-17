@@ -1311,7 +1311,15 @@ function finalizeDesignStory(
 				]);
 			} catch (err) {
 				const msg = err instanceof AmendmentApplyError ? err.message : (err instanceof Error ? err.message : String(err));
-				return { ok: false, failure: schemaFailure(`amendment proposal from ${p.stepId} would fail applier: ${msg}`) };
+				// An amendment proposal is OPTIONAL back-flow — a small HLD tweak
+				// the LLD noticed. A malformed proposal (breaking flag missing,
+				// unknown contract, applier null-deref, …) must NOT fail the
+				// otherwise-valid LLD: drop it with a warning and continue. The
+				// LLD proceeds against the current effective HLD; a genuinely
+				// needed HLD change resurfaces as a real back-flow, not a synth
+				// failure that burns the whole (expensive) LLD generation.
+				log.warn({ runId, storyId, stepId: p.stepId, amendmentType: (p.amendment as { type?: string }).type, err: msg }, 'design.story: dropping invalid amendment proposal; LLD proceeds without it');
+				continue;
 			}
 			const amendmentId = nextAmendmentId(intent.repoPath, epicHash);
 			const record: AmendmentRecord = {

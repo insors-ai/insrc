@@ -24,7 +24,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
 
@@ -33,7 +33,7 @@ import { registerWorkflowRunners } from '../../../workflow/index.js';
 import { _clearWorkflowStateStoreForTests } from '../state-store.js';
 import { _setBuildStageDepsForTests, type BuildStageDeps } from '../../../workflow/runners/build/index.js';
 import { approveArtifactByJsonPath } from '../../../workflow/gates.js';
-import { lldArtifactPaths, planArtifactPaths, buildArtifactPaths } from '../../../workflow/storage.js';
+import { lldArtifactPaths, planArtifactPaths, planArtifactId, buildArtifactPaths } from '../../../workflow/storage.js';
 import type { PlanTask } from '../../../workflow/artifacts/plan.js';
 import type { TaskVerifier, DaemonVerification } from '../../../workflow/runners/build/verifier.js';
 import type {
@@ -136,6 +136,15 @@ test('t6/t7: a halted build run surfaces BuildRunProgress halt frame through the
 		}));
 		assert.equal(stepOut['next'], 'emit_synthesize', JSON.stringify(stepOut).slice(0, 300));
 
+		// t5 grow-in-place: the registered runner persisted the flat BuildArtifact
+		// checkpoint at each Task boundary — reloadable BEFORE finalize seals it,
+		// so a crashed run leaves the latest checkpoint readable.
+		const cpPath = buildArtifactPaths(repo, HASH, 's4', 'build-halt').json;
+		assert.ok(existsSync(cpPath), 'grow-in-place checkpoint json written during the run');
+		const cp = JSON.parse(readFileSync(cpPath, 'utf8')) as { kind: string; runState: string };
+		assert.equal(cp.kind, 'build');
+		assert.equal(cp.runState, 'halted');
+
 		// The synthesize prompt embeds the s2 step output — the sc6 halt frame is
 		// carried through the SAME surface, no bespoke IPC/output member (t6).
 		const s2 = fencedJson(stepOut['userTurn'] as string);
@@ -163,6 +172,80 @@ test('t6/t7: a halted build run surfaces BuildRunProgress halt frame through the
 		}));
 		assert.equal(doneOut['next'], 'done', JSON.stringify(doneOut).slice(0, 300));
 		assert.ok(existsSync(buildArtifactPaths(repo, HASH, 's4', 'build-halt').json), 'BuildArtifact JSON written via storage.ts');
+	} finally {
+		_setBuildStageDepsForTests(undefined);
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
+/** All-passing deps → a COMPLETE run. */
+function passingDeps(): BuildStageDeps {
+	const adapter: TaskImplementerAdapter = {
+		async implement(req: TaskImplementerRequest): Promise<TaskImplementerReport> {
+			return { claimedComplete: true, narrative: `ran ${req.task.id}` };
+		},
+	};
+	const verifier: TaskVerifier = {
+		resolveTestCommand(task: PlanTask): string { return `unit: ${task.id}`; },
+		async verify(task: PlanTask): Promise<DaemonVerification> {
+			return { verdict: { command: `unit: ${task.id}`, passed: true, exitCode: 0, summary: 'tests passed (exit 0)' }, filesTouched: [`src/${task.id}.ts`] };
+		},
+	};
+	return { adapter, verifier };
+}
+
+test('t7: a COMPLETE build finalizes to done; the sealed record reloads with per-Task rows + upstream citation and is approvable', async () => {
+	_clearWorkflowStateStoreForTests();
+	registerWorkflowRunners();
+	_setBuildStageDepsForTests(passingDeps());
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-build-done-'));
+	try {
+		seedPlan(repo);
+		seedLld(repo);
+
+		const startOut = payload(await handleWorkflowStep({ phase: 'start', workflow: 'build', focus: 'build s4', repo, params: { epicHash: HASH, storyId: 's4' } }));
+		assert.equal(startOut['next'], 'emit_plan');
+		const planOut = payload(await handleWorkflowStep({ phase: 'plan', plan: { workflow: 'build', steps: BUILD_STEPS }, state: startOut['state'] as string }));
+		assert.equal(planOut['next'], 'emit_step');
+		const stepOut = payload(await handleWorkflowStep({ phase: 'step', stepId: 's1', response: { taskCount: 2, summary: 'two tasks' }, state: planOut['state'] as string }));
+		assert.equal(stepOut['next'], 'emit_synthesize');
+
+		// synthesize → done. The synthesize body is IGNORED — the record is a
+		// projection of the daemon's own outcomes, not the emitted body.
+		const doneOut = payload(await handleWorkflowStep({
+			phase: 'synthesize',
+			artifact: { body: { summary: 'ignored', taskOutcomes: [] }, citations: [] },
+			state: stepOut['state'] as string,
+		}));
+		assert.equal(doneOut['next'], 'done', JSON.stringify(doneOut).slice(0, 300));
+		// markdown returned = the rendered slug-md.
+		assert.match(String(doneOut['markdown']), /# Build: s4/);
+
+		// The sealed hash-json + slug-md pair reloads in sibling-artifact form.
+		const paths = buildArtifactPaths(repo, HASH, 's4', 'build-halt');
+		assert.ok(existsSync(paths.json) && existsSync(paths.md));
+		const sealed = JSON.parse(readFileSync(paths.json, 'utf8')) as {
+			kind: string; runState: string; taskOutcomes: { taskId: string; status: string }[];
+			upstream: { planArtifactId: string; storyId: string; epicId: string };
+			meta: { workflow: string };
+		};
+		assert.equal(sealed.kind, 'build');
+		assert.equal(sealed.runState, 'complete');
+		assert.deepEqual(sealed.taskOutcomes.map(o => `${o.taskId}:${o.status}`), ['t1:completed', 't2:completed']);
+		// ac3 — the upstream PlanArtifact citation pins the exact approved revision.
+		assert.equal(sealed.upstream.planArtifactId, planArtifactId(HASH, 's4'));
+		assert.equal(sealed.upstream.storyId, 's4');
+		assert.equal(sealed.upstream.epicId, HASH);
+		// ac2 — the reloaded md exposes per-Task status + testVerdict + files.
+		const md = readFileSync(paths.md, 'utf8');
+		assert.match(md, /\| `t1` \| completed \|/);
+		assert.match(md, /tests passed \(exit 0\)/);
+		assert.match(md, /## Upstream/);
+
+		// ac4 — approvable through the same gates path as every sibling kind.
+		const res = approveArtifactByJsonPath(paths.json);
+		assert.equal(res.workflow, 'build');
+		assert.ok(res.approvedAt.length > 0);
 	} finally {
 		_setBuildStageDepsForTests(undefined);
 		rmSync(repo, { recursive: true, force: true });

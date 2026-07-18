@@ -36,11 +36,14 @@ import { getLogger } from '../../../shared/logger.js';
 import { registerRunner } from '../../executor.js';
 import { readBuildUpstream, requireApprovedPlan } from '../../gates.js';
 import { assertEpicHash } from '../../hash.js';
-import { appendRunLog, lldArtifactPaths, planArtifactId, planArtifactPaths } from '../../storage.js';
+import { appendRunLog, buildArtifactPaths, lldArtifactPaths, planArtifactId, planArtifactPaths, writeAtomic } from '../../storage.js';
 import { renderPlanMarkdown, type PlanArtifact } from '../../artifacts/plan.js';
+import { BUILD_SCHEMA_VERSION, type BuildArtifactUpstream, type BuildMeta } from '../../artifacts/build.js';
 import type { StepRunner, StepRunnerContext } from '../../types.js';
+import type { PlanTask } from '../../artifacts/plan.js';
 import { approvalVerdict, driftVerdict } from './admission.js';
 import { CliTaskImplementerAdapter } from './adapter.js';
+import { buildCheckpointArtifact } from './finalize.js';
 import { projectBuildRunProgress } from './progress.js';
 import { sequenceBuildTasks, type BuildTaskProgress } from './sequencer.js';
 import { createGitTestVerifier, type TaskVerifier } from './verifier.js';
@@ -272,6 +275,41 @@ function readMdOr(mdPath: string, fallback: string): string {
 	catch { return fallback; }
 }
 
+/** Resolve the grow-in-place checkpoint context (Story s5, t5): the envelope
+ *  `meta` + the sc3 upstream citation the flat BuildArtifact carries at each
+ *  Task boundary. Best-effort — meaningful only on an ADMITTED run; a refused
+ *  run never reaches a Task boundary, and a resolution failure degrades to the
+ *  jsonl trace rather than aborting the run. The gate already ran at
+ *  `context.assemble`; re-reading here is cheap + read-only. */
+function resolveCheckpointContext(
+	ctx:      StepRunnerContext,
+	repoPath: string,
+	epicHash: string,
+	storyId:  string,
+): { readonly meta: BuildMeta; readonly upstream: BuildArtifactUpstream; readonly tasks: readonly PlanTask[] } | undefined {
+	try {
+		const admission = admitBuild(repoPath, epicHash, storyId);
+		if (!admission.admitted) return undefined;
+		const plan     = requireApprovedPlan(repoPath, epicHash, storyId);
+		const epicSlug = plan.meta.epicSlug ?? epicHash;
+		const meta: BuildMeta = {
+			workflow: 'build', runId: ctx.runId, repoPath, createdAt: new Date().toISOString(),
+			model: 'client', elapsedMs: 0, repoIndexedAt: ctx.intent.repoIndexedAt,
+			schemaVersion: BUILD_SCHEMA_VERSION, epicHash, epicSlug, storyId, planRunId: plan.meta.runId,
+		};
+		const upstream: BuildArtifactUpstream = {
+			planArtifactId:   admission.plan.planArtifactId,
+			planArtifactHash: admission.plan.planArtifactHash,
+			storyId:          admission.plan.storyId,
+			epicId:           epicHash,
+		};
+		return { meta, upstream, tasks: plan.body.tasks };
+	} catch (err) {
+		log.warn({ storyId, err: err instanceof Error ? err.message : String(err) }, 'build: checkpoint context unresolved; grow-in-place json checkpoint disabled for this run');
+		return undefined;
+	}
+}
+
 const tasksSequence: StepRunner = {
 	id:       'tasks.sequence',
 	workflow: 'build',
@@ -280,6 +318,9 @@ const tasksSequence: StepRunner = {
 		const epicHash = epicHashFrom(ctx);
 		const storyId  = storyIdFrom(ctx);
 		const epicKey  = epicHash;
+
+		// The grow-in-place checkpoint context (t5), resolved once up front.
+		const checkpointCtx = resolveCheckpointContext(ctx, repoPath, epicHash, storyId);
 
 		const result = await driveBuildStage(
 			{
@@ -292,17 +333,35 @@ const tasksSequence: StepRunner = {
 					});
 				},
 				// Persist the FULL accumulated BuildTaskOutcome[] at EVERY Task
-				// boundary through the existing run-log envelope (t4/ac3): a daemon
-				// restart mid-run can decode the last checkpoint and re-project the
-				// run state rather than losing the already-landed outcomes. No
-				// second, parallel result store — the same storage substrate the
-				// sibling stages use.
+				// boundary through the existing run-log envelope (trace) AND grow
+				// the flat BuildArtifact checkpoint in place (t5): a daemon restart
+				// mid-run can decode the last checkpoint and re-project the run
+				// state rather than losing the already-landed outcomes. No second,
+				// parallel result store — the same storage substrate + the same
+				// flat shape the seal writes.
 				onCheckpoint: (outcomes) => {
 					appendRunLog(epicKey, 'build', ctx.runId, {
 						ts: new Date().toISOString(), event: 'task-checkpoint',
 						reached: outcomes.length,
 						outcomes,
 					});
+					// Grow-in-place: rewrite the SAME flat BuildArtifact (unsealed,
+					// possibly runState:'running') at the canonical json path so a
+					// crashed run leaves the latest checkpoint readable (t5/ac1).
+					if (checkpointCtx !== undefined) {
+						try {
+							const progress = projectBuildRunProgress(outcomes, checkpointCtx.tasks, storyId);
+							const artifact = buildCheckpointArtifact({
+								meta: checkpointCtx.meta, upstream: checkpointCtx.upstream, progress, taskOutcomes: outcomes,
+							});
+							writeAtomic(
+								buildArtifactPaths(repoPath, epicHash, storyId, checkpointCtx.meta.epicSlug).json,
+								JSON.stringify(artifact, null, 2) + '\n',
+							);
+						} catch (err) {
+							log.warn({ storyId, err: err instanceof Error ? err.message : String(err) }, 'build: grow-in-place checkpoint write failed (best-effort); jsonl trace retained');
+						}
+					}
 				},
 				// The single in-flight `'running'` slot, persisted before a Task is
 				// driven, so a restart mid-Task re-derives inFlightTaskId (a1).

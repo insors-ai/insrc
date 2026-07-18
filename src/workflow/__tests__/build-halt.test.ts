@@ -210,9 +210,12 @@ test('t4: a halted run finalizes into a ChainReport-carried BuildArtifact via st
 		if (!fin.ok) return;
 		const artifact = fin.finalized.artifact as BuildArtifact;
 		// The finalized record carries the halted run's outcomes, including the
-		// 'failed' Task — a reviewable record, not an untracked side-effect.
-		const failed = artifact.body.taskOutcomes.find(o => o.status === 'failed') as BuildTaskReached | undefined;
+		// 'failed' Task — a reviewable record, not an untracked side-effect. The
+		// flat s5 shape carries taskOutcomes DIRECTLY on the record (no body).
+		const failed = artifact.taskOutcomes.find(o => o.status === 'failed') as BuildTaskReached | undefined;
 		assert.ok(failed !== undefined && failed.taskId === 't2');
+		assert.equal(artifact.runState, 'halted');            // re-projected once at finalize (sc6)
+		assert.ok(artifact.halt !== undefined && artifact.halt.failedTaskId === 't2');
 		assert.equal(artifact.meta.workflow, 'build');
 		assert.equal(artifact.meta.storyId, 's4');
 
@@ -222,6 +225,6 @@ test('t4: a halted run finalizes into a ChainReport-carried BuildArtifact via st
 		assert.match(paths.json, /BUILD-a3f4b8c9d1e2f3a4-s4\.json$/);
 		// renderedJson round-trips back to the same outcomes.
 		const roundTrip = JSON.parse(fin.finalized.renderedJson) as BuildArtifact;
-		assert.equal(roundTrip.body.taskOutcomes.length, result.taskOutcomes.length);
+		assert.equal(roundTrip.taskOutcomes.length, result.taskOutcomes.length);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });

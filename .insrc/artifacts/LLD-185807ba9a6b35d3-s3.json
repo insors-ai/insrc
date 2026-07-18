@@ -1,0 +1,665 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1784313695983-6kjwep",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-07-17T19:02:33.752Z",
+    "model": "claude",
+    "elapsedMs": 1257761,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "185807ba9a6b35d3",
+    "epicSlug": "add-build-workflow-insrc-5th-stage",
+    "storyId": "s3",
+    "hldBaseRunId": "wf-1784289418318-fl5y3m",
+    "hldEffectiveHash": "6d130af6ef10bff101a734601ec38ce873de2037786e62c3303fa417c1d5912c",
+    "hldAmendmentsApplied": [],
+    "approvedAt": "2026-07-17T19:02:33.758Z",
+    "tracker": {
+      "adapter": "github",
+      "storyRef": "insors-ai/insrc#4",
+      "pushedAt": "2026-07-17T19:02:36.283Z"
+    }
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Chosen framework: **a2 — a registered `build` stage that delegates each Task's editing work to a CliProvider subprocess, while the daemon keeps sequencing and verification on its own side.** The stage is added exactly where the sibling stages live: a `src/workflow/runners/build/` subdir (index.ts + schemas.ts, one exported `registerBuildRunners(): void`, no classes, no base class — mirroring the confirmed design-story shape) plus a `src/workflow/artifacts/build.ts` artifact definition, reusing the parent module's `hash.ts` / `slug.ts` writers and `gates.ts` rather than adding skeleton machinery. The `insrc_workflow_step` surface gains a `build` phase handler mirroring `phases/plan.ts`, so the developer-facing turn shape (start → decompose → synthesize → finalize) is unchanged.\n\nWhy a2 over the field: it is the only alternative with no partial or unknown across all nine constraints. It removes the k9 dependency instead of absorbing it — the multi-turn edit/test/repair loop does **not** live inside the synthesize seam that is proven only for one-JSON-document-per-turn; it lives behind a one-Task-at-a-time subprocess boundary, so `executor.ts`/`orchestrator.ts` are asked only to do what they already demonstrably do (host a stage, run a gate, finalize an artifact). It keeps k2 enforcement daemon-side: the daemon decides advancement from a test run and a tree diff it performs itself, so a non-cooperating implementer cannot advance the run — unlike the advisory-order failure the Epic's problem statement names. And k8 is satisfied by construction rather than by special pleading: CliProvider is CLAUDE.md's sanctioned cloud path and one-subprocess-at-a-time is serial by definition.\n\nTwo items are carried into design as unproven, not settled. (1) **CliProvider's structured-output path is built for JSON returns, not for supervising a long free-form editing session** — that usage is unverified and may require provider-level work; the design must inspect `src/agent/providers/cli-provider.ts` directly, since no analyze bundle touched it (k8 is carried verbatim from CLAUDE.md). (2) Per the coverage-gap bundle, `gates.ts`, `hash.ts` and `slug.ts` are cited at **module level only** — no exploration located an entity in them by name — so k1's gate shape and k3's writer contract are unread APIs that must be read directly, alongside k9's required reading of `executor.ts` and `orchestrator.ts`. The scope phase's \"clear match\" verdict on `src/workflow` answers \"does the skeleton exist?\" (yes) and is not license to assume those files fit a code-editing workload.",
+      "ownedContracts": [
+        {
+          "id": "sc4",
+          "name": "BuildTaskOutcome",
+          "purpose": "The per-Task verified result the sequencer produces — status, files touched, and the daemon's own test verdict. This is the unit s4 halts on and s5 finalizes into the artifact. Load-bearing property: filesTouched and testVerdict are populated by the daemon's tree diff and test run, never by the implementer's self-report.",
+          "interfaceSketch": "// src/workflow/runners/build/schemas.ts\n\nexport type BuildTaskStatus =\n  | 'completed'    // edits made AND stated tests observed passing\n  | 'failed'       // stated tests could not be brought to passing\n  | 'blocked'      // a dependency failed; never started\n  | 'not-reached'; // run halted before this Task\n\nexport interface BuildTestVerdict {\n  readonly command: string;\n  readonly passed: boolean;\n  readonly exitCode: number;\n  readonly summary: string;\n}\n\nexport interface BuildTaskOutcome {\n  /** PlanTask id, verbatim from the approved plan. */\n  readonly taskId: string;\n  readonly title: string;\n  readonly dependsOn: readonly string[];\n  readonly status: BuildTaskStatus;\n  /** Repo-relative paths, from the daemon's working-tree diff. */\n  readonly filesTouched: readonly string[];\n  readonly testVerdict?: BuildTestVerdict | undefined;\n  readonly attempts: number;\n  readonly note?: string | undefined;\n}",
+          "ownedByStory": "s3",
+          "consumedByStories": [
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c15",
+            "c16"
+          ]
+        },
+        {
+          "id": "sc5",
+          "name": "TaskImplementerAdapter",
+          "purpose": "The quarantine boundary — the seam through which one Task at a time is handed to a CliProvider subprocess that may edit code. Isolates the k9-unproven long free-form editing workload from executor.ts/orchestrator.ts, and makes k8 structural: one subprocess at a time, via LLMProvider, never Promise.all, no direct cloud REST. Its self-report is explicitly advisory.",
+          "interfaceSketch": "// src/workflow/runners/build/schemas.ts\n\nexport interface TaskImplementerRequest {\n  readonly task: PlanTask;\n  readonly storyDesignMarkdown: string;\n  readonly planMarkdown: string;\n  /** Outcomes of already-completed dependencies, for context. */\n  readonly completedDependencies: readonly BuildTaskOutcome[];\n  readonly repoRoot: string;\n  /** Bounded repair budget for this Task. */\n  readonly maxAttempts: number;\n}\n\n/**\n * ADVISORY ONLY. The sequencer never advances on this value; advancement\n * is decided by the daemon's own test run + working-tree diff.\n */\nexport interface TaskImplementerReport {\n  readonly claimedComplete: boolean;\n  readonly narrative: string;\n}\n\nexport interface TaskImplementerAdapter {\n  /**\n   * Runs exactly one implementer subprocess to completion.\n   * Serial by construction — callers await one call before the next.\n   */\n  implement(req: TaskImplementerRequest): Promise<TaskImplementerReport>;\n}",
+          "ownedByStory": "s3",
+          "consumedByStories": [
+            "s4"
+          ],
+          "assumptions": [
+            "c16",
+            "c14"
+          ]
+        }
+      ],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "BuildStageRegistration",
+          "purpose": "The registration entrypoint that makes `build` a first-class stage of the chain — the single exported function registerWorkflowRunners() calls, mirroring registerDesignEpicRunners / registerDesignStoryRunners. Owning this is what satisfies k4/k6 and makes the stage discoverable in the registry alongside its four siblings.",
+          "interfaceSketch": "// src/workflow/runners/build/index.ts\n\nexport declare const BUILD_STAGE_ID: 'build';\n\nexport interface BuildStageDescriptor {\n  readonly stage: typeof BUILD_STAGE_ID;\n  readonly title: string;\n  readonly description: string;\n  /** Stage whose approved artifact this stage consumes. */\n  readonly consumesStage: 'plan';\n}\n\n/**\n * Registers the build stage's start/decompose/synthesize/finalize turn\n * handlers into the per-stage workflow runner registry.\n * Called from registerWorkflowRunners() in src/workflow/index.ts.\n * Registration only — no inheritance, no mutation of sibling stages.\n */\nexport declare function registerBuildRunners(): void;",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c1",
+            "c3",
+            "c10"
+          ]
+        },
+        {
+          "id": "sc2",
+          "name": "WorkflowStepInputBuild",
+          "purpose": "The insrc_workflow_step driving-surface input for the `build` phase, mirroring WorkflowStepInputPlan / handlePlan so a developer drives build through the same multi-turn turn shape as every earlier stage — no bespoke command, IPC method or UI.",
+          "interfaceSketch": "// src/mcp/workflow-step/types.ts (additions)\n\n// existing union gains 'build'\nexport type WorkflowStepStage =\n  | 'define' | 'design.epic' | 'design.story' | 'plan' | 'build';\n\nexport type BuildPhase = 'start' | 'decompose' | 'synthesize' | 'finalize';\n\nexport interface WorkflowStepInputBuild {\n  readonly stage: 'build';\n  readonly phase: BuildPhase;\n  /** Story whose approved plan is being implemented. */\n  readonly storyId: string;\n  /** Opaque server-side run token; preserved verbatim between turns. */\n  readonly state?: string | undefined;\n  readonly repo?: string | undefined;\n}\n\nexport interface WorkflowStepOutputBuild {\n  readonly next: BuildPhase | 'done' | 'refused';\n  readonly guidance: string;\n  readonly state?: string | undefined;\n  readonly refusal?: BuildAdmissionRefusal | undefined;\n  readonly progress?: BuildRunProgress | undefined;\n  readonly markdown?: string | undefined;\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        },
+        {
+          "id": "sc3",
+          "name": "BuildAdmissionResult",
+          "purpose": "The gate verdict returned before any work list is materialized and before any code-touching path is reachable. Encodes admit-vs-refuse plus which upstream condition failed, so k1's 'refuse and say why, tree untouched' is a typed outcome rather than an ad-hoc error string.",
+          "interfaceSketch": "// src/workflow/runners/build/schemas.ts\n\nexport type BuildRefusalReason =\n  | 'plan-missing'\n  | 'plan-unapproved'\n  | 'plan-stale';\n\nexport interface BuildAdmissionRefusal {\n  readonly reason: BuildRefusalReason;\n  /** Human-facing sentence naming the failed upstream condition. */\n  readonly message: string;\n  /** Present for 'plan-stale': the drift that was detected. */\n  readonly staleness?: {\n    readonly planRecordedDesignHash: string;\n    readonly currentDesignHash: string;\n  } | undefined;\n  /** Invariant: always true on refusal. */\n  readonly treeUntouched: true;\n}\n\nexport interface BuildAdmissionAccepted {\n  readonly planArtifactId: string;\n  readonly planArtifactHash: string;\n  readonly storyId: string;\n}\n\nexport type BuildAdmissionResult =\n  | { readonly admitted: true; readonly plan: BuildAdmissionAccepted }\n  | { readonly admitted: false; readonly refusal: BuildAdmissionRefusal };",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s3",
+            "s5"
+          ],
+          "assumptions": [
+            "c15"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s3",
+        "owns": [
+          "sc4",
+          "sc5"
+        ],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3"
+        ],
+        "internal": "The sequencer's guts are private: the topological ordering of the plan's PlanTask[] into a serial work list, the `for...of` loop that walks it, the per-Task attempt/repair budget, how the working-tree diff is taken to compute filesTouched, how the Task's stated test command is extracted from the PlanTask and executed, and how the test exit code plus diff are combined into the authoritative advance decision. Also private: the prompt handed to the implementer subprocess, the CliProvider invocation shape, and the direct inspection of cli-provider.ts needed to establish whether its structured-output path can supervise a long free-form editing session at all (unproven at Epic time — s3 owns the finding, and provider-level work if the answer is no). Other Stories consume finished BuildTaskOutcome values and must never call the adapter directly or infer status from the implementer's advisory narrative."
+      },
+      "rolloutPhase": "Phase C — sequenced Task loop + implementer adapter",
+      "nonFunctional": {
+        "durability": "The BuildArtifact must survive the run ending — a halted run finalizes just as a complete one does (s4/ac3), so a crash mid-Task must not be the only way the record is lost. Every Task boundary is a natural checkpoint: the run's accumulated BuildTaskOutcome[] should be persisted incrementally, not only at finalize, so a daemon restart mid-run leaves a readable record of what already landed on the tree rather than an untracked side-effect. The artifact is written through the parent module's existing hash-json + slug-md writers and storage.ts — same durability envelope as define/design.epic/design.story/plan, no new persistence substrate. Working-tree edits themselves are NOT transactional: this framework deliberately does not add worktree lifecycle (that was a4's breach of k5), so a halted run leaves partial edits in place — which is why the artifact naming what landed is the durability guarantee that matters.",
+        "security": "The refusal path is a safety boundary, not a convenience: the gate runs at the start turn, before any work list is materialized and before the implementer adapter is reachable, so `treeUntouched: true` on refusal is structural rather than asserted. No direct cloud REST from our process under any circumstance — the implementer reaches cloud models only through the locally-installed claude/codex CLI binaries via CliProvider, so auth and quota stay with the user's CLI OAuth session and no API keys enter this stage. The implementer subprocess is the only component in the design that can write to the repository; its blast radius is the registered repo root, and its self-report is never trusted to advance the run. Test commands executed by the daemon come verbatim from the approved plan's PlanTask — an approved artifact is the authorization boundary for what gets run.",
+        "performance": "Accuracy is primary; cost is the least priority — a build run is expected to be slow and expensive, and that is the correct trade. Sequencing is strictly one Task at a time (s3/ac3) even where dependencies would permit parallelism, and one implementer subprocess at a time; there is no Promise.all anywhere on the provider path and no concurrency knob to add later without reopening k2. Expect wall-clock proportional to Task count times (edit session + test run), i.e. tens of minutes for a real Story — do not optimize this by batching Tasks or by parallelizing provider calls. The per-Task repair budget (maxAttempts) is the only latency bound, and it should be generous rather than tight: giving up early produces a wrong `failed` verdict, which costs more than the retry did.",
+        "observability": "Long serial runs are opaque by default, and this one is the longest in the chain — BuildRunProgress exists so a developer can see which Task is in flight, which completed, and what they left on the tree without reading the working tree themselves. Progress should be emitted at every Task boundary at minimum: task-start, implementer-finished, test-verdict, advance-or-halt. Halts must name the failed Task, the reason, and the blocked set explicitly (s4/ac2) rather than surfacing a bare non-zero exit. Every stage boundary logs via getLogger('workflow:build') — never console.log. The finalized artifact is the durable observability surface: per-Task status, files touched, test verdict, and the cited PlanArtifact make the whole run reviewable after the fact, which is the entire point of the stage."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "hld": {
+        "amendmentProposal": {
+          "amendment": {
+            "type": "sharedContract.fieldRemove",
+            "contractId": "sc4",
+            "field": "testVerdict",
+            "breaking": true,
+            "description": "Reshape BuildTaskOutcome from a flat interface into a status-discriminated union. The HLD sketch carries `testVerdict?: BuildTestVerdict | undefined` (plus `filesTouched` and `attempts`) as always-optional top-level fields. This amendment removes `testVerdict` (and, by the same reshape, `filesTouched`/`attempts`) from the flat top-level surface and relocates it into a `reached` arm gated on a terminal status: `BuildTaskReached` (status 'completed' | 'failed') REQUIRES `testVerdict: BuildTestVerdict`, while `BuildTaskUnreached` (status 'blocked' | 'not-reached') has no such field. Consumers (s4, s5) now narrow on `status` before reading `testVerdict`/`filesTouched`.",
+            "replacement": "export type BuildTaskOutcome = BuildTaskReached | BuildTaskUnreached; // reached arm requires testVerdict; unreached arm has none"
+          },
+          "rationale": "sc4's load-bearing property is that filesTouched/testVerdict are populated only by the daemon's tree diff and test run, never self-reported. On the flat HLD shape that invariant is documented, not enforced: `testVerdict?` can legally be undefined on a 'completed' Task and can legally be present on a 'not-reached' Task, and a consumer hits an undefined-vs-stale ambiguity. Encoding the union makes the invariant un-forgeable at the type level — a blocked/not-reached Task has no field in which a fabricated verdict could sit, and a completed/failed Task cannot exist without a daemon-produced verdict. This is a small, localised strengthening of a single owned contract (1 of 5 shared contracts, well under the 30% rework threshold): it changes only sc4's shape, keeps sc5 and the sequencer internals untouched, and costs consumers exactly one narrow-on-status. breaking:true because consumers must narrow before reading the relocated fields.",
+          "citations": []
+        }
+      },
+      "api": [
+        {
+          "name": "implement",
+          "signature": "implement(req: TaskImplementerRequest): Promise<TaskImplementerReport>",
+          "parameters": [
+            {
+              "name": "req",
+              "type": "TaskImplementerRequest",
+              "purpose": "The single Task to implement plus its read-only context: the PlanTask (verbatim from the approved plan), the Story design + plan markdown, the already-completed dependency outcomes, the registered repoRoot, and the bounded per-Task maxAttempts repair budget.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<TaskImplementerReport>",
+            "meaning": "An ADVISORY self-report ({ claimedComplete, narrative }) from the one implementer subprocess. The sequencer never advances on this value; advancement is decided daemon-side from a real test run + working-tree diff (sc4/ac4). Provided only for observability/context to later Tasks."
+          },
+          "errors": [
+            {
+              "type": "provider/subprocess error (rejected Promise)",
+              "condition": "The CliProvider subprocess fails to spawn or errors mid-session. The sequencer treats a rejection as an implementer failure, not a Task pass — the Task's authoritative status still comes from the daemon's own test run, which on a failed/absent implementer session yields a non-passing BuildTestVerdict."
+            }
+          ],
+          "preconditions": [
+            "Called strictly serially — the caller awaits one implement() call to settle before invoking the next (ac3). Never Promise.all'd (ac5, k8).",
+            "The build run was admitted (sc3 BuildAdmissionResult.admitted === true) — the adapter is unreachable on a refused run, so treeUntouched holds structurally.",
+            "Every task in req.task.dependsOn already has a 'completed' BuildTaskOutcome (ac2)."
+          ],
+          "postconditions": [
+            "Exactly one CliProvider subprocess ran to completion (ac3): free-form editing session via the LLMProvider abstraction, cloud reached only through the claude/codex CLI binaries (k8), no direct REST.",
+            "The working tree MAY carry edits made by the subprocess; those edits are advisory input to the daemon's diff, never the advance decision (sc4 load-bearing property).",
+            "No BuildTaskOutcome is produced here — the sequencer computes it afterward from the daemon's test run + diff."
+          ]
+        },
+        {
+          "name": "complete",
+          "signature": "complete(messages: LLMMessage[], opts?: CompletionOpts): Promise<LLMResponse>",
+          "parameters": [
+            {
+              "name": "messages",
+              "type": "LLMMessage[]",
+              "purpose": "The conversation driving the free-form editing turn handed to the CliProvider subprocess.",
+              "optional": false
+            },
+            {
+              "name": "opts",
+              "type": "CompletionOpts",
+              "purpose": "Optional completion controls (model/temperature/etc.).",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<LLMResponse>",
+            "meaning": "Free-form text from one CLI subprocess turn (cli-provider.ts:109-127). This is the surface the implementer adapter reshapes into a multi-turn code-editing session; the design must read the method body directly since the HLD carries the long-editing-session usage as UNPROVEN and no callsite exists to clone (usage.example returned 0 callers)."
+          },
+          "errors": [
+            {
+              "type": "provider/subprocess error (rejected Promise)",
+              "condition": "CLI subprocess spawn or execution failure — surfaces to implement() as a rejection."
+            }
+          ],
+          "preconditions": [
+            "One provider call at a time on the whole build path — never Promise.all (ac5, k8).",
+            "Reached only via the shared LLMProvider abstraction; cloud auth/quota stays with the user's CLI OAuth session (no API keys in this stage)."
+          ],
+          "postconditions": [
+            "A single subprocess turn executed serially; no concurrent provider activity anywhere on the path."
+          ]
+        },
+        {
+          "name": "completeStructured",
+          "signature": "completeStructured(messages: LLMMessage[], schema: StructuredSchema, opts?: StructuredCompletionOpts): Promise<T>",
+          "parameters": [
+            {
+              "name": "messages",
+              "type": "LLMMessage[]",
+              "purpose": "The conversation for a schema-constrained turn.",
+              "optional": false
+            },
+            {
+              "name": "schema",
+              "type": "StructuredSchema",
+              "purpose": "The JSON schema constraining the single returned document.",
+              "optional": false
+            },
+            {
+              "name": "opts",
+              "type": "StructuredCompletionOpts",
+              "purpose": "Optional structured-completion controls (StructuredCompletionOpts lives in src/shared/types.ts).",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<T>",
+            "meaning": "Exactly one typed JSON document per call (cli-provider.ts:161-167). The HLD flags this one-document-per-turn shape as UNPROVEN for supervising a long free-form editing loop — s3 owns the finding: the design must read the body to establish whether it can host the loop, and provider-level work is reserved if it cannot."
+          },
+          "errors": [
+            {
+              "type": "schema-validation failure (rejected Promise after retries)",
+              "condition": "The subprocess cannot produce a document matching schema within the provider's retry budget."
+            }
+          ],
+          "preconditions": [
+            "One call at a time (ac5); cloud via CLI only (k8).",
+            "Used, if at all, only where a single-document return fits — not as the mechanism for the multi-turn edit loop unless the direct read of the body proves it can supervise one."
+          ],
+          "postconditions": [
+            "At most one typed document returned per call; no parallel provider activity."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "BuildTaskOutcome",
+        "change": "invariant-change",
+        "details": "sc4, owned by s3. Reshaped per the winning a2 alternative from the HLD's flat interface into a status-discriminated union so the load-bearing invariant (filesTouched/testVerdict are daemon-produced, never self-reported) is enforced at the type level. `BuildTaskReached` (status 'completed' | 'failed') REQUIRES a daemon-produced `testVerdict: BuildTestVerdict` and carries `filesTouched`/`attempts`; `BuildTaskUnreached` (status 'blocked' | 'not-reached') carries none of them because nothing ran. Common fields (taskId, title, dependsOn, note?) sit on both arms. Consumers s4/s5 narrow on `status` (or `'testVerdict' in outcome`) before reading the verdict — the single, well-justified narrow-on-status this reshape costs. The sequencer that produces the outcome is PRIVATE (topological ordering, the for...of walk, attempt/repair budget, how the diff and test exit code are combined into the advance decision). A boundary amendment (hld.amendmentProposal, sharedContract.fieldRemove on testVerdict, breaking:true) accompanies this divergence.",
+        "schemaDiff": "// HLD sketch (flat):\n// interface BuildTaskOutcome {\n//   taskId; title; dependsOn; status: BuildTaskStatus;\n//   filesTouched; testVerdict?: BuildTestVerdict | undefined; attempts; note?;\n// }\n\n// a2 reshape (src/workflow/runners/build/schemas.ts):\nexport type BuildTaskStatus = 'completed' | 'failed' | 'blocked' | 'not-reached';\n\ninterface BuildTaskCommon {\n  readonly taskId: string;        // PlanTask id, verbatim from the approved plan\n  readonly title: string;\n  readonly dependsOn: readonly string[];\n  readonly note?: string | undefined;\n}\n\nexport interface BuildTaskReached extends BuildTaskCommon {\n  readonly status: 'completed' | 'failed';\n  readonly filesTouched: readonly string[];   // daemon working-tree diff\n  readonly testVerdict: BuildTestVerdict;      // REQUIRED — daemon test run\n  readonly attempts: number;\n}\n\nexport interface BuildTaskUnreached extends BuildTaskCommon {\n  readonly status: 'blocked' | 'not-reached';  // nothing ran: no diff, no verdict\n}\n\nexport type BuildTaskOutcome = BuildTaskReached | BuildTaskUnreached;",
+        "callSites": [
+          "src/daemon/workflow-rpc.ts",
+          "src/daemon/__tests__/workflow-rpc.test.ts"
+        ]
+      },
+      {
+        "entity": "BuildTestVerdict",
+        "change": "new",
+        "details": "The daemon's own authoritative verdict for a Task's stated tests — kept from the HLD sketch unchanged ({ command, passed, exitCode, summary }, all readonly). Produced daemon-side by executing the test command extracted verbatim from the PlanTask (the approved artifact is the authorization boundary for what runs); it is the only thing that advances a Task to a terminal status. Present on the BuildTaskReached arm only. The workflow-rpc test stub (whose complete()/completeStructured() throw) is the ready pattern for exercising the verdict-driven sequencer without a live provider.",
+        "schemaDiff": "export interface BuildTestVerdict {\n  readonly command: string;   // from PlanTask stated tests, verbatim\n  readonly passed: boolean;\n  readonly exitCode: number;\n  readonly summary: string;\n}",
+        "callSites": [
+          "src/daemon/workflow-rpc.ts",
+          "src/daemon/__tests__/workflow-rpc.test.ts"
+        ]
+      },
+      {
+        "entity": "TaskImplementerRequest",
+        "change": "new",
+        "details": "sc5 input, owned by s3. The context bundle handed to one implementer subprocess: the PlanTask (bound to the WORKFLOW PlanTask at src/workflow/artifacts/plan.ts:54-64 — NOT the same-named analyze-types.ts:87-95 interface), the Story design + plan markdown, completedDependencies (finished BuildTaskOutcome values, for context only), repoRoot (the implementer's entire blast radius), and maxAttempts (the bounded per-Task repair budget — kept generous, since giving up early produces a wrong 'failed'). Kept structurally as the HLD sketch.",
+        "schemaDiff": "export interface TaskImplementerRequest {\n  readonly task: PlanTask;                                 // src/workflow/artifacts/plan.ts:54-64\n  readonly storyDesignMarkdown: string;\n  readonly planMarkdown: string;\n  readonly completedDependencies: readonly BuildTaskOutcome[];\n  readonly repoRoot: string;\n  readonly maxAttempts: number;\n}",
+        "callSites": [
+          "src/workflow/artifacts/plan.ts",
+          "src/agent/providers/cli-provider.ts"
+        ]
+      },
+      {
+        "entity": "TaskImplementerReport",
+        "change": "new",
+        "details": "sc5 output, owned by s3. ADVISORY ONLY ({ claimedComplete, narrative }, both readonly) — the sequencer NEVER advances on it; advancement is decided by the daemon's own test run + diff. Kept deliberately two-field/minimal to reinforce the k2/sc5 quarantine: other Stories consume finished BuildTaskOutcome values and must never infer status from this narrative.",
+        "schemaDiff": "export interface TaskImplementerReport {\n  readonly claimedComplete: boolean;   // advisory; never trusted to advance\n  readonly narrative: string;\n}",
+        "callSites": [
+          "src/agent/providers/cli-provider.ts",
+          "src/daemon/workflow-rpc.ts"
+        ]
+      },
+      {
+        "entity": "TaskImplementerAdapter",
+        "change": "new",
+        "details": "sc5 seam, owned by s3. The quarantine boundary: a single implement() method that runs exactly one CliProvider subprocess per Task, serial by construction (ac3/ac5, k8). Isolates the k9-UNPROVEN long free-form editing workload (and the k8-UNPROVEN structured-output-for-editing question) from executor.ts/orchestrator.ts, which are asked only to host a stage, run a gate, and finalize an artifact. The concrete CliProvider invocation shape and the direct cli-provider.ts inspection are PRIVATE to s3; s4 consumes only the finished outcomes.",
+        "schemaDiff": "export interface TaskImplementerAdapter {\n  /** Runs exactly one implementer subprocess to completion. Serial by construction. */\n  implement(req: TaskImplementerRequest): Promise<TaskImplementerReport>;\n}",
+        "callSites": [
+          "src/agent/providers/cli-provider.ts",
+          "src/workflow/__tests__/executor.test.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc4",
+        "role": "implements",
+        "howDetails": "s3 owns and produces BuildTaskOutcome (HLD: ownedByStory s3). It diverges from the flat HLD interfaceSketch into a status-discriminated union (a2) — see the accompanying hld.amendmentProposal — so testVerdict/filesTouched exist only on the reached arm and are daemon-populated, never self-reported. Consumers s4 (halts on it) and s5 (finalizes it) narrow on status before reading the verdict."
+      },
+      {
+        "contractId": "sc5",
+        "role": "implements",
+        "howDetails": "s3 owns TaskImplementerAdapter (HLD: ownedByStory s3). implement() runs one CliProvider subprocess per Task, serial and never Promise.all'd; its TaskImplementerReport is advisory and never advances the run. s4 consumes finished BuildTaskOutcome values only and must never call implement() directly (boundary: sequencer/adapter internals are private)."
+      },
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "s3's start/decompose/synthesize/finalize turn handlers are registered into the per-stage runner registry via registerBuildRunners() (owned by s1). s3 adds the sequencing turn behind that registration; it does not re-register or mutate sibling stages."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "s3's per-Task outcomes surface to the developer through the WorkflowStepOutputBuild driving surface (owned by s1) — BuildRunProgress at each Task boundary and, at finalize, the markdown. s4 owns the progress framing; s3 emits the outcome data that flows through it (no second source of truth)."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "s3 consumes BuildAdmissionResult (owned by s2) at the start turn: the sequencer materializes the PlanTask work list and makes the implementer adapter reachable only when admitted === true, so on refusal treeUntouched:true holds structurally before any code-touching path exists."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The CliProvider subprocess fails to spawn, or the claude/codex CLI errors mid-session, during the one implementer turn for a Task.",
+          "detection": "The `await` on complete()/completeStructured() inside implement() settles as a rejected Promise; the sequencer's try/catch around that single awaited call catches the rejection.",
+          "response": "The rejection is treated as an implementer failure, NOT a Task pass. implement() surfaces it (or the sequencer records the failed session); the Task's authoritative status still comes from the daemon's own test run, which on a failed/absent editing session yields a non-passing BuildTestVerdict — so the Task lands as BuildTaskReached status 'failed', never 'completed'.",
+          "userImpact": "The developer sees the Task did not reach passing tests rather than a falsely-completed Task; the run halts at s4 instead of building the dependent Task on absent work.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A Task's stated tests never pass: after the bounded per-Task repair loop is exhausted, the daemon test run still fails.",
+          "detection": "On the final attempt (attempts === maxAttempts) the daemon-produced BuildTestVerdict has passed === false / exitCode !== 0; the sequencer observes the terminal non-passing verdict after its attempt/repair budget is spent.",
+          "response": "The Task is finalized as BuildTaskReached with status 'failed' carrying that failing daemon verdict (the verdict is never self-reported from the advisory TaskImplementerReport). The run does not advance to the next Task; s4 halts on the failed outcome.",
+          "userImpact": "The developer sees a concrete failing test command + exit code, and the run stops rather than silently continuing on top of a Task whose tests do not pass.",
+          "recoverable": false
+        },
+        {
+          "scenario": "A Task is reached whose dependsOn names a Task that did not complete (its outcome is 'failed', 'blocked' or 'not-reached').",
+          "detection": "Before starting a Task, the sequencer resolves each id in req.task.dependsOn against the already-produced BuildTaskOutcome map and finds one whose status is not 'completed'.",
+          "response": "The implementer adapter is NOT invoked for this Task; the sequencer emits a BuildTaskUnreached with status 'blocked' (no filesTouched, no testVerdict — nothing ran, so the union arm has no field to fabricate one in).",
+          "userImpact": "The dependent Task is transparently marked blocked rather than being built on an incomplete predecessor, preserving the plan's dependency guarantee (ac2).",
+          "recoverable": false
+        },
+        {
+          "scenario": "completeStructured is used for a schema-constrained turn and the subprocess cannot produce a document matching the schema within the provider's retry budget.",
+          "detection": "completeStructured (cli-provider.ts:161-167) rejects after exhausting its internal retry budget; the rejection propagates through the awaited call in implement().",
+          "response": "Handled identically to a subprocess error — surfaced as an implementer failure, never as a Task advance; the daemon test run remains the sole authority and yields a non-passing verdict for that Task.",
+          "userImpact": "A malformed structured response degrades to a reported implementer failure, not a corrupt or fabricated Task outcome.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The PlanTask reached for implementation states no runnable test command (its TaskTestRef set is empty or resolves to an empty command).",
+          "detection": "When the sequencer extracts the test command from req.task to hand the daemon, the extracted command string is empty/absent — checked before dispatching the daemon test run.",
+          "response": "ac4 ('bring stated tests to passing') cannot be authoritatively satisfied, so the Task is not advanced to 'completed'; it is finalized as BuildTaskReached status 'failed' with a BuildTestVerdict recording the missing command (or, if editing never began, BuildTaskUnreached 'not-reached'). The advisory report is never used to claim completion.",
+          "userImpact": "A Task with no verifiable tests cannot masquerade as completed; the developer sees it flagged rather than silently passed.",
+          "recoverable": false
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A work list containing Tasks whose dependency graph would permit two or more to run in parallel (independent Tasks, no dependsOn overlap).",
+          "expected": "They are still implemented strictly one at a time — exactly one Task worked at any moment (ac3) — because concurrency is forbidden even where dependencies would allow it; the topological order is walked with a serial for...of, never Promise.all'd."
+        },
+        {
+          "input": "A Task with dependsOn === [] reached first in the topological order.",
+          "expected": "No dependency gate applies; the implementer adapter runs immediately for it, and its daemon verdict decides its terminal status."
+        },
+        {
+          "input": "An admitted build run whose approved plan holds exactly one Task.",
+          "expected": "The work list is that single Task; one implement() call runs, the daemon test+diff produces its BuildTaskOutcome, and the run finalizes with a one-element outcome list."
+        },
+        {
+          "input": "A Task whose stated tests already pass and whose implementer session makes no edits (a no-op editing turn).",
+          "expected": "The daemon working-tree diff is empty (filesTouched === []) and the test verdict passes, so the Task is BuildTaskReached status 'completed' with an empty filesTouched — a valid completion, not an error."
+        },
+        {
+          "input": "An admitted build run whose plan holds zero Tasks.",
+          "expected": "The materialized work list is empty; the sequencer runs no implementer subprocess, produces no BuildTaskOutcome, and the run finalizes trivially with treeUntouched holding structurally."
+        },
+        {
+          "input": "req.maxAttempts === 1 (minimal repair budget).",
+          "expected": "The implementer gets a single attempt; the first daemon verdict is taken as terminal (passed → 'completed', failed → 'failed'), with no repair loop iteration."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "All LLM interaction on the build path goes through the shared LLMProvider abstraction one call at a time — the implementer runs a single CliProvider subprocess per Task, serially, and provider calls are never Promise.all'd (ac5, k8; CLAUDE.md serial-provider rule).",
+          "source": "c2"
+        },
+        {
+          "text": "Cloud LLM access is reached only through the claude/codex CLI binaries via CliProvider; no direct REST provider is introduced, and cloud auth/quota stays with the user's CLI OAuth session.",
+          "source": "c2"
+        },
+        {
+          "text": "CliProvider.completeStructured returns exactly one typed JSON document per call (cli-provider.ts:161-167); the design must not assume it hosts a multi-turn editing loop — the HLD carries that as UNPROVEN and the adapter quarantines the question rather than silently relying on it.",
+          "source": "c2"
+        },
+        {
+          "text": "The approved plan is a fixed input: the run consumes PlanTask values verbatim from src/workflow/artifacts/plan.ts:54-64 in the recorded order with the recorded dependencies, adding/dropping/reordering nothing (c2, ac1). checkPlanTaskGraph has already validated the dependency graph upstream, so the sequencer treats ordering as pre-validated and never re-derives it.",
+          "source": "c3"
+        },
+        {
+          "text": "The daemon-side runner RPC surface — WorkflowProgress frame shape and the runStart/runWorkflowServerSide server-side entrypoints — is the existing observability/sequencing contract the build stage mirrors; the sequencer emits outcome data through it and does not introduce a second source of truth for Task status.",
+          "source": "c1"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test (executed via `npx tsx --test`, suites under `src/**/__tests__/*.test.ts`) — the convention s1 reports from the daemon/workflow test layout (src/daemon/__tests__/workflow-rpc.test.ts, src/workflow/__tests__/executor.test.ts).",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove the private sequencer over deterministic in-memory inputs, with no live provider and no real git/test execution: work-list materialization from the approved plan, topological ordering, the serial for...of walk, dependency gating, and the BuildTaskOutcome discriminated-union invariant (testVerdict/filesTouched exist only on the reached arm).",
+          "subjects": [
+            "the build-stage sequencer (private ordering + for...of walk + attempt/repair budget) in src/workflow/runners/build",
+            "BuildTaskOutcome union + BuildTestVerdict shape in src/workflow/runners/build/schemas.ts",
+            "binding to the WORKFLOW PlanTask (src/workflow/artifacts/plan.ts:54-64) and reliance on the pre-validated checkPlanTaskGraph ordering"
+          ],
+          "fixturesNeeded": [
+            "an in-memory PlanArtifact whose PlanBody holds several ordered, dependency-labelled PlanTask values (chain + independent-pair + dependsOn:[] + single-Task + zero-Task variants)",
+            "a stub LLMProvider modelled on src/daemon/__tests__/workflow-rpc.test.ts whose complete()/completeStructured() are instrumented (record call order, optionally throw)",
+            "a fake daemon test-run+diff hook returning a canned BuildTestVerdict (passed/failed, exitCode, command) and a filesTouched list, so advancement is driven without executing real tests"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Exercise the TaskImplementerAdapter.implement() seam wired to the sequencer against a fake provider and a fake daemon verdict/diff source: one subprocess per Task, advisory TaskImplementerReport never advancing the run, rejection handling, and the admitted-run precondition (treeUntouched holds on refusal).",
+          "subjects": [
+            "TaskImplementerAdapter.implement() invocation shape against CliProvider signatures (src/agent/providers/cli-provider.ts complete 109-127 / completeStructured 161-167)",
+            "sequencer → adapter → daemon-verdict advance decision end-to-end (BuildTaskReached/BuildTaskUnreached production)",
+            "the sc3 admission gate: adapter unreachable when BuildAdmissionResult.admitted !== true"
+          ],
+          "fixturesNeeded": [
+            "a fake CliProvider/LLMProvider that (a) counts in-flight calls to assert never >1, (b) can resolve, reject, or emit an advisory report claiming completion regardless of the real verdict",
+            "a stubbed daemon test-run + working-tree diff producing BuildTestVerdict + filesTouched independently of the advisory report",
+            "a scratch repoRoot / registered-repo fixture and a canned Story design + plan markdown bundle for TaskImplementerRequest"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "unit: materializes the run work list verbatim from the approved PlanArtifact — same PlanTask ids, same recorded order, same dependsOn, nothing added/dropped/reordered",
+            "unit: an admitted plan with zero Tasks yields an empty work list, runs no implementer subprocess, and finalizes trivially with treeUntouched holding",
+            "unit: a single-Task admitted plan yields a one-element work list and a one-element BuildTaskOutcome result"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "unit: a dependent Task is not started until every id in its dependsOn has a status:'completed' BuildTaskOutcome",
+            "unit: when a dependency ended 'failed'/'blocked'/'not-reached', the dependent Task is emitted as BuildTaskUnreached status 'blocked' with no filesTouched/testVerdict and the adapter is never invoked for it",
+            "integration: the depended-upon Task's implement()+daemon verdict completes before the dependent Task's implement() is dispatched"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "integration: an in-flight-call counter on the fake adapter/provider is never observed >1 across the whole run — exactly one Task worked at any moment",
+            "unit: a work list with two independent Tasks (no dependsOn overlap) is still walked one at a time via serial for...of, never Promise.all'd",
+            "unit: implement() calls settle in strict topological sequence (each awaited before the next is invoked)"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "integration: a Task advances to BuildTaskReached status 'completed' only when the daemon-produced BuildTestVerdict passes (exitCode 0)",
+            "integration: an advisory TaskImplementerReport with claimedComplete:true does NOT advance the Task — a failing daemon verdict still yields status 'failed'",
+            "unit: after the bounded per-Task repair loop is exhausted (attempts === maxAttempts) with a still-failing daemon verdict, the Task finalizes as BuildTaskReached status 'failed' carrying that verdict, and the run halts (does not build the dependent Task)",
+            "unit: a Task whose stated tests resolve to an empty/absent command is flagged failed/not-reached rather than completed",
+            "unit: maxAttempts === 1 takes the first daemon verdict as terminal with no repair iteration; a no-op editing turn with an empty diff and passing verdict is a valid status 'completed' with filesTouched === []"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "integration: a concurrency guard on the stub LLMProvider (increment-on-entry / assert-never-gt-1) confirms provider calls are issued strictly serially and never in parallel across the build path",
+            "integration: the LLM is reached only through the injected CliProvider/LLMProvider abstraction — no direct REST client is constructed — and a rejected provider Promise is treated as an implementer failure, never a Task pass",
+            "integration: a completeStructured rejection after the retry budget degrades to a reported implementer failure, leaving the daemon verdict as the sole authority for the Task's status"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "No `build` stage exists yet. Per the s1 bundles, the per-stage runner registry (sc1, registerWorkflowRunners at src/workflow/index.ts:23-32) hosts only define / design.epic / design.story / tracker, and the daemon drives runs server-side through src/daemon/workflow-rpc.ts (module.profile: WorkflowProgress, runStart, runWorkflowServerSide) — there is no build-specific outcome type on that surface. sc4 `BuildTaskOutcome` currently exists ONLY as a flat HLD interface sketch (`testVerdict?: BuildTestVerdict | undefined`, `filesTouched`, `attempts` as always-optional top-level fields) — not yet code — so its load-bearing invariant (filesTouched/testVerdict are daemon-produced, never self-reported) is documented but unenforced. sc5 (`TaskImplementerAdapter`/`Request`/`Report`) does not exist. CliProvider (src/agent/providers/cli-provider.ts:76-291) already exposes `complete()` (109-127) and `completeStructured()` (161-167) with zero callers for a long editing session (symbol.locate, usage.example totalCallers:0). The workflow PlanTask/PlanArtifact (src/workflow/artifacts/plan.ts:54-64, 83-87) already exist and are pre-validated by checkPlanTaskGraph (data-model.trace), so the ordered, dependency-labelled task list is a fixed input.",
+      "stateAfter": "The `build` stage runs the plan's Tasks one at a time in dependency order. sc4 `BuildTaskOutcome` is a status-discriminated union (`BuildTaskReached` {status 'completed'|'failed'} REQUIRES a daemon-produced `testVerdict: BuildTestVerdict` plus `filesTouched`/`attempts`; `BuildTaskUnreached` {status 'blocked'|'not-reached'} carries none), making the daemon-produced invariant un-forgeable at the type level. `BuildTestVerdict` and the sc5 seam (`TaskImplementerRequest`/`TaskImplementerReport`/`TaskImplementerAdapter`) exist; the adapter runs exactly one CliProvider subprocess per Task, serial by construction, and its report is advisory only. A private sequencer walks the pre-validated PlanTask list topologically, computes each outcome from the daemon's own test run + working-tree diff, and streams progress at each Task boundary via WorkflowProgress. The build turn handlers are registered into the sc1 registry via registerBuildRunners(); in-design consumers s4/s5 narrow on `status` before reading `testVerdict`/`filesTouched`.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the new build schemas module (src/workflow/runners/build/schemas.ts) defining BuildTaskStatus, the BuildTaskCommon base, and BuildTestVerdict ({command, passed, exitCode, summary}, all readonly). Purely additive new types — no existing symbol touched.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add the sc4 BuildTaskOutcome as the two-arm status-discriminated union (BuildTaskReached | BuildTaskUnreached) instead of the flat HLD sketch, with testVerdict/filesTouched/attempts present only on the reached arm. This is the sc4 boundary reshape carried by the accompanying hld.amendmentProposal (sharedContract.fieldRemove testVerdict, breaking:true).",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add the sc5 seam types (TaskImplementerRequest bound to the WORKFLOW PlanTask at src/workflow/artifacts/plan.ts:54-64, TaskImplementerReport, TaskImplementerAdapter). Additive new interfaces.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Implement the TaskImplementerAdapter — one CliProvider subprocess per Task via the shared LLMProvider abstraction, run strictly serially and never Promise.all'd (ac3/ac5/k8), with the report treated as advisory. New code, no existing behaviour altered.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Implement the private sequencer: materialize the pre-validated PlanTask list as the work list only when the run is admitted (sc3 admitted===true), walk it topologically one Task at a time, and compute each BuildTaskOutcome from the daemon's own test run + working-tree diff rather than the advisory report. New private code.",
+          "rollbackable": true
+        },
+        {
+          "order": 6,
+          "action": "Update the in-design sc4 consumers (s4 halt logic, s5 finalize) to narrow on status (or 'testVerdict' in outcome) before reading the relocated testVerdict/filesTouched fields. This is the one narrow-on-status the reshape costs; must land together with step 2.",
+          "rollbackable": true,
+          "prerequisiteFlags": []
+        },
+        {
+          "order": 7,
+          "action": "Register the build turn handlers into the sc1 registry via registerBuildRunners(), adding the sequencing turn behind the existing per-stage registration without re-registering or mutating sibling stages.",
+          "rollbackable": true
+        },
+        {
+          "order": 8,
+          "action": "Extend the test harnesses to exercise the verdict-driven sequencer without a live provider: reuse the src/daemon/__tests__/workflow-rpc.test.ts LLMProvider stub whose complete()/completeStructured() throw, and the src/workflow/__tests__/executor.test.ts llmRunner harness (line 49).",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "sc4 is internal-shared (surfaceLevel), not a published or deployed API, and the entire `build` stage is new and unreleased — there are no external IDE/IPC clients or on-disk BuildTaskOutcome data to preserve. The only compatibility surface is intra-design, between sibling Stories: the sc4 reshape from the flat HLD sketch to the discriminated union is breaking (breaking:true), so the in-design consumers s4 (halts on the outcome) and s5 (finalizes it) MUST narrow on `status` before reading `testVerdict`/`filesTouched`, which on the reached arm move out of the top-level optional position. This is covered by the accompanying hld.amendmentProposal and by migration step 6, which must land in the same change as step 2. No existing runner stage's contract (sc1 registry shape, workflow-rpc.ts runStart/runWorkflowServerSide/WorkflowProgress, CliProvider complete()/completeStructured(), PlanTask/PlanArtifact) is modified — the build stage only registers alongside them.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "HLD-literal flat records (advisory report + daemon-authoritative outcome)",
+        "oneLineSummary": "Take sc4 BuildTaskOutcome and sc5 TaskImplementerAdapter verbatim from the HLD sketch — flat interfaces, plain status union, thin advisory report, daemon fills filesTouched/testVerdict.",
+        "approach": "Adopt both owned contracts exactly as the HLD interfaceSketch draws them. BuildTaskOutcome is a single flat interface: taskId/title/dependsOn bound verbatim from PlanTask (plan.ts:54-64), status as a plain 'completed'|'failed'|'blocked'|'not-reached' string-literal union, attempts as a bare number, filesTouched and an optional testVerdict populated only by the daemon's own working-tree diff and test run. The TaskImplementerAdapter exposes a single implement(req): Promise<TaskImplementerReport>, and TaskImplementerReport stays the two-field advisory {claimedComplete, narrative} — never consulted to advance. The sequencer carries a private BuildTaskOutcome[] and s5 finalizes it. Consumed sc1/sc2/sc3 are used as-is: admission (sc3) gates before any outcome exists, and outcomes flow out through the sc2 progress/markdown surface.",
+        "pros": [
+          "Zero divergence from the HLD — no boundary or interfaceSketch amendment needed, so s2/s4/s5 consumers bind against the shapes the Epic already published.",
+          "Smallest possible cross-Story surface: the advisory report is structurally two fields, making it impossible to mistake the implementer's self-report for an advance decision (reinforces the k2/sc5 quarantine).",
+          "filesTouched/testVerdict as daemon-populated fields keep the 'never self-reported' invariant exactly where the HLD placed it, and serialize trivially into the hash-json artifact."
+        ],
+        "cons": [
+          "The load-bearing rule 'testVerdict is only meaningful on a terminal status' is documented, not type-enforced — a consumer can read testVerdict on a not-reached outcome and get an undefined-vs-stale ambiguity.",
+          "attempts as a bare count discards the per-attempt repair history, so the finalized artifact can't show why a failed Task exhausted its budget — a thinner observability surface than the NFR aspires to."
+        ],
+        "costEstimate": "XS",
+        "reasonRejected": "Safest, lowest-cost (XS), zero HLD divergence — s2/s4/s5 bind against already-published shapes. Loses to a2 only on ac4/sc4: the load-bearing invariant is documented, not type-enforced, an accuracy gap the project's accuracy-primary principle disfavors."
+      },
+      {
+        "id": "a2",
+        "name": "Status-discriminated outcome union (verdict presence tied to terminal status)",
+        "oneLineSummary": "Reshape BuildTaskOutcome into a discriminated union on status so a completed/failed variant requires testVerdict+filesTouched and a blocked/not-reached variant forbids them.",
+        "approach": "Keep sc5's TaskImplementerAdapter and its advisory report unchanged. Split sc4 BuildTaskOutcome into a discriminated union keyed on status: a 'reached' variant ({status:'completed'|'failed', filesTouched, testVerdict: BuildTestVerdict, attempts}) that REQUIRES the daemon-produced verdict and diff, and an 'unreached' variant ({status:'blocked'|'not-reached', note?}) that has no verdict or filesTouched field at all. taskId/title/dependsOn (from PlanTask) are common to both arms. This encodes the HLD's stated invariant — testVerdict/filesTouched are produced only by a real daemon test run + tree diff — directly in the type: an unreached Task literally cannot carry a verdict. s4 narrows on status to decide halt; s5 narrows to render.",
+        "pros": [
+          "Makes k2's 'advancement decided by a real test run' un-forgeable at the type level — a blocked/not-reached Task has no field in which a fabricated verdict could sit.",
+          "Consumers narrow once on status and get exactly the right fields, eliminating the a1 undefined-vs-stale ambiguity on testVerdict.",
+          "Still leaves the sequencer guts and the adapter boundary private — only the shape of the finished value changes, so the sc5 quarantine is untouched."
+        ],
+        "cons": [
+          "Diverges from the HLD's flat sc4 interfaceSketch, so the boundary carries an amendment note and s4/s5 must narrow before reading filesTouched — heavier to consume.",
+          "Discriminated-union serialization into the hash-json artifact is slightly more involved than a flat record, and the renderer must handle both arms."
+        ],
+        "costEstimate": "S"
+      },
+      {
+        "id": "a3",
+        "name": "Structured per-attempt log on the outcome",
+        "oneLineSummary": "Replace attempts:number with attempts:BuildTaskAttempt[], each recording its testVerdict and advisory narrative, so the repair loop is reviewable in the finalized artifact.",
+        "approach": "Leave sc5's adapter signature exactly as sketched — still one implement() call per attempt, driven serially by the sequencer. Reshape sc4 so attempts becomes a readonly BuildTaskAttempt[], where each BuildTaskAttempt records that attempt's daemon test verdict plus the implementer's advisory narrative for that cycle. BuildTaskOutcome's top-level testVerdict is defined as the final attempt's verdict (or absent for unreached Tasks). taskId/title/dependsOn stay bound to PlanTask; filesTouched remains the cumulative daemon diff. The sequencer records each edit→test→repair cycle into the attempt list as it walks the work list.",
+        "pros": [
+          "The bounded repair budget (maxAttempts) becomes reviewable after the fact — a Task that passed on attempt 3 shows what failed on 1-2, directly serving the observability NFR and explaining any 'failed' exhaustion.",
+          "Each attempt's verdict is still daemon-produced, so the 'never self-reported' invariant holds per-attempt, not just at the summary level.",
+          "Gives s4/BuildRunProgress a natural per-attempt signal to emit at implementer-finished/test-verdict boundaries without a separate contract."
+        ],
+        "cons": [
+          "Risks encoding sequencer-internal repair mechanics — which the boundary explicitly lists as private — into a cross-Story contract, over-exposing the guts s3 is meant to hide.",
+          "Larger artifact payload on long runs and more fields for s5's renderer, for history that a reviewer may rarely consult beyond the final verdict."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Serves the observability NFR well (bounded repair budget becomes reviewable), but leaks declared-private sequencer repair mechanics into the sc4 cross-Story contract and enlarges the artifact payload. The boundary violation risk on sc4 ranks it below a1's clean fidelity and a2's type-enforced strengthening."
+      },
+      {
+        "id": "a4",
+        "name": "Run-state accumulator as a first-class checkpoint contract",
+        "oneLineSummary": "Introduce a BuildRunState (completed[]/inFlight?/pending[] over the plan's Tasks) that the sequencer advances one Task at a time and persists at every Task boundary, with BuildTaskOutcome staying the per-Task unit.",
+        "approach": "Keep sc4 BuildTaskOutcome as the per-Task result and sc5's adapter unchanged. Add a BuildRunState value that partitions the plan's PlanTask[] into completed: BuildTaskOutcome[], an optional inFlight taskId, and pending taskIds — advanced by the sequencer exactly one Task at a time and persisted incrementally at each Task boundary through the parent module's hash-json/slug writers. s4 halts on this state and s5 finalizes it; BuildRunProgress frames are derived from its transitions. This turns the durability NFR ('persist incrementally so a restart leaves a readable record') and the observability NFR into a typed object rather than an implementation detail of the private BuildTaskOutcome[] carry.",
+        "pros": [
+          "Makes the durability guarantee a first-class contract — a daemon restart mid-run leaves a well-typed, readable partition of what landed vs. what remains, instead of an untracked side-effect.",
+          "BuildRunProgress emission falls out of state transitions naturally, and s4's halt + s5's finalize consume one coherent object rather than reconstructing state from an array.",
+          "The one-Task-at-a-time invariant (ac3) is visible in the shape: at most one inFlight taskId can exist at any checkpoint."
+        ],
+        "cons": [
+          "Adds a contract the HLD boundary does not name (s3 owns only sc4/sc5) — BuildRunState may overlap sc2's progress surface or the declared-private sequencer internal, requiring a boundary amendment.",
+          "More moving parts than the HLD's plain BuildTaskOutcome[] carry, and the extra state object must stay in lock-step with the per-Task outcomes to avoid a second source of truth."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "The durability-as-first-class-contract idea is attractive, but it adds an unnamed contract (BuildRunState) beyond s3's HLD ownership (sc4/sc5 only), overlaps sc2's progress surface and the declared-private sequencer internal, and costs M with a second-source-of-truth risk. Highest boundary-scope risk of the four, so it ranks last despite the strongest durability story."
+      }
+    ],
+    "chosenAlternative": "a2",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "step-output",
+      "ref": "s3.winnerId",
+      "quotedText": "a2 wins because it satisfies ac4 at the strongest level of any alternative — a discriminated union on status makes \"advancement decided by a real daemon test run\" un-forgeable at the type level"
+    },
+    {
+      "id": "c2",
+      "kind": "step-output",
+      "ref": "s4.hld.amendmentProposal",
+      "quotedText": "sharedContract.fieldRemove on sc4.testVerdict, breaking:true — Reshape BuildTaskOutcome from a flat interface into a status-discriminated union"
+    },
+    {
+      "id": "c3",
+      "kind": "step-output",
+      "ref": "s4.dataModel / s4.interactionWithShared",
+      "quotedText": "BuildTaskOutcome invariant-change; BuildTestVerdict/TaskImplementerRequest/TaskImplementerReport/TaskImplementerAdapter new; interactionWithShared sc4/sc5 implements, sc1/sc2/sc3 consumes"
+    },
+    {
+      "id": "c4",
+      "kind": "step-output",
+      "ref": "s5.errorCases / s5.edgeCases / s5.invariantsToPreserve",
+      "quotedText": "subprocess failure, tests-never-pass, unmet-dependency, schema-validation failure, no-runnable-test-command; serial/one-at-a-time edge cases; c1/c2/c3 invariants"
+    },
+    {
+      "id": "c5",
+      "kind": "step-output",
+      "ref": "s6.acceptanceMapping",
+      "quotedText": "node:test via npx tsx --test; unit + integration levels; ac1-ac5 each mapped to proving tests"
+    },
+    {
+      "id": "c6",
+      "kind": "step-output",
+      "ref": "s7.migrationSteps",
+      "quotedText": "8 rollbackable migration steps; step 2 (sc4 reshape) must land with step 6 (consumer narrow-on-status); zeroDowntime true, dataRewriteRequired false"
+    },
+    {
+      "id": "c7",
+      "kind": "step-output",
+      "ref": "s1.analyzeBundles / s8.results",
+      "quotedText": "cli-provider.ts complete 109-127 / completeStructured 161-167; plan.ts PlanTask 54-64; workflow-rpc.ts WorkflowProgress/runStart/runWorkflowServerSide; all s8 verdicts passed"
+    }
+  ]
+}

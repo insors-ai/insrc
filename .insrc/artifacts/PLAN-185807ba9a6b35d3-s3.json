@@ -1,0 +1,375 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1784321596679-ss57ws",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-07-17T21:07:20.670Z",
+    "model": "claude",
+    "elapsedMs": 843988,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "185807ba9a6b35d3",
+    "epicSlug": "add-build-workflow-insrc-5th-stage",
+    "storyId": "s3",
+    "lldRunId": "wf-1784313695983-6kjwep",
+    "lldEffectiveHash": "6d130af6ef10bff101a734601ec38ce873de2037786e62c3303fa417c1d5912c",
+    "approvedAt": "2026-07-18T04:55:11.083Z",
+    "tracker": {
+      "adapter": "github",
+      "taskRefs": {
+        "t1": "insors-ai/insrc#17",
+        "t2": "insors-ai/insrc#18",
+        "t3": "insors-ai/insrc#19",
+        "t4": "insors-ai/insrc#20",
+        "t5": "insors-ai/insrc#21",
+        "t6": "insors-ai/insrc#22",
+        "t7": "insors-ai/insrc#23",
+        "t8": "insors-ai/insrc#24",
+        "t9": "insors-ai/insrc#25"
+      },
+      "pushedAt": "2026-07-18T04:55:26.735Z",
+      "labelsCreated": [
+        "insrc:task",
+        "epic:add-build-workflow-insrc-5th-stage"
+      ]
+    }
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add the build schemas foundation (BuildTaskStatus, common base, BuildTestVerdict)",
+        "summary": "Create src/workflow/runners/build/schemas.ts with the purely-additive base types the rest of s3 builds on: the BuildTaskStatus string-literal union ('completed' | 'failed' | 'blocked' | 'not-reached'), the BuildTaskCommon base (taskId, title, dependsOn, note?), and BuildTestVerdict ({ command, passed, exitCode, summary }, all readonly). BuildTestVerdict is the daemon's own authoritative per-Task verdict produced by running the test command extracted verbatim from the PlanTask; it appears only on the reached arm added in t2. No existing symbol is touched (migration step 1).",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "src/workflow/runners/build/schemas.ts exports BuildTaskStatus ('completed' | 'failed' | 'blocked' | 'not-reached'), a BuildTaskCommon base (taskId, title, dependsOn, optional note), and BuildTestVerdict ({ command, passed, exitCode, summary }) with every field readonly.",
+          "The module is purely additive — `npm run build` (tsc) passes and no existing exported symbol is modified."
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "schemas: a constructed BuildTestVerdict carries { command, passed, exitCode, summary } and BuildTaskStatus admits exactly the four literals ('completed' | 'failed' | 'blocked' | 'not-reached'), all fields readonly"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Add sc4 BuildTaskOutcome as the status-discriminated union (a2 reshape)",
+        "summary": "Define BuildTaskOutcome = BuildTaskReached | BuildTaskUnreached per the winning a2 alternative and the accompanying hld.amendmentProposal (sharedContract.fieldRemove testVerdict, breaking:true). The reached arm (status 'completed' | 'failed') REQUIRES a daemon-produced testVerdict: BuildTestVerdict plus filesTouched and attempts; the unreached arm (status 'blocked' | 'not-reached') carries none of them because nothing ran. This encodes sc4's load-bearing invariant — testVerdict/filesTouched are daemon-produced, never self-reported — at the type level so a blocked/not-reached Task literally has no field in which a fabricated verdict could sit (migration step 2).",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "BuildTaskOutcome is exported as `BuildTaskReached | BuildTaskUnreached`; the reached arm (status 'completed' | 'failed') requires testVerdict: BuildTestVerdict plus filesTouched and attempts, and the unreached arm (status 'blocked' | 'not-reached') declares none of those fields.",
+          "Constructing a 'blocked'/'not-reached' outcome carrying a testVerdict or filesTouched is a compile error, proving the daemon-produced invariant is enforced by the union rather than only documented."
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "schemas: BuildTaskOutcome union invariant — a reached outcome ('completed'|'failed') requires testVerdict/filesTouched/attempts while a 'blocked'/'not-reached' outcome carrying testVerdict or filesTouched is a compile error"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Add the sc5 seam types (TaskImplementerRequest / Report / Adapter)",
+        "summary": "Add the three sc5 interfaces to schemas.ts: TaskImplementerRequest (task bound to the WORKFLOW PlanTask at src/workflow/artifacts/plan.ts — NOT the same-named analyze-types interface — plus storyDesignMarkdown, planMarkdown, completedDependencies: readonly BuildTaskOutcome[], repoRoot, and the bounded maxAttempts repair budget), the deliberately two-field advisory TaskImplementerReport ({ claimedComplete, narrative }), and the TaskImplementerAdapter interface with a single implement(req): Promise<TaskImplementerReport>. Types only, no implementation (migration step 3).",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "schemas.ts exports TaskImplementerRequest, TaskImplementerReport ({ claimedComplete, narrative }), and TaskImplementerAdapter with one method implement(req: TaskImplementerRequest): Promise<TaskImplementerReport>.",
+          "TaskImplementerRequest.task is typed against the WORKFLOW PlanTask from src/workflow/artifacts/plan.ts and completedDependencies is readonly BuildTaskOutcome[]; the report is documented and used as advisory-only."
+        ],
+        "derivedFrom": [
+          "c3",
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "schemas: TaskImplementerRequest.task binds to the WORKFLOW PlanTask (src/workflow/artifacts/plan.ts) with completedDependencies typed readonly BuildTaskOutcome[], and TaskImplementerReport exposes only the two advisory fields { claimedComplete, narrative }"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Implement TaskImplementerAdapter over one serial CliProvider subprocess (with the UNPROVEN-host finding resolved)",
+        "summary": "Implement the sc5 quarantine seam. FIRST resolve the LLD's single load-bearing UNPROVEN question by reading src/agent/providers/cli-provider.ts directly: can its one-document-per-call complete()/completeStructured() surface actually supervise a long free-form editing session, or is provider-level work required? The boundary explicitly reserves that provider-level work as in-scope for s3, so this Task must land an explicit finding and either do the required provider change or scope it before building on top — never assume the happy path. Then implement(): exactly one CliProvider subprocess per Task through the shared LLMProvider abstraction, cloud reached only via the claude/codex CLI binaries (no direct REST), serial by construction and never Promise.all'd. A subprocess/structured-output rejection propagates out of implement() so the sequencer can treat it as an implementer failure; the returned report is advisory only and never advances the run (migration step 4; sc5; invariants c2).",
+        "size": "L",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "The direct read of src/agent/providers/cli-provider.ts produces an explicit written finding on whether its structured-output/complete path can host the multi-turn free-form editing loop; if it cannot, the required provider-level change is either implemented in this Task or scoped as a named follow-up — the L does not silently absorb an open-ended provider change.",
+          "implement() runs exactly one CliProvider subprocess per call through the injected LLMProvider abstraction with no direct REST client constructed, and callers await one call before the next — provider calls are never Promise.all'd.",
+          "A subprocess spawn/mid-session error or a completeStructured retry-budget exhaustion surfaces from implement() as a rejected Promise, and the returned TaskImplementerReport is treated purely as advisory (never consulted to advance a Task)."
+        ],
+        "derivedFrom": [
+          "c5",
+          "c12"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "adapter: TaskImplementerAdapter.implement() drives exactly one CliProvider subprocess per Task through the injected LLMProvider abstraction (no direct REST client), and a subprocess-spawn / completeStructured retry-budget rejection surfaces from implement() as a rejected Promise"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Implement the daemon verifier (test-run + working-tree diff → BuildTestVerdict + filesTouched) behind an injectable seam",
+        "summary": "Extract the self-contained daemon-side verifier that the sequencer and both test Tasks assume as an injectable 'fake daemon test-run+diff hook'. It takes the stated test command verbatim from a PlanTask, runs it as a subprocess, captures exit code + summary into BuildTestVerdict ({ command, passed, exitCode, summary }), and takes the git working-tree diff to compute filesTouched — the daemon's OWN authority for a reached outcome, computed independently of the advisory report. Exposes a single narrow interface (the seam t8/t9 stub) and handles the empty/absent stated test command case explicitly (no command → not a passing verdict). Real subprocess/git mechanics live here, not inside sequencer guts (split out of the former t5 L per s3 critique; invariants c1).",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "The verifier is a self-contained module exposing a single injectable interface that, given a PlanTask and repoRoot, extracts the stated test command verbatim, runs it, and returns BuildTestVerdict + filesTouched computed from the git working-tree diff — the same seam t8/t9 fake instead of reaching a real provider/git.",
+          "An empty or absent stated test command yields a non-passing verdict (never a fabricated 'passed'), and filesTouched reflects only the actual working-tree diff; the verdict is computed with no reference to any TaskImplementerReport."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c7",
+          "c12"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "verifier: given a PlanTask + repoRoot the injectable verifier extracts the stated test command verbatim, returns BuildTestVerdict + filesTouched from the working-tree diff, and yields a non-passing verdict (never a fabricated 'passed') for an empty/absent command"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Implement the private verdict-driven sequencer over the injected verifier seam",
+        "summary": "Implement the private sequencer that materializes the pre-validated PlanTask[] work list ONLY when the run is admitted (sc3 BuildAdmissionResult.admitted === true — consumed from s2), walks it topologically with a serial for...of (never Promise.all, even where dependencies would permit parallelism), gates each Task on its dependsOn (emitting BuildTaskUnreached 'blocked' without invoking the adapter when a dependency did not complete), applies the bounded per-Task maxAttempts repair budget, and computes every terminal BuildTaskOutcome from the injected t5 verifier seam (test run + working-tree diff) rather than the advisory report. Types and drives against the TaskImplementerAdapter INTERFACE (t3), not the concrete CliProvider adapter (t4) — no compile or runtime dependency on t4, so it proceeds in parallel with it. Exposes a per-Task-boundary checkpoint hook the wiring Task (t7) drives for durability. Handles the error/edge cases: exhausted budget with a failing verdict → BuildTaskReached 'failed' and the run halts; empty/absent stated test command → failed/not-reached; zero/single/no-op-edit Tasks (former t5 sequencing half after the verifier split; boundary.internal; invariants c1/c3).",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t2",
+          "t3",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "The work list is materialized verbatim from the approved plan's PlanTask[] (same ids, order, and dependsOn, nothing added/dropped/reordered) and only when BuildAdmissionResult.admitted === true; the walk is a serial for...of with exactly one Task in flight at any moment.",
+          "The sequencer depends only on the TaskImplementerAdapter interface (t3) and the injected verifier seam (t5) — it constructs no concrete CliProvider and has no compile or runtime dependency on t4; each terminal outcome's status/testVerdict/filesTouched comes from the injected verifier, never from the advisory report, and a Task whose dependency ended failed/blocked/not-reached is emitted BuildTaskUnreached 'blocked' with the adapter never invoked.",
+          "The per-Task repair budget bounds retries: on exhaustion with a still-failing verdict the Task is BuildTaskReached 'failed' and the run halts on it; an empty/absent stated test command yields failed/not-reached (never completed); zero-Task and single-Task admitted plans finalize correctly; and the sequencer invokes a per-Task-boundary checkpoint hook so t7 can persist incrementally."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c6",
+          "c7",
+          "c11"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "sequencer: over deterministic in-memory PlanTask[] it materializes the work list verbatim (only when admitted===true), walks it serially topologically, gates dependents to BuildTaskUnreached 'blocked' without invoking the adapter, computes each outcome from the injected verifier seam, and halts on a budget-exhausted failing verdict"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Wire the sequencer behind registerBuildRunners, emit outcome progress, and persist the outcome list incrementally",
+        "summary": "Drive the sequencer from the build stage's start/decompose/synthesize/finalize turn handlers registered via registerBuildRunners() (sc1, owned by s1) — adding the sequencing turn behind the existing registration without re-registering or mutating sibling stages. Emit BuildTaskOutcome progress at every Task boundary (task-start, implementer-finished, test-verdict, advance-or-halt) through the WorkflowStepOutputBuild / WorkflowProgress driving surface (sc2, owned by s1), keeping a single source of truth for Task status — no second store. Own the durability NFR explicitly: supply the storage-writer implementation behind the sequencer's per-Task-boundary checkpoint hook (t6) so the accumulated BuildTaskOutcome[] is persisted through the existing hash-json/storage writers AT EACH Task boundary, not only at finalize — because build (unlike define/design/plan) mutates the working tree non-transactionally, a daemon restart mid-run must leave a readable record of what already landed. All stage-boundary logging goes through getLogger('workflow:build'), never console.log (migration step 7; interactionWithShared sc1/sc2; observability + durability NFR).",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "The sequencer runs behind the build stage handlers registered by registerBuildRunners(); no sibling stage (define / design.epic / design.story / tracker) is re-registered or mutated, and BuildTaskOutcome data is emitted at each Task boundary through the WorkflowStepOutputBuild / WorkflowProgress surface with no second source of truth for Task status.",
+          "The accumulated BuildTaskOutcome[] is persisted incrementally at each Task boundary via the sequencer's checkpoint hook through the existing hash-json/storage writers (not only at finalize), so a simulated mid-run restart leaves a readable record of the outcomes already landed; halts name the failed Task + reason + blocked set, and all logging uses getLogger('workflow:build')."
+        ],
+        "derivedFrom": [
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "wiring: the sequencing turn runs behind registerBuildRunners() without re-registering sibling stages, emits BuildTaskOutcome at each Task boundary through the WorkflowStepOutputBuild/WorkflowProgress surface, and the checkpoint hook persists the accumulated outcomes at each boundary so a simulated mid-run restart leaves a readable record"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Unit-test the private sequencer and verifier seam without a live provider",
+        "summary": "Add a node:test suite under src/workflow/runners/build/__tests__ that proves the sequencer over deterministic in-memory inputs, cloning the src/daemon/__tests__/workflow-rpc.test.ts throwing-LLMProvider stub and the src/workflow/__tests__/executor.test.ts harness — no live provider, no real git/test execution. Injects a fake TaskImplementerAdapter and the t5 verifier seam (returning a canned BuildTestVerdict + filesTouched) so nothing spawns. Covers verbatim work-list materialization, topological serial walk, dependency gating (blocked emission with no verdict/filesTouched), the BuildTaskOutcome union invariant, the checkpoint hook firing at each boundary, and the empty-test-command case. Uses chain / independent-pair / dependsOn:[] / single-Task / zero-Task fixtures (migration step 8; testStrategy unit level; acceptance ac1/ac2/ac3/ac4).",
+        "size": "M",
+        "order": 8,
+        "dependsOn": [
+          "t6",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "A node:test suite runs green under `npx tsx --test` with no live provider and no real git/test execution, cloning the workflow-rpc.test.ts stub and executor.test.ts harness patterns and injecting a fake verifier seam that returns a canned BuildTestVerdict + filesTouched.",
+          "It proves verbatim work-list materialization, topological serial walk (independent Tasks still one at a time), dependency gating (blocked BuildTaskUnreached with no verdict/filesTouched), the union invariant, and the per-Task-boundary checkpoint hook firing, across chain / independent-pair / dependsOn:[] / single-Task / zero-Task fixtures."
+        ],
+        "derivedFrom": [
+          "c9",
+          "c11"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "build/__tests__: sequencer+verifier suite over chain / independent-pair / dependsOn:[] / single-Task / zero-Task fixtures with a fake adapter and canned verifier seam — proves verbatim work-list materialization, serial topological walk, dependency gating (blocked, no verdict/filesTouched), the union invariant, and the checkpoint hook firing at each boundary"
+          }
+        ]
+      },
+      {
+        "id": "t9",
+        "title": "Integration-test the adapter seam and serial-provider invariants",
+        "summary": "Add an integration suite exercising sequencer → TaskImplementerAdapter.implement() → daemon-verdict end to end against a fake CliProvider/LLMProvider (that counts in-flight calls to assert never >1, and can resolve, reject, or emit an advisory report claiming completion regardless of the real verdict) plus the stubbed t5 verifier producing BuildTestVerdict + filesTouched independently of the report. Proves one subprocess per Task, that an advisory claimedComplete:true never advances a failing-verdict Task, that a provider rejection / structured-output failure degrades to a reported implementer failure with the daemon verdict as sole authority, and the sc3 precondition — the adapter is unreachable when admitted !== true, so treeUntouched holds on refusal (migration step 8; testStrategy integration level; acceptance ac3/ac4/ac5).",
+        "size": "M",
+        "order": 9,
+        "dependsOn": [
+          "t4",
+          "t6",
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "A concurrency guard on the fake provider (increment-on-entry / assert-never-gt-1) confirms provider calls are strictly serial across the whole build path, and the LLM is reached only through the injected LLMProvider abstraction — no direct REST client is constructed.",
+          "An advisory TaskImplementerReport with claimedComplete:true does NOT advance a Task whose daemon verdict fails, and a rejected/structured-failure provider Promise degrades to a reported implementer failure with the daemon verdict as the sole authority.",
+          "The sc3 admission gate is exercised: the adapter is unreachable when BuildAdmissionResult.admitted !== true and treeUntouched holds on refusal."
+        ],
+        "derivedFrom": [
+          "c10",
+          "c11",
+          "c12"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "build/__tests__: sequencer→adapter.implement()→daemon-verdict end-to-end against a fake CliProvider/LLMProvider (in-flight counter asserts never >1) and stubbed verifier — proves one subprocess per Task, advisory claimedComplete:true never advances a failing-verdict Task, a provider rejection degrades to a reported implementer failure, and the adapter is unreachable when admitted!==true (treeUntouched on refusal)"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "the build-stage sequencer (private ordering + for...of walk + attempt/repair budget) in src/workflow/runners/build",
+        "coveredByTaskIds": [
+          "t6",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "BuildTaskOutcome union + BuildTestVerdict shape in src/workflow/runners/build/schemas.ts",
+        "coveredByTaskIds": [
+          "t1",
+          "t2",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "binding to the WORKFLOW PlanTask (src/workflow/artifacts/plan.ts:54-64) and reliance on the pre-validated checkPlanTaskGraph ordering",
+        "coveredByTaskIds": [
+          "t3",
+          "t6",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "TaskImplementerAdapter.implement() invocation shape against CliProvider signatures (src/agent/providers/cli-provider.ts complete 109-127 / completeStructured 161-167)",
+        "coveredByTaskIds": [
+          "t4",
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "sequencer → adapter → daemon-verdict advance decision end-to-end (BuildTaskReached/BuildTaskUnreached production)",
+        "coveredByTaskIds": [
+          "t7",
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "the sc3 admission gate: adapter unreachable when BuildAdmissionResult.admitted !== true",
+        "coveredByTaskIds": [
+          "t6",
+          "t9"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 handoff: sc4 BuildTaskOutcome status-discriminated union — testVerdict/filesTouched are daemon-produced on the reached arm only, never self-reported"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 handoff: purely-additive build schemas foundation (BuildTaskStatus, BuildTaskCommon, BuildTestVerdict) in src/workflow/runners/build/schemas.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 handoff: sc5 TaskImplementerRequest bound to the WORKFLOW PlanTask (src/workflow/artifacts/plan.ts), not the same-named analyze-types interface"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 handoff: sc5 TaskImplementerReport is deliberately two-field ({ claimedComplete, narrative }) and advisory-only"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 handoff: sc5 TaskImplementerAdapter.implement(req): Promise<TaskImplementerReport> quarantine seam over one serial CliProvider subprocess per Task"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 handoff: sc3 admission gate — sequencer materializes the work list only when BuildAdmissionResult.admitted === true (consumed from s2)"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 handoff: daemon verifier (test-run + git working-tree diff → BuildTestVerdict + filesTouched) as the sole authority for a reached outcome, computed independently of the report"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 handoff: interactionWithShared sc1/sc2 — wire behind registerBuildRunners(), emit BuildTaskOutcome via WorkflowStepOutputBuild/WorkflowProgress, incremental checkpoint persistence (durability + observability NFR)"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 handoff: unit test harness — clone src/daemon/__tests__/workflow-rpc.test.ts throwing-LLMProvider stub and src/workflow/__tests__/executor.test.ts patterns, no live provider"
+    },
+    {
+      "id": "c10",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 handoff: integration testStrategy — fake CliProvider/LLMProvider with in-flight counter, advisory report never overrides the daemon verdict"
+    },
+    {
+      "id": "c11",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 handoff: reliance on the pre-validated checkPlanTaskGraph ordering — verbatim work-list materialization, serial topological walk, dependency gating"
+    },
+    {
+      "id": "c12",
+      "kind": "code",
+      "ref": "s1 analyze bundle: src/agent/providers/cli-provider.ts complete (109-127) / completeStructured (161-167) signatures and the UNPROVEN long-editing-session host question"
+    }
+  ]
+}

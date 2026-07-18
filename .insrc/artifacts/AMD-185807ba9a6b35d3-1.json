@@ -1,0 +1,26 @@
+{
+  "id": "AMD-185807ba9a6b35d3-1",
+  "epicHash": "185807ba9a6b35d3",
+  "epicSlug": "add-build-workflow-insrc-5th-stage",
+  "hldBaseRunId": "wf-1784289418318-fl5y3m",
+  "amendment": {
+    "type": "sharedContract.fieldAdd",
+    "contractId": "sc1",
+    "breaking": false,
+    "field": {
+      "name": "build",
+      "target": "WORKFLOW_NAMES tuple / WorkflowName union (src/workflow/types.ts)",
+      "description": "Add the 'build' string literal to WORKFLOW_NAMES so WorkflowName includes 'build'. This is the single additive primitive underpinning both sc1 (registerBuildRunners registers runners keyed `build/<id>` with `workflow:'build'`) and sc2 (WorkflowStepInputStart.workflow accepts 'build', so the existing stage-agnostic MCP surface drives build with no new input type). It is the real form of sc1's sketched BUILD_STAGE_ID."
+    }
+  },
+  "rationale": "The HLD's own backFlowNotes (items 1-2) flagged every symbol on the src/mcp/workflow-step surface as an UNVERIFIED seam name and instructed the LLD to open types.ts + phases/plan.ts before finalizing sc2. Doing so revealed the sketches for BOTH owned contracts are provisional and diverge from the real code: (a) the driving surface is stage-agnostic — WorkflowStepPhase is 'start'|'plan'|'step'|'synthesize', WorkflowStepInputStart already carries `workflow: WorkflowName`, and there is no per-stage WorkflowStepInputPlan/handlePlan, so sc2's WorkflowStepInputBuild/WorkflowStepOutputBuild/BuildPhase and its 'build'-bearing WorkflowStepStage union should NOT be created (WorkflowStepStage in state.ts is an 'awaiting_*' codec stage, unrelated to stage names); (b) stages carry no descriptor object, so sc1's BuildStageDescriptor/BUILD_STAGE_ID have no analogue — stage identity is WORKFLOW_NAMES membership plus the `workflow:'build'` field on each StepRunner. The a2 framework, the story boundaries, the rollout and the non-functionals are all unaffected; only the interfaceSketch shape of the two owned contracts is corrected, and the correction SIMPLIFIES them (fewer new types) while satisfying their purposes better (build is driven through the genuinely-shared surface). Because the interfaceSketch text cannot be rewritten through the field-level amendment vocabulary, this proposal records only the one load-bearing additive fact — 'build' ∈ WORKFLOW_NAMES — and asks the HLD author to simplify the sc1/sc2 interfaceSketches to match: drop the descriptor and the discriminated build-input types, and describe sc2 as 'start build via WorkflowStepInputStart with workflow:\"build\"'. This is a localized shape correction the HLD explicitly deferred to the LLD's direct reads, not a framework rework.",
+  "citations": [],
+  "proposedBy": {
+    "workflow": "design.story",
+    "runId": "wf-1784304852747-uu8si8",
+    "storyId": "s1",
+    "stepId": "s4"
+  },
+  "proposedAt": "2026-07-17T16:33:47.352Z",
+  "status": "pending"
+}

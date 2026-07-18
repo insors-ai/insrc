@@ -1,0 +1,634 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1784314958112-fd2glm",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-07-17T19:21:18.394Z",
+    "model": "claude",
+    "elapsedMs": 1120255,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "185807ba9a6b35d3",
+    "epicSlug": "add-build-workflow-insrc-5th-stage",
+    "storyId": "s4",
+    "hldBaseRunId": "wf-1784289418318-fl5y3m",
+    "hldEffectiveHash": "6d130af6ef10bff101a734601ec38ce873de2037786e62c3303fa417c1d5912c",
+    "hldAmendmentsApplied": [],
+    "approvedAt": "2026-07-17T19:21:18.438Z",
+    "tracker": {
+      "adapter": "github",
+      "storyRef": "insors-ai/insrc#5",
+      "pushedAt": "2026-07-17T19:21:20.804Z"
+    }
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Chosen framework: **a2 — a registered `build` stage that delegates each Task's editing work to a CliProvider subprocess, while the daemon keeps sequencing and verification on its own side.** The stage is added exactly where the sibling stages live: a `src/workflow/runners/build/` subdir (index.ts + schemas.ts, one exported `registerBuildRunners(): void`, no classes, no base class — mirroring the confirmed design-story shape) plus a `src/workflow/artifacts/build.ts` artifact definition, reusing the parent module's `hash.ts` / `slug.ts` writers and `gates.ts` rather than adding skeleton machinery. The `insrc_workflow_step` surface gains a `build` phase handler mirroring `phases/plan.ts`, so the developer-facing turn shape (start → decompose → synthesize → finalize) is unchanged.\n\nWhy a2 over the field: it is the only alternative with no partial or unknown across all nine constraints. It removes the k9 dependency instead of absorbing it — the multi-turn edit/test/repair loop does **not** live inside the synthesize seam that is proven only for one-JSON-document-per-turn; it lives behind a one-Task-at-a-time subprocess boundary, so `executor.ts`/`orchestrator.ts` are asked only to do what they already demonstrably do (host a stage, run a gate, finalize an artifact). It keeps k2 enforcement daemon-side: the daemon decides advancement from a test run and a tree diff it performs itself, so a non-cooperating implementer cannot advance the run — unlike the advisory-order failure the Epic's problem statement names. And k8 is satisfied by construction rather than by special pleading: CliProvider is CLAUDE.md's sanctioned cloud path and one-subprocess-at-a-time is serial by definition.\n\nTwo items are carried into design as unproven, not settled. (1) **CliProvider's structured-output path is built for JSON returns, not for supervising a long free-form editing session** — that usage is unverified and may require provider-level work; the design must inspect `src/agent/providers/cli-provider.ts` directly, since no analyze bundle touched it (k8 is carried verbatim from CLAUDE.md). (2) Per the coverage-gap bundle, `gates.ts`, `hash.ts` and `slug.ts` are cited at **module level only** — no exploration located an entity in them by name — so k1's gate shape and k3's writer contract are unread APIs that must be read directly, alongside k9's required reading of `executor.ts` and `orchestrator.ts`. The scope phase's \"clear match\" verdict on `src/workflow` answers \"does the skeleton exist?\" (yes) and is not license to assume those files fit a code-editing workload.",
+      "ownedContracts": [
+        {
+          "id": "sc6",
+          "name": "BuildRunProgress",
+          "purpose": "The run-level status a developer inspects mid-run or after a halt — which Task failed, what the completed Tasks left in place, what was never reached. Lets s4 report a halt without the developer reconstructing state from the working tree, and gives s5 the run-level frame its artifact wraps.",
+          "interfaceSketch": "// src/workflow/runners/build/schemas.ts\n\nexport type BuildRunState = 'running' | 'halted' | 'complete';\n\nexport interface BuildHaltInfo {\n  readonly failedTaskId: string;\n  readonly failedTaskTitle: string;\n  readonly reason: string;\n  /** Tasks marked 'blocked' because they depend on the failed Task. */\n  readonly blockedTaskIds: readonly string[];\n}\n\nexport interface BuildRunProgress {\n  readonly storyId: string;\n  readonly runState: BuildRunState;\n  readonly totalTasks: number;\n  readonly completedTaskIds: readonly string[];\n  /** Exactly one, or none. Concurrency is structurally impossible. */\n  readonly inFlightTaskId?: string | undefined;\n  readonly halt?: BuildHaltInfo | undefined;\n  /** Union of filesTouched across completed Tasks. */\n  readonly filesTouchedSoFar: readonly string[];\n}",
+          "ownedByStory": "s4",
+          "consumedByStories": [
+            "s5"
+          ],
+          "assumptions": [
+            "c15"
+          ]
+        }
+      ],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "BuildStageRegistration",
+          "purpose": "The registration entrypoint that makes `build` a first-class stage of the chain — the single exported function registerWorkflowRunners() calls, mirroring registerDesignEpicRunners / registerDesignStoryRunners. Owning this is what satisfies k4/k6 and makes the stage discoverable in the registry alongside its four siblings.",
+          "interfaceSketch": "// src/workflow/runners/build/index.ts\n\nexport declare const BUILD_STAGE_ID: 'build';\n\nexport interface BuildStageDescriptor {\n  readonly stage: typeof BUILD_STAGE_ID;\n  readonly title: string;\n  readonly description: string;\n  /** Stage whose approved artifact this stage consumes. */\n  readonly consumesStage: 'plan';\n}\n\n/**\n * Registers the build stage's start/decompose/synthesize/finalize turn\n * handlers into the per-stage workflow runner registry.\n * Called from registerWorkflowRunners() in src/workflow/index.ts.\n * Registration only — no inheritance, no mutation of sibling stages.\n */\nexport declare function registerBuildRunners(): void;",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c1",
+            "c3",
+            "c10"
+          ]
+        },
+        {
+          "id": "sc2",
+          "name": "WorkflowStepInputBuild",
+          "purpose": "The insrc_workflow_step driving-surface input for the `build` phase, mirroring WorkflowStepInputPlan / handlePlan so a developer drives build through the same multi-turn turn shape as every earlier stage — no bespoke command, IPC method or UI.",
+          "interfaceSketch": "// src/mcp/workflow-step/types.ts (additions)\n\n// existing union gains 'build'\nexport type WorkflowStepStage =\n  | 'define' | 'design.epic' | 'design.story' | 'plan' | 'build';\n\nexport type BuildPhase = 'start' | 'decompose' | 'synthesize' | 'finalize';\n\nexport interface WorkflowStepInputBuild {\n  readonly stage: 'build';\n  readonly phase: BuildPhase;\n  /** Story whose approved plan is being implemented. */\n  readonly storyId: string;\n  /** Opaque server-side run token; preserved verbatim between turns. */\n  readonly state?: string | undefined;\n  readonly repo?: string | undefined;\n}\n\nexport interface WorkflowStepOutputBuild {\n  readonly next: BuildPhase | 'done' | 'refused';\n  readonly guidance: string;\n  readonly state?: string | undefined;\n  readonly refusal?: BuildAdmissionRefusal | undefined;\n  readonly progress?: BuildRunProgress | undefined;\n  readonly markdown?: string | undefined;\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        },
+        {
+          "id": "sc4",
+          "name": "BuildTaskOutcome",
+          "purpose": "The per-Task verified result the sequencer produces — status, files touched, and the daemon's own test verdict. This is the unit s4 halts on and s5 finalizes into the artifact. Load-bearing property: filesTouched and testVerdict are populated by the daemon's tree diff and test run, never by the implementer's self-report.",
+          "interfaceSketch": "// src/workflow/runners/build/schemas.ts\n\nexport type BuildTaskStatus =\n  | 'completed'    // edits made AND stated tests observed passing\n  | 'failed'       // stated tests could not be brought to passing\n  | 'blocked'      // a dependency failed; never started\n  | 'not-reached'; // run halted before this Task\n\nexport interface BuildTestVerdict {\n  readonly command: string;\n  readonly passed: boolean;\n  readonly exitCode: number;\n  readonly summary: string;\n}\n\nexport interface BuildTaskOutcome {\n  /** PlanTask id, verbatim from the approved plan. */\n  readonly taskId: string;\n  readonly title: string;\n  readonly dependsOn: readonly string[];\n  readonly status: BuildTaskStatus;\n  /** Repo-relative paths, from the daemon's working-tree diff. */\n  readonly filesTouched: readonly string[];\n  readonly testVerdict?: BuildTestVerdict | undefined;\n  readonly attempts: number;\n  readonly note?: string | undefined;\n}",
+          "ownedByStory": "s3",
+          "consumedByStories": [
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c15",
+            "c16"
+          ]
+        },
+        {
+          "id": "sc5",
+          "name": "TaskImplementerAdapter",
+          "purpose": "The quarantine boundary — the seam through which one Task at a time is handed to a CliProvider subprocess that may edit code. Isolates the k9-unproven long free-form editing workload from executor.ts/orchestrator.ts, and makes k8 structural: one subprocess at a time, via LLMProvider, never Promise.all, no direct cloud REST. Its self-report is explicitly advisory.",
+          "interfaceSketch": "// src/workflow/runners/build/schemas.ts\n\nexport interface TaskImplementerRequest {\n  readonly task: PlanTask;\n  readonly storyDesignMarkdown: string;\n  readonly planMarkdown: string;\n  /** Outcomes of already-completed dependencies, for context. */\n  readonly completedDependencies: readonly BuildTaskOutcome[];\n  readonly repoRoot: string;\n  /** Bounded repair budget for this Task. */\n  readonly maxAttempts: number;\n}\n\n/**\n * ADVISORY ONLY. The sequencer never advances on this value; advancement\n * is decided by the daemon's own test run + working-tree diff.\n */\nexport interface TaskImplementerReport {\n  readonly claimedComplete: boolean;\n  readonly narrative: string;\n}\n\nexport interface TaskImplementerAdapter {\n  /**\n   * Runs exactly one implementer subprocess to completion.\n   * Serial by construction — callers await one call before the next.\n   */\n  implement(req: TaskImplementerRequest): Promise<TaskImplementerReport>;\n}",
+          "ownedByStory": "s3",
+          "consumedByStories": [
+            "s4"
+          ],
+          "assumptions": [
+            "c16",
+            "c14"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s4",
+        "owns": [
+          "sc6"
+        ],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc4",
+          "sc5"
+        ],
+        "internal": "Private to s4: how a failed Task's transitive dependents are computed and marked `blocked` versus `not-reached`, how the run's in-flight state is tracked so progress can be reported mid-run, how a halt is distinguished from a clean completion, and the phrasing of the halt narrative a developer reads. Also private: guaranteeing that the halt path still reaches finalize — the internal control flow that routes a halted run into s5's finalize rather than letting it end as an untracked side-effect. Other Stories read BuildRunProgress; nobody else decides what halting means or recomputes the blocked set."
+      },
+      "rolloutPhase": "Phase D — halt semantics + run progress",
+      "nonFunctional": {
+        "durability": "The BuildArtifact must survive the run ending — a halted run finalizes just as a complete one does (s4/ac3), so a crash mid-Task must not be the only way the record is lost. Every Task boundary is a natural checkpoint: the run's accumulated BuildTaskOutcome[] should be persisted incrementally, not only at finalize, so a daemon restart mid-run leaves a readable record of what already landed on the tree rather than an untracked side-effect. The artifact is written through the parent module's existing hash-json + slug-md writers and storage.ts — same durability envelope as define/design.epic/design.story/plan, no new persistence substrate. Working-tree edits themselves are NOT transactional: this framework deliberately does not add worktree lifecycle (that was a4's breach of k5), so a halted run leaves partial edits in place — which is why the artifact naming what landed is the durability guarantee that matters.",
+        "security": "The refusal path is a safety boundary, not a convenience: the gate runs at the start turn, before any work list is materialized and before the implementer adapter is reachable, so `treeUntouched: true` on refusal is structural rather than asserted. No direct cloud REST from our process under any circumstance — the implementer reaches cloud models only through the locally-installed claude/codex CLI binaries via CliProvider, so auth and quota stay with the user's CLI OAuth session and no API keys enter this stage. The implementer subprocess is the only component in the design that can write to the repository; its blast radius is the registered repo root, and its self-report is never trusted to advance the run. Test commands executed by the daemon come verbatim from the approved plan's PlanTask — an approved artifact is the authorization boundary for what gets run.",
+        "performance": "Accuracy is primary; cost is the least priority — a build run is expected to be slow and expensive, and that is the correct trade. Sequencing is strictly one Task at a time (s3/ac3) even where dependencies would permit parallelism, and one implementer subprocess at a time; there is no Promise.all anywhere on the provider path and no concurrency knob to add later without reopening k2. Expect wall-clock proportional to Task count times (edit session + test run), i.e. tens of minutes for a real Story — do not optimize this by batching Tasks or by parallelizing provider calls. The per-Task repair budget (maxAttempts) is the only latency bound, and it should be generous rather than tight: giving up early produces a wrong `failed` verdict, which costs more than the retry did.",
+        "observability": "Long serial runs are opaque by default, and this one is the longest in the chain — BuildRunProgress exists so a developer can see which Task is in flight, which completed, and what they left on the tree without reading the working tree themselves. Progress should be emitted at every Task boundary at minimum: task-start, implementer-finished, test-verdict, advance-or-halt. Halts must name the failed Task, the reason, and the blocked set explicitly (s4/ac2) rather than surfacing a bare non-zero exit. Every stage boundary logs via getLogger('workflow:build') — never console.log. The finalized artifact is the durable observability surface: per-Task status, files touched, test verdict, and the cited PlanArtifact make the whole run reviewable after the fact, which is the entire point of the stage."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "BuildRunProgress",
+          "signature": "interface BuildRunProgress { readonly storyId: string; readonly runState: BuildRunState; readonly totalTasks: number; readonly completedTaskIds: readonly string[]; readonly inFlightTaskId?: string | undefined; readonly halt?: BuildHaltInfo | undefined; readonly filesTouchedSoFar: readonly string[] }",
+          "parameters": [
+            {
+              "name": "storyId",
+              "type": "string",
+              "purpose": "The Story whose approved plan is being implemented.",
+              "optional": false
+            },
+            {
+              "name": "runState",
+              "type": "BuildRunState",
+              "purpose": "'running' | 'halted' | 'complete'; 'halted' iff some outcome row has status 'failed'.",
+              "optional": false
+            },
+            {
+              "name": "totalTasks",
+              "type": "number",
+              "purpose": "Count of PlanTasks in the approved plan graph.",
+              "optional": false
+            },
+            {
+              "name": "completedTaskIds",
+              "type": "readonly string[]",
+              "purpose": "Task ids whose outcome status is 'completed'.",
+              "optional": false
+            },
+            {
+              "name": "inFlightTaskId",
+              "type": "string",
+              "purpose": "The single Task currently being implemented, re-derived from the one 'running' slot in the outcome array; concurrency is structurally impossible.",
+              "optional": true
+            },
+            {
+              "name": "halt",
+              "type": "BuildHaltInfo",
+              "purpose": "Present iff runState==='halted'.",
+              "optional": true
+            },
+            {
+              "name": "filesTouchedSoFar",
+              "type": "readonly string[]",
+              "purpose": "Union of filesTouched across completed outcome rows.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "BuildRunProgress",
+            "meaning": "A read-time projection over the accumulated BuildTaskOutcome[] (sc4) plus the approved PlanArtifact graph. Not a separately stored record — no field is writable independently of the outcome array, so progress can never skew from the persisted outcomes (winning alt a1)."
+          },
+          "errors": [],
+          "preconditions": [
+            "The run's accumulated BuildTaskOutcome[] (sc4) is available (persisted incrementally at each Task boundary via storage.ts/hash.ts/slug.ts).",
+            "The approved PlanArtifact DEPENDS_ON graph is loaded so blocked/not-reached membership can be derived."
+          ],
+          "postconditions": [
+            "runState==='halted' iff at least one outcome has status==='failed'; 'complete' iff every Task has a terminal status and none failed.",
+            "inFlightTaskId is the single 'running' slot or undefined — never more than one.",
+            "filesTouchedSoFar equals the union of filesTouched across all 'completed' outcomes.",
+            "Computed on demand per read; recompute cannot disagree with the sc4 rows or the live plan graph."
+          ]
+        },
+        {
+          "name": "BuildHaltInfo",
+          "signature": "interface BuildHaltInfo { readonly failedTaskId: string; readonly failedTaskTitle: string; readonly reason: string; readonly blockedTaskIds: readonly string[] }",
+          "parameters": [
+            {
+              "name": "failedTaskId",
+              "type": "string",
+              "purpose": "PlanTask id of the Task whose stated tests could not be brought to passing.",
+              "optional": false
+            },
+            {
+              "name": "failedTaskTitle",
+              "type": "string",
+              "purpose": "Human-facing title of the failed Task, so inspection names it without a tree read (ac2).",
+              "optional": false
+            },
+            {
+              "name": "reason",
+              "type": "string",
+              "purpose": "Why the run gave up on the Task — the daemon's own test verdict summary, not a bare non-zero exit.",
+              "optional": false
+            },
+            {
+              "name": "blockedTaskIds",
+              "type": "readonly string[]",
+              "purpose": "Transitive DEPENDS_ON dependents of the failed Task, recomputed against the live plan graph so it can never go stale.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "BuildHaltInfo",
+            "meaning": "The halt frame a developer inspects after a run stops — which Task failed, why, and which Tasks were blocked as a consequence — computed on demand from the outcome array plus the plan graph."
+          },
+          "errors": [],
+          "preconditions": [
+            "runState==='halted' — exactly one outcome has status==='failed'.",
+            "The approved PlanArtifact graph is loaded to walk the failed Task's transitive dependents."
+          ],
+          "postconditions": [
+            "blockedTaskIds is the transitive DEPENDS_ON closure of failedTaskId, always consistent with the plan graph (recomputed, never snapshotted).",
+            "No Task in blockedTaskIds was started; each carries outcome status 'blocked' or 'not-reached'."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "BuildRunProgress",
+        "change": "new",
+        "details": "Owned by s4 (sc6). Realized as a PURE PROJECTION of the sc4 BuildTaskOutcome[] plus the approved plan graph per winning alt a1 — never a second writeable record, so no progress-vs-outcome skew is structurally possible. inFlightTaskId is re-derived from the single 'running' slot rather than stored, so it survives a daemon restart. Lives in the new src/workflow/runners/build/schemas.ts alongside sc4/sc6 (search.text confirmed no existing halt/status vocabulary in the package to reconcile against).",
+        "schemaDiff": "+ interface BuildRunProgress { storyId; runState: BuildRunState; totalTasks; completedTaskIds[]; inFlightTaskId?; halt?: BuildHaltInfo; filesTouchedSoFar[] }",
+        "callSites": [
+          "src/workflow/runners/build/schemas.ts",
+          "src/workflow/orchestrator.ts",
+          "src/workflow/chain.ts"
+        ]
+      },
+      {
+        "entity": "BuildHaltInfo",
+        "change": "new",
+        "details": "Owned by s4 (part of sc6). Computed on demand at inspection time from the outcome array and the live plan graph; blockedTaskIds is recomputed (not snapshotted) so it cannot go stale relative to the plan. The halt-detection and blocked-vs-not-reached distinction is private to s4 (boundary.internal); only the resulting frame is shared.",
+        "schemaDiff": "+ interface BuildHaltInfo { failedTaskId; failedTaskTitle; reason; blockedTaskIds[] }",
+        "callSites": [
+          "src/workflow/runners/build/schemas.ts",
+          "src/workflow/gates.ts",
+          "src/workflow/orchestrator.ts"
+        ]
+      },
+      {
+        "entity": "BuildRunState",
+        "change": "new",
+        "details": "Owned by s4 (part of sc6). New string union 'running' | 'halted' | 'complete' — the run-level terminal-state discriminant. types.ts carries no existing run-state discriminant to reuse (search.text), so the union is introduced in the build subdir per the sibling-per-stage idiom. Derived from the presence/absence of a 'failed' outcome and whether every Task has reached a terminal status.",
+        "schemaDiff": "+ type BuildRunState = 'running' | 'halted' | 'complete'",
+        "callSites": [
+          "src/workflow/runners/build/schemas.ts",
+          "src/workflow/orchestrator.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc6",
+        "role": "implements",
+        "howDetails": "s4 owns BuildRunProgress (HLD ownedByStory: s4). Realized exactly as winning alt a1 prescribes: a pure read-time projection of the accumulated sc4 outcome array plus the live plan graph, with runState/completedTaskIds/inFlightTaskId/halt/filesTouchedSoFar all computable and never separately stored. Consumed by s5, which wraps this run-level frame in its BuildArtifact."
+      },
+      {
+        "contractId": "sc4",
+        "role": "consumes",
+        "howDetails": "Reads the BuildTaskOutcome[] (owned by s3) as the SINGLE authoritative state. Every BuildRunProgress and BuildHaltInfo field is folded from these rows — status drives runState and completed/blocked/not-reached membership, filesTouched drives filesTouchedSoFar. No parallel record, so no dual-write skew (a1). See amendment proposal: sc4's BuildTaskStatus needs a 'running' member so the single in-flight Task is representable in the array a1 projects from."
+      },
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "s4's halt/progress logic lives inside the registered build stage (owned by s1). The halt gate reuses the existing gates.ts machinery and the finalize routing runs inside the build runner registered via registerBuildRunners() — no new stage, no new gate type, mirroring the sibling registration idiom (registerWorkflowRunners at src/workflow/index.ts)."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "s4 populates the driving-surface output WorkflowStepOutputBuild (owned by s1): it sets next to 'done' on a halted-or-complete finalize and fills progress?: BuildRunProgress so the developer inspects the halt frame through the same insrc_workflow_step turn shape as every earlier stage — no bespoke IPC or UI."
+      },
+      {
+        "contractId": "sc5",
+        "role": "consumes",
+        "howDetails": "s4 halts on the outcome the daemon produces AFTER the TaskImplementerAdapter subprocess (owned by s3) returns. The adapter's self-report is advisory and never advances the run; s4's give-up decision (ac1) is taken on the daemon's own test verdict + tree diff, and marking dependents blocked/not-reached is s4-private. The quarantine seam is untouched by the derived-progress choice."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The accumulated BuildTaskOutcome[] contains more than one row with status 'failed' — impossible under the halt-on-first-failure guarantee, so the array was corrupted or written by a buggy upstream drive loop.",
+          "detection": "When folding the outcome array to derive runState and BuildHaltInfo, the projection counts status==='failed' rows and finds the count is greater than one.",
+          "response": "Throw a projection-invariant error naming the offending taskIds rather than fabricating a BuildHaltInfo that arbitrarily picks one failed Task; the halt frame is never emitted from an ambiguous set.",
+          "userImpact": "Inspection surfaces a hard 'run state inconsistent' error instead of a misleading halt frame that names an arbitrary Task as the failure.",
+          "recoverable": false
+        },
+        {
+          "scenario": "The 'failed' outcome row's taskId does not resolve to any node in the loaded approved PlanArtifact DEPENDS_ON graph — the plan was edited/re-approved while a stale outcome array from a prior run is still on disk.",
+          "detection": "BuildHaltInfo computation looks up failedTaskId in the live plan graph to walk its transitive dependents and the node lookup returns undefined.",
+          "response": "Throw a plan/outcome-drift error; blockedTaskIds cannot be recomputed against a graph that no longer contains the failed Task, so no halt frame with a guessed or empty blocked set is produced.",
+          "userImpact": "The developer is told the run's recorded outcomes are out of sync with the current plan, instead of silently receiving blockedTaskIds=[] as if nothing was blocked.",
+          "recoverable": false
+        },
+        {
+          "scenario": "A non-failed outcome row (completed/blocked/not-reached) carries a taskId that is absent from the live plan graph — same plan-vs-outcome drift, seen while computing totals and membership sets rather than the halt frame.",
+          "detection": "While folding rows into completedTaskIds and the blocked/not-reached membership sets, a row's taskId fails to resolve against the loaded plan graph's node set.",
+          "response": "Throw the same plan/outcome-drift error; the projection refuses to report a totalTasks / completedTaskIds pairing it cannot reconcile against the current plan graph.",
+          "userImpact": "No skewed progress (e.g. completedTaskIds naming a Task that no longer exists in the plan) is ever shown; the drift is reported explicitly.",
+          "recoverable": false
+        },
+        {
+          "scenario": "The incrementally-checkpointed BuildTaskOutcome[] is missing or cannot be decoded at read time — an interrupted per-Task-boundary write or a corrupt storage envelope.",
+          "detection": "The projection's precondition load through storage.ts/hash.ts/slug.ts throws on decode, or returns no outcome array for the run's storyId.",
+          "response": "Surface a load error naming the storyId/run; BuildRunProgress is not manufactured as an empty { runState:'complete', totalTasks:0 } projection from absent data.",
+          "userImpact": "The developer sees 'run state unreadable' rather than a false 'complete' or zero-task 'running' state; the last durably-checkpointed Task boundary is the recovery point for a resumed/re-run.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A persisted outcome row carries a status string outside the BuildTaskStatus union ('running'|'completed'|'failed'|'blocked'|'not-reached') — e.g. a row written by a newer or older schema version.",
+          "detection": "The status-fold switch that maps each row into runState / membership sets hits its default (unmatched) branch on that row.",
+          "response": "Throw a schema-version error rather than treating the unknown status as non-terminal, which would wrongly leave runState pinned at 'running' forever.",
+          "userImpact": "The developer gets a clear schema-mismatch signal instead of a run that appears perpetually in-flight and never finalizes.",
+          "recoverable": false
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Every PlanTask reaches outcome status 'completed' and no row is 'failed'.",
+          "expected": "runState==='complete', halt===undefined, inFlightTaskId===undefined, completedTaskIds equals every Task id, and filesTouchedSoFar equals the deduped union of every completed row's filesTouched."
+        },
+        {
+          "input": "A run halts on a failed Task that has no DEPENDS_ON dependents.",
+          "expected": "runState==='halted' and BuildHaltInfo is present with blockedTaskIds===[] — an empty blocked set is valid; the halt is still fully reported (which Task failed + reason)."
+        },
+        {
+          "input": "The approved plan is empty (totalTasks===0).",
+          "expected": "runState==='complete' vacuously, completedTaskIds===[], filesTouchedSoFar===[], inFlightTaskId===undefined, halt===undefined."
+        },
+        {
+          "input": "The failed Task is the plan root and every other Task is its transitive dependent.",
+          "expected": "blockedTaskIds equals every other Task id, completedTaskIds===[], none of the dependents was started (each row is 'blocked' or 'not-reached'), and runState==='halted'."
+        },
+        {
+          "input": "Two 'completed' Tasks each report an overlapping file path in filesTouched.",
+          "expected": "filesTouchedSoFar contains that path exactly once — the projection takes the set union, not a concatenation."
+        },
+        {
+          "input": "A Task completes having edited nothing (outcome.filesTouched===[]).",
+          "expected": "The Task appears in completedTaskIds but contributes nothing to filesTouchedSoFar; a completed row with no files is legal, not treated as a failure."
+        },
+        {
+          "input": "A run is mid-flight: exactly one outcome row is 'running', the rest 'completed' or not yet present.",
+          "expected": "runState==='running', inFlightTaskId equals that single 'running' task id, halt===undefined — the in-flight Task is re-derived from the one 'running' slot and survives a daemon restart."
+        },
+        {
+          "input": "BuildRunProgress is read twice for the same run with no intervening outcome write.",
+          "expected": "Both reads return an identical projection — the computation is a pure fold over the sc4 rows plus the plan graph with no time- or random-derived field, so a recompute can never disagree with itself or with the persisted outcomes."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The build stage registers through the single existing registry seam — a plain registration function (registerBuildRunners) wired via registerWorkflowRunners, no base class, mirroring registerDesignEpicRunners and llmPauseRunner. s4's halt/progress logic must not introduce a new registry mechanism or a parallel runner-registration path.",
+          "source": "c1"
+        },
+        {
+          "text": "A halted run finalizes into a record carried by ChainReport via the existing artifact-writer path (storage.ts + hash.ts + slug.ts) — the same persistence envelope the sibling stages use. ac3's 'record of what happened' must reuse that substrate rather than introducing a second, parallel result store.",
+          "source": "c2"
+        },
+        {
+          "text": "The halt gate reuses the existing gates.ts checkpoint/gate machinery and inserts into the orchestrator.ts per-Task drive loop; s4 adds no new gate type. The exact insertion point (mark not-completed + block dependents) is confirmed by reading orchestrator.ts/gates.ts directly, not by assuming the current loop already halts.",
+          "source": "c3"
+        },
+        {
+          "text": "No existing halt/blocked/status vocabulary lives in the workflow package and types.ts carries no run-state discriminant to reuse; BuildRunState and BuildTaskStatus are introduced fresh in src/workflow/runners/build/schemas.ts per the sibling-per-stage idiom, without duplicating or shadowing an established enum.",
+          "source": "c4"
+        },
+        {
+          "text": "The halt-and-report tests extend the src/workflow/__tests__ patterns (executor.test.ts runner-registration/drive path, plan-artifact.test.ts task fixture) and the src/mcp/workflow-step/__tests__ driving-surface mirror; the src/analyze/** mkTask fixtures are the analyze executor's and are out of scope — they must not be reused for the build-stage tests.",
+          "source": "c5"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test (Node.js built-in test runner, run via `tsx --test 'src/**/__tests__/*.test.ts'`) — the framework test.locate reported for the existing src/workflow/__tests__ and src/mcp/workflow-step/__tests__ suites (executor.test.ts, plan-artifact.test.ts, tracker-tasks.test.ts, workflow-rpc.test.ts).",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove BuildRunProgress/BuildHaltInfo are a correct pure read-time fold over the accumulated BuildTaskOutcome[] (sc4) plus the live approved-plan DEPENDS_ON graph (winning alt a1): runState/completedTaskIds/inFlightTaskId/halt/filesTouchedSoFar are all derivable, deterministic, and never disagree with the persisted rows. Covers the s5 error paths (multi-'failed', plan/outcome drift, undecodable outcomes, unknown status) as thrown invariants rather than fabricated frames, and every s5 edge case (all-completed, no-dependents halt, empty plan, root failure, overlapping/empty filesTouched, mid-flight single 'running' slot, idempotent recompute).",
+          "subjects": [
+            "src/workflow/runners/build/schemas.ts — BuildRunProgress, BuildHaltInfo, BuildRunState (and the consumed BuildTaskStatus incl. the additive 'running' member)",
+            "The BuildRunProgress projection function that folds BuildTaskOutcome[] + PlanArtifact graph into the run-level frame (src/workflow/runners/build/)"
+          ],
+          "fixturesNeeded": [
+            "In-memory approved PlanArtifact DEPENDS_ON graph fixtures (root-only, linear chain, diamond, disjoint) built with the src/workflow __tests__ task-shaped fixture idiom (plan-artifact.test.ts:38) — NOT the src/analyze/** mkTask helpers, which are out of scope",
+            "Hand-authored BuildTaskOutcome[] arrays covering each status ('running'|'completed'|'failed'|'blocked'|'not-reached'), overlapping/empty filesTouched, and the corrupt shapes from s5 (two 'failed' rows, a row whose taskId is absent from the graph, an out-of-union status string)",
+            "A malformed / undecodable persisted-outcome envelope to drive the storage.ts/hash.ts/slug.ts load-failure path"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove the halt-and-report behavior end-to-end through the registered build runner and the orchestrator per-Task drive loop + gates.ts checkpoint machinery: giving up on an unrepairable Task marks it not-completed and starts no dependent (ac1), and the halted run still finalizes into a ChainReport record via the existing storage.ts/hash.ts/slug.ts artifact-writer envelope (ac3). Extends the executor.test.ts runner-registration/drive path; asserts no new registry mechanism or parallel result store is introduced.",
+          "subjects": [
+            "registerBuildRunners wired via registerWorkflowRunners (src/workflow/index.ts, src/workflow/executor.ts)",
+            "The per-Task drive loop halt insertion point (src/workflow/orchestrator.ts + src/workflow/gates.ts)",
+            "Halted-run finalize into ChainReport (src/workflow/chain.ts + src/workflow/storage.ts)"
+          ],
+          "fixturesNeeded": [
+            "A stub TaskImplementerAdapter (sc5) whose test verdict is driven to 'failed' for a chosen Task and 'passing' for others, so the daemon's own give-up decision (not the adapter self-report) is exercised",
+            "A multi-Task approved plan graph with dependents of the failing Task",
+            "A temp storage dir so the incremental per-Task-boundary checkpoint + finalized ChainReport are read back and asserted (extends the executor.test.ts / llmRunner drive-path pattern at executor.test.ts:49)"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove the inspection surface (ac2): after a halted run the developer, through the same insrc_workflow_step turn shape, receives WorkflowStepOutputBuild with next==='done' and progress?: BuildRunProgress carrying the halt frame — failedTaskId/failedTaskTitle/reason and filesTouchedSoFar — so the failed Task and what earlier Tasks left in place are named without reconstructing them from the working tree, via no bespoke IPC.",
+          "subjects": [
+            "WorkflowStepOutputBuild population in the build runner (sc2, owned by s1) surfaced through the driving-surface mirror",
+            "src/mcp/workflow-step/__tests__ (driving-surface exercise; mirrors tracker-tasks-coarse.test.ts) and src/daemon/__tests__/workflow-rpc.test.ts (IPC-level shape)"
+          ],
+          "fixturesNeeded": [
+            "A halted-run outcome array + plan graph fixture reused from the integration halt scenario",
+            "A driving-surface harness asserting the emitted step output's next==='done' and progress halt frame + filesTouchedSoFar, following the src/mcp/workflow-step/__tests__ pattern"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "integration: drive loop gives up on an unrepairable Task, records it as not-completed, and starts no dependent Task",
+            "unit: BuildHaltInfo.blockedTaskIds equals the transitive DEPENDS_ON closure of the failed Task, recomputed against the live plan graph",
+            "unit: every dependent of the failed Task carries outcome status 'blocked' or 'not-reached' and none is 'completed' or started",
+            "unit(edge): failed plan-root blocks every other Task; completedTaskIds===[] and runState==='halted'",
+            "unit(edge): a failed Task with no DEPENDS_ON dependents yields blockedTaskIds===[] and is still fully reported"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "unit: BuildHaltInfo names failedTaskId, failedTaskTitle and reason (daemon test-verdict summary, not a bare exit code) from the single 'failed' outcome row",
+            "unit: BuildRunProgress.filesTouchedSoFar is the deduped set-union of completed rows' filesTouched",
+            "unit(edge): overlapping filesTouched across two completed rows appears exactly once; a completed row with empty filesTouched contributes nothing and is not a failure",
+            "unit(edge): mid-flight run derives inFlightTaskId from the single 'running' slot; halt===undefined",
+            "integration(driving-surface): halted WorkflowStepOutputBuild.progress carries the halt frame + filesTouchedSoFar so inspection names the failed Task and prior work without a working-tree read"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "integration: a run with several completed Tasks and one failed still finalizes into a ChainReport record via the storage.ts/hash.ts/slug.ts artifact-writer envelope, not an untracked side-effect",
+            "unit: runState==='halted' iff exactly one outcome has status==='failed'; 'complete' iff every Task has a terminal status and none failed",
+            "unit(edge): all-completed run finalizes as runState==='complete' with halt===undefined; empty plan (totalTasks===0) finalizes 'complete' vacuously",
+            "integration(driving-surface): the halted-or-complete finalize sets next==='done' on the driving-surface output",
+            "unit(error): projection throws (never fabricates a record) on multiple 'failed' rows, plan/outcome drift, an undecodable outcome envelope, or an out-of-union status string"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "Per the s1 analyze bundles, the workflow package today has no `build` stage and no halt-and-report seam. symbol.locate confirms `registerWorkflowRunners(): void` (src/workflow/index.ts:23-32) is the only public registry entrypoint, mirrored by registerDesignEpicRunners and llmPauseRunner — there is no build runner registered. search.text found NO existing halt/status vocabulary anywhere in the package (chain.ts/executor.ts/gates.ts/orchestrator.ts/types.ts/...), so BuildRunState, BuildRunProgress, and BuildHaltInfo have no prior signature to reconcile against; symbol.locate resolves none of s4's owned/consumed contract types to an indexed entity — they are net-new. The run-result carrier that exists today is ChainReport (chain.ts, data-model.trace), and incremental per-Task persistence lives in storage.ts/hash.ts/slug.ts. Critically, the halt-vs-press-on branch body of the per-Task drive loop was NOT read by the graph exploration (usage.example reported this limitation): whether orchestrator.ts (71 KB) today halts or presses on when a Task's tests fail cannot be asserted from the bundles and must be confirmed by opening orchestrator.ts and gates.ts directly. sc4's BuildTaskStatus as inherited has members 'completed'|'failed'|'blocked'|'not-reached' with no in-flight ('running') value.",
+      "stateAfter": "The build stage owns a halt-and-report seam. When a run gives up on a Task whose stated tests cannot be brought to passing (ac1), that Task is recorded not-completed and no transitive DEPENDS_ON dependent is started; the run finalizes into a ChainReport-carried record even with one failure (ac3), and a developer inspecting the run is told which Task failed, why, and what the completed Tasks left in place — without reading the working tree (ac2). BuildRunState ('running'|'halted'|'complete'), BuildHaltInfo, and BuildRunProgress are defined in the new src/workflow/runners/build/schemas.ts. BuildRunProgress is a pure read-time projection over the accumulated sc4 BuildTaskOutcome[] plus the live approved-plan graph — never a second writeable record — with inFlightTaskId re-derived from the single 'running' outcome slot, so progress can never skew from persisted outcomes and survives a daemon restart. sc4's BuildTaskStatus gains an additive 'running' member so the in-flight Task is representable in the authoritative array. The halt gate reuses existing gates.ts machinery and the build runner is registered via registerBuildRunners() through the same registerWorkflowRunners seam; WorkflowStepOutputBuild carries progress?: BuildRunProgress so inspection flows through the standard insrc_workflow_step turn shape.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Create the new src/workflow/runners/build/schemas.ts and add the run-level terminal-state discriminant: a new string union BuildRunState with members 'running' | 'halted' | 'complete'. Net-new type, nothing consumes it yet.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add the BuildHaltInfo interface (failedTaskId, failedTaskTitle, reason, blockedTaskIds) to the same build/schemas.ts as a net-new value object. No existing type is modified.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add the BuildRunProgress interface (storyId, runState, totalTasks, completedTaskIds, optional inFlightTaskId, optional halt, filesTouchedSoFar) to build/schemas.ts as a net-new projection type. Declared as a read-time view, not a stored record.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Amend sc4's BuildTaskStatus union to add the 'running' member (from 'completed'|'failed'|'blocked'|'not-reached' to 'running'|'completed'|'failed'|'blocked'|'not-reached'). Additive value only; ownership stays with s3. Existing outcome rows and consumers use no 'running' value, so none are invalidated.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "sc4-amendment-accepted"
+          ]
+        },
+        {
+          "order": 5,
+          "action": "Open orchestrator.ts (71 KB) and gates.ts (18 KB) directly to confirm the actual halt-vs-press-on branch (unread by the s1 graph exploration), then fix the halt insertion point in the per-Task drive loop: on a daemon test-verdict failure for a Task, mark that Task's outcome status 'failed' and derive its transitive DEPENDS_ON dependents as 'blocked'/'not-reached' so none are started. This behaviour is reached only via the not-yet-registered build runner, so the drive-loop change is inert until step 8.",
+          "rollbackable": true
+        },
+        {
+          "order": 6,
+          "action": "Route finalize-on-halt through the existing ChainReport carrier (chain.ts) so a run with one failed Task still produces a result record rather than an untracked side-effect (ac3), persisted at the Task boundary via the existing storage.ts/hash.ts/slug.ts envelope. Reuses the existing persistence substrate; no new store.",
+          "rollbackable": true
+        },
+        {
+          "order": 7,
+          "action": "Implement BuildRunProgress and BuildHaltInfo as on-demand projections folded from the accumulated sc4 outcome array plus the live plan graph (runState from presence of a 'failed' row; inFlightTaskId from the single 'running' slot; blockedTaskIds recomputed, never snapshotted). Populate WorkflowStepOutputBuild.progress with this projection. No separately stored progress record is introduced.",
+          "rollbackable": true
+        },
+        {
+          "order": 8,
+          "action": "Register the build runner via registerBuildRunners() through the existing registerWorkflowRunners seam (src/workflow/index.ts), mirroring registerDesignEpicRunners/llmPauseRunner. This is the flip that makes the halt seam live. Rolling back = unregister, which fully reverts to the prior no-build-stage behaviour.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "All of s4's owned types (BuildRunState, BuildHaltInfo, BuildRunProgress) are net-new (surfaceLevel internal-shared; symbol.locate resolved none to an existing entity), so they reconcile against no prior signature and break no existing caller. The one change touching an already-declared contract is the sc4 BuildTaskStatus amendment, which is strictly additive (adds 'running'); existing BuildTaskOutcome rows and every consumer remain valid because none produced or matched a 'running' value before, and exhaustive switches over the old members continue to compile with a default/unhandled path. WorkflowStepOutputBuild gains only an optional progress?: BuildRunProgress field, which older readers can ignore. BuildRunProgress being a pure projection over the sc4 array (never a second writeable record) means no consumer that reads outcomes can observe a skewed or newly-required field. No public API signature is removed or narrowed.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Derived read-model over the outcome list",
+        "oneLineSummary": "Persist only BuildTaskOutcome[]; compute BuildRunProgress + BuildHaltInfo on demand as a pure projection.",
+        "approach": "Persist only the accumulating BuildTaskOutcome[] (sc4) as the run's authoritative state, appended/updated at each Task boundary through the parent module's hash.ts / slug.ts / storage.ts envelope. BuildRunProgress (sc6) and its nested BuildHaltInfo are never stored — they are computed on demand from that array plus the approved plan's PlanTask dependency graph: runState from the presence of a 'failed' outcome, completedTaskIds / filesTouchedSoFar by folding the array, inFlightTaskId from the single 'running' slot, and BuildHaltInfo.blockedTaskIds as the transitive DEPENDS_ON closure of the failed Task computed at read time. Finalize seals the same array into the BuildArtifact — no parallel result substrate, matching the ChainReport-carrier idiom in chain.ts.",
+        "pros": [
+          "Single source of truth: no progress-vs-outcome skew is possible because progress is a pure function of the outcome array.",
+          "The blocked set is always consistent with the current dependency graph — it is recomputed from the plan, never a stale snapshot.",
+          "Smallest new persisted schema: reuses sc4 rows and adds no parallel record, staying inside the existing durability envelope.",
+          "The halted-vs-complete distinction falls out of the data itself; there is no separate flag to keep in sync."
+        ],
+        "cons": [
+          "Recomputes the dependency closure and the full progress projection on every inspection (acceptable given accuracy-over-cost, but non-trivial per read).",
+          "A halted-but-not-yet-finalized run is only distinguishable once the 'failed' outcome is written, so write ordering at the halt boundary is load-bearing.",
+          "not-reached Tasks are absent from the array and must be inferred against the plan on every read rather than being readable directly."
+        ],
+        "costEstimate": "S"
+      },
+      {
+        "id": "a2",
+        "name": "Materialized progress record persisted beside the outcomes",
+        "oneLineSummary": "Persist BuildRunProgress as a stateful record updated every Task boundary; freeze BuildHaltInfo at halt.",
+        "approach": "Treat BuildRunProgress as a first-class stateful record persisted incrementally at every Task boundary: task-start stamps inFlightTaskId, advance appends to completedTaskIds / filesTouchedSoFar, and halt sets runState='halted' and freezes a BuildHaltInfo whose blockedTaskIds is the transitive-dependent set snapshotted at the moment of halt. The record is written through the same hash.ts / slug.ts / storage.ts writers as the BuildTaskOutcome[] array, so an inspection returns the stored record verbatim and the halt narrative reflects the plan graph exactly as it stood when the run stopped.",
+        "pros": [
+          "O(1) reads — the stored record is the answer, matching the observability NFR of emitting progress at every Task boundary.",
+          "Halt-moment fidelity: the blocked snapshot cannot drift even if the plan is reinterpreted later.",
+          "In-flight state is explicit and durable, so a daemon restart mid-run leaves a directly readable run frame."
+        ],
+        "cons": [
+          "Dual write of the progress record plus the outcome array invites skew and forces a reconcile-on-restart rule.",
+          "Larger persisted schema than the derived model — a second record type under the same storage envelope.",
+          "The frozen blocked snapshot can diverge from a freshly recomputed closure if the two are ever compared."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Highest read performance and best halt-moment fidelity (ac2), but the second stateful record is a real correctness liability against sc4: dual write invites skew and needs a reconcile-on-restart rule that a1 avoids by construction. Scored partial on sc4 (dual-write skew; the frozen blocked snapshot can diverge from a freshly recomputed closure, so sc4 remains authoritative but no longer the single source of truth). Under accuracy-over-cost, the O(1) benefit does not justify the skew surface, so it ranks below a1."
+      },
+      {
+        "id": "a3",
+        "name": "Eagerly materialized outcome rows (self-describing array)",
+        "oneLineSummary": "Write an outcome row for every plan Task up front; stamp blocked/not-reached in place so progress is a trivial fold.",
+        "approach": "Persist BuildTaskOutcome[] as the authoritative state but write a row for EVERY plan Task, filling status eagerly: 'not-reached' at run start, flipped to 'running' / 'completed' / 'failed' as the sequencer advances, and 'blocked' stamped onto each transitive dependent the instant a Task fails. BuildRunProgress (sc6) becomes a thin projection whose blockedTaskIds and not-reached set read directly off status='blocked' / 'not-reached' rows, with no dependency-graph recompute at read time. Finalize seals the array unchanged through the existing writers.",
+        "pros": [
+          "The outcome array is self-describing — which Tasks were blocked or never reached is answerable without re-walking the plan graph.",
+          "The blocked/not-reached partition is computed exactly once, at halt, then read cheaply thereafter.",
+          "Every Task has a durable row from t0, so a mid-run crash leaves a complete skeleton of the run rather than a sparse fragment."
+        ],
+        "cons": [
+          "Pre-writes rows for Tasks that never ran, so the array carries speculative state that must be corrected on a clean completion.",
+          "The blocked-stamping pass mutates many rows at the halt boundary — a wider write than appending a single outcome.",
+          "The dependency closure is still computed once; eager materialization moves the work earlier rather than removing it."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Achieves cheap self-describing reads but at the cost of writing speculative rows into an array whose sc4 contract says rows are daemon-verified results — scored partial on sc4 (eager 'not-reached'/'blocked' rows are speculative placeholders written before any run, so the array no longer contains only verified outcomes) and partial on ac3 (pre-written 'not-reached' rows must be corrected on a clean completion, so the finalized record carries provisional state unless the correcting pass is reliable), plus a wide halt-boundary multi-row mutation. It moves the dependency-closure work earlier without removing it, delivering the same read-time answer as a1 with more moving parts and more contract stretch — last."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "alt-completeness (s8 alt2, partial): the s3 alternatives are scored against ac1/ac2/ac3 and shared contracts sc6/sc4/sc5, but the two consumed contracts sc1 (BuildStageRegistration) and sc2 (WorkflowStepInputBuild) are not individually scored, and the Epic k-constraints are covered only indirectly via the acceptance criteria rather than enumerated by id. sc1/sc2 are judged orthogonal to the persistence-strategy choice (all three alternatives would score identically on them), so the omission is defensible — but a reviewer wanting the literal 'every shared contract and Epic constraint scored' should confirm sc1/sc2 are genuinely invariant across a1/a2/a3 before treating the comparison as exhaustive."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1.symbol.locate — src/workflow/index.ts:23-32",
+      "quotedText": "Only one public symbol exists for the whole package: registerWorkflowRunners(): void at src/workflow/index.ts:23-32 (entityId 74af0f8c30f0659a9d73a5d585d13363) — the single registry seam a `build` runner registers into (mirrored by registerDesignEpicRunners in runners/design-epic/index.ts and llmPauseRunner in runners/plan/index.ts)."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1.data-model.trace — src/workflow/chain.ts",
+      "quotedText": "The run-result domain type is ChainReport, carried by src/workflow/chain.ts (14 KB). The code-shaper explicitly names ChainReport as 'the natural carrier for a reported failure result', which is exactly what s4/ac3 requires: a halted run must finalize into a record rather than end as an untracked side-effect."
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1.usage.example — src/workflow/orchestrator.ts + src/workflow/gates.ts",
+      "quotedText": "the graph exploration did NOT include the branch body ... so whether today's loop halts vs. presses on cannot be asserted from these outputs, and the concrete insertion point for 'give up on a Task → mark it not-completed → do not start its dependents' (ac1) must be confirmed by opening orchestrator.ts and gates.ts directly."
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "s1.search.text — src/workflow (no existing status vocabulary)",
+      "quotedText": "No existing halt/blocked/not-reached status vocabulary surfaced in the indexed workflow package ... The s4 terminal-state vocabulary (BuildRunState = 'running'|'halted'|'complete'; BuildTaskStatus = 'completed'|'failed'|'blocked'|'not-reached') is therefore introduced by this Story, defined in the new src/workflow/runners/build/schemas.ts."
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "s1.test.locate — src/workflow/__tests__ + src/mcp/workflow-step/__tests__",
+      "quotedText": "The s4 test strategy adds cases inside src/workflow/__tests__ (and the driving-surface mirror in src/mcp/workflow-step/__tests__) ... extend the src/workflow __tests__ patterns, not those [src/analyze/** mkTask fixtures]."
+    },
+    {
+      "id": "c6",
+      "kind": "step-output",
+      "ref": "s3.winnerId — chosen alternative a1",
+      "quotedText": "a1 wins because it is the only alternative that satisfies every acceptance criterion AND both persistence contracts (sc6, sc4) with no consistency stretch."
+    },
+    {
+      "id": "c7",
+      "kind": "step-output",
+      "ref": "s4.hld.amendmentProposal — sc4 BuildTaskStatus 'running' member",
+      "quotedText": "add a 'running' member: type BuildTaskStatus = 'running' | 'completed' | 'failed' | 'blocked' | 'not-reached' ... makes the in-flight Task durable across restart and satisfies the observability NFR ('see which Task is in flight') without introducing a parallel writeable record."
+    },
+    {
+      "id": "c8",
+      "kind": "step-output",
+      "ref": "s8.alt2 — verdict partial",
+      "quotedText": "consumed contracts sc1 (BuildStageRegistration) and sc2 (WorkflowStepInputBuild) are not scored ... sc1/sc2 are genuinely orthogonal to the persistence-strategy alternatives (all three would score identically), so the omission is defensible, but it is not the literal 'every shared contract and Epic constraint' the item asks for."
+    }
+  ]
+}

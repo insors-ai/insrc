@@ -36,6 +36,7 @@
 import { getLogger } from '../../../shared/logger.js';
 import type { PlanTask } from '../../artifacts/plan.js';
 import type {
+	BuildTaskInFlight,
 	BuildTaskOutcome,
 	BuildTaskReached,
 	BuildTaskStatus,
@@ -65,9 +66,16 @@ export interface SequencerDeps {
 	/** Bounded per-Task repair budget (>= 1). */
 	readonly maxAttempts: number;
 	readonly onProgress?:   ((frame: BuildTaskProgress) => void) | undefined;
-	/** Fired at EVERY Task boundary with the accumulated outcomes so far, so
-	 *  the wiring layer can persist incrementally (durability NFR). */
+	/** Fired at EVERY Task boundary with the accumulated TERMINAL outcomes so
+	 *  far, so the wiring layer can persist incrementally (durability NFR). */
 	readonly onCheckpoint?: ((outcomes: readonly BuildTaskOutcome[]) => void) | undefined;
+	/** Fired just BEFORE a reached Task is driven, with the accumulated
+	 *  terminal outcomes PLUS the single in-flight `'running'` row appended.
+	 *  Lets the wiring layer persist a checkpoint that carries exactly one
+	 *  `'running'` slot, so a run interrupted mid-Task leaves the s4 projection
+	 *  a live `inFlightTaskId` to re-derive on restart (a1). Additive to
+	 *  `onCheckpoint`, whose per-boundary cadence is unchanged. */
+	readonly onInFlight?:   ((outcomes: readonly BuildTaskOutcome[]) => void) | undefined;
 }
 
 /**
@@ -91,6 +99,18 @@ export async function sequenceBuildTasks(
 		const depsCompleted = task.dependsOn.every(id => outcomes.get(id)?.status === 'completed');
 		let outcome: BuildTaskOutcome;
 
+		// THE HALT BRANCH (s4, formalized). Three mutually exclusive arms, in
+		// priority order, so the invariant `runState==='halted' iff >=1 outcome
+		// has status 'failed'` holds by construction:
+		//   1. a dependency did not `'completed'`   → 'blocked'  (implementer NOT run)
+		//   2. the run already halted on a failed Task → 'not-reached' (implementer NOT run)
+		//   3. otherwise DRIVE the Task; a terminal 'failed' verdict HALTS the run
+		//      (`halted := true`), so every later Task falls into arm 2.
+		// Only ONE Task ever reaches a 'failed' outcome — the FIRST unrepairable
+		// one — because arm 3 is gated on `!halted`. The blocked-vs-not-reached
+		// classification the sequencer stamps here is advisory for observability;
+		// s4's read-time projection (progress.ts) RECOMPUTES blockedTaskIds from
+		// the plan graph, so it is the single source of truth (alt a1).
 		if (!depsCompleted) {
 			outcome = unreached(task, 'blocked', 'a dependency did not complete');
 			deps.onProgress?.({ taskId: task.id, phase: 'blocked', status: 'blocked' });
@@ -98,6 +118,9 @@ export async function sequenceBuildTasks(
 			outcome = unreached(task, 'not-reached', 'the run halted on an earlier failed Task');
 			deps.onProgress?.({ taskId: task.id, phase: 'not-reached', status: 'not-reached' });
 		} else {
+			// Publish the single in-flight `'running'` slot BEFORE driving, so an
+			// interruption mid-Task leaves exactly one 'running' row on disk.
+			deps.onInFlight?.([...results, inFlight(task)]);
 			const completedDeps = task.dependsOn
 				.map(id => outcomes.get(id))
 				.filter((o): o is BuildTaskOutcome => o !== undefined);
@@ -220,5 +243,16 @@ function unreached(
 		dependsOn: task.dependsOn,
 		status,
 		note,
+	};
+}
+
+/** The single in-flight `'running'` slot for a Task about to be driven —
+ *  no verdict/diff yet (the daemon has produced neither). */
+function inFlight(task: PlanTask): BuildTaskInFlight {
+	return {
+		taskId:    task.id,
+		title:     task.title,
+		dependsOn: task.dependsOn,
+		status:    'running',
 	};
 }

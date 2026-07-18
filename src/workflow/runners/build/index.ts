@@ -41,6 +41,7 @@ import { renderPlanMarkdown, type PlanArtifact } from '../../artifacts/plan.js';
 import type { StepRunner, StepRunnerContext } from '../../types.js';
 import { approvalVerdict, driftVerdict } from './admission.js';
 import { CliTaskImplementerAdapter } from './adapter.js';
+import { projectBuildRunProgress } from './progress.js';
 import { sequenceBuildTasks, type BuildTaskProgress } from './sequencer.js';
 import { createGitTestVerifier, type TaskVerifier } from './verifier.js';
 import {
@@ -49,6 +50,7 @@ import {
 import type {
 	BuildAdmissionRefusal,
 	BuildAdmissionResult,
+	BuildRunProgress,
 	BuildTaskOutcome,
 	TaskImplementerAdapter,
 } from './schemas.js';
@@ -58,6 +60,9 @@ export type {
 	BuildAdmissionRefusal,
 	BuildAdmissionResult,
 	BuildRefusalReason,
+	BuildRunProgress,
+	BuildRunState,
+	BuildHaltInfo,
 } from './schemas.js';
 
 const log = getLogger('workflow:build');
@@ -175,12 +180,17 @@ export interface BuildStageInput {
 	readonly maxAttempts?:  number | undefined;
 	readonly onProgress?:   ((frame: BuildTaskProgress) => void) | undefined;
 	readonly onCheckpoint?: ((outcomes: readonly BuildTaskOutcome[]) => void) | undefined;
+	readonly onInFlight?:   ((outcomes: readonly BuildTaskOutcome[]) => void) | undefined;
 }
 
 export interface BuildStageResult {
 	readonly admitted:     boolean;
 	readonly refusal?:     BuildAdmissionRefusal | undefined;
 	readonly taskOutcomes: readonly BuildTaskOutcome[];
+	/** The sc6 run-level frame — a PURE read-time projection of `taskOutcomes`
+	 *  plus the approved plan graph (winning alt a1; never a stored record).
+	 *  Present on an admitted run; a refused run touched no Task and has none. */
+	readonly progress?:    BuildRunProgress | undefined;
 }
 
 /**
@@ -217,8 +227,20 @@ export async function driveBuildStage(input: BuildStageInput, deps: BuildStageDe
 		maxAttempts: input.maxAttempts ?? DEFAULT_MAX_ATTEMPTS,
 		...(input.onProgress   !== undefined ? { onProgress:   input.onProgress }   : {}),
 		...(input.onCheckpoint !== undefined ? { onCheckpoint: input.onCheckpoint } : {}),
+		...(input.onInFlight   !== undefined ? { onInFlight:   input.onInFlight }   : {}),
 	});
-	return { admitted: true, taskOutcomes: outcomes };
+
+	// sc6: the run-level frame is a PURE read-time projection over the
+	// accumulated outcomes plus the approved plan graph — computed HERE from
+	// the same authoritative array the run just produced, never a second
+	// writeable record (winning alt a1). On a halted run it carries the halt
+	// frame (failed Task + reason + recomputed blockedTaskIds).
+	const progress = projectBuildRunProgress(outcomes, plan.body.tasks, input.storyId);
+	log.info(
+		{ storyId: input.storyId, runState: progress.runState, total: progress.totalTasks, completed: progress.completedTaskIds.length, halted: progress.halt !== undefined },
+		`build: run ${progress.runState}`,
+	);
+	return { admitted: true, taskOutcomes: outcomes, progress };
 }
 
 /** Construct the LIVE build-stage deps: the concrete git verifier (real test
@@ -232,6 +254,16 @@ function liveBuildStageDeps(): BuildStageDeps {
 		verifier: createGitTestVerifier(),
 		adapter:  new CliTaskImplementerAdapter(new CliProvider({ kind: 'claude' })),
 	};
+}
+
+/** Test seam: when set, the registered `tasks.sequence` runner drives the
+ *  INJECTED fake deps instead of spawning the live CliProvider. Lets the
+ *  driving-surface mirror + halt-and-report end-to-end suites exercise the
+ *  real runner (registration → drive loop → halt → progress) with no live
+ *  provider and no real git. Mirrors `_clearWorkflowStateStoreForTests`. */
+let testDepsOverride: BuildStageDeps | undefined;
+export function _setBuildStageDepsForTests(deps: BuildStageDeps | undefined): void {
+	testDepsOverride = deps;
 }
 
 /** Read a markdown artifact file if present, else fall back. */
@@ -259,17 +291,30 @@ const tasksSequence: StepRunner = {
 						taskId: f.taskId, phase: f.phase, status: f.status ?? null, detail: f.detail ?? null,
 					});
 				},
-				// Persist the accumulated outcomes at EVERY Task boundary so a
-				// daemon restart mid-run leaves a readable record (durability NFR).
+				// Persist the FULL accumulated BuildTaskOutcome[] at EVERY Task
+				// boundary through the existing run-log envelope (t4/ac3): a daemon
+				// restart mid-run can decode the last checkpoint and re-project the
+				// run state rather than losing the already-landed outcomes. No
+				// second, parallel result store — the same storage substrate the
+				// sibling stages use.
 				onCheckpoint: (outcomes) => {
 					appendRunLog(epicKey, 'build', ctx.runId, {
 						ts: new Date().toISOString(), event: 'task-checkpoint',
 						reached: outcomes.length,
-						outcomes: outcomes.map(o => ({ taskId: o.taskId, status: o.status })),
+						outcomes,
+					});
+				},
+				// The single in-flight `'running'` slot, persisted before a Task is
+				// driven, so a restart mid-Task re-derives inFlightTaskId (a1).
+				onInFlight: (outcomes) => {
+					appendRunLog(epicKey, 'build', ctx.runId, {
+						ts: new Date().toISOString(), event: 'task-inflight',
+						reached: outcomes.length,
+						outcomes,
 					});
 				},
 			},
-			liveBuildStageDeps(),
+			testDepsOverride ?? liveBuildStageDeps(),
 		);
 
 		return {
@@ -278,9 +323,13 @@ const tasksSequence: StepRunner = {
 				admitted:     result.admitted,
 				refusal:      result.refusal ?? null,
 				taskOutcomes: result.taskOutcomes,
+				// sc6 halt/progress frame, surfaced through the SAME step output
+				// s3 flows outcome data through — no bespoke MCP output member
+				// (t6). Null on a refused run (no Task was touched).
+				progress:     result.progress ?? null,
 			},
 			summary: result.admitted
-				? `build: ${result.taskOutcomes.length} Task outcome(s)`
+				? `build: ${result.progress?.runState ?? 'unknown'} — ${result.taskOutcomes.length} Task outcome(s)`
 				: `build refused: ${result.refusal?.reason ?? 'unknown'}`,
 		};
 	},

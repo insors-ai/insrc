@@ -112,11 +112,22 @@ export type BuildAdmissionResult =
 // is touched (migration step 1).
 // ===========================================================================
 
-/** The terminal status a Task lands in after the sequencer walks it. The
- *  first two are REACHED (an implementer ran and the daemon produced a
- *  verdict); the last two are UNREACHED (nothing ran — a blocked dependency
- *  or a halted run left no verdict to fabricate). */
-export type BuildTaskStatus = 'completed' | 'failed' | 'blocked' | 'not-reached';
+/** The status a Task lands in as the sequencer walks it.
+ *   - `'running'`  — IN-FLIGHT: the single Task the sequencer is currently
+ *     driving, before it reaches a terminal verdict. Additive member owned
+ *     by s3's sc4 (amendment AMD sc4 'running'); it makes the one in-flight
+ *     Task representable in the authoritative array the s4 projection folds
+ *     over, so `inFlightTaskId` is re-derived from it (never separately
+ *     stored) and survives a daemon restart.
+ *   - `'completed' | 'failed'` — REACHED (an implementer ran and the daemon
+ *     produced a verdict).
+ *   - `'blocked' | 'not-reached'` — UNREACHED (nothing ran — a blocked
+ *     dependency or a halted run left no verdict to fabricate).
+ *
+ *  The change is STRICTLY ADDITIVE: existing outcome rows and consumers never
+ *  produced or matched `'running'`, so exhaustive switches over the prior four
+ *  members keep compiling via their default/unhandled path (backwardCompat). */
+export type BuildTaskStatus = 'running' | 'completed' | 'failed' | 'blocked' | 'not-reached';
 
 /** Fields common to every Task outcome, whether reached or not. Bound
  *  verbatim from the PlanTask (`taskId`/`title`/`dependsOn`) plus an optional
@@ -172,9 +183,20 @@ export interface BuildTaskUnreached extends BuildTaskCommon {
 	readonly status: 'blocked' | 'not-reached';
 }
 
+/** IN-FLIGHT: the single Task the sequencer is currently driving. Carries NO
+ *  `testVerdict` and NO `filesTouched` — the daemon has produced neither yet.
+ *  Written into a per-Task-boundary checkpoint so a run interrupted mid-Task
+ *  leaves exactly one `'running'` slot on disk; the s4 projection re-derives
+ *  `inFlightTaskId` from it (a1: never a separately stored field). At most one
+ *  such row exists at a time — concurrency is structurally impossible (serial
+ *  `for...of`, never `Promise.all`). */
+export interface BuildTaskInFlight extends BuildTaskCommon {
+	readonly status: 'running';
+}
+
 /** sc4 — a Task's implementation outcome. Consumers narrow on `status` (or
  *  `'testVerdict' in outcome`) before reading the verdict/diff. */
-export type BuildTaskOutcome = BuildTaskReached | BuildTaskUnreached;
+export type BuildTaskOutcome = BuildTaskReached | BuildTaskUnreached | BuildTaskInFlight;
 
 // ===========================================================================
 // t3 — sc5 seam types (TaskImplementerRequest / Report / Adapter)
@@ -218,4 +240,70 @@ export interface TaskImplementerReport {
 export interface TaskImplementerAdapter {
 	/** Runs exactly one implementer subprocess to completion. Serial by construction. */
 	implement(req: TaskImplementerRequest): Promise<TaskImplementerReport>;
+}
+
+// ===========================================================================
+// sc6 — BuildRunProgress / BuildHaltInfo / BuildRunState (Story s4, Phase D)
+//
+// The run-level halt/progress vocabulary s4 OWNS. Net-new — no prior halt/
+// status vocabulary exists in the workflow package to reconcile against
+// (invariant c4). Everything here is TYPES ONLY: the projection that folds a
+// `BuildTaskOutcome[]` + the approved plan graph into these frames lives in
+// `progress.ts`, and the halt-detection / blocked-vs-not-reached distinction
+// is PRIVATE to `runners/build/` — only the resulting frame is shared.
+//
+// KEY DESIGN (winning alt a1): `BuildRunProgress` is a PURE READ-TIME
+// PROJECTION over the accumulated sc4 `BuildTaskOutcome[]` plus the approved
+// PlanArtifact graph — NEVER a second, separately-writeable stored record. No
+// field is writable independently of the outcome array, so progress can never
+// skew from the persisted outcomes. `inFlightTaskId` is re-derived from the
+// single `'running'` slot (not stored); `BuildHaltInfo.blockedTaskIds` is
+// recomputed from the plan graph (never snapshotted).
+// ===========================================================================
+
+/** The run-level terminal-state discriminant, derived from the outcome array:
+ *   - `'running'`  — the run is in flight (some Task has yet to reach a
+ *     terminal status and no Task has failed);
+ *   - `'halted'`   — some outcome row has status `'failed'` (halt-on-first-
+ *     failure ⇒ exactly one);
+ *   - `'complete'` — every Task reached a terminal status and none failed. */
+export type BuildRunState = 'running' | 'halted' | 'complete';
+
+/** The halt frame a developer inspects after a run stops: which Task failed,
+ *  why, and which Tasks were blocked as a consequence. Computed ON DEMAND from
+ *  the single `'failed'` outcome row plus the live plan graph — never stored. */
+export interface BuildHaltInfo {
+	/** PlanTask id of the Task whose stated tests could not be brought to passing. */
+	readonly failedTaskId:   string;
+	/** Human-facing title of the failed Task, so inspection names it without a tree read (ac2). */
+	readonly failedTaskTitle: string;
+	/** Why the run gave up — the daemon's OWN test-verdict summary, not a bare non-zero exit. */
+	readonly reason:         string;
+	/** Transitive DEPENDS_ON dependents of the failed Task, recomputed against
+	 *  the live plan graph so it can never go stale (never snapshotted). */
+	readonly blockedTaskIds: readonly string[];
+}
+
+/** sc6 — a read-time PROJECTION over the accumulated sc4 `BuildTaskOutcome[]`
+ *  plus the approved PlanArtifact graph (winning alt a1). Never a separately
+ *  stored record: no field is writable independently of the outcome array, so
+ *  progress can never skew from the persisted outcomes. Consumed by s5, which
+ *  wraps this run-level frame in its BuildArtifact. */
+export interface BuildRunProgress {
+	/** The Story whose approved plan is being implemented. */
+	readonly storyId:          string;
+	/** 'running' | 'halted' | 'complete'; 'halted' iff some outcome row has status 'failed'. */
+	readonly runState:         BuildRunState;
+	/** Count of PlanTasks in the approved plan graph. */
+	readonly totalTasks:       number;
+	/** Task ids whose outcome status is 'completed'. */
+	readonly completedTaskIds: readonly string[];
+	/** The single Task currently being implemented, re-derived from the one
+	 *  'running' slot in the outcome array; concurrency is structurally
+	 *  impossible so there is never more than one. */
+	readonly inFlightTaskId?:  string | undefined;
+	/** Present iff runState==='halted'. */
+	readonly halt?:            BuildHaltInfo | undefined;
+	/** Union of filesTouched across completed outcome rows (deduped set-union). */
+	readonly filesTouchedSoFar: readonly string[];
 }

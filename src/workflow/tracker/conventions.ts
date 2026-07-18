@@ -44,7 +44,23 @@ export function allTrackerLabels(epicLabel: string, storyLabel: string, epicSlug
 /** Epic issue body — problem, non-goals, constraints, a `## Stories`
  *  task-list with placeholders later pushes replace, and slug-based doc
  *  links. */
-export function renderEpicBody(define: DefineArtifact, epicSlug: string): string {
+/** Points a `## Design references` line at the committed artifact. */
+export interface RepoRef {
+	readonly owner:   string;
+	readonly repo:    string;
+	readonly branch?: string | undefined;   // default 'main'
+}
+
+/** Render one design-reference line. With `repo`, the doc path is a clickable
+ *  GitHub blob link (the artifact is committed to the repo on approval, so the
+ *  link resolves for anyone who pulls); without it, a bare path (back-compat). */
+function docRef(label: string, path: string, repo?: RepoRef): string {
+	if (repo === undefined) return `- ${label}: \`${path}\``;
+	const branch = repo.branch ?? 'main';
+	return `- ${label}: [\`${path}\`](https://github.com/${repo.owner}/${repo.repo}/blob/${branch}/${path})`;
+}
+
+export function renderEpicBody(define: DefineArtifact, epicSlug: string, repo?: RepoRef): string {
 	const body = define.body;
 	const lines: string[] = [];
 	lines.push('## Problem', '', body.problem, '');
@@ -65,8 +81,8 @@ export function renderEpicBody(define: DefineArtifact, epicSlug: string): string
 	}
 	lines.push('');
 	lines.push('## Design references', '');
-	lines.push(`- HLD: \`${hldMdRel(epicSlug)}\``);
-	lines.push(`- Define: \`${defineMdRel(epicSlug)}\``);
+	lines.push(docRef('HLD', hldMdRel(epicSlug), repo));
+	lines.push(docRef('Define', defineMdRel(epicSlug), repo));
 	lines.push('');
 	lines.push(`_epic slug: ${epicSlug}_`);
 	return lines.join('\n');
@@ -74,7 +90,7 @@ export function renderEpicBody(define: DefineArtifact, epicSlug: string): string
 
 /** Story issue body — Epic back-ref, user value, acceptance criteria,
  *  slug-based LLD link. */
-export function renderStoryBody(epicRef: string, story: DefineStory, epicSlug: string): string {
+export function renderStoryBody(epicRef: string, story: DefineStory, epicSlug: string, repo?: RepoRef): string {
 	const lines: string[] = [];
 	lines.push(`**Epic:** #${issueNumber(epicRef)}`, '');
 	lines.push('## User value', '', story.userValue, '');
@@ -86,7 +102,7 @@ export function renderStoryBody(epicRef: string, story: DefineStory, epicSlug: s
 		lines.push('');
 	}
 	lines.push('## Design references', '');
-	lines.push(`- LLD: \`${lldMdRel(epicSlug, story.id)}\``);
+	lines.push(docRef('LLD', lldMdRel(epicSlug, story.id), repo));
 	if (story.sizeEstimate !== undefined) {
 		lines.push('', `Size: ${story.sizeEstimate}`);
 	}
@@ -118,7 +134,7 @@ export function updateEpicTaskList(currentBody: string, storyId: string, storyRe
 /** Task issue body — Story back-ref, size, summary, per-Task acceptance
  *  checks + named tests, and a slug-based link to the plan doc. Rendered
  *  for each PlanTask when `pushTasks` is enabled. */
-export function renderTaskBody(storyRef: string, storyId: string, task: PlanTask, epicSlug: string): string {
+export function renderTaskBody(storyRef: string, storyId: string, task: PlanTask, epicSlug: string, repo?: RepoRef): string {
 	const lines: string[] = [];
 	lines.push(`**Story:** #${issueNumber(storyRef)} (${storyId})`, '');
 	lines.push(`**Size:** ${task.size}`, '');
@@ -137,7 +153,7 @@ export function renderTaskBody(storyRef: string, storyId: string, task: PlanTask
 		lines.push('');
 	}
 	lines.push('## Design references', '');
-	lines.push(`- Plan: \`${planMdRel(epicSlug, storyId)}\``);
+	lines.push(docRef('Plan', planMdRel(epicSlug, storyId), repo));
 	lines.push('', `_task: ${storyId}/${task.id}_`);
 	return lines.join('\n');
 }

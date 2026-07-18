@@ -15,6 +15,7 @@
  */
 
 import { execFileSync, type ExecFileSyncOptions } from 'node:child_process';
+import { existsSync } from 'node:fs';
 
 import { buildRef, parseIssueRef } from './refs.js';
 
@@ -40,6 +41,47 @@ function silent(cmd: string, args: readonly string[]): void {
 // ---------------------------------------------------------------------------
 // git
 // ---------------------------------------------------------------------------
+
+export interface CommitArtifactsResult {
+	readonly committed: boolean;
+	readonly pushed:    boolean;
+	readonly reason?:   string;   // why nothing was committed / pushed
+}
+
+/** Stage the given (already-written) artifact files, commit, and push. Makes
+ *  the workflow artifacts portable: after an approval, the canonical JSON +
+ *  rendered MD are checked into the repo so anyone who pulls can proceed to the
+ *  next stage — the local machine is no longer the only holder.
+ *
+ *  Best-effort and non-fatal to the surrounding approval:
+ *   - a no-op when `repoPath` isn't a git work tree, when no path exists, or
+ *     when nothing is staged (already committed);
+ *   - a push failure (offline / no upstream / rejected) still leaves the
+ *     artifacts committed LOCALLY — reported via `pushed:false` + `reason`.
+ *  Routes through the injectable exec so unit tests stub it like the gh calls. */
+export function commitAndPushArtifacts(repoPath: string, paths: readonly string[], message: string): CommitArtifactsResult {
+	try { silent('git', ['-C', repoPath, 'rev-parse', '--is-inside-work-tree']); }
+	catch { return { committed: false, pushed: false, reason: 'not a git work tree' }; }
+
+	const present = paths.filter(p => existsSync(p));
+	if (present.length === 0) return { committed: false, pushed: false, reason: 'no artifact files on disk' };
+
+	try { silent('git', ['-C', repoPath, 'add', '--', ...present]); }
+	catch (err) { return { committed: false, pushed: false, reason: `git add failed: ${(err as Error).message}` }; }
+
+	// `git diff --cached --quiet` exits 0 when nothing is staged, non-zero when
+	// there ARE staged changes → the throw is the "there is something to commit" signal.
+	let staged = false;
+	try { silent('git', ['-C', repoPath, 'diff', '--cached', '--quiet']); }
+	catch { staged = true; }
+	if (!staged) return { committed: false, pushed: false, reason: 'nothing to commit (already up to date)' };
+
+	try { silent('git', ['-C', repoPath, 'commit', '-m', message]); }
+	catch (err) { return { committed: false, pushed: false, reason: `git commit failed: ${(err as Error).message}` }; }
+
+	try { silent('git', ['-C', repoPath, 'push']); return { committed: true, pushed: true }; }
+	catch (err) { return { committed: true, pushed: false, reason: `committed locally; push failed: ${(err as Error).message}` }; }
+}
 
 /** Parse `git remote get-url origin` into a GitHub owner/repo. Returns
  *  null when there's no origin or it isn't a github URL. */

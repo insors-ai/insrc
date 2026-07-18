@@ -75,6 +75,9 @@ export interface GithubEntry {
 	 *  false) — Task issues can be numerous and lean on org features
 	 *  (issue types + sub-issues) that not every org enables. */
 	readonly pushTasks?:    boolean;     // default false
+	/** Commit + push the workflow artifacts (JSON + rendered MD) on approval, so
+	 *  the chain is portable (anyone who pulls can proceed). Default true. */
+	readonly commitArtifacts?: boolean;  // default true
 	/** Native GitHub issue-type name applied to Task issues. Set to ''
 	 *  to create untyped Task issues. Default 'Task'. Falls back to an
 	 *  untyped issue when the org has no such type. */
@@ -102,6 +105,7 @@ export type ResolvedGithubConfig =
 		readonly taskLabel:     string;
 		readonly useMilestones: boolean;
 		readonly pushTasks:     boolean;
+		readonly commitArtifacts: boolean;
 		readonly taskIssueType: string;
 		readonly source:        ResolvedGithubConfigSource;
 	}
@@ -221,6 +225,7 @@ function resolveEntry(
 			taskLabel:     entry.taskLabel  ?? fallbackDefaults?.taskLabel  ?? DEFAULT_TASK_LABEL,
 			useMilestones: entry.useMilestones ?? fallbackDefaults?.useMilestones ?? false,
 			pushTasks:     entry.pushTasks ?? fallbackDefaults?.pushTasks ?? false,
+			commitArtifacts: entry.commitArtifacts ?? fallbackDefaults?.commitArtifacts ?? true,
 			taskIssueType: entry.taskIssueType ?? fallbackDefaults?.taskIssueType ?? DEFAULT_TASK_ISSUE_TYPE,
 			source,
 		};
@@ -246,6 +251,7 @@ function resolveEntry(
 			taskLabel:     entry.taskLabel  ?? fallbackDefaults?.taskLabel  ?? DEFAULT_TASK_LABEL,
 			useMilestones: entry.useMilestones ?? fallbackDefaults?.useMilestones ?? false,
 			pushTasks:     entry.pushTasks ?? fallbackDefaults?.pushTasks ?? false,
+			commitArtifacts: entry.commitArtifacts ?? fallbackDefaults?.commitArtifacts ?? true,
 			taskIssueType: entry.taskIssueType ?? fallbackDefaults?.taskIssueType ?? DEFAULT_TASK_ISSUE_TYPE,
 			source:        'git-remote',
 		};

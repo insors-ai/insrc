@@ -46,8 +46,16 @@ import {
 import { scanLldStaleness, type StaleLldEntry } from '../../workflow/amendments/staleness.js';
 import type { AmendmentRecord } from '../../workflow/amendments/types.js';
 import { deriveSlug } from '../../workflow/slug.js';
-import { ARTIFACTS_DIR } from '../../workflow/storage.js';
+import {
+	ARTIFACTS_DIR,
+	defineArtifactPaths, hldArtifactPaths, lldArtifactPaths, planArtifactPaths,
+} from '../../workflow/storage.js';
+import { commitAndPushArtifacts, type CommitArtifactsResult } from '../../workflow/tracker/github.js';
+import { resolveGithubConfig } from '../../workflow/config/github.js';
 import { syncTracker, type SyncResult } from '../../workflow/tracker/sync.js';
+import { getLogger } from '../../shared/logger.js';
+
+const log = getLogger('cli:workflow');
 
 export interface EpicSummary {
 	readonly epicHash: string;
@@ -57,6 +65,35 @@ export interface EpicSummary {
 export interface ApproveOutcome {
 	readonly approval: ApprovalResult;
 	readonly tracker?: AutoPushResult;
+	readonly commit?:  CommitArtifactsResult;
+}
+
+/** Commit + push the artifact files this approval wrote/patched, so the chain
+ *  is portable (anyone who pulls has the canonical JSON + MD the next stage
+ *  reads). Gated on the github tracker being enabled with `commitArtifacts`
+ *  (default true); best-effort — a git failure never breaks the approval. */
+function commitApprovedArtifacts(approval: ApprovalResult): CommitArtifactsResult | undefined {
+	let meta: { repoPath?: string; epicHash?: string; epicSlug?: string; storyId?: string };
+	try { meta = ((JSON.parse(readFileSync(approval.path, 'utf8')) as { meta?: typeof meta }).meta) ?? {}; }
+	catch { return undefined; }
+	const { repoPath, epicHash, epicSlug, storyId } = meta;
+	if (typeof repoPath !== 'string' || typeof epicHash !== 'string') return undefined;
+
+	const cfg = resolveGithubConfig(repoPath);
+	if (cfg.type !== 'github' || cfg.commitArtifacts === false) return undefined;
+
+	// The files this approval touched: the approved artifact, plus the Define
+	// (which aggregates the epic/story tracker refs on epic/story approvals).
+	const files = new Set<string>();
+	const add = (p: { md: string; json: string }) => { files.add(p.md); files.add(p.json); };
+	if (approval.workflow === 'design.epic') { add(hldArtifactPaths(repoPath, epicHash, epicSlug)); add(defineArtifactPaths(repoPath, epicHash, epicSlug)); }
+	else if (approval.workflow === 'design.story' && typeof storyId === 'string') { add(lldArtifactPaths(repoPath, epicHash, storyId, epicSlug)); add(defineArtifactPaths(repoPath, epicHash, epicSlug)); }
+	else if (approval.workflow === 'plan' && typeof storyId === 'string') { add(planArtifactPaths(repoPath, epicHash, storyId, epicSlug)); }
+	else { add(defineArtifactPaths(repoPath, epicHash, epicSlug)); }
+
+	const result = commitAndPushArtifacts(repoPath, [...files], `chore(workflow): ${approval.workflow} approved — check in artifacts + tracker refs`);
+	log.info({ workflow: approval.workflow, committed: result.committed, pushed: result.pushed, reason: result.reason }, 'approve: artifact check-in');
+	return result;
 }
 
 const DEF_RE = /^DEF-([0-9a-f]{16})\.json$/;
@@ -103,7 +140,11 @@ export function approve(artifactPath: string, withTracker = true): ApproveOutcom
 	if (approval.workflow === 'design.epic')       tracker = autoPushEpicOnHld(approval.path);
 	else if (approval.workflow === 'design.story') tracker = autoPushStoryOnLld(approval.path);
 	else if (approval.workflow === 'plan')         tracker = autoPushTasksOnPlan(approval.path);
-	return tracker !== undefined ? { approval, tracker } : { approval };
+	// Commit + push AFTER the tracker push, so the checked-in MD carries the
+	// re-rendered `**Tracker:**` link and the issue bodies link the committed blob.
+	const commit = commitApprovedArtifacts(approval);
+	const out: ApproveOutcome = { approval };
+	return { ...out, ...(tracker !== undefined ? { tracker } : {}), ...(commit !== undefined ? { commit } : {}) };
 }
 
 export function reject(artifactPath: string, reason: string): RejectionResult {

@@ -124,7 +124,7 @@ export function autoPushEpicOnHld(hldJsonPath: string): AutoPushResult {
 		}
 		try {
 			epicRef = ghCreateIssue(cfg.owner, cfg.repo, `Epic: ${firstSentence(define.body.problem)}`,
-				renderEpicBody(define, epicSlug), [cfg.epicLabel, membership]);
+				renderEpicBody(define, epicSlug, { owner: cfg.owner, repo: cfg.repo }), [cfg.epicLabel, membership]);
 		} catch (err) { return { status: 'failed', reason: `gh issue create failed: ${(err as Error).message}` }; }
 		if (cfg.useMilestones) bestEffort('milestone', () => { ghEnsureMilestone(cfg.owner, cfg.repo, epicSlug); ghAttachMilestone(cfg.owner, cfg.repo, epicRef, epicSlug); });
 	}
@@ -184,7 +184,7 @@ export function autoPushStoryOnLld(lldJsonPath: string): AutoPushResult {
 	} else {
 		try {
 			storyRef = ghCreateIssue(cfg.owner, cfg.repo, `${storyId}: ${story.title}`,
-				renderStoryBody(epicRef, story, epicSlug), [cfg.storyLabel, epicMembershipLabel(epicSlug)]);
+				renderStoryBody(epicRef, story, epicSlug, { owner: cfg.owner, repo: cfg.repo }), [cfg.storyLabel, epicMembershipLabel(epicSlug)]);
 		} catch (err) { return { status: 'failed', reason: `gh issue create failed: ${(err as Error).message}` }; }
 		if (cfg.useMilestones) bestEffort('milestone', () => ghAttachMilestone(cfg.owner, cfg.repo, storyRef, epicSlug));
 	}
@@ -269,7 +269,7 @@ export function autoPushTasksOnPlan(planJsonPath: string): AutoPushResult {
 		try {
 			issue = ghCreateIssueTyped(
 				cfg.owner, cfg.repo, `${storyId}/${task.id}: ${task.title}`,
-				renderTaskBody(parentStoryRef, storyId, task, epicSlug),
+				renderTaskBody(parentStoryRef, storyId, task, epicSlug, { owner: cfg.owner, repo: cfg.repo }),
 				[cfg.taskLabel, membership], cfg.taskIssueType,
 			);
 		} catch (err) { return { status: 'failed', reason: `gh issue create (task ${task.id}) failed: ${(err as Error).message}` }; }

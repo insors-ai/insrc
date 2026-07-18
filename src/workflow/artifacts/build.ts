@@ -25,22 +25,22 @@
 import { renderCitationBlock } from '../synthesizer.js';
 import { artifactIdMarker, buildArtifactId } from '../storage.js';
 import type { ArtifactMetaBase, Citation } from '../types.js';
+import type { BuildTaskOutcome } from '../runners/build/schemas.js';
 
 // ---------------------------------------------------------------------------
 // Body
 // ---------------------------------------------------------------------------
 
-/** One Task's implementation outcome. s1 keeps this minimal; s5 grows
- *  it (diff stats, test run result, repair attempts, …). */
-export interface BuildTaskOutcome {
-	readonly taskId:   string;                        // the PlanTask id (`t1`, `t2`, …)
-	readonly status:   'pending' | 'implemented' | 'failed';
-	readonly summary?: string;                        // one-line human note
-}
+// sc4 `BuildTaskOutcome` is owned by Story s3 and defined in
+// `runners/build/schemas.ts` as a status-discriminated union
+// (`BuildTaskReached | BuildTaskUnreached`) so the daemon-produced invariant
+// (`filesTouched`/`testVerdict` are never self-reported) is enforced at the
+// type level. The artifact body re-exports it — a single source of truth.
+export type { BuildTaskOutcome } from '../runners/build/schemas.js';
 
 export interface BuildBody {
 	readonly summary:      string;                    // human-facing run summary
-	readonly taskOutcomes: readonly BuildTaskOutcome[]; // one per implemented Task (empty in the s1 skeleton)
+	readonly taskOutcomes: readonly BuildTaskOutcome[]; // one per Task the run reached (empty on a refused/zero-Task run)
 }
 
 // ---------------------------------------------------------------------------
@@ -85,11 +85,18 @@ export function renderBuildMarkdown(artifact: BuildArtifact): string {
 	if (body.taskOutcomes.length > 0) {
 		lines.push('## Task outcomes');
 		lines.push('');
-		lines.push('| Task | Status | Notes |');
-		lines.push('| :--- | :--- | :--- |');
+		lines.push('| Task | Status | Attempts | Files | Notes |');
+		lines.push('| :--- | :--- | :--- | :--- | :--- |');
 		for (const o of body.taskOutcomes) {
-			const note = o.summary !== undefined ? escapePipes(o.summary) : '—';
-			lines.push(`| \`${o.taskId}\` | ${o.status} | ${note} |`);
+			// Narrow on the discriminant before reading the reached-arm fields
+			// (the single narrow-on-status the a2 reshape costs).
+			const reached = 'testVerdict' in o;
+			const attempts = reached ? String(o.attempts) : '—';
+			const files    = reached ? String(o.filesTouched.length) : '—';
+			const note     = reached
+				? escapePipes(o.testVerdict.summary)
+				: (o.note !== undefined ? escapePipes(o.note) : '—');
+			lines.push(`| \`${o.taskId}\` | ${o.status} | ${attempts} | ${files} | ${note} |`);
 		}
 		lines.push('');
 	}

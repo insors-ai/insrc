@@ -6,22 +6,21 @@
 /**
  * `build` workflow runners — Phase H (5th in the chain).
  *
- * Recipe (s1 SKELETON — a minimal, coherent set of llm-pause steps):
- *   s1: context.assemble  — read the approved plan (ordered Tasks) upstream
- *   s2: tasks.implement    — PLACEHOLDER outcome stub
+ * Recipe:
+ *   s1: context.assemble — read the approved plan (ordered Tasks) upstream
+ *   s3: tasks.sequence   — the verdict-driven sequenced Task loop: implement
+ *                          each Task via one serial CliProvider subprocess,
+ *                          then advance ONLY on the daemon's own test run +
+ *                          working-tree diff (never the implementer's report)
  *
  * The upstream gate (`readBuildUpstream` → `requireApprovedPlan`) runs at
- * each step's prompt build, so an unapproved plan aborts the run before
- * any Task is touched — the approved plan is `build`'s authorization
- * boundary.
+ * each step's prompt build, and the sc3 admission gate (`admitBuild`) runs
+ * at the sequencing turn, so an unapproved/stale plan aborts before any
+ * Task is touched — the approved plan is `build`'s authorization boundary.
  *
- * SCOPE BOUNDARY: this file makes `build` a dispatchable, first-class
- * stage (registry membership + `workflow:'build'` tag). The heavy logic
- * is deferred:
- *   - TODO(s2): the full admission gate (plan freshness vs its LLD).
- *   - TODO(s3): real Task sequencing — delegate each Task's editing to a
- *     serial CliProvider subprocess while the daemon keeps sequencing.
- *   - TODO(s4): halt/report on a failing Task (test run + tree diff).
+ * SCOPE BOUNDARY: s3 owns sc4 (`BuildTaskOutcome`) + sc5
+ * (`TaskImplementerAdapter`). Still deferred:
+ *   - TODO(s4): halt/report framing on a failing Task.
  *   - TODO(s5): the full BuildArtifact body + finalize.
  *
  * Mirrors `runners/plan/index.ts` in shape exactly (module-level
@@ -30,19 +29,29 @@
  */
 
 import { createHash } from 'node:crypto';
+import { existsSync, readFileSync } from 'node:fs';
 
+import { CliProvider } from '../../../agent/providers/cli-provider.js';
+import { getLogger } from '../../../shared/logger.js';
 import { registerRunner } from '../../executor.js';
-import { readBuildUpstream } from '../../gates.js';
+import { readBuildUpstream, requireApprovedPlan } from '../../gates.js';
 import { assertEpicHash } from '../../hash.js';
-import { planArtifactId } from '../../storage.js';
-import type { PlanArtifact } from '../../artifacts/plan.js';
+import { appendRunLog, lldArtifactPaths, planArtifactId, planArtifactPaths } from '../../storage.js';
+import { renderPlanMarkdown, type PlanArtifact } from '../../artifacts/plan.js';
 import type { StepRunner, StepRunnerContext } from '../../types.js';
 import { approvalVerdict, driftVerdict } from './admission.js';
+import { CliTaskImplementerAdapter } from './adapter.js';
+import { sequenceBuildTasks, type BuildTaskProgress } from './sequencer.js';
+import { createGitTestVerifier, type TaskVerifier } from './verifier.js';
 import {
 	buildContextSchema,
-	tasksImplementSchema,
 } from './schemas.js';
-import type { BuildAdmissionResult } from './schemas.js';
+import type {
+	BuildAdmissionRefusal,
+	BuildAdmissionResult,
+	BuildTaskOutcome,
+	TaskImplementerAdapter,
+} from './schemas.js';
 
 export type {
 	BuildAdmissionAccepted,
@@ -50,6 +59,12 @@ export type {
 	BuildAdmissionResult,
 	BuildRefusalReason,
 } from './schemas.js';
+
+const log = getLogger('workflow:build');
+
+/** Default per-Task repair budget. Kept generous — the LLD notes giving up
+ *  early produces a wrong `'failed'` (accuracy over cost). */
+const DEFAULT_MAX_ATTEMPTS = 3;
 
 // ---------------------------------------------------------------------------
 // Params helpers
@@ -136,42 +151,140 @@ const contextAssemble = llmPauseRunner({
 });
 
 // ---------------------------------------------------------------------------
-// s2 — tasks.implement  (PLACEHOLDER)
+// s3 — tasks.sequence: the verdict-driven sequenced Task loop
+//
+// Replaces the s1 `tasks.implement` placeholder. This is a DETERMINISTIC
+// (`output`) runner, not an llm-pause: the per-Task editing is delegated to
+// a serial CliProvider subprocess (the injected adapter) while the daemon
+// keeps sequencing + verification on its own side — it does NOT ask the
+// outer LLM to self-report Task status (that would breach the k2 invariant).
 // ---------------------------------------------------------------------------
 
-// TODO(s3): real Task sequencing — this step is a skeleton. The real
-// implementation delegates each Task's editing to a serial CliProvider
-// subprocess while the daemon sequences + verifies (test run + tree diff).
-// TODO(s4): halt/report when a Task's verification fails.
-const tasksImplement = llmPauseRunner({
-	id: 'tasks.implement',
-	buildPrompt: (ctx) => {
-		const { plan } = upstream(ctx);
+/** The two INJECTED seams the build stage drives. Injectable so the whole
+ *  driver is testable with fakes (t9) and the sequencer never constructs a
+ *  concrete CliProvider itself. */
+export interface BuildStageDeps {
+	readonly adapter:  TaskImplementerAdapter;
+	readonly verifier: TaskVerifier;
+}
+
+export interface BuildStageInput {
+	readonly repoPath: string;
+	readonly epicHash: string;
+	readonly storyId:  string;
+	readonly maxAttempts?:  number | undefined;
+	readonly onProgress?:   ((frame: BuildTaskProgress) => void) | undefined;
+	readonly onCheckpoint?: ((outcomes: readonly BuildTaskOutcome[]) => void) | undefined;
+}
+
+export interface BuildStageResult {
+	readonly admitted:     boolean;
+	readonly refusal?:     BuildAdmissionRefusal | undefined;
+	readonly taskOutcomes: readonly BuildTaskOutcome[];
+}
+
+/**
+ * Drive the `build` stage for one Story: consume the sc3 admission verdict,
+ * materialize the approved plan's `PlanTask[]` work list ONLY when
+ * `admitted === true`, and run the private sequencer over the injected
+ * adapter + verifier. On a refused run the adapter is UNREACHABLE and
+ * `treeUntouched` holds structurally — no Task-touching path exists.
+ *
+ * The verifier + adapter are injected (`deps`) so this is exercised end-to-
+ * end with fakes; the registered runner below supplies the LIVE deps.
+ */
+export async function driveBuildStage(input: BuildStageInput, deps: BuildStageDeps): Promise<BuildStageResult> {
+	const admission = admitBuild(input.repoPath, input.epicHash, input.storyId);
+	if (!admission.admitted) {
+		// Adapter unreachable on refusal — treeUntouched holds structurally.
+		log.info({ storyId: input.storyId, reason: admission.refusal.reason }, 'build refused; sequencer not run');
+		return { admitted: false, refusal: admission.refusal, taskOutcomes: [] };
+	}
+
+	const plan = requireApprovedPlan(input.repoPath, input.epicHash, input.storyId);
+	const storyDesignMarkdown = readMdOr(lldArtifactPaths(input.repoPath, input.epicHash, input.storyId).md, '');
+	const planMarkdown = readMdOr(
+		planArtifactPaths(input.repoPath, input.epicHash, input.storyId).md,
+		renderPlanMarkdown(plan),
+	);
+
+	const outcomes = await sequenceBuildTasks(plan.body.tasks, {
+		adapter:  deps.adapter,
+		verifier: deps.verifier,
+		repoRoot: input.repoPath,
+		storyDesignMarkdown,
+		planMarkdown,
+		maxAttempts: input.maxAttempts ?? DEFAULT_MAX_ATTEMPTS,
+		...(input.onProgress   !== undefined ? { onProgress:   input.onProgress }   : {}),
+		...(input.onCheckpoint !== undefined ? { onCheckpoint: input.onCheckpoint } : {}),
+	});
+	return { admitted: true, taskOutcomes: outcomes };
+}
+
+/** Construct the LIVE build-stage deps: the concrete git verifier (real test
+ *  run + real working-tree diff) and the CliProvider editing adapter. THIS
+ *  IS THE LIVE BOUNDARY — it spawns the local `claude` CLI binary with the
+ *  repo as cwd + edit permissions (CLAUDE.md's sanctioned cloud path; no
+ *  direct REST). Kept lazy (constructed per run) and separate from
+ *  `driveBuildStage` so tests inject fakes instead. */
+function liveBuildStageDeps(): BuildStageDeps {
+	return {
+		verifier: createGitTestVerifier(),
+		adapter:  new CliTaskImplementerAdapter(new CliProvider({ kind: 'claude' })),
+	};
+}
+
+/** Read a markdown artifact file if present, else fall back. */
+function readMdOr(mdPath: string, fallback: string): string {
+	try { return existsSync(mdPath) ? readFileSync(mdPath, 'utf8') : fallback; }
+	catch { return fallback; }
+}
+
+const tasksSequence: StepRunner = {
+	id:       'tasks.sequence',
+	workflow: 'build',
+	async run(ctx) {
+		const repoPath = ctx.intent.repoPath;
+		const epicHash = epicHashFrom(ctx);
+		const storyId  = storyIdFrom(ctx);
+		const epicKey  = epicHash;
+
+		const result = await driveBuildStage(
+			{
+				repoPath, epicHash, storyId,
+				onProgress: (f) => {
+					log.info({ storyId, ...f }, `build: ${f.phase}`);
+					appendRunLog(epicKey, 'build', ctx.runId, {
+						ts: new Date().toISOString(), event: 'task-progress',
+						taskId: f.taskId, phase: f.phase, status: f.status ?? null, detail: f.detail ?? null,
+					});
+				},
+				// Persist the accumulated outcomes at EVERY Task boundary so a
+				// daemon restart mid-run leaves a readable record (durability NFR).
+				onCheckpoint: (outcomes) => {
+					appendRunLog(epicKey, 'build', ctx.runId, {
+						ts: new Date().toISOString(), event: 'task-checkpoint',
+						reached: outcomes.length,
+						outcomes: outcomes.map(o => ({ taskId: o.taskId, status: o.status })),
+					});
+				},
+			},
+			liveBuildStageDeps(),
+		);
+
 		return {
-			prompt: [
-				'You are running the `tasks.implement` step of the `build` workflow.',
-				'',
-				'SKELETON STEP (s1): record one `taskOutcomes[]` entry per plan Task with a',
-				'`status` of `pending`. The real per-Task edit/test/repair loop is deferred to',
-				'a later Story — do NOT attempt to implement anything here.',
-			].join('\n'),
-			userTurn: [
-				's1 BuildContext:',
-				'```json',
-				JSON.stringify(ctx.stepOutputs['s1'], null, 2),
-				'```',
-				'',
-				'Plan Tasks:',
-				'```json',
-				JSON.stringify(plan.body.tasks, null, 2),
-				'```',
-				'',
-				'Emit the taskOutcomes JSON now.',
-			].join('\n'),
+			type: 'output',
+			output: {
+				admitted:     result.admitted,
+				refusal:      result.refusal ?? null,
+				taskOutcomes: result.taskOutcomes,
+			},
+			summary: result.admitted
+				? `build: ${result.taskOutcomes.length} Task outcome(s)`
+				: `build refused: ${result.refusal?.reason ?? 'unknown'}`,
 		};
 	},
-	schema: tasksImplementSchema,
-});
+};
 
 // ---------------------------------------------------------------------------
 // s2 — admitBuild: the start-turn admission gate (sc3)
@@ -286,6 +399,6 @@ let registered = false;
 export function registerBuildRunners(): void {
 	if (registered) return;
 	registerRunner(contextAssemble);
-	registerRunner(tasksImplement);
+	registerRunner(tasksSequence);
 	registered = true;
 }

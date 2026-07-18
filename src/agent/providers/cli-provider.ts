@@ -60,6 +60,18 @@ const log = getLogger('cli-provider');
 
 export type CliKind = 'claude' | 'codex';
 
+/** Options for an agentic free-form EDITING session (`runEditSession`).
+ *  Unlike `complete`/`completeStructured` — which are one-shot text/JSON
+ *  turns — this spawns the CLI binary with the repo as its working
+ *  directory and file-edit permissions, so `claude`/`codex` can actually
+ *  modify files on disk during the turn. */
+export interface EditSessionOpts {
+	/** The repo root the CLI runs inside; its entire edit blast radius. */
+	readonly cwd:        string;
+	/** Per-session wall-clock cap. Defaults to the provider's `timeoutMs`. */
+	readonly timeoutMs?: number | undefined;
+}
+
 export interface CliProviderOpts {
 	readonly kind: CliKind;
 	/** Default model name passed via `--model`. Optional; the CLI's own default applies when absent. */
@@ -209,6 +221,48 @@ export class CliProvider implements LLMProvider {
 	}
 
 
+	// -- runEditSession -------------------------------------------------
+
+	/**
+	 * Run ONE agentic free-form editing session: spawn the `claude`/`codex`
+	 * binary with `opts.cwd` as its working directory and file-edit
+	 * permissions, feed `prompt` on stdin, and return the session's
+	 * free-form summary text as an `LLMResponse`.
+	 *
+	 * This is the surface the build stage's `TaskImplementerAdapter` (sc5)
+	 * drives — the design's k8/k9 UNPROVEN finding resolved: the existing
+	 * `complete()`/`completeStructured()` are one-shot `--print` text/JSON
+	 * turns that DO NOT grant the CLI file-edit permission, so a new
+	 * capability was required. It stays within CLAUDE.md's sanctioned cloud
+	 * path — the local CLI binary is spawned exactly like every other call
+	 * (`runSubprocess`), auth/quota stay with the CLI's OAuth session, and
+	 * NO direct REST client is introduced.
+	 *
+	 * Permission flags are best-effort per CLI version:
+	 *   - claude: `--permission-mode acceptEdits` (auto-accept file edits).
+	 *   - codex:  `--full-auto` (workspace-write sandbox, no approvals).
+	 * The daemon runs the tests + tree diff ITSELF (the verifier), so the
+	 * session's edits are advisory input to that diff, never the advance
+	 * decision.
+	 */
+	async runEditSession(prompt: string, opts: EditSessionOpts): Promise<LLMResponse> {
+		return this.withTransientRetry('runEditSession', async () => {
+			const exec = { cwd: opts.cwd, timeoutMs: opts.timeoutMs ?? this.timeoutMs };
+			if (this.kind === 'claude') {
+				const args = ['--print', '--output-format', 'json', '--permission-mode', 'acceptEdits', ...this.modelArgs()];
+				const { envelope } = await this.runClaude(args, prompt, exec);
+				if (envelope.is_error) {
+					throw new Error(`claude edit session failed: ${envelope.result ?? 'no error message'}`);
+				}
+				return { text: envelope.result ?? '', stopReason: 'end_turn' as const };
+			}
+			const args = ['exec', '--json', '--full-auto', ...this.modelArgs()];
+			const { agentText } = await this.runCodex(args, prompt, exec);
+			return { text: agentText ?? '', stopReason: 'end_turn' as const };
+		});
+	}
+
+
 	// -- stream ---------------------------------------------------------
 
 	stream(messages: LLMMessage[], opts?: CompletionOpts): AsyncIterable<string> {
@@ -249,9 +303,9 @@ export class CliProvider implements LLMProvider {
 	}
 
 
-	private runClaude(args: readonly string[], prompt: string): Promise<{ envelope: ClaudeEnvelope }> {
+	private runClaude(args: readonly string[], prompt: string, exec?: ExecOverride): Promise<{ envelope: ClaudeEnvelope }> {
 		return new Promise((resolve, reject) => {
-			const r = runSubprocess(this.binPath, args, prompt, this.timeoutMs);
+			const r = runSubprocess(this.binPath, args, prompt, exec?.timeoutMs ?? this.timeoutMs, exec?.cwd);
 			r.then(out => {
 				if (out.exitCode !== 0) {
 					return reject(new Error(`claude exited with ${out.exitCode}. stderr=${out.stderr.slice(0, 300)} stdout=${out.stdout.slice(0, 600)}`));
@@ -268,8 +322,8 @@ export class CliProvider implements LLMProvider {
 	}
 
 
-	private async runCodex(args: readonly string[], prompt: string): Promise<{ events: readonly CodexEvent[]; agentText: string | undefined }> {
-		const out = await runSubprocess(this.binPath, args, prompt, this.timeoutMs);
+	private async runCodex(args: readonly string[], prompt: string, exec?: ExecOverride): Promise<{ events: readonly CodexEvent[]; agentText: string | undefined }> {
+		const out = await runSubprocess(this.binPath, args, prompt, exec?.timeoutMs ?? this.timeoutMs, exec?.cwd);
 		const events: CodexEvent[] = [];
 		for (const line of out.stdout.split('\n')) {
 			const trimmed = line.trim();
@@ -330,6 +384,14 @@ interface SubprocessResult {
 	readonly durationMs: number;
 }
 
+/** Per-call overrides for the private `runClaude`/`runCodex` helpers — a
+ *  working directory (edit sessions run inside the repo) and/or a tighter
+ *  timeout. Absent fields fall back to the provider defaults. */
+interface ExecOverride {
+	readonly cwd?:       string | undefined;
+	readonly timeoutMs?: number | undefined;
+}
+
 /** Await `ms` milliseconds. */
 function delay(ms: number): Promise<void> {
 	return new Promise(resolve => setTimeout(resolve, ms));
@@ -372,11 +434,12 @@ async function runSubprocess(
 	args: readonly string[],
 	stdin: string,
 	timeoutMs: number,
+	cwd?: string,
 ): Promise<SubprocessResult> {
-	let result = await spawnOnce(resolveBin(command), args, stdin, timeoutMs);
+	let result = await spawnOnce(resolveBin(command), args, stdin, timeoutMs, cwd);
 	if (result.exitCode === -1 && /ENOENT/.test(result.stderr)) {
 		resolvedBinCache.delete(command);
-		result = await spawnOnce(resolveBin(command), args, stdin, timeoutMs);
+		result = await spawnOnce(resolveBin(command), args, stdin, timeoutMs, cwd);
 	}
 	return result;
 }
@@ -386,10 +449,11 @@ function spawnOnce(
 	args: readonly string[],
 	stdin: string,
 	timeoutMs: number,
+	cwd?: string,
 ): Promise<SubprocessResult> {
 	return new Promise(resolve => {
 		const start = Date.now();
-		const child = spawn(command, [...args], { stdio: ['pipe', 'pipe', 'pipe'] });
+		const child = spawn(command, [...args], { stdio: ['pipe', 'pipe', 'pipe'], ...(cwd !== undefined ? { cwd } : {}) });
 		let stdout = '';
 		let stderr = '';
 		let timedOut = false;

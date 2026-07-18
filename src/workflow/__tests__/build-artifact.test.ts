@@ -44,7 +44,11 @@ function fixtureArtifact(): BuildArtifact {
 		},
 		body: {
 			summary: 'Implemented the tag filter Tasks.',
-			taskOutcomes: [{ taskId: 't1', status: 'implemented', summary: 'added filter path' }],
+			taskOutcomes: [{
+				taskId: 't1', title: 'Add filter path', dependsOn: [], status: 'completed',
+				filesTouched: ['src/filter.ts'], attempts: 1,
+				testVerdict: { command: 'npx tsx --test', passed: true, exitCode: 0, summary: 'tests passed (exit 0)' },
+			}],
 		},
 		citations: [...CITES],
 	};
@@ -73,7 +77,7 @@ test('renderBuildMarkdown: leads with the BUILD- marker, renders summary + outco
 	assert.equal(m![1], `BUILD-${HASH}-s1`);
 	assert.ok(md.includes('# Build: s1'));
 	assert.ok(md.includes('Implemented the tag filter Tasks.'));
-	assert.ok(md.includes('| `t1` | implemented |'));   // outcome row
+	assert.ok(md.includes('| `t1` | completed |'));   // reached outcome row
 	assert.ok(md.includes('## Citations'));             // shared renderCitationBlock footer
 	assert.ok(md.includes('[[c1]]'));
 });

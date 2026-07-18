@@ -54,7 +54,7 @@ test("ac1: 'build' enumerates alongside its sibling doc-producing stages", () =>
 
 test("ac3: registerBuildRunners() adds build/<id> StepRunners tagged workflow:'build'", () => {
 	registerBuildRunners();
-	for (const id of ['context.assemble', 'tasks.implement']) {
+	for (const id of ['context.assemble', 'tasks.sequence']) {
 		assert.ok(hasRunner('build', id), `build/${id} not registered`);
 		const runner = getRunner('build', id);
 		assert.equal(runner.workflow, 'build', `build/${id} not tagged workflow:'build'`);
@@ -74,7 +74,7 @@ test('ac3: registerWorkflowRunners() wires build alongside its siblings, leaving
 	registerWorkflowRunners();
 	// build resolvable...
 	assert.ok(hasRunner('build', 'context.assemble'));
-	assert.ok(hasRunner('build', 'tasks.implement'));
+	assert.ok(hasRunner('build', 'tasks.sequence'));
 	// ...and every sibling stage's runners still register (unchanged by the addition).
 	assert.ok(hasRunner('plan', 'context.assemble'));
 	assert.ok(hasRunner('plan', 'tasks.enumerate'));

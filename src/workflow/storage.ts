@@ -53,6 +53,7 @@ export const ARTIFACTS_DIR = '.insrc/artifacts';
 export const DEFINES_DIR = 'docs/defines';
 export const DESIGNS_DIR = 'docs/designs';
 export const PLANS_DIR   = 'docs/plans';
+export const BUILDS_DIR  = 'docs/builds';
 export const STUB_DIR    = 'docs/stub';
 
 // ---------------------------------------------------------------------------
@@ -140,6 +141,10 @@ export function lldArtifactId(epicHash: string, storyId: string): string {
 /** Canonical `.json` basename ID for a Plan artifact — one per Story. */
 export function planArtifactId(epicHash: string, storyId: string): string {
 	return `PLAN-${epicHash}-${storyId}`;
+}
+/** Canonical `.json` basename ID for a Build artifact — one per Story. */
+export function buildArtifactId(epicHash: string, storyId: string): string {
+	return `BUILD-${epicHash}-${storyId}`;
 }
 
 /** HTML-comment marker embedded at the top of every rendered markdown
@@ -239,6 +244,31 @@ export function planFilenamePrefix(epicHash: string): string {
 	return `PLAN-${epicHash}-`;
 }
 
+/** Paths for a Build (`build`) artifact — one per Story. Slug-named
+ *  markdown under `docs/builds/`, canonical hash-named JSON under
+ *  `.insrc/artifacts/`. The direct peer of `planArtifactPaths`; `epicSlug`
+ *  is the trailing optional so `(repo, hash, storyId)` JSON-only callers
+ *  keep working. */
+export function buildArtifactPaths(
+	repoPath: string,
+	epicHash: string,
+	storyId:  string,
+	epicSlug?: string,
+): {
+	readonly md:   string;
+	readonly json: string;
+} {
+	return {
+		md:   join(repoPath, BUILDS_DIR,    `BUILD-${fileSeg(epicSlug ?? epicHash)}-${storyId}.md`),
+		json: join(repoPath, ARTIFACTS_DIR, `${buildArtifactId(epicHash, storyId)}.json`),
+	};
+}
+
+/** Filename prefix that identifies every Build belonging to an Epic. */
+export function buildFilenamePrefix(epicHash: string): string {
+	return `BUILD-${epicHash}-`;
+}
+
 /** Canonical id + paths for an Extend artifact (`define` extend branch).
  *  One per (Epic, new Story). Markdown under `docs/designs/` (slug), JSON
  *  under `.insrc/artifacts/` (hash). */
@@ -267,6 +297,7 @@ export function defineMdRel(epicSlug: string): string { return `${DEFINES_DIR}/D
 export function hldMdRel(epicSlug: string): string { return `${DESIGNS_DIR}/HLD-${fileSeg(epicSlug)}.md`; }
 export function lldMdRel(epicSlug: string, storyId: string): string { return `${DESIGNS_DIR}/LLD-${fileSeg(epicSlug)}-${storyId}.md`; }
 export function planMdRel(epicSlug: string, storyId: string): string { return `${PLANS_DIR}/PLAN-${fileSeg(epicSlug)}-${storyId}.md`; }
+export function buildMdRel(epicSlug: string, storyId: string): string { return `${BUILDS_DIR}/BUILD-${fileSeg(epicSlug)}-${storyId}.md`; }
 
 /** Path for a single amendment record. The amendmentId is already
  *  `AMD-<epicHash>-<n>` (see `amendments/store.ts`). */
@@ -341,6 +372,13 @@ export function pathsForWorkflow(args: {
 			throw new Error(`plan synthesize requires params.storyId`);
 		}
 		return planArtifactPaths(repoPath, epicHash, sid, epicSlug);
+	}
+	if (workflow === 'build') {
+		const sid = storyId ?? storyIdParam;
+		if (typeof sid !== 'string' || sid.length === 0) {
+			throw new Error(`build synthesize requires params.storyId`);
+		}
+		return buildArtifactPaths(repoPath, epicHash, sid, epicSlug);
 	}
 	if (workflow === 'tracker.push' || workflow === 'tracker.sync' || workflow === 'tracker.post') {
 		const dir = runsDirFor(epicHash);

@@ -81,7 +81,14 @@ import {
 	type PlanArtifact,
 	type PlanBody,
 } from './artifacts/plan.js';
-import { appendStoryToDefine, nextStoryId, readBaseHld, readDefineArtifact, requireApprovedEpic, requireApprovedHld, requireApprovedLld } from './gates.js';
+import {
+	BUILD_SCHEMA_VERSION,
+	isCitationArray as isBuildCitationArray,
+	isBuildBody,
+	renderBuildMarkdown,
+	type BuildArtifact,
+} from './artifacts/build.js';
+import { appendStoryToDefine, nextStoryId, readBaseHld, readDefineArtifact, requireApprovedEpic, requireApprovedHld, requireApprovedLld, requireApprovedPlan } from './gates.js';
 import {
 	isTrackerChecklistResult,
 	isTrackerPostRefs,
@@ -135,6 +142,7 @@ export function prepareDecompose(intent: WorkflowIntent): DecomposerPrompt {
 		case 'design.epic':  return designEpicDecomposer(intent);
 		case 'design.story': return designStoryDecomposer(intent);
 		case 'plan':         return planDecomposer(intent);
+		case 'build':        return buildDecomposer(intent);
 		case 'tracker.push':
 		case 'tracker.sync':
 		case 'tracker.post':
@@ -206,6 +214,7 @@ export function prepareSynthesize(
 		case 'design.epic':  return designEpicSynthesizer(intent, stepOutputs);
 		case 'design.story': return designStorySynthesizer(intent, stepOutputs);
 		case 'plan':         return planSynthesizer(intent, stepOutputs);
+		case 'build':        return buildSynthesizer(intent, stepOutputs);
 		case 'tracker.push':
 		case 'tracker.sync':
 		case 'tracker.post':
@@ -311,6 +320,7 @@ export function finalizeArtifact(
 			case 'design.epic':  return finalizeDesignEpic(intent, stepOutputs, runId, elapsedMs, llmResponse, model);
 			case 'design.story': return finalizeDesignStory(intent, stepOutputs, runId, elapsedMs, llmResponse, model);
 			case 'plan':         return finalizePlan(intent, stepOutputs, runId, elapsedMs, llmResponse, model);
+			case 'build':        return finalizeBuild(intent, stepOutputs, runId, elapsedMs, llmResponse, model);
 			case 'tracker.push':
 			case 'tracker.sync':
 			case 'tracker.post':
@@ -1563,6 +1573,182 @@ function finalizePlan(
 		ok: true,
 		finalized: {
 			workflow:   'plan',
+			renderedMd,
+			renderedJson,
+			artifact,
+		},
+	};
+}
+
+// ---------------------------------------------------------------------------
+// build workflow (Story plan -> implemented Tasks)
+//
+// s1 SCOPE: these are SKELETON seams that make `build` a dispatchable,
+// first-class stage on the shared synthesize-one-doc surface. The real
+// per-Task edit/test/repair loop is deferred:
+//   - TODO(s3): real Task sequencing via a serial CliProvider subprocess.
+//   - TODO(s4): halt/report on a failing Task.
+//   - TODO(s5): the full BuildArtifact body + finalize (validators, etc.).
+// ---------------------------------------------------------------------------
+
+function buildDecomposer(intent: WorkflowIntent): DecomposerPrompt {
+	const epicHash = requireEpicHash(intent);
+	const storyId  = requireStoryId(intent);
+	const systemPrompt = [
+		'You are the workflow decomposer for the `build` workflow.',
+		'',
+		'The `build` workflow (s1 skeleton) runs the SAME two steps in the SAME order:',
+		'  s1: `context.assemble`  — read the approved plan (ordered Tasks)',
+		'  s2: `tasks.implement`   — placeholder per-Task outcome stub',
+		'',
+		'Params are `{}` on every step. Runners read prior step outputs via the executor.',
+	].join('\n');
+	const userTurn = `Focus: ${intent.focus}\nEpic hash: ${epicHash}   Story: ${storyId}\nEmit the plan JSON now.`;
+	const schema = {
+		type: 'object',
+		required: ['workflow', 'steps'],
+		properties: {
+			workflow:  { const: 'build' },
+			rationale: { type: 'string' },
+			steps: {
+				type:     'array',
+				minItems: 2,
+				maxItems: 2,
+				items: {
+					type: 'object',
+					required: ['id', 'runner', 'params'],
+					properties: {
+						id:     { type: 'string', pattern: '^s[1-2]$' },
+						runner: { enum: ['context.assemble', 'tasks.implement'] },
+						params: { type: 'object' },
+						note:   { type: 'string' },
+					},
+					additionalProperties: false,
+				},
+			},
+		},
+		additionalProperties: false,
+	} as const;
+	return { systemPrompt, userTurn, schema: schema as unknown as Record<string, unknown> };
+}
+
+function buildSynthesizer(
+	intent:      WorkflowIntent,
+	stepOutputs: Readonly<Record<string, unknown>>,
+): SynthesizerPrompt {
+	const epicHash = requireEpicHash(intent);
+	const storyId  = requireStoryId(intent);
+	const systemPrompt = [
+		'You are the synthesizer for the `build` workflow (s1 skeleton).',
+		'',
+		'Read s2 (`tasks.implement`) and emit a minimal BuildArtifact JSON matching the schema.',
+		'',
+		'HARD RULES:',
+		'- `body.summary` is a one-line human-facing summary of the build run.',
+		'- `body.taskOutcomes` is the s2 `taskOutcomes` verbatim (empty is allowed in the s1 skeleton).',
+		'- `citations[]` grounds the summary — cite the plan Tasks as { kind: "prior-artifact", ref: "Plan <storyId> <task>" }.',
+	].join('\n');
+	const userTurn = [
+		`Focus: ${intent.focus}   Epic: ${epicHash}   Story: ${storyId}`,
+		'',
+		's2 tasks.implement:',
+		'```json',
+		JSON.stringify(stepOutputs['s2'], null, 2),
+		'```',
+		'',
+		'Emit the BuildArtifact JSON now.',
+	].join('\n');
+	const schema = {
+		type: 'object',
+		required: ['body', 'citations'],
+		properties: {
+			body: {
+				type: 'object',
+				required: ['summary', 'taskOutcomes'],
+				additionalProperties: false,
+				properties: {
+					summary:      { type: 'string', minLength: 1 },
+					taskOutcomes: { type: 'array' },
+				},
+			},
+			citations: {
+				type: 'array',
+				items: {
+					type: 'object',
+					required: ['id', 'kind', 'ref'],
+					properties: {
+						id:         { type: 'string', pattern: '^c\\d+$' },
+						kind:       { enum: ['step-output', 'analyze-bundle', 'doc', 'code', 'stakeholder', 'convention', 'prior-artifact'] },
+						ref:        { type: 'string', minLength: 1 },
+						quotedText: { type: 'string' },
+					},
+					additionalProperties: false,
+				},
+			},
+		},
+		additionalProperties: false,
+	} as const;
+	return { systemPrompt, userTurn, schema: schema as unknown as Record<string, unknown> };
+}
+
+function finalizeBuild(
+	intent:      WorkflowIntent,
+	_stepOutputs: Readonly<Record<string, unknown>>,
+	runId:       string,
+	elapsedMs:   number,
+	llmResponse: Record<string, unknown>,
+	model:       string,
+): FinalizeResult {
+	if (typeof llmResponse !== 'object' || llmResponse === null) {
+		return { ok: false, failure: schemaFailure(`synthesizer response is not an object`) };
+	}
+	const body      = (llmResponse as { body?: unknown }).body;
+	const citations = (llmResponse as { citations?: unknown }).citations;
+	if (!isBuildBody(body)) {
+		return { ok: false, failure: schemaFailure(`body does not match BuildBody shape`) };
+	}
+	if (!isBuildCitationArray(citations)) {
+		return { ok: false, failure: schemaFailure(`citations must be an array of { id, kind, ref }`) };
+	}
+
+	// Upstream must still be approved (gate throws otherwise); the plan
+	// supplies the build's anchor. TODO(s2): the full admission gate (plan
+	// freshness vs its LLD) lands in Story s2.
+	const epicHash = requireEpicHash(intent);
+	const storyId  = requireStoryId(intent);
+	const plan     = requireApprovedPlan(intent.repoPath, epicHash, storyId);
+	const epicSlug = plan.meta.epicSlug ?? safeDeriveSlug(intent.focus);
+
+	// TODO(s5): real per-Task outcome validation + the deterministic
+	// cross-artifact checks (the build peers of checkPlanTaskGraph).
+	const artifact: BuildArtifact = {
+		meta: {
+			workflow:      'build',
+			runId,
+			repoPath:      intent.repoPath,
+			createdAt:     new Date().toISOString(),
+			model,
+			elapsedMs,
+			repoIndexedAt: intent.repoIndexedAt,
+			schemaVersion: BUILD_SCHEMA_VERSION,
+			epicHash,
+			epicSlug,
+			storyId,
+			planRunId:     plan.meta.runId,
+		},
+		body,
+		citations,
+	};
+	const renderedMd   = renderBuildMarkdown(artifact);   // includes the shared citation footer
+	const renderedJson = JSON.stringify(artifact, null, 2) + '\n';
+	log.info(
+		{ workflow: 'build', runId, epicHash, storyId, taskOutcomes: body.taskOutcomes.length, citations: citations.length },
+		'finalizeBuild: artifact ready (s1 skeleton)',
+	);
+	return {
+		ok: true,
+		finalized: {
+			workflow:   'build',
 			renderedMd,
 			renderedJson,
 			artifact,

@@ -105,6 +105,7 @@ export function epicKeyFor(
 		return computeEpicHash(runId);
 	}
 	if (workflow === 'design.epic' || workflow === 'design.story' || workflow === 'plan' ||
+	    workflow === 'build' ||
 	    workflow === 'tracker.push' || workflow === 'tracker.sync' || workflow === 'tracker.post') {
 		const h = params['epicHash'];
 		assertEpicHash(h, `insrc_workflow_step[start]: workflow '${workflow}' requires params.epicHash`);

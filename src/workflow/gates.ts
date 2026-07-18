@@ -28,12 +28,14 @@ import type { DefineArtifact, DefineStory } from './artifacts/define.js';
 import type { HldArtifact }    from './artifacts/hld.js';
 import { computeHldEffectiveHash, extractHldContextSlice } from './artifacts/lld.js';
 import type { HldContextSlice, LldArtifact } from './artifacts/lld.js';
+import type { PlanArtifact } from './artifacts/plan.js';
 import {
 	ARTIFACT_ID_MARKER_RE,
 	ARTIFACTS_DIR,
 	defineArtifactPaths,
 	hldArtifactPaths,
 	lldArtifactPaths,
+	planArtifactPaths,
 	writeAtomic,
 } from './storage.js';
 
@@ -269,6 +271,63 @@ export function readPlanUpstream(repoPath: string, epicHash: string, storyId: st
 }
 
 // ---------------------------------------------------------------------------
+// Build gate (the `build` workflow's upstream gate)
+// ---------------------------------------------------------------------------
+
+/** Read the canonical Plan JSON for a Story from disk. */
+export function readPlanArtifact(repoPath: string, epicHash: string, storyId: string): PlanArtifact {
+	const paths = planArtifactPaths(repoPath, epicHash, storyId);
+	if (!existsSync(paths.json)) {
+		throw new ArtifactMissingError(
+			`Plan not found at ${paths.json}. Run \`plan\` for Story '${storyId}' before build.`,
+		);
+	}
+	return JSON.parse(readFileSync(paths.json, 'utf8')) as PlanArtifact;
+}
+
+/** Same as `readPlanArtifact` but refuses when the plan is unapproved or
+ *  rejected — the `build` workflow's upstream gate, the throwing peer of
+ *  `requireApprovedLld`. The approved plan is `build`'s authorization
+ *  boundary: its Tasks (and the test commands they carry) come verbatim
+ *  from an approved plan.
+ *
+ *  TODO(s2): the FULL admission gate — plan freshness vs its upstream LLD
+ *  (an amended/re-run LLD makes the plan stale) — is Story s2's job. s1
+ *  gates on approval only. */
+export function requireApprovedPlan(repoPath: string, epicHash: string, storyId: string): PlanArtifact {
+	const plan  = readPlanArtifact(repoPath, epicHash, storyId);
+	const label = plan.meta.epicSlug ?? epicHash;
+	if (plan.meta.approvedAt === undefined || plan.meta.approvedAt.length === 0) {
+		const path = planArtifactPaths(repoPath, epicHash, storyId, plan.meta.epicSlug).md;
+		throw new ArtifactNotApprovedError(
+			`Plan for Story '${storyId}' of Epic '${label}' (${epicHash}) is not approved. ` +
+			`Run \`insrc workflow approve ${path}\` before starting build.`,
+		);
+	}
+	if (plan.meta.rejectedAt !== undefined && plan.meta.rejectedAt.length > 0) {
+		throw new ArtifactNotApprovedError(
+			`Plan for Story '${storyId}' of Epic '${label}' (${epicHash}) was rejected on ${plan.meta.rejectedAt}. ` +
+			`Re-run plan before build.`,
+		);
+	}
+	return plan;
+}
+
+/** The in-memory read-model the `build` workflow's `context.assemble`
+ *  step consumes: the approved plan of ordered Tasks. Not persisted.
+ *  TODO(s3): widen to carry the per-Task sequencing context the real
+ *  implement loop needs. */
+export interface BuildUpstream {
+	readonly plan: PlanArtifact;
+}
+
+/** Compose the build's upstream inputs: `requireApprovedPlan` gates the
+ *  plan. Throws (via the gate) when the plan is unusable. */
+export function readBuildUpstream(repoPath: string, epicHash: string, storyId: string): BuildUpstream {
+	return { plan: requireApprovedPlan(repoPath, epicHash, storyId) };
+}
+
+// ---------------------------------------------------------------------------
 // Stale-ack helper
 // ---------------------------------------------------------------------------
 
@@ -395,7 +454,7 @@ function readArtifactIdMarker(mdPath: string): string | undefined {
 /** `.../docs/defines/DEF-<slug>.md` → `.../` (the repo root). Returns
  *  undefined when the path has no recognised `docs/` segment. */
 function repoRootFromDocsPath(p: string): string | undefined {
-	for (const seg of ['/docs/defines/', '/docs/designs/', '/docs/plans/', '/docs/stub/']) {
+	for (const seg of ['/docs/defines/', '/docs/designs/', '/docs/plans/', '/docs/builds/', '/docs/stub/']) {
 		const i = p.indexOf(seg);
 		if (i >= 0) return p.slice(0, i);
 	}
@@ -412,7 +471,7 @@ function swapExt(p: string): string {
  *  swapped. If no such segment is present, the path is returned as-
  *  is (older layouts / non-standard callers). */
 function swapDocsToArtifacts(p: string): string {
-	for (const seg of ['/docs/defines/', '/docs/designs/', '/docs/plans/']) {
+	for (const seg of ['/docs/defines/', '/docs/designs/', '/docs/plans/', '/docs/builds/']) {
 		const i = p.indexOf(seg);
 		if (i >= 0) {
 			return p.slice(0, i) + '/.insrc/artifacts/' + p.slice(i + seg.length);

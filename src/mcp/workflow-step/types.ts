@@ -9,6 +9,7 @@
  * See plans/workflow-implementation.md §7.2 for the protocol.
  */
 
+import type { BuildAdmissionRefusal } from '../../workflow/runners/build/schemas.js';
 import type { WorkflowName, WorkflowPlan } from '../../workflow/types.js';
 
 // ---------------------------------------------------------------------------
@@ -99,12 +100,25 @@ export interface WorkflowStepError {
 	};
 }
 
+/** The `build` stage's start-turn admission refusal (Story s2, sc2/sc3).
+ *  Emitted BEFORE any work list is materialized when the Story's plan is
+ *  missing / unapproved / stale — a typed, serializable refusal rather than
+ *  a protocol error (it is a valid outcome of a newly-registered stage, not
+ *  a failure). Additive: sibling stages never emit it. */
+export interface WorkflowStepRefused {
+	readonly next:     'refused';
+	readonly workflow: WorkflowName;
+	readonly storyId:  string;
+	readonly refusal:  BuildAdmissionRefusal;
+}
+
 export type WorkflowStepOutput =
 	| WorkflowStepEmitPlan
 	| WorkflowStepEmitStep
 	| WorkflowStepEmitSynthesize
 	| WorkflowStepDone
-	| WorkflowStepError;
+	| WorkflowStepError
+	| WorkflowStepRefused;
 
 // ---------------------------------------------------------------------------
 // MCP envelope

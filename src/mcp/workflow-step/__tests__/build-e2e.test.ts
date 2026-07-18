@@ -31,9 +31,10 @@ import { handleWorkflowStep } from '../handler.js';
 import { registerWorkflowRunners } from '../../../workflow/index.js';
 import { _clearWorkflowStateStoreForTests } from '../state-store.js';
 import { approveArtifactByJsonPath } from '../../../workflow/gates.js';
-import { planArtifactPaths } from '../../../workflow/storage.js';
+import { lldArtifactPaths, planArtifactPaths } from '../../../workflow/storage.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
+const LLD_HASH = 'deadbeef';   // matches the seeded plan's recorded lldEffectiveHash
 
 interface Envelope { readonly content: readonly { readonly type: 'text'; readonly text: string }[]; readonly isError?: boolean }
 function payload(env: Envelope): Record<string, unknown> {
@@ -66,6 +67,23 @@ function seedPlan(repo: string, approved: boolean): void {
 	if (approved) approveArtifactByJsonPath(pp.json);
 }
 
+// The current design.story (LLD) the s2 admission gate compares the plan's
+// recorded design basis against. `hldEffectiveHash === LLD_HASH` keeps the
+// plan FRESH (equal ⇒ not drifted). Only the meta is read by the gate.
+function seedLld(repo: string, hldEffectiveHash: string): void {
+	const lp = lldArtifactPaths(repo, HASH, 's1');
+	mkdirSync(dirname(lp.json), { recursive: true });
+	writeFileSync(lp.json, JSON.stringify({
+		meta: {
+			workflow: 'design.story', runId: 'lld-run-1', schemaVersion: 1,
+			epicHash: HASH, epicSlug: 'tag-filtering', storyId: 's1',
+			hldBaseRunId: 'hld-run-1', hldEffectiveHash, hldAmendmentsApplied: [],
+			approvedAt: '2026-07-18T00:00:00.000Z',
+		},
+		body: {}, citations: [],
+	}, null, 2));
+}
+
 const BUILD_STEPS = [
 	{ id: 's1', runner: 'context.assemble', params: {} },
 	{ id: 's2', runner: 'tasks.implement',  params: {} },
@@ -77,7 +95,9 @@ test("ac2: build start turn { phase:'start', workflow:'build', params:{ epicHash
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-build-e2e-'));
 	try {
 		seedPlan(repo, true);
-		// start → emit_plan (through the SHARED stage-agnostic surface).
+		seedLld(repo, LLD_HASH);   // fresh: plan's recorded basis == current design.story hash
+		// start → emit_plan (through the SHARED stage-agnostic surface; the
+		// s2 admission gate admits an approved + fresh plan).
 		const startOut = payload(await handleWorkflowStep({
 			phase: 'start', workflow: 'build', focus: 'build tag filtering s1', repo,
 			params: { epicHash: HASH, storyId: 's1' },
@@ -91,7 +111,7 @@ test("ac2: build start turn { phase:'start', workflow:'build', params:{ epicHash
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
-test('ac2: build refuses at the gate when the plan is unapproved', async () => {
+test('s2: build refuses at the START turn (next:refused) when the plan is unapproved', async () => {
 	_clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-build-e2e-'));
@@ -101,11 +121,49 @@ test('ac2: build refuses at the gate when the plan is unapproved', async () => {
 			phase: 'start', workflow: 'build', focus: 'build tag filtering s1', repo,
 			params: { epicHash: HASH, storyId: 's1' },
 		}));
-		assert.equal(startOut['next'], 'emit_plan', JSON.stringify(startOut));
-		const planOut = payload(await handleWorkflowStep({
-			phase: 'plan', plan: { workflow: 'build', steps: BUILD_STEPS }, state: startOut['state'] as string,
+		// The s2 admission gate refuses BEFORE any work list is materialized.
+		assert.equal(startOut['next'], 'refused', JSON.stringify(startOut));
+		const refusal = startOut['refusal'] as Record<string, unknown>;
+		assert.equal(refusal['reason'], 'plan-unapproved');
+		assert.equal(refusal['treeUntouched'], true);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('s2: build refuses at the START turn (next:refused, plan-missing) when no plan record exists', async () => {
+	_clearWorkflowStateStoreForTests();
+	registerWorkflowRunners();
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-build-e2e-'));
+	try {
+		seedLld(repo, LLD_HASH);   // a current design.story exists, but no plan
+		const startOut = payload(await handleWorkflowStep({
+			phase: 'start', workflow: 'build', focus: 'build tag filtering s1', repo,
+			params: { epicHash: HASH, storyId: 's1' },
 		}));
-		// The gate runs at the first step's prompt build → the run errors.
-		assert.equal(planOut['next'], 'error', JSON.stringify(planOut));
+		assert.equal(startOut['next'], 'refused', JSON.stringify(startOut));
+		assert.equal((startOut['refusal'] as Record<string, unknown>)['reason'], 'plan-missing');
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('s2: build refuses at the START turn (next:refused, plan-stale) — refusal survives JSON round-trip intact', async () => {
+	_clearWorkflowStateStoreForTests();
+	registerWorkflowRunners();
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-build-e2e-'));
+	try {
+		seedPlan(repo, true);              // recorded basis == 'deadbeef'
+		seedLld(repo, 'drifted-hash');     // current design.story hash differs ⇒ stale
+		const startOut = payload(await handleWorkflowStep({
+			phase: 'start', workflow: 'build', focus: 'build tag filtering s1', repo,
+			params: { epicHash: HASH, storyId: 's1' },
+		}));
+		assert.equal(startOut['next'], 'refused', JSON.stringify(startOut));
+		// payload() already parsed the serialized MCP envelope — asserting the
+		// full structured refusal proves it survived the turn boundary intact.
+		assert.deepEqual(startOut['refusal'], {
+			reason:  'plan-stale',
+			message: (startOut['refusal'] as Record<string, unknown>)['message'],
+			staleness: { planRecordedDesignHash: LLD_HASH, currentDesignHash: 'drifted-hash' },
+			treeUntouched: true,
+		});
+		assert.equal(typeof (startOut['refusal'] as Record<string, unknown>)['message'], 'string');
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });

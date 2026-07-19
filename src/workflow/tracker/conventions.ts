@@ -38,6 +38,28 @@ export function allTrackerLabels(epicLabel: string, storyLabel: string, epicSlug
 }
 
 // ---------------------------------------------------------------------------
+// Hierarchical-id marker
+// ---------------------------------------------------------------------------
+
+/** HTML-comment marker embedded as the FIRST line of a pushed issue body.
+ *  Invisible in rendered markdown, machine-readable — lets an issue map
+ *  back to its canonical hierarchical workflow id from the GitHub side
+ *  alone (complements the local artifact resolver). See `workflow/id.ts`. */
+export function idMarker(workflowId: string): string {
+	return `<!-- insrc:id ${workflowId} -->`;
+}
+
+/** Extracts the canonical workflow id from an issue body's `idMarker`
+ *  line (returns null when absent). The id has no whitespace, so `\S+`
+ *  captures the whole `E<…>:S<…>:T<…>` / `E<…>-S<…>-T<…>` token. */
+export const ID_MARKER_RE = /<!--\s*insrc:id\s+(\S+)\s*-->/;
+
+export function parseIdMarker(body: string): string | null {
+	const m = ID_MARKER_RE.exec(body);
+	return m !== null ? m[1]! : null;
+}
+
+// ---------------------------------------------------------------------------
 // Issue bodies
 // ---------------------------------------------------------------------------
 
@@ -60,9 +82,10 @@ function docRef(label: string, path: string, repo?: RepoRef): string {
 	return `- ${label}: [\`${path}\`](https://github.com/${repo.owner}/${repo.repo}/blob/${branch}/${path})`;
 }
 
-export function renderEpicBody(define: DefineArtifact, epicSlug: string, repo?: RepoRef): string {
+export function renderEpicBody(define: DefineArtifact, epicSlug: string, repo?: RepoRef, workflowId?: string): string {
 	const body = define.body;
 	const lines: string[] = [];
+	if (workflowId !== undefined && workflowId.length > 0) lines.push(idMarker(workflowId));
 	lines.push('## Problem', '', body.problem, '');
 	if (body.nonGoals.length > 0) {
 		lines.push('## Non-goals', '');
@@ -90,8 +113,9 @@ export function renderEpicBody(define: DefineArtifact, epicSlug: string, repo?: 
 
 /** Story issue body — Epic back-ref, user value, acceptance criteria,
  *  slug-based LLD link. */
-export function renderStoryBody(epicRef: string, story: DefineStory, epicSlug: string, repo?: RepoRef): string {
+export function renderStoryBody(epicRef: string, story: DefineStory, epicSlug: string, repo?: RepoRef, workflowId?: string): string {
 	const lines: string[] = [];
+	if (workflowId !== undefined && workflowId.length > 0) lines.push(idMarker(workflowId));
 	lines.push(`**Epic:** #${issueNumber(epicRef)}`, '');
 	lines.push('## User value', '', story.userValue, '');
 	if (story.acceptanceCriteria.length > 0) {
@@ -134,8 +158,9 @@ export function updateEpicTaskList(currentBody: string, storyId: string, storyRe
 /** Task issue body — Story back-ref, size, summary, per-Task acceptance
  *  checks + named tests, and a slug-based link to the plan doc. Rendered
  *  for each PlanTask when `pushTasks` is enabled. */
-export function renderTaskBody(storyRef: string, storyId: string, task: PlanTask, epicSlug: string, repo?: RepoRef): string {
+export function renderTaskBody(storyRef: string, storyId: string, task: PlanTask, epicSlug: string, repo?: RepoRef, workflowId?: string): string {
 	const lines: string[] = [];
+	if (workflowId !== undefined && workflowId.length > 0) lines.push(idMarker(workflowId));
 	lines.push(`**Story:** #${issueNumber(storyRef)} (${storyId})`, '');
 	lines.push(`**Size:** ${task.size}`, '');
 	lines.push('## Summary', '', task.summary, '');

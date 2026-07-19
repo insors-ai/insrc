@@ -46,8 +46,16 @@ import {
 	renderTrackerHldSummary, renderTrackerLldSummary, updateEpicTaskList,
 } from './tracker/conventions.js';
 import { patchTrackerMeta, readTrackerMeta, type TrackerMeta } from './tracker/refs.js';
+import { epicWorkflowId, storyWorkflowId, taskWorkflowId, toCanonical, type WorkflowId } from './id.js';
 
 const log = getLogger('workflow:tracker-auto');
+
+/** Canonical hierarchical workflow id, or undefined if it can't be
+ *  minted (e.g. an artifact with an unusable `createdAt`). Best-effort:
+ *  the id marker is an enhancement, never a reason to fail a push. */
+function safeCanonical(mint: () => WorkflowId): string | undefined {
+	try { return toCanonical(mint()); } catch { return undefined; }
+}
 
 export type AutoPushResult =
 	| { readonly status: 'created';        readonly epicRef?: string; readonly storyRef?: string; readonly taskRefs?: Readonly<Record<string, string>>; readonly labelsCreated?: readonly string[] }
@@ -124,7 +132,8 @@ export function autoPushEpicOnHld(hldJsonPath: string): AutoPushResult {
 		}
 		try {
 			epicRef = ghCreateIssue(cfg.owner, cfg.repo, `Epic: ${firstSentence(define.body.problem)}`,
-				renderEpicBody(define, epicSlug, { owner: cfg.owner, repo: cfg.repo }), [cfg.epicLabel, membership]);
+				renderEpicBody(define, epicSlug, { owner: cfg.owner, repo: cfg.repo },
+					safeCanonical(() => epicWorkflowId(epicHash, define.meta.createdAt))), [cfg.epicLabel, membership]);
 		} catch (err) { return { status: 'failed', reason: `gh issue create failed: ${(err as Error).message}` }; }
 		if (cfg.useMilestones) bestEffort('milestone', () => { ghEnsureMilestone(cfg.owner, cfg.repo, epicSlug); ghAttachMilestone(cfg.owner, cfg.repo, epicRef, epicSlug); });
 	}
@@ -184,7 +193,8 @@ export function autoPushStoryOnLld(lldJsonPath: string): AutoPushResult {
 	} else {
 		try {
 			storyRef = ghCreateIssue(cfg.owner, cfg.repo, `${storyId}: ${story.title}`,
-				renderStoryBody(epicRef, story, epicSlug, { owner: cfg.owner, repo: cfg.repo }), [cfg.storyLabel, epicMembershipLabel(epicSlug)]);
+				renderStoryBody(epicRef, story, epicSlug, { owner: cfg.owner, repo: cfg.repo },
+					safeCanonical(() => storyWorkflowId(epicHash, define.meta.createdAt, storyId))), [cfg.storyLabel, epicMembershipLabel(epicSlug)]);
 		} catch (err) { return { status: 'failed', reason: `gh issue create failed: ${(err as Error).message}` }; }
 		if (cfg.useMilestones) bestEffort('milestone', () => ghAttachMilestone(cfg.owner, cfg.repo, storyRef, epicSlug));
 	}
@@ -269,7 +279,8 @@ export function autoPushTasksOnPlan(planJsonPath: string): AutoPushResult {
 		try {
 			issue = ghCreateIssueTyped(
 				cfg.owner, cfg.repo, `${storyId}/${task.id}: ${task.title}`,
-				renderTaskBody(parentStoryRef, storyId, task, epicSlug, { owner: cfg.owner, repo: cfg.repo }),
+				renderTaskBody(parentStoryRef, storyId, task, epicSlug, { owner: cfg.owner, repo: cfg.repo },
+					safeCanonical(() => taskWorkflowId(epicHash, define.meta.createdAt, storyId, task.id))),
 				[cfg.taskLabel, membership], cfg.taskIssueType,
 			);
 		} catch (err) { return { status: 'failed', reason: `gh issue create (task ${task.id}) failed: ${(err as Error).message}` }; }

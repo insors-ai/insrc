@@ -44,6 +44,7 @@ import {
 	rejectAmendment,
 } from '../../workflow/amendments/store.js';
 import { scanLldStaleness, type StaleLldEntry } from '../../workflow/amendments/staleness.js';
+import { listDeferred, type DeferredQuestion } from '../../workflow/questions.js';
 import type { AmendmentRecord } from '../../workflow/amendments/types.js';
 import { deriveSlug } from '../../workflow/slug.js';
 import {
@@ -181,6 +182,20 @@ export function staleness(repoPath: string, epicHash: string): readonly StaleLld
 
 export function slugFor(focus: string): string {
 	return deriveSlug(focus);
+}
+
+/** Every `deferred` open question across an Epic's DEF + HLD + all LLDs — the
+ *  deferred-review surface. Deferred questions never auto-resurface at a stage
+ *  boundary; this is how they come back. */
+export function deferredQuestions(repoPath: string, epicHash: string): readonly DeferredQuestion[] {
+	return listDeferred(repoPath, epicHash);
+}
+
+/** Resolve an `<epicSlug|hash>` argument to a canonical 16-hex Epic hash, or
+ *  undefined when neither a hash nor a known slug matches. */
+export function resolveEpicHashArg(repoPath: string, hashOrSlug: string): string | undefined {
+	if (/^[0-9a-f]{16}$/.test(hashOrSlug)) return hashOrSlug;
+	return listEpics(repoPath).find(e => e.epicSlug === hashOrSlug)?.epicHash;
 }
 
 /** Pull GitHub issue state for an Epic + its Stories into meta.tracker

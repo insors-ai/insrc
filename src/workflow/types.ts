@@ -231,6 +231,28 @@ export type ExecutorTickResult =
 // Artifact base
 // ---------------------------------------------------------------------------
 
+/** The status of one open-question resolution. `resolved` carries a
+ *  `choice`; `ignored` leaves it to downstream judgment; `deferred`
+ *  parks it for the dedicated deferred-review flow (it does NOT
+ *  auto-resurface at the next stage boundary). */
+export type QuestionResolutionStatus = 'resolved' | 'ignored' | 'deferred';
+
+/** One resolution of an artifact open question, recorded by the
+ *  cross-stage open-question gate (`insrc_workflow_step`
+ *  resolve_question). ADDITIVE — absent on every artifact until at
+ *  least one question is resolved. Keyed in
+ *  `ArtifactMetaBase.questionResolutions` by the stable `questionId`
+ *  derived from the open-question text. */
+export interface QuestionResolution {
+	/** The open-question text, verbatim, at resolution time. */
+	readonly question:   string;
+	readonly status:     QuestionResolutionStatus;
+	readonly choice?:    string;
+	readonly rationale?: string;
+	/** ISO 8601 timestamp. */
+	readonly resolvedAt: string;
+}
+
 /** Every artifact shares this meta envelope. Runner-specific
  *  artifact types extend the payload. */
 export interface ArtifactMetaBase {
@@ -266,6 +288,12 @@ export interface ArtifactMetaBase {
 	 *  in meta for display in prompts / titles / CLI hints. Files
 	 *  are named by hash, never by slug. */
 	readonly epicSlug?:    string;
+	/** Open-question resolutions, keyed by the stable questionId
+	 *  derived from each `body.openQuestions` entry. Written by the
+	 *  cross-stage open-question gate (`insrc_workflow_step`
+	 *  resolve_question). Additive; absent until a question is
+	 *  resolved / ignored / deferred. */
+	readonly questionResolutions?: Readonly<Record<string, QuestionResolution>>;
 }
 
 /** A citation grounds a claim in the artifact body against a step

@@ -27,14 +27,15 @@ import { deriveSlug } from '../../../workflow/slug.js';
 import { assertEpicHash, computeEpicHash } from '../../../workflow/hash.js';
 import type { WorkflowIntent } from '../../../workflow/types.js';
 import { prepareDecompose } from '../../../workflow/orchestrator.js';
+import { preflightUpstreamQuestions } from '../questions-gate.js';
 import { encodeState, STATE_VERSION, type WorkflowStepStatePayload } from '../state.js';
-import type { WorkflowStepEmitPlan, WorkflowStepInputStart } from '../types.js';
+import type { WorkflowStepEmitPlan, WorkflowStepInputStart, WorkflowStepResolveQuestions } from '../types.js';
 
 const log = getLogger('mcp:workflow-step:start');
 
 export async function handleStart(
 	input: WorkflowStepInputStart,
-): Promise<WorkflowStepEmitPlan> {
+): Promise<WorkflowStepEmitPlan | WorkflowStepResolveQuestions> {
 	const repoPath = resolveRepoPath(input.repo);
 	if (repoPath === undefined) {
 		throw new Error(
@@ -42,8 +43,14 @@ export async function handleStart(
 			`in the MCP server's environment.`,
 		);
 	}
-	const runId = `wf-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 	const params = input.params ?? {};
+
+	// Mandatory start gate: resolve the IMMEDIATE-UPSTREAM artifact's open
+	// questions before this consuming stage runs. Pre-run — no state token yet.
+	const gate = await preflightUpstreamQuestions(input.workflow, repoPath, params);
+	if (gate !== undefined) return gate;
+
+	const runId = `wf-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 	const epicKey = epicKeyFor(input.workflow, input.focus, params, runId);
 
 	const intent: WorkflowIntent = {

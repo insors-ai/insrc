@@ -15,7 +15,13 @@ import type { WorkflowName, WorkflowPlan } from '../../workflow/types.js';
 // Phases
 // ---------------------------------------------------------------------------
 
-export type WorkflowStepPhase = 'start' | 'plan' | 'step' | 'synthesize';
+export type WorkflowStepPhase =
+	| 'start'
+	| 'plan'
+	| 'step'
+	| 'synthesize'
+	| 'resolve_question'
+	| 'review_deferred';
 
 export interface WorkflowStepInputStart {
 	readonly phase:    'start';
@@ -44,11 +50,36 @@ export interface WorkflowStepInputSynthesize {
 	readonly state:    string;
 }
 
+/** Record ONE answer to an upstream-artifact open question. Pre-run gate:
+ *  no `state` token — the upstream artifact is addressed by workflow+params.
+ *  Exactly one of `choice` (with status resolved) / `defer` / `ignore`. */
+export interface WorkflowStepInputResolveQuestion {
+	readonly phase:      'resolve_question';
+	readonly workflow:   WorkflowName;
+	readonly params?:    Record<string, unknown>;
+	readonly questionId: string;
+	readonly choice?:    string;
+	readonly defer?:     boolean;
+	readonly ignore?:    boolean;
+	readonly rationale?: string;
+	readonly repo?:      string;
+}
+
+/** List the Epic's deferred open questions (with regenerated options) for
+ *  the review flow. Stateless; addressed by `params.epicHash | epicSlug`. */
+export interface WorkflowStepInputReviewDeferred {
+	readonly phase:   'review_deferred';
+	readonly params?: Record<string, unknown>;
+	readonly repo?:   string;
+}
+
 export type WorkflowStepInput =
 	| WorkflowStepInputStart
 	| WorkflowStepInputPlan
 	| WorkflowStepInputStep
-	| WorkflowStepInputSynthesize;
+	| WorkflowStepInputSynthesize
+	| WorkflowStepInputResolveQuestion
+	| WorkflowStepInputReviewDeferred;
 
 // ---------------------------------------------------------------------------
 // Outputs
@@ -88,6 +119,44 @@ export interface WorkflowStepDone {
 	readonly path:     string;
 	readonly markdown: string;
 	readonly artifact: unknown;
+	/** The just-produced artifact's still-open questions (if any). The
+	 *  controller MAY offer to resolve them now via phase='resolve_question'
+	 *  (optional — the stage is complete regardless). */
+	readonly openQuestions?: readonly { readonly questionId: string; readonly text: string }[];
+}
+
+/** One upstream-artifact open question with daemon-generated options. */
+export interface WorkflowStepQuestion {
+	readonly questionId:     string;
+	readonly text:           string;
+	readonly options:        readonly { readonly label: string; readonly detail: string }[];
+	readonly recommendation: string;
+}
+
+/** The mandatory stage-start gate: the immediate-upstream artifact has
+ *  unresolved open questions. Resolve each via phase='resolve_question',
+ *  then re-call phase='start'. */
+export interface WorkflowStepResolveQuestions {
+	readonly next:      'resolve_questions';
+	readonly questions: readonly WorkflowStepQuestion[];
+}
+
+/** Every upstream open question is now resolved / ignored / deferred —
+ *  re-call phase='start' to proceed. */
+export interface WorkflowStepReady {
+	readonly next:    'ready';
+	readonly message: string;
+}
+
+/** The Epic's deferred questions (with regenerated options + the exact
+ *  resolve_question call to make for each). */
+export interface WorkflowStepDeferred {
+	readonly next:      'deferred';
+	readonly questions: readonly (WorkflowStepQuestion & {
+		readonly kind:       'define' | 'hld' | 'lld';
+		readonly storyId?:   string;
+		readonly resolveWith: { readonly workflow: WorkflowName; readonly params: Record<string, unknown> };
+	})[];
 }
 
 export interface WorkflowStepError {
@@ -104,6 +173,9 @@ export type WorkflowStepOutput =
 	| WorkflowStepEmitStep
 	| WorkflowStepEmitSynthesize
 	| WorkflowStepDone
+	| WorkflowStepResolveQuestions
+	| WorkflowStepReady
+	| WorkflowStepDeferred
 	| WorkflowStepError;
 
 // ---------------------------------------------------------------------------

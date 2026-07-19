@@ -336,7 +336,20 @@ export function buildInsrcMcpServer(): McpServer {
 				'  4. Server returns { next: \'emit_synthesize\', prompt, schema, state }.\n' +
 				'     Emit the artifact JSON, then phase=\'synthesize\' with artifact + state.\n' +
 				'  5. Server returns { next: \'done\', path, markdown, artifact } once\n' +
-				'     the artifact has been written to disk.\n\n' +
+				'     the artifact has been written to disk. `done` may also carry\n' +
+				'     `openQuestions` — the new artifact\'s own still-open questions;\n' +
+				'     you MAY resolve them now via phase=\'resolve_question\' (optional).\n\n' +
+				'Open-question gate (design.epic / design.story / plan):\n' +
+				'  - phase=\'start\' first checks the IMMEDIATE-UPSTREAM artifact\n' +
+				'    (design.epic->DEF, design.story->HLD, plan->LLD) for unresolved\n' +
+				'    open questions. If any it returns { next: \'resolve_questions\',\n' +
+				'    questions: [{ questionId, text, options, recommendation }] } INSTEAD\n' +
+				'    of emit_plan. Present each ONE AT A TIME (Resolve / Defer / Ignore),\n' +
+				'    then call phase=\'resolve_question\' with { workflow, params,\n' +
+				'    questionId, choice? | defer? | ignore?, rationale? }. When it returns\n' +
+				'    { next: \'ready\' }, re-call phase=\'start\'. Deferred questions do NOT\n' +
+				'    re-trigger; surface them later with phase=\'review_deferred\'\n' +
+				'    { params: { epicHash | epicSlug } } -> { next: \'deferred\', questions }.\n\n' +
 				'Common params:\n' +
 				'  - design.epic:  { epicSlug }\n' +
 				'  - design.story: { epicSlug, storyId }\n' +
@@ -352,10 +365,10 @@ export function buildInsrcMcpServer(): McpServer {
 				openWorldHint:  false,
 			},
 			inputSchema: {
-				phase: z.enum(['start', 'plan', 'step', 'synthesize'])
+				phase: z.enum(['start', 'plan', 'step', 'synthesize', 'resolve_question', 'review_deferred'])
 					.describe('Which turn of the loop this call carries.'),
 				workflow: z.enum(WORKFLOW_NAMES)
-					.describe('Only for phase=start. Which workflow to run.')
+					.describe('For phase=start (which workflow to run) and phase=resolve_question (the consuming stage whose upstream artifact to patch).')
 					.optional(),
 				focus: z.string().min(1)
 					.describe('Only for phase=start. Natural-language framing of the ask.')
@@ -364,7 +377,22 @@ export function buildInsrcMcpServer(): McpServer {
 					.describe('Only for phase=start. Absolute repo path; falls back to INSRC_REPO env.')
 					.optional(),
 				params: z.record(z.string(), z.unknown())
-					.describe('Only for phase=start. Optional workflow-specific parameters.')
+					.describe('For phase=start / resolve_question / review_deferred. Workflow-specific params (epicHash, epicSlug, storyId, …).')
+					.optional(),
+				questionId: z.string()
+					.describe('Only for phase=resolve_question. The questionId from a prior resolve_questions / done.openQuestions response.')
+					.optional(),
+				choice: z.string()
+					.describe('Only for phase=resolve_question. The chosen option label/decision (omit when deferring/ignoring).')
+					.optional(),
+				defer: z.boolean()
+					.describe('Only for phase=resolve_question. Set true to defer this question to the review flow (does not re-trigger at stage boundaries).')
+					.optional(),
+				ignore: z.boolean()
+					.describe('Only for phase=resolve_question. Set true to leave this question to downstream judgment.')
+					.optional(),
+				rationale: z.string()
+					.describe('Only for phase=resolve_question. Optional one-line rationale for the choice / defer / ignore.')
 					.optional(),
 				plan: z.object({
 					workflow: z.string(),
@@ -413,48 +441,30 @@ export function buildInsrcMcpServer(): McpServer {
 				'given `target` (a task id: `#N`, a hierarchical id, or `s1/t3`).\n\n' +
 				'Phases:\n\n' +
 				'  - `implement` — { target }. The daemon runs the admission gate ' +
-				'(plan present + approved + fresh) and the open-question gate (the ' +
-				"Story LLD's unresolved openQuestions). It returns one of:\n" +
+				'(plan present + approved + fresh) and returns one of:\n' +
 				'      { next: "refused", refusal }            — plan missing/unapproved/stale;\n' +
-				'      { next: "resolve_questions", questions } — unresolved design questions,\n' +
-				'          each with daemon-generated options + a recommendation. PRESENT ' +
-				'each to the human ONE AT A TIME (with an "ignore / leave to implementer" ' +
-				'choice) and record the answer via phase="resolve_question";\n' +
 				'      { next: "implement", taskId, workflowId, issueRef, prompt } — EXECUTE ' +
-				'the returned prompt: edit code, run tests, commit. The daemon did NOT edit.\n\n' +
-				'  - `resolve_question` — { target, questionId, choice? | ignore?, rationale? }. ' +
-				"Records the human's answer into the LLD meta, re-renders + commits the LLD, " +
-				'comments on the Story issue, then returns the next unresolved question or ' +
-				'{ next: "ready" } (call implement again).\n\n' +
+				'the returned prompt: edit code, run tests, commit. The daemon did NOT edit. ' +
+				'The prompt surfaces any design decisions resolved at plan-start (from the ' +
+				"Story LLD's meta.questionResolutions). Open questions are resolved at stage " +
+				'STARTS via insrc_workflow_step, not here.\n\n' +
 				'  - `validate` — { target }. The DAEMON runs a read-only verdict session ' +
 				'against the repo (inspect tree + run tests + typecheck) and returns ' +
 				'{ next: "done", verdict, passed }. `passed` is the daemon\'s judgment, ' +
 				'never a self-report.\n\n' +
 				'`repo` falls back to INSRC_REPO. The repo must be registered + indexed.',
 			annotations: {
-				readOnlyHint:   false,   // validate runs an agentic session; resolve_question writes the LLD
+				readOnlyHint:   false,   // validate runs an agentic session against the repo
 				idempotentHint: false,
 				openWorldHint:  false,
 			},
 			inputSchema: {
-				phase: z.enum(['implement', 'validate', 'resolve_question'])
+				phase: z.enum(['implement', 'validate'])
 					.describe('Which build step to run.'),
 				target: z.string().min(1)
 					.describe('Task identifier: `#N`, `owner/repo#N`, a canonical/slug hierarchical id, or `s1/t3`.'),
 				repo: z.string()
 					.describe('Absolute repo path; falls back to INSRC_REPO env.')
-					.optional(),
-				questionId: z.string()
-					.describe('Only for phase=resolve_question. The questionId from a prior resolve_questions response.')
-					.optional(),
-				choice: z.string()
-					.describe('Only for phase=resolve_question. The chosen option label/decision (omit when ignoring).')
-					.optional(),
-				ignore: z.boolean()
-					.describe('Only for phase=resolve_question. Set true to leave this question to implementer judgment.')
-					.optional(),
-				rationale: z.string()
-					.describe('Only for phase=resolve_question. Optional one-line rationale for the choice / ignore.')
 					.optional(),
 			},
 		},

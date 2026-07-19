@@ -58,6 +58,8 @@ export interface Services {
 		rejectAmendment(repoPath: string, amendmentId: string, reason: string): AmendmentRecord;
 		staleness(repoPath: string, epicHash: string): readonly StaleLldEntry[];
 		sync(repoPath: string, epicHash: string): import('../../workflow/tracker/sync.js').SyncResult;
+		deferredQuestions(repoPath: string, epicHash: string): readonly import('../../workflow/questions.js').DeferredQuestion[];
+		resolveEpicHashArg(repoPath: string, hashOrSlug: string): string | undefined;
 	};
 	readonly setup: {
 		detect(): SystemInfo;
@@ -103,6 +105,8 @@ export function makeServices(): Services {
 			rejectAmendment:  workflow.rejectAmendmentById,
 			staleness:        workflow.staleness,
 			sync:             workflow.sync,
+			deferredQuestions: workflow.deferredQuestions,
+			resolveEpicHashArg: workflow.resolveEpicHashArg,
 		},
 		setup: {
 			detect:       setup.detect,

@@ -7,11 +7,15 @@
  * Input / output shapes for `insrc_build_step` — the lean, controller-driven
  * build surface.
  *
- * The daemon does NOT edit code here. It resolves a task, gates it (admission
- * + open-question), templatizes the implement instructions for the CONTROLLER
- * to run, and — for `validate` — runs a read-only agentic verdict session
- * itself. Every call is self-contained given the `target`; there is no state
- * token.
+ * The daemon does NOT edit code here. It resolves a task, runs the admission
+ * gate, templatizes the implement instructions for the CONTROLLER to run, and
+ * — for `validate` — runs a read-only agentic verdict session itself. Every
+ * call is self-contained given the `target`; there is no state token.
+ *
+ * Open questions are NOT gated at build: they are resolved at the START of
+ * each consuming stage on its immediate-upstream artifact (see
+ * `workflow/questions.ts` + `insrc_workflow_step`). Build's upstream PLAN
+ * carries no open questions.
  */
 
 import type { BuildAdmissionRefusal } from '../../workflow/runners/build/schemas.js';
@@ -20,7 +24,7 @@ import type { BuildAdmissionRefusal } from '../../workflow/runners/build/schemas
 // Phases + inputs
 // ---------------------------------------------------------------------------
 
-export type BuildStepPhase = 'implement' | 'validate' | 'resolve_question';
+export type BuildStepPhase = 'implement' | 'validate';
 
 export interface BuildStepInputImplement {
 	readonly phase:  'implement';
@@ -35,20 +39,9 @@ export interface BuildStepInputValidate {
 	readonly repo?:  string;
 }
 
-export interface BuildStepInputResolveQuestion {
-	readonly phase:      'resolve_question';
-	readonly target:     string;
-	readonly questionId: string;
-	readonly choice?:    string;
-	readonly ignore?:    boolean;
-	readonly rationale?: string;
-	readonly repo?:      string;
-}
-
 export type BuildStepInput =
 	| BuildStepInputImplement
-	| BuildStepInputValidate
-	| BuildStepInputResolveQuestion;
+	| BuildStepInputValidate;
 
 // ---------------------------------------------------------------------------
 // Outputs
@@ -70,28 +63,6 @@ export interface BuildStepRefused {
 	readonly refusal: BuildAdmissionRefusal;
 }
 
-/** A single open question with daemon-generated solution options. The
- *  CONTROLLER presents each to the human (one at a time, with an ignore
- *  choice) and records the answer via phase='resolve_question'. */
-export interface BuildStepQuestion {
-	readonly questionId:     string;
-	readonly text:           string;
-	readonly options:        readonly { readonly label: string; readonly detail: string }[];
-	readonly recommendation: string;
-}
-
-/** Unresolved open questions block implement until each is resolved/ignored. */
-export interface BuildStepResolveQuestions {
-	readonly next:      'resolve_questions';
-	readonly questions: readonly BuildStepQuestion[];
-}
-
-/** Every open question is now resolved/ignored — call implement again. */
-export interface BuildStepReady {
-	readonly next:    'ready';
-	readonly message: string;
-}
-
 /** The daemon's read-only validation verdict for a task. */
 export interface BuildStepDone {
 	readonly next:    'done';
@@ -111,8 +82,6 @@ export interface BuildStepError {
 export type BuildStepOutput =
 	| BuildStepImplement
 	| BuildStepRefused
-	| BuildStepResolveQuestions
-	| BuildStepReady
 	| BuildStepDone
 	| BuildStepError;
 

@@ -12,6 +12,8 @@ import { appendFileSync } from 'node:fs';
 
 import { getLogger } from '../../shared/logger.js';
 import { handlePlan } from './phases/plan.js';
+import { handleResolveQuestion } from './phases/resolve-question.js';
+import { handleReviewDeferred } from './phases/review-deferred.js';
 import { handleStart } from './phases/start.js';
 import { handleStep } from './phases/step.js';
 import { handleSynthesize } from './phases/synthesize.js';
@@ -54,15 +56,17 @@ async function dispatch(input: unknown): Promise<WorkflowStepOutput> {
 	const step = input as WorkflowStepInput;
 	try {
 		switch (step.phase) {
-			case 'start':      return await handleStart(step);
-			case 'plan':       return await handlePlan(step);
-			case 'step':       return await handleStep(step);
-			case 'synthesize': return await handleSynthesize(step);
+			case 'start':            return await handleStart(step);
+			case 'plan':             return await handlePlan(step);
+			case 'step':             return await handleStep(step);
+			case 'synthesize':       return await handleSynthesize(step);
+			case 'resolve_question': return await handleResolveQuestion(step);
+			case 'review_deferred':  return await handleReviewDeferred(step);
 			default:
 				return errorResult(
 					'bad-phase',
 					`insrc_workflow_step: unknown phase '${(step as { phase: string }).phase}'. ` +
-					`Expected 'start' | 'plan' | 'step' | 'synthesize'.`,
+					`Expected 'start' | 'plan' | 'step' | 'synthesize' | 'resolve_question' | 'review_deferred'.`,
 					false,
 				);
 		}

@@ -17,6 +17,7 @@
 
 import { getLogger } from '../../../shared/logger.js';
 import { finalizeArtifact } from '../../../workflow/orchestrator.js';
+import { unresolvedOpen } from '../../../workflow/questions.js';
 import { appendRunLog, pathsForWorkflow, writeAtomic } from '../../../workflow/storage.js';
 import { assertStage, decodeState } from '../state.js';
 import { releaseState } from '../state-store.js';
@@ -82,12 +83,31 @@ export async function handleSynthesize(
 		'insrc_workflow_step[synthesize]: artifact written; releasing state',
 	);
 	releaseState(inputStateToken(input.state));
+
+	// Optional end-of-stage offer: surface the just-produced artifact's own
+	// still-open questions (DEF/HLD/LLD carry `body.openQuestions`). The
+	// controller MAY loop them through phase='resolve_question' now; the
+	// stage is complete regardless.
+	const stillOpen = openQuestionsOf(result.finalized.artifact);
+
 	return {
 		next:     'done',
 		path:     paths.md,
 		markdown: result.finalized.renderedMd,
 		artifact: result.finalized.artifact,
+		...(stillOpen.length > 0 ? { openQuestions: stillOpen } : {}),
 	};
+}
+
+/** The freshly-produced artifact's open questions with no resolution yet. */
+function openQuestionsOf(artifact: unknown): { readonly questionId: string; readonly text: string }[] {
+	const a = artifact as { body?: { openQuestions?: unknown }; meta?: { questionResolutions?: Record<string, unknown> } };
+	const texts = Array.isArray(a.body?.openQuestions)
+		? (a.body!.openQuestions as unknown[]).filter((t): t is string => typeof t === 'string')
+		: [];
+	if (texts.length === 0) return [];
+	return unresolvedOpen(texts, a.meta?.questionResolutions as never)
+		.map(q => ({ questionId: q.id, text: q.text }));
 }
 
 function formatFailure(f: import('../../../workflow/synthesizer.js').ValidationResult): string {

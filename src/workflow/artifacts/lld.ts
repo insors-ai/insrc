@@ -133,22 +133,10 @@ export interface LldBody {
 	readonly openQuestions:        readonly string[];
 }
 
-/** One resolution of a Story LLD open question, recorded by the build stage's
- *  open-question gate (`insrc_build_step` resolve_question). ADDITIVE — absent
- *  on every LLD until a build resolves at least one question. Keyed by the
- *  stable `questionId` derived from the open-question text. */
-export interface QuestionResolution {
-	/** The open-question text, verbatim, at resolution time. */
-	readonly question:   string;
-	/** `'resolved'` carries a `choice`; `'ignored'` leaves it to implementer judgment. */
-	readonly status:     'resolved' | 'ignored';
-	readonly choice?:    string;
-	readonly rationale?: string;
-	readonly resolvedAt: string;
-}
-
 // LLD meta extends the base with HLD anchoring. Every LLD carries
 // the Epic hash (canonical Epic identity) + slug (display only).
+// `questionResolutions` is inherited from `ArtifactMetaBase` (shared
+// across DEF/HLD/LLD — see `workflow/questions.ts`).
 export interface LldMeta extends ArtifactMetaBase {
 	readonly epicHash:             string;
 	readonly epicSlug:             string;
@@ -157,8 +145,6 @@ export interface LldMeta extends ArtifactMetaBase {
 	readonly hldEffectiveHash:     string;
 	readonly hldAmendmentsApplied: readonly string[];
 	readonly staleReason?:         string;
-	/** Build open-question resolutions, keyed by questionId. Additive. */
-	readonly questionResolutions?: Readonly<Record<string, QuestionResolution>>;
 }
 
 export interface LldArtifact {

@@ -13,7 +13,6 @@ import { appendFileSync } from 'node:fs';
 
 import { getLogger } from '../../shared/logger.js';
 import { handleImplement } from './phases/implement.js';
-import { handleResolveQuestion } from './phases/resolve-question.js';
 import { handleValidate } from './phases/validate.js';
 import type { BuildStepInput, BuildStepMcpEnvelope, BuildStepOutput, BuildStepError } from './types.js';
 
@@ -43,12 +42,11 @@ async function dispatch(input: unknown): Promise<BuildStepOutput> {
 		switch (step.phase) {
 			case 'implement':        return await handleImplement(step);
 			case 'validate':         return await handleValidate(step);
-			case 'resolve_question': return await handleResolveQuestion(step);
 			default:
 				return errorResult(
 					'bad-phase',
 					`insrc_build_step: unknown phase '${(step as { phase: string }).phase}'. ` +
-					`Expected 'implement' | 'validate' | 'resolve_question'.`,
+					`Expected 'implement' | 'validate'.`,
 				);
 		}
 	} catch (err) {

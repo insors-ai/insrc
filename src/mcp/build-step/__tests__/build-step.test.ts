@@ -109,6 +109,33 @@ test('implement: approved+fresh plan returns a prompt carrying acceptance checks
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
+test('implement: does NOT gate on the LLD open questions (resolved at stage-start now)', async () => {
+	const repo = mkRepo();
+	try {
+		seedDef(repo);
+		// LLD carries an unresolved open question AND a recorded decision.
+		writeFileSync(join(artifactsDir(repo), `${lldArtifactId(HASH, 's1')}.json`), JSON.stringify({
+			meta: {
+				workflow: 'design.story', runId: 'lld-run-1', schemaVersion: 1,
+				epicHash: HASH, epicSlug: 'tag-filtering', storyId: 's1',
+				hldBaseRunId: 'hld-run-1', hldEffectiveHash: 'basis-hash-xyz', hldAmendmentsApplied: [],
+				approvedAt: CREATED_AT,
+				questionResolutions: {
+					sc2: { question: 'Case sensitivity?', status: 'resolved', choice: 'Case-insensitive match', resolvedAt: CREATED_AT },
+				},
+			},
+			body: { openQuestions: ['[sc9 / missed] Still-open question that must NOT block build?'] },
+			citations: [],
+		}, null, 2));
+		seedPlan(repo, true);
+		const out = outputOf(await handleBuildStep({ phase: 'implement', target: 's1/t1', repo }));
+		assert.equal(out['next'], 'implement');   // NOT resolve_questions
+		const prompt = out['prompt'] as string;
+		assert.match(prompt, /Resolved design decisions/);
+		assert.match(prompt, /Case-insensitive match/);   // decision reaches the implementer
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
 // ---------------------------------------------------------------------------
 // implement — unapproved plan → refused
 // ---------------------------------------------------------------------------

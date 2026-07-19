@@ -25,8 +25,8 @@ import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, wr
 import { dirname, join, relative } from 'node:path';
 import { tmpdir } from 'node:os';
 
-import { admitBuild } from '../index.js';
-import * as buildIndex from '../index.js';
+import { admitBuild } from '../admission.js';
+import * as buildAdmission from '../admission.js';
 import { approvalVerdict, driftVerdict } from '../admission.js';
 import { approveArtifactByJsonPath } from '../../../gates.js';
 import type { PlanArtifact } from '../../../artifacts/plan.js';
@@ -336,12 +336,10 @@ test('t3: driftVerdict conservatively yields stale when the recorded design hash
 // t2 / t3 — boundary guard: neither half is on build/'s public surface
 // ---------------------------------------------------------------------------
 
-test('guard: the approval wrapper + drift comparator are NOT re-exported from build/index', () => {
-	assert.equal('approvalVerdict' in buildIndex, false);
-	assert.equal('driftVerdict' in buildIndex, false);
-	// The composed verdict + registration ARE the public surface.
-	assert.equal(typeof buildIndex.admitBuild, 'function');
-	assert.equal(typeof buildIndex.registerBuildRunners, 'function');
+test('guard: admitBuild is the public verdict surface of the admission module', () => {
+	// The composed verdict IS the public surface (the pivot has no runner
+	// registration; the daemon only gates + validates).
+	assert.equal(typeof buildAdmission.admitBuild, 'function');
 });
 
 // ---------------------------------------------------------------------------

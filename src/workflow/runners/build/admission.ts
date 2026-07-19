@@ -4,11 +4,14 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * `build` admission internals — Story s2, Phase B.
+ * `build` admission gate — the daemon's read-only start-turn verdict.
  *
- * Two build-PRIVATE halves of the start-turn admission gate. Neither is
- * re-exported from `runners/build/index.ts`; siblings (s3, s5) see only
- * the composed `BuildAdmissionResult` verdict, never HOW it is reached.
+ * In the controller-driven pivot this module is the whole of what the daemon
+ * decides before handing an implement prompt to the controller: is the Story's
+ * plan present, approved, and fresh? `admitBuild` composes the two private
+ * halves below into the `BuildAdmissionResult` verdict; consumers
+ * (`insrc_build_step`'s implement phase) see only that verdict, never HOW it is
+ * reached.
  *
  *   1. `approvalVerdict` — a NON-THROWING wrapper over the existing
  *      throwing plan-approval accessor (`requireApprovedPlan`, the plan-
@@ -37,8 +40,20 @@
  * `requireApprovedPlan`. This module uses the accurate source.
  */
 
+import { createHash } from 'node:crypto';
+
 import { ArtifactMissingError, ArtifactNotApprovedError, readLldArtifact, requireApprovedPlan } from '../../gates.js';
+import { assertEpicHash } from '../../hash.js';
+import { planArtifactId } from '../../storage.js';
 import type { PlanArtifact } from '../../artifacts/plan.js';
+import type { BuildAdmissionResult } from './schemas.js';
+
+export type {
+	BuildAdmissionAccepted,
+	BuildAdmissionRefusal,
+	BuildAdmissionResult,
+	BuildRefusalReason,
+} from './schemas.js';
 
 // ---------------------------------------------------------------------------
 // t2 — non-throwing approval wrapper (build-private)
@@ -103,4 +118,101 @@ export function driftVerdict(
 		return { stale: true, planRecordedDesignHash, currentDesignHash };
 	}
 	return { fresh: true };
+}
+
+// ---------------------------------------------------------------------------
+// admitBuild — the start-turn admission gate (sc3)
+// ---------------------------------------------------------------------------
+
+/** A stable identity hash of the resolved plan version being admitted. Honest
+ *  content hash of the on-disk plan JSON (the object came from `JSON.parse`,
+ *  so re-stringify preserves key order deterministically). */
+function planContentHash(plan: PlanArtifact): string {
+	return createHash('sha256').update(JSON.stringify(plan)).digest('hex');
+}
+
+/** The `build` stage's read-only start-turn admission gate. Refuses to touch
+ *  code when the Story's plan is missing, unapproved, or stale, and reports
+ *  WHICH condition failed as a typed `BuildAdmissionResult` — never throwing
+ *  for any of the four modeled conditions (accepted / plan-missing /
+ *  plan-unapproved / plan-stale), so `treeUntouched` is structural, not
+ *  asserted.
+ *
+ *  Fixed evaluation order — approval BEFORE staleness — so:
+ *    - a missing plan short-circuits to `plan-missing`, never a staleness
+ *      verdict and never an empty admitted run;
+ *    - an unapproved (or rejected) plan short-circuits to `plan-unapproved`,
+ *      so an unapproved-AND-drifted plan yields the single reason
+ *      `plan-unapproved` and the drift comparison is never computed;
+ *    - only an approved plan reaches the drift check, which yields
+ *      `plan-stale` (with the inline drift hashes) or admits.
+ *
+ *  Unmodeled errors — a malformed `epicHash` (via `assertEpicHash`), a corrupt
+ *  plan body, or a missing CURRENT design.story — propagate rather than being
+ *  remapped to a modeled reason. */
+export function admitBuild(repoPath: string, epicHash: string, storyId: string): BuildAdmissionResult {
+	// Guard the hash up front so a malformed epicHash is a propagated internal
+	// error, not a mis-reported `plan-missing`.
+	assertEpicHash(epicHash, `admitBuild requires a well-formed epicHash`);
+
+	const approval = approvalVerdict(repoPath, epicHash, storyId);
+	if ('missing' in approval) {
+		return {
+			admitted: false,
+			refusal: {
+				reason:  'plan-missing',
+				message:
+					`Build refused for Story '${storyId}': no plan artifact exists (plan-missing). ` +
+					`Run \`plan\` for Story '${storyId}' and approve it before build.`,
+				treeUntouched: true,
+			},
+		};
+	}
+	if ('unapproved' in approval) {
+		return {
+			admitted: false,
+			refusal: {
+				reason:  'plan-unapproved',
+				message:
+					`Build refused for Story '${storyId}': the plan exists but is not approved ` +
+					`(plan-unapproved). Approve the plan before build.`,
+				treeUntouched: true,
+			},
+		};
+	}
+
+	// Approved — now the plan-vs-design.story drift check.
+	const drift = driftVerdict(repoPath, epicHash, storyId, approval.plan);
+	if ('stale' in drift) {
+		return {
+			admitted: false,
+			refusal: {
+				reason:  'plan-stale',
+				message:
+					`Build refused for Story '${storyId}': the plan is stale (plan-stale) — its recorded ` +
+					`design.story basis (${short(drift.planRecordedDesignHash)}) differs from the current ` +
+					`design.story (${short(drift.currentDesignHash)}). Re-run \`plan\` against the current LLD before build.`,
+				staleness: {
+					planRecordedDesignHash: drift.planRecordedDesignHash,
+					currentDesignHash:      drift.currentDesignHash,
+				},
+				treeUntouched: true,
+			},
+		};
+	}
+
+	// Approved + fresh — admit with the THIN plan pointer.
+	return {
+		admitted: true,
+		plan: {
+			planArtifactId:   planArtifactId(epicHash, storyId),
+			planArtifactHash: planContentHash(approval.plan),
+			storyId,
+		},
+	};
+}
+
+/** Short display form for a hash inside a refusal message. */
+function short(hash: string): string {
+	return hash.length > 0 ? `${hash.slice(0, 12)}…` : '(empty)';
 }

@@ -29,11 +29,9 @@ import type { HldArtifact }    from './artifacts/hld.js';
 import { computeHldEffectiveHash, extractHldContextSlice } from './artifacts/lld.js';
 import type { HldContextSlice, LldArtifact } from './artifacts/lld.js';
 import type { PlanArtifact } from './artifacts/plan.js';
-import { BUILD_ARTIFACT_KIND, type BuildArtifact } from './artifacts/build.js';
 import {
 	ARTIFACT_ID_MARKER_RE,
 	ARTIFACTS_DIR,
-	buildArtifactPaths,
 	defineArtifactPaths,
 	hldArtifactPaths,
 	lldArtifactPaths,
@@ -327,61 +325,6 @@ export interface BuildUpstream {
  *  plan. Throws (via the gate) when the plan is unusable. */
 export function readBuildUpstream(repoPath: string, epicHash: string, storyId: string): BuildUpstream {
 	return { plan: requireApprovedPlan(repoPath, epicHash, storyId) };
-}
-
-// ---------------------------------------------------------------------------
-// Build artifact reader / require-approved (s5, sc7 — the terminal record)
-//
-// The finalized BuildArtifact enters the IDENTICAL sign-off path as every
-// sibling kind: `approveArtifactByJsonPath` / `rejectArtifactByJsonPath` +
-// `jsonPathForMd` (which already resolves `docs/builds/` via the shared
-// `insrc:artifact` marker). This pairing is the read-back peer of
-// `readPlanArtifact`/`requireApprovedPlan`, keyed on BUILD_ARTIFACT_KIND — an
-// ADDITIONAL kind, never a change to how the existing kinds are approved.
-// Build is the terminal stage, so an unapproved build artifact is simply
-// treated as absent downstream (the throwing read below), exactly as for
-// every other kind.
-// ---------------------------------------------------------------------------
-
-/** Read the canonical BuildArtifact JSON for a Story from disk. Asserts the
- *  `kind` discriminant so a mistyped record is caught here rather than
- *  downstream. */
-export function readBuildArtifact(repoPath: string, epicHash: string, storyId: string): BuildArtifact {
-	const paths = buildArtifactPaths(repoPath, epicHash, storyId);
-	if (!existsSync(paths.json)) {
-		throw new ArtifactMissingError(
-			`Build artifact not found at ${paths.json}. Run \`build\` for Story '${storyId}' first.`,
-		);
-	}
-	const artifact = JSON.parse(readFileSync(paths.json, 'utf8')) as BuildArtifact;
-	if (artifact.kind !== BUILD_ARTIFACT_KIND) {
-		throw new ArtifactMissingError(
-			`Artifact at ${paths.json} is not a '${BUILD_ARTIFACT_KIND}' record (kind='${String(artifact.kind)}').`,
-		);
-	}
-	return artifact;
-}
-
-/** Same as `readBuildArtifact` but refuses when the build record is unapproved
- *  or rejected — the throwing peer of `requireApprovedPlan`. An unapproved
- *  finalized build is treated as absent downstream, exactly as for every other
- *  artifact kind. */
-export function requireApprovedBuild(repoPath: string, epicHash: string, storyId: string): BuildArtifact {
-	const build = readBuildArtifact(repoPath, epicHash, storyId);
-	const label = build.meta.epicSlug ?? epicHash;
-	if (build.meta.approvedAt === undefined || build.meta.approvedAt.length === 0) {
-		const path = buildArtifactPaths(repoPath, epicHash, storyId, build.meta.epicSlug).md;
-		throw new ArtifactNotApprovedError(
-			`Build for Story '${storyId}' of Epic '${label}' (${epicHash}) is not approved. ` +
-			`Run \`insrc workflow approve ${path}\` to sign it off.`,
-		);
-	}
-	if (build.meta.rejectedAt !== undefined && build.meta.rejectedAt.length > 0) {
-		throw new ArtifactNotApprovedError(
-			`Build for Story '${storyId}' of Epic '${label}' (${epicHash}) was rejected on ${build.meta.rejectedAt}.`,
-		);
-	}
-	return build;
 }
 
 // ---------------------------------------------------------------------------

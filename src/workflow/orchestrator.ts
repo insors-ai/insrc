@@ -81,18 +81,6 @@ import {
 	type PlanArtifact,
 	type PlanBody,
 } from './artifacts/plan.js';
-import {
-	BUILD_SCHEMA_VERSION,
-	renderBuildMarkdown,
-	type BuildMeta,
-} from './artifacts/build.js';
-import { admitBuild } from './runners/build/index.js';
-import { projectBuildRunProgress } from './runners/build/progress.js';
-import {
-	assembleBuildArtifact,
-	projectBuildArtifact,
-	resolveTerminalOutcomes,
-} from './runners/build/finalize.js';
 import { appendStoryToDefine, nextStoryId, readBaseHld, readDefineArtifact, requireApprovedEpic, requireApprovedHld, requireApprovedLld, requireApprovedPlan } from './gates.js';
 import {
 	isTrackerChecklistResult,
@@ -147,7 +135,6 @@ export function prepareDecompose(intent: WorkflowIntent): DecomposerPrompt {
 		case 'design.epic':  return designEpicDecomposer(intent);
 		case 'design.story': return designStoryDecomposer(intent);
 		case 'plan':         return planDecomposer(intent);
-		case 'build':        return buildDecomposer(intent);
 		case 'tracker.push':
 		case 'tracker.sync':
 		case 'tracker.post':
@@ -219,7 +206,6 @@ export function prepareSynthesize(
 		case 'design.epic':  return designEpicSynthesizer(intent, stepOutputs);
 		case 'design.story': return designStorySynthesizer(intent, stepOutputs);
 		case 'plan':         return planSynthesizer(intent, stepOutputs);
-		case 'build':        return buildSynthesizer(intent, stepOutputs);
 		case 'tracker.push':
 		case 'tracker.sync':
 		case 'tracker.post':
@@ -325,7 +311,6 @@ export function finalizeArtifact(
 			case 'design.epic':  return finalizeDesignEpic(intent, stepOutputs, runId, elapsedMs, llmResponse, model);
 			case 'design.story': return finalizeDesignStory(intent, stepOutputs, runId, elapsedMs, llmResponse, model);
 			case 'plan':         return finalizePlan(intent, stepOutputs, runId, elapsedMs, llmResponse, model);
-			case 'build':        return finalizeBuild(intent, stepOutputs, runId, elapsedMs, llmResponse, model);
 			case 'tracker.push':
 			case 'tracker.sync':
 			case 'tracker.post':
@@ -1578,213 +1563,6 @@ function finalizePlan(
 		ok: true,
 		finalized: {
 			workflow:   'plan',
-			renderedMd,
-			renderedJson,
-			artifact,
-		},
-	};
-}
-
-// ---------------------------------------------------------------------------
-// build workflow (Story plan -> implemented Tasks)
-//
-// s1 SCOPE: these are SKELETON seams that make `build` a dispatchable,
-// first-class stage on the shared synthesize-one-doc surface. The real
-// per-Task edit/test/repair loop is deferred:
-//   - TODO(s3): real Task sequencing via a serial CliProvider subprocess.
-//   - TODO(s4): halt/report on a failing Task.
-//   - TODO(s5): the full BuildArtifact body + finalize (validators, etc.).
-// ---------------------------------------------------------------------------
-
-function buildDecomposer(intent: WorkflowIntent): DecomposerPrompt {
-	const epicHash = requireEpicHash(intent);
-	const storyId  = requireStoryId(intent);
-	const systemPrompt = [
-		'You are the workflow decomposer for the `build` workflow.',
-		'',
-		'The `build` workflow runs the SAME two steps in the SAME order:',
-		'  s1: `context.assemble`  — read the approved plan (ordered Tasks)',
-		'  s2: `tasks.sequence`    — the verdict-driven sequenced Task loop (implement + verify)',
-		'',
-		'Params are `{}` on every step. Runners read prior step outputs via the executor.',
-	].join('\n');
-	const userTurn = `Focus: ${intent.focus}\nEpic hash: ${epicHash}   Story: ${storyId}\nEmit the plan JSON now.`;
-	const schema = {
-		type: 'object',
-		required: ['workflow', 'steps'],
-		properties: {
-			workflow:  { const: 'build' },
-			rationale: { type: 'string' },
-			steps: {
-				type:     'array',
-				minItems: 2,
-				maxItems: 2,
-				items: {
-					type: 'object',
-					required: ['id', 'runner', 'params'],
-					properties: {
-						id:     { type: 'string', pattern: '^s[1-2]$' },
-						runner: { enum: ['context.assemble', 'tasks.sequence'] },
-						params: { type: 'object' },
-						note:   { type: 'string' },
-					},
-					additionalProperties: false,
-				},
-			},
-		},
-		additionalProperties: false,
-	} as const;
-	return { systemPrompt, userTurn, schema: schema as unknown as Record<string, unknown> };
-}
-
-function buildSynthesizer(
-	intent:      WorkflowIntent,
-	stepOutputs: Readonly<Record<string, unknown>>,
-): SynthesizerPrompt {
-	const epicHash = requireEpicHash(intent);
-	const storyId  = requireStoryId(intent);
-	const systemPrompt = [
-		'You are the synthesizer for the `build` workflow (s1 skeleton).',
-		'',
-		'Read s2 (`tasks.implement`) and emit a minimal BuildArtifact JSON matching the schema.',
-		'',
-		'HARD RULES:',
-		'- `body.summary` is a one-line human-facing summary of the build run.',
-		'- `body.taskOutcomes` is the s2 `taskOutcomes` verbatim (empty is allowed in the s1 skeleton).',
-		'- `citations[]` grounds the summary — cite the plan Tasks as { kind: "prior-artifact", ref: "Plan <storyId> <task>" }.',
-	].join('\n');
-	const userTurn = [
-		`Focus: ${intent.focus}   Epic: ${epicHash}   Story: ${storyId}`,
-		'',
-		's2 tasks.implement:',
-		'```json',
-		JSON.stringify(stepOutputs['s2'], null, 2),
-		'```',
-		'',
-		'Emit the BuildArtifact JSON now.',
-	].join('\n');
-	const schema = {
-		type: 'object',
-		required: ['body', 'citations'],
-		properties: {
-			body: {
-				type: 'object',
-				required: ['summary', 'taskOutcomes'],
-				additionalProperties: false,
-				properties: {
-					summary:      { type: 'string', minLength: 1 },
-					taskOutcomes: { type: 'array' },
-				},
-			},
-			citations: {
-				type: 'array',
-				items: {
-					type: 'object',
-					required: ['id', 'kind', 'ref'],
-					properties: {
-						id:         { type: 'string', pattern: '^c\\d+$' },
-						kind:       { enum: ['step-output', 'analyze-bundle', 'doc', 'code', 'stakeholder', 'convention', 'prior-artifact'] },
-						ref:        { type: 'string', minLength: 1 },
-						quotedText: { type: 'string' },
-					},
-					additionalProperties: false,
-				},
-			},
-		},
-		additionalProperties: false,
-	} as const;
-	return { systemPrompt, userTurn, schema: schema as unknown as Record<string, unknown> };
-}
-
-// s5 (winning alt a1): FINALIZE is a deterministic PROJECTION, not an LLM
-// synthesize. It re-projects the run-level frame ONCE from the terminal
-// outcomes + the approved plan graph (sc6), carries taskOutcomes[] (sc4)
-// verbatim, maps the sc3 accepted verdict into the upstream citation (ac3),
-// asserts the three pre-seal preconditions, and seals the flat record. The
-// synthesize turn's emitted body is deliberately IGNORED — the record is
-// grown/sealed from the daemon's own outcomes, never a self-report.
-function finalizeBuild(
-	intent:       WorkflowIntent,
-	stepOutputs:  Readonly<Record<string, unknown>>,
-	runId:        string,
-	elapsedMs:    number,
-	_llmResponse: Record<string, unknown>,
-	model:        string,
-): FinalizeResult {
-	// Upstream must still be approved (gate throws otherwise); the approved
-	// plan supplies the build's anchor + the plan graph the progress projects
-	// against.
-	const epicHash = requireEpicHash(intent);
-	const storyId  = requireStoryId(intent);
-	const plan     = requireApprovedPlan(intent.repoPath, epicHash, storyId);
-	const epicSlug = plan.meta.epicSlug ?? safeDeriveSlug(intent.focus);
-
-	// Resolve the terminal outcomes to seal — the live `tasks.sequence` step
-	// output (fresh run) or the reloaded grow-in-place checkpoint (restart-safe
-	// seal). taskOutcomes (sc4) are carried verbatim.
-	const outcomes = resolveTerminalOutcomes(stepOutputs, intent.repoPath, epicHash, storyId);
-
-	// Re-project the run-level frame ONCE from the terminal outcomes + the
-	// approved plan graph (sc6). A projection-invariant violation (corrupt
-	// outcome array) becomes a retryable schema failure, never a crash.
-	let progress: ReturnType<typeof projectBuildRunProgress>;
-	try {
-		progress = projectBuildRunProgress(outcomes, plan.body.tasks, storyId);
-	} catch (err) {
-		const msg = err instanceof Error ? err.message : String(err);
-		return { ok: false, failure: schemaFailure(`build progress projection failed: ${msg}`) };
-	}
-
-	// The sc3 accepted verdict is the SOLE sanctioned source of the ac3
-	// upstream citation — re-run the read-only admission gate rather than
-	// trusting any self-report. A refused verdict → `missing-admission` abort.
-	const admission = admitBuild(intent.repoPath, epicHash, storyId);
-	const accepted  = admission.admitted ? admission.plan : undefined;
-
-	const projected = projectBuildArtifact({
-		progress,
-		taskOutcomes: outcomes,
-		admission:    accepted,
-		epicId:       epicHash,
-	});
-	if (!projected.ok) {
-		// The three pre-seal preconditions (missing-admission / non-terminal /
-		// halt-inconsistent) are TERMINAL — re-emitting cannot fix them.
-		return { ok: false, failure: { ok: false, kind: 'schema', message: projected.message, retryable: false } };
-	}
-
-	const meta: BuildMeta = {
-		workflow:      'build',
-		runId,
-		repoPath:      intent.repoPath,
-		createdAt:     new Date().toISOString(),
-		model,
-		elapsedMs,
-		repoIndexedAt: intent.repoIndexedAt,
-		schemaVersion: BUILD_SCHEMA_VERSION,
-		epicHash,
-		epicSlug,
-		storyId,
-		planRunId:     plan.meta.runId,
-	};
-	// A single prior-artifact citation pins the approved plan (ac3); the build
-	// record is a deterministic projection, not an LLM-grounded doc, so
-	// citation grounding is not re-validated here.
-	const citations: Citation[] = [
-		{ id: 'c1', kind: 'prior-artifact', ref: `Plan ${storyId} (${projected.core.upstream.planArtifactId})` },
-	];
-	const artifact = assembleBuildArtifact({ meta, core: projected.core, citations });
-
-	const renderedMd   = renderBuildMarkdown(artifact);   // includes the shared citation footer
-	const renderedJson = JSON.stringify(artifact, null, 2) + '\n';
-	log.info(
-		{ workflow: 'build', runId, epicHash, storyId, runState: artifact.runState, taskOutcomes: artifact.taskOutcomes.length, filesTouched: artifact.filesTouched.length },
-		'finalizeBuild: artifact ready (sealed flat record)',
-	);
-	return {
-		ok: true,
-		finalized: {
-			workflow:   'build',
 			renderedMd,
 			renderedJson,
 			artifact,

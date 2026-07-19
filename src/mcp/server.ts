@@ -44,6 +44,7 @@ import { getLogger } from '../shared/logger.js';
 
 import { handleAnalyzeStep } from './analyze-step/handler.js';
 import { handleWorkflowStep } from './workflow-step/handler.js';
+import { handleBuildStep } from './build-step/handler.js';
 import { renderBundleAsMarkdown } from './bundle-md.js';
 import { makeSamplerFromMcpServer } from './sampling-bridge.js';
 import { WORKFLOW_NAMES } from '../workflow/types.js';
@@ -388,6 +389,76 @@ export function buildInsrcMcpServer(): McpServer {
 			},
 		},
 		async (rawArgs, _extra) => handleWorkflowStep(rawArgs),
+	);
+
+	// -------------------------------------------------------------------
+	// insrc_build_step — the lean, controller-driven build surface.
+	//
+	// Unlike insrc_workflow_step, this tool is STATELESS: every call is
+	// self-contained given its `target`. The daemon resolves the task,
+	// gates it (admission + open questions), templatizes the implement
+	// instructions for the CONTROLLER to run, and — for `validate` — runs
+	// a read-only agentic verdict session itself. The daemon NEVER edits
+	// code in the `implement` phase; the controller (Claude Code / Codex)
+	// does the actual editing/testing/committing.
+	// -------------------------------------------------------------------
+	server.registerTool(
+		'insrc_build_step',
+		{
+			title: 'insrc build (controller-driven)',
+			description:
+				'Lean, controller-driven build surface for implementing ONE approved ' +
+				'plan Task. The daemon resolves + gates + templatizes; YOU (the ' +
+				'controller) do the editing. Stateless — each call is self-contained ' +
+				'given `target` (a task id: `#N`, a hierarchical id, or `s1/t3`).\n\n' +
+				'Phases:\n\n' +
+				'  - `implement` — { target }. The daemon runs the admission gate ' +
+				'(plan present + approved + fresh) and the open-question gate (the ' +
+				"Story LLD's unresolved openQuestions). It returns one of:\n" +
+				'      { next: "refused", refusal }            — plan missing/unapproved/stale;\n' +
+				'      { next: "resolve_questions", questions } — unresolved design questions,\n' +
+				'          each with daemon-generated options + a recommendation. PRESENT ' +
+				'each to the human ONE AT A TIME (with an "ignore / leave to implementer" ' +
+				'choice) and record the answer via phase="resolve_question";\n' +
+				'      { next: "implement", taskId, workflowId, issueRef, prompt } — EXECUTE ' +
+				'the returned prompt: edit code, run tests, commit. The daemon did NOT edit.\n\n' +
+				'  - `resolve_question` — { target, questionId, choice? | ignore?, rationale? }. ' +
+				"Records the human's answer into the LLD meta, re-renders + commits the LLD, " +
+				'comments on the Story issue, then returns the next unresolved question or ' +
+				'{ next: "ready" } (call implement again).\n\n' +
+				'  - `validate` — { target }. The DAEMON runs a read-only verdict session ' +
+				'against the repo (inspect tree + run tests + typecheck) and returns ' +
+				'{ next: "done", verdict, passed }. `passed` is the daemon\'s judgment, ' +
+				'never a self-report.\n\n' +
+				'`repo` falls back to INSRC_REPO. The repo must be registered + indexed.',
+			annotations: {
+				readOnlyHint:   false,   // validate runs an agentic session; resolve_question writes the LLD
+				idempotentHint: false,
+				openWorldHint:  false,
+			},
+			inputSchema: {
+				phase: z.enum(['implement', 'validate', 'resolve_question'])
+					.describe('Which build step to run.'),
+				target: z.string().min(1)
+					.describe('Task identifier: `#N`, `owner/repo#N`, a canonical/slug hierarchical id, or `s1/t3`.'),
+				repo: z.string()
+					.describe('Absolute repo path; falls back to INSRC_REPO env.')
+					.optional(),
+				questionId: z.string()
+					.describe('Only for phase=resolve_question. The questionId from a prior resolve_questions response.')
+					.optional(),
+				choice: z.string()
+					.describe('Only for phase=resolve_question. The chosen option label/decision (omit when ignoring).')
+					.optional(),
+				ignore: z.boolean()
+					.describe('Only for phase=resolve_question. Set true to leave this question to implementer judgment.')
+					.optional(),
+				rationale: z.string()
+					.describe('Only for phase=resolve_question. Optional one-line rationale for the choice / ignore.')
+					.optional(),
+			},
+		},
+		async (rawArgs, _extra) => handleBuildStep(rawArgs),
 	);
 
 	return server;

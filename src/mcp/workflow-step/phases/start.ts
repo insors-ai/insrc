@@ -25,17 +25,16 @@
 import { getLogger } from '../../../shared/logger.js';
 import { deriveSlug } from '../../../workflow/slug.js';
 import { assertEpicHash, computeEpicHash } from '../../../workflow/hash.js';
-import { admitBuild } from '../../../workflow/runners/build/index.js';
 import type { WorkflowIntent } from '../../../workflow/types.js';
 import { prepareDecompose } from '../../../workflow/orchestrator.js';
 import { encodeState, STATE_VERSION, type WorkflowStepStatePayload } from '../state.js';
-import type { WorkflowStepEmitPlan, WorkflowStepInputStart, WorkflowStepRefused } from '../types.js';
+import type { WorkflowStepEmitPlan, WorkflowStepInputStart } from '../types.js';
 
 const log = getLogger('mcp:workflow-step:start');
 
 export async function handleStart(
 	input: WorkflowStepInputStart,
-): Promise<WorkflowStepEmitPlan | WorkflowStepRefused> {
+): Promise<WorkflowStepEmitPlan> {
 	const repoPath = resolveRepoPath(input.repo);
 	if (repoPath === undefined) {
 		throw new Error(
@@ -46,25 +45,6 @@ export async function handleStart(
 	const runId = `wf-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 	const params = input.params ?? {};
 	const epicKey = epicKeyFor(input.workflow, input.focus, params, runId);
-
-	// s2 — the `build` admission gate runs at the START turn, BEFORE any
-	// work list is materialized. An unapproved / stale / missing plan aborts
-	// with a typed refusal (`next:'refused'`) and an untouched tree. For
-	// `build`, `epicKey` is the validated epicHash (see `epicKeyFor`).
-	if (input.workflow === 'build') {
-		const storyId = params['storyId'];
-		if (typeof storyId !== 'string' || storyId.length === 0) {
-			throw new Error(`insrc_workflow_step[start]: workflow 'build' requires params.storyId`);
-		}
-		const verdict = admitBuild(repoPath, epicKey, storyId);
-		if (!verdict.admitted) {
-			log.info(
-				{ runId, workflow: 'build', storyId, reason: verdict.refusal.reason },
-				'insrc_workflow_step[start]: build admission refused',
-			);
-			return { next: 'refused', workflow: 'build', storyId, refusal: verdict.refusal };
-		}
-	}
 
 	const intent: WorkflowIntent = {
 		workflow:      input.workflow,

@@ -158,3 +158,46 @@ test('service errors surface as a line, not a throw', async () => {
 	ctx.services.repo.add = async () => { throw new Error('path does not exist'); };
 	assert.match((await runCommand('repo add /nope', ctx))[0] ?? '', /✗ path does not exist/);
 });
+
+test('workflow review renders verdict, counts, auto-fixes, and pending findings', async () => {
+	const { ctx } = ctxWith();
+	ctx.services.workflow.reviewArtifact = async () => ({
+		report: {
+			artifact: 'PLAN', stage: 'plan', verdict: 'block', findings: [],
+			counts: { high: 2, med: 1, low: 3 }, reviewedAt: '', model: 'm',
+		},
+		applied: [{ claimId: 'c1', edits: [] }],
+		skipped: [],
+		pendingUser: [{
+			claimId: 'c2', ref: 's2/t7', kind: 'citation', severity: 'HIGH',
+			premise: 'wiring spans exactly two files', evidence: 'e', action: 'a', fixability: 'assisted',
+		}],
+	}) as never;
+	const out = await runCommand('workflow review docs/plans/PLAN-x.md', ctx);
+	assert.match(out[0] ?? '', /BLOCK · HIGH=2 MED=1 LOW=3/);
+	assert.ok(out.some(l => /auto-fixed 1 finding/.test(l)));
+	assert.ok(out.some(l => /\[HIGH\] s2\/t7 · assisted · citation/.test(l)));
+});
+
+test('workflow approve --override threads the reason to approve', async () => {
+	const { ctx } = ctxWith();
+	let seen: unknown;
+	ctx.services.workflow.approve = ((p: string, t?: boolean, ov?: string) => {
+		seen = [p, t, ov];
+		return { approval: { workflow: 'plan', path: '', approvedAt: '' } };
+	}) as never;
+	const out = await runCommand('workflow approve docs/plans/PLAN-x.md --override findings are non-material', ctx);
+	assert.deepEqual(seen, ['docs/plans/PLAN-x.md', true, 'findings are non-material']);
+	assert.match(out[0] ?? '', /approved plan \(review overridden\)/);
+});
+
+test('workflow approve surfaces a review block as a line, not a throw', async () => {
+	const { ctx } = ctxWith();
+	ctx.services.workflow.approve = (() => {
+		const e = new Error('blocked'); e.name = 'ReviewBlockedError';
+		(e as { summary?: string }).summary = '2 HIGH · 1 MED · 3 LOW';
+		throw e;
+	}) as never;
+	const out = await runCommand('workflow approve docs/plans/PLAN-x.md', ctx);
+	assert.match(out[0] ?? '', /blocked by review \(2 HIGH · 1 MED · 3 LOW\)/);
+});

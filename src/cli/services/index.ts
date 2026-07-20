@@ -50,7 +50,8 @@ export interface Services {
 		listEpics(repoPath: string): EpicSummary[];
 		chain(repoPath: string, epicHash: string): ChainReport;
 		chainText(repoPath: string, epicHash: string): string;
-		approve(artifactPath: string, withTracker?: boolean): ApproveOutcome;
+		approve(artifactPath: string, withTracker?: boolean, overrideReview?: string): ApproveOutcome;
+		reviewArtifact(repoPath: string, artifactPath: string): Promise<import('../../workflow/review/index.js').ReviewArtifactResult>;
 		reject(artifactPath: string, reason: string): RejectionResult;
 		ackStale(artifactPath: string, reason: string): { readonly path: string; readonly ackedAt: string; readonly reason: string };
 		amendments(repoPath: string, epicHash: string): readonly AmendmentRecord[];
@@ -99,6 +100,7 @@ export function makeServices(): Services {
 			chain:            workflow.chain,
 			chainText:        workflow.chainText,
 			approve:          workflow.approve,
+			reviewArtifact:   workflow.reviewArtifact,
 			reject:           workflow.reject,
 			ackStale:         workflow.ackStale,
 			amendments:       workflow.amendments,

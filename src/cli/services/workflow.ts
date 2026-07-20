@@ -56,6 +56,8 @@ import { runTrackerSetup, type TrackerSetupOptions, type TrackerSetupReport } fr
 import { resolveGithubConfig } from '../../workflow/config/github.js';
 import { syncTracker, type SyncResult } from '../../workflow/tracker/sync.js';
 import { getLogger } from '../../shared/logger.js';
+import { CliProvider } from '../../agent/providers/cli-provider.js';
+import { reviewArtifactFile, type ReviewArtifactResult } from '../../workflow/review/index.js';
 
 const log = getLogger('cli:workflow');
 
@@ -151,6 +153,22 @@ export function approve(artifactPath: string, withTracker = true, overrideReview
 
 export function reject(artifactPath: string, reason: string): RejectionResult {
 	return rejectArtifactByJsonPath(jsonPathForMd(artifactPath), reason);
+}
+
+/** Run the grounded review cycle over an artifact: verify its premises
+ *  against real source, auto-fix the fixable findings, re-review, and stamp
+ *  `meta.review`. Uses the `claude` CLI provider (accuracy-first). The
+ *  resulting `block` verdict is what `approve` then enforces. */
+export async function reviewArtifact(repoPath: string, artifactPath: string): Promise<ReviewArtifactResult> {
+	const provider = new CliProvider({ kind: 'claude' });
+	return reviewArtifactFile({
+		mdPath:     artifactPath,
+		jsonPath:   jsonPathForMd(artifactPath),
+		repo:       repoPath,
+		provider,
+		model:      'cli-claude',
+		reviewedAt: new Date().toISOString(),
+	});
 }
 
 export function ackStale(artifactPath: string, reason: string): { readonly path: string; readonly ackedAt: string; readonly reason: string } {

@@ -12,6 +12,7 @@
 
 import type { Services } from './services/index.js';
 import type { TrackerSetupStep } from '../workflow/tracker/setup.js';
+import type { ReviewArtifactResult } from '../workflow/review/index.js';
 import { formatBytes, formatUptime } from './ui/format.js';
 import { CONFIG_CATALOG } from './config-catalog.js';
 
@@ -28,7 +29,7 @@ const PANES: Record<string, number> = { daemon: 0, repos: 1, workflows: 2, setup
 export const COMMAND_HELP: readonly string[] = [
 	'repo     add <path> | remove <path> | reindex <path> | list',
 	'daemon   start | stop | restart | update | backup <dir> | compact | status',
-	'workflow list | chain <hash> | approve <path> | reject <path> <reason> | ack-stale <path> <reason> | sync <hash> | deferred <epicSlug|hash>',
+	'workflow list | chain <hash> | review <path> | approve <path> [--override <reason>] | reject <path> <reason> | ack-stale <path> <reason> | sync <hash> | deferred <epicSlug|hash>',
 	'tracker  setup [--project]   ·   bootstrap the GitHub tracker (config, labels, issue types, project)',
 	'config   list [search] | get <key> | set <key> <value> | unset <key> | reload   (dot-path keys)',
 	'setup    show | apply | pull',
@@ -52,7 +53,7 @@ export async function runCommand(line: string, ctx: CommandCtx): Promise<string[
 			case 'pane': return switchPane(sub, ctx);
 			case 'daemon': case 'd':   return await runDaemon(sub, rest, svc, ctx);
 			case 'repo': case 'r':     return await runRepo(sub, rest, svc);
-			case 'workflow': case 'wf': return runWorkflow(sub, rest, svc, ctx);
+			case 'workflow': case 'wf': return await runWorkflow(sub, rest, svc, ctx);
 			case 'tracker': case 'tr': return runTracker(sub, rest, svc, ctx);
 			case 'config': case 'cfg': return await runConfig(sub, rest, svc);
 			case 'setup':              return await runSetup(sub, svc, ctx);
@@ -123,7 +124,7 @@ async function runRepo(sub: string | undefined, rest: readonly string[], svc: Se
 	}
 }
 
-function runWorkflow(sub: string | undefined, rest: readonly string[], svc: Services, ctx: CommandCtx): string[] {
+async function runWorkflow(sub: string | undefined, rest: readonly string[], svc: Services, ctx: CommandCtx): Promise<string[]> {
 	switch (sub) {
 		case 'list': case 'ls': {
 			const es = svc.workflow.listEpics(ctx.repoPath);
@@ -132,10 +133,28 @@ function runWorkflow(sub: string | undefined, rest: readonly string[], svc: Serv
 		case 'chain':
 			if (rest[0] === undefined) return ['usage: workflow chain <hash>'];
 			return svc.workflow.chainText(ctx.repoPath, rest[0]).split('\n');
+		case 'review': {
+			if (rest[0] === undefined) return ['usage: workflow review <path>'];
+			const res = await svc.workflow.reviewArtifact(ctx.repoPath, rest[0]);
+			return renderReviewSummary(res);
+		}
 		case 'approve': {
-			if (rest[0] === undefined) return ['usage: workflow approve <path>'];
-			const r = svc.workflow.approve(rest[0]);
-			return [`approved ${r.approval.workflow}${r.tracker !== undefined ? ` · tracker ${r.tracker.status}` : ''}`];
+			if (rest[0] === undefined) return ['usage: workflow approve <path> [--override <reason>]'];
+			// `--override <reason...>` forces approval past a `block` review verdict.
+			const ovIdx = rest.indexOf('--override');
+			const override = ovIdx >= 0 ? rest.slice(ovIdx + 1).join(' ') : undefined;
+			if (ovIdx >= 0 && (override === undefined || override.length === 0)) {
+				return ['usage: workflow approve <path> --override <reason>'];
+			}
+			try {
+				const r = svc.workflow.approve(rest[0], true, override);
+				return [`approved ${r.approval.workflow}${override !== undefined ? ' (review overridden)' : ''}${r.tracker !== undefined ? ` · tracker ${r.tracker.status}` : ''}`];
+			} catch (err) {
+				if (err instanceof Error && err.name === 'ReviewBlockedError') {
+					return [`✗ blocked by review (${(err as { summary?: string }).summary ?? 'findings'}) — run 'workflow review ${rest[0]}' to fix, or approve --override <reason>`];
+				}
+				throw err;
+			}
 		}
 		case 'reject': {
 			if (rest[0] === undefined || rest.length < 2) return ['usage: workflow reject <path> <reason>'];
@@ -164,8 +183,26 @@ function runWorkflow(sub: string | undefined, rest: readonly string[], svc: Serv
 				return `${where}  \`${d.questionId}\`  ${d.text}`;
 			});
 		}
-		default: return ['usage: workflow list|chain <hash>|approve <path>|reject <path> <reason>|ack-stale <path> <reason>|sync <hash>|deferred <epicSlug|hash>'];
+		default: return ['usage: workflow list|chain <hash>|review <path>|approve <path> [--override <reason>]|reject <path> <reason>|ack-stale <path> <reason>|sync <hash>|deferred <epicSlug|hash>'];
 	}
+}
+
+/** Render a review-cycle result as CLI lines: verdict + counts, auto-fixes
+ *  applied, and the findings still needing the user gate. */
+function renderReviewSummary(res: ReviewArtifactResult): string[] {
+	const r = res.report;
+	const icon = r.verdict === 'block' ? '✗' : r.verdict === 'warn' ? '▲' : '✓';
+	const lines = [`review: ${icon} ${r.verdict.toUpperCase()} · HIGH=${r.counts.high} MED=${r.counts.med} LOW=${r.counts.low}`];
+	if (res.applied.length > 0) lines.push(`  auto-fixed ${res.applied.length} finding(s)`);
+	if (res.skipped.length > 0) lines.push(`  ${res.skipped.length} auto-fix(es) skipped (target text not present)`);
+	if (res.pendingUser.length > 0) {
+		lines.push(`  ${res.pendingUser.length} finding(s) need your review:`);
+		for (const f of res.pendingUser) {
+			lines.push(`    [${f.severity}] ${f.ref ?? '?'} · ${f.fixability} · ${f.kind} — ${f.premise.slice(0, 80)}`);
+		}
+	}
+	if (r.verdict === 'block') lines.push(`  → resolve/override before approve`);
+	return lines;
 }
 
 function runTracker(sub: string | undefined, rest: readonly string[], svc: Services, ctx: CommandCtx): string[] {

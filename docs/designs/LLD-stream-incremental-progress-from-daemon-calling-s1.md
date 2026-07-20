@@ -1,0 +1,354 @@
+<!-- insrc:artifact LLD-6d6cfaf9a9b14bd4-s1 -->
+
+# LLD: E202607206d6cfaf9:S001
+
+**Epic:** `stream-incremental-progress-from-daemon-calling`
+**HLD base run:** `wf-1784476347429-dbnaq6`
+**HLD effective hash:** `2699deb16227...`
+**Tracker:** [insors-ai/insrc#42](https://github.com/insors-ai/insrc/issues/42)
+
+## HLD context
+
+**Framework:** Extend the daemon's existing per-operation progress emitters (WorkflowProgress in workflow-rpc.ts, eventToProgressData in analyze-rpc.ts) so both converge on one uniform ProgressEvent payload that rides the already-shipped IpcStreamMessage / IpcStreamKind 'progress' + 'delta' frame — no new wire format (k2, k5). The MCP tool surface gains a single progressToken-gated branch that maps inbound ProgressEvent frames to MCP notifications/progress notifications (k3). The IDE side is served purely by defining the daemon-emitted contract plus a thin reader-API shape the fork consumes (k4); the fork's actual render path is out of scope for this repo. This is the a1 alternative: extend-in-place over the two nearest existing emitters, one shared mapping, one forwarding branch, one thin reader, all on the single existing stream seam — no parallel progress subsystem.
+**Rollout phase:** Phase A — foundational progress contract
+**Owns:** `sc1` (ProgressEvent)
+
+## Contract details
+
+**Surface level:** public
+
+### `ProgressEvent`
+
+```typescript
+export type ProgressEvent = StageProgressEvent | TokenProgressEvent;
+```
+
+**Returns:** `ProgressEvent` — The sc1 uniform progress payload. Net-new type (symbol.locate resolved NO indexed entity named ProgressEvent anywhere in the tree), introduced in src/shared/types.ts adjacent to IpcStreamMessage:734 so it sits with the rest of the IPC contract the IDE fork mirrors.
+
+**Preconditions:**
+- Declared in src/shared/types.ts, not in src/daemon — module.profile reported `exports: []` for the src/daemon directory, confirming the streaming contract is not defined there.
+
+**Postconditions:**
+- Discriminating on `kind` yields a variant whose stage or token fields are all non-optional, so under strict + exactOptionalPropertyTypes no consumer handles `| undefined` for them (ac1, ac2).
+- Never carries repository contents or secrets — only stage labels and counts (nonFunctional.security).
+
+### `ProgressOperation`
+
+```typescript
+export type ProgressOperation = 'workflow.run' | 'analyze.run';
+```
+
+**Returns:** `ProgressOperation` — Closed union naming the two long operations in scope. Deliberately excludes the other two `send: (msg: IpcStreamMessage) => void` producers found by search.text — src/daemon/todos-rpc.ts:1146 and src/daemon/tools/types.ts:56 — which stay on the raw frame and are NOT migrated by this Story.
+
+**Postconditions:**
+- Carried identically by both variants, so no operation-specific shape divergence is representable (ac3).
+- Scope decision recorded: todos-rpc and the tool-execution context are a deliberate exclusion, not an oversight in the k1 uniformity claim. The search.text sweep returned `truncated: true`, so this exclusion list is not asserted to be exhaustive; s7's migration must re-run an untruncated sweep before claiming complete coverage.
+
+### `StageProgressEvent`
+
+```typescript
+export interface StageProgressEvent {
+  readonly kind:       'stage';
+  readonly operation:  ProgressOperation;
+  readonly stageId:    string;
+  readonly stageLabel: string;
+  readonly index:      number;
+  readonly total:      number | null;
+}
+```
+
+**Parameters:**
+- `stageId: string` — Stable id of the internal stage now executing. For workflow.run this is the existing WorkflowProgress.phase value (src/daemon/workflow-rpc.ts:61 — 'decompose' | 'plan-ready' | 'grounding' | 'step-start' | 'step-done' | 'synthesize-attempt' | 'synthesize-retry' | 'done'), optionally qualified by the existing `stepId` field. For analyze.run it is the existing AnalyzeRunEvent stage value read at src/daemon/analyze-rpc.ts:586.
+- `stageLabel: string` — Human-facing label. Absorbs the workflow emitter's existing `runner`/`attempt`/`detail` context (workflow-rpc.ts:63-66) so no extra sc1 field is needed for them.
+- `index: number` — 0-based ordinal of the current stage.
+- `total: number | null` — Known stage count, or null when the stage set is not enumerable ahead of time — which is the workflow.run case, where retry phases make the count dynamic.
+
+**Returns:** `StageProgressEvent` — Emitted on actual stage change only (never per-poll), carried as the `data` of an IpcStreamMessage with stream === 'progress'.
+
+**Preconditions:**
+- The operation has advanced from one internal stage to the next (ac1 `when`).
+
+**Postconditions:**
+- The caller identifies the executing stage from the payload alone, without reading the enclosing frame's `stream` field — this is what makes s3's reader definable over ProgressEvent rather than over the frame (k4).
+- O(1) per stage transition; no measurable slowdown of the 30-40 minute operation (nonFunctional.performance).
+
+### `TokenProgressEvent`
+
+```typescript
+export interface TokenProgressEvent {
+  readonly kind:        'token';
+  readonly operation:   ProgressOperation;
+  readonly stageId:     string | null;
+  readonly tokensDelta: number;
+  readonly tokensTotal: number;
+}
+```
+
+**Parameters:**
+- `stageId: string | null` — Stage the tokens belong to when known. For workflow.run this is the `stepId` argument already passed to the existing onToken callback (src/daemon/workflow-rpc.ts:78), documented there as the emitting step or 'plan' / 'synthesize'; null when the producing stage is not attributable.
+- `tokensDelta: number` — Tokens produced since the previous token event. NOTE the impedance mismatch this Story absorbs internally: the existing workflow onToken callback yields a token *string*, not a count (workflow-rpc.ts:78). Counting and batching that stream into a numeric delta is s1-internal per the HLD boundary and is not visible in sc1.
+- `tokensTotal: number` — Cumulative tokens for this operation run.
+
+**Returns:** `TokenProgressEvent` — Carried as the `data` of an IpcStreamMessage with stream === 'delta'.
+
+**Preconditions:**
+- The operation is actively producing output and continues (ac2 `given`/`when`).
+- Only providers that stream tokens produce these — the existing comment at src/daemon/workflow-rpc.ts:77 records that Ollama streams and the CLI providers do not, so a CLI-backed run legitimately emits stage events with no token events. Consumers must not treat token silence as a stall.
+
+**Postconditions:**
+- Emitted at the operation's natural token-batch cadence, never per-token, to avoid frame flooding (nonFunctional.performance).
+- Best-effort and non-durable: a dropped token event never affects the operation's final result (nonFunctional.durability). Because sc1 carries no sequence number, a consumer CANNOT detect a dropped frame — this is the known cost of picking a1 over a3, deferred pending a demonstrated s3 need.
+
+### `eventToProgressData`
+
+```typescript
+function eventToProgressData(event: AnalyzeRunEvent, tokensTotal: number): ProgressEvent | null;
+```
+
+**Parameters:**
+- `event: AnalyzeRunEvent` — The analyze run event being normalised. Unchanged from the current signature at src/daemon/analyze-rpc.ts:583.
+- `tokensTotal: number` — Running cumulative token count for the operation, threaded in by the caller at src/daemon/analyze-rpc.ts:521 so the mapper itself stays pure. Required because TokenProgressEvent.tokensTotal is cumulative but AnalyzeRunEvent carries only per-event data.
+
+**Returns:** `ProgressEvent | null` — The uniform payload, or null for AnalyzeRunEvent variants that are not stage transitions or token production. Return type narrows from the current `Record<string, unknown>` (analyze-rpc.ts:583) — this is the concrete 'extend in place' the HLD frameworkSummary describes, and this is the only existing, graph-indexed normaliser (entityId 36e8cc525ed310a03b3bb632236d15df) that sc1 subsumes.
+
+**Errors:**
+- `none` when Total function over the AnalyzeRunEvent union; unmapped variants return null rather than throwing, so progress mapping can never fail an in-flight analyze run (nonFunctional.durability).
+
+**Preconditions:**
+- Caller is the onEvent closure at src/daemon/analyze-rpc.ts:521.
+
+**Postconditions:**
+- A null return means the caller emits no frame for that event — a behaviour change from today, where every AnalyzeRunEvent produces a `progress` frame at line 521.
+- The workflow.run counterpart mapping (over the WorkflowProgress shape) is s1-internal per the HLD boundary and is intentionally NOT exposed as a shared API; uniformity is enforced by both adapters returning ProgressEvent, not by a shared exported helper.
+
+## Data model changes
+
+### `IpcStreamMessage` — invariant-change
+
+No structural change — the interface at src/shared/types.ts:734-738 (`id: number; stream: IpcStreamKind; data: unknown`) is untouched, and no member is added to the IpcStreamKind union at line 732, which already contains both 'delta' and 'progress'. This is k2 satisfied literally. The NEW invariant: when `stream` is 'progress' the `data` field is a StageProgressEvent, and when `stream` is 'delta' from a ProgressOperation it is a TokenProgressEvent. That pairing duplicates the discriminant (payload `kind` vs frame `stream`) — the acknowledged cost of a1. It is contained because construction happens only at the two adapter call sites below, and it is directly testable with the existing collector idiom. The `id: number` field discipline must be preserved: src/daemon/__tests__/handoff-stream.test.ts:224 asserts emitted messages carry a numeric `id` that the server overrides, and both existing call sites already pass `id: 0`.
+
+```
+// src/shared/types.ts — UNCHANGED
+ export type IpcStreamKind = 'delta' | 'progress' | 'gate' | ... ;
+ export interface IpcStreamMessage { id: number; stream: IpcStreamKind; data: unknown; }
+// NEW invariant (documented, not type-enforced — `data` stays `unknown`):
+//   stream === 'progress'                        => data is StageProgressEvent
+//   stream === 'delta' && op is ProgressOperation => data is TokenProgressEvent
+```
+
+**Call sites:**
+- `src/shared/types.ts:734 — interface declaration (entityId 2f5bb3447f82eaa2482d6144aad1784a)`
+- `src/shared/types.ts:732 — IpcStreamKind union, unchanged`
+- `src/daemon/analyze-rpc.ts:521 — `send({ id: 0, stream: 'progress', data: eventToProgressData(event) })``
+- `src/daemon/workflow-rpc.ts:238 — `onProgress: (f) => send({ id: 0, stream: 'progress', data: f })``
+- `src/daemon/server.ts:154 — `const sendStream = (msg: IpcStreamMessage): void =>`, the socket write closure (local, not exported)`
+- `src/daemon/__tests__/handoff-stream.test.ts:224 — numeric `id` override assertion`
+
+### `WorkflowProgress` — invariant-change
+
+CONFIRMED to exist, contrary to the s1 back-flow note that flagged it unverified: src/daemon/workflow-rpc.ts:61, `{ readonly phase: string; stepId?; runner?; attempt?; detail? }`, emitted at lines 110, 112, 123, 131, 134, 151, 166, 184. It does NOT reach the socket directly today — it is wrapped by the caller at line 238. This Story leaves the WorkflowProgress interface itself intact (it is the workflow driver's internal vocabulary, and the HLD boundary declares that vocabulary s1-internal) and changes only what line 238 puts on the wire: a ProgressEvent rather than the raw WorkflowProgress. Its untyped `phase: string` becomes StageProgressEvent.stageId, and `runner`/`attempt`/`detail` fold into stageLabel. Consequence for ac2: workflow token production does NOT flow through WorkflowProgress at all — it flows through the separate `onToken(stepId: string, token: string)` callback at line 78, which yields strings. Batching and counting those into TokenProgressEvent.tokensDelta/tokensTotal is the workflow half of ac2 and is s1-internal.
+
+```
+// src/daemon/workflow-rpc.ts:61 — interface UNCHANGED (s1-internal vocabulary)
+ export interface WorkflowProgress { readonly phase: string; stepId?; runner?; attempt?; detail? }
+
+// line 238 — CHANGED: raw shape no longer reaches the wire
+-  onProgress: (f) => send({ id: 0, stream: 'progress', data: f }),
++  onProgress: (f) => send({ id: 0, stream: 'progress', data: <StageProgressEvent from f> }),
++  onToken:    (stepId, token) => /* batch+count, then */ send({ id: 0, stream: 'delta', data: <TokenProgressEvent> }),
+```
+
+**Call sites:**
+- `src/daemon/workflow-rpc.ts:61 — interface declaration`
+- `src/daemon/workflow-rpc.ts:75 — `onProgress?: ((f: WorkflowProgress) => void) | undefined` on RunWorkflowOpts`
+- `src/daemon/workflow-rpc.ts:78 — `onToken?: ((stepId: string, token: string) => void) | undefined`, the token source for ac2`
+- `src/daemon/workflow-rpc.ts:110,112,123,131,134,151,166,184 — the eight emission sites`
+- `src/daemon/workflow-rpc.ts:202 — `workflow.run` stream handler doc comment`
+- `src/daemon/workflow-rpc.ts:238 — the wrap-into-frame site this Story changes`
+- `src/daemon/__tests__/workflow-rpc.test.ts:42 — existing `stream` method entity (entityId 9fa1e04a75df777edb5afd49d36abfeb), the host for ac3's workflow.run half`
+
+### `ProgressEvent (sc1 payload)` — new
+
+Net-new. The s1 back-flow finding is confirmed and material: symbol.locate found NO indexed entity named ProgressEvent anywhere in the tree, so the HLD frameworkSummary's 'converge on one uniform ProgressEvent payload' is an INTRODUCTION, not an extension. Only the two *emitters* are extended in place. Declared in src/shared/types.ts beside IpcStreamMessage so the IDE fork's mirrored types pick it up on the same seam. No new file is added, so the src/daemon kebab-case file-naming question raised by convention.detect does not arise; PascalCase types and camelCase functions follow the unanimous local convention.
+
+**Call sites:**
+- `src/shared/types.ts:734 — declared adjacent to IpcStreamMessage`
+- `src/daemon/analyze-rpc.ts:583 — produced by eventToProgressData`
+- `src/daemon/workflow-rpc.ts:238 — produced by the workflow-side adapter`
+- `src/mcp/server.ts — consumed by s2's progressToken-gated forwarding branch; grep for progressToken|notifications/progress|sendNotification returned ZERO hits today, so there is no incumbent consumer shape to stay compatible with`
+- `src/analyze/orchestrator/types.ts:104 — documents the `IpcStreamMessage frame the IDE consumes via daemonService.stream()`, the seam s3's reader API attaches to`
+
+### `Test collector fixtures (`sent: IpcStreamMessage[]` + `send`)` — invariant-change
+
+The dominant test idiom across five files is a `sent: IpcStreamMessage[]` collector plus a `send` function passed into the RPC under test. Because this Story changes only the `data` payload and never the frame type, every collector keeps compiling and every `send` signature is unchanged — no migration of the five files is required, which is what keeps this contract S-cost. What DOES change is assertion content: helpers reading frame bodies must expect a ProgressEvent. `deltaText(sent)` at prefs-slash.test.ts:75 is the one to watch for ac2, since 'delta' frames from a ProgressOperation now carry a TokenProgressEvent object rather than text — note prefs slash-command deltas are NOT a ProgressOperation and are unaffected, so the two delta populations must not be conflated. `endsWithDone(sent)` at line 85 is untouched. ac3 is discharged by asserting the same ProgressEvent union shape in workflow-rpc.test.ts and an analyze-side test.
+
+**Call sites:**
+- `src/daemon/__tests__/handoff-stream.test.ts:59,60,191,193 — collectors; :224 — numeric id assertion`
+- `src/daemon/__tests__/prefs-slash.test.ts:57 — `{ dir; sent: IpcStreamMessage[]; send }` fixture; :75 `deltaText`; :85 `endsWithDone``
+- `src/daemon/__tests__/prefs-confirm.test.ts:303,325,342 — collectors`
+- `src/daemon/__tests__/workflow-rpc.test.ts:42 — `stream` method, ac3 workflow half`
+- `src/bin/__tests__/permission-hook-integration.test.ts:11,44 — fake server replying with scripted IpcStreamMessages`
+
+## Interaction with shared contracts
+
+| Contract | Role | How |
+| :--- | :--- | :--- |
+| `sc1` | implements | s1 is the declared owner of sc1 in the HLD (`ownedByStory: "s1"`), consumed by s2 and s3. This contract detail reproduces the HLD interfaceSketch structurally verbatim — the two-variant discriminated union tagged by `kind`, ProgressOperation as a closed 'workflow.run' \| 'analyze.run' union, and every stage/token field non-optional within its variant. That fidelity is why a1 won: it is the only alternative needing no back-flow on the one contract two downstream Stories must code against, and freezing it unchanged is the point of Phase A. Two cosmetic deviations from the sketch, neither semantic: fields are marked `readonly` to match the surrounding declaration style (RunWorkflowOpts and WorkflowProgress at src/daemon/workflow-rpc.ts:61-79 are uniformly readonly), and the type is `export`ed from src/shared/types.ts. Implementation is discharged by (a) declaring the union in src/shared/types.ts beside IpcStreamMessage:734, (b) narrowing eventToProgressData's return type from `Record<string, unknown>` to `ProgressEvent \| null` at src/daemon/analyze-rpc.ts:583, and (c) converting the WorkflowProgress and onToken callbacks into StageProgressEvent / TokenProgressEvent at the wrap site src/daemon/workflow-rpc.ts:238. Three deliberate limits are recorded rather than hidden. First, no `seq` field: a3's drop-detection idea is NOT carried, so consumers cannot detect a missed frame — consistent with the HLD's best-effort durability, revisitable as an additive `sharedContract.fieldAdd` if s3 shows a concrete need. Second, ProgressOperation excludes the todos-rpc.ts:1146 and tools/types.ts:56 producers, so the k1 uniformity claim scopes to the two long operations only. Third, that exclusion list rests on a `truncated: true` search sweep and is not asserted exhaustive; s7 must re-run an untruncated sweep before any complete-coverage claim. No amendment is proposed — the one HLD inaccuracy surfaced in scope (ProgressEvent being net-new rather than an existing type extended) is a description-vs-reality note in frameworkSummary prose, not a change to any contract field, and the sketch itself is correct as written. |
+
+## Error paths
+
+### Error cases
+
+- **The workflow-side adapter at src/daemon/workflow-rpc.ts:238 receives a WorkflowProgress whose `phase` is not one of the eight known values ('decompose' | 'plan-ready' | 'grounding' | 'step-start' | 'step-done' | 'synthesize-attempt' | 'synthesize-retry' | 'done'). `phase` is declared as an untyped `string` at workflow-rpc.ts:61, so the compiler cannot rule this out and a future emission site can add a phase without touching the adapter.** (recoverable)
+  - Detection: The adapter's phase→stage lookup returns undefined for the incoming `phase` key; the adapter tests the lookup result rather than indexing blindly (noUncheckedIndexedAccess already forces the `| undefined` handling).
+  - Response: Emit a StageProgressEvent anyway, using the raw `phase` string verbatim as `stageId` and as the `stageLabel` fallback, with `total: null`. Log at warn via getLogger('workflow-rpc'). Never drop the frame and never throw — an unrecognised phase is still a real stage transition and ac1 requires the caller to be told.
+  - User impact: The caller sees a stage event with a less polished label; live progress keeps advancing rather than stalling.
+- **The progress adapter itself throws while mapping (e.g. a WorkflowProgress or AnalyzeRunEvent field is undefined where the mapper dereferences it). Because the adapters run inline inside the onProgress/onToken/onEvent closures at workflow-rpc.ts:238 and analyze-rpc.ts:521, an unguarded throw propagates into the driver and aborts a 30-40 minute run.** (recoverable)
+  - Detection: A try/catch wrapping the adapter-plus-send call at each of the two emission sites catches the thrown error; nothing else in the call chain distinguishes a mapping fault from a driver fault.
+  - Response: Catch, log the error with the offending event at warn, emit no frame for that event, and return normally so the operation continues. Progress mapping is declared unable to fail an in-flight run (nonFunctional.durability); eventToProgressData is additionally written as a total function returning `ProgressEvent | null` so the catch is a backstop, not the primary path.
+  - User impact: One progress update is silently missing; the operation completes and its final result is unaffected.
+- **The socket write fails mid-run — the IDE or MCP client disconnects while a long operation is still executing, so the `sendStream` closure at src/daemon/server.ts:154 writes to a destroyed socket (EPIPE / ERR_STREAM_DESTROYED).** (recoverable)
+  - Detection: The `send` callback throws synchronously out of the socket write, surfacing at the same try/catch that guards the adapter at the two emission sites.
+  - Response: Swallow the write error and continue the operation to completion; progress delivery is best-effort and non-durable, and the run's real output is persisted independently of the stream. Do not attempt to buffer or replay — sc1 carries no sequence number and defines no replay semantics.
+  - User impact: The disconnected caller loses live progress; the operation still finishes and its result remains retrievable.
+- **Token accounting goes non-numeric or non-monotonic. The workflow `onToken(stepId, token)` callback at workflow-rpc.ts:78 yields token *strings*, not counts; the s1-internal batcher converts them to `tokensDelta`/`tokensTotal`. A counting bug or an empty batch can yield NaN, a negative delta, or a `tokensTotal` lower than the previously emitted one.** (recoverable)
+  - Detection: A guard immediately before constructing TokenProgressEvent: `Number.isFinite(delta) && delta >= 0 && total >= lastEmittedTotal`. Without it the bad value reaches the wire, because TokenProgressEvent's fields are plain `number` and nothing downstream validates them.
+  - Response: Suppress the frame, retain the last known-good `tokensTotal` as the running cumulative, and log at debug. The next successful batch emits with a corrected cumulative total. Never emit NaN or a regressing total — a rendering consumer cannot recover from either.
+  - User impact: The token counter momentarily stops advancing rather than displaying garbage or running backwards.
+- **A consumer receives an IpcStreamMessage with `stream === 'progress'` whose `data` is not a ProgressEvent. This is representable because `data` stays typed `unknown` (k2: no wire-format change) and the payload↔frame discriminant pairing is a documented invariant, not a compiler-enforced one — and because src/daemon/todos-rpc.ts:1146 and src/daemon/tools/types.ts:56 are deliberately excluded from ProgressOperation and keep emitting raw-shaped frames on the same channel.** (recoverable)
+  - Detection: The consumer narrows on the payload discriminant — `typeof data === 'object' && data !== null && (data.kind === 'stage' || data.kind === 'token')` — before treating it as a ProgressEvent. Frames failing the narrow are from an out-of-scope producer.
+  - Response: Ignore the frame for progress-rendering purposes and pass it through untouched to whatever handled it before; do not throw and do not tear down the stream. s1 discharges its half by making both in-scope adapters the only producers of `kind`-tagged payloads, so the narrow is sound.
+  - User impact: Progress from the two in-scope operations renders correctly; unrelated daemon frames are unaffected and no consumer crashes on them.
+- **The frame's numeric `id` field is omitted or non-numeric on a progress/delta message. src/daemon/__tests__/handoff-stream.test.ts:224 asserts emitted messages carry a numeric `id` that the server subsequently overrides; a new adapter call site that constructs frames without `id: 0` breaks that discipline.** (terminal)
+  - Detection: Compile-time: IpcStreamMessage declares `id: number` as required (src/shared/types.ts:734-738), so a missing field fails tsc under strict mode. Runtime backstop: the existing handoff-stream assertion at line 224 fails in CI.
+  - Response: Both new call sites construct frames as `{ id: 0, stream, data }`, matching the two existing sites verbatim. No runtime handling is added — this is prevented by the type and the existing test, not recovered from.
+  - User impact: None in a correct build; a regression is caught before it ships.
+
+### Edge cases
+
+| Input | Expected |
+| :--- | :--- |
+| A workflow.run executed against a CLI-backed provider (claude / codex) rather than Ollama. The comment at src/daemon/workflow-rpc.ts:77 records that Ollama streams tokens and the CLI providers do not, so `onToken` never fires for the entire 30-40 minute run. | Stage events flow normally for every phase transition (ac1 satisfied); zero TokenProgressEvents are emitted, and that is correct, not a fault. `tokensTotal` is never reported. Consumers must not treat prolonged token silence as a stall — this is documented on TokenProgressEvent's preconditions so s2 and s3 do not build a timeout on it. |
+| A workflow.run whose stage count is not knowable ahead of time because `synthesize-retry` may fire an arbitrary number of times. | Every StageProgressEvent for workflow.run carries `total: null` while `index` continues to increment monotonically. `total` is non-optional and explicitly nullable precisely so this case needs no absent-field handling under exactOptionalPropertyTypes. A retry emits a fresh event with the same `stageId` and an advanced `index` — repeated stageIds are legal and must not be deduplicated by consumers. |
+| An AnalyzeRunEvent variant that is neither a stage transition nor token production reaches eventToProgressData (src/daemon/analyze-rpc.ts:583). | Returns `null` and the caller at analyze-rpc.ts:521 emits no frame. This is a deliberate behaviour change from today, where every AnalyzeRunEvent produces a `progress` frame unconditionally — the analyze stream becomes strictly quieter, never noisier. Any analyze test asserting a one-frame-per-event count must be updated. |
+| Token production that cannot be attributed to a stage — analyze-side output arriving before any stage has been announced, or workflow tokens whose `stepId` is not one of the known step ids. | A TokenProgressEvent with `stageId: null` and a correct `tokensDelta`/`tokensTotal`. The null is a first-class value in the variant, not a signal of malfunction; consumers attribute the tokens to the operation rather than to a stage. |
+| An operation that fails or is cancelled during its very first stage, before any stage transition completes. | Zero ProgressEvents are emitted; the stream still terminates with the existing error/done frame. A progress-free stream is valid — `endsWithDone(sent)` at src/daemon/__tests__/prefs-slash.test.ts:85 continues to hold, and no consumer may require at least one progress event before a terminal frame. |
+| A prefs slash-command run that emits `stream: 'delta'` frames carrying plain text (the population read by `deltaText(sent)` at src/daemon/__tests__/prefs-slash.test.ts:75). | Unchanged text-bearing deltas. Slash-command output is not a ProgressOperation, so its delta frames are untouched by this Story. Two distinct delta populations now share the channel — text deltas and TokenProgressEvent deltas — and `deltaText` must keep working on the former without being generalised over the latter. Conflating them is the single most likely regression in this change. |
+| An extremely chatty Ollama-backed run producing tokens far faster than the socket can usefully carry per-token frames. | Token events are emitted at the operation's natural batch cadence, never one frame per token, so `tokensDelta` is routinely greater than 1. Frame rate stays bounded independent of token rate (nonFunctional.performance). |
+| A workflow phase carrying rich context — `runner`, `attempt`, and `detail` all populated (src/daemon/workflow-rpc.ts:63-66), e.g. a `synthesize-retry` on attempt 3. | All three fold into the single `stageLabel` string; `stageId` stays the bare `phase` (optionally qualified by `stepId`) so it remains stable across attempts. No sc1 field is added for them — this is why the contract needs no amendment to carry the workflow emitter's existing vocabulary. |
+
+### Invariants to preserve
+
+- The on-wire frame shape is unchanged: IpcStreamMessage stays `{ id: number; stream: IpcStreamKind; data: unknown }` at src/shared/types.ts:734-738, and no member is added to the IpcStreamKind union at src/shared/types.ts:732 — it already contains both 'delta' and 'progress'. This is HLD invariant k2 satisfied literally; the IDE fork mirrors these types, so any structural change here breaks lock-step across the two repos. [[c1]]
+- Emitted IpcStreamMessages carry a numeric `id` field that the server overrides on write. src/daemon/__tests__/handoff-stream.test.ts:224 asserts this, and both existing construction sites (analyze-rpc.ts:521, workflow-rpc.ts:238) already pass `id: 0`. Both adapters must keep doing so. [[c1]]
+- The `sent: IpcStreamMessage[]` collector plus `send` callback test idiom keeps compiling and running unmodified across all five files that use it (handoff-stream.test.ts:59/60/191/193, prefs-slash.test.ts:57, prefs-confirm.test.ts:303/325/342, workflow-rpc.test.ts:42, permission-hook-integration.test.ts:11/44). Only the `data` payload changes, never the frame type or the `send` signature — this is what keeps the Story S-cost instead of forcing a five-file migration. [[c1]]
+- The `send: (msg: IpcStreamMessage) => void` producers at src/daemon/todos-rpc.ts:1146 and src/daemon/tools/types.ts:56 are outside ProgressOperation and remain entirely untouched, still emitting raw-shaped frames. The k1 uniformity claim scopes to 'workflow.run' | 'analyze.run' only. This exclusion rests on a search sweep that returned `truncated: true`, so it is not asserted exhaustive — s7 must re-run an untruncated sweep before any complete-coverage claim. [[c1]]
+- The WorkflowProgress interface at src/daemon/workflow-rpc.ts:61 and all eight of its emission sites (lines 110, 112, 123, 131, 134, 151, 166, 184) are unchanged. It is the workflow driver's internal vocabulary and the HLD boundary declares that vocabulary s1-internal; only what line 238 puts on the wire changes. [[c1]]
+- Progress emission can never fail an in-flight operation. A mapping fault, a bad token count, or a dead socket degrades progress delivery and nothing else — the run completes and its persisted result is byte-identical to a run with no listener attached (nonFunctional.durability). [[c1]]
+- Progress payloads carry only stage labels, ids, ordinals, and token counts — never repository contents, file bodies, prompts, or secrets. `stageLabel` is built from the emitter's own phase/runner/attempt/detail vocabulary, not from model output (nonFunctional.security). [[c1]]
+- The stream still terminates with a done frame in every case, including runs that emit zero progress events. `endsWithDone(sent)` at src/daemon/__tests__/prefs-slash.test.ts:85 must continue to pass unmodified. [[c1]]
+- `stream: 'delta'` frames from non-ProgressOperation sources (notably prefs slash-command output, read by `deltaText(sent)` at src/daemon/__tests__/prefs-slash.test.ts:75) continue to carry text exactly as today. The delta channel now hosts two populations and they must not be conflated. [[c1]]
+
+## Test strategy
+
+**Test framework:** `node:test (built-in Node test runner) executed via tsx — `npx tsx --test 'src/**/__tests__/*.test.ts'`, with `node:assert/strict` for assertions and `*.test.ts` file naming under per-module `__tests__/` directories. This is what convention.detect + test.locate reported in s1: all five streaming-test files cited (src/daemon/__tests__/handoff-stream.test.ts, prefs-slash.test.ts, prefs-confirm.test.ts, workflow-rpc.test.ts, src/bin/__tests__/permission-hook-integration.test.ts) follow that layout, and CLAUDE.md documents the same runner plus the fast subset `npx tsx --test 'src/workflow/**/*.test.ts' 'src/mcp/**/*.test.ts'`. No new framework is introduced; the existing `sent: IpcStreamMessage[]` + `send` collector idiom and the reusable helpers `deltaText()` / `endsWithDone()` (prefs-slash.test.ts:75/85) are extended rather than replaced. Live-service suites remain gated behind INSRC_LIVE_TESTS=1 and are not required by any acceptance criterion here — the CLI-provider no-token case is covered with a provider stub, not a live run.`
+
+### Test levels
+
+- **unit** — Pin the two pure adapters and the token batcher/guard in isolation — no socket, no driver — so every branch of the ProgressEvent union, the unknown-phase fallback, the null-return path, and the non-monotonic-token suppression are exercised directly rather than inferred from stream output.
+  - Subjects: `eventToProgressData(event, tokensTotal) at src/daemon/analyze-rpc.ts:583 — narrowed return ProgressEvent | null: stage-transition events map to StageProgressEvent with operation:'analyze.run'; token-production events map to TokenProgressEvent; every other AnalyzeRunEvent variant returns null (deliberate behaviour change from today's unconditional frame at analyze-rpc.ts:521)`, `the workflow-side WorkflowProgress -> StageProgressEvent adapter feeding src/daemon/workflow-rpc.ts:238 — each of the eight known phases ('decompose'|'plan-ready'|'grounding'|'step-start'|'step-done'|'synthesize-attempt'|'synthesize-retry'|'done') yields stageId from phase, runner/attempt/detail folded into stageLabel, total:null, index monotonically increasing across a synthesize-retry that repeats a stageId`, `the unknown-phase fallback path — a phase string outside the eight known values (phase is untyped `string` at workflow-rpc.ts:61) still yields a StageProgressEvent with the raw phase as stageId and stageLabel, warn-logged, never dropped and never thrown`, `the s1-internal token batcher over onToken(stepId, token) at src/daemon/workflow-rpc.ts:78 — string tokens counted+batched into tokensDelta/tokensTotal, tokensDelta routinely > 1 (never one frame per token), stageId taken from stepId and null when unattributable`, `the numeric-token guard `Number.isFinite(delta) && delta >= 0 && total >= lastEmittedTotal` — NaN / negative delta / regressing total suppress the frame and retain the last known-good cumulative`, `the adapter try/catch backstop at both emission sites — a mapper that throws is caught, warn-logged, emits no frame, and returns normally`
+  - Fixtures: `Hand-built AnalyzeRunEvent fixtures covering stage, token, and at least two non-progress variants`, `Hand-built WorkflowProgress fixtures: one per known phase, one with runner+attempt+detail all populated (synthesize-retry attempt 3), one with an unrecognised phase`, `A stub logger capturing getLogger('workflow-rpc') / analyze-rpc warn+debug lines so suppression paths are asserted, not just silent`, `A throwing-mapper injection point (or a malformed event whose field the mapper dereferences) for the catch-backstop case`
+- **integration** — Drive each RPC's stream handler end to end with the established `sent: IpcStreamMessage[]` + `send` collector idiom and assert the frames that actually reach the wire — this is where ac1 and ac2 are proven per operation, and where the unchanged frame shape (k2) and id discipline are re-verified.
+  - Subjects: `src/daemon/workflow-rpc.ts `workflow.run` stream handler (doc comment at :202, wrap site at :238) exercised via the existing `stream` method entity in src/daemon/__tests__/workflow-rpc.test.ts:42 — asserts stage frames arrive as {id:0, stream:'progress', data:StageProgressEvent} on phase transitions, and delta frames as {id:0, stream:'delta', data:TokenProgressEvent} while output continues`, `src/daemon/analyze-rpc.ts `analyze.run` onEvent closure at :521 — same two assertions with operation:'analyze.run'; plus that AnalyzeRunEvents mapping to null emit NO frame (stream is strictly quieter than today, never noisier)`, `CLI-provider run (claude/codex) where onToken never fires per workflow-rpc.ts:77 — stage frames flow for the whole run, ZERO TokenProgressEvents, and token silence is asserted valid rather than a stall`, `operation that fails/cancels during its first stage — zero ProgressEvents emitted and the stream still terminates with the existing done/error frame`, `socket-write failure mid-run (destroyed socket at the sendStream closure, src/daemon/server.ts:154) — send throws, the operation runs to completion, and its persisted result is byte-identical to a run with no listener attached`, `regression guard on the second delta population: src/daemon/__tests__/prefs-slash.test.ts `deltaText(sent)` at :75 keeps returning text for prefs slash-command deltas (not a ProgressOperation) while ProgressOperation deltas carry TokenProgressEvent objects — the two populations must not be conflated`, `invariant re-runs, unmodified: `endsWithDone(sent)` at prefs-slash.test.ts:85, and the numeric-`id`-overridden-by-server assertion at src/daemon/__tests__/handoff-stream.test.ts:224`
+  - Fixtures: `The existing `{ dir; sent: IpcStreamMessage[]; send }` collector fixture pattern (prefs-slash.test.ts:57) reused verbatim — it must keep compiling unchanged, since only `data` changes and never the frame type or `send` signature`, `A scripted fake workflow driver emitting a fixed phase sequence including a synthesize-retry, plus a token stream, so frame order and index monotonicity are deterministic`, `A scripted fake analyze run emitting stage, token, and non-progress AnalyzeRunEvents`, `A provider stub that streams tokens (Ollama-like) and one that does not (CLI-like)`, `A send stub that throws EPIPE/ERR_STREAM_DESTROYED on the Nth call`, `Existing prefs-slash/handoff-stream suites run as-is — no edits — to prove no five-file migration is needed`
+- **contract** — Prove uniformity across the two operations directly (ac3) rather than leaving it as an emergent property of two independently-written integration suites — one shared validator applied to both frame streams, so an operation-specific field or a divergent discriminant fails loudly.
+  - Subjects: `A single shared assertion helper, e.g. assertProgressEvent(data): asserts data.kind is 'stage'|'token', data.operation is one of 'workflow.run'|'analyze.run', and that within the discriminated variant every field is present and non-undefined (no `| undefined` leaks under strict + exactOptionalPropertyTypes) — stage: stageId/stageLabel/index/total(number|null); token: stageId(string|null)/tokensDelta/tokensTotal`, `The same helper applied to the full frame stream captured from the workflow.run integration run AND from the analyze.run integration run, asserting the observed key sets per `kind` are exactly equal between operations — no operation-specific extra or missing field`, `The payload/frame discriminant pairing invariant: every frame with stream==='progress' from an in-scope operation carries kind==='stage'; every stream==='delta' from an in-scope operation carries kind==='token'`, `The consumer narrow `typeof data === 'object' && data !== null && (data.kind === 'stage' || data.kind === 'token')` is sound — frames from the deliberately-excluded producers (src/daemon/todos-rpc.ts:1146, src/daemon/tools/types.ts:56) fail the narrow, are ignored for progress rendering, pass through untouched, and never throw or tear down the stream`, `Type-level conformance: a tsc-compiled fixture assigning each adapter's return to ProgressEvent, ensuring the declaration in src/shared/types.ts stays structurally identical to the HLD sc1 interfaceSketch (readonly modifiers are the only permitted deviation)`
+  - Fixtures: `The captured `sent` arrays from both integration runs, fed into one table-driven conformance test`, `A raw-shaped frame fixture standing in for a todos-rpc / tool-execution-context emission, to exercise the negative branch of the consumer narrow`, `A compile-only fixture file under src/shared (or a test-local type assertion) exercising exhaustive `switch (ev.kind)` narrowing with a never-check on the default arm`
+
+### Acceptance mapping
+
+| Criterion | Proving tests |
+| :--- | :--- |
+| `ac1` | `unit: eventToProgressData maps a stage-transition AnalyzeRunEvent to a StageProgressEvent with operation:'analyze.run' and all four stage fields populated`, `unit: the workflow adapter maps each of the eight known WorkflowProgress phases to a StageProgressEvent with stageId from phase, runner/attempt/detail folded into stageLabel, and total:null`, `unit: an unrecognised phase string still yields a StageProgressEvent (raw phase as stageId + stageLabel), warn-logged, never dropped`, `unit: index increments monotonically across a synthesize-retry that repeats the same stageId; repeated stageIds are legal and not deduplicated`, `integration: workflow.run stream handler emits {id:0, stream:'progress', data:StageProgressEvent} on every phase transition, collected via the `sent: IpcStreamMessage[]` + `send` fixture`, `integration: analyze.run onEvent closure emits the same frame shape with operation:'analyze.run' on stage transitions, and emits NO frame for AnalyzeRunEvents that map to null`, `integration: an operation cancelled during its first stage emits zero ProgressEvents and still terminates with the existing done/error frame`, `contract: every stream==='progress' frame from an in-scope operation carries a payload with kind==='stage' and identifies the executing stage from the payload alone, without reading the frame's `stream` field` |
+| `ac2` | `unit: the token batcher converts the string-yielding onToken(stepId, token) stream (workflow-rpc.ts:78) into TokenProgressEvent with numeric tokensDelta and cumulative tokensTotal, batched so tokensDelta is routinely > 1 and never one frame per token`, `unit: tokens with an unattributable stepId yield stageId:null as a first-class value, with correct delta/total`, `unit: eventToProgressData maps a token-production AnalyzeRunEvent to a TokenProgressEvent with the threaded cumulative tokensTotal`, `unit: the numeric guard suppresses frames on NaN, negative delta, or a tokensTotal below the last emitted total, retaining the last known-good cumulative and debug-logging`, `integration: while a workflow.run continues producing output, {id:0, stream:'delta', data:TokenProgressEvent} frames arrive in the collector at the natural batch cadence`, `integration: the analyze.run half emits the same delta-carried TokenProgressEvent shape while output continues`, `integration: a CLI-backed run emits stage frames for the whole run and ZERO TokenProgressEvents — token silence is asserted valid, not a stall`, `integration: prefs slash-command delta frames still carry plain text and `deltaText(sent)` (prefs-slash.test.ts:75) passes unmodified — the two delta populations stay distinct`, `contract: every stream==='delta' frame from an in-scope operation carries a payload with kind==='token' and the full non-optional token field set` |
+| `ac3` | `contract: the shared assertProgressEvent validator is applied to the complete frame stream captured from BOTH the workflow.run and analyze.run integration runs and passes for every frame`, `contract: the observed payload key sets per `kind` are asserted exactly equal between the two operations — any operation-specific extra or missing field fails`, `contract: data.operation is asserted to be a member of the closed ProgressOperation union in both runs, so no third operation leaks onto the contract`, `contract: the compile-only type fixture assigns both adapters' return types to ProgressEvent and exhaustively switches on `kind` with a never-check, proving structural identity with the sc1 sketch`, `contract: frames from the deliberately-excluded producers (todos-rpc.ts:1146, tools/types.ts:56) fail the `kind` narrow, are ignored for progress rendering, pass through untouched, and never throw — bounding the k1 uniformity claim to the two in-scope operations`, `integration: the workflow.run half hosted in src/daemon/__tests__/workflow-rpc.test.ts (existing `stream` method at :42) and the analyze.run half in the analyze-side suite both feed their captured `sent` arrays into the one shared conformance table` |
+
+## Migration
+
+**State before:** Today the daemon emits progress for its two long operations in two unrelated shapes, and no uniform payload type exists anywhere in the tree.
+
+- **No `ProgressEvent` type exists.** The s1 `symbol.locate` bundle probed `ProgressEvent` and resolved NO indexed entity anywhere; of the five contract names probed, only `IpcStreamMessage` (interface, src/shared/types.ts:734-738, entityId 2f5bb3447f82eaa2482d6144aad1784a) resolved. `IpcStreamHandler` does not resolve; `sendStream` exists only as a local closure at src/daemon/server.ts:154; `onProgress` resolves only in the CLI layer over an unrelated `PullTick` vocabulary.
+- **The wire frame already supports both frame kinds.** Per the `data-model.trace` bundle, `IpcStreamKind` (src/shared/types.ts:732) already contains both `'delta'` and `'progress'`, and `IpcStreamMessage` carries `{ id: number; stream: IpcStreamKind; data: unknown }`. `data` is `unknown`, so any payload shape passes today with no type error.
+- **analyze.run** normalises each `AnalyzeRunEvent` through `eventToProgressData` (src/daemon/analyze-rpc.ts:583, entityId 36e8cc525ed310a03b3bb632236d15df — the only graph-indexed normaliser in-tree, surfaced by the `usage.example` bundle), returning `Record<string, unknown>`. The caller at analyze-rpc.ts:521 emits a `'progress'` frame for **every** event unconditionally.
+- **workflow.run** puts its raw internal `WorkflowProgress` shape (src/daemon/workflow-rpc.ts:61, `{ phase: string; stepId?; runner?; attempt?; detail? }`, emitted at lines 110/112/123/131/134/151/166/184) straight onto the wire via the wrap site at workflow-rpc.ts:238. Its token stream is a *separate* callback `onToken(stepId: string, token: string)` at workflow-rpc.ts:78 yielding token **strings**, not counts, and reaching no frame at all — so token progress is invisible to callers today. The comment at workflow-rpc.ts:77 records that Ollama streams tokens and the CLI providers do not.
+- **Emitter divergence is real but the inventory is incomplete.** The `search.text` bundle found four independent `send: (msg: IpcStreamMessage) => void` declarations with no shared helper (src/daemon/server.ts:19, analyze-rpc.ts:481, todos-rpc.ts:1146, tools/types.ts:56) and returned `truncated: true` over root `src/` — the inventory is explicitly non-exhaustive.
+- **No consumer contract to preserve.** The capability-discovery bundle found ZERO hits for `progressToken|notifications/progress|sendNotification|onProgress|reportProgress` in src/mcp, so nothing forwards daemon progress frames to an MCP client today.
+- **Tests read the frames, not the payload type.** The `test.locate` bundle found the `sent: IpcStreamMessage[]` + `send` collector idiom in five files, with `deltaText()` (prefs-slash.test.ts:75) and `endsWithDone()` (line 85) helpers, plus a numeric-`id`-override assertion at handoff-stream.test.ts:224.
+
+**State after:** `ProgressEvent = StageProgressEvent | TokenProgressEvent` is declared in src/shared/types.ts beside `IpcStreamMessage`, and both long operations put that single payload on the wire.
+
+- `IpcStreamMessage` and the `IpcStreamKind` union are byte-for-byte unchanged (invariant k2 held literally); `data` remains `unknown`, so the payload pairing (`stream === 'progress'` ⇒ `StageProgressEvent`; `stream === 'delta'` from a `ProgressOperation` ⇒ `TokenProgressEvent`) is a documented invariant, not a type-enforced one.
+- `eventToProgressData` returns `ProgressEvent | null` and takes a `tokensTotal` argument; the analyze caller emits no frame on `null` — a deliberate behaviour change from emitting a frame per event.
+- The workflow wrap site emits a mapped `StageProgressEvent` (its `phase` becomes `stageId`; `runner`/`attempt`/`detail` fold into `stageLabel`) and, for the first time, emits `TokenProgressEvent` `'delta'` frames from a counting/batching accumulator over the `onToken` string stream.
+- `WorkflowProgress` itself is untouched — it stays the workflow driver's internal vocabulary.
+- `ProgressOperation` is a closed `'workflow.run' | 'analyze.run'` union; src/daemon/todos-rpc.ts:1146 and src/daemon/tools/types.ts:56 stay on the raw frame as a **recorded deliberate exclusion**, and the k1 uniformity claim is scoped to the two long operations only.
+- The five `sent`/`send` collector fixtures still compile unchanged; only assertion bodies that read frame payloads were updated.
+- No `seq` field: consumers still cannot detect a dropped frame, consistent with best-effort durability and revisitable as an additive field if s3 demonstrates a need.
+
+**Zero downtime:** no — **Data rewrite:** no
+
+### Steps
+
+1. Re-run the emitter sweep untruncated (full `send: (msg: IpcStreamMessage) => void` producer search over all of src/, not just the root-node slice that returned `truncated: true` in the s1 search.text bundle). Record the resulting producer list and confirm that the only sites outside 'workflow.run' | 'analyze.run' are the two already named for exclusion (todos-rpc.ts:1146, tools/types.ts:56). If the sweep surfaces additional in-scope producers, stop and widen the plan before proceeding — no later step may claim complete coverage on the truncated inventory. — ↩ rollbackable
+2. Add the new type declarations to src/shared/types.ts adjacent to IpcStreamMessage:734: the `ProgressOperation` closed union, the `StageProgressEvent` and `TokenProgressEvent` interfaces (all fields readonly and non-optional within their variant, per exactOptionalPropertyTypes), and the `ProgressEvent` union over them. Purely additive — nothing references them yet, so the tree still builds and behaves exactly as before. Add a comment at the IpcStreamKind/IpcStreamMessage declarations recording the new payload-pairing invariant. — ↩ rollbackable
+3. Mirror the new type declarations into the IDE fork's copy of the shared IPC types, unreferenced, ahead of any behaviour change. This keeps the two repos' mirrored-types contract in lock-step and lets the fork compile against ProgressEvent before the daemon starts producing it. — ↩ rollbackable
+4. Narrow `eventToProgressData` (src/daemon/analyze-rpc.ts:583) from returning `Record<string, unknown>` to returning `ProgressEvent | null`, and add the required `tokensTotal: number` parameter so the mapper stays pure. Keep it total over the AnalyzeRunEvent union — unmapped variants return null rather than throwing, so progress mapping can never fail an in-flight analyze run. — ↩ rollbackable
+5. Update the analyze caller closure at src/daemon/analyze-rpc.ts:521 to thread a running cumulative token count into the mapper, to skip emission entirely when the mapper returns null (behaviour change: no longer one frame per event), and to route TokenProgressEvent payloads onto `stream: 'delta'` frames while StageProgressEvent payloads stay on `stream: 'progress'`. Preserve the `id: 0` field discipline the server overrides. — ↩ rollbackable
+6. Add a token counting-and-batching accumulator inside the workflow run path that consumes the existing `onToken(stepId, token)` string callback (src/daemon/workflow-rpc.ts:78) and produces numeric `tokensDelta`/`tokensTotal` at the operation's natural batch cadence, never per token. Keep this s1-internal — do not add it to any exported shape. Leave the `WorkflowProgress` interface at workflow-rpc.ts:61 entirely untouched. — ↩ rollbackable
+7. Flip the workflow wrap site at src/daemon/workflow-rpc.ts:238 so the raw WorkflowProgress shape no longer reaches the wire: map `phase` to `stageId` (optionally qualified by `stepId`), fold `runner`/`attempt`/`detail` into `stageLabel`, set `total` to null because retry phases make the workflow stage count non-enumerable, and emit the result as the `data` of the existing `stream: 'progress'` frame. Wire the step-6 accumulator to emit TokenProgressEvent on `stream: 'delta'` frames. THIS IS THE OBSERVABLE CUT-OVER for workflow.run consumers. — ↩ rollbackable
+8. Update test assertion bodies — not fixtures — across the five collector files. The `sent: IpcStreamMessage[]` + `send` shape and every `send` signature are unchanged, so no fixture migration is needed. Specifically: audit `deltaText()` (prefs-slash.test.ts:75) to ensure it is not applied to ProgressOperation delta frames, which now carry a TokenProgressEvent object rather than text — prefs slash-command deltas are NOT a ProgressOperation and must stay unaffected; leave `endsWithDone()` (line 85) alone; keep the numeric-`id` assertion at handoff-stream.test.ts:224 passing. — ↩ rollbackable
+9. Add the ac3 parity coverage: assert the same ProgressEvent union shape on the workflow half in src/daemon/__tests__/workflow-rpc.test.ts (hosted on the existing `stream` method at line 42) and on the analyze half in an analyze-side test, with a shared assertion that neither operation introduces an operation-specific field. Add ac1 (stage-transition-only emission, never per-poll) and ac2 (token events with cumulative totals) cases, including a case asserting that a CLI-backed run emitting stage events with zero token events is valid — token silence is not a stall. — ↩ rollbackable
+10. Rebuild and restart the installed daemon so the new emitters take effect, then land the IDE fork's reader changes against the now-live payload. Announce the payload-shape change to fork maintainers as part of the mirrored-types contract. NOT rollbackable in the operational sense: restarting the daemon terminates any in-flight workflow or analyze run, and a 30-40 minute operation killed mid-flight must be re-run from the start. Schedule the restart when no long operation is active. — ✕ non-rollbackable
+
+**Backward compat:** This change **breaks payload-level compatibility for consumers of `stream: 'progress'` frames from `workflow.run`**, and must not be shipped as if it were transparent.
+
+- **Frame level: fully compatible.** `IpcStreamMessage` and the `IpcStreamKind` union are unchanged, `data` stays `unknown`, and the numeric `id` field discipline the server overrides (asserted at src/daemon/__tests__/handoff-stream.test.ts:224) is preserved. Any consumer that only routes on `stream` keeps working, including the five test collector fixtures and the fake server at src/bin/__tests__/permission-hook-integration.test.ts.
+- **Payload level: breaking for workflow.run.** Today workflow.run puts the raw `WorkflowProgress` shape on the wire at workflow-rpc.ts:238. Any consumer reading `data.phase`, `data.runner`, `data.attempt`, or `data.detail` off a workflow progress frame will read `undefined` after step 7; those values are now `stageId` and `stageLabel`. The affected surface is the IDE fork, which consumes these frames via `daemonService.stream()` (documented at src/analyze/orchestrator/types.ts:104). Mitigation: step 3 lands the mirrored types in the fork before the cut-over, and step 10 pairs the daemon restart with the fork's reader change.
+- **Payload level: breaking for analyze.run in two ways.** The return type narrows from `Record<string, unknown>` to `ProgressEvent | null`, and — more visibly — the caller at analyze-rpc.ts:521 stops emitting a frame for every AnalyzeRunEvent. A consumer counting progress frames as a proxy for events will see fewer frames. This is deliberate, not incidental.
+- **No incumbent MCP consumer to break.** The s1 capability-discovery bundle found zero hits for `progressToken|notifications/progress|sendNotification` in src/mcp, so s2's forwarding branch is genuinely new work with no compatibility obligation.
+- **New frame population on the delta channel.** workflow.run begins emitting `'delta'` frames carrying a `TokenProgressEvent` object where it previously emitted none. Consumers that assume all `'delta'` frames carry text (the `deltaText()` helper at prefs-slash.test.ts:75 is the in-tree example) must distinguish by operation. The two delta populations must not be conflated.
+- **Excluded producers are untouched.** src/daemon/todos-rpc.ts:1146 and src/daemon/tools/types.ts:56 stay on the raw frame by design; their consumers see no change at all. This exclusion rests on a `truncated: true` sweep and is why step 1 exists.
+- **No drop detection.** `ProgressEvent` carries no `seq` field, so consumers cannot distinguish a dropped frame from a quiet period — the known, recorded cost of this design, additively revisitable if s3 shows a concrete need.
+
+## Alternatives considered
+
+### a1: Tagged union payload (kind: 'stage' | 'token') — **CHOSEN**
+
+ProgressEvent is a two-variant discriminated union tagged by an in-payload `kind` field, carried as the body of the existing IpcStreamMessage.
+
+Introduce `ProgressEvent = StageProgressEvent | TokenProgressEvent` in src/shared/types.ts, exactly as the HLD interfaceSketch draws it: each variant carries its own `kind` discriminant plus `operation: ProgressOperation`, and stage variants add stageId/stageLabel/index/total while token variants add stageId/tokensDelta/tokensTotal. The payload is self-describing — a consumer narrows on `event.kind` alone and never has to read the enclosing frame's `stream` field. The frame's `stream` kind ('progress' for stage, 'delta' for token) is set to match but is redundant with the tag. Both workflow-rpc.ts and analyze-rpc.ts funnel into one shared mapping helper (a new kebab-case module next to its rpc neighbours) that constructs the variant and wraps it in an IpcStreamMessage, preserving the numeric `id` field discipline the server overrides. The `ProgressOperation` union is closed at 'workflow.run' | 'analyze.run'; todos-rpc.ts and tools/types.ts stay on the raw frame as a deliberate, documented exclusion.
+
+### a2: Flat payload discriminated by the existing frame kind
+
+One flat ProgressEvent interface with optional stage and token fields; the enclosing IpcStreamMessage's `stream` value ('progress' vs 'delta') is the sole discriminant.
+
+Define a single `interface ProgressEvent { operation: ProgressOperation; stageId: string | null; stageLabel?: string; index?: number; total?: number | null; tokensDelta?: number; tokensTotal?: number }` with no in-payload tag. The already-shipped `IpcStreamKind` union carries the discrimination: a frame with `stream: 'progress'` means the stage fields are populated, `stream: 'delta'` means the token fields are. This leans hardest into HLD invariant k2 (reuse the shipped frame) by refusing to duplicate any information the frame already encodes. The shared mapping helper takes the emitter's internal event plus the intended stream kind and produces the `(kind, payload)` pair together, so the two can never diverge at the single construction site. Consumers pair the frame kind with the payload — s2's MCP branch reads `msg.stream` to decide whether to send a stage-label notification or a token-count update, and s3's reader API surfaces the pair.
+
+**Rejected because:** Violates sc1, the one contract this Story owns and that s2 and s3 both consume: it deletes the `kind` discriminant the HLD interfaceSketch specifies and collapses StageProgressEvent/TokenProgressEvent into one optional-field interface, which would require back-flow on a contract that must freeze early for two downstream Stories. It is also only `partial` on ac1 and ac2 — its optional stage/token fields mean the payload alone does not establish that a stage is identified or that tokens are being produced, so the caller must read the enclosing frame's `stream`, which additionally drops it to `partial` on k4 because s3's reader cannot be defined over ProgressEvent alone. Ranked 2nd of 3: its divergence is a narrowing of the sketch rather than a restructuring plus a net-new stateful field.
+
+### a3: Common envelope + variant detail
+
+ProgressEvent is a shared header (operation, seq, stageId, timestamp-free) plus a nested `detail` union, so operation-agnostic consumers read the header and only progress-aware ones destructure the detail.
+
+Define `interface ProgressEnvelope { operation: ProgressOperation; seq: number; stageId: string | null; detail: StageDetail | TokenDetail }` where `StageDetail = { kind: 'stage'; stageLabel: string; index: number; total: number | null }` and `TokenDetail = { kind: 'token'; tokensDelta: number; tokensTotal: number }`. The header holds everything common to all progress regardless of flavour — notably a monotonic `seq` per operation, which the flat and union shapes lack and which gives consumers a way to detect the dropped frames the HLD's durability note explicitly permits. `ProgressOperation` stays a string union but the envelope shape is deliberately agnostic to its membership, so admitting todos-rpc.ts or the tool-execution context later is a one-line union widening with no consumer change. Both emitters funnel through one shared mapping that owns seq allocation per operation run.
+
+**Rejected because:** Violates sc1 the most of the three: it restructures the HLD interfaceSketch into envelope + nested detail AND adds an unspecified `seq` field, so it needs back-flow on both structure and additions before s2/s3 can consume — the largest contract deviation on the contract this Story owns. It matches a1 on ac1/ac2/ac3 and beats it on k4 via `seq`-based gap detection, but pays M cost against a1's S, adds the design's only statefulness (per-operation-run `seq` allocation the shared mapping must own and reset across two emitters with differing lifecycles — the one place a shared helper can carry a bug across concurrent runs), and its extension points are speculative because s7's emitter sweep was truncated and the out-of-scope producers' migration is unsized. Recommendation carried forward: revisit `seq` as a deferred additive amendment if s3 demonstrates a concrete need for drop detection.
+
+## Open questions
+
+- [s8 cd3 — partial] The `eventToProgressData` api entry expresses its non-throwing totality as `errors: [{ type: "none", condition: "Total function over the AnalyzeRunEvent union; unmapped variants return null rather than throwing" }]`. `none` is not a concrete error type and abuses the errors field. Should this be normalised to `errors: []` with the totality claim moved to a postcondition before implementation? The intent is sound and consistent with nonFunctional.durability; only the encoding is in question.
+- [s8 dm1 / ep3 — partial] The WorkflowProgress callSites (src/daemon/workflow-rpc.ts:61 interface, :75 onProgress, :78 onToken, the eight emission sites at :110/112/123/131/134/151/166/184, :202 doc comment, :238 wrap site) and src/daemon/analyze-rpc.ts:521 appear in NO s1 analyze bundle — s1 explicitly recorded WorkflowProgress as having 'did NOT appear in any exploration output' and instructed the LLD to read workflow-rpc.ts directly. The LLD did so and openly attributes these to that direct read, so they are transparently sourced rather than invented, but they remain graph-unverified. Recommended: re-run symbol.locate on WorkflowProgress (and on the analyze-rpc.ts:521 caller closure) to convert these to graph-verified anchors before implementation begins. This is the single highest-value verification left.
+- [s8 ep3 — partial] All nine invariantsToPreserve carry `source: "c1"`, a Story existingCapabilityRef rather than an analyze-bundle identifier, so the field carries no per-invariant bundle discrimination and the actual grounding lives only in the prose. Should `source` be repointed at the specific bundle kind (symbol.locate / data-model.trace / test.locate) that established each invariant? The WorkflowProgress invariant in particular cites no bundle at all — same root cause as the dm1 question above.
+- [s8 alt2 — partial] Epic constraints k1 (the uniformity claim) and k5 (all progress rides the existing unix-socket IPC stream) are cited repeatedly in the prose but appear in no constraintScore row on any alternative. k1 is substantially covered in substance by ac3 and k5 by k2, so this reads as an enumeration gap rather than an analytical one — but k1 is the Story's headline constraint and is the one the deliberate todos-rpc.ts:1146 / tools/types.ts:56 exclusion partially scopes down, so it arguably deserved an explicit scored row per alternative. Should the alternatives be re-scored against k1 and k5 explicitly before the design is frozen?
+- [carried from s4 / s7 step 1 — open] The `send: (msg: IpcStreamMessage) => void` producer inventory rests on an s1 search.text sweep that returned `truncated: true` over root src/. The exclusion of todos-rpc.ts:1146 and tools/types.ts:56 from ProgressOperation is therefore not asserted exhaustive. Migration step 1 gates on re-running the sweep untruncated and stopping to widen the plan if additional in-scope producers surface — until that runs, no complete-coverage claim for k1 can be made.
+- [deferred design decision — open] `ProgressEvent` carries no `seq` field, so consumers cannot distinguish a dropped frame from a quiet period. This is the recorded cost of choosing a1 over a3 and is consistent with the HLD's best-effort durability. Open: does s3's IDE reader have a concrete need for drop detection? If so, `seq` is revisitable as an additive `sharedContract.fieldAdd` amendment rather than a redesign.

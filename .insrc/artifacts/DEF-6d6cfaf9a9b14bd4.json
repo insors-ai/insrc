@@ -10,7 +10,15 @@
     "schemaVersion": 1,
     "epicHash": "6d6cfaf9a9b14bd4",
     "epicSlug": "stream-incremental-progress-from-daemon-calling",
-    "approvedAt": "2026-07-19T15:52:54.827Z"
+    "approvedAt": "2026-07-19T15:52:54.827Z",
+    "tracker": {
+      "adapter": "github",
+      "epicRef": "insors-ai/insrc#41",
+      "pushedAt": "2026-07-20T10:33:05.179Z",
+      "storyRefs": {
+        "s1": "insors-ai/insrc#42"
+      }
+    }
   },
   "body": {
     "flavor": "enhancement",

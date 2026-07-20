@@ -3,6 +3,7 @@
 # Epic: During long-running daemon IPC operations — a workflow run or an analyze run that can take 30 to 40 minutes — the calling framework has no observable signal that anything is happening.
 
 **Flavor:** enhancement
+**Tracker:** [insors-ai/insrc#41](https://github.com/insors-ai/insrc/issues/41)
 
 ## Problem
 

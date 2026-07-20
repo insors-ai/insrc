@@ -1,0 +1,372 @@
+<!-- insrc:artifact LLD-6d6cfaf9a9b14bd4-s2 -->
+
+# LLD: E202607206d6cfaf9:S002
+
+**Epic:** `stream-incremental-progress-from-daemon-calling`
+**HLD base run:** `wf-1784476347429-dbnaq6`
+**HLD effective hash:** `2699deb16227...`
+**Tracker:** [insors-ai/insrc#43](https://github.com/insors-ai/insrc/issues/43)
+
+## HLD context
+
+**Framework:** Extend the daemon's existing per-operation progress emitters (WorkflowProgress in workflow-rpc.ts, eventToProgressData in analyze-rpc.ts) so both converge on one uniform ProgressEvent payload that rides the already-shipped IpcStreamMessage / IpcStreamKind 'progress' + 'delta' frame — no new wire format (k2, k5). The MCP tool surface gains a single progressToken-gated branch that maps inbound ProgressEvent frames to MCP notifications/progress notifications (k3). The IDE side is served purely by defining the daemon-emitted contract plus a thin reader-API shape the fork consumes (k4); the fork's actual render path is out of scope for this repo. This is the a1 alternative: extend-in-place over the two nearest existing emitters, one shared mapping, one forwarding branch, one thin reader, all on the single existing stream seam — no parallel progress subsystem.
+**Rollout phase:** Phase B — caller-facing progress consumers
+**Owns:** `sc2` (McpProgressForwarding)
+**Consumes:** `sc1` (ProgressEvent)
+
+## Contract details
+
+**Surface level:** internal
+
+### `buildInsrcMcpServer`
+
+```typescript
+declare function buildInsrcMcpServer(opts: BuildInsrcMcpServerOpts): McpServer  // existing export, reshaped: each long-running tool handler resolves a ProgressSink for its request before invoking the daemon operation
+```
+
+**Parameters:**
+- `opts: BuildInsrcMcpServerOpts` — Existing construction options for the MCP server. UNVERIFIED SHAPE — s1 backFlowNote 1 records that no symbol.locate ran, so no signature was returned for this export. This Story adds no new parameter to it; the reshape is confined to the tool handler bodies registered inside.
+
+**Returns:** `McpServer` — The live MCP server object, unchanged in type. It is the object each per-request sink closes over in order to emit notifications/progress, following the makeSamplerFromMcpServer precedent for reaching back into the live server.
+
+**Errors:**
+- `none-added` when This Story introduces no new failure mode on construction. Progress wiring is additive and per-request; a wiring or emission fault degrades to silence, never to a construction error.
+
+**Preconditions:**
+- The real parameter list must be re-resolved with symbol.locate before implementation — s1 explicitly flags the insertion point as unverified at the signature level (backFlowNote 1).
+- The daemon IPC stream for the invoked operation is already multiplexed as stream:'progress' frames (src/daemon/workflow-rpc.ts:238); this Story attaches a reader to it, it does not create emission.
+
+**Postconditions:**
+- For every long-running tool request, exactly one ProgressSink is constructed before the daemon operation starts and is closed over by that request's frame reader — this is the correlation mechanism (s1 backFlowNote 5: frames carry a literal id:0 and cannot be correlated from the frame itself, so correlation comes from per-invocation lexical scope, not from the wire).
+- The subscription is torn down when the invocation settles, on both the success and the error path.
+- No class is introduced; all added symbols are camelCase free functions or PascalCase types, per the conventions bundle (class sample size 0 in this module).
+
+### `mcpProgressSink`
+
+```typescript
+declare function mcpProgressSink(server: McpServer, progressToken: string | number | undefined): ProgressSink
+```
+
+**Parameters:**
+- `server: McpServer` — The live MCP server to emit notifications/progress through. Same reach-back shape as the existing makeSamplerFromMcpServer precedent in src/mcp/sampling-bridge.ts.
+- `progressToken: string | number | undefined` — The caller's token read from request _meta (LongRunningToolMeta). undefined is the ac2 case and is the ONLY gate: it is evaluated once here, not at each report() call.
+
+**Returns:** `ProgressSink` — A token-bearing sink when progressToken is defined; NOOP_PROGRESS_SINK when it is undefined. Callers never re-check the token — the gate is resolved by which sink was returned.
+
+**Errors:**
+- `EmissionFault` when The underlying server notification write rejects or throws. Swallowed and logged inside the sink; never propagated to the tool handler. Progress is best-effort per the HLD durability note — a dropped frame must not affect the operation's result.
+
+**Preconditions:**
+- progressToken, when defined, is the value the caller supplied verbatim in request _meta; it is never synthesised and never mixed with a daemon-internal identifier (HLD security note).
+
+**Postconditions:**
+- Every McpProgressNotification emitted by the returned sink carries params.progressToken strictly equal to the progressToken argument — ac1 holds by construction of the closure, not by a runtime lookup.
+- When progressToken is undefined the returned sink emits nothing for the whole invocation while the frame stream is still consumed to completion — ac2.
+- TESTABILITY OBLIGATION carried from the winning alternative: the ac1 test must assert on the sink actually constructed for a token-bearing request, not merely that report() was called. A wiring mistake that always returns NOOP_PROGRESS_SINK would satisfy ac2 while silently failing ac1, and a report()-only assertion would not catch it.
+
+### `ProgressSink`
+
+```typescript
+interface ProgressSink { report(event: ProgressEvent): void }
+```
+
+**Parameters:**
+- `event: ProgressEvent` — A frame consumed verbatim from sc1 — the StageProgressEvent | TokenProgressEvent union. This Story neither widens nor narrows sc1.
+
+**Returns:** `void` — Fire-and-forget. report() is synchronous from the caller's perspective and never blocks the operation, satisfying the HLD performance note (O(1) per stage transition and per token batch).
+
+**Errors:**
+- `none-propagated` when report() never throws. All emission faults are contained inside the implementation.
+
+**Preconditions:**
+- The event is a well-formed sc1 ProgressEvent. Design against sc1, not against the WorkflowProgress phase union observed today — s1 reshapes the payload (backFlowNote 4).
+
+**Postconditions:**
+- This single interface is the ONLY place that branches on event.kind === 'stage' vs 'token'. How stageLabel / index / total / tokensDelta / tokensTotal become params.progress / total / message is private to s2 per the HLD boundary.internal claim, and is not observable outside this Story.
+- The 'token' branch has NO PRODUCER TODAY: all eight daemon emission sites are stage-shaped (backFlowNote 3). Isolating it here is what lets the ac3 token half be stubbed and asserted ahead of s1 shipping its emitter. The branch ships with the mapping implemented and tested against synthetic TokenProgressEvents.
+- Consequence for ac3: the stage half is live on merge; the ongoing-production half is contract-complete and test-covered but dormant until s1's token emitter lands. This is a declared dependency on s1, not a gap in this Story.
+
+### `NOOP_PROGRESS_SINK`
+
+```typescript
+declare const NOOP_PROGRESS_SINK: ProgressSink
+```
+
+**Returns:** `ProgressSink` — The shared, stateless sink whose report() discards its argument. The ac2 implementation.
+
+**Errors:**
+- `none` when Cannot fail.
+
+**Postconditions:**
+- Emits no MCP notification of any kind for the invocation's lifetime.
+- Incurs zero per-frame cost beyond the already-emitted daemon stream frames, matching the HLD durability note that a caller supplying no progressToken pays nothing.
+
+### `LongRunningToolMeta`
+
+```typescript
+interface LongRunningToolMeta { progressToken?: string | number }
+```
+
+**Parameters:**
+- `progressToken: string | number | undefined` _(optional)_ — The standard MCP progress token. Absent means run silently (ac2). Owned by sc2 and reproduced here unchanged from the HLD interfaceSketch.
+
+**Returns:** `LongRunningToolMeta` — The _meta shape accepted on each long-running tool request envelope. It is the sole inbound surface this Story adds.
+
+**Errors:**
+- `none` when A malformed or non-string/number token is treated as absent — the sink degrades to NOOP rather than rejecting the tool call. Progress must never be able to fail an operation.
+
+**Postconditions:**
+- Purely additive to the three existing envelope types; no existing request field changes shape, so no current caller breaks.
+
+### `McpProgressNotification`
+
+```typescript
+interface McpProgressNotification { method: 'notifications/progress'; params: { progressToken: string | number; progress: number; total?: number; message?: string } }
+```
+
+**Parameters:**
+- `params.progressToken: string | number` — Echoes the caller's token verbatim (k3).
+- `params.progress: number` — Monotonic advance. Derived from stage index for StageProgressEvent and from tokensTotal for TokenProgressEvent. Kept REQUIRED — the winning judgment rejected a4 specifically for making this optional and omitting it on the token variant, which would downgrade ac3 to partial.
+- `params.total: number | undefined` _(optional)_ — Stage total when sc1 reports it as non-null; omitted when sc1's total is null or the event is a token event.
+- `params.message: string | undefined` _(optional)_ — Derived from stageLabel or the token delta (ac3).
+
+**Returns:** `void` — Emitted, not returned. This is the outbound half of sc2.
+
+**Errors:**
+- `EmissionFault` when Handled entirely inside mcpProgressSink; see that entry.
+
+**Preconditions:**
+- Emitted only from a token-bearing sink — never constructed on the ac2 path.
+
+**Postconditions:**
+- Never leaks into tool handler code. Handlers hold a ProgressSink and call report(); the notification shape is constructed only inside the sink, preserving the HLD boundary.internal claim that the ProgressEvent-to-notification mapping stays private to s2.
+- progress is non-decreasing across the notifications emitted for a single invocation.
+
+## Data model changes
+
+### `WorkflowStepMcpEnvelope` — field-add
+
+Gains an optional `_meta?: LongRunningToolMeta` carrying the caller's progressToken. Additive only — every existing field keeps its shape, so callers that omit _meta are unaffected and take the ac2 path. Entity id fd6b8811520d93b6f07693f4afd1af1b.
+
+```
++ readonly _meta?: LongRunningToolMeta | undefined;
+```
+
+**Call sites:**
+- `src/mcp/workflow-step/types.ts`
+- `src/mcp/server.ts`
+
+### `StepMcpEnvelope` — field-add
+
+Same additive `_meta?: LongRunningToolMeta` for the insrc_analyze_step tool surface. Entity id f3bd82f0085d580fe58f403fa8782db0. Note: sc1 declares ProgressOperation as 'workflow.run' | 'analyze.run', but s1 backFlowNote 8 records that no exploration returned emission sites for src/daemon/analyze-rpc.ts — whether analyze.run's frames reach the wire through the same stream:'progress' binding is UNVERIFIED. This field is declared for both operations because sc1 requires uniformity; the analyze.run path must be confirmed with a targeted search over analyze-rpc.ts before the forwarder is assumed to work identically for it.
+
+```
++ readonly _meta?: LongRunningToolMeta | undefined;
+```
+
+**Call sites:**
+- `src/mcp/analyze-step/types.ts`
+- `src/mcp/server.ts`
+
+### `BuildStepMcpEnvelope` — field-add
+
+Same additive `_meta?: LongRunningToolMeta`. Entity id 8b9f4657257acf3cba59225e3fc40e43. Included so the three existing long-running tool envelopes share one opt-in shape rather than each growing its own — this is the property the winning alternative (a2) buys over a1, where the mapping and teardown would be replicated per tool with nothing forcing the sharing.
+
+```
++ readonly _meta?: LongRunningToolMeta | undefined;
+```
+
+**Call sites:**
+- `src/mcp/build-step/types.ts`
+- `src/mcp/server.ts`
+
+### `ProgressSink` — new
+
+Net-new internal port, plus the NOOP_PROGRESS_SINK constant and the mcpProgressSink factory. Lives alongside the two existing exports of src/mcp/server.ts, or in a sibling module under src/mcp/. NET-NEW confirmed by s1: a full-workspace grep for progressToken | notifications/progress | onprogress | sendNotification returned ZERO hits under src/mcp/ and zero anywhere for progressToken / notifications/progress / sendNotification — there is no existing forwarder to extend in place. Structural note: implemented as free functions plus an interface, NOT a class — the conventions bundle reports class sample size 0 for this module, so a class would be its first and would break the observed idiom. ACCEPTED COST from the winning judgment: 'port' is net-new vocabulary in a module with no existing port idiom; it is taken deliberately in exchange for a single testable branch point.
+
+```
++ interface ProgressSink { report(event: ProgressEvent): void }
++ declare const NOOP_PROGRESS_SINK: ProgressSink
++ declare function mcpProgressSink(server: McpServer, progressToken: string | number | undefined): ProgressSink
+```
+
+**Call sites:**
+- `src/mcp/server.ts`
+- `src/mcp/sampling-bridge.ts`
+
+### `McpProgressNotification` — new
+
+Net-new outbound type, the emission half of sc2. Constructed only inside mcpProgressSink and never referenced by tool handler code. Reproduced verbatim from the sc2 interfaceSketch with `progress` kept required.
+
+```
++ interface McpProgressNotification { method: 'notifications/progress'; params: { progressToken: string | number; progress: number; total?: number; message?: string } }
+```
+
+**Call sites:**
+- `src/mcp/server.ts`
+
+### `WorkflowProgress` — invariant-change
+
+NOT CHANGED BY THIS STORY — recorded because this Story's correctness depends on s1 changing it. Declared at src/daemon/workflow-rpc.ts:75 as `readonly onProgress?: ((f: WorkflowProgress) => void) | undefined`, fired at eight sites (110 decompose, 112 plan-ready, 123 grounding, 131 step-start, 134 step-done, 151 synthesize-attempt, 166 synthesize-retry, 184 done). The transport binding at line 238 — `onProgress: (f) => send({ id: 0, stream: 'progress', data: f })` — is the STABLE seam this Story subscribes to; the `data` payload inside it is the moving part that s1 reshapes from WorkflowProgress into sc1 ProgressEvent. s2 makes no daemon-side change (preserving k2/k5 and the sc1 boundary that s1 owns), and designs against sc1 rather than against the phase union observed today.
+
+```
+(unchanged by s2 — reshaped by s1 into ProgressEvent; the `id: 0` framing is deliberately not altered, see amendment rationale)
+```
+
+**Call sites:**
+- `src/daemon/workflow-rpc.ts`
+- `src/shared/types.ts`
+
+## Interaction with shared contracts
+
+| Contract | Role | How |
+| :--- | :--- | :--- |
+| `sc2` | implements | HLD lists sc2 McpProgressForwarding as ownedByStory s2 with an empty consumedByStories, so this Story is the sole owner and the contract is a terminal sink. Both halves of the sketch are implemented unchanged: LongRunningToolMeta lands as an additive `_meta` field on the three existing tool envelopes (WorkflowStepMcpEnvelope, StepMcpEnvelope, BuildStepMcpEnvelope), and McpProgressNotification is the emission shape produced only inside mcpProgressSink. The gate the contract encodes — token present means forward, token absent means run silently — is resolved ONCE, at sink construction, rather than re-checked at each consumption point; that is the substantive design choice this Story makes on top of the sketch, and it is why ac1 and ac2 become testable by swapping sinks without standing up an MCP client. Everything the HLD marked boundary.internal stays internal: the frame-reading loop, the ProgressEvent-to-notification mapping, the monotonic-progress derivation, and subscription attach/teardown for a single invocation are all behind ProgressSink, and McpProgressNotification never appears in handler code. The one place this Story goes beyond the literal sketch is the ProgressSink port itself, filed as an amendment below. |
+| `sc1` | consumes | HLD lists sc1 ProgressEvent as ownedByStory s1 with s2 among its consumedByStories. Consumed strictly as-is: ProgressSink.report takes the ProgressEvent union verbatim, no field is added, narrowed, or reinterpreted, no new IpcStreamKind is introduced, and no daemon-side code is touched — k2 (reuse the existing frame) and k5 (no new caller-to-daemon channel) both hold. This is the boundary on which the losing alternative a3 was rejected: it would have required the daemon to stamp and echo a correlationId on every ProgressEvent, changing a contract this Story only consumes. Correlation is instead solved inside s2's own boundary — the sink is constructed per request and closed over by that request's frame reader, so overlapping invocations stay correctly keyed despite the literal `id: 0` on progress frames (s1 backFlowNote 5). TWO CONSUMPTION RISKS CARRIED FORWARD, both inherited from s1 rather than introduced here: (1) TokenProgressEvent has no producer today — all eight daemon emission sites are stage-shaped — so ac3's ongoing-production half is contract-complete and unit-tested against synthetic events but stays dormant until s1 ships token emission (backFlowNote 3); (2) sc1 declares analyze.run alongside workflow.run, but no exploration confirmed that analyze-rpc.ts frames reach the wire through the same stream:'progress' binding, so uniform handling across both operations is asserted by contract and UNVERIFIED in code (backFlowNote 8). |
+
+## Error paths
+
+### Error cases
+
+- **The MCP notification write for a notifications/progress frame rejects or throws (transport closed, peer gone, serialization failure) while the daemon operation is still running.** (recoverable)
+  - Detection: mcpProgressSink wraps the server notification call in try/catch and attaches a rejection handler to the returned promise; the thrown value or rejection reason is the detection signal inside the sink's report() implementation.
+  - Response: Swallow the fault, log it once at warn via getLogger('mcp-progress') with the operation and frame kind, and continue consuming the frame stream. The sink is NOT torn down and report() still returns void — subsequent frames are attempted normally.
+  - User impact: The caller silently misses one or more progress notifications but the tool call itself returns its normal result. Degradation is to silence, never to failure.
+- **The caller supplies _meta.progressToken with a value that is neither string nor number (object, array, null, boolean) — a non-conforming MCP client.** (recoverable)
+  - Detection: mcpProgressSink performs a typeof check on the progressToken argument at construction time — the single gate evaluation — and finds it is not 'string' and not 'number'.
+  - Response: Treat it exactly as absent: return NOOP_PROGRESS_SINK. Do not reject the tool call, do not coerce the value, do not echo it in any notification.
+  - User impact: The caller sees the ac2 behaviour (operation completes, no notifications) rather than a rejected tool call. A progress-plumbing defect can never fail the underlying operation.
+- **The daemon IPC socket closes or the stream:'progress' channel ends mid-operation, before the invocation settles.** (recoverable)
+  - Detection: The per-invocation frame reader observes stream end / socket 'close' or 'error' on the IpcServer connection it is reading from (src/daemon/server.ts binding), rather than the expected terminal frame.
+  - Response: Run the same teardown path used on normal settlement — detach the reader, drop the sink reference — and let the tool handler's own daemon-call error handling decide the tool result. The progress layer emits nothing further and contributes no error of its own.
+  - User impact: Progress notifications stop. Whatever error the daemon call itself surfaces is what the caller sees; the forwarder adds no second, confusing failure.
+- **A progress frame for an invocation arrives after that invocation has already settled (late frame racing teardown).** (recoverable)
+  - Detection: The reader checks a per-invocation settled flag set by the teardown path before dispatching into the sink; a frame arriving with the flag set is the detection.
+  - Response: Discard the frame without calling report(). Do not re-attach the subscription. Correlation is by per-request lexical scope (s1 backFlowNote 5: frames carry a literal id:0 and cannot be correlated from the wire), so a late frame belonging to a settled invocation has no valid destination.
+  - User impact: No notification is emitted after the tool result. Callers never receive a progress frame for a token whose call has already returned, which would otherwise look like a hung or duplicated operation.
+- **The daemon operation throws or the tool handler exits on the error path while a subscription is attached.** (recoverable)
+  - Detection: The handler's finally block (or equivalent settle hook) runs regardless of outcome — the absence of teardown is not detected reactively, it is made unreachable structurally.
+  - Response: Tear down the subscription on both the success and the error path, per the buildInsrcMcpServer postcondition. The error propagates to the caller unmodified; no progress notification is emitted to describe it.
+  - User impact: No leaked readers across failed invocations, so a long-lived MCP server does not accumulate dead subscriptions over many failed runs.
+- **A frame arrives whose kind is neither 'stage' nor 'token' — sc1's ProgressEvent union widened by s1 ahead of s2 learning about it, or a malformed payload on the wire.** (recoverable)
+  - Detection: The single branch point inside ProgressSink.report falls through both known kind arms; the default arm is the detection site.
+  - Response: Emit no notification for that frame, log once at debug with the unrecognized kind, and continue reading. Do not throw, do not advance the monotonic progress counter.
+  - User impact: Unknown future event kinds are ignored rather than crashing an in-flight 30-40 minute run. s2 stays forward-compatible with s1 widening sc1.
+
+### Edge cases
+
+| Input | Expected |
+| :--- | :--- |
+| _meta.progressToken is the number 0, or the empty string ''. | Treated as PRESENT, not absent. The gate is a typeof check, never a truthiness check — a token-bearing sink is returned and every notification carries params.progressToken strictly equal to 0 or '' respectively (ac1). |
+| A StageProgressEvent whose total is null. | params.total is OMITTED from the notification rather than sent as null or 0. params.progress is still present and required — it is derived from the stage index (the a4 narrowing that made progress optional was explicitly rejected). |
+| The operation runs to completion emitting only stage frames and zero TokenProgressEvents — the state of the world today, since all eight daemon emission sites are stage-shaped (s1 backFlowNote 3). | The stage half of ac3 is satisfied live; zero token notifications are emitted and this is not an error. The token branch stays dormant, contract-complete and unit-tested against synthetic TokenProgressEvents, until s1 ships its emitter. |
+| Two long-running tool invocations are in flight concurrently, each supplying a different progressToken. | Each invocation's frames reach only its own sink. Correlation comes from per-invocation lexical scope — one sink constructed per request and closed over by that request's reader — not from the frame, which carries a literal id:0 for every invocation. |
+| Two concurrent invocations supply the SAME progressToken value. | Both are honoured independently; each sink echoes the token verbatim as supplied. s2 does not deduplicate, reject, or synthesise a distinguishing token — token uniqueness is the caller's concern (HLD security note: never synthesise, never mix with a daemon-internal identifier). |
+| Frames arrive out of order, or a stage index regresses relative to the previously emitted notification. | The emitted params.progress is clamped so it is non-decreasing across notifications for a single invocation, per the McpProgressNotification postcondition. The derivation is private to s2 and is not observable outside this Story. |
+| An invocation supplies a progressToken but the operation settles before any frame arrives (very fast run, or a daemon path that emits nothing). | Zero notifications, normal tool result, clean teardown. Indistinguishable from ac2 on the wire and correct in both cases. |
+| The invoked operation is analyze.run rather than workflow.run. | Declared to behave identically per sc1's ProgressOperation union, but UNVERIFIED in code: no exploration confirmed src/daemon/analyze-rpc.ts frames reach the wire through the same stream:'progress' binding (s1 backFlowNote 8). A targeted search over analyze-rpc.ts must confirm the binding before implementation; if the binding differs, this degrades to the ac2 no-notification path rather than misbehaving. |
+| A very high-frequency burst of TokenProgressEvents once s1's emitter lands (many frames per second over a 30-40 minute run). | report() stays O(1) per frame and synchronous from the caller's perspective, never blocking the operation, per the HLD performance note. Notification emission is fire-and-forget; the forwarder never applies backpressure to the daemon operation. |
+| A fourth long-running MCP tool is added later and its envelope gains _meta?: LongRunningToolMeta. | It inherits the mapping, monotonic derivation, and teardown by calling mcpProgressSink — no per-tool reimplementation. This is the structural property the shared adapter buys over per-handler branching. |
+
+### Invariants to preserve
+
+- The daemon side is not modified by this Story. No emission site in src/daemon/workflow-rpc.ts changes, the transport binding at line 238 (onProgress: (f) => send({ id: 0, stream: 'progress', data: f })) stays as-is including the literal id: 0, and no new IpcStreamKind or caller-to-daemon channel is introduced — k2 and k5 hold. [[c4]]
+- sc1 ProgressEvent is consumed strictly as-is: ProgressSink.report takes the union verbatim with no field added, narrowed, or reinterpreted. Correlation is solved inside s2's own boundary rather than by asking the daemon to stamp or echo a correlationId. [[c2]]
+- The frame-reading loop, the ProgressEvent-to-notification mapping, the monotonic-progress derivation, and subscription attach/teardown for a single invocation all stay private to s2. McpProgressNotification is constructed only inside mcpProgressSink and never appears in tool handler code — handlers hold a ProgressSink and call report(). [[c2]]
+- The sc2 sketch shapes are reproduced unchanged: LongRunningToolMeta keeps progressToken?: string | number, and McpProgressNotification keeps params.progress REQUIRED. Making progress optional or omitting it on the token variant would downgrade ac3 to partial and is out of bounds. [[c1]]
+- The _meta field on WorkflowStepMcpEnvelope, StepMcpEnvelope, and BuildStepMcpEnvelope is purely additive — no existing request field changes shape, so no current caller breaks and any caller omitting _meta takes the ac2 path. [[c1]]
+- All added symbols in src/mcp/ are camelCase free functions or PascalCase types. No class is introduced — the module's indexed class sample size is 0, so a class would be its first and would break the observed idiom. [[c6]]
+- Reaching back into the live MCP server object follows the existing makeSamplerFromMcpServer precedent in src/mcp/sampling-bridge.ts — a factory closing over the server — rather than inventing a second reach-back mechanism. [[c5]]
+- The gate is evaluated exactly once, at sink construction. Callers never re-check the progressToken; which sink was returned IS the gate. A token is echoed verbatim as supplied and is never synthesised or mixed with a daemon-internal identifier. [[c3]]
+- The ac1 test must assert on the sink actually constructed for a token-bearing request, not merely that report() was called — a wiring mistake that always returns NOOP_PROGRESS_SINK would satisfy ac2 while silently failing ac1. The branch tests live in a NEW file following the src/mcp/__tests__/ handler-test pattern, since src/mcp/server.ts has no test file to extend and no workflow-step test file exists. [[c7]]
+
+## Test strategy
+
+**Test framework:** `node:test (Node's built-in test runner) with node:assert/strict, executed via `npx tsx --test 'src/**/__tests__/*.test.ts'` — the framework used by every test file s1's test.locate surfaced (src/daemon/__tests__/workflow-rpc.test.ts, src/mcp/__tests__/analyze-step-handler.test.ts, src/mcp/__tests__/analyze-step-narrow.test.ts, src/mcp/__tests__/analyze-step-state.test.ts, src/mcp/build-step/__tests__/build-step.test.ts). New tests go in a NEW file under src/mcp/__tests__/ following that handler-test pattern, since module.profile reports testFiles 'none' for src/mcp/server.ts and no workflow-step test file exists to extend. No external assertion or mocking library is introduced; doubles are hand-written objects, matching the existing suites. Fast iteration subset: `npx tsx --test 'src/mcp/**/*.test.ts'`.`
+
+### Test levels
+
+- **unit** — Prove the gate resolution and the ProgressEvent -> McpProgressNotification mapping in isolation, without standing up an MCP client or a daemon. This is the primary level for this Story: the winning alternative was chosen precisely because a single swappable ProgressSink makes ac1/ac2 assertable by construction rather than end-to-end. Covers the typeof gate (including the 0 / '' falsy-but-present edge cases and the non-string/non-number degradation), the stage branch, the token branch against synthetic TokenProgressEvents (no producer exists today — s1 backFlowNote 3), monotonic clamping of params.progress, omission of params.total when sc1 total is null, verbatim token echo, and the unknown-kind default arm.
+  - Subjects: `mcpProgressSink — returns a token-bearing sink for a defined string|number token and NOOP_PROGRESS_SINK otherwise`, `NOOP_PROGRESS_SINK — emits nothing for the invocation lifetime`, `ProgressSink.report — the single branch point on event.kind === 'stage' | 'token' and the notification construction it performs`, `the private monotonic-progress derivation reached through report()`
+  - Fixtures: `a fake McpServer double recording every notification call (method + params) and able to be told to throw/reject on demand, following the makeSamplerFromMcpServer reach-back shape in src/mcp/sampling-bridge.ts`, `synthetic sc1 StageProgressEvent fixtures covering total: number, total: null, and a regressing stage index`, `synthetic sc1 TokenProgressEvent fixtures (tokensDelta / tokensTotal) — no daemon producer exists, so these must be hand-built`, `a malformed-kind event fixture for the default-arm test`, `a captured-log spy so the warn/debug paths can be asserted without console output`
+- **integration** — Prove the wiring: that a long-running tool handler registered by buildInsrcMcpServer actually reads _meta.progressToken off the request envelope, constructs the sink ONCE per invocation before the daemon operation starts, routes that invocation's frames into that invocation's sink via lexical scope, and tears the subscription down on both the success and the error path. This level exists because the unit level cannot catch a wiring mistake that always returns NOOP_PROGRESS_SINK — such a mistake would satisfy ac2 while silently failing ac1 (s4 mcpProgressSink testability obligation, s5 invariant sourced to c7). Tests live in a NEW file following the src/mcp/__tests__/ handler-test pattern: module.profile reports testFiles 'none' for src/mcp/server.ts and test.locate found no workflow-step test file (its hits were insrcRoot token false positives).
+  - Subjects: `buildInsrcMcpServer tool-handler registration path — sink construction per request`, `WorkflowStepMcpEnvelope / StepMcpEnvelope / BuildStepMcpEnvelope _meta?: LongRunningToolMeta acceptance (additive field, absent _meta takes the ac2 path)`, `the per-invocation frame reader: attach, dispatch, settled-flag late-frame discard, teardown on success and on throw`, `concurrent-invocation correlation — two in-flight requests with different tokens, and two with the same token`
+  - Fixtures: `a stubbed daemon operation that emits a scripted sequence of sc1 ProgressEvents then settles (and a variant that throws mid-stream)`, `a stubbed frame source standing in for the stream:'progress' / id:0 IPC binding at src/daemon/workflow-rpc.ts:238 — s2 makes no daemon-side change, so the seam is stubbed, not driven`, `request-envelope fixtures with _meta present, _meta absent, and _meta.progressToken of a non-conforming type`, `a spy on the sink factory so the test can assert WHICH sink was constructed for a token-bearing request, not merely that report() was called`, `a stream-end / socket-close fixture for the mid-operation termination case`
+- **contract** — Pin the sc2 shapes this Story owns and the sc1 shape it consumes, so a later widening cannot silently break the boundary. Type-level and shape assertions only — no behaviour. Also pins the invariant that McpProgressNotification never escapes into handler code and that params.progress stays REQUIRED (making it optional would downgrade ac3 to partial and was explicitly rejected).
+  - Subjects: `LongRunningToolMeta { progressToken?: string | number } — reproduced unchanged from the sc2 sketch`, `McpProgressNotification — method literal 'notifications/progress', params.progressToken and params.progress required, total/message optional`, `ProgressSink.report accepts the sc1 ProgressEvent union verbatim, with no field added, narrowed, or reinterpreted`
+  - Fixtures: `type-level assertions compiled under the project's strict settings (exactOptionalPropertyTypes, noUncheckedIndexedAccess)`, `a representative instance of each sc1 ProgressEvent variant to typecheck against report()`
+- **smoke** — A single guard test for the one UNVERIFIED assumption carried forward from s1 backFlowNote 8: sc1 declares ProgressOperation as 'workflow.run' | 'analyze.run', but no exploration confirmed that src/daemon/analyze-rpc.ts frames reach the wire through the same stream:'progress' binding. This test asserts the analyze.run path either forwards identically or degrades to the ac2 no-notification behaviour — it must never misbehave. If the binding is confirmed absent during implementation, this test documents the degradation rather than silently passing.
+  - Subjects: `the insrc_analyze_step tool surface driven with a progressToken, over an analyze.run operation`
+  - Fixtures: `a stubbed analyze.run frame source mirroring the workflow.run stub`, `a recorded assertion that the outcome is one of: identical forwarding, or zero notifications with a normal tool result`
+
+### Acceptance mapping
+
+| Criterion | Proving tests |
+| :--- | :--- |
+| `ac1` | `unit: mcpProgressSink returns a token-bearing (non-NOOP) sink when progressToken is a string`, `unit: mcpProgressSink returns a token-bearing sink when progressToken is the number 0 and when it is the empty string '' — the gate is typeof, never truthiness`, `unit: every notification emitted by a token-bearing sink carries params.progressToken strictly equal to the supplied token, for both string and number tokens`, `unit: params.progress is present and non-decreasing across a multi-frame sequence, and params.total is omitted (not null, not 0) when the sc1 stage total is null`, `integration: a long-running tool request carrying _meta.progressToken causes mcpProgressSink to be constructed with THAT token before the daemon operation starts — asserted on the constructed sink, not on report() having been called (guards the always-NOOP wiring mistake)`, `integration: frames emitted during a token-bearing invocation arrive as notifications/progress on the fake server, in order, keyed to that token`, `integration: two concurrent invocations with different tokens each receive only their own frames — correlation by per-invocation lexical scope, despite the literal id:0 on every frame`, `integration: two concurrent invocations supplying the SAME token are both honoured independently, with the token echoed verbatim and no deduplication or synthesis`, `contract: McpProgressNotification requires params.progressToken and params.progress; method is the 'notifications/progress' literal` |
+| `ac2` | `unit: mcpProgressSink returns NOOP_PROGRESS_SINK when progressToken is undefined`, `unit: mcpProgressSink returns NOOP_PROGRESS_SINK when progressToken is a non-string/non-number value (object, array, null, boolean) — treated as absent, never coerced, never rejected`, `unit: NOOP_PROGRESS_SINK.report over a full synthetic frame sequence emits zero notifications on the fake server`, `integration: a tool request with no _meta completes normally and emits zero notifications, while the frame stream is still consumed to completion`, `integration: a tool request with _meta present but progressToken absent takes the same silent path and the tool result is unchanged`, `integration: a malformed progressToken never rejects or alters the tool call — the result is byte-identical to the same request with no _meta`, `contract: LongRunningToolMeta.progressToken is optional and the _meta field is optional on all three envelopes, so every existing caller compiles unchanged and takes this path` |
+| `ac3` | `unit: a StageProgressEvent maps to a notification whose params.message is derived from stageLabel and whose params.progress is derived from the stage index — the current-stage half`, `unit: a synthetic TokenProgressEvent maps to a notification whose params.progress is derived from tokensTotal and whose params.message reflects the token delta — the ongoing-production half, tested against synthetic events because no daemon producer exists today (s1 backFlowNote 3)`, `unit: params.progress is REQUIRED and populated on the token variant too — the rejected a4 narrowing (optional progress, omitted on token events) would fail this test`, `unit: an interleaved sequence of stage and token events produces notifications conveying both, with params.progress monotonically non-decreasing across the whole sequence including a regressing stage index (clamped)`, `integration: over a scripted run that both changes stage and continues producing output, the caller receives more than one notification before the tool result — proving ongoing production, not merely a final result`, `integration: a run emitting only stage frames (the state of the world today) satisfies the stage half live and emits zero token notifications without error — the dormant-token-branch case`, `contract: ProgressSink.report accepts both sc1 variants verbatim, so the token branch is contract-complete ahead of s1's emitter landing` |
+
+## Migration
+
+**State before:** No MCP-side progress plumbing exists. A full-workspace grep for `progressToken | notifications/progress | onprogress | sendNotification` returned ZERO hits under `src/mcp/` and zero anywhere for `progressToken`, `notifications/progress`, or `sendNotification` (s1 search.text bundle) — no inbound token is read off tool-call params and no outbound notification is emitted. `src/mcp/server.ts` is a leaf file (27,405 bytes, 6 indexed entities) exporting exactly `buildInsrcMcpServer` and `runInsrcMcpStdio`, with no sub-module to extend and `testFiles: none` (s1 module.profile + test.locate). The three long-running tool envelopes — `WorkflowStepMcpEnvelope` (src/mcp/workflow-step/types.ts), `StepMcpEnvelope` (src/mcp/analyze-step/types.ts), `BuildStepMcpEnvelope` (src/mcp/build-step/types.ts) — carry no `_meta` field (s1 concept.resolve). On the daemon side progress already flows: `onProgress?: ((f: WorkflowProgress) => void)` at src/daemon/workflow-rpc.ts:75 fires at eight stage-shaped sites (110, 112, 123, 131, 134, 151, 166, 184) and is bound to the wire at line 238 as `send({ id: 0, stream: 'progress', data: f })` (s1 search.text). Consequently an MCP caller driving a 30–40 minute daemon operation sees only silence until the final tool result. Three constraints inherited from s1: the frame payload today is `WorkflowProgress`, not sc1 `ProgressEvent`; frames carry a literal `id: 0` so they cannot be correlated to an invocation from the wire; and no emission site carries a token count, so `TokenProgressEvent` has no producer.
+
+**State after:** Each of the three long-running tool envelopes accepts an additive optional `_meta` carrying `LongRunningToolMeta.progressToken`. Every long-running tool handler resolves exactly one `ProgressSink` per request before invoking the daemon operation — `mcpProgressSink(server, token)` returns a token-bearing sink when the token is present and `NOOP_PROGRESS_SINK` when it is absent, so the gate is evaluated once at construction rather than re-checked per frame. The handler attaches a reader to the already-existing `stream:'progress'` frames for the duration of that invocation; correlation comes from the per-invocation lexical closure over the sink, not from the frame (which still carries `id: 0`, deliberately unchanged). The sink is the single branch point on `event.kind === 'stage' | 'token'` and is the only place `McpProgressNotification` is constructed; handlers never see the notification shape. Subscription is torn down when the invocation settles on both the success and the error path. Emission faults are swallowed and logged inside the sink — progress is best-effort and can never fail an operation. No daemon-side code changes; no class is introduced (free functions plus interfaces, matching the module's 6/6 camelCase, class-sample-size-0 idiom). The stage half of ac3 is live on merge; the token half is contract-complete and unit-tested against synthetic `TokenProgressEvent`s but dormant until s1 ships a token emitter.
+
+**Zero downtime:** yes — **Data rewrite:** no
+
+### Steps
+
+1. Re-resolve the real parameter lists of `buildInsrcMcpServer` and `runInsrcMcpStdio` with `symbol.locate`, and run a targeted `search.text` over `src/daemon/analyze-rpc.ts` to confirm whether `analyze.run` frames reach the wire through the same `stream:'progress'` binding. Both are read-only verification gates that s1 flagged as unverified (backFlowNote 1 and 8); no code changes. If analyze.run does not share the binding, narrow the rollout in step 6 to workflow.run only and record the deviation. — ↩ rollbackable
+2. Add the net-new type surface as free functions plus interfaces in `src/mcp/` alongside the existing exports: the `ProgressSink` port, the `NOOP_PROGRESS_SINK` constant, the `mcpProgressSink` factory, the `LongRunningToolMeta` shape, and the `McpProgressNotification` shape. Purely additive declarations with no call sites yet — nothing observes them, so the build is unchanged in behaviour. — ↩ rollbackable
+3. Implement the sink: `mcpProgressSink` closes over the live MCP server (following the `makeSamplerFromMcpServer` precedent in src/mcp/sampling-bridge.ts) and returns `NOOP_PROGRESS_SINK` when the token is absent or is not a string/number. Inside the token-bearing sink, map the sc1 `ProgressEvent` union onto `notifications/progress` — stage index/total/label for the stage branch, tokensTotal/tokensDelta for the token branch — keeping `params.progress` required and non-decreasing across an invocation, and swallow-and-log any emission fault. Still no call sites; unreachable code. — ↩ rollbackable
+4. Add a new test file under `src/mcp/__tests__/` following the existing handler-test pattern (analyze-step-handler.test.ts et al.), since `src/mcp/server.ts` has no test file to extend. Assert ac1 by inspecting the sink actually constructed for a token-bearing request — not merely that report() was called, because a wiring mistake that always returns NOOP would satisfy ac2 while silently failing ac1. Assert ac2 by asserting zero emissions across a full invocation. Assert both ac3 branches against synthetic stage and token events. Tests pass against the not-yet-wired implementation. — ↩ rollbackable
+5. Add the optional `_meta?: LongRunningToolMeta` field to `WorkflowStepMcpEnvelope`, `StepMcpEnvelope`, and `BuildStepMcpEnvelope`. Additive only — no existing field changes shape, so every current caller keeps compiling and keeps behaving identically by taking the absent-token path. — ↩ rollbackable
+6. Wire the handlers: in each long-running tool handler registered inside `buildInsrcMcpServer`, read the token from request `_meta`, construct one sink for the request, attach the frame reader to the operation's `stream:'progress'` messages, and tear the subscription down when the invocation settles on both the success and the error path. This is the step that makes progress observable to callers; until it lands the whole change is inert. — ↩ rollbackable _(needs: `s1 sc1 ProgressEvent reshape merged — until the daemon `data` payload is a ProgressEvent rather than WorkflowProgress, the reader has nothing conforming to consume`)_
+7. Verify end-to-end against a real long-running run driven through the MCP server: confirm notifications arrive keyed to the supplied token as the operation advances (ac1), confirm a token-less invocation completes normally with zero notifications (ac2), and confirm two overlapping invocations stay correctly keyed despite the `id: 0` framing. Observation only; no code change. — ↩ rollbackable
+8. Leave the token branch dormant and re-verify the ac3 ongoing-production half once s1 ships a token emitter — no further s2 change is expected, since the branch is already implemented and tested against synthetic events. Record explicitly that until then the stage half is live and the token half is contract-complete but unexercised in production. — ↩ rollbackable _(needs: `s1 token emission added to the daemon — no emission site is token-shaped today`)_
+
+**Backward compat:** The three tool request envelopes are the public MCP surface consumed by Claude Code and Codex, so compatibility is load-bearing. Every envelope change is a field-add of an optional `_meta`; no existing field is renamed, retyped, or made required. A caller that sends no `_meta` — i.e. every caller in existence before this change — resolves `NOOP_PROGRESS_SINK`, receives no notifications, and gets a byte-identical tool result: ac2 is precisely the pre-change behaviour preserved. A malformed or non-string/non-number token degrades to the NOOP sink rather than rejecting the tool call, so a buggy client cannot fail an operation by sending a bad token. `buildInsrcMcpServer` keeps its return type (`McpServer`) and gains no parameter; the reshape is confined to handler bodies. No new failure mode is added on construction, and a wiring or emission fault degrades to silence, never to an error. No daemon-side code and no IPC frame shape is altered by this Story — the `id: 0` framing is left as-is by design — so a mixed deployment of an older daemon with a newer MCP server does not break: the reader simply observes frames it cannot map and stays silent. `McpProgressNotification` is a net-new outbound message on a standard MCP method; clients that do not handle `notifications/progress` ignore it per protocol and are unaffected.
+
+## Alternatives considered
+
+### a1: Token-threaded envelope with inline mapper
+
+Each per-tool MCP envelope gains an optional progressToken field; the handler that already owns the invocation subscribes to that run's ProgressEvent frames and maps them to notifications/progress inline.
+
+sc2 is expressed as two additive shapes on surfaces that already exist. First, LongRunningToolMeta is threaded into the three per-tool envelope types (WorkflowStepMcpEnvelope, StepMcpEnvelope, BuildStepMcpEnvelope) as an optional `_meta.progressToken?: string | number`, so the token travels with the request it belongs to and no new routing type is introduced. Second, the McpProgressNotification shape stays entirely inside the handler that issued the daemon call: on invocation the handler opens its daemon IPC stream, reads sc1 ProgressEvent frames off it, and emits notifications keyed to the token it was handed. Absence of the token is a plain `if` at the top of the handler — the stream is still consumed (the operation must complete) but nothing is emitted. Progress/total derivation is private: StageProgressEvent supplies index/total directly; TokenProgressEvent supplies tokensTotal as a monotonic counter with total omitted. Correlation is solved structurally rather than by protocol change — the handler holds its own stream handle, so the `id: 0` on progress frames never has to be interpreted.
+
+**Rejected because:** Ranked 2nd. Correct on every constraint (satisfies ac1, ac2, ac3, sc1, sc2) but weaker on durability than a2 on exactly the two cons the contract cannot police: the mapping and the subscription teardown are replicated once per long-running tool with nothing forcing sharing, and a fourth long-running tool must opt in rather than inherit. Its structural answer to backFlowNote 5 (correlation from lexical scope) is genuinely sound and is why a3's frame change is unnecessary — a2 inherits exactly this property at one indirection's cost.
+
+### a2: ProgressSink port with a no-op default — **CHOSEN**
+
+sc2 declares a narrow ProgressSink port that consumes sc1 ProgressEvents; MCP notification construction lives behind one adapter, and a token-absent request is served by a shared no-op sink so the gate disappears from every call site.
+
+The owned contract becomes a port rather than a notification shape: `interface ProgressSink { report(event: ProgressEvent): void }`. One adapter, `mcpProgressSink(server, progressToken)`, is the only code that knows the notifications/progress method name, the progressToken echo, and the progress/total/message derivation. A single `NOOP_PROGRESS_SINK` satisfies the same port when `_meta.progressToken` is absent. Handlers receive a ProgressSink and always call `report` unconditionally — the ac1/ac2 divergence is resolved once, at sink construction in server.ts, not at each consumption point. McpProgressNotification remains in the contract as documentation of what the adapter emits, but no handler ever names it. Correlation is still per-invocation: the sink is constructed per request and closed over by that request's frame reader, so it inherits a1's structural correlation without needing the daemon frame to carry an id. Because the port consumes sc1 directly, the TokenProgressEvent variant that currently has no producer (backFlowNote 3) needs no contract change when s1 lands it — the adapter grows a branch, the port does not.
+
+### a3: Correlation-keyed forwarder registry
+
+Progress frames are demultiplexed centrally: sc2 pins a correlationId that the daemon stamps on each ProgressEvent frame, and one server-level registry maps correlationId to the progressToken of the invocation that requested it.
+
+This alternative treats backFlowNote 5 (`id: 0` on progress frames) as a contract problem rather than a scoping accident. sc2 gains a correlation element: the MCP server generates an invocation-scoped `correlationId` per long-running tool call, passes it into the daemon request, and the daemon echoes it on every ProgressEvent frame for that operation. server.ts holds one `Map<correlationId, progressToken>` populated when a request carries `_meta.progressToken` and deleted on completion or error. A single frame reader at the server level, not per handler, consumes the `stream: 'progress'` messages, looks up the token, and emits the notification; frames with no registry entry are dropped, which is precisely the ac2 silent path. Handlers stay unaware of progress entirely — they neither read the token nor subscribe.
+
+**Rejected because:** Ranked 4th on a boundary violation, not on design quality. sc1 is ownedByStory s1 and only consumed by s2; requiring the daemon to stamp and echo a correlationId on every ProgressEvent frame changes a contract this Story only consumes — a `violates` on sc1 and a `partial` on sc2 (which grows a correlation element beyond its sketched surface). The change is also unnecessary: a1 and a2 both show correlation falls out of per-invocation lexical scope, so backFlowNote 5 is solved without touching the frame. Two further costs: registry lifecycle is a live failure mode (a missed delete on an error path leaks an entry and can mis-key a later notification to a stale token — a correctness bug affecting ac1, hence `partial` there), and server-level mutable state contradicts the module's all-free-function structure. Cost L for the same acceptance coverage a2 delivers at M.
+
+### a4: Message-first notification, numeric progress optional
+
+Same forwarding branch as a1, but sc2 commits only to the `message` field being always populated; `progress`/`total` are best-effort and omitted whenever the source event cannot supply an honest monotonic number.
+
+This narrows the owned contract rather than restructuring where the code lives. McpProgressNotification is specified so that `message` is required and derived from stageLabel (stage events) or a rendered token count (token events), while `progress` is populated only from StageProgressEvent.index and `total` only from StageProgressEvent.total when non-null. TokenProgressEvent produces a message-only notification. The motivation is backFlowNote 3: no producer emits TokenProgressEvent today, and the eight existing daemon frames are stage-shaped with no token counts, so any numeric progress derived from tokens would be fabricated. Structurally this reuses a1's threading — token on the envelope, handler-scoped subscription — and differs only in what the contract promises about the numeric fields. It can be tightened later to a strictly monotonic `progress` once s1's token emitter exists, without changing any call site.
+
+**Rejected because:** Ranked 3rd. Structurally identical to a1 (inherits its ac1/ac2 scores and conventions fit) but deliberately narrows sc2's promise, and that narrowing is what costs it the ranking. ac3 asks that notifications convey the current stage AND the ongoing production; a4 renders token events as message-only, so a client gets no monotonic signal for the production half — a `partial` on ac3 as written. sc2 is likewise `partial`: the sketch specifies `progress: number` as a required monotonic advance explicitly citing tokensTotal, and a4 makes it optional and omits it for the entire token variant, revising the owned contract rather than implementing it. Its motivating observation is legitimate (backFlowNote 3: no producer emits TokenProgressEvent today and fabricating numbers would be dishonest), but a2 handles the same fact without weakening the contract by isolating the unproduced variant behind one adapter. a4's own con concedes the contract is knowingly provisional and must be revisited when s1 ships.
+
+## Open questions
+
+- EmissionFault has no definition site (s8 cd3, partial). It is used as the error type on both mcpProgressSink and McpProgressNotification but is never declared in contractDetails.api or dataModelChanges. Resolve by either declaring it as a concrete type or restating it as a caught-and-swallowed condition rather than a named type. Related: four api entries carry pseudo-types ('none-added', 'none-propagated', 'none') in the error `type` field — honest assertions that the surface adds no failure mode, each with a real `condition`, but not concrete types.
+- Five of the nine invariantsToPreserve are grounded in HLD text or the alternative judgment rather than in an analyze bundle showing the invariant holds in code today (s8 ep3, partial): invariants 2, 3, 4, 5 and 8 cite c1/c2 (hld.sharedContract, hld.boundary) and c3 (judgment.winner). Invariant 1 — the one that most needs code grounding (daemon side unmodified, line 238 unchanged) — does cite an analyze bundle (c4). Consider a targeted analyze pass to code-ground the remainder.
+- testFramework attributes to s1 a finding s1 did not return (s8 ts2, partial). node:test + node:assert/strict via `npx tsx --test` is justified as 'the framework used by every test file s1's test.locate surfaced', but test.locate reports only file paths — it never reports a framework name or runner. The claim is consistent with the repo's documented sweep command; re-ground it on an analyze pass that actually reports the runner, or restate it as an inference from file naming plus the project build docs.
+- src/mcp/sampling-bridge.ts is listed under ProgressSink.callSites but s1 surfaces it as a reach-back precedent (makeSamplerFromMcpServer), not as a site that would call ProgressSink (s8 dm1 note). The path is real; its role as a call site is not established. Correct the label on the next pass.
+- Whether src/daemon/analyze-rpc.ts frames reach the wire through the same stream:'progress' binding is UNVERIFIED (s1 backFlowNote 8). sc1 declares ProgressOperation as 'workflow.run' | 'analyze.run', but no exploration returned analyze-rpc.ts emission sites. Gated behind migration step 1 and covered by a dedicated smoke-level test; if the binding differs, the analyze.run rollout narrows to workflow.run only.
+- BuildInsrcMcpServerOpts and the real parameter lists of buildInsrcMcpServer / runInsrcMcpStdio are unverified at the signature level (s1 backFlowNote 1) — no symbol.locate ran. Self-flagged in situ as 'UNVERIFIED SHAPE' and gated behind migration step 1.
+- The HLD nonFunctional dimensions (performance, durability, observability, security) are not scored as explicit constraint rows in the alternatives matrix (s8 alt2 note), though the winnerRationale and downstream steps engage them. Scoring them as first-class rows would strengthen the matrix.
+- Migration steps 2–4 drift toward implementation sequencing in their phrasing ('Add the net-new type surface...', 'Implement the sink...', 'Add a new test file...') (s8 sbdry2 note). Each stays inside the LLD boundary because it is justified by a rollout property — additive-and-inert, unreachable-until-wired, tests-green-before-wiring — rather than by work decomposition, but the verbs are worth tightening so the distinction is not left to the reader.

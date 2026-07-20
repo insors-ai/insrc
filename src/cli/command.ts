@@ -11,6 +11,7 @@
  */
 
 import type { Services } from './services/index.js';
+import type { TrackerSetupStep } from '../workflow/tracker/setup.js';
 import { formatBytes, formatUptime } from './ui/format.js';
 import { CONFIG_CATALOG } from './config-catalog.js';
 
@@ -28,6 +29,7 @@ export const COMMAND_HELP: readonly string[] = [
 	'repo     add <path> | remove <path> | reindex <path> | list',
 	'daemon   start | stop | restart | update | backup <dir> | compact | status',
 	'workflow list | chain <hash> | approve <path> | reject <path> <reason> | ack-stale <path> <reason> | sync <hash> | deferred <epicSlug|hash>',
+	'tracker  setup [--project]   ·   bootstrap the GitHub tracker (config, labels, issue types, project)',
 	'config   list [search] | get <key> | set <key> <value> | unset <key> | reload   (dot-path keys)',
 	'setup    show | apply | pull',
 	'pane daemon|repos|workflows|setup   ·   help   ·   quit',
@@ -51,6 +53,7 @@ export async function runCommand(line: string, ctx: CommandCtx): Promise<string[
 			case 'daemon': case 'd':   return await runDaemon(sub, rest, svc, ctx);
 			case 'repo': case 'r':     return await runRepo(sub, rest, svc);
 			case 'workflow': case 'wf': return runWorkflow(sub, rest, svc, ctx);
+			case 'tracker': case 'tr': return runTracker(sub, rest, svc, ctx);
 			case 'config': case 'cfg': return await runConfig(sub, rest, svc);
 			case 'setup':              return await runSetup(sub, svc, ctx);
 			default:
@@ -163,6 +166,35 @@ function runWorkflow(sub: string | undefined, rest: readonly string[], svc: Serv
 		}
 		default: return ['usage: workflow list|chain <hash>|approve <path>|reject <path> <reason>|ack-stale <path> <reason>|sync <hash>|deferred <epicSlug|hash>'];
 	}
+}
+
+function runTracker(sub: string | undefined, rest: readonly string[], svc: Services, ctx: CommandCtx): string[] {
+	switch (sub) {
+		case 'setup': {
+			const includeProject = rest.includes('--project');
+			const report = svc.workflow.trackerSetup(ctx.repoPath, { includeProject });
+			const lines = report.steps.flatMap(renderTrackerStep);
+			lines.push('');
+			lines.push(report.manualRemaining === 0
+				? '✓ tracker ready — no manual steps remaining'
+				: `⚠ ${report.manualRemaining} manual step(s) remaining — complete the ⚠ actions above`);
+			return lines;
+		}
+		default: return ['usage: tracker setup [--project]'];
+	}
+}
+
+const TRACKER_GLYPH: Record<TrackerSetupStep['status'], string> = {
+	done: '✓', already: '•', manual: '⚠', skipped: '·', failed: '✗',
+};
+
+/** One setup step → display lines (detail + action may be multi-line). */
+function renderTrackerStep(step: TrackerSetupStep): string[] {
+	const detailLines = step.detail.split('\n');
+	const head = `${TRACKER_GLYPH[step.status]} ${step.title} — ${detailLines[0] ?? ''}`;
+	const lines = [head, ...detailLines.slice(1).map(l => `    ${l}`)];
+	if (step.action !== undefined) lines.push(`    → ${step.action}`);
+	return lines;
 }
 
 async function runSetup(sub: string | undefined, svc: Services, ctx: CommandCtx): Promise<string[]> {

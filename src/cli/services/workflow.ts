@@ -52,6 +52,7 @@ import {
 	defineArtifactPaths, hldArtifactPaths, lldArtifactPaths, planArtifactPaths,
 } from '../../workflow/storage.js';
 import { commitAndPushArtifacts, type CommitArtifactsResult } from '../../workflow/tracker/github.js';
+import { runTrackerSetup, type TrackerSetupOptions, type TrackerSetupReport } from '../../workflow/tracker/setup.js';
 import { resolveGithubConfig } from '../../workflow/config/github.js';
 import { syncTracker, type SyncResult } from '../../workflow/tracker/sync.js';
 import { getLogger } from '../../shared/logger.js';
@@ -202,4 +203,11 @@ export function resolveEpicHashArg(repoPath: string, hashOrSlug: string): string
  *  (read by the chain report). Deterministic; read-only against GitHub. */
 export function sync(repoPath: string, epicHash: string): SyncResult {
 	return syncTracker(repoPath, epicHash);
+}
+
+/** Bootstrap the GitHub tracker for a repo — auth/scope preflight, config,
+ *  labels, issue types, and (optionally) a Projects board. Returns a
+ *  structured checklist; the command layer renders it. */
+export function trackerSetup(repoPath: string, opts: TrackerSetupOptions = {}): TrackerSetupReport {
+	return runTrackerSetup(repoPath, opts);
 }

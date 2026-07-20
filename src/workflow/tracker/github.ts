@@ -223,3 +223,113 @@ export function ghEnsureMilestone(owner: string, repo: string, title: string): v
 export function ghAttachMilestone(owner: string, repo: string, ref: string, title: string): void {
 	silent('gh', ['issue', 'edit', parseIssueRef(ref).number, '--repo', `${owner}/${repo}`, '--milestone', title]);
 }
+
+// ---------------------------------------------------------------------------
+// gh — tracker setup (scopes / issue types / projects)
+//
+// These back the one-shot `insrc tracker setup` bootstrap. All go
+// through the same `_exec` seam so `_setTrackerExecForTests` stubs them
+// alongside the push/sync calls.
+// ---------------------------------------------------------------------------
+
+/** Read the OAuth scopes the current `gh` token carries, from the
+ *  `X-Oauth-Scopes` response header of `gh api -i /user`. Returns the
+ *  parsed scope list (possibly empty when the header is absent/blank —
+ *  e.g. a fine-grained token), or `ok:false` when the call fails. */
+export function ghTokenScopes(): { readonly ok: true; readonly scopes: readonly string[] } | { readonly ok: false; readonly reason: string } {
+	let raw: string;
+	try { raw = out('gh', ['api', '-i', '/user']); }
+	catch { return { ok: false, reason: 'could not read token scopes (`gh api -i /user` failed)' }; }
+	for (const line of raw.split(/\r?\n/)) {
+		const m = /^x-oauth-scopes:\s*(.*)$/i.exec(line.trim());
+		if (m !== null) {
+			return { ok: true, scopes: m[1]!.split(',').map(s => s.trim()).filter(s => s.length > 0) };
+		}
+	}
+	// Header not emitted → treat as an empty scope set (setup will guide a refresh).
+	return { ok: true, scopes: [] };
+}
+
+/** Names of the native issue types defined on an org, via GraphQL
+ *  `organization.issueTypes`. Returns [] on any error (org without the
+ *  feature, personal account, API hiccup) — the caller then attempts a
+ *  create and reports on that result. */
+export function ghListOrgIssueTypes(org: string): readonly string[] {
+	const query = 'query($owner:String!){organization(login:$owner){issueTypes(first:25){nodes{name}}}}';
+	let raw: string;
+	try { raw = out('gh', ['api', 'graphql', '-f', `query=${query}`, '-f', `owner=${org}`]); }
+	catch { return []; }
+	try {
+		const j = JSON.parse(raw) as { data?: { organization?: { issueTypes?: { nodes?: Array<{ name?: string }> } } } };
+		return (j.data?.organization?.issueTypes?.nodes ?? []).map(n => n.name ?? '').filter(n => n.length > 0);
+	} catch { return []; }
+}
+
+/** Create an org issue type. Returns false on error (needs `admin:org`;
+ *  the caller gates on the scope first).
+ *
+ *  NOTE: `is_enabled` MUST be passed with `-F` (typed boolean). Using
+ *  `-f` sends the string "true" and the API 422s. */
+export function ghCreateOrgIssueType(org: string, name: string, color: string, description: string): boolean {
+	try {
+		silent('gh', ['api', '-X', 'POST', `/orgs/${org}/issue-types`,
+			'-f', `name=${name}`, '-F', 'is_enabled=true', '-f', `color=${color}`, '-f', `description=${description}`]);
+		return true;
+	} catch { return false; }
+}
+
+/** Create a Projects v2 board. Returns its number + url, or null on
+ *  error (needs the `project` scope; the caller gates on it). */
+export function ghCreateProject(org: string, title: string): { readonly number: number; readonly url: string } | null {
+	let raw: string;
+	try { raw = out('gh', ['project', 'create', '--owner', org, '--title', title, '--format', 'json']); }
+	catch { return null; }
+	try {
+		const j = JSON.parse(raw) as { number?: number; url?: string };
+		if (typeof j.number !== 'number') return null;
+		return { number: j.number, url: j.url ?? '' };
+	} catch { return null; }
+}
+
+/** Find an existing Projects v2 board by exact title. Returns its number
+ *  + url, or null if none matches (or on error). Lets setup reuse a board
+ *  instead of creating a duplicate on every `--project` run. */
+export function ghFindProjectByTitle(org: string, title: string): { readonly number: number; readonly url: string } | null {
+	let raw: string;
+	try { raw = out('gh', ['project', 'list', '--owner', org, '--format', 'json', '--limit', '200']); }
+	catch { return null; }
+	try {
+		const j = JSON.parse(raw) as { projects?: Array<{ number?: number; title?: string; url?: string; closed?: boolean }> };
+		const match = (j.projects ?? []).find(p => p.title === title && typeof p.number === 'number' && p.closed !== true);
+		if (match === undefined || typeof match.number !== 'number') return null;
+		return { number: match.number, url: match.url ?? '' };
+	} catch { return null; }
+}
+
+/** Add a single-select field (e.g. `Size` with `XS,S,M,L,XL`) to a
+ *  Projects v2 board. Best-effort → false on error. */
+export function ghAddProjectSingleSelectField(org: string, projectNumber: number, name: string, options: readonly string[]): boolean {
+	try {
+		silent('gh', ['project', 'field-create', String(projectNumber), '--owner', org,
+			'--name', name, '--data-type', 'SINGLE_SELECT', '--single-select-options', options.join(',')]);
+		return true;
+	} catch { return false; }
+}
+
+/** List the web URLs of a repo's issues (any state), capped at `limit`.
+ *  Used to seed a fresh Project board with the existing issues. */
+export function ghListRepoIssueUrls(owner: string, repo: string, limit: number): readonly string[] {
+	let raw: string;
+	try { raw = out('gh', ['issue', 'list', '--repo', `${owner}/${repo}`, '--state', 'all', '--limit', String(limit), '--json', 'url', '-q', '.[].url']); }
+	catch { return []; }
+	return raw.split(/\r?\n/).map(s => s.trim()).filter(s => s.length > 0);
+}
+
+/** Add one issue (by web URL) to a Projects v2 board. Best-effort →
+ *  false on error (the caller counts how many landed). */
+export function ghAddProjectItem(org: string, projectNumber: number, issueUrl: string): boolean {
+	try {
+		silent('gh', ['project', 'item-add', String(projectNumber), '--owner', org, '--url', issueUrl]);
+		return true;
+	} catch { return false; }
+}

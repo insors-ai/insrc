@@ -737,6 +737,45 @@ export interface IpcStreamMessage {
   data:   unknown;
 }
 
+// ---------------------------------------------------------------------------
+// Progress events (sc1) — one uniform payload for long daemon operations.
+//
+// A `ProgressOperation` is a long-running daemon op that emits progress on the
+// EXISTING IpcStreamMessage frames (no new wire format): a StageProgressEvent
+// rides a `stream: 'progress'` frame; a TokenProgressEvent rides a
+// `stream: 'delta'` frame emitted by such an operation. This payload pairing is
+// documented, NOT type-enforced on IpcStreamMessage (whose `data` stays
+// `unknown`) — IpcStreamKind and IpcStreamMessage above are unchanged.
+//
+// The closed `ProgressOperation` union is the two stage/token-emitting ops. An
+// untruncated sweep of `send: (msg: IpcStreamMessage) => void` producers over
+// ALL of src/ finds FIVE sites: analyze-rpc.ts:481 (analyze.run) and
+// workflow-rpc.ts:206 (workflow.run) — the two progress operations here — plus
+// server.ts:19 (the socket transport), tools/types.ts:56 (per-tool message
+// streaming), and todos-rpc.ts:1146 (the todos runner), which are deliberately
+// EXCLUDED from ProgressOperation (they are not stage/token progress). All
+// fields are readonly and non-optional within their variant.
+export type ProgressOperation = 'workflow.run' | 'analyze.run';
+
+export interface StageProgressEvent {
+  readonly kind:       'stage';
+  readonly operation:  ProgressOperation;
+  readonly stageId:    string;
+  readonly stageLabel: string;
+  readonly index:      number;
+  readonly total:      number | null;
+}
+
+export interface TokenProgressEvent {
+  readonly kind:        'token';
+  readonly operation:   ProgressOperation;
+  readonly stageId:     string | null;
+  readonly tokensDelta: number;
+  readonly tokensTotal: number;
+}
+
+export type ProgressEvent = StageProgressEvent | TokenProgressEvent;
+
 export interface DaemonStatus {
   uptime:            number;  // seconds
   repos:             RegisteredRepo[];

@@ -55,7 +55,7 @@ import type {
 	RunAnalyzeResult,
 	RunRecord,
 } from '../analyze/index.js';
-import type { IpcStreamMessage } from '../shared/types.js';
+import type { IpcStreamMessage, ProgressEvent, StageProgressEvent } from '../shared/types.js';
 import {
 	ClassifierLlmUnavailableError,
 	ClassifierPromptMissingError,
@@ -459,8 +459,15 @@ export async function plan(params: unknown): Promise<PlanRpcResponse> {
  * DaemonStreamMessage events.
  *
  * Frame protocol:
- *   - { stream: 'progress', data: { step, status, ...event-specific } }
- *     fires for every intermediate stage / task event
+ *   - { stream: 'progress', data: StageProgressEvent } (sc1)
+ *     fires for every genuine stage / task transition. `data` is the
+ *     uniform StageProgressEvent { kind:'stage', operation:'analyze.run',
+ *     stageId, stageLabel, index, total:null }. Fine-grained sub-events
+ *     (stage-substep, shaper tool call/response, llm-token, plan-attempt)
+ *     map to null and emit NO frame — the stream only ever gets quieter.
+ *     analyze has no token count, so there are NO 'delta'/TokenProgressEvent
+ *     frames on this path (see LLD-stream-incremental-progress amendment
+ *     2026-07-21).
  *   - { stream: 'analyze.result', data: RunStartRpcResponse }
  *     fires ONCE at the end carrying the terminal RunAnalyzeResult
  *     (success or failure, in the SAME shape the prior r/r RPC used)
@@ -512,14 +519,7 @@ export async function runStart(
 		...(parsed.scopeHint !== undefined ? { scopeHint: parsed.scopeHint } : {}),
 	};
 
-	const onEvent = (event: AnalyzeRunEvent): void => {
-		// `done` is captured by runAnalyze's return value; the handler
-		// emits a single terminal `analyze.result` frame from that
-		// return value below. Intermediate events go straight to
-		// `progress` frames.
-		if (event.type === 'done') return;
-		send({ id: 0, stream: 'progress', data: eventToProgressData(event) });
-	};
+	const onEvent = makeProgressEmitter(send, parsed.runId);
 
 	let result: RunAnalyzeResult;
 	try {
@@ -572,98 +572,117 @@ export async function runStart(
 // ---------------------------------------------------------------------------
 
 /**
- * Shape an AnalyzeRunEvent into a JSON-friendly object the IDE side
- * surfaces as `DaemonStreamMessage.progress { step, status, ... }`.
+ * Build the `onEvent` closure that maps each AnalyzeRunEvent to a
+ * StageProgressEvent `progress` frame and sends it.
  *
- * The `step` + `status` pair is what the existing widgets
- * (status bar, runs sidebar) read. The remaining fields are spread
- * verbatim so future widgets can pick them up without backend
- * changes.
+ * The closure owns a monotonic `stageIndex` counter (starts 0). It
+ * advances once per EMITTED stage frame — i.e. every time the mapper
+ * returns a StageProgressEvent (repeated stages still advance it) —
+ * and the value threaded into that frame's `.index` is the pre-advance
+ * value (first emitted frame carries index 0). Events the mapper maps
+ * to `null` emit no frame and leave the counter untouched, so the
+ * stream only ever gets quieter, never noisier.
+ *
+ * The map-plus-send is wrapped in try/catch that logs at warn and
+ * returns normally: neither a mapping fault nor a destroyed-socket
+ * write (EPIPE / ERR_STREAM_DESTROYED surfacing from the sendStream
+ * closure) may abort an in-flight 30-40 min analyze run.
  */
-function eventToProgressData(event: AnalyzeRunEvent): Record<string, unknown> {
+export function makeProgressEmitter(
+	send: (msg: IpcStreamMessage) => void,
+	runId: string,
+): (event: AnalyzeRunEvent) => void {
+	let stageIndex = 0;
+	return (event: AnalyzeRunEvent): void => {
+		// `done` is captured by runAnalyze's return value; the handler
+		// emits a single terminal `analyze.result` frame from that
+		// return value. It never rides a `progress` frame.
+		if (event.type === 'done') return;
+		try {
+			const data = eventToProgressData(event, stageIndex);
+			if (data === null) return;
+			stageIndex += 1;
+			send({ id: 0, stream: 'progress', data });
+		} catch (err) {
+			const message = err instanceof Error ? err.message : String(err);
+			log.warn(
+				{ runId, eventType: event.type, message },
+				'analyze.run.start: progress emit failed; continuing run',
+			);
+		}
+	};
+}
+
+/**
+ * Map an AnalyzeRunEvent to the uniform sc1 StageProgressEvent, or
+ * `null` when the event is not a user-facing stage transition.
+ *
+ * Pure + total + no-throw: every union arm is handled and unmapped /
+ * malformed variants return `null` rather than throwing, so a mapping
+ * fault can never abort an in-flight run.
+ *
+ * Which variants count as a genuine stage/step transition (mapped) vs a
+ * fine-grained sub-event (null):
+ *
+ *   stage-started   -> stage  (a pipeline stage begins)
+ *   classified      -> stage  (classify stage produced its intent)
+ *   plan-accepted   -> stage  (plan stage finished; task count known)
+ *   task-started    -> stage  (an execute-stage task begins)
+ *   task-completed  -> stage  (an execute-stage task ends)
+ *
+ *   stage-substep         -> null  (multi-per-stage progress chatter)
+ *   shaper-tool-call      -> null  (fine-grained shaper tool loop)
+ *   shaper-tool-response  -> null  (fine-grained shaper tool loop)
+ *   plan-attempt          -> null  (per-round-trip retry noise; the
+ *                                   meaningful transition is plan-accepted)
+ *   llm-token             -> null  (throttled preview, no token count —
+ *                                   per the 2026-07-21 amendment analyze
+ *                                   emits NO token/delta frames at all)
+ *   done                  -> null  (terminal; handled as analyze.result)
+ *
+ * `total` is ALWAYS null: analyze's stage set is not enumerable up front
+ * (task count is only known mid-run, and stages recurse via templates).
+ * `stageId` / `stageLabel` are derived from the same step/status/stage
+ * fields the previous mapper surfaced, folded into a short human label.
+ */
+export function eventToProgressData(event: AnalyzeRunEvent, stageIndex: number): ProgressEvent | null {
+	const stage = (stageId: string, stageLabel: string): StageProgressEvent => ({
+		kind:       'stage',
+		operation:  'analyze.run',
+		stageId,
+		stageLabel,
+		index:      stageIndex,
+		total:      null,
+	});
+
 	switch (event.type) {
 		case 'stage-started':
-			return { step: event.stage, status: 'started' };
-		case 'stage-substep':
-			return {
-				step: event.stage,
-				status: `substep-${event.substep}`,
-				substep: event.substep,
-				...(event.detail !== undefined ? { detail: event.detail } : {}),
-			};
+			return stage(event.stage, `${event.stage} started`);
 		case 'classified':
-			return { step: 'classify', status: 'completed', intent: event.intent };
-		case 'plan-attempt':
-			return {
-				step: 'plan',
-				status: `attempt-${event.attempt}-${event.accepted ? 'accepted' : 'rejected'}`,
-				attempt: event.attempt,
-				accepted: event.accepted,
-				...(event.invariantId !== undefined ? { invariantId: event.invariantId } : {}),
-			};
+			return stage('classify', `classified: ${event.intent.target}/${event.intent.scope}`);
 		case 'plan-accepted':
-			return {
-				step: 'plan',
-				status: 'accepted',
-				taskCount: event.taskCount,
-				planId: event.planId,
-			};
+			return stage('plan', `plan accepted (${event.taskCount} task${event.taskCount === 1 ? '' : 's'})`);
 		case 'task-started':
-			return {
-				step: `task-${event.index}/${event.total}`,
-				status: `started: ${event.template}`,
-				taskId: event.taskId,
-				template: event.template,
-				index: event.index,
-				total: event.total,
-				...(event.parentTaskPath !== undefined ? { parentTaskPath: event.parentTaskPath } : {}),
-			};
+			return stage(
+				`task-${event.taskId}`,
+				`task ${event.index}/${event.total} started: ${event.template}`,
+			);
 		case 'task-completed':
-			return {
-				step: `task-${event.taskId}`,
-				status: event.status,
-				taskId: event.taskId,
-				...(event.parentTaskPath !== undefined ? { parentTaskPath: event.parentTaskPath } : {}),
-			};
+			return stage(`task-${event.taskId}`, `task ${event.taskId} ${event.status}`);
+		// Fine-grained sub-events + terminal: no progress frame.
+		case 'stage-substep':
 		case 'shaper-tool-call':
-			// Nest under the parent stage row via parentTaskPath so the
-			// LiveStepsWidget indents these as sub-rows. Use a synthetic
-			// path 'shaper-tools' since real tasks haven't started yet
-			// during the shaper phase.
-			return {
-				step: `tool-${event.tool}`,
-				status: 'started',
-				trace: 'shaper-tool-call',
-				stage: event.stage,
-				tool: event.tool,
-				parentTaskPath: 'shaper-tools',
-				...(event.argsPreview !== undefined ? { detail: event.argsPreview } : {}),
-			};
 		case 'shaper-tool-response':
-			return {
-				step: `tool-${event.tool}`,
-				status: event.ok ? 'ok' : 'failed',
-				trace: 'shaper-tool-response',
-				stage: event.stage,
-				tool: event.tool,
-				parentTaskPath: 'shaper-tools',
-				...(event.notePreview !== undefined ? { detail: event.notePreview } : {}),
-			};
+		case 'plan-attempt':
 		case 'llm-token':
-			// Throttled streaming preview. Non-terminal: the widget
-			// updates a preview line under the parent substep row's
-			// status but keeps the row's icon in in-progress state.
-			return {
-				step: event.stage,
-				status: `token-${event.substep}`,
-				substep: event.substep,
-				preview: event.preview,
-				trace: 'llm-token',
-			};
 		case 'done':
-			// Not emitted as a progress frame -- handler emits analyze.result
-			// from the run result directly.
-			return { step: 'done', status: 'unused' };
+			return null;
+		default: {
+			// Defensive: unknown/malformed variant -> null, never throw.
+			const _exhaustive: never = event;
+			void _exhaustive;
+			return null;
+		}
 	}
 }
 

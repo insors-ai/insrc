@@ -26,7 +26,7 @@
  */
 
 import { getLogger } from '../shared/logger.js';
-import type { IpcStreamMessage, LLMMessage, LLMProvider, StructuredCompletionOpts } from '../shared/types.js';
+import type { IpcStreamMessage, LLMMessage, LLMProvider, StageProgressEvent, StructuredCompletionOpts, TokenProgressEvent } from '../shared/types.js';
 import type { ClassifiedIntent } from '../shared/analyze-types.js';
 import type { AnalyzeContextBundle } from '../analyze/context/types.js';
 import { buildShaperProvider, runWithClientProviderContext } from '../analyze/context/shaper-provider.js';
@@ -271,10 +271,16 @@ export async function runStart(
 	const modelLabel = modelLabelFor(cfg, clientDefault);
 
 	try {
+		// t5/t6: map the driver's internal vocabulary onto the sc1 wire shape.
+		// WorkflowProgress → StageProgressEvent on `progress`; the per-token
+		// string stream is counted + batched into TokenProgressEvent on `delta`.
+		// Both stay s1-internal — WorkflowProgress/onToken are unchanged.
+		let stageIndex = 0;
+		const tokens = makeTokenAccumulator();
 		const drive = (): Promise<RunWorkflowResult> => runWorkflowServerSide(intent, provider, {
 			runId, epicKey, modelLabel, signal,
-			onProgress: (f) => send({ id: 0, stream: 'progress', data: f }),
-			onToken:    (stepId, token) => send({ id: 0, stream: 'delta', data: { stepId, token } }),
+			onProgress: (f) => send({ id: 0, stream: 'progress', data: workflowProgressToStage(f, stageIndex++) }),
+			onToken:    (stepId, token) => { const ev = tokens.push(stepId, token); if (ev !== null) send({ id: 0, stream: 'delta', data: ev }); },
 			...(p.review !== undefined ? { review: p.review } : {}),
 		});
 		// Run inside the invoking CLI's provider context so the analyze
@@ -284,6 +290,8 @@ export async function runStart(
 		const out = clientDefault !== undefined
 			? await runWithClientProviderContext(clientDefault, drive)
 			: await drive();
+		const tail = tokens.flush();   // emit any tokens left below the batch threshold
+		if (tail !== null) send({ id: 0, stream: 'delta', data: tail });
 		send({ id: 0, stream: 'done', data: { path: out.path, runId: out.runId, model: modelLabel, artifact: out.artifact, ...(out.review !== undefined ? { review: { verdict: out.review.verdict, counts: out.review.counts } } : {}) } });
 	} catch (err) {
 		send({ id: 0, stream: 'error', data: { error: (err as Error).message, recoverable: false } });
@@ -296,6 +304,54 @@ export async function runStart(
 
 function msgs(systemPrompt: string, userTurn: string): LLMMessage[] {
 	return [{ role: 'system', content: systemPrompt }, { role: 'user', content: userTurn }];
+}
+
+/** t6: map the workflow driver's internal `WorkflowProgress` onto the sc1
+ *  `StageProgressEvent`. `phase` becomes `stageId`; `runner`/`attempt`/`detail`
+ *  fold into a human `stageLabel`. `total` is null — the workflow stage set is
+ *  not enumerable ahead of time (synthesize may retry). `index` is the caller's
+ *  monotonic counter. Total function — never throws. */
+export function workflowProgressToStage(f: WorkflowProgress, index: number): StageProgressEvent {
+	const parts = [
+		f.runner,
+		f.attempt !== undefined ? `attempt ${f.attempt}` : undefined,
+		f.detail,
+	].filter((s): s is string => typeof s === 'string' && s.length > 0);
+	const label = parts.length > 0 ? parts.join(' · ') : f.phase;
+	return { kind: 'stage', operation: 'workflow.run', stageId: f.phase, stageLabel: label, index, total: null };
+}
+
+/** t5: the s1-internal workflow token accumulator. The driver's `onToken`
+ *  yields token *strings*, not counts (workflow-rpc.ts:78); this counts them
+ *  (one call = one token) and batches into `TokenProgressEvent` at a fixed
+ *  cadence so the wire never floods per-token. A numeric guard keeps
+ *  `tokensTotal` monotonic and `tokensDelta` finite + non-negative. */
+export function makeTokenAccumulator(): {
+	push(stepId: string, token: string): TokenProgressEvent | null;
+	flush(): TokenProgressEvent | null;
+} {
+	const BATCH = 16;
+	let total = 0;
+	let delta = 0;
+	let stage: string | null = null;
+	const mk = (): TokenProgressEvent => ({
+		kind: 'token', operation: 'workflow.run', stageId: stage, tokensDelta: delta, tokensTotal: total,
+	});
+	return {
+		push(stepId: string, _token: string): TokenProgressEvent | null {
+			total += 1;
+			delta += 1;
+			stage = stepId.length > 0 ? stepId : null;
+			if (delta >= BATCH) { const ev = mk(); delta = 0; return ev; }
+			return null;
+		},
+		flush(): TokenProgressEvent | null {
+			if (delta <= 0) return null;
+			const ev = mk();
+			delta = 0;
+			return ev;
+		},
+	};
 }
 
 function classifiedIntent(intent: WorkflowIntent): ClassifiedIntent {

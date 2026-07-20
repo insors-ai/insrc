@@ -253,3 +253,18 @@ This gives progress its own lifecycle and backpressure independent of result del
 ## Open questions
 
 - s6/f2 (ambiguous): architectureShape names WorkflowProgress, eventToProgressData, workflow.run, analyze.run, and IpcStreamMessage but carries no inline s1 bundle citation in the prose itself — the concrete cite (src/shared/types.ts:734) appears only in the sc1 interfaceSketch. Every named module is grounded in s1/s2 exploration so nothing is ungrounded, but the architectureShape prose omits explicit per-module s1 bundle citations; confirm whether inline citations are required there before story-level design.
+
+## Resolved questions
+
+- `qc8647f7e` — s6/f2 (ambiguous): architectureShape names WorkflowProgress, eventToProgressData, workflow.run, analyze.run, and IpcStreamMessage but carries no inline s1 bundle citation in the prose itself — the concrete cite (src/shared/types.ts:734) appears only in the sc1 interfaceSketch. Every named module is grounded in s1/s2 exploration so nothing is ungrounded, but the architectureShape prose omits explicit per-module s1 bundle citations; confirm whether inline citations are required there before story-level design.
+  - **resolved**: Mandatory inline citations — Enforce strict per-module traceability: add explicit s1-bundle citations after each module name in architectureShape. _(2026-07-20T09:25:39.290Z)_
+
+## Citations
+
+- **[[c1]]** `analyze-bundle` `src/mcp/server.ts` — "No existing module forwards daemon progress frames to the MCP client — the consumption/forwarding gap is real. A grep of src/mcp for progressToken|notifications/progress|sendNotification|onProgress|re"
+- **[[c2]]** `analyze-bundle` `src/shared/types.ts:732` — "IpcStreamKind (src/shared/types.ts:732) is a union already including 'delta' and 'progress' (plus gate/checkpoint/done/error/liveStep/analyze.result), and IpcStreamMessage is declared at src/shared/ty"
+- **[[c3]]** `analyze-bundle` `src/daemon/workflow-rpc.ts` — "concept.resolve ranks src/daemon/workflow-rpc.ts (entity `WorkflowProgress`, score 0.236) and src/daemon/analyze-rpc.ts (entity `eventToProgressData`, score 0.191) as the nearest existing progress sha"
+- **[[c4]]** `analyze-bundle` `src/daemon/analyze-rpc.ts` — "the closest existing shapes are the `WorkflowProgress` entity in src/daemon/workflow-rpc.ts and the `eventToProgressData` transform in src/daemon/analyze-rpc.ts (surfaced only via concept.resolve, tre"
+- **[[c5]]** `analyze-bundle` `src/mcp/workflow-step/handler.ts` — "On the forwarding side it ranks the MCP step tool dir src/mcp/workflow-step (0.243) with `handleWorkflowStep` (handler.ts, 0.168), `WorkflowStepMcpEnvelope` (types.ts), and `WorkflowStepStage` (state."
+- **[[c6]]** `analyze-bundle` `src/daemon/index.ts` — "The daemon module hosts the IPC/RPC surface: index.ts holds the handler registry alongside the per-operation RPC files analyze-rpc.ts, artifacts-rpc.ts, db-rpc.ts, and workflow-rpc.ts — the emission s"
+- **[[c7]]** `analyze-bundle` `src/daemon` — "Detected on src/daemon: functions are camelCase (sample 1054), classes PascalCase (sample 321), files snake_case (sample 214), and test files use the *.test suffix; no base-class idioms were detected."

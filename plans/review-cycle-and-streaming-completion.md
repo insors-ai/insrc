@@ -64,10 +64,30 @@ report posted to the tracker.
 The 37 tasks are planned but the audit found defects. Fix the plans, then build —
 each re-scoped artifact re-reviewed (Part 1) before approval.
 
-### S1 · Re-scope s2 wiring cluster (3 HIGH)  `[M · high value]`
-- **Defect:** s2 t6/t7/t8 assume the MCP tools are uniform daemon-streaming ops whose `progressToken` is an envelope field. Real source: token arrives via the SDK **`extra`** arg (discarded in `server.ts:300/419/471`); handlers run **in-process** (`resumeRun`/`runEditSession`); **build-step has no streaming producer** (`build.run` ∉ `ProgressOperation`).
-- **Action:** amend the s2 LLD + re-run/patch the s2 plan — establish the real token seam (read `progressToken` from `extra` in the `server.ts` registrations, thread to handlers); **drop build-step** from the progress rollout OR add a `build.run` streaming op + union member first. Rebuild tests t9/t11 accordingly.
-- **DoD:** re-scoped s2 plan passes the review cycle (no HIGH); Task issues #55–#65 updated.
+### S1 · Re-design s2 → Option B: a streaming MCP tool over `workflow.run`  `[L · high value]`
+- **Why the original s2 was void (review-cycle finding):** its plan forwards daemon
+  `stream:'progress'` frames from the MCP tool boundary, but the MCP tools run
+  **in-process** (`resumeRun`, `step.ts:51`), the streaming daemon op (`workflow.run`)
+  is invoked **only over the socket** (`index.ts:1423`), and the SDK `progressToken`
+  (on the `extra` arg) is discarded in every registration (`server.ts:157/300/419/471`).
+  There were no frames at that boundary to forward.
+- **DECISION (Option B):** give Claude/Codex live progress so a run going wrong can be
+  **corrected mid-stream** instead of waiting for a 30–40 min black box. Add a NEW MCP
+  tool (e.g. `insrc_workflow_run`) that: reads `progressToken` from the SDK `extra`;
+  opens a socket stream to the daemon `workflow.run`; consumes its `stream:'progress'`
+  / `'delta'` frames; maps each to a sc1 `ProgressEvent`; and forwards it as an MCP
+  `notifications/progress`. Reuses the s2 LLD's sound `mcpProgressSink(server,
+  progressToken) → ProgressSink` design — only the frame SOURCE changes (real daemon
+  socket stream, not in-process). Threads the tool's `extra.signal` into `workflow.run`
+  so the client can **abort** mid-run (observation + abort now; full redirect later).
+- **Depends on s1** — it forwards the `ProgressEvent` frames s1's producers emit, so
+  build s1 first. **Drop build-step** from the progress model (D2), and drop the
+  `_meta`-on-envelope field-adds (wrong seam).
+- **Action:** amend/re-run `design.story` for s2 with the Option-B architecture (auto-
+  reviewed by the now-live cycle), re-plan, then build. Close the old #55–#65 wiring
+  tasks as superseded.
+- **DoD:** an MCP client run of a long `workflow.run` streams live `notifications/progress`
+  and is abortable; re-scoped s2 artifacts pass the review cycle (no HIGH).
 
 ### S2 · Fix s1 defects  `[S]`
 - **Defect:** s1 t9/t6/t7 cite a phantom "existing `stream` method at `workflow-rpc.test.ts:42`" (unused stub — graph resolved the wrong symbol); t3 has a token-mapping semantic gap (analyze's `preview` text tail has no count; `TokenProgressEvent` can't hold it).
@@ -112,5 +132,6 @@ each re-scoped artifact re-reviewed (Part 1) before approval.
 - **Sequence** — proceed as recommended: **R1 + R2 + R5 first**, then the streaming build (S1/S2 …).
 - **D1 (R2)** — daemon `workflow.run` **auto-reviews by default**, opt-out per run.
 - **D2 (S1)** — **drop build-step from the progress model** (stateless: `implement` returns a prompt, `validate` is one await); revisit a `build.run` streaming op only if build-step later needs progress.
+- **s2 direction (2026-07-21)** — **Option B**: re-design s2 as a streaming MCP tool that drives `workflow.run` and forwards live progress to Claude/Codex via `progressToken`, enabling **mid-stream correction** of a long run. Depends on s1. Supersedes the original in-process forwarding design (which had no substrate).
 - **D4 (R5)** — **keep "block on HIGH+MED"**; R5 calibration keeps MED meaningful rather than relaxing the gate.
 - **D3 (L3)** — still open (GitHub board consolidation) — minor; decide during L3.

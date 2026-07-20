@@ -3,6 +3,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import type { ReviewReport } from './review/types.js';
+
 /**
  * Workflow framework type surface.
  *
@@ -294,6 +296,12 @@ export interface ArtifactMetaBase {
 	 *  resolve_question). Additive; absent until a question is
 	 *  resolved / ignored / deferred. */
 	readonly questionResolutions?: Readonly<Record<string, QuestionResolution>>;
+	/** Post-stage review-cycle result — the grounded premise audit run at
+	 *  finalize (see `workflow/review/`). Its `verdict` gates approval:
+	 *  a `block` (HIGH/MED findings) refuses `insrc workflow approve` until
+	 *  the findings are auto-fixed, resolved at the user gate, or explicitly
+	 *  overridden. Absent until a review has run. */
+	readonly review?: ReviewReport;
 }
 
 /** A citation grounds a claim in the artifact body against a step

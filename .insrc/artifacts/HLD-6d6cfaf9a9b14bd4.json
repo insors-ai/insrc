@@ -1,0 +1,258 @@
+{
+  "meta": {
+    "workflow": "design.epic",
+    "runId": "wf-1784476347429-dbnaq6",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-07-19T16:06:55.169Z",
+    "model": "claude",
+    "elapsedMs": 867732,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6d6cfaf9a9b14bd4",
+    "epicSlug": "stream-incremental-progress-from-daemon-calling",
+    "approvedAt": "2026-07-20T08:43:30.017Z"
+  },
+  "body": {
+    "frameworkSummary": "Extend the daemon's existing per-operation progress emitters (WorkflowProgress in workflow-rpc.ts, eventToProgressData in analyze-rpc.ts) so both converge on one uniform ProgressEvent payload that rides the already-shipped IpcStreamMessage / IpcStreamKind 'progress' + 'delta' frame — no new wire format (k2, k5). The MCP tool surface gains a single progressToken-gated branch that maps inbound ProgressEvent frames to MCP notifications/progress notifications (k3). The IDE side is served purely by defining the daemon-emitted contract plus a thin reader-API shape the fork consumes (k4); the fork's actual render path is out of scope for this repo. This is the a1 alternative: extend-in-place over the two nearest existing emitters, one shared mapping, one forwarding branch, one thin reader, all on the single existing stream seam — no parallel progress subsystem.",
+    "architectureShape": "Three layers over one seam. (1) Emission — inside the daemon, workflow.run and analyze.run each keep their own stage/token tracking but funnel it through a shared event→ProgressEvent mapping so both emit the identical uniform payload into the existing IpcStreamMessage stream ('progress' for stage transitions, 'delta' for token production). (2) Forwarding — the MCP server reads those ProgressEvent frames off the daemon IPC stream and, only when the caller supplied a progressToken, re-emits them as MCP notifications/progress; absent a token it stays silent. (3) Consumption — the wire contract plus a thin structured reader-API shape is defined here for the IDE RPC client to decode stage + token events and completion without parsing raw frames; the fork implements the render. Data flows one direction: daemon operation → ProgressEvent on the existing stream → (MCP notification) / (IDE reader API). No caller touches the databases; everything rides the unix-socket stream protocol.",
+    "sharedContracts": [
+      {
+        "id": "sc1",
+        "name": "ProgressEvent",
+        "purpose": "The one uniform progress payload emitted by every long daemon operation (workflow.run, analyze.run), carried as the body of an existing IpcStreamMessage whose stream kind is 'progress' (stage transition) or 'delta' (token production). This is the k1 uniformity contract and the k2 reuse-the-existing-frame invariant made concrete. Both the MCP forwarding path (s2) and the IDE reader API (s3) consume exactly this shape, so neither depends on operation-specific frame variants.",
+        "interfaceSketch": "// Payload carried inside the existing IpcStreamMessage (src/shared/types.ts:734),\n// whose `stream: IpcStreamKind` is 'progress' (stage) or 'delta' (token) — no new wire kind (k2).\ntype ProgressOperation = 'workflow.run' | 'analyze.run';\n\ninterface StageProgressEvent {\n  kind: 'stage';\n  operation: ProgressOperation;\n  stageId: string;         // stable id of the internal stage now executing\n  stageLabel: string;      // human-facing label for that stage\n  index: number;           // 0-based ordinal of the current stage\n  total: number | null;    // known stage count, or null when not enumerable\n}\n\ninterface TokenProgressEvent {\n  kind: 'token';\n  operation: ProgressOperation;\n  stageId: string | null;  // stage the tokens belong to, when known\n  tokensDelta: number;     // tokens produced since the previous token event\n  tokensTotal: number;     // cumulative tokens for this operation\n}\n\ntype ProgressEvent = StageProgressEvent | TokenProgressEvent;",
+        "ownedByStory": "s1",
+        "consumedByStories": [
+          "s2",
+          "s3"
+        ],
+        "assumptions": [
+          "c1",
+          "c4"
+        ]
+      },
+      {
+        "id": "sc2",
+        "name": "McpProgressForwarding",
+        "purpose": "The MCP-facing contract for k3: the optional caller-supplied progressToken accepted on a long-running tool request, and the MCP notifications/progress notification the server emits keyed to that token as ProgressEvent frames arrive. Encodes the gate — token present means forward, token absent means run silently (s2 ac1/ac2).",
+        "interfaceSketch": "// Caller opts in by supplying the standard MCP progress token in request _meta.\ninterface LongRunningToolMeta {\n  progressToken?: string | number; // absent => no progress notifications emitted (s2 ac2)\n}\n\n// Emitted per inbound ProgressEvent frame, only when a progressToken was supplied.\ninterface McpProgressNotification {\n  method: 'notifications/progress';\n  params: {\n    progressToken: string | number; // echoes the caller's token (k3)\n    progress: number;               // monotonic advance (e.g. tokensTotal or stage index)\n    total?: number;                 // stage total when known\n    message?: string;               // derived from stageLabel / token delta (s2 ac3)\n  };\n}",
+        "ownedByStory": "s2",
+        "consumedByStories": [],
+        "assumptions": [
+          "c7"
+        ]
+      },
+      {
+        "id": "sc3",
+        "name": "DaemonProgressReaderApi",
+        "purpose": "The k4 clean-consumption contract the IDE RPC client is given so the workbench renders live phase + token progress without parsing raw stream frames. Defined here (the wire + reader shape) because per repo convention the render path itself lives in the IDE fork; this repo owns only the daemon-emitted contract the fork consumes. Surfaces structured stage/token events plus a completion signal that stops further reporting (s3 ac2/ac3).",
+        "interfaceSketch": "// Thin typed reader the RPC client exposes over decoded ProgressEvent frames.\n// Type-level surface only; the fork supplies the implementation and render.\ninterface DaemonProgressReader {\n  onStage(handler: (event: StageProgressEvent) => void): void;\n  onToken(handler: (event: TokenProgressEvent) => void): void;\n  onComplete(handler: () => void): void;   // fires once when final result arrives; no events after\n}\n\ninterface DaemonProgressSnapshot {\n  operation: ProgressOperation;\n  currentStage: StageProgressEvent | null;\n  tokensTotal: number;\n  done: boolean;\n}",
+        "ownedByStory": "s3",
+        "consumedByStories": [],
+        "assumptions": [
+          "c7"
+        ]
+      }
+    ],
+    "storyBoundaries": [
+      {
+        "storyId": "s1",
+        "owns": [
+          "sc1"
+        ],
+        "depends": [],
+        "internal": "The per-operation stage/token tracking and the event→ProgressEvent mapping stay private to s1. This includes how workflow.run's existing WorkflowProgress shape and analyze.run's existing eventToProgressData transform are each extended in place to funnel into the single shared mapping, the internal stage enumeration/labelling logic per operation, how token deltas are counted and accumulated per stage, and the emission call that wraps a ProgressEvent into the existing IpcStreamMessage 'progress'/'delta' frame. Consumers see only the sc1 ProgressEvent payload on the wire, never these emitter internals or the two divergent source shapes behind them."
+      },
+      {
+        "storyId": "s2",
+        "owns": [
+          "sc2"
+        ],
+        "depends": [
+          "sc1"
+        ],
+        "internal": "The MCP server's frame-reading loop, the progressToken presence check and gating branch, and the mapping from a ProgressEvent to a notifications/progress notification (how stageLabel/token delta become the progress/total/message fields, and how monotonic progress is derived) stay private to s2. Also private: how the forwarding subscription is attached to and torn down with the underlying daemon IPC stream for a single tool invocation. Nothing outside s2 depends on this branch — it is a terminal sink that reads sc1 and emits sc2."
+      },
+      {
+        "storyId": "s3",
+        "owns": [
+          "sc3"
+        ],
+        "depends": [
+          "sc1"
+        ],
+        "internal": "The RPC client's decoding of raw IpcStreamMessage frames back into ProgressEvent objects, per-operation buffering, current-stage/token-total bookkeeping, and detection that the final result has arrived (to fire onComplete and stop reporting) stay private to s3 on this repo's side. The IDE fork's actual rendering of phase + token progress is out of scope for this repo entirely; s3 here defines only the sc3 reader surface and the sc1 wire contract the fork consumes."
+      }
+    ],
+    "nonFunctional": {
+      "performance": "Progress emission must not measurably slow the underlying 30-40 minute operation: mapping to a ProgressEvent and writing it to the existing stream is O(1) per stage transition and per token batch. Token events are emitted at the operation's natural token-batch cadence rather than per-token to avoid frame flooding, and stage events fire only on actual stage change.",
+      "durability": "Progress is transient and best-effort — ProgressEvents are not persisted and carry no delivery guarantee; a dropped or missed frame never affects the operation's final result or its correctness. A caller that supplies no progressToken (MCP) or attaches no reader (IDE) incurs zero progress overhead beyond the already-emitted stream frames.",
+      "observability": "Both workflow.run and analyze.run must be exercisable end to end and asserted to emit ProgressEvents of the identical sc1 shape (s1 ac3), with tests covering stage transitions, token production, the progressToken-present/absent MCP branches (s2 ac1/ac2), and completion signalling (s3 ac2). Tests follow src/daemon's *.test suffix and snake_case file / camelCase fn / PascalCase type idioms.",
+      "security": "No new caller-to-daemon channel: all progress rides the existing unix-socket IPC stream (k5); the MCP server and IDE client continue to never open LMDB/Lance/DuckDB directly. The progressToken is echoed verbatim from the caller and carries no daemon-internal identifiers; ProgressEvent payloads expose only stage labels and token counts, no repository contents or secrets."
+    },
+    "rolloutOverview": {
+      "orderingRationale": "The Epic has one shared contract, sc1 ProgressEvent, owned by s1 and consumed by both s2 (McpProgressForwarding) and s3 (DaemonProgressReaderApi). Both s2 and s3 declare dependsOn: [s1] in the Epic and depend on sc1 per s4's storyBoundaries, so the owner Story must land before either consumer. s1 must therefore be its own foundational phase. s2 and s3 have no edge to each other and no shared contract between them — s2 is a terminal MCP sink, s3 is a terminal IDE reader surface — so they are independent consumers of the now-stable ProgressEvent shape and belong together in a second phase that can be built in either order. Two phases minimally satisfy all dependency + shared-contract-ownership edges.",
+      "phases": [
+        {
+          "name": "Phase A — foundational progress contract",
+          "includesStories": [
+            "s1"
+          ],
+          "rationale": "s1 owns sc1 ProgressEvent, the single uniform payload both downstream Stories consume, and has no dependsOn edges of its own. It extends workflow.run's WorkflowProgress and analyze.run's eventToProgressData in place to funnel into one shared event→ProgressEvent mapping emitted on the existing IpcStreamMessage 'progress'/'delta' frames (k1, k2). Nothing about s2 or s3 can be built or asserted until this uniform shape exists and both operations emit it identically (s1 ac3), so it must land first and alone.",
+          "backwardCompat": "Preserve the existing IpcStreamMessage / IpcStreamKind wire format and its current 'progress'/'delta' semantics — no new stream kind is introduced (k2). Existing consumers of workflow.run and analyze.run stream frames must continue to function unchanged; the funnel is additive and progress is best-effort, so a caller that ignores the new ProgressEvent payload sees no behavioral change and the operation's final result is unaffected.",
+          "featureFlag": null
+        },
+        {
+          "name": "Phase B — caller-facing progress consumers",
+          "includesStories": [
+            "s2",
+            "s3"
+          ],
+          "rationale": "s2 (MCP progress forwarding) and s3 (IDE reader API) both depend only on sc1 from Phase A and not on each other — s2 is a terminal sink mapping ProgressEvent frames to notifications/progress gated on a caller progressToken (k3, k5), and s3 defines the thin DaemonProgressReaderApi decode surface plus completion signal the IDE fork consumes (k4, k5). With the uniform contract fixed, they are independent and can be implemented in parallel or either order within this phase.",
+          "backwardCompat": "Preserve existing MCP tool request/response behavior: absent a progressToken, the long-running tool must run to completion emitting no progress notifications (s2 ac2). For the IDE, the daemon-emitted wire contract and reader shape are additive — a client that attaches no reader incurs zero overhead and the operation's result path is unchanged (s3 nonFunctional durability).",
+          "featureFlag": null
+        }
+      ],
+      "riskyBits": [
+        {
+          "area": "In-place extension of two divergent emitters (WorkflowProgress vs eventToProgressData) into one shared shape",
+          "why": "s1 must reconcile two independently-evolved progress sources behind a single sc1 payload; a shape mismatch or an operation-specific field leaking through would violate the k1 uniformity contract and break s1 ac3 (no operation-specific divergence), silently propagating to both consumers.",
+          "mitigation": "Route both operations through one shared event→ProgressEvent mapping function and assert in tests that a workflow.run and an analyze.run each emit frames conforming to the identical sc1 schema (s1 ac3), covering both stage transitions and token production before Phase B consumes it."
+        },
+        {
+          "area": "Token-event frame flooding on a 30–40 minute operation",
+          "why": "Emitting a ProgressEvent per token would flood the existing IPC stream and could measurably slow the underlying operation, violating the nonFunctional performance budget and the durability guarantee that progress overhead is negligible.",
+          "mitigation": "Emit token events at the operation's natural token-batch cadence (not per-token) and stage events only on actual stage change, keeping mapping O(1) per batch; keep ProgressEvents non-persisted and best-effort so a dropped frame never affects correctness."
+        },
+        {
+          "area": "progressToken gating in the MCP forwarding branch (s2)",
+          "why": "If the token-presence gate is wrong, either a tokenless caller receives spurious notifications/progress (breaks s2 ac2) or a token-supplying caller gets silence (breaks s2 ac1), and the forwarding subscription must be torn down with the single tool invocation to avoid leaking across calls.",
+          "mitigation": "Make the presence check the single branch point — forward only when a progressToken was supplied, echo it verbatim, stay silent otherwise — and test both the token-present and token-absent paths plus subscription teardown at end of the tool invocation."
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Uniform progress contract riding the existing stream seam",
+        "oneLineSummary": "Generalize WorkflowProgress/eventToProgressData into one ProgressEvent shape carried on the current IpcStreamMessage 'progress'/'delta' frames, mapped per-emitter, forwarded by MCP and read by a thin IDE client API.",
+        "approach": "Treat the two existing partial-match seeds — `WorkflowProgress` (src/daemon/workflow-rpc.ts) and `eventToProgressData` (src/daemon/analyze-rpc.ts) — as the emission-side anchors and lift their overlap into a single uniform ProgressEvent payload that always carries a stage identifier plus an incremental token/output delta. That payload is emitted over the IpcStreamMessage frame already declared at src/shared/types.ts:734, reusing the 'progress' and 'delta' members of IpcStreamKind (src/shared/types.ts:732) so no new wire kind is invented. Each long operation (workflow.run, analyze.run) keeps its own internal event vocabulary but funnels it through one shared mapping into the uniform shape at the point it writes to the stream, so both operations converge on an identical on-wire contract with no per-operation divergence.\n\nOn the consumption side the MCP server gains a single forwarding path: when a tool caller supplies a progressToken, incoming 'progress'/'delta' frames for that operation are translated into MCP progress notifications keyed to that token, and when no token is supplied the frames are simply dropped. The IDE fork consumes the same frames through a small client-side reader API that exposes current-phase and token-progress structured events plus a completion signal, so the workbench never parses raw frames. This keeps every facet on the one existing stream protocol seam and extends the nearest existing code rather than standing up a parallel subsystem.",
+        "pros": [
+          "Reuses the already-shipped IpcStreamMessage/IpcStreamKind frame carrying 'progress'+'delta' (src/shared/types.ts:732/734), so zero new wire format is introduced — satisfies constraint k2 by construction.",
+          "Both workflow.run and analyze.run converge on one ProgressEvent shape via a single shared mapping, directly satisfying the uniform-contract requirement (k1) at the emission source rather than only at consumers.",
+          "MCP forwarding is one code path gated on progressToken presence, so the 'no token → no notifications' behavior (s2/ac2) falls out of a single branch instead of per-tool handling.",
+          "Extends the two nearest existing entities (WorkflowProgress, eventToProgressData) in place beside the *-rpc.ts emitters, avoiding a competing parallel progress path (aligns with the reuse posture in backFlowNotes)."
+        ],
+        "cons": [
+          "Each RPC emitter must still author its own internal-event→uniform-ProgressEvent mapping, so uniformity is enforced by convention at N call sites rather than by a single choke point — a new long operation added later can silently emit a divergent shape.",
+          "The two seed shapes (WorkflowProgress vs eventToProgressData) were recovered via concept.resolve, not symbol.locate (which FAILED prerequisite-empty), so their actual field overlap must be spot-verified before the uniform shape can be finalized.",
+          "Threads progress and final-result traffic over the same operation stream, so a high token-delta rate competes with result frames on the one channel with no independent backpressure control."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Centralized ProgressReporter injected into every long-running runner",
+        "oneLineSummary": "A single daemon-owned ProgressReporter abstraction is injected into the workflow and analyze runners; all internal progress flows through it, and one boundary sink serializes it onto the existing stream frame.",
+        "approach": "Rather than let each *-rpc.ts handler own its mapping, introduce one ProgressReporter interface constructed at the IPC boundary and passed into the workflow runner and the analyze runner. The runners call a small, fixed API (report a stage transition, report an output delta) and never touch the wire; the reporter is the single place that stamps the uniform ProgressEvent and hands it to a boundary sink which serializes it onto the existing IpcStreamMessage 'progress'/'delta' frame (src/shared/types.ts:734). Because there is exactly one implementation writing the payload, the uniform contract (k1) is enforced structurally: any operation that wants progress must accept a reporter and can only speak the one vocabulary.\n\nThe MCP server and IDE client sides are identical to the stream-seam approach — a token-gated forwarder turns frames into MCP progress notifications, and the IDE reader API exposes phase/token events plus completion. The difference is entirely on the emission side: the reporter centralizes what alternative a1 leaves distributed across handlers, so adding a third long operation later is a matter of accepting the injected reporter rather than re-implementing a mapping. The existing WorkflowProgress and eventToProgressData transforms are absorbed into (and deleted in favor of) the reporter's single implementation.",
+        "pros": [
+          "One implementation stamps every ProgressEvent, so the uniform contract (k1) is guaranteed structurally — a future long operation physically cannot emit a divergent shape without bypassing the injected reporter.",
+          "A newly added long operation gets progress by accepting the injected reporter, with no new mapping code, lowering the marginal cost of the third-and-beyond operation to near zero.",
+          "Collapses the two existing partial-match transforms (WorkflowProgress, eventToProgressData) into a single deletable-and-replace target, reducing duplicated progress logic to one module.",
+          "The runner-facing API (stage transition / output delta) is decoupled from the wire, so frame serialization can evolve without touching runner code."
+        ],
+        "cons": [
+          "Requires threading a reporter dependency through the workflow and analyze runner call paths, a wider refactor of existing runner signatures than a1's in-place emitter change.",
+          "Introduces a new daemon abstraction (reporter + boundary sink) where the repo currently has none, versus a1 which only generalizes two existing entities — larger surface to design and test.",
+          "The runner-facing API must be pre-designed to cover both workflow-stage and analyze-stage semantics up front; if the two operations' stage models differ more than the seeds suggest, the shared API risks a lowest-common-denominator shape that loses operation detail."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Scores satisfies on all five and has the best structural guarantee for k1, but ranked below a1 because it deletes the two nearest existing transforms in favor of a new daemon abstraction (larger surface, cost L), threads a reporter through both runner signatures (wider refactor), and risks a lowest-common-denominator shared API that could lose operation detail — a self-noted risk that cuts against the very k1 fidelity it aims to guarantee. The reuse posture steers toward extend-in-place (a1), not replace-with-new-subsystem."
+      },
+      {
+        "id": "a3",
+        "name": "Consumer-side normalization adapters only",
+        "oneLineSummary": "Leave daemon emission heterogeneous as it is today and normalize the differing WorkflowProgress/analyze frames into a uniform shape inside the MCP forwarder and the IDE client adapter.",
+        "approach": "Make the smallest possible daemon change: keep each operation emitting whatever progress frames it emits today (the WorkflowProgress shape from workflow-rpc.ts, the eventToProgressData shape from analyze-rpc.ts) and push the uniformity requirement entirely to the two consumers. The MCP server gains an adapter that recognizes each operation's frame variant and maps it into MCP progress notifications keyed to the progressToken; the IDE client gains a parallel adapter that maps the same variants into its phase/token consumption API. No new emission code lands in the daemon and the existing frames ride the existing stream seam unchanged.\n\nThis trades source-side uniformity for minimal daemon churn. The uniform ProgressEvent shape exists only as an interface at the two consumption boundaries, so acceptance is met from the caller's point of view even though the wire carries two operation-specific variants. It is the cheapest path to 'callers see live progress' but it locates the contract knowledge in the consumers, where it must be duplicated once for MCP and once for the IDE.",
+        "pros": [
+          "Smallest daemon-side footprint of the four — no runner signature changes and no new emission abstraction, so the backend blast radius is limited to two adapter modules.",
+          "The uniform shape can be finalized without first spot-verifying the two concept.resolve-recovered seed transforms, since the daemon keeps emitting them unchanged — de-risks the symbol.locate FAILED prerequisite-empty gap for the emission side.",
+          "MCP and IDE work can proceed in parallel and independently, since neither depends on a shared new daemon contract landing first."
+        ],
+        "cons": [
+          "The uniform contract (k1) is NOT enforced at the source — the wire still carries per-operation variants, so 'no operation-specific divergence in shape' (s1/ac3) holds only after each consumer's adapter, not on the wire itself.",
+          "The normalization logic is duplicated across the MCP adapter and the IDE fork adapter, so a new operation or a changed frame variant must be handled twice in two repos, doubling maintenance and drift risk.",
+          "Facet 3 lives in the IDE fork (per repo convention, NOT FOUND HERE), so pushing contract knowledge into consumers puts half the uniformity guarantee in a repo this Epic cannot design or test."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Cheapest daemon footprint (cost S) and satisfies k2/k3/k4/k5, but only partial on k1 — the uniform contract is not enforced at the source and the normalization logic is duplicated across two repos, half of it in the IDE fork this Epic cannot design or test. That drift risk on the core contract constraint places it below a1 and a2."
+      },
+      {
+        "id": "a4",
+        "name": "Out-of-band progress subscription channel keyed by operation id",
+        "oneLineSummary": "Expose a separate subscribe-by-operation-id RPC so callers pull a dedicated progress stream out-of-band, decoupled from the operation's own result stream.",
+        "approach": "Model progress as an independent subscription rather than in-band frames on the operation's own stream. Each long operation is assigned an operation id; a new IPC method lets a caller subscribe to that id and receive a dedicated sequence of uniform ProgressEvent messages, separate from the frames carrying the operation's final result. The MCP server subscribes on the caller's behalf when a progressToken is supplied and relays the subscription's events as MCP progress notifications; the IDE client subscribes and feeds its phase/token consumption API.\n\nThis gives progress its own lifecycle and backpressure independent of result delivery, and lets a late-joining or reconnecting caller attach to an in-flight operation's progress by id. The cost is a second protocol path alongside the existing IpcStreamMessage stream — the very thing the constraints steer away from — so it must be weighed against constraints k2 (build on the existing frame, no competing wire format) and k5 (ride the existing stream protocol seam).",
+        "pros": [
+          "Progress gets an independent channel with its own backpressure, so a high token-delta rate cannot contend with final-result frames on a single stream (the sharing drawback a1 carries).",
+          "Keying by operation id lets a reconnecting or late-attaching caller subscribe to an already-in-flight operation's progress — a resilience property the in-band approaches cannot offer.",
+          "Cleanly separates progress lifecycle from result lifecycle, so completion of progress and delivery of the result are decoupled signals rather than interleaved frames."
+        ],
+        "cons": [
+          "Introduces a second progress protocol path alongside IpcStreamMessage, which directly conflicts with k2 (build on the existing frame, no competing wire format) and k5 (ride the existing stream seam).",
+          "Requires assigning and correlating operation ids and a subscribe/unsubscribe lifecycle across the socket — substantially more IPC surface than emitting on the stream the operation already owns.",
+          "The MCP and IDE sides must manage subscription setup, teardown, and the race between subscribing and an operation that starts emitting immediately, adding failure modes absent when progress rides the operation's existing frames."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Its independent-channel backpressure and reconnect-by-id resilience are real engineering merits, but they come at the direct cost of violating k2 (competing wire format) and k5 (does not ride the existing stream seam) — two hard invariants the Epic sets. It also adds substantial IPC surface (id correlation, subscribe/unsubscribe lifecycle, subscribe-vs-emit races). Two constraint violations rank it last."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "s6/f2 (ambiguous): architectureShape names WorkflowProgress, eventToProgressData, workflow.run, analyze.run, and IpcStreamMessage but carries no inline s1 bundle citation in the prose itself — the concrete cite (src/shared/types.ts:734) appears only in the sc1 interfaceSketch. Every named module is grounded in s1/s2 exploration so nothing is ungrounded, but the architectureShape prose omits explicit per-module s1 bundle citations; confirm whether inline citations are required there before story-level design."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "src/mcp/server.ts",
+      "quotedText": "No existing module forwards daemon progress frames to the MCP client — the consumption/forwarding gap is real. A grep of src/mcp for progressToken|notifications/progress|sendNotification|onProgress|reportProgress returned ZERO hits, so the MCP tool surface (src/mcp/server.ts) does not relay daemon phase/token frames."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "src/shared/types.ts:732",
+      "quotedText": "IpcStreamKind (src/shared/types.ts:732) is a union already including 'delta' and 'progress' (plus gate/checkpoint/done/error/liveStep/analyze.result), and IpcStreamMessage is declared at src/shared/types.ts:734 with a `stream: IpcStreamKind` field."
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "src/daemon/workflow-rpc.ts",
+      "quotedText": "concept.resolve ranks src/daemon/workflow-rpc.ts (entity `WorkflowProgress`, score 0.236) and src/daemon/analyze-rpc.ts (entity `eventToProgressData`, score 0.191) as the nearest existing progress shapes — the natural anchors to generalize into one uniform contract on the emission side."
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "src/daemon/analyze-rpc.ts",
+      "quotedText": "the closest existing shapes are the `WorkflowProgress` entity in src/daemon/workflow-rpc.ts and the `eventToProgressData` transform in src/daemon/analyze-rpc.ts (surfaced only via concept.resolve, treated as extend-from seeds)."
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "src/mcp/workflow-step/handler.ts",
+      "quotedText": "On the forwarding side it ranks the MCP step tool dir src/mcp/workflow-step (0.243) with `handleWorkflowStep` (handler.ts, 0.168), `WorkflowStepMcpEnvelope` (types.ts), and `WorkflowStepStage` (state.ts) as the host entities a forwarded progressToken would thread through."
+    },
+    {
+      "id": "c6",
+      "kind": "analyze-bundle",
+      "ref": "src/daemon/index.ts",
+      "quotedText": "The daemon module hosts the IPC/RPC surface: index.ts holds the handler registry alongside the per-operation RPC files analyze-rpc.ts, artifacts-rpc.ts, db-rpc.ts, and workflow-rpc.ts — the emission side where a uniform progress-event contract would be generalized."
+    },
+    {
+      "id": "c7",
+      "kind": "analyze-bundle",
+      "ref": "src/daemon",
+      "quotedText": "Detected on src/daemon: functions are camelCase (sample 1054), classes PascalCase (sample 321), files snake_case (sample 214), and test files use the *.test suffix; no base-class idioms were detected."
+    }
+  ]
+}

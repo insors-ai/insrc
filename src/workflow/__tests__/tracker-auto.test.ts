@@ -40,7 +40,19 @@ function makeFakeGh() {
 		calls.push([cmd, ...args]);
 		if (cmd === 'git') return 'git@github.com:acme/demo.git\n';
 		const [sub0, sub1] = args;
-		if (sub0 === 'auth' || sub0 === 'label' || sub0 === 'api') return '';
+		if (sub0 === 'auth' || sub0 === 'label') return '';
+		if (sub0 === 'api') {
+			const pi = args.indexOf('POST');
+			const path = pi >= 0 ? String(args[pi + 1] ?? '') : '';
+			if (path.endsWith('/sub_issues')) return '';                 // native sub-issue link — ok
+			if (path.endsWith('/issues')) {                              // issue create via REST (story now)
+				counter += 1;
+				const bodyArg = args.find(a => String(a).startsWith('body='));
+				if (bodyArg !== undefined) bodies.set(String(counter), String(bodyArg).slice('body='.length));
+				return JSON.stringify({ number: counter, id: 1000 + counter });
+			}
+			return '';
+		}
 		if (sub0 === 'issue') {
 			if (sub1 === 'create') {
 				counter += 1;

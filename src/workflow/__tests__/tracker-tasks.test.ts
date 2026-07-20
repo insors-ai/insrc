@@ -157,7 +157,8 @@ test('pushTasks: creates a typed Task issue per PlanTask, linked as a sub-issue'
 		assert.deepEqual(trackerOf(s.planJson)['taskRefs'], { t1: 'acme/demo#3', t2: 'acme/demo#4' });
 
 		// Each create went through `gh api POST .../issues` with `type=Task`.
-		const apiCreates = gh.calls.filter(c => c[0] === 'gh' && c[1] === 'api' && c.some(a => a === 'repos/acme/demo/issues'));
+		// Task creates only (the Story now also POSTs a REST issue — exclude it by its label).
+		const apiCreates = gh.calls.filter(c => c[0] === 'gh' && c[1] === 'api' && c.some(a => a === 'repos/acme/demo/issues') && c.some(a => a === 'labels[]=insrc:task'));
 		assert.equal(apiCreates.length, 2);
 		assert.ok(apiCreates.every(c => c.some(a => a === 'type=Task')), 'issue create missing type=Task');
 
@@ -180,7 +181,7 @@ test('pushTasks: falls back to an untyped issue when the org lacks the issue typ
 		// Both tasks still created (untyped) + recorded.
 		assert.deepEqual(trackerOf(s.planJson)['taskRefs'], { t1: 'acme/demo#3', t2: 'acme/demo#4' });
 		// The typed attempt was retried without `type=` (a bare create call exists).
-		const bareCreates = gh.calls.filter(c => c[1] === 'api' && c.some(a => a === 'repos/acme/demo/issues') && !c.some(a => a.startsWith('type=')));
+		const bareCreates = gh.calls.filter(c => c[1] === 'api' && c.some(a => a === 'repos/acme/demo/issues') && !c.some(a => a.startsWith('type=')) && c.some(a => a === 'labels[]=insrc:task'));
 		assert.equal(bareCreates.length, 2);
 	} finally { s.cleanup(); }
 });

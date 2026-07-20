@@ -186,12 +186,21 @@ export function autoPushStoryOnLld(lldJsonPath: string): AutoPushResult {
 	if (typeof adopted === 'string' && adopted.length > 0) {
 		storyRef = adopted;
 	} else {
+		let created: CreatedIssue;
 		try {
 			const storyWid = safeCanonical(() => storyWorkflowId(epicHash, define.meta.createdAt, storyId));
 			const title = storyWid !== undefined ? `${storyWid} — ${story.title}` : `${storyId}: ${story.title}`;
-			storyRef = ghCreateIssue(cfg.owner, cfg.repo, title,
+			// ghCreateIssueTyped (REST) returns the DB id needed to link a
+			// native sub-issue; stories stay untyped (no issueType passed).
+			created = ghCreateIssueTyped(cfg.owner, cfg.repo, title,
 				renderStoryBody(epicRef, story, epicSlug, { owner: cfg.owner, repo: cfg.repo }, storyWid), [cfg.storyLabel, epicMembershipLabel(epicSlug)]);
 		} catch (err) { return { status: 'failed', reason: `gh issue create failed: ${(err as Error).message}` }; }
+		storyRef = created.ref;
+		// Link the Story as a NATIVE sub-issue of its Epic — mirrors the
+		// Task→Story link, so the full Epic→Story→Task hierarchy + progress
+		// rollups render in the issues UI and any Project (was previously only
+		// the markdown task-list in the Epic body).
+		bestEffort('epic sub-issue', () => ghLinkSubIssue(cfg.owner, cfg.repo, epicRef, created.id));
 		if (cfg.useMilestones) bestEffort('milestone', () => ghAttachMilestone(cfg.owner, cfg.repo, storyRef, epicSlug));
 	}
 

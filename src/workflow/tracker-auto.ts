@@ -37,7 +37,7 @@ import type { PlanArtifact, PlanTask } from './artifacts/plan.js';
 import { defineArtifactPaths, hldArtifactPaths, lldArtifactPaths, writeAtomic } from './storage.js';
 import { GithubConfigError, resolveGithubConfig, type ResolvedGithubConfig } from './config/github.js';
 import {
-	ghAttachMilestone, ghAuthOk, ghComment, ghCreateIssue, ghCreateIssueTyped, ghCreateLabel,
+	ghAttachMilestone, ghAuthOk, ghComment, ghCreateIssueTyped, ghCreateLabel,
 	ghEditIssueBody, ghEnsureMilestone, ghFindIssueByLabels, ghGetIssueBody, ghLinkSubIssue,
 	type CreatedIssue,
 } from './tracker/github.js';
@@ -127,8 +127,10 @@ export function autoPushEpicOnHld(hldJsonPath: string): AutoPushResult {
 		try {
 			const epicWid = safeCanonical(() => epicWorkflowId(epicHash, define.meta.createdAt));
 			const title = epicWid !== undefined ? `${epicWid} — ${firstSentence(define.body.problem)}` : `Epic: ${firstSentence(define.body.problem)}`;
-			epicRef = ghCreateIssue(cfg.owner, cfg.repo, title,
-				renderEpicBody(define, epicSlug, { owner: cfg.owner, repo: cfg.repo }, epicWid), [cfg.epicLabel, membership]);
+			// ghCreateIssueTyped applies the native `Epic` issue type (fail-open to
+			// untyped if the org lacks it).
+			epicRef = ghCreateIssueTyped(cfg.owner, cfg.repo, title,
+				renderEpicBody(define, epicSlug, { owner: cfg.owner, repo: cfg.repo }, epicWid), [cfg.epicLabel, membership], cfg.epicIssueType).ref;
 		} catch (err) { return { status: 'failed', reason: `gh issue create failed: ${(err as Error).message}` }; }
 		if (cfg.useMilestones) bestEffort('milestone', () => { ghEnsureMilestone(cfg.owner, cfg.repo, epicSlug); ghAttachMilestone(cfg.owner, cfg.repo, epicRef, epicSlug); });
 	}
@@ -193,7 +195,7 @@ export function autoPushStoryOnLld(lldJsonPath: string): AutoPushResult {
 			// ghCreateIssueTyped (REST) returns the DB id needed to link a
 			// native sub-issue; stories stay untyped (no issueType passed).
 			created = ghCreateIssueTyped(cfg.owner, cfg.repo, title,
-				renderStoryBody(epicRef, story, epicSlug, { owner: cfg.owner, repo: cfg.repo }, storyWid), [cfg.storyLabel, epicMembershipLabel(epicSlug)]);
+				renderStoryBody(epicRef, story, epicSlug, { owner: cfg.owner, repo: cfg.repo }, storyWid), [cfg.storyLabel, epicMembershipLabel(epicSlug)], cfg.storyIssueType);
 		} catch (err) { return { status: 'failed', reason: `gh issue create failed: ${(err as Error).message}` }; }
 		storyRef = created.ref;
 		// Link the Story as a NATIVE sub-issue of its Epic — mirrors the

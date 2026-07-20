@@ -82,6 +82,10 @@ export interface GithubEntry {
 	 *  to create untyped Task issues. Default 'Task'. Falls back to an
 	 *  untyped issue when the org has no such type. */
 	readonly taskIssueType?: string;    // default 'Task'
+	/** Native GitHub issue-type names for Epic + Story issues (fail-open to
+	 *  untyped when the org has no such type). Default 'Epic' / 'Story'. */
+	readonly epicIssueType?:  string;   // default 'Epic'
+	readonly storyIssueType?: string;   // default 'Story'
 }
 
 export interface GithubConfigFile {
@@ -107,6 +111,8 @@ export type ResolvedGithubConfig =
 		readonly pushTasks:     boolean;
 		readonly commitArtifacts: boolean;
 		readonly taskIssueType: string;
+		readonly epicIssueType:  string;
+		readonly storyIssueType: string;
 		readonly source:        ResolvedGithubConfigSource;
 	}
 	| {
@@ -122,6 +128,8 @@ const DEFAULT_EPIC_LABEL:  string = 'insrc:epic';
 const DEFAULT_STORY_LABEL: string = 'insrc:story';
 const DEFAULT_TASK_LABEL:  string = 'insrc:task';
 const DEFAULT_TASK_ISSUE_TYPE: string = 'Task';
+const DEFAULT_EPIC_ISSUE_TYPE: string = 'Epic';
+const DEFAULT_STORY_ISSUE_TYPE: string = 'Story';
 
 // ---------------------------------------------------------------------------
 // Config path
@@ -227,6 +235,8 @@ function resolveEntry(
 			pushTasks:     entry.pushTasks ?? fallbackDefaults?.pushTasks ?? false,
 			commitArtifacts: entry.commitArtifacts ?? fallbackDefaults?.commitArtifacts ?? true,
 			taskIssueType: entry.taskIssueType ?? fallbackDefaults?.taskIssueType ?? DEFAULT_TASK_ISSUE_TYPE,
+			epicIssueType: entry.epicIssueType ?? fallbackDefaults?.epicIssueType ?? DEFAULT_EPIC_ISSUE_TYPE,
+			storyIssueType: entry.storyIssueType ?? fallbackDefaults?.storyIssueType ?? DEFAULT_STORY_ISSUE_TYPE,
 			source,
 		};
 	}
@@ -253,6 +263,8 @@ function resolveEntry(
 			pushTasks:     entry.pushTasks ?? fallbackDefaults?.pushTasks ?? false,
 			commitArtifacts: entry.commitArtifacts ?? fallbackDefaults?.commitArtifacts ?? true,
 			taskIssueType: entry.taskIssueType ?? fallbackDefaults?.taskIssueType ?? DEFAULT_TASK_ISSUE_TYPE,
+			epicIssueType: entry.epicIssueType ?? fallbackDefaults?.epicIssueType ?? DEFAULT_EPIC_ISSUE_TYPE,
+			storyIssueType: entry.storyIssueType ?? fallbackDefaults?.storyIssueType ?? DEFAULT_STORY_ISSUE_TYPE,
 			source:        'git-remote',
 		};
 	}

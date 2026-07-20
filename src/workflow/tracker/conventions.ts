@@ -14,6 +14,8 @@
  * earlier hash-named regression) so issue → doc links always resolve.
  */
 
+import { createHash } from 'node:crypto';
+
 import { issueNumber } from './refs.js';
 import { defineMdRel, hldMdRel, lldMdRel, planMdRel } from '../storage.js';
 import type { DefineArtifact, DefineStory } from '../artifacts/define.js';
@@ -29,7 +31,18 @@ import type { AmendmentRecord } from '../amendments/types.js';
 /** Status labels that add nuance over open/closed. */
 export const STATUS_LABELS: readonly string[] = ['insrc:in-progress', 'insrc:blocked'];
 
-export function epicMembershipLabel(epicSlug: string): string { return `epic:${epicSlug}`; }
+/** GitHub caps label names at 50 chars. A long epic slug would overflow
+ *  `epic:<slug>` (issue + label creation then fails with a 422 / "label not
+ *  found"), so bound it: keep a readable prefix and append a short content hash
+ *  for uniqueness. Short slugs are unchanged. */
+const MAX_LABEL_LEN = 50;
+export function epicMembershipLabel(epicSlug: string): string {
+	const full = `epic:${epicSlug}`;
+	if (full.length <= MAX_LABEL_LEN) return full;
+	const h = createHash('sha256').update(epicSlug).digest('hex').slice(0, 6);
+	const prefixLen = MAX_LABEL_LEN - 'epic:'.length - 1 - h.length;   // room for "-<h>"
+	return `epic:${epicSlug.slice(0, prefixLen)}-${h}`;
+}
 
 /** Every label the framework expects to exist for an Epic. Created
  *  idempotently on first push. */

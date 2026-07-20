@@ -19,7 +19,7 @@ the IDE consumes.
 - Built-in tools (~110 capability wrappers: file/git/shell/http/web/gh/k8s/pkg/ssh/test/notify/search/graph/db/data/code/cloud)
 - `CliProvider` (`claude` + `codex` CLI subprocess wrapper, structured-output aware)
 - `OllamaProvider` (local LLM + embeddings)
-- Analyze framework (`insrc_analyze` + `insrc_analyze_step` MCP tools; 10 exploration recipes; context builder)
+- Analyze framework (`insrc_analyze` + `insrc_analyze_step` MCP tools; 20 exploration recipes; context builder)
 - Workflow framework (`define` → `design.epic` → `design.story` → `tracker` chain; `insrc_workflow_step` MCP tool)
 - `insrc` interactive CLI — a full-screen ink (React) TUI with Daemon /
   Repos / Workflows / Setup panes (replaced the old commander subcommands)
@@ -65,7 +65,7 @@ src/
       ollama.ts            Local provider (LLM + embeddings)
       cli-provider.ts      Subprocess wrapper for claude + codex CLI binaries
       structured-output.ts ajv + retry helpers
-  analyze/         Analyze framework (10 exploration recipes, decomposer, synthesizer, context builder)
+  analyze/         Analyze framework (20 exploration recipes, decomposer, synthesizer, context builder)
   workflow/        Workflow framework (define, design.epic, design.story, tracker, amendments, gates)
   mcp/             MCP servers (insrc_analyze_step, insrc_workflow_step)
   cli/             `insrc` interactive TUI (ink): panes/ services/ hooks/ ui/
@@ -135,7 +135,7 @@ CliProvider suites) and skip cleanly when unset.
 1. **Daemon owns all DB access** — CLI, MCP, and the IDE workbench communicate via IPC only.
 2. **Local-first** — Ollama is always available (embeddings are local-only). Cloud LLM access goes through `CliProvider` (claude + codex CLI subprocesses); no direct REST.
 3. **Dependency-closure scoping** — graph searches span only the transitive `DEPENDS_ON` closure of the active repo.
-4. **Graph + vector** — structural queries use the LMDB graph layer's typed JS API (`findCallers / findCallees / outEdges / inEdges / transitiveClosure / unreachable`); semantic queries use LanceDB ANN. No Cypher / GQL / SQL exposed for graph traversal.
+4. **Graph + vector** — structural queries use the LMDB graph layer's typed JS API (`findCallers / findCallees / outNeighbors / inNeighbors / transitiveClosure / unreachable`); semantic queries use LanceDB ANN. No Cypher / GQL / SQL exposed for graph traversal.
 5. **No raw file dumps** — context is always structured entity summaries + relations from the graph.
 6. **Repo registry is the contract** — workspace registry membership is established exclusively via the `repo.add` IPC. The storage layer never auto-allocates registry rows; an `Entity` whose `repo` path isn't registered fails the upsert with `UnregisteredRepoError`. See [`plans/repo-registry-strict-contract.md`](plans/repo-registry-strict-contract.md).
 7. **Prompt structure: structural reference goes trailing.** Schemas / catalogs / manifests belong at the tail of the prompt, not the middle — recency-weighted attention (especially on qwen3-coder) hallucinates against mid-prompt structural info.

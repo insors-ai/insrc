@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cli — insrc</title>
+<meta name="description" content="The insrc interactive TUI: a full-screen ink (React) terminal app with Daemon / Repos / Workflows / Setup panes, a vim-style command bar, and all DB access delegated to the daemon over its Unix socket.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13' font-family='monospace' fill='%234ade80'>▌</text></svg>">
+<link rel="stylesheet" href="css/tui.css">
+</head>
+<body>
+<a class="skip" href="#main">skip to content</a>
+
+<nav class="nav"><div class="nav-inner">
+  <span class="brand">insrc<span class="sig">.daemon</span></span>
+  <div class="nav-links">
+    <a href="index.html">home</a>
+    <a href="getting-started.html">getting started</a>
+    <a href="architecture.html">architecture</a>
+    <a href="workflow.html">workflow</a>
+    <a href="analyze.html">analyze</a>
+    <a href="tools.html">tools</a>
+    <a href="cli.html">cli</a>
+  </div>
+  <button class="theme-btn" type="button" aria-label="toggle theme">◐ light</button>
+</div></nav>
+
+<div class="wrap"><main id="main">
+
+  <h1>The insrc CLI</h1>
+  <p class="lead">The <code>insrc</code> command is a full-screen interactive TUI — an ink (React) terminal app with four panes: Daemon, Repos, Workflows, and Setup. It replaced the old commander subcommands entirely; there are no <code>insrc &lt;verb&gt;</code> subcommands, only the interactive app and its built-in command bar.</p>
+
+  <h2 id="cli">A full-screen terminal app</h2>
+  <p>Launch it from anywhere — the launch directory becomes the default selected repo. The <code>insrc</code> bin resolves to <code>out/cli/index.js</code> (built) with source at <code>src/cli/index.tsx</code>.</p>
+  <div class="code">
+    <div class="code-head"><span class="name">bash</span><button class="copy" type="button">copy</button></div>
+<pre><code><span class="p">$</span> npx insrc              <span class="c"># or the built entry: node out/cli/index.js</span></code></pre>
+  </div>
+  <p>The app renders a header with the four pane tabs, the active pane body, a toast line, and a persistent key-hint footer. Every pane talks to the running daemon; if the daemon is down, the Daemon pane starts it.</p>
+
+  <div class="panel"><span class="panel-title">global keys</span>
+    <p class="mt0">These work from any pane (a pane suspends them while it has an open prompt / modal):</p>
+    <p><kbd>:</kbd> open the command bar · <kbd>1</kbd>–<kbd>4</kbd> jump to a pane · <kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd> cycle panes · <kbd>r</kbd> refresh · <kbd>?</kbd> help · <kbd>q</kbd> quit</p>
+  </div>
+
+  <h2 id="panes">The four panes</h2>
+  <p>Panes are ordered <strong>Daemon</strong> (1), <strong>Repos</strong> (2), <strong>Workflows</strong> (3), <strong>Setup</strong> (4). Each pane owns a small set of single-key actions shown in its footer hint bar.</p>
+
+  <h3 id="pane-daemon">Daemon — health &amp; lifecycle</h3>
+  <p>A live health readout (uptime, queue depth, embeddings pending, model-pull status, LMDB size on disk, registered repo count) plus the full maintenance lifecycle. Long-running operations — restart, update, backup — stream their progress into a live log below the readout.</p>
+  <div class="term" style="margin:16px 0">
+    <div class="term-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="term-title">insrc — Daemon</span></div>
+    <div class="term-body">
+<pre style="margin:0"><code><span class="fn">┌─ Daemon ──────────────────────────────────────────┐</span>
+<span class="fn">│</span> <span class="o">● running</span>  uptime <span class="o">4h 12m</span>                         <span class="fn">│</span>
+<span class="fn">│</span> queue     <span class="o">0</span> job(s) · embeddings pending <span class="o">0</span>       <span class="fn">│</span>
+<span class="fn">│</span> model     <span class="o">ready</span>                                  <span class="fn">│</span>
+<span class="fn">│</span> lmdb      <span class="o">218</span> MiB on disk                        <span class="fn">│</span>
+<span class="fn">│</span> repos     <span class="o">2</span> registered                          <span class="fn">│</span>
+<span class="fn">└───────────────────────────────────────────────────┘</span>
+<span class="c"> s</span> start  <span class="c">x</span> stop  <span class="c">R</span> restart  <span class="c">u</span> update  <span class="c">b</span> backup  <span class="c">c</span> compact</code></pre>
+    </div>
+  </div>
+  <p><strong>Keys:</strong> <kbd>s</kbd> start · <kbd>x</kbd> stop · <kbd>R</kbd> restart · <kbd>u</kbd> update · <kbd>b</kbd> backup (prompts for a directory) · <kbd>c</kbd> compact the LMDB store.</p>
+  <div class="tip">Prefer <kbd>u</kbd> update / <kbd>R</kbd> restart here over a manual git-pull-and-kill — they run the daemon's own maintenance service functions and stream each step.</div>
+
+  <h3 id="pane-repos">Repos — registered repositories</h3>
+  <p>The list of registered repositories with a colored status dot — <span class="o">●</span> ready (green), indexing (yellow), pending (gray), error (red) — the status label, path, and when it was last indexed. The highlighted row is the <em>selected repo</em> that the Workflows pane targets. Adding a repo goes through the <code>repo.add</code> IPC (the registry contract); the daemon then parses, builds the graph, and generates embeddings.</p>
+  <div class="term" style="margin:16px 0">
+    <div class="term-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="term-title">insrc — Repos</span></div>
+    <div class="term-body">
+<pre style="margin:0"><code><span class="fn">┌─ Repos ───────────────────────────────────────────┐</span>
+<span class="fn">│</span> <span class="o">❯</span> <span class="o">●</span> ready    ~/work/insrc      <span class="c">(indexed 2m ago)</span>  <span class="fn">│</span>
+<span class="fn">│</span>   <span class="o">●</span> indexing ~/work/my-service  <span class="c">(indexed never)</span>   <span class="fn">│</span>
+<span class="fn">└───────────────────────────────────────────────────┘</span>
+<span class="c"> ↑/↓</span> select   <span class="c">a</span> add   <span class="c">d</span> remove   <span class="c">i</span> reindex</code></pre>
+    </div>
+  </div>
+  <p><strong>Keys:</strong> <kbd>↑</kbd>/<kbd>↓</kbd> select · <kbd>a</kbd> add (prompts for a path) · <kbd>d</kbd> remove (confirms, drops its graph data) · <kbd>i</kbd> reindex the highlighted repo.</p>
+  <div class="warn">The repo registry is the contract. An entity whose repo path isn't registered fails the upsert with <code>UnregisteredRepoError</code> — the storage layer never auto-allocates rows. Add the repo with <kbd>a</kbd> first, and add its dependency repos too if you want cross-repo answers (searches span the transitive <code>DEPENDS_ON</code> closure).</div>
+
+  <h3 id="pane-workflows">Workflows — the Epic chain</h3>
+  <p>The Epic chain for the selected repo. The list view shows every Epic (a <code>DEF-*.json</code> under <code>.insrc/artifacts/</code>); <kbd>↵</kbd> opens a detail view with the chain state — Define / HLD marks, per-story LLD status (with STALE flags), the next action, amendment counts — and a cursor over the <em>actionable</em> items (the next pending artifact and any pending amendments) that you approve or reject in place.</p>
+  <div class="term" style="margin:16px 0">
+    <div class="term-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="term-title">insrc — Workflows</span></div>
+    <div class="term-body">
+<pre style="margin:0"><code><span class="fn">┌─ Workflows · plan-workflow ───────────────────────┐</span>
+<span class="fn">│</span> define  <span class="o">✓ approved</span>   hld  <span class="o">✓ approved</span>            <span class="fn">│</span>
+<span class="fn">│</span> <span class="c">stories</span>                                          <span class="fn">│</span>
+<span class="fn">│</span>   s1 tracker resolve        <span class="o">✓ approved</span>          <span class="fn">│</span>
+<span class="fn">│</span>   s2 id resolution          <span class="o">• pending</span>           <span class="fn">│</span>
+<span class="fn">│</span> <span class="c">next:</span> <span class="o">approve-lld</span>   <span class="c">amendments:</span> 0 pending      <span class="fn">│</span>
+<span class="fn">│</span> <span class="c">actionable</span>                                       <span class="fn">│</span>
+<span class="fn">│</span> <span class="o">❯</span> approve LLD s2 (…/artifacts/LLD-s2.json)         <span class="fn">│</span>
+<span class="fn">└───────────────────────────────────────────────────┘</span>
+<span class="c"> ↑/↓</span> select   <span class="c">a</span> approve   <span class="c">x</span> reject   <span class="c">b/Esc</span> back</code></pre>
+    </div>
+  </div>
+  <p><strong>Keys (list):</strong> <kbd>↑</kbd>/<kbd>↓</kbd> select · <kbd>↵</kbd> open. <strong>Keys (detail):</strong> <kbd>↑</kbd>/<kbd>↓</kbd> select · <kbd>a</kbd> approve · <kbd>x</kbd> reject (prompts for a reason) · <kbd>b</kbd> / <kbd>Esc</kbd> back.</p>
+  <div class="note">The panes approve and reject artifacts; they don't <em>generate</em> them. Run a workflow stage to produce the next artifact via the <code>insrc_workflow_step</code> MCP tool or the daemon's <code>workflow.run</code> IPC — then approve it here. See <a href="workflow.html">the workflow guide</a>.</div>
+
+  <h3 id="pane-setup">Setup — provider &amp; model config</h3>
+  <p>Hardware detection (CPU, RAM, GPU/VRAM, Ollama availability) and a model recommendation for a tier — the coder model, the embedding model + dims, and the context shape/token budget. <kbd>a</kbd> writes the recommended config; <kbd>p</kbd> pulls any missing models, streaming Ollama's progress into a log (never <code>stdio:inherit</code>, which would fight ink).</p>
+  <div class="term" style="margin:16px 0">
+    <div class="term-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="term-title">insrc — Setup</span></div>
+    <div class="term-body">
+<pre style="margin:0"><code><span class="fn">┌─ Setup ───────────────────────────────────────────┐</span>
+<span class="fn">│</span> <span class="o">System</span>                                            <span class="fn">│</span>
+<span class="fn">│</span>   CPU   Apple M3 Max (14 cores)                    <span class="fn">│</span>
+<span class="fn">│</span>   RAM   64GB total · 22GB free                     <span class="fn">│</span>
+<span class="fn">│</span>   GPU   Apple M3 Max · 48GB VRAM                    <span class="fn">│</span>
+<span class="fn">│</span>   Ollama v0.5.4 (6 models)                         <span class="fn">│</span>
+<span class="fn">│</span> <span class="o">Recommendation</span> <span class="c">(high)</span>                            <span class="fn">│</span>
+<span class="fn">│</span>   coder     qwen3-coder <span class="c">(30b)</span>                     <span class="fn">│</span>
+<span class="fn">│</span>   embedding qwen3-embedding <span class="c">(1024 dims)</span>            <span class="fn">│</span>
+<span class="fn">│</span>   context   wide <span class="c">(65536 tokens)</span>                    <span class="fn">│</span>
+<span class="fn">└───────────────────────────────────────────────────┘</span>
+<span class="c"> a</span> apply config   <span class="c">p</span> pull models</code></pre>
+    </div>
+  </div>
+  <p><strong>Keys:</strong> <kbd>a</kbd> apply the recommended config · <kbd>p</kbd> pull the missing models.</p>
+
+  <h2 id="ipc">Talking to the daemon</h2>
+  <p>The CLI never opens LMDB or LanceDB directly. Every pane action goes through the daemon over JSON-RPC on its Unix socket at <code>~/.insrc/daemon.sock</code>, via the service functions in <code>src/cli/services/</code> — <code>daemon</code>, <code>repo</code>, <code>workflow</code>, <code>config</code>, <code>setup</code>, <code>maintenance</code>, and <code>lifecycle</code>. The panes are thin views over that services facade; the daemon owns all DB access.</p>
+
+  <h3 id="command-bar">The command bar</h3>
+  <p>Press <kbd>:</kbd> for a vim-style command line — the same operations the panes expose via keys, but typed, plus a few that have no key. It runs against the same services facade and prints its output inline.</p>
+  <div class="term" style="margin:16px 0">
+    <div class="term-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="term-title">insrc — command</span></div>
+    <div class="term-body">
+<pre style="margin:0"><code><span class="p">:</span> tracker setup --project
+<span class="o">✓</span> config      <span class="c">— wrote .github tracker config</span>
+<span class="o">✓</span> labels      <span class="c">— created 6 workflow labels</span>
+<span class="o">•</span> issue-types <span class="c">— already present</span>
+<span class="o">✓</span> project     <span class="c">— linked GitHub Project</span>
+<span class="o">✓</span> tracker ready — no manual steps remaining</code></pre>
+    </div>
+  </div>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Command</th><th>Subcommands</th></tr></thead>
+    <tbody>
+      <tr><td><code>repo</code></td><td><code>add &lt;path&gt;</code> · <code>remove &lt;path&gt;</code> · <code>reindex &lt;path&gt;</code> · <code>list</code></td></tr>
+      <tr><td><code>daemon</code></td><td><code>start</code> · <code>stop</code> · <code>restart</code> · <code>update</code> · <code>backup &lt;dir&gt;</code> · <code>compact</code> · <code>status</code></td></tr>
+      <tr><td><code>workflow</code></td><td><code>list</code> · <code>chain &lt;hash&gt;</code> · <code>approve &lt;path&gt;</code> · <code>reject &lt;path&gt; &lt;reason&gt;</code> · <code>ack-stale &lt;path&gt; &lt;reason&gt;</code> · <code>sync &lt;hash&gt;</code> · <code>deferred &lt;epicSlug|hash&gt;</code></td></tr>
+      <tr><td><code>tracker</code></td><td><code>setup [--project]</code> — bootstrap the GitHub tracker (config, labels, issue types, project)</td></tr>
+      <tr><td><code>config</code></td><td><code>list [search]</code> · <code>get &lt;key&gt;</code> · <code>set &lt;key&gt; &lt;value&gt;</code> · <code>unset &lt;key&gt;</code> · <code>reload</code> (dot-path keys)</td></tr>
+      <tr><td><code>setup</code></td><td><code>show</code> · <code>apply</code> · <code>pull</code></td></tr>
+      <tr><td><code>pane</code></td><td><code>daemon|repos|workflows|setup</code> · plus <code>help</code> and <code>quit</code></td></tr>
+    </tbody>
+  </table></div>
+  <div class="note">The command bar is the same interpreter for every workflow verb — including <code>tracker setup</code>, which has no pane key. It's pure logic over the services facade, so it unit-tests directly with a fake Services.</div>
+
+  <h2 id="config">Shared config layout</h2>
+  <p>The CLI and the daemon share one on-disk home, <code>~/.insrc/</code> (defined in <code>src/shared/paths.ts</code>). The socket the CLI dials, the config it edits, the graph + vector stores the daemon owns, and the workflow artifacts all live under it.</p>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Path</th><th>What it is</th></tr></thead>
+    <tbody>
+      <tr><td><code>~/.insrc/daemon.sock</code></td><td>Unix socket — the JSON-RPC endpoint every pane and service function dials.</td></tr>
+      <tr><td><code>~/.insrc/daemon.pid</code></td><td>PID file the lifecycle service uses to start / stop / restart.</td></tr>
+      <tr><td><code>~/.insrc/config.json</code></td><td>on-disk config the Setup pane and <code>config</code> command read and write.</td></tr>
+      <tr><td><code>~/.insrc/graph.lmdb</code></td><td>LMDB store — the graph, repo registry, plans, conversations, config.</td></tr>
+      <tr><td><code>~/.insrc/lance</code></td><td>LanceDB store — entity / session / turn / config vectors.</td></tr>
+      <tr><td><code>&lt;repo&gt;/.insrc/artifacts/</code></td><td>per-repo workflow artifacts (<code>DEF-*.json</code> and the rest of the Epic chain) the Workflows pane lists.</td></tr>
+    </tbody>
+  </table></div>
+  <p>Because the daemon owns every one of these, the CLI stays a pure client — no LMDB / Lance handles in the TUI process, only IPC. That's the same contract the MCP servers and the IDE workbench follow.</p>
+
+  <h2 id="next">Where next</h2>
+  <div class="grid">
+    <a class="card" href="getting-started.html"><div class="glyph">▮</div><h4>Getting started</h4><p>Install the toolchain, build the daemon, launch the TUI, and index your first repo.</p><span class="more">read</span></a>
+    <a class="card" href="workflow.html"><div class="glyph">⟿</div><h4>Workflow</h4><p>Drive a feature from define → design → plan → build, approving each stage in the Workflows pane.</p><span class="more">read</span></a>
+    <a class="card" href="architecture.html"><div class="glyph">⬡</div><h4>Architecture</h4><p>How the daemon, storage substrate, and the IPC contract the CLI rides fit together.</p><span class="more">read</span></a>
+  </div>
+
+</main></div>
+
+<footer class="foot"><div class="foot-inner">
+  <span class="seg"><span class="accent">insrc</span> · code-knowledge daemon</span>
+  <span class="seg">TypeScript · ESM · Node 20+</span>
+  <span class="seg">LMDB + Lance + DuckDB</span>
+  <span class="seg"><a href="https://github.com/insors-ai/insrc">github</a></span>
+  <span class="seg" style="margin-left:auto">local-first · no keys · no REST</span>
+</div></footer>
+
+<script src="js/tui.js"></script>
+</body>
+</html>

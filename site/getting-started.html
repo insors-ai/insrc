@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>getting started — insrc</title>
+<meta name="description" content="Install, build and run the insrc daemon: prerequisites, indexing your first repo, asking a grounded question, and registering the MCP servers with claude / codex.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13' font-family='monospace' fill='%234ade80'>▌</text></svg>">
+<link rel="stylesheet" href="css/tui.css">
+</head>
+<body>
+<a class="skip" href="#main">skip to content</a>
+
+<nav class="nav"><div class="nav-inner">
+  <span class="brand">insrc<span class="sig">.daemon</span></span>
+  <div class="nav-links">
+    <a href="index.html">home</a>
+    <a href="getting-started.html">getting started</a>
+    <a href="architecture.html">architecture</a>
+    <a href="workflow.html">workflow</a>
+    <a href="analyze.html">analyze</a>
+    <a href="tools.html">tools</a>
+    <a href="cli.html">cli</a>
+  </div>
+  <button class="theme-btn" type="button" aria-label="toggle theme">◐ light</button>
+</div></nav>
+
+<div class="wrap"><main id="main">
+
+  <h1>Getting started</h1>
+  <p class="lead">Five steps: install the toolchain, build the daemon, launch the TUI, index a repo, and ask your first grounded question. Everything runs locally.</p>
+
+  <h2 id="prerequisites">1 · Prerequisites</h2>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Requirement</th><th>Why</th><th>Check</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Node.js 20+</strong></td><td>runtime. Native modules build against Node 22.22.1 headers; the daemon spawns under Node 22 at install.</td><td><code>node -v</code></td></tr>
+      <tr><td><strong>Ollama</strong></td><td>local LLM + embeddings — embeddings are local-only, so this is always required.</td><td><code>ollama --version</code></td></tr>
+      <tr><td><strong>claude</strong> and/or <strong>codex</strong> CLI</td><td>cloud LLM access is delegated to these CLIs' OAuth sessions — insrc never makes direct REST calls.</td><td><code>claude --version</code></td></tr>
+      <tr><td><strong>git</strong></td><td>repo discovery, the git tools, and the workflow tracker.</td><td><code>git --version</code></td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="tip">Pull the local models once — the shaper and embedder default to these:
+    <div class="code" style="margin-top:10px">
+      <div class="code-head"><span class="name">bash</span><button class="copy" type="button">copy</button></div>
+<pre><code><span class="p">$</span> ollama pull qwen3-coder
+<span class="p">$</span> ollama pull qwen3-embedding</code></pre>
+    </div>
+  </div>
+
+  <h2 id="install">2 · Install &amp; build</h2>
+  <div class="code">
+    <div class="code-head"><span class="name">bash</span><button class="copy" type="button">copy</button></div>
+<pre><code><span class="p">$</span> git clone https://github.com/insors-ai/insrc.git
+<span class="p">$</span> cd insrc
+<span class="p">$</span> npm install            <span class="c"># runtime + dev deps (builds native modules)</span>
+<span class="p">$</span> npm run build          <span class="c"># tsc + copy-assets.mjs → out/</span></code></pre>
+  </div>
+  <p>The two entry points produced by the build:</p>
+  <ul>
+    <li><code>out/daemon/index.js</code> — the daemon binary the IDE spawns.</li>
+    <li><code>out/bin/insrc-mcp.js</code> — the MCP binary you register with <code>claude</code> / <code>codex</code>.</li>
+  </ul>
+
+  <div class="note">Sanity-check the build with the fast test subsets:
+    <div class="code" style="margin-top:10px">
+      <div class="code-head"><span class="name">bash</span><button class="copy" type="button">copy</button></div>
+<pre><code><span class="p">$</span> npx tsx --test <span class="s">'src/workflow/**/*.test.ts'</span> <span class="s">'src/mcp/**/*.test.ts'</span>   <span class="c"># ~5s</span>
+<span class="p">$</span> npx tsx --test <span class="s">'src/**/__tests__/*.test.ts'</span>                       <span class="c"># full sweep</span></code></pre>
+    </div>
+    Live-service suites gate behind <code>INSRC_LIVE_TESTS=1</code> and skip cleanly when unset.
+  </div>
+
+  <h2 id="run">3 · Launch the TUI</h2>
+  <p>The <code>insrc</code> command is a full-screen ink (React) TUI. It starts (or attaches to) the daemon and gives you Daemon / Repos / Workflows / Setup panes.</p>
+  <div class="code">
+    <div class="code-head"><span class="name">bash</span><button class="copy" type="button">copy</button></div>
+<pre><code><span class="p">$</span> npx insrc</code></pre>
+  </div>
+  <div class="term" style="margin:16px 0">
+    <div class="term-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="term-title">insrc — Repos</span></div>
+    <div class="term-body">
+<pre style="margin:0"><code><span class="fn">┌─ Repos ───────────────────────────────────────────┐</span>
+<span class="fn">│</span> <span class="o">●</span> insrc            <span class="c">ready    · 3,412 entities</span>      <span class="fn">│</span>
+<span class="fn">│</span> <span class="o">○</span> my-service       <span class="c">indexing · 61%</span>               <span class="fn">│</span>
+<span class="fn">└───────────────────────────────────────────────────┘</span>
+<span class="c"> a</span> add repo   <span class="c">r</span> re-index   <span class="c">d</span> remove   <span class="c">↑↓</span> select</code></pre>
+    </div>
+  </div>
+
+  <h2 id="index">4 · Add &amp; index a repo</h2>
+  <p>Registry membership is established exclusively through the <code>repo.add</code> IPC — from the TUI, open the <strong>Repos</strong> pane and press <kbd>a</kbd>. The daemon parses the tree with tree-sitter, builds the graph, and generates embeddings.</p>
+  <div class="warn">The repo registry is the contract. An entity whose repo path isn't registered fails the upsert with <code>UnregisteredRepoError</code> — the storage layer never auto-allocates registry rows. Always add a repo before expecting queries to resolve.</div>
+  <p>Wait for the status to reach <code>ready</code> (embeddings pending shows as a count). Graph searches span the transitive <code>DEPENDS_ON</code> closure of the active repo, so add dependency repos too if you want cross-repo answers.</p>
+
+  <h2 id="ask">5 · Ask your first question</h2>
+  <p>For any question about a codebase's structure, conventions or capabilities, use the analyze tools — every claim is grounded in a real graph exploration, with file paths drawn from the index (no hallucinated paths).</p>
+  <div class="code">
+    <div class="code-head"><span class="name">bash</span><button class="copy" type="button">copy</button></div>
+<pre><code><span class="p">$</span> insrc analyze <span class="s">"list the storage layers and where each is initialised"</span></code></pre>
+  </div>
+  <p>Prefer <code>insrc_analyze_step</code> (multi-turn, stays in your session) over the one-shot <code>insrc_analyze</code> when driving from an MCP client — it's more accurate and doesn't spawn a separate billing path. See <a href="analyze.html">the analyze guide</a>.</p>
+
+  <h2 id="mcp">Register the MCP servers</h2>
+  <p>To let <code>claude</code> / <code>codex</code> call insrc directly, register the MCP binary. It exposes two servers: <code>insrc_analyze_step</code> and <code>insrc_workflow_step</code>.</p>
+  <div class="code">
+    <div class="code-head"><span class="name">claude — .mcp.json</span><button class="copy" type="button">copy</button></div>
+<pre><code>{
+  <span class="k">"mcpServers"</span>: {
+    <span class="k">"insrc"</span>: {
+      <span class="k">"command"</span>: <span class="s">"node"</span>,
+      <span class="k">"args"</span>: [<span class="s">"/path/to/insrc/out/bin/insrc-mcp.js"</span>],
+      <span class="k">"env"</span>: { <span class="k">"INSRC_REPO"</span>: <span class="s">"/path/to/your/repo"</span> }
+    }
+  }
+}</code></pre>
+  </div>
+  <p><code>INSRC_REPO</code> is the default repo for tool calls; an explicit <code>repo</code> argument overrides it. The repo must be registered with the daemon and finished indexing.</p>
+
+  <h2 id="next">Where next</h2>
+  <div class="grid">
+    <a class="card" href="architecture.html"><div class="glyph">⬡</div><h4>Architecture</h4><p>How the daemon, storage substrate and IPC contract fit together.</p><span class="more">read</span></a>
+    <a class="card" href="workflow.html"><div class="glyph">⟿</div><h4>Workflow</h4><p>Drive a feature from define → design → plan → build with a GitHub tracker.</p><span class="more">read</span></a>
+    <a class="card" href="analyze.html"><div class="glyph">◎</div><h4>Analyze</h4><p>The 10 exploration recipes and the 7-layer context bundle.</p><span class="more">read</span></a>
+  </div>
+
+</main></div>
+
+<footer class="foot"><div class="foot-inner">
+  <span class="seg"><span class="accent">insrc</span> · code-knowledge daemon</span>
+  <span class="seg">TypeScript · ESM · Node 20+</span>
+  <span class="seg">LMDB + Lance + DuckDB</span>
+  <span class="seg"><a href="https://github.com/insors-ai/insrc">github</a></span>
+  <span class="seg" style="margin-left:auto">local-first · no keys · no REST</span>
+</div></footer>
+
+<script src="js/tui.js"></script>
+</body>
+</html>

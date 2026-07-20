@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>architecture — insrc</title>
+<meta name="description" content="How insrc fits together: one daemon owning the LMDB graph + Lance vectors + DuckDB query engine, a JSON-RPC Unix-socket IPC contract, the tree-sitter indexer, and the seven architectural rules that hold it all in place.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13' font-family='monospace' fill='%234ade80'>▌</text></svg>">
+<link rel="stylesheet" href="css/tui.css">
+</head>
+<body>
+<a class="skip" href="#main">skip to content</a>
+
+<nav class="nav"><div class="nav-inner">
+  <span class="brand">insrc<span class="sig">.daemon</span></span>
+  <div class="nav-links">
+    <a href="index.html">home</a>
+    <a href="getting-started.html">getting started</a>
+    <a href="architecture.html">architecture</a>
+    <a href="workflow.html">workflow</a>
+    <a href="analyze.html">analyze</a>
+    <a href="tools.html">tools</a>
+    <a href="cli.html">cli</a>
+  </div>
+  <button class="theme-btn" type="button" aria-label="toggle theme">◐ light</button>
+</div></nav>
+
+<div class="wrap"><main id="main">
+
+  <h1>Architecture</h1>
+  <p class="lead">insrc is one daemon that owns everything. It parses your repos with tree-sitter into a typed entity/relation graph, stores that graph in LMDB alongside Lance vectors, and answers every query with structured, citation-grounded context. Clients — the <code>claude</code> / <code>codex</code> CLIs, the interactive TUI, and the VSCode fork — never touch a database directly; they speak JSON-RPC over a Unix socket.</p>
+
+  <section>
+    <h2 id="overview">The shape of the system</h2>
+    <p>Three kinds of client fan in through two entry surfaces — the MCP servers and the raw IPC socket — onto a single daemon. The daemon is the sole owner of the graph, the vectors, the query engine, and the tool registry.</p>
+<div class="ascii" aria-label="architecture diagram">
+   <i>claude / codex CLI</i>      <i>insrc TUI</i>        <i>VSCode fork</i>
+          │                    │                   │
+          └──────────┬─────────┴─────────┬─────────┘
+                     ▼                   ▼
+              <b>MCP servers</b>        <u>JSON-RPC over</u>
+           insrc_analyze_step     <u>~/.insrc/daemon.sock</u>
+           insrc_workflow_step            │
+                     └──────────┬─────────┘
+                                ▼
+                   ┌────────────────────────┐
+                   │        <b>DAEMON</b>          │  owns all DB access
+                   │  registry · queue · fs │
+                   │  watcher · tool exec   │
+                   └───────────┬────────────┘
+              ┌────────────────┼────────────────┐
+              ▼                ▼                 ▼
+        <b>LMDB graph</b>       <b>Lance vectors</b>       <b>DuckDB</b>
+      entities/edges     ANN / embeddings   data-driver tools
+</div>
+    <div class="flow">
+      <span class="stage">index</span><span class="arr">→</span>
+      <span class="stage">LMDB graph + Lance vectors</span><span class="arr">→</span>
+      <span class="stage">daemon IPC</span><span class="arr">→</span>
+      <span class="stage">structured context</span>
+    </div>
+  </section>
+
+  <section>
+    <h2 id="daemon">The daemon</h2>
+    <p>The daemon is the background process everything else attaches to. Its entry point is <code>src/daemon/index.ts</code>, built to <code>out/daemon/index.js</code> — the binary the IDE spawns. It runs a Unix-socket JSON-RPC server (<code>src/daemon/server.ts</code>) at <code>~/.insrc/daemon.sock</code> and owns the repo registry, the work queue, process lifecycle, and the file-watcher.</p>
+    <ul>
+      <li><strong>Repo registry</strong> — the authoritative list of workspaces; membership is established only through the <code>repo.add</code> IPC.</li>
+      <li><strong>Queue &amp; lifecycle</strong> — indexing jobs and daemon start/stop are marshalled server-side.</li>
+      <li><strong>File-watcher</strong> — changes on disk re-index the affected entities.</li>
+      <li><strong>Tool registry + executor</strong> — ~110 built-in capability wrappers under <code>src/daemon/tools/</code> (registry, executor, and the <code>builtins/</code> set): file · git · shell · http · web · gh · k8s · pkg · ssh · test · notify · search · graph · db · data · code · cloud.</li>
+    </ul>
+    <div class="panel">
+      <span class="panel-title">the IPC contract is the surface</span>
+      <p class="mt0">The IPC contract is the <em>only</em> surface the IDE consumes. Method names, the socket path (<code>~/.insrc/daemon.sock</code>), and payload shapes stay in lock-step across this repo and the <a href="https://github.com/insors-ai/insrc-ide">insors-ai/insrc-ide</a> fork, which clones this repo into <code>~/.insrc/daemon/</code> and spawns the compiled entry. Mirrored types on both sides keep the two repos honest.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2 id="storage">Storage substrate</h2>
+    <p>Three embedded engines, each with a distinct job. Only two of them persist anything.</p>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Engine</th><th>Role</th><th>Where</th></tr></thead>
+      <tbody>
+        <tr><td><strong>LMDB</strong> <small>via <code>lmdb-js</code></small></td><td>Embedded KV store — the substrate for the custom graph layer: entities, edges, deterministic keys.</td><td><code>src/db/graph/</code></td></tr>
+        <tr><td><strong>LanceDB</strong></td><td>Embedded vector DB — entity embeddings + ANN search, across per-purpose tables.</td><td><code>src/db/lance/</code></td></tr>
+        <tr><td><strong>DuckDB</strong> <small>via <code>@duckdb/node-api</code></small></td><td>In-memory query engine that backs the data-driver <code>db_file_*</code> tools.</td><td><code>src/daemon/tools/</code></td></tr>
+      </tbody>
+    </table></div>
+
+    <h3 id="graph">LMDB graph layer</h3>
+    <p>The graph layer in <code>src/db/graph/</code> is built directly on LMDB — <code>store.ts</code>, <code>keys.ts</code>, <code>codec.ts</code>, <code>edges.ts</code>, and <code>traversal.ts</code>. Structural queries go through a typed JS API, not a query language: <strong>no Cypher, GQL, or SQL is exposed for traversal.</strong></p>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Function</th><th>Does</th><th>Defined in</th></tr></thead>
+      <tbody>
+        <tr><td><code>findCallers</code></td><td>entities that call a given entity</td><td><code>src/db/search.ts</code></td></tr>
+        <tr><td><code>findCallees</code></td><td>entities a given entity calls</td><td><code>src/db/search.ts</code></td></tr>
+        <tr><td><code>outNeighbors</code></td><td>outgoing edges from a node</td><td><code>src/db/graph/edges.ts</code></td></tr>
+        <tr><td><code>inNeighbors</code></td><td>incoming edges to a node</td><td><code>src/db/graph/edges.ts</code></td></tr>
+        <tr><td><code>transitiveClosure</code></td><td>everything reachable from a node</td><td><code>src/db/graph/traversal.ts</code></td></tr>
+        <tr><td><code>unreachable</code></td><td>nodes with no path from a root set</td><td><code>src/db/graph/traversal.ts</code></td></tr>
+      </tbody>
+    </table></div>
+    <p>Semantic queries take the other path: LanceDB approximate-nearest-neighbour search over embeddings. Lance keeps several purpose-built tables — <code>entity-vec</code>, <code>session-vec</code>, <code>turn-vec</code>, <code>artifact-vec</code>, and <code>config-vec</code> among them.</p>
+
+    <div class="warn">DuckDB is an <strong>in-memory query engine only</strong>. It backs the data-driver <code>db_file_*</code> tools (<code>db_file_describe</code>, <code>db_file_aggregate</code>, <code>db_file_histogram</code>, <code>db_file_outliers</code>, …) and is <em>not</em> used for persistent storage. Persistence lives entirely in LMDB (graph) and LanceDB (vectors).</div>
+
+    <h3 id="entity-ids">Entity IDs</h3>
+    <p>Entity identity is deterministic — the same source always yields the same ID, so re-indexing is idempotent and IDs are stable across runs and machines:</p>
+    <div class="code">
+      <div class="code-head"><span class="name">id</span><button class="copy" type="button">copy</button></div>
+<pre><code><span class="fn">id</span> = <span class="k">SHA256</span>(repo + file + kind + name)   <span class="c">// hex-32</span></code></pre>
+    </div>
+  </section>
+
+  <section>
+    <h2 id="indexer">The indexer</h2>
+    <p>The indexer turns source into the graph. It parses with tree-sitter across five languages, resolves build manifests, and generates embeddings — all locally.</p>
+    <div class="flow">
+      <span class="stage">tree-sitter parse</span><span class="arr">→</span>
+      <span class="stage">entities + relations</span><span class="arr">→</span>
+      <span class="stage">manifest resolution</span><span class="arr">→</span>
+      <span class="stage">embeddings</span>
+    </div>
+    <ul>
+      <li><strong>Languages</strong> — TypeScript, Python, Go, Java, Scala.</li>
+      <li><strong>Output</strong> — a typed entity/relation graph, written to the LMDB graph layer.</li>
+      <li><strong>Embeddings</strong> — computed locally (Ollama), stored in Lance for ANN search.</li>
+    </ul>
+    <div class="note">Upserting an entity whose <code>repo</code> path isn't registered fails with <code>UnregisteredRepoError</code> — the strict repo-registry contract is enforced right at the storage boundary (<code>src/db/entities.ts</code>, <code>src/db/repos.ts</code>).</div>
+  </section>
+
+  <section>
+    <h2 id="layout">Directory layout</h2>
+    <p>The <code>src/</code> tree, by responsibility:</p>
+<div class="ascii" aria-label="source tree">
+src/
+  <b>shared/</b>          Core types, paths, logger (types.ts · paths.ts · logger.ts)
+  <b>indexer/</b>         Tree-sitter parsing + graph construction
+  <b>db/</b>              Storage (LMDB graph + Lance vectors + DuckDB pool)
+    <i>graph/</i>         LMDB-backed graph (store · keys · codec · edges · traversal)
+    <i>lance/</i>         LanceDB tables (entity-vec · session-vec · turn-vec · …)
+  <b>daemon/</b>          Background daemon process
+    <i>index.ts</i>       Entry point + IPC handler registry
+    <i>server.ts</i>      Unix-socket JSON-RPC server
+    <i>tools/</i>         Tool registry + executor + ~110 built-in wrappers
+  <b>config/</b>          On-disk config store + templates + feedback
+  <b>agent/</b>
+    <i>providers/</i>     ollama.ts (local) · cli-provider.ts (claude + codex)
+  <b>analyze/</b>         Analyze framework (recipes · decomposer · synthesizer)
+  <b>workflow/</b>        define · design.epic · design.story · tracker · gates
+  <b>mcp/</b>             MCP servers (insrc_analyze_step · insrc_workflow_step)
+  <b>cli/</b>             insrc interactive TUI (ink): panes/ services/ hooks/ ui/
+  <b>bin/</b>             Executable entrypoints
+  <b>prompts/</b>         Shaper / analyze / workflow prompt templates
+  <b>assets/</b>          Non-TS runtime resources (shipped by copy-assets.mjs)
+</div>
+    <p>Two binaries fall out of the build: <code>out/daemon/index.js</code> (the daemon the IDE spawns) and <code>out/bin/insrc-mcp.js</code> (the MCP server you register with <code>claude</code> / <code>codex</code>).</p>
+  </section>
+
+  <section>
+    <h2 id="rules">Architectural rules</h2>
+    <p>Seven invariants hold the design together. They are non-negotiable — every subsystem is built to respect them.</p>
+    <div class="panel">
+      <span class="panel-title">invariants</span>
+      <ol class="mt0">
+        <li><strong>Daemon owns all DB access.</strong> The CLI, MCP, and the IDE workbench communicate via IPC only — none of them opens LMDB or LanceDB directly.</li>
+        <li><strong>Local-first.</strong> Ollama is always available; embeddings are local-only. Cloud LLM access goes through <code>CliProvider</code> (the <code>claude</code> + <code>codex</code> CLI subprocesses) — no direct REST.</li>
+        <li><strong>Dependency-closure scoping.</strong> Graph searches span only the transitive <code>DEPENDS_ON</code> closure of the active repo.</li>
+        <li><strong>Graph + vector split.</strong> Structural queries use the LMDB graph layer's typed JS API; semantic queries use LanceDB ANN. No Cypher / GQL / SQL is exposed for graph traversal.</li>
+        <li><strong>No raw file dumps.</strong> Context is always structured entity summaries + relations from the graph — never a blind file paste.</li>
+        <li><strong>Repo registry is the contract.</strong> Registry membership is established exclusively via the <code>repo.add</code> IPC; an <code>Entity</code> whose <code>repo</code> path isn't registered fails the upsert with <code>UnregisteredRepoError</code>.</li>
+        <li><strong>Structural reference goes trailing.</strong> Schemas, catalogs, and manifests belong at the tail of a prompt, not the middle — recency-weighted attention hallucinates against mid-prompt structural info.</li>
+      </ol>
+    </div>
+  </section>
+
+  <section>
+    <h2 id="next">Go deeper</h2>
+    <div class="grid">
+      <a class="card" href="workflow.html"><div class="glyph">⟿</div><h4>Workflow</h4><p>The define → design.epic → design.story → tracker chain, with approval gates and a GitHub tracker.</p><span class="more">read</span></a>
+      <a class="card" href="analyze.html"><div class="glyph">◎</div><h4>Analyze</h4><p>The exploration recipes and the verified 7-layer, citation-grounded context bundle.</p><span class="more">read</span></a>
+      <a class="card" href="tools.html"><div class="glyph">⚒</div><h4>Tools</h4><p>The ~110 built-in capability wrappers the daemon exposes to the executor.</p><span class="more">read</span></a>
+    </div>
+  </section>
+
+</main></div>
+
+<footer class="foot"><div class="foot-inner">
+  <span class="seg"><span class="accent">insrc</span> · code-knowledge daemon</span>
+  <span class="seg">TypeScript · ESM · Node 20+</span>
+  <span class="seg">LMDB + Lance + DuckDB</span>
+  <span class="seg"><a href="https://github.com/insors-ai/insrc">github</a></span>
+  <span class="seg" style="margin-left:auto">local-first · no keys · no REST</span>
+</div></footer>
+
+<script src="js/tui.js"></script>
+</body>
+</html>

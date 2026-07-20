@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>insrc — local-first code-knowledge daemon</title>
+<meta name="description" content="insrc is a local-first code-knowledge daemon: tree-sitter indexing, an LMDB graph + Lance vectors, ~110 built-in tools, and an autonomous define→design→plan→build workflow — all driven through your local claude/codex CLI sessions.">
+<link rel="preconnect" href="">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13' font-family='monospace' fill='%234ade80'>▌</text></svg>">
+<link rel="stylesheet" href="css/tui.css">
+</head>
+<body>
+<a class="skip" href="#main">skip to content</a>
+
+<nav class="nav"><div class="nav-inner">
+  <span class="brand">insrc<span class="sig">.daemon</span></span>
+  <div class="nav-links">
+    <a href="index.html">home</a>
+    <a href="getting-started.html">getting started</a>
+    <a href="architecture.html">architecture</a>
+    <a href="workflow.html">workflow</a>
+    <a href="analyze.html">analyze</a>
+    <a href="tools.html">tools</a>
+    <a href="cli.html">cli</a>
+  </div>
+  <button class="theme-btn" type="button" aria-label="toggle theme">◐ light</button>
+</div></nav>
+
+<div class="wrap"><main id="main">
+
+  <!-- hero -->
+  <header class="hero">
+<pre class="banner" aria-label="insrc">
+ _
+(_)_ __  ___ _ __ ___
+| | '_ \/ __| '__/ __|
+| | | | \__ \ | | (__
+|_|_| |_|___/_|  \___|
+</pre>
+    <div class="tagline">local-first code-knowledge daemon<span class="cursor"></span></div>
+    <p class="subtag">insrc parses your repos into a graph + vector store, answers questions with
+      citation-grounded context, and drives an autonomous <code>define → design → plan → build</code>
+      workflow — all through your local <code>claude</code> / <code>codex</code> CLI sessions. No API keys, no data leaves your box.</p>
+    <div class="cta">
+      <a class="btn primary" href="getting-started.html">get started</a>
+      <a class="btn" href="architecture.html">how it works</a>
+      <a class="btn" href="https://github.com/insors-ai/insrc">source</a>
+    </div>
+  </header>
+
+  <!-- live session mock -->
+  <div class="term">
+    <div class="term-bar">
+      <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+      <span class="term-title">insrc — analyze</span>
+    </div>
+    <div class="term-body">
+<pre style="margin:0"><code><span class="p">$</span> <span class="fn">insrc</span> analyze <span class="s">"how does the workflow tracker push issues to GitHub?"</span>
+<span class="c">◆ decompose → 3 explorations · module.profile · symbol.locate · doc.constraint</span>
+<span class="c">◆ grounding on the dependency-closure graph … 41 entities, 7 relations</span>
+<span class="c">◆ synthesizing (citation-grounded) …</span>
+
+<span class="o">The tracker chain lives in </span><span class="fn">src/workflow/tracker-auto.ts</span><span class="o">. On approval,</span>
+<span class="o">autoPushEpicOnHld / autoPushStoryOnLld / autoPushTasksOnPlan create typed</span>
+<span class="o">issues (Epic▸Story▸Task) as native sub-issues, committing the artifacts</span>
+<span class="o">and linking the blobs back from each issue. [tracker-auto.ts:112]</span>
+
+<span class="p">$</span> <span class="cursor"></span></code></pre>
+    </div>
+  </div>
+
+  <!-- features -->
+  <section>
+    <h2 id="features">what's inside</h2>
+    <div class="grid">
+      <a class="card" href="architecture.html">
+        <div class="glyph">▚</div><h4>Indexer</h4>
+        <p>tree-sitter parsing for TS, Python, Go, Java &amp; Scala into a typed entity/relation graph with deterministic IDs.</p>
+        <span class="more">architecture</span>
+      </a>
+      <a class="card" href="architecture.html#daemon">
+        <div class="glyph">⬡</div><h4>Daemon &amp; IPC</h4>
+        <p>a background process that owns every DB, exposed over a JSON-RPC Unix socket. CLI, MCP &amp; IDE all talk to it.</p>
+        <span class="more">architecture</span>
+      </a>
+      <a class="card" href="architecture.html#storage">
+        <div class="glyph">▦</div><h4>Storage</h4>
+        <p>LMDB-backed graph layer + LanceDB vectors for ANN search + DuckDB for the data-driver query tools.</p>
+        <span class="more">architecture</span>
+      </a>
+      <a class="card" href="tools.html">
+        <div class="glyph">⚒</div><h4>~110 built-in tools</h4>
+        <p>file · git · shell · http · web · gh · k8s · pkg · ssh · test · graph · db · data · code · cloud capability wrappers.</p>
+        <span class="more">tools</span>
+      </a>
+      <a class="card" href="tools.html#providers">
+        <div class="glyph">◈</div><h4>Providers</h4>
+        <p>Ollama for local LLM + embeddings, and CliProvider wrapping the <code>claude</code> + <code>codex</code> CLIs. No REST.</p>
+        <span class="more">providers</span>
+      </a>
+      <a class="card" href="analyze.html">
+        <div class="glyph">◎</div><h4>Analyze framework</h4>
+        <p>10 exploration recipes + a context builder that returns a verified 7-layer, citation-grounded bundle.</p>
+        <span class="more">analyze</span>
+      </a>
+      <a class="card" href="workflow.html">
+        <div class="glyph">⟿</div><h4>Workflow framework</h4>
+        <p>define → design.epic → design.story → plan → build, with approval gates, open-question resolution &amp; a GitHub tracker.</p>
+        <span class="more">workflow</span>
+      </a>
+      <a class="card" href="cli.html">
+        <div class="glyph">▮</div><h4>Interactive CLI</h4>
+        <p>a full-screen ink (React) TUI with Daemon / Repos / Workflows / Setup panes.</p>
+        <span class="more">cli</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- architecture at a glance -->
+  <section>
+    <h2 id="glance">at a glance</h2>
+    <p>Everything routes through one daemon. Clients never open a database directly — the daemon is the single owner of the graph, the vectors and the tool registry.</p>
+<div class="ascii" aria-label="architecture diagram">
+   <i>claude / codex CLI</i>      <i>insrc TUI</i>        <i>VSCode fork</i>
+          │                    │                   │
+          └──────────┬─────────┴─────────┬─────────┘
+                     ▼                   ▼
+              <b>MCP servers</b>        <u>JSON-RPC over</u>
+           insrc_analyze_step     <u>~/.insrc/daemon.sock</u>
+           insrc_workflow_step            │
+                     └──────────┬─────────┘
+                                ▼
+                   ┌────────────────────────┐
+                   │        <b>DAEMON</b>          │  owns all DB access
+                   │  registry · queue · fs │
+                   │  watcher · tool exec   │
+                   └───────────┬────────────┘
+              ┌────────────────┼────────────────┐
+              ▼                ▼                 ▼
+        <b>LMDB graph</b>       <b>Lance vectors</b>       <b>DuckDB</b>
+      entities/edges     ANN / embeddings   data-driver tools
+</div>
+    <a class="btn" href="architecture.html">read the architecture</a>
+  </section>
+
+  <!-- quick start -->
+  <section>
+    <h2 id="quickstart">60-second start</h2>
+    <div class="code">
+      <div class="code-head"><span class="name">bash</span><button class="copy" type="button">copy</button></div>
+<pre><code><span class="c"># build the daemon</span>
+<span class="p">$</span> npm install <span class="o">&amp;&amp;</span> npm run build
+
+<span class="c"># launch the interactive TUI — add a repo from the Repos pane (press 'a')</span>
+<span class="p">$</span> npx insrc
+
+<span class="c"># ask a grounded question about the codebase</span>
+<span class="p">$</span> insrc analyze <span class="s">"where is the repo registry contract enforced?"</span></code></pre>
+    </div>
+    <a class="btn primary" href="getting-started.html">full getting-started guide</a>
+  </section>
+
+  <!-- principles -->
+  <section>
+    <h2 id="principles">principles</h2>
+    <div class="panel">
+      <span class="panel-title">non-negotiable</span>
+      <ul>
+        <li><strong>Local-first.</strong> Embeddings are computed locally by Ollama; the graph + vectors live on your disk under <code>~/.insrc/</code>.</li>
+        <li><strong>No direct cloud REST.</strong> Cloud LLM access happens only through the installed <code>claude</code> and <code>codex</code> CLI binaries — auth &amp; quota stay with your CLI OAuth sessions.</li>
+        <li><strong>Accuracy is primary; cost is the least priority.</strong> Given an accurate-but-expensive path and a cheap-but-lossy one, insrc chooses accuracy.</li>
+        <li><strong>No raw file dumps.</strong> Context is always structured entity summaries + relations from the graph, never a blind file paste.</li>
+      </ul>
+    </div>
+  </section>
+
+</main></div>
+
+<footer class="foot"><div class="foot-inner">
+  <span class="seg"><span class="accent">insrc</span> · code-knowledge daemon</span>
+  <span class="seg">TypeScript · ESM · Node 20+</span>
+  <span class="seg">LMDB + Lance + DuckDB</span>
+  <span class="seg"><a href="https://github.com/insors-ai/insrc">github</a></span>
+  <span class="seg" style="margin-left:auto">local-first · no keys · no REST</span>
+</div>
+<div class="foot-inner keys" style="padding-top:0">
+  <span><kbd>g</kbd> getting started</span><span><kbd>w</kbd> workflow</span><span><kbd>t</kbd> theme</span>
+</div>
+</footer>
+
+<script src="js/tui.js"></script>
+</body>
+</html>

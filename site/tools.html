@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>tools &amp; providers — insrc</title>
+<meta name="description" content="The insrc tool registry: ~110 built-in capability wrappers the daemon executes on behalf of clients, plus the two LLMProvider implementations — local OllamaProvider and the claude/codex CliProvider.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13' font-family='monospace' fill='%234ade80'>▌</text></svg>">
+<link rel="stylesheet" href="css/tui.css">
+</head>
+<body>
+<a class="skip" href="#main">skip to content</a>
+
+<nav class="nav"><div class="nav-inner">
+  <span class="brand">insrc<span class="sig">.daemon</span></span>
+  <div class="nav-links">
+    <a href="index.html">home</a>
+    <a href="getting-started.html">getting started</a>
+    <a href="architecture.html">architecture</a>
+    <a href="workflow.html">workflow</a>
+    <a href="analyze.html">analyze</a>
+    <a href="tools.html">tools</a>
+    <a href="cli.html">cli</a>
+  </div>
+  <button class="theme-btn" type="button" aria-label="toggle theme">◐ light</button>
+</div></nav>
+
+<div class="wrap"><main id="main">
+
+  <h1>Tools &amp; providers</h1>
+  <p class="lead">Two capability surfaces sit under the daemon: a registry of ~110 built-in tool wrappers it executes on behalf of any client, and the <code>LLMProvider</code> abstraction that routes completions to a local model or to the <code>claude</code> / <code>codex</code> CLIs. Everything runs through the daemon — clients never open a socket to the cloud themselves.</p>
+
+  <h2 id="tools">The tool registry</h2>
+  <p>Every executable capability — read a file, run a shell command, open a PR, tail pod logs, sample a Parquet file — is registered exactly once as a <code>Tool</code> and exposed through a single registry + executor. The pieces live under <code>src/daemon/tools/</code>:</p>
+  <ul>
+    <li><code>registry.ts</code> — the unified registry every tool registers into.</li>
+    <li><code>executor.ts</code> — validates input against the tool's JSON schema, fires the approval gate when required, then runs it.</li>
+    <li><code>builtins/</code> — the ~110 built-in wrappers, one domain per subdirectory.</li>
+  </ul>
+  <p>A single registration serves two callers: the LLM (via the tool-call protocol) and daemon controllers (via <code>kind: 'tool'</code> tasks). Same schema, same execution, same approval flow.</p>
+  <div class="note">The <strong>daemon</strong> is the only process that executes tools. The CLI, the MCP servers, and the IDE workbench request execution over the Unix-socket JSON-RPC — they never run a tool in-process. This keeps DB access, approval gating, and streaming progress in one place. See <a href="architecture.html">architecture</a>.</div>
+
+  <div class="panel"><span class="panel-title">approval gate</span>
+    <p class="mt0">Read-only tools (<code>git_status</code>, <code>file_read</code>, <code>search_grep</code>) run ungated. Mutating tools fire an Approve / Skip / Edit gate with a diff or command preview before <code>execute()</code>; destructive actions (force-push, <code>k8s_delete</code>, <code>git_reset --hard</code>) add an extra confirm. Some tools are risk-tiered — low-risk shell commands auto-run in auto-accept mode, medium and high always gate.</p>
+  </div>
+
+  <h2 id="categories">Categories</h2>
+  <p>Tool IDs follow a <code>domain_verb_noun</code> convention (a handful of deeper namespaces use <code>domain:sub:action</code>). One row per capability domain, with real IDs drawn from <code>src/daemon/tools/builtins/</code>:</p>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Category</th><th>What it does</th><th>Example tools</th></tr></thead>
+    <tbody>
+      <tr><td><strong>file</strong></td><td>Read, write, edit, move, copy, stat files on disk.</td><td><code>file_read</code> · <code>file_write</code> · <code>file_edit</code></td></tr>
+      <tr><td><strong>git</strong></td><td>Local git — status/log/diff read, plus staged commits, branches, push/pull, rebase.</td><td><code>git_status</code> · <code>git_diff</code> · <code>git_commit</code></td></tr>
+      <tr><td><strong>shell</strong></td><td>Run commands: one-shot, detached (streamed), or a scripted pipeline; set cwd.</td><td><code>shell_exec</code> · <code>shell_exec-detached</code></td></tr>
+      <tr><td><strong>http</strong></td><td>Generic HTTP client — requests, file up/download, websocket.</td><td><code>http_request</code> · <code>http_download</code> · <code>http_websocket</code></td></tr>
+      <tr><td><strong>web</strong></td><td>Web search and page fetch for research flows.</td><td><code>web_search</code> · <code>web_fetch</code></td></tr>
+      <tr><td><strong>gh</strong></td><td>GitHub via the <code>gh</code> CLI + REST/GraphQL — issues, PRs, runs, releases, repos, projects.</td><td><code>gh_pr_create</code> · <code>gh_issue_view</code> · <code>gh_run_list</code></td></tr>
+      <tr><td><strong>k8s</strong></td><td>Wraps <code>kubectl</code> — get/describe/logs plus gated apply/delete/exec.</td><td><code>k8s_get</code> · <code>k8s_logs</code> · <code>k8s_apply</code></td></tr>
+      <tr><td><strong>pkg</strong></td><td>Package managers — install/add/remove, audit, outdated (npm/pip/cargo/go auto-detect).</td><td><code>pkg_install</code> · <code>pkg_audit</code> · <code>pkg_outdated</code></td></tr>
+      <tr><td><strong>ssh</strong></td><td>Run commands on remote hosts and copy files, using the system <code>ssh</code> client.</td><td><code>ssh_exec</code> · <code>scp:upload</code> · <code>scp:download</code></td></tr>
+      <tr><td><strong>test</strong></td><td>Run the detected test framework and parse failures; coverage and watch modes.</td><td><code>test_run</code> · <code>test_coverage</code> · <code>test_watch</code></td></tr>
+      <tr><td><strong>notify</strong></td><td>Outbound messaging — always gated with the rendered message + destination.</td><td><code>notify_slack</code> · <code>notify_email</code> · <code>notify_teams</code></td></tr>
+      <tr><td><strong>search</strong></td><td>Local filesystem search — glob, content grep, directory listing, recently-modified.</td><td><code>search_grep</code> · <code>search_glob</code> · <code>search_recent</code></td></tr>
+      <tr><td><strong>graph</strong></td><td>Query the indexed code-knowledge graph — semantic ANN, entity lookup, structural query.</td><td><code>graph_search</code> · <code>graph_entity</code> · <code>graph_query</code></td></tr>
+      <tr><td><strong>db</strong></td><td>Data-driver introspection over SQL engines, on-disk files (DuckDB), and the KV store.</td><td><code>db_sql_sample</code> · <code>db_file_describe</code> · <code>db_kv_scan</code></td></tr>
+      <tr><td><strong>data</strong></td><td>Higher-level data analysis — lineage tracing and schema-drift detection.</td><td><code>data_lineage</code> · <code>data_schema-drift</code></td></tr>
+      <tr><td><strong>code</strong></td><td>Structural code intel — locate a class, find its references/fields, walk migrations, scan ORMs.</td><td><code>code_class_locate</code> · <code>code_class_references</code> · <code>code_orm_scan</code></td></tr>
+      <tr><td><strong>cloud</strong></td><td>AWS / GCP / Azure CLI wrappers — reads auto-run, mutations gate. Registers only when the CLI is on PATH.</td><td><code>cloud_aws_s3_ls</code> · <code>cloud_gcp_run_deploy</code> · <code>cloud_az_vm_list</code></td></tr>
+    </tbody>
+  </table></div>
+  <p>A related <strong>docs</strong> family (<code>docs_retrieve</code>, <code>docs_project_context</code>, <code>docs_summary_get</code>) surfaces indexed documentation to the same callers.</p>
+  <div class="note">Categories are gated on capability: cloud, k8s and similar CLI wrappers register only when their binary is detected on PATH, so the LLM's tool list stays uncluttered on machines that don't have them.</div>
+
+  <h2 id="providers">LLM providers</h2>
+  <p>All model interaction goes through one interface, <code>LLMProvider</code>, defined in <code>src/shared/types.ts</code>. Application code never imports an SDK directly — it holds an <code>LLMProvider</code> and calls its methods:</p>
+  <ul>
+    <li><code>complete(messages, opts)</code> — one completion.</li>
+    <li><code>stream(messages, opts)</code> — token stream (async iterable).</li>
+    <li><code>embed(text)</code> — embedding vector (empty array if unsupported).</li>
+    <li><code>completeStructured&lt;T&gt;(...)</code> — schema-enforced JSON (see below).</li>
+    <li><code>supportsTools</code> — whether the provider can drive tool-calls.</li>
+  </ul>
+  <p>Two implementations back it:</p>
+  <div class="grid">
+    <a class="card" href="#providers"><div class="glyph">◍</div><h4>OllamaProvider <span class="badge ok">local</span></h4><p><code>src/agent/providers/ollama.ts</code>. Local LLM (qwen3-coder) and embeddings (qwen3-embedding). Always available — embeddings are local-only, so Ollama is a hard prerequisite.</p><span class="more">local-first</span></a>
+    <a class="card" href="#providers"><div class="glyph">⌘</div><h4>CliProvider <span class="badge man">CLI</span></h4><p><code>src/agent/providers/cli-provider.ts</code>. A subprocess wrapper around the installed <code>claude</code> and <code>codex</code> binaries. Structured-output aware; cloud auth + quota are delegated to the CLIs' OAuth sessions.</p><span class="more">no keys</span></a>
+  </div>
+  <div class="term" style="margin:16px 0">
+    <div class="term-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="term-title">CliProvider — how cloud calls happen</span></div>
+    <div class="term-body">
+<pre style="margin:0"><code><span class="c"># claude: structured output via native --json-schema</span>
+<span class="p">$</span> claude --print --output-format json --json-schema <span class="s">'&lt;inline&gt;'</span>
+<span class="c"># codex: structured output via --output-schema</span>
+<span class="p">$</span> codex exec --output-schema <span class="fn">&lt;tmpfile&gt;</span> --json
+<span class="c"># auth + quota belong to the CLI's own OAuth session — no keys on our side</span></code></pre>
+    </div>
+  </div>
+  <div class="warn">Cloud LLM access happens <strong>only</strong> through the locally-installed <code>claude</code> and <code>codex</code> CLI binaries, wrapped by <code>CliProvider</code>. There are <em>no API keys stored on our side and no direct REST calls</em> to Anthropic / OpenAI / Gemini / Mistral from the daemon process. Direct REST providers must never be reintroduced — auth and quota stay with the user's CLI OAuth sessions.</div>
+
+  <h2 id="structured">Structured output</h2>
+  <p><code>src/agent/providers/structured-output.ts</code> gives providers a schema-validated JSON path. It compiles the caller's JSON Schema with <strong>ajv</strong> (draft 2020-12, singleton compiled-validator cache) and validates every response. On a validation mismatch the helper re-issues the completion with the errors appended to the conversation, retrying up to <code>maxAttempts</code> (default 3) so the model can self-correct.</p>
+  <p>The provider's wire layer enforces the schema natively where it can — Ollama via <code>format</code>, the CLIs via <code>--json-schema</code> / <code>--output-schema</code> — and ajv re-validates as a defensive backstop. A provider without a native structured-output API sets its capability flag off and throws a clear "not supported" error, so callers gate on the flag at config time.</p>
+
+  <div class="tip">Never <code>Promise.all</code> anything that reaches an LLM provider — cloud (CliProvider) or local Ollama <code>embed</code> / <code>complete</code>. Always drive it with a serial <code>for…of</code> loop and sequential <code>await</code>s. Parallel fan-out to a provider blows quota, races the local model, and reorders streamed output.</div>
+
+  <h2 id="next">Where next</h2>
+  <div class="grid">
+    <a class="card" href="analyze.html"><div class="glyph">◎</div><h4>Analyze</h4><p>Graph-grounded exploration recipes and the 7-layer context bundle — the read-only side of the daemon.</p><span class="more">read</span></a>
+    <a class="card" href="workflow.html"><div class="glyph">⟿</div><h4>Workflow</h4><p>define → design → plan → build, with tools driving the tracker and provider stamping the model.</p><span class="more">read</span></a>
+    <a class="card" href="architecture.html"><div class="glyph">⬡</div><h4>Architecture</h4><p>How the daemon owns tool execution, DB access and the IPC contract clients depend on.</p><span class="more">read</span></a>
+  </div>
+
+</main></div>
+
+<footer class="foot"><div class="foot-inner">
+  <span class="seg"><span class="accent">insrc</span> · code-knowledge daemon</span>
+  <span class="seg">TypeScript · ESM · Node 20+</span>
+  <span class="seg">LMDB + Lance + DuckDB</span>
+  <span class="seg"><a href="https://github.com/insors-ai/insrc">github</a></span>
+  <span class="seg" style="margin-left:auto">local-first · no keys · no REST</span>
+</div></footer>
+
+<script src="js/tui.js"></script>
+</body>
+</html>

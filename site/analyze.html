@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>analyze — insrc</title>
+<meta name="description" content="The insrc analyze tools: two MCP entry points (insrc_analyze one-shot, insrc_analyze_step multi-turn) over the same deterministic graph exploration recipes and citation-grounded 7-layer context bundle.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13' font-family='monospace' fill='%234ade80'>▌</text></svg>">
+<link rel="stylesheet" href="css/tui.css">
+</head>
+<body>
+<a class="skip" href="#main">skip to content</a>
+
+<nav class="nav"><div class="nav-inner">
+  <span class="brand">insrc<span class="sig">.daemon</span></span>
+  <div class="nav-links">
+    <a href="index.html">home</a>
+    <a href="getting-started.html">getting started</a>
+    <a href="architecture.html">architecture</a>
+    <a href="workflow.html">workflow</a>
+    <a href="analyze.html">analyze</a>
+    <a href="tools.html">tools</a>
+    <a href="cli.html">cli</a>
+  </div>
+  <button class="theme-btn" type="button" aria-label="toggle theme">◐ light</button>
+</div></nav>
+
+<div class="wrap"><main id="main">
+
+  <h1>Analyze</h1>
+  <p class="lead">For any question about a codebase's structure, conventions, capabilities, or adherence to its own docs, ask the analyze tools first. Every claim is grounded in a real graph exploration — file paths are drawn from the index, not invented.</p>
+
+  <p>Analyze is exposed as two MCP tools that share the same engine. Both run the same deterministic graph queries plus the same citation-grounded synthesis, and both return the same verified <strong>7-layer context bundle</strong>. They differ only in <em>who</em> drives the inner reasoning.</p>
+
+  <div class="grid">
+    <div class="card">
+      <div class="glyph">◎</div>
+      <h4><code>insrc_analyze</code></h4>
+      <p>One-shot. A single tool call — the server runs the whole pipeline end to end. Inner narrow-LLM calls route to the daemon's configured <code>shaperProvider</code> (Ollama by default), so it's slower and bills separately.</p>
+    </div>
+    <div class="card">
+      <div class="glyph">⟳</div>
+      <h4><code>insrc_analyze_step</code></h4>
+      <p>Multi-turn. The server hands you the decomposer / synthesizer / narrow prompts + schemas, and your client emits the JSON as its next reasoning step. Stays in-session — better accuracy, no subprocess spawn, no separate billing.</p>
+    </div>
+  </div>
+
+  <div class="tip">Prefer <code>insrc_analyze_step</code> by default when you are already inside an MCP client (claude / codex). Every reasoning turn stays in your session, so the answer is more accurate and there is no second billing path. Reach for the one-shot <code>insrc_analyze</code> only when you specifically want the Ollama-backed path or a single fire-and-forget call.</div>
+
+  <h2 id="why">Why it beats grep + read</h2>
+  <p>Manual <code>Read</code> / <code>Grep</code> / <code>Glob</code> gives you raw text and a mental model you assemble yourself. Analyze gives you a structured, verified bundle assembled from the graph.</p>
+
+  <div class="panel">
+    <span class="panel-title">grounded, not guessed</span>
+    <ul>
+      <li><strong>Every claim is grounded in a real exploration output</strong> — a module profile, a symbol locate, a class hierarchy, a doc-constraint enumeration. Bundle citations must trace back to a field in some exploration's structured payload.</li>
+      <li><strong>File paths are drawn from the indexed graph</strong> — there are no hallucinated paths, because the runners only report what the tree-sitter index actually contains.</li>
+      <li><strong>Contradictions in the docs are preserved verbatim</strong> — when two documents disagree, analyze surfaces both rather than silently auto-resolving to one. You decide.</li>
+    </ul>
+  </div>
+
+  <h2 id="recipes">The exploration recipes</h2>
+  <p>A run is a <em>plan</em> of small, typed explorations. The decomposer picks which recipes to fire for the question's answer-type; each runner returns a structured payload (never free-form prose); the synthesizer composes those into the bundle. These are the recipe types defined in <code>src/analyze/explore/</code>:</p>
+
+  <h3 id="recipes-structural">Structural resolvers · deterministic</h3>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Recipe</th><th>What it resolves</th></tr></thead>
+    <tbody>
+      <tr><td><code>concept.resolve</code></td><td>Resolve a natural-language concept to the concrete graph entities that implement it.</td></tr>
+      <tr><td><code>module.profile</code></td><td>Profile a module — entity counts, the sub-tree, and its key exported symbols.</td></tr>
+      <tr><td><code>symbol.locate</code></td><td>Locate a named symbol and report its definition site.</td></tr>
+      <tr><td><code>class.hierarchy</code></td><td>Build the extends / implements hierarchy around a type.</td></tr>
+      <tr><td><code>import.graph</code></td><td>Summarise the import graph around a module — what it pulls in and who pulls it.</td></tr>
+      <tr><td><code>test.locate</code></td><td>Locate the tests that cover a given symbol or module.</td></tr>
+      <tr><td><code>usage.example</code></td><td>Find real call-sites that exemplify how a symbol is used.</td></tr>
+      <tr><td><code>capability.reuse-check</code></td><td>Answer "does the codebase already implement Y?" with candidate matches.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 id="recipes-content">Content search · deterministic</h3>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Recipe</th><th>What it resolves</th></tr></thead>
+    <tbody>
+      <tr><td><code>search.text</code></td><td>Grounded text / content search across indexed files.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 id="recipes-doc">Doc-side · mostly deterministic, some narrow LLM</h3>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Recipe</th><th>What it resolves</th></tr></thead>
+    <tbody>
+      <tr><td><code>doc.mention</code></td><td>Find the doc passages that mention a term.</td></tr>
+      <tr><td><code>doc.decision.trace</code></td><td>Trace a design decision through the documentation.</td></tr>
+      <tr><td><code>doc.constraint.enumerate</code></td><td>Enumerate the documented constraints / rules relevant to a topic.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 id="recipes-convention">Convention detection · deterministic</h3>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Recipe</th><th>What it resolves</th></tr></thead>
+    <tbody>
+      <tr><td><code>convention.detect</code></td><td>Detect naming schemes, base-class idioms, and test-layout conventions.</td></tr>
+      <tr><td><code>config.trace</code></td><td>Trace a config key through its load and use sites.</td></tr>
+      <tr><td><code>data-model.trace</code></td><td>Trace a data model's fields and relations.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 id="recipes-data">Data-driver · deterministic, wraps the registered DriverPool</h3>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Recipe</th><th>What it resolves</th></tr></thead>
+    <tbody>
+      <tr><td><code>db.connections.list</code></td><td>List the registered data-driver connections.</td></tr>
+      <tr><td><code>db.tables.list</code></td><td>List the tables for a connection.</td></tr>
+      <tr><td><code>db.table.describe</code></td><td>Describe a table's columns.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 id="recipes-infra">Infra + fallback</h3>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Recipe</th><th>What it resolves</th></tr></thead>
+    <tbody>
+      <tr><td><code>manifests.locate</code></td><td>Locate infra manifests via a graph-backed manifest scan.</td></tr>
+      <tr><td><code>freeform.probe</code></td><td>Fallback probe when no structural recipe fits the question.</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="note">That is 20 recipe types in <code>src/analyze/explore/</code>. The decomposer only fires the subset relevant to the question's answer-type — a "map this module" query and an "does X follow rule Y from the docs" query walk very different recipe sets.</div>
+
+  <h3 id="bundle">The 7-layer context bundle</h3>
+  <p>Whatever recipes fire, the synthesizer folds their outputs into one bundle with seven named layers. Each layer field is required on the wire, so the model can't silently drop one; an empty layer is reported explicitly.</p>
+  <div class="ascii"><b>system</b>     project rules + the analyze contract
+<b>focus</b>      what the question is centred on
+<b>summary</b>    the grounded prose answer
+<b>structure</b>  entities, trees, hierarchies from the graph
+<b>surface</b>    key symbols / signatures / call-sites
+<b>artefacts</b>  docs, constraints, decisions, conventions
+<b>upstream</b>   dependencies + transitive DEPENDS_ON context</div>
+
+  <h2 id="loop">The step loop</h2>
+  <p>With <code>insrc_analyze_step</code> the pipeline runs as a turn-by-turn handshake. Follow the <code>next</code> field in each response verbatim; <code>prompt</code> + <code>schema</code> are the authoritative instructions for the JSON you emit next. Preserve <code>state</code> verbatim between calls — it is a short opaque token tied to a server-side run.</p>
+
+  <div class="flow">
+    <span class="stage">start</span><span class="arr">→</span>
+    <span class="stage">emit_plan</span><span class="arr">→</span>
+    <span class="stage">plan</span><span class="arr">→</span>
+    <span class="stage">emit_narrow ↻</span><span class="arr">→</span>
+    <span class="stage">emit_bundle</span><span class="arr">→</span>
+    <span class="stage">done</span>
+  </div>
+
+  <ol>
+    <li><strong>start</strong> — open a run with a focus. Server replies with the decomposer prompt + plan schema.</li>
+    <li><strong>plan</strong> — you emit the exploration plan JSON. Server either loops into narrow steps or jumps straight to the bundle.</li>
+    <li><strong>narrow ↻</strong> — for recipes that need a narrow LLM, emit the requested JSON per <code>explorationId</code>; repeat until every exploration is satisfied.</li>
+    <li><strong>bundle</strong> — you emit the 7-layer bundle JSON. Server replies <code>done</code> with rendered markdown.</li>
+  </ol>
+
+  <p>The call that opens a run:</p>
+  <div class="code">
+    <div class="code-head"><span class="name">json</span><button class="copy" type="button">copy</button></div>
+<pre><code><span class="c">// your tool call</span>
+<span class="fn">insrc_analyze_step</span>({ <span class="k">"phase"</span>: <span class="s">"start"</span>, <span class="k">"focus"</span>: <span class="s">"list the storage layers and where each is initialised"</span> })</code></pre>
+  </div>
+
+  <p>The response tells you exactly what to emit next:</p>
+  <div class="code">
+    <div class="code-head"><span class="name">json</span><button class="copy" type="button">copy</button></div>
+<pre><code>{
+  <span class="k">"next"</span>:   <span class="s">"emit_plan"</span>,
+  <span class="k">"prompt"</span>: <span class="s">"&lt;decomposer prompt — how to choose recipes&gt;"</span>,
+  <span class="k">"schema"</span>: { <span class="c">/* JSON Schema the plan must match */</span> },
+  <span class="k">"state"</span>:  <span class="s">"&lt;opaque token — pass back verbatim&gt;"</span>
+}</code></pre>
+  </div>
+
+  <div class="term" style="margin:16px 0">
+    <div class="term-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="term-title">insrc_analyze_step — one run</span></div>
+    <div class="term-body">
+<pre style="margin:0"><code><span class="p">→</span> start   <span class="c">focus: "how does the daemon own DB access?"</span>
+<span class="p">←</span> emit_plan   <span class="c">decomposer prompt + plan schema</span>
+<span class="p">→</span> plan    <span class="fn">{ answerType: "structural-map", explorations: [ … ] }</span>
+<span class="p">←</span> emit_narrow   <span class="c">explorationId=e3 · narrow prompt + schema</span>
+<span class="p">→</span> narrow  <span class="fn">{ … }</span>   <span class="c">↻ until every exploration is satisfied</span>
+<span class="p">←</span> emit_bundle   <span class="c">synthesizer prompt + 7-layer schema</span>
+<span class="p">→</span> bundle  <span class="fn">{ system, focus, summary, structure, surface, artefacts, upstream }</span>
+<span class="p">←</span> <span class="o">done</span>    <span class="c">rendered markdown — show this to the user</span></code></pre>
+    </div>
+  </div>
+
+  <h2 id="which">When to use which</h2>
+  <p>Most context questions want the in-session <code>insrc_analyze_step</code>. The one-shot <code>insrc_analyze</code> is the escape hatch for a quick Ollama-backed bundle.</p>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Intent</th><th>Tool</th></tr></thead>
+    <tbody>
+      <tr><td>Map a module / explore its tree / count entities</td><td><code>insrc_analyze_step</code></td></tr>
+      <tr><td>List conventions / naming / test layout</td><td><code>insrc_analyze_step</code></td></tr>
+      <tr><td>List indexed data sources or infra manifests</td><td><code>insrc_analyze_step</code></td></tr>
+      <tr><td>Adherence check — "does the code follow rule X from doc?"</td><td><code>insrc_analyze_step</code></td></tr>
+      <tr><td>Capability discovery — "does the codebase already do Y?"</td><td><code>insrc_analyze_step</code></td></tr>
+      <tr><td>Prose retrieval / decision trace from the docs</td><td><code>insrc_analyze_step</code></td></tr>
+      <tr><td>Quick one-shot bundle (fine if you don't mind Ollama)</td><td><code>insrc_analyze</code></td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="avoid">When NOT to use either</h2>
+  <p>Both tools are read-only context builders. Reach for something else when:</p>
+  <ul>
+    <li><strong>Editing files</strong> — analyze never writes. Use your editor / <code>Edit</code> tools.</li>
+    <li><strong>Running tests or builds</strong> — that's a shell job, not an exploration.</li>
+    <li><strong>Non-context questions</strong> — anything not about this codebase's structure, conventions, capabilities, or docs.</li>
+    <li><strong>The bundle comes back empty or clearly off-topic</strong> — fall back to <code>Read</code> / <code>Grep</code> / <code>Glob</code> at that point rather than forcing a second run.</li>
+  </ul>
+
+  <h2 id="repo">The repo argument</h2>
+  <p>Analyze operates against one registered repo:</p>
+  <ul>
+    <li>If <code>repo</code> is not passed, the tool uses <code>$INSRC_REPO</code> from the MCP server's environment.</li>
+    <li>An explicit <code>repo</code> argument overrides that default.</li>
+    <li>Either way, the repo must be <strong>registered with the daemon</strong> (add it via the TUI's Repos pane → <kbd>a</kbd>, or the <code>repo.add</code> IPC) and have <strong>finished indexing</strong>.</li>
+  </ul>
+  <div class="warn">Graph searches span only the transitive <code>DEPENDS_ON</code> closure of the active repo. If you want cross-repo answers, register the dependency repos too — an entity whose repo path isn't registered never enters the graph.</div>
+
+  <h2 id="next">Where next</h2>
+  <div class="grid">
+    <a class="card" href="workflow.html"><div class="glyph">⟿</div><h4>Workflow</h4><p>Drive a feature from define → design → plan → build with a GitHub tracker.</p><span class="more">read</span></a>
+    <a class="card" href="tools.html"><div class="glyph">⌘</div><h4>Tools</h4><p>The ~110 built-in capability wrappers the daemon exposes to agents.</p><span class="more">read</span></a>
+    <a class="card" href="architecture.html"><div class="glyph">⬡</div><h4>Architecture</h4><p>How the daemon, storage substrate and IPC contract fit together.</p><span class="more">read</span></a>
+  </div>
+
+</main></div>
+
+<footer class="foot"><div class="foot-inner">
+  <span class="seg"><span class="accent">insrc</span> · code-knowledge daemon</span>
+  <span class="seg">TypeScript · ESM · Node 20+</span>
+  <span class="seg">LMDB + Lance + DuckDB</span>
+  <span class="seg"><a href="https://github.com/insors-ai/insrc">github</a></span>
+  <span class="seg" style="margin-left:auto">local-first · no keys · no REST</span>
+</div></footer>
+
+<script src="js/tui.js"></script>
+</body>
+</html>

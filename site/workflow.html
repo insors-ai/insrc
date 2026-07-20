@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>workflow — insrc</title>
+<meta name="description" content="Drive a feature from define → design → plan → build: citation-grounded artifacts, human approval gates, open-question resolution, hierarchical Epic/Story/Task IDs, and a native GitHub sub-issue tracker.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13' font-family='monospace' fill='%234ade80'>▌</text></svg>">
+<link rel="stylesheet" href="css/tui.css">
+</head>
+<body>
+<a class="skip" href="#main">skip to content</a>
+
+<nav class="nav"><div class="nav-inner">
+  <span class="brand">insrc<span class="sig">.daemon</span></span>
+  <div class="nav-links">
+    <a href="index.html">home</a>
+    <a href="getting-started.html">getting started</a>
+    <a href="architecture.html">architecture</a>
+    <a href="workflow.html">workflow</a>
+    <a href="analyze.html">analyze</a>
+    <a href="tools.html">tools</a>
+    <a href="cli.html">cli</a>
+  </div>
+  <button class="theme-btn" type="button" aria-label="toggle theme">◐ light</button>
+</div></nav>
+
+<div class="wrap"><main id="main">
+
+  <h1>Workflow</h1>
+  <p class="lead">A citation-grounded, human-in-the-loop authoring pipeline. One natural-language ask flows through five stages — each produces exactly one approved artifact, and each stage hard-refuses to start until the upstream artifact is approved. The last stage writes code.</p>
+
+  <div class="flow">
+    <span class="stage">define</span><span class="arr">→</span>
+    <span class="stage">design.epic</span><span class="arr">→</span>
+    <span class="stage">design.story</span><span class="arr">→</span>
+    <span class="stage">plan</span><span class="arr">→</span>
+    <span class="stage">build</span>
+  </div>
+
+  <p>Every stage follows the same shape — <code>context.assemble</code> (deterministic or a coarse handoff to <code>insrc_analyze_step</code>) → N sequential LLM steps → <code>checklist.verify</code> → synthesize — and every claim in every artifact is cited to a step output or an analyze bundle. Ungrounded citations refuse to synthesize. No step is ever skipped to save turns, and no LLM call runs in parallel: accuracy first, cost last.</p>
+
+  <div class="tablewrap"><table>
+    <thead><tr><th>Stage</th><th>Produces</th><th>What it is</th><th>openQuestions</th></tr></thead>
+    <tbody>
+      <tr><td><code>define</code></td><td><strong>DEF</strong> — definition</td><td>Frames the Epic: problem statement, non-goals, assumptions, constraints, and 1–10 Stories.</td><td><span class="badge man">yes</span></td></tr>
+      <tr><td><code>design.epic</code></td><td><strong>HLD</strong> — high-level design</td><td>One per Epic: chosen framework, shared contracts, Story boundaries, rollout phases, alternatives considered.</td><td><span class="badge man">yes</span></td></tr>
+      <tr><td><code>design.story</code></td><td><strong>LLD</strong> — low-level design</td><td>One per Story: detailed contract (APIs + data model), error paths, test strategy, migration.</td><td><span class="badge man">yes</span></td></tr>
+      <tr><td><code>plan</code></td><td><strong>PLAN</strong> — ordered Tasks</td><td>A sequenced list of implementable Tasks for a Story. Carries no open questions — the decisions were already made upstream.</td><td><span class="badge ok">none</span></td></tr>
+      <tr><td><code>build</code></td><td>code + validation</td><td>The controller implements each Task and the daemon runs a read-only verdict.</td><td>—</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="note">DEF, HLD, and LLD each carry an <code>openQuestions</code> list on their body (see <code>src/workflow/artifacts/{define,hld,lld}.ts</code>). PLAN deliberately does not — by plan time every design decision is settled, so a plan is pure sequencing.</div>
+
+  <h2 id="artifacts">Artifacts &amp; approval gates</h2>
+  <p>Each artifact is written twice: a human-readable <code>.md</code> under <code>docs/</code> and the canonical JSON under <code>.insrc/artifacts/</code>. The JSON is the machine contract downstream stages read; the Markdown is what you review.</p>
+
+  <div class="tablewrap"><table>
+    <thead><tr><th>Artifact</th><th>Doc path</th><th>Canonical JSON</th></tr></thead>
+    <tbody>
+      <tr><td><strong>DEF</strong></td><td><code>docs/defines/DEF-&lt;h16&gt;.md</code></td><td><code>.insrc/artifacts/DEF-&lt;h16&gt;.json</code></td></tr>
+      <tr><td><strong>HLD</strong></td><td><code>docs/designs/HLD-&lt;h16&gt;.md</code></td><td><code>.insrc/artifacts/HLD-&lt;h16&gt;.json</code></td></tr>
+      <tr><td><strong>LLD</strong></td><td><code>docs/designs/LLD-&lt;h16&gt;-&lt;storyId&gt;.md</code></td><td><code>.insrc/artifacts/LLD-&lt;h16&gt;-&lt;storyId&gt;.json</code></td></tr>
+      <tr><td><strong>PLAN</strong></td><td><code>docs/plans/PLAN-&lt;epic-slug&gt;-&lt;story-id&gt;.md</code></td><td><code>.insrc/artifacts/PLAN-&lt;epic-hash&gt;-&lt;story-id&gt;.json</code></td></tr>
+    </tbody>
+  </table></div>
+
+  <p>The gate is hard, not advisory. Every downstream workflow refuses to run against an unapproved (or rejected) upstream artifact. You approve from the CLI:</p>
+  <div class="code">
+    <div class="code-head"><span class="name">bash</span><button class="copy" type="button">copy</button></div>
+<pre><code><span class="p">$</span> insrc workflow approve docs/defines/DEF-&lt;h16&gt;.md   <span class="c"># unlocks design.epic</span></code></pre>
+  </div>
+
+  <div class="tip">On approval the tracker can auto-push and commit. Approving an HLD auto-creates the Epic issue; approving an LLD auto-creates the Story issue; approving a PLAN can push the Task issues. The artifact docs are committed and linked back from each issue. Repeat approves are idempotent — an existing ref is detected and the push is skipped. Pass <code>--no-tracker</code> to opt out for one call.</div>
+
+  <h2 id="questions">Open-question resolution</h2>
+  <p>DEF, HLD, and LLD each surface the questions the stage could not settle. Resolving them is a two-beat contract:</p>
+  <ul>
+    <li><strong>Optional at the end</strong> of the stage that raised them — you can synthesize with questions still open.</li>
+    <li><strong>Mandatory at the start</strong> of the next stage — the gate is lifted to <em>stage-start</em> and applies to the <strong>immediate-upstream</strong> artifact. <code>unresolvedOpen</code> must be empty before the next stage proceeds (<code>src/workflow/questions.ts</code>).</li>
+  </ul>
+
+  <p>For each question you have three moves, recorded by <code>recordResolution</code> as a <code>resolved</code> | <code>ignored</code> | <code>deferred</code> status:</p>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Move</th><th>Meaning</th><th>Re-surfaces?</th></tr></thead>
+    <tbody>
+      <tr><td><span class="badge ok">resolve</span></td><td>Record a decision (optionally a chosen option + rationale).</td><td>No — closed.</td></tr>
+      <tr><td><span class="badge man">ignore</span></td><td>Leave it to implementer judgment; no decision recorded.</td><td>No — closed.</td></tr>
+      <tr><td><span class="badge new">defer</span></td><td>Park it for a dedicated review pass. A <code>deferred</code> question is <strong>not</strong> open, so it never auto-blocks a stage.</td><td>Only in the review-deferred flow.</td></tr>
+    </tbody>
+  </table></div>
+
+  <p>When you resolve, the daemon generates candidate solution options through the shaper LLM (<code>QuestionWithOptions</code> / <code>QuestionOption</code>), so you pick from grounded choices rather than inventing them. Three <code>insrc_workflow_step</code> phases drive this: <code>start</code> runs the stage-start gate, <code>resolve_question</code> records one resolution, and <code>review_deferred</code> walks every parked question across the Epic's DEF + HLD + all LLDs (<code>src/mcp/workflow-step/phases/{start,resolve-question,review-deferred}.ts</code>).</p>
+
+  <h2 id="ids">Hierarchical IDs</h2>
+  <p>Every Epic, Story, and Task carries a single canonical identifier that encodes its place in the hierarchy. The separator between levels is <code>:</code>, and the slug form simply swaps each <code>:</code> for <code>-</code> (<code>toCanonical</code> / <code>toSlug</code> in <code>src/workflow/id.ts</code>):</p>
+
+  <div class="ascii"><b>Canonical</b>   E&lt;YYYYMMDD&gt;&lt;hash8&gt;<i>:</i>S&lt;nnn&gt;<i>:</i>T&lt;nnn&gt;
+<b>Slug     </b>   E&lt;YYYYMMDD&gt;&lt;hash8&gt;<u>-</u>S&lt;nnn&gt;<u>-</u>T&lt;nnn&gt;
+
+<b>Example  </b>   <i>E20260717185807ba</i><i>:</i><u>S001</u><i>:</i><u>T003</u>
+              └── Epic ──┘   Story   Task</div>
+
+  <p>The date prefix plus 8-hex hash is separator-free, so <code>E&lt;8&gt;&lt;8&gt;</code> parses unambiguously. The levels nest: an Epic is <code>E…</code>, a Story is <code>E…:S…</code>, and a Task is <code>E…:S…:T…</code>. This gives a clean two-way Epic → Story → Task relationship — <code>parseWorkflowId</code> reads any string back into its level, and <code>parentId</code> / <code>epicOf</code> walk upward. The minting helpers are <code>epicWorkflowId</code>, <code>storyWorkflowId</code>, and <code>taskWorkflowId</code>. The same ID appears in issue titles and in the stored docs, so a glance at an issue tells you exactly where it sits.</p>
+
+  <h2 id="tracker">The GitHub tracker</h2>
+  <p>The tracker is opt-in and never stores a token — it shells out to <code>gh</code>, which owns your OAuth session. When enabled, approval-time auto-push turns each approved artifact into a typed, natively-nested GitHub issue (<code>src/workflow/tracker-auto.ts</code>):</p>
+
+  <div class="tablewrap"><table>
+    <thead><tr><th>On approval of…</th><th>Function</th><th>Creates</th></tr></thead>
+    <tbody>
+      <tr><td>HLD</td><td><code>autoPushEpicOnHld</code></td><td>An <strong>Epic</strong> issue (native issue type <code>Epic</code>).</td></tr>
+      <tr><td>LLD</td><td><code>autoPushStoryOnLld</code></td><td>A <strong>Story</strong> issue, linked as a native sub-issue of its Epic.</td></tr>
+      <tr><td>PLAN</td><td><code>autoPushTasksOnPlan</code></td><td>One <strong>Task</strong> issue per PlanTask, each a native sub-issue of its Story.</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="ascii"><b>Epic</b>  E20260717185807ba              <i>#</i>typed: Epic
+  <b>▸ Story</b>  E…:S001                   <i>#</i>native sub-issue · typed: Story
+      <b>▸ Task</b>  E…:S001:T001            <i>#</i>native sub-issue · typed: Task
+      <b>▸ Task</b>  E…:S001:T002
+  <b>▸ Story</b>  E…:S002
+      <b>▸ Task</b>  E…:S002:T001</div>
+
+  <p>The nesting is real GitHub sub-issue linkage via <code>ghLinkSubIssue</code>, not just a label convention. Alongside the issues, the tracker commits the artifact docs and links the committed blobs back from each issue, and can seed a <strong>GitHub Projects v2</strong> dashboard so you get Epic → Story → Task drill-down on a board. Issue-type names and Task pushing are configurable per repo via <code>src/workflow/config/github.ts</code> (<code>epicIssueType</code> / <code>storyIssueType</code> / <code>taskIssueType</code>, <code>pushTasks</code>, <code>useMilestones</code>); types fail open to untyped issues when the org lacks them.</p>
+
+  <p>Bootstrap the automatable GitHub setup once with:</p>
+  <div class="code">
+    <div class="code-head"><span class="name">bash</span><button class="copy" type="button">copy</button></div>
+<pre><code><span class="p">$</span> insrc tracker setup <span class="c"># config + labels + issue types</span>
+<span class="p">$</span> insrc tracker setup --project   <span class="c"># also create a Projects v2 board</span></code></pre>
+  </div>
+  <p><code>runTrackerSetup</code> (<code>src/workflow/tracker/setup.ts</code>) checks that <code>gh</code> is authenticated, verifies the OAuth scopes it needs (<code>admin:org</code> for issue types, <code>project</code> for the board), writes the resolved config, upserts the fixed tracker labels, ensures the Epic/Story issue types exist, and — behind <code>--project</code> — creates the board. Steps whose prerequisite is missing come back as <span class="badge man">manual</span> with the exact command to run, so nothing is done behind your back.</p>
+
+  <div class="warn">The tracker is opt-in even when your git origin points at GitHub. With no matching <code>~/.insrc/github.json</code> entry, <code>resolveGithubConfig</code> returns <code>{ type: 'none' }</code>, auto-push short-circuits, and the manual <code>tracker.*</code> workflows refuse with a clear message. You must explicitly enable it (via <code>insrc tracker setup</code> or by writing the config).</div>
+
+  <h2 id="build">The build stage</h2>
+  <p>Build is a controller-driven MCP tool, <code>insrc_build_step</code>, with two phases (<code>src/mcp/build-step/</code>):</p>
+  <ul>
+    <li><span class="badge new">implement</span> — the daemon resolves the Task, runs the admission gate, then hands the <strong>controller</strong> LLM a templated implement prompt pointed at that Task. The daemon does <em>not</em> edit code here; your controller performs the edits.</li>
+    <li><span class="badge new">validate</span> — the daemon itself runs a read-only agentic verdict session over the result.</li>
+  </ul>
+  <p>The admission gate is strict: <code>admitBuild</code> (<code>src/workflow/runners/build/admission.ts</code>) requires an <strong>approved PLAN</strong> for the Story. An unapproved or rejected plan short-circuits to <code>plan-unapproved</code>; only an approved plan reaches the freshness/drift check. Because a PLAN carries no open questions, build inherits the decisions already settled at plan-start rather than re-litigating them.</p>
+
+  <div class="term" style="margin:16px 0">
+    <div class="term-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="term-title">insrc_build_step — implement</span></div>
+    <div class="term-body">
+<pre style="margin:0"><code><span class="c"># controller calls insrc_build_step { phase: 'implement', ref: 'E…:S001:T003' }</span>
+<span class="fn">▚ admission</span>  plan <span class="o">E20260717185807ba:S001</span> <span class="p">approved</span> · fresh
+<span class="fn">▚ task    </span>  <span class="o">T003</span>  add tag index to the query planner
+<span class="fn">▚ next    </span>  <span class="p">implement</span> → controller runs the templated prompt
+<span class="c"># …controller edits files, then:</span>
+<span class="c"># insrc_build_step { phase: 'validate', ref: 'E…:S001:T003' }</span>
+<span class="fn">▚ verdict </span>  read-only session · <span class="p">PASS</span></code></pre>
+    </div>
+  </div>
+
+  <h2 id="running">Two ways to run</h2>
+  <p>The same five stages run either from your MCP client turn-by-turn, or entirely inside the daemon over the socket. The only visible difference in the output is what <code>meta.model</code> gets stamped with.</p>
+
+  <div class="tablewrap"><table>
+    <thead><tr><th></th><th>Client-driven</th><th>Daemon-driven</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Surface</strong></td><td><code>insrc_workflow_step</code> MCP tool</td><td><code>workflow.run</code> IPC (Unix socket)</td></tr>
+      <tr><td><strong>Who runs the LLM</strong></td><td>Your client (Claude Code / Codex CLI) — every turn stays in your session</td><td>The daemon, via its resolved provider (config → client CLI → Ollama)</td></tr>
+      <tr><td><strong>Shape</strong></td><td>Multi-turn: <code>start</code> → <code>plan</code> → <code>step</code> → <code>synthesize</code> (plus <code>resolve_question</code> / <code>review_deferred</code>)</td><td>Single call that streams <code>progress</code> frames per phase, then a terminal frame</td></tr>
+      <tr><td><strong>Progress</strong></td><td>Per tool-call, in-band</td><td>Incremental frames streamed over the socket (<code>decompose</code>, <code>plan-ready</code>, …)</td></tr>
+      <tr><td><code>meta.model</code></td><td><code>'client'</code></td><td>The resolved provider id (e.g. <code>ollama:qwen3…</code> / <code>claude</code> / <code>codex</code>)</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="note">Both paths write the same artifacts to the same locations and honour the same approval gates. Client-driven is the more accurate default (no subprocess spawn, no separate billing path); daemon-driven is the hands-off runner for long jobs where you want streamed progress. Structured-output support is required — <code>workflow.run</code> refuses a provider that cannot emit structured output.</div>
+
+  <div class="term" style="margin:16px 0">
+    <div class="term-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="term-title">insrc_workflow_step — define</span></div>
+    <div class="term-body">
+<pre style="margin:0"><code><span class="c"># in your MCP client:</span>
+<span class="o">&gt;</span> Use insrc_workflow_step to define an Epic for "Add tag filtering to todos".
+
+<span class="fn">phase=start     </span> <span class="c">→ decomposer prompt</span>
+<span class="fn">phase=plan      </span> <span class="c">→ 4-step plan  · context.assemble uses insrc_analyze_step</span>
+<span class="fn">phase=step ×N   </span> <span class="c">→ epic.frame → stories.compose → checklist.verify</span>
+<span class="fn">phase=synthesize</span> <span class="o">→ docs/defines/DEF-3f9c…e2.md   meta.model: client</span>
+
+<span class="p">$</span> insrc workflow approve docs/defines/DEF-3f9c…e2.md
+  <span class="o">approved</span> · design.epic unlocked</code></pre>
+    </div>
+  </div>
+
+  <h2 id="next">Where next</h2>
+  <div class="grid">
+    <a class="card" href="getting-started.html"><div class="glyph">▸</div><h4>Getting started</h4><p>Install the daemon, register the MCP servers, and index your first repo.</p><span class="more">read</span></a>
+    <a class="card" href="analyze.html"><div class="glyph">◎</div><h4>Analyze</h4><p>The grounding layer every workflow step cites — 10 recipes, a 7-layer bundle.</p><span class="more">read</span></a>
+    <a class="card" href="cli.html"><div class="glyph">⌘</div><h4>CLI</h4><p>The ink TUI: approve artifacts, inspect chains, and run <code>tracker setup</code>.</p><span class="more">read</span></a>
+  </div>
+
+</main></div>
+
+<footer class="foot"><div class="foot-inner">
+  <span class="seg"><span class="accent">insrc</span> · code-knowledge daemon</span>
+  <span class="seg">TypeScript · ESM · Node 20+</span>
+  <span class="seg">LMDB + Lance + DuckDB</span>
+  <span class="seg"><a href="https://github.com/insors-ai/insrc">github</a></span>
+  <span class="seg" style="margin-left:auto">local-first · no keys · no REST</span>
+</div></footer>
+
+<script src="js/tui.js"></script>
+</body>
+</html>

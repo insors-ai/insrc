@@ -156,6 +156,15 @@ export function toCanonical(id: WorkflowId): string {
 	return s;
 }
 
+/** Best-effort canonical id: mint + serialize, returning `undefined` when the
+ *  inputs can't produce one (e.g. an empty/malformed `createdAt`, as in minimal
+ *  test fixtures). Lets renderers + the tracker show the hierarchical id when a
+ *  real artifact carries a valid `createdAt`, and fall back to the plain
+ *  `s1`/`t3` label otherwise. */
+export function safeCanonical(mint: () => WorkflowId): string | undefined {
+	try { return toCanonical(mint()); } catch { return undefined; }
+}
+
 /** Slug form — the canonical with every level separator `:` → `-`. */
 export function toSlug(id: WorkflowId): string {
 	return toCanonical(id).replaceAll(':', '-');

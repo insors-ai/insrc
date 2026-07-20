@@ -18,6 +18,7 @@
  */
 
 import { artifactIdMarker, defineArtifactId } from '../storage.js';
+import { safeCanonical, storyWorkflowId } from '../id.js';
 import { trackerRefLine } from '../tracker/refs.js';
 import type { Citation, WorkflowArtifact } from '../types.js';
 
@@ -134,8 +135,10 @@ export function renderDefineMarkdown(artifact: DefineArtifact): string {
 
 	lines.push('## Stories');
 	lines.push('');
+	const eh = artifact.meta.epicHash;
 	for (const s of body.stories) {
-		lines.push(`### ${s.id}: ${s.title}`);
+		const sid = eh ? safeCanonical(() => storyWorkflowId(eh, artifact.meta.createdAt, s.id)) : undefined;
+		lines.push(sid !== undefined ? `### ${sid} — ${s.title}` : `### ${s.id}: ${s.title}`);
 		lines.push('');
 		const size = s.sizeEstimate === undefined ? '' : ` \`size: ${s.sizeEstimate}\``;
 		lines.push(`**User value:**${size}`);

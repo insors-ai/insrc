@@ -333,7 +333,8 @@ test('design.story enhancement: happy path writes LLD under docs/designs/<slug>/
 		assert.ok(outPath.endsWith(`/docs/designs/LLD-tag-filtering-s1.md`), outPath);
 		assert.ok(existsSync(outPath));
 		const md = readFileSync(outPath, 'utf8');
-		assert.ok(md.includes('# LLD: s1'));
+		// With a valid createdAt the LLD title leads with the hierarchical story id.
+		assert.ok(/# LLD: E\d{8}[0-9a-f]{8}:S001\b/.test(md), md.split('\n').find(l => l.startsWith('# LLD:')));
 		assert.ok(md.includes('## Contract details'));
 		assert.ok(md.includes('## Migration'));
 		assert.ok(md.includes('1. add tag index'));

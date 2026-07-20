@@ -16,6 +16,7 @@
  */
 
 import { artifactIdMarker, hldArtifactId } from '../storage.js';
+import { safeCanonical, storyWorkflowId } from '../id.js';
 import { trackerRefLine } from '../tracker/refs.js';
 import type { Citation, WorkflowArtifact } from '../types.js';
 
@@ -150,8 +151,10 @@ export function renderHldMarkdown(artifact: HldArtifact): string {
 
 	lines.push('## Story boundaries');
 	lines.push('');
+	const eh = artifact.meta.epicHash;
 	for (const sb of body.storyBoundaries) {
-		lines.push(`### Story \`${sb.storyId}\``);
+		const sid = eh ? safeCanonical(() => storyWorkflowId(eh, artifact.meta.createdAt, sb.storyId)) : undefined;
+		lines.push(sid !== undefined ? `### Story ${sid}` : `### Story \`${sb.storyId}\``);
 		lines.push('');
 		if (sb.owns.length > 0)    lines.push(`**Owns:** ${sb.owns.map(x => `\`${x}\``).join(', ')}`);
 		if (sb.depends.length > 0) lines.push(`**Depends on:** ${sb.depends.map(x => `\`${x}\``).join(', ')}`);

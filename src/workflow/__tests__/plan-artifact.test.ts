@@ -188,7 +188,8 @@ test('renderPlanMarkdown: leads with the PLAN- marker, renders the ordered task 
 	const m = ARTIFACT_ID_MARKER_RE.exec(md.slice(0, 200));
 	assert.ok(m !== null, 'no artifact marker');
 	assert.equal(m![1], `PLAN-${HASH}-s1`);
-	assert.ok(md.includes('# Plan: s1'));
+	// With a valid createdAt the title leads with the hierarchical story id.
+	assert.ok(/# Plan: E\d{8}[0-9a-f]{8}:S001\b/.test(md), md.split('\n').find(l => l.startsWith('# Plan:')));
 	assert.ok(md.includes('| # | Task | Size | Depends on | Tests | Derived from |'));
 	assert.ok(md.includes('[[c1]]'), 'task derivedFrom not rendered as a citation ref');
 	assert.ok(md.includes('## Test-strategy coverage'));

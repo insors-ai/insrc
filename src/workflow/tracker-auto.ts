@@ -46,16 +46,10 @@ import {
 	renderTrackerHldSummary, renderTrackerLldSummary, updateEpicTaskList,
 } from './tracker/conventions.js';
 import { patchTrackerMeta, readTrackerMeta, type TrackerMeta } from './tracker/refs.js';
-import { epicWorkflowId, storyWorkflowId, taskWorkflowId, toCanonical, type WorkflowId } from './id.js';
+import { epicWorkflowId, storyWorkflowId, taskWorkflowId, safeCanonical } from './id.js';
 
 const log = getLogger('workflow:tracker-auto');
 
-/** Canonical hierarchical workflow id, or undefined if it can't be
- *  minted (e.g. an artifact with an unusable `createdAt`). Best-effort:
- *  the id marker is an enhancement, never a reason to fail a push. */
-function safeCanonical(mint: () => WorkflowId): string | undefined {
-	try { return toCanonical(mint()); } catch { return undefined; }
-}
 
 export type AutoPushResult =
 	| { readonly status: 'created';        readonly epicRef?: string; readonly storyRef?: string; readonly taskRefs?: Readonly<Record<string, string>>; readonly labelsCreated?: readonly string[] }

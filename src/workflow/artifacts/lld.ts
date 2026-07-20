@@ -19,6 +19,7 @@
 import { createHash } from 'node:crypto';
 
 import { artifactIdMarker, lldArtifactId } from '../storage.js';
+import { safeCanonical, storyWorkflowId } from '../id.js';
 import { trackerRefLine } from '../tracker/refs.js';
 import type { Alternative, HldArtifact, SharedContract, StoryBoundary } from './hld.js';
 import type { ArtifactMetaBase, Citation, WorkflowArtifact } from '../types.js';
@@ -223,7 +224,9 @@ export function renderLldMarkdown(artifact: LldArtifact): string {
 		lines.push(artifactIdMarker(lldArtifactId(meta.epicHash, meta.storyId)));
 		lines.push('');
 	}
-	lines.push(`# LLD: ${meta.storyId}`);
+	const eh = meta.epicHash;
+	const lldSid = eh ? safeCanonical(() => storyWorkflowId(eh, meta.createdAt, meta.storyId)) : undefined;
+	lines.push(`# LLD: ${lldSid ?? meta.storyId}`);
 	lines.push('');
 	lines.push(`**Epic:** \`${meta.epicSlug}\``);
 	lines.push(`**HLD base run:** \`${meta.hldBaseRunId}\``);

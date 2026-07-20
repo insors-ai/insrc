@@ -26,6 +26,7 @@
  */
 
 import { artifactIdMarker, planArtifactId } from '../storage.js';
+import { safeCanonical, storyWorkflowId, taskWorkflowId } from '../id.js';
 import type { TestStrategy as LldTestStrategy } from './lld.js';
 import type { ArtifactMetaBase, Citation } from '../types.js';
 
@@ -97,7 +98,9 @@ export function renderPlanMarkdown(artifact: PlanArtifact): string {
 	const lines: string[] = [];
 	lines.push(artifactIdMarker(planArtifactId(meta.epicHash, meta.storyId)));
 	lines.push('');
-	lines.push(`# Plan: ${meta.storyId}`);
+	const eh = meta.epicHash;
+	const planSid = eh ? safeCanonical(() => storyWorkflowId(eh, meta.createdAt, meta.storyId)) : undefined;
+	lines.push(`# Plan: ${planSid ?? meta.storyId}`);
 	lines.push('');
 	lines.push(`**Epic:** \`${meta.epicSlug}\``);
 	lines.push(`**LLD run:** \`${meta.lldRunId}\``);
@@ -117,7 +120,8 @@ export function renderPlanMarkdown(artifact: PlanArtifact): string {
 	lines.push('');
 
 	for (const t of [...body.tasks].sort((a, b) => a.order - b.order)) {
-		lines.push(`### \`${t.id}\` — ${t.title}`);
+		const tid = eh ? safeCanonical(() => taskWorkflowId(eh, meta.createdAt, meta.storyId, t.id)) : undefined;
+		lines.push(tid !== undefined ? `### ${tid} — ${t.title}` : `### \`${t.id}\` — ${t.title}`);
 		lines.push('');
 		lines.push(t.summary);
 		lines.push('');

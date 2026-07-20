@@ -35,6 +35,8 @@ import { registerWorkflowRunners } from '../workflow/index.js';
 import { prepareDecompose, prepareSynthesize, finalizeArtifact, type FinalizedArtifact } from '../workflow/orchestrator.js';
 import { startRun, resumeRun } from '../workflow/executor.js';
 import { appendRunLog, pathsForWorkflow, writeAtomic } from '../workflow/storage.js';
+import { reviewArtifactFile } from '../workflow/review/index.js';
+import type { ReviewReport } from '../workflow/review/types.js';
 import { WORKFLOW_NAMES, type WorkflowIntent, type WorkflowName, type WorkflowPlan } from '../workflow/types.js';
 import { epicKeyFor } from '../mcp/workflow-step/phases/start.js';
 import { buildRun } from './analyze-rpc.js';
@@ -77,12 +79,18 @@ export interface RunWorkflowOpts {
 	 *  the emitting step, or `'plan'` / `'synthesize'`. */
 	readonly onToken?:         ((stepId: string, token: string) => void) | undefined;
 	readonly maxSynthAttempts?: number | undefined;
+	/** Auto-run the grounded review cycle at finalize (default true). Set
+	 *  false to skip it for a run. Uses the SAME provider as the workflow. */
+	readonly review?:          boolean | undefined;
 }
 
 export interface RunWorkflowResult {
 	readonly path:     string;
 	readonly artifact: unknown;
 	readonly runId:    string;
+	/** The finalize review result, when review ran and succeeded. Its
+	 *  `verdict` is what a subsequent `approve` enforces. */
+	readonly review?:  ReviewReport | undefined;
 }
 
 /** Drive one workflow to a persisted artifact via `provider`. Throws on a
@@ -181,8 +189,36 @@ export async function runWorkflowServerSide(
 		ts: new Date().toISOString(), event: 'artifact-written', md: paths.md, json: paths.json, model: opts.modelLabel,
 	});
 	log.info({ workflow: intent.workflow, runId, model: opts.modelLabel, path: paths.md }, 'workflow.run: artifact written');
+
+	// 5. Review at finalize (default on; opt out with `review:false`). Runs the
+	//    grounded review cycle on the just-persisted artifact with the SAME
+	//    provider, auto-fixes the fixable findings, and stamps `meta.review` —
+	//    whose `block` verdict a later `approve` enforces. A review failure is
+	//    non-fatal: the artifact is already persisted and must not be lost.
+	let review: ReviewReport | undefined;
+	if (opts.review !== false) {
+		checkAbort();
+		opts.onProgress?.({ phase: 'review' });
+		try {
+			const res = await reviewArtifactFile({
+				mdPath: paths.md, jsonPath: paths.json, repo: intent.repoPath,
+				provider, model: opts.modelLabel, reviewedAt: new Date().toISOString(),
+				onProgress: (m) => opts.onProgress?.({ phase: 'review', detail: m }),
+				...(opts.signal !== undefined ? { signal: opts.signal } : {}),
+			});
+			review = res.report;
+			const c = res.report.counts;
+			opts.onProgress?.({ phase: 'review-done', detail: `${res.report.verdict} · HIGH=${c.high} MED=${c.med} LOW=${c.low}` });
+		} catch (err) {
+			log.warn(
+				{ runId, err: err instanceof Error ? err.message : String(err) },
+				'workflow.run: review failed; artifact persisted without meta.review',
+			);
+		}
+	}
+
 	opts.onProgress?.({ phase: 'done' });
-	return { path: paths.md, artifact: finalized.artifact, runId };
+	return { path: paths.md, artifact: finalized.artifact, runId, ...(review !== undefined ? { review } : {}) };
 }
 
 // ---------------------------------------------------------------------------
@@ -197,6 +233,8 @@ interface WorkflowRunParams {
 	/** Invoking MCP agent, so a config with no explicit shaperProvider falls
 	 *  back to that CLI (claude/codex) instead of Ollama. */
 	readonly client?:   'claude' | 'codex';
+	/** Opt out of the finalize review cycle for this run (default: review runs). */
+	readonly review?:   boolean;
 }
 
 /** `workflow.run` stream handler. Emits `progress` frames per phase, then a
@@ -237,6 +275,7 @@ export async function runStart(
 			runId, epicKey, modelLabel, signal,
 			onProgress: (f) => send({ id: 0, stream: 'progress', data: f }),
 			onToken:    (stepId, token) => send({ id: 0, stream: 'delta', data: { stepId, token } }),
+			...(p.review !== undefined ? { review: p.review } : {}),
 		});
 		// Run inside the invoking CLI's provider context so the analyze
 		// grounding (`buildRun`, called bare inside the driver) resolves to
@@ -245,7 +284,7 @@ export async function runStart(
 		const out = clientDefault !== undefined
 			? await runWithClientProviderContext(clientDefault, drive)
 			: await drive();
-		send({ id: 0, stream: 'done', data: { path: out.path, runId: out.runId, model: modelLabel, artifact: out.artifact } });
+		send({ id: 0, stream: 'done', data: { path: out.path, runId: out.runId, model: modelLabel, artifact: out.artifact, ...(out.review !== undefined ? { review: { verdict: out.review.verdict, counts: out.review.counts } } : {}) } });
 	} catch (err) {
 		send({ id: 0, stream: 'error', data: { error: (err as Error).message, recoverable: false } });
 	}
@@ -310,5 +349,6 @@ function parseParams(raw: unknown): WorkflowRunParams {
 		...(typeof o['repo'] === 'string' ? { repo: o['repo'] } : {}),
 		...(typeof o['params'] === 'object' && o['params'] !== null ? { params: o['params'] as Record<string, unknown> } : {}),
 		...(client === 'claude' || client === 'codex' ? { client } : {}),
+		...(typeof o['review'] === 'boolean' ? { review: o['review'] } : {}),
 	};
 }

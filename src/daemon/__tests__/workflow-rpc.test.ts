@@ -75,6 +75,7 @@ test('runWorkflowServerSide drives stub end-to-end + stamps meta.model with the 
 		const provider = new FakeProvider([STUB_PLAN, STUB_ARTIFACT]);
 		const out = await runWorkflowServerSide(stubIntent(repo), provider, {
 			runId: 'wf-test-1', epicKey: 'demo-stub', modelLabel: 'ollama:qwen3-test',
+			review: false,   // this test asserts the decompose+synthesize turn count; review is exercised separately
 		});
 		assert.ok(out.path.endsWith('/docs/stub/demo-stub.md'), out.path);
 
@@ -88,6 +89,26 @@ test('runWorkflowServerSide drives stub end-to-end + stamps meta.model with the 
 
 		const md = readFileSync(out.path, 'utf8');
 		assert.match(md, /\[\[c1\]\]/);   // citation grounding survived render + validation
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('runWorkflowServerSide reviews at finalize by default and stamps meta.review', async () => {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-wf-rpc-'));
+	try {
+		// plan + synthesize, then the review cycle's extract + one verify turn.
+		const REVIEW_EXTRACT = { claims: [{ id: 'c1', kind: 'citation', text: 'a grounded claim', anchors: [], probe: {} }] };
+		const REVIEW_VERIFY = { severity: 'LOW', evidence: 'verified sound', action: 'none — verified sound', fixability: 'manual' };
+		const provider = new FakeProvider([STUB_PLAN, STUB_ARTIFACT, REVIEW_EXTRACT, REVIEW_VERIFY]);
+		const out = await runWorkflowServerSide(stubIntent(repo), provider, {
+			runId: 'wf-test-r', epicKey: 'demo-stub-r', modelLabel: 'ollama:qwen3-test',
+		});
+		// review result surfaced + stamped into the persisted meta
+		assert.ok(out.review, 'review present on result');
+		assert.equal(out.review.verdict, 'pass');
+		const json = JSON.parse(readFileSync(out.path.replace(/\.md$/, '.json'), 'utf8')) as { meta: { review?: { verdict: string } } };
+		assert.equal(json.meta.review?.verdict, 'pass');
+		// decompose + synthesize + review(extract + verify) = 4 provider turns
+		assert.equal(provider.calls, 4);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 

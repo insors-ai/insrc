@@ -1,6 +1,6 @@
 <!-- insrc:artifact LLD-1cd9a4c34f403a80-s5 -->
 
-# LLD: s5
+# LLD: E202607151cd9a4c3:S005
 
 **Epic:** `add-plan-workflow-insrc-framework-4th`
 **HLD base run:** `wf-1784121669696-i1rc6r`
@@ -278,9 +278,3 @@ Refactor prepareDecompose/prepareSynthesize/finalizeArtifact and pathsForWorkflo
 Instead of adding a 'plan' case to each switch, introduce a WorkflowSpec { decompose, synthesize, finalize, paths } registry; the orchestrator seams and pathsForWorkflow become thin lookups (registry[intent.workflow].decompose(intent), etc.). 'plan' is then registered as a single WorkflowSpec entry. sc5's three arm functions still exist but are wired via the table rather than switch cases.
 
 **Rejected because:** Only partial on sc5 + k7: it rewrites the shared orchestrator seams for every existing workflow, contradicting the HLD's 'add a single plan arm at each existing seam / nothing else changes'. That is an HLD deviation (amendment territory), carries L cost + regression risk against green e2e suites, and buys no accuracy — so it loses to a1.
-
-## Citations
-
-- **[[c1]]** `analyze-bundle` `s1 how-does-it-work: exact orchestrator seam signatures + pathsForWorkflow switch (orchestrator.ts:119/186/282, index.ts:22, executor.ts:57, synthesize.ts:96/112/137)` — "prepareDecompose(intent: WorkflowIntent): DecomposerPrompt (L119); prepareSynthesize(...): SynthesizerPrompt (L186); finalizeArtifact(...): FinalizeResult (L282); pathsForWorkflow switch throws 'not y"
-- **[[c2]]** `analyze-bundle` `s1 how-does-it-work: design.story end-to-end wiring template (runner module + registration + gate + storage + MCP loop)` — "design.story is one runner file aggregated by registerWorkflowRunners; per-workflow branching is centralized in orchestrator.ts; driven through the shared multi-turn phase loop. A new 'plan' workflow "
-- **[[c3]]** `analyze-bundle` `s1 prose-retrieval: meta-workflow-framework.md §plan fixed step recipe` — "meta §plan fixes the fine-grained recipe tasks.enumerate→tasks.critique→tasks.finalize→test-strategy.write→checklist.verify(forced); sc5's PlanStepId sequence matches, prefixed with context.assemble a"

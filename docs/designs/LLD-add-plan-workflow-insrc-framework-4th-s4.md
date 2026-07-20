@@ -1,6 +1,6 @@
 <!-- insrc:artifact LLD-1cd9a4c34f403a80-s4 -->
 
-# LLD: s4
+# LLD: E202607151cd9a4c3:S004
 
 **Epic:** `add-plan-workflow-insrc-framework-4th`
 **HLD base run:** `wf-1784121669696-i1rc6r`
@@ -189,9 +189,3 @@ Only fill PlanTask.tests[]; compute coverage on the fly in finalize by matching 
 test-strategy.write fills each Task's tests[] but does not emit a separate coverage list; finalizePlan derives coverage by fuzzy-matching each Task test name against the LLD testStrategy items and fails if any item is unmatched. sc4's TestStrategyCoverage would then be a computed view rather than a persisted field.
 
 **Rejected because:** Violates sc4 (drops the declared TestStrategyCoverage field) and only partially meets ac2 via unreliable, non-auditable fuzzy matching; not viable without an HLD amendment, so a1 wins on contract-fidelity + traceability.
-
-## Citations
-
-- **[[c1]]** `analyze-bundle` `s1 how-does-it-work: existing coverage-check pattern (constraint/acceptance/rollout coverage in finalize)` — "The existing artifacts enforce coverage-style invariants in finalize (constraint coverage in define, acceptance mapping + rollout coverage in HLD, acceptance-mapping in the LLD); s4's checkTestStrateg"
-- **[[c2]]** `analyze-bundle` `s1 how-does-it-work: LLD testStrategy shape s4 reads (artifacts/lld.ts + design-story schemas)` — "The LLD carries a testStrategy (testLevels{level,subjects}/acceptanceMapping/testFramework); s4 reads these items as lldStrategyItems to cover, and TestLevel mirrors the LLD's unit/integration/live/sm"
-- **[[c3]]** `analyze-bundle` `s1 prose-retrieval: plan test-strategy.write step + Task tests[] slot (meta-workflow-framework.md)` — "meta §plan lists test-strategy.write ('names the tests the Tasks should produce — unit/integration/live/smoke'); s1's PlanTask reserves a tests[] slot for s4 to fill."

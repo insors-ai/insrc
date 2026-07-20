@@ -1,6 +1,6 @@
 <!-- insrc:artifact LLD-1cd9a4c34f403a80-s2 -->
 
-# LLD: s2
+# LLD: E202607151cd9a4c3:S002
 
 **Epic:** `add-plan-workflow-insrc-framework-4th`
 **HLD base run:** `wf-1784121669696-i1rc6r`
@@ -186,8 +186,3 @@ One function returns { ok: true, upstream } | { ok: false, reason: 'unapproved'|
 readPlanUpstream performs the approval + staleness checks inline and returns a discriminated union rather than throwing; the plan runner branches on ok. Staleness still reuses computeHldEffectiveHash + the scanLldStaleness comparison and honors staleAckedAt.
 
 **Rejected because:** Functionally refuses correctly but diverges from sc3's declared throwing requireApprovedLld (returns LldArtifact) and the framework-wide throw-based gate convention (partial on sc3/k7); a1 wins on contract-fidelity and convention-consistency.
-
-## Citations
-
-- **[[c1]]** `analyze-bundle` `s1 how-does-it-work: requireApprovedHld + LLD staleness machinery (gates.ts, staleness.ts, lld.ts)` — "gates.ts has requireApprovedHld (throws ArtifactNotApprovedError); LLD staleness is recomputed via scanLldStaleness + computeHldEffectiveHash, honoring meta.staleAckedAt/staleAckedReason; there is NO "
-- **[[c2]]** `analyze-bundle` `s1 how-does-it-work: PlanUpstream assembly (extractHldContextSlice + Define story.dependsOn)` — "readPlanUpstream returns the approved LLD + a HLD context slice (extractHldContextSlice) + the define Story dependsOn edges, all from the same approved DEF-/HLD-/LLD- artifacts."

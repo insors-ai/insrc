@@ -1,6 +1,6 @@
 <!-- insrc:artifact LLD-1cd9a4c34f403a80-s1 -->
 
-# LLD: s1
+# LLD: E202607151cd9a4c3:S001
 
 **Epic:** `add-plan-workflow-insrc-framework-4th`
 **HLD base run:** `wf-1784121669696-i1rc6r`
@@ -194,9 +194,3 @@ tasks.enumerate first builds a matrix mapping each LLD handoff item to one or mo
 The enumerate step emits an intermediate coverage matrix keyed by LLD handoff item; every handoff item must map to at least one Task before Tasks are materialised. PlanTasks inherit derivedFrom from the matrix keys; finalizePlan still runs the acyclic + consistency checks, but coverage is by construction.
 
 **Rejected because:** Strongest structural coverage but adds an intermediate matrix schema (partial on sc1) and over-granulates small Stories; its coverage benefit is captured by folding the item->Task coverage requirement into a1's deterministic finalize check, so a1 wins without a2's added surface.
-
-## Citations
-
-- **[[c1]]** `analyze-bundle` `s1 how-does-it-work: workflow skeleton + finalizeArtifact seam + acyclic dependency-check pattern` — "finalizeArtifact switches on workflow and validates cross-artifact invariants (Story dependency DAG + coverage) before an artifact is accepted; finalizePlan mirrors this pattern."
-- **[[c2]]** `analyze-bundle` `s1 how-does-it-work: LLD handoff + sc3 gate/staleness` — "LldBody/LldArtifact carry the handoff block; the approved+non-stale LLD arrives via requireApprovedLld/readPlanUpstream (reusing computeHldEffectiveHash + scanLldStaleness); s1 never re-reads or re-va"
-- **[[c3]]** `analyze-bundle` `s1 prose-retrieval: Task shape + ordering rule (meta-workflow-framework.md)` — "The Task shape is ordered + sized (S/M/L) + dependency-labelled + per-Task acceptance checks; Task-level ordering must respect define's Story dependency graph."

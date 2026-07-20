@@ -1,6 +1,6 @@
 <!-- insrc:artifact PLAN-185807ba9a6b35d3-s4 -->
 
-# Plan: s4
+# Plan: E20260717185807ba:S004
 
 **Epic:** `add-build-workflow-insrc-5th-stage`
 **LLD run:** `wf-1784314958112-fd2glm`
@@ -18,7 +18,7 @@
 | 6 | **`t6`** Surface progress through WorkflowStepOutputBuild | M | `t4`, `t5` | integration: integration (driving-surface mirror, src/mcp/workflow-step/__tests__): a halted finalize emits WorkflowStepOutputBuild.next==='done' with progress carrying the halt frame (failedTaskId/failedTaskTitle/reason) + filesTouchedSoFar through the standard insrc_workflow_step surface (no new IPC/UI), driven via a stub sc5 TaskImplementerAdapter set to 'failed' (ac2) | [[c6]] |
 | 7 | **`t7`** Wire the halt/progress path live through the build runner registration | M | `t3`, `t4`, `t6` | integration: integration (halt-and-report end-to-end, extends executor.test.ts registration/drive path): with the build runner registered via registerBuildRunners()/registerWorkflowRunners, a run that gives up on an unrepairable Task halts, starts no dependent, checkpoints per boundary (read back from temp storage dir), finalizes into a ChainReport via storage.ts/hash.ts/slug.ts, and surfaces the halt frame via WorkflowStepOutputBuild — no new registry mechanism; unregistering reverts to prior behavior (invariants c1/c3) | [[c7]] |
 
-### `t1` — Define the build-stage schema vocabulary
+### E20260717185807ba:S004:T001 — Define the build-stage schema vocabulary
 
 Create src/workflow/runners/build/schemas.ts and add the net-new, types-only vocabulary that s4 owns (sc6): the BuildRunState union ('running'|'halted'|'complete'), the BuildHaltInfo value object (failedTaskId, failedTaskTitle, reason, blockedTaskIds), and the BuildRunProgress projection interface (storyId, runState, totalTasks, completedTaskIds, optional inFlightTaskId, optional halt, filesTouchedSoFar). Signatures must match contractDetails.api exactly — readonly members, optional props as `| undefined`, declared as a read-time view rather than a stored record. Mirror the sibling-per-stage idiom; introduce no behavior and reuse/shadow no existing workflow enum (search.text confirmed no prior halt/status vocabulary in the package).
 
@@ -27,7 +27,7 @@ Create src/workflow/runners/build/schemas.ts and add the net-new, types-only voc
 - The file introduces fresh vocabulary only — no existing workflow type in chain.ts/executor.ts/gates.ts/orchestrator.ts/types.ts is modified, duplicated, or shadowed (invariant c4).
 - `tsc` compiles with the new file present and nothing yet consuming the new types.
 
-### `t2` — Add the 'running' member to sc4 BuildTaskStatus
+### E20260717185807ba:S004:T002 — Add the 'running' member to sc4 BuildTaskStatus
 
 Additively extend the s3-owned BuildTaskStatus union from 'completed'|'failed'|'blocked'|'not-reached' to add 'running', so the single in-flight Task is representable in the authoritative BuildTaskOutcome[] the s4 projection folds over. Additive value only — ownership stays with s3, no ownership relocation, and existing outcome rows/consumers remain valid because none produced or matched a 'running' value before. Ordered after s3 lands per storyDependsOn=[s3].
 
@@ -36,7 +36,7 @@ Additively extend the s3-owned BuildTaskStatus union from 'completed'|'failed'|'
 - Existing exhaustive switches over BuildTaskStatus continue to compile via their default/unhandled path; no producer or matcher of the prior members breaks (backwardCompat).
 - The amendment lands after s3's sc4 (storyDependsOn=[s3]) and leaves ownership of BuildTaskOutcome/BuildTaskStatus with s3.
 
-### `t3` — Insert the halt branch into the per-Task drive loop
+### E20260717185807ba:S004:T003 — Insert the halt branch into the per-Task drive loop
 
 Open src/workflow/orchestrator.ts and src/workflow/gates.ts directly to confirm the actual halt-vs-press-on behavior of the per-Task drive loop (unread by graph exploration — the largest sizing risk in the Story), then implement the halt per the chosen alt a1: on the daemon's own test-verdict failure for a Task, record ONLY that Task's outcome status 'failed' and start no transitive DEPENDS_ON dependent. Do NOT stamp blocked/not-reached rows into the outcome array — under a1 that classification is recomputed at read time by t5's projection (eager materialization is the rejected a3 approach and would fork the single source of truth). The give-up decision is taken on the daemon's test verdict + tree diff, never the implementer adapter's advisory self-report. Reuse the existing gates.ts checkpoint machinery; add no new gate type and no parallel runner-registration path. At each Task boundary the loop emits observability via getLogger('workflow:build').
 
@@ -46,7 +46,7 @@ Open src/workflow/orchestrator.ts and src/workflow/gates.ts directly to confirm 
 - The halt reuses existing gates.ts machinery — no new gate type and no new/parallel registry or runner-registration mechanism is introduced (invariant c3).
 - Each Task boundary (task-start / implementer-finished / test-verdict / advance-or-halt) emits via getLogger('workflow:build') with no console.log, satisfying the observability NFR's per-boundary requirement.
 
-### `t4` — Route finalize-on-halt through the ChainReport carrier
+### E20260717185807ba:S004:T004 — Route finalize-on-halt through the ChainReport carrier
 
 Make a run that gives up on one Task still finalize into a ChainReport-carried record via the existing storage.ts/hash.ts/slug.ts artifact-writer envelope — the same durability substrate the sibling stages use — persisted incrementally at each Task boundary so a daemon restart mid-run leaves a readable record of what already landed on the tree. The halted run must reach finalize rather than ending as an untracked side-effect; add no second, parallel result store.
 
@@ -55,7 +55,7 @@ Make a run that gives up on one Task still finalize into a ChainReport-carried r
 - The accumulated BuildTaskOutcome[] is checkpointed at each Task boundary, so a restart mid-run leaves the already-landed outcomes readable rather than lost.
 - No new or parallel result store is introduced; finalize reuses the existing ChainReport persistence substrate.
 
-### `t5` — Implement the BuildRunProgress/BuildHaltInfo projection
+### E20260717185807ba:S004:T005 — Implement the BuildRunProgress/BuildHaltInfo projection
 
 Implement the winning alt a1 pure read-time fold from the accumulated BuildTaskOutcome[] plus the live approved-plan DEPENDS_ON graph into BuildRunProgress and its nested BuildHaltInfo, with no separately stored record: runState from the presence of a 'failed' row, completedTaskIds/filesTouchedSoFar by folding the array (set-union for files), inFlightTaskId from the single 'running' slot, and blockedTaskIds recomputed as the failed Task's transitive dependent closure (never snapshotted). The projection throws the defined invariant errors rather than fabricating a frame. Author the sc6 unit suite alongside the implementation.
 
@@ -65,7 +65,7 @@ Implement the winning alt a1 pure read-time fold from the accumulated BuildTaskO
 - The projection throws (never fabricates a frame) on: more than one 'failed' row, a taskId absent from the live plan graph (failed or non-failed row), an undecodable persisted outcome envelope, or an out-of-union status string.
 - The testStrategy unit suite is authored using the src/workflow/__tests__ plan-artifact.test.ts fixture idiom (explicitly NOT the src/analyze/** mkTask helpers, invariant c5), covering: determinism/idempotent-recompute, all five thrown error paths, and the edge cases (all-completed, no-dependents halt, empty plan, root failure, overlapping/empty filesTouched, mid-flight single 'running').
 
-### `t6` — Surface progress through WorkflowStepOutputBuild
+### E20260717185807ba:S004:T006 — Surface progress through WorkflowStepOutputBuild
 
 Populate the build finalize handler's WorkflowStepOutputBuild so a developer inspects the run through the same insrc_workflow_step turn shape as every earlier stage: set next='done' on a halted-or-complete finalize and fill progress?: BuildRunProgress with the sc6 projection carrying the halt frame (failedTaskId/failedTaskTitle/reason) and filesTouchedSoFar. No bespoke command, IPC method, or UI — the existing driving surface is the only channel. Author the driving-surface mirror integration suite for this turn shape.
 
@@ -74,7 +74,7 @@ Populate the build finalize handler's WorkflowStepOutputBuild so a developer ins
 - Inspection names the failed Task and what earlier Tasks left in place without a working-tree read (ac2), flowing through the standard insrc_workflow_step surface with no new IPC method or UI.
 - A driving-surface mirror integration suite is authored in src/mcp/workflow-step/__tests__ asserting WorkflowStepOutputBuild.next==='done' with the halt-frame progress (failedTaskId/failedTaskTitle/reason + filesTouchedSoFar) for a halted finalize, driven via the stub sc5 TaskImplementerAdapter set to a chosen 'failed' verdict.
 
-### `t7` — Wire the halt/progress path live through the build runner registration
+### E20260717185807ba:S004:T007 — Wire the halt/progress path live through the build runner registration
 
 Wire s4's halt, finalize-on-halt, and progress handlers into the build runner registered through registerBuildRunners() via the existing registerWorkflowRunners seam in src/workflow/index.ts, mirroring the registerDesignEpicRunners/llmPauseRunner idiom. This is the flip that makes the halt-and-report seam live; rolling back = unregister, which fully reverts to the prior no-build-stage behavior. No new registry mechanism. Author the halt-and-report end-to-end integration suite.
 
@@ -94,13 +94,3 @@ Wire s4's halt, finalize-on-halt, and progress handlers into the build runner re
 | Halted-run finalize into ChainReport (src/workflow/chain.ts + src/workflow/storage.ts) | `t4`, `t7` |
 | WorkflowStepOutputBuild population in the build runner (sc2, owned by s1) surfaced through the driving-surface mirror | `t6` |
 | src/mcp/workflow-step/__tests__ (driving-surface exercise; mirrors tracker-tasks-coarse.test.ts) and src/daemon/__tests__/workflow-rpc.test.ts (IPC-level shape) | `t6` |
-
-## Citations
-
-- **[[c1]]** `prior-artifact` `LLD s4 contractDetails.api sc6 — BuildRunState/BuildHaltInfo/BuildRunProgress types-only vocabulary in src/workflow/runners/build/schemas.ts` — "sc6: BuildRunState ('running'|'halted'|'complete'), BuildHaltInfo (failedTaskId, failedTaskTitle, reason, blockedTaskIds), BuildRunProgress (storyId, runState, totalTasks, completedTaskIds, inFlightTa"
-- **[[c2]]** `prior-artifact` `LLD s4 amendment sc4 — additive 'running' member on the s3-owned BuildTaskStatus union (storyDependsOn=[s3])` — "Additively extend BuildTaskStatus from 'completed'|'failed'|'blocked'|'not-reached' to add 'running'; ownership stays s3; strictly additive so existing outcome rows/consumers remain valid"
-- **[[c3]]** `prior-artifact` `LLD s4 ac1 / alt a1 — per-Task drive loop halt branch in src/workflow/orchestrator.ts + src/workflow/gates.ts` — "On the daemon's own test-verdict failure record ONLY that Task's outcome 'failed' and start no transitive DEPENDS_ON dependent; do not stamp blocked/not-reached (recomputed at read time by the project"
-- **[[c4]]** `prior-artifact` `LLD s4 ac3 / invariant c2 — finalize-on-halt through the ChainReport carrier via storage.ts/hash.ts/slug.ts` — "A halted run finalizes into a ChainReport record through the same storage.ts/hash.ts/slug.ts envelope as the sibling stages, with the accumulated BuildTaskOutcome[] checkpointed per Task boundary; no "
-- **[[c5]]** `prior-artifact` `LLD s4 alt a1 projection handoff / invariant c5 — pure read-time BuildRunProgress/BuildHaltInfo fold in src/workflow/runners/build/` — "Pure deterministic fold of BuildTaskOutcome[] + live approved-plan DEPENDS_ON graph into BuildRunProgress/BuildHaltInfo, blockedTaskIds recomputed as transitive dependent closure (never snapshotted), "
-- **[[c6]]** `prior-artifact` `LLD s4 ac2 — WorkflowStepOutputBuild population surfaced through the insrc_workflow_step driving surface` — "On a halted-or-complete finalize set next='done' and fill progress?: BuildRunProgress carrying the halt frame (failedTaskId/failedTaskTitle/reason) + filesTouchedSoFar; no bespoke command, IPC method,"
-- **[[c7]]** `prior-artifact` `LLD s4 registration handoff / invariants c1,c3 — registerBuildRunners wired via registerWorkflowRunners in src/workflow/index.ts` — "Wire s4's halt/finalize/progress handlers into the build runner registered through registerBuildRunners() via the registerWorkflowRunners seam, mirroring registerDesignEpicRunners/llmPauseRunner; no n"

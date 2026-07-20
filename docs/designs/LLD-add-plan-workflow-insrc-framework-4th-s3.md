@@ -1,6 +1,6 @@
 <!-- insrc:artifact LLD-1cd9a4c34f403a80-s3 -->
 
-# LLD: s3
+# LLD: E202607151cd9a4c3:S003
 
 **Epic:** `add-plan-workflow-insrc-framework-4th`
 **HLD base run:** `wf-1784121669696-i1rc6r`
@@ -197,9 +197,3 @@ Reuse lldArtifactPaths' docs/designs location with a PLAN- prefix instead of add
 Rather than a new plans/ root, write the plan md/json alongside the LLD under docs/designs / .insrc/artifacts with a PLAN-<slug>-<storyId> / PLAN-<hash>-<storyId> naming, reusing the existing path-helper shape with a different prefix. Renderer + approval are the same as a1.
 
 **Rejected because:** Functionally equivalent but partial on k1 (tier blur) and contradicts the meta doc's dedicated plans/ root; the small storage saving is not worth muddying the tier separation, so a1 wins on tier-fidelity.
-
-## Citations
-
-- **[[c1]]** `analyze-bundle` `s1 how-does-it-work: LLD artifact persistence pattern (lld.ts renderer + marker, storage.ts lldArtifactPaths + writeAtomic, synthesize phase)` — "artifacts/lld.ts defines renderLldMarkdown embedding the insrc:artifact marker; lldArtifactPaths gives slug-md + hash-json; writeAtomic does write-temp-then-rename; the synthesize phase resolves paths"
-- **[[c2]]** `analyze-bundle` `s1 how-does-it-work: approval gate reuse (approveArtifactByJsonPath / jsonPathForMd)` — "approveArtifactByJsonPath sets meta.approvedAt (clearing rejection) on any artifact json; jsonPathForMd resolves a slug md back to its hash json via the marker; downstream treats an unapproved artifac"
-- **[[c3]]** `analyze-bundle` `s1 how-does-it-work: ArtifactMetaBase + Citation + validateBodyAndCitations` — "PlanMeta extends ArtifactMetaBase; Citation is the shared { id, kind, ref, quotedText? }; the synthesizer's validateBodyAndCitations enforces every body claim cites a citations[] entry."

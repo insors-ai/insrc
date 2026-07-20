@@ -140,34 +140,34 @@ function finalizePlan(intent: WorkflowIntent, stepOutputs: Readonly<Record<strin
 
 ## Story boundaries
 
-### Story `s1`
+### Story E202607151cd9a4c3:S001
 
 **Owns:** `sc1`
 **Depends on:** `sc3`, `sc4`, `sc5`
 
 Private to s1: the enumeration/critique/finalize prompts and the internal reasoning that turns the LLD handoff into candidate Tasks, plus the acyclicity + dependency-consistency validation logic over the Task graph. Nothing outside s1 sees how Tasks are derived; other Stories only consume the resulting PlanTask shape.
 
-### Story `s2`
+### Story E202607151cd9a4c3:S002
 
 **Owns:** `sc3`
 
 Private to s2: how approval is checked and how staleness is recomputed (reading meta.approvedAt, recomputing the effective hash, honoring staleAckedAt). Callers only see either a usable PlanUpstream or a typed refusal; the comparison mechanics stay inside the gate.
 
-### Story `s3`
+### Story E202607151cd9a4c3:S003
 
 **Owns:** `sc2`
 **Depends on:** `sc1`
 
 Private to s3: the PlanArtifact markdown renderer, the insrc:artifact marker embedding, the atomic write + path resolution, and how the review gate reads meta.approvedAt. Other Stories consume the PlanArtifact type but not the rendering/persistence internals.
 
-### Story `s4`
+### Story E202607151cd9a4c3:S004
 
 **Owns:** `sc4`
 **Depends on:** `sc1`
 
 Private to s4: how the LLD test strategy is decomposed into per-Task named tests and how the coverage mapping is computed. Consumers see only the TaskTestRef[] embedded in each Task and the TestStrategyCoverage list.
 
-### Story `s5`
+### Story E202607151cd9a4c3:S005
 
 **Owns:** `sc5`
 **Depends on:** `sc1`, `sc2`
@@ -278,12 +278,3 @@ Add a design.plan mode so the Task breakdown is produced by the same design fami
 ## Open questions
 
 - Item sc2: the shared-contract graph lists s1 as the consumer of sc3/sc4/sc5 (the gate, test plan, and orchestration contracts), which inverts the Epic's dependency edges (the Epic has s2/s4/s5 dependsOn s1, not the reverse). The rollout resolves this as an interfaces-first / type-level dependency (interfaces fixed in Phase A, implementations phased later), but the reviewer should confirm that resolution OR ask for the ownership to be re-modelled at implementation time — e.g. s1 owns the upstream-read + Task shapes and s2/s4/s5 consume them — so the contract graph reads acyclically without the interfaces-first caveat.
-
-## Citations
-
-- **[[c1]]** `analyze-bundle` `s1 how-does-it-work: src/workflow framework seams` — "Per-workflow branching is centralised in orchestrator.ts (prepareDecompose/prepareSynthesize/finalizeArtifact switch on workflow); runner modules register via executor.registerRunner, aggregated by re"
-- **[[c3]]** `doc` `plans/workflow-define.md#as-built-deltas` — "AS-BUILT: canonical JSON named by 16-char Epic hash under .insrc/artifacts/, human markdown named by slug under docs/ with an insrc:artifact marker; workflows run via the insrc_workflow_step MCP tool."
-- **[[c4]]** `doc` `plans/meta-workflow-framework.md#design` — "Plan reads BOTH the HLD (cross-cutting) AND the specific Story's LLD; Task-level ordering respects the Story dependency graph from define."
-- **[[c5]]** `analyze-bundle` `s1 how-does-it-work: LLD artifact shape + handoff + gate + staleness` — "LldBody/LldArtifact (lld.ts) carry the handoff block (contractDetails/dataModelChanges/errorPaths/testStrategy/migration); lldArtifactPaths (storage.ts) gives slug-md + hash-json; gates.ts has require"
-- **[[c6]]** `analyze-bundle` `s1 how-does-it-work: LLD staleness mechanism` — "LLD staleness is recomputed: scanLldStaleness (amendments/staleness.ts) compares meta.hldEffectiveHash to current computeHldEffectiveHash (lld.ts:167), emitting staleReason; ackStaleArtifact writes me"
-- **[[c7]]** `doc` `plans/meta-workflow-framework.md#1-motivation` — "If we build that skeleton once as workflow/, each of the five becomes a small specialisation (recipe library, step-runner registry, artifact shape) rather than a bespoke pipeline."

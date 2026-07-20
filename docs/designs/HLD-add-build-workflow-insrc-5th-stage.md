@@ -305,34 +305,34 @@ export interface BuildArtifact {
 
 ## Story boundaries
 
-### Story `s1`
+### Story E20260717185807ba:S001
 
 **Owns:** `sc1`, `sc2`
 
 How the four turn handlers are wired into the per-stage registry — the internal handler table shape, the descriptor strings shown when a developer lists stages, and the argument threading from handleWorkflowStep down into the runner — stays private to s1. The opaque `state` token's encoding (how a run id is minted, serialized and validated across turns) is s1's business alone; every other Story sees only an opaque string. The decision of whether the build decomposer mirrors designEpicDecomposer inside orchestrator.ts or lives entirely in runners/build/ is s1's, provided the k9 reading of orchestrator.ts is done first and the registration-not-inheritance shape (k6) holds. No other Story may reach into the registry or the MCP phase dispatch.
 
-### Story `s2`
+### Story E20260717185807ba:S002
 
 **Owns:** `sc3`
 **Depends on:** `sc1`, `sc2`
 
 Everything about how upstream freshness is actually determined stays private: how the PlanArtifact is resolved for a Story, how gates.ts is called and what its real signature turns out to be (unread at Epic time — s2 owns the direct inspection), how approval state is read, and how the plan's recorded upstream design hash is compared against the current design.story artifact hash to detect drift. The wording of refusal messages is s2's. Other Stories see only the BuildAdmissionResult verdict — they never re-derive staleness, never re-check approval, and must not implement a second gate. If gates.ts turns out not to fit, adapting it is s2's problem, not a shared contract change.
 
-### Story `s3`
+### Story E20260717185807ba:S003
 
 **Owns:** `sc4`, `sc5`
 **Depends on:** `sc1`, `sc2`, `sc3`
 
 The sequencer's guts are private: the topological ordering of the plan's PlanTask[] into a serial work list, the `for...of` loop that walks it, the per-Task attempt/repair budget, how the working-tree diff is taken to compute filesTouched, how the Task's stated test command is extracted from the PlanTask and executed, and how the test exit code plus diff are combined into the authoritative advance decision. Also private: the prompt handed to the implementer subprocess, the CliProvider invocation shape, and the direct inspection of cli-provider.ts needed to establish whether its structured-output path can supervise a long free-form editing session at all (unproven at Epic time — s3 owns the finding, and provider-level work if the answer is no). Other Stories consume finished BuildTaskOutcome values and must never call the adapter directly or infer status from the implementer's advisory narrative.
 
-### Story `s4`
+### Story E20260717185807ba:S004
 
 **Owns:** `sc6`
 **Depends on:** `sc1`, `sc2`, `sc4`, `sc5`
 
 Private to s4: how a failed Task's transitive dependents are computed and marked `blocked` versus `not-reached`, how the run's in-flight state is tracked so progress can be reported mid-run, how a halt is distinguished from a clean completion, and the phrasing of the halt narrative a developer reads. Also private: guaranteeing that the halt path still reaches finalize — the internal control flow that routes a halted run into s5's finalize rather than letting it end as an untracked side-effect. Other Stories read BuildRunProgress; nobody else decides what halting means or recomputes the blocked set.
 
-### Story `s5`
+### Story E20260717185807ba:S005
 
 **Owns:** `sc7`
 **Depends on:** `sc1`, `sc2`, `sc3`, `sc4`, `sc6`

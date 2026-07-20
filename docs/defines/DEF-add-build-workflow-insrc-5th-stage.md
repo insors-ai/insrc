@@ -44,7 +44,7 @@ Once a Story's plan is approved, the chain stops. The approved breakdown of orde
 
 ## Stories
 
-### s1: Start a `build` run for a Story through the same workflow interface as every other stage
+### E20260717185807ba:S001 — Start a `build` run for a Story through the same workflow interface as every other stage
 
 **User value:** `size: M`
 
@@ -62,7 +62,7 @@ A developer who has an approved plan for a Story can begin implementation the sa
 
 - `c1` (convention) The stage is added as a sibling of the existing per-stage runners and artifact definitions; the shared skeleton (gate evaluation, artifact hashing, slug writing, decompose/synthesize/finalize seams) is instantiated, not rebuilt. [[c3]]
 
-### s2: Refuse to touch code when the Story's plan is unapproved or stale
+### E20260717185807ba:S002 — Refuse to touch code when the Story's plan is unapproved or stale
 
 **User value:** `size: M`
 
@@ -83,7 +83,7 @@ A developer can never accidentally implement against a breakdown nobody signed o
 
 - `c1` (invariant) The exact conditions the gate reads for 'approved' and 'non-stale' must be confirmed against the existing gate and hash machinery before this behaviour is designed — no exploration verified their internal shape. [[c13]]
 
-### s3: Implement the plan's Tasks one at a time in the order the plan established
+### E20260717185807ba:S003 — Implement the plan's Tasks one at a time in the order the plan established
 
 **User value:** `size: XL`
 
@@ -106,7 +106,7 @@ The dependency order the plan stage spent a whole stage establishing actually go
 - `c1` (invariant) Whether the existing decompose/synthesize/finalize seams can host a stage that edits code and runs tests — rather than one that emits a document — is unproven and must be established before this behaviour is designed. [[c14]]
 - `c2` (contract) The approved plan is a fixed input: the run consumes the Tasks as ordered, sized and dependency-labelled, and never reorders, re-sizes or re-derives them. [[c11]]
 
-### s4: Halt and report when a Task cannot be completed, instead of pressing on
+### E20260717185807ba:S004 — Halt and report when a Task cannot be completed, instead of pressing on
 
 **User value:** `size: M`
 
@@ -120,7 +120,7 @@ When a Task's tests won't pass, the developer finds out at that Task — with th
 - **ac2:** Given a run that has halted on a failed Task, when the developer inspects the run, then they are told which Task failed and what was left in place by the Tasks completed before it, without having to reconstruct that from the working tree. _(operationalizes `k2`, `k3`)_
 - **ac3:** Given a run in which some Tasks completed and one failed, when the run ends, then it still finalizes into a record of what happened rather than ending as an untracked side-effect. _(operationalizes `k3`)_
 
-### s5: Finalize the run into a reviewable, approvable record of what was built
+### E20260717185807ba:S005 — Finalize the run into a reviewable, approvable record of what was built
 
 **User value:** `size: M`
 

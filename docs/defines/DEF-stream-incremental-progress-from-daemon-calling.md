@@ -37,7 +37,7 @@ During long-running daemon IPC operations — a workflow run or an analyze run t
 
 ## Stories
 
-### s1: One consistent progress signal for every long daemon operation
+### E202607196d6cfaf9:S001 — One consistent progress signal for every long daemon operation
 
 **User value:** `size: M`
 
@@ -51,7 +51,7 @@ A caller watching any long-running daemon operation receives progress events of 
 - **ac2:** Given a long-running daemon operation is actively producing output, when further output is generated while the operation continues, then the caller receives incremental progress events in the same uniform shape reflecting that ongoing production. _(operationalizes `k1`, `k2`)_
 - **ac3:** Given both a workflow run and an analyze run are exercised end to end, when each reports its progress, then the events observed for both conform to the same contract with no operation-specific divergence in shape. _(operationalizes `k1`)_
 
-### s2: MCP-driven callers see live progress instead of silence
+### E202607196d6cfaf9:S002 — MCP-driven callers see live progress instead of silence
 
 **User value:** `size: M`
 
@@ -67,7 +67,7 @@ Claude Code and Codex driving the daemon through the MCP server see live phase a
 - **ac2:** Given a caller invokes the same long-running MCP tool without supplying a progress token, when the operation runs to completion, then the operation completes normally and no progress notifications are emitted for it. _(operationalizes `k3`)_
 - **ac3:** Given a long-running MCP operation is in flight with a progress token supplied, when the operation both changes stage and continues producing output, then the notifications the caller receives convey the current stage and the ongoing production, not merely a final result. _(operationalizes `k3`, `k1`)_
 
-### s3: IDE workbench renders live progress through a clean consumption API
+### E202607196d6cfaf9:S003 — IDE workbench renders live progress through a clean consumption API
 
 **User value:** `size: M`
 
@@ -80,14 +80,3 @@ The IDE workbench can render live phase and token progress for a long daemon ope
 - **ac1:** Given the IDE workbench drives a long-running operation through its RPC client, when the daemon reports progress for that operation, then the RPC client surfaces the current phase and ongoing token progress through a clean consumption API the workbench can render. _(operationalizes `k4`, `k5`)_
 - **ac2:** Given the IDE is consuming live progress for an operation, when the operation finishes and its final result arrives, then the consumption API signals completion and stops reporting further progress for that operation. _(operationalizes `k4`)_
 - **ac3:** Given progress is being reported to the IDE for a long-running operation, when the workbench reads that progress, then it consumes structured phase and token events through the provided API rather than interpreting raw stream frames itself. _(operationalizes `k4`)_
-
-## Citations
-
-- **[[c1]]** `code` `src/shared/types.ts:732-738` — "IpcStreamKind = 'delta' | 'progress' | 'gate' | 'checkpoint' | 'done' | 'error' | ...; interface IpcStreamMessage { stream: IpcStreamKind; ... } — progress kinds already exist on the on-wire frame."
-- **[[c2]]** `code` `src/mcp/server.ts` — "MCP tool surface (~27 KB); grep for progressToken|notifications/progress|sendNotification|onProgress|reportProgress returned 0 hits — no forwarding of daemon progress frames to the client exists today"
-- **[[c3]]** `code` `src/daemon/workflow-rpc.ts` — "Carries WorkflowProgress and emits onProgress/onToken frames as IpcStreamMessage on the emission side — the daemon already produces the frames the caller never sees."
-- **[[c4]]** `code` `src/daemon/analyze-rpc.ts` — "The sibling long-running op the uniform progress-event contract must also cover (analyze.run), alongside workflow.run."
-- **[[c5]]** `code` `src/daemon/server.ts` — "Unix-socket JSON-RPC server whose handleStreamMessage runs the stream protocol that carries these frames from daemon to caller."
-- **[[c6]]** `analyze-bundle` `capability-discovery: does src/mcp/server.ts forward daemon onProgress/onToken frames to the client?` — "No existing module forwards daemon progress frames to the MCP client — the consumption/forwarding gap is real. src/mcp and src/daemon both rate only partial-match; no clear-match exists, confirming ne"
-- **[[c7]]** `stakeholder` `Raw ask (epic.frame input)` — "the MCP tool surface forwarding daemon progress to the client as MCP progress notifications via progressToken; and a clean consumption API the IDE RPC client can render ... so a caller sees live phase"
-- **[[c8]]** `convention` `CLAUDE.md — Key architectural rules` — "Daemon owns all DB access — CLI, MCP, and the IDE workbench communicate via IPC only."

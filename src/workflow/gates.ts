@@ -57,6 +57,17 @@ export class ArtifactNotApprovedError extends Error {
 	}
 }
 
+/** Thrown when approval is refused because the artifact's post-stage
+ *  review verdict is `block` (unresolved HIGH/MED findings) and no
+ *  override reason was supplied. Carries the findings summary so callers
+ *  can show what to fix. */
+export class ReviewBlockedError extends Error {
+	constructor(msg: string, readonly summary: string) {
+		super(msg);
+		this.name = 'ReviewBlockedError';
+	}
+}
+
 /** Read the canonical Define JSON from disk. */
 export function readDefineArtifact(repoPath: string, epicHash: string): DefineArtifact {
 	const paths = defineArtifactPaths(repoPath, epicHash);
@@ -362,17 +373,42 @@ export interface ApprovalResult {
 /** Mark an artifact approved by writing `meta.approvedAt` into its
  *  JSON. Works generically for any workflow — the artifact's JSON
  *  path is passed in verbatim. */
-export function approveArtifactByJsonPath(jsonPath: string): ApprovalResult {
+export function approveArtifactByJsonPath(jsonPath: string, opts?: { readonly overrideReview?: string }): ApprovalResult {
 	if (!existsSync(jsonPath)) {
 		throw new ArtifactMissingError(`No artifact at ${jsonPath}`);
 	}
 	const raw = readFileSync(jsonPath, 'utf8');
-	const artifact = JSON.parse(raw) as { meta?: { workflow?: string; approvedAt?: string; rejectedAt?: string; rejectReason?: string } };
+	const artifact = JSON.parse(raw) as {
+		meta?: {
+			workflow?: string; approvedAt?: string; rejectedAt?: string; rejectReason?: string;
+			review?: { verdict?: string; counts?: { high?: number; med?: number; low?: number } };
+			reviewOverride?: { reason: string; at: string };
+		};
+	};
 	if (typeof artifact.meta !== 'object' || artifact.meta === null) {
 		throw new Error(`Artifact at ${jsonPath} has no meta`);
 	}
+	// Review gate: a `block` verdict (unresolved HIGH/MED findings) refuses
+	// approval unless an explicit override reason is supplied. Auto-fixing
+	// the fixable findings or resolving them at the user gate re-runs the
+	// review and clears the verdict; this is the last line before approval.
+	const override = opts?.overrideReview;
+	let reviewOverride: { reason: string; at: string } | undefined;
+	if (artifact.meta.review?.verdict === 'block') {
+		if (override === undefined || override.length === 0) {
+			const c = artifact.meta.review.counts;
+			const summary = c !== undefined
+				? `${c.high ?? 0} HIGH · ${c.med ?? 0} MED · ${c.low ?? 0} LOW`
+				: 'unresolved findings';
+			throw new ReviewBlockedError(
+				`Review verdict is 'block' (${summary}). Fix/resolve the findings or approve with an override reason.`,
+				summary,
+			);
+		}
+		reviewOverride = { reason: override, at: new Date().toISOString() };
+	}
 	const approvedAt = new Date().toISOString();
-	const nextMeta = { ...artifact.meta, approvedAt };
+	const nextMeta = { ...artifact.meta, approvedAt, ...(reviewOverride !== undefined ? { reviewOverride } : {}) };
 	// Clear any prior rejection if we're re-approving.
 	delete nextMeta.rejectedAt;
 	delete nextMeta.rejectReason;

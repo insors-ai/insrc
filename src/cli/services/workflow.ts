@@ -134,9 +134,9 @@ export function chainText(repoPath: string, epicHash: string): string {
 /** Approve an artifact by its `.md`/`.json` path. When `withTracker`
  *  is true (default), an approved HLD/LLD auto-pushes to the GitHub
  *  tracker — mirroring the old `insrc workflow approve` flow. */
-export function approve(artifactPath: string, withTracker = true): ApproveOutcome {
+export function approve(artifactPath: string, withTracker = true, overrideReview?: string): ApproveOutcome {
 	const jsonPath = jsonPathForMd(artifactPath);
-	const approval = approveArtifactByJsonPath(jsonPath);
+	const approval = approveArtifactByJsonPath(jsonPath, overrideReview !== undefined ? { overrideReview } : undefined);
 	if (!withTracker) return { approval };
 	let tracker: AutoPushResult | undefined;
 	if (approval.workflow === 'design.epic')       tracker = autoPushEpicOnHld(approval.path);

@@ -302,6 +302,9 @@ export interface ArtifactMetaBase {
 	 *  the findings are auto-fixed, resolved at the user gate, or explicitly
 	 *  overridden. Absent until a review has run. */
 	readonly review?: ReviewReport;
+	/** Set when approval overrode a `block` review verdict — records who
+	 *  chose to proceed despite unresolved HIGH/MED findings, and why. */
+	readonly reviewOverride?: { readonly reason: string; readonly at: string };
 }
 
 /** A citation grounds a claim in the artifact body against a step

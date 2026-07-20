@@ -121,6 +121,38 @@ function eventToProgressData(event: AnalyzeRunEvent, tokensTotal: number): Progr
 - A null return means the caller emits no frame for that event — a behaviour change from today, where every AnalyzeRunEvent produces a `progress` frame at line 521.
 - The workflow.run counterpart mapping (over the WorkflowProgress shape) is s1-internal per the HLD boundary and is intentionally NOT exposed as a shared API; uniformity is enforced by both adapters returning ProgressEvent, not by a shared exported helper.
 
+> ## Design amendment (2026-07-21) — analyze token reconciliation
+>
+> **Trigger:** the post-plan review cycle flagged that this contract's token-mapping
+> premise has no source in `AnalyzeRunEvent`, confirmed against
+> `src/analyze/orchestrator/types.ts:180`.
+>
+> **Finding:** analyze.run has **no token-producing event**. Its only token-adjacent
+> variant, `llm-token`, carries `preview: string` — a *throttled preview snapshot*
+> (the accumulated ~240-char tail, emitted at most every ~250 ms), **not** a per-token
+> stream and with **no token count**. This is categorically unlike the workflow side,
+> where `onToken(stepId, token)` (`workflow-rpc.ts:78`) is a genuine per-token *string*
+> stream that t5's accumulator counts into a numeric `tokensDelta`/`tokensTotal`.
+>
+> **Reconciliation (supersedes the token half of this section + t3/t4 as planned):**
+> - `eventToProgressData` maps stage-transition variants → `StageProgressEvent` and
+>   **every other variant, including `llm-token`, → `null`.** analyze.run emits
+>   `StageProgressEvent` **only**. The `preview` text is out of sc1's scope (it was a
+>   UI-only live-typing nicety; a fork that still wants it consumes it on a separate,
+>   non-sc1 channel).
+> - The signature drops the unusable `tokensTotal` param → `eventToProgressData(event:
+>   AnalyzeRunEvent, stageIndex: number): ProgressEvent | null`. Only `stageIndex` is
+>   threaded (for `StageProgressEvent.index`); `total` is always `null` (analyze's stage
+>   set is not enumerable). The t4 closure therefore counts **no** analyze tokens and
+>   emits **no `delta` frames** on the analyze path.
+> - `TokenProgressEvent` is **not dormant** — it is produced by **workflow.run only**
+>   (t5/t6), a legitimately single-producer variant. Consumers must not treat the
+>   absence of analyze token frames as a stall (mirrors the existing CLI-provider note).
+>
+> **Acceptance-check delta:** the t3/t4 checks asserting analyze `TokenProgressEvent`
+> emission are removed; add a check that `llm-token` maps to `null` and that the analyze
+> path emits zero `delta` frames.
+
 ## Data model changes
 
 ### `IpcStreamMessage` — invariant-change

@@ -92,7 +92,19 @@ test('runWorkflowServerSide drives stub end-to-end + stamps meta.model with the 
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
-test('runWorkflowServerSide reviews at finalize by default and stamps meta.review', async () => {
+test('runWorkflowServerSide does NOT review by default (review is a controller task)', async () => {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-wf-rpc-'));
+	try {
+		const provider = new FakeProvider([STUB_PLAN, STUB_ARTIFACT]);
+		const out = await runWorkflowServerSide(stubIntent(repo), provider, {
+			runId: 'wf-test-nr', epicKey: 'demo-stub-nr', modelLabel: 'ollama:qwen3-test',
+		});
+		assert.equal(out.review, undefined, 'daemon does not self-review by default');
+		assert.equal(provider.calls, 2);   // decompose + synthesize only — no review turns
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('runWorkflowServerSide reviews at finalize when review:true is opted in', async () => {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-wf-rpc-'));
 	try {
 		// plan + synthesize, then the review cycle's extract + one verify turn.
@@ -100,7 +112,7 @@ test('runWorkflowServerSide reviews at finalize by default and stamps meta.revie
 		const REVIEW_VERIFY = { severity: 'LOW', evidence: 'verified sound', action: 'none — verified sound', fixability: 'manual' };
 		const provider = new FakeProvider([STUB_PLAN, STUB_ARTIFACT, REVIEW_EXTRACT, REVIEW_VERIFY]);
 		const out = await runWorkflowServerSide(stubIntent(repo), provider, {
-			runId: 'wf-test-r', epicKey: 'demo-stub-r', modelLabel: 'ollama:qwen3-test',
+			runId: 'wf-test-r', epicKey: 'demo-stub-r', modelLabel: 'ollama:qwen3-test', review: true,
 		});
 		// review result surfaced + stamped into the persisted meta
 		assert.ok(out.review, 'review present on result');

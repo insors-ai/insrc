@@ -79,8 +79,11 @@ export interface RunWorkflowOpts {
 	 *  the emitting step, or `'plan'` / `'synthesize'`. */
 	readonly onToken?:         ((stepId: string, token: string) => void) | undefined;
 	readonly maxSynthAttempts?: number | undefined;
-	/** Auto-run the grounded review cycle at finalize (default true). Set
-	 *  false to skip it for a run. Uses the SAME provider as the workflow. */
+	/** Auto-run the grounded review cycle at finalize. DEFAULT FALSE — review
+	 *  is a CONTROLLER task (independent 2nd eyes via insrc_review_step), not a
+	 *  daemon self-review, since a daemon-side review runs the SAME provider
+	 *  that authored the artifact. Set true only for fully-autonomous runs with
+	 *  no controller in the loop. */
 	readonly review?:          boolean | undefined;
 }
 
@@ -190,13 +193,15 @@ export async function runWorkflowServerSide(
 	});
 	log.info({ workflow: intent.workflow, runId, model: opts.modelLabel, path: paths.md }, 'workflow.run: artifact written');
 
-	// 5. Review at finalize (default on; opt out with `review:false`). Runs the
-	//    grounded review cycle on the just-persisted artifact with the SAME
-	//    provider, auto-fixes the fixable findings, and stamps `meta.review` —
-	//    whose `block` verdict a later `approve` enforces. A review failure is
-	//    non-fatal: the artifact is already persisted and must not be lost.
+	// 5. Review at finalize — OPT-IN (default off; enable with `review:true`).
+	//    Review is a CONTROLLER task (insrc_review_step, independent 2nd eyes):
+	//    a daemon-side review here would run the SAME provider that authored the
+	//    artifact — self-review, not independent. This path stays only for
+	//    fully-autonomous runs with no controller in the loop. When it runs it
+	//    stamps `meta.review` (whose block verdict `approve` enforces); a review
+	//    failure is non-fatal since the artifact is already persisted.
 	let review: ReviewReport | undefined;
-	if (opts.review !== false) {
+	if (opts.review === true) {
 		checkAbort();
 		opts.onProgress?.({ phase: 'review' });
 		try {

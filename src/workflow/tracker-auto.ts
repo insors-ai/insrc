@@ -47,6 +47,8 @@ import {
 } from './tracker/conventions.js';
 import { patchTrackerMeta, readTrackerMeta, type TrackerMeta } from './tracker/refs.js';
 import { epicWorkflowId, storyWorkflowId, taskWorkflowId, safeCanonical } from './id.js';
+import { renderReviewReport } from './review/index.js';
+import type { ReviewReport } from './review/types.js';
 
 const log = getLogger('workflow:tracker-auto');
 
@@ -146,6 +148,7 @@ export function autoPushEpicOnHld(hldJsonPath: string): AutoPushResult {
 	relink(definePaths.md, () => renderDefineMarkdown(readDefineArtifact(repoPath, epicHash)));
 
 	if (adopted === undefined) bestEffort('comment', () => ghComment(cfg.owner, cfg.repo, epicRef, renderTrackerHldSummary(readHldArtifact(repoPath, epicHash))));
+	postReviewComment(cfg, epicRef, hldJsonPath);
 
 	return adopted !== undefined ? { status: 'already-exists', epicRef } : { status: 'created', epicRef, labelsCreated: created };
 }
@@ -219,6 +222,7 @@ export function autoPushStoryOnLld(lldJsonPath: string): AutoPushResult {
 			if (updated !== current) ghEditIssueBody(cfg.owner, cfg.repo, epicRef, updated);
 		});
 		bestEffort('comment', () => ghComment(cfg.owner, cfg.repo, storyRef, renderTrackerLldSummary(readLldArtifact(repoPath, epicHash, storyId))));
+	postReviewComment(cfg, storyRef, lldJsonPath);
 	}
 
 	return adopted !== undefined ? { status: 'already-exists', storyRef } : { status: 'created', storyRef };
@@ -270,6 +274,9 @@ export function autoPushTasksOnPlan(planJsonPath: string): AutoPushResult {
 	} catch (err) { return { status: 'failed', reason: `cannot read plan tasks: ${(err as Error).message}` }; }
 	if (tasks.length === 0) return { status: 'skipped', reason: 'plan has no tasks' };
 
+	// R4: the plan's review lands on its parent Story issue.
+	postReviewComment(cfg, storyRef, planJsonPath);
+
 	// Ensure the task + membership labels exist (idempotent, best-effort).
 	const membership = epicMembershipLabel(epicSlug);
 	const created: string[] = [];
@@ -319,6 +326,24 @@ function relink(mdPath: string, render: () => string): void {
 /** Run a non-critical side effect; log + swallow failures. */
 function bestEffort(what: string, fn: () => void): void {
 	try { fn(); } catch (err) { log.warn({ what, err: (err as Error).message }, 'tracker side-effect failed'); }
+}
+
+/** Read `meta.review` off an artifact JSON, or undefined if absent/unreadable. */
+function readReview(jsonPath: string): ReviewReport | undefined {
+	try {
+		const meta = (JSON.parse(readFileSync(jsonPath, 'utf8')) as { meta?: { review?: ReviewReport } }).meta;
+		return meta?.review;
+	} catch { return undefined; }
+}
+
+/** R4: post the finalize review report as an issue comment (best-effort). No
+ *  comment when the artifact carries no review. */
+function postReviewComment(cfg: { owner: string; repo: string }, ref: string, jsonPath: string): void {
+	const review = readReview(jsonPath);
+	if (review === undefined) return;
+	bestEffort('review-comment', () => ghComment(
+		cfg.owner, cfg.repo, ref, `<!-- insrc:review -->\n${renderReviewReport(review)}`,
+	));
 }
 
 function firstSentence(s: string): string {

@@ -209,3 +209,23 @@ test('missing required meta fields skip', () => {
 		assert.equal(r.status === 'skipped' && /missing epicHash/.test(r.reason), true);
 	} finally { s.cleanup(); }
 });
+
+test('R4: posts the review report as an issue comment when the artifact carries meta.review', () => {
+	const s = setup();
+	const gh = makeFakeGh();
+	_setTrackerExecForTests(gh.fn);
+	try {
+		const hld = JSON.parse(readFileSync(s.hldJson, 'utf8')) as { meta: Record<string, unknown> };
+		hld.meta['review'] = {
+			artifact: 'HLD', stage: 'design.epic', verdict: 'block',
+			findings: [{ claimId: 'c1', kind: 'inventory', severity: 'HIGH', premise: 'p', evidence: 'e', action: 'a', fixability: 'manual' }],
+			counts: { high: 1, med: 0, low: 0 }, reviewedAt: '2026-07-21T00:00:00.000Z', model: 'm',
+		};
+		writeFileSync(s.hldJson, JSON.stringify(hld, null, 2));
+		autoPushEpicOnHld(s.hldJson);
+		const reviewComment = gh.calls
+			.filter(c => c[1] === 'issue' && c[2] === 'comment')
+			.find(c => c.some(a => typeof a === 'string' && a.includes('insrc:review')));
+		assert.ok(reviewComment, 'a review comment carrying the insrc:review marker was posted on the Epic issue');
+	} finally { s.cleanup(); _setTrackerExecForTests(); }
+});

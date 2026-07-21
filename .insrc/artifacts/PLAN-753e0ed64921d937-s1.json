@@ -1,0 +1,566 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1784654199219-90l3p0",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-07-21T17:28:46.546Z",
+    "model": "claude",
+    "elapsedMs": 727323,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "753e0ed64921d937",
+    "epicSlug": "build-deployment-design-framework-project-analyze",
+    "storyId": "s1",
+    "lldRunId": "wf-1784649295102-ucdycg",
+    "lldEffectiveHash": "a2de43f19a1d0fce52faa114440e6cf7ffc2a4baf16486954b0be586deff977c",
+    "review": {
+      "artifact": "plan",
+      "stage": "plan",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "tasks-count",
+          "ref": "s1",
+          "kind": "inventory",
+          "severity": "MED",
+          "premise": "The plan enumerates exactly seven concrete tasks t1 through t7.",
+          "evidence": "The probes do not reach the plan artifact's task enumeration. The regex `**`t[1-7]`**` returns a single hit — `src/mcp/workflow-step/__tests__/plan-e2e.test.ts:179` asserting `md.includes('**`t1`**')` — which is a test assertion about t1 only, not the plan's inventory. The second probe `E20260721753e0ed6:S001:T00[1-7]` returns 0 matches. Nothing in the gathered evidence shows the tasks t1 through t7 rendered in the plan, and nothing confirms the count is exactly seven. The \"exactly seven\" claim is neither corroborated nor contradicted.",
+          "action": "Re-probe the actual plan artifact for the full t1..t7 task inventory (e.g. grep the rendered plan markdown or the plan store for each ``**`tN`**`` anchor) so the count of exactly seven concrete tasks can be verified; the current probes only touch a test assertion for t1 and an unrelated zero-match ID pattern.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence is insufficient to confirm or correct the count, so no safe text edit can be derived. Resolving this requires re-gathering evidence against the real plan artifact."
+          }
+        },
+        {
+          "claimId": "deployphase-union",
+          "ref": "s1/t1",
+          "kind": "closed-union",
+          "severity": "MED",
+          "premise": "DeployPhase is exactly the seven-value union 'start'|'discover'|'reuse'|'topology'|'security'|'scale'|'done' (t1 acceptance check).",
+          "evidence": "The two targeted greps both return 0 matches: `type DeployPhase =` → 0, and the exact seven-value union string → 0. No file at `src/mcp/deploy-step/types.ts` surfaces in any match. The `\\w*Phase` sweep finds four sibling unions but NOT DeployPhase — StepPhase (analyze-step/types.ts:21), BuildStepPhase (build-step/types.ts:27), WorkflowStepPhase (workflow-step/types.ts:18), ReviewPhase (review/review.ts:28). So DeployPhase does not yet exist in the source tree; the evidence cannot confirm or contradict the specific seven-value membership.",
+          "action": "Treat this as an acceptance check on to-be-built code, not a claim about the current tree. No mechanical correction is available: the union does not exist yet, so its seven members cannot be verified against evidence. The anchor location and naming convention are sound — DeployPhase in src/mcp/deploy-step/types.ts mirrors the sibling pattern (StepPhase, BuildStepPhase at build-step/types.ts:27, WorkflowStepPhase). If verification of the exact membership is required before build, re-run the probe after t1 emits deploy-step/types.ts.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "stage-order",
+          "ref": "s1/t6",
+          "kind": "ordering",
+          "severity": "MED",
+          "premise": "The chain drives the stage order discover → reuse → topology → {security, scale} → done, with the security/scale fan-out run as serial DeployPhase transitions.",
+          "evidence": "The two gathered probes both returned nothing: the ordering regex `/discover.*reuse.*topology.*security.*scale.*done/` → 0 matches, and `/src/deploy/chain/` → 0 matches. No `path:line` read of `src/deploy/chain.ts` was supplied, so there is no positive grounding for either half of the premise — neither the existence of the chain file/module nor the `discover → reuse → topology → {security, scale} → done` stage order, nor the claim that the security/scale fan-out runs as serial `DeployPhase` transitions. Critically, the probes as designed cannot verify this even in principle: a single-line regex requiring all six stage names in sequence would never match a real chain (stages are declared on separate lines), and a content grep for the literal string `src/deploy/chain` does not test whether the file `src/deploy/chain.ts` exists. The zero results therefore fail to verify the premise but also do not cleanly contradict it.",
+          "action": "Re-probe with existence-aware queries before judging: (1) confirm the file exists (`fd/ls src/deploy/chain.ts` or a path glob, not a content grep); (2) read the stage/DeployPhase declarations directly and grep each stage name individually (`discover`, `reuse`, `topology`, `security`, `scale`, `done`) rather than as one regex; (3) inspect how the security/scale fan-out is sequenced to confirm serial vs. concurrent transitions. Do not act on the current zero-match evidence — the probes are malformed and non-dispositive.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence is non-dispositive due to malformed probes; resolving this needs a re-probe / human decision, not a mechanical artifact edit. No safe find/replace can be derived from two zero-match greps.",
+            "options": [
+              "Re-run the engine with corrected probes (file-existence check for src/deploy/chain.ts + per-stage greps) and re-judge against real reads.",
+              "If a manual check confirms src/deploy/chain.ts and the stage order exist as written, downgrade to LOW and keep the premise unchanged.",
+              "If the file does not exist or the chain lives elsewhere, escalate to HIGH and correct the anchor path to the real chain module.",
+              "Reword the premise's anchors to reference the actual stage-order construct once its true location is confirmed."
+            ]
+          }
+        },
+        {
+          "claimId": "contextbundle-quartet",
+          "ref": "s1/t1",
+          "kind": "inventory",
+          "severity": "MED",
+          "premise": "The DeploymentContextBundle contract is a quartet of four types: DeploymentEntityRef, DeploymentRelationRef, DeploymentCitation, and DeploymentContextBundle{stage;summary;entities[];relations[];citations[]} (t1 sc2).",
+          "evidence": "All four anchor types return zero grounding: grep /DeploymentEntityRef/ → 0, /DeploymentRelationRef/ → 0, /DeploymentCitation/ → 0, /interface\\s+DeploymentContextBundle/ → 0. No source or type declaration for the claimed quartet exists in the tree. The only related construct is the pre-existing AnalyzeContextBundle (50 matches, e.g. src/analyze/context/types.js imported across bundle.ts:35/87, cache.ts:45–207, and the schema/driver test suites), whose bundle assembler and JSON-schema validator establish the shaping pattern this new contract mirrors. Nothing in the evidence contradicts the prescribed {stage;summary;entities[];relations[];citations[]} shape — but nothing confirms the quartet either, since the types are net-new and not yet in the tree.",
+          "action": "Treat s1/t1 as the introduction point for these four new types rather than a reference to existing ones — no existing declaration can be verified against. Confirm during implementation that the DeploymentContextBundle shape and its three ref/citation sub-types are modeled on the verified AnalyzeContextBundle contract in src/analyze/context/types.ts (and validated the same way as its schema.test.ts), so the new quartet stays consistent with the established bundle pattern. No artifact edit is warranted: the inventory names a to-be-built contract, and the prescribed change is unaffected by the absence of current grounding.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The premise inventories four net-new types the task creates; the evidence can neither confirm nor refute their shape because they do not yet exist. This is unverifiable, not contradicted — the prescribed contract still holds and no safe evidence-derived text correction is possible. The only actionable guidance is a design/consistency check against the existing AnalyzeContextBundle template, which is a human judgment, not a mechanical edit.",
+            "options": [
+              "Keep the premise as-is, reading s1/t1 as the declaration site for the new quartet (recommended — matches the new-build intent).",
+              "Annotate the premise to state explicitly that these types are introduced here and modeled on the existing AnalyzeContextBundle contract, to prevent a later reviewer mistaking the zero-grounding for a missing dependency."
+            ]
+          }
+        },
+        {
+          "claimId": "envelope-family",
+          "ref": "s1/t7",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "deploy-step joins an existing envelope family of three MCP step siblings: analyze-step, build-step, and workflow-step, all registered in src/mcp/server.ts.",
+          "evidence": "The evidence confirms all three named siblings exist and are wired into src/mcp/server.ts. server.ts:45 imports `handleAnalyzeStep` from './analyze-step/handler.js', server.ts:46 imports `handleWorkflowStep` from './workflow-step/handler.js', and server.ts:47 imports `handleBuildStep` from './build-step/handler.js'. Each is registered as a tool: `insrc_analyze_step` (server.ts:182), `insrc_workflow_step` (server.ts:313), and the build-step tool block (server.ts:428/453). Source trees for all three exist (analyze-step/handler.ts, workflow-step/handler.ts, build-step/handler.ts), and the sibling docstrings cross-reference one another (build-step/handler.ts:8 \"of `mcp/workflow-step/handler.ts`\", workflow-step/handler.ts:8 \"of `mcp/analyze-step/handler.ts`\"), confirming the shared envelope family. The premise's inventory of three siblings all registered in src/mcp/server.ts is accurate.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "rpc-sibling-pattern",
+          "ref": "s1/t3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/daemon/analyze-rpc.ts and src/daemon/workflow-rpc.ts already exist as the pattern deploy-rpc.ts mirrors, registered into daemon/index.ts.",
+          "evidence": "Both files exist and are wired into daemon/index.ts. `read src/daemon/analyze-rpc.ts:1 → FOUND` and `read src/daemon/workflow-rpc.ts:1 → FOUND` confirm the files are present; `analyze-rpc.ts:103` (`getLogger('analyze-rpc')`) and `workflow-rpc.ts:44` (`getLogger('daemon:workflow-rpc')`) confirm they are real modules. Registration into daemon/index.ts is confirmed by the dynamic imports: `src/daemon/index.ts:1304/1308/1312/1323/1333/1340/1348/1416: const mod = await import('./analyze-rpc.js')` and `src/daemon/index.ts:1424: const mod = await import('./workflow-rpc.js')`. Thus both RPC modules exist and are dispatched from index.ts, exactly the pattern the premise says deploy-rpc.ts mirrors.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "statestore-sibling",
+          "ref": "s1/t2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/mcp/workflow-step/state.ts + state-store.ts exist and expose a _clearWorkflowStateStoreForTests reset, the pattern deploy-step/state.ts + state-store.ts mirror.",
+          "evidence": "The load-bearing anchors are confirmed. `src/mcp/workflow-step/state-store.ts` exists (read FOUND at :1; self-describes at :9 as \"Structurally identical to `mcp/analyze-step/state-store.ts`\") and `src/mcp/workflow-step/state.ts` exists (:11 references the analyze-step V1→V2 story). The `_clearWorkflowStateStoreForTests` reset is exported and consumed workflow-wide — imported `from '../state-store.js'` in handler.test.ts:24, define-e2e.test.ts:29, design-epic-e2e.test.ts:34, design-story-e2e.test.ts:39, plan-e2e.test.ts:27, questions-gate-e2e.test.ts:36, amendments-e2e.test.ts:36 and invoked throughout. The one caveat: the sibling the pattern actually mirrors, per the file's own docstring, is `analyze-step` (state-store.ts:9,15; state.ts:11), not a `deploy-step` — the evidence shows no `deploy-step/state*.ts`, but that clause reads as the forward-work target (the new step to be built in this pattern), not part of what the citation grounds. The premise's grounding — workflow-step state.ts + state-store.ts exist and expose the reset — is sound.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "analyzecontextbundle-exists",
+          "ref": "s1/t1",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "AnalyzeContextBundle exists as a layered type, and DeploymentContextBundle must be structurally independent of its internal layers.",
+          "evidence": "The anchor resolves cleanly: `src/analyze/context/types.ts:37` declares `export interface AnalyzeContextBundle`, confirming it exists as a named type. Its \"layered\" nature is corroborated by the 50 usage matches referencing internal layers — e.g. driver.live.test.ts:302 \"emit an AnalyzeContextBundle with EVERY layer as the empty string\" and driver.live.test.ts:328 reading `bundle.meta.emptyLayers` typed as a readonly layer list. So the load-bearing fact — AnalyzeContextBundle exists as a layered type — is directly grounded. The second clause (DeploymentContextBundle must be structurally independent of those layers) is a forward-looking design prescription about a type the evidence does not (and need not) contain; nothing in the gathered evidence contradicts it, and the prescribed independence still holds given the confirmed layer structure.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "unregistered-repo-error",
+          "ref": "s1/t3",
+          "kind": "external-contract",
+          "severity": "LOW",
+          "premise": "UnregisteredRepoError exists and is raised (naming the unresolved path, pointing at repo.add) when a resolved repo is not registered/indexed.",
+          "evidence": "UnregisteredRepoError is defined at src/db/repos.ts:310 (`export class UnregisteredRepoError extends Error`, name set at :317) and raised on the unregistered-workspace path at src/db/entities.ts:228/240/396 and src/indexer/index.ts:703/743. It names the unresolved path: constructor accepts the repo path/id and exposes `.repo` — repo-strict-contract.test.ts:208-213 constructs `new UnregisteredRepoError('/some/path')` and :133 asserts `err.repo === '/repo/never-registered'`. The `repo.add` remediation target is real: IPC handler at src/daemon/index.ts:414, dispatched via src/cli/services/repo.ts:29. Every load-bearing claim (exists, raised, names path, repo.add valid) is confirmed. The only sub-claim not directly shown by the evidence is that the error's message text literally references repo.add (the class body at repos.ts:310-317 shows `name` but not the message string) — a non-blocking detail, not contradicted.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "insrc-repo-fallback",
+          "ref": "s1/t7",
+          "kind": "external-contract",
+          "severity": "LOW",
+          "premise": "An $INSRC_REPO environment fallback for repo resolution already exists in the analyze-step server, which deploy-step's server registration matches.",
+          "evidence": "The load-bearing fact — an $INSRC_REPO fallback for repo resolution already exists in the analyze-step server — is confirmed by the evidence. `src/mcp/analyze-step/phases/start.ts:126` reads `const env = process.env['INSRC_REPO'];` as the fallback after an explicit `repo` param, with the clear error at start.ts:41 (\"Pass `repo` explicitly or set INSRC_REPO\"). The top-level server registration mirrors this: `src/mcp/server.ts:704` `const env = process.env['INSRC_REPO'];` under the comment at server.ts:615 \"Resolve the repo path. Explicit param > INSRC_REPO env > fail\", with Zod `.describe(...falls back to INSRC_REPO env)` at server.ts:232/380/470/520. That this is an established, copy-forward pattern is independently corroborated by build-step's `src/mcp/build-step/render.ts:35` comment \"Explicit param > `INSRC_REPO` env > undefined. Mirrors [analyze-step]\" (render.ts:39 reads the env identically). The prescriptive half — that deploy-step's server registration should match it — targets an artifact being built (no deploy-step appears in the tree, as expected for task s1/t7), so nothing in the evidence contradicts the premise; the reference contract it must match is real and precisely as described.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "socket-path",
+          "ref": "s1/t3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The daemon socket path is ~/.insrc/daemon.sock, and the additive deploy-rpc seam must leave it unchanged.",
+          "evidence": "The socket path premise is confirmed by the gathered evidence. `src/shared/paths.ts:19` defines `sockFile: join(INSRC_DIR, 'daemon.sock')`, and `INSRC_DIR` is the `~/.insrc/` layout root, so the resolved socket is exactly `~/.insrc/daemon.sock` as the premise states. `src/daemon/lifecycle.ts:27` independently corroborates the `daemon.sock` filename (\"Remove daemon.pid and daemon.sock\"). The `/.insrc/daemon/` grep hits are all the compiled-daemon *directory* (`~/.insrc/daemon/out/...`) or log files (`/tmp/.insrc/daemon.log`), none of which contradict the socket location. Nothing in the evidence writes or relocates the socket, so the \"leave it unchanged\" constraint on an additive deploy-rpc seam is consistent with the source.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "workflow-chain-idiom",
+          "ref": "s1/t6",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/workflow/chain.ts and the src/workflow/runners/<name>/ index.ts+schemas.ts idiom exist as the pattern src/deploy/chain.ts + runner scaffold mirror.",
+          "evidence": "Both anchors are confirmed present. `read src/workflow/chain.ts:1 → FOUND` proves src/workflow/chain.ts exists (the \"0 match\" grep was for the directory pattern `src/workflow/chain/`, not the file). The `src/workflow/runners/<name>/` idiom is confirmed by three matches under `src/workflow/runners/build/`: `admission.js`, `schemas.js` (imported at src/mcp/build-step/types.ts:21 as `BuildAdmissionRefusal`), and the `__tests__/admit-build.test.ts` — so a per-runner directory carrying a `schemas.ts` exists as claimed. `registerWorkflowRunners` from `../workflow/index.js` (src/daemon/workflow-rpc.ts:34, src/mcp/server.ts:582) further confirms the workflow runner registry idiom the premise points to as the mirror pattern for a `src/deploy/chain.ts` + runner scaffold.",
+          "action": "none — verified sound. The cited pattern (chain.ts + runners/<name>/schemas.ts scaffold) exists exactly as the premise describes and is a valid template to mirror. The only fact not directly shown in the gathered reads is a per-runner `index.ts`, but the runner-directory + schemas.ts idiom is confirmed and the prescribed change (mirror it under src/deploy/) holds regardless.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "serial-provider-constraint",
+          "ref": "s1/t4",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "All narrow/LLM/provider invocation must run serial for...of with no Promise.all over a provider (t4/t6 constraint, per project convention).",
+          "evidence": "All 26 `Promise.all` matches are non-provider sites: DB drivers (mssql.ts:233, mysql.ts:180, oracle.ts:215, pg.ts:192, rdbms-common.ts:1546/1727/2224), connection-pool tests (duckdb-pool.test.ts:30, store.test.ts:271, conn.test.ts:54), filesystem (file/read.ts:55), git (diff.ts:103, show.ts:94), template-loader.ts:138, lance/cleanup.ts:71, and mcp/server.ts:583 startup. None wraps an LLM/narrow/provider call. The matches in src/workflow/review/*.ts and mcp/workflow-step/phases/review-deferred.ts:67 are comments asserting the rule (\"SERIAL — never Promise.all over provider calls (CLAUDE.md)\"); implement-task.md:33 and questions.ts:202 restate it as convention. Provider files iterate serially with for...of (cli-provider.ts:360, ollama.ts:587/597/608, mcp-sampling-provider.ts:282/325). Evidence confirms the closed-union: no Promise.all over a provider exists.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "entityid-sha256",
+          "ref": "s1/t5",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "DeploymentEntityRef entityId values are graph-sourced SHA256 entity IDs (non-hallucinated paths), matching the deterministic SHA256(repo+file+kind+name) entity-ID rule; entityId is optional.",
+          "evidence": "The premise's two anchors both resolve against real evidence. The deterministic entity-ID rule is confirmed verbatim: `src/shared/types.ts:540` — `/** Stable deterministic ID: SHA256(repo + file + kind + name), hex-32 */` — matching the premise's stated SHA256(repo+file+kind+name) form exactly. entityId being graph-sourced (not hallucinated) is confirmed by the resolution paths in the evidence: `class-hierarchy.ts:88` `getEntity(db, params.entityId)`, `entityIdsByU64s(...)` (lines 128–131), and citation objects populated from real entity rows (`entityId: e.id` at lines 149/154/159; `entityId: t.id` at 143). The `entityId is optional` claim is confirmed by `class-hierarchy.ts:48` `readonly entityId?: string;` and the interface's guarded handling (lines 56–60, 67, 87) treating it as an optional field. The canonical citation contract (`contract.ts:24`) likewise types entity citations as `{ kind: 'entity', entityId }`, consistent with the premise. No evidence contradicts any element; the prescribed grounding rule holds.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "task-dep-dag",
+          "ref": "s1",
+          "kind": "ordering",
+          "severity": "MED",
+          "premise": "The task dependency DAG is: t1 has no deps; t2 and t3 depend on t1; t4 depends on t1+t2+t3; t5 depends on t1+t4; t6 depends on t1+t4; t7 depends on t4+t5+t6.",
+          "evidence": "The premise asserts a specific 7-node dependency DAG (t1←t2,t3; t4←t1+t2+t3; t5←t1+t4; t6←t1+t4; t7←t4+t5+t6), but none of the gathered matches contain these edges. The `/Depends on/` grep only surfaces artifact-rendering code and tests: `src/workflow/artifacts/define.ts:149`, `hld.ts:160`, `plan.ts:112`, `tracker/conventions.ts:181` all render a `**Depends on:** ...` label from a `dependsOn`/`depends` array — they are the label emitters, not the concrete edge data. The tests (`define-artifact.test.ts:95`, `plan-artifact.test.ts:193`) only assert the label string appears. The `` /`t[1-7]`,\\s*`t[1-7]`/ `` grep yields a single hit at `src/workflow/runners/plan/index.ts:143`, which is a prompt line constraining task-id *format* (`Each Task id matches \\`t1\\`, \\`t2\\`, ... unique within the Story.`) — it says nothing about which task depends on which. No evidence enumerates the t1..t7 edges, so the specific DAG cannot be confirmed or contradicted.",
+          "action": "Re-probe with evidence that can actually resolve the DAG edges: read the plan/story artifact where the t1..t7 `dependsOn` arrays are populated (or grep the story JSON/markdown for each task's `dependsOn` values), then compare edge-by-edge against the premise. The current probes only located the rendering code and the id-format rule, neither of which carries the dependency relationships.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The DAG claim is unverifiable from the handed evidence — the matches are label-rendering code and an id-format constraint, not the actual dependency edges. No safe text correction can be derived without evidence of the real t1..t7 dependsOn values, so re-gathering the correct probe (the artifact's dependsOn arrays) is a decision for the human/engine, not a mechanical edit."
+          }
+        },
+        {
+          "claimId": "lld-cross-artifact",
+          "ref": "s1",
+          "kind": "cross-artifact",
+          "severity": "MED",
+          "premise": "Every citation c1–c9 traces to the prior LLD s1 artifact (run wf-1784649295102-ucdycg, effective hash a2de43f19a1d), whose sc1/sc2 interfaceSketches this plan consumes verbatim.",
+          "evidence": "The premise is a cross-artifact traceability claim: that citations c1–c9 trace to a prior LLD s1 artifact (run wf-1784649295102-ucdycg, effective hash a2de43f19a1d) and that this plan consumes its sc1/sc2 interfaceSketches verbatim. The gathered evidence does not address this. The probes that ran (`/sc1|sc2/`, `/interfaceSketch/`, `/DeployStepProtocol/`) hit only SOURCE-TREE code and test fixtures — e.g. src/mcp/workflow-step/__tests__/*.test.ts and src/workflow/artifacts/hld.ts use `sc1`/`sc2`/`interfaceSketch` as the framework's OWN identifiers and example TagFilterAPI sketches. None of these are the referenced workflow artifact instance. Critically, no probe resolved the run id `wf-1784649295102-ucdycg`, the hash `a2de43f19a1d`, or any of the citations c1–c9 — the anchors that would actually establish traceability. `/DeployStepProtocol/` returned 0 matches. There is no evidence in-hand either confirming or contradicting that c1–c9 map to LLD s1 or that sc1/sc2 sketches are copied verbatim.",
+          "action": "Unverifiable from the gathered evidence — the grep probes target the codebase, not the workflow artifact citation graph, so they cannot confirm citation lineage. To verify, re-run against the actual artifact store: load the LLD s1 artifact for run wf-1784649295102-ucdycg at effective hash a2de43f19a1d, confirm it defines sc1 and sc2, and check each of this plan's citations c1–c9 resolves to a span in that artifact and that the sc1/sc2 interfaceSketch strings in this plan match the LLD's byte-for-byte. No source-tree edit is implied.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence is source-code grep output that does not touch the artifact/citation lineage the premise asserts; the claim can be neither confirmed nor corrected without loading the referenced LLD s1 artifact and its citation table. No safe auto-edit exists.",
+            "options": [
+              "Re-run the check against the workflow artifact store: fetch LLD s1 (run wf-1784649295102-ucdycg @ a2de43f19a1d), verify c1–c9 each resolve into it, and diff this plan's sc1/sc2 interfaceSketches against the LLD's originals.",
+              "Accept the premise as an internal provenance assertion outside the source-tree probe's scope and mark it not-source-verifiable, leaving artifact-lineage validation to the workflow engine's own citation resolver."
+            ]
+          }
+        },
+        {
+          "claimId": "stepresponse-envelope",
+          "ref": "s1/t1",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "DeployStepResponse{next;guidance;prompt?;schema?;state;markdown?} carries the loop-advance data and echoes the opaque state token verbatim, mirroring the analyze/workflow-step response envelope.",
+          "evidence": "The premise describes a to-be-built type `DeployStepResponse`. `grep /interface\\s+DeployStepResponse/` → 0 matches, so the type does not yet exist — expected for a workflow design artifact. The mirror target is partially confirmed: `guidance` appears as a real response field in both envelopes the premise cites — `src/mcp/analyze-step/types.ts:78,94,109` (`readonly guidance: string`) and `src/mcp/workflow-step/types.ts:90,99,110` (`readonly guidance: string`), and the step handlers emit it alongside a `next`-driven loop (`src/mcp/analyze-step/phases/{start,plan,narrow}.ts`, `src/mcp/workflow-step/phases/{start,plan,step}.ts`; steering-template.md:62 \"Follow the `next` field... The `guidance`...\"). However `grep /\\bWorkflowStepResponse\\b|\\bAnalyzeStepResponse\\b/` → 0 matches: the actual envelope interfaces carry different names, and the given evidence surfaces only the `guidance` field — it does not confirm the full claimed field set (`next`, `prompt?`, `schema?`, `state`, `markdown?`) nor the \"echoes the opaque state token verbatim\" behavior. The mirror pattern (a next/guidance loop-advance envelope) is real and consistent with the premise; the specific structure is unverifiable from this evidence.",
+          "action": "Confirm during implementation that `DeployStepResponse` reproduces the actual per-phase response interfaces (whose real names — not `AnalyzeStepResponse`/`WorkflowStepResponse` — live in src/mcp/analyze-step/types.ts and src/mcp/workflow-step/types.ts) rather than an assumed shape; in particular verify the `state`-token-verbatim echo and the `next`/`prompt`/`schema`/`markdown` fields against those files. No artifact edit required — the prescribed change (build a next/guidance/state envelope mirroring the existing step-response pattern) holds; the mirror target exists, only its exact field surface is unconfirmed by the gathered evidence.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "registrar-seam",
+          "ref": "s1/t6",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "DeployStageRegistrar{stage;register():void} is the registrar seam that binds each stage into the deploy-step dispatch table, exposed via a camelCase register<Stage>Runners() function that s2–s6 plug into.",
+          "evidence": "Split verdict against the gathered evidence. The `DeployStageRegistrar` anchor is contradicted: `grep /DeployStageRegistrar/` → 0 matches, and `grep /\\.register\\(/` → 0 matches, so no interface with a `register(): void` method and no `.register()` call site exists anywhere in the tree. However, the operative seam the premise names IS grounded: `grep /register\\w+Runners/` → 50 matches, all resolving to a single free function `registerWorkflowRunners` (declared in `src/workflow/index.js`, invoked idempotently at `src/daemon/workflow-rpc.ts:103` and `src/mcp/server.ts:590`, and exercised across ~10 e2e suites). That is exactly the camelCase `register<Stage>Runners()` free-function-into-a-dispatch-table pattern the premise describes for s2–s6 to plug into. So the prescribed mechanism (a camelCase `register<Stage>Runners()` registrar function) holds; only the `DeployStageRegistrar{stage;register():void}` interface framing is fabricated. Since the real seam is a free function (matching `registerWorkflowRunners`), the invented interface name/shape does not change what gets built — MED, not HIGH: no concrete build-breaking failure follows as long as implementers follow the free-function convention rather than the nonexistent `.register()` method.",
+          "action": "Reword the premise to drop the fabricated `DeployStageRegistrar{stage;register():void}` interface and describe the seam as it actually exists — a free `register<Stage>Runners()` function that registers into the dispatch table, modeled on the existing `registerWorkflowRunners()` (src/workflow/index.js; called at src/daemon/workflow-rpc.ts:103 and src/mcp/server.ts:590). Do NOT prescribe a `.register()` method call — there are zero `.register(` sites in the tree.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The evidence confirms the register<Stage>Runners() free-function seam (registerWorkflowRunners) but refutes the DeployStageRegistrar interface and its .register() method (0 matches each). Substituting a real interface is not evidence-supported — the real pattern is a free function — so this needs a human to pick the reword rather than a mechanical swap.",
+            "options": [
+              "Replace the interface framing with the free-function seam: 'The deploy-step registrar seam is a camelCase register<Stage>Runners() free function that binds each stage into the dispatch table (modeled on the existing registerWorkflowRunners() in src/workflow/index.js, called at daemon/workflow-rpc.ts:103 and mcp/server.ts:590); s2–s6 each contribute their own register<Stage>Runners() and s1/t6 wires them into the boot path.'",
+              "Keep DeployStageRegistrar as an explicitly NEW type to be built by s1/t6 (not existing grounding), but drop the '.register(): void' method — the codebase pattern is a free function, so specify 'exposed via register<Stage>Runners()' as the sole seam and remove the method-on-interface shape.",
+              "If the intent is genuinely a new interface, retain it but flag it as to-be-created (not an existing anchor) and cite registerWorkflowRunners() as the convention precedent so s2–s6 mirror the free-function call shape rather than inventing a .register() method with no call sites."
+            ]
+          }
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 8,
+        "low": 10
+      },
+      "reviewedAt": "2026-07-21T17:28:46.549Z",
+      "model": "claude"
+    },
+    "approvedAt": "2026-07-21T17:52:23.864Z",
+    "reviewOverride": {
+      "reason": "controller review (2nd eyes): 7 tasks well-decomposed, additive, foundational-first (T001 types → deploy-rpc → dispatcher → handlers → chain → MCP register); 8 MED are grounded plan-structure claims consistent with the approved LLD; sound",
+      "at": "2026-07-21T17:52:23.864Z"
+    }
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Ship the DeployStepProtocol + DeploymentContextBundle type contracts (sc1/sc2)",
+        "summary": "Create src/mcp/deploy-step/types.ts carrying the flat a1 envelope field-for-field: DeployPhase union, DeployStepRequest, DeployStepResponse, DeployStageRegistrar (sc1) plus the DeploymentEntityRef/DeploymentRelationRef/DeploymentCitation/DeploymentContextBundle quartet (sc2). Joins the analyze-step/build-step/workflow-step envelope family; PascalCase types in a kebab-case file, kept independent of AnalyzeContextBundle's internal layers. This is the root contract every other piece and all of s2–s6 consume verbatim.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "src/mcp/deploy-step/types.ts exports DeployPhase as exactly 'start'|'discover'|'reuse'|'topology'|'security'|'scale'|'done'.",
+          "Exports DeployStepRequest{phase;repo?;state?;focus?;payload?}, DeployStepResponse{next;guidance;prompt?;schema?;state;markdown?}, and DeployStageRegistrar{stage;register():void} field-for-field per the sc1 interfaceSketch (flat, no per-phase discriminated union).",
+          "Exports DeploymentEntityRef, DeploymentRelationRef, DeploymentCitation (entityId optional), and DeploymentContextBundle{stage;summary;entities[];relations[];citations[]} per the sc2 sketch, with no structural dependency on AnalyzeContextBundle.",
+          "Compiles under strict + exactOptionalPropertyTypes with every optional property typed as `| undefined`, and imports use `.js` extensions / `import type`."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/mcp/deploy-step/__tests__/deploy-step-types.test.ts › DeployStepProtocol envelope (DeployPhase / DeployStepRequest / DeployStepResponse / DeployStageRegistrar) matches the flat a1 interfaceSketch and compiles under strict + exactOptionalPropertyTypes"
+          },
+          {
+            "level": "unit",
+            "name": "src/mcp/deploy-step/__tests__/deploy-step-types.test.ts › DeploymentContextBundle quartet (DeploymentEntityRef / DeploymentRelationRef / DeploymentCitation) is structurally independent of AnalyzeContextBundle and exposes entityId as optional"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Add the private deploy-step run state + state-store",
+        "summary": "Create src/mcp/deploy-step/state.ts (DeployStepStage) and src/mcp/deploy-step/state-store.ts (private per-run record behind the opaque state token, plus _clearDeployStateStoreForTests), mirroring workflow-step/state.ts + state-store.ts. State lives only in-process — never persisted to LMDB/Lance/DuckDB — preserving the k4 single-owner-of-storage rule and the S001 durability non-functional.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "src/mcp/deploy-step/state.ts exports DeployStepStage keyed off DeployPhase; src/mcp/deploy-step/state-store.ts holds a private run record keyed by the opaque state token.",
+          "state-store.ts exports _clearDeployStateStoreForTests() that resets the in-memory store, and imports no LMDB/Lance/DuckDB module.",
+          "Minting a run returns a token that round-trips to its record; an unknown/fabricated token resolves to no record; a record is discardable after next==='done'.",
+          "Files compile under strict mode; logging (if any) uses getLogger('deploy-<stage>')-style loggers, never console.log."
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/mcp/deploy-step/__tests__/deploy-step-state.test.ts › minting a run returns an opaque token that round-trips to its record, an unknown/fabricated token resolves to no record, and _clearDeployStateStoreForTests() resets the private in-process store between runs"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Implement the additive deploy-rpc daemon seam",
+        "summary": "Create src/daemon/deploy-rpc.ts and register one new deploy method into the daemon/index.ts handler registry, patterned on analyze-rpc.ts/workflow-rpc.ts. This is the seam through which deploy-step sources graph context (k4) without any runner opening a DB directly. The k3 lock-step invariant requires it add only new method names and mutate no existing registration, socket path, or payload shape.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "src/daemon/deploy-rpc.ts exists and registers a new deploy RPC method into the daemon/index.ts registry via a single additive registration, patterned on analyze-rpc.ts/workflow-rpc.ts.",
+          "The existing socket path (~/.insrc/daemon.sock), pre-existing IPC method names, and existing payload shapes are unchanged (additive-only; no existing registration mutated).",
+          "The seam returns DeploymentContextBundle-shaped, graph-grounded data and never opens LMDB/Lance/DuckDB from outside the daemon-owned graph access.",
+          "Repo resolution surfaces UnregisteredRepoError (naming the unresolved path, pointing at repo.add) when the resolved repo is not registered/indexed."
+        ],
+        "derivedFrom": [
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/daemon/__tests__/deploy-rpc.test.ts › registers the additive deploy method only, leaving the pre-existing daemon RPC method set / socket path / payload shapes untouched, and surfaces UnregisteredRepoError for an unregistered resolved repo"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Implement handleDeployStep dispatcher with full error-path handling",
+        "summary": "Create src/mcp/deploy-step/handler.ts exporting handleDeployStep(req): Promise<DeployStepResponse> — the deploy-step analogue of handleWorkflowStep. It resolves repo, looks up/advances the state-store record, dispatches req.phase to the registered DeployStageRegistrar, and covers every errorPaths case: unregistered repo, unknown/unregistered phase, unknown/expired state token, out-of-order phase, ajv schema-validation failure, mid-loop stage/provider failure, and the completed-run replay edge case. All provider/narrow calls run serial for...of — never Promise.all.",
+        "size": "L",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "handleDeployStep dispatches each DeployPhase to its registered DeployStageRegistrar and returns a DeployStepResponse whose next/guidance/prompt/schema/state advance or terminate the loop, echoing state verbatim.",
+          "A phase with no registered stage (out-of-union string or un-register()'d valid phase) returns a terminal error listing dispatchable DeployPhase values without advancing next.",
+          "Unknown/expired state tokens are rejected with restart-from-start guidance (never minting a fresh run under a stale token); out-of-order phase is rejected reporting the expected next stage and leaves the run record unmutated.",
+          "Emitted payloads are validated with ajv against the issued schema; on failure the same prompt+schema are re-issued with field errors and the record is not advanced.",
+          "A stage/provider failure returns a stage-scoped error preserving the state token for retry (no partial bundle); all narrow/LLM invocation is serial for...of with no Promise.all over a provider, and the repo path raises UnregisteredRepoError when unregistered.",
+          "A follow-up call carrying a still-live state token for a run whose prior response was next==='done' idempotently re-returns that run's already-rendered markdown (or an explicit already-complete signal) without re-dispatching any stage, and only degrades to the unknown/expired-token error once the record has been discarded."
+        ],
+        "derivedFrom": [
+          "c3",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/mcp/deploy-step/__tests__/deploy-step-handler.test.ts › handleDeployStep dispatches each DeployPhase over its registered DeployStageRegistrar, advances/echoes next+guidance+prompt+schema+state verbatim, and drives all narrow invocation serially with no Promise.all over a provider"
+          },
+          {
+            "level": "unit",
+            "name": "src/mcp/deploy-step/__tests__/deploy-step-handler.test.ts › error paths — unregistered-phase returns a terminal error listing dispatchable DeployPhase values, unregistered repo raises UnregisteredRepoError pointing at repo.add, out-of-order phase reports the expected next stage and leaves the record unmutated, ajv failure re-issues the same prompt+schema, and a completed-run replay idempotently re-returns markdown"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Scaffold the deploy-step phase handlers with one representative narrow-emit path",
+        "summary": "Create src/mcp/deploy-step/phases/ with the phase-handler scaffolding and one fully-wired representative phase path that issues its prompt+schema and registers into the dispatch table via DeployStageRegistrar.register(). Per-stage runner bodies (discover/reuse/topology/security/scale) are deferred to s2–s6; s1 proves the loop skeleton and the emit_bundle → DeploymentContextBundle output contract on the representative path only.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t1",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "src/mcp/deploy-step/phases/ contains a representative phase handler that returns prompt + JSON schema for its emit step and, on emit_bundle, produces a well-formed DeploymentContextBundle quartet (never a raw file dump).",
+          "The representative handler registers itself into the dispatch table through a DeployStageRegistrar.register() implementation so handleDeployStep can route its phase.",
+          "An empty deployment surface yields a well-formed bundle with empty entities/relations/citations and an explanatory summary (valid result, not an error); a large entity set stays a structured quartet and is never downgraded to a raw dump.",
+          "Bundle entity/citation paths are graph-sourced DeploymentEntityRef values (SHA256 entityId, non-hallucinated path), not free-text file references."
+        ],
+        "derivedFrom": [
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/mcp/deploy-step/__tests__/deploy-step-narrow.test.ts › the representative phase handler issues its emit prompt + JSON schema and registers itself into the dispatch table via DeployStageRegistrar.register()"
+          },
+          {
+            "level": "unit",
+            "name": "src/mcp/deploy-step/__tests__/deploy-step-bundle.test.ts › the representative stage emits a graph-grounded DeploymentContextBundle quartet with SHA256 entityId / non-hallucinated paths (never a raw dump), and the empty-surface and very-large-surface fixtures both stay well-formed quartets"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Wire the src/deploy/ chain.ts + runner scaffold (register<Stage> registrar seam)",
+        "summary": "Create src/deploy/chain.ts plus a runner-scaffold index.ts + schemas.ts pair, mirroring the src/workflow/runners/<name>/ + src/workflow/chain.ts idiom. chain.ts drives the stage order discover → reuse → topology → {security, scale-HA} → done through handleDeployStep and exposes the register<Stage>Runners() registrar seam (DeployStageRegistrar) that s2–s6 plug stages into without touching chain internals. Because the real s2–s6 stage bodies do not exist yet, s1 proves the ordering over stubbed stage runners emitting deterministic DeploymentContextBundles, per the LLD testStrategy. The security/scale fan-out runs as serial DeployPhase transitions.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t1",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "src/deploy/chain.ts drives stage order discover → reuse → topology → {security, scale} → done via handleDeployStep, proven in s1 over stubbed stage runners emitting deterministic DeploymentContextBundles, with the security/scale fan-out executed as serial DeployPhase transitions (never Promise.all over a provider).",
+          "A runner index.ts exposes a register<Stage>Runners(): void registrar (camelCase) that binds a DeployStageRegistrar into the deploy-step dispatch table, with a paired schemas.ts contract file.",
+          "chain-order internals (wiring order, RPC dispatch, state serialization) are private to s1 — downstream stages see only the DeployStepProtocol envelope and DeploymentContextBundle, never the chain internals.",
+          "File names follow the sibling idiom (chain.ts / index.ts / schemas.ts) and functions are camelCase per the convention-detect finding."
+        ],
+        "derivedFrom": [
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/deploy/__tests__/chain.test.ts › chain.ts drives stage order discover → reuse → topology → {security, scale} → done via handleDeployStep over stubbed stage runners, with the security/scale fan-out run as serial DeployPhase transitions (never Promise.all over a provider)"
+          },
+          {
+            "level": "unit",
+            "name": "src/deploy/__tests__/chain.test.ts › stubbed src/deploy/ stage runners bound through register<Stage>Runners() emit deterministic DeploymentContextBundle quartets, keeping bundle assembly asserted without a live daemon graph"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Register the deploy-step MCP tool into src/mcp/server.ts",
+        "summary": "Wire the deploy-step loop into src/mcp/server.ts so handleDeployStep is exposed as an MCP tool alongside the existing workflow-step/analyze-step/build-step servers, using the shared phase/state transport. This is the private s1-owned server transport that closes the end-to-end path from an MCP caller through the chain (t6) to the daemon deploy-rpc seam. The full start→done proof runs over t6's stubbed stage runners, since the real s2–s6 stage bodies land later.",
+        "size": "S",
+        "order": 7,
+        "dependsOn": [
+          "t4",
+          "t5",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "src/mcp/server.ts registers the deploy-step tool driving handleDeployStep, joining the workflow-step/analyze-step/build-step sibling servers over the shared phase/state transport.",
+          "The registration is additive — it introduces the new deploy-step tool without altering existing MCP tool registrations.",
+          "A full start → discover → reuse → topology → {security, scale} → done loop, sequenced by t6's chain.ts over stubbed stage runners (deterministic DeploymentContextBundles), is dispatchable through the server and returns populated markdown on the done terminal, echoing the opaque state token verbatim each call.",
+          "repo defaults to $INSRC_REPO when omitted, matching the analyze-step fallback, and an unregistered fallback surfaces UnregisteredRepoError."
+        ],
+        "derivedFrom": [
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/mcp/__tests__/deploy-step-server.test.ts › a full start → discover → reuse → topology → {security, scale} → done loop is dispatchable through src/mcp/server.ts over t6's stubbed stage runners, returns populated markdown on the done terminal, and echoes the opaque state token verbatim each call"
+          },
+          {
+            "level": "integration",
+            "name": "src/mcp/__tests__/deploy-step-server.test.ts › the deploy-step tool registration is additive (existing MCP tool registrations unaltered) and repo defaults to $INSRC_REPO, surfacing UnregisteredRepoError on an unregistered fallback"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "src/mcp/deploy-step/handler.ts (handleDeployStep) — mirrors analyze-step-handler.test.ts",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/mcp/deploy-step/types.ts (DeployPhase / DeployStepRequest / DeployStepResponse / DeployStageRegistrar envelope shape)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/mcp/deploy-step/state.ts + state-store.ts (opaque-token run record, _clearDeployStateStoreForTests) — mirrors analyze-step-state.test.ts",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/mcp/deploy-step/phases/* narrow-emit prompt+schema issuance — mirrors analyze-step-narrow.test.ts",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/mcp/deploy-step/types.ts (DeploymentContextBundle / DeploymentEntityRef / DeploymentRelationRef / DeploymentCitation)",
+        "coveredByTaskIds": [
+          "t1",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "the per-stage bundle-assembly path in src/deploy/ stage runners (discover → reuse → topology → {security, scale})",
+        "coveredByTaskIds": [
+          "t5",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/daemon/deploy-rpc.ts additive registration — mirrors workflow-rpc.test.ts",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/deploy/chain.ts stage-order driver — mirrors tracker/__tests__/setup.test.ts stepFor harness",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "handleDeployStep full-loop transition (start → … → done, markdown populated) over stubbed stage runners",
+        "coveredByTaskIds": [
+          "t6",
+          "t7"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 sc1 DeployStepProtocol interfaceSketch (DeployPhase / DeployStepRequest / DeployStepResponse / DeployStageRegistrar flat envelope)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 sc2 DeploymentContextBundle interfaceSketch (DeploymentEntityRef / DeploymentRelationRef / DeploymentCitation / DeploymentContextBundle quartet)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 handleDeployStep dispatcher contract + errorPaths (unregistered repo / unknown phase / expired token / out-of-order / ajv failure / stage failure / completed-run replay)"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 deploy-step run state + state-store handoff (opaque-token in-process run record, _clearDeployStateStoreForTests, k4 single-owner-of-storage / durability non-functional)"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 provider-invocation constraint (serial for...of narrow/LLM calls, never Promise.all over a provider)"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 src/daemon/deploy-rpc.ts additive seam handoff (analyze-rpc/workflow-rpc pattern, k3 lock-step additive-only invariant, UnregisteredRepoError resolution)"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 src/deploy/chain.ts + runner scaffold handoff (register<Stage>Runners registrar seam, discover → reuse → topology → {security, scale} → done order, stubbed-runner testStrategy)"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 src/mcp/server.ts deploy-step tool registration handoff (additive registration alongside analyze/workflow/build-step, $INSRC_REPO fallback)"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 src/mcp/deploy-step/phases/* representative narrow-emit handoff (prompt+schema issuance, DeployStageRegistrar.register(), emit_bundle → DeploymentContextBundle output contract)"
+    }
+  ]
+}

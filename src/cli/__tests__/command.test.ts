@@ -216,3 +216,23 @@ test('workflow run streams progress via onLog and reports path + review verdict'
 	assert.ok(logged.some(l => /decompose/.test(l)), 'streamed a progress frame');
 	assert.match(out[0] ?? '', /✓ define done · \/docs\/def\.md · review pass \(H0\/M0\/L2\)/);
 });
+
+test('workflow findings lists pending, workflow resolve resolves one (R3)', async () => {
+	const { ctx } = ctxWith();
+	ctx.services.workflow.reviewFindings = (() => ({
+		verdict: 'block',
+		pending: [{ claimId: 'high1', kind: 'citation', severity: 'HIGH', premise: 'cites a stub', evidence: 'e', action: 'a', fixability: 'assisted' }],
+	})) as never;
+	const out = await runCommand('workflow findings docs/plans/PLAN-x.md', ctx);
+	assert.match(out[0] ?? '', /review: block · 1 finding/);
+	assert.ok(out.some(l => /\[HIGH\] high1 · assisted · citation/.test(l)));
+
+	let seen: unknown;
+	ctx.services.workflow.resolveFinding = ((_p: string, id: string, action: string, note?: string) => {
+		seen = [id, action, note];
+		return { findingId: id, status: 'overridden', effectiveVerdict: 'pass', remainingBlocking: 0 };
+	}) as never;
+	const out2 = await runCommand('workflow resolve docs/plans/PLAN-x.md high1 override non-material', ctx);
+	assert.deepEqual(seen, ['high1', 'override', 'non-material']);
+	assert.match(out2[0] ?? '', /resolved high1 \(overridden\).*review clears/);
+});

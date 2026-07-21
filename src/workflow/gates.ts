@@ -29,6 +29,9 @@ import type { HldArtifact }    from './artifacts/hld.js';
 import { computeHldEffectiveHash, extractHldContextSlice } from './artifacts/lld.js';
 import type { HldContextSlice, LldArtifact } from './artifacts/lld.js';
 import type { PlanArtifact } from './artifacts/plan.js';
+import { effectiveReviewVerdict } from './review/resolve.js';
+import type { ReviewReport } from './review/types.js';
+import type { ReviewResolution } from './types.js';
 import {
 	ARTIFACT_ID_MARKER_RE,
 	ARTIFACTS_DIR,
@@ -381,27 +384,30 @@ export function approveArtifactByJsonPath(jsonPath: string, opts?: { readonly ov
 	const artifact = JSON.parse(raw) as {
 		meta?: {
 			workflow?: string; approvedAt?: string; rejectedAt?: string; rejectReason?: string;
-			review?: { verdict?: string; counts?: { high?: number; med?: number; low?: number } };
+			review?: ReviewReport;
+			reviewResolutions?: Record<string, ReviewResolution>;
 			reviewOverride?: { reason: string; at: string };
 		};
 	};
 	if (typeof artifact.meta !== 'object' || artifact.meta === null) {
 		throw new Error(`Artifact at ${jsonPath} has no meta`);
 	}
-	// Review gate: a `block` verdict (unresolved HIGH/MED findings) refuses
-	// approval unless an explicit override reason is supplied. Auto-fixing
-	// the fixable findings or resolving them at the user gate re-runs the
-	// review and clears the verdict; this is the last line before approval.
+	// Review gate: refuses approval while any HIGH/MED finding is UNRESOLVED
+	// (the effective verdict, after the interactive resolutions in R3), unless
+	// an explicit override reason is supplied. Auto-fixes + per-finding
+	// resolutions clear the block one finding at a time.
 	const override = opts?.overrideReview;
+	const review = artifact.meta.review;
 	let reviewOverride: { reason: string; at: string } | undefined;
-	if (artifact.meta.review?.verdict === 'block') {
+	if (review !== undefined && effectiveReviewVerdict(review, artifact.meta.reviewResolutions) === 'block') {
 		if (override === undefined || override.length === 0) {
-			const c = artifact.meta.review.counts;
-			const summary = c !== undefined
-				? `${c.high ?? 0} HIGH · ${c.med ?? 0} MED · ${c.low ?? 0} LOW`
-				: 'unresolved findings';
+			const res = artifact.meta.reviewResolutions ?? {};
+			const pending = review.findings.filter(f => (f.severity === 'HIGH' || f.severity === 'MED') && res[f.claimId] === undefined);
+			const highs = pending.filter(f => f.severity === 'HIGH').length;
+			const meds = pending.filter(f => f.severity === 'MED').length;
+			const summary = `${highs} HIGH · ${meds} MED unresolved`;
 			throw new ReviewBlockedError(
-				`Review verdict is 'block' (${summary}). Fix/resolve the findings or approve with an override reason.`,
+				`Review blocks approval (${summary}). Resolve findings ('insrc workflow resolve <path> <id> <action>') or approve with an override reason.`,
 				summary,
 			);
 		}

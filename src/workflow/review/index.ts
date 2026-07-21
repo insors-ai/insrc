@@ -27,3 +27,6 @@ export { applyAutoFixes, pendingUserFindings } from './apply.js';
 export type { AutoFixResult, AppliedFix, SkippedFix } from './apply.js';
 export { reviewArtifactFile } from './run-artifact.js';
 export type { ReviewArtifactOpts, ReviewArtifactResult } from './run-artifact.js';
+export { applyOneFinding } from './apply.js';
+export { resolveReviewFinding, effectiveReviewVerdict, listPendingReviewFindings } from './resolve.js';
+export type { ReviewAction, ResolveReviewResult } from './resolve.js';

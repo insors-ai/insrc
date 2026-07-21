@@ -104,22 +104,41 @@ export function applyAutoFixes(markdown: string, body: unknown, report: ReviewRe
 
 	for (const f of report.findings) {
 		if (f.fixability !== 'auto') continue;
-		const edits = f.proposedFix?.artifactEdits ?? [];
-		const done: { find: string; replace: string }[] = [];
-		for (const e of edits) {
-			const inMd = md.includes(e.find);
-			const bodyRes = deepReplace(curBody, e.find, e.replace);
-			if (!inMd && !bodyRes.changed) {
-				skipped.push({ claimId: f.claimId, ref: f.ref, find: e.find, reason: 'find-not-present' });
-				continue;
-			}
-			if (inMd) md = replaceAllLiteral(md, e.find, e.replace);
-			if (bodyRes.changed) curBody = bodyRes.value;
-			done.push({ find: e.find, replace: e.replace });
-		}
-		if (done.length > 0) applied.push({ claimId: f.claimId, ref: f.ref, edits: done });
+		const one = applyOneFinding(md, curBody, f.claimId, f.ref, f.proposedFix?.artifactEdits ?? []);
+		md = one.markdown;
+		curBody = one.body;
+		if (one.applied !== undefined) applied.push(one.applied);
+		skipped.push(...one.skipped);
 	}
 
 	log.info({ applied: applied.length, skipped: skipped.length }, 'review:apply: applied auto-fixes');
 	return { markdown: md, body: curBody, applied, skipped };
+}
+
+/** Apply ONE finding's edits to (markdown, body). Shared by `applyAutoFixes`
+ *  and the interactive resolver (R3, `apply` action). Skips any edit whose
+ *  `find` is absent in both. Pure — inputs are not mutated. */
+export function applyOneFinding(
+	markdown: string,
+	body: unknown,
+	claimId: string,
+	ref: string | undefined,
+	edits: readonly { readonly find: string; readonly replace: string }[],
+): { markdown: string; body: unknown; applied?: AppliedFix; skipped: SkippedFix[] } {
+	let md = markdown;
+	let curBody = body;
+	const done: { find: string; replace: string }[] = [];
+	const skipped: SkippedFix[] = [];
+	for (const e of edits) {
+		const inMd = md.includes(e.find);
+		const bodyRes = deepReplace(curBody, e.find, e.replace);
+		if (!inMd && !bodyRes.changed) {
+			skipped.push({ claimId, ref, find: e.find, reason: 'find-not-present' });
+			continue;
+		}
+		if (inMd) md = replaceAllLiteral(md, e.find, e.replace);
+		if (bodyRes.changed) curBody = bodyRes.value;
+		done.push({ find: e.find, replace: e.replace });
+	}
+	return { markdown: md, body: curBody, ...(done.length > 0 ? { applied: { claimId, ref, edits: done } } : {}), skipped };
 }

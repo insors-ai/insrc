@@ -60,6 +60,12 @@ import { CliProvider } from '../../agent/providers/cli-provider.js';
 import { reviewArtifactFile, type ReviewArtifactResult } from '../../workflow/review/index.js';
 import { runWorkflowStream } from '../../mcp/daemon-stream.js';
 import type { ProgressEvent } from '../../shared/types.js';
+import {
+	effectiveReviewVerdict, listPendingReviewFindings, resolveReviewFinding,
+	type ReviewAction, type ResolveReviewResult,
+} from '../../workflow/review/index.js';
+import type { Finding, ReviewReport, ReviewVerdict } from '../../workflow/review/types.js';
+import type { ReviewResolution } from '../../workflow/types.js';
 
 const log = getLogger('cli:workflow');
 
@@ -155,6 +161,25 @@ export function approve(artifactPath: string, withTracker = true, overrideReview
 
 export function reject(artifactPath: string, reason: string): RejectionResult {
 	return rejectArtifactByJsonPath(jsonPathForMd(artifactPath), reason);
+}
+
+export interface ReviewFindingsResult {
+	readonly verdict:  ReviewVerdict;
+	readonly pending:  readonly Finding[];
+}
+
+/** The review findings still needing a human (R3), plus the effective verdict. */
+export function reviewFindings(artifactPath: string): ReviewFindingsResult {
+	const jsonPath = jsonPathForMd(artifactPath);
+	const meta = (JSON.parse(readFileSync(jsonPath, 'utf8')) as { meta?: { review?: ReviewReport; reviewResolutions?: Record<string, ReviewResolution> } }).meta ?? {};
+	const review = meta.review;
+	if (review === undefined) return { verdict: 'pass', pending: [] };
+	return { verdict: effectiveReviewVerdict(review, meta.reviewResolutions), pending: listPendingReviewFindings(review, meta.reviewResolutions) };
+}
+
+/** Resolve one review finding (apply | accept | override | defer). */
+export function resolveFinding(artifactPath: string, findingId: string, action: ReviewAction, note?: string): ResolveReviewResult {
+	return resolveReviewFinding(artifactPath, jsonPathForMd(artifactPath), findingId, action, note);
 }
 
 export interface StreamRunResult {

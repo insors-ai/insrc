@@ -29,7 +29,7 @@ const PANES: Record<string, number> = { daemon: 0, repos: 1, workflows: 2, setup
 export const COMMAND_HELP: readonly string[] = [
 	'repo     add <path> | remove <path> | reindex <path> | list',
 	'daemon   start | stop | restart | update | backup <dir> | compact | status',
-	'workflow run <workflow> <focus> | list | chain <hash> | review <path> | approve <path> [--override <reason>] | reject <path> <reason> | ack-stale <path> <reason> | sync <hash> | deferred <epicSlug|hash>',
+	'workflow run <workflow> <focus> | list | chain <hash> | review <path> | findings <path> | resolve <path> <id> <action> | approve <path> [--override <reason>] | reject <path> <reason> | ack-stale <path> <reason> | sync <hash> | deferred <epicSlug|hash>',
 	'tracker  setup [--project]   ·   bootstrap the GitHub tracker (config, labels, issue types, project)',
 	'config   list [search] | get <key> | set <key> <value> | unset <key> | reload   (dot-path keys)',
 	'setup    show | apply | pull',
@@ -151,6 +151,29 @@ async function runWorkflow(sub: string | undefined, rest: readonly string[], svc
 			const res = await svc.workflow.reviewArtifact(ctx.repoPath, rest[0]);
 			return renderReviewSummary(res);
 		}
+		case 'findings': {
+			if (rest[0] === undefined) return ['usage: workflow findings <path>'];
+			const r = svc.workflow.reviewFindings(rest[0]);
+			if (r.pending.length === 0) return [`review: ${r.verdict} · no findings need your attention`];
+			return [
+				`review: ${r.verdict} · ${r.pending.length} finding(s) need your attention:`,
+				...r.pending.map(f => `  [${f.severity}] ${f.claimId} · ${f.fixability} · ${f.kind} — ${f.premise.slice(0, 80)}`),
+				`resolve: workflow resolve <path> <id> apply|accept|override|defer [note]`,
+			];
+		}
+		case 'resolve': {
+			const [path, id, action, ...noteParts] = rest;
+			const actions = ['apply', 'accept', 'override', 'defer'];
+			if (path === undefined || id === undefined || action === undefined || !actions.includes(action)) {
+				return ['usage: workflow resolve <path> <findingId> apply|accept|override|defer [note]'];
+			}
+			const note = noteParts.join(' ');
+			const res = svc.workflow.resolveFinding(path, id, action as 'apply' | 'accept' | 'override' | 'defer', note.length > 0 ? note : undefined);
+			const tail = res.effectiveVerdict === 'block'
+				? ` · still blocked (${res.remainingBlocking} left)`
+				: ` · ✓ review clears — ready to approve`;
+			return [`resolved ${res.findingId} (${res.status})${res.appliedEdits !== undefined ? ` · applied ${res.appliedEdits} edit(s)` : ''}${tail}`];
+		}
 		case 'approve': {
 			if (rest[0] === undefined) return ['usage: workflow approve <path> [--override <reason>]'];
 			// `--override <reason...>` forces approval past a `block` review verdict.
@@ -196,7 +219,7 @@ async function runWorkflow(sub: string | undefined, rest: readonly string[], svc
 				return `${where}  \`${d.questionId}\`  ${d.text}`;
 			});
 		}
-		default: return ['usage: workflow run <workflow> <focus>|list|chain <hash>|review <path>|approve <path> [--override <reason>]|reject <path> <reason>|ack-stale <path> <reason>|sync <hash>|deferred <epicSlug|hash>'];
+		default: return ['usage: workflow run <workflow> <focus>|list|chain <hash>|review <path>|findings <path>|resolve <path> <id> <action>|approve <path> [--override <reason>]|reject <path> <reason>|ack-stale <path> <reason>|sync <hash>|deferred <epicSlug|hash>'];
 	}
 }
 

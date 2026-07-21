@@ -13,10 +13,15 @@ import { approveArtifactByJsonPath, ReviewBlockedError } from '../gates.js';
 
 function writeArtifact(dir: string, verdict: 'block' | 'pass'): string {
 	const p = join(dir, 'PLAN-x.json');
+	// A 'block' review carries an unresolved HIGH finding; a 'pass' review has
+	// no blocking findings. The gate computes the effective verdict from these.
+	const findings = verdict === 'block'
+		? [{ claimId: 'f1', kind: 'inventory', severity: 'HIGH', premise: 'p', evidence: 'e', action: 'a', fixability: 'manual' }]
+		: [];
 	writeFileSync(p, JSON.stringify({
 		meta: {
 			workflow: 'plan',
-			review: { verdict, counts: { high: 1, med: 2, low: 3 } },
+			review: { artifact: 'PLAN', stage: 'plan', verdict, findings, counts: { high: findings.length, med: 0, low: 0 }, reviewedAt: '', model: 'm' },
 		},
 		body: {},
 		citations: [],
@@ -30,7 +35,7 @@ test('approve is refused when the review verdict is block and no override', () =
 		const p = writeArtifact(dir, 'block');
 		assert.throws(() => approveArtifactByJsonPath(p), (e: unknown) => {
 			assert.ok(e instanceof ReviewBlockedError);
-			assert.match(e.summary, /1 HIGH · 2 MED · 3 LOW/);
+			assert.match(e.summary, /1 HIGH · 0 MED unresolved/);
 			return true;
 		});
 		// artifact stays un-approved

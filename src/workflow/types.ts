@@ -305,6 +305,20 @@ export interface ArtifactMetaBase {
 	/** Set when approval overrode a `block` review verdict — records who
 	 *  chose to proceed despite unresolved HIGH/MED findings, and why. */
 	readonly reviewOverride?: { readonly reason: string; readonly at: string };
+	/** Per-finding resolutions from the interactive review gate, keyed by the
+	 *  finding's `claimId`. A resolved/overridden/deferred finding no longer
+	 *  counts toward the block verdict. Additive; absent until a finding is
+	 *  resolved. See `workflow/review/resolve.ts`. */
+	readonly reviewResolutions?: Readonly<Record<string, ReviewResolution>>;
+}
+
+/** One interactive resolution of a review finding (R3). */
+export interface ReviewResolution {
+	readonly findingId:  string;
+	readonly status:     'resolved' | 'overridden' | 'deferred';
+	/** The applied fix note, chosen option, or override/defer reason. */
+	readonly note?:      string | undefined;
+	readonly resolvedAt: string;
 }
 
 /** A citation grounds a claim in the artifact body against a step

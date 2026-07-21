@@ -52,6 +52,8 @@ export interface Services {
 		chainText(repoPath: string, epicHash: string): string;
 		approve(artifactPath: string, withTracker?: boolean, overrideReview?: string): ApproveOutcome;
 		reviewArtifact(repoPath: string, artifactPath: string): Promise<import('../../workflow/review/index.js').ReviewArtifactResult>;
+		reviewFindings(artifactPath: string): import('./workflow.js').ReviewFindingsResult;
+		resolveFinding(artifactPath: string, findingId: string, action: import('../../workflow/review/index.js').ReviewAction, note?: string): import('../../workflow/review/index.js').ResolveReviewResult;
 		runWorkflowStreaming(repoPath: string, workflow: string, focus: string, params: Record<string, unknown>, onLine: (line: string) => void): Promise<import('./workflow.js').StreamRunResult>;
 		reject(artifactPath: string, reason: string): RejectionResult;
 		ackStale(artifactPath: string, reason: string): { readonly path: string; readonly ackedAt: string; readonly reason: string };
@@ -102,6 +104,8 @@ export function makeServices(): Services {
 			chainText:        workflow.chainText,
 			approve:          workflow.approve,
 			reviewArtifact:   workflow.reviewArtifact,
+			reviewFindings:   workflow.reviewFindings,
+			resolveFinding:   workflow.resolveFinding,
 			runWorkflowStreaming: workflow.runWorkflowStreaming,
 			reject:           workflow.reject,
 			ackStale:         workflow.ackStale,

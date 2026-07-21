@@ -117,6 +117,19 @@ export function appendRunLog(
 	} catch { /* trace is best-effort */ }
 }
 
+/** Rolling, tailable progress log at `~/.insrc/progress.log`. Long
+ *  `workflow.run` / `analyze.run` operations append one human line per phase
+ *  here so a user can WATCH progress live (`tail -f ~/.insrc/progress.log`, or
+ *  a controller relays it via a monitor) — independent of whether the calling
+ *  MCP client surfaces `notifications/progress`. Best-effort. */
+export function appendProgressLog(runId: string, op: string, phase: string, detail?: string): void {
+	try {
+		const ts = new Date().toISOString().slice(11, 19);
+		const line = `[${ts}] ${op} ${runId} · ${phase}${detail !== undefined && detail.length > 0 ? ' — ' + detail : ''}\n`;
+		appendFileSync(join(PATHS.insrc, 'progress.log'), line, 'utf8');
+	} catch { /* best-effort */ }
+}
+
 // ---------------------------------------------------------------------------
 // Canonical artifact IDs (hash-based) + in-markdown resolution marker
 // ---------------------------------------------------------------------------

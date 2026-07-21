@@ -34,7 +34,7 @@ import { loadAnalyzeConfig, type AnalyzeConfig, type AnalyzeShaperProviderKind }
 import { registerWorkflowRunners } from '../workflow/index.js';
 import { prepareDecompose, prepareSynthesize, finalizeArtifact, type FinalizedArtifact } from '../workflow/orchestrator.js';
 import { startRun, resumeRun } from '../workflow/executor.js';
-import { appendRunLog, pathsForWorkflow, writeAtomic } from '../workflow/storage.js';
+import { appendProgressLog, appendRunLog, pathsForWorkflow, writeAtomic } from '../workflow/storage.js';
 import { reviewArtifactFile } from '../workflow/review/index.js';
 import type { ReviewReport } from '../workflow/review/types.js';
 import { WORKFLOW_NAMES, type WorkflowIntent, type WorkflowName, type WorkflowPlan } from '../workflow/types.js';
@@ -284,7 +284,7 @@ export async function runStart(
 		const tokens = makeTokenAccumulator();
 		const drive = (): Promise<RunWorkflowResult> => runWorkflowServerSide(intent, provider, {
 			runId, epicKey, modelLabel, signal,
-			onProgress: (f) => send({ id: 0, stream: 'progress', data: workflowProgressToStage(f, stageIndex++) }),
+			onProgress: (f) => { appendProgressLog(runId, 'workflow.run', f.phase, f.detail); send({ id: 0, stream: 'progress', data: workflowProgressToStage(f, stageIndex++) }); },
 			onToken:    (stepId, token) => { const ev = tokens.push(stepId, token); if (ev !== null) send({ id: 0, stream: 'delta', data: ev }); },
 			...(p.review !== undefined ? { review: p.review } : {}),
 		});

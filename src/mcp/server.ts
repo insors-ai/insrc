@@ -47,6 +47,9 @@ import { handleWorkflowStep } from './workflow-step/handler.js';
 import { handleBuildStep } from './build-step/handler.js';
 import { renderBundleAsMarkdown } from './bundle-md.js';
 import { makeSamplerFromMcpServer } from './sampling-bridge.js';
+import { runWorkflowStream } from './daemon-stream.js';
+import { mcpProgressSink } from './progress-forward.js';
+import type { ProgressEvent } from '../shared/types.js';
 import { WORKFLOW_NAMES } from '../workflow/types.js';
 
 const log = getLogger('mcp:server');
@@ -469,6 +472,92 @@ export function buildInsrcMcpServer(): McpServer {
 			},
 		},
 		async (rawArgs, _extra) => handleBuildStep(rawArgs),
+	);
+
+	// -------------------------------------------------------------------
+	// insrc_workflow_run — streaming, daemon-driven workflow.
+	//
+	// Unlike insrc_workflow_step (in-process, client-driven, turn-by-turn),
+	// this tool drives the daemon's long-running `workflow.run` op over the
+	// socket and forwards its live progress to the MCP client as
+	// notifications/progress — so a 30–40 min run can be WATCHED LIVE and
+	// ABORTED mid-stream (the SDK request signal destroys the socket, which
+	// aborts the daemon run). Progress flows only when the caller supplies a
+	// progressToken; absent one the run is silent.
+	// -------------------------------------------------------------------
+	server.registerTool(
+		'insrc_workflow_run',
+		{
+			title: 'insrc workflow (streaming, daemon-driven)',
+			description:
+				'Run a full workflow SERVER-SIDE in the daemon and stream live ' +
+				'progress back. The daemon drives every phase (decompose → steps → ' +
+				'synthesize → review) autonomously via its configured LLM provider; ' +
+				'you get incremental notifications/progress (stage transitions + ' +
+				'token deltas) as it runs, and can ABORT mid-stream by cancelling the ' +
+				'request — the daemon run is really aborted, not just detached.\n\n' +
+				'Use this for a hands-off run of a long workflow when you want to ' +
+				'watch it live and step in if it goes wrong. Use insrc_workflow_step ' +
+				'instead when YOU want to drive each turn.\n\n' +
+				'Supply the standard MCP progressToken (request _meta.progressToken) ' +
+				'to receive progress; omit it to run silently. Returns the finalized ' +
+				'artifact path + review verdict once written.\n\n' +
+				'`repo` falls back to INSRC_REPO. The repo must be registered + indexed.',
+			annotations: {
+				readOnlyHint:   false,   // the daemon writes an artifact to disk
+				idempotentHint: false,
+				openWorldHint:  false,
+			},
+			inputSchema: {
+				workflow: z.enum(WORKFLOW_NAMES)
+					.describe('Which workflow to run (define / design.epic / design.story / plan / …).'),
+				focus: z.string().min(1)
+					.describe('Natural-language framing of the ask.'),
+				params: z.record(z.string(), z.unknown())
+					.describe('Workflow-specific params (epicSlug, storyId, …).')
+					.optional(),
+				repo: z.string()
+					.describe('Absolute repo path; falls back to INSRC_REPO env.')
+					.optional(),
+			},
+		},
+		async (rawArgs, extra) => {
+			const progressToken = extra._meta?.progressToken;
+			// Forward each daemon ProgressEvent frame as an MCP notification —
+			// no-op when the caller supplied no progressToken.
+			const sink = mcpProgressSink(
+				(n) => extra.sendNotification(n as Parameters<typeof extra.sendNotification>[0]),
+				progressToken,
+			);
+			try {
+				const out = await runWorkflowStream(
+					{
+						workflow: rawArgs.workflow,
+						focus:    rawArgs.focus,
+						...(rawArgs.repo   !== undefined ? { repo:   rawArgs.repo }   : {}),
+						...(rawArgs.params !== undefined ? { params: rawArgs.params } : {}),
+					},
+					{
+						onFrame: (_stream, data) => sink(data as ProgressEvent),
+						signal:  extra.signal,
+					},
+				);
+				const review = out.review as { verdict?: string; counts?: { high?: number; med?: number; low?: number } } | undefined;
+				const reviewLine = review?.verdict !== undefined
+					? `\nReview: ${review.verdict} (HIGH=${review.counts?.high ?? 0} MED=${review.counts?.med ?? 0} LOW=${review.counts?.low ?? 0})`
+					: '';
+				const text =
+					`Workflow '${rawArgs.workflow}' completed.\n` +
+					`Artifact: ${out.path}\n` +
+					`Run ${out.runId} · model ${out.model}` +
+					reviewLine;
+				return { content: [{ type: 'text' as const, text }] };
+			} catch (err) {
+				const msg = err instanceof Error ? err.message : String(err);
+				log.warn({ workflow: rawArgs.workflow, err: msg }, 'insrc_workflow_run failed');
+				return { content: [{ type: 'text' as const, text: `workflow.run failed: ${msg}` }], isError: true };
+			}
+		},
 	);
 
 	return server;

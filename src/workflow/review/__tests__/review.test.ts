@@ -317,3 +317,16 @@ test('renderReviewReport emits a verdict header, a table, and orders HIGH first'
 		cleanup();
 	}
 });
+
+test('gatherEvidence notes a file that EXISTS on disk but is named in no file body (probe fix)', async () => {
+	const { repo, cleanup } = makeRepo();   // makeRepo writes src/foo.ts (content: export const alpha…)
+	try {
+		// grep the filename "foo.ts" — content-grep finds 0 (no body mentions it),
+		// but the file exists, so the existence check must surface it.
+		const claim: Claim = { id: 'c-exists', kind: 'citation', text: 'foo.ts exists', anchors: [], probe: { greps: ['foo.ts'] } };
+		const [ev] = await gatherEvidence([claim], repo);
+		assert.ok(ev);
+		const all = ev.grepResults.flatMap(g => g.matches).join('\n');
+		assert.match(all, /FILE EXISTS: .*foo\.ts/);
+	} finally { cleanup(); }
+});

@@ -13,8 +13,8 @@
  * the LLM never asserts grounding it wasn't handed.
  */
 
-import { readFileSync } from 'node:fs';
-import { isAbsolute, join, normalize, resolve, sep } from 'node:path';
+import { readFileSync, readdirSync } from 'node:fs';
+import { isAbsolute, join, normalize, relative, resolve, sep } from 'node:path';
 
 import { runGrepSearch } from '../../daemon/tools/builtins/search/grep.js';
 import { getLogger } from '../../shared/logger.js';
@@ -53,6 +53,56 @@ async function runGrep(pattern: string, repoPath: string): Promise<GrepResult> {
 		log.warn({ pattern, err: msg }, 'review:probe: grep errored; treating as empty');
 		return { pattern, matches: [], truncated: false };
 	}
+}
+
+// ---------------------------------------------------------------------------
+// filename existence — a content grep CANNOT see a file that exists but is
+// named in no file body (e.g. "does foo.test.ts exist?"). This closed a real
+// false-positive HIGH ("test file X missing" when X was right there on disk).
+// ---------------------------------------------------------------------------
+
+const IGNORE = new Set(['node_modules', 'out', 'dist', '.git']);
+
+/** Filename-ish tokens in a grep pattern (`foo.test.ts`, `src/x/y.ts`). */
+function filenameTokens(pattern: string): string[] {
+	const out = new Set<string>();
+	for (const m of pattern.matchAll(/[\w./-]*\w+\.[a-z][a-z0-9]{0,4}(?:\.[a-z][a-z0-9]{0,4})?/gi)) {
+		out.add(m[0].replace(/\\/g, ''));
+	}
+	return [...out];
+}
+
+/** Repo-relative paths of existing files matching `token` by basename or
+ *  path-suffix, searched under `src/`. Bounded (≤5 hits, skips ignored dirs). */
+function findFilesByName(repoPath: string, token: string): string[] {
+	const base = token.split('/').pop() ?? token;
+	const found: string[] = [];
+	const walk = (dir: string): void => {
+		if (found.length >= 5) return;
+		let entries;
+		try { entries = readdirSync(dir, { withFileTypes: true }); } catch { return; }
+		for (const e of entries) {
+			if (found.length >= 5) return;
+			if (e.name.startsWith('.') || IGNORE.has(e.name)) continue;
+			const full = join(dir, e.name);
+			if (e.isDirectory()) { walk(full); continue; }
+			const rel = relative(repoPath, full);
+			if (e.isFile() && (e.name === base || rel.endsWith(token))) found.push(rel);
+		}
+	};
+	walk(join(repoPath, 'src'));
+	return found;
+}
+
+/** Existence notes for the filename tokens in a grep pattern, so the judge
+ *  sees a file that exists even when nothing references it by name. */
+function existenceMatches(pattern: string, repoPath: string): string[] {
+	const out: string[] = [];
+	for (const tok of filenameTokens(pattern)) {
+		if (!tok.includes('.')) continue;
+		for (const p of findFilesByName(repoPath, tok)) out.push(`FILE EXISTS: ${p} (matched by name, not content)`);
+	}
+	return out;
 }
 
 // ---------------------------------------------------------------------------
@@ -114,7 +164,11 @@ export async function gatherEvidence(claims: Claim[], repoPath: string): Promise
 	for (const claim of claims) {
 		const grepResults: GrepResult[] = [];
 		for (const pattern of claim.probe.greps ?? []) {
-			grepResults.push(await runGrep(pattern, repoPath));
+			const gr = await runGrep(pattern, repoPath);
+			// Augment with filename-existence notes so the judge doesn't false-flag
+			// a file that exists on disk but is referenced in no file body.
+			const exists = existenceMatches(pattern, repoPath);
+			grepResults.push(exists.length > 0 ? { ...gr, matches: [...exists, ...gr.matches] } : gr);
 		}
 		const reads: ReadResult[] = [];
 		for (const anchor of claim.probe.reads ?? []) {

@@ -58,6 +58,8 @@ import { syncTracker, type SyncResult } from '../../workflow/tracker/sync.js';
 import { getLogger } from '../../shared/logger.js';
 import { CliProvider } from '../../agent/providers/cli-provider.js';
 import { reviewArtifactFile, type ReviewArtifactResult } from '../../workflow/review/index.js';
+import { runWorkflowStream } from '../../mcp/daemon-stream.js';
+import type { ProgressEvent } from '../../shared/types.js';
 
 const log = getLogger('cli:workflow');
 
@@ -153,6 +155,47 @@ export function approve(artifactPath: string, withTracker = true, overrideReview
 
 export function reject(artifactPath: string, reason: string): RejectionResult {
 	return rejectArtifactByJsonPath(jsonPathForMd(artifactPath), reason);
+}
+
+export interface StreamRunResult {
+	readonly path:    string;
+	readonly runId:   string;
+	readonly verdict?: string;
+	readonly counts?: { readonly high: number; readonly med: number; readonly low: number };
+}
+
+/** Render one live progress frame as a TUI log line. */
+function progressLine(stream: 'progress' | 'delta', data: unknown): string {
+	const ev = data as ProgressEvent;
+	if (ev !== null && typeof ev === 'object' && 'kind' in ev) {
+		if (ev.kind === 'stage') return `▸ ${ev.stageLabel}`;
+		if (ev.kind === 'token') return `  +${ev.tokensDelta} tok (${ev.tokensTotal})`;
+	}
+	return `${stream}: ${JSON.stringify(data).slice(0, 100)}`;
+}
+
+/** Run a workflow to completion via the daemon `workflow.run` stream,
+ *  emitting each live progress frame to `onLine` (the TUI log). Returns the
+ *  artifact path + the finalize review verdict. The daemon auto-reviews at
+ *  finalize (R2), so `verdict` reflects the review gate. */
+export async function runWorkflowStreaming(
+	repoPath: string,
+	workflow: string,
+	focus: string,
+	params: Record<string, unknown>,
+	onLine: (line: string) => void,
+): Promise<StreamRunResult> {
+	const out = await runWorkflowStream(
+		{ repo: repoPath, workflow, focus, params },
+		{ onFrame: (stream, data) => onLine(progressLine(stream, data)) },
+	);
+	const review = out.review as { verdict?: string; counts?: { high: number; med: number; low: number } } | undefined;
+	return {
+		path: out.path,
+		runId: out.runId,
+		...(typeof review?.verdict === 'string' ? { verdict: review.verdict } : {}),
+		...(review?.counts !== undefined ? { counts: review.counts } : {}),
+	};
 }
 
 /** Run the grounded review cycle over an artifact: verify its premises

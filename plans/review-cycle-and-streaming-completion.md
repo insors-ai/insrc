@@ -132,6 +132,7 @@ each re-scoped artifact re-reviewed (Part 1) before approval.
 - **Sequence** — proceed as recommended: **R1 + R2 + R5 first**, then the streaming build (S1/S2 …).
 - **D1 (R2)** — daemon `workflow.run` **auto-reviews by default**, opt-out per run.
 - **D2 (S1)** — **drop build-step from the progress model** (stateless: `implement` returns a prompt, `validate` is one await); revisit a `build.run` streaming op only if build-step later needs progress.
-- **s2 direction (2026-07-21)** — **Option B**: re-design s2 as a streaming MCP tool that drives `workflow.run` and forwards live progress to Claude/Codex via `progressToken`, enabling **mid-stream correction** of a long run. Depends on s1. Supersedes the original in-process forwarding design (which had no substrate).
+- **s2 direction (2026-07-21)** — **Option B**: re-design s2 as a streaming MCP tool that drives `workflow.run` and forwards live progress to Claude/Codex via `progressToken`, enabling **mid-stream correction** of a long run. Depends on s1. Supersedes the original in-process forwarding design (which had no substrate). **DONE** (`insrc_workflow_run`, commit `05dec4f`).
+- **Scope narrowed (2026-07-21)** — **defer s3 (IDE/VSCode-fork render)**; focus only on the **TUI + Claude/Codex** surfaces. Claude/Codex = s2/B (done). TUI = a new "run a workflow from the TUI with live progress" affordance consuming the same `workflow.run` stream (the TUI's WorkflowsPane currently only manages — list/chain/approve/reject — it cannot run). The IDE render side stays the fork's job, revisited later.
 - **D4 (R5)** — **keep "block on HIGH+MED"**; R5 calibration keeps MED meaningful rather than relaxing the gate.
 - **D3 (L3)** — still open (GitHub board consolidation) — minor; decide during L3.

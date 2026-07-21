@@ -29,7 +29,7 @@ const PANES: Record<string, number> = { daemon: 0, repos: 1, workflows: 2, setup
 export const COMMAND_HELP: readonly string[] = [
 	'repo     add <path> | remove <path> | reindex <path> | list',
 	'daemon   start | stop | restart | update | backup <dir> | compact | status',
-	'workflow list | chain <hash> | review <path> | approve <path> [--override <reason>] | reject <path> <reason> | ack-stale <path> <reason> | sync <hash> | deferred <epicSlug|hash>',
+	'workflow run <workflow> <focus> | list | chain <hash> | review <path> | approve <path> [--override <reason>] | reject <path> <reason> | ack-stale <path> <reason> | sync <hash> | deferred <epicSlug|hash>',
 	'tracker  setup [--project]   ·   bootstrap the GitHub tracker (config, labels, issue types, project)',
 	'config   list [search] | get <key> | set <key> <value> | unset <key> | reload   (dot-path keys)',
 	'setup    show | apply | pull',
@@ -133,6 +133,19 @@ async function runWorkflow(sub: string | undefined, rest: readonly string[], svc
 		case 'chain':
 			if (rest[0] === undefined) return ['usage: workflow chain <hash>'];
 			return svc.workflow.chainText(ctx.repoPath, rest[0]).split('\n');
+		case 'run': {
+			if (rest[0] === undefined || rest.length < 2) return ['usage: workflow run <workflow> <focus...>'];
+			const workflow = rest[0];
+			const focus = rest.slice(1).join(' ');
+			ctx.onLog(`▸ running ${workflow} — ${focus}`);
+			// Streams live ProgressEvent frames into the TUI log; the daemon
+			// auto-reviews at finalize so the result carries the review verdict.
+			const res = await svc.workflow.runWorkflowStreaming(ctx.repoPath, workflow, focus, {}, ctx.onLog);
+			const review = res.verdict !== undefined
+				? ` · review ${res.verdict}${res.counts !== undefined ? ` (H${res.counts.high}/M${res.counts.med}/L${res.counts.low})` : ''}`
+				: '';
+			return [`✓ ${workflow} done · ${res.path}${review}`];
+		}
 		case 'review': {
 			if (rest[0] === undefined) return ['usage: workflow review <path>'];
 			const res = await svc.workflow.reviewArtifact(ctx.repoPath, rest[0]);
@@ -183,7 +196,7 @@ async function runWorkflow(sub: string | undefined, rest: readonly string[], svc
 				return `${where}  \`${d.questionId}\`  ${d.text}`;
 			});
 		}
-		default: return ['usage: workflow list|chain <hash>|review <path>|approve <path> [--override <reason>]|reject <path> <reason>|ack-stale <path> <reason>|sync <hash>|deferred <epicSlug|hash>'];
+		default: return ['usage: workflow run <workflow> <focus>|list|chain <hash>|review <path>|approve <path> [--override <reason>]|reject <path> <reason>|ack-stale <path> <reason>|sync <hash>|deferred <epicSlug|hash>'];
 	}
 }
 

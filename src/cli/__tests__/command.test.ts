@@ -201,3 +201,18 @@ test('workflow approve surfaces a review block as a line, not a throw', async ()
 	const out = await runCommand('workflow approve docs/plans/PLAN-x.md', ctx);
 	assert.match(out[0] ?? '', /blocked by review \(2 HIGH · 1 MED · 3 LOW\)/);
 });
+
+test('workflow run streams progress via onLog and reports path + review verdict', async () => {
+	const { ctx } = ctxWith();
+	const logged: string[] = [];
+	(ctx as { onLog: (l: string) => void }).onLog = (l) => logged.push(l);
+	ctx.services.workflow.runWorkflowStreaming = (async (_repo: string, wf: string, focus: string, _params: unknown, onLine: (l: string) => void) => {
+		onLine('▸ decompose');
+		onLine('▸ plan-ready');
+		return { path: '/docs/def.md', runId: 'wf-1', verdict: 'pass', counts: { high: 0, med: 0, low: 2 } };
+	}) as never;
+	const out = await runCommand('workflow run define add a build thing', ctx);
+	assert.ok(logged.some(l => /running define — add a build thing/.test(l)), 'logged the run start');
+	assert.ok(logged.some(l => /decompose/.test(l)), 'streamed a progress frame');
+	assert.match(out[0] ?? '', /✓ define done · \/docs\/def\.md · review pass \(H0\/M0\/L2\)/);
+});

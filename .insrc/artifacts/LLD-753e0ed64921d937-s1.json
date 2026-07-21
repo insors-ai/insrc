@@ -20,238 +20,66 @@
       "verdict": "block",
       "findings": [
         {
-          "claimId": "c1-workflow-step-types-template",
-          "ref": "citations/c1",
+          "claimId": "c-mirror-tests",
+          "ref": "s1/test-strategy",
           "kind": "citation",
-          "severity": "MED",
-          "premise": "src/mcp/workflow-step/types.ts is the canonical sc1 template: a ~6 KB file exporting the phase/next/state envelope types that DeployStepProtocol parallels.",
-          "evidence": "The anchor file resolves: `read src/mcp/workflow-step/types.ts:1 → FOUND` (a license-header comment block), so the cited path is real, not hallucinated. However, the export grep was TRUNCATED at its 50-match cap while still inside `src/agent/` and `src/analyze/` — it never reached `src/mcp/workflow-step/`. So the evidence does NOT show the file's actual exports, and nothing was gathered on file size. The premise's specific descriptors — \"~6 KB\", \"exporting the phase/next/state envelope types\", and the DeployStepProtocol parallel — are therefore neither confirmed nor contradicted by the handed evidence. No contradiction exists (nothing says the file is empty, differently-scoped, or absent), so this is not a build-breaking defect; the anchor points at the intended real file.",
-          "action": "none required to build — the citation anchor is a real, resolvable file pointing at the right concept. To fully verify the descriptive claims, re-run the probe scoped to the anchor: `rg '^export (type|interface|function)' src/mcp/workflow-step/types.ts` plus a byte-size read to confirm the \"~6 KB\" and the phase/next/state envelope exports before relying on them.",
-          "fixability": "manual",
-          "proposedFix": {
-            "rationale": "The file exists but the truncated grep never covered src/mcp/workflow-step/, so the export list and ~6 KB size are unverified. No safe auto-edit: the correct values aren't in the evidence, and there is no contradiction to mechanically correct. Verification needs a probe scoped to the anchor file."
-          }
+          "severity": "LOW",
+          "premise": "The four existing test files the new deploy tests mirror all resolve in the source tree: analyze-step-handler.test.ts, build-step.test.ts, workflow-rpc.test.ts, and setup.test.ts.",
+          "evidence": "All four cited test files are confirmed present on disk: analyze-step-handler.test.ts at src/mcp/__tests__/, build-step.test.ts at src/mcp/build-step/__tests__/, workflow-rpc.test.ts at src/daemon/__tests__/, and setup.test.ts at src/workflow/tracker/__tests__/ (each surfaced by the filename-existence check). The premise holds.",
+          "action": "none — verified sound",
+          "fixability": "manual"
         },
         {
-          "claimId": "c1-workflow-step-types-19-exports",
-          "ref": "citations/c1",
+          "claimId": "c-mcp-step-loops",
+          "ref": "sc1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The analyze-step and workflow-step MCP multi-turn loops exist and are the envelope idiom sc1 DeployStepProtocol parallels.",
+          "evidence": "handleAnalyzeStep exists at src/mcp/analyze-step/handler.ts:56 and handleWorkflowStep at src/mcp/workflow-step/handler.ts:31 — both multi-turn step loops present, confirming the envelope idiom sc1 parallels.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c-runner-idiom",
+          "ref": "sc1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The workflow runners use an index.ts registrar + schemas.ts contract idiom that the deploy runner idiom mirrors, e.g. the design-epic runner.",
+          "evidence": "src/workflow/runners/design-epic/schemas.ts exists (alongside build/define/design-story/plan runners) and runners/design-epic is registered via src/workflow/index.ts:13 (registerDesignEpicRunners). The index.ts + schemas.ts runner idiom is real.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c-deploy-rpc-netnew",
+          "ref": "framework",
           "kind": "inventory",
           "severity": "LOW",
-          "premise": "src/mcp/workflow-step/types.ts exports exactly 19 types forming the workflow-step envelope (the count sc1/a2 leans on).",
-          "evidence": "The `grep /export (type|interface) WorkflowStep\\w+/` returned 21 matches; 2 belong to `src/mcp/workflow-step/state.ts:25,30` (WorkflowStepStage, WorkflowStepStatePayload). The remaining 19 all live in `src/mcp/workflow-step/types.ts`: WorkflowStepPhase (:18), WorkflowStepInputStart (:26), WorkflowStepInputPlan (:34), WorkflowStepInputStep (:40), WorkflowStepInputSynthesize (:47), WorkflowStepInputResolveQuestion (:56), WorkflowStepInputReviewDeferred (:70), WorkflowStepInput (:76), WorkflowStepEmitPlan (:88), WorkflowStepEmitStep (:97), WorkflowStepEmitSynthesize (:108), WorkflowStepDone (:117), WorkflowStepQuestion (:129), WorkflowStepResolveQuestions (:139), WorkflowStepReady (:146), WorkflowStepDeferred (:153), WorkflowStepError (:162), WorkflowStepOutput (:171), WorkflowStepMcpEnvelope (:185). Count = 21 − 2 = exactly 19 in types.ts, matching the premise.",
+          "premise": "src/daemon/deploy-rpc.ts is net-new: no deploy-rpc handler exists in the daemon today, so the seam is additive and does not modify existing IPC.",
+          "evidence": "Both greps (deploy-rpc, deployRpc) return 0 matches under src/ — no deploy-rpc handler exists in the daemon today, confirming the seam is genuinely net-new and additive to existing IPC.",
           "action": "none — verified sound",
           "fixability": "manual"
         },
         {
-          "claimId": "workflow-step-phase-symbol",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "A WorkflowStepPhase type exists in workflow-step, which DeployPhase is claimed to parallel.",
-          "evidence": "grep for /WorkflowStepPhase/ returned exactly 1 match at src/mcp/workflow-step/types.ts:18: `export type WorkflowStepPhase =`, and the read of src/mcp/workflow-step/types.ts:1 confirmed the file exists. Both anchors (the `WorkflowStepPhase` symbol and the `src/mcp/workflow-step/types.ts` path) resolve exactly as the premise claims — a `WorkflowStepPhase` type is declared in workflow-step.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "workflow-step-output-next-field",
+          "claimId": "c-daemon-owns-db",
+          "ref": "k4",
           "kind": "semantic",
           "severity": "MED",
-          "premise": "A WorkflowStepOutput type exists carrying a `next` field, the precedent DeployStepResponse.next mirrors.",
-          "evidence": "The build target is real: `src/mcp/workflow-step/types.ts:171` defines `export type WorkflowStepOutput =` (a union), and `handler.ts:48` returns `Promise<WorkflowStepOutput>` — consistent with the established discriminated-union pattern where each variant carries a `next` field (`build-step/types.ts:53,62,68,74` → `next: 'implement'|'refused'|'done'|'error'`; `analyze-step/types.ts:77,93,108,118,125` → `next: 'emit_plan'|'emit_narrow'|'emit_bundle'|'done'|'error'`). However, the named precedent `DeployStepResponse` appears NOWHERE in the gathered evidence — no `deploy-step` type, file, or symbol was matched. The nearest real precedents with a `.next` discriminant are the build-step and analyze-step response unions.",
-          "action": "Reword the precedent reference: `DeployStepResponse` does not exist. Point instead to a verified precedent — the build-step response union (`src/mcp/build-step/types.ts`) or analyze-step response union (`src/mcp/analyze-step/types.ts`), both of which carry the `next` discriminant WorkflowStepOutput mirrors. The prescribed change (WorkflowStepOutput carries `next`) is unaffected, so this is a grounding correction, not a redesign.",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "The load-bearing claim (WorkflowStepOutput exists and carries a `next` field) is corroborated by the type definition plus the family-wide discriminated-union pattern, so what gets built still holds. Only the analogy anchor `DeployStepResponse` is wrong — it matches nothing in the tree. Because two real precedents (build-step, analyze-step) both fit, a human should pick which to cite rather than an auto-edit guessing.",
-            "options": [
-              "Replace `DeployStepResponse.next` with `BuildStepResponse.next` (src/mcp/build-step/types.ts) — the structurally closest precedent: a returned discriminated union with a `next` tag.",
-              "Replace `DeployStepResponse.next` with the analyze-step response union's `next` (src/mcp/analyze-step/types.ts:77/93/108/118/125), the other established `next`-carrying precedent.",
-              "Drop the specific precedent name and generalize to 'mirrors the established mcp step-response `next` discriminated-union pattern' to avoid citing a single anchor."
-            ]
-          }
-        },
-        {
-          "claimId": "handle-workflow-step-symbol",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "A handleWorkflowStep function exists (the sibling handle<Subsystem>Step idiom) that handleDeployStep is the analogue of.",
-          "evidence": "The premise claims a `handleWorkflowStep` function exists as the sibling `handle<Subsystem>Step` idiom. Evidence confirms it directly: `src/mcp/workflow-step/handler.ts:31` — `export async function handleWorkflowStep(input: unknown): Promise<WorkflowStepMcpEnvelope>`. It is exported and wired into the MCP server (`src/mcp/server.ts:46` import, `:422` `async (rawArgs, _extra) => handleWorkflowStep(rawArgs)`) and exercised by numerous e2e tests (define/design-epic/design-story/amendments). The anchor `src/mcp/workflow-step/handler.ts` resolves exactly to the named function, establishing the real `handle<Subsystem>Step` idiom that `handleDeployStep` is the analogue of.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "callsite-analyze-step-types",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/mcp/analyze-step/types.ts exists (listed DeployStepProtocol call site / sibling envelope).",
-          "evidence": "The probe `read src/mcp/analyze-step/types.ts:1 → FOUND` resolved and returned real content (a license/header comment banner `/*----...`), confirming the file exists at the cited path. The premise claims only existence of `src/mcp/analyze-step/types.ts`, which the read directly verifies.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "callsite-build-step-types",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/mcp/build-step/types.ts exists (listed DeployStepProtocol call site / sibling envelope).",
-          "evidence": "The probe `read src/mcp/build-step/types.ts:1` returned FOUND with real file content (a license header block `/*----...`), confirming the file exists on the source tree. The premise claims only that `src/mcp/build-step/types.ts` exists, and the read directly verifies it. The truncated ripgrep listing (50 matches, all under `src/agent` and `src/analyze`, capped before reaching `src/mcp`) neither confirms nor contradicts — its absence is a truncation artifact, not evidence the file is missing. The successful direct read is dispositive.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "callsite-workflow-step-handler",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/mcp/workflow-step/handler.ts exists (listed DeployStepProtocol call site).",
-          "evidence": "The premise claims only that `src/mcp/workflow-step/handler.ts` exists as a listed DeployStepProtocol call site. The read probe confirms this: `read src/mcp/workflow-step/handler.ts:1 → FOUND` returns the file's license/comment header, so the file is present on disk at the cited anchor. The companion grep `/export function handle/ → 0 matches` does not contradict the premise — the premise makes no claim about an `export function handle` symbol; it asserts file existence only, which the read verifies.",
-          "action": "none — verified sound. The anchor `src/mcp/workflow-step/handler.ts` resolves to a real file, confirming the citation.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "callsite-daemon-analyze-rpc",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/daemon/analyze-rpc.ts exists (listed DeploymentContextBundle call site; additive deploy-rpc.ts mirrors it).",
-          "evidence": "The read probe `src/daemon/analyze-rpc.ts:1` resolved successfully — FOUND the file header (`/*----...` license banner) at line 1. This is the exact anchor the citation asserts. The file exists on the real source tree; the citation's load-bearing claim is confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "workflow-step-state-files",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/mcp/workflow-step/state.ts and state-store.ts exist (the WorkflowStepStage + state-store precedent the private deploy-step run record mirrors).",
-          "evidence": "Both anchor files exist and were read successfully: `src/mcp/workflow-step/state.ts:1` and `src/mcp/workflow-step/state-store.ts:1` each returned FOUND (license-header opening). `WorkflowStepStage` is confirmed as a real exported type — grep returned 3 matches including `state.ts:25:export type WorkflowStepStage =`, plus its use as a field type (`state.ts:45: readonly stage: WorkflowStepStage;`) and a parameter (`state.ts:88: expected: WorkflowStepStage`). The premise's cited precedent (WorkflowStepStage + state-store pair) is real and correctly located.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "workflow-clear-state-store-hook",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "A _clearWorkflowStateStoreForTests-style test-clear hook exists in workflow-step state-store (the pattern _clearDeployStateStoreForTests mirrors).",
-          "evidence": "The gathered grep for `_clear\\w*StateStoreForTests` returns numerous hits confirming `_clearWorkflowStateStoreForTests` is a real symbol in workflow-step: every workflow-step test file imports it from the anchored module — e.g. `src/mcp/workflow-step/__tests__/handler.test.ts:24: import { _clearWorkflowStateStoreForTests } from '../state-store.js';` (also amendments-e2e.test.ts:36, define-e2e.test.ts:29, define-extend-e2e.test.ts:30, design-epic-e2e.test.ts:34, design-story-e2e.test.ts:39, plan-e2e.test.ts:27, questions-gate-e2e.test.ts:36) and each calls it in setup (handler.test.ts:38, plan-e2e.test.ts:165, etc.). Those imports resolve against `../state-store.js`, i.e. the anchor `src/mcp/workflow-step/state-store.ts`, which the read confirms exists (line 1 FOUND). The premise's load-bearing claim — a test-clear hook of this name exists in workflow-step state-store — is confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "envelope-family-siblings",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "The deploy-step envelope joins an existing sibling family of exactly analyze-step, build-step, and workflow-step step-envelopes, each with its own types.ts.",
-          "evidence": "All three cited anchors resolve to real files, each opening with its own file header at line 1: `src/mcp/analyze-step/types.ts:1`, `src/mcp/build-step/types.ts:1`, and `src/mcp/workflow-step/types.ts:1` all read FOUND. This confirms the sibling family of step-envelopes, each carrying its own `types.ts`, that the deploy-step envelope is described as joining. (The `grep → 0 match` line is a regex-escaping artifact — the alternation pattern was matched literally — and is superseded by the three direct reads.) The only unproven fragment is the word \"exactly\": the evidence did not enumerate all `src/mcp/*-step/` directories, so it neither confirms nor denies a fourth sibling — but that does not bear on the prescribed change, since adding a deploy-step envelope alongside the existing three holds whether the family has three members or more.",
-          "action": "none — verified sound. The three named sibling envelopes each exist with their own types.ts, confirming the pattern the deploy-step envelope follows.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "test-locate-existing-tests",
-          "ref": "citations/c4",
-          "kind": "cross-artifact",
-          "severity": "HIGH",
-          "premise": "The test files s1 test.locate reports (analyze-step-handler.test.ts, build-step.test.ts, workflow-rpc.test.ts, tracker setup.test.ts) resolve in the source tree and the new deploy tests mirror them.",
-          "evidence": "The premise asserts all four cited test files resolve in the source tree. Three do: `src/mcp/build-step/__tests__/build-step.test.ts:13`, `src/daemon/__tests__/workflow-rpc.test.ts:16`, and `src/workflow/tracker/__tests__/setup.test.ts:12`. But `grep /analyze-step-handler\\.test\\.ts/` → 0 matches — no file by that name exists anywhere in the tree. (The other workflow-rpc.test.ts hits at calibration.ts:62-66 are literal strings in the calibration fixture, not a second real file.) So one of the four anchors the premise claims resolves does not, and the \"new deploy tests mirror them\" clause has no mirror source for the analyze-step case.",
-          "action": "Determine the real analyze-step test file the s1 locate intended (the surviving MCP test lives at src/mcp/build-step/__tests__/build-step.test.ts, so an analyze-step handler test would plausibly sit under src/mcp/analyze-step/__tests__/ — but the evidence does not confirm any such file exists), and either correct the anchor to that verified path or drop analyze-step-handler.test.ts from the mirror set. Do not build a deploy test that mirrors a nonexistent template.",
+          "premise": "The daemon owns all DB access (CLIs/MCP/IDE go through IPC only), so deploy runners reading the graph over deploy-rpc rather than opening LMDB/Lance directly is consistent with the existing rule.",
+          "evidence": "Both greps returned 0 matches, but the probe searches src/ only while this premise's anchor is CLAUDE.md (project-rules doc), outside the searched scope — so the evidence neither confirms nor refutes it. Unverifiable from the gathered evidence.",
+          "action": "Re-probe against CLAUDE.md/docs; the daemon-owns-all-DB rule is stated in CLAUDE.md rule 1, so the claim is sound but the src-scoped probe cannot see it.",
           "fixability": "manual",
           "proposedFix": {
-            "rationale": "The evidence proves analyze-step-handler.test.ts does not exist but supplies no verified replacement path, so no safe auto-edit is derivable — a human must locate the intended file or decide to drop the anchor.",
-            "options": [
-              "Locate the actual analyze-step handler test (e.g. under src/mcp/analyze-step/__tests__/) and correct the anchor + citation to its real path:line",
-              "Drop analyze-step-handler.test.ts from the four cited mirror sources and generate its deploy test from one of the three confirmed patterns instead",
-              "Remove the analyze-step deploy-test mirror entirely if no analyze-step handler test exists to model it on"
-            ]
-          }
-        },
-        {
-          "claimId": "test-mirror-analyze-state-narrow",
-          "kind": "citation",
-          "severity": "MED",
-          "premise": "analyze-step-state.test.ts and analyze-step-narrow.test.ts exist (the state-store and narrow-emit tests the deploy-step unit tests mirror).",
-          "evidence": "The premise cites two files as existing exemplars the deploy-step unit tests mirror. Re-running the premise's own probes contradicts existence: grep `/analyze-step-state\\.test\\.ts/` → 0 matches, and grep `/analyze-step-narrow\\.test\\.ts/` → 0 matches. So neither filename appears anywhere in the source tree as written. However, the probes only tested these two exact filenames — they do not prove that no state-store / narrow-emit tests exist under different names. The evidence therefore contradicts the literal anchors but does not resolve whether the underlying concept (analyze-step tests to mirror) exists elsewhere, and the prescribed change (author deploy-step unit tests analogously) still holds regardless of the exact filename.",
-          "action": "Locate the real analyze-step test files (the state-store and narrow-emit suites) and correct the two anchors to their actual paths, or drop the specific filenames if no direct analogue exists. Do not treat the current names as valid — they resolve to nothing.",
-          "fixability": "manual",
-          "proposedFix": {
-            "rationale": "The evidence positively contradicts both cited filenames (0 grep matches each) but supplies no correct replacement path, so no safe auto-edit is derivable — a human must confirm the real exemplar test names.",
-            "options": [
-              "Search the analyze test directory for the actual state-store / narrow-emit suites (e.g. by different naming such as step-state / step-narrow or a nested __tests__ path) and update both anchors to the verified paths.",
-              "If no direct analogue exists, reword the premise to drop the two specific filenames and instead describe the pattern being mirrored, so the citation no longer points at nonexistent files.",
-              "Confirm whether these tests were planned but not yet written; if so, mark the citation as forward-looking rather than an existing-file reference."
-            ]
-          }
-        },
-        {
-          "claimId": "test-mirror-workflow-rpc",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/daemon/__tests__/workflow-rpc.test.ts exists (the additive-RPC-registration test deploy-rpc.test.ts mirrors).",
-          "evidence": "The grep for `workflow-rpc.test.ts` returns a match originating from inside the file itself — `src/daemon/__tests__/workflow-rpc.test.ts:16: * Run: npx tsx --test src/daemon/__tests__/workflow-rpc.test.ts` — which proves the anchored file exists on disk with real content. The remaining three matches (calibration.ts:62-66) are references TO this test from other source, further confirming it is a real, cited artifact. The citation anchor (`src/daemon/__tests__/workflow-rpc.test.ts`) resolves to an existing file.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "tracker-setup-stepfor-harness",
-          "kind": "citation",
-          "severity": "MED",
-          "premise": "tracker/__tests__/setup.test.ts contains a stepFor-style loop-driving harness that chain.test.ts is modeled on.",
-          "evidence": "The anchor `stepFor` resolves in `setup.test.ts` — defined at line 85 as `const stepFor = (report, key) => ...`, a pure step-lookup helper used across lines 102–173 to fetch a step by key and assert `.status`/`.action`. So the citation's load-bearing fact (setup.test.ts contains a `stepFor` helper reusable by chain.test.ts) is confirmed. Two imprecisions: (1) `stepFor` is a lookup helper, NOT a \"loop-driving harness\" — it drives no loop, it indexes into `report.steps`; (2) no evidence about `chain.test.ts` was gathered, so the \"modeled on\" relationship is unverifiable. Neither alters what gets built: the anchor points at a real, correctly-located helper embodying the right concept.",
-          "action": "Reword the premise to describe `stepFor` as a per-step lookup/assertion helper rather than a \"loop-driving harness,\" and soften the unverified \"chain.test.ts is modeled on it\" to reflect that it's a reusable pattern. The citation itself is sound and needs no anchor change.",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "The cited helper exists and is correctly located; only the characterization ('loop-driving harness') and the unverified 'modeled on' claim are imprecise. A reword is safe but is a judgment call, so offer options.",
-            "options": [
-              "Reword to: 'setup.test.ts contains a stepFor(report, key) per-step lookup helper (line 85) used to assert individual step statuses — a reusable pattern chain.test.ts can follow.'",
-              "Keep the citation but drop the 'loop-driving harness' phrasing, replacing it with 'step-lookup helper'.",
-              "Leave as-is (accept the imprecise characterization) since the anchor resolves correctly and does not change the prescribed change."
-            ]
-          }
-        },
-        {
-          "claimId": "entity-id-sha256-formula",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Daemon graph entity ids are deterministic SHA256(repo+file+kind+name) hex — the formula DeploymentEntityRef.entityId claims to carry.",
-          "evidence": "The canonical formula is confirmed by the type-level doc and by production code. src/shared/types.ts:540 documents `Stable deterministic ID: SHA256(repo + file + kind + name), hex-32`. Production id-derivation sites materialize exactly that formula with a null-byte separator and a 32-hex slice: src/daemon/tools/builtins/code/__tests__/orm-scan.test.ts:125 and the makeEntityId helpers at src/db/graph/migrations.ts:363-365, src/db/relations.ts:90, and src/indexer/parser/base.ts:18 all compute `createHash('sha256').update(`${repo}\\x00${file}\\x00${kind}\\x00${name}`).digest('hex')` sliced to 32. src/db/entities.ts:197 further corroborates that `(repo, file, kind, name)` is the uniqueness tuple. The premise's `hex` is precisely `hex-32` in the source, and the composed key uses `\\x00` separators — an implementation detail that does not alter the stated formula.",
-          "action": "none — verified sound. The SHA256(repo+file+kind+name) deterministic-id formula the premise relies on is real and consistently applied; DeploymentEntityRef.entityId can safely carry it (canonical output is the 32-char hex slice).",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "deploy-phase-closed-union-order",
-          "kind": "closed-union",
-          "severity": "MED",
-          "premise": "DeployPhase is exactly the 7-member ordered union 'start'|'discover'|'reuse'|'topology'|'security'|'scale'|'done', mirroring the chain order discover → reuse → topology → {security, scale-HA}; no phase outside it is dispatchable.",
-          "evidence": "The single gathered probe — a regex for the literal ordered union `'start' | 'discover' | 'reuse' | 'topology' | 'security' | 'scale' | 'done'` — returned 0 matches. No `path:line` read of a `DeployPhase` declaration was handed over. The evidence therefore neither confirms the 7 members, their order, nor the \"no phase outside it is dispatchable\" claim. A 0-match grep is not a contradiction: the type may be declared with different member spacing, ordering, line-wrapping, or split across lines that this one rigid pattern cannot see. The premise is unverifiable from the evidence provided.",
-          "action": "Re-probe DeployPhase directly before trusting or rejecting the closed-union claim: locate the `DeployPhase` type declaration (e.g. `rg 'type DeployPhase'` and read the surrounding lines), then confirm the member set, the ordering, and that dispatch is gated on exactly these members. The current single literal-string grep is too brittle to ground the premise.",
-          "fixability": "manual",
-          "proposedFix": {
-            "rationale": "The evidence is empty (0 matches on one brittle literal pattern), so no evidence-derived text correction is safe. Resolving this requires re-running a real probe against the DeployPhase declaration — a semantic/verification gap, not a mechanical edit.",
-            "options": [
-              "Re-run a looser probe (`rg 'type DeployPhase'` + read the declaration) and re-judge the premise against the actual member list and ordering",
-              "If the declaration is confirmed to hold the 7 ordered members exactly, downgrade to LOW (verified sound)",
-              "If the declaration differs (extra/missing member, different order, or dispatch not gated on the union), escalate to HIGH with the concrete build-breaking discrepancy named"
-            ]
-          }
-        },
-        {
-          "claimId": "no-promise-all-provider",
-          "kind": "external-contract",
-          "severity": "MED",
-          "premise": "The project rule that LLM/narrow provider calls run serial for...of and never Promise.all holds in the sibling handler deploy-step mirrors.",
-          "evidence": "The gathered evidence does not surface any \"deploy-step\" sibling handler at all. The `Promise.all` grep (26 matches) hits only DB drivers (`rdbms-common.ts`, `pg.ts`, `mysql.ts`, `oracle.ts`, `mssql.ts`), test files, `template-loader.ts`, `daemon/index.ts:1146`, `cloud/gcp/iam.ts`, `file/read.ts`, `git/diff.ts`/`show.ts`, graph/lance tests, and `mcp/server.ts:583` — none are provider calls and none live in a `deploy-step` handler. The only workflow-step handler read, `src/mcp/workflow-step/handler.ts:1`, returned just the license-header comment, verifying nothing about serial provider iteration. The rule-affirming comments that DO appear (`review-deferred.ts:67`, `questions.ts:202`, `review.ts:10`, `calibration.ts:168`, `probe.ts:108`) belong to review/question phases, not a deploy-step mirror. The `for...of` grep was truncated at its 50-match cap and shows no deploy-step file either. Thus the premise's subject — a \"deploy-step mirror\" handler and whether the serial rule holds in it — is neither confirmed nor contradicted by the evidence handed over.",
-          "action": "Re-run the probe against the actual deploy-step handler path (the premise names none — anchor is only `handler.ts`). Confirm a `deploy-step` sibling exists and grep it specifically for `Promise.all` over provider calls vs. serial `for...of`. Until that file is surfaced, the premise cannot be judged; the general grep shows no `Promise.all` provider-call violation anywhere, which is consistent with the rule but does not verify the specific mirror.",
-          "fixability": "manual",
-          "proposedFix": {
-            "rationale": "The premise asserts a property of a specific 'deploy-step mirror' handler that the evidence never surfaces — no file under a deploy-step path appears in either grep, and the sole handler read returned only a license header. This is a semantic/scoping gap requiring the probe to target the actual file, not a mechanical text fix.",
-            "options": [
-              "Narrow the premise to a concrete file path for the deploy-step handler and re-probe it directly for provider-call iteration.",
-              "Drop the 'deploy-step mirrors' claim if no such sibling handler exists in the tree (the evidence surfaces none).",
-              "Rescope the premise to the verified serial-rule sites actually present (review-deferred.ts:67, questions.ts:202, review.ts:10) rather than an unshown deploy-step mirror."
-            ]
+            "rationale": "The probe is src-scoped; a doc-anchored claim needs a docs/CLAUDE.md search to verify."
           }
         }
       ],
       "counts": {
-        "high": 1,
-        "med": 6,
-        "low": 12
+        "high": 0,
+        "med": 1,
+        "low": 4
       },
-      "reviewedAt": "2026-07-21T16:07:18.294Z",
-      "model": "claude"
+      "reviewedAt": "2026-07-21T20:36:32.756Z",
+      "model": "client"
     },
     "approvedAt": "2026-07-21T16:21:06.416Z",
     "reviewOverride": {

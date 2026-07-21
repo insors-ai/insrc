@@ -141,9 +141,18 @@ export interface CalibrationReport {
 	readonly rounds:        number;
 	readonly cases:         number;
 	readonly agreementRate: number;   // overall fraction of (case×round) matching expected
-	/** Over-blocking: expected MED/LOW but judged HIGH. */
+	/**
+	 * The SAFETY metric. The gate blocks on HIGH+MED, so a HIGH judged MED
+	 * still blocks — the defect is caught, only mis-labeled. The one dangerous
+	 * error is an expected-blocking case (HIGH or MED) judged LOW: it would
+	 * pass the gate. This must be zero to certify the gate.
+	 */
+	readonly gateEscapes:   number;
+	/** Over-blocking: expected MED/LOW but judged HIGH. Quality signal, non-gating. */
 	readonly falseHighs:    number;
-	/** Under-blocking: expected HIGH but judged below HIGH. */
+	/** Severity under-label: expected HIGH but judged below HIGH. A quality
+	 *  signal (imprecise labeling) — NOT a gate escape when judged MED, since
+	 *  MED still blocks. */
 	readonly missedHighs:   number;
 	readonly perCase:       readonly CalibrationCaseResult[];
 }
@@ -163,10 +172,13 @@ export interface RunCalibrationOpts {
  */
 export async function runCalibration(provider: LLMProvider, opts?: RunCalibrationOpts): Promise<CalibrationReport> {
 	const rounds = Math.max(1, opts?.rounds ?? 1);
+	// The gate blocks on HIGH+MED, so anything below MED (i.e. LOW) is a pass.
+	const BLOCKING = new Set<Severity>(['HIGH', 'MED']);
 	const perCase: CalibrationCaseResult[] = [];
 	let agreements = 0;
 	let falseHighs = 0;
 	let missedHighs = 0;
+	let gateEscapes = 0;
 
 	for (const c of CALIBRATION_FIXTURES) {
 		const actuals: Severity[] = [];
@@ -176,8 +188,10 @@ export async function runCalibration(provider: LLMProvider, opts?: RunCalibratio
 			const finding = await verifyClaim(c.claim, c.evidence, provider, opts?.signal);
 			actuals.push(finding.severity);
 			if (finding.severity === c.expected) agreements += 1;
-			if (SEV_RANK[finding.severity] > SEV_RANK[c.expected] && finding.severity === 'HIGH') falseHighs += 1;
+			if (finding.severity === 'HIGH' && SEV_RANK[c.expected] < SEV_RANK.HIGH) falseHighs += 1;
 			if (c.expected === 'HIGH' && finding.severity !== 'HIGH') missedHighs += 1;
+			// gate escape: a case that SHOULD block (HIGH/MED) was judged LOW.
+			if (BLOCKING.has(c.expected) && !BLOCKING.has(finding.severity)) gateEscapes += 1;
 		}
 		const matches = actuals.filter(s => s === c.expected).length;
 		perCase.push({ claimId: c.claim.id, expected: c.expected, actuals, matchRate: matches / rounds });
@@ -188,6 +202,7 @@ export async function runCalibration(provider: LLMProvider, opts?: RunCalibratio
 		rounds,
 		cases: CALIBRATION_FIXTURES.length,
 		agreementRate: totalTrials > 0 ? agreements / totalTrials : 0,
+		gateEscapes,
 		falseHighs,
 		missedHighs,
 		perCase,
@@ -198,7 +213,8 @@ export async function runCalibration(provider: LLMProvider, opts?: RunCalibratio
 export function renderCalibrationReport(r: CalibrationReport): string {
 	const lines = [
 		`calibration: ${(r.agreementRate * 100).toFixed(0)}% agreement over ${r.cases} cases × ${r.rounds} round(s)`,
-		`  false-highs (over-block): ${r.falseHighs}   missed-highs (under-block): ${r.missedHighs}`,
+		`  gate-escapes (block→LOW, UNSAFE): ${r.gateEscapes}`,
+		`  false-highs (over-block): ${r.falseHighs}   missed-highs (HIGH→MED label, still blocks): ${r.missedHighs}`,
 		'',
 	];
 	for (const c of r.perCase) {

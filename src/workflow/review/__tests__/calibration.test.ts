@@ -59,12 +59,26 @@ test('runCalibration scores agreement + directional errors against the fixtures'
 	assert.equal(report.rounds, 1);
 	assert.equal(report.missedHighs, 1);
 	assert.equal(report.falseHighs, 1);
+	// Neither deliberate error dropped a blocking case to LOW, so the gate is
+	// still safe (a HIGH→MED still blocks).
+	assert.equal(report.gateEscapes, 0);
 	const expectedAgree = (CALIBRATION_FIXTURES.length - 2) / CALIBRATION_FIXTURES.length;
 	assert.ok(Math.abs(report.agreementRate - expectedAgree) < 1e-9, `agreement ${report.agreementRate}`);
 	// render smoke
 	const rendered = renderCalibrationReport(report);
 	assert.match(rendered, /calibration: \d+% agreement/);
-	assert.match(rendered, /false-highs/);
+	assert.match(rendered, /gate-escapes/);
+});
+
+test('runCalibration flags a gate escape when a blocking case is judged LOW', async () => {
+	// Force the first HIGH case to LOW — that is an escape (a material defect
+	// would pass the HIGH+MED gate).
+	const seq: Severity[] = CALIBRATION_FIXTURES.map(c => c.expected);
+	const highIdx = CALIBRATION_FIXTURES.findIndex(c => c.expected === 'HIGH');
+	seq[highIdx] = 'LOW';
+	const report = await runCalibration(fakeProvider(seq), { rounds: 1 });
+	assert.equal(report.gateEscapes, 1);
+	assert.equal(report.missedHighs, 1);   // HIGH→LOW is also a missed-high
 });
 
 test('runCalibration is fully in agreement when the provider matches ground truth', async () => {

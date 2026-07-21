@@ -97,6 +97,23 @@ export async function runReview(
 // Aggregation
 // ---------------------------------------------------------------------------
 
+export const DEFAULT_BLOCK_ON_SEVERITIES: readonly Severity[] = DEFAULT_BLOCK_ON;
+
+/** Tally findings by severity. Exposed for controller-driven surfaces that
+ *  assemble a `ReviewReport` from externally-produced findings. */
+export function tallyFindings(findings: readonly Finding[]): ReviewReport['counts'] {
+	return tally(findings);
+}
+
+/** The engine's verdict policy: `block` if any finding is in `blockOn`,
+ *  else `warn` if any is above LOW, else `pass`. Exposed for reuse. */
+export function computeReviewVerdict(
+	findings: readonly Finding[],
+	blockOn:  readonly Severity[] = DEFAULT_BLOCK_ON,
+): ReviewVerdict {
+	return computeVerdict(findings, blockOn);
+}
+
 function tally(findings: readonly Finding[]): ReviewReport['counts'] {
 	let high = 0, med = 0, low = 0;
 	for (const f of findings) {

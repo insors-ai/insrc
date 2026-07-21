@@ -29,7 +29,12 @@ const CLAIM_KINDS: readonly ClaimKind[] = [
 // Schema
 // ---------------------------------------------------------------------------
 
-const CLAIMS_SCHEMA: StructuredSchema = {
+/**
+ * The JSON/ajv schema the claim-extraction turn must satisfy: `{ claims: Claim[] }`.
+ * Exported so a controller-driven surface (`insrc_review_step`) can hand it to
+ * the outer LLM turn instead of running the extraction through a provider here.
+ */
+export const EXTRACT_SCHEMA: StructuredSchema = {
 	type: 'object',
 	additionalProperties: false,
 	required: ['claims'],
@@ -119,6 +124,37 @@ function systemPrompt(stage: string): string {
 }
 
 // ---------------------------------------------------------------------------
+// Prompt builder (exposed for the controller-driven review surface)
+// ---------------------------------------------------------------------------
+
+/**
+ * Build the system + user prompt for the claim-extraction turn. The artifact
+ * markdown is placed at the TAIL of the `user` message (CLAUDE.md rule 7).
+ * Exposed so `insrc_review_step` can hand it to the outer (controller) LLM
+ * verbatim; the daemon path (`extractClaims`) uses the same builder.
+ */
+export function buildExtractPrompt(
+	artifactMarkdown: string,
+	stage:            string,
+): { system: string; user: string } {
+	return {
+		system: systemPrompt(stage),
+		user: [
+			'Extract the load-bearing premises of the artifact below. Emit the claims JSON now.',
+			'',
+			'--- ARTIFACT MARKDOWN (stage: ' + stage + ') ---',
+			artifactMarkdown,
+		].join('\n'),
+	};
+}
+
+/** Coerce a raw `{ claims }` envelope (however produced) into well-formed
+ *  `Claim`s. Shared by the daemon path and the controller-driven surface. */
+export function normalizeClaimsEnvelope(env: { claims?: readonly RawClaim[] | undefined }): Claim[] {
+	return normalizeClaims(env.claims);
+}
+
+// ---------------------------------------------------------------------------
 // Public entry
 // ---------------------------------------------------------------------------
 
@@ -133,22 +169,15 @@ export async function extractClaims(
 	provider:         LLMProvider,
 	signal?:          AbortSignal,
 ): Promise<Claim[]> {
+	const { system, user } = buildExtractPrompt(artifactMarkdown, stage);
 	const messages = [
-		{ role: 'system' as const, content: systemPrompt(stage) },
-		{
-			role: 'user' as const,
-			content: [
-				'Extract the load-bearing premises of the artifact below. Emit the claims JSON now.',
-				'',
-				'--- ARTIFACT MARKDOWN (stage: ' + stage + ') ---',
-				artifactMarkdown,
-			].join('\n'),
-		},
+		{ role: 'system' as const, content: system },
+		{ role: 'user' as const, content: user },
 	];
 
 	const env = await provider.completeStructured<ClaimsEnvelope>(
 		messages,
-		CLAIMS_SCHEMA,
+		EXTRACT_SCHEMA,
 		signal !== undefined ? { signal } : {},
 	);
 

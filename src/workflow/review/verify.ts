@@ -43,7 +43,13 @@ const FIXABILITIES: readonly Fixability[] = ['auto', 'assisted', 'manual'];
 // Schema
 // ---------------------------------------------------------------------------
 
-const FINDING_SCHEMA: StructuredSchema = {
+/**
+ * The JSON/ajv schema one premise-judgment turn must satisfy — a Finding
+ * WITHOUT its `claimId` (the caller keys it back to the claim): `{ severity,
+ * evidence, action, fixability, proposedFix? }`. Exported so a controller-
+ * driven surface (`insrc_review_step`) can hand it to the outer LLM turn.
+ */
+export const VERIFY_SCHEMA: StructuredSchema = {
 	type: 'object',
 	additionalProperties: false,
 	required: ['severity', 'evidence', 'action', 'fixability'],
@@ -76,7 +82,7 @@ const FINDING_SCHEMA: StructuredSchema = {
 	},
 };
 
-interface RawFinding {
+export interface RawFinding {
 	readonly severity: Severity;
 	readonly evidence: string;
 	readonly action: string;
@@ -162,6 +168,34 @@ function renderEvidence(claim: Claim, evidence: Evidence): string {
 }
 
 // ---------------------------------------------------------------------------
+// Prompt builder (exposed for the controller-driven review surface)
+// ---------------------------------------------------------------------------
+
+/**
+ * Build the system + user prompt for ONE premise-judgment turn. The gathered
+ * evidence is placed at the TAIL of the `user` message (CLAUDE.md rule 7).
+ * Exposed so `insrc_review_step` can compose the per-claim premise+evidence
+ * blocks itself; the daemon path (`verifyClaim`) uses the same builder.
+ */
+export function buildVerifyPrompt(
+	claim:    Claim,
+	evidence: Evidence,
+): { system: string; user: string } {
+	return {
+		system: SYSTEM,
+		user: [
+			'Judge the premise below against the gathered evidence. Emit the finding JSON now.',
+			'',
+			renderEvidence(claim, evidence),
+		].join('\n'),
+	};
+}
+
+/** The evidence block for one claim (premise header + ground-truth matches),
+ *  exposed so a controller-driven surface can compose a batched judge prompt. */
+export { renderEvidence };
+
+// ---------------------------------------------------------------------------
 // Public entry
 // ---------------------------------------------------------------------------
 
@@ -175,21 +209,15 @@ export async function verifyClaim(
 	provider: LLMProvider,
 	signal?:  AbortSignal,
 ): Promise<Finding> {
+	const { system, user } = buildVerifyPrompt(claim, evidence);
 	const messages = [
-		{ role: 'system' as const, content: SYSTEM },
-		{
-			role: 'user' as const,
-			content: [
-				'Judge the premise below against the gathered evidence. Emit the finding JSON now.',
-				'',
-				renderEvidence(claim, evidence),
-			].join('\n'),
-		},
+		{ role: 'system' as const, content: system },
+		{ role: 'user' as const, content: user },
 	];
 
 	const raw = await provider.completeStructured<RawFinding>(
 		messages,
-		FINDING_SCHEMA,
+		VERIFY_SCHEMA,
 		signal !== undefined ? { signal } : {},
 	);
 
@@ -198,7 +226,9 @@ export async function verifyClaim(
 	return finding;
 }
 
-function normalizeFinding(claim: Claim, raw: RawFinding): Finding {
+/** Coerce a raw judgment payload into a `Finding` keyed to `claim`. Shared by
+ *  the daemon path and the controller-driven surface (`insrc_review_step`). */
+export function normalizeFinding(claim: Claim, raw: RawFinding): Finding {
 	const severity: Severity = SEVERITIES.includes(raw.severity) ? raw.severity : 'MED';
 	const fixability: Fixability = FIXABILITIES.includes(raw.fixability) ? raw.fixability : 'manual';
 	const proposedFix = normalizeFix(fixability, raw.proposedFix);

@@ -17,10 +17,11 @@
  */
 
 export * from './types.js';
-export { extractClaims } from './extract.js';
+export { extractClaims, buildExtractPrompt, normalizeClaimsEnvelope, EXTRACT_SCHEMA } from './extract.js';
 export { gatherEvidence } from './probe.js';
-export { verifyClaim } from './verify.js';
-export { runReview } from './review.js';
+export { verifyClaim, buildVerifyPrompt, normalizeFinding, renderEvidence, VERIFY_SCHEMA } from './verify.js';
+export type { RawFinding } from './verify.js';
+export { runReview, tallyFindings, computeReviewVerdict, DEFAULT_BLOCK_ON_SEVERITIES } from './review.js';
 export type { ReviewPhase, RunReviewOpts } from './review.js';
 export { renderReviewReport } from './report.js';
 export { applyAutoFixes, pendingUserFindings } from './apply.js';

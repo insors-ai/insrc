@@ -45,6 +45,7 @@ import { getLogger } from '../shared/logger.js';
 import { handleAnalyzeStep } from './analyze-step/handler.js';
 import { handleWorkflowStep } from './workflow-step/handler.js';
 import { handleBuildStep } from './build-step/handler.js';
+import { handleReviewStep } from './review-step/handler.js';
 import { renderBundleAsMarkdown } from './bundle-md.js';
 import { makeSamplerFromMcpServer } from './sampling-bridge.js';
 import { runWorkflowStream } from './daemon-stream.js';
@@ -472,6 +473,73 @@ export function buildInsrcMcpServer(): McpServer {
 			},
 		},
 		async (rawArgs, _extra) => handleBuildStep(rawArgs),
+	);
+
+	// -------------------------------------------------------------------
+	// insrc_review_step — controller-driven, multi-turn INDEPENDENT review.
+	//
+	// A daemon-side review runs the SAME provider that authored the
+	// artifact — no independent perspective. This tool moves the review's
+	// LLM reasoning into the CONTROLLER (the MCP client model): the server
+	// does the DETERMINISTIC parts (read artifact, gather evidence, assemble
+	// + persist the report); the CONTROLLER emits the claims + verdicts.
+	// Genuine "two sets of eyes". Stamps meta.review with model='client'.
+	// -------------------------------------------------------------------
+	server.registerTool(
+		'insrc_review_step',
+		{
+			title: 'insrc review (controller-driven, multi-turn)',
+			description:
+				'Controller-driven INDEPENDENT review of a persisted workflow artifact. ' +
+				'A daemon self-review runs the SAME provider that authored the artifact — ' +
+				'no independent perspective; this tool moves the review\'s reasoning into ' +
+				'YOU (the controller), off that provider. The server does the DETERMINISTIC ' +
+				'parts (read the artifact, gather evidence by re-running probes against real ' +
+				'source, assemble + persist the report); YOU emit the claims + the verdicts. ' +
+				'Stamps `meta.review` with model=`client`; `approve` then enforces its block ' +
+				'verdict.\n\n' +
+				'Multi-turn loop:\n\n' +
+				'  1. phase=\'start\' with { artifact, repo? }. `artifact` is the `.md` (or ' +
+				'`.json`) path. Server returns { next: \'emit_claims\', prompt, schema, state }.\n' +
+				'  2. Emit the claims JSON (the artifact\'s load-bearing premises + their ' +
+				'deterministic probes) matching the schema, then phase=\'claims\' with ' +
+				'claims=<your JSON> + state. The server re-runs the probes and returns ' +
+				'{ next: \'emit_verdicts\', prompt, schema, evidence, state } — `evidence` is ' +
+				'the ground truth you MUST judge against.\n' +
+				'  3. Emit the verdicts JSON (one entry per claim, keyed by claimId), then ' +
+				'phase=\'verdicts\' with verdicts=<your JSON> + state. Server returns ' +
+				'{ next: \'done\', verdict, counts, report, applied, pending } once the amended ' +
+				'artifact + stamped review are written to disk.\n\n' +
+				'The `guidance` field on each response explains the next call; `prompt` + ' +
+				'`schema` are authoritative. Preserve `state` verbatim between calls.',
+			annotations: {
+				readOnlyHint:   false,   // writes the amended artifact + stamps meta.review
+				idempotentHint: false,
+				openWorldHint:  false,
+			},
+			inputSchema: {
+				phase: z.enum(['start', 'claims', 'verdicts'])
+					.describe('Which turn of the loop this call carries.'),
+				artifact: z.string()
+					.describe('Only for phase=start. The artifact `.md` / `.html` / `.json` path to review.')
+					.optional(),
+				repo: z.string()
+					.describe('Only for phase=start. Absolute repo path; falls back to INSRC_REPO env.')
+					.optional(),
+				claims: z.object({ claims: z.array(z.record(z.string(), z.unknown())).optional() })
+					.passthrough()
+					.describe('Only for phase=claims. The extracted-claims JSON your LLM emitted (matches the emit_claims schema).')
+					.optional(),
+				verdicts: z.object({ verdicts: z.array(z.record(z.string(), z.unknown())).optional() })
+					.passthrough()
+					.describe('Only for phase=verdicts. The per-claim verdicts JSON your LLM emitted (matches the emit_verdicts schema).')
+					.optional(),
+				state: z.string()
+					.describe('Opaque continuation token from the prior response. Required after phase=start.')
+					.optional(),
+			},
+		},
+		async (rawArgs, _extra) => handleReviewStep(rawArgs),
 	);
 
 	// -------------------------------------------------------------------

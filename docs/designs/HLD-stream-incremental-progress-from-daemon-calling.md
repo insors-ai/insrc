@@ -2,6 +2,8 @@
 
 # HLD: Extend the daemon's existing per-operation progress emitters (WorkflowProgress in workflow-rpc
 
+**Tracker:** [insors-ai/insrc#41](https://github.com/insors-ai/insrc/issues/41)
+
 ## Framework summary
 
 Extend the daemon's existing per-operation progress emitters (WorkflowProgress in workflow-rpc.ts, eventToProgressData in analyze-rpc.ts) so both converge on one uniform ProgressEvent payload that rides the already-shipped IpcStreamMessage / IpcStreamKind 'progress' + 'delta' frame — no new wire format (k2, k5). The MCP tool surface gains a single progressToken-gated branch that maps inbound ProgressEvent frames to MCP notifications/progress notifications (k3). The IDE side is served purely by defining the daemon-emitted contract plus a thin reader-API shape the fork consumes (k4); the fork's actual render path is out of scope for this repo. This is the a1 alternative: extend-in-place over the two nearest existing emitters, one shared mapping, one forwarding branch, one thin reader, all on the single existing stream seam — no parallel progress subsystem.

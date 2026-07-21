@@ -49,6 +49,9 @@ import { patchTrackerMeta, readTrackerMeta, type TrackerMeta } from './tracker/r
 import { epicWorkflowId, storyWorkflowId, taskWorkflowId, safeCanonical } from './id.js';
 import { renderReviewReport } from './review/index.js';
 import type { ReviewReport } from './review/types.js';
+import { renderResolvedQuestionsSection } from './questions.js';
+import { renderCitationBlock } from './synthesizer.js';
+import type { Citation, QuestionResolution } from './types.js';
 
 const log = getLogger('workflow:tracker-auto');
 
@@ -144,8 +147,8 @@ export function autoPushEpicOnHld(hldJsonPath: string): AutoPushResult {
 	const definePaths = defineArtifactPaths(repoPath, epicHash, epicSlug);
 	patchTrackerMeta(definePaths.json, { epicRef, pushedAt: now });
 	// Re-render both docs so each shows the `**Tracker:** owner/repo#N` link.
-	relink(hldArtifactPaths(repoPath, epicHash, epicSlug).md, () => renderHldMarkdown(readHldArtifact(repoPath, epicHash)));
-	relink(definePaths.md, () => renderDefineMarkdown(readDefineArtifact(repoPath, epicHash)));
+	relink(hldArtifactPaths(repoPath, epicHash, epicSlug).md, () => { const a = readHldArtifact(repoPath, epicHash); return withResolvedTail(a.meta, a.citations, renderHldMarkdown(a)); });
+	relink(definePaths.md, () => { const a = readDefineArtifact(repoPath, epicHash); return withResolvedTail(a.meta, a.citations, renderDefineMarkdown(a)); });
 
 	if (adopted === undefined) bestEffort('comment', () => ghComment(cfg.owner, cfg.repo, epicRef, renderTrackerHldSummary(readHldArtifact(repoPath, epicHash))));
 	postReviewComment(cfg, epicRef, hldJsonPath);
@@ -212,7 +215,7 @@ export function autoPushStoryOnLld(lldJsonPath: string): AutoPushResult {
 	// Persist: storyRef on the LLD (its doc link) + aggregate into the
 	// Define's storyRefs map. Re-render the LLD doc with the issue link.
 	patchTrackerMeta(lldJsonPath, { storyRef, pushedAt: new Date().toISOString() });
-	relink(lldArtifactPaths(repoPath, epicHash, storyId, epicSlug).md, () => renderLldMarkdown(readLldArtifact(repoPath, epicHash, storyId)));
+	relink(lldArtifactPaths(repoPath, epicHash, storyId, epicSlug).md, () => { const a = readLldArtifact(repoPath, epicHash, storyId); return withResolvedTail(a.meta, a.citations, renderLldMarkdown(a)); });
 	patchTrackerMeta(defineArtifactPaths(repoPath, epicHash, epicSlug).json, { storyRefs: { ...(defineTracker?.storyRefs ?? {}), [storyId]: storyRef } });
 
 	if (adopted === undefined) {
@@ -321,6 +324,18 @@ export function autoPushTasksOnPlan(planJsonPath: string): AutoPushResult {
 function relink(mdPath: string, render: () => string): void {
 	try { writeAtomic(mdPath, render()); }
 	catch (err) { log.warn({ mdPath, err: (err as Error).message }, 'failed to re-render doc with tracker link'); }
+}
+
+/** Append the "## Resolved questions" + "## Citations" tail to a core render,
+ *  matching the canonical full-md assembly in `questions.ts`. Without this a
+ *  tracker relink re-renders with the bare renderer and silently drops both
+ *  sections (the data stays in the JSON — this only restores the md view). */
+function withResolvedTail(
+	meta: { readonly questionResolutions?: Readonly<Record<string, QuestionResolution>> | undefined },
+	citations: readonly Citation[],
+	core: string,
+): string {
+	return core + renderResolvedQuestionsSection(meta.questionResolutions ?? {}) + renderCitationBlock(citations);
 }
 
 /** Run a non-critical side effect; log + swallow failures. */

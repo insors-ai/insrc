@@ -316,7 +316,7 @@ export async function runStart(
 		const tokens = makeTokenAccumulator();
 		const drive = (): Promise<RunWorkflowResult> => runWorkflowServerSide(intent, provider, {
 			runId, epicKey, modelLabel, signal,
-			onProgress: (f) => { appendProgressLog(runId, 'workflow.run', f.phase, f.detail); send({ id: 0, stream: 'progress', data: workflowProgressToStage(f, stageIndex++) }); },
+			onProgress: (f) => { appendProgressLog(runId, 'workflow.run', f.phase, formatProgressDetail(f)); send({ id: 0, stream: 'progress', data: workflowProgressToStage(f, stageIndex++) }); },
 			onToken:    (stepId, token) => { const ev = tokens.push(stepId, token); if (ev !== null) send({ id: 0, stream: 'delta', data: ev }); },
 			...(p.review !== undefined ? { review: p.review } : {}),
 		});
@@ -349,13 +349,24 @@ function msgs(systemPrompt: string, userTurn: string): LLMMessage[] {
  *  not enumerable ahead of time (synthesize may retry). `index` is the caller's
  *  monotonic counter. Total function — never throws. */
 export function workflowProgressToStage(f: WorkflowProgress, index: number): StageProgressEvent {
-	const parts = [
+	const detail = formatProgressDetail(f);
+	const label = detail.length > 0 ? detail : f.phase;
+	return { kind: 'stage', operation: 'workflow.run', stageId: f.phase, stageLabel: label, index, total: null };
+}
+
+/** Compose the human-readable detail for a progress frame. The STEP IDENTITY of
+ *  a `step-start`/`step-done`/`grounding` frame lives in `stepId` + `runner`,
+ *  NOT `detail` (which is only set for synthesize-retry / review). Any consumer
+ *  that folds only `f.detail` — the tailable progress log did — renders a step
+ *  as a bare "step-start" with no name, which reads as stalled. Fold the
+ *  identity in so both the log and the stream carry "s2 · alternatives.enumerate". */
+export function formatProgressDetail(f: WorkflowProgress): string {
+	return [
+		f.stepId,
 		f.runner,
 		f.attempt !== undefined ? `attempt ${f.attempt}` : undefined,
 		f.detail,
-	].filter((s): s is string => typeof s === 'string' && s.length > 0);
-	const label = parts.length > 0 ? parts.join(' · ') : f.phase;
-	return { kind: 'stage', operation: 'workflow.run', stageId: f.phase, stageLabel: label, index, total: null };
+	].filter((s): s is string => typeof s === 'string' && s.length > 0).join(' · ');
 }
 
 /** t5: the s1-internal workflow token accumulator. The driver's `onToken`

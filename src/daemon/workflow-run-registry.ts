@@ -23,6 +23,7 @@ import { getLogger } from '../shared/logger.js';
 import { runWithClientProviderContext } from '../analyze/context/shaper-provider.js';
 import { appendProgressLog } from '../workflow/storage.js';
 import {
+	formatProgressDetail,
 	prepareWorkflowRun,
 	runWorkflowServerSide,
 	type PreparedWorkflowRun,
@@ -100,7 +101,7 @@ export function startWorkflowRun(rawParams: unknown, deps: StartRunDeps = {}): {
 	// but land progress frames in the state buffer instead of the socket.
 	const drive = (): Promise<RunWorkflowResult> => runWorkflowServerSide(intent, provider, {
 		runId, epicKey, modelLabel, signal: abort.signal,
-		onProgress: (f) => { appendProgressLog(runId, 'workflow.run', f.phase, f.detail); state.frames.push(f); },
+		onProgress: (f) => { appendProgressLog(runId, 'workflow.run', f.phase, formatProgressDetail(f)); state.frames.push(f); },
 		...(review !== undefined ? { review } : {}),
 	});
 	const run = clientDefault !== undefined

@@ -1385,12 +1385,15 @@ function finalizeStandaloneLld(
 	const storyId  = requireStoryId(intent);
 	const epicSlug = safeDeriveSlug(intent.focus);
 
-	// HLD-independent body checks that still apply.
-	const acIssues     = checkAcceptanceMapping(body, []);   // no Epic criteria to satisfy
+	// A standalone LLD has no parent Epic, so there is no EXTERNAL acceptance
+	// contract to validate the test-strategy mapping against — the LLD is
+	// authoritative for its own acceptance surface. Running checkAcceptanceMapping
+	// with an empty Epic criteria set spuriously rejects every mapping the
+	// test-strategy step legitimately produced (the dogfood retry). Keep the
+	// HLD-independent API-signature check.
 	const apiSigIssues = checkApiSignaturesTypeLevel(body);
-	const combined = [...acIssues, ...apiSigIssues];
-	if (combined.length > 0) {
-		return { ok: false, failure: { ok: false, kind: 'schema', message: 'standalone LLD checks failed', details: combined } };
+	if (apiSigIssues.length > 0) {
+		return { ok: false, failure: { ok: false, kind: 'schema', message: 'standalone LLD checks failed', details: apiSigIssues } };
 	}
 	if (!body.alternativesConsidered.some(a => a.id === body.chosenAlternative)) {
 		return { ok: false, failure: schemaFailure(`chosenAlternative '${body.chosenAlternative}' not in alternativesConsidered`) };

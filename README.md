@@ -104,7 +104,16 @@ the MCP binary is `out/bin/insrc-mcp.js` (registered as `insrc-mcp`).
 - **Logging** — pino (+ pino-pretty, pino-roll)
 - **CLI** — ink + react (full-screen TUI) · **HTTP** — undici
 
-## Build
+## Install
+
+Users: run the release installer — it clones + builds the daemon into
+`~/.insrc/daemon` and starts it. See [`docs/installation.md`](docs/installation.md).
+
+```bash
+./insrc-daemon-install.sh      # --target <path> · --branch main · --no-start · --embedder auto|ollama|onnx
+```
+
+## Build (from source / development)
 
 ```bash
 npm install        # runtime + dev deps

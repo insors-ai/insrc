@@ -1,10 +1,10 @@
-<!-- insrc:artifact LLD-3e7223b0a7aa436d-S001 -->
+<!-- insrc:artifact LLD-7d951871d9566b3c-S001 -->
 
 # LLD: S001
 
 **Epic:** `build-handler-query-list-tasks-from`
-**HLD base run:** `wf-1784715605060-05z9vo`
-**HLD effective hash:** `3e7223b0a7aa...`
+**HLD base run:** `wf-1784717650175-ynj5xg`
+**HLD effective hash:** `7d951871d956...`
 
 ## HLD context
 
@@ -15,219 +15,251 @@
 
 **Surface level:** internal
 
-### `query`
+### `queryTasks`
 
 ```typescript
-query(filters: TaskQueryFilters): Promise<TaskRecord[]>
+queryTasks(exec: TrackerExec, filters: TaskQueryFilters, page?: PageRequest): Promise<TaskPage>
 ```
 
 **Parameters:**
-- `filters: TaskQueryFilters` — Filter criteria — any combination of owner (assignee login), state (open|closed), epic (epic ref/hash), story (story ref). Absent fields are unconstrained; provided fields are ANDed together.
+- `exec: TrackerExec` — The existing GitHub-execution seam (tracker/github.ts) used to issue authenticated GitHub search/issue calls; reused rather than re-established.
+- `filters: TaskQueryFilters` — The four supported filters — owner, state, epic, story — that constrain the returned task set. Any subset may be provided.
+- `page: PageRequest | undefined` _(optional)_ — Cursor + size for one page of results; when omitted the first page at the default size is returned.
 
-**Returns:** `Promise<TaskRecord[]>` — Normalized task records from the GitHub-backed tracker matching every supplied filter; empty array when nothing matches.
+**Returns:** `Promise<TaskPage>` — A single page of projected tracker tasks plus pageInfo (hasNextPage/endCursor) and total, so callers can detect and continue past truncation instead of silently dropping tasks.
 
 **Errors:**
-- `GithubApiError` when Underlying GitHub REST/GraphQL request fails (auth, network, rate-limit).
-- `InvalidFilterError` when filters.state is not one of the TaskState members, or a filter value is malformed.
+- `TrackerAuthError` when The GitHub-authenticated identity behind TrackerExec is missing or unauthorized for the tracker repo.
+- `TrackerQueryError` when GitHub search/issue API returns an error, is rate-limited, or the epic/story filter resolves to no known epic hash.
 
 **Preconditions:**
-- The active repo has a configured GitHub tracker (config/github.ts) resolvable for the current repo.
-- The GitHub CLI OAuth session is authenticated (cloud access delegated per project rule).
+- exec is a live TrackerExec bound to an authenticated GitHub session for the tracker repo
+- epic/story filter values, when supplied, are resolvable against listEpicHashes (tracker/resolve.ts) / the epic task-list convention
 
 **Postconditions:**
-- Returned records satisfy AND semantics across all provided filters; an empty filters object returns all tracker tasks.
-- Each returned record is a normalized TaskRecord decoupled from GitHub's wire shape — no raw GitHub issue objects leak across the boundary.
+- Returns tasks matching ALL supplied filters (AND semantics), projected via TrackerTask; qualifiers not expressible as GitHub search are applied as a post-filter so the returned set is exact
+- TaskPage.pageInfo.hasNextPage is true iff more matching tasks exist beyond this page; no matching task is omitted without hasNextPage being set
 
-### `list`
+### `listMyOpenTasks`
 
 ```typescript
-list(): Promise<TaskRecord[]>
+listMyOpenTasks(exec: TrackerExec, page?: PageRequest): Promise<TaskPage>
 ```
 
-**Returns:** `Promise<TaskRecord[]>` — The current user's open tasks — assignee = the authenticated GitHub user, state = open — resolved entirely server-side so the my-open-tasks semantics cannot be mis-parameterized by the caller.
+**Parameters:**
+- `exec: TrackerExec` — The GitHub-execution seam whose authenticated identity also supplies the 'current user' whose assigned open tasks are listed.
+- `page: PageRequest | undefined` _(optional)_ — Cursor + size for one page; omitted means first page at default size.
+
+**Returns:** `Promise<TaskPage>` — A single page of the current GitHub-authenticated user's OPEN tasks assigned to them, in the same paginated TaskPage shape as queryTasks.
 
 **Errors:**
-- `CurrentUserResolutionError` when The authenticated GitHub user (assignee identity) cannot be resolved.
-- `GithubApiError` when Underlying GitHub request fails (auth, network, rate-limit).
+- `TrackerAuthError` when No current GitHub-authenticated identity can be resolved (e.g. config/github.ts yields no login), so 'my' tasks are undefined.
+- `TrackerQueryError` when GitHub search/issue API returns an error or is rate-limited.
 
 **Preconditions:**
-- The current GitHub user is resolvable from the CLI OAuth session.
-- The active repo has a configured GitHub tracker.
+- The current GitHub user login is resolvable from the authenticated session used by exec (candidate source: src/workflow/config/github.ts)
 
 **Postconditions:**
-- Every returned record has owner = current user and state = 'open'; the view is a distinct verb, not a caller-supplied preset.
-- Equivalent to query({ owner: <current-user>, state: 'open' }) but with the owner/state binding fixed server-side.
+- Returns only tasks that are simultaneously state=open AND assignee=current-user
+- Shares queryTasks' pagination contract: no assigned open task is dropped without pageInfo.hasNextPage signalling continuation
 
 ## Data model changes
 
-### `TaskRecord` — new
+### `TrackerTask` — new
 
-Normalized, GitHub-wire-decoupled task record returned by both query() and list(). Carries the identity + filter fields the Story needs: id/number, title, owner (assignee login | null), state (TaskState), epic (epic ref/hash | null), story (story ref | null), url. Built new — no existing record is shaped for owner/state/epic/story filtering (data-model.trace). Normalized from the GitHub issue wire shape in github.ts rather than passed through raw.
+Read-side projection of a GitHub issue into a tracker task record: { number: number; title: string; state: 'open' | 'closed'; author: string; assignees: string[]; labels: string[]; milestone?: string; epic?: string; story?: string; url: string; createdAt: string; updatedAt: string }. Projected from the GitHub issue / CreatedIssue shape in tracker/github.ts; epic/story derived from the epic-hash + epic task-list conventions (listEpicHashes / updateEpicTaskList). This is the returned task DTO — no such filter-bearing task DTO exists today (s1 data-model.trace).
 
 ```
-+ interface TaskRecord {
-+   id: string;
-+   number: number;
-+   title: string;
-+   owner: string | null;   // GitHub assignee login
-+   state: TaskState;
-+   epic: string | null;    // epic ref/hash (cf. listEpicHashes)
-+   story: string | null;   // story ref
-+   url: string;
-+ }
++ interface TrackerTask { number; title; state; author; assignees[]; labels[]; milestone?; epic?; story?; url; createdAt; updatedAt }
 ```
 
 **Call sites:**
 - `/Users/subhagho/work/projects/insors/insrc/src/workflow/tracker/github.ts`
 - `/Users/subhagho/work/projects/insors/insrc/src/workflow/tracker/resolve.ts`
 - `/Users/subhagho/work/projects/insors/insrc/src/workflow/tracker/conventions.ts`
-
-### `TaskState` — new
-
-Closed enum of task states used both in TaskRecord.state and TaskQueryFilters.state so invalid state filters are rejected at the handler boundary rather than at GitHub. Net-new — no existing state vocabulary is modeled (data-model.trace, search.text: filter vocabulary is net-new).
-
-```
-+ type TaskState = 'open' | 'closed';
-```
-
-**Call sites:**
-- `/Users/subhagho/work/projects/insors/insrc/src/workflow/tracker/github.ts`
+- `/Users/subhagho/work/projects/insors/insrc/src/workflow/artifacts/tracker.ts`
 
 ### `TaskQueryFilters` — new
 
-Filter argument for query(). All fields optional (exactOptionalPropertyTypes: explicit | undefined); each present field constrains the result set, ANDed. owner filters by assignee login, state by TaskState, epic/story by ref. Net-new — no owner/state/epic/story filter surface exists today; nearest identity anchors are listEpicHashes (resolve.ts) and updateEpicTaskList (conventions.ts), which handle epic/story identity only and perform no assignee/state filtering.
+The four supported query filters, all optional: { owner?: string; state?: 'open' | 'closed' | 'all'; epic?: string; story?: string }. owner filters by GitHub author/assignee login; epic/story map onto epic-hash identifiers (listEpicHashes, tracker/resolve.ts) and the epic task-list convention (updateEpicTaskList, tracker/conventions.ts). Applied with AND semantics.
 
 ```
-+ interface TaskQueryFilters {
-+   owner?: string | undefined;
-+   state?: TaskState | undefined;
-+   epic?: string | undefined;
-+   story?: string | undefined;
-+ }
++ interface TaskQueryFilters { owner?; state?; epic?; story? }
 ```
 
 **Call sites:**
 - `/Users/subhagho/work/projects/insors/insrc/src/workflow/tracker/resolve.ts`
 - `/Users/subhagho/work/projects/insors/insrc/src/workflow/tracker/conventions.ts`
+
+### `PageRequest` — new
+
+Cursor-based page request over GitHub results: { cursor?: string; size?: number }. Mirrors GitHub's opaque-cursor pagination so callers step through pages deterministically. size defaults to a module constant when omitted.
+
+```
++ interface PageRequest { cursor?; size? }
+```
+
+**Call sites:**
+- `/Users/subhagho/work/projects/insors/insrc/src/workflow/tracker/github.ts`
+
+### `TaskPage` — new
+
+First-class paginated return of both entrypoints: { tasks: TrackerTask[]; pageInfo: { hasNextPage: boolean; endCursor?: string }; total?: number }. Chosen (winning alt a3) specifically to eliminate the silent-truncation failure a flat-array return hides — hasNextPage/endCursor let callers detect and continue past a capped GitHub page instead of dropping tasks.
+
+```
++ interface TaskPage { tasks: TrackerTask[]; pageInfo: { hasNextPage; endCursor? }; total? }
+```
+
+**Call sites:**
+- `/Users/subhagho/work/projects/insors/insrc/src/workflow/tracker/github.ts`
 
 ## Error paths
 
 ### Error cases
 
-- **query() called with filters.state set to a value outside the TaskState set (e.g. 'in_progress', 'OPEN', '') ** (recoverable)
-  - Detection: The handler validates filters.state against the closed TaskState literal set ('open' | 'closed') at the top of query(), before any GitHub request is issued.
-  - Response: Throw InvalidFilterError naming the offending field and the accepted values; no GitHub call is made.
-  - User impact: Caller gets a precise, fast rejection at the handler boundary instead of an opaque GitHub-side failure or silently-empty result.
-- **A supplied filter value is structurally malformed — e.g. epic/story ref that is not a string or is an empty/blank string.** (recoverable)
-  - Detection: The handler type/shape-checks each present filter field (owner/epic/story are non-empty strings when provided) before building the GitHub query.
-  - Response: Throw InvalidFilterError identifying the malformed field; abort before contacting GitHub.
-  - User impact: Malformed input is caught deterministically rather than degrading into a wrong or empty task list.
-- **The underlying GitHub request (REST/GraphQL via the CLI) fails: auth expired, network unreachable, or rate-limit (HTTP 401/403/429/5xx).** (recoverable)
-  - Detection: The handler inspects the GitHub CLI subprocess exit code / response status; a non-success status or non-zero exit is surfaced as a failure rather than parsed as data.
-  - Response: Wrap the underlying failure in GithubApiError, preserving the status/reason; do not return a partial or empty list as if it were a successful match.
-  - User impact: A transport/auth failure is clearly distinguished from a genuine no-results answer, so the caller can retry or re-auth instead of trusting an empty array.
-- **list() cannot resolve the authenticated GitHub user (assignee identity) — OAuth session present but the current-user lookup returns no login.** (recoverable)
-  - Detection: list() checks the current-user resolution result before building the my-open-tasks query; a missing/empty login field is treated as unresolved.
-  - Response: Throw CurrentUserResolutionError; do not fall back to an unfiltered or all-users query.
-  - User impact: Prevents list() from silently returning someone else's or all tasks when the current user is unknown, which would violate the my-open-tasks contract.
-- **The active repo has no resolvable GitHub tracker configuration (config/github.ts returns nothing for the repo).** (recoverable)
-  - Detection: Both query() and list() resolve the tracker config for the active repo up front; a missing configuration is detected when the lookup returns undefined.
-  - Response: Throw a tracker-not-configured error (GithubApiError or a dedicated config error) before any request; message points at the missing GitHub tracker config.
-  - User impact: Caller learns the repo isn't wired to a GitHub tracker instead of receiving a confusing auth or empty-result failure.
+- **TrackerExec's authenticated GitHub session is missing or lacks access to the tracker repo (queryTasks and listMyOpenTasks).** (terminal)
+  - Detection: The GitHub search/issue call issued through TrackerExec returns HTTP 401/403 (or a GraphQL auth error), which the handler classifies as an auth failure rather than a query failure.
+  - Response: Throw TrackerAuthError with the tracker repo and the failing operation; do not fall back to an empty page (an empty page would masquerade as 'no tasks').
+  - User impact: Caller learns the tracker session is unauthenticated/unauthorized and can re-auth, instead of being shown a misleading empty task list.
+- **listMyOpenTasks cannot resolve a 'current user' login for the authenticated GitHub session.** (terminal)
+  - Detection: The current-user login lookup (candidate source src/workflow/config/github.ts) returns empty/undefined before any search is issued, so 'my' is undefined.
+  - Response: Throw TrackerAuthError signalling no resolvable current identity; never substitute a default/blank login into the assignee filter.
+  - User impact: Caller is told their identity could not be resolved rather than receiving someone else's or an empty task set.
+- **GitHub search/issue API returns a transport/server error or is rate-limited during a query.** (recoverable)
+  - Detection: The TrackerExec response is a non-2xx status (5xx, or 403 carrying rate-limit headers / GraphQL RATE_LIMITED), distinguished from a 401/403 auth failure by the presence of rate-limit metadata / status class.
+  - Response: Throw TrackerQueryError carrying the GitHub status/reason; surface partial pages already collected only via a thrown error, never as a silently-truncated success.
+  - User impact: Caller can retry/back off knowing the query did not complete, rather than treating a partial result as the full set.
+- **An epic or story filter value is supplied that resolves to no known epic hash.** (terminal)
+  - Detection: Resolving the epic/story filter against listEpicHashes (tracker/resolve.ts) / the epic task-list convention (updateEpicTaskList, tracker/conventions.ts) yields no matching epic hash before the GitHub search is built.
+  - Response: Throw TrackerQueryError identifying the unresolvable epic/story filter; do not silently drop the filter and return the unfiltered set.
+  - User impact: Caller learns their epic/story filter was invalid instead of receiving a superset of tasks that ignores the filter.
+- **GitHub rejects the pagination cursor supplied in PageRequest.cursor.** (recoverable)
+  - Detection: The GitHub API responds with an invalid-cursor error for the opaque cursor passed through in PageRequest.
+  - Response: Throw TrackerQueryError indicating the cursor is stale/invalid so the caller restarts from the first page; do not coerce it to the first page silently.
+  - User impact: Caller distinguishes a bad/expired cursor from a genuine end-of-results and can restart pagination deterministically.
 
 ### Edge cases
 
 | Input | Expected |
 | :--- | :--- |
-| query({}) — empty filters object | Returns all tracker tasks (no constraints applied); AND-over-zero-filters is the unconstrained set, not an error and not empty-by-default. |
-| query({ owner: 'x', state: 'open', epic: 'E1', story: 'S3' }) where filters are individually valid but their AND-intersection matches no task | Returns an empty TaskRecord[] — a valid no-match result, distinct from a GithubApiError. |
-| list() when the current user has zero open assigned tasks | Returns an empty array; my-open-tasks with nothing open is a normal empty result, not an error. |
-| query({ owner: 'alice' }) against a tracker whose issues include tasks with no assignee (owner = null) | Unassigned tasks are excluded from the owner-filtered result; owner=null records only appear when the owner filter is absent. |
-| query({ epic: 'E1' }) against tasks that carry no epic/story ref (epic/story = null) | Records with null epic are excluded by an epic filter; the null fields are preserved verbatim on records that do pass other filters. |
-| A tracker with more open tasks than a single GitHub page returns | The handler paginates through all pages so the returned TaskRecord[] is complete, not truncated to the first page. |
-| query({ state: 'open', state duplicated / case-exact 'open' }) and list() overlapping — both asked for the same current-user open set | list() returns the same records as query({ owner: <current-user>, state: 'open' }); the two verbs agree, with list() binding owner/state server-side. |
+| queryTasks called with an empty TaskQueryFilters ({}) — no owner/state/epic/story. | Returns the first page of ALL tracker tasks (no constraint), paginated via TaskPage; not an error and not an empty set. |
+| Filters that legitimately match zero tasks (e.g. valid but unused owner). | Returns TaskPage with tasks: [], pageInfo.hasNextPage=false, total=0 — a valid empty result, distinct from an auth/query error. |
+| state='all' (or state omitted) in queryTasks. | state='all' returns both open and closed tasks; omitted state applies no state constraint per the documented default, both projected identically. |
+| A matching GitHub issue that carries no epic/story label or milestone. | TrackerTask.epic / .story / .milestone are left undefined; the task is still returned when it satisfies the other supplied filters. |
+| A matching issue assigned to multiple users, or with an author distinct from its assignees, queried with an owner filter. | assignees[] captures all logins; the owner filter matches on either author or assignee login (AND-combined with other filters), and the full assignee list is preserved in the projection. |
+| PageRequest with size omitted, or a cursor pointing exactly at the last page. | Omitted size uses the module default page size; a cursor at the final page returns the remaining tasks with pageInfo.hasNextPage=false and no endCursor advance. |
+| A qualifier that GitHub search cannot express natively (e.g. epic/story derived from convention, not a GitHub field). | The GitHub-searchable qualifiers narrow server-side, then the convention-derived qualifier is applied as a post-filter so the returned page is exact (no over-inclusion). |
 
 ### Invariants to preserve
 
-- No raw GitHub issue/wire objects leak across the handler boundary — both query() and list() return only normalized TaskRecord values (id/number/title/owner/state/epic/story/url), preserving the codebase's 'no raw file dumps / structured records only' rule. [[c1]]
-- All cloud GitHub access goes through the CLI OAuth session (gh/CliProvider path), never a direct REST/GraphQL client instantiated in-process — the project's 'no direct cloud REST from our process' rule. [[c2]]
-- list() fixes owner = authenticated current user and state = 'open' server-side; these bindings are not caller-supplied presets and cannot be overridden through the list() surface. [[c3]]
-- query() applies AND semantics across all provided filters, leaves absent fields unconstrained, and validates state against the closed TaskState set at the boundary rather than deferring the check to GitHub. [[c4]]
+- The handler reuses the existing TrackerExec GitHub-execution seam (tracker/github.ts) for all authenticated calls and never re-establishes GitHub auth or opens a second connectivity path. [[c2]]
+- GitHub calls are issued serially through TrackerExec, never Promise.all'd — matching the repo rule against parallelizing provider/remote calls and the tracker module's existing sync/resolve call pattern. [[c2]]
+- No matching task is omitted from results without TaskPage.pageInfo.hasNextPage=true signalling continuation — the paginated TaskPage exists specifically to eliminate the silent-truncation a flat-array return hides. [[c3]]
+- Supplied filters combine with AND semantics; qualifiers not expressible as GitHub search are applied as an exact post-filter so the returned set neither over- nor under-includes. [[c3]]
+- Epic/story filter values are resolved only through the established identity sources — listEpicHashes (tracker/resolve.ts) and the epic task-list convention (updateEpicTaskList, tracker/conventions.ts) — not via an ad-hoc parallel epic lookup. [[c1]]
+- This is a read-only surface: queryTasks and listMyOpenTasks issue only GitHub read/search calls and perform no create/write/mutation via TrackerExec's write ops (ghAddProjectItem/ghAttachMilestone/commitAndPushArtifacts). [[c1]]
 
 ## Test strategy
 
-**Test framework:** `node:test via `npx tsx --test` (co-located `*.test.ts` files under src/workflow/tracker, per test.locate in s1)`
+**Test framework:** `node:test (tsx --test, *.test.ts under src/workflow/tracker)`
 
 ### Test levels
 
-- **unit** — Prove query()/list() filter semantics, TaskRecord normalization, and error-boundary behavior with the GitHub CLI subprocess faked/stubbed — no network. This is the primary level: every filter, edge case, and error path from s4/s5 is deterministically exercisable here.
-  - Subjects: `query(filters: TaskQueryFilters): Promise<TaskRecord[]> — AND semantics, empty-filters = all, no-match = empty array`, `list(): Promise<TaskRecord[]> — server-side owner=current-user + state='open' binding, equivalence to query({owner,state:'open'})`, `filter validation — InvalidFilterError for out-of-set state and malformed owner/epic/story before any GitHub call`, `TaskRecord normalization — GitHub issue wire shape → {id,number,title,owner,state,epic,story,url}, no raw wire object leaks`, `error mapping — GithubApiError (401/403/429/5xx / non-zero exit), CurrentUserResolutionError, tracker-not-configured`
-  - Fixtures: `Fake GitHub CLI provider / gh-invocation seam returning canned issue-list JSON (assigned, unassigned, open, closed, epic/story-tagged, multi-page)`, `Stub current-user resolver returning a known login, and a variant returning empty/no-login`, `Stub tracker-config resolver returning a config and a variant returning undefined`, `Canned failing-subprocess result (non-zero exit / 401 / 429 status) for GithubApiError mapping`, `Multi-page issue fixture to exercise pagination completeness`
-- **integration** — Prove the handler wires through the real gh/CliProvider OAuth path and returns normalized TaskRecords against a live GitHub-backed tracker — asserting the 'no direct REST' invariant holds end to end. Gated behind INSRC_LIVE_TESTS=1, skips cleanly when unset (matches the repo's live-test convention).
-  - Subjects: `query() against a real configured GitHub tracker repo — owner/state/epic/story filters resolve real issues`, `list() against the authenticated current user — returns that user's open assigned tasks only`
-  - Fixtures: `INSRC_LIVE_TESTS=1 gate + an authenticated gh CLI OAuth session`, `A registered test repo with a configured GitHub tracker (config/github.ts) and a few seeded/known issues`
+- **unit** — Verify queryTasks and listMyOpenTasks against a stubbed TrackerExec seam: filter AND-semantics, convention-derived post-filtering (epic/story), TrackerTask projection from GitHub issue shape, pagination (hasNextPage/endCursor/default size), and empty-filter/empty-result handling — all without touching real GitHub.
+  - Subjects: `queryTasks(exec, filters, page) in src/workflow/tracker (new query/list module)`, `listMyOpenTasks(exec, page)`, `TrackerTask projection from CreatedIssue/GitHub issue shape`, `TaskQueryFilters AND-combination + owner author-or-assignee matching`, `TaskPage pagination (pageInfo.hasNextPage, endCursor, module default size)`
+  - Fixtures: `Fake/stub TrackerExec returning canned GitHub search/issue responses (success, empty, multi-assignee, no-epic/story-label, multi-page)`, `Stubbed listEpicHashes (tracker/resolve.ts) + updateEpicTaskList (tracker/conventions.ts) returning known + unknown epic hashes`, `Stubbed current-user login source (candidate src/workflow/config/github.ts) returning a login, and returning empty/undefined`, `Sample GitHub issue JSON fixtures covering labels/milestone/assignees/state variants`
+- **unit** — Verify the error-path contract: each failure maps to the correct typed error (TrackerAuthError vs TrackerQueryError) and never degrades to a silently-truncated or misleading-empty page.
+  - Subjects: `queryTasks / listMyOpenTasks error classification (401/403 auth vs 5xx/rate-limit vs invalid-cursor vs unresolvable epic/story)`, `TrackerAuthError raised on missing session and on unresolvable current-user login`, `TrackerQueryError raised on API/rate-limit error, unresolvable epic/story filter, and stale cursor`
+  - Fixtures: `TrackerExec stub configured to return 401/403, 5xx, 403+rate-limit-headers/RATE_LIMITED, and invalid-cursor responses`, `listEpicHashes stub returning no match for a supplied epic/story filter`
+
+### Acceptance mapping
+
+| Criterion | Proving tests |
+| :--- | :--- |
+| `ac1` | `queryTasks returns tasks matching ALL supplied filters with AND semantics`, `queryTasks with empty filters {} returns the first page of all tasks`, `owner filter matches on either author or assignee login and preserves full assignees[]`, `state='all'/omitted vs state='open'/'closed' return the documented task sets` |
+| `ac2` | `listMyOpenTasks returns only state=open AND assignee=current-user tasks`, `listMyOpenTasks throws TrackerAuthError when current-user login is unresolvable` |
+| `ac3` | `TaskPage.pageInfo.hasNextPage=true whenever matching tasks remain beyond the page (no silent truncation)`, `cursor at final page returns remaining tasks with hasNextPage=false and no endCursor advance`, `omitted PageRequest.size uses the module default page size`, `filters matching zero tasks return tasks:[], hasNextPage=false, total=0` |
+| `ac4` | `epic/story filter resolved via listEpicHashes / updateEpicTaskList; unresolvable value throws TrackerQueryError`, `convention-derived qualifier applied as exact post-filter so the returned page neither over- nor under-includes`, `GitHub calls issued serially through TrackerExec (no Promise.all), reusing the existing seam without re-establishing auth` |
+| `ac5` | `missing/unauthorized TrackerExec session throws TrackerAuthError (never an empty page)`, `GitHub 5xx/rate-limit throws TrackerQueryError (never a silently-truncated success)`, `invalid/stale PageRequest.cursor throws TrackerQueryError rather than coercing to first page`, `TrackerTask leaves epic/story/milestone undefined when the issue lacks them and still returns the task` |
 
 ## Migration
 
-**State before:** Per s1 analyze bundles, src/workflow/tracker exposes no task query/list read surface today. symbol.locate returned prerequisite-empty (module.profile exports:[]/entrypoints:[]) and the only surfaced exports on github.ts (CreatedIssue, ghAddProjectItem, ghAttachMilestone, commitAndPushArtifacts) are all create/commit-side. data-model.trace and search.text confirm the owner/state/epic/story fields, the TaskState vocabulary, and the my-open-tasks (assignee=current-user + open) view are NOT modeled anywhere; nearest identity anchors are listEpicHashes (resolve.ts) and updateEpicTaskList (conventions.ts), which handle epic/story identity only and perform no assignee/state filtering. test.locate confirms no task-query test file exists. Net: there is no TaskRecord, no TaskState, no TaskQueryFilters, and no query()/list() handler — the read surface is entirely absent.
+**State before:** No query/list read surface exists over the GitHub-backed tracker. Per the s1 capability-discovery bundle, the reuse-check returned zero clear-match candidates: the tracker core module (src/workflow/tracker — github.ts, sync.ts, resolve.ts, refs.ts) owns GitHub connectivity (the TrackerExec seam) and epic/story resolution (listEpicHashes in resolve.ts, updateEpicTaskList in conventions.ts) but exposes NO method taking owner/state/epic/story filters and NO listing of the current user's open assigned tasks. Per the s1 data-model.trace bundle, no filter-bearing task DTO exists — only write-side/type shapes (CreatedIssue in github.ts, TrackerArtifact/TrackerSyncRefs/TrackerRunBody in artifacts/tracker.ts). Per the s1 backFlowNotes, the tracker dir exposes no package-level exports in the graph index and no source of the 'current GitHub user' identity was surfaced (candidate src/workflow/config/github.ts). Callers today cannot read tasks from the tracker by filter or list their own open assigned tasks.
 
-**State after:** A new internal read surface lives beside src/workflow/tracker: a query(filters) handler returning normalized TaskRecord[] with AND semantics across optional owner/state/epic/story filters, and a list() handler returning the current user's open tasks (assignee=authenticated GitHub user, state=open) bound server-side. TaskRecord, TaskState, and TaskQueryFilters are defined and TaskRecord is normalized from GitHub's wire shape in github.ts so no raw issue objects cross the boundary. Co-located *.test files cover each filter plus the my-open-tasks path.
+**State after:** Two new internal read entrypoints live in the tracker module and reuse the existing TrackerExec seam: queryTasks(exec, filters, page?) returns a paginated TaskPage of tasks matching all supplied owner/state/epic/story filters (AND semantics), and listMyOpenTasks(exec, page?) returns a paginated TaskPage of the current GitHub-authenticated user's open assigned tasks. Four new read-side types back them — TrackerTask (issue→task projection), TaskQueryFilters (owner/state/epic/story, all optional), PageRequest (cursor+size), and TaskPage (tasks + pageInfo{hasNextPage,endCursor} + total). The current-user login is resolved from the authenticated session (via config/github.ts). Pagination surfaces truncation via pageInfo so no matching task is silently dropped.
 
 **Zero downtime:** yes — **Data rewrite:** no
 
 ### Steps
 
-1. Add the closed TaskState type ('open' | 'closed') as a new net-new type in the tracker module. Purely additive — no existing symbol references it yet. — ↩ rollbackable
-2. Add the new TaskRecord interface (id, number, title, owner: string|null, state: TaskState, epic: string|null, story: string|null, url) as the normalized, GitHub-wire-decoupled record. Additive new type; no existing record changes shape. — ↩ rollbackable
-3. Add the new TaskQueryFilters interface with all fields optional and explicitly | undefined (exactOptionalPropertyTypes): owner, state, epic, story. Additive new type. — ↩ rollbackable
-4. Add a normalization step in github.ts that maps a raw GitHub issue wire object to a TaskRecord (assignee login -> owner, GitHub state -> TaskState, epic/story refs derived via the listEpicHashes / updateEpicTaskList identity anchors). New internal helper; leaves existing create/commit-side functions untouched. — ↩ rollbackable
-5. Add the new query(filters) handler beside the tracker module: resolve the configured GitHub tracker for the active repo, fetch tracker issues, apply AND semantics over provided filters, validate filters.state against TaskState (reject malformed with InvalidFilterError), surface GithubApiError on underlying request failure, and return normalized TaskRecord[] (empty array when nothing matches). New entrypoint — no existing call-site is repurposed. — ↩ rollbackable
-6. Add the new list() handler that resolves the authenticated GitHub user from the CLI OAuth session (raising CurrentUserResolutionError when unresolvable) and returns query({ owner: <current-user>, state: 'open' }) with the owner/state binding fixed server-side. New entrypoint depending on step 5; additive. — ↩ rollbackable
-7. Add co-located *.test files under src/workflow/tracker covering each filter (owner/state/epic/story), AND-combination semantics, the empty-filters returns-all case, InvalidFilterError on bad state, and the my-open-tasks (list) path including CurrentUserResolutionError. Test-only addition. — ↩ rollbackable
+1. Read the actual signatures the LLD could not obtain from the s1 graph pass: the TrackerExec seam and CreatedIssue shape in src/workflow/tracker/github.ts, listEpicHashes in resolve.ts, updateEpicTaskList in conventions.ts, and TrackerArtifact/TrackerSyncRefs/TrackerRunBody in artifacts/tracker.ts, plus locate the current-user login source in src/workflow/config/github.ts. Pure inspection — no code change. Rollbackable: yes (no-op if abandoned). — ↩ rollbackable
+2. Add the four new read-side type definitions (TrackerTask, TaskQueryFilters, PageRequest, TaskPage) to the tracker module's type surface. Purely additive new interfaces; nothing references them yet. Rollbackable: yes (delete the added types). — ↩ rollbackable
+3. Add the GitHub issue → TrackerTask projection helper that maps issue/CreatedIssue fields (number, title, state, author, assignees, labels, milestone, url, timestamps) plus epic/story derived from listEpicHashes and the epic task-list convention into a TrackerTask. New internal helper, no existing caller affected. Rollbackable: yes (delete the helper). — ↩ rollbackable
+4. Add the queryTasks(exec, filters, page?) entrypoint: translate the supplied filters into a GitHub search issued through the existing TrackerExec seam, apply as a post-filter any qualifier not expressible in GitHub search so the returned set is exact (AND semantics), project results via the step-3 helper, and return a TaskPage carrying pageInfo{hasNextPage,endCursor} and total. Surface TrackerAuthError / TrackerQueryError per the contract. New export; reuses TrackerExec rather than re-establishing connectivity. Rollbackable: yes (remove the entrypoint). — ↩ rollbackable
+5. Add the listMyOpenTasks(exec, page?) entrypoint: resolve the current GitHub user login from the authenticated session (config/github.ts), then return the same paginated TaskPage constrained to state=open AND assignee=current-user, raising TrackerAuthError when no login can be resolved. New export built on the same projection + pagination path. Rollbackable: yes (remove the entrypoint). — ↩ rollbackable
+6. Add tests for the two entrypoints under src/workflow/tracker following the *.test convention, borrowing GitHub-plumbing setup from the module's existing sync/setup/resolve tests: cover each filter, AND-combination, empty results, the my-open-tasks state=open+assignee=current-user constraint, and the pagination/hasNextPage truncation contract. Test-only addition. Rollbackable: yes (delete the test file). — ↩ rollbackable
 
-**Backward compat:** Not applicable — no existing public API is affected. Every element (TaskState, TaskRecord, TaskQueryFilters, query(), list()) is net-new internal surface (surfaceLevel: internal); s1 confirms no task-query signature, filter vocabulary, or my-open-tasks view exists today, and the adjacent github.ts create/commit-side functions are not repurposed or reshaped. No existing caller, signature, or record changes shape, so no compatibility shim, deprecation window, or dual-read path is required.
+**Backward compat:** No existing public API is affected — this is a greenfield, internal (surfaceLevel: internal) read surface. Every change is purely additive: two new functions (queryTasks, listMyOpenTasks) and four new types (TrackerTask, TaskQueryFilters, PageRequest, TaskPage), with no modification to any existing tracker signature, the TrackerExec seam, or the write-side ops (ghAddProjectItem, ghAttachMilestone, commitAndPushArtifacts). Existing callers of the tracker module compile and behave identically; the new entrypoints are opt-in. The TaskPage-based return (winning alt a3) is chosen so that the very first shape of this API already exposes truncation via pageInfo, avoiding a future breaking migration away from a flat-array return.
 
 ## Alternatives considered
 
-### a1: Two-verb contract, shared TaskRecord — **CHOSEN**
+### a3: Filter object → GitHub search qualifiers, paginated envelope — **CHOSEN**
 
-Distinct query(filters) and list() entrypoints returning the same TaskRecord shape.
+Two entrypoints backed by a TaskQuery that compiles to GitHub issue-search qualifiers and returns a { tasks, pageInfo } envelope preserving richer GitHub fields.
 
-Expose two named handlers beside src/workflow/tracker: query(filters: TaskQuery) and list(). TaskQuery is a typed object { owner?, state?, epic?, story? } with each field optional and independently applied (AND semantics). list() takes no args and is defined as the my-open-tasks view — assignee = resolved current user, state = open — resolved server-side, not by the caller passing filters. Both return TaskRecord[] where TaskRecord is a new domain record { id, title, owner, state, epicRef, storyRef, url } normalized off the GitHub issue/project-item, decoupled from the wire shape. epicRef/storyRef reuse the existing epic/story identity anchors (listEpicHashes in resolve.ts, updateEpicTaskList in conventions.ts). Current-user resolution is an internal concern of list(), not a query filter value.
+Keep the two named entrypoints of a1 (query + list) but make the contract search-native: a buildTaskSearch(filters) compiler translates TaskQuery { owner, state, epic, story, assignee } into GitHub issue-search qualifier strings, issued through TrackerExec. Returns a QueryResult envelope { tasks: TaskRecord[]; pageInfo: { hasNextPage: boolean; endCursor?: string }; total?: number } rather than a bare array. TaskRecord is a richer projection preserving GitHub-faithful fields (number, title, url, state, assignees[], labels, milestone, createdAt, updatedAt) plus derived epic/story. Epic/story filters map onto epic-hash identifiers (listEpicHashes) applied as label/milestone qualifiers or post-filtered after the search.
 
-### a2: Single query() with list as a named preset
+### a1: Two-method split, shared flat TaskRecord
 
-One query(filters) contract; my-open-tasks is a documented preset over the same filter object.
+Distinct query(filters) and list() entrypoints returning the same flat TaskRecord[], mirroring the tracker's existing per-purpose function style.
 
-Expose a single handler query(filters: TaskQuery) where TaskQuery = { owner?, state?, epic?, story? }. The my-open-tasks 'list' behavior is not a separate entrypoint but a preset: owner = the sentinel '@me' (or a resolved current-user id) and state = 'open'. Callers wanting the list view pass { owner: '@me', state: 'open' }; an optional thin convenience wrapper list() may forward exactly that. TaskRecord is the same normalized domain record { id, title, owner, state, epicRef, storyRef, url }. One fetch/normalize/filter pipeline serves every case.
+Expose two sibling functions in src/workflow/tracker (new query.ts, following snake_case file / camelCase fn convention): queryTasks(filters: TaskQuery): TaskRecord[] and listMyOpenTasks(): TaskRecord[]. TaskQuery is a plain optional-field record { owner?: string; state?: 'open' | 'closed'; epic?: string; story?: string }. Both project GitHub issues into a single shared flat TaskRecord DTO { number, title, url, state, assignee, owner, epic, story } — epic/story derived from listEpicHashes (resolve.ts) + the epic task-list convention (updateEpicTaskList, conventions.ts). Both go through the existing TrackerExec seam in github.ts for connectivity. listMyOpenTasks resolves 'current user' via the GitHub-auth identity helper (candidate src/workflow/config/github.ts) and internally hard-fixes assignee=me + state=open. Returns a plain array, no pagination envelope.
 
-**Rejected because:** Lowest surface and one code path, but it collapses the Story's explicitly-framed 'returns my open tasks' list view into a caller-honored preset ({owner:'@me', state:'open'}) with no compile-time guarantee, making the core user intent easier to get wrong — a direct weakening of the Story's framing. The '@me' sentinel also smuggles an identity concept into a plain equality filter. Its S cost advantage carries little weight given cost is the lowest priority.
+**Rejected because:** a1 has the honest, minimal signatures (query takes filters, list takes nothing) and best matches the tracker module's one-function-per-purpose convention (sync/setup/resolve), and it cleanly preserves the Story's two-behavior framing — the strongest fit on idiomatic-code and intent-boundary grounds. It loses to a3 solely on the accuracy-primary axis: its own stated con is that the bare flat-array return has no pagination contract and silently caps large result sets, which is exactly the correctness gap a3 closes. Ranked second because it is the safest, most conventional S-cost option and would be the winner under a cost-first mandate — but the project mandate is the opposite.
 
-### a3: Thin GitHub-projection, filters as search qualifiers
+### a2: Single query method, list as a preset
 
-Model the task close to GitHub's issue/project-item wire shape; filters compile to GitHub search qualifiers.
+One queryTasks(filters) entrypoint where my-open-tasks is just the preset { assignee: 'me', state: 'open' }, collapsing both behaviors into a single contract.
 
-Keep the data model deliberately thin: TaskRecord is a near-passthrough projection of the GitHub issue / project-item ({ number, title, assignees, state, labels/fields, url }) with epic/story surfaced from the existing label/field convention rather than a normalized ref type. query(filters) and list() translate owner/state/epic/story into GitHub search qualifiers (assignee:, state:, plus the label/field qualifiers used for epic/story) and let GitHub do the filtering; the handler forwards and lightly maps the response. list() sets assignee:@me state:open. Reuses github.ts's existing GitHub access idioms directly.
+Expose one function queryTasks(filters: TaskQuery): TaskRecord[] in src/workflow/tracker. TaskQuery gains an assignee field alongside owner/state/epic/story, and assignee accepts the sentinel 'me' resolved against the GitHub-auth identity (candidate src/workflow/config/github.ts). The 'list my open tasks' behavior is not a separate method but a documented default/convenience: callers (or a thin listMyOpenTasks() one-liner wrapper) pass { assignee: 'me', state: 'open' }. Same flat TaskRecord DTO and same TrackerExec plumbing as a1; epic/story still resolved via listEpicHashes + updateEpicTaskList convention.
 
-**Rejected because:** Weakest on accuracy/durability: it leaks GitHub's wire shape into the handler contract, makes epic/story filtering brittle against label/field convention drift, bakes search-qualifier semantics (partial match, pagination, rate limits) into observable behavior, and gives the weakest typing on state/owner (invalid filters fail at GitHub rather than the boundary). It also makes unit testing hard without live GitHub. Its server-side filtering and small conceptual distance are real but are cost/convenience wins, which rank last under the accuracy-primary principle.
-
-### a4: Typed predicate model with normalized refs
-
-First-class Task domain entity + a typed TaskFilter predicate, GitHub as one backing source.
-
-Introduce a first-class normalized domain: Task { id, title, owner: OwnerRef, state: TaskState (enum: open|closed|...), epic: EpicRef, story: StoryRef, url }, with EpicRef/StoryRef built on the existing epic/story identity anchors (listEpicHashes, updateEpicTaskList). Filtering is a typed TaskFilter predicate — { owner?, state?, epic?, story? } validated at the boundary — applied in-process after normalization. A single findTasks(filter) is the core; query(filter) and list() (filter = { owner: currentUser, state: open }) are thin views over it. GitHub is treated as one backing source behind the normalizer, not baked into the contract.
-
-**Rejected because:** a4 offers the strongest and most durable contract — typed TaskState enum and EpicRef/StoryRef catch invalid filters at the boundary and fully decouple from GitHub — which aligns with accuracy-first. It edges out a2/a3 on robustness. It ranks below a1 only because, for a standalone read surface with no stated cross-Story contracts to satisfy, the L-cost normalizer + predicate + per-view test surface and the need to reconcile net-new enum/ref types against github.ts's existing encoding is over-engineering relative to scope; a1 captures the wire-shape decoupling that matters here at M cost while equally preserving the list() intent.
+**Rejected because:** a2 collapses both behaviors into one queryTasks with a 'me' sentinel. It shares a1's truncation gap (same flat array, no pagination) AND additionally erodes the Story's explicit framing of query and list as two behaviors, making 'my open tasks' an unnamed convention callers must remember. Its 'me' magic-string overloads owner/assignee semantics — an easy-to-misuse, validation-hungry accuracy hazard the other two avoid. It ranks last because it is weaker than a1 on intent-boundary/misuse-safety while offering no correctness advantage, and weaker than a3 on pagination correctness.
 
 ## Open questions
 
-- s8 verify item ep3 (partial): invariantsToPreserve cite constraint/design-decision IDs (c1-c4: no-raw-dumps and no-direct-REST from CLAUDE.md; server-side list() binding and AND semantics from s2/s3) rather than an s1 analyze bundle showing a pre-existing code invariant. This is legitimate for a net-new standalone build — the analyze bundles found the surface absent, so there is no pre-existing code invariant for a bundle to cite — but the soft 'cite an analyze bundle' enhancement check is formally unmet and flagged for reviewer confirmation.
+- invariantsToPreserve cite sources 'c1'/'c2'/'c3', which are constraint-style labels rather than references to a specific s1 analyze bundle. Invariants 1/2/5/6 (reuse TrackerExec, serial calls, epic resolution via listEpicHashes/updateEpicTaskList, read-only) trace to s1 bundle content, but invariants 3 (no silent truncation via pageInfo) and 4 (AND semantics + post-filter) are NEW design decisions adopted from winning alt a3 with no supporting current-behaviour bundle. Confirm these two are accepted as design choices, not pre-existing invariants. (s8 ep3, partial)
+- The Story's acceptanceCriteria is empty — the s6 acceptance mapping (ac1..ac5) is derived from userValue (query filters, my-open-tasks, pagination, error handling), not literal Story-supplied criteria. Confirm the derived ac1-ac5 are the intended acceptance surface, or back-flow the missing acceptanceCriteria to the upstream Story. (s8 ts1, partial)
 
 ## Citations
 
-- **[[c1]]** `convention` `CLAUDE.md — Key architectural rules #5: No raw file dumps; context is always structured entity summaries + relations from the graph.` — "No raw file dumps — context is always structured entity summaries + relations from the graph."
-- **[[c2]]** `convention` `CLAUDE.md — Project principles: No direct cloud REST calls from our process; cloud LLM/GitHub access goes through the locally-installed CLI binaries (CliProvider).` — "No direct cloud REST calls from our process. Cloud LLM access happens through the locally-installed `claude` and `codex` CLI binaries (via `CliProvider`)."
-- **[[c3]]** `step-output` `s3.winnerRationale / s4.api.list — list() fixes owner=authenticated current user and state='open' server-side; the my-open-tasks semantics are resolved server-side and cannot be mis-parameterized.` — "a1 uniquely makes list() a distinct verb whose my-open-tasks semantics are resolved server-side and cannot be mis-parameterized."
-- **[[c4]]** `step-output` `s4.api.query / s5.invariantsToPreserve — query() applies AND semantics across all provided filters, leaves absent fields unconstrained, and validates state against the closed TaskState set at the boundary.` — "query() applies AND semantics across all provided filters, leaves absent fields unconstrained, and validates state against the closed TaskState set at the boundary rather than deferring the check to G"
-- **[[c5]]** `step-output` `s1.backFlowNotes — this is a BUILD beside src/workflow/tracker; no task query/list signature, filter vocabulary, or my-open-tasks view exists today.` — "this is a BUILD beside src/workflow/tracker, not a reshape — the query/list read surface, the owner/state/epic/story filters, and the my-open-tasks (assignee=current-user + open) view do not exist tod"
-- **[[c6]]** `step-output` `s8.results ep3 — invariants cite constraint/design-decision IDs rather than an s1 analyze bundle; soft enhancement check unmet for a net-new standalone build.` — "For a net-new standalone build the analyze bundles found the surface absent, so there is no pre-existing code invariant for a bundle to show; the invariants are legitimately project-rule/design invari"
+- **[[c1]]** `step-output` `s1.analyzeBundles[0] capability-discovery` — "No existing query/list read surface was found — reuse-check returned zero clear-match candidates. ... The handler must be BUILT, and it should be built inside/against src/workflow/tracker, which alrea"
+- **[[c2]]** `step-output` `s1.analyzeBundles[1] symbol.locate` — "the TrackerExec abstraction in github.ts is the existing GitHub-execution seam to reuse for the read calls"
+- **[[c3]]** `step-output` `s3.winnerRationale / s4.dataModel TaskPage` — "a3 is the only design that makes pagination a first-class part of the contract ({ tasks, pageInfo, total }), eliminating the silent large-result-set truncation that both a1 and a2 hide behind a bare f"
+- **[[c4]]** `step-output` `s5.errorCases + s6.testStrategy + s7.migration` — "Throw TrackerAuthError / TrackerQueryError per the contract; node:test (tsx --test, *.test.ts under src/workflow/tracker); purely additive greenfield internal read surface."
+
+<!-- insrc:review -->
+
+## Review
+
+### ⛔ Review `BLOCK` — design.story (design.story)
+
+**0 HIGH · 1 MED · 8 LOW** · model `client` · reviewed 2026-07-22T11:28:22.868Z
+
+| Ref | Kind | Severity | Fixability | Premise | Evidence | Action |
+| --- | --- | --- | --- | --- | --- | --- |
+| c6 | citation | MED | assisted | A source of the current GitHub user login (for listMyOpenTasks' assignee=current-user) is resolvable from src/workflow/config/github.ts. | CONTRADICTED for the named source: src/workflow/config/github.ts exports only config resolution (resolveGithubConfig, loadGithubConfigFile, githubConfigPath) and no current-user/login resolver — the `user` grep hits there are prose comments. So listMyOpenTasks' identity source (config/github.ts) is misattributed. HOWEVER the correct mechanism already exists: `gh api -i /user` at src/workflow/tracker/github.ts:241 (used for token scopes) — `gh api /user --jq .login` yields the current login. The LLD itself flagged this as an open question, so it is acknowledged, not hidden; but it must be resolved before build since half the feature (listMyOpenTasks) depends on it. | Resolve the current-user login via `gh api /user` (.login) through the existing TrackerExec seam, NOT config/github.ts. Update the LLD's identity-source citation and open question accordingly before approve. |
+| c1 | citation | LOW | manual | A TrackerExec GitHub-execution seam exists in src/workflow/tracker/github.ts and is the reusable authenticated-call abstraction the handler builds on. | Confirmed: `export type TrackerExec` at src/workflow/tracker/github.ts:22 — the reusable GitHub-execution seam exists exactly as the LLD's core reuse anchor claims. | none — verified sound |
+| c2 | citation | LOW | manual | listEpicHashes exists in src/workflow/tracker/resolve.ts and is the source for resolving epic/story filter values to epic hashes. | Confirmed the function exists and is the right resolution source: `function listEpicHashes(dir)` at src/workflow/tracker/resolve.ts:121, used internally at :251/:267. Note: it is module-PRIVATE (no `export`), so reuse from a new query module requires adding an export — a trivial, non-blocking impl step; the premise (listEpicHashes is the epic-resolution source) holds. | During build, export listEpicHashes from resolve.ts before importing it into the new query module. |
+| c3 | citation | LOW | manual | updateEpicTaskList exists in src/workflow/tracker/conventions.ts and encodes the epic task-list convention the epic/story filter maps onto. | Confirmed: `export function updateEpicTaskList` at src/workflow/tracker/conventions.ts:154 — exported and available as the epic task-list convention source. | none — verified sound |
+| c4 | citation | LOW | manual | A CreatedIssue shape exists in src/workflow/tracker/github.ts and is the GitHub-issue projection source for TrackerTask. | Confirmed: `export interface CreatedIssue` at src/workflow/tracker/github.ts:140 — the GitHub-issue projection source for TrackerTask exists. | none — verified sound |
+| c5 | inventory | LOW | manual | The tracker write-side ops the read-only invariant names as forbidden — ghAddProjectItem, ghAttachMilestone, commitAndPushArtifacts — actually exist in the tracker module. | Confirmed all three write-ops the read-only invariant forbids: ghAddProjectItem (github.ts:330), ghAttachMilestone (github.ts:223), commitAndPushArtifacts (real, imported in cli/services/workflow.ts:54). The read-only boundary is grounded in real functions. | none — verified sound |
+| c7 | closed-union | LOW | manual | No query/list task read surface with owner/state/epic/story filters (queryTasks / listMyOpenTasks) already exists in the tracker module — this is genuinely new, not duplicating an existing capability. | Confirmed: 0 matches for queryTasks\|listMyOpenTasks\|listTasks\|queryIssues across src — no existing query/list task read surface. The capability is genuinely new (validates the triage new-vs-reuse signal); no duplication risk. | none — verified sound |
+| c8 | external-contract | LOW | manual | The repo rule against Promise.all over provider/remote calls (the serial-GitHub-calls invariant) is a real documented constraint the tracker module already follows. | The repo rule against Promise.all over provider/remote calls is real (CLAUDE.md; the Promise.all hits found are DB/file batching in daemon/db + template-loader, not remote/provider calls). The tracker module shows no Promise.all over GitHub calls — the serial-calls invariant is grounded and already the module's pattern. | none — verified sound |
+| c9 | citation | LOW | manual | The test convention the LLD adopts — *.test.ts under src/workflow/tracker run via tsx --test — matches existing tracker test files. | The node:test convention is confirmed by the existing tracker test (src/workflow/__tests__/tracker-auto.test.ts imports node:test). Minor location imprecision: existing tracker tests live at src/workflow/__tests__/, not src/workflow/tracker/ as the LLD's framework note says — non-breaking; the impl should follow the existing __tests__/ location. | Place the new tests at src/workflow/__tests__/ (existing tracker-test location), not src/workflow/tracker/. |
+
+#### Proposed fixes
+
+- **c6** (assisted) — 
+  - option: Resolve current user via `gh api /user --jq .login` issued through the existing TrackerExec seam — the same `gh api /user` call already present at tracker/github.ts:241 for scope-checking; add a small `currentGithubLogin(exec)` helper next to it.
+  - option: Add current-user resolution to config/github.ts (extend it to read `gh api /user`), keeping the LLD's original citation but making it true.
+  - option: Accept as an explicit open question to resolve at plan/build time, documenting `gh api /user` as the intended mechanism.

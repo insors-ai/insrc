@@ -154,6 +154,29 @@ CliProvider suites) and skip cleanly when unset.
 - [`docs/workflow.md`](docs/workflow.md) — workflow user guide
 - [`docs/daemon.md`](docs/daemon.md) — daemon usage guide
 
+## Building features via insrc — classify FIRST, review before approve
+
+This repo is registered with insrc and dogfoods its own workflow. When asked to
+**build / add / implement a feature here** (not answer a question — that's
+analyze below), do NOT hand-pick `define` / `design.story` / `build`, and do NOT
+just start editing. The framework's core guarantee is that **every feature, big
+or small, is tracked**. Route it:
+
+1. **`insrc_triage` FIRST.** It sizes the request (grounded on your own
+   `insrc_analyze_step` passes) and returns a pre-filled `nextCall`:
+   epic → `define`; feature → standalone `design.story` → plan → build;
+   small → standalone `design.story` → build; trivial → `build`.
+2. **Run the routed workflow** via `insrc_workflow_run` (async: START → POLL,
+   relay each progress batch) or `insrc_workflow_step` (drive each turn).
+3. **`insrc_review_step` before approve** — the independent "two sets of eyes"
+   review (a daemon self-review is the SAME model that authored the artifact).
+   Resolve any HIGH/MED findings, then `insrc workflow approve`.
+
+Skip triage only for a one-liner the user explicitly scoped, or when they name a
+stage. See [`plans/feature-triage-router.md`](plans/feature-triage-router.md).
+The controller-review model + provider resolution are in the daemon; the
+size→route table lives in [`src/workflow/triage/classify.ts`](src/workflow/triage/classify.ts).
+
 ## Code exploration via `insrc_analyze` / `insrc_analyze_step` (insrc MCP server)
 
 For ANY question about this codebase's structure, conventions,

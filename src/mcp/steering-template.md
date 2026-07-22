@@ -115,6 +115,46 @@ environment. Explicit `repo` overrides it. The repo must be
 registered with the insrc daemon (`insrc repo add /path/to/repo`)
 and finished indexing.
 
+## Building features via insrc — classify FIRST, review before approve
+
+When the user asks you to **build / add / implement a feature** (not a question
+about the code — that's analyze), do NOT hand-pick `define` / `design.story` /
+`build` yourself, and do NOT just start editing files. The framework's core
+guarantee is that **every feature, big or small, is tracked**. Follow this:
+
+1. **`insrc_triage` FIRST.** It sizes the request (grounded on your own
+   `insrc_analyze_step` passes) and routes it to the right start stage:
+   - **epic** → `define` (full chain — new subsystem / many stories)
+   - **feature** → standalone `design.story` (LLD) → plan → build
+   - **small** → standalone `design.story` (LLD) → build
+   - **trivial** → `build` (no LLD; a standalone BUILD record is its ledger entry)
+
+   It returns a **pre-filled `nextCall`** — make exactly that call next.
+   Two-turn loop: `phase:'start'` with `{ focus, repo? }` → ground + emit the
+   `TriageResult` → `phase:'classify'` with `{ result, state }` → `{ nextCall }`.
+
+2. **Run the routed workflow.** Prefer **`insrc_workflow_run`** (async,
+   daemon-driven): `START` returns a `runId` immediately; then `POLL`
+   `{ poll: runId, cursor }` and RELAY each `progress` batch to the user so they
+   can watch a long run. Or drive each turn yourself with `insrc_workflow_step`.
+
+3. **Review before you approve — two sets of eyes.** After a workflow writes an
+   artifact (LLD/HLD/DEF), run **`insrc_review_step`** on it BEFORE approving. A
+   daemon self-review runs the SAME model that authored the artifact — no
+   independent perspective; `insrc_review_step` moves the review's reasoning into
+   YOU (the controller). It extracts the artifact's load-bearing premises, the
+   server re-runs deterministic probes against real source, and you judge the
+   verdicts against that evidence. It stamps `meta.review`; a `block` verdict
+   (unresolved HIGH/MED findings) then gates `insrc workflow approve`. Resolve
+   the blocking findings (apply / accept-with-note / override), THEN approve.
+
+4. **Approve between gates** (`insrc workflow approve <path>`) and continue the
+   routed chain to the next stage.
+
+Skip triage only for a genuine one-liner the user explicitly scoped, or when
+they name a specific stage. Everything else goes through the front door so it
+lands on the ledger.
+
 ## Workflow authoring via `insrc_workflow_step` (insrc MCP server)
 
 Beyond code exploration, the insrc MCP server exposes a workflow

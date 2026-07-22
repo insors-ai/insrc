@@ -105,6 +105,7 @@
 
   <h2 id="index">4 · Add &amp; index a repo</h2>
   <p>Registry membership is established exclusively through the <code>repo.add</code> IPC — from the TUI, open the <strong>Repos</strong> pane and press <kbd>a</kbd>. The daemon parses the tree with tree-sitter, builds the graph, and generates embeddings.</p>
+  <p>During <kbd>a</kbd>, insrc asks — per file — whether to install the <strong>steering block</strong> into the repo's <code>CLAUDE.md</code> (Claude Code) and/or <code>AGENTS.md</code> (Codex). Say yes and the daemon writes a safe, idempotent <code>insrc:steering</code> marked section (created if absent, replaced in place on re-add, never clobbering your surrounding content) so a controller reaches for <code>insrc_analyze_step</code> on code questions, <code>insrc_triage</code> first on build requests, and <code>insrc_review_step</code> before approving. No manual copy-paste needed.</p>
   <div class="warn">The repo registry is the contract. An entity whose repo path isn't registered fails the upsert with <code>UnregisteredRepoError</code> — the storage layer never auto-allocates registry rows. Always add a repo before expecting queries to resolve.</div>
   <p>Wait for the status to reach <code>ready</code> (embeddings pending shows as a count). Graph searches span the transitive <code>DEPENDS_ON</code> closure of the active repo, so add dependency repos too if you want cross-repo answers.</p>
 

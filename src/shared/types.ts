@@ -588,6 +588,19 @@ export interface Relation {
 // Repo registry
 // ---------------------------------------------------------------------------
 
+/**
+ * Per-file steering-block selection, threaded on the `repo.add` IPC payload.
+ * The client (CLI TUI / IDE fork) prompts the user and sets this; the daemon
+ * applies the marker-upsert into the selected files (see
+ * `daemon/steering-inject.ts`). Absent / both-false ⇒ no file is written.
+ */
+export interface SteeringSelection {
+  /** Install the steering block into the repo's CLAUDE.md (Claude Code). */
+  readonly claude?: boolean | undefined;
+  /** Install the steering block into the repo's AGENTS.md (Codex). */
+  readonly agents?: boolean | undefined;
+}
+
 export interface RegisteredRepo {
   /**
    * Phase 5.x strict-contract discriminator. 'workspace' is the

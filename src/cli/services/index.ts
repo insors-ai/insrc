@@ -10,7 +10,7 @@
  * the filesystem directly.
  */
 
-import type { DaemonStatus, RegisteredRepo } from '../../shared/types.js';
+import type { DaemonStatus, RegisteredRepo, SteeringSelection  } from '../../shared/types.js';
 import type { SystemInfo } from '../../shared/system-info.js';
 import type { ModelRecommendation } from '../../shared/model-recommender.js';
 import type { ChainReport } from '../../workflow/chain.js';
@@ -42,7 +42,7 @@ export interface Services {
 	};
 	readonly repo: {
 		list(): Promise<RegisteredRepo[]>;
-		add(path: string): Promise<string>;
+		add(path: string, steering?: SteeringSelection): Promise<string>;
 		remove(path: string): Promise<string>;
 		reindex(path: string): Promise<string>;
 	};

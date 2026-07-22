@@ -124,10 +124,10 @@ test('number keys switch panes (Daemon → Repos)', async () => {
 	unmount();
 });
 
-test('Repos add flow drives repo.add with the entered path', async () => {
+test('Repos add flow drives repo.add with the entered path (+ per-file steering)', async () => {
 	const svc = fakeServices();
-	const addCalls: string[] = [];
-	svc.repo.add = async p => { addCalls.push(p); return p; };
+	const addCalls: Array<{ path: string; steering: unknown }> = [];
+	svc.repo.add = async (p, steering) => { addCalls.push({ path: p, steering }); return p; };
 	const { stdin, unmount } = render(createElement(App, { services: svc, pollMs: 0 }));
 	await settle();
 	stdin.write('2');          // → Repos pane
@@ -136,9 +136,13 @@ test('Repos add flow drives repo.add with the entered path', async () => {
 	await settle();
 	stdin.write('/tmp/some-repo');
 	await settle();
-	stdin.write('\r');         // submit
+	stdin.write('\r');         // submit path → steering-claude confirm
 	await settle();
-	assert.deepEqual(addCalls, ['/tmp/some-repo']);
+	stdin.write('y');          // install into CLAUDE.md
+	await settle();
+	stdin.write('n');          // skip AGENTS.md → finish add
+	await settle();
+	assert.deepEqual(addCalls, [{ path: '/tmp/some-repo', steering: { claude: true, agents: false } }]);
 	unmount();
 });
 

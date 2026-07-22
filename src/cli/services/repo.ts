@@ -12,7 +12,7 @@ import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import { rpc } from '../client.js';
-import type { RegisteredRepo } from '../../shared/types.js';
+import type { RegisteredRepo, SteeringSelection } from '../../shared/types.js';
 
 export function listRepos(): Promise<RegisteredRepo[]> {
 	return rpc<RegisteredRepo[]>('repo.list');
@@ -20,13 +20,15 @@ export function listRepos(): Promise<RegisteredRepo[]> {
 
 /** Register `path` for indexing. Resolves it against cwd and rejects
  *  if it does not exist (mirrors the old command's guard). Returns the
- *  absolute path that was registered. */
-export async function addRepo(path: string): Promise<string> {
+ *  absolute path that was registered. `steering` (per-file CLAUDE.md /
+ *  AGENTS.md selection) is threaded to the daemon, which applies the
+ *  steering-block injection; omit it to install nothing. */
+export async function addRepo(path: string, steering?: SteeringSelection): Promise<string> {
 	const abs = resolve(path);
 	if (!existsSync(abs)) {
 		throw new Error(`path does not exist: ${abs}`);
 	}
-	await rpc('repo.add', { path: abs });
+	await rpc('repo.add', { path: abs, ...(steering !== undefined ? { steering } : {}) });
 	return abs;
 }
 

@@ -13,6 +13,7 @@
  */
 
 import { mkdirSync, readFileSync, writeFileSync, existsSync, appendFileSync, rmSync } from 'node:fs';
+import { injectSteeringBlock, type SteeringSelection } from './steering-inject.js';
 import { PATHS } from '../shared/paths.js';
 import { setLogMode, getLogger } from '../shared/logger.js';
 
@@ -437,7 +438,23 @@ async function main(): Promise<void> {
 			};
 			await addRepo(db, repo);
 			await indexer.addRepo(normalisedPath);
-			return { ok: true };
+			// Optional steering-block injection into the repo's CLAUDE.md /
+			// AGENTS.md. Per-file selection comes from the client (which prompts
+			// the user); the daemon applies it so BOTH CLI and IDE-fork adds are
+			// covered. Guarded — a write failure never fails the add.
+			let steering: Awaited<ReturnType<typeof injectSteeringBlock>> | undefined;
+			const sel = (params as { steering?: SteeringSelection }).steering;
+			if (sel !== undefined && (sel.claude === true || sel.agents === true)) {
+				try {
+					steering = await injectSteeringBlock(normalisedPath, sel);
+				} catch (err) {
+					log.warn(
+						{ repo: normalisedPath, err: err instanceof Error ? err.message : String(err) },
+						'steering injection failed; repo registered regardless',
+					);
+				}
+			}
+			return { ok: true, ...(steering !== undefined ? { steering } : {}) };
 		},
 
 		'repo.remove': async (params) => {

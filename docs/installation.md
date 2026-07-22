@@ -170,10 +170,14 @@ Register the insrc MCP server so the agent can call `insrc_analyze` /
 claude mcp add insrc --scope local --env INSRC_REPO="$PWD" -- node "$HOME/.insrc/daemon/out/bin/insrc-mcp.js"
 ```
 
-Then paste the steering block from
-[`src/mcp/steering-template.md`](../src/mcp/steering-template.md) into the repo's
-`CLAUDE.md` (Claude Code) or `AGENTS.md` (Codex) so the agent routes context
-questions to analyze and build requests to the workflow chain.
+You don't need to paste anything: when you register a repo (`insrc` TUI → Repos →
+`a`, or the `repo.add` IPC), insrc **offers to install the steering block** into
+the repo's `CLAUDE.md` (Claude Code) and/or `AGENTS.md` (Codex) — a safe,
+idempotent `insrc:steering` marked section, never clobbered on re-add — so the
+agent routes context questions to analyze and build requests through the
+workflow chain. To install it by hand instead, copy
+[`src/prompts/steering-block.md`](../src/prompts/steering-block.md) into the file
+wrapped in those markers.
 
 > The MCP tools load on a **fresh** agent session — after registering, restart
 > Claude Code / Codex.

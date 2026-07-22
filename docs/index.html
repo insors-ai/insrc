@@ -231,8 +231,11 @@ ollama pull qwen3.6:35b-a3b        # skip if reasoning runs on claude/codex</cod
     <pre><code># Claude Code (per-project, from the repo root):
 claude mcp add insrc --scope local --env INSRC_REPO="$PWD" \
   -- node "$HOME/.insrc/daemon/out/bin/insrc-mcp.js"</code></pre>
-    <p>Then paste the steering block from <code>src/mcp/steering-template.md</code> into the repo's <code>CLAUDE.md</code>
-      (Claude Code) or <code>AGENTS.md</code> (Codex).</p>
+    <p>You don't need to paste anything: when you register a repo (<code>insrc</code> TUI → Repos → <code>a</code>, or the
+      <code>repo.add</code> IPC), insrc <strong>offers to install the steering block</strong> into the repo's
+      <code>CLAUDE.md</code> (Claude Code) and/or <code>AGENTS.md</code> (Codex) — a safe, idempotent
+      <code>insrc:steering</code> marked section that is never clobbered on re-add. To install by hand instead, copy
+      <code>src/prompts/steering-block.md</code> into the file wrapped in those markers.</p>
     <div class="callout">MCP tools load on a <strong>fresh</strong> agent session — after registering, restart Claude Code / Codex.</div>
 
     <h2 id="tui">6 · Using the <code>insrc</code> TUI</h2>

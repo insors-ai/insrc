@@ -23,7 +23,7 @@ const STATUS_COLOR: Record<RegisteredRepo['status'], string> = {
 	ready: 'green', indexing: 'yellow', pending: 'gray', error: 'red',
 };
 
-type Modal = 'none' | 'add' | 'confirm-remove';
+type Modal = 'none' | 'add' | 'steer-claude' | 'steer-agents' | 'confirm-remove';
 
 export function ReposPane(props: {
 	daemon: DaemonState;
@@ -36,6 +36,19 @@ export function ReposPane(props: {
 	const captured = useCaptured();
 	const [cursor, setCursor] = useState(0);
 	const [modal, setModal] = useState<Modal>('none');
+	// Steering-injection add flow: path entered, then a per-file confirm for
+	// CLAUDE.md and AGENTS.md before the repo.add call carries the selection.
+	const [addPath, setAddPath] = useState('');
+	const [steerClaude, setSteerClaude] = useState(false);
+
+	const finishAdd = (claude: boolean, agents: boolean): void => {
+		setModal('none'); ui.capture(false);
+		const picks = [claude ? 'CLAUDE.md' : null, agents ? 'AGENTS.md' : null].filter(Boolean).join(' + ');
+		act('add', async () => {
+			const registered = await svc.repo.add(addPath, { claude, agents });
+			return `registered ${registered} — indexing started${picks ? ` · steering → ${picks}` : ''}`;
+		});
+	};
 
 	const repos = props.daemon.status?.repos ?? [];
 	const clamped = Math.min(cursor, Math.max(0, repos.length - 1));
@@ -65,9 +78,34 @@ export function ReposPane(props: {
 					label="repo path:"
 					onCancel={() => { setModal('none'); ui.capture(false); }}
 					onSubmit={(path) => {
-						setModal('none'); ui.capture(false);
-						if (path.trim().length > 0) act('add', async () => `registered ${await svc.repo.add(path.trim())} — indexing started`);
+						const p = path.trim();
+						if (p.length === 0) { setModal('none'); ui.capture(false); return; }
+						setAddPath(p); setModal('steer-claude');
 					}}
+				/>
+			</Panel>
+		);
+	}
+
+	if (modal === 'steer-claude') {
+		return (
+			<Panel title="Repos · add · steering" active>
+				<ConfirmPrompt
+					label="install the insrc steering block into this repo's CLAUDE.md (Claude Code)?"
+					onYes={() => { setSteerClaude(true);  setModal('steer-agents'); }}
+					onNo={()  => { setSteerClaude(false); setModal('steer-agents'); }}
+				/>
+			</Panel>
+		);
+	}
+
+	if (modal === 'steer-agents') {
+		return (
+			<Panel title="Repos · add · steering" active>
+				<ConfirmPrompt
+					label="install the insrc steering block into this repo's AGENTS.md (Codex)?"
+					onYes={() => finishAdd(steerClaude, true)}
+					onNo={()  => finishAdd(steerClaude, false)}
 				/>
 			</Panel>
 		);

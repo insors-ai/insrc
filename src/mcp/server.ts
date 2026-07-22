@@ -605,7 +605,16 @@ export function buildInsrcMcpServer(): McpServer {
 					.optional(),
 			},
 		},
-		async (rawArgs) => handleWorkflowRun(rawArgs),
+		async (rawArgs) => {
+			// Infer the per-run caller from the invoking MCP client so a config
+			// with NO explicit shaperProvider (and no per-repo override) falls
+			// back to that CLI (Claude Code → claude, Codex → codex) instead of
+			// Ollama. Threaded into the START path only; per-repo + global config
+			// still take precedence downstream (buildShaperProvider).
+			const kind   = detectClientProvider(server.server.getClientVersion()?.name);
+			const client = kind === 'cli-claude' ? 'claude' : kind === 'cli-codex' ? 'codex' : undefined;
+			return handleWorkflowRun(rawArgs, {}, client);
+		},
 	);
 
 	return server;
@@ -652,9 +661,13 @@ function renderFrame(f: WorkflowProgress): string {
 
 /** Async dispatch: abort > poll > start. Returns a plain object serialized into
  *  the tool's text content. `deps` is a test seam for the unary socket calls. */
-export async function handleWorkflowRun(args: WorkflowRunArgs, deps: UnaryRpcDeps = {}): Promise<WorkflowRunEnvelope> {
+export async function handleWorkflowRun(
+	args:   WorkflowRunArgs,
+	deps:   UnaryRpcDeps = {},
+	client?: 'claude' | 'codex' | undefined,
+): Promise<WorkflowRunEnvelope> {
 	try {
-		const result = await dispatchWorkflowRun(args, deps);
+		const result = await dispatchWorkflowRun(args, deps, client);
 		const isError = 'error' in result && result['error'] !== undefined && result['status'] !== 'running';
 		return {
 			content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
@@ -667,7 +680,11 @@ export async function handleWorkflowRun(args: WorkflowRunArgs, deps: UnaryRpcDep
 	}
 }
 
-async function dispatchWorkflowRun(args: WorkflowRunArgs, deps: UnaryRpcDeps): Promise<Record<string, unknown>> {
+async function dispatchWorkflowRun(
+	args:   WorkflowRunArgs,
+	deps:   UnaryRpcDeps,
+	client?: 'claude' | 'codex' | undefined,
+): Promise<Record<string, unknown>> {
 	// ABORT — highest precedence.
 	if (typeof args.abort === 'string' && args.abort.length > 0) {
 		const { ok } = await abortRun(args.abort, deps);
@@ -705,6 +722,7 @@ async function dispatchWorkflowRun(args: WorkflowRunArgs, deps: UnaryRpcDeps): P
 			focus:    args.focus,
 			...(args.repo   !== undefined ? { repo:   args.repo }   : {}),
 			...(args.params !== undefined ? { params: args.params } : {}),
+			...(client      !== undefined ? { client }              : {}),
 		}, deps);
 		return { runId, next: 'poll', guidance: POLL_GUIDANCE };
 	}

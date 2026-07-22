@@ -87,6 +87,20 @@ export interface MaxPlanDepthMap {
  */
 export type AnalyzeShaperProviderKind = 'ollama' | 'cli-claude' | 'cli-codex';
 
+/**
+ * Per-repo shaper override, keyed by absolute repo path under
+ * `models.analyze.byRepo` in `~/.insrc/config.json`. A repo may pin its own
+ * `shaperProvider` (and optionally `shaperModel`); this is the HIGHEST-priority
+ * signal in the resolution chain (per-repo > global config > per-run caller >
+ * ollama). Read FRESH per lookup (see `resolveRepoShaperProvider`) rather than
+ * folded into the cached `AnalyzeConfig`, so a per-repo edit is picked up
+ * without poisoning — or being poisoned by — the global cache.
+ */
+export interface RepoShaperOverride {
+	readonly shaperProvider?: AnalyzeShaperProviderKind | undefined;
+	readonly shaperModel?:    string | undefined;
+}
+
 export interface AnalyzeConfig {
 	readonly shaperProvider: AnalyzeShaperProviderKind;
 	/** True when `models.analyze.shaperProvider` was set to a recognized
@@ -250,6 +264,69 @@ function parseShaperProvider(raw: unknown): AnalyzeShaperProviderKind {
 
 function isObject(x: unknown): x is Record<string, unknown> {
 	return typeof x === 'object' && x !== null && !Array.isArray(x);
+}
+
+/**
+ * Read the `models.analyze.byRepo[repoPath]` override entry FRESH from disk.
+ *
+ * Deliberately NOT cached (and NOT routed through `loadAnalyzeConfig`'s cache):
+ * per-repo overrides are consulted at run-resolve time and must reflect the
+ * current on-disk config, and reading them must not populate / read the global
+ * cache. Tolerates a missing file / missing section (returns `undefined`).
+ *
+ * `configPath` defaults to the global `~/.insrc/config.json`; it exists as a
+ * test seam so a case can point at a temp config without touching the real
+ * user config.
+ */
+function readRepoOverride(repoPath: string, configPath: string): RepoShaperOverride | undefined {
+	if (!existsSync(configPath)) return undefined;
+	try {
+		const raw     = JSON.parse(readFileSync(configPath, 'utf8')) as Record<string, unknown>;
+		const models  = isObject(raw['models'])       ? (raw['models'] as Record<string, unknown>)      : {};
+		const analyze = isObject(models['analyze'])   ? (models['analyze'] as Record<string, unknown>)  : {};
+		const byRepo  = isObject(analyze['byRepo'])   ? (analyze['byRepo'] as Record<string, unknown>)  : {};
+		const entry   = byRepo[repoPath];
+		if (!isObject(entry)) return undefined;
+		const provider = entry['shaperProvider'];
+		const model    = entry['shaperModel'];
+		return {
+			...(provider === 'ollama' || provider === 'cli-claude' || provider === 'cli-codex'
+				? { shaperProvider: provider }
+				: {}),
+			...(typeof model === 'string' && model.length > 0 ? { shaperModel: model } : {}),
+		};
+	} catch (err) {
+		log.warn(
+			{ err: (err as Error).message, repoPath },
+			'failed to read models.analyze.byRepo; ignoring per-repo override',
+		);
+		return undefined;
+	}
+}
+
+/**
+ * Resolve a repo-scoped `shaperProvider` override (highest priority in the
+ * client/shaper resolution chain). Returns the pinned kind for `repoPath`, or
+ * `undefined` when the repo has no override / the config / section is absent.
+ * Reads the config file FRESH (never the cached global).
+ */
+export function resolveRepoShaperProvider(
+	repoPath:   string,
+	configPath: string = PATHS.config,
+): AnalyzeShaperProviderKind | undefined {
+	return readRepoOverride(repoPath, configPath)?.shaperProvider;
+}
+
+/**
+ * Symmetric to `resolveRepoShaperProvider`: a repo may also pin a model
+ * (`models.analyze.byRepo[repoPath].shaperModel`). Returns it fresh from disk,
+ * or `undefined` when unset. Read FRESH (never the cached global).
+ */
+export function resolveRepoShaperModel(
+	repoPath:   string,
+	configPath: string = PATHS.config,
+): string | undefined {
+	return readRepoOverride(repoPath, configPath)?.shaperModel;
 }
 
 export function _resetAnalyzeConfigCacheForTests(): void {

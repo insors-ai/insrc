@@ -61,10 +61,16 @@ export interface ShaperProviderOverrides {
 	/** Optional model-preference hints forwarded on every sampling
 	 *  request. Ignored when `sampler` is undefined. */
 	readonly modelHints?: readonly string[] | undefined;
-	/** Provider to use when config does NOT explicitly pin one — set by
-	 *  the MCP server from the invoking client (Claude Code → 'cli-claude',
-	 *  Codex → 'cli-codex'). Falls back to the ambient client-provider
-	 *  context (below). An explicit `cfg.shaperProvider` always wins. */
+	/** Highest-priority NON-sampler signal: a repo-scoped provider pinned via
+	 *  `models.analyze.byRepo[repoPath].shaperProvider` (resolved by the caller
+	 *  through `resolveRepoShaperProvider`). Wins over the global config default
+	 *  and the per-run `clientDefault`. Only the active sampler beats it. */
+	readonly repoOverride?: AnalyzeShaperProviderKind | undefined;
+	/** Provider to use when NEITHER a per-repo override NOR an explicit global
+	 *  `cfg.shaperProvider` is set — the per-run caller, set by the MCP server
+	 *  from the invoking client (Claude Code → 'cli-claude', Codex →
+	 *  'cli-codex'). Falls back to the ambient client-provider context (below).
+	 *  A per-repo override or an explicit `cfg.shaperProvider` always wins. */
 	readonly clientDefault?: AnalyzeShaperProviderKind | undefined;
 	/** Override the CLI subprocess timeout (ms) when the resolved provider is
 	 *  `cli-claude`/`cli-codex`. The default (120 s) is fine for analyze's
@@ -135,6 +141,30 @@ export function runWithClientProviderContext<T>(
 }
 
 /**
+ * Pure resolution of the effective shaper KIND across the non-sampler signals,
+ * in strict priority order:
+ *
+ *   per-repo override > explicit global config > per-run caller > 'ollama'
+ *
+ * The sampler (when active) sits ABOVE all of these and is handled in
+ * `buildShaperProvider` before this function is consulted — it routes to
+ * `McpSamplingProvider` rather than a KIND, so it is not represented here.
+ *
+ * `globalExplicit` is `cfg.shaperProvider` ONLY when the operator explicitly
+ * set `models.analyze.shaperProvider` (i.e. `cfg.shaperProviderExplicit`);
+ * otherwise pass `undefined` so a defaulted-'ollama' global does not pre-empt
+ * the per-run caller. Extracted + exported so the precedence is unit-testable
+ * in isolation from provider construction.
+ */
+export function resolveShaperKind(inputs: {
+	readonly repoOverride:   AnalyzeShaperProviderKind | undefined;
+	readonly globalExplicit: AnalyzeShaperProviderKind | undefined;
+	readonly clientDefault:  AnalyzeShaperProviderKind | undefined;
+}): AnalyzeShaperProviderKind {
+	return inputs.repoOverride ?? inputs.globalExplicit ?? inputs.clientDefault ?? 'ollama';
+}
+
+/**
  * Return the `LLMProvider` implementation the analyze framework
  * should use for its structured-output calls.
  *
@@ -143,8 +173,9 @@ export function runWithClientProviderContext<T>(
  *   2. ambient `runWithSamplerContext` sampler -> `McpSamplingProvider`
  *      (implicit MCP override; how the server threads the sampler
  *      through the analyze pipeline without touching every runner)
- *   3. `cfg.shaperProvider === 'cli-claude' | 'cli-codex'` -> `CliProvider`
- *   4. `cfg.shaperProvider === 'ollama'` (default) -> `OllamaProvider`
+ *   3. effective KIND via `resolveShaperKind`:
+ *        per-repo override > explicit global config > per-run caller > 'ollama'
+ *      cli-claude / cli-codex -> `CliProvider`; 'ollama' -> `OllamaProvider`.
  *
  * Cheap; call per invocation rather than caching because config
  * edits + per-request overrides are the common shape.
@@ -174,14 +205,13 @@ export function buildShaperProvider(
 			modelHints: ambient.modelHints,
 		});
 	}
-	// Effective provider: an explicit config `shaperProvider` always
-	// wins; otherwise auto-pick from the invoking CLI (via override arg
-	// or the ambient client-provider context); otherwise the config
-	// default ('ollama').
+	// Effective provider (non-sampler): per-repo override > explicit global
+	// config > per-run caller (arg or ambient client-provider context) >
+	// 'ollama'. See resolveShaperKind.
 	const clientDefault = overrides?.clientDefault ?? clientProviderContextStorage.getStore()?.kind;
-	const effective: AnalyzeShaperProviderKind = cfg.shaperProviderExplicit
-		? cfg.shaperProvider
-		: (clientDefault ?? cfg.shaperProvider);
+	const repoOverride  = overrides?.repoOverride;
+	const globalExplicit = cfg.shaperProviderExplicit ? cfg.shaperProvider : undefined;
+	const effective = resolveShaperKind({ repoOverride, globalExplicit, clientDefault });
 
 	if (effective === 'cli-claude' || effective === 'cli-codex') {
 		const kind = effective === 'cli-claude' ? 'claude' : 'codex';
@@ -190,8 +220,9 @@ export function buildShaperProvider(
 		// set `shaperModel` explicitly (e.g. `claude-haiku-4-5` for
 		// cost-sensitive inner calls); otherwise use the CLI's own default.
 		const model = cfg.shaperModelExplicit && cfg.shaperModel !== '' ? cfg.shaperModel : undefined;
+		const source = repoOverride !== undefined ? 'repo' : globalExplicit !== undefined ? 'config' : 'client';
 		log.info(
-			{ kind, model: model ?? '(cli default)', source: cfg.shaperProviderExplicit ? 'config' : 'client', timeoutMs: overrides?.cliTimeoutMs },
+			{ kind, model: model ?? '(cli default)', source, timeoutMs: overrides?.cliTimeoutMs },
 			'shaper provider: routing through CliProvider',
 		);
 		return new CliProvider({

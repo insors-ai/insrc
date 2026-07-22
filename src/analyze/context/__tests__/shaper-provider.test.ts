@@ -17,7 +17,7 @@ import { CliProvider } from '../../../agent/providers/cli-provider.js';
 import { McpSamplingProvider } from '../../../agent/providers/mcp-sampling-provider.js';
 import { OllamaProvider } from '../../../agent/providers/ollama.js';
 import type { AnalyzeConfig } from '../../../config/analyze.js';
-import { buildShaperProvider, runWithClientProviderContext } from '../shaper-provider.js';
+import { buildShaperProvider, resolveShaperKind, runWithClientProviderContext } from '../shaper-provider.js';
 
 function makeCfg(overrides: Partial<AnalyzeConfig>): AnalyzeConfig {
 	return {
@@ -147,4 +147,54 @@ test('sampler still beats a clientDefault', () => {
 	const sampler = async () => ({ role: 'assistant' as const, content: '' });
 	const cfg = makeCfg({ shaperProvider: 'ollama', shaperProviderExplicit: false });
 	assert.ok(buildShaperProvider(cfg, { sampler, clientDefault: 'cli-claude' }) instanceof McpSamplingProvider);
+});
+
+// ---------------------------------------------------------------------------
+// Resolution chain: per-repo override > global config > per-run caller > ollama
+// ---------------------------------------------------------------------------
+
+test('resolveShaperKind: per-repo override wins over everything below it', () => {
+	assert.equal(
+		resolveShaperKind({ repoOverride: 'cli-codex', globalExplicit: 'cli-claude', clientDefault: 'cli-claude' }),
+		'cli-codex',
+	);
+});
+
+test('resolveShaperKind: explicit global wins over the per-run caller', () => {
+	assert.equal(
+		resolveShaperKind({ repoOverride: undefined, globalExplicit: 'ollama', clientDefault: 'cli-claude' }),
+		'ollama',
+	);
+});
+
+test('resolveShaperKind: per-run caller used when repo + global are unset', () => {
+	assert.equal(
+		resolveShaperKind({ repoOverride: undefined, globalExplicit: undefined, clientDefault: 'cli-codex' }),
+		'cli-codex',
+	);
+});
+
+test('resolveShaperKind: ollama when all signals are unset', () => {
+	assert.equal(
+		resolveShaperKind({ repoOverride: undefined, globalExplicit: undefined, clientDefault: undefined }),
+		'ollama',
+	);
+});
+
+test('repoOverride beats an explicit global config in buildShaperProvider', () => {
+	// Global pins ollama, but the repo pins cli-claude → CliProvider.
+	const cfg = makeCfg({ shaperProvider: 'ollama', shaperProviderExplicit: true });
+	assert.ok(buildShaperProvider(cfg, { repoOverride: 'cli-claude' }) instanceof CliProvider);
+});
+
+test('repoOverride beats the clientDefault in buildShaperProvider', () => {
+	const cfg = makeCfg({ shaperProvider: 'ollama', shaperProviderExplicit: false });
+	// repo pins ollama; a Claude Code invocation must still resolve to Ollama.
+	assert.ok(buildShaperProvider(cfg, { repoOverride: 'ollama', clientDefault: 'cli-claude' }) instanceof OllamaProvider);
+});
+
+test('sampler still beats a repoOverride', () => {
+	const sampler = async () => ({ role: 'assistant' as const, content: '' });
+	const cfg = makeCfg({ shaperProvider: 'ollama', shaperProviderExplicit: false });
+	assert.ok(buildShaperProvider(cfg, { sampler, repoOverride: 'cli-claude' }) instanceof McpSamplingProvider);
 });

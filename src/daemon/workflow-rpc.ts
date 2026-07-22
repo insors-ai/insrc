@@ -29,8 +29,8 @@ import { getLogger } from '../shared/logger.js';
 import type { IpcStreamMessage, LLMMessage, LLMProvider, StageProgressEvent, StructuredCompletionOpts, TokenProgressEvent } from '../shared/types.js';
 import type { ClassifiedIntent } from '../shared/analyze-types.js';
 import type { AnalyzeContextBundle } from '../analyze/context/types.js';
-import { buildShaperProvider, runWithClientProviderContext } from '../analyze/context/shaper-provider.js';
-import { loadAnalyzeConfig, type AnalyzeConfig, type AnalyzeShaperProviderKind } from '../config/analyze.js';
+import { buildShaperProvider, resolveShaperKind, runWithClientProviderContext } from '../analyze/context/shaper-provider.js';
+import { loadAnalyzeConfig, resolveRepoShaperProvider, type AnalyzeConfig, type AnalyzeShaperProviderKind } from '../config/analyze.js';
 import { registerWorkflowRunners } from '../workflow/index.js';
 import { prepareDecompose, prepareSynthesize, finalizeArtifact, type FinalizedArtifact } from '../workflow/orchestrator.js';
 import { startRun, resumeRun } from '../workflow/executor.js';
@@ -277,10 +277,13 @@ export function prepareWorkflowRun(rawParams: unknown): PreparedWorkflowRun {
 	const cfg = loadAnalyzeConfig();
 	const clientDefault: AnalyzeShaperProviderKind | undefined =
 		p.client === 'claude' ? 'cli-claude' : p.client === 'codex' ? 'cli-codex' : undefined;
+	// Resolution chain: per-repo override > global config > per-run caller >
+	// ollama. `repoOverride` is read FRESH from disk (never the global cache).
+	const repoOverride = resolveRepoShaperProvider(repoPath);
 	// Workflow synthesize generates a whole artifact — well past the CLI's
 	// 120 s default — so give CLI providers a generous timeout (Ollama ignores it).
-	const provider   = buildShaperProvider(cfg, { clientDefault, cliTimeoutMs: WORKFLOW_CLI_TIMEOUT_MS });
-	const modelLabel = modelLabelFor(cfg, clientDefault);
+	const provider   = buildShaperProvider(cfg, { repoOverride, clientDefault, cliTimeoutMs: WORKFLOW_CLI_TIMEOUT_MS });
+	const modelLabel = modelLabelFor(cfg, repoOverride, clientDefault);
 	return { intent, runId, epicKey, provider, modelLabel, clientDefault, review: p.review };
 }
 
@@ -403,12 +406,19 @@ function flattenBundle(b: AnalyzeContextBundle): string {
 		.join('\n\n');
 }
 
-/** The `meta.model` label matching what `buildShaperProvider` resolves — an
- *  explicit config provider wins, else the invoking CLI, else Ollama. */
-function modelLabelFor(cfg: AnalyzeConfig, clientDefault: AnalyzeShaperProviderKind | undefined): string {
-	const effective: AnalyzeShaperProviderKind = cfg.shaperProviderExplicit
-		? cfg.shaperProvider
-		: (clientDefault ?? cfg.shaperProvider);
+/** The `meta.model` label matching what `buildShaperProvider` resolves — the
+ *  chosen provider along the chain: per-repo override > explicit config >
+ *  invoking CLI > Ollama. */
+function modelLabelFor(
+	cfg:           AnalyzeConfig,
+	repoOverride:  AnalyzeShaperProviderKind | undefined,
+	clientDefault: AnalyzeShaperProviderKind | undefined,
+): string {
+	const effective = resolveShaperKind({
+		repoOverride,
+		globalExplicit: cfg.shaperProviderExplicit ? cfg.shaperProvider : undefined,
+		clientDefault,
+	});
 	if (effective === 'ollama') return `ollama:${cfg.shaperModel}`;
 	const cli = effective === 'cli-claude' ? 'claude' : 'codex';
 	return cfg.shaperModelExplicit && cfg.shaperModel.length > 0 ? `${cli}:${cfg.shaperModel}` : cli;

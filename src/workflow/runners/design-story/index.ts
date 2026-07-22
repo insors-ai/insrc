@@ -26,8 +26,8 @@ import { existsSync, readFileSync } from 'node:fs';
 
 import { registerRunner } from '../../executor.js';
 import { requireApprovedEpic, requireApprovedHld } from '../../gates.js';
-import { extractHldContextSlice, type HldContextSlice } from '../../artifacts/lld.js';
-import type { DefineConstraint, DefineFlavor, DefineStory } from '../../artifacts/define.js';
+import { extractHldContextSlice } from '../../artifacts/lld.js';
+import { isStandaloneParams, standaloneStoryContext, type StandaloneStoryContext } from './standalone.js';
 import { assertEpicHash } from '../../hash.js';
 import { scopeAnalyzeCachePath } from '../../storage.js';
 import type { StepRunner, StepRunnerContext } from '../../types.js';
@@ -81,64 +81,13 @@ function priorScopeAnalyzeBlock(ctx: StepRunnerContext): string {
 	].join('\n');
 }
 
-/** The upstream context every LLD step consumes. Narrowed to exactly what
- *  the steps read (`flavor`, `constraints`, `story`, `hldSlice`) so a
- *  STANDALONE run (no parent Epic/HLD) can supply a synthesized context of
- *  the same shape without faking full DEF/HLD artifacts. */
-interface StoryContext {
-	readonly flavor:      DefineFlavor;
-	readonly constraints: readonly DefineConstraint[];
-	readonly story:       DefineStory;
-	readonly hldSlice:    HldContextSlice;
-}
-
-/** True when triage routed this design.story here as a STANDALONE feature —
- *  no parent Epic/HLD. Its story context is synthesized from the triage scope
- *  statement (`params.storyTitle` / `params.storySpec`) instead of read from an
- *  approved Epic + HLD. See `plans/feature-triage-router.md`. */
-function isStandalone(ctx: StepRunnerContext): boolean {
-	return ctx.intent.params['standalone'] === true;
-}
-
-function strParam(ctx: StepRunnerContext, key: string): string | undefined {
-	const v = ctx.intent.params[key];
-	return typeof v === 'string' && v.length > 0 ? v : undefined;
-}
-
-/** Synthesize a single-story context for a standalone LLD. The design quality
- *  is the same as an Epic-parented LLD (s1 runs the full analyze passes) — only
- *  the story spec + an empty HLD slice differ. `flavor` defaults to
- *  `enhancement` (be careful about existing behaviour); override via
- *  `params.flavor`. */
-function standaloneContext(ctx: StepRunnerContext): StoryContext {
-	const storyId = strParam(ctx, 'storyId') ?? 'S001';
-	const title   = strParam(ctx, 'storyTitle') ?? ctx.intent.focus;
-	const spec    = strParam(ctx, 'storySpec')  ?? ctx.intent.focus;
-	const flavorParam = strParam(ctx, 'flavor');
-	const flavor: DefineFlavor = flavorParam === 'new-capability' ? 'new-capability' : 'enhancement';
-	const story: DefineStory = {
-		id:    storyId,
-		title,
-		userValue: spec,
-		acceptanceCriteria: [],
-	};
-	const hldSlice: HldContextSlice = {
-		frameworkSummary:
-			'Standalone feature — no parent HLD. Design directly against the repo, ' +
-			'grounded on the s1 analyze passes. There are no HLD shared contracts to honour.',
-		ownedContracts:    [],
-		consumedContracts: [],
-		boundary:          { storyId, owns: [], depends: [], internal: title },
-		rolloutPhase:      'standalone',
-		nonFunctional:     {},
-	};
-	return { flavor, constraints: [], story, hldSlice };
-}
-
 /** Return the story context every LLD runner needs. Epic-parented runs read an
- *  approved Epic + HLD (gates throw if red); standalone runs synthesize it. */
-function readUpstream(ctx: StepRunnerContext): StoryContext {
-	if (isStandalone(ctx)) return standaloneContext(ctx);
+ *  approved Epic + HLD (gates throw if red); standalone runs synthesize it via
+ *  the SHARED builder the synthesizer also uses (one definition, no drift). */
+function readUpstream(ctx: StepRunnerContext): StandaloneStoryContext {
+	if (isStandaloneParams(ctx.intent.params)) {
+		return standaloneStoryContext(ctx.intent.params, ctx.intent.focus);
+	}
 	const epicHash = epicHashFrom(ctx);
 	const storyId  = storyIdFrom(ctx);
 	const epic  = requireApprovedEpic(ctx.intent.repoPath, epicHash);

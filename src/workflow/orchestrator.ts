@@ -112,6 +112,7 @@ import {
 import { isAmendment } from './amendments/types.js';
 import { assertEpicHash, computeEpicHash } from './hash.js';
 import { SIZE_CLASSES, type SizeClass } from './triage/types.js';
+import { isStandaloneParams, standaloneStoryContext } from './runners/design-story/standalone.js';
 import { deriveSlug } from './slug.js';
 
 const log = getLogger('workflow:orchestrator');
@@ -1104,8 +1105,12 @@ function designStorySynthesizer(
 ): SynthesizerPrompt {
 	const epicHash = requireEpicHash(intent);
 	const storyId  = requireStoryId(intent);
-	const hld = requireApprovedHld(intent.repoPath, epicHash);
-	const hldSlice = extractHldContextSlice(hld, storyId);
+	// Standalone (triage-routed) runs have no parent HLD — synthesize the same
+	// single-story context the step runners use (one shared definition, so the
+	// synthesizer never demands an HLD the run doesn't have).
+	const hldSlice = isStandaloneParams(intent.params)
+		? standaloneStoryContext(intent.params, intent.focus).hldSlice
+		: extractHldContextSlice(requireApprovedHld(intent.repoPath, epicHash), storyId);
 	const s7 = stepOutputs['s7'] as { skipped?: boolean } | undefined;
 	const migrationOptional = s7 !== undefined && s7.skipped === true;
 

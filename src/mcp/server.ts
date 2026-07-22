@@ -48,9 +48,8 @@ import { handleBuildStep } from './build-step/handler.js';
 import { handleReviewStep } from './review-step/handler.js';
 import { renderBundleAsMarkdown } from './bundle-md.js';
 import { makeSamplerFromMcpServer } from './sampling-bridge.js';
-import { runWorkflowStream } from './daemon-stream.js';
-import { mcpProgressSink } from './progress-forward.js';
-import type { ProgressEvent } from '../shared/types.js';
+import { startRun, pollRun, abortRun, type UnaryRpcDeps } from './daemon-stream.js';
+import type { WorkflowProgress } from '../daemon/workflow-rpc.js';
 import { WORKFLOW_NAMES } from '../workflow/types.js';
 
 const log = getLogger('mcp:server');
@@ -543,33 +542,39 @@ export function buildInsrcMcpServer(): McpServer {
 	);
 
 	// -------------------------------------------------------------------
-	// insrc_workflow_run — streaming, daemon-driven workflow.
+	// insrc_workflow_run — async (start → poll → done), daemon-driven.
 	//
-	// Unlike insrc_workflow_step (in-process, client-driven, turn-by-turn),
-	// this tool drives the daemon's long-running `workflow.run` op over the
-	// socket and forwards its live progress to the MCP client as
-	// notifications/progress — so a 30–40 min run can be WATCHED LIVE and
-	// ABORTED mid-stream (the SDK request signal destroys the socket, which
-	// aborts the daemon run). Progress flows only when the caller supplies a
-	// progressToken; absent one the run is silent.
+	// The run executes DETACHED in the daemon: a `start` call returns a
+	// runId immediately (no 5–20 min block), and the CONTROLLER polls for
+	// new progress frames + the terminal result, RELAYING each batch to the
+	// user between polls (the whole UX point), and can abort mid-run. This
+	// mirrors insrc_workflow_step / insrc_review_step: the controller stays
+	// in the loop instead of watching a single blocking stream. See
+	// daemon/workflow-run-registry.ts for the server-side lifecycle.
 	// -------------------------------------------------------------------
 	server.registerTool(
 		'insrc_workflow_run',
 		{
-			title: 'insrc workflow (streaming, daemon-driven)',
+			title: 'insrc workflow (async start/poll, daemon-driven)',
 			description:
-				'Run a full workflow SERVER-SIDE in the daemon and stream live ' +
-				'progress back. The daemon drives every phase (decompose → steps → ' +
-				'synthesize → review) autonomously via its configured LLM provider; ' +
-				'you get incremental notifications/progress (stage transitions + ' +
-				'token deltas) as it runs, and can ABORT mid-stream by cancelling the ' +
-				'request — the daemon run is really aborted, not just detached.\n\n' +
-				'Use this for a hands-off run of a long workflow when you want to ' +
-				'watch it live and step in if it goes wrong. Use insrc_workflow_step ' +
+				'Run a full workflow SERVER-SIDE in the daemon, ASYNC. The daemon ' +
+				'drives every phase (decompose → steps → synthesize → review) via its ' +
+				'configured LLM provider; a long run no longer blocks this call.\n\n' +
+				'Loop: START → POLL* → done.\n\n' +
+				'  1. START — call with { workflow, focus, params?, repo? } (no poll/abort). ' +
+				'Returns { runId, next:\'poll\', guidance } IMMEDIATELY; the run is now ' +
+				'executing detached.\n' +
+				'  2. POLL — call with { poll: <runId>, cursor: <n> } repeatedly (start ' +
+				'cursor at 0). Each returns { status, progress:[short lines], cursor:<next> }. ' +
+				'RELAY each `progress` batch to the user, then poll again with the returned ' +
+				'cursor to get only NEW frames. Space polls a few seconds apart.\n' +
+				'  3. DONE — when status is \'done\' the response also carries { artifact, ' +
+				'runId, model, review? }; when \'error\' it carries { error }; \'aborted\' ends ' +
+				'the loop. Stop polling on any terminal status.\n\n' +
+				'ABORT — call with { abort: <runId> } to cancel a run mid-flight ' +
+				'(returns { aborted:true, runId }); the daemon run is really aborted.\n\n' +
+				'Use this for a hands-off run you watch by polling. Use insrc_workflow_step ' +
 				'instead when YOU want to drive each turn.\n\n' +
-				'Supply the standard MCP progressToken (request _meta.progressToken) ' +
-				'to receive progress; omit it to run silently. Returns the finalized ' +
-				'artifact path + review verdict once written.\n\n' +
 				'`repo` falls back to INSRC_REPO. The repo must be registered + indexed.',
 			annotations: {
 				readOnlyHint:   false,   // the daemon writes an artifact to disk
@@ -578,57 +583,135 @@ export function buildInsrcMcpServer(): McpServer {
 			},
 			inputSchema: {
 				workflow: z.enum(WORKFLOW_NAMES)
-					.describe('Which workflow to run (define / design.epic / design.story / plan / …).'),
+					.describe('START only. Which workflow to run (define / design.epic / design.story / plan / …).')
+					.optional(),
 				focus: z.string().min(1)
-					.describe('Natural-language framing of the ask.'),
+					.describe('START only. Natural-language framing of the ask.')
+					.optional(),
 				params: z.record(z.string(), z.unknown())
-					.describe('Workflow-specific params (epicSlug, storyId, …).')
+					.describe('START only. Workflow-specific params (epicSlug, storyId, …).')
 					.optional(),
 				repo: z.string()
-					.describe('Absolute repo path; falls back to INSRC_REPO env.')
+					.describe('START only. Absolute repo path; falls back to INSRC_REPO env.')
+					.optional(),
+				poll: z.string()
+					.describe('POLL. A runId returned by a prior start call; fetches new progress + status.')
+					.optional(),
+				cursor: z.number().int().nonnegative()
+					.describe('POLL. Cursor from the previous poll (start at 0); returns only frames after it.')
+					.optional(),
+				abort: z.string()
+					.describe('ABORT. A runId to cancel mid-run.')
 					.optional(),
 			},
 		},
-		async (rawArgs, extra) => {
-			const progressToken = extra._meta?.progressToken;
-			// Forward each daemon ProgressEvent frame as an MCP notification —
-			// no-op when the caller supplied no progressToken.
-			const sink = mcpProgressSink(
-				(n) => extra.sendNotification(n as Parameters<typeof extra.sendNotification>[0]),
-				progressToken,
-			);
-			try {
-				const out = await runWorkflowStream(
-					{
-						workflow: rawArgs.workflow,
-						focus:    rawArgs.focus,
-						...(rawArgs.repo   !== undefined ? { repo:   rawArgs.repo }   : {}),
-						...(rawArgs.params !== undefined ? { params: rawArgs.params } : {}),
-					},
-					{
-						onFrame: (_stream, data) => sink(data as ProgressEvent),
-						signal:  extra.signal,
-					},
-				);
-				const review = out.review as { verdict?: string; counts?: { high?: number; med?: number; low?: number } } | undefined;
-				const reviewLine = review?.verdict !== undefined
-					? `\nReview: ${review.verdict} (HIGH=${review.counts?.high ?? 0} MED=${review.counts?.med ?? 0} LOW=${review.counts?.low ?? 0})`
-					: '';
-				const text =
-					`Workflow '${rawArgs.workflow}' completed.\n` +
-					`Artifact: ${out.path}\n` +
-					`Run ${out.runId} · model ${out.model}` +
-					reviewLine;
-				return { content: [{ type: 'text' as const, text }] };
-			} catch (err) {
-				const msg = err instanceof Error ? err.message : String(err);
-				log.warn({ workflow: rawArgs.workflow, err: msg }, 'insrc_workflow_run failed');
-				return { content: [{ type: 'text' as const, text: `workflow.run failed: ${msg}` }], isError: true };
-			}
-		},
+		async (rawArgs) => handleWorkflowRun(rawArgs),
 	);
 
 	return server;
+}
+
+// ---------------------------------------------------------------------------
+// insrc_workflow_run dispatch — async start / poll / abort.
+// ---------------------------------------------------------------------------
+
+/** Parsed args of `insrc_workflow_run`; every field optional (the phase is
+ *  inferred from which are set: abort > poll > start). */
+export interface WorkflowRunArgs {
+	readonly workflow?: string | undefined;
+	readonly focus?:    string | undefined;
+	readonly params?:   Record<string, unknown> | undefined;
+	readonly repo?:     string | undefined;
+	readonly poll?:     string | undefined;
+	readonly cursor?:   number | undefined;
+	readonly abort?:    string | undefined;
+}
+
+/** MCP tool result envelope (text carrying the JSON dispatch result). */
+interface WorkflowRunEnvelope {
+	readonly content:  { readonly type: 'text'; readonly text: string }[];
+	readonly isError?: boolean;
+	readonly [key: string]: unknown;
+}
+
+const POLL_GUIDANCE =
+	'Call insrc_workflow_run with { poll: <runId>, cursor: 0 } repeatedly to stream ' +
+	'progress; relay each batch to the user until status is done/error. ' +
+	'Abort with { abort: <runId> }.';
+
+/** Render one progress frame as a short human line for the poll `progress[]`. */
+function renderFrame(f: WorkflowProgress): string {
+	const detail = [
+		f.stepId,
+		f.runner,
+		f.attempt !== undefined ? `attempt ${f.attempt}` : undefined,
+		f.detail,
+	].filter((s): s is string => typeof s === 'string' && s.length > 0).join(' · ');
+	return detail.length > 0 ? `▸ ${f.phase} — ${detail}` : `▸ ${f.phase}`;
+}
+
+/** Async dispatch: abort > poll > start. Returns a plain object serialized into
+ *  the tool's text content. `deps` is a test seam for the unary socket calls. */
+export async function handleWorkflowRun(args: WorkflowRunArgs, deps: UnaryRpcDeps = {}): Promise<WorkflowRunEnvelope> {
+	try {
+		const result = await dispatchWorkflowRun(args, deps);
+		const isError = 'error' in result && result['error'] !== undefined && result['status'] !== 'running';
+		return {
+			content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+			...(isError ? { isError: true } : {}),
+		};
+	} catch (err) {
+		const msg = err instanceof Error ? err.message : String(err);
+		log.warn({ err: msg }, 'insrc_workflow_run failed');
+		return { content: [{ type: 'text', text: JSON.stringify({ error: `workflow.run failed: ${msg}` }, null, 2) }], isError: true };
+	}
+}
+
+async function dispatchWorkflowRun(args: WorkflowRunArgs, deps: UnaryRpcDeps): Promise<Record<string, unknown>> {
+	// ABORT — highest precedence.
+	if (typeof args.abort === 'string' && args.abort.length > 0) {
+		const { ok } = await abortRun(args.abort, deps);
+		return { aborted: ok, runId: args.abort };
+	}
+	// POLL.
+	if (typeof args.poll === 'string' && args.poll.length > 0) {
+		const cursor = typeof args.cursor === 'number' && args.cursor >= 0 ? args.cursor : 0;
+		const res    = await pollRun(args.poll, cursor, deps);
+		const progress = res.frames.map(renderFrame);
+		const done = res.status === 'done' && res.result !== undefined;
+		return {
+			status:   res.status,
+			progress,
+			cursor:   res.cursor,
+			...(done
+				? {
+					artifact: res.result!.path,
+					runId:    res.result!.runId,
+					...(res.model !== undefined ? { model: res.model } : {}),
+					...(res.result!.review !== undefined
+						? { review: { verdict: res.result!.review.verdict, counts: res.result!.review.counts } }
+						: {}),
+				}
+				: {}),
+			...(res.status === 'error' || res.status === 'unknown'
+				? { error: res.error ?? 'workflow.run: error' }
+				: {}),
+		};
+	}
+	// START.
+	if (typeof args.workflow === 'string' && args.workflow.length > 0 && typeof args.focus === 'string' && args.focus.length > 0) {
+		const { runId } = await startRun({
+			workflow: args.workflow,
+			focus:    args.focus,
+			...(args.repo   !== undefined ? { repo:   args.repo }   : {}),
+			...(args.params !== undefined ? { params: args.params } : {}),
+		}, deps);
+		return { runId, next: 'poll', guidance: POLL_GUIDANCE };
+	}
+	return {
+		error: 'insrc_workflow_run: provide { workflow, focus } to START, ' +
+			'{ poll: <runId>, cursor } to POLL, or { abort: <runId> } to ABORT.',
+	};
 }
 
 /**

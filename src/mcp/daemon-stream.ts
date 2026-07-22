@@ -23,6 +23,8 @@
 import { createConnection, type Socket } from 'node:net';
 import { PATHS } from '../shared/paths.js';
 import { getLogger } from '../shared/logger.js';
+import type { RunWorkflowResult, WorkflowProgress } from '../daemon/workflow-rpc.js';
+import type { RunStatus } from '../daemon/workflow-run-registry.js';
 
 const log = getLogger('mcp:workflow-run');
 
@@ -176,4 +178,94 @@ export function runWorkflowStream(
 			});
 		});
 	});
+}
+
+// ---------------------------------------------------------------------------
+// Unary start/poll/abort client — the async (non-streaming) `workflow.run`
+// lifecycle. `startRun` kicks a detached daemon run and returns its runId;
+// `pollRun` fetches new progress frames + the terminal result via a cursor;
+// `abortRun` cancels mid-run. Same socket framing as `src/cli/client.ts`'s
+// `rpc()` (one request → one `{ id, result | error }` line → close).
+// ---------------------------------------------------------------------------
+
+/** Test seam: inject the socket factory for the unary calls. */
+export interface UnaryRpcDeps {
+	readonly connect?: (() => Socket) | undefined;
+}
+
+/** Send one JSON-RPC request to the daemon and resolve its `result`. Rejects on
+ *  a daemon error, an unreachable socket, or an unparseable line. */
+function unaryRpc<T>(method: string, params: unknown, deps: UnaryRpcDeps): Promise<T> {
+	return new Promise<T>((resolve, reject) => {
+		const socket = deps.connect !== undefined ? deps.connect() : createConnection(PATHS.sockFile);
+		let   buffer = '';
+
+		socket.on('connect', () => {
+			socket.write(JSON.stringify({ id: _nextId++, method, params }) + '\n');
+		});
+		socket.on('data', (chunk: Buffer) => {
+			buffer += chunk.toString();
+			const lines = buffer.split('\n');
+			buffer = lines.pop() ?? '';
+			for (const line of lines) {
+				if (!line.trim()) continue;
+				try {
+					const res = JSON.parse(line) as { error?: string; result?: unknown };
+					socket.end();
+					if (res.error !== undefined) reject(new Error(res.error));
+					else                          resolve(res.result as T);
+				} catch {
+					socket.end();
+					reject(new Error('invalid response from daemon'));
+				}
+				return;
+			}
+		});
+		socket.on('error', (err: NodeJS.ErrnoException) => {
+			if (err.code === 'ENOENT' || err.code === 'ECONNREFUSED') {
+				reject(new Error('daemon is not running — start it with: insrc daemon start'));
+			} else {
+				reject(err);
+			}
+		});
+	});
+}
+
+/** Result of `workflow.run.start` — the detached run's id. */
+export interface StartRunResult {
+	readonly runId: string;
+}
+
+/** Result of `workflow.run.poll` — new frames since the caller's cursor + the
+ *  status, plus the terminal `result`/`error` once done. Mirrors the daemon
+ *  registry's `PollResult`. */
+export interface PollRunResult {
+	readonly status:  RunStatus | 'unknown';
+	readonly frames:  WorkflowProgress[];
+	readonly cursor:  number;
+	readonly model?:  string | undefined;
+	readonly result?: RunWorkflowResult | undefined;
+	readonly error?:  string | undefined;
+}
+
+/** Start a detached daemon workflow run; returns its runId immediately. */
+export function startRun(params: RunWorkflowStreamParams & { client?: 'claude' | 'codex' | undefined }, deps: UnaryRpcDeps = {}): Promise<StartRunResult> {
+	return unaryRpc<StartRunResult>('workflow.run.start', {
+		workflow: params.workflow,
+		focus:    params.focus,
+		...(params.repo   !== undefined ? { repo:   params.repo }   : {}),
+		...(params.params !== undefined ? { params: params.params } : {}),
+		...(params.review !== undefined ? { review: params.review } : {}),
+		...(params.client !== undefined ? { client: params.client } : {}),
+	}, deps);
+}
+
+/** Poll a detached run for new progress frames + status. */
+export function pollRun(runId: string, cursor: number, deps: UnaryRpcDeps = {}): Promise<PollRunResult> {
+	return unaryRpc<PollRunResult>('workflow.run.poll', { runId, cursor }, deps);
+}
+
+/** Abort a detached run mid-flight. */
+export function abortRun(runId: string, deps: UnaryRpcDeps = {}): Promise<{ ok: boolean }> {
+	return unaryRpc<{ ok: boolean }>('workflow.run.abort', { runId }, deps);
 }

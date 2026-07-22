@@ -242,26 +242,33 @@ interface WorkflowRunParams {
 	readonly review?:   boolean;
 }
 
-/** `workflow.run` stream handler. Emits `progress` frames per phase, then a
- *  terminal `done` (with the artifact path) or `error`. */
-export async function runStart(
-	rawParams: unknown,
-	send:      (msg: IpcStreamMessage) => void,
-	signal:    AbortSignal,
-): Promise<void> {
-	let p: WorkflowRunParams;
-	try {
-		p = parseParams(rawParams);
-	} catch (err) {
-		send({ id: 0, stream: 'error', data: { error: (err as Error).message, recoverable: false } });
-		return;
-	}
+/** Everything the streaming handler AND the async run registry need to drive a
+ *  workflow: the resolved intent + run identity, the built provider, and the
+ *  client-context selector. Produced once by `prepareWorkflowRun` so the two
+ *  entry points share identical provider-build + timeout + client-context logic. */
+export interface PreparedWorkflowRun {
+	readonly intent:        WorkflowIntent;
+	readonly runId:         string;
+	readonly epicKey:       string;
+	readonly provider:      LLMProvider;
+	/** Stamped into `meta.model` by the driver. */
+	readonly modelLabel:    string;
+	/** When set, drive inside `runWithClientProviderContext(clientDefault, …)`
+	 *  so bare `buildRun` grounding resolves to the same CLI provider. */
+	readonly clientDefault: AnalyzeShaperProviderKind | undefined;
+	/** Opt-in finalize review (default off — a controller task). */
+	readonly review:        boolean | undefined;
+}
+
+/** Parse + resolve a `workflow.run` request into a ready-to-drive bundle. Throws
+ *  on a bad payload or a missing repo (both `runStart` and the async registry
+ *  wrap this and surface the message their own way). */
+export function prepareWorkflowRun(rawParams: unknown): PreparedWorkflowRun {
+	const p = parseParams(rawParams);
 	const repoPath = p.repo !== undefined && p.repo.length > 0 ? p.repo : process.env['INSRC_REPO'];
 	if (repoPath === undefined || repoPath.length === 0) {
-		send({ id: 0, stream: 'error', data: { error: 'workflow.run: no repo (pass `repo` or set INSRC_REPO)', recoverable: false } });
-		return;
+		throw new Error('workflow.run: no repo (pass `repo` or set INSRC_REPO)');
 	}
-
 	const runId   = `wf-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 	const params  = p.params ?? {};
 	const epicKey = epicKeyFor(p.workflow, p.focus, params, runId);
@@ -274,6 +281,25 @@ export async function runStart(
 	// 120 s default — so give CLI providers a generous timeout (Ollama ignores it).
 	const provider   = buildShaperProvider(cfg, { clientDefault, cliTimeoutMs: WORKFLOW_CLI_TIMEOUT_MS });
 	const modelLabel = modelLabelFor(cfg, clientDefault);
+	return { intent, runId, epicKey, provider, modelLabel, clientDefault, review: p.review };
+}
+
+/** `workflow.run` stream handler. Emits `progress` frames per phase, then a
+ *  terminal `done` (with the artifact path) or `error`. */
+export async function runStart(
+	rawParams: unknown,
+	send:      (msg: IpcStreamMessage) => void,
+	signal:    AbortSignal,
+): Promise<void> {
+	let prep: PreparedWorkflowRun;
+	try {
+		prep = prepareWorkflowRun(rawParams);
+	} catch (err) {
+		send({ id: 0, stream: 'error', data: { error: (err as Error).message, recoverable: false } });
+		return;
+	}
+	const { intent, runId, epicKey, provider, modelLabel, clientDefault } = prep;
+	const p = { review: prep.review };
 
 	try {
 		// t5/t6: map the driver's internal vocabulary onto the sc1 wire shape.

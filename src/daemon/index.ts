@@ -1349,6 +1349,27 @@ async function main(): Promise<void> {
 			return mod.runPurge(params);
 		},
 
+		// Async (start/poll/abort) lifecycle for `workflow.run`. The
+		// streaming `workflow.run` handler holds the socket for the whole
+		// 5–20 min run; these three let a controller START a detached run
+		// (returns a runId immediately), POLL for new progress frames +
+		// the terminal result via a cursor, and ABORT mid-run. See
+		// daemon/workflow-run-registry.ts.
+		'workflow.run.start': async (params) => {
+			const mod = await import('./workflow-run-registry.js');
+			return mod.startWorkflowRun(params);
+		},
+		'workflow.run.poll': async (params) => {
+			const mod = await import('./workflow-run-registry.js');
+			const p = (params ?? {}) as { runId?: string; cursor?: number };
+			return mod.pollWorkflowRun(String(p.runId ?? ''), p.cursor ?? 0);
+		},
+		'workflow.run.abort': async (params) => {
+			const mod = await import('./workflow-run-registry.js');
+			const p = (params ?? {}) as { runId?: string };
+			return mod.abortWorkflowRun(String(p.runId ?? ''));
+		},
+
 		// Phase 1 cleanup: access RPCs + skill RPCs are gone with their
 		// backing files (substrate-coupled access store, skill registry).
 		// Both surfaces return `backend offline` to the workbench panes.

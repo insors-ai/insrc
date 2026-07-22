@@ -4,6 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import type { ReviewReport } from './review/types.js';
+import type { SizeClass } from './triage/types.js';
 
 /**
  * Workflow framework type surface.
@@ -310,6 +311,17 @@ export interface ArtifactMetaBase {
 	 *  counts toward the block verdict. Additive; absent until a finding is
 	 *  resolved. See `workflow/review/resolve.ts`. */
 	readonly reviewResolutions?: Readonly<Record<string, ReviewResolution>>;
+	/** True when this artifact was produced by a STANDALONE run — a non-Epic
+	 *  feature routed here by triage, with no parent DEF/HLD. Its `epicHash` is
+	 *  a self-minted identity, not a shared Epic hash. Downstream gates skip
+	 *  HLD-staleness for a standalone LLD (no HLD to be stale against). See
+	 *  `plans/feature-triage-router.md`. */
+	readonly standalone?:  boolean;
+	/** The triage size class that routed this feature. Absent on Epic-chain
+	 *  artifacts that were not classified. */
+	readonly sizeClass?:   SizeClass;
+	/** The classifier's one-paragraph justification for the size class. */
+	readonly triageRationale?: string;
 }
 
 /** One interactive resolution of a review finding (R3). */

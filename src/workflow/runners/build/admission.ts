@@ -42,7 +42,7 @@
 
 import { createHash } from 'node:crypto';
 
-import { ArtifactMissingError, ArtifactNotApprovedError, readLldArtifact, requireApprovedPlan } from '../../gates.js';
+import { ArtifactMissingError, ArtifactNotApprovedError, readLldArtifact, requireApprovedLld, requireApprovedPlan } from '../../gates.js';
 import { assertEpicHash } from '../../hash.js';
 import { planArtifactId } from '../../storage.js';
 import type { PlanArtifact } from '../../artifacts/plan.js';
@@ -215,4 +215,68 @@ export function admitBuild(repoPath: string, epicHash: string, storyId: string):
 /** Short display form for a hash inside a refusal message. */
 function short(hash: string): string {
 	return hash.length > 0 ? `${hash.slice(0, 12)}…` : '(empty)';
+}
+
+// ---------------------------------------------------------------------------
+// Standalone build admission — the no-plan path for triage-routed tiers
+// ---------------------------------------------------------------------------
+
+/** Admit a STANDALONE build — a triage-routed Small (LLD → build, no plan) or
+ *  Trivial (build only, no LLD) feature. There is no plan to gate on, so the
+ *  gate instead requires:
+ *    - Small (`producesLld` true): the standalone LLD exists AND is approved
+ *      (the design IS the spec build implements). Reuses `requireApprovedLld`,
+ *      which skips HLD-staleness for a standalone LLD.
+ *    - Trivial (`producesLld` false): nothing upstream — admit directly; the
+ *      scope statement is the spec, and the standalone BUILD record is the
+ *      tracking artifact.
+ *  Mirrors `admitBuild`'s never-throw-for-modeled-conditions discipline: a
+ *  missing/unapproved LLD returns a typed refusal, not an exception. See
+ *  `plans/feature-triage-router.md`. */
+export function admitStandaloneBuild(
+	repoPath:    string,
+	epicHash:    string,
+	storyId:     string,
+	producesLld: boolean,
+): BuildAdmissionResult {
+	assertEpicHash(epicHash, `admitStandaloneBuild requires a well-formed epicHash`);
+
+	if (!producesLld) {
+		// Trivial — no upstream artifact to gate on. Admit; the scope statement
+		// is the spec. `planArtifactHash` is empty (there is no plan).
+		return { admitted: true, plan: { planArtifactId: '(standalone-trivial)', planArtifactHash: '', storyId } };
+	}
+
+	// Small — the standalone LLD must exist and be approved.
+	try {
+		requireApprovedLld(repoPath, epicHash, storyId);
+	} catch (err) {
+		if (err instanceof ArtifactMissingError) {
+			return {
+				admitted: false,
+				refusal: {
+					reason: 'plan-missing',
+					message:
+						`Build refused for standalone Story '${storyId}': no LLD exists. ` +
+						`Run \`design.story\` (standalone) for this feature and approve it before build.`,
+					treeUntouched: true,
+				},
+			};
+		}
+		if (err instanceof ArtifactNotApprovedError) {
+			return {
+				admitted: false,
+				refusal: {
+					reason: 'plan-unapproved',
+					message:
+						`Build refused for standalone Story '${storyId}': the LLD exists but is not approved. ` +
+						`Approve the standalone LLD before build.`,
+					treeUntouched: true,
+				},
+			};
+		}
+		throw err;   // unmodeled — propagate
+	}
+
+	return { admitted: true, plan: { planArtifactId: '(standalone-lld)', planArtifactHash: '', storyId } };
 }

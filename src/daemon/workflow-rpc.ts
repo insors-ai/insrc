@@ -38,7 +38,7 @@ import { appendProgressLog, appendRunLog, pathsForWorkflow, writeAtomic } from '
 import { reviewArtifactFile } from '../workflow/review/index.js';
 import type { ReviewReport } from '../workflow/review/types.js';
 import { WORKFLOW_NAMES, type WorkflowIntent, type WorkflowName, type WorkflowPlan } from '../workflow/types.js';
-import { epicKeyFor } from '../mcp/workflow-step/phases/start.js';
+import { augmentStandaloneParams, epicKeyFor } from '../mcp/workflow-step/phases/start.js';
 import { buildRun } from './analyze-rpc.js';
 
 const log = getLogger('daemon:workflow-rpc');
@@ -270,7 +270,10 @@ export function prepareWorkflowRun(rawParams: unknown): PreparedWorkflowRun {
 		throw new Error('workflow.run: no repo (pass `repo` or set INSRC_REPO)');
 	}
 	const runId   = `wf-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-	const params  = p.params ?? {};
+	const params  = { ...(p.params ?? {}) };
+	// Standalone runs (triage routed a non-Epic feature here) mint a self-hash
+	// + default storyId, identical to the MCP `insrc_workflow_step` entry.
+	augmentStandaloneParams(params, runId);
 	const epicKey = epicKeyFor(p.workflow, p.focus, params, runId);
 	const intent: WorkflowIntent = { workflow: p.workflow, focus: p.focus, repoPath, repoIndexedAt: null, params };
 

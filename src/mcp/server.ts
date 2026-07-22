@@ -46,6 +46,7 @@ import { handleAnalyzeStep } from './analyze-step/handler.js';
 import { handleWorkflowStep } from './workflow-step/handler.js';
 import { handleBuildStep } from './build-step/handler.js';
 import { handleReviewStep } from './review-step/handler.js';
+import { handleTriageStep } from './triage-step/handler.js';
 import { renderBundleAsMarkdown } from './bundle-md.js';
 import { makeSamplerFromMcpServer } from './sampling-bridge.js';
 import { startRun, pollRun, abortRun, type UnaryRpcDeps } from './daemon-stream.js';
@@ -465,9 +466,19 @@ export function buildInsrcMcpServer(): McpServer {
 				phase: z.enum(['implement', 'validate'])
 					.describe('Which build step to run.'),
 				target: z.string().min(1)
-					.describe('Task identifier: `#N`, `owner/repo#N`, a canonical/slug hierarchical id, or `s1/t3`.'),
+					.describe('Task identifier: `#N`, `owner/repo#N`, a canonical/slug hierarchical id, or `s1/t3`. Ignored for a standalone (no-plan) build.'),
 				repo: z.string()
 					.describe('Absolute repo path; falls back to INSRC_REPO env.')
+					.optional(),
+				standalone: z.object({
+					standalone:      z.literal(true),
+					epicHash:        z.string().optional().describe('Standalone story identity (self-minted hash). Required for a Small build (locates the approved LLD).'),
+					storyId:         z.string().optional().describe('Standalone story id; defaults to S001.'),
+					focus:           z.string().optional().describe('Scope statement — the spec for a Trivial (no-LLD) build.'),
+					sizeClass:       z.string().optional().describe('Triage size class (small / trivial).'),
+					triageRationale: z.string().optional().describe('The classifier\'s rationale, stamped on the standalone BUILD record.'),
+				})
+					.describe('Present for a triage-routed no-plan build (Small implements the approved standalone LLD; Trivial implements the scope). Bypasses task/tracker resolution.')
 					.optional(),
 			},
 		},
@@ -539,6 +550,63 @@ export function buildInsrcMcpServer(): McpServer {
 			},
 		},
 		async (rawArgs, _extra) => handleReviewStep(rawArgs),
+	);
+
+	// -------------------------------------------------------------------
+	// insrc_triage — controller-driven size classifier + workflow-entry router.
+	//
+	// The framework's front door: every feature — big or small — is tracked,
+	// but not every feature earns the full `define → epic → story → plan →
+	// build` ladder. This tool sizes the request (YOU classify, grounded on
+	// your own `insrc_analyze_step` passes) and routes it to the right start
+	// stage: Epic → define; Feature → standalone LLD → plan → build; Small →
+	// standalone LLD → build; Trivial → build. Server maps size → route and
+	// pre-fills the exact next call. See `plans/feature-triage-router.md`.
+	// -------------------------------------------------------------------
+	server.registerTool(
+		'insrc_triage',
+		{
+			title: 'insrc triage (classify size → route workflow entry)',
+			description:
+				'Classify a feature request by SIZE and route it to the right workflow ' +
+				'start stage, so every feature — big or small — is tracked without the ' +
+				'smallest ones drowning in ceremony. Call this FIRST when asked to build ' +
+				'a feature, instead of hand-picking `define` / `design.story` / `build`.\n\n' +
+				'Tiers: Epic → `define` (full chain); Feature → standalone `design.story` ' +
+				'(LLD) → plan → build; Small → standalone `design.story` → build; Trivial ' +
+				'→ `build` (no LLD).\n\n' +
+				'Two-turn loop:\n' +
+				'  1. phase=\'start\' with { focus, repo? }. Server returns ' +
+				'{ next: \'emit_classification\', prompt, schema, state }.\n' +
+				'  2. GROUND the sizing on `insrc_analyze_step` passes (which modules/files ' +
+				'it touches, caller counts, new-vs-reuse), emit a TriageResult JSON matching ' +
+				'the schema, then phase=\'classify\' with result=<your JSON> + state. Server ' +
+				'returns { next: \'done\', result, route, nextCall, summary } — `nextCall` is ' +
+				'the exact pre-filled call to make next.\n\n' +
+				'Preserve `state` verbatim between the two calls.',
+			annotations: {
+				readOnlyHint:   true,    // read-only: it routes, it writes nothing
+				idempotentHint: true,
+				openWorldHint:  false,
+			},
+			inputSchema: {
+				phase: z.enum(['start', 'classify'])
+					.describe('Which turn of the loop this call carries.'),
+				focus: z.string()
+					.describe('Only for phase=start. The feature request / scope statement to size.')
+					.optional(),
+				repo: z.string()
+					.describe('Only for phase=start. Absolute repo path; falls back to INSRC_REPO env.')
+					.optional(),
+				result: z.record(z.string(), z.unknown())
+					.describe('Only for phase=classify. The TriageResult JSON your LLM emitted (matches the emit_classification schema).')
+					.optional(),
+				state: z.string()
+					.describe('Opaque continuation token from phase=start. Required for phase=classify.')
+					.optional(),
+			},
+		},
+		async (rawArgs, _extra) => handleTriageStep(rawArgs),
 	);
 
 	// -------------------------------------------------------------------

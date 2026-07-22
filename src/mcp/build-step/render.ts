@@ -135,6 +135,55 @@ export function renderValidatePrompt(repoPath: string, ref: ResolvedTask): strin
 	return fill(template, baseVars(repoPath, ref));
 }
 
+/** The spec a standalone (no-plan) build implements. */
+export interface StandaloneBuildSpec {
+	readonly storyId:     string;
+	readonly sizeClass:   string;
+	/** true ⇒ Small (implement the approved LLD); false ⇒ Trivial (implement the scope). */
+	readonly producesLld: boolean;
+	/** Scope statement — the LLD's focus (Small) or the trivial-change scope. */
+	readonly focus:       string;
+	/** Relative LLD md path to read (Small only). */
+	readonly lldMdRel?:   string | undefined;
+	readonly resolvedDecisions: string;
+}
+
+/** Render the implement prompt for a triage-routed no-plan build. There is no
+ *  PlanTask: a Small build implements the approved LLD directly; a Trivial
+ *  build implements the scope statement directly. Built inline (no template
+ *  asset) — the shape differs enough from the task template to not share it. */
+export function renderStandaloneImplementPrompt(spec: StandaloneBuildSpec): string {
+	const decisions = spec.resolvedDecisions.trim().length > 0
+		? spec.resolvedDecisions
+		: '_No design decisions were resolved; use your judgment within the stated scope._';
+	const lines: string[] = [
+		`# Implement — standalone ${spec.sizeClass} feature (Story \`${spec.storyId}\`)`,
+		'',
+		spec.producesLld
+			? `Implement the approved standalone LLD directly. The LLD is the spec — its ` +
+			  `contract, error paths, and test strategy define what to build. There is no ` +
+			  `separate plan; treat the LLD as the single unit of work.`
+			: `Implement this trivial change directly. It is mechanical and needs no design ` +
+			  `artifact — make the smallest correct edit that satisfies the scope, with a ` +
+			  `test if one is warranted.`,
+		'',
+		'## Scope',
+		'',
+		spec.focus,
+	];
+	if (spec.lldMdRel !== undefined) {
+		lines.push('', '## Design (LLD)', '', `Read \`${spec.lldMdRel}\` and implement its contract + test strategy.`);
+	}
+	lines.push(
+		'', '## Resolved design decisions', '', decisions,
+		'', '## Definition of done', '',
+		`- \`${TYPECHECK_CMD}\` is clean.`,
+		`- \`${TEST_CMD}\` passes (add or extend tests for the change).`,
+		'- The edit is minimal and matches the surrounding conventions.',
+	);
+	return lines.join('\n');
+}
+
 // ---------------------------------------------------------------------------
 // Template loading (relative to the insrc root where copy-assets drops prompts)
 // ---------------------------------------------------------------------------

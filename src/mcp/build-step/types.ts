@@ -26,11 +26,30 @@ import type { BuildAdmissionRefusal } from '../../workflow/runners/build/schemas
 
 export type BuildStepPhase = 'implement' | 'validate';
 
+/** Standalone build context — a triage-routed Small (LLD → build) or Trivial
+ *  (build only) feature. Present ⇒ the implement phase bypasses task/tracker
+ *  resolution and sources its spec from the standalone LLD (Small) or the
+ *  `focus` scope statement (Trivial). See `plans/feature-triage-router.md`. */
+export interface BuildStandaloneContext {
+	readonly standalone: true;
+	/** The standalone story identity (self-minted hash + `S001`). Required for
+	 *  Small (locates the LLD); optional for Trivial. */
+	readonly epicHash?:  string | undefined;
+	readonly storyId?:   string | undefined;
+	/** The scope statement — the spec for a Trivial (no-LLD) build. */
+	readonly focus?:     string | undefined;
+	readonly sizeClass?: string | undefined;
+	readonly triageRationale?: string | undefined;
+}
+
 export interface BuildStepInputImplement {
 	readonly phase:  'implement';
-	/** Task identifier: `#N`, a canonical/slug hierarchical id, or `s1/t3`. */
+	/** Task identifier: `#N`, a canonical/slug hierarchical id, or `s1/t3`.
+	 *  Ignored for a standalone build (spec comes from `standalone`). */
 	readonly target: string;
 	readonly repo?:  string;
+	/** Present for a triage-routed no-plan build. */
+	readonly standalone?: BuildStandaloneContext | undefined;
 }
 
 export interface BuildStepInputValidate {

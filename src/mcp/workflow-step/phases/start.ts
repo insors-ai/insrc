@@ -43,14 +43,19 @@ export async function handleStart(
 			`in the MCP server's environment.`,
 		);
 	}
-	const params = input.params ?? {};
+	const params = { ...(input.params ?? {}) };
+
+	const runId = `wf-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+	// Standalone runs (triage routed a non-Epic feature here) have no caller-
+	// provided epicHash — mint a self-hash (like `define`) and thread it +
+	// a default storyId through params so the runner + storage key identically.
+	augmentStandaloneParams(params, runId);
 
 	// Mandatory start gate: resolve the IMMEDIATE-UPSTREAM artifact's open
 	// questions before this consuming stage runs. Pre-run — no state token yet.
 	const gate = await preflightUpstreamQuestions(input.workflow, repoPath, params);
 	if (gate !== undefined) return gate;
 
-	const runId = `wf-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 	const epicKey = epicKeyFor(input.workflow, input.focus, params, runId);
 
 	const intent: WorkflowIntent = {
@@ -119,4 +124,21 @@ export function epicKeyFor(
 		return h;
 	}
 	return deriveSlug(focus);
+}
+
+/** A STANDALONE run (triage routed a non-Epic feature to `design.story` /
+ *  `build`) carries no caller-provided `epicHash`. Mint a self-hash from the
+ *  runId — the same identity move `define` makes — and default `storyId` to
+ *  `S001`, so the runner's synthetic-context path and storage key identically.
+ *  No-op unless `params.standalone === true`. Idempotent: an already-set
+ *  `epicHash` / `storyId` is preserved. Exported so the daemon `workflow.run`
+ *  entry can apply the identical augmentation. */
+export function augmentStandaloneParams(params: Record<string, unknown>, runId: string): void {
+	if (params['standalone'] !== true) return;
+	if (typeof params['epicHash'] !== 'string' || (params['epicHash'] as string).length === 0) {
+		params['epicHash'] = computeEpicHash(runId);
+	}
+	if (typeof params['storyId'] !== 'string' || (params['storyId'] as string).length === 0) {
+		params['storyId'] = 'S001';
+	}
 }

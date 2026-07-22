@@ -26,7 +26,8 @@ import { existsSync, readFileSync } from 'node:fs';
 
 import { registerRunner } from '../../executor.js';
 import { requireApprovedEpic, requireApprovedHld } from '../../gates.js';
-import { extractHldContextSlice } from '../../artifacts/lld.js';
+import { extractHldContextSlice, type HldContextSlice } from '../../artifacts/lld.js';
+import type { DefineConstraint, DefineFlavor, DefineStory } from '../../artifacts/define.js';
 import { assertEpicHash } from '../../hash.js';
 import { scopeAnalyzeCachePath } from '../../storage.js';
 import type { StepRunner, StepRunnerContext } from '../../types.js';
@@ -80,14 +81,64 @@ function priorScopeAnalyzeBlock(ctx: StepRunnerContext): string {
 	].join('\n');
 }
 
-/** Return `{ epic, hld, story, hldSlice }` — all the upstream
- *  context every LLD runner needs. Throws if the gates are red. */
-function readUpstream(ctx: StepRunnerContext): {
-	readonly epic:  ReturnType<typeof requireApprovedEpic>;
-	readonly hld:   ReturnType<typeof requireApprovedHld>;
-	readonly story: ReturnType<typeof requireApprovedEpic>['body']['stories'][number];
-	readonly hldSlice: ReturnType<typeof extractHldContextSlice>;
-} {
+/** The upstream context every LLD step consumes. Narrowed to exactly what
+ *  the steps read (`flavor`, `constraints`, `story`, `hldSlice`) so a
+ *  STANDALONE run (no parent Epic/HLD) can supply a synthesized context of
+ *  the same shape without faking full DEF/HLD artifacts. */
+interface StoryContext {
+	readonly flavor:      DefineFlavor;
+	readonly constraints: readonly DefineConstraint[];
+	readonly story:       DefineStory;
+	readonly hldSlice:    HldContextSlice;
+}
+
+/** True when triage routed this design.story here as a STANDALONE feature —
+ *  no parent Epic/HLD. Its story context is synthesized from the triage scope
+ *  statement (`params.storyTitle` / `params.storySpec`) instead of read from an
+ *  approved Epic + HLD. See `plans/feature-triage-router.md`. */
+function isStandalone(ctx: StepRunnerContext): boolean {
+	return ctx.intent.params['standalone'] === true;
+}
+
+function strParam(ctx: StepRunnerContext, key: string): string | undefined {
+	const v = ctx.intent.params[key];
+	return typeof v === 'string' && v.length > 0 ? v : undefined;
+}
+
+/** Synthesize a single-story context for a standalone LLD. The design quality
+ *  is the same as an Epic-parented LLD (s1 runs the full analyze passes) — only
+ *  the story spec + an empty HLD slice differ. `flavor` defaults to
+ *  `enhancement` (be careful about existing behaviour); override via
+ *  `params.flavor`. */
+function standaloneContext(ctx: StepRunnerContext): StoryContext {
+	const storyId = strParam(ctx, 'storyId') ?? 'S001';
+	const title   = strParam(ctx, 'storyTitle') ?? ctx.intent.focus;
+	const spec    = strParam(ctx, 'storySpec')  ?? ctx.intent.focus;
+	const flavorParam = strParam(ctx, 'flavor');
+	const flavor: DefineFlavor = flavorParam === 'new-capability' ? 'new-capability' : 'enhancement';
+	const story: DefineStory = {
+		id:    storyId,
+		title,
+		userValue: spec,
+		acceptanceCriteria: [],
+	};
+	const hldSlice: HldContextSlice = {
+		frameworkSummary:
+			'Standalone feature — no parent HLD. Design directly against the repo, ' +
+			'grounded on the s1 analyze passes. There are no HLD shared contracts to honour.',
+		ownedContracts:    [],
+		consumedContracts: [],
+		boundary:          { storyId, owns: [], depends: [], internal: title },
+		rolloutPhase:      'standalone',
+		nonFunctional:     {},
+	};
+	return { flavor, constraints: [], story, hldSlice };
+}
+
+/** Return the story context every LLD runner needs. Epic-parented runs read an
+ *  approved Epic + HLD (gates throw if red); standalone runs synthesize it. */
+function readUpstream(ctx: StepRunnerContext): StoryContext {
+	if (isStandalone(ctx)) return standaloneContext(ctx);
 	const epicHash = epicHashFrom(ctx);
 	const storyId  = storyIdFrom(ctx);
 	const epic  = requireApprovedEpic(ctx.intent.repoPath, epicHash);
@@ -97,7 +148,7 @@ function readUpstream(ctx: StepRunnerContext): {
 		throw new Error(`design.story: Story '${storyId}' not found in Epic '${epicHash}'.`);
 	}
 	const hldSlice = extractHldContextSlice(hld, storyId);
-	return { epic, hld, story, hldSlice };
+	return { flavor: epic.body.flavor, constraints: epic.body.constraints, story, hldSlice };
 }
 
 // ---------------------------------------------------------------------------
@@ -134,7 +185,7 @@ function llmPauseRunner(spec: {
 const contextAssemble = llmPauseRunner({
 	id: 'context.assemble',
 	buildPrompt: (ctx) => {
-		const { epic, story, hldSlice } = readUpstream(ctx);
+		const { flavor, story, hldSlice } = readUpstream(ctx);
 		return {
 			prompt: [
 				'You are running the `context.assemble` step of the `design.story` (LLD) workflow.',
@@ -157,7 +208,7 @@ const contextAssemble = llmPauseRunner({
 				`Epic hash: ${epicHashFrom(ctx)}   Story: ${story.id} — ${story.title}`,
 				'',
 				'Epic flavor (informs migration in s7):',
-				epic.body.flavor,
+				flavor,
 				'',
 				'HLD context slice (for grounding — do not restate):',
 				'```json',
@@ -226,7 +277,7 @@ const alternativesEnumerate = llmPauseRunner({
 const alternativesJudge = llmPauseRunner({
 	id: 'alternatives.judge',
 	buildPrompt: (ctx) => {
-		const { epic, story, hldSlice } = readUpstream(ctx);
+		const { constraints, story, hldSlice } = readUpstream(ctx);
 		return {
 			prompt: [
 				'You are running the `alternatives.judge` step of the `design.story` (LLD) workflow.',
@@ -255,7 +306,7 @@ const alternativesJudge = llmPauseRunner({
 				'',
 				'Epic constraints (may still apply):',
 				'```json',
-				JSON.stringify(epic.body.constraints, null, 2),
+				JSON.stringify(constraints, null, 2),
 				'```',
 				'',
 				'Emit the judgment JSON now.',
@@ -323,7 +374,7 @@ const contractDetail = llmPauseRunner({
 const errorPaths = llmPauseRunner({
 	id: 'error.paths',
 	buildPrompt: (ctx) => {
-		const { epic, story } = readUpstream(ctx);
+		const { flavor, story } = readUpstream(ctx);
 		return {
 			prompt: [
 				'You are running the `error.paths` step of the `design.story` (LLD) workflow.',
@@ -333,7 +384,7 @@ const errorPaths = llmPauseRunner({
 				'HARD RULES:',
 				'- `errorCases[].detection` describes HOW the code notices; not "the caller passes bad data".',
 				'- `errorCases` are distinct from `edgeCases` (errors = something went wrong; edges = valid but unusual input).',
-				`- For flavor="${epic.body.flavor}": ${epic.body.flavor === 'enhancement' ? 'invariantsToPreserve must cite an analyze bundle from s1 showing the invariant.' : 'invariantsToPreserve may be empty; no legacy behaviour to preserve.'}`,
+				`- For flavor="${flavor}": ${flavor === 'enhancement' ? 'invariantsToPreserve must cite an analyze bundle from s1 showing the invariant.' : 'invariantsToPreserve may be empty; no legacy behaviour to preserve.'}`,
 				'',
 				'HLD AMENDMENT PROPOSAL (optional):',
 				'  If an error path exposes a mismatch with HLD (e.g. HLD says a shared contract does not throw, but the Story genuinely needs to signal a specific failure), you MAY emit `hld.amendmentProposal` with `{ amendment: <typed>, rationale: <string>, citations: [] }`. Use `sharedContract.methodAdd` when you need to name a new error signal. Do NOT propose a wholesale rework; back-flow HLD instead.',
@@ -415,14 +466,14 @@ const migrationWrite: StepRunner = {
 	id: 'migration.write',
 	workflow: 'design.story',
 	async run(ctx) {
-		const { epic, story } = readUpstream(ctx);
-		if (epic.body.flavor !== 'enhancement') {
+		const { flavor, story } = readUpstream(ctx);
+		if (flavor !== 'enhancement') {
 			// Deterministic short-circuit — plan shape stays uniform,
 			// finalizer omits `body.migration` when this fires.
 			return {
 				type: 'output',
 				output: { ...migrationSkippedOutput },
-				summary: `migration.write skipped (${epic.body.flavor})`,
+				summary: `migration.write skipped (${flavor})`,
 			};
 		}
 		return {
@@ -472,7 +523,7 @@ const migrationWrite: StepRunner = {
 const checklistVerify = llmPauseRunner({
 	id: 'checklist.verify',
 	buildPrompt: (ctx) => {
-		const { epic, story, hldSlice } = readUpstream(ctx);
+		const { flavor, story, hldSlice } = readUpstream(ctx);
 		return {
 			prompt: [
 				'You are the AUDITOR for the `design.story` (LLD) workflow.',
@@ -503,7 +554,7 @@ const checklistVerify = llmPauseRunner({
 			].join('\n'),
 			userTurn: [
 				'Epic flavor:',
-				epic.body.flavor,
+				flavor,
 				'',
 				'Story:',
 				'```json',

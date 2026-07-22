@@ -111,6 +111,7 @@ import {
 } from './amendments/index.js';
 import { isAmendment } from './amendments/types.js';
 import { assertEpicHash, computeEpicHash } from './hash.js';
+import { SIZE_CLASSES, type SizeClass } from './triage/types.js';
 import { deriveSlug } from './slug.js';
 
 const log = getLogger('workflow:orchestrator');
@@ -1218,6 +1219,13 @@ function finalizeDesignStory(
 		}
 	}
 
+	// Standalone LLD (triage-routed non-Epic feature) — no parent Epic/HLD to
+	// validate against. Skip the HLD cross-artifact checks + amendment back-flow
+	// and stamp the triage provenance instead. See `plans/feature-triage-router.md`.
+	if (intent.params['standalone'] === true) {
+		return finalizeStandaloneLld(intent, runId, elapsedMs, body, citations, model);
+	}
+
 	// Cross-artifact invariants — LLD must fit approved Epic + HLD.
 	const epicHash = requireEpicHash(intent);
 	const storyId  = requireStoryId(intent);
@@ -1352,6 +1360,86 @@ function finalizeDesignStory(
 			artifact,
 		},
 	};
+}
+
+/** Finalize a STANDALONE LLD — a triage-routed non-Epic feature. No parent
+ *  Epic/HLD, so the HLD cross-artifact checks + amendment back-flow are skipped;
+ *  the `hld*` meta fields carry self-consistent sentinels (inert — the
+ *  `requireApprovedLld` gate skips staleness for a standalone LLD), and the
+ *  triage provenance (`standalone` / `sizeClass` / `triageRationale`) is
+ *  stamped. See `plans/feature-triage-router.md`. */
+function finalizeStandaloneLld(
+	intent:    WorkflowIntent,
+	runId:     string,
+	elapsedMs: number,
+	body:      LldBody,
+	citations: readonly import('./types.js').Citation[],
+	model:     string,
+): FinalizeResult {
+	const epicHash = requireEpicHash(intent);   // self-minted by augmentStandaloneParams
+	const storyId  = requireStoryId(intent);
+	const epicSlug = safeDeriveSlug(intent.focus);
+
+	// HLD-independent body checks that still apply.
+	const acIssues     = checkAcceptanceMapping(body, []);   // no Epic criteria to satisfy
+	const apiSigIssues = checkApiSignaturesTypeLevel(body);
+	const combined = [...acIssues, ...apiSigIssues];
+	if (combined.length > 0) {
+		return { ok: false, failure: { ok: false, kind: 'schema', message: 'standalone LLD checks failed', details: combined } };
+	}
+	if (!body.alternativesConsidered.some(a => a.id === body.chosenAlternative)) {
+		return { ok: false, failure: schemaFailure(`chosenAlternative '${body.chosenAlternative}' not in alternativesConsidered`) };
+	}
+
+	const sizeClass = readSizeClassParam(intent);
+	const triageRationale = typeof intent.params['triageRationale'] === 'string'
+		? (intent.params['triageRationale'] as string) : undefined;
+
+	const artifact: LldArtifact = {
+		meta: {
+			workflow:      'design.story',
+			runId,
+			repoPath:      intent.repoPath,
+			createdAt:     new Date().toISOString(),
+			model,
+			elapsedMs,
+			repoIndexedAt: intent.repoIndexedAt,
+			schemaVersion: LLD_SCHEMA_VERSION,
+			epicHash,
+			epicSlug,
+			storyId,
+			// Self-consistent sentinels — no parent HLD. Inert: the LLD gate
+			// skips staleness for a standalone LLD.
+			hldBaseRunId:         runId,
+			hldEffectiveHash:     computeHldEffectiveHash(runId, []),
+			hldAmendmentsApplied: [],
+			standalone:           true,
+			...(sizeClass !== undefined ? { sizeClass } : {}),
+			...(triageRationale !== undefined ? { triageRationale } : {}),
+		},
+		body,
+		citations,
+	};
+	const renderedBody = renderLldMarkdown(artifact);
+	const check = validateBodyAndCitations(
+		{ meta: artifact.meta, body: artifact.body as LldBody, citations: artifact.citations },
+		renderedBody,
+	);
+	if (!check.ok) return { ok: false, failure: check };
+	const renderedMd   = renderedBody + renderCitationBlock(citations);
+	const renderedJson = JSON.stringify(artifact, null, 2) + '\n';
+
+	log.info(
+		{ workflow: 'design.story', runId, epicHash, storyId, standalone: true, sizeClass, size: renderedMd.length, citations: citations.length },
+		'finalizeStandaloneLld: artifact ready',
+	);
+	return { ok: true, finalized: { workflow: 'design.story', renderedMd, renderedJson, artifact } };
+}
+
+function readSizeClassParam(intent: WorkflowIntent): SizeClass | undefined {
+	const v = intent.params['sizeClass'];
+	return typeof v === 'string' && (SIZE_CLASSES as readonly string[]).includes(v)
+		? (v as SizeClass) : undefined;
 }
 
 // Collect any amendment proposals from an LLD step-output map.

@@ -20,10 +20,16 @@
 
 import { getLogger } from '../../../shared/logger.js';
 import { readLldArtifact } from '../../../workflow/gates.js';
+import { lldMdRel } from '../../../workflow/storage.js';
 import { renderResolvedDecisions } from '../../../workflow/questions.js';
-import { admitBuild } from '../../../workflow/runners/build/admission.js';
-import { renderImplementPrompt, resolveRepoPath, resolveTaskRef } from '../render.js';
+import { admitBuild, admitStandaloneBuild } from '../../../workflow/runners/build/admission.js';
+import {
+	persistStandaloneBuildRecord,
+	standaloneEpicHashFromFocus,
+} from '../../../workflow/runners/build/standalone-record.js';
+import { renderImplementPrompt, renderStandaloneImplementPrompt, resolveRepoPath, resolveTaskRef } from '../render.js';
 import type {
+	BuildStandaloneContext,
 	BuildStepError,
 	BuildStepImplement,
 	BuildStepInputImplement,
@@ -39,6 +45,14 @@ export async function handleImplement(
 	if (repoPath === undefined) {
 		return err('no-repo', `insrc_build_step[implement]: no repo. Pass \`repo\` or set INSRC_REPO.`);
 	}
+
+	// Standalone (no-plan) build — a triage-routed Small (LLD → build) or Trivial
+	// (build only) feature. Bypasses task/tracker resolution; the spec is the
+	// standalone LLD or the scope statement. See `plans/feature-triage-router.md`.
+	if (input.standalone?.standalone === true) {
+		return handleStandaloneImplement(repoPath, input.standalone);
+	}
+
 	const resolved = resolveTaskRef(repoPath, input.target);
 	if (!resolved.ok) return err('unresolved-target', resolved.message);
 	const ref = resolved.ref;
@@ -74,6 +88,64 @@ export async function handleImplement(
 		issueRef:   ref.issueRef,
 		prompt,
 	};
+}
+
+/** The no-plan standalone implement path. Small implements the approved
+ *  standalone LLD directly; Trivial implements the scope statement and persists
+ *  a standalone BUILD tracking record (its only ledger entry). */
+function handleStandaloneImplement(
+	repoPath: string,
+	ctx:      BuildStandaloneContext,
+): BuildStepImplement | BuildStepRefused | BuildStepError {
+	const sizeClass   = ctx.sizeClass ?? 'small';
+	const producesLld = sizeClass !== 'trivial';
+	const focus       = (ctx.focus ?? '').trim();
+
+	if (!producesLld && focus.length === 0) {
+		return err('no-scope', `insrc_build_step[implement]: a standalone trivial build requires \`standalone.focus\` (the scope statement).`);
+	}
+
+	// Identity: Small must carry the approved-LLD identity; Trivial derives a
+	// stable hash from its scope when none is provided.
+	const epicHash = ctx.epicHash ?? (producesLld ? undefined : standaloneEpicHashFromFocus(focus));
+	if (epicHash === undefined) {
+		return err('no-identity', `insrc_build_step[implement]: a standalone Small build requires \`standalone.epicHash\` + \`storyId\` (the approved LLD identity).`);
+	}
+	const storyId = ctx.storyId ?? 'S001';
+
+	const verdict = admitStandaloneBuild(repoPath, epicHash, storyId, producesLld);
+	if (!verdict.admitted) {
+		log.info({ storyId, sizeClass, reason: verdict.refusal.reason }, 'insrc_build_step[implement]: standalone admission refused');
+		return { next: 'refused', refusal: verdict.refusal };
+	}
+
+	let lldMdRelPath: string | undefined;
+	let resolvedDecisions = '';
+	let specFocus = focus.length > 0 ? focus : `Implement the approved standalone LLD for Story ${storyId}.`;
+
+	if (producesLld) {
+		const lld = readLldArtifact(repoPath, epicHash, storyId);
+		resolvedDecisions = renderResolvedDecisions(lld.meta.questionResolutions);
+		lldMdRelPath = lldMdRel(lld.meta.epicSlug ?? epicHash, storyId);
+	} else {
+		// Trivial — no upstream artifact; persist the tracking record so the
+		// change is on the ledger.
+		persistStandaloneBuildRecord(repoPath, {
+			meta: {
+				workflow: 'build', standalone: true, sizeClass, epicHash, storyId,
+				createdAt: new Date().toISOString(),
+				...(ctx.triageRationale !== undefined ? { triageRationale: ctx.triageRationale } : {}),
+			},
+			body: { focus: specFocus, producesLld: false },
+		});
+	}
+
+	const prompt = renderStandaloneImplementPrompt({
+		storyId, sizeClass, producesLld, focus: specFocus,
+		lldMdRel: lldMdRelPath, resolvedDecisions,
+	});
+	log.info({ storyId, sizeClass, standalone: true, producesLld }, 'insrc_build_step[implement]: emitting standalone prompt');
+	return { next: 'implement', taskId: storyId, workflowId: epicHash, issueRef: undefined, prompt };
 }
 
 function err(code: string, message: string): BuildStepError {

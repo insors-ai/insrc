@@ -240,6 +240,11 @@ export function requireApprovedLld(repoPath: string, epicHash: string, storyId: 
 			`Re-run design.story before plan.`,
 		);
 	}
+	// Standalone LLDs (triage-routed non-Epic features) have no parent HLD, so
+	// there is nothing to be stale against — skip the HLD-staleness check.
+	if (lld.meta.standalone === true) {
+		return lld;
+	}
 	// Staleness — recompute the current effective HLD hash the same way
 	// `scanLldStaleness` does, and compare to the LLD's stored value.
 	const staleAckedAt = (lld.meta as { staleAckedAt?: string }).staleAckedAt;

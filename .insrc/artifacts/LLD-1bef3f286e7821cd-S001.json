@@ -1,0 +1,610 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1784722428744-qdwkqn",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-07-22T12:28:55.347Z",
+    "model": "claude",
+    "elapsedMs": 906602,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1bef3f286e7821cd",
+    "epicSlug": "make-repo-add-write-insrc-steering",
+    "storyId": "S001",
+    "hldBaseRunId": "wf-1784722428744-qdwkqn",
+    "hldEffectiveHash": "1bef3f286e7821cd3a73c0e6102390fe58fb10961243d97012c507a3de6045f9",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "feature",
+    "triageRationale": "Feature: writes into the user's own CLAUDE.md/AGENTS.md (safe idempotent marker-upsert, opt-out default), block extraction from steering-template.md, and a hook-placement decision (CLI addRepo vs daemon repo.add IPC). No existing CLAUDE.md writer to reuse.",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "c1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "addRepo is exported from src/cli/services/repo.ts and is the CLI-side repo-add service the change extends.",
+          "evidence": "Confirmed: `export async function addRepo(path: string): Promise<string>` at src/cli/services/repo.ts:24 — the CLI repo-add service. (Also exposed as repo.add in cli/services/index.ts:97.)",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The registry-row write addRepo lives in src/db/repos.ts (the layer the design keeps free of filesystem side effects).",
+          "evidence": "Confirmed: `export async function addRepo(_db: DbClient, repo: RegisteredRepo): Promise<void>` at src/db/repos.ts:153 — the registry-row write layer the design keeps free of fs side effects.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "repoTemplateDir exists in src/daemon/artifacts/template-loader.ts and is the repo-root-materialisation idiom the new writer mirrors.",
+          "evidence": "Confirmed: `function repoTemplateDir(repoRoot: string): string` at src/daemon/artifacts/template-loader.ts:58 (used at :164). Module-private, but the writer mirrors the repo-root idiom rather than importing it, so private is fine.",
+          "action": "none — verified sound (mirror the idiom; no import needed)",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c4",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "src/mcp/steering-template.md contains a preamble followed by a '---' separator, so the 'post-preamble body' the writer extracts as the steering block is a well-defined region.",
+          "evidence": "Confirmed: src/mcp/steering-template.md:1 is the '# insrc-analyze steering block' preamble and line 8 is the single `---` separator; everything after line 8 is the block body. Post-preamble extraction (split on the first `---`) is well-defined. The other `---` hits are frontmatter in config/templates.ts (irrelevant).",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c5",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "No (insrc:steering) marker convention exists anywhere in the tree yet — the marker + writer are genuinely new.",
+          "evidence": "Confirmed: 0 matches for `insrc:steering` across the tree — the marker convention + upsert writer are genuinely new (no duplication).",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c6",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "A daemon repo.add IPC handler exists (registered in the daemon handler registry) and is the shared path the daemon must hook so IDE-fork adds also inject — the LLD claims it is NOT symbol-resolvable, so its location must be confirmed.",
+          "evidence": "RESOLVED the LLD's open question: the daemon repo.add IPC handler exists at src/daemon/index.ts:414 (`'repo.add': async (params) => {`). symbol.locate missed it because it is an object-literal property key, not a named function, but grep confirms it. The CLI service reaches it via `rpc('repo.add', ...)` (cli/services/repo.ts:29).",
+          "action": "Wire injectSteeringBlock into the daemon repo.add handler at src/daemon/index.ts:414 (per the daemon-applies decision), threading the per-file steering selection from the IPC params.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c7",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "docs/index.html:234 instructs the user to manually paste the steering block into CLAUDE.md (a doc-update target the LLD names).",
+          "evidence": "Confirmed: docs/index.html:234 reads 'Then paste the steering block from src/mcp/steering-template.md into the repo's CLAUDE.md' — a real manual-paste instruction. Note (build scope): the LIVE Pages site is now site/getting-started.html (Pages was migrated from docs/ to site/ this session), so the doc update must ALSO hit site/getting-started.html — the LLD's docs/ targets are secondary/stale.",
+          "action": "Update the manual-paste instruction in docs/index.html:234 AND site/getting-started.html (the live site) to say repo.add offers to install the steering block.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c8",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "docs/installation.md:174 instructs a manual paste of the steering block (the other doc-update target the LLD names).",
+          "evidence": "Confirmed: docs/installation.md:174 links src/mcp/steering-template.md '...into the repo's' — the second manual-paste instruction. Same build-scope note as c7: also update site/getting-started.html (the live site).",
+          "action": "Update docs/installation.md:174 alongside docs/index.html + site/getting-started.html.",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 8
+      },
+      "reviewedAt": "2026-07-22T12:37:28.312Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-07-22T12:38:16.547Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "S001",
+        "owns": [],
+        "depends": [],
+        "internal": "repo.add injects the insrc steering block into CLAUDE.md / AGENTS.md"
+      },
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "addRepo",
+          "signature": "addRepo(input: { path: string; steering?: 'inject' | 'skip' /* …existing AddRepoInput fields unchanged */ }): Promise<AddRepoResult>",
+          "parameters": [
+            {
+              "name": "input.path",
+              "type": "string",
+              "purpose": "Repo root path being registered — already present; reused as the anchor to resolve target CLAUDE.md / AGENTS.md locations for the steering write.",
+              "optional": false
+            },
+            {
+              "name": "input.steering",
+              "type": "'inject' | 'skip'",
+              "purpose": "New opt-out control. Defaults to 'inject' (write the steering block). 'skip' short-circuits the write. Threaded from this service export (and the daemon repo.add IPC payload) down to the writer.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<AddRepoResult>",
+            "meaning": "Existing registration result, unchanged in shape. Steering-write outcome is a side effect on disk; it does not gate registry-membership success (write failure must not fail the add)."
+          },
+          "errors": [
+            {
+              "type": "UnregisteredRepoError",
+              "condition": "Pre-existing registry-contract error, unchanged by this Story."
+            }
+          ],
+          "preconditions": [
+            "input.path is an existing directory the caller intends to register."
+          ],
+          "postconditions": [
+            "Repo is registered exactly as today.",
+            "When steering !== 'skip', the steering marked section exists in the repo's CLAUDE.md and AGENTS.md (created if absent, replaced if present)."
+          ]
+        },
+        {
+          "name": "repoTemplateDir",
+          "signature": "repoTemplateDir(...): string /* existing signature unchanged — consumed as the repo-root materialisation idiom to mirror */",
+          "parameters": [
+            {
+              "name": "(existing)",
+              "type": "as defined in src/daemon/artifacts/template-loader.ts",
+              "purpose": "Consumed, not reshaped. The new writer follows this module's repo-root-resolution + template-materialisation idiom rather than inventing a new file-write pattern.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "Resolved repo-root-relative template target path — reference idiom for locating CLAUDE.md / AGENTS.md."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": []
+        },
+        {
+          "name": "injectSteeringBlock",
+          "signature": "injectSteeringBlock(repoRoot: string, opts?: { mode?: 'inject' | 'skip' }): Promise<{ files: Array<{ path: string; action: 'created' | 'replaced' | 'unchanged' | 'skipped' }> }>",
+          "parameters": [
+            {
+              "name": "repoRoot",
+              "type": "string",
+              "purpose": "Repo root supplied by addRepo; anchor for resolving CLAUDE.md and AGENTS.md.",
+              "optional": false
+            },
+            {
+              "name": "opts.mode",
+              "type": "'inject' | 'skip'",
+              "purpose": "Carries the opt-out through from addRepo.input.steering; 'skip' short-circuits with no filesystem write.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<{ files: Array<{ path: string; action: 'created' | 'replaced' | 'unchanged' | 'skipped' }> }>",
+            "meaning": "Per-file outcome of the marker-delimited upsert. Net-new orchestration-layer writer (mirrors template-loader idiom); keeps db/repos.ts pure of filesystem side effects."
+          },
+          "errors": [
+            {
+              "type": "Error (I/O)",
+              "condition": "Filesystem write fails; surfaced to caller but must NOT fail repo registration (caller guards)."
+            }
+          ],
+          "preconditions": [
+            "repoRoot is a registered repo's root directory.",
+            "Steering block content is extracted from the post-preamble region of src/mcp/steering-template.md."
+          ],
+          "postconditions": [
+            "mode='skip' → no file is created or modified (action='skipped').",
+            "Target file absent → created with only the marked section (action='created').",
+            "Marked section present → only the region between the (insrc:steering) open/close markers is replaced; surrounding user content is never clobbered (action='replaced' or 'unchanged' if identical)."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "AddRepoInput / repo.add IPC payload",
+        "change": "field-add",
+        "details": "Add `steering?: 'inject' | 'skip'` (default 'inject'). Threaded at the service/IPC boundary only and passed to the writer — NOT persisted on the registry row (db/repos.ts stays pure per the winning design). Because the daemon repo.add IPC is consumed by the IDE fork in lock-step, this field must be mirrored on the IDE-fork payload type so IDE adds can also opt out.",
+        "callSites": [
+          "src/cli/services/repo.ts",
+          "src/db/repos.ts"
+        ]
+      },
+      {
+        "entity": "Steering marked section — (insrc:steering) delimited region in CLAUDE.md / AGENTS.md",
+        "change": "new",
+        "details": "New on-disk marker convention introduced by this Story (search.text confirmed no existing (insrc:steering) marker). Defines the open/close markers wrapping the injected block; content is the post-preamble body of src/mcp/steering-template.md. Enables the idempotent create-if-absent / replace-if-present / never-clobber upsert. No such marker or writer exists today.",
+        "callSites": [
+          "src/mcp/steering-template.md",
+          "src/cli/services/repo.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Filesystem write to the target CLAUDE.md or AGENTS.md fails during injectSteeringBlock (EACCES on a read-only repo checkout, ENOSPC disk full, or the repo directory was removed between registration and write → ENOENT).",
+          "detection": "injectSteeringBlock's fs.writeFile / atomic-rename promise rejects; the rejection propagates up to the try/catch guard that addRepo wraps around the writer call.",
+          "response": "Catch the I/O rejection, log it at warn with the offending path, mark that file's action accordingly, and RETURN NORMALLY — registration is already committed and must not be rolled back. Per-file failure does not abort the sibling file's write.",
+          "userImpact": "Repo is registered successfully; the steering block is missing for the file that failed. User sees a warning and can re-run repo.add or paste the block manually from src/mcp/steering-template.md.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The bundled steering-block source (src/mcp/steering-template.md) is missing or its post-preamble body cannot be extracted (asset not shipped by copy-assets, or the preamble/body split yields an empty section).",
+          "detection": "fs.readFile of the bundled steering-template.md rejects, OR after a successful read the post-preamble slice used as the block content is empty/whitespace-only.",
+          "response": "Abort the upsert before any target file is touched (no partial or empty marked section is written), log at warn, and do not fail registration.",
+          "userImpact": "Repo is registered; no steering block is injected into either file. Existing user content in CLAUDE.md/AGENTS.md is left exactly as-is.",
+          "recoverable": true
+        },
+        {
+          "scenario": "An existing target file contains the (insrc:steering) OPEN marker but no matching CLOSE marker (user truncated or hand-edited the region), so the section boundary is undeterminable.",
+          "detection": "After locating the open marker offset, the scan for the corresponding close marker returns no match within the file.",
+          "response": "Refuse to replace-to-EOF (that would clobber all user content after the open marker). Leave the file byte-for-byte untouched, report action='unchanged' with a warning that the markers are malformed, and continue.",
+          "userImpact": "File is not modified and surrounding user content is preserved; user is warned to repair or remove the stray marker so the next add can re-inject cleanly.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A target file contains more than one (insrc:steering) open marker (duplicated by a prior copy-paste or merge), making the region to replace ambiguous.",
+          "detection": "The count of open-marker occurrences found while scanning the file is greater than one.",
+          "response": "Do not guess which region owns the block; skip the replace for that file, leave it untouched, log a warn identifying the duplicate markers, and report action='unchanged'.",
+          "userImpact": "File is left intact; user is told to de-duplicate the marked sections manually. Registration and the sibling file's write are unaffected.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "addRepo called with steering:'skip'.",
+          "expected": "injectSteeringBlock short-circuits before any filesystem read or write; both CLAUDE.md and AGENTS.md report action='skipped'. Registration proceeds exactly as today."
+        },
+        {
+          "input": "steering omitted / undefined in the addRepo input (and in the repo.add IPC payload).",
+          "expected": "Defaults to 'inject' — the block is written. Opt-out is explicit-only; the safe default is to inject."
+        },
+        {
+          "input": "Target file (e.g. AGENTS.md) does not exist at the repo root.",
+          "expected": "File is created containing only the marker-delimited steering section; action='created'."
+        },
+        {
+          "input": "Target file already contains a marked section whose body is byte-identical to the extracted block.",
+          "expected": "No write is performed (idempotent no-op); action='unchanged'. Re-running repo.add never rewrites an up-to-date section."
+        },
+        {
+          "input": "Target file contains a marked section whose body differs from the current template (stale block).",
+          "expected": "Only the bytes between the open and close markers are replaced; all content before the open marker and after the close marker is preserved verbatim; action='replaced'."
+        },
+        {
+          "input": "Target file exists with user content but has NO (insrc:steering) marked section.",
+          "expected": "The marked section is appended without disturbing existing content (with a separating newline); the pre-existing user prose is preserved; action='created' at the section level even though the file already existed."
+        },
+        {
+          "input": "Only one of the two files (CLAUDE.md present, AGENTS.md absent) exists at the repo root.",
+          "expected": "The present file is upserted (created/replaced/unchanged as applicable) and the absent file is created; the two files' outcomes are computed independently and both reported."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "addRepo's registration behavior is unchanged: it continues to register the repo exactly as today, the AddRepoResult shape is unchanged, and the steering write is a purely additive on-disk side effect that never gates registry-membership success.",
+          "source": "c3"
+        },
+        {
+          "text": "The registry write layer (src/db/repos.ts) stays free of filesystem side effects — the steering flag is threaded only at the service/IPC boundary and passed to the writer, never persisted on the registry row. Registry membership remains established exclusively via repo.add and storage never auto-allocates rows (strict repo-registry contract).",
+          "source": "c2"
+        },
+        {
+          "text": "The repo.add IPC payload stays in lock-step between this daemon and the IDE fork. The new steering field must be mirrored on the IDE-fork payload type, and the write must live where BOTH the CLI addRepo path and the daemon repo.add IPC pass through, so IDE-fork adds also receive the block.",
+          "source": "c1"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test (built-in, run via `npx tsx --test 'src/**/__tests__/*.test.ts'`)",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Exhaustively exercise the net-new marker-delimited upsert writer (injectSteeringBlock) in isolation against a temp-dir repo root, covering every create/replace/unchanged/skipped branch, malformed-marker guards, and template-extraction failure — the writer is where all the marker logic and never-clobber invariant live.",
+          "subjects": [
+            "injectSteeringBlock (net-new writer, orchestration layer mirroring template-loader idiom)",
+            "the (insrc:steering) open/close marker upsert: create-if-absent, idempotent replace-if-present, never-clobber",
+            "post-preamble block extraction from src/mcp/steering-template.md"
+          ],
+          "fixturesNeeded": [
+            "temp repo-root dir created per test (mkdtemp) and removed in teardown",
+            "seed CLAUDE.md / AGENTS.md variants: absent, present-with-identical-marked-section, present-with-stale-marked-section, present-with-user-content-no-marker, present-with-open-marker-no-close, present-with-duplicate-open-markers",
+            "a fixture/stub steering-template.md (valid post-preamble body; plus a missing/empty-body variant to force the extraction-failure path)",
+            "chmod-readonly dir (or fs.writeFile stub that rejects) to simulate EACCES/ENOSPC/ENOENT I/O rejection"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Verify the steering flag is threaded end-to-end from the addRepo service export (and the mirrored repo.add IPC payload) down to the writer, that registration behavior/AddRepoResult shape is unchanged, and that a writer I/O failure is caught and does NOT fail registration — the invariants that span the service/IPC boundary and db/repos.ts purity.",
+          "subjects": [
+            "addRepo in src/cli/services/repo.ts with new steering?: 'inject'|'skip' input",
+            "the repo.add IPC handler path (traced inbound from addRepo — must inject on the daemon path too, not only CLI)",
+            "the try/catch guard around injectSteeringBlock inside addRepo",
+            "src/db/repos.ts staying free of filesystem side effects (registry row carries no steering field)"
+          ],
+          "fixturesNeeded": [
+            "registered temp repo (repo.add against a temp dir) with the daemon registry/db stubbed or a test store",
+            "spy/stub on injectSteeringBlock to assert it is (a) invoked with the repo root + resolved mode on inject, (b) NOT invoked / short-circuits on skip, and (c) its rejection is swallowed by addRepo",
+            "assertion helper that reads back the registry row to confirm no steering field was persisted"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "src/cli/services/__tests__/repo-add-steering.test.ts > steering omitted defaults to 'inject' and invokes the writer",
+            "src/daemon/artifacts/__tests__/inject-steering-block.test.ts > undefined mode is treated as 'inject'"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "src/daemon/artifacts/__tests__/inject-steering-block.test.ts > mode 'skip' short-circuits before any fs read or write, reports action='skipped' for both files",
+            "src/cli/services/__tests__/repo-add-steering.test.ts > addRepo({steering:'skip'}) registers repo and performs no filesystem write"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "src/daemon/artifacts/__tests__/inject-steering-block.test.ts > absent target file is created containing only the marked section, action='created'"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "src/daemon/artifacts/__tests__/inject-steering-block.test.ts > byte-identical existing marked section is a no-op, action='unchanged' (idempotent re-run)"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "src/daemon/artifacts/__tests__/inject-steering-block.test.ts > stale marked section: only bytes between open/close markers replaced, content before and after preserved verbatim, action='replaced'"
+          ]
+        },
+        {
+          "criterionId": "ac6",
+          "provingTests": [
+            "src/daemon/artifacts/__tests__/inject-steering-block.test.ts > existing user content with no marker: section appended with separating newline, prior prose preserved"
+          ]
+        },
+        {
+          "criterionId": "ac7",
+          "provingTests": [
+            "src/daemon/artifacts/__tests__/inject-steering-block.test.ts > CLAUDE.md present + AGENTS.md absent: present file upserted and absent file created, both outcomes reported independently"
+          ]
+        },
+        {
+          "criterionId": "ac8",
+          "provingTests": [
+            "src/cli/services/__tests__/repo-add-steering.test.ts > writer I/O rejection is caught, logged, and addRepo returns normally with registration committed",
+            "src/daemon/artifacts/__tests__/inject-steering-block.test.ts > per-file write failure does not abort the sibling file's write"
+          ]
+        },
+        {
+          "criterionId": "ac9",
+          "provingTests": [
+            "src/daemon/artifacts/__tests__/inject-steering-block.test.ts > missing or empty-body steering-template.md aborts the upsert before touching any target file, no partial/empty section written",
+            "src/cli/services/__tests__/repo-add-steering.test.ts > template-extraction failure still registers the repo"
+          ]
+        },
+        {
+          "criterionId": "ac10",
+          "provingTests": [
+            "src/daemon/artifacts/__tests__/inject-steering-block.test.ts > open marker with no matching close marker leaves file byte-for-byte untouched, action='unchanged' with warning"
+          ]
+        },
+        {
+          "criterionId": "ac11",
+          "provingTests": [
+            "src/daemon/artifacts/__tests__/inject-steering-block.test.ts > more than one open marker: replace is skipped, file left intact, action='unchanged' with warning"
+          ]
+        },
+        {
+          "criterionId": "ac12",
+          "provingTests": [
+            "src/cli/services/__tests__/repo-add-steering.test.ts > steering field is threaded from the repo.add IPC payload through addRepo to the writer (daemon path injects, not only CLI)",
+            "src/cli/services/__tests__/repo-add-steering.test.ts > registry row written by src/db/repos.ts carries no steering field (db layer stays fs-side-effect free)"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "Per s1 bundles: the repo.add flow (addRepo in src/cli/services/repo.ts → registry-row write addRepo in src/db/repos.ts) registers a repo ONLY — the usage.example bundle confirms addRepo has no file-writing side effect into the target repo. No CLAUDE.md/AGENTS.md writer exists anywhere in the tree (usage.example + test.locate both found none). The (insrc:steering) idempotent marked-section convention does NOT exist yet — search.text for 'insrc:steering|steering-template' returned zero marker hits; the block content lives un-injected as the post-preamble body of src/mcp/steering-template.md. The repo.add IPC handler is not resolvable by symbol name (symbol.locate returned zero hits), so today only manual user action places the block: docs/index.html:234 and docs/installation.md:174 instruct users to paste the steering block by hand. addRepo carries the repo-root path (data-model.trace) but no steering-related field or opt-out control exists on any layer.",
+      "stateAfter": "repo.add automatically materialises the insrc steering block. The addRepo service export and the daemon repo.add IPC payload both accept a new optional `steering?: 'inject' | 'skip'` field defaulting to 'inject'. After successful registration, addRepo invokes a net-new orchestration-layer writer (injectSteeringBlock) that resolves CLAUDE.md and AGENTS.md at the registered repo root (mirroring the repoTemplateDir idiom in src/daemon/artifacts/template-loader.ts), extracts the post-preamble body of src/mcp/steering-template.md, and performs a marker-delimited upsert bounded by new (insrc:steering) open/close markers: create-if-absent, replace-only-the-marked-region-if-present, never clobber surrounding user content. `steering: 'skip'` short-circuits with no filesystem write. Write failure surfaces to the caller but never fails registry membership. db/repos.ts stays free of filesystem side effects. The IDE-fork repo.add payload type mirrors the new field so IDE adds also inject (or opt out). Getting-started docs (docs/index.html, docs/installation.md) state that repo.add injects the block instead of instructing a manual paste.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the nullable/optional field `steering?: 'inject' | 'skip'` to AddRepoInput and the repo.add IPC payload type (default 'inject' when absent). Purely additive at the service/IPC boundary; not persisted on the db/repos.ts registry row.",
+          "rollbackable": true,
+          "prerequisiteFlags": []
+        },
+        {
+          "order": 2,
+          "action": "Mirror the same optional `steering` field on the IDE-fork repo.add payload type to keep the lock-step IPC contract aligned, so IDE-fork adds can also opt out. Coordinate the mirrored type change with the insrc-ide repo.",
+          "rollbackable": true,
+          "prerequisiteFlags": []
+        },
+        {
+          "order": 3,
+          "action": "Define the (insrc:steering) open/close marker convention and add a net-new orchestration-layer writer module (injectSteeringBlock) that: resolves CLAUDE.md/AGENTS.md at the given repo root by mirroring the repoTemplateDir repo-root-materialisation idiom in src/daemon/artifacts/template-loader.ts; extracts the post-preamble region of src/mcp/steering-template.md as the block source; and performs the marker-delimited upsert (create-if-absent, idempotent replace-of-marked-region-if-present, never clobber surrounding content).",
+          "rollbackable": true,
+          "prerequisiteFlags": []
+        },
+        {
+          "order": 4,
+          "action": "Locate the shared write hook by tracing inbound from the addRepo service export to the daemon repo.add IPC registry (handler is not symbol-resolvable), and wire that shared path to call injectSteeringBlock with mode derived from input.steering AFTER successful registration. Guard the call so any write error is caught and does not fail repo registration; treat 'skip' as short-circuit.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "steering-field-added",
+            "writer-module-present"
+          ]
+        },
+        {
+          "order": 5,
+          "action": "Leave already-registered repos untouched — do NOT backfill the steering block into existing repos as part of this change; the block is injected only on new repo.add calls (and on a subsequent re-add). Note this intentional non-backfill so existing registrations are not rewritten on disk.",
+          "rollbackable": true,
+          "prerequisiteFlags": []
+        },
+        {
+          "order": 6,
+          "action": "Update the getting-started doc surfaces (docs/index.html:234 and docs/installation.md:174) to state that repo.add injects the steering block automatically, replacing the manual-paste instructions.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "write-hook-wired"
+          ]
+        },
+        {
+          "order": 7,
+          "action": "Author net-new tests alongside the writer covering: create-when-absent, idempotent replace of an existing marked section without clobbering surrounding content, opt-out ('skip') short-circuits the write, and block extraction from src/mcp/steering-template.md.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "writer-module-present"
+          ]
+        }
+      ],
+      "backwardCompat": "repo.add is an existing public API consumed in lock-step by the IDE fork, so backward compatibility is mandatory. The new `steering` field is OPTIONAL and defaults to 'inject', so existing callers (CLI and current IDE-fork adds) that omit it stay valid and simply gain the injection behaviour; AddRepoResult shape is unchanged. The steering write is a disk side effect that does NOT gate registration success — a write failure must be caught and never fail the add, preserving today's success contract. The pre-existing UnregisteredRepoError path is unchanged. The IDE-fork payload type must be updated to mirror the optional field in the same release window; because the field is optional an older IDE fork still interoperates (it omits the field and gets the default 'inject'). The new on-disk (insrc:steering) marked section is additive and never clobbers surrounding user content in CLAUDE.md/AGENTS.md.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Registry-boundary side-effect (single funnel at db/repos.ts addRepo)",
+        "oneLineSummary": "Steering write fires inside the one registry-write choke point both CLI and IPC pass through; opt-out is a boolean param defaulting to inject.",
+        "approach": "Hook the steering upsert directly into addRepo in src/db/repos.ts — the strict-contract single funnel through which BOTH the CLI addRepo service and the daemon repo.add IPC establish registry membership. The addRepo params gain one new optional field `injectSteering?: boolean` (default true), threaded from src/cli/services/repo.ts and from the (inbound-traced) daemon IPC handler down to this layer. A net-new writer resolves the repo-root path already carried on the registry row, extracts the post-preamble content of src/mcp/steering-template.md, and performs a marker-delimited upsert (`<!-- insrc:steering:start -->` / `<!-- insrc:steering:end -->`) on CLAUDE.md and AGENTS.md: create-if-absent, idempotent replace-if-present, never clobber surrounding user content. One call site guarantees IDE-fork adds get the block for free.",
+        "pros": [
+          "Single call site structurally guarantees both CLI adds and daemon repo.add IPC (IDE-fork) inject the block — impossible to have one path drift from the other.",
+          "Repo-root path is already in hand on the registry row at this layer, so no extra threading of the anchor.",
+          "Smallest contract surface: one optional boolean added to the existing addRepo signature."
+        ],
+        "cons": [
+          "Puts a filesystem side-effect into the user's repo root from the db/registry layer, violating the layering separation between storage and repo-materialisation.",
+          "Harder to unit-test the writer in isolation because it is entangled with the registry-row write and its transaction.",
+          "Couples registry membership success to steering-write outcome unless carefully guarded (a failed CLAUDE.md write must not fail the add)."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "a1's single-funnel structural guarantee is its genuine strength, but it earns second place because it buys that guarantee by violating storage/repo-materialisation layering (its own con), entangling the writer with the registry transaction so it resists isolated unit testing, and coupling registry-membership success to steering-write outcome unless carefully guarded. Cost S is attractive but reflects a smaller diff, not lower risk — the risk is architectural and harder to unwind later. Ranked above a3 because it stays within the standalone story's minimal scope, whereas a3 does not."
+      },
+      {
+        "id": "a2",
+        "name": "Orchestration-layer writer with explicit opt-out on the repo.add contract",
+        "oneLineSummary": "A standalone steering-writer module composed at both orchestration entry points; opt-out is a first-class field on the repo.add IPC payload plus a CLI flag.",
+        "approach": "Keep the db/registry layer pure and introduce a net-new `steering-writer` module invoked from the two orchestration entry points: src/cli/services/repo.ts (addRepo service) and the daemon repo.add IPC handler located by tracing inbound from the service export (symbol.locate returned zero hits, so this trace is mandatory). The repo.add IPC payload contract gains an explicit control — `steering?: 'inject' | 'skip'` (default 'inject') — mirrored by a CLI `--no-steering` flag; both resolve to the same opt-out value passed into the writer. The writer mirrors the repo-root materialisation idiom in src/daemon/artifacts/template-loader.ts (repoTemplateDir), extracts the steering block from src/mcp/steering-template.md's post-preamble, and does the marker-delimited safe upsert on CLAUDE.md and AGENTS.md. The db layer is untouched.",
+        "pros": [
+          "Clean layering: repo-root filesystem writes live in an orchestration/materialisation module, not the storage layer, matching the existing template-loader idiom.",
+          "The writer is a self-contained unit trivially testable against the four required cases (create-when-absent, idempotent replace, opt-out short-circuit, block extraction).",
+          "Opt-out is an explicit, discoverable part of the repo.add IPC contract, so the IDE fork can surface a toggle without hidden coupling."
+        ],
+        "cons": [
+          "Two composition sites (CLI service + daemon IPC handler) must both call the writer, so one path can forget it and drift — must be covered by tests at both entry points.",
+          "Slightly larger contract change: a new IPC payload field plus a CLI flag, both needing mirrored types across the IDE-fork lock-step surface.",
+          "Requires resolving the currently-unnamed IPC handler before the hook can be placed."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a3",
+        "name": "Per-repo persisted opt-out with durable injection state on the registry row",
+        "oneLineSummary": "Promote opt-out and injection state to durable fields on the registry row so re-adds/reindex honour the user's choice and never re-clobber.",
+        "approach": "Extend the registry-row data model in src/db/repos.ts with two durable fields — `steeringOptOut: boolean` (default false = inject) and `steeringInjectedAt` (timestamp/version marker) — making the opt-out a first-class, persisted property of the repo rather than a per-call parameter. The orchestration-layer writer (as in a2, invoked from both the CLI service and the traced IPC handler) reads the persisted opt-out before acting and records injection state after a successful marker upsert. On re-add / reindex the writer consults the stored flag: skip if opted out, else re-materialise the marked section idempotently (never touching surrounding user content). Block source and marker contract are identical to the other alternatives (post-preamble of src/mcp/steering-template.md; `insrc:steering` start/end markers).",
+        "pros": [
+          "Opt-out survives across re-adds and reindexing — the user disables steering once and it stays disabled, which a per-call boolean cannot guarantee.",
+          "Durable injection state enables future safe re-materialisation (e.g. template-version bumps) without guessing whether the block was ever written.",
+          "Centralises the opt-out decision in one queryable place, so both CLI and IPC read the same source of truth."
+        ],
+        "cons": [
+          "Requires a registry-row schema change plus a migration/back-compat path for existing rows — the largest surface of the three and likely beyond the standalone story's minimal scope.",
+          "Adds persistent state that must stay consistent with the actual on-disk marked section, introducing a drift class (row says injected, file was hand-deleted).",
+          "More moving parts to test and to mirror across the IDE-fork lock-step types than a simple contract-level opt-out."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "a3 is the most capable design — durable per-repo opt-out that survives re-adds/reindex and injection-state tracking for future template-version re-materialisation — but it is over-scoped for a standalone story: it requires a registry-row schema change plus a migration/back-compat path (its own largest-surface con), introduces a persistent-state-vs-on-disk drift class (row says injected, file hand-deleted), and adds the most types to mirror across the IDE-fork lock-step surface. Cost L. Its durability advantage is real but speculative relative to the current requirement; it is best deferred to a follow-up once the a2 writer exists, since a3 explicitly builds on a2's orchestration-layer writer anyway. Ranked last on scope-fit and added risk despite the highest ceiling."
+      }
+    ],
+    "chosenAlternative": "a2",
+    "openQuestions": [
+      "s8 flagged ep3 as partial: the three invariantsToPreserve cite opaque source tokens c1/c2/c3 that do not map to a named s1 analyze bundle (bundles are keyed by kind). The invariants are grounded in s1 content (registry-purity from data-model.trace, lock-step from backFlowNotes, registration-unchanged from the api postconditions), but the citation-to-a-named-bundle linkage is only weakly met — confirm the intended bundle mapping before build.",
+      "s8 flagged ts2 as partial: the test framework (node:test via `npx tsx --test`) is grounded in the repo's documented convention (CLAUDE.md) rather than an explicit s1 test.locate report, because test.locate surfaced no existing test files or framework name to match against — confirm this is the correct/active test runner for the new writer + integration suites."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "step-output",
+      "ref": "s1.backFlowNotes",
+      "quotedText": "the write must live where BOTH CLI addRepo and daemon repo.add IPC pass through so IDE-fork adds also inject the block"
+    },
+    {
+      "id": "c2",
+      "kind": "step-output",
+      "ref": "s1.analyzeBundles[data-model.trace]",
+      "quotedText": "The repo.add flow writes a registry row through addRepo in src/db/repos.ts ... No steering-related field exists on this path today"
+    },
+    {
+      "id": "c3",
+      "kind": "step-output",
+      "ref": "s4.api[addRepo].postconditions",
+      "quotedText": "Repo is registered exactly as today. Steering-write outcome is a side effect on disk; it does not gate registry-membership success (write failure must not fail the add)."
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/cli/services/repo.ts",
+      "quotedText": "addRepo exported from src/cli/services/repo.ts; export surface {addRepo, listRepos, reindexRepo, removeRepo}"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/db/repos.ts",
+      "quotedText": "the registry-row write layer behind the service is addRepo in src/db/repos.ts"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/daemon/artifacts/template-loader.ts",
+      "quotedText": "repoTemplateDir in src/daemon/artifacts/template-loader.ts ... follow that idiom rather than inventing a new file-write pattern"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/mcp/steering-template.md",
+      "quotedText": "The block content to inject lives in src/mcp/steering-template.md (the post-preamble content is the string to extract and wrap in the marker)"
+    },
+    {
+      "id": "c8",
+      "kind": "doc",
+      "ref": "docs/index.html:234",
+      "quotedText": "Then paste the steering block from src/mcp/steering-template.md into the repo's CLAUDE.md"
+    },
+    {
+      "id": "c9",
+      "kind": "doc",
+      "ref": "docs/installation.md:174",
+      "quotedText": "the second manual-paste instruction (...src/mcp/steering-template.md... into the repo's)"
+    },
+    {
+      "id": "c10",
+      "kind": "step-output",
+      "ref": "s3.winnerId",
+      "quotedText": "a2 wins because ... the decision reduces to design quality — and a2 dominates the contested dimensions"
+    }
+  ]
+}

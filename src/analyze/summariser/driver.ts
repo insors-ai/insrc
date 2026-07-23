@@ -26,7 +26,7 @@ import { isAbsolute, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { loadAnalyzeConfig } from '../../config/analyze.js';
-import { buildShaperProvider } from '../context/shaper-provider.js';
+import { buildSummariserProvider } from '../context/shaper-provider.js';
 import type { DbClient } from '../../db/client.js';
 import {
 	getDocSummary,
@@ -181,7 +181,7 @@ export async function summariseDoc(args: SummariseDocArgs): Promise<SummariseDoc
 	}
 
 	const cfg = loadAnalyzeConfig();
-	const modelId = cfg.shaperModel;
+	const modelId = cfg.summariserModel;
 	const contentHash = sha256(body);
 
 	// Skip-if-unchanged: same body + same model = same summary.
@@ -196,7 +196,7 @@ export async function summariseDoc(args: SummariseDocArgs): Promise<SummariseDoc
 
 	const family = inferDocFamily(entity.file);
 	const promptContent = loadPromptFile();
-	const provider = args.provider ?? buildShaperProvider(cfg);
+	const provider = args.provider ?? buildSummariserProvider(cfg);
 
 	const messages = buildMessages({
 		promptContent,

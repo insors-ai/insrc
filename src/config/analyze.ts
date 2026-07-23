@@ -113,6 +113,18 @@ export interface AnalyzeConfig {
 	 *  The default (`qwen3.6:35b-a3b`) is an Ollama id, so it must NOT be
 	 *  forwarded to a CLI provider unless the operator explicitly set it. */
 	readonly shaperModelExplicit: boolean;
+	/** Provider for BACKGROUND doc-summarisation during indexing. Independent
+	 *  of `shaperProvider` (which is for interactive analyze/workflow reasoning)
+	 *  and defaults to LOCAL `ollama` regardless — summarising every doc through
+	 *  a cloud CLI per doc is slow, serial, and quota-burning. Override via
+	 *  `models.analyze.summariserProvider`. See analyze/summariser/driver.ts. */
+	readonly summariserProvider: AnalyzeShaperProviderKind;
+	/** Model for the summariser; defaults to the local MoE `qwen3.6:35b-a3b`
+	 *  (fast despite size). Override via `models.analyze.summariserModel`. */
+	readonly summariserModel:    string;
+	/** True when `models.analyze.summariserModel` was set explicitly (guards
+	 *  forwarding an Ollama id to a CLI summariser provider). */
+	readonly summariserModelExplicit: boolean;
 	readonly shaper:         AnalyzeShaperConfig;
 	readonly maxPlanDepth:   MaxPlanDepthMap;
 }
@@ -179,6 +191,9 @@ export function loadAnalyzeConfig(): AnalyzeConfig {
 			shaperProviderExplicit: false,
 			shaperModel:    fallbackModel,
 			shaperModelExplicit: false,
+			summariserProvider: 'ollama',
+			summariserModel:    fallbackModel,
+			summariserModelExplicit: false,
 			shaper:         DEFAULT_SHAPER,
 			maxPlanDepth:   DEFAULT_MAX_PLAN_DEPTH,
 		};
@@ -207,6 +222,12 @@ export function loadAnalyzeConfig(): AnalyzeConfig {
 					? (analyze['shaperModel'] as string)
 					: fallbackModel,
 			shaperModelExplicit: typeof analyze['shaperModel'] === 'string',
+			summariserProvider: parseShaperProvider(analyze['summariserProvider']),
+			summariserModel:
+				typeof analyze['summariserModel'] === 'string'
+					? (analyze['summariserModel'] as string)
+					: fallbackModel,
+			summariserModelExplicit: typeof analyze['summariserModel'] === 'string',
 			shaper: {
 				maxToolTurns:
 					typeof shaperObj['maxToolTurns'] === 'number'
@@ -244,6 +265,9 @@ export function loadAnalyzeConfig(): AnalyzeConfig {
 			shaperProviderExplicit: false,
 			shaperModel:    fallbackModel,
 			shaperModelExplicit: false,
+			summariserProvider: 'ollama',
+			summariserModel:    fallbackModel,
+			summariserModelExplicit: false,
 			shaper:         DEFAULT_SHAPER,
 			maxPlanDepth:   DEFAULT_MAX_PLAN_DEPTH,
 		};

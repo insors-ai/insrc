@@ -239,3 +239,31 @@ export function buildShaperProvider(
 	const local = loadLocalProviderConfig();
 	return new OllamaProvider(cfg.shaperModel, local.host, cfg.shaper.ollamaNumCtx);
 }
+
+/**
+ * Provider for BACKGROUND doc-summarisation (analyze/summariser/driver.ts).
+ *
+ * Deliberately SEPARATE from `buildShaperProvider`: summarisation runs during
+ * indexing over many docs, so it must NOT inherit the interactive
+ * `shaperProvider` (which the operator may have pinned to a cloud CLI, or which
+ * the per-run MCP client sets) — that would spawn a `claude`/`codex` subprocess
+ * per doc, serial + quota-burning. This ignores the sampler + client-provider
+ * ambient contexts entirely and builds strictly from `cfg.summariser*`,
+ * defaulting to LOCAL `ollama` (`qwen3.6:35b-a3b`, a MoE). Only if the operator
+ * explicitly sets `models.analyze.summariserProvider` to a `cli-*` does it use
+ * a CLI.
+ */
+export function buildSummariserProvider(cfg: AnalyzeConfig): LLMProvider {
+	const kind = cfg.summariserProvider;
+	if (kind === 'cli-claude' || kind === 'cli-codex') {
+		const cliKind = kind === 'cli-claude' ? 'claude' : 'codex';
+		// The default summariserModel (`qwen3.6:35b-a3b`) is an Ollama id — never
+		// forward it to a CLI; only pin a CLI model when set explicitly.
+		const model = cfg.summariserModelExplicit && cfg.summariserModel !== '' ? cfg.summariserModel : undefined;
+		log.info({ kind: cliKind, model: model ?? '(cli default)' }, 'summariser provider: routing through CliProvider');
+		return new CliProvider({ kind: cliKind, ...(model !== undefined ? { model } : {}) });
+	}
+	log.info({ model: cfg.summariserModel, numCtx: cfg.shaper.ollamaNumCtx }, 'summariser provider: routing through OllamaProvider (local)');
+	const local = loadLocalProviderConfig();
+	return new OllamaProvider(cfg.summariserModel, local.host, cfg.shaper.ollamaNumCtx);
+}

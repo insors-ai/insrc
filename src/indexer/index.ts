@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { join, extname, resolve } from 'node:path';
+import { join, extname, resolve, relative, sep } from 'node:path';
 import type { DbClient } from '../db/client.js';
 import type { RegisteredRepo, IndexJob, ConfigScope } from '../shared/types.js';
 import { upsertEntities } from '../db/entities.js';
@@ -25,6 +25,7 @@ import './parser/scala.js';
 import './parser/artifact.js';
 import { basenameParser } from './parser/artifact.js';
 import { Watcher, IGNORE_DIRS } from './watcher.js';
+import { resolveRepoIgnore, initRepoIgnore } from './repo-ignore-config.js';
 import { IndexQueue } from '../daemon/queue.js';
 import { getLogger } from '../shared/logger.js';
 import type { ConfigStore } from '../config/store.js';
@@ -86,10 +87,19 @@ function isGeneratedOrMinified(filePath: string): boolean {
   return GENERATED_FILE_PATTERN.test(filePath);
 }
 
-function listRepoFiles(repoPath: string): string[] {
+/** True when any path segment of `file` (relative to `repoPath`) is in the
+ *  ignore set. Applies the ignore list to `git ls-files` output too — the git
+ *  walker honours `.gitignore`, but a repo can COMMIT ignore-worthy dirs (e.g.
+ *  insrc's own `.insrc/artifacts/*.md`), which `.gitignore` never excludes. */
+function hasIgnoredSegment(file: string, repoPath: string, ignoreSet: Set<string>): boolean {
+  return relative(repoPath, file).split(sep).some(seg => ignoreSet.has(seg));
+}
+
+function listRepoFiles(repoPath: string, ignore: readonly string[] = IGNORE_DIRS): string[] {
+  const ignoreSet = new Set(ignore);
   if (!existsSync(join(repoPath, '.git'))) {
     log.debug({ repo: repoPath }, 'not a git repo, using directory walker');
-    return [...walkFilesLegacy(repoPath)];
+    return [...walkFilesLegacy(repoPath, ignoreSet)];
   }
 
   try {
@@ -101,26 +111,27 @@ function listRepoFiles(repoPath: string): string[] {
       ['ls-files', '--cached', '--others', '--exclude-standard', '-z'],
       { cwd: repoPath, maxBuffer: 50 * 1024 * 1024, encoding: 'utf8' },
     );
-    const files = stdout.split('\0').filter(Boolean).map(f => resolve(repoPath, f));
+    const files = stdout.split('\0').filter(Boolean).map(f => resolve(repoPath, f))
+      .filter(f => !hasIgnoredSegment(f, repoPath, ignoreSet));
     log.info({ repo: repoPath, files: files.length }, 'git ls-files');
     return files;
   } catch (err) {
     log.warn({ repo: repoPath, err: String(err) }, 'git ls-files failed, falling back to directory walker');
-    return [...walkFilesLegacy(repoPath)];
+    return [...walkFilesLegacy(repoPath, ignoreSet)];
   }
 }
 
 /** Legacy directory walker — used as fallback for non-git repos. */
-function* walkFilesLegacy(dir: string): Iterable<string> {
+function* walkFilesLegacy(dir: string, ignoreSet: Set<string> = IGNORE_SET): Iterable<string> {
   let entries;
   try { entries = readdirSync(dir, { withFileTypes: true }); }
   catch { return; }
 
   for (const entry of entries) {
-    if (IGNORE_SET.has(entry.name)) continue;
+    if (ignoreSet.has(entry.name)) continue;
     const full = join(dir, entry.name);
     if (entry.isDirectory()) {
-      yield* walkFilesLegacy(full);
+      yield* walkFilesLegacy(full, ignoreSet);
     } else if (entry.isFile()) {
       yield full;
     }
@@ -219,7 +230,10 @@ export class IndexerService {
       }
 
       this.registeredRepos.add(repo.path);
-      await this.watcher.addRepo(repo.path);
+      // Seed the per-repo ignore config for already-registered repos too
+      // (idempotent) so every repo gets the externalized `.insrc` config,
+      // not just fresh adds.
+      await this.watcher.addRepo(repo.path, initRepoIgnore(repo.path));
 
       if (
         repo.status === 'pending' ||
@@ -278,7 +292,7 @@ export class IndexerService {
     const sinceMs = new Date(lastIndexed).getTime();
     if (Number.isNaN(sinceMs)) return [];
 
-    const allFiles = listRepoFiles(repoPath);
+    const allFiles = listRepoFiles(repoPath, resolveRepoIgnore(repoPath));
     const changed: string[] = [];
 
     for (const filePath of allFiles) {
@@ -302,7 +316,9 @@ export class IndexerService {
   async addRepo(repoPath: string): Promise<void> {
     log.info({ repo: repoPath }, 'repo added, enqueuing full index');
     this.registeredRepos.add(repoPath);
-    await this.watcher.addRepo(repoPath);
+    // Seed the per-repo .insrc ignore config (idempotent) + watch with it.
+    const ignore = initRepoIgnore(repoPath);
+    await this.watcher.addRepo(repoPath, ignore);
     this.queue.enqueue({ kind: 'full', repoPath });
 
     // Watch project config dir if it exists
@@ -348,7 +364,7 @@ export class IndexerService {
       let total = 0;
       const t0 = Date.now();
 
-      const files = listRepoFiles(repoPath);
+      const files = listRepoFiles(repoPath, resolveRepoIgnore(repoPath));
       const supported: string[] = [];
       let skippedGenerated = 0;
       for (const filePath of files) {

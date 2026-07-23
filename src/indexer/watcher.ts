@@ -38,8 +38,10 @@ export class Watcher {
     this.handlers.push(handler);
   }
 
-  /** Start watching a repo directory. Idempotent. */
-  async addRepo(repoPath: string): Promise<void> {
+  /** Start watching a repo directory. Idempotent. `ignore` is the per-repo
+   *  ignore dir list (from the repo's `.insrc` config); defaults to the
+   *  universal `IGNORE_DIRS` for config dirs / older registrations. */
+  async addRepo(repoPath: string, ignore: readonly string[] = IGNORE_DIRS): Promise<void> {
     if (this.subscriptions.has(repoPath)) return;
 
     const sub = await parcelWatcher.subscribe(
@@ -53,7 +55,7 @@ export class Watcher {
         }
         this.scheduleDrain();
       },
-      { ignore: IGNORE_DIRS },
+      { ignore: [...ignore] },
     );
 
     this.subscriptions.set(repoPath, sub);

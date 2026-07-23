@@ -18,13 +18,14 @@ import type { Services } from '../services/index.js';
 
 interface Spies {
 	repoAdd: string[];
+	repoAddSteering: Array<unknown>;
 	configWrite: Array<{ path: string; value: unknown }>;
 	panes: number[];
 	exited: boolean;
 }
 
 function ctxWith(overrides: Partial<Services> = {}): { ctx: CommandCtx; spies: Spies } {
-	const spies: Spies = { repoAdd: [], configWrite: [], panes: [], exited: false };
+	const spies: Spies = { repoAdd: [], repoAddSteering: [], configWrite: [], panes: [], exited: false };
 	const base: Services = {
 		daemon: {
 			isRunning: () => true,
@@ -38,7 +39,7 @@ function ctxWith(overrides: Partial<Services> = {}): { ctx: CommandCtx; spies: S
 		},
 		repo: {
 			list: async () => [],
-			add: async p => { spies.repoAdd.push(p); return p; },
+			add: async (p, steering) => { spies.repoAdd.push(p); spies.repoAddSteering.push(steering); return p; },
 			remove: async p => p,
 			reindex: async p => p,
 		},
@@ -81,6 +82,29 @@ function ctxWith(overrides: Partial<Services> = {}): { ctx: CommandCtx; spies: S
 test('help lists the command reference', async () => {
 	const { ctx } = ctxWith();
 	assert.deepEqual(await runCommand('help', ctx), [...COMMAND_HELP]);
+});
+
+test('repo add without --steering passes no steering (no silent write)', async () => {
+	const { ctx, spies } = ctxWith();
+	const out = await runCommand('repo add /work/myrepo', ctx);
+	assert.deepEqual(spies.repoAdd, ['/work/myrepo']);
+	assert.deepEqual(spies.repoAddSteering, [undefined]);
+});
+
+test('repo add --steering installs both CLAUDE.md + AGENTS.md', async () => {
+	const { ctx, spies } = ctxWith();
+	const out = await runCommand('repo add /work/myrepo --steering', ctx);
+	assert.deepEqual(spies.repoAdd, ['/work/myrepo']);
+	assert.deepEqual(spies.repoAddSteering, [{ claude: true, agents: true }]);
+	assert.match(out.join('\n'), /steering → CLAUDE\.md \+ AGENTS\.md/);
+});
+
+test('repo add --steering=claude installs CLAUDE.md only (path parsed past the flag)', async () => {
+	const { ctx, spies } = ctxWith();
+	const out = await runCommand('repo add /work/myrepo --steering=claude', ctx);
+	assert.deepEqual(spies.repoAdd, ['/work/myrepo']);
+	assert.deepEqual(spies.repoAddSteering, [{ claude: true, agents: false }]);
+	assert.match(out.join('\n'), /steering → CLAUDE\.md$/m);
 });
 
 test('repo add dispatches to repo.add with the path', async () => {

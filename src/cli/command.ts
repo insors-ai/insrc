@@ -11,6 +11,7 @@
  */
 
 import type { Services } from './services/index.js';
+import type { SteeringSelection } from '../shared/types.js';
 import type { TrackerSetupStep } from '../workflow/tracker/setup.js';
 import type { ReviewArtifactResult } from '../workflow/review/index.js';
 import { formatBytes, formatUptime } from './ui/format.js';
@@ -107,9 +108,23 @@ async function runDaemon(sub: string | undefined, rest: readonly string[], svc: 
 
 async function runRepo(sub: string | undefined, rest: readonly string[], svc: Services): Promise<string[]> {
 	switch (sub) {
-		case 'add':
-			if (rest[0] === undefined) return ['usage: repo add <path>'];
-			return [`registered ${await svc.repo.add(rest[0])} — indexing started`];
+		case 'add': {
+			const path = rest.find(a => !a.startsWith('--'));
+			if (path === undefined) {
+				return ['usage: repo add <path> [--steering[=claude,agents]]',
+				        '  (the command bar is non-interactive — pass --steering to install the block;',
+				        '   for the per-file y/N prompt use the Repos pane: press a)'];
+			}
+			const steering = parseSteeringFlag(rest);
+			const registered = await svc.repo.add(path, steering);
+			const picks = steering !== undefined
+				? [steering.claude === true ? 'CLAUDE.md' : null, steering.agents === true ? 'AGENTS.md' : null].filter(Boolean).join(' + ')
+				: '';
+			const line = `registered ${registered} — indexing started${picks !== '' ? ` · steering → ${picks}` : ''}`;
+			return picks !== ''
+				? [line]
+				: [line, 'tip: pass --steering[=claude,agents] to install the insrc steering block into CLAUDE.md / AGENTS.md'];
+		}
 		case 'remove': case 'rm':
 			if (rest[0] === undefined) return ['usage: repo remove <path>'];
 			return [`removed ${await svc.repo.remove(rest[0])}`];
@@ -122,6 +137,26 @@ async function runRepo(sub: string | undefined, rest: readonly string[], svc: Se
 		}
 		default: return ['usage: repo add|remove|reindex|list'];
 	}
+}
+
+/** Parse the `--steering` flag for `repo add`. Absent ⇒ undefined (no write —
+ *  the command bar is non-interactive, so steering is explicit-opt-in here).
+ *    --steering               → both CLAUDE.md + AGENTS.md
+ *    --steering=claude        → CLAUDE.md only
+ *    --steering=agents        → AGENTS.md only
+ *    --steering=claude,agents → both (or `--steering=both` / `all`) */
+function parseSteeringFlag(rest: readonly string[]): SteeringSelection | undefined {
+	const flag = rest.find(a => a === '--steering' || a.startsWith('--steering='));
+	if (flag === undefined) return undefined;
+	if (flag === '--steering') return { claude: true, agents: true };
+	const val = flag.slice('--steering='.length).toLowerCase();
+	const parts = val.split(',').map(s => s.trim());
+	const all = parts.includes('both') || parts.includes('all');
+	const sel: SteeringSelection = {
+		claude: all || parts.includes('claude'),
+		agents: all || parts.includes('agents'),
+	};
+	return sel.claude === true || sel.agents === true ? sel : undefined;
 }
 
 async function runWorkflow(sub: string | undefined, rest: readonly string[], svc: Services, ctx: CommandCtx): Promise<string[]> {

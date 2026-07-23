@@ -15,6 +15,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { handleAnalyzeStep } from '../analyze-step/handler.js';
+import { _setResolveForCwdForTests } from '../resolve-repo.js';
 import type {
 	StepOutputEmitBundle,
 	StepOutputEmitPlan,
@@ -85,9 +86,14 @@ test('start returns emit_plan with a state blob + a real prompt', async () => {
 	assert.match(out.guidance, /phase="plan"/);
 });
 
-test('start with no repo + no INSRC_REPO env throws a clear error', async () => {
+test('start with no repo + no INSRC_REPO env → clear no-repo error', async () => {
+	// Repo resolution is now session-aware (explicit > CWD-contained registered
+	// repo > INSRC_REPO). Stub the daemon CWD lookup to find nothing and clear
+	// INSRC_REPO, so resolution returns undefined and the handler surfaces its
+	// clear no-repo error — without depending on a live daemon.
 	const priorEnv = process.env['INSRC_REPO'];
 	delete process.env['INSRC_REPO'];
+	_setResolveForCwdForTests(async () => null);
 	try {
 		const envelope = await handleAnalyzeStep({
 			phase: 'start',
@@ -97,6 +103,7 @@ test('start with no repo + no INSRC_REPO env throws a clear error', async () => 
 		assert.equal(out.next, 'error');
 		assert.match(out.error.message, /no repo/);
 	} finally {
+		_setResolveForCwdForTests();
 		if (priorEnv !== undefined) process.env['INSRC_REPO'] = priorEnv;
 	}
 });

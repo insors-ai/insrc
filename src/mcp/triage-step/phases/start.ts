@@ -11,14 +11,15 @@
  */
 
 import { getLogger } from '../../../shared/logger.js';
+import { resolveRepoPath } from '../../resolve-repo.js';
 import { buildClassifyPrompt, CLASSIFY_SCHEMA } from '../../../workflow/triage/classify.js';
 import { encodeState } from '../state.js';
 import type { TriageEmitClassification, TriageInputStart, TriageState } from '../types.js';
 
 const log = getLogger('mcp:triage-step:start');
 
-export function handleStart(input: TriageInputStart): TriageEmitClassification {
-	const repo = resolveRepoPath(input.repo);
+export async function handleStart(input: TriageInputStart): Promise<TriageEmitClassification> {
+	const repo = await resolveRepoPath(input.repo);
 	if (repo === undefined) {
 		throw new Error(
 			`insrc_triage[start]: no repo. Pass \`repo\` explicitly or set INSRC_REPO ` +
@@ -59,9 +60,3 @@ export function handleStart(input: TriageInputStart): TriageEmitClassification {
 	};
 }
 
-function resolveRepoPath(explicit: string | undefined): string | undefined {
-	if (explicit !== undefined && explicit.length > 0) return explicit;
-	const env = process.env['INSRC_REPO'];
-	if (env !== undefined && env.length > 0) return env;
-	return undefined;
-}

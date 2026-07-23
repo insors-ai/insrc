@@ -21,7 +21,7 @@
  */
 
 import { statSync } from 'node:fs';
-import { basename, isAbsolute, resolve } from 'node:path';
+import { basename, isAbsolute, resolve, sep } from 'node:path';
 
 import type { RegisteredRepo } from '../shared/types.js';
 import {
@@ -219,6 +219,25 @@ export async function listRepos(_db: DbClient): Promise<RegisteredRepo[]> {
 		out.push(rowToRepo(row));
 	}
 	return out;
+}
+
+/** The registered repo whose path CONTAINS `cwd` — either equal to it, or an
+ *  ancestor directory at a path-segment boundary (so `/foo` does NOT contain
+ *  `/foobar`). On nested registrations the longest (most-specific) containing
+ *  path wins. Returns undefined when no registered path contains `cwd`.
+ *
+ *  Pure over the passed rows — the daemon feeds it `listRepos()` output so the
+ *  CWD→repo match lives next to the registry that owns the paths (the MCP side
+ *  never opens the registry directly). See the session-aware repo-resolution
+ *  LLD (`docs/designs/LLD-make-insrc-mcp-server-s-repo-S001.md`). */
+export function repoContainingCwd(repos: readonly RegisteredRepo[], cwd: string): string | undefined {
+	let best: string | undefined;
+	for (const r of repos) {
+		if (cwd === r.path || cwd.startsWith(r.path + sep)) {
+			if (best === undefined || r.path.length > best.length) best = r.path;
+		}
+	}
+	return best;
 }
 
 export async function updateRepoStatus(

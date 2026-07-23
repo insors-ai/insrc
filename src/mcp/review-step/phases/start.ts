@@ -15,6 +15,8 @@
 
 import { existsSync, readFileSync } from 'node:fs';
 
+import { resolveRepoPath } from '../../resolve-repo.js';
+
 import { getLogger } from '../../../shared/logger.js';
 import { jsonPathForMd } from '../../../workflow/gates.js';
 import { buildExtractPrompt, EXTRACT_SCHEMA } from '../../../workflow/review/index.js';
@@ -23,8 +25,8 @@ import type { ReviewStepEmitClaims, ReviewStepInputStart, ReviewStepStatePayload
 
 const log = getLogger('mcp:review-step:start');
 
-export function handleStart(input: ReviewStepInputStart): ReviewStepEmitClaims {
-	const repo = resolveRepoPath(input.repo);
+export async function handleStart(input: ReviewStepInputStart): Promise<ReviewStepEmitClaims> {
+	const repo = await resolveRepoPath(input.repo);
 	if (repo === undefined) {
 		throw new Error(
 			`insrc_review_step[start]: no repo. Pass \`repo\` explicitly or set INSRC_REPO ` +
@@ -70,12 +72,6 @@ export function handleStart(input: ReviewStepInputStart): ReviewStepEmitClaims {
 	};
 }
 
-function resolveRepoPath(explicit: string | undefined): string | undefined {
-	if (explicit !== undefined && explicit.length > 0) return explicit;
-	const env = process.env['INSRC_REPO'];
-	if (env !== undefined && env.length > 0) return env;
-	return undefined;
-}
 
 /** Resolve the artifact's (md, json) pair. Given a `.md`/`.html` path the
  *  canonical json is found via `jsonPathForMd`; given a `.json` path its

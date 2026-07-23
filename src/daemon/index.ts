@@ -65,7 +65,7 @@ process.on('unhandledRejection', (reason) => reportFatal('unhandledRejection', r
 import { getDb, initDb, closeDb } from '../db/client.js';
 import { closeDuckDB } from './db/duckdb-pool.js';
 import {
-	listRepos, addRepo, removeRepo,
+	listRepos, addRepo, removeRepo, repoContainingCwd,
 	InvalidRepoPathError, validateRepoPath,
 } from '../db/repos.js';
 import { deleteEntitiesForRepo, findEntitiesByFile, getEntity } from '../db/entities.js';
@@ -475,6 +475,19 @@ async function main(): Promise<void> {
 
 		'repo.list': async () => {
 			return await listRepos(db);
+		},
+
+		// Session-aware repo resolution: given a session CWD, return the
+		// registered repo whose path contains it (most-specific on nesting), or
+		// null. Keeps the CWD→repo containment match daemon-side, next to the
+		// registry that owns the paths — the MCP resolver is a thin caller.
+		'repo.resolveForCwd': async (params) => {
+			const { cwd } = (params ?? {}) as { cwd?: unknown };
+			if (typeof cwd !== 'string' || cwd.length === 0) {
+				return { error: 'repo.resolveForCwd: `cwd` (non-empty string) required' };
+			}
+			const repos = await listRepos(db);
+			return { path: repoContainingCwd(repos, cwd) ?? null };
 		},
 
 		'repo.reindex': async (params) => {

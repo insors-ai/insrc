@@ -34,6 +34,7 @@
  */
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { resolveRepoPath } from './resolve-repo.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 
@@ -849,8 +850,9 @@ async function handleAnalyze(
 	content:  { type: 'text'; text: string }[];
 	isError?: boolean;
 }> {
-	// Resolve the repo path. Explicit param > INSRC_REPO env > fail.
-	const repoPath = resolveRepoPath(args.repo);
+	// Resolve the repo path: explicit param > CWD-contained registered repo >
+	// INSRC_REPO env > fail (session-aware; see resolve-repo.ts).
+	const repoPath = await resolveRepoPath(args.repo);
 	if (repoPath === undefined) {
 		return errorResult(
 			'no repo -- pass the `repo` param or set INSRC_REPO in the ' +
@@ -933,13 +935,6 @@ function detectClientProvider(name: string | undefined): AnalyzeShaperProviderKi
 	const n = name.toLowerCase();
 	if (n.includes('codex'))  return 'cli-codex';
 	if (n.includes('claude')) return 'cli-claude';
-	return undefined;
-}
-
-function resolveRepoPath(explicit: string | undefined): string | undefined {
-	if (explicit !== undefined && explicit.length > 0) return explicit;
-	const env = process.env['INSRC_REPO'];
-	if (env !== undefined && env.length > 0) return env;
 	return undefined;
 }
 

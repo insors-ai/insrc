@@ -17,6 +17,7 @@
  */
 
 import { prepareDecompose } from '../../../analyze/context/decomposer.js';
+import { resolveRepoPath } from '../../resolve-repo.js';
 import { resolveRepoLastIndexedAt } from '../../../analyze/context/driver.js';
 import { renderBundleAsMarkdown } from '../../bundle-md.js';
 import { readBundleForStep } from '../cache-lookup.js';
@@ -35,7 +36,7 @@ const log = getLogger('mcp:analyze-step:start');
 export async function handleStart(
 	input: StepInputStart,
 ): Promise<StepOutputEmitPlan | StepOutputDone> {
-	const repoPath = resolveRepoPath(input.repo);
+	const repoPath = await resolveRepoPath(input.repo);
 	if (repoPath === undefined) {
 		throw new Error(
 			`insrc_analyze_step[start]: no repo. Pass \`repo\` explicitly or set INSRC_REPO ` +
@@ -121,9 +122,3 @@ export async function handleStart(
 // Helpers
 // ---------------------------------------------------------------------------
 
-function resolveRepoPath(explicit: string | undefined): string | undefined {
-	if (explicit !== undefined && explicit.length > 0) return explicit;
-	const env = process.env['INSRC_REPO'];
-	if (env !== undefined && env.length > 0) return env;
-	return undefined;
-}

@@ -265,6 +265,14 @@ export function pollRun(runId: string, cursor: number, deps: UnaryRpcDeps = {}):
 	return unaryRpc<PollRunResult>('workflow.run.poll', { runId, cursor }, deps);
 }
 
+/** Ask the daemon which registered repo contains `cwd` (most-specific on
+ *  nesting), or null when none does. Rejects (surfacing an unreachable-daemon
+ *  error) rather than resolving null when the socket is down, so a broken
+ *  daemon is never misread as "no repo". */
+export function resolveRepoForCwd(cwd: string, deps: UnaryRpcDeps = {}): Promise<string | null> {
+	return unaryRpc<{ path: string | null }>('repo.resolveForCwd', { cwd }, deps).then(r => r.path);
+}
+
 /** Abort a detached run mid-flight. */
 export function abortRun(runId: string, deps: UnaryRpcDeps = {}): Promise<{ ok: boolean }> {
 	return unaryRpc<{ ok: boolean }>('workflow.run.abort', { runId }, deps);

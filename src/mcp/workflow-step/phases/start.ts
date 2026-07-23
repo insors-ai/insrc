@@ -23,6 +23,7 @@
  */
 
 import { getLogger } from '../../../shared/logger.js';
+import { resolveRepoPath } from '../../resolve-repo.js';
 import { deriveSlug } from '../../../workflow/slug.js';
 import { assertEpicHash, computeEpicHash } from '../../../workflow/hash.js';
 import type { WorkflowIntent } from '../../../workflow/types.js';
@@ -36,7 +37,7 @@ const log = getLogger('mcp:workflow-step:start');
 export async function handleStart(
 	input: WorkflowStepInputStart,
 ): Promise<WorkflowStepEmitPlan | WorkflowStepResolveQuestions> {
-	const repoPath = resolveRepoPath(input.repo);
+	const repoPath = await resolveRepoPath(input.repo);
 	if (repoPath === undefined) {
 		throw new Error(
 			`insrc_workflow_step[start]: no repo. Pass \`repo\` explicitly or set INSRC_REPO ` +
@@ -95,12 +96,6 @@ export async function handleStart(
 	};
 }
 
-function resolveRepoPath(explicit: string | undefined): string | undefined {
-	if (explicit !== undefined && explicit.length > 0) return explicit;
-	const env = process.env['INSRC_REPO'];
-	if (env !== undefined && env.length > 0) return env;
-	return undefined;
-}
 
 /** Key that groups this run's trace log under `~/.insrc/workflow-runs/`.
  *  Epic-scoped workflows key by the 16-char Epic hash so every

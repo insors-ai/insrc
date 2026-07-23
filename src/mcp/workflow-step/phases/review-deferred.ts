@@ -16,6 +16,7 @@
  */
 
 import { getLogger } from '../../../shared/logger.js';
+import { resolveRepoPath } from '../../resolve-repo.js';
 import { epicCatalog } from '../../../workflow/gates.js';
 import { assertEpicHash } from '../../../workflow/hash.js';
 import { generateQuestionOptions, listDeferred } from '../../../workflow/questions.js';
@@ -24,12 +25,6 @@ import type { WorkflowStepDeferred, WorkflowStepError, WorkflowStepInputReviewDe
 
 const log = getLogger('mcp:workflow-step:review-deferred');
 
-function resolveRepoPath(explicit: string | undefined): string | undefined {
-	if (explicit !== undefined && explicit.length > 0) return explicit;
-	const env = process.env['INSRC_REPO'];
-	if (env !== undefined && env.length > 0) return env;
-	return undefined;
-}
 
 /** Resolve `params.epicHash` directly, or map `params.epicSlug` → hash via
  *  the Epic catalog. Returns undefined when neither resolves. */
@@ -47,7 +42,7 @@ function resolveEpicHash(repoPath: string, params: Record<string, unknown>): str
 export async function handleReviewDeferred(
 	input: WorkflowStepInputReviewDeferred,
 ): Promise<WorkflowStepDeferred | WorkflowStepError> {
-	const repoPath = resolveRepoPath(input.repo);
+	const repoPath = await resolveRepoPath(input.repo);
 	if (repoPath === undefined) {
 		return err('no-repo', `insrc_workflow_step[review_deferred]: no repo. Pass \`repo\` or set INSRC_REPO.`);
 	}

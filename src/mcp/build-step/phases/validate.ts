@@ -34,7 +34,7 @@ export function _setBuildValidateProviderForTests(p: ValidateProvider | undefine
 }
 
 export async function handleValidate(input: BuildStepInputValidate): Promise<BuildStepDone | BuildStepError> {
-	const repoPath = resolveRepoPath(input.repo);
+	const repoPath = await resolveRepoPath(input.repo);
 	if (repoPath === undefined) {
 		return err('no-repo', `insrc_build_step[validate]: no repo. Pass \`repo\` or set INSRC_REPO.`);
 	}

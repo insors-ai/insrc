@@ -41,7 +41,7 @@ const log = getLogger('mcp:build-step:implement');
 export async function handleImplement(
 	input: BuildStepInputImplement,
 ): Promise<BuildStepImplement | BuildStepRefused | BuildStepError> {
-	const repoPath = resolveRepoPath(input.repo);
+	const repoPath = await resolveRepoPath(input.repo);
 	if (repoPath === undefined) {
 		return err('no-repo', `insrc_build_step[implement]: no repo. Pass \`repo\` or set INSRC_REPO.`);
 	}

@@ -20,22 +20,22 @@ import type { TriageInput, TriageMcpEnvelope, TriageOutput } from './types.js';
 
 const log = getLogger('mcp:triage-step:handler');
 
-export function handleTriageStep(input: unknown): TriageMcpEnvelope {
-	const result = dispatch(input);
+export async function handleTriageStep(input: unknown): Promise<TriageMcpEnvelope> {
+	const result = await dispatch(input);
 	return {
 		content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
 		...(result.next === 'error' ? { isError: true } : {}),
 	};
 }
 
-function dispatch(input: unknown): TriageOutput {
+async function dispatch(input: unknown): Promise<TriageOutput> {
 	if (typeof input !== 'object' || input === null || !('phase' in input)) {
 		return { next: 'error', code: 'bad-input', message: 'insrc_triage: input must be an object with a `phase` field.' };
 	}
 	const step = input as TriageInput;
 	try {
 		switch (step.phase) {
-			case 'start':    return handleStart(step);
+			case 'start':    return await handleStart(step);
 			case 'classify': return handleClassify(step);
 			default:
 				return { next: 'error', code: 'bad-phase', message: `insrc_triage: unknown phase '${(step as { phase?: string }).phase}'.` };

@@ -18,6 +18,7 @@
  */
 
 import { getLogger } from '../../../shared/logger.js';
+import { resolveRepoPath } from '../../resolve-repo.js';
 import { assertEpicHash } from '../../../workflow/hash.js';
 import { questionsWithOptions, recordResolution } from '../../../workflow/questions.js';
 import type { QuestionResolutionStatus } from '../../../workflow/types.js';
@@ -31,17 +32,11 @@ import type {
 
 const log = getLogger('mcp:workflow-step:resolve-question');
 
-function resolveRepoPath(explicit: string | undefined): string | undefined {
-	if (explicit !== undefined && explicit.length > 0) return explicit;
-	const env = process.env['INSRC_REPO'];
-	if (env !== undefined && env.length > 0) return env;
-	return undefined;
-}
 
 export async function handleResolveQuestion(
 	input: WorkflowStepInputResolveQuestion,
 ): Promise<WorkflowStepResolveQuestions | WorkflowStepReady | WorkflowStepError> {
-	const repoPath = resolveRepoPath(input.repo);
+	const repoPath = await resolveRepoPath(input.repo);
 	if (repoPath === undefined) {
 		return err('no-repo', `insrc_workflow_step[resolve_question]: no repo. Pass \`repo\` or set INSRC_REPO.`);
 	}

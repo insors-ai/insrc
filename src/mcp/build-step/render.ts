@@ -32,14 +32,10 @@ const TEST_CMD      = `npx tsx --test 'src/**/__tests__/*.test.ts'`;
 // Repo + task resolution
 // ---------------------------------------------------------------------------
 
-/** Explicit param > `INSRC_REPO` env > undefined. Mirrors
- *  `workflow-step/phases/start.ts`. */
-export function resolveRepoPath(explicit: string | undefined): string | undefined {
-	if (explicit !== undefined && explicit.length > 0) return explicit;
-	const env = process.env['INSRC_REPO'];
-	if (env !== undefined && env.length > 0) return env;
-	return undefined;
-}
+/** Session-aware repo resolution: explicit > CWD-contained registered repo >
+ *  INSRC_REPO > undefined. Re-exported from the single shared resolver so the
+ *  build-step phase handlers keep importing it from here. */
+export { resolveRepoPath } from '../resolve-repo.js';
 
 /** A resolved, task-level ref (guaranteed `task !== undefined`). */
 export interface ResolvedTask extends ResolvedRef {

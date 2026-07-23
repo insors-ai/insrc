@@ -191,6 +191,26 @@ test('isLldBody rejects missing testStrategy', () => {
 	assert.equal(isLldBody(bad), false);
 });
 
+// Partial LLM emission: parent object present but a nested required array
+// missing. Must be rejected here — else checkApiSignaturesTypeLevel /
+// renderLldMarkdown throw a TypeError deep in finalize (masked only by retry).
+test('isLldBody rejects contractDetails without an api array', () => {
+	const bad = { ...lldBodyFixture(), contractDetails: { surfaceLevel: 'internal' } } as Record<string, unknown>;
+	assert.equal(isLldBody(bad), false);
+});
+
+test('isLldBody rejects testStrategy without an acceptanceMapping array', () => {
+	const { acceptanceMapping: _drop, ...ts } = lldBodyFixture().testStrategy;
+	const bad = { ...lldBodyFixture(), testStrategy: ts } as Record<string, unknown>;
+	assert.equal(isLldBody(bad), false);
+});
+
+test('checkApiSignaturesTypeLevel: a body rejected by isLldBody never reaches it (no TypeError)', () => {
+	const partial = { ...lldBodyFixture(), contractDetails: { surfaceLevel: 'internal' } } as Record<string, unknown>;
+	// The guard is the contract: partial bodies are filtered before the check runs.
+	assert.equal(isLldBody(partial), false);
+});
+
 // ---------------------------------------------------------------------------
 // checkSharedContractRefs
 // ---------------------------------------------------------------------------

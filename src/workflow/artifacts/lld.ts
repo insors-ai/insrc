@@ -435,6 +435,11 @@ function escapePipes(s: string): string { return s.replace(/\|/g, '\\|'); }
 // Runtime type guards
 // ---------------------------------------------------------------------------
 
+/** True iff `o[key]` is an array — for validating nested required arrays. */
+function hasArray(o: unknown, key: string): boolean {
+	return typeof o === 'object' && o !== null && Array.isArray((o as Record<string, unknown>)[key]);
+}
+
 export function isLldBody(v: unknown): v is LldBody {
 	if (typeof v !== 'object' || v === null) return false;
 	const r = v as Record<string, unknown>;
@@ -447,6 +452,18 @@ export function isLldBody(v: unknown): v is LldBody {
 	if (!Array.isArray(r['alternativesConsidered'])) return false;
 	if (typeof r['chosenAlternative'] !== 'string')  return false;
 	if (!Array.isArray(r['openQuestions']))          return false;
+	// Nested required arrays iterated unguarded by the checks + renderer. A body
+	// whose parent object is present but whose array is missing (a partial LLM
+	// emission) must be rejected as a schema-failure here — not throw a
+	// TypeError deep in checkApiSignaturesTypeLevel / renderLldMarkdown.
+	if (!hasArray(r['contractDetails'], 'api'))                return false;
+	if (!hasArray(r['hldContextSlice'], 'ownedContracts'))    return false;
+	if (!hasArray(r['hldContextSlice'], 'consumedContracts')) return false;
+	if (!hasArray(r['errorPaths'], 'errorCases'))             return false;
+	if (!hasArray(r['errorPaths'], 'edgeCases'))              return false;
+	if (!hasArray(r['errorPaths'], 'invariantsToPreserve'))   return false;
+	if (!hasArray(r['testStrategy'], 'testLevels'))           return false;
+	if (!hasArray(r['testStrategy'], 'acceptanceMapping'))    return false;
 	return true;
 }
 

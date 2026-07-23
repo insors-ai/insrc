@@ -110,6 +110,7 @@
   <p>From the command bar (non-interactive, so it can't prompt) pass the flag explicitly: <code>repo add &lt;path&gt; --steering</code> installs both, or <code>--steering=claude</code> / <code>--steering=agents</code> for one. Bare <code>repo add &lt;path&gt;</code> installs nothing (no silent write) and prints a reminder.</p>
   <div class="warn">The repo registry is the contract. An entity whose repo path isn't registered fails the upsert with <code>UnregisteredRepoError</code> — the storage layer never auto-allocates registry rows. Always add a repo before expecting queries to resolve.</div>
   <p>Wait for the status to reach <code>ready</code> (embeddings pending shows as a count). Graph searches span the transitive <code>DEPENDS_ON</code> closure of the active repo, so add dependency repos too if you want cross-repo answers.</p>
+  <p>On add, insrc writes a per-repo <code>.insrc/config.json</code> with an <code>ignore</code> section — seeded from the repo's <code>.gitignore</code> when present, otherwise from its type (node / python / java / go). Edit it to control which directories the indexer and file-watcher skip (e.g. <code>node_modules</code>, <code>dist</code>, <code>target</code>, <code>__pycache__</code>). It's created idempotently and never overwritten once you've customised it.</p>
 
   <h2 id="ask">5 · Ask your first question</h2>
   <p>For any question about a codebase's structure, conventions or capabilities, use the analyze tools — every claim is grounded in a real graph exploration, with file paths drawn from the index (no hallucinated paths).</p>
@@ -120,20 +121,19 @@
   <p>Prefer <code>insrc_analyze_step</code> (multi-turn, stays in your session) over the one-shot <code>insrc_analyze</code> when driving from an MCP client — it's more accurate and doesn't spawn a separate billing path. See <a href="analyze.html">the analyze guide</a>.</p>
 
   <h2 id="mcp">Register the MCP servers</h2>
-  <p>To let <code>claude</code> / <code>codex</code> call insrc directly, register the MCP binary. It exposes two servers: <code>insrc_analyze_step</code> and <code>insrc_workflow_step</code>.</p>
+  <p>To let <code>claude</code> / <code>codex</code> call insrc directly, register the MCP binary. It exposes the full tool suite — <code>insrc_analyze_step</code>, <code>insrc_triage</code>, <code>insrc_workflow_step</code> / <code>insrc_workflow_run</code>, <code>insrc_review_step</code> and <code>insrc_build_step</code>.</p>
   <div class="code">
     <div class="code-head"><span class="name">claude — .mcp.json</span><button class="copy" type="button">copy</button></div>
 <pre><code>{
   <span class="k">"mcpServers"</span>: {
     <span class="k">"insrc"</span>: {
       <span class="k">"command"</span>: <span class="s">"node"</span>,
-      <span class="k">"args"</span>: [<span class="s">"/path/to/insrc/out/bin/insrc-mcp.js"</span>],
-      <span class="k">"env"</span>: { <span class="k">"INSRC_REPO"</span>: <span class="s">"/path/to/your/repo"</span> }
+      <span class="k">"args"</span>: [<span class="s">"/path/to/insrc/out/bin/insrc-mcp.js"</span>]
     }
   }
 }</code></pre>
   </div>
-  <p><code>INSRC_REPO</code> is the default repo for tool calls; an explicit <code>repo</code> argument overrides it. The repo must be registered with the daemon and finished indexing.</p>
+  <p>Repo resolution is <strong>session-aware</strong>, so a single global config works across all your repos and concurrent sessions — no per-repo setup. Order: an explicit <code>repo</code> argument wins; otherwise the server matches its working directory against the registered repos (the session workspace); an optional <code>INSRC_REPO</code> env is the last-resort fallback for headless / cron use where there's no meaningful working directory. The repo must be registered with the daemon and finished indexing.</p>
 
   <h2 id="next">Where next</h2>
   <div class="grid">

@@ -214,8 +214,8 @@
   <h2 id="repo">The repo argument</h2>
   <p>Analyze operates against one registered repo:</p>
   <ul>
-    <li>If <code>repo</code> is not passed, the tool uses <code>$INSRC_REPO</code> from the MCP server's environment.</li>
-    <li>An explicit <code>repo</code> argument overrides that default.</li>
+    <li>Resolution is <strong>session-aware</strong>, in order: an explicit <code>repo</code> argument wins; otherwise the server matches its working directory against the registered repos; otherwise it falls back to <code>$INSRC_REPO</code> from the environment (headless / cron).</li>
+    <li>Because the working directory disambiguates the session, one MCP registration serves every repo — no per-repo <code>INSRC_REPO</code> needed.</li>
     <li>Either way, the repo must be <strong>registered with the daemon</strong> (add it via the TUI's Repos pane → <kbd>a</kbd>, or the <code>repo.add</code> IPC) and have <strong>finished indexing</strong>.</li>
   </ul>
   <div class="warn">Graph searches span only the transitive <code>DEPENDS_ON</code> closure of the active repo. If you want cross-repo answers, register the dependency repos too — an entity whose repo path isn't registered never enters the graph.</div>

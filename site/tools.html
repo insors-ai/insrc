@@ -82,7 +82,7 @@
   </ul>
   <p>Two implementations back it:</p>
   <div class="grid">
-    <a class="card" href="#providers"><div class="glyph">◍</div><h4>OllamaProvider <span class="badge ok">local</span></h4><p><code>src/agent/providers/ollama.ts</code>. Local LLM (qwen3-coder) and embeddings (qwen3-embedding). Always available — embeddings are local-only, so Ollama is a hard prerequisite.</p><span class="more">local-first</span></a>
+    <a class="card" href="#providers"><div class="glyph">◍</div><h4>OllamaProvider <span class="badge ok">local</span></h4><p><code>src/agent/providers/ollama.ts</code>. Local LLM (qwen3.6:35b-a3b analyzer/shaper core) and embeddings (qwen3-embedding:0.6b). Embeddings are always local, so Ollama is a hard prerequisite; the analyzer model is only needed when reasoning runs through Ollama rather than the claude / codex CLI.</p><span class="more">local-first</span></a>
     <a class="card" href="#providers"><div class="glyph">⌘</div><h4>CliProvider <span class="badge man">CLI</span></h4><p><code>src/agent/providers/cli-provider.ts</code>. A subprocess wrapper around the installed <code>claude</code> and <code>codex</code> binaries. Structured-output aware; cloud auth + quota are delegated to the CLIs' OAuth sessions.</p><span class="more">no keys</span></a>
   </div>
   <div class="term" style="margin:16px 0">

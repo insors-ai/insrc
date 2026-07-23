@@ -1,0 +1,508 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1784804966200-8b7p8t",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-07-23T11:14:39.432Z",
+    "model": "client",
+    "elapsedMs": 313230,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "aa737b47e8712a83",
+    "epicSlug": "add-surgical-audit-correction-loop-daemon",
+    "storyId": "S001",
+    "hldBaseRunId": "wf-1784804966200-8b7p8t",
+    "hldEffectiveHash": "aa737b47e8712a83948a6553e750e6acf437b243a087a3880a1fcedf7c37911e",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "feature",
+    "triageRationale": "One cohesive story with a real design decision (surgical patch vs step re-run vs whole-workflow re-run; user mandates minimal feedback-correction, no re-run) across 3 modules under a single design. Not epic (no new subsystem/independent stories), not small (changes the ValidationResult failure taxonomy + adds a new correction/re-audit mechanism).",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "c1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "boundaryHardFailure in src/workflow/orchestrator.ts accepts an optional findings parameter of type readonly BoundaryFinding[].",
+          "evidence": "orchestrator.ts:400 defines `function boundaryHardFailure(message: string, findings?: readonly BoundaryFinding[]): ValidationResult` — exact signature match.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "ValidationFailure in src/workflow/synthesizer.ts carries optional findings?: readonly BoundaryFinding[] and correctable?: boolean fields.",
+          "evidence": "synthesizer.ts:66 `readonly findings?: ReadonlyArray<BoundaryFinding>;` and :72 `readonly correctable?: boolean;` both present on ValidationFailure.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The BoundaryFinding type { itemId; verdict; detail } is defined in src/workflow/synthesizer.ts.",
+          "evidence": "synthesizer.ts:43 `export interface BoundaryFinding` with :44 itemId:string and :45 verdict:'missed'|'ambiguous'. The other readonly itemId matches (workflow-rpc ReAuditResult, todos.ts) are unrelated types, not contradictions.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "reAuditBoundary and correctionDirective helpers exist in src/daemon/workflow-rpc.ts.",
+          "evidence": "workflow-rpc.ts:543 `export async function reAuditBoundary(` and :505 `export function correctionDirective(` both present.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c5",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "RunWorkflowOpts in src/daemon/workflow-rpc.ts adds a maxCorrectionRounds option, defaulting to 3 in runWorkflowServerSide.",
+          "evidence": "workflow-rpc.ts:88 `readonly maxCorrectionRounds?: number | undefined;` and :165 `const maxCorrectionRounds = opts.maxCorrectionRounds ?? 3;` confirm the option and the default of 3.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c6",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The correction loop swaps the fresh re-audit verdict into the audit step output (liveStepOutputs[auditStepId]) before re-finalizing, rather than reading the frozen verdict.",
+          "evidence": "workflow-rpc.ts:166 selects auditStepId ('define'->'s4' else 's8') and :201 swaps the fresh verdict `liveStepOutputs = { ...liveStepOutputs, [auditStepId]: freshAudit }` before re-finalize — the fresh-verdict semantic holds.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c7",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "boundaryHardFailure is minted at the scope-boundary mint sites in the orchestrator (define s4, define-extend, design.story s8), each now passing boundaryFindings(failed).",
+          "evidence": "Exactly three mint sites at orchestrator.ts:627 (define s4), :718 (define-extend s4), :1243 (design.story s8), each passing boundaryFindings(failed). Inventory of three confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c8",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The re-audit uses RE_AUDIT_SCHEMA and returns results shaped {itemId, verdict, evidence} matching what finalize reads.",
+          "evidence": "workflow-rpc.ts:518 `const RE_AUDIT_SCHEMA` and :564 `provider.completeStructured<ReAuditResult>` confirm the re-audit schema + typed return shape.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c9",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A boundary hard-fail is marked correctable only when findings are non-empty (an empty-findings boundary failure stays terminal).",
+          "evidence": "orchestrator.ts:403 spreads `{ findings, correctable: true }` only when `findings !== undefined && findings.length > 0` — an empty-findings boundary failure stays terminal, exactly as claimed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c10",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The correctable-boundary taxonomy and the correction helpers are covered by tests in src/daemon/__tests__/workflow-rpc-correction.test.ts.",
+          "evidence": "workflow-rpc-correction.test.ts:61 tests the CORRECTABLE-with-findings taxonomy and :127 tests reAuditBoundary against the corrected artifact — coverage confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 10
+      },
+      "reviewedAt": "2026-07-23T11:24:50.656Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-07-23T11:25:35.837Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "S001",
+        "owns": [],
+        "depends": [],
+        "internal": "Add surgical audit-correction loop to the workflow runner"
+      },
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "boundaryHardFailure",
+          "signature": "function boundaryHardFailure(message: string, findings?: readonly BoundaryFinding[]): ValidationFailure",
+          "parameters": [
+            {
+              "name": "message",
+              "type": "string",
+              "purpose": "The one-line human-readable summary (e.g. 's8 scope-boundary hard-fail on: sbdry4'), unchanged from today. [[c2]]",
+              "optional": false
+            },
+            {
+              "name": "findings",
+              "type": "readonly BoundaryFinding[]",
+              "purpose": "The structured flagged items (itemId + verdict + detail) extracted from the audit output, so the runner can build a targeted correction directive instead of parsing the message string. [[c2]]",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "ValidationFailure",
+            "meaning": "A boundary-kind failure; marked correctable (carrying findings) when findings are supplied, else the historical terminal retryable:false. [[c2]]"
+          },
+          "errors": [],
+          "preconditions": [
+            "Each findings[].itemId is a real audit item id from the frozen audit step output (sb1..sb3 for define, sbdry1..sbdry4 for design.story)."
+          ],
+          "postconditions": [
+            "Returned failure has kind='boundary' and retryable=false.",
+            "When findings is non-empty the failure carries findings and correctable=true so the runner attempts correction; called without findings it preserves today's terminal behavior for client/MCP-driven call-sites."
+          ]
+        },
+        {
+          "name": "runWorkflowServerSide",
+          "signature": "function runWorkflowServerSide(intent: WorkflowIntent, provider: LLMProvider, opts: RunWorkflowOpts): Promise<RunWorkflowResult>",
+          "parameters": [
+            {
+              "name": "intent",
+              "type": "WorkflowIntent",
+              "purpose": "The workflow intent being driven (unchanged). [[c1]]",
+              "optional": false
+            },
+            {
+              "name": "provider",
+              "type": "LLMProvider",
+              "purpose": "Structured-output-capable provider for synthesize + re-audit calls (unchanged). [[c1]]",
+              "optional": false
+            },
+            {
+              "name": "opts",
+              "type": "RunWorkflowOpts",
+              "purpose": "Adds maxCorrectionRounds?: number (default 3; 0 = historical terminate-on-first-boundary-fail) alongside the existing runId/epicKey/modelLabel/maxSynthAttempts/signal/onProgress fields. [[c1]]",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<RunWorkflowResult>",
+            "meaning": "The persisted artifact path + artifact + runId, exactly as today on success."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "Thrown only after maxCorrectionRounds correction rounds still leave a boundary audit failing, or on a genuinely non-correctable failure (e.g. a schema failure surviving maxSynthAttempts) — termination is now the last resort, not the first response to a boundary hard-fail."
+            }
+          ],
+          "preconditions": [
+            "provider.capabilities.structuredOutput is true (existing gate)."
+          ],
+          "postconditions": [
+            "On a correctable boundary failure, the runner injects the findings into the existing feedback channel, re-emits the synthesized body, re-runs ONLY the audit against the corrected body, swaps the fresh verdict into the audit step output, and re-finalizes — up to maxCorrectionRounds rounds; no design step s1..s7 is re-run and no scope re-run occurs.",
+            "A persisted artifact is written (writeAtomic) only when finalizeArtifact returns ok, so a failing run leaves no partial artifact.",
+            "onProgress emits a correction-round frame per round."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "BoundaryFinding",
+        "change": "new",
+        "details": "A structured audit finding carried on a boundary failure so the correction loop can target it: { itemId: string; verdict: 'missed' | 'ambiguous'; detail: string }. itemId is the audit item (e.g. 'sbdry4'), verdict mirrors the audit verdict values read at finalize, detail is the auditor's own explanation (its evidence/notes) of what was flagged. Extracted from the frozen audit step output via a boundaryFindings helper at the point boundaryHardFailure is minted. [[c2]][[c3]]",
+        "callSites": [
+          "src/workflow/synthesizer.ts",
+          "src/workflow/orchestrator.ts",
+          "src/daemon/workflow-rpc.ts"
+        ]
+      },
+      {
+        "entity": "ValidationFailure",
+        "change": "field-add",
+        "details": "Add two optional, additive fields to the existing ValidationFailure interface: findings?: readonly BoundaryFinding[] (the structured flagged items) and correctable?: boolean (true when a targeted correction loop can fix it; distinct from retryable, which governs plain synth re-emits). Existing consumers are unaffected because both fields are optional; the runner treats kind==='boundary' && correctable===true as the signal to enter the correction loop rather than throw. [[c3]]",
+        "schemaDiff": "interface ValidationFailure { ok:false; kind:'schema'|'citations'|'boundary'; message:string; details?:readonly string[]; retryable?:boolean; findings?:readonly BoundaryFinding[]; correctable?:boolean }",
+        "callSites": [
+          "src/workflow/synthesizer.ts",
+          "src/workflow/orchestrator.ts",
+          "src/daemon/workflow-rpc.ts"
+        ]
+      },
+      {
+        "entity": "reAuditBoundary",
+        "change": "new",
+        "details": "A new internal helper in the daemon runner that, given the corrected artifact, re-runs ONLY the scope-boundary audit against the corrected content and returns fresh verdicts shaped like the audit step output ({results:[{itemId,verdict,evidence}]}). This lets finalize judge the CORRECTED body instead of the stale frozen audit output. Paired with a correctionDirective helper that builds the tightly-scoped 'fix only the flagged reference, change nothing else, ground replacements in s1' directive. Both live in src/daemon/workflow-rpc.ts and are invoked from the reshaped runWorkflowServerSide correction loop. [[c1]]",
+        "callSites": [
+          "src/daemon/workflow-rpc.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The boundary audit still fails after the correction loop has run maxCorrectionRounds rounds.",
+          "detection": "The runner's correction-round counter reaches maxCorrectionRounds while the fresh re-audit verdict for the current content still reports a boundary finding.",
+          "response": "Throw a terminal error listing the persistent findings (itemId + detail), emitted only as the last resort after exhausting rounds. No artifact is persisted.",
+          "userImpact": "Run terminates with a clear 'could not correct after N rounds' message enumerating exactly which items remained — far more actionable than today's immediate abort, and only after real correction attempts.",
+          "recoverable": false
+        },
+        {
+          "scenario": "A correction round removes the flagged reference but the re-emitted body introduces a DIFFERENT invented reference (or trips a different sbdry item).",
+          "detection": "The fresh re-audit against the corrected body returns a boundary failure whose findings differ from the prior round's.",
+          "response": "Treat it as the next correctable finding: build a new directive from the new findings and continue the loop, still bounded by maxCorrectionRounds.",
+          "userImpact": "Transparent — another bounded round; the correction-round progress frame shows the shifting findings so a watcher sees forward motion, not a silent spin.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The provider emits malformed / schema-invalid JSON on the audit RE-RUN (reAuditBoundary), not the synthesize.",
+          "detection": "The structured-output layer (completeStructured against RE_AUDIT_SCHEMA) rejects the re-audit response.",
+          "response": "The provider's own structured-output retry applies; if a valid verdict still cannot be produced the call throws and the run surfaces the malformed-re-audit reason — never looping unbounded on a broken re-audit.",
+          "userImpact": "The round ends without a false 'passed'; the failure surfaces with a clear cause.",
+          "recoverable": false
+        },
+        {
+          "scenario": "The abort signal fires while the correction loop is mid-flight (between or during rounds).",
+          "detection": "checkAbort() (signal.aborted) is invoked at the top of every correction round and before each provider call.",
+          "response": "Throw 'workflow.run: aborted' exactly as today; because writeAtomic runs only after a successful finalize, no partial artifact is left behind.",
+          "userImpact": "Run stops promptly on cancel with no half-written artifact.",
+          "recoverable": false
+        },
+        {
+          "scenario": "A non-boundary, non-retryable failure (e.g. a schema failure explicitly marked retryable:false) reaches the failure branch.",
+          "detection": "failure.kind !== 'boundary' || failure.correctable !== true.",
+          "response": "Preserve today's terminal behavior — surface immediately without entering the correction loop; the correction path is gated strictly on a correctable boundary failure.",
+          "userImpact": "Genuinely uncorrectable failures still fail fast, so the loop never masks a real defect or wastes rounds on something feedback cannot fix.",
+          "recoverable": false
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A boundary failure whose findings list is empty (kind='boundary' but nothing structured extracted, so correctable is unset).",
+          "expected": "Not treated as correctable — terminate as today; the loop requires concrete findings to build a directive."
+        },
+        {
+          "input": "opts.maxCorrectionRounds = 0.",
+          "expected": "Behaves exactly like today: a boundary hard-fail is surfaced immediately with no correction attempt — fully backward-compatible at the zero bound."
+        },
+        {
+          "input": "The first synthesize already passes the boundary audit (no invented reference).",
+          "expected": "The correction loop is never entered; zero extra provider calls or latency on the happy path."
+        },
+        {
+          "input": "The audit flags multiple items at once (e.g. sbdry2 AND sbdry4).",
+          "expected": "A single correction directive enumerates all findings and one corrected re-emit + re-audit addresses them together, rather than one item per round."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Validation precedes every side effect: writeAtomic persists the artifact ONLY after finalizeArtifact returns ok, so a run that exhausts correction rounds or aborts leaves no partial artifact on disk.",
+          "source": "c1"
+        },
+        {
+          "text": "Provider calls are never Promise.all'd — the synthesize re-emit and the audit re-run in each correction round stay serial sequential awaits, matching the repo-wide LLM-provider rule.",
+          "source": "c1"
+        },
+        {
+          "text": "After a correction, the boundary decision must be taken against the FRESH re-audit verdict for the corrected content — never the stale frozen stepOutputs['s8']/['s4'], which described the pre-correction body.",
+          "source": "c4"
+        },
+        {
+          "text": "The change is additive to the failure taxonomy: findings and correctable are optional fields, and boundaryHardFailure called without findings preserves the exact terminal behavior existing MCP/client-driven call-sites rely on.",
+          "source": "c2"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test (run via tsx --test, the repo-wide convention)",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Lock the failure-taxonomy change: a scope-boundary hard-fail is now CORRECTABLE and carries structured findings (itemId + verdict + detail), and a clean audit yields no boundary failure.",
+          "subjects": [
+            "finalizeArtifact (correctable-boundary path)",
+            "boundaryHardFailure + boundaryFindings extraction",
+            "ValidationFailure additive fields (findings, correctable)"
+          ],
+          "fixturesNeeded": [
+            "A minimal LldBody that satisfies isLldBody plus a crafted stepOutputs['s8'] flagging sbdry4 (verdict missed, evidence carrying the invented path)",
+            "A standalone design.story WorkflowIntent"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Lock the runner correction helpers: the targeted directive names each finding + demands change-nothing-else + grounding, and the re-audit call carries the corrected artifact + prior findings and returns fresh verdicts.",
+          "subjects": [
+            "correctionDirective(findings)",
+            "reAuditBoundary(provider, artifact, findings, sco)"
+          ],
+          "fixturesNeeded": [
+            "A capturing fake LLMProvider that records the messages it receives and returns a canned re-audit verdict"
+          ]
+        },
+        {
+          "level": "live",
+          "purpose": "Prove the full recover-instead-of-throw loop end-to-end: a run whose audit flags an invented reference is corrected and finalizes instead of being discarded. Requires real analyze grounding (buildRun) so it runs against define/design.story, not a fake provider.",
+          "subjects": [
+            "runWorkflowServerSide correction loop over a real define/design.story run"
+          ],
+          "fixturesNeeded": [
+            "A registered + indexed repo and a focus known to tempt an invented reference (the dogfood scenario that originally hard-failed)"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "unit: finalizeArtifact returns a CORRECTABLE boundary failure carrying structured findings (sbdry4, detail) when s8 flags an invented reference",
+            "unit: correctionDirective names each finding + its detail and demands change-nothing-else + grounding in s1"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "unit: reAuditBoundary audits the CORRECTED artifact for the flagged items and returns fresh verdicts (passed once resolved)",
+            "live: a run whose audit never clears terminates after exactly maxCorrectionRounds rounds, listing the persistent findings"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "unit: a CLEAN s8 (all passed) yields no boundary failure from finalizeArtifact",
+            "live: opts.maxCorrectionRounds=0 surfaces a boundary hard-fail immediately (backward-compatible)"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "live: after correction rounds are exhausted, NO artifact file exists on disk (writeAtomic never ran)",
+            "live: a run whose first synthesize passes the audit persists the artifact and never enters the correction loop"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "boundaryHardFailure (src/workflow/orchestrator.ts) returned { kind:'boundary', retryable:false } with no structured findings, and runWorkflowServerSide (src/daemon/workflow-rpc.ts) THREW on the first boundary hard-fail — discarding the whole run's work and tokens. The audit verdict is frozen in stepOutputs['s8']/['s4'] and finalize reads it directly; there was no correction path. ValidationFailure carried only message/details. [[c1]][[c2]]",
+      "stateAfter": "boundaryHardFailure optionally carries structured findings and marks the failure correctable; runWorkflowServerSide, on a correctable boundary failure, runs a bounded correction loop (maxCorrectionRounds, default 3): inject the specific findings into the existing feedback channel, re-emit the synthesized body, re-run ONLY the audit (reAuditBoundary) against the corrected body, swap the fresh verdict into the audit step output, re-finalize — terminating only after the bound is exhausted. Design steps are never re-run; the happy path and all client-driven call-sites are unchanged.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the BoundaryFinding type and two OPTIONAL additive fields (findings, correctable) to the ValidationFailure interface in the synthesizer module. Purely additive — no existing consumer reads them yet.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Extend boundaryHardFailure to accept an optional findings argument and, at each mint site (define s4, define-extend, design.story s8), extract the flagged items (itemId + verdict + detail) from the frozen audit output via a boundaryFindings helper and pass them in, marking the failure correctable when findings are present. Calling boundaryHardFailure with no findings keeps today's terminal semantics.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add the reAuditBoundary + correctionDirective helpers in the daemon runner and reshape runWorkflowServerSide's non-retryable branch: on a correctable boundary failure, loop up to maxCorrectionRounds (new opt, default 3) building a targeted 'change only the flagged reference, preserve everything else, ground replacements in s1' directive, re-emitting the body, re-auditing the corrected body, swapping the fresh verdict into the audit step output, and re-finalizing. Non-boundary / non-correctable failures keep failing fast.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Rebuild and fast-forward-restart the installed daemon (the standard scripts/daemon-ctl.sh update + restart) so the running instance picks up the correction loop.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "orders 1-3 committed and tests green"
+          ]
+        }
+      ],
+      "backwardCompat": "Fully backward-compatible. findings/correctable are optional additive fields, so existing ValidationFailure consumers compile and behave unchanged. boundaryHardFailure called without findings and opts.maxCorrectionRounds=0 both reproduce today's immediate-surface behavior exactly. The change is confined to the daemon-side runWorkflowServerSide path; client/MCP-driven runs (insrc_workflow_step) do not use runWorkflowServerSide and are wholly unaffected. No IPC method name or payload shape changes. In-flight daemon runs are dropped by the FF-restart, which is the pre-existing behavior of every daemon update — not new to this change.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Synthesize-time correction + audit re-run",
+        "oneLineSummary": "Make the boundary failure correctable: inject the specific findings into the existing synth feedback channel, re-emit the corrected artifact body, then re-run only the audit against that corrected body — loop N rounds.",
+        "approach": "Extend ValidationFailure with a structured findings list (the flagged sbdry items + detail) and a correctable marker, minted by boundaryHardFailure. In runWorkflowServerSide, replace the throw at the non-retryable branch with a correction round: (1) format the findings into a targeted directive appended to the EXISTING feedback channel; (2) re-issue the synthesize call to get a corrected artifact; (3) re-run ONLY the boundary audit against the corrected content to get a fresh verdict; (4) swap the fresh verdict into the audit step output and re-finalize. Bound by maxCorrectionRounds (generalizes maxSynthAttempts, default 3). No design step (s1-s7) is re-run; no scope re-run.",
+        "pros": [
+          "Leanest — reuses the existing feedback string, onProgress frames, prepareSynthesize/finalizeArtifact and the synth retry loop almost verbatim.",
+          "Surgical per the constraint: only the synthesized body is re-emitted and only the one audit re-runs; design steps and their tokens are preserved.",
+          "Generic over the audit step — keys on the boundary-kind failure, covering define s4 and design.story s8 with no per-workflow branching.",
+          "Smallest blast radius on the failure taxonomy: two additive optional fields, existing call-sites unaffected."
+        ],
+        "cons": [
+          "Re-emitting the WHOLE artifact body (not just the flagged fields) risks the LLM perturbing unrelated, already-valid content between rounds — mitigated by a tightly-scoped 'change nothing else' directive.",
+          "Requires a standalone re-run of the boundary audit outside the main executor step loop — a new (small) code path.",
+          "finalize's source of truth shifts to a FRESH audit verdict, not the frozen stepOutputs['s8']."
+        ],
+        "costEstimate": "S"
+      },
+      {
+        "id": "a2",
+        "name": "Dedicated surgical correction pass (patch only flagged fields)",
+        "oneLineSummary": "A new correction runner takes {flagged findings, current body} and emits a minimal patch touching ONLY the invented-reference fields; splice it in, re-run the audit, then finalize — no full body re-emit.",
+        "approach": "Add a small correction runner/prompt: input = the flagged findings + the exact offending fragments; output = a minimal correction (remove the invented ref, or replace it with a real path from the s1 bundle). Splice the correction back into the frozen content (field-level merge), then re-run the audit against the patched content and finalize. Bound by N rounds.",
+        "pros": [
+          "Most surgical — unrelated valid content is provably untouched (field-level splice, not a whole-body re-emit).",
+          "Cheapest per round (small correction prompt, not a full synthesize re-emit of a large body).",
+          "Deterministic merge boundary makes it easy to log exactly what changed each round."
+        ],
+        "cons": [
+          "New prompt template + runner + splice/merge logic = more machinery to build and test than a1.",
+          "Field-level splicing into a frozen artifact is fiddly and error-prone (must locate the exact offending fragment reliably) — itself an accuracy risk.",
+          "Still needs the same audit re-run + finalize-on-fresh-verdict plumbing as a1, so it is strictly a superset of a1's cost."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Most surgical on paper, but the extra splice/merge machinery introduces new failure surface that can hurt correction accuracy — the very thing we are improving. A superset of a1; deferred unless whole-body re-emit proves lossy in practice. Scores partial on minimal-blast-radius vs a1's satisfies."
+      },
+      {
+        "id": "a3",
+        "name": "Re-run the offending design step via the executor",
+        "oneLineSummary": "Identify which design step (s1-s7) produced the invented reference, re-invoke just that step through resumeRun with a correction directive, patch its stepOutput, re-run the audit, then synthesize.",
+        "approach": "Map the flagged finding back to the design step that introduced it, rebuild that step's pause, re-drive it through the executor's resumeRun with a correction directive, overwrite that single stepOutput, re-run the audit step, then prepareSynthesize/finalizeArtifact fresh.",
+        "pros": [
+          "Fixes the invented reference at its SOURCE step, so corrected content flows through the normal synthesize path unchanged.",
+          "Leans on the existing executor resumeRun/finalize contract rather than a bespoke re-audit path."
+        ],
+        "cons": [
+          "Re-running a full design step (then the audit, then synthesize) is the heaviest option — closest to the 're-run scope' the constraint rejects.",
+          "Requires attributing a finding to a specific step — provenance the audit does not currently emit.",
+          "Rebuilding an executor pause outside the main loop is the most invasive change to the executor of the three.",
+          "Highest risk of perturbing more than the flagged content, since a re-run step may regenerate everything it owns."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Heaviest and least aligned with the surgical/no-rerun mandate; violates surgical-correct-flagged-only and minimal-blast-radius, and needs finding-to-step provenance the audit does not emit. Rejected."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "ep3 (non-hard): the 'provider calls never Promise.all'd' invariant is grounded in the repo-wide LLM-provider convention (CLAUDE.md) rather than a specific s1 analyze bundle — a minor grounding caveat, not a design gap."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/daemon/workflow-rpc.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/orchestrator.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/synthesizer.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/executor.ts"
+    }
+  ]
+}

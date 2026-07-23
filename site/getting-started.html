@@ -41,12 +41,13 @@
     </tbody>
   </table></div>
 
-  <div class="tip">Pull the local models once — the shaper and embedder default to these:
+  <div class="tip">Pull the two local models — the analyzer core and the embedder:
     <div class="code" style="margin-top:10px">
       <div class="code-head"><span class="name">bash</span><button class="copy" type="button">copy</button></div>
-<pre><code><span class="p">$</span> ollama pull qwen3-coder
-<span class="p">$</span> ollama pull qwen3-embedding</code></pre>
+<pre><code><span class="p">$</span> ollama pull qwen3.6:35b-a3b        <span class="c"># analyzer / shaper core model</span>
+<span class="p">$</span> ollama pull qwen3-embedding:0.6b   <span class="c"># embeddings — 1024-dim, local-only</span></code></pre>
     </div>
+    <p style="margin:10px 0 0">Embeddings are always local. The analyzer model is only needed when <code>shaperProvider</code> is <code>ollama</code> — skip <code>qwen3.6:35b-a3b</code> if you drive analyze / workflow reasoning through the <code>claude</code> / <code>codex</code> CLI instead.</p>
   </div>
 
   <h2 id="install">2 · Install</h2>

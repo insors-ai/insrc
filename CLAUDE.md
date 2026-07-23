@@ -38,7 +38,7 @@ lock-step across the two repos via mirrored types.
 - **Module system**: NodeNext (`"module": "nodenext"` in tsconfig)
 - **Databases**: LMDB via `lmdb-js` (embedded KV; substrate for the custom graph layer in `db/graph/`), LanceDB (embedded vector DB; entity embeddings + ANN search), DuckDB via `@duckdb/node-api` (in-memory query engine *only* — backs the data-driver `db_file_*` tools; **not** used for persistent storage)
 - **Parsing**: tree-sitter (TypeScript, Python, Go, Java, Scala)
-- **LLM providers**: Ollama (local, qwen3-coder + qwen3-embedding) + `CliProvider`. Cloud auth is delegated to the CLI's OAuth session — no API keys stored on our side.
+- **LLM providers**: Ollama (local — `qwen3.6:35b-a3b` analyzer/shaper core + `qwen3-embedding:0.6b` embeddings) + `CliProvider`. Cloud auth is delegated to the CLI's OAuth session — no API keys stored on our side.
 - **Logging**: pino + pino-pretty (CLI) + pino-roll (file rotation)
 - **CLI**: ink + react — the `insrc` CLI is a full-screen interactive TUI (no commander/subcommands)
 - **HTTP**: undici
@@ -138,7 +138,7 @@ CliProvider suites) and skip cleanly when unset.
 4. **Graph + vector** — structural queries use the LMDB graph layer's typed JS API (`findCallers / findCallees / outNeighbors / inNeighbors / transitiveClosure / unreachable`); semantic queries use LanceDB ANN. No Cypher / GQL / SQL exposed for graph traversal.
 5. **No raw file dumps** — context is always structured entity summaries + relations from the graph.
 6. **Repo registry is the contract** — workspace registry membership is established exclusively via the `repo.add` IPC. The storage layer never auto-allocates registry rows; an `Entity` whose `repo` path isn't registered fails the upsert with `UnregisteredRepoError`. See [`plans/repo-registry-strict-contract.md`](plans/repo-registry-strict-contract.md).
-7. **Prompt structure: structural reference goes trailing.** Schemas / catalogs / manifests belong at the tail of the prompt, not the middle — recency-weighted attention (especially on qwen3-coder) hallucinates against mid-prompt structural info.
+7. **Prompt structure: structural reference goes trailing.** Schemas / catalogs / manifests belong at the tail of the prompt, not the middle — recency-weighted attention (especially on the local `qwen3.6:35b-a3b` shaper) hallucinates against mid-prompt structural info.
 
 ## Design documents
 

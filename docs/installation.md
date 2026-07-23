@@ -69,14 +69,12 @@ see §6):
 
 | Model | Purpose | Required? | Default id |
 | :--- | :--- | :--- | :--- |
-| Embedding | Semantic index + query embeddings (1024-dim) | **Mandatory** | `qwen3-embedding:0.6b` |
-| Coder (indexer core) | The indexer's local core model | Mandatory | `qwen3-coder:latest` |
-| Shaper (analyze/workflow reasoning) | Local reasoning **when `shaperProvider: "ollama"`** | Only if not using a CLI for reasoning | `qwen3.6:35b-a3b` |
+| Embedding | Semantic index + query embeddings (1024-dim) | **Mandatory** (local-only) | `qwen3-embedding:0.6b` |
+| Analyzer core (shaper) | Analyze / workflow reasoning **when `shaperProvider: "ollama"`** | Only when reasoning runs locally (skip if using the claude / codex CLI) | `qwen3.6:35b-a3b` |
 
 ```bash
 ollama pull qwen3-embedding:0.6b
-ollama pull qwen3-coder:latest
-ollama pull qwen3.6:35b-a3b        # skip if reasoning runs on claude/codex
+ollama pull qwen3.6:35b-a3b        # analyzer core — skip if reasoning runs on claude/codex
 ```
 
 > If you set reasoning to a CLI (`shaperProvider: "cli-claude"` / `"cli-codex"`),
@@ -99,7 +97,7 @@ Two files under `~/.insrc/`:
         "host":           "http://localhost:11434",
         "embeddingModel": "qwen3-embedding:0.6b",
         "embeddingDim":   1024,
-        "coreModel":      "qwen3-coder:latest"
+        "coreModel":      "qwen3.6:35b-a3b"
       }
     },
     "analyze": {

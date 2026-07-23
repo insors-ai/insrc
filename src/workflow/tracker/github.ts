@@ -18,6 +18,7 @@ import { execFileSync, type ExecFileSyncOptions } from 'node:child_process';
 import { existsSync } from 'node:fs';
 
 import { buildRef, parseIssueRef } from './refs.js';
+import { epicMembershipLabel } from './conventions.js';
 
 export type TrackerExec = (cmd: string, args: readonly string[], opts?: ExecFileSyncOptions) => Buffer | string;
 
@@ -332,4 +333,166 @@ export function ghAddProjectItem(org: string, projectNumber: number, issueUrl: s
 		silent('gh', ['project', 'item-add', String(projectNumber), '--owner', org, '--url', issueUrl]);
 		return true;
 	} catch { return false; }
+}
+
+// ---------------------------------------------------------------------------
+// gh — task query / list (read-side)
+//
+// A read-side projection of GitHub issues into tracker "tasks", backing the
+// `owner/state/epic/story` query + "my open tasks" list. Built against the
+// GraphQL `search` connection (not `gh issue list`) so pagination is real,
+// opaque-cursor pagination — `pageInfo.hasNextPage`/`endCursor` + `issueCount`
+// let callers step every page deterministically instead of a `--limit` cap
+// that silently truncates. See `.insrc/artifacts/LLD-7d951871d9566b3c-S001`
+// (winning alternative a3). All calls go through the same `_exec` seam.
+// ---------------------------------------------------------------------------
+
+/** Read-side projection of a GitHub issue into a tracker task. */
+export interface TrackerTask {
+	readonly number:    number;
+	readonly title:     string;
+	readonly state:     'open' | 'closed';
+	readonly author:    string;
+	readonly assignees: readonly string[];
+	readonly labels:    readonly string[];
+	readonly milestone?: string;
+	readonly epic?:     string;   // from an `epic:<slug>` label, prefix stripped
+	readonly story?:    string;   // from a `story:<id>` label, prefix stripped
+	readonly url:       string;
+}
+
+/** The four supported query filters, all optional. */
+export interface TaskQueryFilters {
+	readonly owner?: string;                        // GitHub assignee login
+	readonly state?: 'open' | 'closed' | 'all';     // default 'open'
+	readonly epic?:  string;                         // epic slug or full `epic:` label
+	readonly story?: string;                         // story id or full `story:` label
+}
+
+/** Cursor-based page request over GitHub results. */
+export interface PageRequest {
+	readonly cursor?: string;   // opaque endCursor from a prior page
+	readonly size?:   number;   // defaults to DEFAULT_PAGE_SIZE
+}
+
+/** First-class paginated return — carries `hasNextPage`/`endCursor` so a flat
+ *  array can never silently truncate the result set. */
+export interface TaskPage {
+	readonly tasks:    readonly TrackerTask[];
+	readonly pageInfo: { readonly hasNextPage: boolean; readonly endCursor?: string };
+	readonly total?:   number;
+}
+
+const DEFAULT_PAGE_SIZE = 30;
+const MAX_PAGE_SIZE     = 100;   // GitHub's `first:` ceiling on a connection
+
+const SEARCH_GQL =
+	'query($q:String!,$first:Int!,$after:String){' +
+	'search(query:$q,type:ISSUE,first:$first,after:$after){' +
+	'issueCount pageInfo{hasNextPage endCursor} ' +
+	'nodes{... on Issue{number title state url ' +
+	'author{login} assignees(first:20){nodes{login}} ' +
+	'labels(first:50){nodes{name}} milestone{title}}}}}';
+
+/** Login of the currently-authenticated `gh` user, from `gh api user`.
+ *  This is the authoritative current-user source (not any config value). */
+export function ghCurrentLogin(): string {
+	const login = out('gh', ['api', 'user', '-q', '.login']);
+	if (login.length === 0) throw new Error('gh api user returned no login (is `gh` authenticated?)');
+	return login;
+}
+
+/** Normalise an epic filter to its membership label. A value already carrying
+ *  the `epic:` prefix is passed through; a bare slug is mapped via the same
+ *  `epicMembershipLabel` used when the issue was created. */
+function epicFilterLabel(epic: string): string {
+	return epic.startsWith('epic:') ? epic : epicMembershipLabel(epic);
+}
+
+/** Normalise a story filter to its `story:<id>` label. */
+function storyFilterLabel(story: string): string {
+	return story.includes(':') ? story : `story:${story}`;
+}
+
+/** Build the GitHub search query string from repo + filters. */
+function buildTaskSearchQuery(owner: string, repo: string, filters: TaskQueryFilters): string {
+	const q: string[] = [`repo:${owner}/${repo}`, 'is:issue'];
+	switch (filters.state ?? 'open') {
+		case 'open':   q.push('is:open'); break;
+		case 'closed': q.push('is:closed'); break;
+		case 'all':    break;   // no state qualifier
+	}
+	if (filters.owner) q.push(`assignee:${filters.owner}`);
+	if (filters.epic)  q.push(`label:"${epicFilterLabel(filters.epic)}"`);
+	if (filters.story) q.push(`label:"${storyFilterLabel(filters.story)}"`);
+	return q.join(' ');
+}
+
+interface SearchNode {
+	number?: number; title?: string; state?: string; url?: string;
+	author?: { login?: string } | null;
+	assignees?: { nodes?: Array<{ login?: string }> };
+	labels?: { nodes?: Array<{ name?: string }> };
+	milestone?: { title?: string } | null;
+}
+
+/** Strip a `prefix` off the first matching label, else undefined. */
+function labelValue(labels: readonly string[], prefix: string): string | undefined {
+	const hit = labels.find(l => l.startsWith(prefix));
+	return hit === undefined ? undefined : hit.slice(prefix.length);
+}
+
+function toTrackerTask(n: SearchNode): TrackerTask {
+	const labels = (n.labels?.nodes ?? []).map(l => l.name ?? '').filter(s => s.length > 0);
+	const epic  = labelValue(labels, 'epic:');
+	const story = labelValue(labels, 'story:');
+	return {
+		number:    n.number ?? 0,
+		title:     n.title ?? '',
+		state:     (n.state ?? 'OPEN').toLowerCase() === 'closed' ? 'closed' : 'open',
+		author:    n.author?.login ?? '',
+		assignees: (n.assignees?.nodes ?? []).map(a => a.login ?? '').filter(s => s.length > 0),
+		labels,
+		...(n.milestone?.title ? { milestone: n.milestone.title } : {}),
+		...(epic  !== undefined ? { epic }  : {}),
+		...(story !== undefined ? { story } : {}),
+		url:       n.url ?? '',
+	};
+}
+
+/** Query tracker tasks (GitHub issues) in `owner/repo` by owner/state/epic/story,
+ *  one cursor page at a time. `page.cursor` omitted → first page. */
+export function queryTasks(owner: string, repo: string, filters: TaskQueryFilters, page?: PageRequest): TaskPage {
+	const size = Math.min(Math.max(1, page?.size ?? DEFAULT_PAGE_SIZE), MAX_PAGE_SIZE);
+	const q    = buildTaskSearchQuery(owner, repo, filters);
+	const args = ['api', 'graphql', '-f', `query=${SEARCH_GQL}`, '-f', `q=${q}`, '-F', `first=${size}`];
+	// A nullable `$after` variable simply defaults to null (first page) when
+	// omitted — passing an empty string would be rejected as an invalid cursor.
+	if (page?.cursor) args.push('-f', `after=${page.cursor}`);
+
+	const raw    = out('gh', args);
+	const parsed = JSON.parse(raw) as { data?: { search?: {
+		issueCount?: number;
+		pageInfo?: { hasNextPage?: boolean; endCursor?: string | null };
+		nodes?: SearchNode[];
+	} } };
+	const search = parsed.data?.search;
+	if (search === undefined) throw new Error(`gh api graphql search returned unexpected JSON: '${raw.slice(0, 120)}'`);
+
+	const tasks   = (search.nodes ?? []).map(toTrackerTask);
+	const cursor  = search.pageInfo?.endCursor;
+	return {
+		tasks,
+		pageInfo: {
+			hasNextPage: search.pageInfo?.hasNextPage ?? false,
+			...(cursor ? { endCursor: cursor } : {}),
+		},
+		...(typeof search.issueCount === 'number' ? { total: search.issueCount } : {}),
+	};
+}
+
+/** The current user's open tasks — `assignee:<me> is:open`, where `<me>` is
+ *  resolved from `gh api user` (not any config value). */
+export function listMyOpenTasks(owner: string, repo: string, page?: PageRequest): TaskPage {
+	return queryTasks(owner, repo, { owner: ghCurrentLogin(), state: 'open' }, page);
 }

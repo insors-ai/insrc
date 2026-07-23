@@ -17,7 +17,7 @@
 
 import { getLogger } from '../shared/logger.js';
 import type { Citation, WorkflowIntent, WorkflowName, WorkflowPlan } from './types.js';
-import type { ValidationResult } from './synthesizer.js';
+import type { BoundaryFinding, ValidationResult } from './synthesizer.js';
 import { renderCitationBlock, validateBodyAndCitations } from './synthesizer.js';
 import {
 	isCitationArray,
@@ -389,12 +389,32 @@ function schemaFailure(message: string): ValidationResult {
 	return { ok: false, kind: 'schema', message };
 }
 
-/** A synthesize failure that re-emitting the artifact CANNOT fix — it derives
- *  from a fixed step output (a checklist scope-boundary hard-fail), not the
- *  emitted JSON. Marked non-retryable so an automated driver surfaces it
- *  immediately instead of wasting synthesize attempts. */
-function boundaryHardFailure(message: string): ValidationResult {
-	return { ok: false, kind: 'boundary', message, retryable: false };
+/** A synthesize failure that re-emitting the artifact ALONE cannot fix — it
+ *  derives from a fixed step output (a checklist scope-boundary hard-fail), not
+ *  the emitted JSON. Always `retryable:false` (a plain re-emit against the
+ *  frozen audit is pointless). When `findings` are supplied it is ALSO marked
+ *  `correctable` — an automated driver can run a bounded SURGICAL correction
+ *  loop (targeted re-emit + re-audit of the corrected content) off the findings
+ *  rather than terminate. Called without findings it preserves the historical
+ *  terminal behavior every client/MCP-driven call-site relied on. */
+function boundaryHardFailure(message: string, findings?: readonly BoundaryFinding[]): ValidationResult {
+	return {
+		ok: false, kind: 'boundary', message, retryable: false,
+		...(findings !== undefined && findings.length > 0 ? { findings, correctable: true } : {}),
+	};
+}
+
+/** Extract structured `BoundaryFinding`s from the flagged audit results, so the
+ *  correction loop gets each item's id + verdict + the auditor's own detail
+ *  (evidence/notes) instead of just a comma-joined id list. */
+function boundaryFindings(
+	failed: ReadonlyArray<{ itemId?: string; verdict?: string; evidence?: string; notes?: string }>,
+): BoundaryFinding[] {
+	return failed.map(f => ({
+		itemId:  f.itemId ?? '',
+		verdict: f.verdict === 'ambiguous' ? 'ambiguous' : 'missed',
+		detail:  f.evidence ?? f.notes ?? '(no detail supplied by the audit)',
+	}));
 }
 
 // Kept as an unused import guard: STUB_ARTIFACT_JSON_SCHEMA is
@@ -595,7 +615,7 @@ function finalizeDefine(
 		return { ok: false, failure: schemaFailure(`citations must be an array of { id, kind, ref }`) };
 	}
 	// scope-boundary hard-fail from s4
-	const s4 = stepOutputs['s4'] as { results?: Array<{ itemId?: string; verdict?: string }> } | undefined;
+	const s4 = stepOutputs['s4'] as { results?: Array<{ itemId?: string; verdict?: string; evidence?: string; notes?: string }> } | undefined;
 	if (s4 !== undefined && Array.isArray(s4.results)) {
 		const boundaryIds = new Set(['sb1', 'sb2', 'sb3']);
 		const failed = s4.results.filter(r =>
@@ -604,7 +624,7 @@ function finalizeDefine(
 		);
 		if (failed.length > 0) {
 			const items = failed.map(f => f.itemId).join(', ');
-			return { ok: false, failure: boundaryHardFailure(`s4 scope-boundary hard-fail on: ${items}`) };
+			return { ok: false, failure: boundaryHardFailure(`s4 scope-boundary hard-fail on: ${items}`, boundaryFindings(failed)) };
 		}
 	}
 	// Cross-artifact invariants: dependency DAG + constraint coverage.
@@ -687,7 +707,7 @@ function finalizeDefineExtend(
 	}
 	// s4 scope-boundary hard-fail — a solution-leaking newStory is refused
 	// (same contract as the new branch's sb* items).
-	const s4 = stepOutputs['s4'] as { results?: Array<{ itemId?: string; verdict?: string }> } | undefined;
+	const s4 = stepOutputs['s4'] as { results?: Array<{ itemId?: string; verdict?: string; evidence?: string; notes?: string }> } | undefined;
 	if (s4 !== undefined && Array.isArray(s4.results)) {
 		const boundaryIds = new Set(['sb1', 'sb2', 'sb3']);
 		const failed = s4.results.filter(r =>
@@ -695,7 +715,7 @@ function finalizeDefineExtend(
 			(r.verdict === 'missed' || r.verdict === 'ambiguous'),
 		);
 		if (failed.length > 0) {
-			return { ok: false, failure: boundaryHardFailure(`s4 scope-boundary hard-fail on: ${failed.map(f => f.itemId).join(', ')}`) };
+			return { ok: false, failure: boundaryHardFailure(`s4 scope-boundary hard-fail on: ${failed.map(f => f.itemId).join(', ')}`, boundaryFindings(failed)) };
 		}
 	}
 	// Target Epic must exist + be approved; its design (HLD) must exist +
@@ -1211,7 +1231,7 @@ function finalizeDesignStory(
 	}
 
 	// s8 hard-fail scope-boundary items.
-	const s8 = stepOutputs['s8'] as { results?: Array<{ itemId?: string; verdict?: string }> } | undefined;
+	const s8 = stepOutputs['s8'] as { results?: Array<{ itemId?: string; verdict?: string; evidence?: string; notes?: string }> } | undefined;
 	if (s8 !== undefined && Array.isArray(s8.results)) {
 		const boundaryIds = new Set(['sbdry1', 'sbdry2', 'sbdry3', 'sbdry4']);
 		const failed = s8.results.filter(r =>
@@ -1220,7 +1240,7 @@ function finalizeDesignStory(
 		);
 		if (failed.length > 0) {
 			const items = failed.map(f => f.itemId).join(', ');
-			return { ok: false, failure: boundaryHardFailure(`s8 scope-boundary hard-fail on: ${items}`) };
+			return { ok: false, failure: boundaryHardFailure(`s8 scope-boundary hard-fail on: ${items}`, boundaryFindings(failed)) };
 		}
 	}
 

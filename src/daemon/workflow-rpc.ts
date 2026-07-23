@@ -34,6 +34,7 @@ import { loadAnalyzeConfig, resolveRepoShaperProvider, type AnalyzeConfig, type 
 import { registerWorkflowRunners } from '../workflow/index.js';
 import { prepareDecompose, prepareSynthesize, finalizeArtifact, type FinalizedArtifact } from '../workflow/orchestrator.js';
 import { startRun, resumeRun } from '../workflow/executor.js';
+import type { BoundaryFinding } from '../workflow/synthesizer.js';
 import { appendProgressLog, appendRunLog, pathsForWorkflow, writeAtomic } from '../workflow/storage.js';
 import { reviewArtifactFile } from '../workflow/review/index.js';
 import type { ReviewReport } from '../workflow/review/types.js';
@@ -59,7 +60,7 @@ const WORKFLOW_CLI_TIMEOUT_MS = 900_000;
 
 /** Incremental progress event. `phase` is one of: `decompose`, `plan-ready`,
  *  `grounding` (running analyze for a step), `step-start`, `step-done`,
- *  `synthesize-attempt`, `synthesize-retry`, `done`. */
+ *  `synthesize-attempt`, `synthesize-retry`, `correction-round`, `done`. */
 export interface WorkflowProgress {
 	readonly phase:    string;
 	readonly stepId?:  string | undefined;
@@ -79,6 +80,12 @@ export interface RunWorkflowOpts {
 	 *  the emitting step, or `'plan'` / `'synthesize'`. */
 	readonly onToken?:         ((stepId: string, token: string) => void) | undefined;
 	readonly maxSynthAttempts?: number | undefined;
+	/** Max SURGICAL correction rounds for a correctable scope-boundary hard-fail
+	 *  (e.g. s8 flagging an invented reference). Each round re-emits the artifact
+	 *  against a targeted "fix ONLY the flagged reference" directive and re-audits
+	 *  the corrected content — never re-running the design steps. DEFAULT 3.
+	 *  Set 0 to reproduce the historical terminate-on-first-boundary-fail. */
+	readonly maxCorrectionRounds?: number | undefined;
 	/** Auto-run the grounded review cycle at finalize. DEFAULT FALSE — review
 	 *  is a CONTROLLER task (independent 2nd eyes via insrc_review_step), not a
 	 *  daemon self-review, since a daemon-side review runs the SAME provider
@@ -155,27 +162,73 @@ export async function runWorkflowServerSide(
 	// 4 attempts: a long artifact commonly needs one citation-grounding retry
 	// AND may need one shape retry, leaving a genuine final attempt.
 	const maxAttempts = opts.maxSynthAttempts ?? 4;
+	const maxCorrectionRounds = opts.maxCorrectionRounds ?? 3;
+	const auditStepId = intent.workflow === 'define' ? 's4' : 's8';
 	let feedback = '';
 	let finalized: FinalizedArtifact | undefined;
+	// The audit step output (sN) may be replaced by a fresh re-audit verdict
+	// during a correction round; finalize reads it, so keep a live copy.
+	let liveStepOutputs: Readonly<Record<string, unknown>> = stepOutputs;
+	synthLoop:
 	for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
 		checkAbort();
 		opts.onProgress?.({ phase: 'synthesize-attempt', attempt });
 		const artifactJson = await provider.completeStructured<Record<string, unknown>>(
 			msgs(synth.systemPrompt, synth.userTurn + feedback), synth.schema, sco('synthesize'),
 		);
-		const result = finalizeArtifact(intent, stepOutputs, runId, Date.now() - startedAtMs, artifactJson, opts.modelLabel);
+		const result = finalizeArtifact(intent, liveStepOutputs, runId, Date.now() - startedAtMs, artifactJson, opts.modelLabel);
 		if (result.ok) { finalized = result.finalized; break; }
-		// A non-retryable failure derives from a fixed step output (e.g. a
-		// checklist scope-boundary hard-fail) — re-emitting the artifact can't
-		// change it, so surface immediately rather than burn the retry budget.
-		if (!result.failure.ok && result.failure.retryable === false) {
-			throw new Error(`workflow.run: synthesize failed (non-retryable — fix the upstream step): ${formatFailure(result.failure)}`);
+		const failure = result.failure;
+
+		// A CORRECTABLE scope-boundary hard-fail (e.g. s8 sbdry4 = an invented
+		// reference): run a bounded SURGICAL correction loop rather than
+		// discarding the whole run. Each round re-emits the artifact against a
+		// targeted "fix ONLY the flagged reference, change nothing else"
+		// directive, re-audits the CORRECTED content (the frozen audit verdict
+		// described the pre-correction body), swaps the fresh verdict into the
+		// audit step output, and re-finalizes. The design steps are never
+		// re-run — no workflow / no scope re-run.
+		if (!failure.ok && failure.kind === 'boundary' && failure.correctable === true
+			&& failure.findings !== undefined && failure.findings.length > 0 && maxCorrectionRounds > 0) {
+			let findings: readonly BoundaryFinding[] = failure.findings;
+			for (let round = 1; round <= maxCorrectionRounds; round += 1) {
+				checkAbort();
+				opts.onProgress?.({ phase: 'correction-round', attempt: round, detail: findings.map(f => f.itemId).join(', ') });
+				const corrected = await provider.completeStructured<Record<string, unknown>>(
+					msgs(synth.systemPrompt, synth.userTurn + correctionDirective(findings)), synth.schema, sco('synthesize'),
+				);
+				const freshAudit = await reAuditBoundary(provider, corrected, findings, sco('re-audit'));
+				liveStepOutputs = { ...liveStepOutputs, [auditStepId]: freshAudit };
+				const r2 = finalizeArtifact(intent, liveStepOutputs, runId, Date.now() - startedAtMs, corrected, opts.modelLabel);
+				if (r2.ok) { finalized = r2.finalized; break synthLoop; }
+				const f2 = r2.failure;
+				if (!f2.ok && f2.kind === 'boundary' && f2.correctable === true
+					&& f2.findings !== undefined && f2.findings.length > 0) {
+					findings = f2.findings;   // residual / shifted findings → next round
+					continue;
+				}
+				// The correction cleared the boundary but tripped a different,
+				// non-correctable failure — surface it rather than loop blindly.
+				throw new Error(`workflow.run: correction produced a non-correctable failure: ${formatFailure(f2)}`);
+			}
+			if (finalized !== undefined) break;
+			throw new Error(
+				`workflow.run: could not correct scope-boundary findings after ${maxCorrectionRounds} rounds: ` +
+				findings.map(f => `${f.itemId} (${f.detail})`).join('; '),
+			);
+		}
+
+		// A non-retryable, non-correctable failure derives from a fixed step
+		// output a plain re-emit cannot change — surface it (historical
+		// behavior; also the maxCorrectionRounds=0 path).
+		if (!failure.ok && failure.retryable === false) {
+			throw new Error(`workflow.run: synthesize failed (non-retryable — fix the upstream step): ${formatFailure(failure)}`);
 		}
 		if (attempt === maxAttempts) {
-			throw new Error(`workflow.run: synthesize rejected after ${maxAttempts} attempts: ${formatFailure(result.failure)}`);
+			throw new Error(`workflow.run: synthesize rejected after ${maxAttempts} attempts: ${formatFailure(failure)}`);
 		}
-		opts.onProgress?.({ phase: 'synthesize-retry', attempt, detail: formatFailure(result.failure) });
-		feedback = `\n\nYour previous artifact was REJECTED: ${formatFailure(result.failure)}\nFix exactly that and re-emit valid JSON.`;
+		opts.onProgress?.({ phase: 'synthesize-retry', attempt, detail: formatFailure(failure) });
+		feedback = `\n\nYour previous artifact was REJECTED: ${formatFailure(failure)}\nFix exactly that and re-emit valid JSON.`;
 	}
 	if (finalized === undefined) throw new Error('workflow.run: synthesize produced no artifact');
 
@@ -442,6 +495,75 @@ function formatFailure(f: { readonly ok: boolean; readonly message?: string; rea
 	if (f.ok) return 'ok';
 	const details = f.details !== undefined && f.details.length > 0 ? ` — ${f.details.join(' | ')}` : '';
 	return `${f.message ?? 'validation failed'}${details}`;
+}
+
+/** The targeted correction directive appended to the synthesize prompt when a
+ *  correctable scope-boundary hard-fail occurs. Tightly scoped: fix ONLY the
+ *  flagged findings, ground any replacement in the real analyze context, and
+ *  leave every other field verbatim — so the re-emit does not perturb valid
+ *  content (the surgical intent). */
+export function correctionDirective(findings: readonly BoundaryFinding[]): string {
+	return [
+		'',
+		'',
+		'STOP — your previous artifact tripped the scope-boundary audit. Fix EXACTLY the findings below and CHANGE NOTHING ELSE: preserve every other field, sentence, and citation verbatim.',
+		...findings.map(f => `  - [${f.itemId}] ${f.detail}`),
+		'',
+		'For each finding: REMOVE the invented / ungrounded reference, or REPLACE it with a real path or symbol that appears in the s1 analyze bundles above. Do NOT introduce any new reference that is not grounded in s1. Re-emit the COMPLETE, valid artifact JSON.',
+	].join('\n');
+}
+
+/** JSON Schema for the focused re-audit verdict — one result per flagged item,
+ *  shaped exactly like the audit step output finalize reads. */
+const RE_AUDIT_SCHEMA = {
+	type: 'object', additionalProperties: false, required: ['results'],
+	properties: {
+		results: {
+			type: 'array', minItems: 1,
+			items: {
+				type: 'object', additionalProperties: false, required: ['itemId', 'verdict', 'evidence'],
+				properties: {
+					itemId:   { type: 'string', minLength: 1 },
+					verdict:  { enum: ['passed', 'missed', 'partial', 'ambiguous'] },
+					evidence: { type: 'string', minLength: 1 },
+				},
+			},
+		},
+	},
+} as const;
+
+interface ReAuditResult { readonly results: ReadonlyArray<{ readonly itemId: string; readonly verdict: string; readonly evidence: string }>; }
+
+/** Re-run ONLY the scope-boundary audit against the CORRECTED artifact — the
+ *  frozen audit verdict described the pre-correction body, so finalize must
+ *  judge a fresh verdict for the corrected content. Verifies each previously-
+ *  flagged item and returns results shaped like the audit step output (so the
+ *  caller can swap it into stepOutputs[auditStepId] and re-finalize). Does not
+ *  re-run any design step. */
+export async function reAuditBoundary(
+	provider: LLMProvider,
+	artifactJson: Record<string, unknown>,
+	findings: readonly BoundaryFinding[],
+	sco: StructuredCompletionOpts,
+): Promise<ReAuditResult> {
+	const system = [
+		'You are the scope-boundary AUDITOR re-verifying a CORRECTED design artifact.',
+		'For EACH flagged item below, decide whether the corrected artifact STILL trips it.',
+		'Mark an item `passed` iff the flagged problem is fully resolved in the corrected artifact — e.g. an invented / ungrounded reference has been removed or replaced with a real, grounded one. Mark it `missed` iff the problem remains, `ambiguous` iff you genuinely cannot tell.',
+		'Emit exactly one result per flagged itemId; do NOT invent new items.',
+	].join('\n');
+	const user = [
+		'Previously-flagged findings:',
+		'```json', JSON.stringify(findings, null, 2), '```',
+		'',
+		'Corrected artifact:',
+		'```json', JSON.stringify(artifactJson, null, 2), '```',
+		'',
+		'Emit the re-audit verdict JSON now (one result per flagged itemId).',
+	].join('\n');
+	return provider.completeStructured<ReAuditResult>(
+		msgs(system, user), RE_AUDIT_SCHEMA as unknown as Record<string, unknown>, sco,
+	);
 }
 
 function parseParams(raw: unknown): WorkflowRunParams {

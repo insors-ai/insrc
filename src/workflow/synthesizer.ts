@@ -35,6 +35,17 @@ export interface ValidationOk {
 	readonly ok: true;
 }
 
+/** A structured scope-boundary audit finding, carried on a boundary failure so
+ *  an automated driver can build a TARGETED correction directive rather than
+ *  parse the message string. `itemId` is the audit item (e.g. `sbdry4`),
+ *  `detail` is the auditor's own explanation of what was flagged (e.g. the
+ *  invented reference). See `runWorkflowServerSide`'s correction loop. */
+export interface BoundaryFinding {
+	readonly itemId: string;
+	readonly verdict: 'missed' | 'ambiguous';
+	readonly detail: string;
+}
+
 export interface ValidationFailure {
 	readonly ok: false;
 	/** Which check failed. */
@@ -43,12 +54,22 @@ export interface ValidationFailure {
 	readonly message: string;
 	/** Per-check details for the retry prompt. */
 	readonly details?: ReadonlyArray<string>;
-	/** Whether re-emitting the synthesize artifact can fix this. Defaults to
-	 *  true (absent). Set `false` for failures that derive from a FIXED step
-	 *  output — e.g. a checklist scope-boundary hard-fail — which re-emitting
-	 *  the artifact cannot change; an automated driver surfaces those
-	 *  immediately instead of wasting retries. */
+	/** Whether re-emitting the synthesize artifact ALONE can fix this. Defaults
+	 *  to true (absent). Set `false` for failures that derive from a FIXED step
+	 *  output — e.g. a checklist scope-boundary hard-fail — which a plain
+	 *  artifact re-emit cannot change. Such a failure is not retryable by the
+	 *  plain synth loop, but MAY still be `correctable` (see below). */
 	readonly retryable?: boolean;
+	/** The structured boundary findings (populated for a boundary hard-fail
+	 *  minted with findings). Present ⇒ the driver can drive a targeted
+	 *  correction round off these instead of the message string. */
+	readonly findings?: ReadonlyArray<BoundaryFinding>;
+	/** True when the failure is fixable by a bounded SURGICAL correction loop
+	 *  (re-emit the artifact against a targeted directive + re-audit the
+	 *  corrected content) rather than a plain re-emit. Distinct from
+	 *  `retryable`: a boundary hard-fail is `retryable:false` (a plain re-emit
+	 *  won't help) yet `correctable:true` (the correction loop can). */
+	readonly correctable?: boolean;
 }
 
 export type ValidationResult = ValidationOk | ValidationFailure;

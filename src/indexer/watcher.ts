@@ -4,10 +4,15 @@ export type FileEventType = 'create' | 'update' | 'delete';
 export interface FileEvent { type: FileEventType; path: string }
 export type EventHandler = (events: FileEvent[]) => void;
 
-/** Directories to ignore during watching and file-walking. */
+/** Directories to ignore during watching and file-walking.
+ *  `out` is a build-output dir (insrc itself builds to `out/`, alongside the
+ *  common `dist`/`build`), and `.insrc` holds daemon-managed per-repo artifacts
+ *  (LLD/review markdown, config, index state). Neither is source — indexing +
+ *  watching them re-triggers doc-summarisation on every build / workflow-run,
+ *  which floods the queue. See the doc-summariser churn diagnosis. */
 export const IGNORE_DIRS = [
-  'node_modules', '.git', 'dist', 'build', '__pycache__',
-  '.venv', 'venv', '.env', '.next', '.nuxt', 'vendor', 'target',
+  'node_modules', '.git', 'dist', 'build', 'out', '__pycache__',
+  '.venv', 'venv', '.env', '.next', '.nuxt', 'vendor', 'target', '.insrc',
 ];
 
 const DEBOUNCE_MS = 200;

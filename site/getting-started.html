@@ -121,19 +121,42 @@
   <p>Prefer <code>insrc_analyze_step</code> (multi-turn, stays in your session) over the one-shot <code>insrc_analyze</code> when driving from an MCP client — it's more accurate and doesn't spawn a separate billing path. See <a href="analyze.html">the analyze guide</a>.</p>
 
   <h2 id="mcp">Register the MCP servers</h2>
-  <p>To let <code>claude</code> / <code>codex</code> call insrc directly, register the MCP binary. It exposes the full tool suite — <code>insrc_analyze_step</code>, <code>insrc_triage</code>, <code>insrc_workflow_step</code> / <code>insrc_workflow_run</code>, <code>insrc_review_step</code> and <code>insrc_build_step</code>.</p>
+  <p>To let <code>claude</code> / <code>codex</code> call insrc directly, register the MCP binary <code>insrc-mcp.js</code> with each client. It exposes the full tool suite — <code>insrc_analyze_step</code>, <code>insrc_triage</code>, <code>insrc_workflow_step</code> / <code>insrc_workflow_run</code>, <code>insrc_review_step</code> and <code>insrc_build_step</code>. The installer puts the binary at <code>~/.insrc/daemon/out/bin/insrc-mcp.js</code>; a from-source build has it at <code>out/bin/insrc-mcp.js</code> in the repo.</p>
+
+  <div class="tip"><strong>Register once, at user / global scope.</strong> Repo resolution is session-aware, so a single global registration serves every repo and every concurrent session — no per-repo config, no <code>INSRC_REPO</code> pin. A <em>project-scoped</em> registration (Claude's <code>.mcp.json</code>) exposes insrc <em>only</em> inside that one repo, so a session in any other repo won't see the tools at all — the usual cause of "insrc isn't being used here."</div>
+
+  <h3 id="mcp-claude">Claude Code</h3>
+  <p>Register at <strong>user scope</strong> so insrc is available in every repo:</p>
   <div class="code">
-    <div class="code-head"><span class="name">claude — .mcp.json</span><button class="copy" type="button">copy</button></div>
+    <div class="code-head"><span class="name">bash</span><button class="copy" type="button">copy</button></div>
+<pre><code><span class="p">$</span> claude mcp add insrc --scope user -- node ~/.insrc/daemon/out/bin/insrc-mcp.js
+<span class="p">$</span> claude mcp list        <span class="c"># insrc: … ✔ Connected</span></code></pre>
+  </div>
+  <p>To scope it to a single repo instead, drop a <code>.mcp.json</code> at that repo's root — insrc is then visible <em>only</em> inside it. Use an absolute path (<code>~</code> is not expanded in JSON):</p>
+  <div class="code">
+    <div class="code-head"><span class="name">&lt;repo&gt;/.mcp.json</span><button class="copy" type="button">copy</button></div>
 <pre><code>{
   <span class="k">"mcpServers"</span>: {
     <span class="k">"insrc"</span>: {
       <span class="k">"command"</span>: <span class="s">"node"</span>,
-      <span class="k">"args"</span>: [<span class="s">"/path/to/insrc/out/bin/insrc-mcp.js"</span>]
+      <span class="k">"args"</span>: [<span class="s">"/Users/you/.insrc/daemon/out/bin/insrc-mcp.js"</span>]
     }
   }
 }</code></pre>
   </div>
-  <p>Repo resolution is <strong>session-aware</strong>, so a single global config works across all your repos and concurrent sessions — no per-repo setup. Order: an explicit <code>repo</code> argument wins; otherwise the server matches its working directory against the registered repos (the session workspace); an optional <code>INSRC_REPO</code> env is the last-resort fallback for headless / cron use where there's no meaningful working directory. The repo must be registered with the daemon and finished indexing.</p>
+
+  <h3 id="mcp-codex">Codex</h3>
+  <p>Codex servers in <code>~/.codex/config.toml</code> are global by nature — add the <code>insrc</code> server there (absolute path; no <code>~</code>):</p>
+  <div class="code">
+    <div class="code-head"><span class="name">~/.codex/config.toml</span><button class="copy" type="button">copy</button></div>
+<pre><code><span class="k">[mcp_servers.insrc]</span>
+<span class="k">command</span> = <span class="s">"node"</span>
+<span class="k">args</span> = [<span class="s">"/Users/you/.insrc/daemon/out/bin/insrc-mcp.js"</span>]</code></pre>
+  </div>
+  <p>Restart the client (or reconnect its MCP) after editing a config file — both read it at startup.</p>
+
+  <h3 id="mcp-resolution">How the repo is resolved</h3>
+  <p>Resolution is <strong>session-aware</strong> for both clients, in order: an explicit <code>repo</code> argument wins; otherwise the server matches its working directory against the registered repos (the session workspace — both clients spawn the server with the workspace as its CWD); otherwise it falls back to an optional <code>INSRC_REPO</code> env for headless / cron use where there's no meaningful working directory. That's why one global registration with <strong>no <code>INSRC_REPO</code></strong> works everywhere. Either way the repo must be registered with the daemon and finished indexing.</p>
 
   <h2 id="next">Where next</h2>
   <div class="grid">

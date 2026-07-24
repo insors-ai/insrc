@@ -36,10 +36,13 @@ function payload(env: Envelope): Record<string, unknown> {
 	return JSON.parse(first.text) as Record<string, unknown>;
 }
 
-function stubGithubConfig(pushTasks: boolean): { path: string; dispose: () => void } {
+function stubGithubConfig(repoPath: string, pushTasks: boolean): { path: string; dispose: () => void } {
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-gh-cfg-'));
 	const path = join(dir, 'github.json');
-	writeFileSync(path, JSON.stringify({ default: { type: 'github', owner: 'myorg', repo: 'myrepo', ...(pushTasks ? { pushTasks: true } : {}) } }));
+	// A per-repo entry carries an explicit target legitimately (the repo's own
+	// config). A global `default` may NOT target a repo — its owner/repo is
+	// ignored in favour of the repo's git remote.
+	writeFileSync(path, JSON.stringify({ repos: { [repoPath]: { type: 'github', owner: 'myorg', repo: 'myrepo', ...(pushTasks ? { pushTasks: true } : {}) } } }));
 	const prev = process.env['INSRC_GITHUB_CONFIG'];
 	process.env['INSRC_GITHUB_CONFIG'] = path;
 	return { path, dispose: () => { if (prev === undefined) delete process.env['INSRC_GITHUB_CONFIG']; else process.env['INSRC_GITHUB_CONFIG'] = prev; rmSync(dir, { recursive: true, force: true }); } };
@@ -97,7 +100,7 @@ test('coarse push with pushTasks: execute prompt carries the TASK TIER block + t
 	_clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-coarse-tasks-'));
-	const cfg = stubGithubConfig(/* pushTasks */ true);
+	const cfg = stubGithubConfig(repo, /* pushTasks */ true);
 	try {
 		seed(repo, { approvePlan: true });
 		const { prompt } = await walkToExecutePrompt(repo);
@@ -114,7 +117,7 @@ test('coarse push with pushTasks but an UNAPPROVED plan: no TASK TIER (plan excl
 	_clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-coarse-tasks-'));
-	const cfg = stubGithubConfig(true);
+	const cfg = stubGithubConfig(repo, true);
 	try {
 		seed(repo, { approvePlan: false });
 		const { prompt } = await walkToExecutePrompt(repo);
@@ -126,7 +129,7 @@ test('coarse push with pushTasks OFF: execute prompt has no task instructions', 
 	_clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-coarse-tasks-'));
-	const cfg = stubGithubConfig(/* pushTasks */ false);
+	const cfg = stubGithubConfig(repo, /* pushTasks */ false);
 	try {
 		seed(repo, { approvePlan: true });
 		const { prompt } = await walkToExecutePrompt(repo);
@@ -139,7 +142,7 @@ test('coarse push synthesize persists LLM-returned taskRefs onto the plan meta.t
 	_clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-coarse-tasks-'));
-	const cfg = stubGithubConfig(true);
+	const cfg = stubGithubConfig(repo, true);
 	try {
 		seed(repo, { approvePlan: true });
 		const { state: afterExecPrompt } = await walkToExecutePrompt(repo);

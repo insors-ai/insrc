@@ -172,34 +172,41 @@ export class GithubConfigError extends Error {
 }
 
 /** Resolve the effective config for a repo. Precedence:
- *   1. `github.json` `repos.<repoPath>` entry
- *   2. `github.json` `default` entry
- *   3. Implicit default: `{ type: 'none' }`
+ *   1. `github.json` `repos.<repoPath>` entry — the repo's OWN config;
+ *      may name an explicit owner/repo, or `{ type: 'github' }` to
+ *      auto-detect the repo's git remote.
+ *   2. `github.json` `default` entry — supplies github-enablement +
+ *      shared label/behaviour settings ONLY. Its owner/repo (if any) is
+ *      IGNORED: a repo's tracker target NEVER comes from a global
+ *      default — it always resolves to the repo's own git remote.
+ *   3. Implicit default: `{ type: 'none' }`.
  *
  *  The result is a discriminated union on `type`:
  *   - `{ type: 'github', owner, repo, ... }` — a real tracker target.
- *   - `{ type: 'none' }` — no tracker. This is the DEFAULT when no
- *     matching entry resolves (including when the config file is
- *     absent). Tracker operations short-circuit cleanly.
+ *   - `{ type: 'none' }` — no tracker. Tracker operations short-circuit.
  *
- *  Enable `github` explicitly by either:
- *   - `{ type: "github", owner: "...", repo: "..." }` (recommended), OR
- *   - `{ owner: "...", repo: "..." }` (implicit github, back-compat), OR
- *   - `{ type: "github" }` alone — auto-detects owner/repo from
- *     `git remote get-url origin`. Throws `GithubConfigError` if the
- *     remote can't be parsed.
+ *  Why a global default may not target a repo: a `default` with an
+ *  explicit owner/repo would silently push EVERY unconfigured repo's
+ *  issues to that one repo (the AFM-epics-into-insrc bug). The target
+ *  must be the repo's own — per-repo config or `git remote origin`.
  *
- *  Throws `GithubConfigError` only when the matched entry explicitly
- *  asked for github but no owner/repo could be resolved. */
+ *  Throws `GithubConfigError` only when github is enabled for the repo
+ *  but no owner/repo could be resolved (per-repo entry named none, or
+ *  the git remote could not be parsed). Callers gate on this. */
 export function resolveGithubConfig(repoPath: string, configPath: string = githubConfigPath()): ResolvedGithubConfig {
 	const file = loadGithubConfigFile(configPath);
 	const perRepo = file.repos?.[repoPath];
 	if (perRepo !== undefined) {
-		const resolved = resolveEntry(perRepo, file.default, repoPath, 'per-repo-config');
+		// The repo's OWN entry — an explicit owner/repo here is intentional.
+		const resolved = resolveEntry(perRepo, file.default, repoPath, 'per-repo-config', true);
 		if (resolved !== null) return resolved;
 	}
 	if (file.default !== undefined) {
-		const resolved = resolveEntry(file.default, undefined, repoPath, 'default-config');
+		// Global default: honour its enablement + label/behaviour settings,
+		// but NEVER its owner/repo — the target is the repo's git remote. The
+		// tier source stays 'default-config'; resolveEntry's git-remote branch
+		// self-labels 'git-remote' when it resolves an actual target.
+		const resolved = resolveEntry(file.default, undefined, repoPath, 'default-config', false);
 		if (resolved !== null) return resolved;
 	}
 	// Implicit default: none. The user hasn't opted in.
@@ -208,21 +215,27 @@ export function resolveGithubConfig(repoPath: string, configPath: string = githu
 
 /** Resolve a single entry into a config value.
  *   - `type: 'none'` → none.
- *   - Entry has owner AND repo → github (type defaults to github when omitted).
+ *   - Entry has owner AND repo (and `allowEntryTarget`) → github.
  *   - Explicit `type: 'github'` with missing owner/repo → git-remote fallback,
  *     throwing `GithubConfigError` when that fails.
- *   - Empty / partial entries → null (caller falls through to the next tier). */
+ *   - Empty / partial entries → null (caller falls through to the next tier).
+ *
+ *  `allowEntryTarget` gates whether this entry's own owner/repo may be used
+ *  as the target. It is `true` for a repo's own per-repo entry and `false`
+ *  for the global default — a global default must never target a repo, so
+ *  its owner/repo is skipped and the target resolves to the git remote. */
 function resolveEntry(
 	entry: GithubEntry,
 	fallbackDefaults: GithubEntry | undefined,
 	repoPath: string,
 	source: ResolvedGithubConfigSource,
+	allowEntryTarget: boolean,
 ): ResolvedGithubConfig | null {
 	if (entry.type === 'none') {
 		return { type: 'none', source };
 	}
-	const hasOwner = typeof entry.owner === 'string' && entry.owner.length > 0;
-	const hasRepo  = typeof entry.repo  === 'string' && entry.repo.length  > 0;
+	const hasOwner = allowEntryTarget && typeof entry.owner === 'string' && entry.owner.length > 0;
+	const hasRepo  = allowEntryTarget && typeof entry.repo  === 'string' && entry.repo.length  > 0;
 	if (hasOwner && hasRepo) {
 		return {
 			type:          'github',

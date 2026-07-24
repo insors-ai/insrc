@@ -70,7 +70,9 @@ function stubGithubConfig(repo: string, entry: unknown): () => void {
 function seedApprovedEpic(repo: string, epicHash: string, opts: { withGithubConfig: boolean }): (() => void) | null {
 	let disposer: (() => void) | null = null;
 	if (opts.withGithubConfig) {
-		disposer = stubGithubConfig(repo, { default: { type: 'github', owner: 'myorg', repo: 'myrepo' } });
+		// Per-repo entry: an explicit target belongs to the repo's OWN config.
+		// A global `default` may not target a repo (its owner/repo is ignored).
+		disposer = stubGithubConfig(repo, { repos: { [repo]: { type: 'github', owner: 'myorg', repo: 'myrepo' } } });
 	}
 	const paths = defineArtifactPaths(repo, epicHash);
 	mkdirSync(dirname(paths.json), { recursive: true });

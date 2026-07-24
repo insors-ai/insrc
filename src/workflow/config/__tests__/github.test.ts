@@ -148,19 +148,51 @@ test('resolveGithubConfig returns type=github with owner/repo when configured', 
 	);
 });
 
-test('resolveGithubConfig falls back to default entry when repo is unlisted', () => {
-	withTempConfig(
-		{ default: { owner: 'org', repo: 'default', useMilestones: true } },
-		configPath => {
-			const cfg = resolveGithubConfig('/repo/unlisted', configPath);
+test('a global default NEVER targets a repo — an unlisted repo resolves to its OWN git remote, not the default owner/repo', () => {
+	// Regression: the AFM-epics-into-insrc bug. A `default` with an explicit
+	// owner/repo must NOT capture every unlisted repo. The default supplies
+	// enablement + settings; the TARGET is always the repo's own git remote.
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-default-target-'));
+	try {
+		execFileSync('git', ['init'], { cwd: repo, stdio: 'ignore' });
+		execFileSync('git', ['remote', 'add', 'origin', 'git@github.com:real-owner/real-repo.git'], { cwd: repo, stdio: 'ignore' });
+		withTempConfig(
+			{ default: { type: 'github', owner: 'WRONG', repo: 'WRONG', useMilestones: true } },
+			configPath => {
+				const cfg = resolveGithubConfig(repo, configPath);
+				assert.equal(cfg.type, 'github');
+				if (cfg.type === 'github') {
+					assert.equal(cfg.owner, 'real-owner', 'owner must come from the git remote, not the default');
+					assert.equal(cfg.repo,  'real-repo',  'repo must come from the git remote, not the default');
+					assert.equal(cfg.source, 'git-remote');
+					assert.equal(cfg.useMilestones, true, 'non-target settings still inherit from the default');
+				}
+			},
+		);
+	} finally {
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
+test('a default enabling github targets the repo remote even when the repo has an unrelated per-repo entry absence', () => {
+	// A default with only an explicit `type: github` (no owner/repo) + a repo
+	// with a remote → the repo's remote. (No per-repo entry needed.)
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-default-remote-'));
+	try {
+		execFileSync('git', ['init'], { cwd: repo, stdio: 'ignore' });
+		execFileSync('git', ['remote', 'add', 'origin', 'git@github.com:acme/afm.git'], { cwd: repo, stdio: 'ignore' });
+		withTempConfig({ default: { type: 'github' } }, configPath => {
+			const cfg = resolveGithubConfig(repo, configPath);
 			assert.equal(cfg.type, 'github');
 			if (cfg.type === 'github') {
-				assert.equal(cfg.owner, 'org');
-				assert.equal(cfg.useMilestones, true);
-				assert.equal(cfg.source, 'default-config');
+				assert.equal(cfg.owner, 'acme');
+				assert.equal(cfg.repo,  'afm');
+				assert.equal(cfg.source, 'git-remote');
 			}
-		},
-	);
+		});
+	} finally {
+		rmSync(repo, { recursive: true, force: true });
+	}
 });
 
 test('resolveGithubConfig defaults to type=none when no matching entry AND no config file', () => {

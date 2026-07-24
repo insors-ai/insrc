@@ -123,6 +123,14 @@ export interface WorkflowStepDone {
 	 *  controller MAY offer to resolve them now via phase='resolve_question'
 	 *  (optional — the stage is complete regardless). */
 	readonly openQuestions?: readonly { readonly questionId: string; readonly text: string }[];
+	/** In-CLI approval gate instruction: the controller must present the
+	 *  artifact summary, ASK the user, and only on an in-chat yes call
+	 *  insrc_workflow_approve. Never auto-approve. */
+	readonly pendingApproval?: {
+		readonly artifactPath: string;
+		readonly epicHash?:    string;
+		readonly guidance:     string;
+	};
 }
 
 /** One upstream-artifact open question with daemon-generated options. */

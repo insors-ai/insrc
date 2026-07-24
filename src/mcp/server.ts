@@ -50,7 +50,7 @@ import { handleReviewStep } from './review-step/handler.js';
 import { handleTriageStep } from './triage-step/handler.js';
 import { renderBundleAsMarkdown } from './bundle-md.js';
 import { makeSamplerFromMcpServer } from './sampling-bridge.js';
-import { startRun, pollRun, abortRun, type UnaryRpcDeps } from './daemon-stream.js';
+import { startRun, pollRun, abortRun, approveWorkflow, type UnaryRpcDeps } from './daemon-stream.js';
 import type { WorkflowProgress } from '../daemon/workflow-rpc.js';
 import { WORKFLOW_NAMES } from '../workflow/types.js';
 
@@ -686,7 +686,90 @@ export function buildInsrcMcpServer(): McpServer {
 		},
 	);
 
+	server.registerTool(
+		'insrc_workflow_approve',
+		{
+			title: 'insrc workflow approve (in-CLI, controller-driven gate)',
+			description:
+				'Approve a workflow artifact WITHOUT leaving this session — the in-CLI ' +
+				'approval gate. Call this ONLY after you have PRESENTED the artifact ' +
+				'summary to the user and they have said yes in chat (the human still ' +
+				'authorizes; this just executes it). Approve a SINGLE artifact with ' +
+				'`artifactPath`, or a BATCH with `epicHash` (every review-clean, still-' +
+				'pending DEF/HLD/LLD/PLAN artifact under that epic). Exactly one of ' +
+				'artifactPath | epicHash.\n\n' +
+				'Stamps `approvedAt` and ENFORCES the independent review block-verdict: ' +
+				'a review-blocked artifact comes back in `skipped[]` {path,reason}, never ' +
+				'`approved[]` — relay both arrays to the user. Stamp-only: it does NOT ' +
+				'gh-push or commit (that stays with the TUI approve). Pass `overrideReview` ' +
+				'to approve past a HIGH/MED block with a recorded reason. `repo` falls back ' +
+				'to the session workspace / INSRC_REPO (required only for an epicHash batch).',
+			annotations: {
+				readOnlyHint:   false,   // stamps approvedAt into the artifact JSON
+				idempotentHint: true,    // re-approving an approved artifact is a no-op stamp
+				openWorldHint:  false,
+			},
+			inputSchema: {
+				artifactPath: z.string()
+					.describe('Single-artifact target: the .md/.json artifact path to approve. Exactly one of artifactPath | epicHash.')
+					.optional(),
+				epicHash: z.string()
+					.describe('Batch target: approve every review-clean, still-pending artifact under this epic. Exactly one of artifactPath | epicHash.')
+					.optional(),
+				repo: z.string()
+					.describe('Absolute repo path; falls back to the session workspace / INSRC_REPO. Required only for an epicHash batch.')
+					.optional(),
+				overrideReview: z.string()
+					.describe('Optional review-override reason — approves past a HIGH/MED review block and records the reason on the artifact.')
+					.optional(),
+			},
+		},
+		async (rawArgs) => handleWorkflowApprove(rawArgs),
+	);
+
 	return server;
+}
+
+// ---------------------------------------------------------------------------
+// insrc_workflow_approve dispatch — in-CLI controller-driven approval.
+// ---------------------------------------------------------------------------
+
+export interface WorkflowApproveArgs {
+	readonly artifactPath?:  string | undefined;
+	readonly epicHash?:      string | undefined;
+	readonly repo?:          string | undefined;
+	readonly overrideReview?: string | undefined;
+}
+
+/** Normalize the flat tool input to exactly-one-of target, resolve the repo,
+ *  and forward to the daemon `workflow.approve` IPC. Holds no approval logic. */
+export async function handleWorkflowApprove(
+	args: WorkflowApproveArgs,
+	deps: UnaryRpcDeps = {},
+): Promise<{ content: { type: 'text'; text: string }[]; isError?: boolean }> {
+	const err = (msg: string): { content: { type: 'text'; text: string }[]; isError: boolean } =>
+		({ content: [{ type: 'text', text: msg }], isError: true });
+
+	const hasPath = typeof args.artifactPath === 'string' && args.artifactPath.length > 0;
+	const hasEpic = typeof args.epicHash === 'string' && args.epicHash.length > 0;
+	if (hasPath === hasEpic) {   // neither, or both
+		return err('insrc_workflow_approve: exactly one of `artifactPath` or `epicHash` is required.');
+	}
+	const repo = await resolveRepoPath(args.repo);
+	if (hasEpic && (repo === undefined || repo.length === 0)) {
+		return err('insrc_workflow_approve: no repo (pass `repo`, or run in a registered repo) — required for an epicHash batch.');
+	}
+	try {
+		const result = await approveWorkflow({
+			repo: repo ?? '',
+			...(hasPath ? { artifactPath: args.artifactPath } : {}),
+			...(hasEpic ? { epicHash: args.epicHash } : {}),
+			...(args.overrideReview !== undefined ? { overrideReview: args.overrideReview } : {}),
+		}, deps);
+		return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+	} catch (e) {
+		return err(`insrc_workflow_approve: ${e instanceof Error ? e.message : String(e)}`);
+	}
 }
 
 // ---------------------------------------------------------------------------

@@ -1,0 +1,719 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1784872153750-1bswj4",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-07-24T06:05:13.890Z",
+    "model": "claude",
+    "elapsedMs": 960114,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9a6f10a9b5858c05",
+    "epicSlug": "make-workflow-approval-fully-cli-controller",
+    "storyId": "S001",
+    "hldBaseRunId": "wf-1784872153750-1bswj4",
+    "hldEffectiveHash": "9a6f10a9b5858c05ec0399042cafb769a5fd43a05cb4b3be2bdedf4ec77c91bb",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "feature",
+    "triageRationale": "One cohesive story with a real design decision (approve in daemon IPC vs MCP-direct; batch-scoping semantics) across daemon IPC + MCP server + workflow gates + steering, reusing approve()/approveArtifactByJsonPath. New client-facing surface (workflow.approve IPC + insrc_workflow_approve MCP tool) + batch enumeration + done-response/steering flow instruction. Not epic (no new subsystem), not small (new IPC + tool + batch + cross-cutting flow instruction).",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "c1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "approve() is defined at src/cli/services/workflow.ts:147 with signature (artifactPath: string, withTracker=true, overrideReview?: string).",
+          "evidence": "read src/cli/services/workflow.ts:147 = `export function approve(artifactPath: string, withTracker = true, overrideReview?: string): ApproveOutcome {` — exact signature match.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "approveArtifactByJsonPath is defined in src/workflow/gates.ts and is the review block-verdict gate the batch loop iterates.",
+          "evidence": "read src/workflow/gates.ts:384 = `export function approveArtifactByJsonPath(jsonPath: string, opts?: { readonly overrideReview?: string }): ApprovalResult {` — the batch loop's per-artifact gate, confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c3",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "approve() defaults withTracker to true today (so TUI approval runs the tracker leg); the new IPC deliberately overrides that to false.",
+          "evidence": "grep confirms `withTracker = true` is the default at workflow.ts:147, so the IPC's override-to-false is a real, deliberate divergence.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c4",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "Approval is reachable ONLY through the interactive TUI today — the callers of the approve service are WorkflowsPane.tsx and the command-bar in command.ts; there is no daemon-IPC or MCP entrypoint.",
+          "evidence": "The only approve callers are src/cli/command.ts:221 (command bar, case 'approve' at :212) and src/cli/panes/WorkflowsPane.tsx:116 — both TUI. No IPC/MCP caller. The LLD's 'zero indexed callers' phrasing is a graph-index artifact (real TUI callers exist), but the material claim — approval is TUI-only with no programmatic entrypoint — holds.",
+          "action": "none — verified sound (approval is TUI-only)",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c5",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "No `workflow.approve` daemon IPC method and no `insrc_workflow_approve` MCP tool exist today — the feature is net-new.",
+          "evidence": "grep for 'workflow.approve' and 'insrc_workflow_approve' both return 0 matches — the IPC method and MCP tool are genuinely net-new.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c6",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The daemon IPC handler registry lives in src/daemon/index.ts (where a new `workflow.approve` method registers, alongside e.g. `repo.list`).",
+          "evidence": "The daemon IPC registry in src/daemon/index.ts is confirmed by sibling method handlers: 'repo.list' at :476, 'workflow.run.start' at :1388, 'workflow.run' at :1474 — the exact spot the new 'workflow.approve' method registers. This closes the LLD's dm1 grounding gap.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c7",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The MCP process reaches the daemon over a unary RPC client in src/mcp/daemon-stream.ts (where a new workflow.approve client method goes).",
+          "evidence": "src/mcp/daemon-stream.ts:198 `function unaryRpc<T>(method, params, deps)` + the socket connect at :200 confirm the unary client is the right place for a workflow.approve forwarder (mirrors the workflow.run.start unary call at :253).",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c8",
+          "kind": "citation",
+          "severity": "MED",
+          "premise": "MCP tools are registered in src/mcp/server.ts (where insrc_workflow_approve registers).",
+          "evidence": "The probe pattern was too broad and matched the DAEMON built-in-tool registry (registerTool in tools/builtins/cloud/*), then truncated at 50 before reaching src/mcp/server.ts — so this evidence does NOT confirm that server.ts is where the insrc_* MCP tools register. It is almost certainly correct (server.ts is the MCP tool surface), but it is unverified from what was gathered here.",
+          "action": "Before building, confirm src/mcp/server.ts is the MCP tool-registration site with a scoped grep (e.g. `insrc_workflow_step` / the tool-registration call in server.ts); register insrc_workflow_approve wherever the existing insrc_* tools register. Non-blocking grounding-provenance check.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The premise is a structural claim about the MCP registration file; the probe was mis-scoped/truncated, so verify by reading server.ts directly in the build step rather than editing the artifact (the LLD's design point is sound)."
+          }
+        },
+        {
+          "claimId": "c9",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The design.story `done` response is shaped in src/mcp/workflow-step/phases/synthesize.ts and the run result in src/daemon/workflow-rpc.ts — the two places the present-summary flow instruction is threaded.",
+          "evidence": "src/mcp/workflow-step/phases/synthesize.ts is the design.story done-response site (its header documents 'return next:\\'done\\''), and src/daemon/workflow-rpc.ts:108 `export async function runWorkflowServerSide` is the run driver whose result carries the flow instruction — both integration points exist.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c10",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "Test fixtures seedApprovedEpic and seedApprovedDefine exist and can seed pending epic artifacts for the batch tests.",
+          "evidence": "seedApprovedEpic at src/mcp/workflow-step/__tests__/tracker-e2e.test.ts:70 and seedApprovedDefine at design-epic-e2e.test.ts:49 both exist — reusable to seed pending epic artifacts for the batch tests.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 1,
+        "low": 9
+      },
+      "reviewedAt": "2026-07-24T06:14:33.712Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-07-24T06:15:26.427Z",
+    "reviewOverride": {
+      "reason": "Review: 0 HIGH, 9 LOW, 1 MED (c8) now verified sound — src/mcp/server.ts server.registerTool (:184–:625) confirms it is the MCP tool-registration site; the c8 probe was truncated by the daemon built-in-tool registry, no design defect. Approving with override.",
+      "at": "2026-07-24T06:15:26.426Z"
+    }
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "S001",
+        "owns": [],
+        "depends": [],
+        "internal": "In-CLI controller-driven workflow approval (IPC + MCP tool)"
+      },
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "public",
+      "api": [
+        {
+          "name": "workflow.approve",
+          "signature": "// daemon IPC method registered in src/daemon/index.ts registry; shaped through src/daemon/workflow-rpc.ts\n(params: WorkflowApproveRequest) => Promise<WorkflowApproveResult>\n\ninterface WorkflowApproveRequest {\n  readonly target: { readonly artifactPath: string } | { readonly epicHash: string };\n  readonly withTracker?: boolean;   // IPC default = false (approve() default is true)\n  readonly overrideReview?: string;\n}\ninterface WorkflowApproveResult {\n  readonly approved: readonly { readonly path: string; readonly outcome: ApproveOutcome }[];\n  readonly skipped: readonly { readonly path: string; readonly reason: string }[];\n}",
+          "parameters": [
+            {
+              "name": "params.target",
+              "type": "{ artifactPath: string } | { epicHash: string }",
+              "purpose": "Discriminated union selecting single-artifact-by-path vs batch-by-epicHash approval; exhaustive, type-safe, and replaces an untyped runtime XOR branch (a2 winning rationale).",
+              "optional": false
+            },
+            {
+              "name": "params.withTracker",
+              "type": "boolean | undefined",
+              "purpose": "Whether to run the tracker (gh-push/commit) leg; the IPC flips the reused approve() default from true to FALSE so approval only stamps approvedAt + enforces review unless the caller opts in.",
+              "optional": true
+            },
+            {
+              "name": "params.overrideReview",
+              "type": "string | undefined",
+              "purpose": "Threaded verbatim into approve()/approveArtifactByJsonPath(opts.overrideReview) — the existing review-override string; not re-interpreted by the handler.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<WorkflowApproveResult>",
+            "meaning": "approved[] carries each stamped artifact's path + forwarded ApproveOutcome; skipped[] reports review-blocked / declined artifacts distinctly as {path,reason} so the block-verdict invariant is visibly preserved rather than silently dropped."
+          },
+          "errors": [
+            {
+              "type": "ArtifactNotFoundError",
+              "condition": "target.artifactPath does not resolve to an on-disk pending artifact"
+            },
+            {
+              "type": "NoPendingArtifactsError",
+              "condition": "target.epicHash resolves to an epic with zero review-clean, still-pending artifacts to sweep"
+            },
+            {
+              "type": "UnregisteredRepoError",
+              "condition": "the artifact's repo path is not in the daemon repo registry"
+            }
+          ],
+          "preconditions": [
+            "Repo is registered with the daemon and indexing is complete.",
+            "For the epicHash target, the referenced epic exists and has at least one pending artifact."
+          ],
+          "postconditions": [
+            "Every approved artifact is stamped approvedAt via the reused approve()/approveArtifactByJsonPath path — approval is never re-implemented in the handler.",
+            "The review block-verdict check inside approveArtifactByJsonPath is enforced for every artifact; blocked ones land in skipped[] (never approved[]).",
+            "With withTracker defaulting false, no gh-push/commit is performed unless the caller passes withTracker=true."
+          ]
+        },
+        {
+          "name": "insrc_workflow_approve",
+          "signature": "// MCP tool registered in src/mcp/server.ts; forwards over the unary client in src/mcp/daemon-stream.ts to workflow.approve\n(input: { artifactPath?: string; epicHash?: string; withTracker?: boolean; overrideReview?: string }) => Promise<WorkflowApproveResult>",
+          "parameters": [
+            {
+              "name": "input.artifactPath",
+              "type": "string | undefined",
+              "purpose": "Single-artifact target (by path). Exactly one of artifactPath | epicHash must be supplied; the tool normalizes to the WorkflowApproveRequest.target discriminated union before the IPC call.",
+              "optional": true
+            },
+            {
+              "name": "input.epicHash",
+              "type": "string | undefined",
+              "purpose": "Batch target: approve every review-clean, still-pending artifact under this epic. Exactly one of artifactPath | epicHash must be supplied.",
+              "optional": true
+            },
+            {
+              "name": "input.withTracker",
+              "type": "boolean | undefined",
+              "purpose": "Forwarded to workflow.approve; default false (stamp + enforce review, no auto gh-push/commit).",
+              "optional": true
+            },
+            {
+              "name": "input.overrideReview",
+              "type": "string | undefined",
+              "purpose": "Forwarded verbatim to workflow.approve.overrideReview.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<WorkflowApproveResult>",
+            "meaning": "The same tagged result as the IPC — approved[] + skipped[] — so the controller LLM can report to the user which artifacts were approved and which were skipped (with reason)."
+          },
+          "errors": [
+            {
+              "type": "InvalidTargetError",
+              "condition": "neither artifactPath nor epicHash was provided, or both were provided (the single-method tool cannot resolve the discriminated target)"
+            },
+            {
+              "type": "DaemonUnavailableError",
+              "condition": "the unary daemon-stream client cannot reach the daemon socket"
+            }
+          ],
+          "preconditions": [
+            "Daemon is running and reachable over the Unix socket via src/mcp/daemon-stream.ts.",
+            "The controller invokes this ONLY after presenting the artifact summary and receiving the user's in-chat approval (per the done-response flow instruction)."
+          ],
+          "postconditions": [
+            "The call is a pure forward to the workflow.approve IPC; the tool holds no approval logic of its own.",
+            "review-blocked artifacts surface in the returned skipped[] for the controller to relay to the user."
+          ]
+        },
+        {
+          "name": "approve",
+          "signature": "// existing — src/cli/services/workflow.ts:147 (entity 44186db9463e17ec841f79f66f1d2ab4); CALLED THROUGH, not reshaped\n(artifactPath: string, withTracker?: boolean, overrideReview?: string) => ApproveOutcome",
+          "parameters": [
+            {
+              "name": "artifactPath",
+              "type": "string",
+              "purpose": "Path of the single artifact to approve; the workflow.approve single-artifact branch forwards target.artifactPath here.",
+              "optional": false
+            },
+            {
+              "name": "withTracker",
+              "type": "boolean | undefined",
+              "purpose": "Existing param defaulting TRUE at the call site; the new IPC explicitly passes the (defaulted-false) value so no auto gh-push/commit occurs unless requested.",
+              "optional": true
+            },
+            {
+              "name": "overrideReview",
+              "type": "string | undefined",
+              "purpose": "Existing review-override string forwarded unchanged.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "ApproveOutcome",
+            "meaning": "Existing single-artifact approval outcome the IPC handler wraps into WorkflowApproveResult.approved[].outcome."
+          },
+          "errors": [],
+          "preconditions": [
+            "artifactPath references an existing pending artifact."
+          ],
+          "postconditions": [
+            "Review enforcement and approvedAt stamping happen inside this reused function — the new handler adds no approval semantics."
+          ]
+        },
+        {
+          "name": "approveArtifactByJsonPath",
+          "signature": "// existing — src/workflow/gates.ts:384 (entity dd1b39370cb2c6351a744dea079f8656); the review block-verdict gate the batch loop iterates through\n(jsonPath: string, opts?: { readonly overrideReview?: string }) => ApprovalResult",
+          "parameters": [
+            {
+              "name": "jsonPath",
+              "type": "string",
+              "purpose": "Path of one pending artifact; the epicHash batch loop calls this per artifact so the block-verdict check runs for each.",
+              "optional": false
+            },
+            {
+              "name": "opts.overrideReview",
+              "type": "string | undefined",
+              "purpose": "Existing review-override, forwarded from WorkflowApproveRequest.overrideReview.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "ApprovalResult",
+            "meaning": "Per-artifact result; a review-blocked ApprovalResult is mapped into WorkflowApproveResult.skipped[] {path,reason} rather than approved[]."
+          },
+          "errors": [],
+          "preconditions": [
+            "jsonPath references a pending artifact under the target epic."
+          ],
+          "postconditions": [
+            "The review block-verdict invariant is enforced HERE for every batch member; the batch handler must not bypass or re-implement it."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "WorkflowApproveTarget",
+        "change": "new",
+        "details": "Discriminated union `{ readonly artifactPath: string } | { readonly epicHash: string }` selecting single-artifact vs batch approval. Chosen over an XOR-of-optionals object because that is inexpressible under exactOptionalPropertyTypes and would degrade to a runtime validation branch (a2 winning rationale).",
+        "callSites": [
+          "src/daemon/index.ts",
+          "src/daemon/workflow-rpc.ts",
+          "src/mcp/server.ts"
+        ]
+      },
+      {
+        "entity": "WorkflowApproveRequest",
+        "change": "new",
+        "details": "IPC request payload: `{ readonly target: WorkflowApproveTarget; readonly withTracker?: boolean; readonly overrideReview?: string }`. withTracker default is false at the handler (the reused approve() default of true is overridden).",
+        "callSites": [
+          "src/daemon/index.ts",
+          "src/daemon/workflow-rpc.ts",
+          "src/mcp/daemon-stream.ts"
+        ]
+      },
+      {
+        "entity": "WorkflowApproveResult",
+        "change": "new",
+        "details": "Tagged result `{ readonly approved: readonly { path: string; outcome: ApproveOutcome }[]; readonly skipped: readonly { path: string; reason: string }[] }`. skipped[] reports review-blocked / declined artifacts distinctly so batches never silently drop them — the non-lossy contract that selected a2. For a single-artifact target, approved holds one entry (or skipped holds one), so single vs batch-of-one stays distinguishable.",
+        "callSites": [
+          "src/daemon/workflow-rpc.ts",
+          "src/mcp/server.ts",
+          "src/mcp/daemon-stream.ts"
+        ]
+      },
+      {
+        "entity": "ApproveOutcome",
+        "change": "invariant-change",
+        "details": "Existing return type of approve() (src/cli/services/workflow.ts:147). Not restructured, but its provenance changes: it now also flows out of a daemon IPC / MCP tool (0 callers today, per usage.example), embedded as WorkflowApproveResult.approved[].outcome. No field edits.",
+        "callSites": [
+          "src/cli/services/workflow.ts"
+        ]
+      },
+      {
+        "entity": "ApprovalResult",
+        "change": "invariant-change",
+        "details": "Existing return type of approveArtifactByJsonPath() (src/workflow/gates.ts:384). Unchanged in shape; the batch loop now maps a review-blocked ApprovalResult into WorkflowApproveResult.skipped[] instead of discarding it, making the block-verdict outcome observable to programmatic callers.",
+        "callSites": [
+          "src/workflow/gates.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "workflow.approve is called with target.artifactPath that does not resolve to an on-disk pending artifact (typo'd path, already-approved artifact, or artifact deleted between listing and approve).",
+          "detection": "The single-artifact branch resolves target.artifactPath against the pending-artifact store / filesystem before calling approve(); the resolution returns no matching pending artifact (or the JSON read fails), so the handler raises ArtifactNotFoundError instead of forwarding into approve().",
+          "response": "Throw ArtifactNotFoundError with the offending path; do not partially stamp anything. Nothing is written to approved[] or skipped[].",
+          "userImpact": "The controller relays that the named artifact could not be found; the user re-checks the path or re-runs the workflow to regenerate the artifact. No approval state is corrupted.",
+          "recoverable": true
+        },
+        {
+          "scenario": "workflow.approve is called with target.epicHash that resolves to a real epic, but the epic has zero still-pending artifacts to sweep (all already approved, or the epic produced none).",
+          "detection": "The batch branch enumerates pending artifacts under the epicHash and the resulting set is empty before any approveArtifactByJsonPath call; the handler raises NoPendingArtifactsError rather than returning an empty-approved success (which would read as a no-op success and hide the mistake).",
+          "response": "Throw NoPendingArtifactsError naming the epicHash. Distinguished from a batch where pending artifacts exist but are all review-blocked (that returns approved=[] / skipped=[all], NOT this error).",
+          "userImpact": "The controller tells the user there was nothing pending under that epic to approve; the user verifies the epicHash or that the workflow actually produced artifacts. No silent no-op.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The resolved artifact's repo path is not present in the daemon repo registry (repo never added via repo.add, or registry row missing).",
+          "detection": "The reused approve()/approveArtifactByJsonPath path (and any storage upsert it performs) enforces the strict repo-registry contract and throws UnregisteredRepoError; the handler propagates it rather than swallowing it, per key architectural rule 6.",
+          "response": "Propagate UnregisteredRepoError unchanged to the IPC/MCP caller; abort the approval for that target (and the whole batch, since a batch shares one epic/repo).",
+          "userImpact": "The controller reports the repo isn't registered and points the user to add it (insrc TUI Repos pane / repo.add IPC) and finish indexing before approving.",
+          "recoverable": true
+        },
+        {
+          "scenario": "insrc_workflow_approve is invoked with neither artifactPath nor epicHash, or with BOTH supplied — the single-method tool cannot resolve which discriminated target the caller means.",
+          "detection": "The MCP tool normalizer counts the supplied target fields before building WorkflowApproveRequest.target; a count != 1 fails validation and raises InvalidTargetError, so an ambiguous request never reaches the daemon.",
+          "response": "Throw InvalidTargetError describing the exactly-one-of rule; make no IPC call.",
+          "userImpact": "The controller LLM corrects its own call (it constructed the tool input), supplying exactly one of artifactPath | epicHash. No approval attempted.",
+          "recoverable": true
+        },
+        {
+          "scenario": "insrc_workflow_approve is invoked but the daemon is not running / the Unix socket is unreachable.",
+          "detection": "The unary daemon-stream client (src/mcp/daemon-stream.ts) fails to connect to ~/.insrc/daemon.sock (ENOENT / ECONNREFUSED on connect); the tool maps the connect failure to DaemonUnavailableError.",
+          "response": "Throw DaemonUnavailableError; hold no local approval logic and never attempt to approve out-of-process (the tool is a pure forward).",
+          "userImpact": "The controller tells the user the daemon is down and to start it; the user retries the approval once the daemon is reachable. No partial state, since nothing reached a gate.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "workflow.approve with target.epicHash for an epic whose pending artifacts are a MIX of review-clean and review-blocked ones.",
+          "expected": "Each pending artifact is iterated through approveArtifactByJsonPath; review-clean ones stamp approvedAt and land in approved[] {path,outcome}; review-blocked ones (block-verdict from the gate) land in skipped[] {path,reason}. Both arrays are non-empty; nothing is silently dropped."
+        },
+        {
+          "input": "workflow.approve with target.epicHash where EVERY pending artifact is review-blocked (pending artifacts exist, but none are review-clean).",
+          "expected": "approved=[]; skipped=[all artifacts with their block reason]. This is a successful non-lossy result, NOT NoPendingArtifactsError (which is reserved for zero pending artifacts of any kind)."
+        },
+        {
+          "input": "workflow.approve with a single-artifact target (target.artifactPath) that is itself review-blocked.",
+          "expected": "approved=[]; skipped=[{path, reason}] with one entry. Single-vs-batch-of-one stays distinguishable because the single target still returns exactly one entry across approved[]/skipped[]."
+        },
+        {
+          "input": "workflow.approve request omits withTracker entirely.",
+          "expected": "Handler defaults withTracker=false and passes false explicitly into approve() (whose own default is true), so approvedAt is stamped and review enforced but NO gh-push/commit tracker leg runs."
+        },
+        {
+          "input": "workflow.approve with withTracker=true on a batch of review-clean artifacts.",
+          "expected": "Each artifact is approved AND its tracker (gh-push/commit) leg runs via the reused approve() path; batch iteration is sequential per artifact (not Promise.all), matching the reused single-artifact semantics."
+        },
+        {
+          "input": "workflow.approve batch with overrideReview set to a review-override string.",
+          "expected": "overrideReview is threaded verbatim into approveArtifactByJsonPath(opts.overrideReview) for every artifact in the sweep; the handler does not re-interpret or per-artifact-vary it."
+        },
+        {
+          "input": "insrc_workflow_approve given exactly one of artifactPath OR epicHash (the valid case).",
+          "expected": "The tool normalizes to the WorkflowApproveRequest.target discriminated union ({artifactPath} or {epicHash}) and forwards to workflow.approve, returning the same approved[]/skipped[] result unchanged for the controller to relay."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The review block-verdict check lives INSIDE approve() (src/cli/services/workflow.ts:147) and approveArtifactByJsonPath() (src/workflow/gates.ts:384). Both the new workflow.approve IPC and insrc_workflow_approve MCP tool MUST call through these functions (batch iterating each pending artifact through approveArtifactByJsonPath) and MUST NOT re-implement or bypass approval — otherwise the block-verdict enforcement is lost.",
+          "source": "c1"
+        },
+        {
+          "text": "approvedAt stamping and review enforcement happen inside the reused approve()/approveArtifactByJsonPath functions; the new IPC/MCP handlers add no approval semantics of their own — they only select the target, forward params, and shape the result.",
+          "source": "c1"
+        },
+        {
+          "text": "Batch approval iterates pending artifacts sequentially through approveArtifactByJsonPath (never Promise.all), so each artifact's block-verdict gate runs and a review-blocked ApprovalResult is mapped into skipped[] rather than discarded — approval is non-lossy for every batch member.",
+          "source": "c1"
+        },
+        {
+          "text": "approve() has zero indexed callers today (totalCallers: 0) — approval is TUI-only with no daemon-IPC/MCP entrypoint. The new handlers are the first programmatic callers, so approve()'s existing signature (artifactPath, withTracker=true, overrideReview) must not be reshaped; the IPC only overrides the passed withTracker value to false.",
+          "source": "c3"
+        },
+        {
+          "text": "ApproveOutcome (from approve()) and ApprovalResult (from approveArtifactByJsonPath()) keep their existing shapes; the handler forwards them unchanged (ApproveOutcome embedded in approved[].outcome, a blocked ApprovalResult surfaced as skipped[] {path,reason}) with no field edits.",
+          "source": "c2"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test via tsx (`npx tsx --test 'src/**/__tests__/*.test.ts'`), *.test.ts files under __tests__ dirs",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove the workflow.approve handler is a thin selector/forwarder: it resolves the WorkflowApproveTarget discriminated union, defaults withTracker=false and passes it explicitly, threads overrideReview verbatim, and shapes approved[]/skipped[] non-lossily WITHOUT adding approval semantics of its own. approve()/approveArtifactByJsonPath are stubbed/spied so we assert call-through (never re-implementation).",
+          "subjects": [
+            "workflow.approve handler in src/daemon/workflow-rpc.ts (target discrimination, withTracker=false default, overrideReview threading, approved[]/skipped[] shaping)",
+            "insrc_workflow_approve tool normalizer in src/mcp/server.ts (exactly-one-of artifactPath|epicHash -> WorkflowApproveRequest.target; InvalidTargetError on count!=1)"
+          ],
+          "fixturesNeeded": [
+            "spy/stub over approve() (src/cli/services/workflow.ts:147) capturing (artifactPath, withTracker, overrideReview) args",
+            "spy/stub over approveArtifactByJsonPath() (src/workflow/gates.ts:384) returning canned ApprovalResult (clean vs review-blocked)",
+            "canned ApproveOutcome and ApprovalResult fixtures (clean + block-verdict variants)"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove the daemon IPC round-trip and the batch sweep against the REAL gate: workflow.approve dispatched through the daemon RPC/registry enforces the review block-verdict invariant per artifact by iterating pending artifacts sequentially through the real approveArtifactByJsonPath; mixed clean/blocked epics split into approved[]/skipped[]; the error taxonomy (ArtifactNotFoundError, NoPendingArtifactsError, UnregisteredRepoError) surfaces correctly.",
+          "subjects": [
+            "src/daemon/__tests__/workflow-rpc.test.ts extension for the workflow.approve IPC method",
+            "batch-by-epicHash sweep through the real src/workflow/gates.ts approveArtifactByJsonPath (block-verdict enforcement, non-lossy skipped[])",
+            "error propagation: ArtifactNotFoundError / NoPendingArtifactsError / UnregisteredRepoError from the handler",
+            "single-artifact-by-path branch calling through the real approve() with withTracker=false (no tracker leg)"
+          ],
+          "fixturesNeeded": [
+            "seedApprovedEpic (src/mcp/workflow-step/__tests__/tracker-e2e.test.ts:70) and seedApprovedDefine (design-epic-e2e.test.ts:49) reused to seed pending epic artifacts",
+            "on-disk pending-artifact tmp fixtures: all-clean epic, mixed clean/blocked epic, all-blocked epic, zero-pending epic",
+            "registered-repo daemon test harness + an unregistered-repo path to trigger UnregisteredRepoError",
+            "review-gate block-verdict fixture mirroring src/workflow/__tests__/review-gate.test.ts"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove the MCP tool -> daemon forward is pure: insrc_workflow_approve normalizes its flat input to the discriminated target and forwards over the unary daemon-stream client to workflow.approve, returning approved[]/skipped[] unchanged; InvalidTargetError (neither/both target fields) short-circuits before any IPC call; DaemonUnavailableError maps from an unreachable socket.",
+          "subjects": [
+            "insrc_workflow_approve dispatch via src/mcp/daemon-stream.ts unary client (analog of src/mcp/__tests__/workflow-run-dispatch.test.ts)",
+            "tool-level validation: InvalidTargetError makes NO IPC call; DaemonUnavailableError on ENOENT/ECONNREFUSED"
+          ],
+          "fixturesNeeded": [
+            "mock/fake daemon socket returning a canned WorkflowApproveResult",
+            "unreachable-socket harness (no daemon / bad socket path) for DaemonUnavailableError",
+            "workflow-run-dispatch.test.ts scaffolding reused for tool registration + forward assertions"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "unit: workflow.approve with target.artifactPath forwards to approve() and returns approved[] with one {path,outcome}",
+            "integration: workflow.approve IPC single-artifact-by-path round-trip stamps approvedAt via reused approve()"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "integration: workflow.approve with target.epicHash iterates every pending artifact sequentially through the real approveArtifactByJsonPath (not Promise.all)",
+            "integration: mixed clean/blocked epic yields non-empty approved[] AND non-empty skipped[] with no artifact dropped"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "integration: review-blocked artifact (single target) returns approved=[] and skipped=[{path,reason}] — block-verdict enforced inside the gate, not bypassed",
+            "integration: all-blocked epic returns approved=[] / skipped=[all] as a successful non-lossy result (NOT NoPendingArtifactsError)"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "unit: workflow.approve omitting withTracker defaults to false and passes false explicitly into approve()",
+            "unit: approve() spy asserts no tracker/gh-push leg invoked when withTracker=false; invoked when withTracker=true"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "unit: overrideReview threaded verbatim into approve() and into approveArtifactByJsonPath(opts.overrideReview) for every batch member"
+          ]
+        },
+        {
+          "criterionId": "ac6",
+          "provingTests": [
+            "integration: unresolvable target.artifactPath throws ArtifactNotFoundError with nothing written to approved[]/skipped[]",
+            "integration: target.epicHash with zero pending artifacts throws NoPendingArtifactsError (not empty-approved success)",
+            "integration: artifact repo not in registry propagates UnregisteredRepoError unchanged"
+          ]
+        },
+        {
+          "criterionId": "ac7",
+          "provingTests": [
+            "unit: insrc_workflow_approve with neither artifactPath nor epicHash throws InvalidTargetError and makes no IPC call",
+            "unit: insrc_workflow_approve with BOTH artifactPath and epicHash throws InvalidTargetError and makes no IPC call",
+            "integration: insrc_workflow_approve with exactly one target normalizes to the discriminated union and forwards to workflow.approve"
+          ]
+        },
+        {
+          "criterionId": "ac8",
+          "provingTests": [
+            "integration: insrc_workflow_approve returns the daemon's approved[]/skipped[] result unchanged (pure forward, no local approval logic)",
+            "integration: unreachable daemon socket maps to DaemonUnavailableError with no approval attempted"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "Workflow approval is reachable ONLY through the interactive insrc TUI — WorkflowsPane.tsx / command.ts:212 `workflow approve` calling into approve(artifactPath, withTracker=true, overrideReview?) at src/cli/services/workflow.ts:147 (entity 44186db9463e17ec841f79f66f1d2ab4) and, for the gate/batch path, approveArtifactByJsonPath(jsonPath, {overrideReview}) at src/workflow/gates.ts:384 (entity dd1b39370cb2c6351a744dea079f8656), which holds the review block-verdict check. Per s1 usage.example, approve() has ZERO indexed callers (totalCallers: 0) — there is no daemon-IPC or MCP entrypoint into approval today, so every artifact-ready moment forces a context-switch into the TUI. approve() defaults withTracker=true (s1 search.text), i.e. TUI approval also runs the tracker (gh-push/commit) leg. The done-response of insrc_workflow_step / insrc_workflow_run (shaped in src/mcp/workflow-step/phases/synthesize.ts + src/daemon/workflow-rpc.ts) does not instruct the controller LLM to present-and-ask for approval, and src/mcp/steering-template.md carries no approve flow instruction. No WorkflowApprove* domain types exist. (s1 bundles: symbol.locate, usage.example=0-callers, search.text, data-model.trace.)",
+      "stateAfter": "Approval is a fully in-CLI, controller-driven gate. A net-new `workflow.approve` daemon IPC (registered in src/daemon/index.ts, shaped in src/daemon/workflow-rpc.ts) accepts WorkflowApproveRequest{target: {artifactPath} | {epicHash}, withTracker?=false, overrideReview?} and returns WorkflowApproveResult{approved[], skipped[]}. The single-artifact target forwards to the reused approve(); the epicHash target sweeps every review-clean, still-pending artifact through the reused approveArtifactByJsonPath(), mapping any review-blocked ApprovalResult into skipped[]{path,reason} rather than dropping it. The IPC passes withTracker defaulted to FALSE (stamp approvedAt + enforce review; no auto gh-push/commit unless the caller opts in). A net-new `insrc_workflow_approve` MCP tool (registered in src/mcp/server.ts, forwarding over the unary client in src/mcp/daemon-stream.ts) normalizes {artifactPath?|epicHash?} into the discriminated target and is a pure forward to workflow.approve. The done-response (synthesize.ts + workflow-rpc.ts) and steering-template.md now instruct the controller LLM to present the artifact summary and ask the user for approval, calling insrc_workflow_approve only on an in-chat yes. approve()/approveArtifactByJsonPath signatures and the review block-verdict invariant are unchanged; the TUI approve path continues to work as before.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the three net-new domain types in the workflow types surface: WorkflowApproveTarget (discriminated union { artifactPath } | { epicHash }), WorkflowApproveRequest ({ target, withTracker?, overrideReview? }), and WorkflowApproveResult ({ approved[], skipped[] }). Purely additive — no existing type (ApproveOutcome, ApprovalResult, WorkflowArtifact) is edited.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add the workflow.approve handler logic in src/daemon/workflow-rpc.ts that CALLS THROUGH the existing approve()/approveArtifactByJsonPath — never re-implements approval. Single-artifact branch forwards target.artifactPath (+ the defaulted-false withTracker + overrideReview) to approve(); epicHash branch resolves the epic's pending artifacts and loops each through approveArtifactByJsonPath, routing a review-blocked ApprovalResult into skipped[]{path,reason} and successes into approved[]{path,outcome}. Default withTracker to false at the handler boundary (override approve()'s own true default). No approval semantics added in the handler.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Register the workflow.approve method name in the daemon IPC registry in src/daemon/index.ts, wired to the order-2 handler. Additive registry entry; existing methods untouched.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Add a unary client method for workflow.approve in src/mcp/daemon-stream.ts so the MCP process can forward a WorkflowApproveRequest to the daemon socket and receive WorkflowApproveResult. Additive; existing unary calls unchanged.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Register the insrc_workflow_approve MCP tool in src/mcp/server.ts as a pure forwarder: normalize the {artifactPath?|epicHash?} input into the WorkflowApproveTarget discriminated union (rejecting neither-or-both with InvalidTargetError), forward withTracker/overrideReview verbatim over the order-4 client, and return the WorkflowApproveResult unchanged. Additive tool registration.",
+          "rollbackable": true
+        },
+        {
+          "order": 6,
+          "action": "Update the done-response shaping in src/mcp/workflow-step/phases/synthesize.ts and src/daemon/workflow-rpc.ts, plus src/mcp/steering-template.md, to add the present-summary-and-ask-for-approval flow instruction: the controller must show the artifact summary and call insrc_workflow_approve only on the user's in-chat yes. Additive prose/flow-instruction change; no schema field is removed.",
+          "rollbackable": true
+        },
+        {
+          "order": 7,
+          "action": "Extend the existing test suites to cover the new surfaces without weakening the block-verdict coverage: daemon IPC/registry (src/daemon/__tests__/workflow-rpc.test.ts, workflow-run-registry.test.ts) for single-artifact and batch-by-epicHash (reusing seedApprovedEpic / seedApprovedDefine fixtures), the MCP dispatch (src/mcp/__tests__/workflow-run-dispatch.test.ts) for the neither/both InvalidTargetError, and assert a review-blocked artifact lands in skipped[] (not approved[]) via the gate coverage in src/workflow/__tests__/review-gate.test.ts / gates.test.ts.",
+          "rollbackable": true
+        },
+        {
+          "order": 8,
+          "action": "Rebuild the daemon binary (out/daemon/index.js) and MCP binary (out/bin/insrc-mcp.js) and restart the daemon + MCP server so the new IPC method and MCP tool become registered/reachable. This is the activation cutover; roll back by reverting to the prior binaries and restarting.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Affects the observable \"approve\" contract, so compatibility is spelled out. (1) approve() (src/cli/services/workflow.ts:147) and approveArtifactByJsonPath() (src/workflow/gates.ts:384) keep their exact signatures and their withTracker=true / block-verdict behavior — they are called through, never reshaped, so the existing TUI `workflow approve` path (WorkflowsPane.tsx, command.ts:212) is byte-for-byte unaffected. (2) The new default divergence is deliberate and documented: the workflow.approve IPC / insrc_workflow_approve tool default withTracker=FALSE while approve()'s own default stays true — TUI callers therefore see no change, and only the net-new programmatic callers get the stamp-only-no-push default; callers wanting the old tracker behavior pass withTracker=true. (3) ApproveOutcome and ApprovalResult are unchanged in shape (invariant-change only: new provenance, no field edits), so any existing consumer of these types is source- and binary-compatible. (4) All added surfaces (IPC method, MCP tool, unary client method, done-response flow instruction, steering-template text, domain types) are purely additive — no method, field, or schema property is removed or renamed — so old daemon/MCP clients that never call workflow.approve continue to function; the only requirement is a daemon+MCP rebuild/restart (order 8) for the new method to be reachable.",
+      "zeroDowntime": false,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a2",
+        "name": "Explicit tagged-union target + tagged-union result",
+        "oneLineSummary": "workflow.approve takes a discriminated `target` union (artifact | epic) and returns a matching tagged result that reports batch skips distinctly.",
+        "approach": "Add ONE IPC `workflow.approve({ target: { kind: 'artifact'; path: string } | { kind: 'epic'; epicHash: string }; withTracker?: boolean; overrideReview?: string })` and a matching `insrc_workflow_approve` MCP tool. Return is itself a tagged union: `{ kind: 'artifact'; result: ApprovalResult } | { kind: 'epic'; approved: ApprovalResult[]; skipped: { path: string; reason: string }[] }`. Both branches call through approveArtifactByJsonPath (src/workflow/gates.ts:384) — the epic branch iterates pending artifacts and records each review-blocked one under `skipped` instead of dropping it. `withTracker` defaults FALSE. Same `pendingApproval` structured field added to the `done` response (synthesize.ts + workflow-rpc.ts) and steering-template.md flow instruction as a1.",
+        "pros": [
+          "The contract self-documents which mode is invoked; the discriminant makes exhaustive handling type-safe and eliminates the runtime XOR-validation branch a1 needs.",
+          "Batch approval reports review-blocked/skipped artifacts distinctly (path + reason), preserving the block-verdict invariant visibly instead of silently omitting them.",
+          "Return union lets the controller render single-artifact vs epic-batch outcomes with correct, non-lossy messaging to the user."
+        ],
+        "cons": [
+          "Polymorphic return must be threaded through the daemon-stream.ts unary client and the workflow-rpc done-response shaping — more serialization surface than a1's flat array.",
+          "Nested payload is more verbose for the controller LLM to construct correctly (a tagged object rather than a flat field), raising the chance of a malformed tool call.",
+          "More test permutations: both target kinds x both result variants must be covered in the new workflow-rpc + dispatch suites."
+        ],
+        "costEstimate": "M",
+        "chosen": true
+      },
+      {
+        "id": "a3",
+        "name": "Two dedicated IPC methods, one mode-discriminated MCP tool",
+        "oneLineSummary": "Split into workflow.approveArtifact and workflow.approveEpic IPC methods (single-responsibility each), exposed through one insrc_workflow_approve tool with a required `mode` enum.",
+        "approach": "Register TWO IPC methods in src/daemon/index.ts: `workflow.approveArtifact({ artifactPath, withTracker?, overrideReview? })` -> single approveArtifactByJsonPath call; `workflow.approveEpic({ epicHash, withTracker?, overrideReview? })` -> pending-artifact loop through approveArtifactByJsonPath. Each returns its natural shape (ApprovalResult vs ApprovalResult[]). One MCP tool `insrc_workflow_approve` with a required `mode: 'artifact' | 'epic'` discriminator routes to the matching IPC method via daemon-stream.ts. `withTracker` defaults FALSE on both. Same structured `pendingApproval` done-response field + steering-template.md flow instruction as the other alternatives.",
+        "pros": [
+          "Each IPC handler is single-responsibility with its own tight, mode-specific validation — no XOR ambiguity and each method mirrors exactly one existing call shape (approve() vs the epicHash loop).",
+          "Natural per-method return types (single object vs array) with no wrapping or union threading through the unary client.",
+          "Maps cleanly onto the existing test layout: approveArtifact extends the single-path gate suites, approveEpic reuses seedApprovedEpic (tracker-e2e.test.ts:70) for batch coverage."
+        ],
+        "cons": [
+          "Two IPC registry entries and two daemon RPC test targets (workflow-rpc.test.ts) — more surface than the single-method alternatives.",
+          "The MCP tool still needs a `mode` discriminator that duplicates the IPC-method split, so the single-tool ergonomics only partially hide the two-method design.",
+          "Shared logic (withTracker default, overrideReview threading, review block-verdict enforcement) risks drift across two handlers unless factored into one internal helper."
+        ],
+        "costEstimate": "M",
+        "chosen": false,
+        "reasonRejected": "a3's two single-responsibility IPC methods each mirror exactly one existing call shape (approve() vs the epicHash loop) with natural per-method return types and no union threading — clean and type-honest, and it maps well onto the existing test layout (seedApprovedEpic reuse). But it loses to a2 on accuracy of the returned contract: it returns each method's 'natural shape' with no distinct reporting of review-blocked/skipped artifacts in the epic batch, so the block-verdict invariant is not visibly preserved the way a2 does. It also retains a mode discriminator on the MCP tool that duplicates the method split, and flags real drift risk across two handlers for withTracker default / overrideReview / block-verdict enforcement. Ranked above a1 because it eliminates the XOR ambiguity via distinct methods."
+      },
+      {
+        "id": "a1",
+        "name": "Unified polymorphic approve (one IPC method, one MCP tool)",
+        "oneLineSummary": "A single workflow.approve method + insrc_workflow_approve tool take an optional-field payload (artifactPath XOR epicHash) and always return an ApprovalResult array.",
+        "approach": "Add ONE daemon IPC `workflow.approve(params: { artifactPath?: string; epicHash?: string; withTracker?: boolean; overrideReview?: string })` registered in src/daemon/index.ts, and ONE MCP tool `insrc_workflow_approve` (registered in src/mcp/server.ts, unary-forwarded via src/mcp/daemon-stream.ts) mirroring the same shape 1:1. Handler branches at runtime: `artifactPath` present -> single call into approveArtifactByJsonPath (src/workflow/gates.ts:384); `epicHash` present -> resolve pending review-clean artifacts under the epic and loop each through approveArtifactByJsonPath. `withTracker` defaults to FALSE (differs from approve()'s current true at src/cli/services/workflow.ts:147). Return is always `{ approved: ApprovalResult[] }` (single = one element). Flow instruction: the `done` response of insrc_workflow_step / insrc_workflow_run (shaped in src/mcp/workflow-step/phases/synthesize.ts + src/daemon/workflow-rpc.ts) gains a structured `pendingApproval: { artifactPath, epicHash?, summary }` field, and src/mcp/steering-template.md is extended to tell the controller to present the summary and ask before calling the tool.",
+        "pros": [
+          "Smallest surface: one IPC registry entry, one MCP tool, one unary forward path in daemon-stream.ts — minimal plumbing churn across the six files the Story lists.",
+          "MCP tool schema is a verbatim mirror of the IPC params, so the daemon-stream unary client needs no shape translation.",
+          "Uniform array return simplifies the controller: it handles single and batch results with identical downstream code."
+        ],
+        "cons": [
+          "The 'exactly one of artifactPath | epicHash' constraint is not expressible at the TypeScript type level under exactOptionalPropertyTypes — it becomes a runtime validation branch that must be tested explicitly.",
+          "Wrapping a single-artifact approval in a one-element array is slightly lossy — callers can't distinguish 'batch of one' from 'single' without inspecting the input echo.",
+          "Batch skips (artifacts skipped for a non-clean review verdict) are not distinguished in the return shape without an extra sibling field."
+        ],
+        "costEstimate": "S",
+        "chosen": false,
+        "reasonRejected": "a1 has the smallest plumbing surface and a verbatim IPC-to-MCP mirror, which is attractive on cost — but cost is the lowest-priority axis. It is the weakest on accuracy of contract: the 'exactly one of artifactPath|epicHash' constraint degrades to an untyped runtime validation branch; wrapping single approvals in a one-element array is lossy (callers cannot distinguish single from batch-of-one without echoing input); and batch skips are not distinguished without an extra sibling field, meaning review-blocked artifacts can be silently dropped. Given accuracy-primary/cost-least, its surface-area win does not offset the lost invariants that both a2 and a3 handle better."
+      }
+    ],
+    "chosenAlternative": "a2",
+    "openQuestions": [
+      "s8/dm1 (partial): The three net-new type entries (WorkflowApproveTarget/Request/Result) cite callSites in src/daemon/index.ts, src/daemon/workflow-rpc.ts, src/mcp/server.ts, src/mcp/daemon-stream.ts — files that s1 backFlowNotes explicitly state were 'NOT surfaced by the graph and could not be grounded here.' Only the two invariant-change entries (ApproveOutcome, ApprovalResult) cite paths present in the s1 analyze bundles. The ungrounded paths are Story-named (not fabricated), so this is a grounding-provenance gap to close by reading those plumbing files directly in the solution step, not an invented reference.",
+      "s8/ts1 (ambiguous): The Story's acceptanceCriteria is empty, so there are no Story criteria to map. s6.acceptanceMapping introduces ac1–ac8 that carry provingTests but are LLD-derived rather than Story-sourced. Ideally these derived acceptance criteria should back-flow to the Story rather than appear only in the test mapping."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1.symbol.locate + backFlowNotes — reusable approval entrypoints and the review block-verdict invariant",
+      "quotedText": "the review block-verdict check lives inside these gate functions, so both the new workflow.approve IPC and insrc_workflow_approve MCP tool MUST call through them (batch iterating pending artifacts through approveArtifactByJsonPath), not re-implement approval."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1.data-model.trace — ApproveOutcome / ApprovalResult return shapes",
+      "quotedText": "approve() returns ApproveOutcome and approveArtifactByJsonPath() returns ApprovalResult ... these are the shapes a new IPC/MCP handler must forward to the controller."
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1.usage.example — approve() has zero indexed callers (totalCallers: 0)",
+      "quotedText": "usage.example on approve returned ZERO callers (totalCallers: 0) ... consistent with the Story premise that approval is reachable only through the interactive TUI path today and has no daemon-IPC or MCP entrypoint yet."
+    },
+    {
+      "id": "c4",
+      "kind": "step-output",
+      "ref": "s3.winnerId — a2 selected under accuracy-primary/cost-least",
+      "quotedText": "a2 wins because, absent explicit acceptance/contract constraints, the project's governing principle (accuracy primary, cost least) selects the design with the most correct, non-lossy contract."
+    },
+    {
+      "id": "c5",
+      "kind": "step-output",
+      "ref": "s4.api — WorkflowApproveRequest/Result contract and reused approve()/approveArtifactByJsonPath signatures"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/cli/services/workflow.ts:147"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/workflow/gates.ts:384"
+    }
+  ]
+}

@@ -490,6 +490,27 @@ async function main(): Promise<void> {
 			return { path: repoContainingCwd(repos, cwd) ?? null };
 		},
 
+		// In-CLI, controller-driven approval: stamp approvedAt (enforcing the
+		// review block-verdict via approveArtifactByJsonPath) for a single
+		// artifact by path, or batch every still-pending artifact under an epic.
+		// Non-lossy — review-blocked artifacts come back in `skipped[]`.
+		'workflow.approve': async (params) => {
+			const p = (params ?? {}) as { repo?: string; artifactPath?: string; epicHash?: string; overrideReview?: string };
+			const repoPath = (p.repo !== undefined && p.repo.length > 0 ? p.repo : process.env['INSRC_REPO']) ?? '';
+			// repo is only needed to locate the epic's artifacts dir for a batch;
+			// a single artifactPath is an absolute, repo-independent path.
+			if (p.epicHash !== undefined && repoPath.length === 0) {
+				return { error: 'workflow.approve: `repo` is required for an epicHash batch' };
+			}
+			const { approveWorkflowTarget } = await import('../workflow/gates.js');
+			return approveWorkflowTarget({
+				repoPath,
+				...(p.artifactPath !== undefined ? { artifactPath: p.artifactPath } : {}),
+				...(p.epicHash !== undefined ? { epicHash: p.epicHash } : {}),
+				...(p.overrideReview !== undefined ? { overrideReview: p.overrideReview } : {}),
+			});
+		},
+
 		'repo.reindex': async (params) => {
 			const { path: repoPath } = params as { path: string };
 			const repos = await listRepos(db);

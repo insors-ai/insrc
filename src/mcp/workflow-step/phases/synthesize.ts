@@ -96,6 +96,16 @@ export async function handleSynthesize(
 		markdown: result.finalized.renderedMd,
 		artifact: result.finalized.artifact,
 		...(stillOpen.length > 0 ? { openQuestions: stillOpen } : {}),
+		pendingApproval: {
+			artifactPath: paths.md,
+			...(finalizedMeta.epicHash !== undefined ? { epicHash: finalizedMeta.epicHash } : {}),
+			guidance:
+				'This artifact is a workflow GATE. Do NOT auto-approve. Present a concise ' +
+				'summary of it to the user and ASK whether to approve and proceed. Only on ' +
+				'the user\'s explicit in-chat yes, call insrc_workflow_approve({ artifactPath }) ' +
+				'(or { epicHash } to batch every pending artifact under this epic). A review-' +
+				'blocked artifact comes back in skipped[] with a reason — relay that to the user.',
+		},
 	};
 }
 

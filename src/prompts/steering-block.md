@@ -136,11 +136,19 @@ guarantee is that **every feature, big or small, is tracked**. Follow this:
    YOU (the controller). It extracts the artifact's load-bearing premises, the
    server re-runs deterministic probes against real source, and you judge the
    verdicts against that evidence. It stamps `meta.review`; a `block` verdict
-   (unresolved HIGH/MED findings) then gates `insrc workflow approve`. Resolve
-   the blocking findings (apply / accept-with-note / override), THEN approve.
+   (unresolved HIGH/MED findings) then gates approval. Resolve the blocking
+   findings (apply / accept-with-note / override), THEN approve.
 
-4. **Approve between gates** (`insrc workflow approve <path>`) and continue the
-   routed chain to the next stage.
+4. **Approve in-CLI — present, ask, then approve.** The artifact-ready (`done`)
+   response carries a `pendingApproval` block. Do NOT auto-approve and do NOT
+   send the user to the TUI. PRESENT a concise summary of the artifact to the
+   user and ASK whether to approve and proceed. Only on the user's explicit
+   in-chat yes, call **`insrc_workflow_approve({ artifactPath })`** — or
+   `{ epicHash }` to batch-approve every pending artifact under the epic in one
+   call. It stamps `approvedAt` and enforces the review block-verdict: a
+   review-blocked artifact comes back in `skipped[]` with a reason (relay it);
+   pass `overrideReview` only with the user's explicit override reason. Then
+   continue the routed chain to the next stage.
 
 Skip triage only for a genuine one-liner the user explicitly scoped, or when
 they name a specific stage. Everything else goes through the front door so it

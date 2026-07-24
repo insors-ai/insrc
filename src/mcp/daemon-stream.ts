@@ -25,6 +25,7 @@ import { PATHS } from '../shared/paths.js';
 import { getLogger } from '../shared/logger.js';
 import type { RunWorkflowResult, WorkflowProgress } from '../daemon/workflow-rpc.js';
 import type { RunStatus } from '../daemon/workflow-run-registry.js';
+import type { WorkflowApproveResult } from '../workflow/gates.js';
 
 const log = getLogger('mcp:workflow-run');
 
@@ -271,6 +272,16 @@ export function pollRun(runId: string, cursor: number, deps: UnaryRpcDeps = {}):
  *  daemon is never misread as "no repo". */
 export function resolveRepoForCwd(cwd: string, deps: UnaryRpcDeps = {}): Promise<string | null> {
 	return unaryRpc<{ path: string | null }>('repo.resolveForCwd', { cwd }, deps).then(r => r.path);
+}
+
+/** Forward a workflow-approval request to the daemon `workflow.approve` IPC
+ *  (single artifact by path, or batch by epicHash). Pure forward — approval
+ *  logic lives daemon-side in approveWorkflowTarget. */
+export function approveWorkflow(
+	req: { repo: string; artifactPath?: string; epicHash?: string; overrideReview?: string },
+	deps: UnaryRpcDeps = {},
+): Promise<WorkflowApproveResult> {
+	return unaryRpc<WorkflowApproveResult>('workflow.approve', req, deps);
 }
 
 /** Abort a detached run mid-flight. */

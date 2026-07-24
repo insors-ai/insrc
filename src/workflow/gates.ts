@@ -428,6 +428,88 @@ export function approveArtifactByJsonPath(jsonPath: string, opts?: { readonly ov
 	return { workflow: nextMeta.workflow ?? 'unknown', path: jsonPath, approvedAt };
 }
 
+/** Raised when a batch approve targets an epic that has zero still-pending
+ *  artifacts to sweep (all already approved, or the epic produced none) —
+ *  distinct from a batch where pending artifacts exist but are all review-
+ *  blocked (that returns approved=[] / skipped=[all], not this error). */
+export class NoPendingArtifactsError extends Error {
+	constructor(msg: string) { super(msg); this.name = 'NoPendingArtifactsError'; }
+}
+
+/** Request to approve a SINGLE artifact (by md/json path) or a BATCH (every
+ *  still-pending DEF/HLD/LLD/PLAN artifact under an epic). Exactly one of
+ *  artifactPath | epicHash. `repoPath` locates the epic's `.insrc/artifacts`
+ *  dir for the batch path. */
+export interface WorkflowApproveRequest {
+	readonly repoPath:       string;
+	readonly artifactPath?:  string;
+	readonly epicHash?:      string;
+	readonly overrideReview?: string;
+}
+
+/** Non-lossy result: approved artifacts + review-blocked ones (kept distinct
+ *  so a batch never silently drops a blocked artifact). */
+export interface WorkflowApproveResult {
+	readonly approved: readonly { readonly path: string; readonly result: ApprovalResult }[];
+	readonly skipped:  readonly { readonly path: string; readonly reason: string }[];
+}
+
+/** JSON paths of every DEF/HLD/LLD/PLAN artifact under `epicHash` that is not
+ *  yet approved (meta.approvedAt absent). Sorted; malformed files skipped. */
+function pendingArtifactJsonPaths(repoPath: string, epicHash: string): string[] {
+	const dir = join(repoPath, ARTIFACTS_DIR);
+	if (!existsSync(dir)) return [];
+	const re = new RegExp(`^(DEF|HLD|LLD|PLAN)-${epicHash}(-.*)?\\.json$`);
+	const out: string[] = [];
+	for (const name of readdirSync(dir).sort()) {
+		if (!re.test(name)) continue;
+		const jsonPath = join(dir, name);
+		try {
+			const meta = (JSON.parse(readFileSync(jsonPath, 'utf8')) as { meta?: { approvedAt?: string } }).meta;
+			if (meta?.approvedAt === undefined) out.push(jsonPath);
+		} catch { /* malformed — skip */ }
+	}
+	return out;
+}
+
+/** Approve a single artifact or a whole epic's pending set — daemon-safe (no
+ *  cli/services dependency). Each artifact goes through approveArtifactByJsonPath
+ *  (the review block-verdict gate), so a `ReviewBlockedError` routes the artifact
+ *  into `skipped[]` rather than being dropped (non-lossy). Stamp-only: it does
+ *  NOT run the tracker (gh-push/commit) leg — that stays in the cli-services
+ *  `approve()` used by the TUI. Throws ArtifactMissingError (single not found)
+ *  or NoPendingArtifactsError (empty epic sweep). */
+export function approveWorkflowTarget(req: WorkflowApproveRequest): WorkflowApproveResult {
+	const opts = req.overrideReview !== undefined ? { overrideReview: req.overrideReview } : undefined;
+	const approved: { path: string; result: ApprovalResult }[] = [];
+	const skipped:  { path: string; reason: string }[] = [];
+
+	const approveOne = (jsonPath: string): void => {
+		try {
+			approved.push({ path: jsonPath, result: approveArtifactByJsonPath(jsonPath, opts) });
+		} catch (err) {
+			if (err instanceof ReviewBlockedError) {
+				skipped.push({ path: jsonPath, reason: err.summary });
+			} else {
+				throw err;   // ArtifactMissingError / no-meta — surface, not skip
+			}
+		}
+	};
+
+	if (req.artifactPath !== undefined) {
+		const jsonPath = jsonPathForMd(req.artifactPath);
+		if (!existsSync(jsonPath)) throw new ArtifactMissingError(`No artifact at ${jsonPath}`);
+		approveOne(jsonPath);
+	} else if (req.epicHash !== undefined) {
+		const pending = pendingArtifactJsonPaths(req.repoPath, req.epicHash);
+		if (pending.length === 0) throw new NoPendingArtifactsError(`No pending artifacts under epic ${req.epicHash} to approve`);
+		for (const p of pending) approveOne(p);
+	} else {
+		throw new Error('approveWorkflowTarget: exactly one of artifactPath | epicHash is required');
+	}
+	return { approved, skipped };
+}
+
 export interface RejectionResult {
 	readonly workflow:    string;
 	readonly path:        string;

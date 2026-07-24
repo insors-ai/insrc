@@ -376,15 +376,15 @@ EOF
 fi
 
 cat <<EOF
-1. Register the MCP tool with your CLI clients:
+1. Register the MCP tool with your CLI clients — ONCE, at user / global
+   scope. Repo resolution is session-aware (the server matches its working
+   directory against your registered repos), so a single global registration
+   serves every repo and every concurrent session — no INSRC_REPO pin, no
+   per-repo config:
 
-claude mcp add insrc \\
-	-e INSRC_REPO=/absolute/path/to/repo \\
-	-- node $INSTALL_ROOT/out/bin/insrc-mcp.js
+claude mcp add insrc --scope user -- node $INSTALL_ROOT/out/bin/insrc-mcp.js
 
-codex mcp add insrc \\
-	--env INSRC_REPO=/absolute/path/to/repo \\
-	-- node $INSTALL_ROOT/out/bin/insrc-mcp.js
+codex mcp add insrc -- node $INSTALL_ROOT/out/bin/insrc-mcp.js
 
 2. Add repos + manage the daemon in the interactive TUI:
 

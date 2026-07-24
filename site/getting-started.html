@@ -53,13 +53,15 @@
   <h2 id="install">2 · Install</h2>
 
   <h3>A · Release installer <span class="c">(recommended)</span></h3>
-  <p>Download <code>insrc-daemon-install.sh</code> from the latest release and run it. The
-  script is the entire distribution — it verifies prerequisites, clones + builds the daemon
-  into <code>~/.insrc/daemon</code>, and starts it. Update later by re-running it or with
+  <p>Run the one-line installer — it downloads <code>insrc-daemon-install.sh</code> from the
+  latest release, verifies prerequisites, clones + builds the daemon into
+  <code>~/.insrc/daemon</code>, and starts it. Update later by re-running it or with
   <code>~/.insrc/daemon/scripts/daemon-ctl.sh update</code>.</p>
   <div class="code">
     <div class="code-head"><span class="name">bash</span><button class="copy" type="button">copy</button></div>
-<pre><code><span class="p">$</span> ./insrc-daemon-install.sh              <span class="c"># clones + builds into ~/.insrc/daemon, then starts it</span>
+<pre><code><span class="p">$</span> curl -fsSL https://github.com/insors-ai/insrc/releases/download/daemon-v0.2.0/insrc-daemon-install.sh | bash
+<span class="c"># pass installer options after `bash -s --`, e.g.:</span>
+<span class="p">$</span> curl -fsSL https://github.com/insors-ai/insrc/releases/download/daemon-v0.2.0/insrc-daemon-install.sh | bash -s -- --no-start --embedder ollama
 <span class="c"># options: --target &lt;path&gt;  --branch main  --no-start  --repo &lt;fork-url&gt;  --embedder auto|ollama|onnx</span></code></pre>
   </div>
 

@@ -186,8 +186,10 @@ HLD, LLD, GitHub tracker integration). Reach for
 
 Every workflow produces a citation-grounded artifact that survives
 the session and downstream workflows read it as the authoritative
-source. Human approval gates run between phases via `insrc workflow
-approve <path>`.
+source. Approval gates run between phases in-CLI: the `done` response
+carries `pendingApproval` — present a summary, ASK the user, then on
+their yes call `insrc_workflow_approve({ artifactPath })` (see the
+"Approve in-CLI" step above). Never send the user to the TUI.
 
 ### Loop shape (mirrors analyze-step)
 

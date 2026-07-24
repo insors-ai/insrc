@@ -170,7 +170,15 @@ or small, is tracked**. Route it:
    relay each progress batch) or `insrc_workflow_step` (drive each turn).
 3. **`insrc_review_step` before approve** — the independent "two sets of eyes"
    review (a daemon self-review is the SAME model that authored the artifact).
-   Resolve any HIGH/MED findings, then `insrc workflow approve`.
+   Resolve any HIGH/MED findings before approving.
+4. **Approve in-CLI — present, ask, then approve.** Each artifact-ready (`done`)
+   response carries a `pendingApproval` block. Do NOT auto-approve and do NOT
+   send the user to the TUI. Present a concise summary and ASK whether to
+   approve; only on the user's explicit in-chat yes call
+   `insrc_workflow_approve({ artifactPath })` — or `{ epicHash }` to batch every
+   pending artifact under the epic. It stamps `approvedAt` and enforces the
+   review block-verdict: a blocked artifact returns in `skipped[]` with a reason
+   (relay it); pass `overrideReview` only with the user's explicit override.
 
 Skip triage only for a one-liner the user explicitly scoped, or when they name a
 stage. See [`plans/feature-triage-router.md`](plans/feature-triage-router.md).

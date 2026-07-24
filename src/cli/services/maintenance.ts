@@ -64,6 +64,12 @@ export async function update(opts: UpdateOptions, onLog: LogFn): Promise<Mainten
 			if (await stream('git', ['-C', root, 'fetch', '--quiet', 'origin', branch], onLog) !== 0) {
 				return { ok: false, steps, error: `git fetch origin/${branch} failed` };
 			}
+			// `npm install` rewrites package-lock.json; the install mirrors origin
+			// exactly, so discard that churn before the cleanliness check + FF
+			// (otherwise every post-install update would refuse as "dirty" and the
+			// merge --ff-only would fail on the local lockfile edit). Mirrors
+			// `daemon-ctl.sh sync_repo`. Failure (no changes / file absent) is fine.
+			await capture('git', ['-C', root, 'checkout', '--', 'package-lock.json']);
 			const dirty = (await capture('git', ['-C', root, 'status', '--porcelain'])).stdout.trim();
 			if (dirty.length > 0) {
 				return { ok: false, steps, error: 'daemon checkout has uncommitted changes; refusing to overwrite' };

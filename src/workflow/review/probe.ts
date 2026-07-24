@@ -18,6 +18,7 @@ import { isAbsolute, join, normalize, relative, resolve, sep } from 'node:path';
 
 import { runGrepSearch } from '../../daemon/tools/builtins/search/grep.js';
 import { getLogger } from '../../shared/logger.js';
+import { resolveSourceRoots, rootPrefix, type SourceRoot } from './source-roots.js';
 import type { Claim, Evidence, GrepResult, ReadResult } from './types.js';
 
 const log = getLogger('review');
@@ -30,29 +31,52 @@ const MATCH_CAP = 50;
 // ---------------------------------------------------------------------------
 
 /**
- * Run one grep pattern over `src/` within `repoPath` via the shared
- * `runGrepSearch` backend — which prefers ripgrep but falls back to a
- * Node recursive walk when `rg` isn't on PATH. This matters: if evidence
- * gathering silently returned nothing when `rg` is absent, every claim
- * would look "unverifiable" and the whole review would over-block. The
- * pattern is passed as data (never shell-interpolated). A bad regex or any
- * other failure yields empty + `truncated:false` and is logged — a probe
- * that errors must not abort the review.
+ * Run one grep pattern over the repo's REAL source roots (derived from the
+ * indexed graph by `resolveSourceRoots` — no hardcoded `src/` assumption)
+ * via the shared `runGrepSearch` backend, which prefers ripgrep but falls
+ * back to a Node recursive walk when `rg` isn't on PATH. This matters: if
+ * evidence gathering silently returned nothing (rg absent, or code outside
+ * `src/`), every claim would look "unverifiable" and the whole review would
+ * over-block.
+ *
+ * Roots are grepped densest-first under a SINGLE global `MATCH_CAP` (not
+ * MATCH_CAP-per-root). Each match is re-prefixed with its OWNING root's
+ * segment so `path:line` anchors stay diff-clickable. A per-root failure
+ * (e.g. a stale root deleted since indexing → ENOENT) skips only that root;
+ * a pattern-level failure (invalid regex) yields empty — a probe that errors
+ * must not abort the review. The pattern is passed as data (never
+ * shell-interpolated).
  */
-async function runGrep(pattern: string, repoPath: string): Promise<GrepResult> {
-	try {
-		const data = await runGrepSearch({ pattern, root: join(repoPath, 'src'), limit: MATCH_CAP });
-		// Re-prefix with `src/` so match paths line up with how claims cite
-		// them (the search root strips it) and stay diff-clickable.
-		const matches = data.hits.map(h => `src/${h.path}:${h.line}:${h.text}`);
-		return { pattern, matches, truncated: data.truncated };
-	} catch (err) {
-		// runGrepSearch throws only on an empty/invalid pattern; everything
-		// else (missing files, binaries, rg absent) is handled inside it.
-		const msg = err instanceof Error ? err.message : String(err);
-		log.warn({ pattern, err: msg }, 'review:probe: grep errored; treating as empty');
-		return { pattern, matches: [], truncated: false };
+async function runGrep(
+	pattern: string,
+	repoPath: string,
+	roots: readonly SourceRoot[],
+): Promise<GrepResult> {
+	const matches: string[] = [];
+	let truncated = false;
+	for (const root of roots) {
+		if (matches.length >= MATCH_CAP) { truncated = true; break; }
+		const remaining = MATCH_CAP - matches.length;
+		let data;
+		try {
+			data = await runGrepSearch({ pattern, root: root.path, limit: remaining });
+		} catch (err) {
+			// Per-root failure: a stale root (ENOENT), a tooling error, OR an
+			// empty/invalid pattern (runGrepSearch throws on that). Skip this
+			// root; do NOT treat it as an authoritative zero-hit that would
+			// drive a BLOCK. If the pattern itself is bad, every root skips and
+			// the net result is an honest empty — same as the old behaviour.
+			const msg = err instanceof Error ? err.message : String(err);
+			log.warn({ pattern, root: root.path, err: msg }, 'review:probe: grep errored on root; skipping');
+			continue;
+		}
+		const prefix = rootPrefix(repoPath, root);
+		for (const h of data.hits) {
+			matches.push(prefix === '' ? `${h.path}:${h.line}:${h.text}` : `${prefix}/${h.path}:${h.line}:${h.text}`);
+		}
+		if (data.truncated) truncated = true;
 	}
+	return { pattern, matches, truncated };
 }
 
 // ---------------------------------------------------------------------------
@@ -73,8 +97,9 @@ function filenameTokens(pattern: string): string[] {
 }
 
 /** Repo-relative paths of existing files matching `token` by basename or
- *  path-suffix, searched under `src/`. Bounded (≤5 hits, skips ignored dirs). */
-function findFilesByName(repoPath: string, token: string): string[] {
+ *  path-suffix, searched under the repo's real source `roots` (no hardcoded
+ *  `src/`). Bounded (≤5 hits, skips ignored dirs). */
+function findFilesByName(repoPath: string, token: string, roots: readonly SourceRoot[]): string[] {
 	const base = token.split('/').pop() ?? token;
 	const found: string[] = [];
 	const walk = (dir: string): void => {
@@ -90,17 +115,20 @@ function findFilesByName(repoPath: string, token: string): string[] {
 			if (e.isFile() && (e.name === base || rel.endsWith(token))) found.push(rel);
 		}
 	};
-	walk(join(repoPath, 'src'));
+	for (const root of roots) {
+		if (found.length >= 5) break;
+		walk(root.path);
+	}
 	return found;
 }
 
 /** Existence notes for the filename tokens in a grep pattern, so the judge
  *  sees a file that exists even when nothing references it by name. */
-function existenceMatches(pattern: string, repoPath: string): string[] {
+function existenceMatches(pattern: string, repoPath: string, roots: readonly SourceRoot[]): string[] {
 	const out: string[] = [];
 	for (const tok of filenameTokens(pattern)) {
 		if (!tok.includes('.')) continue;
-		for (const p of findFilesByName(repoPath, tok)) out.push(`FILE EXISTS: ${p} (matched by name, not content)`);
+		for (const p of findFilesByName(repoPath, tok, roots)) out.push(`FILE EXISTS: ${p} (matched by name, not content)`);
 	}
 	return out;
 }
@@ -160,14 +188,22 @@ function runRead(anchor: string, repoPath: string): ReadResult {
  * the input.
  */
 export async function gatherEvidence(claims: Claim[], repoPath: string): Promise<Evidence[]> {
+	// Derive the repo's REAL source roots ONCE from the indexed graph (not
+	// per-pattern) — replaces the old hardcoded `join(repoPath, 'src')`. A
+	// degraded/unindexed repo falls back to the repo root (observable), so a
+	// probe always has a real target and can never manufacture a false BLOCK.
+	const { roots, fallbackUsed } = await resolveSourceRoots(repoPath);
+	if (fallbackUsed) {
+		log.warn({ repoPath }, 'review:probe: source-root graph read empty/failed; grepping repo root (degraded run)');
+	}
 	const out: Evidence[] = [];
 	for (const claim of claims) {
 		const grepResults: GrepResult[] = [];
 		for (const pattern of claim.probe.greps ?? []) {
-			const gr = await runGrep(pattern, repoPath);
+			const gr = await runGrep(pattern, repoPath, roots);
 			// Augment with filename-existence notes so the judge doesn't false-flag
 			// a file that exists on disk but is referenced in no file body.
-			const exists = existenceMatches(pattern, repoPath);
+			const exists = existenceMatches(pattern, repoPath, roots);
 			grepResults.push(exists.length > 0 ? { ...gr, matches: [...exists, ...gr.matches] } : gr);
 		}
 		const reads: ReadResult[] = [];
@@ -176,6 +212,6 @@ export async function gatherEvidence(claims: Claim[], repoPath: string): Promise
 		}
 		out.push({ claimId: claim.id, grepResults, reads });
 	}
-	log.info({ claims: claims.length }, 'review:probe: gathered deterministic evidence');
+	log.info({ claims: claims.length, roots: roots.length, fallbackUsed }, 'review:probe: gathered deterministic evidence');
 	return out;
 }

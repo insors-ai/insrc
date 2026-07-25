@@ -36,6 +36,8 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 
 import type { AnalyzeConfig, AnalyzeShaperProviderKind } from '../../config/analyze.js';
+import type { RoleId } from '../../config/role-taxonomy.js';
+import type { RoleRouter } from './role-router.js';
 import { loadLocalProviderConfig } from '../../config/local.js';
 import { CliProvider } from '../../agent/providers/cli-provider.js';
 import {
@@ -149,6 +151,65 @@ export function runWithClientProviderContext<T>(
 	fn:   () => Promise<T>,
 ): Promise<T> {
 	return clientProviderContextStorage.run({ kind }, fn);
+}
+
+// ---------------------------------------------------------------------------
+// RoutingSeamContext (Epic per-role-per-step, Story S005 — sc6).
+//
+// The ambient seam by which deep reasoning sites reach the per-run RoleRouter
+// (sc3) WITHOUT threading a router argument through ~11 signatures. Established
+// ONCE around a workflow-runner drive (mirroring runWithClientProviderContext)
+// and read at each converted site via `resolveRoleProvider`. When unestablished,
+// every site falls through to `buildShaperProvider(cfg)` byte-for-byte (k3), so
+// analyze driven outside a workflow run behaves exactly as before.
+// ---------------------------------------------------------------------------
+
+/** sc6: the per-run routing handle — the sc3 RoleRouter + the active repo path
+ *  (for the router's byRepo precedence layer). */
+export interface RoutingSeamContext {
+	readonly router:    RoleRouter;
+	readonly repoPath?: string | undefined;
+}
+
+const routingContextStorage = new AsyncLocalStorage<RoutingSeamContext>();
+
+/** Establish the routing seam for the duration of `fn` (the workflow-runner
+ *  drive). Any `resolveRoleProvider` call inside `fn` — or any async task it
+ *  spawns — resolves per-role via the ambient router. */
+export function runWithRoutingContext<T>(ctx: RoutingSeamContext, fn: () => Promise<T>): Promise<T> {
+	return routingContextStorage.run(ctx, fn);
+}
+
+/** Read the ambient routing seam, or undefined outside an established run.
+ *  Exported for tests + observability. */
+export function currentRoutingContext(): RoutingSeamContext | undefined {
+	return routingContextStorage.getStore();
+}
+
+/**
+ * Resolve the provider for a reasoning ROLE (S005/sc6). When a RoutingSeamContext
+ * is established, dispatch through the sc3 RoleRouter (per-role tier + coreFloor
+ * clamp + attribution) and return its provider. Otherwise invoke `legacyFallback`
+ * (default: `buildShaperProvider(cfg)`) so behaviour off a run is byte-for-byte
+ * unchanged (k3). The two formerly-hardcoded CLI sites pass a claude-preserving
+ * fallback so their standalone default is not silently dropped to Ollama.
+ *
+ * Fails LOUD if a context is established but its `router` is nullish (a broken
+ * establishment) rather than silently reverting the run to the legacy provider.
+ */
+export function resolveRoleProvider(
+	role:            RoleId,
+	cfg:             AnalyzeConfig,
+	legacyFallback?: () => LLMProvider,
+): LLMProvider {
+	const ctx = routingContextStorage.getStore();
+	if (ctx !== undefined) {
+		if (ctx.router === undefined || ctx.router === null) {
+			throw new Error('resolveRoleProvider: RoutingSeamContext established but its router is nullish (broken establishment)');
+		}
+		return ctx.router.resolveProviderForRole(role, cfg, ctx.repoPath).provider;
+	}
+	return (legacyFallback ?? ((): LLMProvider => buildShaperProvider(cfg)))();
 }
 
 /**

@@ -26,7 +26,7 @@ import { isAbsolute, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { loadAnalyzeConfig } from '../../../config/analyze.js';
-import { buildShaperProvider } from '../../context/shaper-provider.js';
+import { resolveRoleProvider } from '../../context/shaper-provider.js';
 import { getLogger } from '../../../shared/logger.js';
 import type {
 	AnalyzeScope,
@@ -72,7 +72,7 @@ export async function runAggregator(args: RunAggregatorArgs): Promise<AggregateR
 	const cfg = loadAnalyzeConfig();
 
 	const promptContent = loadPromptFile(args.promptRelPath);
-	const provider = args.provider ?? buildShaperProvider(cfg);
+	const provider = args.provider ?? resolveRoleProvider('analyze.aggregate', cfg);
 
 	const messages = buildMessages({
 		promptContent,

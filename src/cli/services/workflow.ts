@@ -56,7 +56,8 @@ import { runTrackerSetup, type TrackerSetupOptions, type TrackerSetupReport } fr
 import { resolveGithubConfig } from '../../workflow/config/github.js';
 import { syncTracker, type SyncResult } from '../../workflow/tracker/sync.js';
 import { getLogger } from '../../shared/logger.js';
-import { CliProvider } from '../../agent/providers/cli-provider.js';
+import { createRoleRouter } from '../../analyze/context/role-router.js';
+import { loadAnalyzeConfig } from '../../config/analyze.js';
 import { reviewArtifactFile, type ReviewArtifactResult } from '../../workflow/review/index.js';
 import { runWorkflowStream } from '../../mcp/daemon-stream.js';
 import type { ProgressEvent } from '../../shared/types.js';
@@ -225,16 +226,18 @@ export async function runWorkflowStreaming(
 
 /** Run the grounded review cycle over an artifact: verify its premises
  *  against real source, auto-fix the fixable findings, re-review, and stamp
- *  `meta.review`. Uses the `claude` CLI provider (accuracy-first). The
- *  resulting `block` verdict is what `approve` then enforces. */
+ *  `meta.review`. Review is a critical (`review`) role → resolves the HIGH
+ *  (core) tier via the RoleRouter (default: claude opus; whatever the operator
+ *  pinned core to otherwise). The resulting `block` verdict is what `approve`
+ *  then enforces. */
 export async function reviewArtifact(repoPath: string, artifactPath: string): Promise<ReviewArtifactResult> {
-	const provider = new CliProvider({ kind: 'claude' });
+	const { provider, resolution } = createRoleRouter({}).resolveProviderForRole('review', loadAnalyzeConfig(), repoPath);
 	return reviewArtifactFile({
 		mdPath:     artifactPath,
 		jsonPath:   jsonPathForMd(artifactPath),
 		repo:       repoPath,
 		provider,
-		model:      'cli-claude',
+		model:      `${resolution.runner}:${resolution.model}`,
 		reviewedAt: new Date().toISOString(),
 	});
 }

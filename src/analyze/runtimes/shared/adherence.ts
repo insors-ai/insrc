@@ -23,7 +23,7 @@ import { isAbsolute, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { loadAnalyzeConfig } from '../../../config/analyze.js';
-import { buildShaperProvider } from '../../context/shaper-provider.js';
+import { resolveRoleProvider } from '../../context/shaper-provider.js';
 import { getDb } from '../../../db/client.js';
 import { getEntity } from '../../../db/entities.js';
 import { getLogger } from '../../../shared/logger.js';
@@ -210,7 +210,7 @@ export async function runAdherenceCheck(args: AdherenceRunArgs): Promise<Adheren
 	}
 
 	const cfg = loadAnalyzeConfig();
-	const provider = buildShaperProvider(cfg);
+	const provider = resolveRoleProvider('analyze.adherence', cfg);
 	const promptContent = loadPromptFile(promptRelPath);
 	const messages = buildMessages(promptContent, subjectLabel, subject, constraints, excerpts);
 	const schema = buildAdherenceSchema(subjectKey);

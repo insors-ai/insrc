@@ -39,21 +39,28 @@ function cfg(tiering: AnalyzeTiering = {}, over: Partial<AnalyzeConfig> = {}): A
 const CRITICAL = 'design.contract.detail'; // taxonomy: critical → core
 const PERIPH   = 'synthesize';             // taxonomy: peripheral → mid
 
-// ── resolveRole: legacy (empty tiering) reproduces shipped behaviour ────────
+// ── resolveRole: empty tiering → built-in DEFAULT_TIERS apply ────────────────
 
-test('empty tiering → peripheral role resolves to legacy ollama + shaperModel, no clamp', () => {
+test('empty tiering → peripheral (mid) role resolves to the built-in mid default (claude sonnet), no clamp', () => {
 	const r = resolveRole(PERIPH, cfg(), undefined);
-	assert.equal(r.runner, 'ollama');
-	assert.equal(r.model, 'qwen3.6:35b-a3b');
-	assert.equal(r.clampedByFloor, false);
 	assert.equal(r.tier, 'mid'); // synthesize defaultTier
+	assert.equal(r.runner, 'cli-claude');
+	assert.equal(r.model, 'sonnet');
+	assert.equal(r.clampedByFloor, false);
 });
 
-test('empty tiering → critical role sits at its core defaultTier (>= built-in mid floor), no clamp, legacy ollama', () => {
+test('empty tiering → critical (core) role resolves to the built-in core default (claude opus), no clamp', () => {
 	const r = resolveRole(CRITICAL, cfg(), undefined);
 	assert.equal(r.tier, 'core');
+	assert.equal(r.runner, 'cli-claude');
+	assert.equal(r.model, 'opus');
 	assert.equal(r.clampedByFloor, false);
-	assert.equal(r.runner, 'ollama'); // no tiers[] entry → legacy fallback
+});
+
+test('empty tiering BUT an explicit legacy shaperProvider still wins over the built-in defaults', () => {
+	const r = resolveRole(PERIPH, cfg({}, { shaperProvider: 'cli-codex', shaperProviderExplicit: true }), undefined,
+		{ clientDefault: undefined });
+	assert.equal(r.runner, 'cli-codex'); // legacy explicit beats DEFAULT_TIERS
 });
 
 // ── resolveRole: role→tier assignment + tier model ──────────────────────────

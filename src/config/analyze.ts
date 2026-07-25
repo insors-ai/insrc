@@ -110,6 +110,21 @@ export interface TierModel {
 /** Sparse RoleId → tier map; a role absent here uses its RoleDescriptor.defaultTier. */
 export type RoleTierAssignment = Readonly<Record<string, TierName>>;
 
+/**
+ * Built-in tier → model defaults (Epic per-role-per-step). Applied by the
+ * RoleRouter when a tier is configured NEITHER globally, per-repo, NOR via the
+ * legacy `shaperProvider` key — so tiering works out of the box: critical roles
+ * (design/review/build/validate) get the high CLI model, mid roles a cheaper CLI
+ * model, peripheral roles the local model. Defaults to CLAUDE (the primary CLI);
+ * the installer rewrites `models.analyze.tiers` for a Codex user
+ * (core `gpt-5.4` / mid `gpt-5.4-mini`), and any config value overrides these.
+ */
+export const DEFAULT_TIERS: Readonly<Record<TierName, TierModel>> = {
+	core:  { runner: 'cli-claude', model: 'opus' },
+	mid:   { runner: 'cli-claude', model: 'sonnet' },
+	cheap: { runner: 'ollama',     model: 'qwen3.6:35b-a3b' },
+};
+
 /** The tiering knobs that may appear globally or under a byRepo entry. */
 export interface TieringOverride {
 	readonly tiers?:     Readonly<Partial<Record<TierName, TierModel>>> | undefined;

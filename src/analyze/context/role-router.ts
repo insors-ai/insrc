@@ -32,6 +32,7 @@
  */
 
 import type { AnalyzeConfig, AnalyzeShaperProviderKind, TierName, TierModel } from '../../config/analyze.js';
+import { DEFAULT_TIERS } from '../../config/analyze.js';
 import type { RoleId } from '../../config/role-taxonomy.js';
 import { roleDescriptor } from '../../config/role-taxonomy.js';
 import { applyCoreFloor } from '../../config/core-floor-guard.js';
@@ -123,15 +124,21 @@ function resolveRoleInternal(
 		clampedByFloor = outcome.clamped;
 	}
 
-	// 3. Tier model: byRepo.tiers → global tiers → legacy fallback (undefined
-	//    tierModel ⇒ the shaperProvider/shaperModel path is used unchanged).
-	const tierModel: TierModel | undefined = byRepo?.tiers?.[tier] ?? cfg.tiering.tiers?.[tier];
+	// 3. Tier model, in precedence order:
+	//    byRepo.tiers[tier] → global tiers[tier] → explicit legacy shaperProvider
+	//    → built-in DEFAULT_TIERS[tier]. The legacy shaperProvider knob (or a
+	//    per-repo/per-run CLI default) still wins over the built-in defaults so an
+	//    operator who pinned one backend keeps it; only a truly unconfigured run
+	//    falls to the built-in tier defaults (critical→high CLI, peripheral→local).
+	const globalExplicit = cfg.shaperProviderExplicit ? cfg.shaperProvider : undefined;
+	const legacyExplicit = globalExplicit !== undefined || deps.repoOverride !== undefined || deps.clientDefault !== undefined;
+	const configuredTier: TierModel | undefined = byRepo?.tiers?.[tier] ?? cfg.tiering.tiers?.[tier];
+	const tierModel: TierModel | undefined = configuredTier ?? (legacyExplicit ? undefined : DEFAULT_TIERS[tier]);
 
 	// Effective runner: the tier's runner (top priority via resolveShaperKind's
 	// roleResolved) or, absent a tier model, the legacy chain. This is the SAME
 	// admission point materialize's buildShaperProvider will use, so the record
 	// and the constructed provider agree on the runner (k1 centralized).
-	const globalExplicit = cfg.shaperProviderExplicit ? cfg.shaperProvider : undefined;
 	const runner = resolveShaperKind({
 		repoOverride:   deps.repoOverride,
 		globalExplicit,

@@ -271,17 +271,55 @@ case "$EMBEDDER_CHOICE" in
 		;;
 esac
 
+# ---------------------------------------------------------------------------
+# Step 4b: preferred CLI + per-role model tiers (Epic per-role-per-step)
+#   The RoleRouter routes each operation to a capability tier: core (high) for
+#   design/review/build, mid for synthesis/grounding, cheap (local Ollama) for
+#   classification/probes/summaries. Preconfigure the tier->model map for the
+#   chosen CLI. Absent this, the daemon's built-in defaults apply (claude
+#   opus/sonnet + local); a Codex user wants the map rewritten below.
+# ---------------------------------------------------------------------------
+CLI_CHOICE="claude"
+if [ "$ASSUME_YES" -eq 0 ]; then
+	printf '%s? Preferred CLI for reasoning (core=high / mid models)? [claude/codex] %s' "$C_BOLD" "$C_RESET"
+	read -r reply || reply=""
+	case "$reply" in
+		codex|Codex|CODEX|c|C) CLI_CHOICE="codex" ;;
+		*)                     CLI_CHOICE="claude" ;;
+	esac
+fi
+if [ "$CLI_CHOICE" = "codex" ]; then
+	ok "CLI: codex (core=gpt-5.5, mid=gpt-5.5, cheap=local ollama)"
+	ANALYZE_TIERS_JSON='"analyze": {
+			"coreFloor": "core",
+			"tiers": {
+				"core":  { "runner": "cli-codex", "model": "gpt-5.5" },
+				"mid":   { "runner": "cli-codex", "model": "gpt-5.5" },
+				"cheap": { "runner": "ollama",    "model": "qwen3.6:35b-a3b" }
+			}
+		},'
+else
+	ok "CLI: claude (core=opus, mid=sonnet, cheap=local ollama)"
+	ANALYZE_TIERS_JSON='"analyze": {
+			"coreFloor": "core",
+			"tiers": {
+				"core":  { "runner": "cli-claude", "model": "opus" },
+				"mid":   { "runner": "cli-claude", "model": "sonnet" },
+				"cheap": { "runner": "ollama",     "model": "qwen3.6:35b-a3b" }
+			}
+		},'
+fi
+
 if [ "$RESOLVED_EMBEDDER" = "onnx" ]; then
 	if [ ! -f "$CONFIG_FILE" ]; then
 		mkdir -p "$HOME/.insrc"
-		# NOTE: we deliberately do NOT pin models.analyze.shaperProvider.
-		# When invoked over MCP the daemon auto-routes the analyze shaper
-		# to the calling CLI (Claude Code -> claude, Codex -> codex); an
-		# explicit value here would override that. Set one manually only
-		# if you want to force a specific backend.
-		cat > "$CONFIG_FILE" <<'CFG'
+		# models.analyze.tiers pins the per-role capability tiers for the chosen
+		# CLI. The legacy shaperProvider is deliberately left unset so any role
+		# without an explicit tier still resolves through the router's defaults.
+		cat > "$CONFIG_FILE" <<CFG
 {
 	"models": {
+		${ANALYZE_TIERS_JSON}
 		"providers": {
 			"local": {
 				"host":           "http://localhost:11434",
@@ -294,7 +332,7 @@ if [ "$RESOLVED_EMBEDDER" = "onnx" ]; then
 	}
 }
 CFG
-		ok "wrote $CONFIG_FILE (ONNX embedder; analyze shaper auto-routes to the invoking CLI)"
+		ok "wrote $CONFIG_FILE (ONNX embedder; $CLI_CHOICE tiers)"
 	else
 		if ! grep -q 'nomic-embed-text' "$CONFIG_FILE" 2>/dev/null; then
 			warn "existing $CONFIG_FILE does not appear to reference the ONNX embedder"
@@ -305,7 +343,26 @@ CFG
 		fi
 	fi
 elif [ "$RESOLVED_EMBEDDER" = "ollama" ]; then
-	if [ -f "$CONFIG_FILE" ] && grep -q 'nomic-embed-text' "$CONFIG_FILE" 2>/dev/null; then
+	if [ ! -f "$CONFIG_FILE" ]; then
+		mkdir -p "$HOME/.insrc"
+		cat > "$CONFIG_FILE" <<CFG
+{
+	"models": {
+		${ANALYZE_TIERS_JSON}
+		"providers": {
+			"local": {
+				"host":           "http://localhost:11434",
+				"embeddingModel": "qwen3-embedding:0.6b",
+				"embeddingDim":   1024,
+				"coreModel":      "qwen3-coder:latest",
+				"charsPerToken":  3
+			}
+		}
+	}
+}
+CFG
+		ok "wrote $CONFIG_FILE (Ollama embedder; $CLI_CHOICE tiers)"
+	elif grep -q 'nomic-embed-text' "$CONFIG_FILE" 2>/dev/null; then
 		warn "existing $CONFIG_FILE references the ONNX embedder but you chose Ollama"
 		warn "  update embeddingModel to 'qwen3-embedding:0.6b' and embeddingDim to 1024"
 		warn "  then: rm -rf ~/.insrc/lance && re-add repos"

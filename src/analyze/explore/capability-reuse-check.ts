@@ -29,7 +29,7 @@ import { readFileSync } from 'node:fs';
 import { isAbsolute, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { buildShaperProvider } from '../context/shaper-provider.js';
+import { resolveRoleProvider } from '../context/shaper-provider.js';
 import { loadAnalyzeConfig } from '../../config/analyze.js';
 import { getLogger } from '../../shared/logger.js';
 import type {
@@ -125,7 +125,7 @@ export async function runCapabilityReuseCheck(
 	let llmSkipReason: string | undefined;
 	try {
 		const cfg = loadAnalyzeConfig();
-		const provider = buildShaperProvider(cfg);
+		const provider = resolveRoleProvider('analyze.narrow', cfg);
 		raw = await provider.completeStructured<CapabilityReuseCheckLLMOutput>(
 			[
 				{ role: 'system', content: prepared.systemPrompt },

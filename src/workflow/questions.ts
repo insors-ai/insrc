@@ -32,7 +32,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { buildShaperProvider } from '../analyze/context/shaper-provider.js';
+import { resolveRoleProvider } from '../analyze/context/shaper-provider.js';
 import { loadAnalyzeConfig } from '../config/analyze.js';
 import { getLogger } from '../shared/logger.js';
 import type { LLMProvider, StructuredSchema } from '../shared/types.js';
@@ -169,7 +169,7 @@ export function _setQuestionProviderForTests(p: LLMProvider | undefined): void {
 
 function optionProvider(): LLMProvider {
 	if (providerOverride !== undefined) return providerOverride;
-	return buildShaperProvider(loadAnalyzeConfig(), {});
+	return resolveRoleProvider('workflow.questions', loadAnalyzeConfig());
 }
 
 /** Formalize ONE open question into 2-4 concrete options + a one-line

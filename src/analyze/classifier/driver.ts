@@ -36,7 +36,7 @@ import { readFileSync } from 'node:fs';
 import { isAbsolute, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { buildShaperProvider } from '../context/shaper-provider.js';
+import { resolveRoleProvider } from '../context/shaper-provider.js';
 import { loadAnalyzeConfig } from '../../config/analyze.js';
 import { getLogger } from '../../shared/logger.js';
 import type { LLMMessage, LLMProvider } from '../../shared/types.js';
@@ -125,7 +125,7 @@ export async function classify(args: ClassifyDriverArgs): Promise<ClassifiedInte
 
 	// (2) Load classifier prompt + build messages.
 	const promptContent = loadPromptFile();
-	const provider = args.provider ?? buildShaperProvider(cfg);
+	const provider = args.provider ?? resolveRoleProvider('analyze.classify', cfg);
 
 	let messages = buildInitialMessages(promptContent, bundleMd, input);
 

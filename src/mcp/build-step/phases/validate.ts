@@ -14,6 +14,8 @@
  */
 
 import { CliProvider } from '../../../agent/providers/cli-provider.js';
+import { createRoleRouter } from '../../../analyze/context/role-router.js';
+import { loadAnalyzeConfig } from '../../../config/analyze.js';
 import { getLogger } from '../../../shared/logger.js';
 import { renderValidatePrompt, resolveRepoPath, resolveTaskRef } from '../render.js';
 import type { BuildStepDone, BuildStepError, BuildStepInputValidate } from '../types.js';
@@ -33,6 +35,21 @@ export function _setBuildValidateProviderForTests(p: ValidateProvider | undefine
 	providerOverride = p;
 }
 
+/** Resolve the edit-session provider for build validation. Validation is a
+ *  critical (`build`) role → resolves the HIGH (core) tier via the RoleRouter
+ *  (default: claude opus; codex `gpt-5.5` for a Codex install, or whatever the
+ *  operator pinned core to). Edit sessions require a CLI (`runEditSession`), so a
+ *  non-CLI resolution (an operator who pinned core→ollama) falls back to claude. */
+function resolveValidateProvider(repoPath: string): ValidateProvider {
+	const { resolution } = createRoleRouter({}).resolveProviderForRole('build', loadAnalyzeConfig(), repoPath);
+	if (resolution.runner === 'cli-claude' || resolution.runner === 'cli-codex') {
+		const kind = resolution.runner === 'cli-codex' ? 'codex' : 'claude';
+		return new CliProvider({ kind, ...(resolution.model !== '' ? { model: resolution.model } : {}) });
+	}
+	log.warn({ runner: resolution.runner }, "build-step[validate]: 'build' tier resolved to a non-CLI runner; edit sessions require a CLI — falling back to claude");
+	return new CliProvider({ kind: 'claude' });
+}
+
 export async function handleValidate(input: BuildStepInputValidate): Promise<BuildStepDone | BuildStepError> {
 	const repoPath = await resolveRepoPath(input.repo);
 	if (repoPath === undefined) {
@@ -42,7 +59,7 @@ export async function handleValidate(input: BuildStepInputValidate): Promise<Bui
 	if (!resolved.ok) return err('unresolved-target', resolved.message);
 
 	const prompt = renderValidatePrompt(repoPath, resolved.ref);
-	const provider: ValidateProvider = providerOverride ?? new CliProvider({ kind: 'claude' });
+	const provider: ValidateProvider = providerOverride ?? resolveValidateProvider(repoPath);
 
 	log.info({ taskId: resolved.ref.taskId, storyId: resolved.ref.storyId }, 'insrc_build_step[validate]: running verdict session');
 	const response = await provider.runEditSession(prompt, { cwd: repoPath });

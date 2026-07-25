@@ -29,7 +29,7 @@ import { getLogger } from '../shared/logger.js';
 import type { IpcStreamMessage, LLMMessage, LLMProvider, StageProgressEvent, StructuredCompletionOpts, TokenProgressEvent } from '../shared/types.js';
 import type { ClassifiedIntent } from '../shared/analyze-types.js';
 import type { AnalyzeContextBundle } from '../analyze/context/types.js';
-import { buildShaperProvider, resolveShaperKind, runWithClientProviderContext } from '../analyze/context/shaper-provider.js';
+import { buildShaperProvider, resolveShaperKind, runWithClientProviderContext, runWithRoutingContext } from '../analyze/context/shaper-provider.js';
 import { createRoleRouter, type RoleRouter } from '../analyze/context/role-router.js';
 import type { RoleId } from '../config/role-taxonomy.js';
 import { loadAnalyzeConfig, resolveRepoShaperProvider, type AnalyzeConfig, type AnalyzeShaperProviderKind } from '../config/analyze.js';
@@ -460,13 +460,15 @@ export async function runStart(
 			onToken:    (stepId, token) => { const ev = tokens.push(stepId, token); if (ev !== null) send({ id: 0, stream: 'delta', data: ev }); },
 			...(p.review !== undefined ? { review: p.review } : {}),
 		});
-		// Run inside the invoking CLI's provider context so the analyze
-		// grounding (`buildRun`, called bare inside the driver) resolves to
-		// the SAME provider as the workflow driving instead of falling back
-		// to Ollama.
+		// Establish the sc6 RoutingSeamContext (S005) around the drive so the
+		// deep analyze sites reached via `buildRun` grounding resolve per-role
+		// through the router. Nested inside the invoking CLI's provider context
+		// so the CLIENT default still governs the legacy fallthrough.
+		const driveWithSeam = (): Promise<RunWorkflowResult> =>
+			runWithRoutingContext({ router, ...(repoPath !== undefined ? { repoPath } : {}) }, drive);
 		const out = clientDefault !== undefined
-			? await runWithClientProviderContext(clientDefault, drive)
-			: await drive();
+			? await runWithClientProviderContext(clientDefault, driveWithSeam)
+			: await driveWithSeam();
 		const tail = tokens.flush();   // emit any tokens left below the batch threshold
 		if (tail !== null) send({ id: 0, stream: 'delta', data: tail });
 		send({ id: 0, stream: 'done', data: { path: out.path, runId: out.runId, model: out.model, artifact: out.artifact, ...(out.review !== undefined ? { review: { verdict: out.review.verdict, counts: out.review.counts } } : {}) } });

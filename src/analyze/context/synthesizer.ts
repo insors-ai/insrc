@@ -25,7 +25,7 @@ import { readFileSync } from 'node:fs';
 import { isAbsolute, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { buildShaperProvider } from './shaper-provider.js';
+import { resolveRoleProvider } from './shaper-provider.js';
 import { loadAnalyzeConfig } from '../../config/analyze.js';
 import { validateAgainstSchema } from '../../agent/providers/structured-output.js';
 import { getLogger } from '../../shared/logger.js';
@@ -113,7 +113,7 @@ export interface SynthesizeArgs {
 export async function synthesize(args: SynthesizeArgs): Promise<Omit<AnalyzeContextBundle, 'meta'>> {
 	const cfg = loadAnalyzeConfig();
 	const promptContent = loadPromptFile(args.target);
-	const provider = args.provider ?? buildShaperProvider(cfg);
+	const provider = args.provider ?? resolveRoleProvider('analyze.synthesize', cfg);
 
 	const messages = buildMessages(promptContent, args.intent, args.executed);
 

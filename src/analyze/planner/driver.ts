@@ -35,7 +35,7 @@ import { isAbsolute, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { loadAnalyzeConfig } from '../../config/analyze.js';
-import { buildShaperProvider } from '../context/shaper-provider.js';
+import { resolveRoleProvider } from '../context/shaper-provider.js';
 import { getLogger } from '../../shared/logger.js';
 import type { LLMMessage, LLMProvider } from '../../shared/types.js';
 import { CONTRACT_FOOTER_MD } from '../contract.js';
@@ -163,7 +163,7 @@ export async function runPlanner(args: RunPlannerArgs): Promise<PlanTask> {
 	const promptContent = loadPromptFile();
 
 	// (3) Provider.
-	const provider = args.provider ?? buildShaperProvider(cfg);
+	const provider = args.provider ?? resolveRoleProvider('analyze.plan', cfg);
 
 	// (4) Initial messages.
 	const bundleMd = assembleMarkdown(contextBundle);

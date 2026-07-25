@@ -22,7 +22,7 @@ import { readFileSync } from 'node:fs';
 import { isAbsolute, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { buildShaperProvider } from '../context/shaper-provider.js';
+import { resolveRoleProvider } from '../context/shaper-provider.js';
 import { loadAnalyzeConfig } from '../../config/analyze.js';
 import { getDb } from '../../db/client.js';
 import { getEntity } from '../../db/entities.js';
@@ -116,7 +116,7 @@ export async function runSharedDocDecisionTrace(
 
 	// Fire the LLM call against the daemon-side shaperProvider.
 	const cfg = loadAnalyzeConfig();
-	const provider = buildShaperProvider(cfg);
+	const provider = resolveRoleProvider('analyze.narrow', cfg);
 	let raw: DocDecisionTraceLLMOutput;
 	try {
 		raw = await provider.completeStructured(

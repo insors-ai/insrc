@@ -20,7 +20,7 @@ import { readFileSync } from 'node:fs';
 import { isAbsolute, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { buildShaperProvider } from '../context/shaper-provider.js';
+import { resolveRoleProvider } from '../context/shaper-provider.js';
 import { loadAnalyzeConfig } from '../../config/analyze.js';
 import { getDb } from '../../db/client.js';
 import { getEntity } from '../../db/entities.js';
@@ -109,7 +109,7 @@ export async function runSharedDocConstraintEnumerate(
 	if (prepared.kind === 'short-circuit') return prepared.shortCircuit;
 
 	const cfg = loadAnalyzeConfig();
-	const provider = buildShaperProvider(cfg);
+	const provider = resolveRoleProvider('analyze.narrow', cfg);
 	let raw: DocConstraintEnumerateLLMOutput;
 	try {
 		raw = await provider.completeStructured(

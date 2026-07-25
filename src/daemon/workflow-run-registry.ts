@@ -20,7 +20,7 @@
  */
 
 import { getLogger } from '../shared/logger.js';
-import { runWithClientProviderContext } from '../analyze/context/shaper-provider.js';
+import { runWithClientProviderContext, runWithRoutingContext } from '../analyze/context/shaper-provider.js';
 import { appendProgressLog } from '../workflow/storage.js';
 import {
 	formatProgressDetail,
@@ -106,9 +106,13 @@ export function startWorkflowRun(rawParams: unknown, deps: StartRunDeps = {}): {
 		onProgress: (f) => { appendProgressLog(runId, 'workflow.run', f.phase, formatProgressDetail(f)); state.frames.push(f); },
 		...(review !== undefined ? { review } : {}),
 	});
+	// Establish the sc6 RoutingSeamContext (S005) around the drive so the deep
+	// analyze sites reached via `buildRun` grounding resolve per-role.
+	const driveWithSeam = (): Promise<RunWorkflowResult> =>
+		runWithRoutingContext({ router, ...(repoPath !== undefined ? { repoPath } : {}) }, drive);
 	const run = clientDefault !== undefined
-		? runWithClientProviderContext(clientDefault, drive)
-		: drive();
+		? runWithClientProviderContext(clientDefault, driveWithSeam)
+		: driveWithSeam();
 	void run.then(
 		(result) => {
 			state.status = 'done';

@@ -118,9 +118,14 @@ test('startWorkflowRun returns a runId synchronously and poll transitions runnin
 		assert.ok(done.result, 'terminal result present');
 		assert.ok(done.result!.path.endsWith('/docs/stub/demo-stub-wf-reg-1.md'), done.result!.path);
 
-		// The persisted artifact is stamped with the fake provider label.
-		const json = JSON.parse(readFileSync(done.result!.path.replace(/\.md$/, '.json'), 'utf8')) as { meta: { model: string } };
-		assert.equal(json.meta.model, 'ollama:qwen3-test');
+		// The persisted artifact carries per-output attribution (sc5); the scalar
+		// meta.model is retired. The poll/done result surfaces the summary.
+		const json = JSON.parse(readFileSync(done.result!.path.replace(/\.md$/, '.json'), 'utf8')) as {
+			meta: { model?: string; attribution: { outputs: { runner: string; model: string }[] } };
+		};
+		assert.equal(json.meta.model, undefined);
+		assert.equal(json.meta.attribution.outputs[0]!.model, 'qwen3-test');
+		assert.equal(done.result!.model, 'ollama:qwen3-test');
 		assert.equal(provider.calls, 2);   // decompose + synthesize
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });

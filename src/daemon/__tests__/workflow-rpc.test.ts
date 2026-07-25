@@ -25,6 +25,8 @@ import { join } from 'node:path';
 import { runWorkflowServerSide } from '../workflow-rpc.js';
 import type { LLMProvider, LLMMessage, StructuredSchema } from '../../shared/types.js';
 import type { WorkflowIntent } from '../../workflow/types.js';
+import type { RoleRouter, ResolvedProvider, RoleResolution } from '../../analyze/context/role-router.js';
+import type { AnalyzeConfig } from '../../config/analyze.js';
 
 // ---------------------------------------------------------------------------
 // Fake provider — returns a fixed queue of structured responses.
@@ -65,11 +67,31 @@ function stubIntent(repo: string): WorkflowIntent {
 	return { workflow: 'stub', focus: 'demo stub run', repoPath: repo, repoIndexedAt: null, params: {} };
 }
 
+/** A stub RoleRouter returning a distinct provider + resolution per role, so a
+ *  driven run captures heterogeneous per-output attribution (S004/sc5). Memoized
+ *  per role so a role's FakeProvider queue persists across repeated resolutions. */
+function stubRouter(byRole: Record<string, { provider: LLMProvider; resolution: RoleResolution }>): RoleRouter {
+	const cache = new Map<string, ResolvedProvider>();
+	return {
+		resolveProviderForRole(role) {
+			let hit = cache.get(role);
+			if (hit === undefined) {
+				hit = byRole[role] ?? { provider: new FakeProvider([]), resolution: { role, tier: 'mid', runner: 'ollama', model: 'stub' } };
+				cache.set(role, hit);
+			}
+			return hit;
+		},
+		resolveSummariser() {
+			return { provider: new FakeProvider([]), resolution: { role: 'indexer.summarise', tier: 'cheap', runner: 'ollama', model: 'stub' } };
+		},
+	};
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
-test('runWorkflowServerSide drives stub end-to-end + stamps meta.model with the provider label', async () => {
+test('runWorkflowServerSide drives stub end-to-end + stamps per-output attribution (sc5), not the retired scalar model', async () => {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-wf-rpc-'));
 	try {
 		const provider = new FakeProvider([STUB_PLAN, STUB_ARTIFACT]);
@@ -79,8 +101,15 @@ test('runWorkflowServerSide drives stub end-to-end + stamps meta.model with the 
 		});
 		assert.ok(out.path.endsWith('/docs/stub/demo-stub.md'), out.path);
 
-		const json = JSON.parse(readFileSync(out.path.replace(/\.md$/, '.json'), 'utf8')) as { meta: { model: string; workflow: string } };
-		assert.equal(json.meta.model, 'ollama:qwen3-test');   // NOT 'client'
+		// No router was supplied, so attribution is synthesized from the run-wide
+		// label; the RETIRED scalar meta.model is no longer written.
+		const json = JSON.parse(readFileSync(out.path.replace(/\.md$/, '.json'), 'utf8')) as {
+			meta: { model?: string; workflow: string; attribution: { outputs: { runner: string; model: string }[] } };
+		};
+		assert.equal(json.meta.model, undefined, 'scalar meta.model is retired (sc5)');
+		assert.equal(json.meta.attribution.outputs[0]!.runner, 'ollama');
+		assert.equal(json.meta.attribution.outputs[0]!.model, 'qwen3-test');   // NOT 'client'
+		assert.equal(out.model, 'ollama:qwen3-test');   // done-frame summary
 		assert.equal(json.meta.workflow, 'stub');
 
 		// Exactly two provider turns: the decomposer plan + the synthesize
@@ -89,6 +118,35 @@ test('runWorkflowServerSide drives stub end-to-end + stamps meta.model with the 
 
 		const md = readFileSync(out.path, 'utf8');
 		assert.match(md, /\[\[c1\]\]/);   // citation grounding survived render + validation
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('runWorkflowServerSide with a router captures per-output attribution — one heterogeneous row per output (sc5 ac1)', async () => {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-wf-rpc-'));
+	try {
+		// Stub steps are deterministic `output` runners → the two provider calls
+		// are decompose (role design.decompose) + synthesize (role synthesize).
+		const router = stubRouter({
+			'design.decompose': { provider: new FakeProvider([STUB_PLAN]),     resolution: { role: 'design.decompose', tier: 'mid',  runner: 'ollama',     model: 'qwen-decomp' } },
+			'synthesize':       { provider: new FakeProvider([STUB_ARTIFACT]), resolution: { role: 'synthesize',       tier: 'core', runner: 'cli-claude', model: 'opus-synth' } },
+		});
+		const out = await runWorkflowServerSide(stubIntent(repo), new FakeProvider([]), {
+			runId: 'wf-test-attr', epicKey: 'demo-attr', modelLabel: 'ollama:should-be-ignored',
+			router, cfg: {} as AnalyzeConfig, review: false,
+		});
+
+		const json = JSON.parse(readFileSync(out.path.replace(/\.md$/, '.json'), 'utf8')) as {
+			meta: { model?: string; attribution: { outputs: { role: string; tier: string; runner: string; model: string }[] } };
+		};
+		assert.equal(json.meta.model, undefined, 'scalar retired');
+		const outs = json.meta.attribution.outputs;
+		// One row per produced output, in step-execution order (plan, then synthesize),
+		// each carrying its OWN runner/model — never flattened to one dominant runner.
+		assert.equal(outs.length, 2);
+		assert.deepEqual(outs[0], { role: 'design.decompose', tier: 'mid', runner: 'ollama', model: 'qwen-decomp' });
+		assert.deepEqual(outs[1], { role: 'synthesize', tier: 'core', runner: 'cli-claude', model: 'opus-synth' });
+		// Heterogeneous run → done-frame summary is mixed(...), not the ignored modelLabel.
+		assert.match(out.model, /^mixed\(2: /);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 

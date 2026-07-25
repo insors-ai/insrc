@@ -44,8 +44,10 @@ export interface RunState {
 	readonly frames:    WorkflowProgress[];
 	result?:            RunWorkflowResult | undefined;
 	error?:             string | undefined;
-	/** Resolved provider label (`meta.model`), known from start. */
-	readonly model:     string;
+	/** Model label surfaced on `poll`. Seeded at start from the run-wide
+	 *  provider label, then refreshed on `done` to the artifact's per-output
+	 *  attribution summary (S004/sc5). */
+	model:              string;
 	readonly abort:     AbortController;
 	readonly startedAt: number;
 }
@@ -111,6 +113,9 @@ export function startWorkflowRun(rawParams: unknown, deps: StartRunDeps = {}): {
 		(result) => {
 			state.status = 'done';
 			state.result = result;
+			// Refresh the seeded run-wide label with the artifact's per-output
+			// attribution summary (S004/sc5) so `poll` surfaces the real models used.
+			state.model = result.model;
 			log.info({ runId, path: result.path }, 'workflow.run (async) done');
 		},
 		(err: unknown) => {

@@ -258,16 +258,56 @@ export interface QuestionResolution {
 
 /** Every artifact shares this meta envelope. Runner-specific
  *  artifact types extend the payload. */
+/**
+ * Per-output model attribution record (Epic per-role-per-step, S004 — sc5).
+ * Projected 1:1 from the sc3 RoleRouter `RoleResolution` at the per-step seam;
+ * `clampedByFloor` is intentionally NOT carried here (it stays an sc3
+ * observability concern). Self-contained string literals — the persisted
+ * artifact type does not import the config-layer role/tier/runner unions.
+ */
+export interface OutputModelStamp {
+	/** The sc4 reasoning RoleId that served this output (e.g. `synthesize`,
+	 *  `design.contract.detail`), or `(legacy)` on a shim-synthesized stamp. */
+	readonly role:   string;
+	readonly tier:   'core' | 'mid' | 'cheap';
+	readonly runner: 'ollama' | 'cli-claude' | 'cli-codex';
+	readonly model:  string;
+}
+
+/**
+ * The artifact-meta attribution aggregate (S004 — sc5): a flat, ordered list of
+ * one stamp per produced output, superseding the scalar per-run `meta.model`.
+ * A flat list (not a byRole map) preserves per-output multiplicity — two
+ * outputs from the same role stay distinct rows.
+ */
+export interface ArtifactModelAttribution {
+	readonly outputs: readonly OutputModelStamp[];
+}
+
 export interface ArtifactMetaBase {
 	readonly workflow:     WorkflowName;
 	readonly runId:        string;
 	readonly repoPath:     string;
 	/** ISO 8601 timestamp. */
 	readonly createdAt:    string;
-	/** Which model produced this run's LLM turns. `client` when the
-	 *  outer LLM (Claude Code / Codex) drove; otherwise a provider
-	 *  id (`ollama:qwen3.6:35b-a3b`, etc.). */
-	readonly model:        'client' | 'ollama' | string;
+	/**
+	 * @deprecated Superseded by {@link ArtifactMetaBase.attribution} (Epic
+	 * per-role-per-step, S004/sc5). New artifacts no longer write this scalar —
+	 * the per-run label is replaced by the per-output `attribution.outputs[]`.
+	 * Retained as OPTIONAL so legacy artifacts on disk (which carry only this
+	 * scalar) stay readable via the `attributionOf` / `modelSummary` shim in
+	 * `workflow/attribution.ts`. Never write it on new artifacts.
+	 */
+	readonly model?:       'client' | 'ollama' | string;
+	/**
+	 * Per-output model attribution (S004/sc5): one {@link OutputModelStamp} per
+	 * produced output (decompose → each design step → synthesize), in
+	 * step-execution order, projected from the sc3 RoleRouter resolutions. This
+	 * supersedes the scalar {@link ArtifactMetaBase.model}. Optional only for
+	 * legacy-read back-compat; every NEW artifact carries it (possibly an empty
+	 * `outputs[]` for a zero-output run). Read via `workflow/attribution.ts`.
+	 */
+	readonly attribution?: ArtifactModelAttribution;
 	/** Total wall-clock elapsed from start to synthesize. */
 	readonly elapsedMs:    number;
 	/** Repo watermark when the run started. */

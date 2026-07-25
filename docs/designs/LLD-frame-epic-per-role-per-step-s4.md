@@ -1,0 +1,275 @@
+<!-- insrc:artifact LLD-820cc07b9c74195c-s4 -->
+
+# LLD: E20260725820cc07b:S004
+
+**Epic:** `frame-epic-per-role-per-step`
+**HLD base run:** `wf-1784970656550-ihypng`
+**HLD effective hash:** `253f46361f54...`
+
+## HLD context
+
+**Framework:** Chosen framework (alternative a2): a single RoleRouter choke point mediates every reasoning-model access across the analyze, workflow, and tracker lifecycle. Rather than constructing one provider per run in prepareWorkflowRun, the router resolves a provider per reasoning role by generalizing the existing shaper-vs-summariser split in shaper-provider.ts into a role-keyed resolver. Configuration extends the existing models.analyze.* contract with three capability tiers {core, mid, cheap}, a role→tier assignment map, a coreFloor guarantee, and byRepo role/tier overrides — the legacy shaperProvider key (and its unset-default path) remaining the lowest-precedence fallback. Because every role access flows through one wrapper, the coreFloor clamp, the CLI/Ollama-only dispatch invariant, per-repo precedence, and per-output model attribution are each enforced at exactly one place with no bypassing seam; the two hardcoded top-tier sites are converted to receive the router from context. The higher mechanical threading cost is accepted under the Epic's accuracy-primary / cost-least-priority principle.
+**Rollout phase:** Phase D — attribution, full-site rollout, and docs
+**Owns:** `sc5` (PerOutputModelAttribution)
+**Consumes:** `sc4` (ReasoningRoleTaxonomy), `sc3` (RoleRouter)
+
+## Contract details
+
+**Surface level:** internal-shared
+
+### `providerFor`
+
+```typescript
+providerFor(role: RoleId): LLMProvider
+```
+
+**Parameters:**
+- `role: RoleId` — The sc4 reasoning role for the step about to execute; replaces the located `runner: string` parameter so the interior seam resolves per-role via the sc3 RoleRouter rather than per-runner.
+
+**Returns:** `LLMProvider` — The provider resolved for `role` (obtained by unwrapping the sc3 ResolvedProvider from resolveProviderForRole). As a side effect, the accompanying sc3 RoleResolution is projected into one OutputModelStamp and recorded on a run-scoped attribution accumulator (accumulator kept private to s4 per the boundary).
+
+**Errors:**
+- `n/a` when No new failure modes introduced; resolution/floor errors surface from the sc3 RoleRouter, not from this seam.
+
+**Preconditions:**
+- The sc3 RoleRouter is available in the run context (constructed upstream by S003); its resolveProviderForRole returns a ResolvedProvider carrying { provider, resolution }.
+- providerFor is the single interior per-step provider resolver (totalCallers = 1, sole caller runWorkflowServerSide), so capturing here covers decompose, every design step, and synthesize with no bypassing path.
+
+**Postconditions:**
+- Exactly one OutputModelStamp is recorded for the resolution used to produce this step's output, in step-execution order.
+- clampedByFloor stays an sc3 observability concern and is NOT copied into the stamp (per sc5 interfaceSketch, which carries only role/tier/runner/model).
+
+### `runWorkflowServerSide`
+
+```typescript
+runWorkflowServerSide(run: WorkflowRunState): Promise<WorkflowArtifact /* meta.attribution: ArtifactModelAttribution */>
+```
+
+**Parameters:**
+- `run: WorkflowRunState` — The workflow run being driven (decompose -> each design step -> synthesize). Parameter shape is as located at workflow-rpc.ts:157-336; only the artifact-meta assembly at the tail is reshaped by this Story.
+
+**Returns:** `Promise<WorkflowArtifact>` — The produced artifact whose meta now carries an ArtifactModelAttribution { outputs: OutputModelStamp[] } aggregated from the per-step stamps captured at the providerFor seam, in place of the scalar meta.model.
+
+**Errors:**
+- `n/a` when Additive meta assembly introduces no new terminal errors; existing driver-loop error paths are unchanged.
+
+**Preconditions:**
+- Each step's provider was resolved through providerFor, so a per-output stamp exists for every produced output before meta is assembled.
+- The run-scoped attribution accumulator preserves per-output ordering and multiplicity (two outputs from the same role remain distinct rows — no last-write-wins collapse).
+
+**Postconditions:**
+- The artifact meta carries outputs[] with one OutputModelStamp per produced output in step-execution order (ac1).
+- The scalar meta.model whole-run attribution is no longer written on new artifacts; it is superseded by the per-output ArtifactModelAttribution (ac2).
+- The write is strictly additive to the meta contract; older single-model artifacts remain readable via the read-time synth shim (k3/k4).
+
+## Data model changes
+
+### `OutputModelStamp` — new
+
+Per-output attribution record adopted verbatim from the sc5 HLD interfaceSketch: { role: RoleId /* sc4 */; tier: 'core'|'mid'|'cheap'; runner: 'ollama'|'cli-claude'|'cli-codex'; model: string }. Projected directly from the sc3 RoleResolution returned by the RoleRouter at the providerFor seam — role/tier/runner/model map 1:1; clampedByFloor is intentionally dropped (observability-only, not attribution).
+
+```
++ interface OutputModelStamp {
++   role: RoleId;              // sc4
++   tier: 'core' | 'mid' | 'cheap';
++   runner: 'ollama' | 'cli-claude' | 'cli-codex';
++   model: string;
++ }
+```
+
+**Call sites:**
+- `src/daemon/workflow-rpc.ts:177-180 (providerFor — resolution captured into a stamp here)`
+- `src/daemon/workflow-rpc.ts:157-336 (runWorkflowServerSide — stamps aggregated per produced output)`
+- `src/analyze/context/__tests__/role-router.test.ts:48,62,70,82,104 (RoleResolution role/tier/runner/model shape the stamp projects from)`
+
+### `ArtifactModelAttribution` — new
+
+Artifact-meta aggregate adopted verbatim from the sc5 HLD interfaceSketch: { outputs: OutputModelStamp[] }. A flat ordered list (one row per produced output) — NOT a byRole map — preserving the per-output multiplicity ac1 requires. Zero contract drift from the committed sc5 wire shape (the decisive edge of the winning alternative a1).
+
+```
++ interface ArtifactModelAttribution {
++   outputs: OutputModelStamp[];   // per-output stamps, superseding the run-wide model field
++ }
+```
+
+**Call sites:**
+- `src/daemon/workflow-rpc.ts:157-336 (runWorkflowServerSide — assembled onto artifact meta at the meta-stamp region)`
+
+### `WorkflowArtifact.meta.model (scalar attribution field)` — field-modify
+
+The single per-run scalar model label on produced-artifact meta is superseded by the ArtifactModelAttribution.outputs[] aggregate; new artifacts no longer write the scalar. The scalar `meta.model` is written in src/workflow/orchestrator.ts by finalizeArtifact (declared L298, `model: string = 'client'` at L307), which stamps `meta: { …, model, … }` in each per-artifact arm (~7 arms: DEF/HLD/LLD/plan/…). runWorkflowServerSide reaches it via `finalizeArtifact(intent, …, opts.modelLabel)`. The S004 cutover therefore threads the outputs[] aggregate INTO finalizeArtifact (and its shared meta assembly) — NOT an inline workflow-rpc literal, and NOT the unrelated analyze-bundle meta.modelId at driver.live.test.ts:158.
+
+```
+- meta.model: string        // one model for the whole run
++ meta.attribution: ArtifactModelAttribution   // per-output stamps
+```
+
+**Call sites:**
+- `src/daemon/workflow-rpc.ts:157-336 (runWorkflowServerSide — meta-stamp region; concrete field/line to be pinned at landing)`
+- `src/analyze/context/__tests__/driver.live.test.ts:158 (meta.modelId — the single-label attribution precedent)`
+
+### `WorkflowArtifact.meta (legacy read back-compat)` — invariant-change
+
+Read-time-only, no stored migration: a legacy artifact carrying scalar meta.model and no outputs[] is read through a pure shim that synthesizes a single-element outputs[] (a placeholder role on the synthesized stamp is a historical-fidelity note, not an sc4 taxonomy violation). The legacy scalar path survives upgrade untouched (k3); the aggregate is strictly additive to meta (k4). Downstream reader sites for the legacy scalar are not yet identified (s1 backFlowNotes gap 3, no import.graph pass) — enumerating them is a landing obligation.
+
+**Call sites:**
+- `src/analyze/context/__tests__/driver.live.test.ts:158 (legacy single-label precedent the shim synthesizes from)`
+- `src/daemon/workflow-rpc.ts:157-336 (artifact meta read/assembly region)`
+
+## Interaction with shared contracts
+
+| Contract | Role | How |
+| :--- | :--- | :--- |
+| `sc5` | implements | s4 owns sc5 (PerOutputModelAttribution) per the HLD boundary (owns: [sc5]). It lands the OutputModelStamp and ArtifactModelAttribution shapes verbatim from the sc5 interfaceSketch — no envelope, no byRole map, no version discriminant — replacing the scalar meta.model with the flat outputs[] aggregate. The provider-wrapping/accumulation mechanism and the legacy-read shim stay private to s4, exposing only the two shapes as required by the boundary's `internal` note. |
+| `sc3` | consumes | The per-output stamp is projected from the sc3 RoleResolution ({ role, tier, runner, model, clampedByFloor }) that the RoleRouter's resolveProviderForRole already returns as part of ResolvedProvider. Capture happens at the single interior providerFor seam (workflow-rpc.ts:177-180, sole caller runWorkflowServerSide), so every step is covered with no bypassing path. s4 reads the resolution only — it does not alter routing, precedence, or the coreFloor clamp; clampedByFloor stays an sc3 observability concern and is not carried into the stamp. |
+| `sc4` | consumes | OutputModelStamp.role is a sc4 RoleId, kept identical to the RoleId on the source RoleResolution so attribution, config, floor, router, and application seams all agree on role identity. The only caveat is the synthesized legacy stamp's placeholder role (a fidelity note on historical records), which does not extend or mutate the sc4 taxonomy. |
+
+## Error paths
+
+### Error cases
+
+- **A produced output has no corresponding captured stamp when runWorkflowServerSide assembles meta — a step's provider was resolved off the providerFor seam, or the run-scoped accumulator dropped/duplicated an entry — so the accumulated OutputModelStamp count diverges from the produced-output count.** (recoverable)
+  - Detection: At the tail meta-assembly, runWorkflowServerSide compares the length of the run-scoped stamp accumulator against the number of produced outputs and finds a mismatch (fewer stamps than outputs, or more — e.g. a lifecycle bug leaking stamps across runs).
+  - Response: Per the additive-assembly contract (no new terminal errors), do not throw: log at error level with the run id and the count delta, and assemble outputs[] from the stamps actually captured for this run so the artifact is still produced. The gap is diagnosable from the logged mismatch rather than being silently misattributed to a wrong model.
+  - User impact: The artifact is still written; any unmatched output's attribution is absent and flagged in logs instead of being fabricated or collapsed onto another output's model.
+- **A legacy artifact is read whose meta carries neither a scalar meta.model nor an outputs[] aggregate (a pre-attribution artifact, or one whose scalar label was never written).** (recoverable)
+  - Detection: The read-time shim, before synthesizing a single-element outputs[], probes for the scalar meta.model and finds it absent while outputs[] is also absent — there is nothing to project a stamp from.
+  - Response: Return an empty outputs[] — an honestly unattributed historical artifact stays empty rather than being invented a stamp; log at debug. The shim never fabricates a runner/model it cannot source.
+  - User impact: The reader sees empty per-output attribution for that old artifact; no crash and no invented model identity.
+- **resolveProviderForRole returns a ResolvedProvider whose provider could not be constructed for the role (an upstream sc3 RoleRouter resolution/floor failure).** (terminal)
+  - Detection: providerFor unwraps the ResolvedProvider at the seam and finds no usable provider to return before any stamp is recorded.
+  - Response: This is an sc3 concern, not s4's to enforce: the failure surfaces from the RoleRouter and aborts the step exactly as today. Because no output is produced, no stamp is recorded — the per-output count invariant is preserved by construction. s4 adds no handling here.
+  - User impact: The step fails upstream as it does today; attribution stays internally consistent (no output ⇒ no stamp), so the artifact meta never lists a phantom output.
+
+### Edge cases
+
+| Input | Expected |
+| :--- | :--- |
+| A run where every step resolves to the same role and model. | outputs[] contains one OutputModelStamp per produced output — N identical rows, never deduplicated to a single row; multiplicity is preserved. |
+| A run that produces zero outputs (e.g. it aborts after decompose before any design output is generated). | meta carries an empty outputs[] array — the field is present, not omitted — and no scalar meta.model is written. |
+| A single-output run. | outputs[] has exactly one OutputModelStamp; structurally length-1 but it is the new per-output aggregate, not the superseded scalar field. |
+| A run served by a heterogeneous mix of runners (ollama for some steps, cli-claude for others). | each row records its own runner/model with per-row fidelity; outputs[] is heterogeneous, never flattened to one dominant runner. |
+| A step whose sc3 resolution was clampedByFloor (raised to the core-floor model). | the stamp records the effective (clamped) tier/runner/model actually used to produce the output; clampedByFloor itself is not copied into the stamp. |
+| A legacy artifact carrying scalar meta.model and no outputs[]. | the read-time shim yields a length-1 outputs[] whose single stamp carries the legacy model plus a placeholder role — a historical-fidelity note, not an sc4 taxonomy entry. |
+| A stored artifact carrying BOTH a legacy scalar meta.model and a populated outputs[]. | outputs[] is authoritative and the shim does not run; the stale scalar is ignored (the richer per-output record wins) — no dual-source reconciliation. |
+
+### Invariants to preserve
+
+- Every produced output maps to exactly one OutputModelStamp, recorded in step-execution order, with multiplicity preserved — two outputs from the same role stay distinct rows (no last-write-wins collapse). Grounded in s1 usage.example: providerFor has totalCallers=1 with sole caller runWorkflowServerSide (src/daemon/workflow-rpc.ts:177-180), so a stamp captured at this single interior seam covers decompose, every design step, and synthesize with no bypassing path. [[c1]]
+- The providerFor interior seam stays the ONLY per-step provider resolver; no step may resolve a provider off this seam or attribution goes incomplete. Grounded in s1 usage.example / symbol.locate: providerFor's sole caller is runWorkflowServerSide, the driver loop at src/daemon/workflow-rpc.ts:157-336 (resolver at :177-180). [[c1]]
+- Legacy artifacts carrying the scalar meta.model remain readable via a read-time-only additive shim — no stored migration, and the legacy scalar path survives upgrade untouched (k3/k4). Grounded in s1 data-model.trace: the single-label attribution precedent is meta.modelId at src/analyze/context/__tests__/driver.live.test.ts:158, the shape the shim synthesizes a single-element outputs[] from. [[c1]]
+- clampedByFloor stays an sc3 observability-only concern and is never copied into an OutputModelStamp (the stamp carries only role/tier/runner/model). Grounded in s1 search.text: clampedByFloor / runner / model are asserted across src/analyze/context/__tests__/role-router.test.ts (:48,:62,:70,:82,:104) as the sc3 RoleResolution shape the stamp projects from. [[c1]]
+- The meta write is strictly additive and introduces no new terminal errors — the existing driver-loop error paths in runWorkflowServerSide are unchanged, only the tail artifact-meta assembly is reshaped. Grounded in s1 symbol.locate: runWorkflowServerSide (src/daemon/workflow-rpc.ts:157-336) is the driver loop and artifact-meta stamp site being extended, not restructured. [[c1]]
+
+## Test strategy
+
+**Test framework:** `node:test (built-in node:test runner, executed via `npx tsx --test`)`
+
+### Test levels
+
+- **unit** — Pin the sc5 shapes in isolation: OutputModelStamp projection from an sc3 RoleResolution (role/tier/runner/model map 1:1; clampedByFloor dropped), ArtifactModelAttribution aggregation preserving per-output order and multiplicity, and the read-time legacy shim. These exercise the pure projection/aggregation/shim logic without driving a full run.
+  - Subjects: `OutputModelStamp projection at the providerFor seam (src/daemon/workflow-rpc.ts:177-180) — from an sc3 RoleResolution { role, tier, runner, model, clampedByFloor } to a stamp carrying only role/tier/runner/model`, `ArtifactModelAttribution aggregation over the run-scoped accumulator — one row per produced output, step-execution order, multiplicity preserved (no dedup, no last-write-wins)`, `Read-time legacy shim — synthesizes a length-1 outputs[] with placeholder role from a legacy scalar meta.model; returns empty outputs[] when neither scalar nor aggregate is present; ignores the scalar when a populated outputs[] already exists`
+  - Fixtures: `Fake RoleResolution objects mirroring the role-router.test.ts tier pairs (ollama/qwen-small=cheap, cli-claude/sonnet=mid, cli-claude/opus=core), at least one with clampedByFloor=true`, `A legacy artifact-meta fixture carrying scalar meta.model (per the meta.modelId precedent at driver.live.test.ts:158) and no outputs[]`, `A pre-attribution artifact-meta fixture carrying neither scalar meta.model nor outputs[]`, `A dual-source artifact-meta fixture carrying BOTH a stale scalar meta.model and a populated outputs[]`
+- **integration** — Drive runWorkflowServerSide end-to-end over a multi-step run (decompose -> design step(s) -> synthesize) with a stubbed RoleRouter and provider stubs, asserting the produced WorkflowArtifact meta carries ArtifactModelAttribution.outputs[] aggregated at the tail meta-assembly, that the scalar meta.model is no longer written, and that the count-mismatch error path degrades gracefully (logs + assembles from captured stamps, no throw).
+  - Subjects: `runWorkflowServerSide (src/daemon/workflow-rpc.ts:157-336) — full driver loop with per-step providerFor resolution and tail meta assembly`, `providerFor as the single interior seam (totalCallers=1) — capture covers decompose, every design step, and synthesize with no bypassing path`, `Additive-assembly degradation — stamp-count vs produced-output-count divergence logs at error and still writes the artifact from captured stamps`
+  - Fixtures: `A stubbed sc3 RoleRouter whose resolveProviderForRole returns a ResolvedProvider { provider, resolution } keyed per role, wired into the run context`, `Heterogeneous LLMProvider stubs (an ollama-runner stub and a cli-claude-runner stub) so different steps resolve to different runners/models`, `A WorkflowRunState fixture shaped as located at workflow-rpc.ts:157-336, configured to (a) resolve every step to the same role/model, (b) resolve a heterogeneous mix, (c) produce a single output, and (d) abort after decompose producing zero outputs`, `A harness hook to force an accumulator/produced-output count mismatch and capture the error-level log`
+
+### Acceptance mapping
+
+| Criterion | Proving tests |
+| :--- | :--- |
+| `ac1` | `integration: runWorkflowServerSide over a heterogeneous run (ollama for some steps, cli-claude for others) writes meta.attribution.outputs[] with one OutputModelStamp per produced output, each row carrying its own runner/model in step-execution order (never flattened to one dominant runner)`, `unit: an OutputModelStamp projected from a given sc3 RoleResolution carries that resolution's exact role/tier/runner/model (identity of the model that produced the output), and drops clampedByFloor`, `unit: aggregation of N stamps where every step resolved to the same role/model yields N identical rows with multiplicity preserved (no dedup, no last-write-wins collapse)`, `integration: a clampedByFloor resolution records the effective (clamped) tier/runner/model actually used, and clampedByFloor is not copied into the stamp`, `unit: a legacy artifact with scalar meta.model reads through the shim into a length-1 outputs[] carrying the legacy model plus a placeholder role; a pre-attribution artifact with neither field yields an empty outputs[] with no fabricated model` |
+| `ac2` | `integration: a newly produced artifact carries meta.attribution.outputs[] and does NOT write the scalar meta.model — the whole-run scalar attribution is superseded by the per-output record`, `integration: a zero-output run writes meta with an empty outputs[] present (not omitted) and no scalar meta.model`, `unit: when a stored artifact carries BOTH a stale scalar meta.model and a populated outputs[], outputs[] is authoritative and the shim does not run — the richer per-output record wins over the superseded scalar`, `integration: a single-output run writes exactly one OutputModelStamp under the new per-output aggregate rather than the superseded scalar field` |
+
+## Migration
+
+**State before:** Per s1 analyze bundles: the workflow driver loop runWorkflowServerSide (workflow-rpc.ts:157-336) executes each step (decompose -> each design step -> synthesize) and stamps the produced artifact's meta at the tail. Its interior per-step provider resolver providerFor (workflow-rpc.ts:177-180) has totalCallers=1 (sole caller runWorkflowServerSide), so every step's provider passes through this one seam. Today the artifact meta carries a single scalar model attribution for the whole run (the single-label precedent surfaces as bundle.meta.modelId at driver.live.test.ts:158; search.text found NO literal meta.model write inside workflow-rpc.ts — the concrete scalar write field/line is UNLOCATED in the graph, flagged as s1 backFlowNotes gap 1). One provider is built run-wide by prepareWorkflowRun via buildShaperProvider (single caller, whole-run construction). There is no per-output attribution: an artifact served by different models across its steps records only one model for the entire run. sc3 RoleResolution { role, tier, runner, model, clampedByFloor } (asserted in role-router.test.ts:48,62,70,82,104) is available at the seam once S003 lands, but is not projected onto artifact meta.
+
+**State after:** The providerFor seam resolves per-role via the sc3 RoleRouter and, as a side effect, projects each step's sc3 RoleResolution into one OutputModelStamp { role, tier, runner, model } (clampedByFloor intentionally dropped — sc3 observability, not attribution) onto a run-scoped attribution accumulator that preserves per-output order and multiplicity. At the tail of runWorkflowServerSide the accumulated stamps are assembled into an ArtifactModelAttribution { outputs: OutputModelStamp[] } written to artifact meta (meta.attribution), in step-execution order, one row per produced output (ac1). New artifacts no longer write the scalar meta.model whole-run label — it is superseded by the per-output aggregate (ac2). Legacy artifacts carrying the scalar meta.model and no outputs[] remain readable: a read-time-only shim synthesizes a single-element outputs[] (with a placeholder role, a historical-fidelity note not an sc4 taxonomy violation). Operators can audit which model actually produced each output rather than one model attributed to the entire run.
+
+**Zero downtime:** yes — **Data rewrite:** no
+
+### Steps
+
+1. Add the two new additive meta shapes OutputModelStamp { role: RoleId; tier: 'core'|'mid'|'cheap'; runner: 'ollama'|'cli-claude'|'cli-codex'; model: string } and ArtifactModelAttribution { outputs: OutputModelStamp[] } as verbatim adoptions of the sc5 HLD interfaceSketch. Introduce meta.attribution as a new optional field on WorkflowArtifact.meta alongside the existing scalar meta.model (do not remove the scalar yet). Purely type/shape addition — no producer or reader changes yet. — ↩ rollbackable
+2. Open workflow-rpc.ts:157-336 and pin the concrete current write site of the scalar whole-run model label (UNLOCATED in the graph per s1 backFlowNotes gap 1 — the assembly may live in a helper such as an artifacts-rpc / tracker render path, not inline). Confirm the exact field/line before attaching the aggregate. This is a locate-only step with no behavioral change. — ↩ rollbackable
+3. Add a run-scoped attribution accumulator, private to s4, that preserves per-output ordering and multiplicity (two outputs from the same role stay distinct rows — no last-write-wins collapse). Thread it through runWorkflowServerSide so each produced output can record one stamp. No stamps captured yet — accumulator is inert until wired. — ↩ rollbackable _(needs: `s3-role-router-landed`)_
+4. At the providerFor seam (workflow-rpc.ts:177-180), reshape the parameter from the located runner: string to role: RoleId, resolve via the sc3 RoleRouter's resolveProviderForRole, unwrap the ResolvedProvider, and project the accompanying sc3 RoleResolution into one OutputModelStamp appended to the accumulator (role/tier/runner/model map 1:1; drop clampedByFloor). Since providerFor is the sole per-step resolver, this covers decompose, every design step, and synthesize with no bypassing path. Reads the resolution only — does not alter routing, precedence, or the coreFloor clamp. — ↩ rollbackable _(needs: `s3-role-router-landed`)_
+5. At the pinned meta-assembly point in runWorkflowServerSide, assemble the accumulated stamps into ArtifactModelAttribution.outputs[] and write it to meta.attribution in step-execution order, one row per produced output (ac1). Stop writing the scalar meta.model on new artifacts (ac2). The scalar-to-aggregate cutover for producers happens here; the shape addition from step 1 makes this a flip, not a breaking rename. — ↩ rollbackable _(needs: `s3-role-router-landed`)_
+6. Add a read-time-only pure shim on the meta read/assembly path: when an artifact carries scalar meta.model and no outputs[], synthesize a single-element outputs[] with a placeholder role (historical-fidelity note). Enumerate the downstream reader sites of the legacy scalar (not yet identified — s1 backFlowNotes gap 3, no import.graph pass) and route each through the shim so all readers see a uniform outputs[] view. No stored data is rewritten — legacy artifacts on disk are untouched. — ↩ rollbackable
+7. Extend the existing workflow-driver test cluster (workflow-rpc.test.ts, workflow-rpc-router.test.ts, and mirror the sc3 shape from role-router.test.ts) to assert: one stamp per produced output in step-execution order for a mixed-model run (ac1), that new artifacts omit the scalar and carry the aggregate (ac2), and that a legacy scalar-only artifact reads back through the shim as a single-element outputs[]. Test-only change. — ↩ rollbackable
+
+**Backward compat:** This Story reshapes internal-shared seams (surfaceLevel: internal-shared) — providerFor and runWorkflowServerSide are interior driver symbols, not an externally-consumed public IPC/MCP surface — but it does change an existing meta contract, so back-compat is required. The reshape of providerFor's parameter from runner: string to role: RoleId affects only its single interior caller (runWorkflowServerSide, totalCallers=1), which is updated in the same change; no external caller exists. On the meta contract: the write is strictly additive — meta.attribution is added (step 1) before the scalar meta.model is retired from producers (step 5), so no field is renamed or removed in a way that breaks in-flight readers. Legacy artifacts carrying the scalar meta.model and no outputs[] remain fully readable via a read-time-only synth shim that fabricates a single-element outputs[] with a placeholder role (k3: legacy scalar path survives upgrade untouched; k4: aggregate is strictly additive to meta). No stored migration is performed — on-disk legacy artifacts are never mutated. Reader sites of the legacy scalar must be enumerated at landing (currently unidentified — s1 backFlowNotes gap 3) and each routed through the shim so every reader observes a uniform outputs[] view.
+
+## Alternatives considered
+
+### a1: Append-only outputs[] aggregate on artifact meta — **CHOSEN**
+
+ArtifactModelAttribution.outputs is a flat, ordered list of OutputModelStamp records, one appended per produced output, replacing the scalar meta.model; legacy artifacts synthesize a single-element list on read.
+
+Adopt the HLD interfaceSketch verbatim as the wire shape: meta carries `outputs: OutputModelStamp[]` in place of the scalar `meta.model`. Each stamp is projected from the sc3 RoleResolution the RoleRouter already returns (role, tier, runner, model — clampedByFloor is dropped from the artifact record, it stays an observability/log concern). The driver appends one stamp per output in step-execution order (decompose → each design step → synthesize). Back-compat is handled purely at read time: a reader shim detects a legacy artifact carrying `meta.model: string` and no `outputs`, and synthesizes `outputs: [{ role: '<legacy>', tier, runner, model }]` from it. No stored migration of existing artifacts. The capture point is the single providerFor resolution seam; the accumulator is threaded through runWorkflowServerSide.
+
+### a2: Role-keyed attribution map
+
+Attribution is stored as a Record<RoleId, OutputModelStamp> keyed by the sc4 role, giving direct per-role lookup and collapsing repeated resolutions of the same role to one entry.
+
+Shape ArtifactModelAttribution as `{ byRole: Record<RoleId, OutputModelStamp> }` instead of a positional list. Each RoleRouter resolution writes/overwrites the entry for its RoleId. Because sc4 RoleIds are the intent-named reasoning sites, the map key is meaningful and stable. Legacy back-compat synthesizes a single-entry map `{ '<legacy-role>': stamp }` from the old scalar. The capture seam is identical to a1 (providerFor), but the accumulator is a keyed object rather than an append list.
+
+**Rejected because:** Ranked last (winnerRank 4): it fails the primary Story acceptance criterion — Record<RoleId, stamp> is last-write-wins, so when a single role produces multiple distinct outputs in one run, earlier stamps are silently discarded and not every output carries its own model identity (ac1 violated). It also diverges from the committed sc5 outputs: OutputModelStamp[] shape (a keyed byRole map is a different wire shape — sc5 violated). Its O(1)-by-role audit ergonomics and clean sc4 keying are real strengths, but they optimize a per-role view the acceptance criteria explicitly do not ask for — the requirement is per-output, which this shape structurally cannot guarantee.
+
+### a3: Versioned attribution envelope with explicit legacy field
+
+Wrap the outputs[] list in a self-describing envelope { schemaVersion, outputs, legacyModel? } so the back-compat contract is carried in the data rather than inferred by a read shim.
+
+Shape the meta as `{ schemaVersion: 2, outputs: OutputModelStamp[], legacyModel?: string }`. New artifacts write schemaVersion 2 with a populated outputs[] and no legacyModel. Old artifacts are recognized by absent schemaVersion (or a bare scalar), and a read adapter populates `legacyModel` while leaving outputs[] as the synthesized single-element list. The envelope makes the additive/back-compat boundary explicit and versioned, so future sc5 evolutions (e.g. adding clampedByFloor to the record) are gated on schemaVersion rather than structural sniffing.
+
+**Rejected because:** Best runner-up (winnerRank 2): it fully satisfies both acceptance criteria and retains a1's ordering/multiplicity strengths with a more robust, versioned migration seam, and — unlike a2/a4 — stays a superset of the committed outputs[] shape rather than diverging from it. Ranked below a1 because it is M cost and carries a heavier contract surface (a schemaVersion discriminant + legacyModel field beyond the HLD sketch), yielding partial verdicts on sc5 (adds contract surface HLD-committed consumers were not told about) and k4 (introduces a versioning discipline the rest of the artifact meta does not use) where a1 is clean.
+
+### a4: Inline per-output stamps co-located with each output
+
+Drop the separate meta-level aggregate; each produced output object carries its own OutputModelStamp inline, so attribution lives with the data it describes rather than in a parallel array.
+
+Instead of an ArtifactModelAttribution aggregate on meta, attach an OutputModelStamp field directly onto each output record the run emits. The artifact's model attribution is then the union of stamps across its outputs, derived rather than separately stored. Back-compat: legacy artifacts (single scalar meta.model, outputs without inline stamps) are read by a shim that treats meta.model as the stamp for every output. The RoleRouter's wrapping mechanism attaches the stamp to each output at emission time — a natural fit for the provider-wrapper side-channel noted in s4's private internals.
+
+**Rejected because:** Ranked third (winnerRank 3): it delivers the strongest form of the actual ac1 requirement (inline locality guarantees a stamp can never be misaligned with its output, which is why it outranks a2), but it violates sc5 by discarding the committed ArtifactModelAttribution { outputs: OutputModelStamp[] } meta aggregate — attribution as the union of inline stamps is a materially different sc5 shape that reads as reshaping the contract. It also only partially holds ac2 (run-level attribution becomes a derived union rather than a stored per-output record on meta) and k4 (every output record's shape changes — an invasive reshape rather than an additive meta extension), requiring touching every output producer across analyze/workflow/tracker at M cost.
+
+## Open questions
+
+- s8 cd3 (partial): every api errors entry carries type "n/a" ("No new failure modes introduced; resolution/floor errors surface from the sc3 RoleRouter" / "Additive meta assembly introduces no new terminal errors"). "n/a" is not a concrete error type — the literal concrete-error-type check is not met. Defensible because the change is strictly additive and honestly introduces no new terminal errors (a fabricated concrete type would be worse), but flagged as an open item.
+- s8 ts2 (ambiguous): testFramework = 'node:test (built-in node:test runner, executed via `npx tsx --test`)'. s1 test.locate located the harness cluster (workflow-rpc.test.ts, role-router.test.ts, etc.) but did not explicitly report a framework name string; the located .test.ts files are consistent with node:test/tsx --test and repo convention, but s1 provides no explicit framework claim to strictly confirm the match against.
+
+## Citations
+
+- **[[c1]]** `step-output` `s1.analyzeBundles (symbol.locate + usage.example + data-model.trace + search.text + test.locate)` — "providerFor has totalCallers = 1 — its sole caller is runWorkflowServerSide — so every step's provider (decompose, each design step, synthesize) is resolved at this one interior seam; capturing a per-"
+- **[[c2]]** `step-output` `s3.winnerId / s3.winnerRationale / s3.judgments` — "a1 is the only alternative that scores `satisfies` on every mandated constraint. ... Critically it satisfies sc5 by adopting the HLD's committed `ArtifactModelAttribution { outputs: OutputModelStamp[]"
+- **[[c3]]** `step-output` `s4 (api / dataModel / interactionWithShared)` — "providerFor(role: RoleId): LLMProvider ... the accompanying sc3 RoleResolution is projected into one OutputModelStamp and recorded on a run-scoped attribution accumulator ... ArtifactModelAttribution "
+- **[[c4]]** `step-output` `s5 (errorCases / edgeCases / invariantsToPreserve)` — "runWorkflowServerSide compares the length of the run-scoped stamp accumulator against the number of produced outputs and finds a mismatch ... do not throw: log at error level ... assemble outputs[] fr"
+- **[[c5]]** `step-output` `s6 (testFramework / testLevels / acceptanceMapping)` — "node:test (built-in node:test runner, executed via `npx tsx --test`) ... acceptanceMapping covers both criteria: ac1 has 5 provingTests, ac2 has 4 provingTests."
+- **[[c6]]** `step-output` `s7 (stateBefore / stateAfter / migrationSteps / backwardCompat)` — "meta.attribution is added (step 1) before the scalar meta.model is retired from producers (step 5), so no field is renamed or removed in a way that breaks in-flight readers. ... No stored migration is"
+- **[[c7]]** `step-output` `s8.results (bundle-detail verifications)` — "cd3 verdict partial: every api errors entry carries type "n/a" ... ts2 verdict ambiguous: s1 test.locate located the harness cluster ... but did not explicitly report a framework name string."
+- **[[c8]]** `doc` `HLD context slice (frameworkSummary / ownedContracts sc5 / consumedContracts sc3,sc4 / boundary / nonFunctional)` — "sc5 PerOutputModelAttribution ... The outputs[] aggregate is strictly additive and back-compat with the legacy scalar meta.model; older single-model artifacts remain readable via a fallback that synth"
+- **[[c9]]** `code` `src/daemon/workflow-rpc.ts:157-336 (runWorkflowServerSide) and :177-180 (providerFor)` — "runWorkflowServerSide is the driver loop that executes each workflow step ... providerFor is the interior per-step provider resolver whose sole caller is runWorkflowServerSide."
+- **[[c10]]** `code` `src/analyze/context/__tests__/role-router.test.ts:48,62,70,82,104` — "The sc3 RoleResolution { role, tier, runner, model, clampedByFloor } that S004 consumes is asserted in role-router.test.ts (clampedByFloor / runner / model at :48,:62,:70,:82,:104)."
+
+<!-- insrc:review -->
+
+## Review
+
+### ⛔ Review `BLOCK` — design.story (design.story)
+
+**0 HIGH · 2 MED · 5 LOW** · model `client` · reviewed 2026-07-25T16:07:33.318Z
+
+| Ref | Kind | Severity | Fixability | Premise | Evidence | Action |
+| --- | --- | --- | --- | --- | --- | --- |
+| dm3/migration-step2 | citation | MED | auto | The scalar whole-run model label is written to artifact meta inside runWorkflowServerSide in workflow-rpc.ts (the LLD claims the concrete write site is UNLOCATED, only within workflow-rpc.ts:157-336). | The scalar model label is NOT in workflow-rpc.ts as the LLD claims 'UNLOCATED': src/workflow/orchestrator.ts finalizeArtifact (declared L298, `model: string = 'client'` at L307) stamps `meta: { ..., model, ... }` across ~7 per-artifact arms (grep shows `meta: {` + `model,` pairs at L352/357, 646/651, 789/794, 1021/1026, 1300/1305, and more). runWorkflowServerSide reaches it via finalizeArtifact(intent, ..., opts.modelLabel). So the write site is concretely located, in a DIFFERENT file than the LLD anchors, and spans multiple arms + a shared meta assembly. | Correct the dm3 'UNLOCATED / open workflow-rpc.ts:157-336' text to the located reality: the cutover threads the outputs[] aggregate INTO orchestrator.ts finalizeArtifact (~7 arms + shared meta builder), not an inline workflow-rpc literal. Migration steps 2/5/6 should target orchestrator.finalizeArtifact. Non-blocking for the design (a1 shape + capture-at-providerFor is sound), but the build must plumb attribution through finalizeArtifact. |
+| dm3 | citation | MED | manual | The single-label attribution precedent is meta.modelId asserted at driver.live.test.ts:158. | driver.live.test.ts:158 does contain a modelId (found=true), but that is an ANALYZE-bundle meta field, not the workflow-artifact scalar the S004 shim must handle. The real legacy scalar is `meta.model`, stamped by orchestrator.finalizeArtifact (see c-metamodel-write). The LLD repeatedly cites meta.modelId@driver.live.test.ts:158 as the 'legacy single-label precedent' the read-shim synthesizes from — that is the wrong field/artifact. | The read-time legacy shim must project from `meta.model` on workflow artifacts (orchestrator-stamped), NOT the analyze-bundle meta.modelId at driver.live.test.ts:158. Covered by the c-metamodel-write auto-edit; remaining meta.modelId references in the LLD are advisory and should be read as meta.model. |
+| migration-step5 | semantic | LOW | manual | finalizeArtifact accepts the model/modelLabel and is where the artifact meta model attribution is actually stamped (so the S004 cutover point is finalizeArtifact, not an inline workflow-rpc literal). | src/workflow/orchestrator.ts: `function finalizeArtifact` (1 def) with a `model: string` param (default 'client') and `meta: { ... model ... }` assembly (50 model / 50 meta: matches across the arms). Confirms finalizeArtifact IS the real scalar write site the cutover must extend. | none — verified sound (and it corrects c-metamodel-write's mislocation) |
+| c9 | citation | LOW | manual | providerFor is the single interior per-step provider resolver inside runWorkflowServerSide (S003), returning the router-resolved provider whose ResolvedProvider carries a RoleResolution. | providerFor (6 matches) + resolveProviderForRole (13) present in the tree — the S003 per-step seam exists and returns the router's ResolvedProvider, as the capture point requires. | none — verified sound |
+| c9 | citation | LOW | manual | runWorkflowServerSide is the driver loop that executes decompose → each design step → synthesize and is the artifact-meta assembly site being extended. | `export async function runWorkflowServerSide` = 1 match; finalizeArtifact = 13 references. The driver loop + its finalize call exist as described. | none — verified sound |
+| c10 | semantic | LOW | manual | The sc3 RoleResolution { role, tier, runner, model, clampedByFloor } that the stamp projects from is asserted in role-router.test.ts. | role-router.test.ts:48 reads (found=true) and clampedByFloor is asserted (11 matches) alongside resolution.runner/model — the sc3 RoleResolution shape the stamp projects from is real. | none — verified sound |
+| sc3 | semantic | LOW | manual | RoleResolution (the source of the stamp) is defined with exactly role/tier/runner/model/clampedByFloor in role-router.ts. | `interface RoleResolution` = 1 match in role-router.ts carrying clampedByFloor — the source shape { role, tier, runner, model, clampedByFloor } exists exactly as the stamp projection assumes. | none — verified sound |
+
+#### Proposed fixes
+
+- **dm3/migration-step2** (auto) — Replace the unlocated-write-site premise with the re-derived orchestrator.finalizeArtifact location so the build targets the right file/symbol.
+  - edit: `Exact current write field/line is UNLOCATED in the graph (s1 backFlowNotes gap 1 — search.text found no `meta.model` literal in workflow-rpc.ts; the single-label precedent surfaces as meta.modelId at driver.live.test.ts:158). The detail step's landing must open workflow-rpc.ts:157-336 to find the actual assembly point before attaching the aggregate.` → `The scalar `meta.model` is written in src/workflow/orchestrator.ts by finalizeArtifact (declared L298, `model: string = 'client'` at L307), which stamps `meta: { …, model, … }` in each per-artifact arm (~7 arms: DEF/HLD/LLD/plan/…). runWorkflowServerSide reaches it via `finalizeArtifact(intent, …, opts.modelLabel)`. The S004 cutover therefore threads the outputs[] aggregate INTO finalizeArtifact (and its shared meta assembly) — NOT an inline workflow-rpc literal, and NOT the unrelated analyze-bundle meta.modelId at driver.live.test.ts:158.`

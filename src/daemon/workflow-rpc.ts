@@ -40,7 +40,8 @@ import type { BoundaryFinding } from '../workflow/synthesizer.js';
 import { appendProgressLog, appendRunLog, pathsForWorkflow, writeAtomic } from '../workflow/storage.js';
 import { reviewArtifactFile } from '../workflow/review/index.js';
 import type { ReviewReport } from '../workflow/review/types.js';
-import { WORKFLOW_NAMES, type WorkflowIntent, type WorkflowName, type WorkflowPlan } from '../workflow/types.js';
+import { WORKFLOW_NAMES, type ArtifactMetaBase, type ArtifactModelAttribution, type OutputModelStamp, type WorkflowIntent, type WorkflowName, type WorkflowPlan } from '../workflow/types.js';
+import { modelSummary } from '../workflow/attribution.js';
 import { augmentStandaloneParams, epicKeyFor } from '../mcp/workflow-step/phases/start.js';
 import { buildRun } from './analyze-rpc.js';
 
@@ -147,6 +148,11 @@ export interface RunWorkflowResult {
 	readonly path:     string;
 	readonly artifact: unknown;
 	readonly runId:    string;
+	/** Single-line model summary derived from the artifact's per-output
+	 *  attribution (S004/sc5): the sole `runner:model` for a homogeneous run, a
+	 *  `mixed(...)` summary otherwise. Surfaced on the `done`/`poll` IPC frames in
+	 *  place of the retired run-wide scalar. */
+	readonly model:    string;
 	/** The finalize review result, when review ran and succeeded. Its
 	 *  `verdict` is what a subsequent `approve` enforces. */
 	readonly review?:  ReviewReport | undefined;
@@ -171,18 +177,31 @@ export async function runWorkflowServerSide(
 		...(opts.onToken !== undefined ? { onToken: (t: string) => opts.onToken!(streamId, t) } : {}),
 	});
 	const checkAbort = (): void => { if (signal?.aborted) throw new Error('workflow.run: aborted'); };
+	// Per-output model attribution (S004/sc5): one stamp per produced output,
+	// keyed by its output id so a retried step (same key) overwrites rather than
+	// double-counts, while distinct steps stay distinct rows. Insertion order ≈
+	// step-execution order. Empty when no router (the MCP client-driven path
+	// synthesizes a single stamp from the label at finalize).
+	const stampByOutput = new Map<string, OutputModelStamp>();
+	const attributionNow = (): ArtifactModelAttribution | undefined =>
+		stampByOutput.size > 0 ? { outputs: [...stampByOutput.values()] } : undefined;
 	// Per-role provider selection (S003 ac1): resolve each call's provider by its
 	// RoleId when a router is supplied; otherwise fall back to the single run-wide
 	// provider (legacy behaviour). Memoized per (role,repoPath) inside the router.
-	const providerFor = (runner: string): LLMProvider =>
-		opts.router !== undefined && opts.cfg !== undefined
-			? opts.router.resolveProviderForRole(runnerToRoleId(runner), opts.cfg, opts.repoPath).provider
-			: provider;
+	// `outputKey` identifies the produced output for the attribution stamp.
+	const providerFor = (runner: string, outputKey: string): LLMProvider => {
+		if (opts.router !== undefined && opts.cfg !== undefined) {
+			const { provider: p, resolution: r } = opts.router.resolveProviderForRole(runnerToRoleId(runner), opts.cfg, opts.repoPath);
+			stampByOutput.set(outputKey, { role: r.role, tier: r.tier, runner: r.runner, model: r.model });
+			return p;
+		}
+		return provider;
+	};
 
 	// 1. Decompose → the workflow plan.
 	const decomp = prepareDecompose(intent);
 	opts.onProgress?.({ phase: 'decompose' });
-	const plan = await providerFor('decompose').completeStructured<WorkflowPlan>(msgs(decomp.systemPrompt, decomp.userTurn), decomp.schema, sco('plan'));
+	const plan = await providerFor('decompose', 'plan').completeStructured<WorkflowPlan>(msgs(decomp.systemPrompt, decomp.userTurn), decomp.schema, sco('plan'));
 	opts.onProgress?.({ phase: 'plan-ready' });
 
 	// 2. Execute — drive each llm-pause through the provider; skipped steps
@@ -203,7 +222,7 @@ export async function runWorkflowServerSide(
 				'cite ONLY paths that appear here; invent nothing):\n' + flattenBundle(res.bundle);
 		}
 		opts.onProgress?.({ phase: 'step-start', stepId: pause.stepId, runner: pause.runner });
-		const stepJson = await providerFor(pause.runner).completeStructured<Record<string, unknown>>(msgs(pause.prompt, userTurn), pause.schema, sco(pause.stepId));
+		const stepJson = await providerFor(pause.runner, pause.stepId).completeStructured<Record<string, unknown>>(msgs(pause.prompt, userTurn), pause.schema, sco(pause.stepId));
 		tick = await resumeRun(tick.state, stepJson, epicKey);
 		opts.onProgress?.({ phase: 'step-done', stepId: pause.stepId, runner: pause.runner });
 	}
@@ -229,10 +248,10 @@ export async function runWorkflowServerSide(
 	for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
 		checkAbort();
 		opts.onProgress?.({ phase: 'synthesize-attempt', attempt });
-		const artifactJson = await providerFor('synthesize').completeStructured<Record<string, unknown>>(
+		const artifactJson = await providerFor('synthesize', 'synthesize').completeStructured<Record<string, unknown>>(
 			msgs(synth.systemPrompt, synth.userTurn + feedback), synth.schema, sco('synthesize'),
 		);
-		const result = finalizeArtifact(intent, liveStepOutputs, runId, Date.now() - startedAtMs, artifactJson, opts.modelLabel);
+		const result = finalizeArtifact(intent, liveStepOutputs, runId, Date.now() - startedAtMs, artifactJson, opts.modelLabel, attributionNow());
 		if (result.ok) { finalized = result.finalized; break; }
 		const failure = result.failure;
 
@@ -250,12 +269,12 @@ export async function runWorkflowServerSide(
 			for (let round = 1; round <= maxCorrectionRounds; round += 1) {
 				checkAbort();
 				opts.onProgress?.({ phase: 'correction-round', attempt: round, detail: findings.map(f => f.itemId).join(', ') });
-				const corrected = await providerFor('synthesize').completeStructured<Record<string, unknown>>(
+				const corrected = await providerFor('synthesize', 'synthesize').completeStructured<Record<string, unknown>>(
 					msgs(synth.systemPrompt, synth.userTurn + correctionDirective(findings)), synth.schema, sco('synthesize'),
 				);
-				const freshAudit = await reAuditBoundary(providerFor('checklist.verify'), corrected, findings, sco('re-audit'));
+				const freshAudit = await reAuditBoundary(providerFor('checklist.verify', 're-audit'), corrected, findings, sco('re-audit'));
 				liveStepOutputs = { ...liveStepOutputs, [auditStepId]: freshAudit };
-				const r2 = finalizeArtifact(intent, liveStepOutputs, runId, Date.now() - startedAtMs, corrected, opts.modelLabel);
+				const r2 = finalizeArtifact(intent, liveStepOutputs, runId, Date.now() - startedAtMs, corrected, opts.modelLabel, attributionNow());
 				if (r2.ok) { finalized = r2.finalized; break synthLoop; }
 				const f2 = r2.failure;
 				if (!f2.ok && f2.kind === 'boundary' && f2.correctable === true
@@ -332,7 +351,8 @@ export async function runWorkflowServerSide(
 	}
 
 	opts.onProgress?.({ phase: 'done' });
-	return { path: paths.md, artifact: finalized.artifact, runId, ...(review !== undefined ? { review } : {}) };
+	const model = modelSummary((finalized.artifact as { meta: ArtifactMetaBase }).meta);
+	return { path: paths.md, artifact: finalized.artifact, runId, model, ...(review !== undefined ? { review } : {}) };
 }
 
 // ---------------------------------------------------------------------------
@@ -449,7 +469,7 @@ export async function runStart(
 			: await drive();
 		const tail = tokens.flush();   // emit any tokens left below the batch threshold
 		if (tail !== null) send({ id: 0, stream: 'delta', data: tail });
-		send({ id: 0, stream: 'done', data: { path: out.path, runId: out.runId, model: modelLabel, artifact: out.artifact, ...(out.review !== undefined ? { review: { verdict: out.review.verdict, counts: out.review.counts } } : {}) } });
+		send({ id: 0, stream: 'done', data: { path: out.path, runId: out.runId, model: out.model, artifact: out.artifact, ...(out.review !== undefined ? { review: { verdict: out.review.verdict, counts: out.review.counts } } : {}) } });
 	} catch (err) {
 		send({ id: 0, stream: 'error', data: { error: (err as Error).message, recoverable: false } });
 	}

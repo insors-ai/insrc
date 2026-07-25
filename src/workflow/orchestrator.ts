@@ -16,7 +16,8 @@
  */
 
 import { getLogger } from '../shared/logger.js';
-import type { Citation, WorkflowIntent, WorkflowName, WorkflowPlan } from './types.js';
+import type { ArtifactModelAttribution, Citation, WorkflowIntent, WorkflowName, WorkflowPlan } from './types.js';
+import { singleModelAttribution } from './attribution.js';
 import type { BoundaryFinding, ValidationResult } from './synthesizer.js';
 import { renderCitationBlock, validateBodyAndCitations } from './synthesizer.js';
 import {
@@ -301,22 +302,28 @@ export function finalizeArtifact(
 	runId:        string,
 	elapsedMs:    number,
 	llmResponse:  Record<string, unknown>,
-	/** Driver id stamped into the artifact's `meta.model`. Defaults to
-	 *  `'client'` (the outer MCP client drove); the daemon workflow runner
-	 *  passes `'ollama:<model>'` (or another provider id) when it drives. */
+	/** Run-wide driver id, used ONLY to synthesize a single-element attribution
+	 *  when `attribution` is not supplied (the MCP client-driven path, where the
+	 *  outer client drove every step). Defaults to `'client'`. NOTE: the scalar
+	 *  `meta.model` is RETIRED (S004/sc5) — this label is no longer written to
+	 *  meta; it only seeds the fallback attribution. */
 	model:        string = 'client',
+	/** Per-output model attribution (S004/sc5), captured per step by the daemon
+	 *  runner's RoleRouter. When present it is written verbatim to `meta.attribution`;
+	 *  when absent, a single-element attribution is synthesized from `model`. */
+	attribution?: ArtifactModelAttribution,
 ): FinalizeResult {
 	try {
 		switch (intent.workflow) {
-			case 'stub':         return finalizeStub(intent, stepOutputs, runId, elapsedMs, llmResponse, model);
-			case 'define':       return finalizeDefine(intent, stepOutputs, runId, elapsedMs, llmResponse, model);
-			case 'design.epic':  return finalizeDesignEpic(intent, stepOutputs, runId, elapsedMs, llmResponse, model);
-			case 'design.story': return finalizeDesignStory(intent, stepOutputs, runId, elapsedMs, llmResponse, model);
-			case 'plan':         return finalizePlan(intent, stepOutputs, runId, elapsedMs, llmResponse, model);
+			case 'stub':         return finalizeStub(intent, stepOutputs, runId, elapsedMs, llmResponse, model, attribution);
+			case 'define':       return finalizeDefine(intent, stepOutputs, runId, elapsedMs, llmResponse, model, attribution);
+			case 'design.epic':  return finalizeDesignEpic(intent, stepOutputs, runId, elapsedMs, llmResponse, model, attribution);
+			case 'design.story': return finalizeDesignStory(intent, stepOutputs, runId, elapsedMs, llmResponse, model, attribution);
+			case 'plan':         return finalizePlan(intent, stepOutputs, runId, elapsedMs, llmResponse, model, attribution);
 			case 'tracker.push':
 			case 'tracker.sync':
 			case 'tracker.post':
-				return finalizeTracker(intent, stepOutputs, runId, elapsedMs, llmResponse, model);
+				return finalizeTracker(intent, stepOutputs, runId, elapsedMs, llmResponse, model, attribution);
 			default:
 				throw new Error(`finalizeArtifact: workflow '${intent.workflow}' not yet supported`);
 		}
@@ -338,6 +345,7 @@ function finalizeStub(
 	elapsedMs:   number,
 	llmResponse: Record<string, unknown>,
 	model:       string,
+	attribution?: ArtifactModelAttribution,
 ): FinalizeResult {
 	// Basic JSON shape check via runtime guards.
 	if (typeof llmResponse !== 'object' || llmResponse === null) {
@@ -354,7 +362,7 @@ function finalizeStub(
 			runId,
 			repoPath:      intent.repoPath,
 			createdAt:     new Date().toISOString(),
-			model,
+			attribution:   attribution ?? singleModelAttribution(model),
 			elapsedMs,
 			repoIndexedAt: intent.repoIndexedAt,
 			schemaVersion: STUB_SCHEMA_VERSION,
@@ -599,6 +607,7 @@ function finalizeDefine(
 	elapsedMs:   number,
 	llmResponse: Record<string, unknown>,
 	model:       string,
+	attribution?: ArtifactModelAttribution,
 ): FinalizeResult {
 	if (defineDecisionOf(stepOutputs) === 'extend') {
 		return finalizeDefineExtend(intent, stepOutputs, runId, elapsedMs, model);
@@ -648,7 +657,7 @@ function finalizeDefine(
 			runId,
 			repoPath:      intent.repoPath,
 			createdAt:     new Date().toISOString(),
-			model,
+			attribution:   attribution ?? singleModelAttribution(model),
 			elapsedMs,
 			repoIndexedAt: intent.repoIndexedAt,
 			schemaVersion: DEFINE_SCHEMA_VERSION,
@@ -691,6 +700,7 @@ function finalizeDefineExtend(
 	runId:       string,
 	elapsedMs:   number,
 	model:       string,
+	attribution?: ArtifactModelAttribution,
 ): FinalizeResult {
 	const s1 = stepOutputs['s1'] as ScopeAssessOutput | undefined;
 	if (s1 === undefined || s1.decision !== 'extend') {
@@ -791,7 +801,7 @@ function finalizeDefineExtend(
 			runId,
 			repoPath:      intent.repoPath,
 			createdAt:     new Date().toISOString(),
-			model,
+			attribution:   attribution ?? singleModelAttribution(model),
 			elapsedMs,
 			repoIndexedAt: intent.repoIndexedAt,
 			schemaVersion: EXTEND_SCHEMA_VERSION,
@@ -952,6 +962,7 @@ function finalizeDesignEpic(
 	elapsedMs:   number,
 	llmResponse: Record<string, unknown>,
 	model:       string,
+	attribution?: ArtifactModelAttribution,
 ): FinalizeResult {
 	if (typeof llmResponse !== 'object' || llmResponse === null) {
 		return { ok: false, failure: schemaFailure(`synthesizer response is not an object`) };
@@ -1023,7 +1034,7 @@ function finalizeDesignEpic(
 			runId,
 			repoPath:      intent.repoPath,
 			createdAt:     new Date().toISOString(),
-			model,
+			attribution:   attribution ?? singleModelAttribution(model),
 			elapsedMs,
 			repoIndexedAt: intent.repoIndexedAt,
 			schemaVersion: HLD_SCHEMA_VERSION,
@@ -1217,6 +1228,7 @@ function finalizeDesignStory(
 	elapsedMs:   number,
 	llmResponse: Record<string, unknown>,
 	model:       string,
+	attribution?: ArtifactModelAttribution,
 ): FinalizeResult {
 	if (typeof llmResponse !== 'object' || llmResponse === null) {
 		return { ok: false, failure: schemaFailure(`synthesizer response is not an object`) };
@@ -1302,7 +1314,7 @@ function finalizeDesignStory(
 			runId,
 			repoPath:      intent.repoPath,
 			createdAt:     new Date().toISOString(),
-			model,
+			attribution:   attribution ?? singleModelAttribution(model),
 			elapsedMs,
 			repoIndexedAt: intent.repoIndexedAt,
 			schemaVersion: LLD_SCHEMA_VERSION,
@@ -1400,6 +1412,7 @@ function finalizeStandaloneLld(
 	body:      LldBody,
 	citations: readonly import('./types.js').Citation[],
 	model:     string,
+	attribution?: ArtifactModelAttribution,
 ): FinalizeResult {
 	const epicHash = requireEpicHash(intent);   // self-minted by augmentStandaloneParams
 	const storyId  = requireStoryId(intent);
@@ -1429,7 +1442,7 @@ function finalizeStandaloneLld(
 			runId,
 			repoPath:      intent.repoPath,
 			createdAt:     new Date().toISOString(),
-			model,
+			attribution:   attribution ?? singleModelAttribution(model),
 			elapsedMs,
 			repoIndexedAt: intent.repoIndexedAt,
 			schemaVersion: LLD_SCHEMA_VERSION,
@@ -1618,6 +1631,7 @@ function finalizePlan(
 	elapsedMs:   number,
 	llmResponse: Record<string, unknown>,
 	model:       string,
+	attribution?: ArtifactModelAttribution,
 ): FinalizeResult {
 	if (typeof llmResponse !== 'object' || llmResponse === null) {
 		return { ok: false, failure: schemaFailure(`synthesizer response is not an object`) };
@@ -1653,7 +1667,7 @@ function finalizePlan(
 			runId,
 			repoPath:      intent.repoPath,
 			createdAt:     new Date().toISOString(),
-			model,
+			attribution:   attribution ?? singleModelAttribution(model),
 			elapsedMs,
 			repoIndexedAt: intent.repoIndexedAt,
 			schemaVersion: PLAN_SCHEMA_VERSION,
@@ -1776,6 +1790,7 @@ function finalizeTracker(
 	elapsedMs:   number,
 	llmResponse: Record<string, unknown>,
 	model:       string,
+	attribution?: ArtifactModelAttribution,
 ): FinalizeResult {
 	if (typeof llmResponse !== 'object' || llmResponse === null) {
 		return { ok: false, failure: schemaFailure(`synthesizer response is not an object`) };
@@ -1826,7 +1841,7 @@ function finalizeTracker(
 			runId,
 			repoPath:      intent.repoPath,
 			createdAt:     new Date().toISOString(),
-			model,
+			attribution:   attribution ?? singleModelAttribution(model),
 			elapsedMs,
 			repoIndexedAt: intent.repoIndexedAt,
 			schemaVersion: TRACKER_SCHEMA_VERSION,

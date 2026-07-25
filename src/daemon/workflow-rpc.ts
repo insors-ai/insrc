@@ -30,6 +30,8 @@ import type { IpcStreamMessage, LLMMessage, LLMProvider, StageProgressEvent, Str
 import type { ClassifiedIntent } from '../shared/analyze-types.js';
 import type { AnalyzeContextBundle } from '../analyze/context/types.js';
 import { buildShaperProvider, resolveShaperKind, runWithClientProviderContext } from '../analyze/context/shaper-provider.js';
+import { createRoleRouter, type RoleRouter } from '../analyze/context/role-router.js';
+import type { RoleId } from '../config/role-taxonomy.js';
 import { loadAnalyzeConfig, resolveRepoShaperProvider, type AnalyzeConfig, type AnalyzeShaperProviderKind } from '../config/analyze.js';
 import { registerWorkflowRunners } from '../workflow/index.js';
 import { prepareDecompose, prepareSynthesize, finalizeArtifact, type FinalizedArtifact } from '../workflow/orchestrator.js';
@@ -47,6 +49,44 @@ const log = getLogger('daemon:workflow-rpc');
 /** Steps whose prompts instruct the driver to call `insrc_analyze_step`.
  *  The runner pre-runs server-side analyze for these and injects the bundle. */
 const ANALYZE_STEP_RUNNERS: ReadonlySet<string> = new Set(['scope.assess', 'context.assemble']);
+
+/**
+ * Map a workflow executor runner id (or the `decompose`/`synthesize` phase) to
+ * its ReasoningRoleTaxonomy (sc4) RoleId so the RoleRouter (S003) can resolve a
+ * per-step, per-role provider. The runner vocabulary is the executor's
+ * (`alternatives.enumerate`, `checklist.verify`, …); the taxonomy prefixes the
+ * design roles with `design.` and names the scope audit `scope.audit`, so an
+ * explicit map is needed. An unmapped runner passes through as its own id — the
+ * router treats an unknown RoleId as a total-function default-tier resolution,
+ * so a new runner is never a hard failure (it simply gets no floor protection
+ * until added here).
+ */
+const RUNNER_TO_ROLE: Readonly<Record<string, RoleId>> = {
+	// phases (no pause.runner)
+	decompose:               'design.decompose',
+	synthesize:              'synthesize',
+	// define
+	'scope.assess':          'define.scope.assess',
+	'epic.frame':            'define.epic.frame',
+	'stories.compose':       'define.stories.compose',
+	'checklist.verify':      'scope.audit',
+	// design.epic / design.story
+	'context.assemble':      'context.assemble',
+	'alternatives.enumerate':'design.alternatives.enumerate',
+	'alternatives.judge':    'design.alternatives.judge',
+	'contract.detail':       'design.contract.detail',
+	'error.paths':           'design.error.paths',
+	'test.strategy':         'design.test.strategy',
+	'migration.write':       'design.migration.write',
+	'framework.write':       'design.framework.write',
+	'rollout.overview':      'design.rollout.overview',
+};
+
+/** Resolve a runner/phase id to its taxonomy RoleId (falls through to the id
+ *  itself for unmapped runners — e.g. plan `tasks.*`, stub `echo.*`). */
+function runnerToRoleId(runner: string): RoleId {
+	return RUNNER_TO_ROLE[runner] ?? runner;
+}
 
 /** CLI-provider subprocess timeout for workflow turns. A full-artifact
  *  synthesize can run many minutes — an XL Story LLD (full HLD + every step
@@ -92,6 +132,15 @@ export interface RunWorkflowOpts {
 	 *  that authored the artifact. Set true only for fully-autonomous runs with
 	 *  no controller in the loop. */
 	readonly review?:          boolean | undefined;
+	/** S003 RoleRouter for per-step, per-role provider resolution. When present,
+	 *  each decompose/step/synthesize call resolves its own provider by the
+	 *  step's RoleId (delivering ac1); when absent, the single `provider` arg is
+	 *  used for every call (legacy run-wide behaviour). */
+	readonly router?:          RoleRouter | undefined;
+	/** The config the router resolves against (required when `router` is set). */
+	readonly cfg?:             AnalyzeConfig | undefined;
+	/** Repo path for the router's byRepo layer (optional; global-only if unset). */
+	readonly repoPath?:        string | undefined;
 }
 
 export interface RunWorkflowResult {
@@ -122,11 +171,18 @@ export async function runWorkflowServerSide(
 		...(opts.onToken !== undefined ? { onToken: (t: string) => opts.onToken!(streamId, t) } : {}),
 	});
 	const checkAbort = (): void => { if (signal?.aborted) throw new Error('workflow.run: aborted'); };
+	// Per-role provider selection (S003 ac1): resolve each call's provider by its
+	// RoleId when a router is supplied; otherwise fall back to the single run-wide
+	// provider (legacy behaviour). Memoized per (role,repoPath) inside the router.
+	const providerFor = (runner: string): LLMProvider =>
+		opts.router !== undefined && opts.cfg !== undefined
+			? opts.router.resolveProviderForRole(runnerToRoleId(runner), opts.cfg, opts.repoPath).provider
+			: provider;
 
 	// 1. Decompose → the workflow plan.
 	const decomp = prepareDecompose(intent);
 	opts.onProgress?.({ phase: 'decompose' });
-	const plan = await provider.completeStructured<WorkflowPlan>(msgs(decomp.systemPrompt, decomp.userTurn), decomp.schema, sco('plan'));
+	const plan = await providerFor('decompose').completeStructured<WorkflowPlan>(msgs(decomp.systemPrompt, decomp.userTurn), decomp.schema, sco('plan'));
 	opts.onProgress?.({ phase: 'plan-ready' });
 
 	// 2. Execute — drive each llm-pause through the provider; skipped steps
@@ -147,7 +203,7 @@ export async function runWorkflowServerSide(
 				'cite ONLY paths that appear here; invent nothing):\n' + flattenBundle(res.bundle);
 		}
 		opts.onProgress?.({ phase: 'step-start', stepId: pause.stepId, runner: pause.runner });
-		const stepJson = await provider.completeStructured<Record<string, unknown>>(msgs(pause.prompt, userTurn), pause.schema, sco(pause.stepId));
+		const stepJson = await providerFor(pause.runner).completeStructured<Record<string, unknown>>(msgs(pause.prompt, userTurn), pause.schema, sco(pause.stepId));
 		tick = await resumeRun(tick.state, stepJson, epicKey);
 		opts.onProgress?.({ phase: 'step-done', stepId: pause.stepId, runner: pause.runner });
 	}
@@ -173,7 +229,7 @@ export async function runWorkflowServerSide(
 	for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
 		checkAbort();
 		opts.onProgress?.({ phase: 'synthesize-attempt', attempt });
-		const artifactJson = await provider.completeStructured<Record<string, unknown>>(
+		const artifactJson = await providerFor('synthesize').completeStructured<Record<string, unknown>>(
 			msgs(synth.systemPrompt, synth.userTurn + feedback), synth.schema, sco('synthesize'),
 		);
 		const result = finalizeArtifact(intent, liveStepOutputs, runId, Date.now() - startedAtMs, artifactJson, opts.modelLabel);
@@ -194,10 +250,10 @@ export async function runWorkflowServerSide(
 			for (let round = 1; round <= maxCorrectionRounds; round += 1) {
 				checkAbort();
 				opts.onProgress?.({ phase: 'correction-round', attempt: round, detail: findings.map(f => f.itemId).join(', ') });
-				const corrected = await provider.completeStructured<Record<string, unknown>>(
+				const corrected = await providerFor('synthesize').completeStructured<Record<string, unknown>>(
 					msgs(synth.systemPrompt, synth.userTurn + correctionDirective(findings)), synth.schema, sco('synthesize'),
 				);
-				const freshAudit = await reAuditBoundary(provider, corrected, findings, sco('re-audit'));
+				const freshAudit = await reAuditBoundary(providerFor('checklist.verify'), corrected, findings, sco('re-audit'));
 				liveStepOutputs = { ...liveStepOutputs, [auditStepId]: freshAudit };
 				const r2 = finalizeArtifact(intent, liveStepOutputs, runId, Date.now() - startedAtMs, corrected, opts.modelLabel);
 				if (r2.ok) { finalized = r2.finalized; break synthLoop; }
@@ -311,6 +367,13 @@ export interface PreparedWorkflowRun {
 	readonly clientDefault: AnalyzeShaperProviderKind | undefined;
 	/** Opt-in finalize review (default off — a controller task). */
 	readonly review:        boolean | undefined;
+	/** S003 RoleRouter: per-step, per-role provider resolution. The driver uses
+	 *  this to serve each operation by its own role's model (ac1). `provider` +
+	 *  `modelLabel` above stay populated from the driver role for back-compat. */
+	readonly router:        RoleRouter;
+	/** The config the router resolves against + the repo for its byRepo layer. */
+	readonly cfg:           AnalyzeConfig;
+	readonly repoPath:      string;
 }
 
 /** Parse + resolve a `workflow.run` request into a ready-to-drive bundle. Throws
@@ -340,7 +403,11 @@ export function prepareWorkflowRun(rawParams: unknown): PreparedWorkflowRun {
 	// 120 s default — so give CLI providers a generous timeout (Ollama ignores it).
 	const provider   = buildShaperProvider(cfg, { repoOverride, clientDefault, cliTimeoutMs: WORKFLOW_CLI_TIMEOUT_MS });
 	const modelLabel = modelLabelFor(cfg, repoOverride, clientDefault);
-	return { intent, runId, epicKey, provider, modelLabel, clientDefault, review: p.review };
+	// S003: the per-role router shares the run's resolution deps (fresh repo
+	// override, client default, CLI timeout). The scalar provider/modelLabel above
+	// stay populated from the driver role's path for back-compat until sc5 lands.
+	const router = createRoleRouter({ repoOverride, clientDefault, cliTimeoutMs: WORKFLOW_CLI_TIMEOUT_MS });
+	return { intent, runId, epicKey, provider, modelLabel, clientDefault, review: p.review, router, cfg, repoPath };
 }
 
 /** `workflow.run` stream handler. Emits `progress` frames per phase, then a
@@ -357,7 +424,7 @@ export async function runStart(
 		send({ id: 0, stream: 'error', data: { error: (err as Error).message, recoverable: false } });
 		return;
 	}
-	const { intent, runId, epicKey, provider, modelLabel, clientDefault } = prep;
+	const { intent, runId, epicKey, provider, modelLabel, clientDefault, router, cfg, repoPath } = prep;
 	const p = { review: prep.review };
 
 	try {
@@ -368,7 +435,7 @@ export async function runStart(
 		let stageIndex = 0;
 		const tokens = makeTokenAccumulator();
 		const drive = (): Promise<RunWorkflowResult> => runWorkflowServerSide(intent, provider, {
-			runId, epicKey, modelLabel, signal,
+			runId, epicKey, modelLabel, signal, router, cfg, repoPath,
 			onProgress: (f) => { appendProgressLog(runId, 'workflow.run', f.phase, formatProgressDetail(f)); send({ id: 0, stream: 'progress', data: workflowProgressToStage(f, stageIndex++) }); },
 			onToken:    (stepId, token) => { const ev = tokens.push(stepId, token); if (ev !== null) send({ id: 0, stream: 'delta', data: ev }); },
 			...(p.review !== undefined ? { review: p.review } : {}),

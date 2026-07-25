@@ -77,6 +77,17 @@ export interface ShaperProviderOverrides {
 	 *  narrow calls but too short for a workflow's full-artifact synthesize;
 	 *  the daemon workflow runner passes a generous value. Ignored for Ollama. */
 	readonly cliTimeoutMs?: number | undefined;
+	/** HIGHEST-priority non-sampler runner, set by the S003 RoleRouter from a
+	 *  resolved capability tier. Fed into `resolveShaperKind` as its top-priority
+	 *  `roleResolved` input so the tier's runner wins over repo/global/client
+	 *  signals while the k1 CLI/Ollama admission stays in one place. Absent for
+	 *  every legacy caller (behaviour unchanged). */
+	readonly roleRunner?: AnalyzeShaperProviderKind | undefined;
+	/** The resolved tier's concrete model id (e.g. `sonnet` for `mid`, a haiku id
+	 *  for `cheap`). When set it is preferred over `cfg.shaperModel`, letting a
+	 *  non-core tier pin a CLI/Ollama model the single `shaperModel` cannot
+	 *  express. Absent for every legacy caller. */
+	readonly roleModel?: string | undefined;
 }
 
 /**
@@ -160,8 +171,21 @@ export function resolveShaperKind(inputs: {
 	readonly repoOverride:   AnalyzeShaperProviderKind | undefined;
 	readonly globalExplicit: AnalyzeShaperProviderKind | undefined;
 	readonly clientDefault:  AnalyzeShaperProviderKind | undefined;
+	/** Optional HIGHEST-priority signal (S003 RoleRouter): the tier-resolved
+	 *  runner. When present and a valid union member it wins over every other
+	 *  signal; a non-union value is coerced to `undefined` so it falls through
+	 *  the chain to the `?? 'ollama'` floor (no direct-REST path can slip in). */
+	readonly roleResolved?:  AnalyzeShaperProviderKind | undefined;
 }): AnalyzeShaperProviderKind {
-	return inputs.repoOverride ?? inputs.globalExplicit ?? inputs.clientDefault ?? 'ollama';
+	const roleResolved = isShaperKind(inputs.roleResolved) ? inputs.roleResolved : undefined;
+	return roleResolved ?? inputs.repoOverride ?? inputs.globalExplicit ?? inputs.clientDefault ?? 'ollama';
+}
+
+/** Type-guard the CLI/Ollama union — the structural gate that keeps a hand-edited
+ *  or stale runner string (e.g. `'openai'`, a typo'd `'cli-claud'`) from reaching
+ *  provider construction. */
+function isShaperKind(v: unknown): v is AnalyzeShaperProviderKind {
+	return v === 'ollama' || v === 'cli-claude' || v === 'cli-codex';
 }
 
 /**
@@ -210,17 +234,21 @@ export function buildShaperProvider(
 	// 'ollama'. See resolveShaperKind.
 	const clientDefault = overrides?.clientDefault ?? clientProviderContextStorage.getStore()?.kind;
 	const repoOverride  = overrides?.repoOverride;
+	const roleRunner    = overrides?.roleRunner;
 	const globalExplicit = cfg.shaperProviderExplicit ? cfg.shaperProvider : undefined;
-	const effective = resolveShaperKind({ repoOverride, globalExplicit, clientDefault });
+	const effective = resolveShaperKind({ repoOverride, globalExplicit, clientDefault, roleResolved: roleRunner });
+
+	// A RoleRouter-resolved tier model (S003) is preferred over cfg.shaperModel.
+	const roleModel = overrides?.roleModel !== undefined && overrides.roleModel !== '' ? overrides.roleModel : undefined;
 
 	if (effective === 'cli-claude' || effective === 'cli-codex') {
 		const kind = effective === 'cli-claude' ? 'claude' : 'codex';
 		// The default `shaperModel` (`qwen3.6:35b-a3b`) is an Ollama id —
-		// never forward it to a CLI. Only pin a CLI model when the operator
-		// set `shaperModel` explicitly (e.g. `claude-haiku-4-5` for
+		// never forward it to a CLI. Prefer an explicit tier model (roleModel),
+		// then an explicitly-set `shaperModel` (e.g. `claude-haiku-4-5` for
 		// cost-sensitive inner calls); otherwise use the CLI's own default.
-		const model = cfg.shaperModelExplicit && cfg.shaperModel !== '' ? cfg.shaperModel : undefined;
-		const source = repoOverride !== undefined ? 'repo' : globalExplicit !== undefined ? 'config' : 'client';
+		const model = roleModel ?? (cfg.shaperModelExplicit && cfg.shaperModel !== '' ? cfg.shaperModel : undefined);
+		const source = roleRunner !== undefined ? 'role' : repoOverride !== undefined ? 'repo' : globalExplicit !== undefined ? 'config' : 'client';
 		log.info(
 			{ kind, model: model ?? '(cli default)', source, timeoutMs: overrides?.cliTimeoutMs },
 			'shaper provider: routing through CliProvider',
@@ -231,13 +259,15 @@ export function buildShaperProvider(
 			...(overrides?.cliTimeoutMs !== undefined ? { timeoutMs: overrides.cliTimeoutMs } : {}),
 		});
 	}
-	// Default + explicit 'ollama'.
+	// Default + explicit 'ollama'. A cheap-tier roleModel may pin a specific
+	// local model; otherwise use cfg.shaperModel.
+	const ollamaModel = roleModel ?? cfg.shaperModel;
 	log.info(
-		{ model: cfg.shaperModel, numCtx: cfg.shaper.ollamaNumCtx },
+		{ model: ollamaModel, numCtx: cfg.shaper.ollamaNumCtx },
 		'shaper provider: routing through OllamaProvider',
 	);
 	const local = loadLocalProviderConfig();
-	return new OllamaProvider(cfg.shaperModel, local.host, cfg.shaper.ollamaNumCtx);
+	return new OllamaProvider(ollamaModel, local.host, cfg.shaper.ollamaNumCtx);
 }
 
 /**

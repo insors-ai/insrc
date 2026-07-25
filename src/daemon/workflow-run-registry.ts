@@ -91,7 +91,7 @@ export interface StartRunDeps {
  *  `state.error` with `status:'error'` (or `'aborted'`). */
 export function startWorkflowRun(rawParams: unknown, deps: StartRunDeps = {}): { runId: string } {
 	const prepare = deps.prepare ?? prepareWorkflowRun;
-	const { intent, runId, epicKey, provider, modelLabel, clientDefault, review } = prepare(rawParams);
+	const { intent, runId, epicKey, provider, modelLabel, clientDefault, review, router, cfg, repoPath } = prepare(rawParams);
 	const abort = new AbortController();
 	const state: RunState = { runId, status: 'running', frames: [], model: modelLabel, abort, startedAt: Date.now() };
 	runs.set(runId, state);
@@ -100,7 +100,7 @@ export function startWorkflowRun(rawParams: unknown, deps: StartRunDeps = {}): {
 	// Fire-and-forget: build the same drive closure as the streaming handler,
 	// but land progress frames in the state buffer instead of the socket.
 	const drive = (): Promise<RunWorkflowResult> => runWorkflowServerSide(intent, provider, {
-		runId, epicKey, modelLabel, signal: abort.signal,
+		runId, epicKey, modelLabel, signal: abort.signal, router, cfg, repoPath,
 		onProgress: (f) => { appendProgressLog(runId, 'workflow.run', f.phase, formatProgressDetail(f)); state.frames.push(f); },
 		...(review !== undefined ? { review } : {}),
 	});

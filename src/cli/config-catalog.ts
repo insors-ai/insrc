@@ -60,6 +60,16 @@ export const CONFIG_CATALOG: readonly ConfigOption[] = [
 	{ path: 'models.analyze.maxPlanDepth.M',  type: 'number', default: 4, desc: 'max plan-tree depth — M-scope roots' },
 	{ path: 'models.analyze.maxPlanDepth.L',  type: 'number', default: 5, desc: 'max plan-tree depth — L-scope roots' },
 	{ path: 'models.analyze.maxPlanDepth.XL', type: 'number', default: 6, desc: 'max plan-tree depth — XL-scope roots' },
+	// ── per-role model tiering (S001 — models.analyze.tiers/roleTiers/coreFloor/byRepo) ──
+	{ path: 'models.analyze.coreFloor',          type: 'enum',   default: 'mid',            desc: "min tier for critical roles: 'core' | 'mid' | 'cheap' (unset ⇒ built-in default)" },
+	{ path: 'models.analyze.tiers.core.runner',  type: 'enum',   default: 'cli-claude',     desc: "core-tier backend: 'ollama' | 'cli-claude' | 'cli-codex'" },
+	{ path: 'models.analyze.tiers.core.model',   type: 'string', default: '',               desc: 'core-tier model id (empty ⇒ CLI default, e.g. opus)' },
+	{ path: 'models.analyze.tiers.mid.runner',   type: 'enum',   default: 'cli-claude',     desc: 'mid-tier backend' },
+	{ path: 'models.analyze.tiers.mid.model',    type: 'string', default: 'sonnet',         desc: 'mid-tier model id (e.g. sonnet)' },
+	{ path: 'models.analyze.tiers.cheap.runner', type: 'enum',   default: 'ollama',         desc: 'cheap-tier backend (local by default)' },
+	{ path: 'models.analyze.tiers.cheap.model',  type: 'string', default: 'qwen3.6:35b-a3b', desc: 'cheap-tier model id (Ollama local by default)' },
+	// models.analyze.roleTiers.<roleId> and models.analyze.byRepo.<repoPath>.* are dynamic-key
+	// overrides — set them directly in ~/.insrc/config.json (see docs/daemon.md).
 
 	// ── local provider / embedder (src/config/local.ts → models.providers.local.*) ──
 	{ path: 'models.providers.local.host',           type: 'string', default: 'http://localhost:11434', desc: 'Ollama host for the embedder/local provider' },

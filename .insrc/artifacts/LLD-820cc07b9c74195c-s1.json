@@ -1,0 +1,698 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1784980809162-rsdllq",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-07-25T12:20:02.788Z",
+    "model": "claude",
+    "elapsedMs": 1193620,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "820cc07b9c74195c",
+    "epicSlug": "frame-epic-per-role-per-step",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1784970656550-ihypng",
+    "hldEffectiveHash": "253f46361f54d8198208e28623c30f98818c2cf3cd30958699949c63fe66ed55",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "c1",
+          "ref": "AnalyzeShaperConfig",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The type home AnalyzeShaperConfig (which gains the additive tiers/roleTiers/coreFloor/byRepo keys) exists in src/config/analyze.ts.",
+          "evidence": "src/config/analyze.ts:33 `export interface AnalyzeShaperConfig {` (and DEFAULT_SHAPER at :139) — the type home that gains the additive keys. Confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c2",
+          "ref": "ConfigOption",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The models.analyze.* config catalog (shaperProvider/shaperModel rows the new keys extend) lives in src/cli/config-catalog.ts around :51-62.",
+          "evidence": "config-catalog.ts:52-62 holds the models.analyze.* rows: :52 shaperProvider, :53 shaperModel, :54-57 shaper.*, :58-62 maxPlanDepth.* — exactly the :51-62 range the LLD cites, which the new tier/role rows extend. Confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c3",
+          "ref": "migration/step6",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The per-repo precedence test harness src/config/__tests__/repo-shaper-override.test.ts exists (the LLD flags it 'confirm exists per backFlowNotes gap 4').",
+          "evidence": "src/config/__tests__/repo-shaper-override.test.ts EXISTS (:22 imports resolveRepoShaperProvider, :34-77 five precedence tests). The LLD's backFlowNotes-gap-4 'confirm exists' is resolved: it exists, and resolveRepoShaperProvider lives at config/analyze.ts:337 (called by workflow-rpc.ts:338). Confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c4",
+          "ref": "invariant/legacy",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The legacy shaperModel default is qwen3.6:35b-a3b (the LLD cites this as the untouched legacy default).",
+          "evidence": "config-catalog.ts:53 `default: 'qwen3.6:35b-a3b'` for models.analyze.shaperModel; corroborated across shaper-provider.ts:218/252/260. The legacy default is as cited. Confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c5",
+          "ref": "RoleTaxonomy",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "The RoleTaxonomy consumer call sites the LLD names exist: src/analyze/summariser/driver.ts, src/workflow/review/extract.ts, src/indexer/watcher.ts (the peripheral/summariser reasoning sites).",
+          "evidence": "The analyze-pipeline reasoning sites the taxonomy targets are real buildShaperProvider/buildSummariserProvider callers (classifier/driver:128, scope-picker:125, decomposer:159, synthesizer:28, + the summariser split at shaper-provider.ts:256). The RoleTaxonomy enumerates real reasoning sites; exact per-site role names are pinned internally as designed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 5
+      },
+      "reviewedAt": "2026-07-25T12:22:46.423Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-07-25T12:41:23.848Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Chosen framework (alternative a2): a single RoleRouter choke point mediates every reasoning-model access across the analyze, workflow, and tracker lifecycle. Rather than constructing one provider per run in prepareWorkflowRun, the router resolves a provider per reasoning role by generalizing the existing shaper-vs-summariser split in shaper-provider.ts into a role-keyed resolver. Configuration extends the existing models.analyze.* contract with three capability tiers {core, mid, cheap}, a role→tier assignment map, a coreFloor guarantee, and byRepo role/tier overrides — the legacy shaperProvider key (and its unset-default path) remaining the lowest-precedence fallback. Because every role access flows through one wrapper, the coreFloor clamp, the CLI/Ollama-only dispatch invariant, per-repo precedence, and per-output model attribution are each enforced at exactly one place with no bypassing seam; the two hardcoded top-tier sites are converted to receive the router from context. The higher mechanical threading cost is accepted under the Epic's accuracy-primary / cost-least-priority principle.",
+      "ownedContracts": [
+        {
+          "id": "sc1",
+          "name": "AnalyzeTieringConfig",
+          "purpose": "Extends the existing models.analyze.* configuration surface with capability tiers, a role→tier assignment map, the coreFloor minimum, and per-repository role/tier overrides — without replacing any pre-existing key, and preserving the legacy single-provider path as lowest-precedence fallback.",
+          "interfaceSketch": "type TierName = 'core' | 'mid' | 'cheap';\n\ninterface TierModel {\n  // runner is which local/CLI backend serves the tier; model is the concrete id\n  runner: 'ollama' | 'cli-claude' | 'cli-codex';\n  model: string;\n}\n\ninterface RoleTierAssignment {\n  // keyed by RoleId (see sc4); value is the tier that serves that role\n  [roleId: string]: TierName;\n}\n\ninterface AnalyzeTieringConfig {\n  // NEW keys, additive to models.analyze.*\n  tiers?: Partial<Record<TierName, TierModel>> | undefined;\n  roleTiers?: RoleTierAssignment | undefined;\n  coreFloor?: TierName | undefined; // see sc2\n  byRepo?: {\n    [repoPath: string]: {\n      tiers?: Partial<Record<TierName, TierModel>> | undefined;\n      roleTiers?: RoleTierAssignment | undefined;\n      coreFloor?: TierName | undefined;\n      // legacy per-repo shaperProvider override remains honored\n      shaperProvider?: string | undefined;\n    };\n  } | undefined;\n  // LEGACY keys, unchanged, lowest precedence:\n  shaperProvider?: string | undefined; // unset => built-in default path\n  shaperModel?: string | undefined;\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s6"
+          ],
+          "assumptions": [
+            "The additive tier/role/coreFloor/byRepo keys land on the existing models.analyze.* catalog in src/cli/config-catalog.ts (51–62) with the type home in src/config/analyze.ts, without introducing a new config domain (k4). UNVERIFIED at HLD: whether the config-catalog.ts → analyze.ts → shaper-provider.ts import direction admits the new keys cleanly — no import.graph pass was run (s1 backFlowNotes gap 1)."
+          ]
+        },
+        {
+          "id": "sc4",
+          "name": "ReasoningRoleTaxonomy",
+          "purpose": "The closed set of reasoning role identifiers (keyed on step/runner names across analyze, workflow, and tracker), each classified as critical or peripheral, plus the tier ordering used to compare capability. Referenced by config, floor, router, attribution, and application seams so they all agree on role identity.",
+          "interfaceSketch": "// RoleId values are the intent-named reasoning sites, e.g.\n// 'design.epic.alternatives' | 'design.epic.judge' | 'design.story.detail'\n// | 'scope.audit' | 'review' | 'build' | 'define.frame'\n// | 'render.issueBody' | 'render.summary' | 'indexer.summarise'\n// | 'analyze.narrow'\ntype RoleId = string;\n\ntype Criticality = 'critical' | 'peripheral';\n\ninterface RoleDescriptor {\n  id: RoleId;\n  criticality: Criticality;\n  defaultTier: 'core' | 'mid' | 'cheap';\n}\n\n// Tier capability ordering, cheap < mid < core, used by the floor clamp.\ntype TierRank = { cheap: 0; mid: 1; core: 2 };\n\ninterface RoleTaxonomy {\n  roles: readonly RoleDescriptor[];\n  rankOf: Record<'cheap' | 'mid' | 'core', number>;\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "The enumerated RoleId string set is an internal registry keyed on the intent-named reasoning sites; consumers see only the RoleId/Criticality/tier-rank shapes. The exact closed set (including the two hardcoded top-tier sites' role names) is pinned at LLD — those seams did not surface in any s1 search.text output (s1 backFlowNotes gap 3)."
+          ]
+        }
+      ],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [
+          "sc1",
+          "sc4"
+        ],
+        "depends": [],
+        "internal": "The concrete default tier→model table (which model backs core/mid/cheap out of the box), the exact camelCase/kebab-case config-catalog.ts key names and their catalog descriptions, the parsing/validation of the byRepo map against registered repo paths, and the internal mapping between config-catalog.ts and config/analyze.ts stay private to s1. The enumerated RoleId string values are an internal registry; only the RoleId/Criticality/tier shapes and the RoleTaxonomy accessor are exposed. Consumers never read raw config keys directly — they see the AnalyzeTieringConfig and RoleTaxonomy shapes."
+      },
+      "rolloutPhase": "Phase A — foundational contracts",
+      "nonFunctional": {
+        "durability": "Per-output model attribution (sc5) replaces the scalar meta.model on persisted artifacts; older single-model artifacts must remain readable, so the outputs[] aggregate is additive and back-compat with the legacy field. Config changes (sc1) are additive to models.analyze.* — the unset-default and legacy shaperProvider paths must survive upgrade untouched (k3).",
+        "observability": "Every role resolution surfaces its RoleResolution (role, tier, runner, model, clampedByFloor), and every coreFloor clamp of a critical downgrade is logged via getLogger so operators can audit where capability was spent and where a downgrade was raised. No console.log.",
+        "performance": "Per-step resolution replaces one per-run provider construction; the router should cache resolved providers per (role, repo) within a run to avoid rebuilding CLI subprocess wrappers. Accuracy is primary and cost is least priority — the wider mechanical threading and any extra resolution overhead are acceptable per the Epic principle. LLM access stays serial (never Promise.all across provider calls).",
+        "security": "The k1 invariant is enforced structurally at the single router choke point: every ResolvedProvider's runner is constrained to 'ollama' | 'cli-claude' | 'cli-codex', so no role at any tier can reach a direct cloud REST path. Cloud auth remains delegated to the CLI OAuth sessions; no API keys are introduced."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "TierName",
+          "signature": "type TierName = 'core' | 'mid' | 'cheap';",
+          "parameters": [],
+          "returns": {
+            "type": "type-alias",
+            "meaning": "The three capability tiers (c1): core = most capable, mid, cheap = served locally by default. Ordered cheap < mid < core for the coreFloor clamp (enforced downstream by sc2/s2)."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Exactly three members; no fourth tier is admitted (c1)."
+          ]
+        },
+        {
+          "name": "TierModel",
+          "signature": "interface TierModel { runner: 'ollama' | 'cli-claude' | 'cli-codex'; model: string; }",
+          "parameters": [
+            {
+              "name": "runner",
+              "type": "'ollama' | 'cli-claude' | 'cli-codex'",
+              "purpose": "The local/CLI backend that serves the tier. Closed to the k1 set so no tier can reach a direct cloud REST path (enforced structurally at the sc3 router).",
+              "optional": false
+            },
+            {
+              "name": "model",
+              "type": "string",
+              "purpose": "The concrete model id backing the tier (e.g. qwen3.6:35b-a3b, claude-haiku-4-5). CliProvider already accepts a model option (src/agent/providers/cli-provider.ts:88-345), so dispatch already exists.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "interface",
+            "meaning": "The model that backs one capability tier, drawn 1:1 from the sc1 interfaceSketch (winning alt a1: TierModel = {runner, model})."
+          },
+          "errors": [],
+          "preconditions": [
+            "runner is one of the three k1-permitted backends."
+          ],
+          "postconditions": []
+        },
+        {
+          "name": "RoleTierAssignment",
+          "signature": "interface RoleTierAssignment { [roleId: string]: TierName; }",
+          "parameters": [
+            {
+              "name": "[roleId]",
+              "type": "TierName",
+              "purpose": "Maps a RoleId (sc4) to the tier that serves it. A sparse map — roles absent here fall through to RoleDescriptor.defaultTier (ac1).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "interface",
+            "meaning": "Role→tier assignment map keyed by sc4 RoleId; the layer an operator edits to move a peripheral role to the cheap tier (ac1)."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Keys not present leave the role at its taxonomy defaultTier."
+          ]
+        },
+        {
+          "name": "AnalyzeTieringConfig",
+          "signature": "interface AnalyzeTieringConfig { tiers?: Partial<Record<TierName, TierModel>> | undefined; roleTiers?: RoleTierAssignment | undefined; coreFloor?: TierName | undefined; byRepo?: { [repoPath: string]: { tiers?: Partial<Record<TierName, TierModel>> | undefined; roleTiers?: RoleTierAssignment | undefined; coreFloor?: TierName | undefined; shaperProvider?: string | undefined; } } | undefined; shaperProvider?: string | undefined; shaperModel?: string | undefined; }",
+          "parameters": [
+            {
+              "name": "tiers",
+              "type": "Partial<Record<TierName, TierModel>> | undefined",
+              "purpose": "Global tier→model backing table. Additive; when absent the legacy single-provider path governs (ac3).",
+              "optional": true
+            },
+            {
+              "name": "roleTiers",
+              "type": "RoleTierAssignment | undefined",
+              "purpose": "Global role→tier assignment. Absent roles use defaultTier (ac1).",
+              "optional": true
+            },
+            {
+              "name": "coreFloor",
+              "type": "TierName | undefined",
+              "purpose": "Minimum tier below which critical roles may not be downgraded (sc2 guarantee; clamp enforced by s2).",
+              "optional": true
+            },
+            {
+              "name": "byRepo",
+              "type": "{ [repoPath: string]: { tiers?; roleTiers?; coreFloor?; shaperProvider?; } } | undefined",
+              "purpose": "Per-repository overrides of tiers/roleTiers/coreFloor that outrank the global layer (ac2); retains the legacy per-repo shaperProvider override at lowest per-repo precedence.",
+              "optional": true
+            },
+            {
+              "name": "shaperProvider",
+              "type": "string | undefined",
+              "purpose": "LEGACY, unchanged, lowest precedence. Unset => built-in default path preserved by the installer (scripts/insrc-daemon-install.sh:277) (ac3/ac4/k3).",
+              "optional": true
+            },
+            {
+              "name": "shaperModel",
+              "type": "string | undefined",
+              "purpose": "LEGACY, unchanged (default qwen3.6:35b-a3b, docs/daemon.md:336-337). Left untouched (ac4).",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "interface",
+            "meaning": "The extended models.analyze.* shape. Type home is AnalyzeShaperConfig in src/config/analyze.ts. Precedence highest→lowest: per-repo tier/role → global tier/role → legacy per-repo shaperProvider → legacy global shaperProvider → unset built-in default. Owned by s1 (sc1), consumed by s2/s3/s6."
+          },
+          "errors": [
+            {
+              "type": "ValidationError",
+              "condition": "A byRepo key is not a registered repo path, or a TierModel.runner is outside the k1 set — rejected at config load (validation is s1-internal)."
+            }
+          ],
+          "preconditions": [
+            "The keys land on the existing models.analyze.* catalog without introducing a new config domain (c2/k4)."
+          ],
+          "postconditions": [
+            "Pre-existing shaperProvider/shaperModel and catalog rows remain honored (ac4).",
+            "With tiers and roleTiers both absent, resolution is identical to the pre-change legacy path (ac3)."
+          ]
+        },
+        {
+          "name": "RoleId",
+          "signature": "type RoleId = string;",
+          "parameters": [],
+          "returns": {
+            "type": "type-alias",
+            "meaning": "Intent-named reasoning-site identifier drawn from the closed internal registry (sc4). The closed set is grounded by the s1 usage.example caller sweep across the three site categories (direct buildShaperProvider callers, prepareWorkflowRun consumers, indexer.summarise)."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Only registry-enumerated RoleId values resolve; unknown ids fall back to defaultTier semantics defined downstream."
+          ]
+        },
+        {
+          "name": "Criticality",
+          "signature": "type Criticality = 'critical' | 'peripheral';",
+          "parameters": [],
+          "returns": {
+            "type": "type-alias",
+            "meaning": "Whether a role is critical (subject to the coreFloor clamp) or peripheral (eligible for the cheap tier). Referenced by the sc2 floor and sc3 router."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": []
+        },
+        {
+          "name": "RoleDescriptor",
+          "signature": "interface RoleDescriptor { id: RoleId; criticality: Criticality; defaultTier: 'core' | 'mid' | 'cheap'; }",
+          "parameters": [
+            {
+              "name": "id",
+              "type": "RoleId",
+              "purpose": "The reasoning-site identifier this descriptor classifies.",
+              "optional": false
+            },
+            {
+              "name": "criticality",
+              "type": "Criticality",
+              "purpose": "critical vs peripheral classification used by the coreFloor clamp.",
+              "optional": false
+            },
+            {
+              "name": "defaultTier",
+              "type": "'core' | 'mid' | 'cheap'",
+              "purpose": "Tier used when no roleTiers assignment covers the role — the gap fallback that guarantees full role coverage (winning alt a1: defaultTier used only as a gap fallback) (ac1).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "interface",
+            "meaning": "One row of the closed reasoning-role registry (sc4)."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": []
+        },
+        {
+          "name": "RoleTaxonomy",
+          "signature": "interface RoleTaxonomy { roles: readonly RoleDescriptor[]; rankOf: Record<'cheap' | 'mid' | 'core', number>; }",
+          "parameters": [
+            {
+              "name": "roles",
+              "type": "readonly RoleDescriptor[]",
+              "purpose": "The closed, hand-authored set of reasoning-role descriptors (winning alt a1: readonly RoleDescriptor[] + rankOf internal registry).",
+              "optional": false
+            },
+            {
+              "name": "rankOf",
+              "type": "Record<'cheap' | 'mid' | 'core', number>",
+              "purpose": "Tier capability ordering cheap:0 < mid:1 < core:2, used by the sc2 floor clamp to compare capability.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "interface",
+            "meaning": "The single exposed taxonomy accessor value (sc4). Raw RoleId string values stay internal; consumers s2/s3/s4/s5 see only the RoleId/Criticality/tier-rank shapes and this accessor."
+          },
+          "errors": [],
+          "preconditions": [
+            "The closed RoleId set is pinned at LLD from the s1 usage.example caller sweep (backFlowNotes gap 3 resolved)."
+          ],
+          "postconditions": [
+            "roles covers every production reasoning site; rankOf is total over the three tiers."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "AnalyzeShaperConfig",
+        "change": "field-add",
+        "details": "Add the additive sc1 keys tiers, roleTiers, coreFloor, and byRepo (each optional, `| undefined` per exactOptionalPropertyTypes) to the type home in src/config/analyze.ts (entityId 98fb3d8bfdf25e8a85484ad526a3ef5b). Legacy shaperProvider/shaperModel are left in place as the lowest-precedence fallback (ac3/ac4). No new config domain (c2/k4). NOTE: the config-catalog.ts → config/analyze.ts → shaper-provider.ts import direction is UNVERIFIED (backFlowNotes gap 2) and must be checked (import.graph pass) before the type change lands.",
+        "callSites": [
+          "src/analyze/context/shaper-provider.ts:183-241",
+          "src/analyze/context/decomposer.ts:159",
+          "src/analyze/context/synthesizer.ts:116",
+          "src/analyze/planner/driver.ts:166",
+          "src/daemon/workflow-rpc.ts:341"
+        ]
+      },
+      {
+        "entity": "ConfigOption",
+        "change": "field-add",
+        "details": "Add new models.analyze.* catalog rows for the tier/role/coreFloor/byRepo keys as additive siblings to the existing rows at src/cli/config-catalog.ts:51-62 (entityId 3ef0c85af2cd4247530de06874accb58) — shaperProvider, shaperModel, shaper.maxToolTurns/structuredOutputRetries/ollamaNumCtx/ollamaNumPredict, maxPlanDepth.*. The exact camelCase/kebab catalog key names and descriptions stay s1-internal (boundary.internal). Pre-existing rows are untouched (ac4).",
+        "callSites": [
+          "src/cli/config-catalog.ts:51-62"
+        ]
+      },
+      {
+        "entity": "RoleTaxonomy",
+        "change": "new",
+        "details": "New hand-authored, closed internal registry (readonly RoleDescriptor[] + rankOf) realizing sc4. Roles are grounded by the s1 usage.example caller sweep: category (A) direct buildShaperProvider callers (decomposer, synthesizer, planner, aggregator, adherence, doc-decision-trace, doc-constraint-enumerate, capability-reuse-check, classifier, scope-picker, workflow/questions) plus buildSummariserProvider (summariser); category (B) prepareWorkflowRun consumers (workflow runner steps alternatives.enumerate/judge, contract.detail, scope.audit, synthesize; review extract/verify/run-artifact/review/calibration; build; tracker render.issueBody/render.summary); category (C) indexer.summarise. Raw RoleId values stay internal; only the RoleTaxonomy accessor is exposed.",
+        "callSites": [
+          "src/daemon/workflow-rpc.ts:341",
+          "src/analyze/runtimes/shared/aggregator.ts:75",
+          "src/analyze/runtimes/shared/adherence.ts:213",
+          "src/analyze/summariser/driver.ts:199",
+          "src/workflow/review/extract.ts:169",
+          "src/indexer/watcher.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "implements",
+        "howDetails": "s1 is the HLD owner of AnalyzeTieringConfig. It ships the additive tiers/roleTiers/coreFloor/byRepo keys on the AnalyzeShaperConfig type (src/config/analyze.ts) and the matching config-catalog.ts rows, drawing TierModel as {runner, model} verbatim from the interfaceSketch (winning alt a1, zero renegotiation for consumers s2/s3/s6). Precedence (per-repo tier/role → global tier/role → legacy per-repo shaperProvider → legacy global shaperProvider → unset built-in default) is preserved, keeping ac2/ac3/ac4 satisfied. Validation of byRepo against registered repo paths and the concrete default tier→model table stay s1-internal (boundary.internal)."
+      },
+      {
+        "contractId": "sc4",
+        "role": "implements",
+        "howDetails": "s1 is the HLD owner of ReasoningRoleTaxonomy. It ships the closed RoleTaxonomy registry (readonly RoleDescriptor[] + rankOf) with defaultTier used only as a gap fallback — exactly the RoleId/Criticality/tier-rank shapes consumers s2/s3/s4/s5 depend on. The enumerated RoleId strings, grounded by the s1 usage.example three-category caller sweep, are an internal registry; only the RoleTaxonomy accessor and the shapes are exposed (boundary.internal)."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A tiers entry declares a runner outside the closed backend set, e.g. models.analyze.tiers.cheap = { runner: \"anthropic-rest\", model: \"...\" }, which would open a direct cloud REST path.",
+          "detection": "The config loader validates each tiers[t].runner against the closed k1 union ('ollama' | 'cli-claude' | 'cli-codex') while parsing AnalyzeShaperConfig; a value not a member of that union fails the check.",
+          "response": "Reject the config load with a ValidationError naming the offending tier and runner value; do not construct any provider from the malformed table (the legacy path is not silently substituted, since a bad tier table is an operator mistake to surface, not paper over).",
+          "userImpact": "The operator sees an explicit config error identifying which tier and runner string is invalid, rather than a run silently reaching an unintended backend.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A byRepo key names a path that is not registered with the daemon (typo, stale path, or a repo never added via repo.add), e.g. byRepo['/home/me/old-checkout'].roleTiers = {...}.",
+          "detection": "The config loader cross-checks every byRepo key against the daemon's registered repo paths at load; a key with no matching registry row is rejected (UnregisteredRepoError-style validation, consistent with the strict repo-registry contract).",
+          "response": "Fail the config load with a ValidationError naming the unregistered path; the global tier/role layer is left intact but the stray per-repo override is not applied.",
+          "userImpact": "The operator is told the byRepo override targets an unknown repo instead of the override silently never firing and the role quietly staying on the wrong tier.",
+          "recoverable": true
+        },
+        {
+          "scenario": "coreFloor is set to a string that is not one of the three TierName members, e.g. coreFloor: \"high\".",
+          "detection": "The config loader validates coreFloor against the TierName union ('core' | 'mid' | 'cheap') during parse; any other string fails the membership check.",
+          "response": "Reject the config load with a ValidationError naming coreFloor and its invalid value; no clamp is derived from an unparseable floor.",
+          "userImpact": "The operator gets an immediate parse error rather than a mis-computed floor that could let a critical role slip below the intended capability tier.",
+          "recoverable": true
+        },
+        {
+          "scenario": "roleTiers assigns a role to a tier that has no backing TierModel in the effective (per-repo merged over global) tiers table — the tier is named but unbacked, e.g. roleTiers.decomposer = 'mid' while tiers.mid is absent.",
+          "detection": "At role resolution the merged tiers map is looked up by the assigned TierName and returns undefined — the code notices the assigned tier has no model row.",
+          "response": "Fall the role back to its RoleDescriptor.defaultTier backing, and if that too is unbacked, down to the legacy single-provider path (ac3), so an unbacked assignment degrades to a working provider rather than throwing at run time; the fallback is logged so the gap is visible.",
+          "userImpact": "A partially-configured tier table still yields a usable provider for every role instead of a run crashing mid-reasoning; the operator sees a log line pointing at the unbacked tier.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "No tiers, roleTiers, coreFloor, or byRepo keys present at all (a config that predates this change, or the installer's unset-default path).",
+          "expected": "Resolution is byte-for-byte identical to the pre-change legacy single-provider selection, including the unset built-in default (ac3); the taxonomy and tier tables are simply never consulted."
+        },
+        {
+          "input": "tiers: {} and roleTiers: {} present but empty.",
+          "expected": "Treated as absent — every role falls through to its taxonomy defaultTier and ultimately the legacy path, matching the ac3 no-config behaviour; empty objects are not an error."
+        },
+        {
+          "input": "A production reasoning role exists that appears in no roleTiers assignment (global or per-repo).",
+          "expected": "The role is served by its RoleDescriptor.defaultTier (the winning-alt gap fallback), guaranteeing full role coverage with no unresolved role (ac1)."
+        },
+        {
+          "input": "roleTiers references a RoleId string that is not in the closed RoleTaxonomy registry (e.g. a renamed or removed reasoning site).",
+          "expected": "The unknown id resolves to defaultTier semantics rather than throwing — only registry-enumerated RoleId values bind to a descriptor; the stray key is inert."
+        },
+        {
+          "input": "For one repo, byRepo[repo] carries BOTH a new tier/role override and the legacy per-repo shaperProvider.",
+          "expected": "The per-repo tier/role override wins for any role it covers; the legacy per-repo shaperProvider still governs at its lower precedence rung for roles the tier/role layer does not cover — both are honored, neither is dropped (ac2/ac4)."
+        },
+        {
+          "input": "A per-repository override and a global override both cover the same role for a run inside that repository.",
+          "expected": "The per-repository assignment determines the tier; the global assignment is shadowed for that repo but remains in effect for repos without an override (ac2)."
+        },
+        {
+          "input": "roleTiers assigns a critical role to the cheap tier while coreFloor is set to mid.",
+          "expected": "s1 stores the assignment and floor faithfully (validation only checks membership, not the clamp); the downstream coreFloor clamp (s2) raises the effective tier to the floor at resolution — s1 does not itself reject the sub-floor assignment."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The legacy models.analyze.shaperProvider / shaperModel keys remain present and continue to be honored as the lowest-precedence fallback (never replaced or removed). Grounded in the s1 search.text bundle, which pins these as the untouched legacy surface at docs/daemon.md:336-337 with only scattered definition-role occurrences (shaper-provider.test.ts:24,71).",
+          "source": "c2"
+        },
+        {
+          "text": "The installer's deliberate unset-default path survives upgrade unchanged as the very bottom precedence rung: with no tier/role and no shaperProvider set, the built-in default provider governs. Grounded in the s1 search.text bundle citing scripts/insrc-daemon-install.sh:277, which explicitly does NOT pin models.analyze.shaperProvider.",
+          "source": "c2"
+        },
+        {
+          "text": "Tier/role/coreFloor/byRepo configuration lands only on the existing models.analyze.* surface as additive siblings — no new configuration domain is introduced. Grounded in the s1 data-model.trace bundle showing the additive keys extend the catalog rows at src/cli/config-catalog.ts:51-62 with the type home in src/config/analyze.ts.",
+          "source": "c2"
+        },
+        {
+          "text": "The precedence order is preserved exactly, highest→lowest: per-repo tier/role override → global tier/role → legacy per-repo shaperProvider → legacy global shaperProvider → unset built-in default. Grounded in the s1 data-model.trace bundle, which enumerates this order and notes the new per-repo tier/role overrides slot ABOVE the legacy per-repo shaperProvider.",
+          "source": "c2"
+        },
+        {
+          "text": "Every TierModel.runner stays within the closed local/CLI backend set (ollama | cli-claude | cli-codex) so no tier can reach a direct cloud REST path — enforced structurally at config validation. Grounded in the s1 symbol.locate bundle confirming CliProvider (src/agent/providers/cli-provider.ts:88-345) is the existing model-dispatch mechanism, consistent with the project's no-direct-cloud-REST principle.",
+          "source": "c1"
+        },
+        {
+          "text": "Exactly three capability tiers exist — core (most capable), mid, cheap (served locally by default) — and no fourth tier is admitted; the TierName union is closed to these three. Grounded in the s4 contract detail (TierName postcondition) which the s1 usage.example/data-model.trace bundles back with the models.analyze.* surface scope.",
+          "source": "c1"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test (Node.js built-in test runner, run via `npx tsx --test 'src/**/__tests__/*.test.ts'`) — matches the *.test.ts harness reported by test.locate in s1 (shaper-provider.test.ts, repo-shaper-override.test.ts, src/config/__tests__).",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Validate the AnalyzeShaperConfig parse/validation of the additive tiers/roleTiers/coreFloor/byRepo keys — closed-set membership checks and the s5 ValidationError paths — in isolation, so malformed operator config is rejected at load with a naming error rather than reaching a run.",
+          "subjects": [
+            "AnalyzeShaperConfig loader/validator in src/config/analyze.ts (tiers[t].runner ∈ {ollama|cli-claude|cli-codex}; coreFloor ∈ TierName; byRepo key ∈ registered repo paths)",
+            "ValidationError emission naming the offending tier/runner/coreFloor/byRepo path (s5 errorCases)"
+          ],
+          "fixturesNeeded": [
+            "in-memory AnalyzeShaperConfig fixtures: valid tier table, out-of-set runner ('anthropic-rest'), non-TierName coreFloor ('high'), unregistered byRepo path",
+            "a stubbed registered-repo-path set (repo.add contract) so byRepo cross-checks resolve deterministically"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Assert the closed RoleTaxonomy registry (readonly RoleDescriptor[] + rankOf) covers every production reasoning site enumerated by the s1 usage.example caller sweep, that rankOf is total and orders cheap<mid<core, and that unknown/absent RoleIds resolve to defaultTier semantics (gap-fallback coverage, ac1).",
+          "subjects": [
+            "RoleTaxonomy accessor + RoleDescriptor.defaultTier gap-fallback (new registry realizing sc4)",
+            "rankOf tier ordering used by the downstream coreFloor clamp"
+          ],
+          "fixturesNeeded": [
+            "the hand-authored RoleTaxonomy value itself (no external fixture)",
+            "a synthetic unknown RoleId and a role with no roleTiers assignment"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Drive buildShaperProvider end-to-end over a full AnalyzeTieringConfig so the config → role-resolution → provider-construction seam picks the correct runner/model per role across the whole precedence stack (per-repo tier/role → global tier/role → legacy per-repo shaperProvider → legacy global shaperProvider → unset built-in default), proving ac1–ac4 through the real resolver rather than a mock of it.",
+          "subjects": [
+            "buildShaperProvider(cfg, overrides) in src/analyze/context/shaper-provider.ts:183-241 resolving a role-keyed router",
+            "precedence resolution: global vs per-repo override, legacy fallback, unset built-in default",
+            "coreFloor clamp raising a sub-floor critical-role assignment to the floor at resolution (edge case)"
+          ],
+          "fixturesNeeded": [
+            "FakeProvider / makeStubProvider stubs (mirroring src/daemon/__tests__/workflow-rpc.test.ts:33, src/analyze/planner/__tests__/recursive.test.ts:173) capturing the requested runner+model without spawning a CLI",
+            "config fixtures: (a) empty/no tiering keys for the legacy baseline, (b) global-only roleTiers, (c) per-repo + global overlap for the same role, (d) legacy shaperProvider/shaperModel present alongside new keys",
+            "a fixed repoPath used both as a registered byRepo key and as the run repo, extending the src/config/__tests__/repo-shaper-override.test.ts and src/analyze/context/__tests__/shaper-provider.test.ts:43-95 patterns"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "shaper-provider.test.ts › a peripheral role assigned to the cheap tier resolves to the cheap tier's configured runner+model, not the most-capable (core) one",
+            "role-taxonomy.test.ts › a production role absent from every roleTiers assignment falls through to its RoleDescriptor.defaultTier (full-coverage gap fallback, no unresolved role)",
+            "role-taxonomy.test.ts › a roleTiers key referencing a RoleId outside the closed registry is inert and resolves to defaultTier semantics"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "repo-shaper-override.test.ts › for a run inside a repo, byRepo[repo].roleTiers determines the tier and shadows the global roleTiers for that role",
+            "repo-shaper-override.test.ts › the same role in a repo without a per-repo override is still served by the global roleTiers assignment",
+            "repo-shaper-override.test.ts › when byRepo[repo] carries both a new tier/role override and a legacy per-repo shaperProvider, the tier/role override wins for roles it covers while the legacy per-repo shaperProvider governs the roles it does not"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "shaper-provider.test.ts › with no tiers/roleTiers/coreFloor/byRepo keys present, resolution is byte-for-byte identical to the pre-change legacy single-provider selection",
+            "shaper-provider.test.ts › with neither tier/role config nor shaperProvider set, the installer's unset built-in default path governs unchanged (scripts/insrc-daemon-install.sh:277 bottom rung)",
+            "shaper-provider.test.ts › empty tiers:{} and roleTiers:{} are treated as absent (not an error) and yield the legacy no-config behaviour"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "shaper-provider.test.ts › pre-existing models.analyze.shaperProvider / shaperModel keys are still honored as the lowest-precedence fallback when tier/role config is added alongside them",
+            "shaper-provider.test.ts › adding tiers/roleTiers does not replace or remove the legacy keys — a role not covered by any tier/role layer still resolves via the legacy shaperProvider/shaperModel",
+            "config-analyze.test.ts › pre-existing models.analyze.* catalog rows (shaperModel, shaper.maxToolTurns, maxPlanDepth.*) remain unchanged after the additive tier/role rows are introduced"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "Per the s1 analyze bundles, the models.analyze.* configuration surface today exposes only the legacy single-provider selection. AnalyzeShaperConfig (src/config/analyze.ts, entityId 98fb3d8bfdf25e8a85484ad526a3ef5b) holds shaperProvider (ollama | cli-claude | cli-codex, default ollama) and shaperModel (default qwen3.6:35b-a3b) plus the byRepo[repoPath].shaperProvider per-repo override — documented at docs/daemon.md:336-337 (search.text bundle). The CLI catalog (src/cli/config-catalog.ts:51-62, entityId 3ef0c85af2cd4247530de06874accb58) carries the matching rows: shaperProvider, shaperModel, shaper.maxToolTurns/structuredOutputRetries/ollamaNumCtx/ollamaNumPredict, maxPlanDepth.* (data-model.trace bundle). buildShaperProvider(cfg, overrides) (src/analyze/context/shaper-provider.ts:183-241, entityId 28618a771e99821f2c6abfe07a0f7eee) and its sibling buildSummariserProvider (256-269) are the only provider-construction seams; every production reasoning site either calls buildShaperProvider directly (decomposer, synthesizer, planner, aggregator, adherence, three explore probes, classifier, scope-picker, workflow/questions — usage.example bundle) or receives the single run-wide provider built at prepareWorkflowRun (src/daemon/workflow-rpc.ts:341). There is no concept of a capability tier, no role→tier assignment, no coreFloor, and no reasoning-role registry — resolveProviderForRole is confirmed absent from the graph (symbol.locate bundle). The installer deliberately leaves shaperProvider unset (scripts/insrc-daemon-install.sh:277), so the built-in default path is the current bottom-of-precedence fallback. Every peripheral reasoning role therefore consumes the single configured (most-capable) provider.",
+      "stateAfter": "models.analyze.* carries four additive, optional keys — tiers, roleTiers, coreFloor, and byRepo{tiers,roleTiers,coreFloor,shaperProvider} — on AnalyzeShaperConfig, with matching CLI catalog rows, and a new closed hand-authored RoleTaxonomy registry (readonly RoleDescriptor[] + rankOf) covering every enumerated production reasoning site. An operator can declare, globally and per repository, which runner/model backs each of the three tiers (core, mid, cheap) and which tier each reasoning role belongs to; unassigned roles fall through to their descriptor defaultTier, and critical roles cannot be clamped below coreFloor. Precedence, highest→lowest, is: per-repo tier/role override → global tier/role → legacy per-repo shaperProvider → legacy global shaperProvider → unset built-in default. When tiers and roleTiers are both absent, resolution is byte-for-byte identical to the pre-change legacy path (ac3), and pre-existing shaperProvider/shaperModel/catalog rows remain honored (ac4). Peripheral work can now be served by the cheap tier instead of the most-capable model (ac1).",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Run an import.graph pass (or inspect import edges directly) over config-catalog.ts → config/analyze.ts → shaper-provider.ts to confirm the additive keys can land without introducing an import cycle (backFlowNotes gap 2, UNVERIFIED). Read-only check; makes no source change.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Read the buildShaperProvider resolver body in full (src/analyze/context/shaper-provider.ts, repo-override path ~:65) to pin the exact legacy per-repo shaperProvider resolution rung, so the new per-repo tier/role overrides can be placed directly above it (backFlowNotes gap 3). Read-only.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "step1-import-graph-clean"
+          ]
+        },
+        {
+          "order": 3,
+          "action": "Add the four additive nullable keys — tiers, roleTiers, coreFloor, byRepo — to the AnalyzeShaperConfig type in src/config/analyze.ts, each optional and explicitly `| undefined` (exactOptionalPropertyTypes). Leave legacy shaperProvider/shaperModel untouched as the lowest-precedence fallback. No new config domain (c2/k4).",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "step1-import-graph-clean"
+          ]
+        },
+        {
+          "order": 4,
+          "action": "Add the closed, hand-authored RoleTaxonomy registry (readonly RoleDescriptor[] + rankOf, ranks cheap:0 < mid:1 < core:2) enumerating every production reasoning site from the s1 caller sweep across the three categories (direct buildShaperProvider callers, prepareWorkflowRun consumers, indexer.summarise). Expose only the RoleTaxonomy accessor; keep raw RoleId string values internal. Purely additive new module.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Add the new models.analyze.* catalog rows for the tier/role/coreFloor/byRepo keys as additive siblings to the existing rows at src/cli/config-catalog.ts:51-62, leaving every pre-existing row unchanged (ac4).",
+          "rollbackable": true
+        },
+        {
+          "order": 6,
+          "action": "Extend the existing precedence test harnesses — src/analyze/context/__tests__/shaper-provider.test.ts:43-95 and src/config/__tests__/repo-shaper-override.test.ts:34-82 (confirm the latter exists per backFlowNotes gap 4) — to cover: per-repo tier/role beats global (ac2), unset-default legacy path preserved unchanged (ac3), pre-existing keys still honored (ac4), and peripheral role served by cheap tier (ac1). No production behavior change; test-only.",
+          "rollbackable": true
+        },
+        {
+          "order": 7,
+          "action": "Document the additive tier/role/coreFloor/byRepo keys alongside the legacy shaperProvider/shaperModel entries in docs/daemon.md (near :336-337), stating the full precedence order. Documentation-only.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "The AnalyzeShaperConfig config surface is extended additively only — every new key (tiers, roleTiers, coreFloor, byRepo) is optional and `| undefined`, so existing on-disk models.analyze.* configs remain valid without edits. Legacy shaperProvider and shaperModel keys are left in place, unchanged, at the lowest precedence rung, and the installer's deliberate unset-default path (scripts/insrc-daemon-install.sh:277) is preserved as the very bottom fallback. With tiers and roleTiers both absent — the state of every existing install — buildShaperProvider resolution is identical to the pre-change legacy behavior (ac3), and all pre-existing catalog rows continue to be honored rather than replaced (ac4). No caller of buildShaperProvider/buildSummariserProvider changes its signature in this Story, so downstream consumers s2/s3/s6 see zero renegotiation. No existing key is renamed, removed, or has its default altered.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Parallel additive keys with a new tier vocabulary (literal HLD shape)",
+        "oneLineSummary": "Add tiers/roleTiers/coreFloor/byRepo as independent siblings of the legacy keys, tiers modeled as a fresh {runner, model} type and roleTiers as an authoritative complete role→tier map.",
+        "approach": "Extend AnalyzeShaperConfig in src/config/analyze.ts exactly as the HLD sc1 interfaceSketch draws it: tiers?: Partial<Record<'core'|'mid'|'cheap', {runner:'ollama'|'cli-claude'|'cli-codex'; model:string}>>, roleTiers?: Record<RoleId, TierName> treated as the authoritative assignment, coreFloor?: TierName, and byRepo?[repoPath] mirroring the full {tiers, roleTiers, coreFloor, shaperProvider} block. The legacy shaperProvider/shaperModel scalars stay as-is at lowest precedence. sc4 ReasoningRoleTaxonomy is a hand-authored internal registry constant (readonly RoleDescriptor[] + rankOf) keyed on the intent-named sites enumerated in the usage.example sweep. defaultTier on each RoleDescriptor is a fallback used only when roleTiers has no entry for the role. New catalog rows extend src/cli/config-catalog.ts:51-62 as models.analyze.tiers.*/roleTiers.*/coreFloor.",
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Legacy-continuous tier shape (tiers reuse the shaperProvider/shaperModel vocabulary)",
+        "oneLineSummary": "Model each tier as a {shaperProvider, shaperModel} pair identical to the legacy scalar keys, so the resolver maps a resolved tier straight into the input buildShaperProvider already accepts.",
+        "approach": "Same additive-key set and precedence as a1, but the TierModel value is shaped as { shaperProvider: 'ollama'|'cli-claude'|'cli-codex'; shaperModel: string } — deliberately reusing the legacy key vocabulary rather than inventing runner/model. Resolving a role to a tier then yields a synthetic { shaperProvider, shaperModel } that is fed to the existing buildShaperProvider(cfg) seam (src/analyze/context/shaper-provider.ts:183-241) unchanged, generalizing the shaper-vs-summariser split into a role-keyed lookup that constructs from a tier-derived config. roleTiers, coreFloor, byRepo, and the sc4 taxonomy stay as in a1. Legacy scalars remain the lowest-precedence fallback and, because they share the tier's shape, ac3/ac4 collapse to 'use the unset tier as if it were the base tier'.",
+        "costEstimate": "S",
+        "reasonRejected": "Ranks second. The single blocking gap versus a1 is the sc1 partial: it renegotiates the owned TierModel vocabulary from the sketched {runner, model} to {shaperProvider, shaperModel}, forcing re-reference by consumers s2/s3/s6 and overloading 'shaperProvider' as both a top-level legacy scalar and a per-tier field (a leakier abstraction tying the public tier shape to provider-construction internals). Under the hard rule to score against the HLD shared contracts, that owned-contract deviation keeps it behind a1's zero-renegotiation fit — despite its strong ac3/ac4 legacy continuity, its k1 robustness (maximal reuse of buildShaperProvider, no new construction path), and its lower cost S."
+      },
+      {
+        "id": "a3",
+        "name": "Taxonomy-defaulted assignment with sparse config overrides",
+        "oneLineSummary": "Make the ReasoningRoleTaxonomy the authoritative source of each role's default tier and treat config roleTiers (global and per-repo) as sparse override deltas that name only exceptions.",
+        "approach": "Keep a1's tiers/coreFloor/byRepo model, but shift the semantics of role→tier binding: every RoleDescriptor in sc4 carries an authoritative defaultTier (critical→core, peripheral→mid/cheap) that fully determines a role's tier absent any config. Config roleTiers (Record<RoleId, TierName>) is then a SPARSE override map — an operator lists only the roles they want to move off-default. Precedence for a role's tier becomes: per-repo roleTiers[role] → global roleTiers[role] → taxonomy defaultTier[role], with coreFloor clamping the result. tiers/byRepo.tiers still allow redefining what model backs each level. This makes ac1 ('assign one peripheral role to cheap, leave others default') the minimal-config common case and keeps the byRepo surface small since most repos override nothing.",
+        "costEstimate": "M",
+        "reasonRejected": "Ranks third despite preserving both contract shapes and uniquely minimizing config for the ac1 common case. It carries two acceptance-criteria partials that a1 avoids: ac2 precedence ambiguity from two sources of truth (taxonomy default + sparse override), correct only if the LLD pins the per-repo → global → taxonomy order exactly; and an ac3 back-compat tension where an authoritative taxonomy default competes with 'legacy governs unchanged', carrying a silent-default trap (changing a shipped defaultTier shifts behavior for operators who set nothing). Both are correctness risks (auditing a role's actual tier requires consulting the taxonomy constant, not just the config file) that the accuracy-primary principle weights heavily, placing it behind both a1's clean fit and a2's legacy continuity."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "s8 ep3 (partial): invariant #6 'exactly three capability tiers' is grounded primarily in the s4 TierName postcondition and derives from the new design constraint localConstraint c1 — not from a current-behaviour analyze bundle. The s1 usage.example/data-model.trace bundles cited as backing do not actually exhibit a three-tier invariant; confirm the three-tier closure is treated as a pinned design decision rather than an observed invariant.",
+      "s8 alt2 (partial): the Story's explicit localConstraints c1 (exactly three tiers) and c2 (no new config domain) were addressed only in prose within the s2 alternative descriptions and s3 rationales, not scored as distinct per-alternative constraint rows the way ac1–ac4 and sc1/sc4 were. A future scoring pass should score c1/c2 per-alternative for completeness."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "step-output",
+      "ref": "s1.symbol.locate",
+      "quotedText": "buildShaperProvider(cfg: AnalyzeConfig, overrides?: ShaperProviderOverrides): LLMProvider — src/analyze/context/shaper-provider.ts:183-241; CliProvider (src/agent/providers/cli-provider.ts:88-345) already accepts a model option"
+    },
+    {
+      "id": "c2",
+      "kind": "step-output",
+      "ref": "s4.contractDetails",
+      "quotedText": "AnalyzeTieringConfig interfaceSketch: TierModel as {runner, model}, roleTiers, coreFloor, and full byRepo mirror; type home AnalyzeShaperConfig in src/config/analyze.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "step-output",
+      "ref": "s5.errorPaths",
+      "quotedText": "config loader validates each tiers[t].runner against the closed k1 union ('ollama' | 'cli-claude' | 'cli-codex'); precedence highest→lowest per-repo tier/role → global tier/role → legacy per-repo shaperProvider → legacy global shaperProvider → unset built-in default"
+    },
+    {
+      "id": "c4",
+      "kind": "step-output",
+      "ref": "s6.testStrategy",
+      "quotedText": "node:test run via `npx tsx --test 'src/**/__tests__/*.test.ts'`; acceptanceMapping covers ac1–ac4"
+    },
+    {
+      "id": "c5",
+      "kind": "step-output",
+      "ref": "s7.migration",
+      "quotedText": "models.analyze.* carries four additive, optional keys — tiers, roleTiers, coreFloor, and byRepo; zeroDowntime true, dataRewriteRequired false"
+    },
+    {
+      "id": "c6",
+      "kind": "step-output",
+      "ref": "s2.alternatives",
+      "quotedText": "a1 Parallel additive keys with a new tier vocabulary; a2 Legacy-continuous tier shape; a3 Taxonomy-defaulted assignment with sparse config overrides"
+    },
+    {
+      "id": "c7",
+      "kind": "step-output",
+      "ref": "s3.winnerId",
+      "quotedText": "winnerId a1 — the only alternative that scores satisfies on all six constraints; zero-partial, zero-renegotiation contract fit"
+    },
+    {
+      "id": "c8",
+      "kind": "step-output",
+      "ref": "s8.results",
+      "quotedText": "ep3 partial (three-tier invariant weakly grounded); alt2 partial (localConstraints c1/c2 not scored per-alternative); sbdry1-4 all passed"
+    },
+    {
+      "id": "c9",
+      "kind": "doc",
+      "ref": "HLD context slice (Epic 820cc07b9c74195c, Story s1)",
+      "quotedText": "ownedContracts sc1 AnalyzeTieringConfig + sc4 ReasoningRoleTaxonomy; boundary.owns [sc1, sc4]; rolloutPhase Phase A — foundational contracts"
+    }
+  ]
+}

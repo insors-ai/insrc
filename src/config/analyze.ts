@@ -87,6 +87,43 @@ export interface MaxPlanDepthMap {
  */
 export type AnalyzeShaperProviderKind = 'ollama' | 'cli-claude' | 'cli-codex';
 
+// ---------------------------------------------------------------------------
+// Per-role model tiering (Epic per-role-per-step, Story S001 — sc1).
+//
+// Additive to the models.analyze.* surface: three capability tiers, a role→tier
+// assignment map, a coreFloor guarantee (enforced downstream by S002), and
+// per-repo overrides. The legacy shaperProvider/shaperModel keys stay untouched
+// as the lowest-precedence fallback (S001 does not resolve — the RoleRouter
+// (S003) consumes this schema + the ReasoningRoleTaxonomy (sc4)).
+// ---------------------------------------------------------------------------
+
+/** The three capability tiers, ordered cheap < mid < core (see RoleTaxonomy.rankOf). */
+export type TierName = 'core' | 'mid' | 'cheap';
+
+/** The model backing one tier. `runner` is closed to the k1 CLI/Ollama set so no
+ *  tier can reach a direct cloud REST path (reuses AnalyzeShaperProviderKind). */
+export interface TierModel {
+	readonly runner: AnalyzeShaperProviderKind;
+	readonly model:  string;
+}
+
+/** Sparse RoleId → tier map; a role absent here uses its RoleDescriptor.defaultTier. */
+export type RoleTierAssignment = Readonly<Record<string, TierName>>;
+
+/** The tiering knobs that may appear globally or under a byRepo entry. */
+export interface TieringOverride {
+	readonly tiers?:     Readonly<Partial<Record<TierName, TierModel>>> | undefined;
+	readonly roleTiers?: RoleTierAssignment | undefined;
+	readonly coreFloor?: TierName | undefined;
+}
+
+/** The full parsed models.analyze tiering shape (sc1). Always present on
+ *  AnalyzeConfig; empty (all fields absent) when no tiering config is set, in
+ *  which case resolution is identical to the legacy single-provider path. */
+export interface AnalyzeTiering extends TieringOverride {
+	readonly byRepo?: Readonly<Record<string, TieringOverride>> | undefined;
+}
+
 /**
  * Per-repo shaper override, keyed by absolute repo path under
  * `models.analyze.byRepo` in `~/.insrc/config.json`. A repo may pin its own
@@ -127,6 +164,9 @@ export interface AnalyzeConfig {
 	readonly summariserModelExplicit: boolean;
 	readonly shaper:         AnalyzeShaperConfig;
 	readonly maxPlanDepth:   MaxPlanDepthMap;
+	/** Per-role model tiering (sc1). Empty ({}) when no tiering config is set —
+	 *  in which case resolution stays on the legacy shaperProvider path. */
+	readonly tiering:        AnalyzeTiering;
 }
 
 /**
@@ -196,6 +236,7 @@ export function loadAnalyzeConfig(): AnalyzeConfig {
 			summariserModelExplicit: false,
 			shaper:         DEFAULT_SHAPER,
 			maxPlanDepth:   DEFAULT_MAX_PLAN_DEPTH,
+			tiering:        {},
 		};
 		return cached;
 	}
@@ -253,6 +294,7 @@ export function loadAnalyzeConfig(): AnalyzeConfig {
 				L:  typeof depthObj['L']  === 'number' ? (depthObj['L']  as number) : DEFAULT_MAX_PLAN_DEPTH.L,
 				XL: typeof depthObj['XL'] === 'number' ? (depthObj['XL'] as number) : DEFAULT_MAX_PLAN_DEPTH.XL,
 			},
+			tiering: parseTiering(analyze),
 		};
 		return cached;
 	} catch (err) {
@@ -270,6 +312,7 @@ export function loadAnalyzeConfig(): AnalyzeConfig {
 			summariserModelExplicit: false,
 			shaper:         DEFAULT_SHAPER,
 			maxPlanDepth:   DEFAULT_MAX_PLAN_DEPTH,
+			tiering:        {},
 		};
 		return cached;
 	}
@@ -288,6 +331,79 @@ function parseShaperProvider(raw: unknown): AnalyzeShaperProviderKind {
 
 function isObject(x: unknown): x is Record<string, unknown> {
 	return typeof x === 'object' && x !== null && !Array.isArray(x);
+}
+
+// ---------------------------------------------------------------------------
+// Tiering parse (sc1). Lenient + validating: an invalid member (unknown tier,
+// non-k1 runner, non-TierName coreFloor) is dropped with a warn rather than
+// throwing, matching this loader's fail-soft contract — a partially-bad tiering
+// block never breaks config load. (Strict rejection + byRepo-vs-registry
+// cross-checks resolve at S003, where the repo registry is in scope.)
+// ---------------------------------------------------------------------------
+
+const TIER_NAMES: readonly TierName[] = ['core', 'mid', 'cheap'];
+function isTierName(x: unknown): x is TierName {
+	return typeof x === 'string' && (TIER_NAMES as readonly string[]).includes(x);
+}
+function isRunner(x: unknown): x is AnalyzeShaperProviderKind {
+	return x === 'ollama' || x === 'cli-claude' || x === 'cli-codex';
+}
+
+/** Parse one TieringOverride (tiers/roleTiers/coreFloor) from a config object. */
+function parseTieringOverride(src: Record<string, unknown>, where: string): TieringOverride {
+	const out: { tiers?: Partial<Record<TierName, TierModel>>; roleTiers?: Record<string, TierName>; coreFloor?: TierName } = {};
+
+	if (isObject(src['tiers'])) {
+		const tiers: Partial<Record<TierName, TierModel>> = {};
+		for (const [tier, val] of Object.entries(src['tiers'])) {
+			if (!isTierName(tier)) { log.warn({ where, tier }, 'models.analyze.tiers: unknown tier name; ignored'); continue; }
+			const runner = isObject(val) ? val['runner'] : undefined;
+			const model  = isObject(val) ? val['model']  : undefined;
+			if (!isRunner(runner) || typeof model !== 'string' || model.length === 0) {
+				log.warn({ where, tier }, 'models.analyze.tiers[tier]: expected { runner: ollama|cli-claude|cli-codex, model: string }; ignored');
+				continue;
+			}
+			tiers[tier] = { runner, model };
+		}
+		if (Object.keys(tiers).length > 0) out.tiers = tiers;
+	}
+
+	if (isObject(src['roleTiers'])) {
+		const roleTiers: Record<string, TierName> = {};
+		for (const [role, tier] of Object.entries(src['roleTiers'])) {
+			if (!isTierName(tier)) { log.warn({ where, role, tier }, 'models.analyze.roleTiers[role]: not a tier name; ignored'); continue; }
+			roleTiers[role] = tier;
+		}
+		if (Object.keys(roleTiers).length > 0) out.roleTiers = roleTiers;
+	}
+
+	const floor = src['coreFloor'];
+	if (floor !== undefined) {
+		if (isTierName(floor)) out.coreFloor = floor;
+		else log.warn({ where, coreFloor: floor }, 'models.analyze.coreFloor: not a tier name; ignored');
+	}
+
+	return out;
+}
+
+/** Parse the full models.analyze tiering shape (sc1): the global override plus
+ *  per-repo byRepo tiering overrides. Returns {} when no tiering keys are set,
+ *  in which case resolution stays on the legacy shaperProvider path. The legacy
+ *  byRepo[repo].shaperProvider override is parsed separately by readRepoOverride
+ *  and is unaffected. */
+export function parseTiering(analyze: Record<string, unknown>): AnalyzeTiering {
+	const global = parseTieringOverride(analyze, 'global');
+	let byRepo: Record<string, TieringOverride> | undefined;
+	if (isObject(analyze['byRepo'])) {
+		const acc: Record<string, TieringOverride> = {};
+		for (const [repoPath, entry] of Object.entries(analyze['byRepo'])) {
+			if (!isObject(entry)) continue;
+			const ov = parseTieringOverride(entry, `byRepo[${repoPath}]`);
+			if (ov.tiers !== undefined || ov.roleTiers !== undefined || ov.coreFloor !== undefined) acc[repoPath] = ov;
+		}
+		if (Object.keys(acc).length > 0) byRepo = acc;
+	}
+	return { ...global, ...(byRepo !== undefined ? { byRepo } : {}) };
 }
 
 /**

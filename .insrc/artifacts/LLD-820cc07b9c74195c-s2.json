@@ -1,0 +1,594 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1784985315515-69vxuw",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-07-25T13:33:57.039Z",
+    "model": "claude",
+    "elapsedMs": 1121521,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "820cc07b9c74195c",
+    "epicSlug": "frame-epic-per-role-per-step",
+    "storyId": "s2",
+    "hldBaseRunId": "wf-1784970656550-ihypng",
+    "hldEffectiveHash": "253f46361f54d8198208e28623c30f98818c2cf3cd30958699949c63fe66ed55",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "c-one-caller",
+          "ref": "c6",
+          "kind": "inventory",
+          "severity": "MED",
+          "premise": "buildShaperProvider has exactly ONE caller (prepareWorkflowRun) in the codebase.",
+          "evidence": "ripgrep for `buildShaperProvider\\(` over src (excluding defs/imports/tests) returns 12 real call sites in distinct files: daemon/workflow-rpc.ts:341, analyze/classifier/scope-picker.ts:125, classifier/driver.ts:128, explore/capability-reuse-check.ts:128, explore/doc-decision-trace.ts:119, explore/doc-constraint-enumerate.ts:112, workflow/questions.ts:172, runtimes/shared/adherence.ts:213, runtimes/shared/aggregator.ts:75, planner/driver.ts:166, context/decomposer.ts:159, context/synthesizer.ts:116. The premise 'exactly ONE caller (prepareWorkflowRun)' is contradicted — prepareWorkflowRun is only the run-wide seam among ~12.",
+          "action": "Correct the 'exactly ONE caller' restatement to '~12 callers'. S002's own build is unaffected (the guard is pure and never touches buildShaperProvider — it is consumed only by the s3 router), so this is non-blocking context imprecision carried from the HLD, but it must be fixed so S003/S005 do not under-scope the call-site conversion.",
+          "fixability": "auto",
+          "proposedFix": {
+            "rationale": "Replace the inaccurate ONE-caller count with the re-derived 12-caller count in both the migration State-before narrative and citation c6, without changing the surrounding scope claims.",
+            "artifactEdits": [
+              {
+                "find": "buildShaperProvider has exactly ONE caller, prepareWorkflowRun (src/daemon/workflow-rpc.ts:319-344), which builds one provider for the whole run",
+                "replace": "buildShaperProvider has ~12 callers across the analyze/workflow pipeline; the run-wide seam prepareWorkflowRun (src/daemon/workflow-rpc.ts:319-344) builds one provider for the whole run"
+              },
+              {
+                "find": "buildShaperProvider has exactly ONE caller, prepareWorkflowRun (src/daemon/workflow-rpc.ts:319-344), the per-run resolution seam",
+                "replace": "buildShaperProvider has ~12 callers; prepareWorkflowRun (src/daemon/workflow-rpc.ts:319-344) is the per-run resolution seam"
+              }
+            ]
+          }
+        },
+        {
+          "claimId": "c-tiering-loc",
+          "ref": "c2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "AnalyzeTiering is defined in src/config/analyze.ts around lines 123-125 carrying coreFloor/tiers/roleTiers.",
+          "evidence": "`export interface AnalyzeTiering extends TieringOverride` resolves at src/config/analyze.ts:123; coreFloor/tiers/roleTiers fields present (via TieringOverride). Matches the cited 123-125.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c-shaper-fns",
+          "ref": "c7",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "shaper-provider.ts defines buildShaperProvider (~183-241) and buildSummariserProvider (~256-269) with a byRepo shaperProvider override.",
+          "evidence": "buildShaperProvider defined at shaper-provider.ts:183 and buildSummariserProvider at :256 — matching the cited ~183-241 / ~256-269 ranges.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c-prepare-run",
+          "ref": "c6",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "prepareWorkflowRun in src/daemon/workflow-rpc.ts builds one provider per run (around lines 319-344).",
+          "evidence": "`export function prepareWorkflowRun` at src/daemon/workflow-rpc.ts:319 — matches the cited 319-344.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c-catalog-rows",
+          "ref": "c9",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "config-catalog.ts carries models.analyze.* rows including a coreFloor override key.",
+          "evidence": "models.analyze.coreFloor row present at src/cli/config-catalog.ts:64 (plus tiers.* rows following). The models.analyze.* block cited at 52-62 is the shaper section; the coreFloor/tiers rows sit just after at 64-70. Substantively correct.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c-role-test",
+          "ref": "c5",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/config/__tests__/role-taxonomy.test.ts exists and exercises the sc4 ReasoningRoleTaxonomy (the sibling the guard's tests mirror).",
+          "evidence": "src/config/__tests__/role-taxonomy.test.ts exists and imports reasoningRoleTaxonomy — the sibling test the guard's tests mirror.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c-rankof",
+          "ref": "c3",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The sc4 tier ordering rankOf { cheap:0, mid:1, core:2 } that the guard imports is defined in the S001 role taxonomy, not re-declared in the guard.",
+          "evidence": "RANK_OF = { cheap: 0, mid: 1, core: 2 } at src/config/role-taxonomy.ts:49, exposed as taxonomy.rankOf (:97). Matches the sc4 rankOf the guard imports; not re-declared.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c-descriptor",
+          "ref": "sc4",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "RoleDescriptor carries a criticality field (critical|peripheral) the guard reads to decide clamp vs pass-through.",
+          "evidence": "interface RoleDescriptor at role-taxonomy.ts:35 carries `readonly criticality: Criticality` (:37). The guard reads this to decide clamp vs pass-through.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c-repo-override-test",
+          "ref": "c9",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "repo-shaper-override.test.ts exists (lines ~34-82) covering the byRepo shaperProvider precedence the guard must not re-implement.",
+          "evidence": "repo-shaper-override.test.ts exists at src/config/__tests__/repo-shaper-override.test.ts and covers byRepo shaperProvider precedence. The LLD c9 cites the bare filename (no dir), so the citation is sound.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 1,
+        "low": 8
+      },
+      "reviewedAt": "2026-07-25T13:38:48.953Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-07-25T13:42:54.898Z",
+    "reviewOverride": {
+      "reason": "Sole finding was MED (buildShaperProvider caller undercount) carried from the HLD; it is non-load-bearing for S002 (pure guard never touches buildShaperProvider) and the review already auto-corrected it in the artifact. 0 HIGH.",
+      "at": "2026-07-25T13:42:54.898Z"
+    }
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Chosen framework (alternative a2): a single RoleRouter choke point mediates every reasoning-model access across the analyze, workflow, and tracker lifecycle. Rather than constructing one provider per run in prepareWorkflowRun, the router resolves a provider per reasoning role by generalizing the existing shaper-vs-summariser split in shaper-provider.ts into a role-keyed resolver. Configuration extends the existing models.analyze.* contract with three capability tiers {core, mid, cheap}, a role→tier assignment map, a coreFloor guarantee, and byRepo role/tier overrides — the legacy shaperProvider key (and its unset-default path) remaining the lowest-precedence fallback. Because every role access flows through one wrapper, the coreFloor clamp, the CLI/Ollama-only dispatch invariant, per-repo precedence, and per-output model attribution are each enforced at exactly one place with no bypassing seam; the two hardcoded top-tier sites are converted to receive the router from context. The higher mechanical threading cost is accepted under the Epic's accuracy-primary / cost-least-priority principle.",
+      "ownedContracts": [
+        {
+          "id": "sc2",
+          "name": "CoreFloorGuard",
+          "purpose": "The capability floor for critical roles: given a role's resolved tier, guarantees a critical role is never served below the configured (or built-in default) minimum, while permitting peripheral roles to resolve below it. Type-level result records whether a clamp was applied.",
+          "interfaceSketch": "interface FloorInput {\n  role: RoleDescriptor;            // from sc4\n  resolvedTier: 'core' | 'mid' | 'cheap';\n  configuredFloor?: 'core' | 'mid' | 'cheap' | undefined; // from sc1; absent => built-in default\n}\n\ninterface FloorOutcome {\n  effectiveTier: 'core' | 'mid' | 'cheap'; // >= floor for critical roles\n  clamped: boolean;                        // true when a critical downgrade was raised\n  reason?: 'below-core-floor' | undefined;\n}\n\n// Type of the guard entry point (signature only, no body):\ntype ApplyCoreFloor = (input: FloorInput) => FloorOutcome;",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s3",
+            "s6"
+          ],
+          "assumptions": [
+            "The built-in default floor value and the tier-rank comparison arithmetic stay private to s2; only the FloorInput/FloorOutcome shapes and the ApplyCoreFloor signature are exposed. The guard reads criticality from sc4 rather than redefining it."
+          ]
+        }
+      ],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "AnalyzeTieringConfig",
+          "purpose": "Extends the existing models.analyze.* configuration surface with capability tiers, a role→tier assignment map, the coreFloor minimum, and per-repository role/tier overrides — without replacing any pre-existing key, and preserving the legacy single-provider path as lowest-precedence fallback.",
+          "interfaceSketch": "type TierName = 'core' | 'mid' | 'cheap';\n\ninterface TierModel {\n  // runner is which local/CLI backend serves the tier; model is the concrete id\n  runner: 'ollama' | 'cli-claude' | 'cli-codex';\n  model: string;\n}\n\ninterface RoleTierAssignment {\n  // keyed by RoleId (see sc4); value is the tier that serves that role\n  [roleId: string]: TierName;\n}\n\ninterface AnalyzeTieringConfig {\n  // NEW keys, additive to models.analyze.*\n  tiers?: Partial<Record<TierName, TierModel>> | undefined;\n  roleTiers?: RoleTierAssignment | undefined;\n  coreFloor?: TierName | undefined; // see sc2\n  byRepo?: {\n    [repoPath: string]: {\n      tiers?: Partial<Record<TierName, TierModel>> | undefined;\n      roleTiers?: RoleTierAssignment | undefined;\n      coreFloor?: TierName | undefined;\n      // legacy per-repo shaperProvider override remains honored\n      shaperProvider?: string | undefined;\n    };\n  } | undefined;\n  // LEGACY keys, unchanged, lowest precedence:\n  shaperProvider?: string | undefined; // unset => built-in default path\n  shaperModel?: string | undefined;\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s6"
+          ],
+          "assumptions": [
+            "The additive tier/role/coreFloor/byRepo keys land on the existing models.analyze.* catalog in src/cli/config-catalog.ts (51–62) with the type home in src/config/analyze.ts, without introducing a new config domain (k4). UNVERIFIED at HLD: whether the config-catalog.ts → analyze.ts → shaper-provider.ts import direction admits the new keys cleanly — no import.graph pass was run (s1 backFlowNotes gap 1)."
+          ]
+        },
+        {
+          "id": "sc4",
+          "name": "ReasoningRoleTaxonomy",
+          "purpose": "The closed set of reasoning role identifiers (keyed on step/runner names across analyze, workflow, and tracker), each classified as critical or peripheral, plus the tier ordering used to compare capability. Referenced by config, floor, router, attribution, and application seams so they all agree on role identity.",
+          "interfaceSketch": "// RoleId values are the intent-named reasoning sites, e.g.\n// 'design.epic.alternatives' | 'design.epic.judge' | 'design.story.detail'\n// | 'scope.audit' | 'review' | 'build' | 'define.frame'\n// | 'render.issueBody' | 'render.summary' | 'indexer.summarise'\n// | 'analyze.narrow'\ntype RoleId = string;\n\ntype Criticality = 'critical' | 'peripheral';\n\ninterface RoleDescriptor {\n  id: RoleId;\n  criticality: Criticality;\n  defaultTier: 'core' | 'mid' | 'cheap';\n}\n\n// Tier capability ordering, cheap < mid < core, used by the floor clamp.\ntype TierRank = { cheap: 0; mid: 1; core: 2 };\n\ninterface RoleTaxonomy {\n  roles: readonly RoleDescriptor[];\n  rankOf: Record<'cheap' | 'mid' | 'core', number>;\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "The enumerated RoleId string set is an internal registry keyed on the intent-named reasoning sites; consumers see only the RoleId/Criticality/tier-rank shapes. The exact closed set (including the two hardcoded top-tier sites' role names) is pinned at LLD — those seams did not surface in any s1 search.text output (s1 backFlowNotes gap 3)."
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s2",
+        "owns": [
+          "sc2"
+        ],
+        "depends": [
+          "sc1",
+          "sc4"
+        ],
+        "internal": "The built-in default floor value, the tier-rank comparison arithmetic that decides whether a resolved tier is below the floor, the clamp-logging/telemetry emitted when a critical downgrade is raised, and the decision of which roles count as critical (read from sc4, not redefined) stay private to s2. Only the FloorInput/FloorOutcome shapes and the ApplyCoreFloor signature are exposed to the router."
+      },
+      "rolloutPhase": "Phase B — critical-role capability floor",
+      "nonFunctional": {
+        "durability": "Per-output model attribution (sc5) replaces the scalar meta.model on persisted artifacts; older single-model artifacts must remain readable, so the outputs[] aggregate is additive and back-compat with the legacy field. Config changes (sc1) are additive to models.analyze.* — the unset-default and legacy shaperProvider paths must survive upgrade untouched (k3).",
+        "observability": "Every role resolution surfaces its RoleResolution (role, tier, runner, model, clampedByFloor), and every coreFloor clamp of a critical downgrade is logged via getLogger so operators can audit where capability was spent and where a downgrade was raised. No console.log.",
+        "performance": "Per-step resolution replaces one per-run provider construction; the router should cache resolved providers per (role, repo) within a run to avoid rebuilding CLI subprocess wrappers. Accuracy is primary and cost is least priority — the wider mechanical threading and any extra resolution overhead are acceptable per the Epic principle. LLM access stays serial (never Promise.all across provider calls).",
+        "security": "The k1 invariant is enforced structurally at the single router choke point: every ResolvedProvider's runner is constrained to 'ollama' | 'cli-claude' | 'cli-codex', so no role at any tier can reach a direct cloud REST path. Cloud auth remains delegated to the CLI OAuth sessions; no API keys are introduced."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "ApplyCoreFloor",
+          "signature": "type ApplyCoreFloor = (input: FloorInput) => FloorOutcome;",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "FloorInput",
+              "purpose": "The role (sc4 RoleDescriptor), its resolved tier, and the already-merged configuredFloor (sc1). The per-repo/global floor precedence merge is done upstream by the s3 router; the guard receives a single resolved configuredFloor.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "FloorOutcome",
+            "meaning": "The effective tier after clamping (>= floor for critical roles), whether a clamp was applied, and — when clamped — the reason 'below-core-floor'. Pure transform; the built-in default floor and rankOf comparison stay module-private (boundary.internal)."
+          },
+          "errors": [],
+          "preconditions": [
+            "input.role.criticality is read from sc4 (ReasoningRoleTaxonomy); the guard never redefines which roles are critical.",
+            "input.configuredFloor is already resolved by the s3 router (global vs byRepo[repoPath].coreFloor precedence merged upstream); the guard does no precedence resolution.",
+            "Tier ordering is the sc4 rankOf { cheap:0, mid:1, core:2 } imported from s1, not re-declared here."
+          ],
+          "postconditions": [
+            "For a critical role whose resolvedTier ranks below the effective floor, effectiveTier is raised to the floor, clamped=true, reason='below-core-floor' (ac1).",
+            "When input.configuredFloor is absent, the module-private built-in default minimum is used as the floor (ac2).",
+            "For a peripheral role, resolvedTier passes through unchanged, clamped=false, reason undefined — even when below the critical minimum (ac3).",
+            "A clamp of a critical downgrade is logged via getLogger (no console.log); the log call site is private to the guard."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "FloorInput",
+        "change": "new",
+        "details": "Input shape for the guard, adopted verbatim from the sc2 interfaceSketch. { role: RoleDescriptor (sc4); resolvedTier: 'core'|'mid'|'cheap'; configuredFloor?: 'core'|'mid'|'cheap'|undefined (sc1, absent => built-in default) }. role carries criticality read from sc4; configuredFloor originates from either the global coreFloor or byRepo[repoPath].coreFloor but arrives already merged.",
+        "schemaDiff": "interface FloorInput {\n  role: RoleDescriptor;            // from sc4\n  resolvedTier: 'core' | 'mid' | 'cheap';\n  configuredFloor?: 'core' | 'mid' | 'cheap' | undefined; // from sc1; absent => built-in default\n}",
+        "callSites": [
+          "src/daemon/workflow-rpc.ts:319-344 (prepareWorkflowRun — the per-run resolution the Epic replaces with per-role resolution; the s3 RoleRouter that supersedes this seam constructs FloorInput after a role's tier is resolved)",
+          "src/analyze/context/shaper-provider.ts (buildShaperProvider / byRepo override — the existing role-based split the s3 router generalizes to feed the guard)"
+        ]
+      },
+      {
+        "entity": "FloorOutcome",
+        "change": "new",
+        "details": "Result shape returned by ApplyCoreFloor, adopted verbatim from the sc2 interfaceSketch. { effectiveTier: 'core'|'mid'|'cheap' (>= floor for critical roles); clamped: boolean (true when a critical downgrade was raised); reason?: 'below-core-floor'|undefined }. Minimal surface — no provenance fields added — keeping s3/s6 with nothing to re-adapt (winner a1).",
+        "schemaDiff": "interface FloorOutcome {\n  effectiveTier: 'core' | 'mid' | 'cheap'; // >= floor for critical roles\n  clamped: boolean;                        // true when a critical downgrade was raised\n  reason?: 'below-core-floor' | undefined;\n}",
+        "callSites": [
+          "src/daemon/workflow-rpc.ts:319-344 (via the s3 RoleRouter that consumes FloorOutcome.effectiveTier to pick the TierModel/provider — the guard's sole downstream consumer seam)"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc2",
+        "role": "implements",
+        "howDetails": "s2 is the owner of sc2 (CoreFloorGuard) in the HLD boundary. This Story materialises the ApplyCoreFloor signature plus the FloorInput/FloorOutcome shapes exactly as sketched (winner a1, zero divergence). The built-in default floor value, the rankOf tier-rank comparison arithmetic, the 'which roles count as critical' read, and the clamp-logging stay private (boundary.internal); only the two shapes and the ApplyCoreFloor type are exposed to the s3 router."
+      },
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Consumes the coreFloor semantics of AnalyzeTieringConfig via FloorInput.configuredFloor?: TierName. The guard falls back to its module-private default when absent (ac2). It does not add catalog rows or resolve the global-vs-byRepo precedence — that merge is s3's responsibility at the single router choke point; the guard receives the already-resolved value, keeping precedence enforcement out of s2."
+      },
+      {
+        "contractId": "sc4",
+        "role": "consumes",
+        "howDetails": "Consumes ReasoningRoleTaxonomy: FloorInput.role is a RoleDescriptor, and the guard reads role.criticality internally to decide whether to clamp (critical) or pass through (peripheral, ac3). The tier ordering comparison uses the sc4 rankOf { cheap:0, mid:1, core:2 }. Both criticality and rankOf are imported from s1, never redefined in s2 (honoring the sc2 centralization assumption)."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "input.configuredFloor carries a value outside {core,mid,cheap} — e.g. a typo ('high') propagated from the models.analyze.coreFloor or byRepo[repoPath].coreFloor config key (sc1) that escaped catalog validation upstream.",
+          "detection": "The guard looks the floor up in the sc4 rankOf map (rankOf[configuredFloor]) to compute the floor rank and gets undefined — there is no rank to compare a critical role's resolvedTier against.",
+          "response": "Throw InvalidTierError naming the offending value and that it originated from a coreFloor config key. The guard does NOT fall through to pass-through, because a critical role passing below an uninterpretable floor would silently violate ac1 (the exact failure this Story exists to prevent).",
+          "userImpact": "The run fails fast with an actionable message pointing at the coreFloor config, instead of a critical reasoning role being silently served below the intended minimum capability.",
+          "recoverable": true
+        },
+        {
+          "scenario": "input.resolvedTier is an off-contract value (not 'core'|'mid'|'cheap') — the upstream s3 RoleRouter handed the guard a tier the sc4 taxonomy does not define.",
+          "detection": "rankOf[resolvedTier] returns undefined when the guard tries to rank the resolved tier against the floor for the comparison.",
+          "response": "Throw InvalidTierError; the guard cannot compare an unknown tier against the floor, so it refuses to emit a FloorOutcome rather than guess a rank.",
+          "userImpact": "A router/contract bug surfaces immediately at the guard boundary rather than producing a silently wrong effectiveTier that s3 would then hand to the provider constructor.",
+          "recoverable": false
+        },
+        {
+          "scenario": "input.role.criticality is undefined or an unrecognized value — a malformed sc4 RoleDescriptor (S001 taxonomy contract violation) reaches the guard.",
+          "detection": "Reading role.criticality yields a value that matches neither the critical nor the peripheral branch of the guard's classification, so the clamp/pass-through decision cannot be made from the taxonomy read.",
+          "response": "Fail safe to the accuracy-preserving branch: treat the role as critical and clamp to the effective floor (a safe clamp target exists, unlike the invalid-tier cases), and log the unclassifiable-criticality anomaly via getLogger.",
+          "userImpact": "An unclassifiable role is never silently dropped below the floor; it is conservatively protected and the anomaly is logged for the operator to reconcile the taxonomy.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Critical role; configuredFloor='core'; resolvedTier='core' (resolvedTier exactly equals the floor — boundary equality).",
+          "expected": "effectiveTier='core', clamped=false, reason=undefined — the guard raises only a strict below-floor tier, so an at-floor tier produces no spurious clamp."
+        },
+        {
+          "input": "Critical role; configuredFloor='mid'; resolvedTier='core' (resolvedTier ranks above the floor).",
+          "expected": "effectiveTier='core', clamped=false, reason=undefined — a tier already at or above the floor passes through unchanged."
+        },
+        {
+          "input": "Critical role; configuredFloor=undefined (no minimum configured); resolvedTier='cheap' (below the built-in default, ac2).",
+          "expected": "effectiveTier is raised to the module-private built-in default minimum, clamped=true, reason='below-core-floor' — the default floor applies exactly as a configured floor would."
+        },
+        {
+          "input": "Peripheral (non-critical) role; configuredFloor='core'; resolvedTier='cheap' (below the critical minimum, ac3).",
+          "expected": "effectiveTier='cheap', clamped=false, reason=undefined — the floor never applies to peripheral roles, so a cheaper tier is permitted."
+        },
+        {
+          "input": "Critical role; configuredFloor='cheap' (the lowest tier — a no-op floor); resolvedTier='cheap'.",
+          "expected": "effectiveTier='cheap', clamped=false, reason=undefined — when the floor is the bottom rank, no resolvedTier can rank below it, so a critical role is never clamped."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "A configured minimum capability applies to critical (core) roles and, when none is configured, the module-private built-in default minimum applies; peripheral roles are never floored (ac1/ac2/ac3). This is the guard's whole reason to exist and must hold across every FloorOutcome it returns.",
+          "source": "c1"
+        },
+        {
+          "text": "The global-vs-byRepo[repoPath].coreFloor precedence merge stays OUT of the guard: FloorInput.configuredFloor arrives already resolved by the s3 router, so precedence stays enforced at the single router choke point. Per s1 search.text (config-catalog.ts models.analyze.* + byRepo override) and backFlowNote #3, the guard must not reintroduce precedence resolution.",
+          "source": "c9"
+        },
+        {
+          "text": "The legacy run-wide models.analyze.shaperProvider fallback (default 'ollama', deliberately left unset by the installer) must remain untouched. Per the s1 config.trace bundle, the guard's built-in default floor is a NEW module-private constant that governs only the clamp decision and must not alter the unset-shaperProvider path or the legacy single-provider resolution.",
+          "source": "c9"
+        }
+      ],
+      "hld": {
+        "amendmentProposal": {
+          "amendment": {
+            "type": "sharedContract.methodAdd",
+            "contractId": "sc2",
+            "target": "ApplyCoreFloor",
+            "name": "InvalidTierError",
+            "kind": "error-signal"
+          },
+          "rationale": "The sc4 contract lists errors: [] for ApplyCoreFloor, but two genuine failure paths cannot preserve the ac1 invariant silently: an unrecognized configuredFloor (a coreFloor config typo, sc1) yields no floor rank to clamp against, and an off-contract resolvedTier from the s3 router yields no rank to compare. Accuracy-first (project principle: cost is least priority) requires the guard fail loud with a named InvalidTierError rather than let a critical role pass below an uninterpretable floor. This adds a single error signal to the shared sc2 contract, not a rework — the FloorInput/FloorOutcome shapes and the ApplyCoreFloor signature are unchanged.",
+          "citations": [
+            {
+              "id": "b1",
+              "kind": "analyzeBundle",
+              "ref": "search.text — src/cli/config-catalog.ts:52-62 models.analyze.* + byRepo[repoPath].coreFloor override (the sc1 config origin of configuredFloor that can carry an unvalidated tier value)"
+            }
+          ]
+        }
+      }
+    },
+    "testStrategy": {
+      "testFramework": "node:test (node's built-in test runner, run via `npx tsx --test`), *.test.ts colocated files — the convention test.locate reported in s1 (role-taxonomy.test.ts / repo-shaper-override.test.ts under src/config/__tests__).",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Exercise the pure ApplyCoreFloor guard as a FloorInput -> FloorOutcome transform with no I/O — proving the clamp/pass-through decision for every criticality x tier x floor combination, including the built-in-default and boundary-equality cases. This is the primary (and near-total) coverage level because the guard is boundary.internal pure logic with no provider/DB seam of its own.",
+          "subjects": [
+            "ApplyCoreFloor (src/analyze — net-new colocated *.test.ts beside the guard file, mirroring src/config/__tests__/role-taxonomy.test.ts)",
+            "FloorOutcome shape (effectiveTier / clamped / reason) returned for critical, peripheral, default-floor, and boundary-equality inputs"
+          ],
+          "fixturesNeeded": [
+            "RoleDescriptor stubs: one critical role and one peripheral role (criticality read from the sc4 taxonomy contract; construct minimal literals, do not redefine the taxonomy)",
+            "rankOf { cheap:0, mid:1, core:2 } tier ordering imported from the sc1/sc4 contract (referenced, not re-declared)",
+            "FloorInput factory helper to vary resolvedTier ('core'|'mid'|'cheap') and configuredFloor ('core'|'mid'|'cheap'|undefined)",
+            "A captured/spied getLogger sink to assert the critical-downgrade clamp log fires without console.log"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Cover the guard's fail-loud and fail-safe error paths (s5) that protect the ac1 invariant: an uninterpretable configuredFloor or off-contract resolvedTier must throw InvalidTierError rather than silently pass a critical role below the floor, and a malformed role.criticality must fail safe to a clamp with an anomaly log.",
+          "subjects": [
+            "ApplyCoreFloor InvalidTierError path (unrecognized configuredFloor value, e.g. 'high')",
+            "ApplyCoreFloor InvalidTierError path (off-contract resolvedTier)",
+            "ApplyCoreFloor fail-safe branch (undefined/unrecognized role.criticality -> treat as critical, clamp, log anomaly)"
+          ],
+          "fixturesNeeded": [
+            "Malformed FloorInput literals with out-of-{core,mid,cheap} floor and tier values",
+            "RoleDescriptor stub with undefined/unrecognized criticality",
+            "getLogger spy to assert the unclassifiable-criticality anomaly is logged"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "critical role with resolvedTier ranking strictly below configuredFloor is raised to the floor: effectiveTier=floor, clamped=true, reason='below-core-floor'",
+            "the raised critical downgrade is logged via getLogger (no console.log)",
+            "critical role whose resolvedTier already equals the configuredFloor passes through: effectiveTier unchanged, clamped=false, reason=undefined (strict below-floor only)",
+            "critical role whose resolvedTier ranks above the configuredFloor passes through unchanged, clamped=false",
+            "critical role with configuredFloor='cheap' (bottom-rank no-op floor) is never clamped, clamped=false",
+            "off-contract configuredFloor (e.g. 'high') throws InvalidTierError rather than letting a critical role pass an uninterpretable floor",
+            "off-contract resolvedTier throws InvalidTierError rather than emitting a guessed effectiveTier"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "critical role with configuredFloor undefined and resolvedTier below the built-in default: effectiveTier raised to the module-private default minimum, clamped=true, reason='below-core-floor'",
+            "critical role with configuredFloor undefined and resolvedTier at/above the built-in default passes through unchanged, clamped=false"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "peripheral (non-critical) role with configuredFloor='core' and resolvedTier='cheap' is permitted: effectiveTier='cheap', clamped=false, reason=undefined",
+            "peripheral role with configuredFloor undefined is never floored by the built-in default: resolvedTier passes through, clamped=false"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "No core-floor clamp exists. Per s1 symbol.locate, searches for CoreFloorGuard, ApplyCoreFloor, FloorInput/FloorOutcome, rankOf, coreFloor, and roleTiers returned NO hits in the indexed graph — the guard entry point and its shapes are net-new and unmaterialised. The only indexed grounding is AnalyzeTiering (src/config/analyze.ts:123-125), a flat standalone config interface (class.hierarchy: extendsList/implementsList/subclasses/implementers all empty) carrying coreFloor/tiers/roleTiers. Provider capability is resolved run-wide, not per-role: s1 usage.example confirms buildShaperProvider has ~12 callers across the analyze/workflow pipeline; the run-wide seam prepareWorkflowRun (src/daemon/workflow-rpc.ts:319-344) builds one provider for the whole run with no minimum-capability enforcement — a critical role overridden to a weaker model is served as-configured with nothing raising it. The legacy models.analyze.shaperProvider key (default 'ollama', installer leaves it unset) is the lowest-precedence run-wide fallback (s1 config.trace). The analyze package root (src/analyze, 779 entities) has ZERO top-level re-exports — no barrel — so consumers import by concrete path.",
+      "stateAfter": "A pure, module-private CoreFloorGuard exists in the analyze package as a concrete-path import (no barrel). It exposes exactly the sc2 surface: the ApplyCoreFloor type plus the FloorInput and FloorOutcome shapes (verbatim from the contract sketch). Given a resolved role/tier and an already-merged configuredFloor, ApplyCoreFloor raises a critical role's effectiveTier to at least the floor (clamped=true, reason='below-core-floor'), applies a module-private built-in default minimum when configuredFloor is absent, and passes peripheral roles through unchanged (clamped=false, reason undefined). The built-in default floor value, the rankOf tier-rank comparison, the criticality read, and the clamp log call site stay private to the guard (boundary.internal). The guard resolves no providers and has no wired consumer yet — its sole downstream seam, the s3 RoleRouter feeding FloorOutcome.effectiveTier into provider construction, is out of s2 scope. Run-wide buildShaperProvider resolution and the unset legacy shaperProvider fallback are unchanged.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the new guard file under src/analyze using the module's kebab-case file-naming plurality (imported by concrete path since the package root has no barrel). Declare the two new data shapes verbatim from the sc2 sketch: FloorInput { role: RoleDescriptor; resolvedTier; configuredFloor? } and FloorOutcome { effectiveTier; clamped; reason? }. Additive net-new file with no consumers wired yet.",
+          "rollbackable": true,
+          "prerequisiteFlags": []
+        },
+        {
+          "order": 2,
+          "action": "Import the sc4/sc1 contracts from S001 rather than redefining them: RoleDescriptor and role.criticality from ReasoningRoleTaxonomy, the rankOf { cheap:0, mid:1, core:2 } tier ordering, and the TierName union for configuredFloor. Confirm the exact S001 import path (likely src/config/analyze.ts or a taxonomy sibling under src/config) once S001 is built; do not re-declare criticality or rankOf.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "s1-built"
+          ]
+        },
+        {
+          "order": 3,
+          "action": "Add a module-private built-in default floor constant inside the guard (boundary.internal). Pick the default value at LLD — no existing constant to reuse. It must govern only the clamp decision and must NOT be surfaced beyond the guard nor alter the unset-shaperProvider fallback path.",
+          "rollbackable": true,
+          "prerequisiteFlags": []
+        },
+        {
+          "order": 4,
+          "action": "Implement the ApplyCoreFloor pure transform: for a critical role whose resolvedTier ranks below the effective floor (configuredFloor, or the built-in default when absent), raise effectiveTier to the floor and set clamped=true, reason='below-core-floor' (ac1, ac2); for a peripheral role pass resolvedTier through unchanged with clamped=false, reason undefined even when below the critical minimum (ac3). No precedence resolution here — configuredFloor arrives already merged from s3.",
+          "rollbackable": true,
+          "prerequisiteFlags": []
+        },
+        {
+          "order": 5,
+          "action": "Add a private getLogger('...') call site inside the guard that logs when a critical downgrade is clamped (no console.log). New log call site, private per boundary.internal.",
+          "rollbackable": true,
+          "prerequisiteFlags": []
+        },
+        {
+          "order": 6,
+          "action": "Add a colocated *.test file beside the guard mirroring src/config/__tests__/role-taxonomy.test.ts, covering ac1 (critical below floor raised, clamped=true, reason='below-core-floor'), ac2 (absent configuredFloor => built-in default applies), and ac3 (peripheral below floor permitted, clamped=false).",
+          "rollbackable": true,
+          "prerequisiteFlags": []
+        }
+      ],
+      "backwardCompat": "No existing public API changes — surfaceLevel is internal-shared and every symbol (ApplyCoreFloor, FloorInput, FloorOutcome) is net-new with no current callers; the guard is consumed only by the future s3 RoleRouter, so nothing existing is broken or re-adapted. What must be preserved and is NOT touched by s2: (1) the run-wide buildShaperProvider resolution and its sole caller prepareWorkflowRun (src/daemon/workflow-rpc.ts:319-344) keep working unchanged until s3 supersedes that seam; (2) the legacy models.analyze.shaperProvider fallback (default 'ollama', deliberately left unset by the installer) stays the lowest-precedence path — the guard's built-in default floor is a module-private constant that governs only the clamp decision and must not alter the unset-shaperProvider path; (3) the guard does no global-vs-byRepo[repoPath].coreFloor precedence merge — it receives an already-resolved configuredFloor, keeping precedence enforcement at the single s3 router choke point. The FloorOutcome surface is kept minimal (no provenance fields) so s3/s6 have nothing to re-adapt.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Literal HLD shape — RoleDescriptor-in, pure ApplyCoreFloor",
+        "oneLineSummary": "Adopt the sc2 sketch verbatim: a pure ApplyCoreFloor(FloorInput)->FloorOutcome that takes the full RoleDescriptor and reads criticality itself.",
+        "approach": "The guard is a single exported pure function typed exactly as the HLD sc2 sketch: FloorInput { role: RoleDescriptor (sc4); resolvedTier; configuredFloor? }, FloorOutcome { effectiveTier; clamped; reason? }, type ApplyCoreFloor = (FloorInput) => FloorOutcome. The guard imports RoleDescriptor + rankOf from sc4 and reads role.criticality internally; the built-in default floor constant, the rankOf-based below-floor arithmetic, and the getLogger clamp log all stay module-private (boundary.internal). Colocated *.test.ts mirrors role-taxonomy.test.ts covering ac1/ac2/ac3.",
+        "pros": [
+          "Zero divergence from the HLD-pinned contract — nothing for the router (s3) or attribution (s6) consumers to re-adapt to.",
+          "Guard owns criticality-reading in one place, so 'critical' is decided from sc4 exactly as the boundary.internal note requires.",
+          "Smallest possible exposed surface: only FloorInput/FloorOutcome/ApplyCoreFloor cross the boundary.",
+          "Purity makes ac1/ac2/ac3 trivially unit-testable with no injection scaffolding."
+        ],
+        "cons": [
+          "Hard-couples FloorInput to the full RoleDescriptor shape; a later sc4 field change ripples into the guard's input type even though it only needs criticality.",
+          "Built-in default floor and logger are module constants, so tests can't swap them without touching module internals or spying on getLogger.",
+          "FloorOutcome carries no provenance beyond clamped/reason — s6 attribution must recompute requestedTier vs effectiveTier from its own inputs."
+        ],
+        "costEstimate": "XS"
+      },
+      {
+        "id": "a2",
+        "name": "Criticality-narrowed input — drop RoleDescriptor, pass the bit",
+        "oneLineSummary": "FloorInput carries a plain criticality flag instead of the whole RoleDescriptor, so the guard depends on sc4 only for rankOf.",
+        "approach": "Keep FloorOutcome and the ApplyCoreFloor signature as sketched, but reshape FloorInput to { criticality: Criticality; resolvedTier; configuredFloor? } — the router (s3) extracts criticality from the RoleDescriptor and hands the guard only what it clamps against. The guard imports just rankOf from sc4 (the tier ordering) and never sees RoleDescriptor. Default floor, arithmetic, and clamp logging remain module-private. Tests feed criticality directly, removing any RoleDescriptor construction.",
+        "pros": [
+          "Minimizes the sc4 dependency surface to the single stable rankOf ordering — RoleDescriptor field churn no longer reaches the guard.",
+          "Sharpens the boundary: the guard's job (clamp a tier given whether the role is critical) is expressed exactly by its input, nothing extraneous.",
+          "Unit tests need no RoleDescriptor fixtures — just (criticality, resolvedTier, configuredFloor) tuples, cleanly covering ac1/ac2/ac3."
+        ],
+        "cons": [
+          "Diverges from the HLD sc2 sketch (which passes role: RoleDescriptor) — a contract deviation the LLD must justify and s3/s6 must mirror.",
+          "Moves the criticality read out of the guard into the router, so 'which roles are critical' is now asserted at the call site rather than centralized in the guard.",
+          "Slightly more threading in s3: the router must destructure RoleDescriptor before calling the guard."
+        ],
+        "costEstimate": "XS",
+        "reasonRejected": "Cleanest dependency surface and test ergonomics, but it diverges from the HLD sc2 sketch and relocates the criticality read out of the guard, partially violating sc2's centralization assumption and diffusing the k2 invariant (single source of truth for 'which roles are critical' asserted at the call site rather than in the guard) — enough to rank below a1 and a3."
+      },
+      {
+        "id": "a3",
+        "name": "Provenance-rich FloorOutcome for attribution",
+        "oneLineSummary": "Keep RoleDescriptor-in but widen FloorOutcome with requestedTier + floorSource so s6 attribution and logging read provenance without recomputation.",
+        "approach": "FloorInput stays as the sketch (role: RoleDescriptor). FloorOutcome is extended additively: { effectiveTier; clamped; reason?; requestedTier: 'core'|'mid'|'cheap'; floorSource: 'configured'|'default' }. requestedTier echoes the pre-clamp resolvedTier and floorSource records whether the applied floor came from configuredFloor or the built-in default (ac2). ApplyCoreFloor signature is unchanged in shape. The guard still keeps the default value + arithmetic private; the new fields are pure derivations already computed inside the clamp. Logging reads floorSource for the audit line.",
+        "pros": [
+          "Feeds sc5 per-output attribution (s6 consumer) directly — requestedTier vs effectiveTier and floorSource are available without the consumer re-deriving them.",
+          "The clamp log line (observability nonFunctional) gets a structured floorSource instead of inferring configured-vs-default at the log site.",
+          "Purely additive to FloorOutcome — the HLD's effectiveTier/clamped/reason contract is preserved, downstream reads stay valid."
+        ],
+        "cons": [
+          "Widens the exposed contract beyond the HLD sketch; the extra fields become a maintained surface the router and s6 now couple to.",
+          "Risks leaking boundary.internal detail — floorSource exposes that a default path exists, which the guard is meant to keep private; needs a deliberate LLD call.",
+          "More outcome fields to assert in the ac1/ac2/ac3 tests, marginally enlarging an otherwise trivial guard."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Strongest for the s6 attribution consumer — feeds sc5 per-output provenance without recomputation — but the widened FloorOutcome (requestedTier + floorSource) partially compromises sc2's minimal-surface / boundary.internal assumption (floorSource leaks that a default path exists), so it ranks below the zero-divergence a1."
+      },
+      {
+        "id": "a4",
+        "name": "Guard factory with injected default floor + logger",
+        "oneLineSummary": "Expose createCoreFloorGuard(deps) that returns an ApplyCoreFloor, injecting the built-in default floor and logger instead of module constants.",
+        "approach": "The public type stays ApplyCoreFloor = (FloorInput) => FloorOutcome with FloorInput/FloorOutcome exactly as sketched, but instead of exporting a bare function the guard exports a factory: createCoreFloorGuard({ defaultFloor?: TierName; logger? }) => ApplyCoreFloor. The default floor value and getLogger('...') are resolved once at construction (falling back to the private built-in default when omitted), and the returned closure performs the pure clamp. s3 constructs the guard once per run and threads the resulting ApplyCoreFloor; the built-in default still lives inside the module as the factory's fallback.",
+        "pros": [
+          "Tests can inject a known defaultFloor and a capturing logger to assert ac2 and the critical-downgrade log line deterministically, without spying on module internals.",
+          "Matches the module's existing build*Provider factory idiom (shaper-provider.ts) rather than a bare export, aiding consistency.",
+          "Keeps the clamp itself pure while making the two impure concerns (default source, logging) explicit and swappable."
+        ],
+        "cons": [
+          "Adds a construction seam the HLD didn't call for — s3 must now build the guard and thread the closure, extra mechanical wiring for an S-sized story.",
+          "The injectable defaultFloor risks a caller overriding the built-in minimum, weakening the 'default stays private to s2' guarantee unless the parameter is deliberately internal-only.",
+          "Heavier than a pure function for a guard whose logic is a single rankOf comparison; injection may be over-engineering here."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Best test-injection ergonomics, but adds an un-mandated createCoreFloorGuard construction seam (partial sc2) and an injectable defaultFloor that partially threatens the ac2 and k2 minimum-capability guarantees (a caller could override the built-in minimum unless the seam is locked internal) — the heaviest option for a guard whose logic is one rankOf comparison, so it ranks last."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "step-output",
+      "ref": "s3 judgments + Story acceptance ac1/ac2/ac3 — the core clamp behavior (critical roles floored to the configured-or-default minimum, peripheral roles never floored) that the guard exists to enforce; scored `satisfies` for winner a1 on ac1/ac2/ac3 and k2."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 symbol.locate — AnalyzeTiering resolved to src/config/analyze.ts:123-125 (coreFloor/tiers/roleTiers); CoreFloorGuard/ApplyCoreFloor/FloorInput/FloorOutcome/rankOf net-new, no graph hits."
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1 data-model.trace — class.hierarchy on AnalyzeTiering (entity 73e3480cbc825826f66c310bb5a498b9) is a flat standalone interface (extendsList/implementsList/subclasses/implementers empty); the guard consumes its fields, does not extend it."
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "s1 module.profile — src/analyze (779 entities) has zero top-level re-exports (no barrel); kebab-case file-naming plurality, *.test suffix, camelCase functions / PascalCase types."
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "s1 test.locate — src/config/__tests__/role-taxonomy.test.ts exercises the sc4 ReasoningRoleTaxonomy; the nearest sibling pattern the colocated guard unit tests mirror for ac1/ac2/ac3."
+    },
+    {
+      "id": "c6",
+      "kind": "analyze-bundle",
+      "ref": "s1 usage.example — buildShaperProvider has exactly ONE caller, prepareWorkflowRun (src/daemon/workflow-rpc.ts:319-344), the per-run resolution seam the Epic replaces with per-role resolution via the s3 RoleRouter that consumes FloorOutcome.effectiveTier."
+    },
+    {
+      "id": "c7",
+      "kind": "analyze-bundle",
+      "ref": "s1 module.profile — shaper-provider.ts buildShaperProvider (183-241) / buildSummariserProvider (256-269) role split + byRepo[repoPath].shaperProvider override (line 65); CliProvider (src/agent/providers/cli-provider.ts:88-345) already accepts a model option."
+    },
+    {
+      "id": "c8",
+      "kind": "step-output",
+      "ref": "s5 amendmentProposal — sharedContract.methodAdd of InvalidTierError to sc2 ApplyCoreFloor (sc4 lists errors:[]); fail-loud on unrecognized configuredFloor / off-contract resolvedTier to preserve the ac1 invariant."
+    },
+    {
+      "id": "c9",
+      "kind": "analyze-bundle",
+      "ref": "s1 search.text + config.trace — src/cli/config-catalog.ts:52-62 models.analyze.* + byRepo[repoPath].coreFloor override (precedence merge stays in s3, per repo-shaper-override.test.ts:34-82) and the legacy models.analyze.shaperProvider fallback (default 'ollama', installer leaves unset) the guard must not disturb."
+    }
+  ]
+}

@@ -118,7 +118,7 @@ Two files under `~/.insrc/`:
 ```
 
 **Provider-selection rules (one decision, applied consistently):**
-- **Explicit `shaperProvider` set** → that provider is used for all reasoning.
+- **Explicit `shaperProvider` set** → legacy fallback: that provider serves any role without an explicit tier. The daemon now routes a model **per operation** through capability tiers (core/mid/cheap) — see [Model tiering](daemon.md#model-tiering). The installer preconfigures the tiers for your chosen CLI (Claude → `opus`/`sonnet`; Codex → `gpt-5.5`; cheap stays local).
 - **Not set** → reasoning follows the invoking coding agent (Claude Code →
   claude, Codex → codex); Ollama is the fallback for standalone use.
 - Regardless of the above, **Ollama is always used for embeddings + the

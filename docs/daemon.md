@@ -333,16 +333,84 @@ Key knobs:
 | `models.providers.local.embeddingModel` | Embedding model for the entity vector store | `qwen3-embedding:0.6b` |
 | `models.providers.local.embeddingDim` | Vector dimensionality (pins the Lance schema — changing this requires a full reindex) | `1024` |
 | `models.providers.local.coreModel` | Used by the indexer's embedder for structural summaries | `qwen3-coder:latest` |
-| `models.analyze.shaperProvider` | Where inner narrow-LLM calls route: `ollama` \| `cli-claude` \| `cli-codex` | `ollama` |
-| `models.analyze.shaperModel` | Ollama model used when `shaperProvider = ollama` | `qwen3.6:35b-a3b` |
+| `models.analyze.shaperProvider` | **Legacy** run-wide backend, now the lowest-precedence fallback beneath the tiers (see [Model tiering](#model-tiering)): `ollama` \| `cli-claude` \| `cli-codex` | *(unset → built-in tier defaults)* |
+| `models.analyze.shaperModel` | Ollama model used when the legacy `shaperProvider = ollama` fallback is in effect | `qwen3.6:35b-a3b` |
 | `models.analyze.shaper.structuredOutputRetries` | Attempts for ajv-guided retry when the LLM emits malformed JSON | `3` |
 | `models.analyze.shaper.maxToolTurns` | Cap on freeform.probe's tool-loop turns | `8` |
 
-Change `shaperProvider` to `cli-claude` or `cli-codex` if you'd
-rather use your CLI OAuth session for the narrow-LLM calls
-instead of a local Ollama model. That path uses `CliProvider`,
-which spawns a `claude --print` / `codex exec` subprocess per
-LLM call.
+`shaperProvider` is the old "one backend for all reasoning" knob. It
+still works — it becomes the second-lowest precedence layer — but the
+daemon now routes **per operation** through capability tiers instead
+(below). Leave it unset unless you want to force a single backend for
+every role that has no explicit tier.
+
+### Model tiering
+
+Not every operation needs the strongest model. Design, review, build,
+and validation are **accuracy-critical** and should run on a high-end
+model; synthesis and grounding are fine on a mid model; classification,
+narrow probes, tracker rendering, and summaries can run on a cheap local
+model. The daemon resolves a **model per reasoning role** through a single
+`RoleRouter` choke point — no operation bypasses it, so cloud access is
+always via the `claude`/`codex` CLI subprocess (never a direct REST call).
+
+**Three tiers.** Each maps a `runner` (`ollama` \| `cli-claude` \|
+`cli-codex` — no REST target) to a `model`:
+
+| Tier | Built-in default | Serves |
+| :--- | :--- | :--- |
+| `core` (high) | `cli-claude` / `opus` | design, review, build, validate, define — the critical roles |
+| `mid` | `cli-claude` / `sonnet` | synthesis, grounding/context assembly, HLD framework/rollout |
+| `cheap` | `ollama` / `qwen3.6:35b-a3b` | classification, narrow probes, tracker rendering, summaries |
+
+These built-in defaults apply out of the box — with **no** tiering config,
+critical roles already resolve to `opus`, mid to `sonnet`, and peripheral
+to the local model. The installer preconfigures `models.analyze.tiers` for
+your chosen CLI (Claude → `opus`/`sonnet`; Codex → `gpt-5.5`); `cheap`
+stays local either way.
+
+**Config shape** (all additive to `models.analyze.*`; every key optional):
+
+```json
+"analyze": {
+  "coreFloor": "core",
+  "tiers": {
+    "core":  { "runner": "cli-claude", "model": "opus" },
+    "mid":   { "runner": "cli-claude", "model": "sonnet" },
+    "cheap": { "runner": "ollama",     "model": "qwen3.6:35b-a3b" }
+  },
+  "roleTiers": { "analyze.synthesize": "cheap" },
+  "byRepo": {
+    "/abs/path/to/repo": { "roleTiers": { "review": "core" }, "coreFloor": "core" }
+  }
+}
+```
+
+- `tiers.<core|mid|cheap>.{runner,model}` — the model backing each tier.
+- `roleTiers.<roleId>` — pin a specific role to a tier, overriding its
+  taxonomy default (e.g. run `analyze.synthesize` on `cheap`).
+- `coreFloor` — the minimum tier for **critical** roles (default `mid`
+  when unset). A critical role assigned below the floor is clamped **up**
+  to it (peripheral roles are never clamped — they may run cheaper).
+- `byRepo.<absPath>.*` — the same knobs scoped to one repo; they win over
+  the global values for that repo only.
+
+**Resolution precedence** (the router applies this at one place):
+
+1. **Tier for the role**: `byRepo.roleTiers[role]` → `roleTiers[role]` →
+   the role's taxonomy `defaultTier`.
+2. **coreFloor clamp**: if the role is critical and its tier ranks below
+   the effective `coreFloor` (`byRepo.coreFloor` → global `coreFloor` →
+   built-in `mid`), raise it to the floor and log the clamp
+   (`reason: below-core-floor`).
+3. **Model for that tier**: `byRepo.tiers[tier]` → global `tiers[tier]` →
+   an explicit legacy `shaperProvider`/`shaperModel` → the built-in
+   `DEFAULT_TIERS[tier]`.
+
+Every resolved `runner` is one of `ollama` \| `cli-claude` \| `cli-codex`;
+there is no path to a direct cloud REST provider at any tier. Each
+workflow artifact records which model actually served each step — see
+*Per-output model attribution* in [workflow.md](workflow.md).
 
 ### Environment overrides
 

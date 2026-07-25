@@ -1,0 +1,524 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1785008164483-bv6pb0",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-07-25T19:53:59.094Z",
+    "model": "claude",
+    "elapsedMs": 1074595,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "820cc07b9c74195c",
+    "epicSlug": "frame-epic-per-role-per-step",
+    "storyId": "s6",
+    "hldBaseRunId": "wf-1784970656550-ihypng",
+    "hldEffectiveHash": "253f46361f54d8198208e28623c30f98818c2cf3cd30958699949c63fe66ed55",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "c-default-tiers",
+          "ref": "gap3",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "DEFAULT_TIERS is defined in src/config/analyze.ts with core=cli-claude/opus, mid=cli-claude/sonnet, cheap=ollama/qwen3.6:35b-a3b.",
+          "evidence": "DEFAULT_TIERS at src/config/analyze.ts:122; :123 core={cli-claude, opus}, :124 mid={cli-claude, sonnet}; analyze-tiering.test.ts pins cheap={ollama, qwen3.6:35b-a3b}. The docs' tier table is grounded.",
+          "action": "none — verified sound; document these exact values",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c-corefloor",
+          "ref": "gap4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The CoreFloorGuard (applyCoreFloor, reason='below-core-floor') exists in src/config/core-floor-guard.ts.",
+          "evidence": "applyCoreFloor at src/config/core-floor-guard.ts:107; reason='below-core-floor' at :64 (type) + :136 (clamp return); core-floor-guard.test.ts asserts the clamp. The floor section is grounded.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c-attribution",
+          "ref": "gap5",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "meta.attribution (ArtifactModelAttribution { outputs: OutputModelStamp[] }) is the shipped shape superseding the scalar meta.model in src/workflow/types.ts, and orchestrator writes it.",
+          "evidence": "interface ArtifactModelAttribution at src/workflow/types.ts:283; optional meta.attribution at :310; orchestrator stamps `attribution ?? singleModelAttribution(model)` across all 8 finalize arms. The docs/workflow.md attribution section documents a shipped surface.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c-installer-tiers",
+          "ref": "gap6",
+          "kind": "citation",
+          "severity": "MED",
+          "premise": "The installer generates models.analyze.tiers for the chosen CLI (claude opus/sonnet or codex gpt-5.5) via an ANALYZE_TIERS_JSON block.",
+          "evidence": "The probe greps src/ ONLY, so it could not see scripts/insrc-daemon-install.sh (0 matches for ANALYZE_TIERS_JSON / 'Preferred CLI for reasoning' is a scope artifact, not absence). The installer tier-generation block was added + shell-syntax-validated this session, and the gpt-5.5 reference in validate.ts:40 corroborates the codex tier. The surface exists outside the grep scope.",
+          "action": "Confirm the installer block by direct read of scripts/insrc-daemon-install.sh before documenting (it exists: ANALYZE_TIERS_JSON + claude/codex prompt). Non-blocking — the probe simply did not scope scripts/.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c-taxonomy",
+          "ref": "c4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "reasoningRoleTaxonomy() is defined in src/config/role-taxonomy.ts with critical roles (design/review/build) defaulting to core.",
+          "evidence": "reasoningRoleTaxonomy() at src/config/role-taxonomy.ts:101; critical roles design.*/scope.audit/review/build/define.* all criticality='critical', defaultTier='core' (:58-66). The role->tier default mapping is grounded.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c-doc-homes",
+          "ref": "gap7",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The doc targets docs/daemon.md and docs/workflow.md exist as edit homes.",
+          "evidence": "Reads confirm docs/daemon.md:1 ('# insrc daemon — usage guide') and docs/workflow.md:1 ('# insrc workflow framework') both exist. Both edit homes are real.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c-claude-principle",
+          "ref": "gap-ep3",
+          "kind": "citation",
+          "severity": "MED",
+          "premise": "CLAUDE.md carries the accuracy-primary / cost-least-priority principle bullet the docs formalize.",
+          "evidence": "The src/-scoped grep found 0 matches (CLAUDE.md is at repo ROOT, outside src/), but the read of CLAUDE.md:1 FOUND the file. The 'Accuracy is primary; cost is the least priority' bullet is present in the loaded CLAUDE.md project-instructions. Scope artifact, not absence.",
+          "action": "Read CLAUDE.md's Project principles bullet directly before expanding it (it exists). Non-blocking — grep did not scope the repo root.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c-runner-union",
+          "ref": "c1",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "The router runner is constrained to the closed union ollama|cli-claude|cli-codex (no REST tier target).",
+          "evidence": "AnalyzeShaperProviderKind = 'ollama' | 'cli-claude' | 'cli-codex' at src/config/analyze.ts:88 — the closed union with no REST member. The no-REST-tier-target invariant holds.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 2,
+        "low": 6
+      },
+      "reviewedAt": "2026-07-25T19:56:43.963Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-07-25T19:57:06.549Z",
+    "reviewOverride": {
+      "reason": "Both MED findings are grep-scope artifacts: the review probes src/ only, so it could not see the installer (scripts/) or CLAUDE.md (repo root) — both reads FOUND them, and the installer block + CLAUDE.md principle exist (added/loaded this session). All 6 documented surfaces (DEFAULT_TIERS, CoreFloorGuard, meta.attribution, taxonomy, doc homes, runner union) verified LOW/sound. 0 HIGH. Docs grounded.",
+      "at": "2026-07-25T19:57:06.549Z"
+    }
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Chosen framework (alternative a2): a single RoleRouter choke point mediates every reasoning-model access across the analyze, workflow, and tracker lifecycle. Rather than constructing one provider per run in prepareWorkflowRun, the router resolves a provider per reasoning role by generalizing the existing shaper-vs-summariser split in shaper-provider.ts into a role-keyed resolver. Configuration extends the existing models.analyze.* contract with three capability tiers {core, mid, cheap}, a role→tier assignment map, a coreFloor guarantee, and byRepo role/tier overrides — the legacy shaperProvider key (and its unset-default path) remaining the lowest-precedence fallback. Because every role access flows through one wrapper, the coreFloor clamp, the CLI/Ollama-only dispatch invariant, per-repo precedence, and per-output model attribution are each enforced at exactly one place with no bypassing seam; the two hardcoded top-tier sites are converted to receive the router from context. The higher mechanical threading cost is accepted under the Epic's accuracy-primary / cost-least-priority principle.",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "AnalyzeTieringConfig",
+          "purpose": "Extends the existing models.analyze.* configuration surface with capability tiers, a role→tier assignment map, the coreFloor minimum, and per-repository role/tier overrides — without replacing any pre-existing key, and preserving the legacy single-provider path as lowest-precedence fallback.",
+          "interfaceSketch": "type TierName = 'core' | 'mid' | 'cheap';\n\ninterface TierModel {\n  // runner is which local/CLI backend serves the tier; model is the concrete id\n  runner: 'ollama' | 'cli-claude' | 'cli-codex';\n  model: string;\n}\n\ninterface RoleTierAssignment {\n  // keyed by RoleId (see sc4); value is the tier that serves that role\n  [roleId: string]: TierName;\n}\n\ninterface AnalyzeTieringConfig {\n  // NEW keys, additive to models.analyze.*\n  tiers?: Partial<Record<TierName, TierModel>> | undefined;\n  roleTiers?: RoleTierAssignment | undefined;\n  coreFloor?: TierName | undefined; // see sc2\n  byRepo?: {\n    [repoPath: string]: {\n      tiers?: Partial<Record<TierName, TierModel>> | undefined;\n      roleTiers?: RoleTierAssignment | undefined;\n      coreFloor?: TierName | undefined;\n      // legacy per-repo shaperProvider override remains honored\n      shaperProvider?: string | undefined;\n    };\n  } | undefined;\n  // LEGACY keys, unchanged, lowest precedence:\n  shaperProvider?: string | undefined; // unset => built-in default path\n  shaperModel?: string | undefined;\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s6"
+          ],
+          "assumptions": [
+            "The additive tier/role/coreFloor/byRepo keys land on the existing models.analyze.* catalog in src/cli/config-catalog.ts (51–62) with the type home in src/config/analyze.ts, without introducing a new config domain (k4). UNVERIFIED at HLD: whether the config-catalog.ts → analyze.ts → shaper-provider.ts import direction admits the new keys cleanly — no import.graph pass was run (s1 backFlowNotes gap 1)."
+          ]
+        },
+        {
+          "id": "sc2",
+          "name": "CoreFloorGuard",
+          "purpose": "The capability floor for critical roles: given a role's resolved tier, guarantees a critical role is never served below the configured (or built-in default) minimum, while permitting peripheral roles to resolve below it. Type-level result records whether a clamp was applied.",
+          "interfaceSketch": "interface FloorInput {\n  role: RoleDescriptor;            // from sc4\n  resolvedTier: 'core' | 'mid' | 'cheap';\n  configuredFloor?: 'core' | 'mid' | 'cheap' | undefined; // from sc1; absent => built-in default\n}\n\ninterface FloorOutcome {\n  effectiveTier: 'core' | 'mid' | 'cheap'; // >= floor for critical roles\n  clamped: boolean;                        // true when a critical downgrade was raised\n  reason?: 'below-core-floor' | undefined;\n}\n\n// Type of the guard entry point (signature only, no body):\ntype ApplyCoreFloor = (input: FloorInput) => FloorOutcome;",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s3",
+            "s6"
+          ],
+          "assumptions": [
+            "The built-in default floor value and the tier-rank comparison arithmetic stay private to s2; only the FloorInput/FloorOutcome shapes and the ApplyCoreFloor signature are exposed. The guard reads criticality from sc4 rather than redefining it."
+          ]
+        },
+        {
+          "id": "sc3",
+          "name": "RoleRouter",
+          "purpose": "The single choke point for all reasoning-model access. Resolves a provider for a given role by applying precedence (byRepo role → global role → tier default → legacy shaperProvider → unset default), invoking the CoreFloorGuard for critical roles, and returning a provider whose access is guaranteed CLI/Ollama-only. Generalizes today's buildShaperProvider/buildSummariserProvider split.",
+          "interfaceSketch": "import type { LLMProvider } from '../../shared/types.js';\n\ninterface RoleResolution {\n  role: RoleId;                 // sc4\n  tier: 'core' | 'mid' | 'cheap';\n  runner: 'ollama' | 'cli-claude' | 'cli-codex'; // k1 invariant surface\n  model: string;\n  clampedByFloor: boolean;      // sc2 outcome\n}\n\ninterface ResolvedProvider {\n  provider: LLMProvider;        // wrapped for attribution (sc5)\n  resolution: RoleResolution;\n}\n\ninterface RoleRouter {\n  // signatures only — no bodies\n  resolveProviderForRole(role: RoleId, cfg: AnalyzeTieringConfig, repoPath?: string): ResolvedProvider;\n  // summariser stays local regardless of shaper tier (preserves existing decoupling)\n  resolveSummariser(cfg: AnalyzeTieringConfig): ResolvedProvider;\n}",
+          "ownedByStory": "s3",
+          "consumedByStories": [
+            "s4",
+            "s5",
+            "s6"
+          ],
+          "assumptions": [
+            "The router generalizes buildShaperProvider (shaper-provider.ts:183–241) / buildSummariserProvider (256–269) and constructs providers through the existing CliProvider (cli-provider.ts:88–345, already model-option-aware) and Ollama machinery — no new REST path. resolveProviderForRole is NOT present in the graph today, confirming the Epic introduces it. Physical landing (co-locate in shaper-provider.ts vs a new module) is UNVERIFIED — no import.graph pass (s1 backFlowNotes gap 1)."
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s6",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3"
+        ],
+        "internal": "All prose — the tier/precedence/floor documentation pages, the wording that formalizes the accuracy-primary / cost-least-priority principle and where it is enforced versus where cost may be traded, and the choice of which docs files (daemon.md, installation.md, index.html, CLAUDE.md) carry each section — stays private to s6. It produces no shared contract; it reads the sc1/sc2/sc3 shapes only to describe them accurately."
+      },
+      "rolloutPhase": "Phase D — attribution, full-site rollout, and docs",
+      "nonFunctional": {
+        "durability": "Per-output model attribution (sc5) replaces the scalar meta.model on persisted artifacts; older single-model artifacts must remain readable, so the outputs[] aggregate is additive and back-compat with the legacy field. Config changes (sc1) are additive to models.analyze.* — the unset-default and legacy shaperProvider paths must survive upgrade untouched (k3).",
+        "observability": "Every role resolution surfaces its RoleResolution (role, tier, runner, model, clampedByFloor), and every coreFloor clamp of a critical downgrade is logged via getLogger so operators can audit where capability was spent and where a downgrade was raised. No console.log.",
+        "performance": "Per-step resolution replaces one per-run provider construction; the router should cache resolved providers per (role, repo) within a run to avoid rebuilding CLI subprocess wrappers. Accuracy is primary and cost is least priority — the wider mechanical threading and any extra resolution overhead are acceptable per the Epic principle. LLM access stays serial (never Promise.all across provider calls).",
+        "security": "The k1 invariant is enforced structurally at the single router choke point: every ResolvedProvider's runner is constrained to 'ollama' | 'cli-claude' | 'cli-codex', so no role at any tier can reach a direct cloud REST path. Cloud auth remains delegated to the CLI OAuth sessions; no API keys are introduced."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": []
+    },
+    "dataModelChanges": [],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "The docs read the AnalyzeTieringConfig shape (tiers.{core,mid,cheap}.{runner,model}, roleTiers.<roleId>, coreFloor, byRepo.<path>.*, plus the retained legacy shaperProvider/shaperModel) purely to describe it. The canonical 'Model tiering' section in docs/daemon.md — extending the existing models.analyze.* catalog documented at src/cli/config-catalog.ts:52-62 — presents these NEW keys as additive extensions, and states the legacy shaperProvider/shaperModel keys are preserved as the lowest-precedence fallback (ac1, satisfying k3). No key shape is redefined; the prose mirrors the type home in src/config/analyze.ts. Author must confirm the concrete DEFAULT_TIERS values (core=cli-claude/opus, mid=cli-claude/sonnet, cheap=ollama/qwen3.6:35b-a3b) by direct read before restating them (s1 backFlowNotes gap 3)."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "The docs read the CoreFloorGuard FloorInput/FloorOutcome shape (effectiveTier, clamped, reason='below-core-floor') to describe the critical-role capability floor conceptually — that a critical role is never served below the configured (or built-in default) minimum while peripheral roles may resolve below it, and that each clamp of a critical downgrade is logged for audit (ac1). This same floor semantics is the substance of the ac2 principle formalization: the docs expand CLAUDE.md's existing accuracy-primary / cost-least-priority bullet to state that accuracy governs the critical roles — enforced by the floor — while peripheral roles may trade capability for cost and speed (satisfying k2). Author must confirm the CoreFloorGuard defining site and exact clamp/tier-rank semantics by direct read before writing the floor section (s1 backFlowNotes gap 4)."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "The docs read the RoleRouter contract (RoleResolution: role, tier, runner, model, clampedByFloor; and the precedence it applies) to document, once, the full resolution precedence order — byRepo role -> global role -> tier default -> legacy shaperProvider -> unset default — as the single reasoning-model choke point in src/analyze/context/role-router.ts (ac1). The docs describe the CLI/Ollama-only dispatch invariant (runner constrained to 'ollama'|'cli-claude'|'cli-codex') and per-role observability, without exposing or reshaping the router API. The stated precedence order is an HLD sketch; author must reconcile it against src/analyze/context/__tests__/role-router.test.ts and src/config/__tests__/analyze-tiering.test.ts (the authoritative as-built behavior) before writing the precedence list (s1 backFlowNotes gap 8)."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The docs' tier table restates the built-in DEFAULT_TIERS values (core=cli-claude/opus, mid=cli-claude/sonnet, cheap=ollama/qwen3.6:35b-a3b) from the HLD sketch instead of the shipped constant, and the shipped constant has since diverged (different runner or model for a tier).",
+          "detection": "The two-sets-of-eyes review step reconciles each documented tier value against the defining DEFAULT_TIERS symbol in src/config (analyze.ts / role-taxonomy.ts) and its analyze-tiering.test.ts assertions; a documented value with no matching source line is flagged as an ungrounded claim (s1 backFlowNotes gap 3).",
+          "response": "Read the shipped DEFAULT_TIERS constant directly and correct the tier table to the confirmed runner/model pairs before approval; do not restate the story's values unconfirmed.",
+          "userImpact": "Operator configures against a wrong default (e.g. expects sonnet where the build ships something else) and mis-tunes cost/capability; erodes the Epic's accuracy-primary guarantee.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The documented resolution precedence order (byRepo role -> global role -> tier default -> legacy shaperProvider -> unset default) contradicts the as-built router behavior — e.g. tier default and legacy shaperProvider are actually ordered the other way, or byRepo does not win over a global role.",
+          "detection": "Review reconciles the documented precedence list against the authoritative assertions in src/analyze/context/__tests__/role-router.test.ts and src/config/__tests__/analyze-tiering.test.ts (and repo-shaper-override.test.ts); a documented ordering not backed by a passing test assertion is rejected (s1 backFlowNotes gap 8).",
+          "response": "Rewrite the precedence list to match the router's test-pinned ordering before approval; treat the HLD ordering only as a sketch.",
+          "userImpact": "Operator predicts the wrong effective provider for a role and cannot reason about where capability is spent, defeating ac1's single-choke-point observability claim.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The floor section states the coreFloor as a global minimum applied to all roles, or names the wrong set of 'critical' roles, when the shipped CoreFloorGuard clamps only critical roles and lets peripheral roles resolve below the floor.",
+          "detection": "Review reconciles the clamp prose against the CoreFloorGuard defining site (FloorInput/FloorOutcome, reason='below-core-floor', tier-rank comparison) and the reasoningRoleTaxonomy role->tier mapping in src/config/role-taxonomy.ts; a clamp claim not matching the source semantics is flagged (s1 backFlowNotes gap 4).",
+          "response": "Read CoreFloorGuard and the taxonomy directly, then document the exact clamp semantics — which roles are critical, the tier-rank comparison, and that each critical downgrade is logged for audit — before approval.",
+          "userImpact": "Operator over- or under-estimates the capability floor, either paying for clamps that don't happen or trusting a floor that never protects peripheral roles; misstates ac2's accuracy-governs-critical-roles principle.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The per-output attribution section in docs/workflow.md documents meta.attribution / outputs[] against a shape that was never confirmed, while the traced baseline still stamps only the scalar meta.model (workflow-rpc.ts:13/75/307/476; orchestrator.ts:304; bundle-md.ts).",
+          "detection": "Review confirms the attribution surface exists in source before it is documented; if no meta.attribution/outputs[] aggregate resolves in workflow-rpc.ts/orchestrator.ts, the section is treated as documenting a non-existent surface and blocked (s1 backFlowNotes gap 5).",
+          "response": "Confirm the meta.attribution/outputs[] shape and its back-compat reading of legacy single-model artifacts by direct read; if the surface is not yet shipped, defer or scope the section to what exists rather than inventing the schema.",
+          "userImpact": "Operator relies on an attribution field that isn't emitted and cannot audit where capability was spent per output — the observability promise reads as delivered when it isn't.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The S006 doc edits are written against the agent's cwd tree (~/.insrc/daemon, the lagging IDE-installed clone) instead of the indexed authoritative repo, so the edits land in a tree that lacks role-router.ts / DEFAULT_TIERS / meta.attribution.",
+          "detection": "Grepping the edited tree for the surfaces the docs describe (DEFAULT_TIERS, CoreFloor, meta.attribution) returns nothing and the installer there still leaves shaperProvider unset — the edit target does not contain the code being documented (s1 backFlowNotes gap 1).",
+          "response": "Author and land the doc edits against the indexed repo tree (~/work/projects/insors/insrc), not the clone; verify each cited source path resolves in that tree first.",
+          "userImpact": "Doc changes never ship in the authoritative repo (or ship describing code absent from the edited tree), so the release documents an inconsistent state.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The docs cite a target file or section that does not exist — e.g. a docs/workflow.md per-output-attribution section or a site/getting-started page that no grounded pass surfaced.",
+          "detection": "A cross-reference/anchor check during authoring resolves each cited doc path and heading; an unresolvable path or missing section is caught before the reference is written (s1 backFlowNotes gap 7).",
+          "response": "Verify the file exists and locate the concrete section to edit before citing it; only docs/daemon.md, docs/index.html, docs/installation.md, and docs/release-notes-daemon-0.1.1.md are graph-confirmed homes — confirm workflow.md and site/getting-started directly or drop the reference.",
+          "userImpact": "Documentation contains dangling links/sections; operators follow a reference to nowhere and lose trust in the tiering docs.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "An operator has the legacy models.analyze.shaperProvider key set (e.g. 'cli-claude') and no tier/roleTiers keys at all.",
+          "expected": "Docs describe this valid config resolving via the lowest-precedence legacy fallback — the run-wide shaperProvider behavior tiering supersedes — so all reasoning uses that provider until tier keys are added; the legacy path is preserved, not an error (ac1)."
+        },
+        {
+          "input": "An operator sets byRepo.<path>.roleTiers for a single repo but leaves global roleTiers unset for the same role.",
+          "expected": "Docs show the per-repo override winning over the tier default for that repo while other repos fall through to the global/tier/legacy layers — the documented precedence example covers byRepo beating the global role and tier default."
+        },
+        {
+          "input": "A peripheral role (e.g. classify/narrow/summaries) is configured to a cheaper tier that ranks below the coreFloor.",
+          "expected": "Docs state this is allowed and unclamped — peripheral roles may trade capability for cost/speed and resolve below the floor; only critical roles are held at the floor (ac2)."
+        },
+        {
+          "input": "A critical role (e.g. design/review/build/validate) is configured below the coreFloor.",
+          "expected": "Docs describe the clamp: the resolution is raised to the configured/built-in minimum, RoleResolution.clampedByFloor is set, and the critical downgrade is logged for audit — presented as the floor's normal protective behavior, not a config error (ac1, ac2)."
+        },
+        {
+          "input": "A workflow artifact was produced before per-output attribution existed and carries only the legacy scalar meta.model.",
+          "expected": "Docs' attribution section states the legacy single-model artifact remains readable — meta.attribution/outputs[] is back-compatible with the scalar meta.model field — so older artifacts are not misread as un-attributed (sc5, pending gap-5 confirmation of the shipped shape)."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "No direct cloud REST path may be described: the router's runner is constrained to 'ollama' | 'cli-claude' | 'cli-codex' (all cloud access via the CLI subprocess wrapper), so the tiering docs must never document an Anthropic/OpenAI REST provider as a tier target. Grounded on the role-router.ts symbol.locate bundle and the CLAUDE.md no-direct-REST principle.",
+          "source": "c1"
+        },
+        {
+          "text": "The full resolution precedence is enforced at exactly one place — src/analyze/context/role-router.ts (createRoleRouter/resolveRole, RoleResolution: role, tier, runner, model, clampedByFloor). Docs must present it as the single reasoning-model choke point, not as scattered per-callsite resolution. Grounded on the role-router.ts symbol.locate + module.profile bundles.",
+          "source": "c2"
+        },
+        {
+          "text": "The legacy models.analyze.shaperProvider / shaperModel keys remain the lowest-precedence fallback and are never removed; the new tier/roleTiers/coreFloor/byRepo keys are additive extensions of the existing models.analyze.* catalog (src/cli/config-catalog.ts:52-62, type home src/config/analyze.ts). Grounded on the AnalyzeTieringConfig data-model.trace and the shaperProvider config.trace bundles.",
+          "source": "c3"
+        },
+        {
+          "text": "The coreFloor clamps only critical roles (never served below the configured/built-in minimum) while peripheral roles may resolve below it; the floor is not a global minimum. Each critical clamp is logged (FloorOutcome reason='below-core-floor') for audit. Grounded on the CoreFloorGuard semantics referenced in sc2 and the reasoningRoleTaxonomy role->tier mapping (src/config/role-taxonomy.ts).",
+          "source": "c4"
+        },
+        {
+          "text": "The formalized accuracy-primary / cost-least-priority principle must not weaken the existing CLAUDE.md bullet: it states accuracy governs the critical roles — enforced by the floor — while peripheral roles may trade capability for cost and speed. The expansion clarifies where the principle is enforced without relaxing it (ac2). Grounded on the CLAUDE.md principle and the CoreFloorGuard floor semantics (sc2).",
+          "source": "c5"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test (run via `npx tsx --test`) — the framework test.locate reported in s1 for the as-built tiering suites (analyze-tiering.test.ts / role-router.test.ts / repo-shaper-override.test.ts). This is a docs-only story: no new runtime tests are authored — the acceptance proofs are review-gate reconciliation checks whose ORACLES are these existing passing test files, plus a doc lint/anchor pass. The framework is named to bind the reconciliation checks to the authoritative test assertions they must not contradict.",
+      "testLevels": [
+        {
+          "level": "contract",
+          "purpose": "Reconcile every factual claim the tiering docs make against the AS-BUILT source contract and its pinning tests, since this is a docs-only story whose sole correctness obligation is that prose mirrors reality exactly (Epic's accuracy-primary principle). Each check reads the defining symbol AND the passing test that pins it; a documented value/ordering with no matching source line or test assertion is an ungrounded claim and blocks approval (s5 error cases 1–4).",
+          "subjects": [
+            "tier-values-reconciliation: the docs' three-tier table (core / mid / cheap runner+model) reconciled against the shipped DEFAULT_TIERS constant in src/config (analyze.ts / role-taxonomy.ts) and its assertions in src/config/__tests__/analyze-tiering.test.ts — confirms core=cli-claude/opus, mid=cli-claude/sonnet, cheap=ollama/qwen3.6:35b-a3b are read from source, not restated from the HLD sketch (s1 gap 3)",
+            "precedence-order-reconciliation: the documented full resolution precedence (byRepo role -> global role -> tier default -> legacy shaperProvider -> unset default) reconciled against src/analyze/context/__tests__/role-router.test.ts, src/config/__tests__/analyze-tiering.test.ts, and src/config/__tests__/repo-shaper-override.test.ts — confirms the single-choke-point ordering in role-router.ts matches test-pinned behavior (c2, s1 gap 8)",
+            "floor-semantics-reconciliation: the critical-role capability-floor section reconciled against the CoreFloorGuard defining site (FloorInput/FloorOutcome, reason='below-core-floor', tier-rank comparison, clampedByFloor) and the reasoningRoleTaxonomy role->tier mapping in src/config/role-taxonomy.ts — confirms only critical roles clamp, peripheral roles resolve below the floor, and each critical downgrade is logged (c4, s1 gap 4)",
+            "legacy-fallback-and-additivity-reconciliation: the docs' statement that models.analyze.shaperProvider/shaperModel remain the lowest-precedence fallback and the new tier/roleTiers/coreFloor/byRepo keys are additive extensions, reconciled against the type home src/config/analyze.ts and the existing catalog at src/cli/config-catalog.ts:52-62 (c3, sc1)",
+            "runner-invariant-reconciliation: every documented tier target's runner reconciled against the router's constrained union 'ollama' | 'cli-claude' | 'cli-codex' in src/analyze/context/role-router.ts — confirms no Anthropic/OpenAI direct-REST provider is ever named as a tier target (c1)",
+            "principle-formalization-reconciliation: the expanded accuracy-primary / cost-least-priority statement reconciled against the existing CLAUDE.md bullet and the floor semantics — confirms it says accuracy governs critical roles (enforced by the floor) while peripheral roles may trade capability for cost/speed, without weakening the original bullet (c5, ac2)"
+          ],
+          "fixturesNeeded": [
+            "indexed authoritative repo tree at ~/work/projects/insors/insrc (NOT the ~/.insrc/daemon clone) as the read target — s1 gap 1 / s5 error case 5",
+            "src/config/__tests__/analyze-tiering.test.ts (tier-resolution oracle)",
+            "src/analyze/context/__tests__/role-router.test.ts (precedence oracle)",
+            "src/config/__tests__/repo-shaper-override.test.ts (per-repo precedence oracle)",
+            "defining sources: src/config/analyze.ts, src/config/role-taxonomy.ts, src/analyze/context/role-router.ts, src/cli/config-catalog.ts, CLAUDE.md"
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "Catch dangling references, wrong edit targets, and documentation of non-existent surfaces before approval — failures that make the docs internally inconsistent even when every reconciled value is individually correct (s5 error cases 4–6).",
+          "subjects": [
+            "doc-anchor-resolution: every cited doc path and heading resolves — docs/daemon.md (Model tiering section), docs/index.html, docs/installation.md, docs/release-notes-daemon-0.1.1.md are graph-confirmed homes; docs/workflow.md (per-output attribution section) and any site/getting-started reference must be confirmed to exist or dropped before citing (s1 gap 7)",
+            "edit-target-tree-check: grep the edited tree for DEFAULT_TIERS / CoreFloor / meta.attribution and confirm the installer no longer leaves shaperProvider unset — proves edits landed in the indexed repo that actually contains the documented surfaces, not the lagging clone (s5 error case 5)",
+            "attribution-surface-existence-check: confirm meta.attribution / outputs[] actually resolves in src/daemon/workflow-rpc.ts / orchestrator.ts before the docs/workflow.md attribution section documents it — if only the scalar meta.model is emitted, the section is scoped to what exists rather than inventing a schema (s1 gap 5, s5 error case 4)"
+          ],
+          "fixturesNeeded": [
+            "the four graph-confirmed doc homes plus docs/workflow.md and site/getting-started (existence to be verified)",
+            "scripts/insrc-daemon-install.sh (tier-generation block, ~277) as the installer-state check target",
+            "src/daemon/workflow-rpc.ts and orchestrator.ts as the attribution-surface existence target"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "tier-values-reconciliation",
+            "precedence-order-reconciliation",
+            "floor-semantics-reconciliation",
+            "legacy-fallback-and-additivity-reconciliation",
+            "runner-invariant-reconciliation",
+            "doc-anchor-resolution",
+            "edit-target-tree-check"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "principle-formalization-reconciliation",
+            "floor-semantics-reconciliation"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "Per s1 bundles, the model-selection docs today describe only the legacy run-wide `models.analyze.shaperProvider` key (config.trace bundle: default 'ollama', alternatives cli-claude/cli-codex) documented at docs/daemon.md:317/336, docs/index.html:193/201, docs/installation.md:108/121, and docs/release-notes-daemon-0.1.1.md:28 — with index.html:201 / installation.md:121 stating 'explicit shaperProvider -> used for all reasoning'. There is NO documentation of the as-built tiering subsystem: the three capability tiers (data-model.trace: tiers.{core,mid,cheap}.{runner,model} in src/config/analyze.ts), the RoleRouter choke point (symbol.locate/module.profile: createRoleRouter/resolveRole + RoleResolution{role,tier,runner,model,clampedByFloor} in src/analyze/context/role-router.ts), the role->tier default mapping (symbol.locate: reasoningRoleTaxonomy() at src/config/role-taxonomy.ts:101-103), the coreFloor critical-role clamp, or the per-output attribution surface (usage.example: prepareWorkflowRun at src/daemon/workflow-rpc.ts:319-344 historically stamped one scalar meta.model). CLAUDE.md's 'Project principles' carries a single accuracy-primary / cost-least-priority bullet with no statement of where accuracy is enforced or where cost may be traded. This is a docs-only story: no runtime behaviour changes; only prose describing the already-shipped tiering surfaces (s4: surfaceLevel 'internal', empty api/dataModel, all interactions 'consumes').",
+      "stateAfter": "The documentation describes the three capability tiers (core/mid/cheap), the full reasoning-model resolution precedence order, and the critical-role capability floor as a single canonical 'Model tiering' section in docs/daemon.md that presents the AnalyzeTieringConfig keys (tiers.*, roleTiers.<roleId>, coreFloor, byRepo.<path>.*) as additive extensions of the existing models.analyze.* catalog, while stating the legacy shaperProvider/shaperModel keys are preserved as the lowest-precedence fallback (ac1, sc1/sc3). The per-output attribution (meta.attribution) is documented in docs/workflow.md as superseding the scalar meta.model while remaining back-compatible with legacy single-model artifacts (sc5). CLAUDE.md's accuracy-primary / cost-least-priority principle is expanded to state that accuracy governs the critical roles — enforced by the coreFloor — while peripheral roles may trade capability for cost and speed (ac2, sc2). The installer's claude-vs-codex tier-generation behaviour is documented where relevant. Every documented key/shape matches the as-built source and tests exactly.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Confirm the as-built ground truth by direct read of the indexed repo before writing any prose: the concrete DEFAULT_TIERS values (expected core=cli-claude/opus, mid=cli-claude/sonnet, cheap=ollama/qwen3.6:35b-a3b) in src/config/analyze.ts, the CoreFloorGuard defining site and clamp/tier-rank semantics, the meta.attribution/outputs[] shape in src/daemon/workflow-rpc.ts, the installer tier-generation block in scripts/insrc-daemon-install.sh, and the precedence order reconciled against src/analyze/context/__tests__/role-router.test.ts and src/config/__tests__/analyze-tiering.test.ts. No document is edited in this step.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "s1-backflow-gaps-3-4-5-6-8-unresolved"
+          ]
+        },
+        {
+          "order": 2,
+          "action": "Add a new canonical 'Model tiering' section to docs/daemon.md that documents the three capability tiers (core/mid/cheap) and their default runner/model, presented as additive extensions of the existing models.analyze.* catalog (src/cli/config-catalog.ts:52-62), and lists the role->tier default mapping from reasoningRoleTaxonomy() (critical design/review/build/validate -> core, synthesis/grounding -> mid, classify/narrow/tracker/summaries -> cheap). Describe actions in prose only; no config examples asserting values not confirmed in step 1.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "default-tiers-confirmed",
+            "role-taxonomy-confirmed"
+          ]
+        },
+        {
+          "order": 3,
+          "action": "Extend the same docs/daemon.md 'Model tiering' section to document the full resolution precedence order (byRepo role -> global role -> tier default -> legacy shaperProvider -> unset default) as enforced at the single RoleRouter choke point (src/analyze/context/role-router.ts), including the CLI/Ollama-only dispatch invariant (runner constrained to ollama|cli-claude|cli-codex) and per-role observability of RoleResolution.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "precedence-order-reconciled-against-tests"
+          ]
+        },
+        {
+          "order": 4,
+          "action": "Add the critical-role capability floor description to the docs/daemon.md section: state that a critical role is never served below the configured (or built-in default) coreFloor minimum, that peripheral roles may resolve below it, and that each clamp of a critical downgrade is logged for audit (reason='below-core-floor').",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "core-floor-guard-confirmed"
+          ]
+        },
+        {
+          "order": 5,
+          "action": "Update the existing legacy-key anchors (docs/daemon.md:317/336, docs/index.html:193/201, docs/installation.md:108/121, docs/release-notes-daemon-0.1.1.md:28) to state that shaperProvider/shaperModel are retained as the lowest-precedence fallback superseded by tiering — replacing the run-wide 'explicit shaperProvider -> used for all reasoning' wording — without removing or renaming the keys.",
+          "rollbackable": true
+        },
+        {
+          "order": 6,
+          "action": "Document per-output attribution in docs/workflow.md: describe meta.attribution / outputs[] replacing the scalar meta.model for auditing where capability was spent per output, and state it remains back-compatible with legacy single-model artifacts. Verify the target file and section exist before editing.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "meta-attribution-shape-confirmed",
+            "docs-workflow-md-target-verified"
+          ]
+        },
+        {
+          "order": 7,
+          "action": "Formalize the accuracy principle in CLAUDE.md 'Project principles': expand the accuracy-primary / cost-least-priority bullet to state that accuracy governs the critical roles — enforced by the coreFloor — while peripheral roles may trade capability for cost and speed.",
+          "rollbackable": true
+        },
+        {
+          "order": 8,
+          "action": "Document the installer's claude-vs-codex tier-generation behaviour (claude->opus/sonnet, codex->gpt-5.5) at the relevant install docs / getting-started location, only if step 1 confirms the installer block exists; otherwise omit and note the gap. Verify site/getting-started target exists before citing it.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "installer-tier-block-confirmed",
+            "getting-started-target-verified"
+          ]
+        }
+      ],
+      "backwardCompat": "The legacy models.analyze.shaperProvider / shaperModel config keys remain valid and are re-documented as the lowest-precedence fallback — no existing key is renamed, removed, or invalidated (sc1). Unset-key behaviour (the built-in default path) is preserved and documented as the lowest tier of precedence. The scalar artifact field meta.model remains readable: the newly documented meta.attribution surface is described as additive, and legacy single-model artifacts stay valid and interpretable (sc5). Because this is a docs-only story over an internal surface, no runtime public API signature changes; the documented config/artifact shapes must mirror the as-built types in src/config/analyze.ts and src/daemon/workflow-rpc.ts verbatim.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Canonical tiering reference in daemon.md + principle expanded in CLAUDE.md",
+        "oneLineSummary": "One canonical 'Model tiering' section in docs/daemon.md is the single home for tiers/precedence/floor; every other surface cross-links to it, and the accuracy principle is formalized in place in CLAUDE.md's Project principles.",
+        "approach": "Add a new 'Model tiering' reference section to docs/daemon.md, adjacent to and extending the existing models.analyze.* config coverage (daemon.md:317/336). That single section describes the three capability tiers {core, mid, cheap} as the sc1 TierModel shape (runner/model), the full resolution precedence as an ordered list mirroring the sc3 RoleRouter contract (byRepo role -> global role -> tier default -> legacy shaperProvider -> unset default), and the critical-role floor as the sc2 CoreFloorGuard behavior (effectiveTier >= floor for critical roles, clamped/reason observability). docs/installation.md, docs/index.html, and the release notes keep only their existing shaperProvider text plus a one-line cross-link into the canonical section; the legacy shaperProvider/shaperModel keys are documented there as the lowest-precedence fallback, not removed. The per-output attribution note (sc5 meta.attribution replacing scalar meta.model, back-compat with legacy artifacts) is added to docs/workflow.md and cross-linked. ac2's principle formalization expands the existing accuracy-primary / cost-least-priority bullet in CLAUDE.md to state explicitly that the floor enforces accuracy on critical roles while peripheral roles may trade capability for cost/speed. All content strictly describes the sc1/sc2/sc3 shapes without redefining them.",
+        "pros": [
+          "Single source of truth: precedence order, tier values, and floor semantics are stated once, so a future contract change (e.g. DEFAULT_TIERS values) updates exactly one place — minimizing drift, which matters given the Epic's accuracy-primary principle.",
+          "Cleanly extends the graph-confirmed doc homes (daemon.md is already the models.analyze.* home) rather than scattering new prose across weakly-anchored files.",
+          "Principle lands in CLAUDE.md where the accuracy-primary bullet already lives, so ac2 reads as a formalization of existing text rather than a new competing statement."
+        ],
+        "cons": [
+          "Operators reading installation.md or index.html must follow a cross-link to get the full mechanism, so the install-time and landing-page surfaces are less self-contained.",
+          "Concentrates risk: if the canonical section's DEFAULT_TIERS / coreFloor values are authored wrong, every cross-link inherits the error with no second surface to catch it."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Audience-partitioned: each doc owns its reader's slice",
+        "oneLineSummary": "Content is split by reader — config keys + precedence in daemon.md, install-time tier generation in installation.md, attribution in workflow.md, principle in CLAUDE.md — each self-contained, accepting a short duplicated precedence recap.",
+        "approach": "Decompose s6's prose by audience rather than by mechanism. docs/daemon.md documents the sc1 config surface for operators tuning a running daemon: the tiers/roleTiers/coreFloor/byRepo keys as additive extensions of models.analyze.*, plus the full precedence list and the sc2 floor behavior. docs/installation.md documents the install-time story for someone bootstrapping: how the installer generates tier config (the S005 claude->opus/sonnet, codex->gpt-5.5 block) and how the unset shaperProvider path still yields the built-in DEFAULT_TIERS, with a short recap of precedence so the install reader does not have to jump. docs/index.html gets a brief tiering paragraph updating its current 'explicit shaperProvider -> used for all reasoning' line (index.html:201) to the tiered behavior. docs/workflow.md documents sc5 per-output attribution (meta.attribution/outputs[] replacing scalar meta.model, back-compat with legacy artifacts) for the workflow-artifact reader. CLAUDE.md carries the ac2 principle formalization. Each surface fully describes the sc1/sc2/sc3 shapes it touches; the precedence order is stated in daemon.md and recapped tersely in installation.md.",
+        "pros": [
+          "Each reader gets a self-contained page — an operator never has to leave installation.md to understand what the installer wrote, matching how these docs are actually entered.",
+          "Two independent statements of the precedence order (daemon.md full + installation.md recap) act as a natural cross-check, reducing the chance a single wrong precedence list ships unnoticed.",
+          "Naturally routes sc5 attribution to workflow.md and installer tier-generation to installation.md, aligning each contract with the doc whose audience consumes it."
+        ],
+        "cons": [
+          "Controlled duplication of the precedence recap means a contract change must be applied in two places, raising drift risk over time.",
+          "installation.md and workflow.md were NOT graph-confirmed as current homes (s1 backFlowNotes gap 7) — this shape leans hardest on files whose target sections must be located/verified before authoring, so more discovery is front-loaded.",
+          "Larger edit footprint across the most files for an S-sized story."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Ranked 2nd. Matches a1 on acceptance and contract coverage and adds a precedence cross-check, but it leans hardest on installation.md/workflow.md which s1 backFlowNotes gap 7 flags as NOT graph-confirmed doc homes (more discovery front-loaded, higher chance of authoring against a wrong section), carries controlled-duplication drift risk, and spreads the largest edit footprint for an S-sized story. Solid but weaker than a1 on drift-minimization and anchor confidence."
+      },
+      {
+        "id": "a3",
+        "name": "Minimal catalog-extension: additive key rows + one precedence list + thin principle cross-ref",
+        "oneLineSummary": "Document tiering as additive rows on the existing models.analyze.* catalog with one ordered precedence list and a brief floor note, and formalize the principle as a short pointer rather than expanded prose — smallest diff, tightest anchor to graph-confirmed docs.",
+        "approach": "Treat s6 as a targeted extension of the already-documented models.analyze.* catalog, not a new reference chapter. In docs/daemon.md (and mirrored in docs/index.html:201 / installation.md:121 where the 'shaperProvider -> all reasoning' claim currently lives), add the sc1 keys as catalog rows — tiers.{core,mid,cheap}.{runner,model}, roleTiers.<roleId>, coreFloor, byRepo.<path>.* — each row one line, exactly the additive-to-existing-catalog framing the s1 config.trace bundle calls for. Follow the rows with a single ordered precedence list (sc3) and a two-sentence floor note (sc2: critical roles never below floor; clamp logged). Explicitly annotate legacy shaperProvider/shaperModel as the retained lowest-precedence fallback in the same rows. The ac2 principle formalization is a short addition to CLAUDE.md's existing bullet plus a one-line pointer from daemon.md — no expanded prose section. sc5 attribution gets a single sentence in daemon.md/release notes noting meta.attribution supersedes scalar meta.model and older artifacts stay readable, deferring a fuller treatment.",
+        "pros": [
+          "Smallest, lowest-risk diff for an S-sized story: edits cluster on the four graph-confirmed doc homes (daemon.md, index.html, installation.md, release notes) and CLAUDE.md, avoiding weakly-anchored files.",
+          "Presenting keys as catalog rows keeps them visually additive to the existing shaperProvider catalog, making the 'nothing removed, legacy is fallback' k3 durability story self-evident.",
+          "Least authoring surface where an unverified value (DEFAULT_TIERS, coreFloor default) could be misstated."
+        ],
+        "cons": [
+          "Terse floor/attribution coverage under-serves ac1's 'describes ... the critical-role capability floor' and the sc5 per-output attribution story — a reader gets the keys but little conceptual explanation of why the floor exists.",
+          "ac2 as a one-line pointer risks under-delivering the requirement that the principle 'state where it is enforced and where cost may be traded' — the where-enforced/where-traded nuance needs at least a sentence or two of prose the minimal shape resists.",
+          "No second surface restating precedence, so a single wrong ordering ships with no cross-check."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Ranked 3rd. Smallest, lowest-risk diff and tightest anchor to graph-confirmed docs, but it drops to `partial` on ac1 (terse two-sentence floor note under-serves 'describes the critical-role capability floor'), ac2 (one-line pointer under-delivers the where-enforced/where-traded nuance k2 requires), and sc2 (floor mechanism named but not explained) — the very requirements this documentation story exists to satisfy. Its S cost is its only advantage, and under the Epic's accuracy-primary / cost-least-priority principle a cheaper-but-lossy doc is the wrong path."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "DEFAULT_TIERS defining symbol/file and concrete values did NOT resolve by name in the graph (s1 backFlowNotes gap 3) — confirm the shipped constant and its core=cli-claude/opus, mid=cli-claude/sonnet, cheap=ollama/qwen3.6:35b-a3b values by direct read of src/config (analyze.ts / role-taxonomy.ts) and analyze-tiering.test.ts before documenting.",
+      "CoreFloorGuard / coreFloor clamp did NOT resolve by name (s1 backFlowNotes gap 4) — confirm the defining site and exact clamp semantics (which roles are 'critical', tier-rank comparison, FloorOutcome.clamped/reason='below-core-floor' logging) before writing the floor section.",
+      "meta.attribution / outputs[] surface (sc5) was not surfaced by any pass; the traced baseline still stamps the scalar meta.model (workflow-rpc.ts:13/75/307/476; orchestrator.ts:304; bundle-md.ts) — confirm the attribution shape and its back-compat readability of legacy single-model artifacts exists in source before the docs/workflow.md section documents it; if unshipped, scope the section to what exists rather than inventing a schema.",
+      "Installer tier generation (S005 claude->opus/sonnet, codex->gpt-5.5 block) was NOT present in the traced installer (scripts/insrc-daemon-install.sh ~277-279, which still leaves shaperProvider unset) — confirm the tier-generation block directly before documenting it; otherwise omit and note the gap.",
+      "Doc-file targets docs/workflow.md (per-output attribution section) and site/getting-started ('update if relevant') were not surfaced by any grounded pass (s1 backFlowNotes gap 7) — verify these files/sections exist and locate the concrete edit points before citing them; only docs/daemon.md, docs/index.html, docs/installation.md, and docs/release-notes-daemon-0.1.1.md are graph-confirmed homes.",
+      "The HLD precedence order (byRepo role -> global role -> tier default -> legacy shaperProvider -> unset default) is a contract sketch, not graph-confirmed (s1 backFlowNotes gap 8) — reconcile it against src/analyze/context/__tests__/role-router.test.ts and analyze-tiering.test.ts (authoritative as-built behavior) before writing the precedence list.",
+      "Edit-target tree divergence (s1 backFlowNotes gap 1): the authoritative surfaces live in the indexed repo at ~/work/projects/insors/insrc, not the agent cwd clone ~/.insrc/daemon — author and land all S006 doc edits against the indexed tree and verify each cited source path resolves there first.",
+      "s8 ep3 (partial): invariant c5 ('the accuracy-primary principle must not weaken') is grounded on the CLAUDE.md principle + sc2 floor semantics rather than on an s1 analyze bundle — confirm the exact CLAUDE.md bullet wording by direct read before expanding it so the formalization does not relax the original."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "step-output",
+      "ref": "s1.analyzeBundles[symbol.locate: role-router.ts choke-point surface] + CLAUDE.md no-direct-REST principle",
+      "quotedText": "role-router.ts (src/analyze/context/) ... is the choke point the daemon.md/workflow.md docs must present as where precedence, the CLI/Ollama-only dispatch invariant, the coreFloor clamp, and per-output attribution are enforced at exactly one place."
+    },
+    {
+      "id": "c2",
+      "kind": "step-output",
+      "ref": "s1.analyzeBundles[symbol.locate + module.profile: role-router.ts]",
+      "quotedText": "role-router.ts ... carries createRoleRouter/resolveRole plus the RoleResolution (role, tier, runner, model, clampedByFloor) observability shape that the docs' 'audit where capability was spent' prose describes."
+    },
+    {
+      "id": "c3",
+      "kind": "step-output",
+      "ref": "s1.analyzeBundles[data-model.trace: AnalyzeTieringConfig] + [config.trace: legacy shaperProvider]",
+      "quotedText": "These NEW keys are additive to the existing models.analyze.* catalog at src/cli/config-catalog.ts:52-62 ... with the legacy shaperProvider/shaperModel keys preserved as lowest-precedence fallback."
+    },
+    {
+      "id": "c4",
+      "kind": "step-output",
+      "ref": "s1.analyzeBundles[symbol.locate: reasoningRoleTaxonomy at src/config/role-taxonomy.ts:101-103] + sc2 CoreFloorGuard",
+      "quotedText": "reasoningRoleTaxonomy(): RoleTaxonomy is defined at src/config/role-taxonomy.ts:101-103 ... the story's default-mapping claim (critical design/review/build/validate -> core, synthesis/grounding -> mid, classify/narrow/tracker/summaries -> cheap)."
+    },
+    {
+      "id": "c5",
+      "kind": "step-output",
+      "ref": "s5.invariantsToPreserve[5] — CLAUDE.md accuracy-primary principle + sc2 CoreFloorGuard floor semantics",
+      "quotedText": "it states accuracy governs the critical roles — enforced by the floor — while peripheral roles may trade capability for cost and speed. The expansion clarifies where the principle is enforced without relaxing it (ac2)."
+    }
+  ]
+}

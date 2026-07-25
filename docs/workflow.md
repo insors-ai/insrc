@@ -326,6 +326,35 @@ by the Define workflow, reused by every downstream artifact for
 the Epic. The human-readable slug derived from the focus lives
 only in `meta.epicSlug` for display.
 
+### Per-output model attribution
+
+Because the daemon routes a model **per step** (see [Model tiering](daemon.md#model-tiering)),
+a single artifact can be produced by several different models — the
+critical design steps on the core tier, synthesis on mid, grounding
+probes on cheap. Each artifact's `meta.attribution` records exactly
+which model served each produced output, so you can audit where
+capability was spent:
+
+```json
+"attribution": {
+  "outputs": [
+    { "role": "design.decompose",       "tier": "mid",  "runner": "cli-claude", "model": "sonnet" },
+    { "role": "design.contract.detail", "tier": "core", "runner": "cli-claude", "model": "opus" },
+    { "role": "synthesize",             "tier": "mid",  "runner": "cli-claude", "model": "sonnet" }
+  ]
+}
+```
+
+One `OutputModelStamp` per produced output, in step-execution order,
+each with its own `role` / `tier` / `runner` / `model`. This
+**supersedes** the old scalar `meta.model` (one label for the whole
+run), which is retired — new artifacts no longer write it. Legacy
+artifacts that carry only `meta.model` remain readable: a read-time
+shim synthesizes a single-element `outputs[]` from the scalar, so
+nothing that consumed the old field breaks. The `done`/`poll` frames
+of a daemon run surface a one-line summary of this attribution (a
+single `runner:model`, or `mixed(…)` when the run spanned tiers).
+
 ## CLI reference
 
 ### Inspection

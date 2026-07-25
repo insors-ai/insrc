@@ -8,7 +8,7 @@ the IDE consumes.
 
 ## Project principles
 
-- **Accuracy is primary; cost is the least priority.** When choosing between an accurate-but-expensive path (more LLM calls, bigger context, slower pipeline) and a cheap-but-lossy one, choose accuracy. The system's value is correctness, not throughput. Cost optimizations are valid only when they preserve accuracy; otherwise the cheap path is the wrong path.
+- **Accuracy is primary; cost is the least priority.** When choosing between an accurate-but-expensive path (more LLM calls, bigger context, slower pipeline) and a cheap-but-lossy one, choose accuracy. The system's value is correctness, not throughput. Cost optimizations are valid only when they preserve accuracy; otherwise the cheap path is the wrong path. **Where this is enforced:** the per-role model tiering (see [`docs/daemon.md#model-tiering`](docs/daemon.md)) applies this principle concretely — accuracy governs the **critical** roles (design, review, build, validate), which the `coreFloor` guarantees are never served below the high tier, while **peripheral** roles (classification, narrow probes, tracker rendering, summaries) may trade capability for cost and speed on cheaper local models. Cost is traded only on roles where a weaker model does not erode correctness.
 - **No direct cloud REST calls from our process.** Cloud LLM access happens through the locally-installed `claude` and `codex` CLI binaries (via `CliProvider`). Auth + quota stay with the user's CLI OAuth sessions. Direct REST providers to Anthropic / OpenAI / Gemini / Mistral must not be reintroduced.
 
 ## What lives here

@@ -198,7 +198,7 @@ ollama pull qwen3.6:35b-a3b        # analyzer core — skip if reasoning runs on
 }</code></pre>
     <p><strong>Provider selection — one decision, applied consistently:</strong></p>
     <ul class="clean">
-      <li><strong>Explicit <code>shaperProvider</code></strong> → that provider is used for all reasoning.</li>
+      <li><strong>Explicit <code>shaperProvider</code></strong> → legacy fallback for any role without an explicit tier. The daemon now routes a model <strong>per operation</strong> through capability tiers (core/mid/cheap); see <a href="daemon.md#model-tiering">Model tiering</a>. The installer preconfigures the tiers for your chosen CLI (Claude&nbsp;→&nbsp;<code>opus</code>/<code>sonnet</code>, Codex&nbsp;→&nbsp;<code>gpt-5.5</code>; cheap stays local).</li>
       <li><strong>Not set</strong> → reasoning follows the invoking agent (Claude Code → claude, Codex → codex); Ollama is the standalone fallback.</li>
       <li>Regardless, <strong>Ollama is always used for embeddings + the tool-loop</strong> (see §1).</li>
     </ul>

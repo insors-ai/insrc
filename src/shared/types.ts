@@ -601,6 +601,23 @@ export interface SteeringSelection {
   readonly agents?: boolean | undefined;
 }
 
+/**
+ * Programmatic MCP-client registration outcome, returned per client on the
+ * `repo.add` IPC response alongside the steering outcome. When a repo is added
+ * and the user approves the steering block for a client (SteeringSelection),
+ * the daemon ALSO registers the insrc MCP server for that client. Shared here
+ * (like SteeringSelection) because the daemon produces it and the CLI + IDE
+ * fork render it. Note: the `agents` selection flag maps to the `codex`
+ * client, so outcomes are keyed on the CLIENT name to avoid that mislabel.
+ */
+export type McpClient = 'claude' | 'codex';
+export type McpRegisterAction = 'registered' | 'unchanged' | 'skipped' | 'failed';
+export interface McpClientOutcome {
+  readonly client: McpClient;
+  readonly action: McpRegisterAction;
+  readonly note?:  string | undefined;
+}
+
 export interface RegisteredRepo {
   /**
    * Phase 5.x strict-contract discriminator. 'workspace' is the

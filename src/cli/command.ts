@@ -14,6 +14,7 @@ import type { Services } from './services/index.js';
 import type { SteeringSelection } from '../shared/types.js';
 import type { TrackerSetupStep } from '../workflow/tracker/setup.js';
 import type { ReviewArtifactResult } from '../workflow/review/index.js';
+import { formatMcpOutcome } from './services/repo.js';
 import { formatBytes, formatUptime } from './ui/format.js';
 import { CONFIG_CATALOG } from './config-catalog.js';
 
@@ -116,11 +117,12 @@ async function runRepo(sub: string | undefined, rest: readonly string[], svc: Se
 				        '   for the per-file y/N prompt use the Repos pane: press a)'];
 			}
 			const steering = parseSteeringFlag(rest);
-			const registered = await svc.repo.add(path, steering);
+			const { path: registered, mcp } = await svc.repo.add(path, steering);
 			const picks = steering !== undefined
 				? [steering.claude === true ? 'CLAUDE.md' : null, steering.agents === true ? 'AGENTS.md' : null].filter(Boolean).join(' + ')
 				: '';
-			const line = `registered ${registered} — indexing started${picks !== '' ? ` · steering → ${picks}` : ''}`;
+			const mcpLine = formatMcpOutcome(mcp);
+			const line = `registered ${registered} — indexing started${picks !== '' ? ` · steering → ${picks}` : ''}${mcpLine !== '' ? ` · mcp: ${mcpLine}` : ''}`;
 			return picks !== ''
 				? [line]
 				: [line, 'tip: pass --steering[=claude,agents] to install the insrc steering block into CLAUDE.md / AGENTS.md'];

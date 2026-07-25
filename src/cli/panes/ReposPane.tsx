@@ -16,6 +16,7 @@ import type { ReactElement } from 'react';
 import type { RegisteredRepo } from '../../shared/types.js';
 import type { DaemonState } from '../hooks/useDaemonStatus.js';
 import { useServices, useUi, useCaptured } from '../ui/context.js';
+import { formatMcpOutcome } from '../services/repo.js';
 import { Panel, KeyHints, TextPrompt, ConfirmPrompt } from '../ui/widgets.js';
 import { formatWhen } from '../ui/format.js';
 
@@ -45,8 +46,9 @@ export function ReposPane(props: {
 		setModal('none'); ui.capture(false);
 		const picks = [claude ? 'CLAUDE.md' : null, agents ? 'AGENTS.md' : null].filter(Boolean).join(' + ');
 		act('add', async () => {
-			const registered = await svc.repo.add(addPath, { claude, agents });
-			return `registered ${registered} — indexing started${picks ? ` · steering → ${picks}` : ''}`;
+			const { path: registered, mcp } = await svc.repo.add(addPath, { claude, agents });
+			const mcpLine = formatMcpOutcome(mcp);
+			return `registered ${registered} — indexing started${picks ? ` · steering → ${picks}` : ''}${mcpLine ? ` · mcp: ${mcpLine}` : ''}`;
 		});
 	};
 

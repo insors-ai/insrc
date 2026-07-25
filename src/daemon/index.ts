@@ -14,6 +14,7 @@
 
 import { mkdirSync, readFileSync, writeFileSync, existsSync, appendFileSync, rmSync } from 'node:fs';
 import { injectSteeringBlock, type SteeringSelection } from './steering-inject.js';
+import { registerMcpClients, daemonInstallRoot } from './mcp-register.js';
 import { PATHS } from '../shared/paths.js';
 import { setLogMode, getLogger } from '../shared/logger.js';
 
@@ -443,6 +444,7 @@ async function main(): Promise<void> {
 			// the user); the daemon applies it so BOTH CLI and IDE-fork adds are
 			// covered. Guarded — a write failure never fails the add.
 			let steering: Awaited<ReturnType<typeof injectSteeringBlock>> | undefined;
+			let mcp: Awaited<ReturnType<typeof registerMcpClients>> | undefined;
 			const sel = (params as { steering?: SteeringSelection }).steering;
 			if (sel !== undefined && (sel.claude === true || sel.agents === true)) {
 				try {
@@ -453,8 +455,23 @@ async function main(): Promise<void> {
 						'steering injection failed; repo registered regardless',
 					);
 				}
+				// Same gate, same non-fatal contract: register the insrc MCP for
+				// each approved client (--scope user / global, idempotent). A
+				// registration failure is captured per-client and never fails the add.
+				try {
+					mcp = await registerMcpClients(daemonInstallRoot(), sel);
+				} catch (err) {
+					log.warn(
+						{ repo: normalisedPath, err: err instanceof Error ? err.message : String(err) },
+						'mcp registration failed; repo registered regardless',
+					);
+				}
 			}
-			return { ok: true, ...(steering !== undefined ? { steering } : {}) };
+			return {
+				ok: true,
+				...(steering !== undefined ? { steering } : {}),
+				...(mcp !== undefined ? { mcp } : {}),
+			};
 		},
 
 		'repo.remove': async (params) => {

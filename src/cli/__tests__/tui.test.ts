@@ -61,7 +61,7 @@ function fakeServices(): Services {
 		},
 		repo: {
 			list:    async () => [],
-			add:     async p => p,
+			add:     async p => ({ path: p }),
 			remove:  async p => p,
 			reindex: async p => p,
 		},
@@ -127,7 +127,7 @@ test('number keys switch panes (Daemon → Repos)', async () => {
 test('Repos add flow drives repo.add with the entered path (+ per-file steering)', async () => {
 	const svc = fakeServices();
 	const addCalls: Array<{ path: string; steering: unknown }> = [];
-	svc.repo.add = async (p, steering) => { addCalls.push({ path: p, steering }); return p; };
+	svc.repo.add = async (p, steering) => { addCalls.push({ path: p, steering }); return { path: p }; };
 	const { stdin, unmount } = render(createElement(App, { services: svc, pollMs: 0 }));
 	await settle();
 	stdin.write('2');          // → Repos pane
@@ -194,7 +194,7 @@ test('Setup pane renders system + recommendation without crashing', async () => 
 test("':' opens the command bar and runs a typed command", async () => {
 	const svc = fakeServices();
 	const addCalls: string[] = [];
-	svc.repo.add = async p => { addCalls.push(p); return p; };
+	svc.repo.add = async p => { addCalls.push(p); return { path: p }; };
 	const { lastFrame, stdin, unmount } = render(createElement(App, { services: svc, pollMs: 0 }));
 	await settle();
 	stdin.write(':');                    // open the command bar

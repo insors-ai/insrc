@@ -42,7 +42,7 @@ export interface Services {
 	};
 	readonly repo: {
 		list(): Promise<RegisteredRepo[]>;
-		add(path: string, steering?: SteeringSelection): Promise<string>;
+		add(path: string, steering?: SteeringSelection): Promise<repo.AddRepoResult>;
 		remove(path: string): Promise<string>;
 		reindex(path: string): Promise<string>;
 	};

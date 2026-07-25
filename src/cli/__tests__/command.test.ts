@@ -39,7 +39,7 @@ function ctxWith(overrides: Partial<Services> = {}): { ctx: CommandCtx; spies: S
 		},
 		repo: {
 			list: async () => [],
-			add: async (p, steering) => { spies.repoAdd.push(p); spies.repoAddSteering.push(steering); return p; },
+			add: async (p, steering) => { spies.repoAdd.push(p); spies.repoAddSteering.push(steering); return { path: p }; },
 			remove: async p => p,
 			reindex: async p => p,
 		},

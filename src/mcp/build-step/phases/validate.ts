@@ -15,6 +15,7 @@
 
 import { CliProvider } from '../../../agent/providers/cli-provider.js';
 import { createRoleRouter } from '../../../analyze/context/role-router.js';
+import { runWithRoutingContext, currentRoutingContext } from '../../../analyze/context/shaper-provider.js';
 import { loadAnalyzeConfig } from '../../../config/analyze.js';
 import { getLogger } from '../../../shared/logger.js';
 import { renderValidatePrompt, resolveRepoPath, resolveTaskRef } from '../render.js';
@@ -41,7 +42,10 @@ export function _setBuildValidateProviderForTests(p: ValidateProvider | undefine
  *  operator pinned core to). Edit sessions require a CLI (`runEditSession`), so a
  *  non-CLI resolution (an operator who pinned core→ollama) falls back to claude. */
 function resolveValidateProvider(repoPath: string): ValidateProvider {
-	const { resolution } = createRoleRouter({}).resolveProviderForRole('build', loadAnalyzeConfig(), repoPath);
+	// Reuse the ambient sc6 router when a routing seam is established (handleValidate
+	// sets one), else construct one — either way the 'build' tier decides the model.
+	const router = currentRoutingContext()?.router ?? createRoleRouter({});
+	const { resolution } = router.resolveProviderForRole('build', loadAnalyzeConfig(), repoPath);
 	if (resolution.runner === 'cli-claude' || resolution.runner === 'cli-codex') {
 		const kind = resolution.runner === 'cli-codex' ? 'codex' : 'claude';
 		return new CliProvider({ kind, ...(resolution.model !== '' ? { model: resolution.model } : {}) });
@@ -58,22 +62,28 @@ export async function handleValidate(input: BuildStepInputValidate): Promise<Bui
 	const resolved = resolveTaskRef(repoPath, input.target);
 	if (!resolved.ok) return err('unresolved-target', resolved.message);
 
-	const prompt = renderValidatePrompt(repoPath, resolved.ref);
-	const provider: ValidateProvider = providerOverride ?? resolveValidateProvider(repoPath);
+	// Establish the sc6 routing seam so the edit-session provider resolves through
+	// the same choke point as the workflow runner (the 'build' tier), unifying the
+	// pattern and tiering any deep reasoning the session triggers.
+	const router = createRoleRouter({});
+	return runWithRoutingContext({ router, repoPath }, async () => {
+		const prompt = renderValidatePrompt(repoPath, resolved.ref);
+		const provider: ValidateProvider = providerOverride ?? resolveValidateProvider(repoPath);
 
-	log.info({ taskId: resolved.ref.taskId, storyId: resolved.ref.storyId }, 'insrc_build_step[validate]: running verdict session');
-	const response = await provider.runEditSession(prompt, { cwd: repoPath });
+		log.info({ taskId: resolved.ref.taskId, storyId: resolved.ref.storyId }, 'insrc_build_step[validate]: running verdict session');
+		const response = await provider.runEditSession(prompt, { cwd: repoPath });
 
-	const verdict = parseVerdict(response.text);
-	if (verdict === undefined) {
-		return err(
-			'unparseable-verdict',
-			`insrc_build_step[validate]: the validation session did not emit a parseable JSON verdict. ` +
-			`Raw tail: ${response.text.slice(-600)}`,
-		);
-	}
-	const passed = (verdict as { passed?: unknown }).passed === true;
-	return { next: 'done', verdict, passed };
+		const verdict = parseVerdict(response.text);
+		if (verdict === undefined) {
+			return err(
+				'unparseable-verdict',
+				`insrc_build_step[validate]: the validation session did not emit a parseable JSON verdict. ` +
+				`Raw tail: ${response.text.slice(-600)}`,
+			);
+		}
+		const passed = (verdict as { passed?: unknown }).passed === true;
+		return { next: 'done', verdict, passed };
+	});
 }
 
 /** Extract the verdict object from the session's free-form text — the LAST

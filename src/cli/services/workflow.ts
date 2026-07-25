@@ -57,6 +57,7 @@ import { resolveGithubConfig } from '../../workflow/config/github.js';
 import { syncTracker, type SyncResult } from '../../workflow/tracker/sync.js';
 import { getLogger } from '../../shared/logger.js';
 import { createRoleRouter } from '../../analyze/context/role-router.js';
+import { runWithRoutingContext } from '../../analyze/context/shaper-provider.js';
 import { loadAnalyzeConfig } from '../../config/analyze.js';
 import { reviewArtifactFile, type ReviewArtifactResult } from '../../workflow/review/index.js';
 import { runWorkflowStream } from '../../mcp/daemon-stream.js';
@@ -231,14 +232,20 @@ export async function runWorkflowStreaming(
  *  pinned core to otherwise). The resulting `block` verdict is what `approve`
  *  then enforces. */
 export async function reviewArtifact(repoPath: string, artifactPath: string): Promise<ReviewArtifactResult> {
-	const { provider, resolution } = createRoleRouter({}).resolveProviderForRole('review', loadAnalyzeConfig(), repoPath);
-	return reviewArtifactFile({
-		mdPath:     artifactPath,
-		jsonPath:   jsonPathForMd(artifactPath),
-		repo:       repoPath,
-		provider,
-		model:      `${resolution.runner}:${resolution.model}`,
-		reviewedAt: new Date().toISOString(),
+	const router = createRoleRouter({});
+	// Establish the sc6 routing seam so the review resolves through the same
+	// choke point as the workflow runner, and any deep reasoning it triggers is
+	// tiered per-role rather than falling through to the legacy provider.
+	return runWithRoutingContext({ router, repoPath }, async () => {
+		const { provider, resolution } = router.resolveProviderForRole('review', loadAnalyzeConfig(), repoPath);
+		return reviewArtifactFile({
+			mdPath:     artifactPath,
+			jsonPath:   jsonPathForMd(artifactPath),
+			repo:       repoPath,
+			provider,
+			model:      `${resolution.runner}:${resolution.model}`,
+			reviewedAt: new Date().toISOString(),
+		});
 	});
 }
 

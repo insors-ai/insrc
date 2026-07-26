@@ -191,6 +191,22 @@ test('Setup pane renders system + recommendation without crashing', async () => 
 	unmount();
 });
 
+test('Model Tiers pane (5) renders effective tiers, coreFloor, and roles from config', async () => {
+	const svc = fakeServices();
+	svc.config.show = async () => ({ models: { analyze: { roleTiers: { 'context.assemble': 'cheap' } } } });
+	const { lastFrame, stdin, unmount } = render(createElement(App, { services: svc, pollMs: 0 }));
+	await settle();
+	stdin.write('5');          // → Model Tiers pane
+	await settle();
+	const frame = lastFrame() ?? '';
+	assert.match(frame, /Model Tiers/);
+	assert.match(frame, /opus/);          // core-tier default model
+	assert.match(frame, /coreFloor/);
+	assert.match(frame, /review/);        // a critical role row (→ core)
+	assert.match(frame, /override/);      // the context.assemble override is surfaced (in-window)
+	unmount();
+});
+
 test("':' opens the command bar and runs a typed command", async () => {
 	const svc = fakeServices();
 	const addCalls: string[] = [];

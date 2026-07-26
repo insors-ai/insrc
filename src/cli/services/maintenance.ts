@@ -26,6 +26,8 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 
 import { startDaemon, stopDaemon } from './daemon.js';
+import { loadBuiltCatalog } from '../../config/config-catalog-loader.js';
+import { reconcileConfigFile, type ConfigIoOutcome } from '../../config/reconcile-io.js';
 
 /** Where the installed daemon checkout lives. */
 export const DAEMON_ROOT = process.env['INSRC_DAEMON_ROOT'] ?? join(homedir(), '.insrc', 'daemon');
@@ -39,8 +41,20 @@ export interface UpdateOptions {
 
 export interface MaintenanceResult {
 	readonly ok:     boolean;
-	readonly steps:  readonly string[];   // e.g. ['sync', 'install', 'build']
+	readonly steps:  readonly string[];   // e.g. ['sync', 'install', 'build', 'reconcile']
 	readonly error?: string;
+	/**
+	 * Additive, optional summary of the post-build config reconcile (t12).
+	 * Counts only — per-key dot-path detail goes to onLog. Absent on paths
+	 * that never reach the reconcile (an early `ok: false` return). Optionality
+	 * is written explicitly per exactOptionalPropertyTypes.
+	 */
+	readonly configReconcile?: {
+		readonly changed:  boolean;
+		readonly filled:   number;
+		readonly repaired: number;
+		readonly error?:   string | undefined;
+	} | undefined;
 }
 
 export type LogFn = (line: string) => void;
@@ -111,10 +125,86 @@ export async function update(opts: UpdateOptions, onLog: LogFn): Promise<Mainten
 			steps.push('build');
 		}
 
+		// Post-build config reconcile. Runs STRICTLY after git-pull + build,
+		// unconditionally (no opt-in flag), writing at most once and only when
+		// changed. It must NOT flip a successful update to failed, so it sits in
+		// its OWN inner try/catch (the surrounding body early-returns ok:false on
+		// every real failure; this is best-effort).
+		//
+		// STALE-CATALOG resolution (see src/config/config-catalog-loader.ts):
+		// this CLI process holds the PRE-update catalog in memory; `npm run
+		// build` just rewrote out/ underneath it, so reconciling against the
+		// resident module would be a no-op for exactly the shape change an update
+		// applies. We load the FRESHLY BUILT catalog via dynamic import and
+		// reconcile against that; if the import fails we DEFER the authoritative
+		// reconcile to the next daemon boot (t9) rather than trust the stale
+		// in-memory catalog. The direct config.json write here is the s8-sbdry3
+		// deviation the approver confirmed — see the deviation note in
+		// src/config/reconcile-io.ts.
+		const configReconcile = await runUpdateReconcile(root, onLog);   // writes ~/.insrc/config.json (PATHS.config)
+		steps.push('reconcile');
+
 		onLog('update complete (daemon NOT restarted)');
-		return { ok: true, steps };
+		return { ok: true, steps, configReconcile };
 	} catch (err) {
 		return { ok: false, steps, error: err instanceof Error ? err.message : String(err) };
+	}
+}
+
+type ReconcileSummary = NonNullable<MaintenanceResult['configReconcile']>;
+
+/** Run the post-build reconcile against the freshly built catalog, reporting
+ *  per-key detail on `onLog` and returning the counts summary. Never throws —
+ *  any failure is captured into the summary's `error`. Exported for tests;
+ *  `configPath` is a test seam (prod reconciles the real PATHS.config). */
+export async function runUpdateReconcile(root: string, onLog: LogFn, configPath?: string): Promise<ReconcileSummary> {
+	try {
+		const builtCatalogPath = join(root, 'out', 'config', 'config-catalog.js');
+		const catalog = await loadBuiltCatalog(builtCatalogPath);
+		if (catalog === null) {
+			onLog('config reconcile: freshly built catalog not loadable; deferring to next daemon boot');
+			return { changed: false, filled: 0, repaired: 0, error: 'built catalog not loadable; deferred to daemon boot' };
+		}
+		const outcome = reconcileConfigFile(configPath !== undefined ? { catalog, configPath } : { catalog });
+		return summarizeReconcile(outcome, onLog);
+	} catch (err) {
+		const message = err instanceof Error ? err.message : String(err);
+		onLog(`config reconcile failed: ${message}`);
+		return { changed: false, filled: 0, repaired: 0, error: message };
+	}
+}
+
+/** Emit the reconcile summary + one detail line per filled / repaired key
+ *  (naming the catalog dot-path, and the discarded value for a collision
+ *  repair), and fold the outcome into the counts summary. Exported for tests. */
+export function summarizeReconcile(outcome: ConfigIoOutcome, onLog: LogFn): ReconcileSummary {
+	switch (outcome.kind) {
+		case 'written':
+		case 'first-boot': {
+			const { filled, repaired } = outcome.result;
+			onLog(`config reconcile: ${filled.length} filled, ${repaired.length} repaired`);
+			for (const p of filled) onLog(`  filled   ${p}`);
+			for (const r of repaired) onLog(`  repaired ${r.path} (discarded ${JSON.stringify(r.discarded)})`);
+			return { changed: outcome.result.changed, filled: filled.length, repaired: repaired.length };
+		}
+		case 'unchanged':
+			onLog('config reconcile: no changes needed');
+			return { changed: false, filled: 0, repaired: 0 };
+		case 'catalog-error':
+			onLog(`config reconcile: SHIPPED-CATALOG BUG at ${outcome.catalogPath}: ${outcome.message}`);
+			return { changed: false, filled: 0, repaired: 0, error: `shipped-catalog bug at ${outcome.catalogPath}: ${outcome.message}` };
+		case 'parse-error':
+			onLog(`config reconcile: config.json is not valid JSON (${outcome.message}); left untouched`);
+			return { changed: false, filled: 0, repaired: 0, error: `invalid config JSON: ${outcome.message}` };
+		case 'read-error':
+			onLog(`config reconcile: could not read config.json (${outcome.errno}): ${outcome.message}`);
+			return { changed: false, filled: 0, repaired: 0, error: `read error (${outcome.errno}): ${outcome.message}` };
+		case 'write-error':
+			onLog(`config reconcile: write failed: ${outcome.message}`);
+			return { changed: outcome.result.changed, filled: outcome.result.filled.length, repaired: outcome.result.repaired.length, error: `write error: ${outcome.message}` };
+		case 'concurrent-modification':
+			onLog('config reconcile: config.json changed during reconcile; write abandoned');
+			return { changed: outcome.result.changed, filled: outcome.result.filled.length, repaired: outcome.result.repaired.length, error: 'config changed during reconcile; write abandoned' };
 	}
 }
 

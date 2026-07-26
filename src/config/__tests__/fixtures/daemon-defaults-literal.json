@@ -1,0 +1,29 @@
+{
+  "logLevel": "info",
+  "ollama": {
+    "host": "http://localhost:11434"
+  },
+  "models": {
+    "local": "qwen3-coder:latest",
+    "embedding": "qwen3-embedding:0.6b",
+    "embeddingDim": 1024,
+    "tiers": {
+      "fast": "claude-haiku-4-5",
+      "standard": "claude-sonnet-4-6",
+      "powerful": "claude-opus-4-6"
+    },
+    "context": {
+      "local": 16384,
+      "localMaxOutput": 8192,
+      "claude": 200000,
+      "claudeMaxOutput": 8192,
+      "charsPerToken": 3
+    }
+  },
+  "permissions": {
+    "mode": "validate"
+  },
+  "routing": {
+    "mode": "static"
+  }
+}

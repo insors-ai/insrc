@@ -118,6 +118,7 @@ import { compactConversations, type CompactionOpts } from '../db/compaction.js';
 import type { RegisteredRepo, DaemonStatus, Entity, ConfigScope, ConfigSearchOpts, TemplateQuery } from '../shared/types.js';
 import { basename } from 'node:path';
 import { ConfigStore } from '../config/store.js';
+import { reconcileConfigFile } from '../config/reconcile-io.js';
 import { searchConfig, resolveTemplate } from '../config/search.js';
 import * as todosRpc from './todos-rpc.js';
 
@@ -175,31 +176,57 @@ async function main(): Promise<void> {
 	mkdirSync(PATHS.conventions, { recursive: true });
 	mkdirSync(PATHS.logDir, { recursive: true });
 
-	// 2b. Ensure config.json exists with agent defaults
-	if (!existsSync(PATHS.config)) {
-		writeFileSync(PATHS.config, JSON.stringify({
-			logLevel: 'info',
-			ollama: { host: 'http://localhost:11434' },
-			models: {
-				local: 'qwen3-coder:latest',
-				embedding: 'qwen3-embedding:0.6b',
-				embeddingDim: 1024,
-				tiers: { fast: 'claude-haiku-4-5', standard: 'claude-sonnet-4-6', powerful: 'claude-opus-4-6' },
-				context: { local: 16384, localMaxOutput: 8192, claude: 200000, claudeMaxOutput: 8192, charsPerToken: 3 },
-			},
-			permissions: { mode: 'validate' },
-			routing: { mode: 'static' },
-		}, null, 2), 'utf-8');
-		log.info('created default config.json');
-	} else {
-		// Ensure models.agents exists in config
-		try {
-			const raw = JSON.parse(readFileSync(PATHS.config, 'utf-8')) as Record<string, unknown>;
-			const models = (raw['models'] ?? {}) as Record<string, unknown>;
-			if (!models['agents']) {
-				log.info('config.json missing models.agents, will be populated on first config.agents call');
-			}
-		} catch { /* ignore parse errors */ }
+	// 2b. Reconcile config.json against the catalog — the AUTHORITATIVE
+	//     reconcile point. UNCONDITIONAL (no existsSync short-circuit): reads
+	//     the current config, carries every value it can, and fills/repairs the
+	//     rest from catalog defaults, writing at most once and only when
+	//     something changed. An absent file reduces EXACTLY to the former
+	//     write-defaults behaviour (every former literal key deep-equals its
+	//     catalog default — see the boot-reconcile test), so a config that
+	//     predates a schema change is brought up to shape on the next boot. It
+	//     runs before the DB opens (step 3) and must NEVER abort boot: a failure
+	//     is logged (once) and retried on the next boot, mirroring the
+	//     legacy-storage sweep above. A ConfigCatalogError (a bug in our own
+	//     shipped catalog) is logged distinguishably from a user-config or I/O
+	//     failure.
+	try {
+		const outcome = reconcileConfigFile();
+		switch (outcome.kind) {
+			case 'first-boot':
+				log.info('created default config.json (catalog defaults)');
+				break;
+			case 'written':
+				log.info({ filled: outcome.result.filled.length, repaired: outcome.result.repaired.length },
+					'reconciled config.json against catalog');
+				break;
+			case 'unchanged':
+				break;
+			case 'parse-error':
+				log.warn({ path: PATHS.config, err: outcome.message, offset: outcome.offset },
+					'config.json is not valid JSON -- left untouched, wrote nothing (fix or delete it)');
+				break;
+			case 'catalog-error':
+				log.warn({ catalogPath: outcome.catalogPath, err: outcome.message },
+					'SHIPPED-CATALOG BUG: config catalog is self-inconsistent -- config left untouched');
+				break;
+			case 'read-error':
+				log.warn({ path: PATHS.config, errno: outcome.errno, err: outcome.message },
+					'could not read config.json -- non-fatal, retry on next boot');
+				break;
+			case 'write-error':
+				log.warn({ path: PATHS.config, err: outcome.message },
+					'failed to write reconciled config.json -- non-fatal, retry on next boot');
+				break;
+			case 'concurrent-modification':
+				log.warn({ path: PATHS.config },
+					'config.json changed during reconcile -- write abandoned, retry on next boot');
+				break;
+		}
+	} catch (err) {
+		// Defensive: reconcileConfigFile is designed never to throw, but boot
+		// must survive even a programmer error here.
+		log.warn({ err: err instanceof Error ? err.message : String(err) },
+			'config reconcile threw -- non-fatal, retry on next boot');
 	}
 
 	// 2c. One-shot Phase 0 agent-family rename migration (idempotent).

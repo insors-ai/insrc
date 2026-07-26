@@ -1,0 +1,1011 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1785080062864-fkfecn",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-07-26T15:57:50.628Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "design.decompose",
+          "tier": "mid",
+          "runner": "cli-claude",
+          "model": "qwen3.6:35b-a3b"
+        },
+        {
+          "role": "context.assemble",
+          "tier": "mid",
+          "runner": "cli-claude",
+          "model": "qwen3.6:35b-a3b"
+        },
+        {
+          "role": "tasks.enumerate",
+          "tier": "mid",
+          "runner": "cli-claude",
+          "model": "qwen3.6:35b-a3b"
+        },
+        {
+          "role": "tasks.critique",
+          "tier": "mid",
+          "runner": "cli-claude",
+          "model": "qwen3.6:35b-a3b"
+        },
+        {
+          "role": "tasks.finalize",
+          "tier": "mid",
+          "runner": "cli-claude",
+          "model": "qwen3.6:35b-a3b"
+        },
+        {
+          "role": "test-strategy.write",
+          "tier": "mid",
+          "runner": "cli-claude",
+          "model": "qwen3.6:35b-a3b"
+        },
+        {
+          "role": "scope.audit",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "qwen3.6:35b-a3b"
+        },
+        {
+          "role": "synthesize",
+          "tier": "mid",
+          "runner": "cli-claude",
+          "model": "qwen3.6:35b-a3b"
+        }
+      ]
+    },
+    "elapsedMs": 1407752,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d01caa994c304bcb",
+    "epicSlug": "add-schema-driven-config-migration-runs",
+    "storyId": "S001",
+    "lldRunId": "wf-1785076760424-ycp62z",
+    "lldEffectiveHash": "d01caa994c304bcb7f636086c259417387c7db355d5922deefc4c9b0a2998ce2",
+    "approvedAt": "2026-07-26T16:01:54.269Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Back-flow acceptance criteria ac1..ac9 into the Story",
+        "summary": "The Story ships with acceptanceCriteria: [], so the nine criterionId values ac1..ac9 that the LLD test-strategy acceptanceMapping is organized around are unanchored forward-declarations — the mapping cannot be audited at review or approve time. Write the nine criteria into the Story with explicit text, using the set the LLD already makes inferable: ac1 catalog keys absent from the on-disk config are filled with catalog defaults; ac2 present-and-type-valid keys are carried through untouched; ac3 present-but-type-invalid keys are repaired to the catalog default; ac4 catalog-unenumerable namespaces (models.analyze.roleTiers, models.analyze.byRepo, models.agents) survive blindly; ac5 reconcile is idempotent and writes at most once, only when changed; ac6 maintenance.update runs the reconcile after the build step and reports it additively via MaintenanceResult; ac7 daemon boot runs the reconcile unconditionally and never aborts boot on failure; ac8 the catalog is relocated into src/config with no daemon→cli import edge; ac9 read/parse/write failures abort without writing and are surfaced as structured non-fatal outcomes. Cross-reference each criterion to the tasks that discharge it. No production code is touched.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "The Story's acceptanceCriteria array contains nine entries with ids ac1..ac9, each carrying non-empty criterion text",
+          "Every criterionId referenced in the LLD test-strategy acceptanceMapping resolves to a criterion with text — no unanchored id remains",
+          "Each of ac1..ac9 is cross-referenced to at least one task id in this plan, and every task in this plan is referenced by at least one criterion",
+          "No source file outside the Story/LLD artifacts is modified by this task"
+        ],
+        "derivedFrom": [
+          "c10"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "story acceptance criteria — ac1..ac9 each resolve to an entry carrying non-empty criterion text"
+          },
+          {
+            "level": "unit",
+            "name": "acceptanceMapping audit — every criterionId in the LLD test strategy resolves to a Story criterion, and every plan task is referenced by at least one criterion"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Capture the real-world config regression fixture and the pre-change defaults literal",
+        "summary": "Take a verbatim copy of an actual ~/.insrc/config.json into src/config/__tests__/fixtures/ (redacting only secrets, preserving structure) that carries populated values in all three catalog-unenumerable namespaces — models.analyze.roleTiers.<roleId>, models.analyze.byRepo.<absPath>.*, models.agents — plus at least one key absent from the current 41-row CONFIG_CATALOG and one key whose value is type-invalid for its catalog row. Keep the untouched original alongside it as the pre-change baseline so before/after can be diffed byte-for-byte. This must be a captured document, not hand-authored: no s1 exploration touched those namespaces' on-disk shape, and blind preservation is the acceptance requirement with the least evidence behind it — so commit a provenance note (README or JSON header comment file) recording that it was captured from a real ~/.insrc/config.json, the capture date, and exactly which values were redacted and how, with every redaction a structure-preserving substitution (same key set, same value types, same nesting depth as the original). Also capture, as a second fixture in the same directory, the hand-rolled defaults literal currently at src/daemon/index.ts:180-192 verbatim as JSON — t9 needs it as the pre-change baseline to prove first-boot equivalence, and it disappears from the source when t9 lands. No production code is touched by this task.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "A fixture file exists under src/config/__tests__/fixtures/ containing non-empty objects at models.analyze.roleTiers, models.analyze.byRepo (with at least one absolute-path key), and models.agents",
+          "The fixture contains at least one dot-path present in CONFIG_CATALOG whose value violates the row's declared type, and at least one CONFIG_CATALOG path that is absent entirely",
+          "An unmodified copy of the same document is committed as the before-baseline, and the two are byte-identical at capture time",
+          "A provenance note is committed alongside recording the real-config origin, the capture date, and the redaction list; each redaction is structure-preserving (same key set, value types and nesting depth as the captured original), stated explicitly so a reviewer can distinguish the fixture from a hand-authored guess",
+          "A second fixture holds the pre-change src/daemon/index.ts:180-192 defaults literal verbatim as JSON, with its key set matching the literal exactly",
+          "Both fixtures parse as valid JSON and contain no credential or token values"
+        ],
+        "derivedFrom": [
+          "c8",
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "captured config fixture — parses, carries non-empty models.analyze.roleTiers / models.analyze.byRepo (absolute-path key) / models.agents, one absent catalog path and one type-invalid catalog path"
+          },
+          {
+            "level": "unit",
+            "name": "fixture baseline integrity — the before-baseline copy is byte-identical to the captured document and neither contains a credential or token value"
+          },
+          {
+            "level": "unit",
+            "name": "captured defaults-literal fixture — key set matches the pre-change src/daemon/index.ts:180-192 literal exactly"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Relocate ConfigOption + CONFIG_CATALOG to src/config, leave a re-export shim",
+        "summary": "Move the ConfigOption interface (src/cli/config-catalog.ts:23-28) and the 41-row CONFIG_CATALOG (src/cli/config-catalog.ts:30) verbatim into a new src/config/config-catalog.ts — no field added, removed or retyped, no catalog entry value changed, header comment carried over. Reduce src/cli/config-catalog.ts to `export { CONFIG_CATALOG } from '../config/config-catalog.js'` plus a `export type { ConfigOption }`, so the sole live importer (src/cli/command.ts:19, iterated at :337) compiles unchanged. The relocation is required, not cosmetic: src/daemon has zero imports of src/cli today, so the boot reconcile cannot reach the catalog from its current home without creating a new daemon→cli edge. The new file must import nothing from src/cli, preserving src/config's independence.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "src/config/config-catalog.ts is the single definition site of ConfigOption and CONFIG_CATALOG; the catalog still has 41 rows with the same paths, types, defaults and descriptions as before the move",
+          "src/cli/config-catalog.ts contains only re-exports and no declarations; the CONFIG_CATALOG it re-exports is reference-identical to the src/config one (no duplicated array literal)",
+          "src/cli/command.ts is unchanged and `npm run build` typechecks clean",
+          "src/config/config-catalog.ts has no import from src/cli"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "relocated catalog parity — CONFIG_CATALOG still has 41 rows with identical paths, types, defaults and descriptions to the pre-move snapshot"
+          },
+          {
+            "level": "unit",
+            "name": "re-export shim — src/cli/config-catalog.ts declares nothing and its CONFIG_CATALOG is === the src/config one; src/cli/command.ts's import resolves and typechecks unchanged"
+          },
+          {
+            "level": "unit",
+            "name": "new definition site imports nothing from src/cli"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Implement the pure reconcileConfig module with a named catalog-error type",
+        "summary": "Add src/config/reconcile.ts exporting `ConfigReconcileResult { config, changed, carried, filled, repaired }` and `reconcileConfig(existing: unknown, catalog: readonly ConfigOption[] = CONFIG_CATALOG): ConfigReconcileResult`. Strictly pure — no fs, IPC, socket or clock — because the daemon-boot caller runs before the socket exists (src/daemon/index.ts:178, DB opens only at :213). Build the output as a MERGE over a deep clone of `existing`, never a rebuild from catalog rows, so catalog-unenumerable keys survive blindly. Own the dot-path get/set walk inside this module (no reusable helper exists); mirror the ancestor-collision rule already inlined in the config.write handler at src/daemon/index.ts:1137-1139, strengthened with `!Array.isArray(...)` in the plain-object predicate, and record the discarded scalar in the repair record so callers can name the loss. The type-match predicate is a 4-arm exhaustive switch over the confirmed closed union 'string'|'number'|'boolean'|'enum'; note explicitly in a comment that 'enum' rows carry no allowed-values field so their predicate degenerates to `typeof === 'string'` (7 of 41 rows). Existence is tested with hasOwnProperty, never truthiness; null is rejected for object/string rows. Settling open question s8-cd3: the two catalog-integrity failures — a catalog row with an out-of-domain `type`, and a catalog row whose own default fails its own predicate — throw a dedicated exported `ConfigCatalogError extends Error` carrying the offending catalog path, distinct from every I/O and parse failure, so downstream callers can report a programmer error in our shipped catalog differently from a user-config or filesystem error. `carried`/`filled`/`repaired` carry dot-paths (repairs also carry the discarded value) so callers can log per-key detail. Derive `changed` from the same comparison that built the document. Land it unwired and inert.",
+        "size": "L",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "`reconcileConfig` is exported from src/config/reconcile.ts and the module imports nothing from node:fs, node:net, the daemon IPC layer, or any clock source",
+          "`existing` is never mutated: a deep-frozen input reconciles without throwing and deep-equals itself afterwards",
+          "Catalog keys absent from `existing` land in `filled` with the catalog default written; present-and-type-valid keys land in `carried` with the value referentially preserved; present-but-type-invalid keys land in `repaired` with the default substituted",
+          "filled/carried/repaired entries carry the catalog dot-path, and each repair entry additionally carries the discarded prior value (including the replaced scalar in the ancestor-collision case)",
+          "Non-object `existing` (undefined, null, array, string, number, boolean) is treated as {} — all catalog keys filled, nothing thrown",
+          "changed === (filled.length + repaired.length > 0), and changed === false implies result.config deep-equals existing",
+          "reconcileConfig(reconcileConfig(x).config).changed === false for every fixture document",
+          "An out-of-domain catalog `type`, and a catalog row whose default fails its own declared type, each throw a `ConfigCatalogError` (not a bare Error) naming the offending catalog path; no user-config or I/O condition can produce that class",
+          "The type-match switch is exhaustive over the ConfigOption discriminant (a new member produces a compile error, not a silent pass-through)"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c5",
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "module surface — src/config/reconcile.ts exports reconcileConfig, ConfigReconcileResult and ConfigCatalogError, and its import specifiers include no node:fs, node:net, daemon IPC or clock source"
+          },
+          {
+            "level": "unit",
+            "name": "result shape — filled/carried/repaired entries carry catalog dot-paths and every repair record carries the discarded prior value"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Unit-test the reconcileConfig contract",
+        "summary": "Add src/config/__tests__/config-reconcile.test.ts (node:test + node:assert/strict, kebab-case sibling naming) covering the full pure contract with in-memory fixtures driven through the injectable `catalog` parameter — no on-disk fixture is needed at this level because the reconciler is pure. Cover: carried/filled/repaired classification; falsy-but-valid values (false, 0, \"\", [], {}) carried and never filled; null at a non-nullable declared type repaired; a type-matching object with extra un-enumerated sub-keys carried whole without recursion; the t2 captured document surviving a gained-and-lost-keys catalog with all three dynamic namespaces deep-equal; a catalog key reconciled beside a dynamic sibling at the same level with independent outcomes; the changed-derivation invariant; idempotence across the whole fixture corpus; non-object roots; empty and non-matching catalogs; partially-present ancestor chains (intermediates synthesized, only the leaf recorded in filled); scalar/array ancestor collision recording the CATALOG path in repaired together with the discarded scalar value; a value already equal to the catalog default recorded as carried not filled; both ConfigCatalogError throw cases asserted by class and by the path they name; and non-mutation via a deep-freeze helper.",
+        "size": "L",
+        "order": 5,
+        "dependsOn": [
+          "t2",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "src/config/__tests__/config-reconcile.test.ts exists and all 18 named subjects from the test strategy have a corresponding assertion",
+          "The captured t2 fixture reconciles with models.analyze.roleTiers, models.analyze.byRepo and models.agents deep-equal to the baseline, against a catalog that both gained and lost rows relative to the fixture",
+          "The two catalog-integrity failures are asserted to be instances of ConfigCatalogError and to carry the offending catalog path, and no user-config input in the corpus produces that class",
+          "The ancestor-collision test asserts the discarded scalar value is present in the repair record, not just the path",
+          "A deep-freeze helper is used to prove `existing` is never mutated",
+          "`npx tsx --test 'src/config/__tests__/*.test.ts'` passes with no new dependency added to package.json"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c8",
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "catalog key absent from existing → default written, path in filled"
+          },
+          {
+            "level": "unit",
+            "name": "catalog key present and type-valid → value carried unchanged and referentially preserved for objects/arrays"
+          },
+          {
+            "level": "unit",
+            "name": "catalog key present but type-invalid → catalog default substituted, path in repaired"
+          },
+          {
+            "level": "unit",
+            "name": "falsy-but-valid values (false, 0, \"\", [], {}) carried, never filled — existence via hasOwnProperty, not truthiness"
+          },
+          {
+            "level": "unit",
+            "name": "null at a non-nullable declared type is repaired, not carried"
+          },
+          {
+            "level": "unit",
+            "name": "type-matching object with extra un-enumerated sub-keys carried whole, no recursion to prune"
+          },
+          {
+            "level": "unit",
+            "name": "dynamic namespaces roleTiers / byRepo / agents deep-equal across a gained-and-lost-keys catalog on the t2 captured fixture"
+          },
+          {
+            "level": "unit",
+            "name": "catalog key reconciled beside a dynamic sibling at the same level — outcomes independent"
+          },
+          {
+            "level": "unit",
+            "name": "changed === (filled.length + repaired.length > 0) and changed === false implies config deep-equals existing"
+          },
+          {
+            "level": "unit",
+            "name": "idempotence — reconcileConfig(reconcileConfig(x).config).changed === false across the whole fixture corpus"
+          },
+          {
+            "level": "unit",
+            "name": "non-object roots (undefined / null / array / string / number / true) treated as {} — all keys filled, nothing thrown"
+          },
+          {
+            "level": "unit",
+            "name": "empty catalog and catalog matching nothing → changed === false, config deep-equals existing"
+          },
+          {
+            "level": "unit",
+            "name": "partially-present ancestor chain — intermediates synthesized, only the leaf recorded in filled, sibling keys untouched"
+          },
+          {
+            "level": "unit",
+            "name": "ancestor segment collides with a scalar/array — subtree replaced, CATALOG path recorded in repaired with the discarded scalar value"
+          },
+          {
+            "level": "unit",
+            "name": "value already exactly equal to the catalog default → carried, not filled"
+          },
+          {
+            "level": "unit",
+            "name": "catalog row with an out-of-domain type throws ConfigCatalogError naming the offending path, never degrading to fill-default"
+          },
+          {
+            "level": "unit",
+            "name": "catalog row whose own default fails its own declared type throws ConfigCatalogError naming the path"
+          },
+          {
+            "level": "unit",
+            "name": "existing document is never mutated — deep-freeze helper input reconciles and deep-equals itself afterwards"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Contract-test the relocation and the real catalog's self-consistency",
+        "summary": "Add src/config/__tests__/config-catalog-contract.test.ts asserting the module-boundary and catalog-integrity properties no runtime test can observe. Static source scan over src/config/** (read files, parse import specifiers — no new dependency) asserting zero imports of src/cli; assert src/config/config-catalog.ts is the single definition site and that the symbol re-exported from src/cli/config-catalog.ts is reference-identical to it; assert every real CONFIG_CATALOG row's declared type is inside the discriminant domain and every row's default satisfies its own predicate (i.e. reconcileConfig({}, CONFIG_CATALOG) does not throw ConfigCatalogError); assert reconcileConfig is idempotent on the real 41-row catalog. Add the tsc-checked never-assignment fixture proving the predicate switch is exhaustive. This task owns six of the seven LLD contract-level subjects; the seventh — MaintenanceResult.configReconcile being optional and additive — is owned by t11 and must not be duplicated here (record that split in a comment at the top of this file so the ac6 contract row has one unambiguous owner).",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t3",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "The source-scan assertion over src/config/** for src/cli imports runs green against the current tree and fails if such an import is introduced",
+          "`import { CONFIG_CATALOG } from '../../cli/config-catalog.js'` and the src/config import are asserted `===` identical",
+          "reconcileConfig({}, CONFIG_CATALOG) does not throw ConfigCatalogError, and a second pass over its output reports changed === false",
+          "An exhaustiveness assertion (never-assignment or tsc-on-fixture) fails to compile if a discriminant member is added without a matching switch arm",
+          "A header comment records that the MaintenanceResult contract subject is owned by t11, so every LLD contract-level subject has exactly one owning test"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "source scan over src/config/** resolves every import specifier and asserts none reference src/cli"
+          },
+          {
+            "level": "unit",
+            "name": "src/config/config-catalog.ts is the single definition site of CONFIG_CATALOG and ConfigOption"
+          },
+          {
+            "level": "unit",
+            "name": "src/cli/config-catalog.ts re-exports both and its CONFIG_CATALOG is === the src/config array (no duplicate literal)"
+          },
+          {
+            "level": "unit",
+            "name": "real CONFIG_CATALOG self-consistency — every row's type is in-domain and every default satisfies its own predicate; reconcileConfig({}, CONFIG_CATALOG) does not throw ConfigCatalogError"
+          },
+          {
+            "level": "unit",
+            "name": "reconcileConfig({}, CONFIG_CATALOG) is idempotent on the real 41-row catalog — second pass changed === false"
+          },
+          {
+            "level": "unit",
+            "name": "type-level exhaustiveness — never-assignment / tsc-on-fixture fails to compile when a ConfigOption discriminant member lacks a switch arm"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Implement the shared read/reconcile/write-once I/O wrapper and record the two LLD deviations",
+        "summary": "Add the I/O side alongside the pure reconciler in src/config (a plain module function, NOT a ConfigStore method — src/config/store.ts is a deprecated LMDB row store with no fs access at all and is not the config.json owner, so the a3 wrapper resolves to no). It resolves the file through PATHS.config from src/shared/paths.js; reads the whole document once; stats mtimeMs+size at read time; calls reconcileConfig; and writes at most once and only when `changed`, via write-temp-then-rename after re-statting to detect concurrent modification. The write unit is defined precisely: exactly one writeFile targeting the temp config document plus one rename per reconcile that reports changed, and zero of both when changed is false. Error paths: ENOENT degrades to reconcileConfig(undefined); any other read errno aborts with the errno reported and nothing written; a JSON SyntaxError aborts with message plus byte offset and explicitly does NOT fall back to the undefined path (default-filling over a corrupt document would destroy the dynamic namespaces); a ConfigCatalogError propagates as a distinct structured outcome kind so callers can flag a shipped-catalog bug rather than a user-config problem; a write failure unlinks the temp file; a concurrent-modification detection abandons the write. Every failure is returned as a structured non-fatal outcome, never thrown at the caller. Ship a deviation note as a deliverable — a comment block at the wrapper (and mirrored in the Story/LLD amendment) recording (a) that `globalConfigDirs` returns [templates, feedback, conventions] and is NOT the config.json resolver, so PATHS.config supersedes the LLD contract entry `globalConfigDirs` and invariant c7, with the evidence (src/daemon/index.ts:179/1118/1129/1144), and (b) the open question s8-sbdry3 deviation: the CLI update path writes ~/.insrc/config.json directly, in tension with the daemon-owns-on-disk-state rule, why alternative a4 was rejected, and that the approver must confirm it.",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "The wrapper resolves the config path solely through PATHS.config from src/shared/paths.js; no '~/.insrc' or 'config.json' string literal appears in the reconciler or the wrapper",
+          "The wrapper does not call writeConfig / config.write IPC (src/cli/services/config.ts:19) and performs exactly one writeFile of the config document (to the temp path) plus one rename when changed === true, and zero writeFile and zero rename when changed === false",
+          "On write failure the temp file is unlinked and no partial or half-renamed document exists",
+          "ENOENT is treated as the first-boot path; every other read errno and any JSON parse failure abort with nothing written and a structured error carrying the errno or the parse message and offset",
+          "A ConfigCatalogError from the reconciler is returned as a structurally distinct outcome kind from user-config and I/O failures",
+          "A config file mutated between the read stat and the pre-rename re-stat causes the write to be abandoned with a non-fatal 'config changed during reconcile' outcome and the newer document intact",
+          "No ConfigStore method is added and src/config/store.ts is unmodified",
+          "The deviation note exists and states both deviations — PATHS.config superseding the globalConfigDirs contract entry and invariant c7 with its file:line evidence, and the s8-sbdry3 CLI-writes-config-directly question with the a4 rejection rationale"
+        ],
+        "derivedFrom": [
+          "c5",
+          "c7",
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "wrapper write unit — exactly one writeFile of the temp config plus one rename when changed, zero of both when unchanged"
+          },
+          {
+            "level": "unit",
+            "name": "wrapper source constraints — path resolved solely via PATHS.config, no '~/.insrc' or 'config.json' literal in reconciler or wrapper, no writeConfig/config.write IPC call, no ConfigStore method added and src/config/store.ts unmodified"
+          },
+          {
+            "level": "unit",
+            "name": "deviation note present — PATHS.config supersedes the globalConfigDirs contract entry and invariant c7 with file:line evidence, and the s8-sbdry3 CLI-writes-config-directly question with the a4 rejection rationale"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Integration-test the I/O wrapper against a temp INSRC home",
+        "summary": "Add src/config/__tests__/config-reconcile-io.test.ts extending the on-disk fixture idiom already used at src/config/__tests__/repo-shaper-override.test.ts:27 (materialise a config file → run the code under test → assert on the resulting file). Use a temp INSRC home per test and a write-counting fs seam that counts writeFile invocations targeting the config document (temp or final) plus rename invocations, so 'written at most once' is an assertion rather than an inference — this is what fences off any N-round-trip implementation, including one that writes the temp file twice. Cover: the t2 legacy fixture producing exactly 1 writeFile + 1 rename with the three dynamic namespaces byte-identical; an already-normalized config producing 0 writeFile and 0 rename and an unchanged mtime; ENOENT first-boot equivalence; unreadable file (EACCES/EISDIR, skip-guarded when running as root); corrupt/truncated/zero-byte JSON aborting with no write and explicitly asserting no default-fill fallback; write failure leaving no temp file behind; concurrent modification abandoning the write; a ConfigCatalogError surfacing as its own outcome kind; and path resolution going through PATHS.config.",
+        "size": "M",
+        "order": 8,
+        "dependsOn": [
+          "t2",
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "Every listed integration subject has a test and the suite passes under `npx tsx --test 'src/config/__tests__/*.test.ts'`",
+          "The write-counting seam counts writeFile invocations targeting the config document (temp or final) and rename invocations, and asserts exactly 1 of each for the legacy fixture and exactly 0 of each for the already-normalized case, with mtime asserted unchanged in the latter",
+          "The corrupt-JSON test asserts the on-disk bytes are identical after the run and that the dynamic namespaces were not default-filled over",
+          "A catalog-integrity failure is asserted to surface as a distinct outcome kind from an I/O or parse failure",
+          "Permission-based tests skip cleanly rather than fail when the suite runs as root",
+          "Tests add no new package dependency"
+        ],
+        "derivedFrom": [
+          "c5",
+          "c7",
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "legacy config on disk → exactly 1 writeFile + 1 rename, resulting document normalized, dynamic namespaces byte-identical"
+          },
+          {
+            "level": "integration",
+            "name": "already-normalized config → zero writeFile, zero rename, mtime unchanged (steady state)"
+          },
+          {
+            "level": "integration",
+            "name": "ENOENT → degrades to reconcileConfig(undefined) and writes defaults once (first-boot equivalence)"
+          },
+          {
+            "level": "integration",
+            "name": "unreadable file (EACCES/EISDIR, root-skip-guarded) → nothing written, existing file untouched, errno surfaced"
+          },
+          {
+            "level": "integration",
+            "name": "corrupt / truncated / zero-byte JSON → aborts writing nothing, reports parse message + byte offset, on-disk bytes identical and no default-fill fallback"
+          },
+          {
+            "level": "integration",
+            "name": "write failure (ENOSPC/EACCES) → temp file unlinked, no partial or half-renamed document, counts reported alongside the error"
+          },
+          {
+            "level": "integration",
+            "name": "concurrent modification between read stat and pre-rename re-stat → write abandoned, newer document intact, non-fatal outcome recorded"
+          },
+          {
+            "level": "integration",
+            "name": "ConfigCatalogError surfaces as a structurally distinct outcome kind from I/O and parse failures"
+          },
+          {
+            "level": "integration",
+            "name": "path resolution goes through PATHS.config against a temp INSRC home; no hardcoded ~/.insrc path is exercised"
+          }
+        ]
+      },
+      {
+        "id": "t9",
+        "title": "Wire the authoritative reconcile into daemon boot, preserving first-boot behaviour exactly",
+        "summary": "Replace step '2b. Ensure config.json exists with agent defaults' at src/daemon/index.ts:178-203 with an unconditional read → reconcile → write-if-changed via the t7 wrapper. The `if (!existsSync(PATHS.config))` short-circuit goes away: the absent-file case must reduce EXACTLY to today's write-defaults behaviour — not merely a superset — while the previously no-op else branch at L194-203 gains the real reconcile. The hand-rolled L180-192 literal (~17 of 41 catalog rows) is deleted in favour of catalog defaults, so before deleting it, assert key-by-key against the t2 captured literal fixture that each key's catalog default is deep-equal to the literal's value. Any divergence must be surfaced as a deliberate, named default change (key, old value, new value) with its own acceptance check — never absorbed silently, because the unconditional reconcile would also write that divergent value into existing configs that lack the key. Tighten the existing `catch { /* ignore parse errors */ }` at L202 into the explicit no-write-and-warn behaviour. The whole sequence is wrapped so a reconcile failure never aborts boot — copy the non-fatal shape of the legacy-storage sweep immediately above at L154-171 (`warn ... non-fatal, retry on next boot`) — but a ConfigCatalogError is logged distinguishably (an explicit shipped-catalog-bug warn naming the catalog path) so a programmer error in our own catalog does not read as a transient EACCES. No DB dependency: 2b runs before the DB opens at L213. Ship boot integration tests asserting the reconcile is unconditional and that a throwing reconcile still reaches listening state.",
+        "size": "M",
+        "order": 9,
+        "dependsOn": [
+          "t2",
+          "t5",
+          "t6",
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "src/daemon/index.ts no longer short-circuits on an existing config.json; the reconcile runs on every boot",
+          "A test enumerates every key of the deleted L180-192 literal from the t2 captured fixture and asserts the corresponding catalog default is deep-equal to the literal's value; any intended divergence is named in a dedicated check listing the key and its old and new value",
+          "With no config.json present, boot writes a document whose values for the former literal's keys are identical to the pre-change output, plus the remaining catalog defaults, in one write",
+          "A reconcile that throws or fails (catalog error, unreadable config, write failure) logs exactly one warn line, leaves the on-disk file untouched, and the daemon still reaches listening state",
+          "A ConfigCatalogError produces a warn line that names the offending catalog path and is textually distinguishable from a user-config or I/O failure warn",
+          "The former silent `catch { /* ignore parse errors */ }` now emits an explicit warn naming the file and the parse failure, and writes nothing",
+          "src/daemon imports the catalog from src/config, and grep confirms src/daemon still has zero imports of src/cli"
+        ],
+        "derivedFrom": [
+          "c5",
+          "c7",
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "daemon boot — reconcile runs on startup unconditionally and does not short-circuit on an existing config.json"
+          },
+          {
+            "level": "integration",
+            "name": "daemon boot — a throwing/failing reconcile (catalog error, unreadable config, write failure) logs exactly one warn, leaves the file untouched, and the daemon still reaches listening state"
+          },
+          {
+            "level": "integration",
+            "name": "daemon boot — a ConfigCatalogError warn names the offending catalog path and is textually distinguishable from a user-config or I/O warn"
+          },
+          {
+            "level": "integration",
+            "name": "daemon boot first-boot equivalence — no config.json present writes the former literal's key values identically to the pre-change output plus the remaining catalog defaults, in one write"
+          },
+          {
+            "level": "integration",
+            "name": "daemon boot — the former silent parse-error catch now emits an explicit warn naming the file and the parse failure and writes nothing"
+          },
+          {
+            "level": "unit",
+            "name": "defaults-literal parity — every key of the deleted src/daemon/index.ts:180-192 literal (from the t2 fixture) is deep-equal to its catalog default, with any intended divergence named key/old/new"
+          },
+          {
+            "level": "unit",
+            "name": "module boundary — src/daemon imports the catalog from src/config and a source scan confirms src/daemon has zero imports of src/cli"
+          }
+        ]
+      },
+      {
+        "id": "t10",
+        "title": "Settle the stale-catalog hazard and ship a standalone built-catalog loader",
+        "summary": "Settle and implement the one genuinely open design decision, as an independently testable unit ahead of any update wiring: maintenance.update runs inside a CLI process holding the PRE-update CONFIG_CATALOG in its module graph, while `npm run build` at src/cli/services/maintenance.ts:106-112 rewrites out/ underneath it — so an in-process reconcile against the resident module is a no-op for exactly the shape change this Story targets, and is indistinguishable from 'already normalized'. Resolution (a) is chosen: load the freshly built catalog module via `await import()` of the build output and pass it as reconcileConfig's injectable `catalog` argument; on import rejection fall back to (b) — report only and defer the authoritative reconcile to the next daemon boot (landed in t9), never claiming a confident no-change against the stale in-memory catalog. Deliver this as a standalone helper `loadBuiltCatalog(): Promise<readonly ConfigOption[] | null>` in src/config that returns the freshly imported catalog or null on import rejection, with unit tests against a built-catalog fixture directory and a missing-output case. Record the decision and its rationale in a doc comment on the helper; the call-site wiring and its rationale comment land in t12.",
+        "size": "M",
+        "order": 10,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "`loadBuiltCatalog` is exported from src/config, obtains the catalog via dynamic import of the build output, and never returns the statically imported src/cli/config-catalog.js binding",
+          "A missing or moved build output makes loadBuiltCatalog resolve to null rather than throwing, and this is unit-tested against both a valid built-catalog fixture directory and a missing-output case",
+          "The returned catalog is validated to be a non-empty array of catalog rows before being returned; a malformed module resolves to null",
+          "The chosen resolution (a with fallback b) and its rationale are documented in a doc comment on the helper",
+          "`npx tsx --test 'src/config/__tests__/*.test.ts'` passes with no new package dependency"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "loadBuiltCatalog — returns the freshly imported catalog from a built-catalog fixture directory, not the statically imported src/cli binding"
+          },
+          {
+            "level": "unit",
+            "name": "loadBuiltCatalog — missing/moved build output resolves to null without throwing"
+          },
+          {
+            "level": "unit",
+            "name": "loadBuiltCatalog — malformed or empty catalog module resolves to null after the non-empty-array-of-rows validation"
+          }
+        ]
+      },
+      {
+        "id": "t11",
+        "title": "Add the optional configReconcile field to MaintenanceResult and pin the interface contract",
+        "summary": "Extend MaintenanceResult at src/cli/services/maintenance.ts:40-44 with an additive, optional summary field. The existing interface is all-`readonly`, which the LLD's schemaDiff omitted: declare it `readonly configReconcile?: { readonly changed: boolean; readonly filled: number; readonly repaired: number; readonly error?: string | undefined } | undefined` — optionality written explicitly per exactOptionalPropertyTypes. Counts only; per-key dot-path detail goes to onLog. No existing field changes meaning and UpdateOptions gains nothing. This task owns the seventh LLD contract-level subject (MaintenanceResult.configReconcile is optional and additive, existing field set and meanings unchanged), and discharges it with a real test rather than a build side effect: add a type-level contract fixture that pins the existing field names and types (ok: boolean, steps, error) and asserts configReconcile is optional, so a future retype of `ok` or `steps` fails the suite instead of passing silently. Check the single downstream reader (src/cli/services/index.ts:91 → src/cli/panes/DaemonPane.tsx) still compiles and renders unchanged.",
+        "size": "S",
+        "order": 11,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "MaintenanceResult gains only the readonly optional configReconcile field; ok, steps and error are untouched in name, type and meaning",
+          "A committed type-level contract fixture pins the pre-existing MaintenanceResult field names and types and the optionality of configReconcile, and fails to compile if any existing field is renamed, retyped, or made required",
+          "The field and its nested members are readonly with `| undefined` written explicitly, and typecheck passes under exactOptionalPropertyTypes",
+          "UpdateOptions is unchanged — no new flag",
+          "src/cli/services/index.ts and src/cli/panes/DaemonPane.tsx compile unchanged and DaemonPane's rendering is unaffected"
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "MaintenanceResult type-level contract fixture — ok/steps/error pinned by name and type and configReconcile asserted optional; a rename, retype or required-ing fails compilation"
+          },
+          {
+            "level": "unit",
+            "name": "configReconcile and its nested members are readonly with explicit `| undefined` and typecheck under exactOptionalPropertyTypes; UpdateOptions gains no field"
+          },
+          {
+            "level": "unit",
+            "name": "downstream reader — src/cli/services/index.ts and src/cli/panes/DaemonPane.tsx compile unchanged and DaemonPane's rendering is unaffected"
+          }
+        ]
+      },
+      {
+        "id": "t12",
+        "title": "Wire the reconcile into maintenance.update after the build step",
+        "summary": "Insert the reconcile between src/cli/services/maintenance.ts:112 and :114 — strictly after git fetch/merge and `npm run build`, never before — using the t7 wrapper and the t10 `loadBuiltCatalog` resolution (fall back to defer-to-boot and report the deferral when it returns null). It must run unconditionally (no opt-in flag) and write at most once, only when changed. Because every failure path in update() early-returns `ok: false` (L55/65/75/84/88/99/109) and the whole body sits in one try/catch returning ok:false (L116-118), the non-fatal requirement needs its OWN inner try/catch — a naive throw would flip a successful update to failed. On success populate configReconcile with counts and push 'reconcile' onto the existing `steps` channel; on failure capture the message into configReconcile.error while still returning ok:true, and report a ConfigCatalogError distinguishably (an explicit shipped-catalog-bug message, not an anonymous failure string) so it is not flattened into the same channel as a user-config or I/O failure. onLog carries the per-key detail the LLD requires, not just counts: emit exactly one reconcile summary line plus one detail line per filled and per repaired key naming its catalog dot-path, and for an ancestor collision the detail line also names the discarded scalar value so the loss is stated, not hidden. An explicit no-change line or an explicit failure line is emitted when there is nothing filled or repaired — never silence — and onLog is the only progress channel. Add the rationale comment for the stale-catalog resolution at this call site, and an acceptance-visible pointer to the t7 deviation note covering s8-sbdry3 (the CLI writing ~/.insrc/config.json directly). Ship the update integration tests (stubbed git/build steps, recording onLog collector) alongside.",
+        "size": "M",
+        "order": 12,
+        "dependsOn": [
+          "t7",
+          "t9",
+          "t10",
+          "t11"
+        ],
+        "acceptanceChecks": [
+          "The reconcile call sits after the build push and before the final `return { ok: true, steps }`; an ordering assertion over the stubbed steps proves it never precedes git-pull or build",
+          "A reconcile failure after successful git-pull + build still returns ok:true with the reason in configReconcile.error and on onLog, and a ConfigCatalogError is reported with a distinguishable shipped-catalog-bug message",
+          "onLog emits exactly one reconcile summary line plus one detail line per filled and per repaired key, each naming the catalog dot-path; counts stay in configReconcile",
+          "A reconcile that repairs an ancestor collision emits a detail line containing both the colliding catalog path and the discarded scalar value",
+          "An explicit no-change onLog line is emitted when nothing was filled or repaired; a silent no-op fails the test",
+          "The reconcile is wrapped in its own inner try/catch, verified by a test where the reconcile throws and update still returns ok:true",
+          "git-pull and build behaviour is byte-identical to the pre-change baseline and no UpdateOptions flag was added",
+          "The stale-catalog resolution is exercised: loadBuiltCatalog's freshly built catalog is used, and a null return falls back to defer-to-boot and reports the deferral rather than a no-change result",
+          "The call site carries the stale-catalog rationale comment and references the t7 deviation note covering the CLI-writes-config-directly question (s8-sbdry3)"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c5",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "maintenance.update — ordering assertion over the stubbed steps proves the reconcile is sequenced strictly after git-pull and build"
+          },
+          {
+            "level": "integration",
+            "name": "maintenance.update — success populates MaintenanceResult.configReconcile {changed, filled, repaired} and emits exactly one onLog summary line plus one detail line per filled and per repaired key naming its catalog dot-path"
+          },
+          {
+            "level": "integration",
+            "name": "maintenance.update — nothing filled or repaired emits an explicit no-change onLog line; silence fails the test"
+          },
+          {
+            "level": "integration",
+            "name": "maintenance.update — an ancestor-collision repair emits a detail line naming both the colliding catalog path and the discarded scalar value"
+          },
+          {
+            "level": "integration",
+            "name": "maintenance.update — reconcile failure after successful git-pull + build still returns ok:true with the reason in configReconcile.error and on onLog; a ConfigCatalogError is reported with a distinguishable shipped-catalog-bug message"
+          },
+          {
+            "level": "integration",
+            "name": "maintenance.update — a throwing reconcile is caught by its own inner try/catch and update still returns ok:true"
+          },
+          {
+            "level": "integration",
+            "name": "maintenance.update — no new UpdateOptions flag, reconcile runs unconditionally, git-pull + build behaviour byte-identical to the pre-change baseline"
+          },
+          {
+            "level": "integration",
+            "name": "maintenance.update — stale-catalog resolution exercised: the post-build loadBuiltCatalog result is used, and a null return falls back to defer-to-boot reporting the deferral instead of a confident no-change against the in-memory pre-update catalog"
+          }
+        ]
+      },
+      {
+        "id": "t13",
+        "title": "End-to-end smoke validation on the captured fixture",
+        "summary": "Prove the user-visible outcome on the two least-evidenced paths with real binaries. Add the smoke suite: spawn the real daemon against a temp ~/.insrc seeded with a scratch copy of the t2 legacy fixture, assert the file is normalized, that all three dynamic namespaces are byte-identical to the baseline, and that the daemon serves IPC; then boot a second time against the now-normalized file and assert zero writes (mtime unchanged) — the convergence property that makes an unconditional boot reconcile safe. Separately, boot once against an empty temp home and diff the written document against the t2 captured pre-change defaults literal to confirm first-boot output is unchanged for every key that literal covered. Then run an actual update against a scratch copy and diff the result against the pre-change capture: the newly-catalogued key added, the type-invalid key repaired, every dynamic namespace unchanged, and a second run writing nothing. No INSRC_LIVE_TESTS gate is needed — neither Ollama nor CliProvider is touched.",
+        "size": "M",
+        "order": 13,
+        "dependsOn": [
+          "t8",
+          "t9",
+          "t12"
+        ],
+        "acceptanceChecks": [
+          "A daemon spawned against the temp legacy home normalizes the config, serves IPC, and leaves models.analyze.roleTiers, models.analyze.byRepo and models.agents byte-identical to the t2 baseline",
+          "A second boot against the normalized file performs zero writes and leaves mtime unchanged",
+          "A first boot against an empty temp home produces values identical to the t2 captured pre-change defaults literal for every key that literal covered",
+          "An update run against a scratch copy of the fixture adds the missing catalog key, repairs the type-invalid one, leaves every dynamic namespace unchanged, and a repeat run writes nothing",
+          "The smoke suite runs under `npx tsx --test` without an INSRC_LIVE_TESTS gate",
+          "The full sweep `npx tsx --test 'src/**/__tests__/*.test.ts'` passes and `npm run build` is clean"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c8",
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "real daemon boot against a temp ~/.insrc holding the legacy fixture — file normalized, all three dynamic namespaces byte-identical to the baseline, daemon serves IPC"
+          },
+          {
+            "level": "smoke",
+            "name": "second real boot against the now-normalized file — zero writes, mtime unchanged (convergence)"
+          },
+          {
+            "level": "smoke",
+            "name": "first real boot against an empty temp home — written values identical to the t2 captured pre-change defaults literal for every key it covered"
+          },
+          {
+            "level": "smoke",
+            "name": "real update run against a scratch fixture copy — missing catalog key added, type-invalid key repaired, dynamic namespaces unchanged, repeat run writes nothing"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "reconcileConfig(existing, catalog) — catalog key absent from existing → default written, path in filled",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "reconcileConfig — catalog key present and type-valid → value carried unchanged and referentially preserved for objects/arrays",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "reconcileConfig — catalog key present but type-invalid → catalog default substituted, path in repaired",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "reconcileConfig — falsy-but-valid existing values (false, 0, \"\", [], {}) are carried, never filled (existence test via hasOwnProperty, not truthiness)",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "reconcileConfig — null at a non-nullable declared type is repaired, not carried (typeof null === 'object' must not slip through an object predicate)",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "reconcileConfig — type-matching object carrying extra un-enumerated sub-keys is carried whole; no recursion into it to prune",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "reconcileConfig — dynamic namespaces models.analyze.roleTiers.<roleId>, models.analyze.byRepo.<absPath>.*, models.agents survive deep-equal across a catalog that has both gained and lost keys",
+        "coveredByTaskIds": [
+          "t5",
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "reconcileConfig — catalog key reconciled while a dynamic sibling sits at the same level; both outcomes independent",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "reconcileConfig — changed === (filled.length + repaired.length > 0), and changed === false implies result.config deep-equals existing",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "reconcileConfig — idempotence: reconcileConfig(reconcileConfig(x).config).changed === false across the whole fixture corpus",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "reconcileConfig — existing is undefined / null / array / string / number / true → treated as {}, all keys filled, nothing thrown",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "reconcileConfig — empty catalog and a catalog matching nothing → changed === false, config deep-equals existing",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "reconcileConfig — partially-present ancestor chain: intermediates synthesized, only the leaf path recorded in filled, sibling keys under the existing ancestor untouched",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "reconcileConfig — ancestor segment collides with a scalar/array: subtree replaced, CATALOG path (not the ancestor) recorded in repaired",
+        "coveredByTaskIds": [
+          "t5",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "reconcileConfig — existing value already exactly equal to the catalog default → carried, not filled",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "reconcileConfig — catalog row with a type outside the ConfigOption discriminant domain throws, naming the offending path (must not degrade to fill-default)",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "reconcileConfig — catalog row whose own default fails its own declared type throws (self-inconsistent row would make the reconcile permanently non-idempotent)",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "reconcileConfig — existing document object identity is never mutated (frozen-input / deep-equal-before-after assertion)",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/config/** contains no import of src/cli (static scan of resolved import specifiers across the directory)",
+        "coveredByTaskIds": [
+          "t6",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/config/config-catalog.ts is the single definition site of CONFIG_CATALOG and ConfigOption",
+        "coveredByTaskIds": [
+          "t6",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/cli/config-catalog.ts re-exports both, and the re-exported CONFIG_CATALOG is reference-identical to the src/config one (no duplicated array)",
+        "coveredByTaskIds": [
+          "t6",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "The real CONFIG_CATALOG: every row's declared type is inside the discriminant domain, and every row's default satisfies its own type predicate — reconcileConfig(CONFIG_CATALOG-shaped empty doc) does not throw",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "reconcileConfig({}, CONFIG_CATALOG) is idempotent on the real catalog: second pass changed === false",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "Type-level: the type-match predicate's switch is exhaustive over the ConfigOption discriminant (a new member is a compile error, verified by a tsc-on-fixture or never-assignment assertion)",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "MaintenanceResult.configReconcile is optional and additive — existing field set and meanings unchanged",
+        "coveredByTaskIds": [
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "read/reconcile/write wrapper — legacy config on disk → file written exactly once, resulting document normalized, dynamic namespaces byte-identical",
+        "coveredByTaskIds": [
+          "t8",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "read/reconcile/write wrapper — already-normalized config → zero writes and unchanged mtime (steady-state boot)",
+        "coveredByTaskIds": [
+          "t8",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "read/reconcile/write wrapper — ENOENT (no config file) → degrades to reconcileConfig(undefined), writes defaults once (first-boot equivalence)",
+        "coveredByTaskIds": [
+          "t8",
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "read/reconcile/write wrapper — unreadable file (EACCES/EISDIR) → nothing written, existing file untouched, errno surfaced",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "read/reconcile/write wrapper — corrupt/truncated/zero-byte JSON → aborts, writes NOTHING, reports parse message + offset; explicitly asserts it does NOT fall back to the undefined path and default-fill over the corrupt document",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "read/reconcile/write wrapper — write failure (ENOSPC/EACCES) → temp file unlinked, no partial or half-renamed document, counts reported alongside the error",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "read/reconcile/write wrapper — concurrent modification between read and write (mtimeMs/size changed) → write abandoned, newer document intact, non-fatal error recorded",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "read/reconcile/write wrapper — path resolution goes through src/config/paths.ts globalConfigDirs; no hardcoded ~/.insrc path anywhere in the reconciler or its call sites",
+        "coveredByTaskIds": [
+          "t7",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "maintenance.update — reconcile sequenced strictly AFTER git-pull and build (ordering assertion over the stubbed steps)",
+        "coveredByTaskIds": [
+          "t12"
+        ]
+      },
+      {
+        "lldStrategyItem": "maintenance.update — success path populates MaintenanceResult.configReconcile {changed, filled, repaired} and emits exactly one onLog reconcile line; no-change case emits an explicit no-change line, never silence",
+        "coveredByTaskIds": [
+          "t12"
+        ]
+      },
+      {
+        "lldStrategyItem": "maintenance.update — reconcile failure with git-pull + build succeeded → update still reported successful, error captured in configReconcile.error and surfaced via onLog",
+        "coveredByTaskIds": [
+          "t12"
+        ]
+      },
+      {
+        "lldStrategyItem": "maintenance.update — no new UpdateOptions flag; reconciliation runs unconditionally, and git-pull + build behaviour is otherwise byte-identical to the pre-change baseline",
+        "coveredByTaskIds": [
+          "t12",
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "maintenance.update — STALE-CATALOG resolution is exercised as chosen: either the post-build dynamic import supplies the freshly built catalog (and its rejection falls back to defer-to-boot), or the update path reports-only and asserts it does not claim a confident no-change against the in-memory pre-update catalog",
+        "coveredByTaskIds": [
+          "t12",
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "daemon boot — reconcile runs on startup, is unconditional, and does not short-circuit on an existing config file",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "daemon boot — reconcile throwing (catalog error, unreadable config, write failure) never aborts boot: daemon reaches listening state, one warn logged, on-disk file untouched",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "Boot the daemon against a temp ~/.insrc holding a legacy config populated in all three dynamic namespaces; assert the file is normalized, the namespaces are unchanged, and the daemon serves IPC",
+        "coveredByTaskIds": [
+          "t13"
+        ]
+      },
+      {
+        "lldStrategyItem": "Boot a second time against the now-normalized file; assert zero writes (mtime unchanged) — the convergence property that makes an unconditional boot reconcile safe",
+        "coveredByTaskIds": [
+          "t13"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 handoff — pure reconcileConfig(existing, catalog) merging catalog outcomes over a deep clone of existing, returning {config, changed, carried, filled, repaired}",
+      "quotedText": "Build the output as a MERGE over a deep clone of `existing`, never a rebuild from catalog rows, so catalog-unenumerable keys survive blindly."
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 handoff — relocate ConfigOption + CONFIG_CATALOG to src/config/config-catalog.ts with a re-export shim at src/cli/config-catalog.ts",
+      "quotedText": "src/config/config-catalog.ts is the single definition site of ConfigOption and CONFIG_CATALOG"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 handoff — ConfigOption discriminant is the closed union 'string'|'number'|'boolean'|'enum'; the type-match predicate must be an exhaustive switch",
+      "quotedText": "The type-match switch is exhaustive over the ConfigOption discriminant (a new member produces a compile error, not a silent pass-through)"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 handoff — maintenance.update reporting: additive optional MaintenanceResult.configReconcile plus the stale-catalog resolution for the post-build reconcile",
+      "quotedText": "maintenance.update runs the reconcile after the build step and reports it additively via MaintenanceResult"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 handoff — daemon boot as the authoritative reconcile point: unconditional read → reconcile → write-if-changed, never aborting boot on failure",
+      "quotedText": "daemon boot runs the reconcile unconditionally and never aborts boot on failure"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 handoff — no daemon→cli import edge: src/config must import nothing from src/cli, enforced by a static source scan",
+      "quotedText": "the catalog is relocated into src/config with no daemon→cli import edge"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 handoff — shared read/reconcile/write-once I/O wrapper: writes at most once and only when changed, all failures structured and non-fatal",
+      "quotedText": "read/parse/write failures abort without writing and are surfaced as structured non-fatal outcomes"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 handoff — preserve the catalog-unenumerable dynamic namespaces (models.analyze.roleTiers, models.analyze.byRepo, models.agents) blindly, proven against a captured real config",
+      "quotedText": "catalog-unenumerable namespaces (models.analyze.roleTiers, models.analyze.byRepo, models.agents) survive blindly"
+    },
+    {
+      "id": "c9",
+      "kind": "analyze-bundle",
+      "ref": "s1 analyze bundle — src/daemon/index.ts:178-203 step 2b (existsSync short-circuit, L180-192 hand-rolled defaults literal, L202 silent parse catch, DB opens at L213), src/daemon/index.ts:1137-1139 config.write ancestor-collision rule, src/cli/config-catalog.ts:23-30, src/cli/services/maintenance.ts:40-44/106-112, PATHS.config in src/shared/paths.ts",
+      "quotedText": "2b runs before the DB opens at L213; the config.write handler already inlines the ancestor-collision rule at src/daemon/index.ts:1137-1139"
+    },
+    {
+      "id": "c10",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 test-strategy acceptanceMapping — criterionId values ac1..ac9 referenced by the strategy while the Story ships acceptanceCriteria: []",
+      "quotedText": "Every criterionId referenced in the LLD test-strategy acceptanceMapping resolves to a criterion with text — no unanchored id remains"
+    }
+  ]
+}

@@ -68,6 +68,7 @@ interface LldMetaOpts {
 	readonly rejected?:      boolean;
 	readonly effectiveHash?: string;
 	readonly staleAckedAt?:  string;
+	readonly standalone?:    boolean;
 }
 
 function seedLld(repo: string, storyId: string, opts: LldMetaOpts): string {
@@ -80,6 +81,7 @@ function seedLld(repo: string, storyId: string, opts: LldMetaOpts): string {
 	if (opts.approved) meta['approvedAt'] = '2026-01-01T00:00:00Z';
 	if (opts.rejected) meta['rejectedAt'] = '2026-01-02T00:00:00Z';
 	if (opts.staleAckedAt) meta['staleAckedAt'] = opts.staleAckedAt;
+	if (opts.standalone) meta['standalone'] = true;
 	writeFileSync(lp.json, JSON.stringify({
 		meta,
 		body: {
@@ -157,7 +159,29 @@ test('readPlanUpstream: assembles { lld, hldSlice, storyDependsOn } from approve
 		seedLld(repo, 's1', { approved: true });
 		const up = readPlanUpstream(repo, HASH, 's1');
 		assert.equal(up.lld.meta.storyId, 's1');
-		assert.equal(up.hldSlice.boundary.storyId, 's1');
+		assert.equal(up.hldSlice!.boundary.storyId, 's1');   // epic-scoped → slice present
 		assert.deepEqual(up.storyDependsOn, []);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('readPlanUpstream: a standalone LLD skips the HLD/epic reads → hldSlice null, no throw (no HLD/DEF present)', () => {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-plan-gate-'));
+	try {
+		// Seed ONLY an approved standalone LLD — no define/HLD on disk at all.
+		seedLld(repo, 's1', { approved: true, standalone: true });
+		let up!: ReturnType<typeof readPlanUpstream>;
+		assert.doesNotThrow(() => { up = readPlanUpstream(repo, HASH, 's1'); });
+		assert.equal(up.lld.meta.storyId, 's1');
+		assert.equal(up.hldSlice, null);            // HLD read skipped
+		assert.deepEqual(up.storyDependsOn, []);    // epic read skipped
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('readPlanUpstream: an epic-scoped LLD (standalone unset) still requires the HLD — throws when it is absent', () => {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-plan-gate-'));
+	try {
+		// Approved epic-scoped LLD but NO HLD seeded → the hard gate still fires.
+		seedLld(repo, 's1', { approved: true });
+		assert.throws(() => readPlanUpstream(repo, HASH, 's1'), ArtifactMissingError);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });

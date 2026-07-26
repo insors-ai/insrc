@@ -108,11 +108,9 @@ const contextAssemble = llmPauseRunner({
 				JSON.stringify(storyDependsOn, null, 2),
 				'```',
 				'',
-				'HLD context slice (for cross-cutting context):',
-				'```json',
-				JSON.stringify(hldSlice, null, 2),
-				'```',
-				'',
+				...(hldSlice !== null
+					? ['HLD context slice (for cross-cutting context):', '```json', JSON.stringify(hldSlice, null, 2), '```', '']
+					: []),
 				'Approved LLD handoff (what to break down):',
 				'```json',
 				JSON.stringify(lld.body, null, 2),

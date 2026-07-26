@@ -270,7 +270,9 @@ export function requireApprovedLld(repoPath: string, epicHash: string, storyId: 
  *  slice, and the Story's define dependency edges. Not persisted. */
 export interface PlanUpstream {
 	readonly lld:            LldArtifact;
-	readonly hldSlice:       HldContextSlice;
+	/** The HLD context slice for cross-cutting grounding, or `null` for a
+	 *  standalone (no-HLD) story — the HLD read is skipped in that case. */
+	readonly hldSlice:       HldContextSlice | null;
 	readonly storyDependsOn: readonly string[];
 }
 
@@ -281,6 +283,14 @@ export interface PlanUpstream {
  *  Throws (via the gates) when any upstream artifact is unusable. */
 export function readPlanUpstream(repoPath: string, epicHash: string, storyId: string): PlanUpstream {
 	const lld = requireApprovedLld(repoPath, epicHash, storyId);
+	// Scope-aware upstream: the required documentation graph is dynamic, not
+	// hardcoded to an HLD start point. A standalone (triage-routed) story has an
+	// approved LLD but NO HLD/epic — skip those reads (mirroring the
+	// `requireApprovedLld` standalone branch) and ground on the LLD alone.
+	// Epic-scoped stories keep the full HLD + epic hard gate unchanged.
+	if (lld.meta.standalone === true) {
+		return { lld, hldSlice: null, storyDependsOn: [] };
+	}
 	const hld = requireApprovedHld(repoPath, epicHash);
 	const hldSlice = extractHldContextSlice(hld, storyId);
 	const define = requireApprovedEpic(repoPath, epicHash);

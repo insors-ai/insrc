@@ -36,7 +36,7 @@
  *                and the discarded prior value is recorded
  */
 
-import { CONFIG_CATALOG, type ConfigOption } from './config-catalog.js';
+import { CONFIG_CATALOG, RETIRED_PATHS, type ConfigOption, type RetiredPath } from './config-catalog.js';
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -60,6 +60,8 @@ export interface ConfigReconcileResult {
 	readonly filled:   readonly string[];
 	/** Catalog dot-paths repaired to the default (with the discarded value). */
 	readonly repaired: readonly ConfigRepair[];
+	/** Declared-retired dot-paths (or prefix-subtree roots) actually removed. */
+	readonly pruned:   readonly string[];
 }
 
 /**
@@ -198,6 +200,64 @@ function writeLeaf(
 }
 
 // ---------------------------------------------------------------------------
+// Prune (retired paths)
+// ---------------------------------------------------------------------------
+
+/** Read-only: does the exact dot-path exist (the whole ancestor chain is plain
+ *  objects and the leaf key is an own-property)? Existence via hasOwnProperty,
+ *  not truthiness, so falsy-but-present values (0/""/false) count as present. */
+function hasPath(root: Record<string, unknown>, keys: readonly string[]): boolean {
+	let node: unknown = root;
+	for (let i = 0; i < keys.length - 1; i++) {
+		if (!isPlainObject(node)) return false;
+		node = node[keys[i]!];
+	}
+	return isPlainObject(node) && Object.prototype.hasOwnProperty.call(node, keys[keys.length - 1]!);
+}
+
+/**
+ * Copy-on-write DELETE of a key. Mirrors writeLeaf: descends from the owned
+ * root, shallow-copying each ancestor once before deleting the leaf key — so
+ * `existing` is never mutated. Deleting the key removes whatever is there
+ * (scalar leaf OR whole subtree), which is what both exact and prefix retired
+ * paths want. Caller must have verified hasPath first (so every ancestor is a
+ * plain object).
+ */
+function deleteAt(root: Record<string, unknown>, owned: WeakSet<object>, keys: readonly string[]): void {
+	let obj = root;
+	for (let i = 0; i < keys.length - 1; i++) {
+		const key = keys[i]!;
+		const child = obj[key] as Record<string, unknown>;
+		if (owned.has(child)) {
+			obj = child;
+		} else {
+			const copy = { ...child };
+			owned.add(copy);
+			obj[key] = copy;
+			obj = copy;
+		}
+	}
+	delete obj[keys[keys.length - 1]!];
+}
+
+/**
+ * Catalog-integrity: every retired path must be disjoint from every live
+ * catalog path — a path cannot be both filled and stripped. A retired path
+ * that equals, or is a prefix of, any live catalog path is a self-inconsistent
+ * shipped catalog and throws ConfigCatalogError.
+ */
+function assertRetiredDisjoint(catalog: readonly ConfigOption[], retired: readonly RetiredPath[]): void {
+	for (const r of retired) {
+		for (const opt of catalog) {
+			if (opt.path === r.path || opt.path.startsWith(`${r.path}.`)) {
+				throw new ConfigCatalogError(r.path,
+					`retired path '${r.path}' overlaps live catalog path '${opt.path}' (retired ∩ catalog ≠ ∅)`);
+			}
+		}
+	}
+}
+
+// ---------------------------------------------------------------------------
 // Public entry point
 // ---------------------------------------------------------------------------
 
@@ -206,13 +266,21 @@ function writeLeaf(
  * is never mutated. A non-object `existing` (undefined / null / array /
  * string / number / boolean) is treated as `{}` — every catalog key is filled.
  *
+ * After the catalog merge it PRUNES the declared-retired paths: blind
+ * preservation of un-catalogued keys is refined to "preserve every
+ * un-catalogued key EXCEPT those explicitly on the retired list".
+ *
  * @throws ConfigCatalogError if a catalog row has an out-of-domain type or a
- *         default that fails its own predicate (a shipped-catalog bug).
+ *         default that fails its own predicate, or a retired path overlaps a
+ *         live catalog path (both are shipped-catalog bugs).
  */
 export function reconcileConfig(
 	existing: unknown,
 	catalog: readonly ConfigOption[] = CONFIG_CATALOG,
+	retired: readonly RetiredPath[] = RETIRED_PATHS,
 ): ConfigReconcileResult {
+	assertRetiredDisjoint(catalog, retired);
+
 	// Root is a shallow copy so we never write through to `existing`; nested
 	// nodes are copied lazily (copy-on-write) only when a descendant is written.
 	const config: Record<string, unknown> = isPlainObject(existing) ? { ...existing } : {};
@@ -222,6 +290,7 @@ export function reconcileConfig(
 	const carried:  string[] = [];
 	const filled:   string[] = [];
 	const repaired: ConfigRepair[] = [];
+	const pruned:   string[] = [];
 
 	for (const opt of catalog) {
 		assertRowValid(opt);
@@ -242,6 +311,19 @@ export function reconcileConfig(
 		}
 	}
 
-	const changed = filled.length + repaired.length > 0;
-	return { config, changed, carried, filled, repaired };
+	// Prune phase: strip declared-retired paths. Exact and prefix both delete
+	// the key at the path (removing a scalar leaf or a whole subtree); the
+	// distinction only governs the disjointness check above. Only paths actually
+	// present are recorded, so pruning is idempotent and preserves refs for
+	// everything untouched.
+	for (const r of retired) {
+		const keys = r.path.split('.');
+		if (hasPath(config, keys)) {
+			deleteAt(config, owned, keys);
+			pruned.push(r.path);
+		}
+	}
+
+	const changed = filled.length + repaired.length + pruned.length > 0;
+	return { config, changed, carried, filled, repaired, pruned };
 }

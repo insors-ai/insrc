@@ -4,10 +4,14 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * Unit tests for the PURE reconcileConfig contract (t5). Everything here is
- * driven through the injectable `catalog` parameter with in-memory fixtures —
- * the reconciler is pure, so no on-disk fixture is needed at this level (the
- * one captured document is used only to prove blind namespace preservation).
+ * Unit tests for the PURE reconcileConfig contract — the merge (fill / carry /
+ * repair) AND the retired-key prune, driven through the injectable `catalog`
+ * and `retired` parameters with in-memory fixtures.
+ *
+ * The pure-MERGE tests pass `retired: []` (via the `merge` helper) so they are
+ * isolated from the built-in RETIRED_PATHS; the PRUNE tests pass explicit
+ * retired lists. The one captured document proves both blind preservation and
+ * blind pruning against the real RETIRED_PATHS.
  *
  * Run: npx tsx --test src/config/__tests__/config-reconcile.test.ts
  */
@@ -18,14 +22,20 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
-import { CONFIG_CATALOG, type ConfigOption } from '../config-catalog.js';
-import { ConfigCatalogError, reconcileConfig } from '../reconcile.js';
+import { CONFIG_CATALOG, RETIRED_PATHS, type ConfigOption, type RetiredPath } from '../config-catalog.js';
+import { ConfigCatalogError, reconcileConfig, type ConfigReconcileResult } from '../reconcile.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const FIXTURES = join(HERE, 'fixtures');
 
 function opt(path: string, type: ConfigOption['type'], def: unknown): ConfigOption {
 	return { path, type, default: def, desc: '' };
+}
+
+/** Pure-merge helper: reconcile with NO retired list, isolating the merge
+ *  contract from the built-in RETIRED_PATHS. */
+function merge(existing: unknown, catalog: readonly ConfigOption[]): ConfigReconcileResult {
+	return reconcileConfig(existing, catalog, []);
 }
 
 /** Recursively freeze an object graph so any attempted mutation throws. */
@@ -42,31 +52,31 @@ function readFixture(name: string): Record<string, unknown> {
 }
 
 // ---------------------------------------------------------------------------
-// classification: filled / carried / repaired
+// classification: filled / carried / repaired  (pure merge, retired: [])
 // ---------------------------------------------------------------------------
 
 test('absent catalog key → default written, path in filled', () => {
-	const r = reconcileConfig({}, [opt('logLevel', 'enum', 'info')]);
+	const r = merge({}, [opt('logLevel', 'enum', 'info')]);
 	assert.deepEqual(r.filled, ['logLevel']);
 	assert.equal(r.config['logLevel'], 'info');
 	assert.deepEqual(r.carried, []);
 	assert.deepEqual(r.repaired, []);
+	assert.deepEqual(r.pruned, []);
 	assert.equal(r.changed, true);
 });
 
 test('present + type-valid → carried unchanged; untouched subtrees referentially preserved', () => {
 	const existing = { logLevel: 'debug', models: { analyze: { roleTiers: { a: 'core' } } } };
-	const r = reconcileConfig(existing, [opt('logLevel', 'enum', 'info')]);
+	const r = merge(existing, [opt('logLevel', 'enum', 'info')]);
 	assert.deepEqual(r.carried, ['logLevel']);
 	assert.deepEqual(r.filled, []);
 	assert.equal(r.config['logLevel'], 'debug');
-	// models was never touched → same object reference (not a deep clone)
-	assert.equal(r.config['models'], existing.models);
+	assert.equal(r.config['models'], existing.models);   // same object reference
 });
 
 test('present + type-invalid → default substituted, path + discarded in repaired', () => {
 	const existing = { models: { embeddingDim: '1024' } };
-	const r = reconcileConfig(existing, [opt('models.embeddingDim', 'number', 1024)]);
+	const r = merge(existing, [opt('models.embeddingDim', 'number', 1024)]);
 	assert.equal(r.repaired.length, 1);
 	assert.equal(r.repaired[0]!.path, 'models.embeddingDim');
 	assert.equal(r.repaired[0]!.discarded, '1024');
@@ -80,7 +90,7 @@ test('falsy-but-valid values (false, 0, "") are carried, never filled (hasOwnPro
 		opt('models.embeddingDim', 'number', 1024),
 		opt('routing.mode', 'string', 'static'),
 	];
-	const r = reconcileConfig(existing, cat);
+	const r = merge(existing, cat);
 	assert.deepEqual(r.filled, []);
 	assert.equal(r.carried.length, 3);
 	assert.equal((r.config['analyzer'] as Record<string, unknown>)['useLocal'], false);
@@ -90,168 +100,223 @@ test('falsy-but-valid values (false, 0, "") are carried, never filled (hasOwnPro
 
 test('present array/object at a scalar row is detected as present (repaired), never filled', () => {
 	const existing = { models: { tiers: { fast: [] as unknown } } };
-	const r = reconcileConfig(existing, [opt('models.tiers.fast', 'string', 'haiku')]);
-	assert.deepEqual(r.filled, []);                 // present → not filled
-	assert.equal(r.repaired.length, 1);             // wrong type → repaired
+	const r = merge(existing, [opt('models.tiers.fast', 'string', 'haiku')]);
+	assert.deepEqual(r.filled, []);
+	assert.equal(r.repaired.length, 1);
 	assert.deepEqual(r.repaired[0]!.discarded, []);
 });
 
-test('null at a non-nullable declared type is repaired, not carried (typeof null === object must not slip through)', () => {
-	const r = reconcileConfig({ logLevel: null }, [opt('logLevel', 'enum', 'info')]);
+test('null at a non-nullable declared type is repaired, not carried', () => {
+	const r = merge({ logLevel: null }, [opt('logLevel', 'enum', 'info')]);
 	assert.equal(r.repaired.length, 1);
 	assert.equal(r.repaired[0]!.discarded, null);
 	assert.equal(r.config['logLevel'], 'info');
 });
 
-// ---------------------------------------------------------------------------
-// dynamic namespaces & un-enumerated subtrees survive blindly
-// ---------------------------------------------------------------------------
-
 test('type-matching object with extra un-enumerated sub-keys is carried whole, no recursion to prune', () => {
 	const existing = { models: { analyze: { shaperProvider: 'ollama', roleTiers: { a: 'core', b: 'mid' } } } };
-	const r = reconcileConfig(existing, [opt('models.analyze.shaperProvider', 'enum', 'ollama')]);
+	const r = merge(existing, [opt('models.analyze.shaperProvider', 'enum', 'ollama')]);
 	const roleTiers = ((r.config['models'] as Record<string, unknown>)['analyze'] as Record<string, unknown>)['roleTiers'];
 	assert.deepEqual(roleTiers, { a: 'core', b: 'mid' });
 });
 
 test('catalog key reconciled beside a dynamic sibling at the same level — outcomes independent', () => {
 	const existing = { models: { analyze: { shaperProvider: 12345 as unknown, roleTiers: { a: 'core' } } } };
-	const r = reconcileConfig(existing, [opt('models.analyze.shaperProvider', 'enum', 'ollama')]);
+	const r = merge(existing, [opt('models.analyze.shaperProvider', 'enum', 'ollama')]);
 	const analyze = (r.config['models'] as Record<string, unknown>)['analyze'] as Record<string, unknown>;
 	assert.equal(r.repaired[0]!.path, 'models.analyze.shaperProvider');
-	assert.equal(analyze['shaperProvider'], 'ollama');                 // repaired
-	assert.deepEqual(analyze['roleTiers'], { a: 'core' });             // sibling untouched
-	assert.equal(analyze['roleTiers'], existing.models.analyze.roleTiers); // still the same ref (shallow COW)
-});
-
-test('captured document: all three dynamic namespaces survive deep-equal across a gained-and-lost catalog', () => {
-	const fixture = readFixture('legacy-config.json');
-	const baseline = readFixture('legacy-config.baseline.json');
-	// A catalog that GAINED a row absent from the fixture (coreFloor) and LOST
-	// rows the real catalog has (only two rows here) relative to the fixture.
-	const gainedAndLost = [
-		opt('models.analyze.coreFloor', 'enum', 'mid'),
-		opt('logLevel', 'enum', 'info'),
-	];
-	const r = reconcileConfig(fixture, gainedAndLost);
-	const analyze = (r.config['models'] as Record<string, unknown>)['analyze'] as Record<string, unknown>;
-	const bAnalyze = (baseline['models'] as Record<string, unknown>)['analyze'] as Record<string, unknown>;
-	assert.deepEqual(analyze['roleTiers'], bAnalyze['roleTiers']);
-	assert.deepEqual(analyze['byRepo'], bAnalyze['byRepo']);
-	assert.deepEqual((r.config['models'] as Record<string, unknown>)['agents'],
-		(baseline['models'] as Record<string, unknown>)['agents']);
-	// the gained key was filled; the orphan top-level key survived
-	assert.ok(r.filled.includes('models.analyze.coreFloor'));
-	assert.equal(r.config['legacyOrphanKey'], 'kept-blindly');
+	assert.equal(analyze['shaperProvider'], 'ollama');
+	assert.deepEqual(analyze['roleTiers'], { a: 'core' });
+	assert.equal(analyze['roleTiers'], existing.models.analyze.roleTiers);   // same ref (shallow COW)
 });
 
 // ---------------------------------------------------------------------------
-// ancestor-chain handling
+// ancestor-chain handling  (pure merge)
 // ---------------------------------------------------------------------------
 
 test('partially-present ancestor chain: intermediates synthesized, only the leaf in filled, siblings untouched', () => {
 	const existing = { models: { tiers: { fast: 'x' } } };
-	const r = reconcileConfig(existing, [opt('models.tiers.standard', 'string', 'sonnet')]);
+	const r = merge(existing, [opt('models.tiers.standard', 'string', 'sonnet')]);
 	assert.deepEqual(r.filled, ['models.tiers.standard']);
 	const tiers = (r.config['models'] as Record<string, unknown>)['tiers'] as Record<string, unknown>;
-	assert.equal(tiers['fast'], 'x');            // existing sibling untouched
+	assert.equal(tiers['fast'], 'x');
 	assert.equal(tiers['standard'], 'sonnet');
 });
 
 test('ancestor segment collides with a scalar: subtree replaced, CATALOG path recorded in repaired with the discarded scalar', () => {
 	const existing = { models: { tiers: 'oops-a-string' } };
-	const r = reconcileConfig(existing, [opt('models.tiers.fast', 'string', 'haiku')]);
+	const r = merge(existing, [opt('models.tiers.fast', 'string', 'haiku')]);
 	assert.equal(r.repaired.length, 1);
-	assert.equal(r.repaired[0]!.path, 'models.tiers.fast');   // the CATALOG path, not the ancestor
-	assert.equal(r.repaired[0]!.discarded, 'oops-a-string');  // the discarded scalar
+	assert.equal(r.repaired[0]!.path, 'models.tiers.fast');
+	assert.equal(r.repaired[0]!.discarded, 'oops-a-string');
 	assert.equal(((r.config['models'] as Record<string, unknown>)['tiers'] as Record<string, unknown>)['fast'], 'haiku');
 });
 
 // ---------------------------------------------------------------------------
-// invariants
+// invariants  (pure merge)
 // ---------------------------------------------------------------------------
 
 test('value already exactly equal to the catalog default → carried, not filled', () => {
-	const r = reconcileConfig({ logLevel: 'info' }, [opt('logLevel', 'enum', 'info')]);
+	const r = merge({ logLevel: 'info' }, [opt('logLevel', 'enum', 'info')]);
 	assert.deepEqual(r.carried, ['logLevel']);
 	assert.deepEqual(r.filled, []);
 });
 
-test('changed === (filled.length + repaired.length > 0); changed false implies config deep-equals existing', () => {
+test('changed === (filled + repaired + pruned > 0); changed false implies config deep-equals existing', () => {
 	const existing = { logLevel: 'info', models: { agents: { x: 1 } } };
-	const r = reconcileConfig(existing, [opt('logLevel', 'enum', 'info')]);
+	const r = merge(existing, [opt('logLevel', 'enum', 'info')]);   // retired: [] → agents NOT pruned here
 	assert.equal(r.changed, false);
 	assert.deepEqual(r.config, existing);
-
-	const r2 = reconcileConfig({}, [opt('logLevel', 'enum', 'info')]);
-	assert.equal(r2.changed, r2.filled.length + r2.repaired.length > 0);
-	assert.equal(r2.changed, true);
 });
 
-test('idempotence: reconcileConfig(reconcileConfig(x).config).changed === false across the corpus', () => {
-	const corpus: unknown[] = [
-		{},
-		{ logLevel: 'info' },
-		{ models: { embeddingDim: '1024' } },
-		{ models: { tiers: 'not-an-object' } },
-		readFixture('legacy-config.json'),
-	];
-	for (const doc of corpus) {
-		const once = reconcileConfig(doc, CONFIG_CATALOG);
-		const twice = reconcileConfig(once.config, CONFIG_CATALOG);
-		assert.equal(twice.changed, false, `idempotence broke for ${JSON.stringify(doc).slice(0, 60)}`);
-	}
-});
-
-test('non-object roots (undefined / null / array / string / number / boolean) → treated as {}, all keys filled, nothing thrown', () => {
+test('non-object roots (undefined / null / array / string / number / boolean) → treated as {}, all keys filled', () => {
 	for (const bad of [undefined, null, [], 'str', 42, true]) {
-		const r = reconcileConfig(bad, [opt('logLevel', 'enum', 'info')]);
+		const r = merge(bad, [opt('logLevel', 'enum', 'info')]);
 		assert.deepEqual(r.filled, ['logLevel']);
 		assert.equal(r.config['logLevel'], 'info');
 	}
 });
 
-test('empty catalog / a catalog matching nothing → changed false, config deep-equals existing', () => {
+test('empty catalog + empty retired → changed false, config deep-equals existing', () => {
 	const existing = { models: { agents: { x: 1 } }, logLevel: 'info' };
-	const r = reconcileConfig(existing, []);
+	const r = reconcileConfig(existing, [], []);
 	assert.equal(r.changed, false);
 	assert.deepEqual(r.config, existing);
 });
 
 // ---------------------------------------------------------------------------
-// catalog-integrity failures throw ConfigCatalogError (a shipped-catalog bug)
+// catalog-integrity failures throw ConfigCatalogError
 // ---------------------------------------------------------------------------
 
-test('catalog row with an out-of-domain type throws ConfigCatalogError naming the path, never fill-default', () => {
+test('catalog row with an out-of-domain type throws ConfigCatalogError naming the path', () => {
 	assert.throws(
-		() => reconcileConfig({}, [{ path: 'x.y', type: 'weird' as ConfigOption['type'], default: 'd', desc: '' }]),
+		() => reconcileConfig({}, [{ path: 'x.y', type: 'weird' as ConfigOption['type'], default: 'd', desc: '' }], []),
 		(e: unknown) => e instanceof ConfigCatalogError && e.catalogPath === 'x.y',
 	);
 });
 
 test('catalog row whose own default fails its own declared type throws ConfigCatalogError naming the path', () => {
 	assert.throws(
-		() => reconcileConfig({}, [opt('a.b', 'number', 'not-a-number')]),
+		() => reconcileConfig({}, [opt('a.b', 'number', 'not-a-number')], []),
 		(e: unknown) => e instanceof ConfigCatalogError && e.catalogPath === 'a.b',
 	);
 });
 
-test('no user-config input in the corpus produces a ConfigCatalogError against the real catalog', () => {
-	for (const doc of [{}, { models: { tiers: 42 } }, readFixture('legacy-config.json')]) {
-		assert.doesNotThrow(() => reconcileConfig(doc, CONFIG_CATALOG));
+// ---------------------------------------------------------------------------
+// PRUNE contract (explicit retired lists)
+// ---------------------------------------------------------------------------
+
+test('retired exact-path present → deleted, recorded in pruned[], changed true', () => {
+	const r = reconcileConfig({ models: { local: 'qwen', analyze: { coreFloor: 'mid' } } }, [], [{ path: 'models.local' }]);
+	assert.deepEqual(r.pruned, ['models.local']);
+	assert.equal(r.changed, true);
+	assert.equal(Object.prototype.hasOwnProperty.call(r.config['models'] as object, 'local'), false);
+	// sibling under the same parent survives
+	assert.deepEqual((r.config['models'] as Record<string, unknown>)['analyze'], { coreFloor: 'mid' });
+});
+
+test('retired exact-path absent → no-op, not in pruned, does not set changed', () => {
+	const r = reconcileConfig({ models: { analyze: {} } }, [], [{ path: 'models.local' }]);
+	assert.deepEqual(r.pruned, []);
+	assert.equal(r.changed, false);
+});
+
+test('retired prefix root with populated subtree → whole subtree deleted, recorded ONCE as the prefix root', () => {
+	const r = reconcileConfig({ models: { tiers: { fast: 'a', standard: 'b', powerful: 'c' } } }, [], [{ path: 'models.tiers', prefix: true }]);
+	assert.deepEqual(r.pruned, ['models.tiers']);   // ONE entry, not per sub-key
+	assert.equal(Object.prototype.hasOwnProperty.call(r.config['models'] as object, 'tiers'), false);
+});
+
+test('retired prefix root present as a SCALAR → slot removed, recorded (type-agnostic delete)', () => {
+	const r = reconcileConfig({ models: { context: 'oops' } }, [], [{ path: 'models.context', prefix: true }]);
+	assert.deepEqual(r.pruned, ['models.context']);
+	assert.equal(Object.prototype.hasOwnProperty.call(r.config['models'] as object, 'context'), false);
+});
+
+test('retired exact-path with falsy-but-present value (0/""/false) → pruned via hasOwnProperty, not truthiness', () => {
+	for (const falsy of [0, '', false]) {
+		const r = reconcileConfig({ models: { embeddingDim: falsy } }, [], [{ path: 'models.embeddingDim' }]);
+		assert.deepEqual(r.pruned, ['models.embeddingDim'], `falsy ${JSON.stringify(falsy)} must still prune`);
 	}
 });
 
+test('retired path with a MISSING ancestor → no-op, nothing recorded', () => {
+	const r = reconcileConfig({ logLevel: 'info' }, [], [{ path: 'models.local' }]);
+	assert.deepEqual(r.pruned, []);
+	assert.equal(r.changed, false);
+	assert.deepEqual(r.config, { logLevel: 'info' });
+});
+
+test('un-catalogued key NOT on the retired list → preserved (blind-preservation refined)', () => {
+	const existing = { models: { analyze: { roleTiers: { a: 'core' }, byRepo: { '/r': { coreFloor: 'core' } } }, providers: { local: { coreModel: 'qwen' } } }, orphan: 1 };
+	const r = reconcileConfig(existing, [], [{ path: 'models.local' }]);   // only models.local retired
+	const analyze = (r.config['models'] as Record<string, unknown>)['analyze'] as Record<string, unknown>;
+	assert.deepEqual(analyze['roleTiers'], { a: 'core' });
+	assert.deepEqual(analyze['byRepo'], { '/r': { coreFloor: 'core' } });
+	assert.deepEqual((r.config['models'] as Record<string, unknown>)['providers'], { local: { coreModel: 'qwen' } });
+	assert.equal(r.config['orphan'], 1);
+	assert.equal(r.changed, false);   // nothing to prune (models.local absent), nothing filled
+});
+
+test('idempotence with pruning: reconcileConfig(reconcileConfig(x).config).pruned === [] and changed === false', () => {
+	const retired: RetiredPath[] = [{ path: 'models.local' }, { path: 'models.tiers', prefix: true }, { path: 'models.agents', prefix: true }];
+	const corpus: unknown[] = [
+		{ models: { local: 'x', tiers: { fast: 'a' }, agents: { p: 1 }, analyze: { coreFloor: 'mid' } } },
+		readFixture('legacy-config.json'),
+	];
+	for (const doc of corpus) {
+		const once = reconcileConfig(doc, CONFIG_CATALOG, retired);
+		const twice = reconcileConfig(once.config, CONFIG_CATALOG, retired);
+		assert.deepEqual(twice.pruned, [], `second pass pruned nothing for ${JSON.stringify(doc).slice(0, 50)}`);
+		assert.equal(twice.changed, false);
+	}
+});
+
+test('a retired path overlapping a live catalog row throws ConfigCatalogError naming the path', () => {
+	// retired 'models.analyze' (prefix) overlaps the live models.analyze.coreFloor row.
+	assert.throws(
+		() => reconcileConfig({}, [opt('models.analyze.coreFloor', 'enum', 'mid')], [{ path: 'models.analyze', prefix: true }]),
+		(e: unknown) => e instanceof ConfigCatalogError && e.catalogPath === 'models.analyze',
+	);
+	// exact overlap too
+	assert.throws(
+		() => reconcileConfig({}, [opt('models.local', 'string', 'x')], [{ path: 'models.local' }]),
+		(e: unknown) => e instanceof ConfigCatalogError && e.catalogPath === 'models.local',
+	);
+});
+
+test('existing document is never mutated — a deep-frozen input reconciles+prunes and deep-equals itself afterwards', () => {
+	const snapshot = { models: { local: 'qwen', tiers: { fast: 'a' }, analyze: { roleTiers: { a: 'core' } } }, logLevel: 'debug' };
+	const existing = deepFreeze(JSON.parse(JSON.stringify(snapshot)) as typeof snapshot);
+	assert.doesNotThrow(() => reconcileConfig(existing, [opt('logLevel', 'enum', 'info')], [{ path: 'models.local' }, { path: 'models.tiers', prefix: true }]));
+	assert.deepEqual(existing, snapshot);   // input unchanged
+});
+
 // ---------------------------------------------------------------------------
-// non-mutation
+// captured document + the REAL catalog & RETIRED_PATHS
 // ---------------------------------------------------------------------------
 
-test('existing document is never mutated — a deep-frozen input reconciles and deep-equals itself afterwards', () => {
-	const snapshot = { models: { tiers: { fast: 'x' }, analyze: { roleTiers: { a: 'core' } } }, logLevel: 'debug' };
-	const existing = deepFreeze(JSON.parse(JSON.stringify(snapshot)) as typeof snapshot);
-	assert.doesNotThrow(() => reconcileConfig(existing, [
-		opt('models.tiers.standard', 'string', 'sonnet'),   // forces a write into a frozen subtree's parent
-		opt('logLevel', 'enum', 'info'),
-	]));
-	assert.deepEqual(existing, snapshot);   // input unchanged
+test('captured legacy config + real RETIRED_PATHS → all retired keys stripped, live surfaces survive', () => {
+	const fixture = readFixture('legacy-config.json');
+	const baseline = readFixture('legacy-config.baseline.json');
+	const r = reconcileConfig(fixture, CONFIG_CATALOG, RETIRED_PATHS);
+	const models = r.config['models'] as Record<string, unknown>;
+	// every retired key gone
+	for (const k of ['local', 'embedding', 'embeddingDim', 'tiers', 'context', 'agents']) {
+		assert.equal(Object.prototype.hasOwnProperty.call(models, k), false, `models.${k} must be pruned`);
+	}
+	// live surfaces survive deep-equal to the baseline
+	const analyze = models['analyze'] as Record<string, unknown>;
+	const bAnalyze = (baseline['models'] as Record<string, unknown>)['analyze'] as Record<string, unknown>;
+	assert.deepEqual(analyze['roleTiers'], bAnalyze['roleTiers']);
+	assert.deepEqual(analyze['byRepo'], bAnalyze['byRepo']);
+	// the top-level orphan key (not on the retired list) survives
+	assert.equal(r.config['legacyOrphanKey'], 'kept-blindly');
+	assert.ok(r.pruned.length >= 5);
+});
+
+test('no user-config input produces a ConfigCatalogError against the real catalog + RETIRED_PATHS', () => {
+	for (const doc of [{}, { models: { tiers: { fast: 42 }, agents: { x: 1 } } }, readFixture('legacy-config.json')]) {
+		assert.doesNotThrow(() => reconcileConfig(doc, CONFIG_CATALOG, RETIRED_PATHS));
+	}
 });

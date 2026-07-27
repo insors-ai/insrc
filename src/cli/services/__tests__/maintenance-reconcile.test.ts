@@ -59,7 +59,8 @@ function row(path: string, type: ConfigOption['type'], def: unknown): ConfigOpti
 
 test('success: fills a newly-catalogued key, reports counts + one detail line per key, preserves dynamic namespaces', async () => {
 	const root = makeRoot([row('newKey', 'string', 'nv'), row('logLevel', 'enum', 'info')]);
-	const configPath = tempConfig({ logLevel: 'info', models: { agents: { x: 1 } } });
+	// models.analyze.roleTiers is a live dynamic namespace (NOT retired) → must survive.
+	const configPath = tempConfig({ logLevel: 'info', models: { analyze: { roleTiers: { a: 'core' } } } });
 	const logs: string[] = [];
 	try {
 		const summary = await runUpdateReconcile(root, l => logs.push(l), configPath);
@@ -70,7 +71,7 @@ test('success: fills a newly-catalogued key, reports counts + one detail line pe
 		assert.ok(logs.some(l => l.includes('newKey')), 'detail line names the catalog dot-path');
 		const written = JSON.parse(readFileSync(configPath, 'utf-8')) as Record<string, unknown>;
 		assert.equal(written['newKey'], 'nv');
-		assert.deepEqual((written['models'] as Record<string, unknown>)['agents'], { x: 1 }); // dynamic survived
+		assert.deepEqual(((written['models'] as Record<string, unknown>)['analyze'] as Record<string, unknown>)['roleTiers'], { a: 'core' }); // dynamic survived
 	} finally {
 		rmSync(dirname(configPath), { recursive: true, force: true });
 		rmSync(root, { recursive: true, force: true });
@@ -92,13 +93,14 @@ test('no change → an explicit no-change onLog line (silence would fail)', asyn
 });
 
 test('ancestor-collision repair → detail line names both the catalog path and the discarded scalar', async () => {
-	const root = makeRoot([row('models.tiers.fast', 'string', 'haiku')]);
-	const configPath = tempConfig({ models: { tiers: 'oops-a-string' } });
+	// Use a non-retired path (svc.endpoint) so the collision is isolated from RETIRED_PATHS.
+	const root = makeRoot([row('svc.endpoint', 'string', 'https://x')]);
+	const configPath = tempConfig({ svc: 'oops-a-string' });
 	const logs: string[] = [];
 	try {
 		const summary = await runUpdateReconcile(root, l => logs.push(l), configPath);
 		assert.equal(summary.repaired, 1);
-		assert.ok(logs.some(l => l.includes('models.tiers.fast') && l.includes('oops-a-string')));
+		assert.ok(logs.some(l => l.includes('svc.endpoint') && l.includes('oops-a-string')));
 	} finally {
 		rmSync(dirname(configPath), { recursive: true, force: true });
 		rmSync(root, { recursive: true, force: true });
@@ -153,7 +155,7 @@ test('runUpdateReconcile never throws — a read failure is captured into the su
 	}
 });
 
-test('summarizeReconcile emits exactly one summary line + one detail line per filled/repaired key', () => {
+test('summarizeReconcile emits exactly one summary line + one detail line per filled/repaired/pruned key', () => {
 	const logs: string[] = [];
 	const summary = summarizeReconcile({
 		kind: 'written',
@@ -162,15 +164,32 @@ test('summarizeReconcile emits exactly one summary line + one detail line per fi
 			carried: ['a'],
 			filled: ['b.c', 'd'],
 			repaired: [{ path: 'e.f', discarded: 'bad' }],
+			pruned: ['models.tiers', 'models.local'],
 		},
 	}, l => logs.push(l));
 	assert.equal(summary.filled, 2);
 	assert.equal(summary.repaired, 1);
+	assert.equal(summary.pruned, 2);
 	const summaryLines = logs.filter(l => /filled,/.test(l));
 	assert.equal(summaryLines.length, 1);                       // exactly one summary line
+	assert.ok(/2 filled, 1 repaired, 2 pruned/.test(summaryLines[0]!));
 	assert.equal(logs.filter(l => /^\s*filled/.test(l)).length, 2);
 	assert.equal(logs.filter(l => /^\s*repaired/.test(l)).length, 1);
+	assert.equal(logs.filter(l => /^\s*pruned/.test(l)).length, 2);
 	assert.ok(logs.some(l => l.includes('e.f') && l.includes('bad'))); // discarded value named
+	assert.ok(logs.some(l => /^\s*pruned\s+models\.tiers/.test(l)));   // pruned path named
+});
+
+test('summarizeReconcile: a config with ONLY retired keys to prune reports pruned>0, changed, filled/repaired 0', () => {
+	const logs: string[] = [];
+	const summary = summarizeReconcile({
+		kind: 'written',
+		result: { config: {}, changed: true, carried: ['x'], filled: [], repaired: [], pruned: ['models.agents'] },
+	}, l => logs.push(l));
+	assert.equal(summary.changed, true);
+	assert.equal(summary.filled, 0);
+	assert.equal(summary.repaired, 0);
+	assert.equal(summary.pruned, 1);
 });
 
 test('SOURCE contract: the reconcile is sequenced after build, is unconditional, and adds no UpdateOptions flag', () => {

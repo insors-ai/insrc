@@ -25,7 +25,7 @@ export const _minimalResult: MaintenanceResult = { ok: true, steps: [] };
 export const _fullResult: MaintenanceResult = {
 	ok: false,
 	steps: ['sync', 'install', 'build', 'reconcile'],
-	configReconcile: { changed: true, filled: 3, repaired: 1, error: undefined },
+	configReconcile: { changed: true, filled: 3, repaired: 1, pruned: 6, error: undefined },
 };
 
 // Pin the existing field types exactly (retyping `ok` or `steps` breaks these).

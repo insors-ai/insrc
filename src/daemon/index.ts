@@ -196,7 +196,7 @@ async function main(): Promise<void> {
 				log.info('created default config.json (catalog defaults)');
 				break;
 			case 'written':
-				log.info({ filled: outcome.result.filled.length, repaired: outcome.result.repaired.length },
+				log.info({ filled: outcome.result.filled.length, repaired: outcome.result.repaired.length, pruned: outcome.result.pruned.length },
 					'reconciled config.json against catalog');
 				break;
 			case 'unchanged':

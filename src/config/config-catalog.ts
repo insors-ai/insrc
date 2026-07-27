@@ -12,18 +12,16 @@
  * nothing from src/cli. The CLI command bar's `config list` re-exports
  * it from src/cli/config-catalog.ts (a pure re-export shim).
  *
- * The config has grown a few overlapping subtrees; this catalog is the
- * UNION of them. SOURCE OF TRUTH — keep in sync with:
- *   - the boot reconcile in src/daemon/index.ts (which fills every
- *     catalog default) and the `Config` type in src/shared/types.ts
- *     → the "main" keys
- *   - src/config/local.ts   → models.providers.local.*  (embedder / local provider)
- *   - src/config/analyze.ts → models.analyze.*          (analyze shaper)
- *
- * NOTE: `models.embedding` / `models.embeddingDim` (main) and
- * `models.providers.local.embeddingModel` / `embeddingDim` (embedder
- * loader) are different keys read by different code — see the daemon
- * config-schema note. Both are listed so neither is hidden.
+ * There are exactly TWO canonical model-config surfaces (the legacy
+ * top-level model block was retired — see RETIRED_PATHS). SOURCE OF TRUTH
+ * — keep in sync with:
+ *   - src/config/local.ts   → models.providers.local.*  (the LIVE local surface:
+ *     host / coreModel / embeddingModel / embeddingDim / charsPerToken)
+ *   - src/config/analyze.ts → models.analyze.*          (the LIVE cloud/tiering
+ *     surface: shaperProvider / shaperModel / tiers / roleTiers / coreFloor / byRepo)
+ * plus the daemon-wide non-model keys (logLevel, ollama.host, permissions,
+ * routing, analyzer, classifier, memory). The boot reconcile
+ * (src/daemon/index.ts step 2b) fills every catalog default.
  */
 
 export interface ConfigOption {
@@ -33,21 +31,31 @@ export interface ConfigOption {
 	readonly desc:    string;
 }
 
+/**
+ * A declared-RETIRED config path — a key the daemon once wrote/recognized
+ * but no longer reads. The reconcile strips it from existing configs on
+ * boot/update (see reconcileConfig). `prefix: true` strips the path AND its
+ * whole subtree (for dynamic namespaces like models.agents whose sub-keys
+ * are not enumerable); the default (exact) strips a single scalar leaf.
+ *
+ * INVARIANT: every RetiredPath.path MUST be disjoint from every live
+ * CONFIG_CATALOG path — a path cannot be both filled and stripped.
+ */
+export interface RetiredPath {
+	readonly path:    string;
+	readonly prefix?: boolean;
+}
+
 export const CONFIG_CATALOG: readonly ConfigOption[] = [
 	// ── main config (src/daemon/index.ts first-boot default + Config type) ──
 	{ path: 'logLevel',              type: 'enum',   default: 'info',                    desc: "daemon log level: 'error' | 'warn' | 'info' | 'debug'" },
 	{ path: 'ollama.host',           type: 'string', default: 'http://localhost:11434',  desc: 'Ollama server URL (daemon-wide)' },
-	{ path: 'models.local',          type: 'string', default: 'qwen3-coder:latest',      desc: 'local core model id' },
-	{ path: 'models.embedding',      type: 'string', default: 'qwen3-embedding:0.6b',    desc: 'embedding model id (main config)' },
-	{ path: 'models.embeddingDim',   type: 'number', default: 1024,                       desc: 'embedding dimensions (main config)' },
-	{ path: 'models.tiers.fast',     type: 'string', default: 'claude-haiku-4-5',         desc: 'cloud tier — fast' },
-	{ path: 'models.tiers.standard', type: 'string', default: 'claude-sonnet-4-6',        desc: 'cloud tier — standard' },
-	{ path: 'models.tiers.powerful', type: 'string', default: 'claude-opus-4-6',          desc: 'cloud tier — powerful' },
-	{ path: 'models.context.local',           type: 'number', default: 16384,  desc: 'local model context window (tokens)' },
-	{ path: 'models.context.localMaxOutput',  type: 'number', default: 8192,   desc: 'local model max output (tokens)' },
-	{ path: 'models.context.claude',          type: 'number', default: 200000, desc: 'cloud context window (tokens)' },
-	{ path: 'models.context.claudeMaxOutput', type: 'number', default: 8192,   desc: 'cloud max output (tokens)' },
-	{ path: 'models.context.charsPerToken',   type: 'number', default: 3,      desc: 'chars→tokens heuristic ratio' },
+	// NOTE: the legacy top-level model block (models.local / models.embedding /
+	// models.embeddingDim / models.tiers.* / models.context.*) was RETIRED — it
+	// was write-only (no runtime reader). The two canonical model surfaces are
+	// models.providers.local.* (local) and models.analyze.* (cloud/tiering). The
+	// retired paths are declared in RETIRED_PATHS below and stripped by the
+	// reconcile on boot/update.
 	{ path: 'permissions.mode',      type: 'enum',    default: 'validate',      desc: "tool permission mode: 'validate' | 'auto-accept'" },
 	{ path: 'routing.mode',          type: 'string',  default: 'static',        desc: 'agent routing mode' },
 	{ path: 'analyzer.useLocal',     type: 'boolean', default: false,           desc: 'force code/data analyzers to local Ollama instead of cloud' },
@@ -83,4 +91,24 @@ export const CONFIG_CATALOG: readonly ConfigOption[] = [
 	{ path: 'models.providers.local.embeddingDim',   type: 'number', default: 1024,                       desc: 'embedder dimensions (768 for ONNX) — read by the embedder' },
 	{ path: 'models.providers.local.coreModel',      type: 'string', default: 'qwen3-coder:latest',       desc: 'local core / summariser model id' },
 	{ path: 'models.providers.local.charsPerToken',  type: 'number', default: 3,                          desc: 'chars→tokens heuristic (local provider)' },
+];
+
+/**
+ * Declared-RETIRED model config paths — the legacy top-level model block that
+ * was write-only (no runtime reader), superseded by the two canonical surfaces
+ * (models.providers.local.* and models.analyze.*). The reconcile strips these
+ * from existing configs on boot/update. Exact-path entries remove a scalar
+ * leaf; prefix entries remove a whole subtree (models.tiers / models.context
+ * held scalar leaves but are declared prefix so a partially-populated block is
+ * removed wholesale; models.agents is a dynamic namespace).
+ *
+ * INVARIANT (enforced by reconcileConfig): disjoint from every CONFIG_CATALOG path.
+ */
+export const RETIRED_PATHS: readonly RetiredPath[] = [
+	{ path: 'models.local' },
+	{ path: 'models.embedding' },
+	{ path: 'models.embeddingDim' },
+	{ path: 'models.tiers',   prefix: true },
+	{ path: 'models.context', prefix: true },
+	{ path: 'models.agents',  prefix: true },
 ];

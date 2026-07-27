@@ -1,0 +1,443 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1785135740233-vuw4bn",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-07-27T07:07:32.602Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 312191,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f5a6e60ccefd9be4",
+    "epicSlug": "consolidate-config-model-specification-surfaces-down",
+    "storyId": "S001",
+    "lldRunId": "wf-1785134702818-ww9xc4",
+    "lldEffectiveHash": "f5a6e60ccefd9be4f8d28905e78b47bf18ab555155da77e974abf3a62e4fb398",
+    "approvedAt": "2026-07-27T07:07:45.452Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Trim CONFIG_CATALOG to 30 rows + add RetiredPath/RETIRED_PATHS",
+        "summary": "In src/config/config-catalog.ts remove the 11 dead rows (models.local, models.embedding, models.embeddingDim, models.tiers.{fast,standard,powerful}, models.context.{local,localMaxOutput,claude,claudeMaxOutput,charsPerToken}); add RetiredPath interface + RETIRED_PATHS const (exact: models.local/embedding/embeddingDim; prefix: models.tiers/models.context/models.agents); update the header 'sync with' comment. Re-export from the src/cli shim only if a CLI consumer needs them.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "CONFIG_CATALOG has exactly 30 rows and none of the 11 removed dot-paths remain",
+          "RETIRED_PATHS exports 6 entries (3 exact + 3 prefix) and is disjoint from every CONFIG_CATALOG path",
+          "npm run build stays green (config-catalog.ts + shim compile)"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "contract: CONFIG_CATALOG has 30 rows (was 41); none of the 11 removed paths remain"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Add the prune phase + pruned channel to reconcileConfig",
+        "summary": "In src/config/reconcile.ts extend reconcileConfig to accept `retired = RETIRED_PATHS` and, after the merge, delete each retired path (exact-path for leaves; whole-subtree for prefix rows), recording removed roots in a new readonly pruned field of ConfigReconcileResult. Fold pruned.length into changed. Assert retired ∩ live-catalog = ∅ (throw ConfigCatalogError). Preserve blind-preservation for un-catalogued keys not on the list; keep COW non-mutation + idempotence. Covers prefix-scalar, falsy-but-present, absent, missing-ancestor edges.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "reconcileConfig strips retired exact-paths + prefix-subtrees, recording each removed root once in result.pruned",
+          "changed === (filled+repaired+pruned > 0); a prune-only change sets changed true",
+          "reconcileConfig(reconcileConfig(x).config).pruned === [] and changed === false (idempotent)",
+          "a retired path overlapping a live catalog row throws ConfigCatalogError naming the path",
+          "dynamic namespaces not on the retired list (models.analyze.roleTiers/byRepo, models.providers.local.*) survive deep-equal; existing never mutated"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "unit: retired exact-path present → deleted from config.config, recorded in pruned[], changed true"
+          },
+          {
+            "level": "unit",
+            "name": "unit: retired prefix root with populated subtree → whole subtree deleted, recorded ONCE as the prefix root (not per sub-key)"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Trim the write-side: recommender + setup + Config type",
+        "summary": "model-recommender.toConfig() drops the models.{local,embedding,embeddingDim,tiers,context} literal (keep providers.local + ollama.host); RecommendedConfig trims accordingly; setup.ts drops the local/embedding/embeddingDim/context/tiers spreads; shared/types.ts trims the legacy top-level model keys. Coupled type edits land together so tsc stays green.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "model-recommender.toConfig() output contains none of the retired paths (only providers.local + ollama.host + analyze if any)",
+          "setup.ts no longer writes models.local/embedding/embeddingDim/context/tiers",
+          "Config/RecommendedConfig types no longer declare the legacy keys and npm run build is clean"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "smoke: setup write-side — model-recommender.toConfig()/setup output contains none of the retired paths"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Surface pruned in both reconcile call sites + MaintenanceResult",
+        "summary": "Add readonly pruned:number to MaintenanceResult.configReconcile (maintenance.ts) + pin it in the compile-time contract fixture; extend summarizeReconcile to emit the pruned count + one onLog detail line per pruned path; extend the daemon-boot 'written' arm to log the pruned count. reconcile-io needs no logic change (write-once keys off result.changed).",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "MaintenanceResult.configReconcile has readonly pruned:number (optional field intact under exactOptionalPropertyTypes) and the contract fixture pins it",
+          "maintenance.update reports configReconcile.pruned + one onLog detail line per pruned path naming the dot-path",
+          "daemon boot logs the pruned count in the 'written' arm; reconcile-io still writes at most once"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "contract: MaintenanceResult.configReconcile compile-time fixture pins the new readonly pruned:number field (optional, exactOptionalPropertyTypes)"
+          },
+          {
+            "level": "integration",
+            "name": "integration: maintenance.update runUpdateReconcile reports configReconcile.pruned + one onLog detail line per pruned path (naming the dot-path); no-change emits an explicit no-change line"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Unit + contract tests for the prune",
+        "summary": "Extend config-reconcile.test.ts with the full prune contract via the injectable retired param + legacy-config.json fixture; update config-catalog-contract.test.ts (41→30, RETIRED_PATHS disjointness + covers-exactly).",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "all prune-contract subjects assert and pass under npx tsx --test",
+          "config-catalog-contract.test.ts asserts 30 rows and RETIRED_PATHS ∩ CONFIG_CATALOG = ∅",
+          "no new package dependency added"
+        ],
+        "derivedFrom": [
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "unit: retired exact-path absent → no-op, not in pruned, does not set changed"
+          },
+          {
+            "level": "unit",
+            "name": "unit: retired prefix root present as a SCALAR → slot removed, recorded (type-agnostic delete)"
+          },
+          {
+            "level": "unit",
+            "name": "unit: retired exact-path with falsy-but-present value (0/\"\"/false) → pruned via hasOwnProperty, not truthiness"
+          },
+          {
+            "level": "unit",
+            "name": "unit: retired path with a MISSING ancestor → no-op, nothing recorded"
+          },
+          {
+            "level": "unit",
+            "name": "unit: un-catalogued key NOT on the retired list → preserved (blind-preservation refined); models.analyze.roleTiers/byRepo + models.providers.local.* survive deep-equal"
+          },
+          {
+            "level": "unit",
+            "name": "unit: changed === (filled+repaired+pruned > 0)"
+          },
+          {
+            "level": "unit",
+            "name": "unit: idempotence — reconcileConfig(reconcileConfig(x).config).pruned === [] and changed === false"
+          },
+          {
+            "level": "unit",
+            "name": "unit: a retired path overlapping a live catalog row throws ConfigCatalogError naming the path"
+          },
+          {
+            "level": "unit",
+            "name": "unit: reconcileConfig existing never mutated (deep-freeze) even when pruning"
+          },
+          {
+            "level": "unit",
+            "name": "contract: RETIRED_PATHS is disjoint from every CONFIG_CATALOG path (retired ∩ live = ∅) — reconcileConfig({}, CONFIG_CATALOG, RETIRED_PATHS) does not throw ConfigCatalogError"
+          },
+          {
+            "level": "unit",
+            "name": "contract: RETIRED_PATHS covers exactly models.local, models.embedding, models.embeddingDim, models.tiers(prefix), models.context(prefix), models.agents(prefix)"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Integration + boot + maintenance + smoke tests for prune reporting/convergence",
+        "summary": "Extend config-reconcile-io.test.ts, config-boot-reconcile.test.ts, maintenance-reconcile.test.ts, config-reconcile-smoke.test.ts for prune-only write-once, convergence, boot/update pruned reporting, and the retired∩live distinguishable warn.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t4",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "integration write-counting seam proves prune-only = 1 write and already-pruned = 0 writes",
+          "boot + maintenance tests assert the pruned count is surfaced and the retired∩live bug is distinguishable",
+          "smoke asserts convergence (retired keys gone, live surfaces intact, second pass no-op)"
+        ],
+        "derivedFrom": [
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "integration: legacy fixture on disk → exactly 1 writeFile + 1 rename; retired keys gone, dynamic namespaces byte-identical to baseline"
+          },
+          {
+            "level": "integration",
+            "name": "integration: a config with ONLY retired keys to remove (nothing to fill/repair) → still 1 write (prune-only trips changed)"
+          },
+          {
+            "level": "integration",
+            "name": "integration: already-pruned config → 0 writeFile, 0 rename, mtime unchanged (convergence)"
+          },
+          {
+            "level": "integration",
+            "name": "integration: daemon boot reconcile strips retired keys and logs a pruned count; a retired∩live catalog bug logs the distinguishable shipped-catalog warn and leaves the file untouched"
+          },
+          {
+            "level": "smoke",
+            "name": "smoke: boot against a temp home holding the legacy fixture → models.{local,embedding,embeddingDim,tiers,context,agents} absent afterwards, models.providers.local.* + models.analyze.* intact; second boot writes nothing"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Full build + test sweep verification",
+        "summary": "npm run build (tsc clean incl. trimmed Config type + pinned MaintenanceResult contract) + full npx tsx --test sweep; confirm only pre-existing stale-test failures remain. (Daemon FF/rebuild/restart rollout is a post-merge operational step, not a build task.)",
+        "size": "S",
+        "order": 7,
+        "dependsOn": [
+          "t3",
+          "t4",
+          "t5",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "npm run build is clean",
+          "all config/daemon/cli reconcile+prune suites pass; no new failures beyond the known pre-existing stale tests",
+          "the whole feature is self-consistent (30-row catalog, prune wired end-to-end, write-side trimmed)"
+        ],
+        "derivedFrom": [
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "smoke: full npx tsx --test 'src/**/__tests__/*.test.ts' sweep green + npm run build clean (verification, no new failures beyond pre-existing stale tests)"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "unit: retired exact-path present → deleted from config.config, recorded in pruned[], changed true",
+        "coveredByTaskIds": [
+          "t2",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "unit: retired exact-path absent → no-op, not in pruned, does not set changed",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "unit: retired prefix root with populated subtree → whole subtree deleted, recorded ONCE as the prefix root (not per sub-key)",
+        "coveredByTaskIds": [
+          "t2",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "unit: retired prefix root present as a SCALAR → slot removed, recorded (type-agnostic delete)",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "unit: retired exact-path with falsy-but-present value (0/\"\"/false) → pruned via hasOwnProperty, not truthiness",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "unit: retired path with a MISSING ancestor → no-op, nothing recorded",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "unit: un-catalogued key NOT on the retired list → preserved (blind-preservation refined); models.analyze.roleTiers/byRepo + models.providers.local.* survive deep-equal",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "unit: changed === (filled+repaired+pruned > 0)",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "unit: idempotence — reconcileConfig(reconcileConfig(x).config).pruned === [] and changed === false",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "unit: a retired path overlapping a live catalog row throws ConfigCatalogError naming the path",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "unit: reconcileConfig existing never mutated (deep-freeze) even when pruning",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "contract: CONFIG_CATALOG has 30 rows (was 41); none of the 11 removed paths remain",
+        "coveredByTaskIds": [
+          "t1",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "contract: RETIRED_PATHS is disjoint from every CONFIG_CATALOG path (retired ∩ live = ∅) — reconcileConfig({}, CONFIG_CATALOG, RETIRED_PATHS) does not throw ConfigCatalogError",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "contract: RETIRED_PATHS covers exactly models.local, models.embedding, models.embeddingDim, models.tiers(prefix), models.context(prefix), models.agents(prefix)",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "contract: MaintenanceResult.configReconcile compile-time fixture pins the new readonly pruned:number field (optional, exactOptionalPropertyTypes)",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "integration: legacy fixture on disk → exactly 1 writeFile + 1 rename; retired keys gone, dynamic namespaces byte-identical to baseline",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "integration: a config with ONLY retired keys to remove (nothing to fill/repair) → still 1 write (prune-only trips changed)",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "integration: already-pruned config → 0 writeFile, 0 rename, mtime unchanged (convergence)",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "integration: daemon boot reconcile strips retired keys and logs a pruned count; a retired∩live catalog bug logs the distinguishable shipped-catalog warn and leaves the file untouched",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "integration: maintenance.update runUpdateReconcile reports configReconcile.pruned + one onLog detail line per pruned path (naming the dot-path); no-change emits an explicit no-change line",
+        "coveredByTaskIds": [
+          "t4",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "smoke: boot against a temp home holding the legacy fixture → models.{local,embedding,embeddingDim,tiers,context,agents} absent afterwards, models.providers.local.* + models.analyze.* intact; second boot writes nothing",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "smoke: setup write-side — model-recommender.toConfig()/setup output contains none of the retired paths",
+        "coveredByTaskIds": [
+          "t3",
+          "t6"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 — reconcileConfig gains retired param + pruned channel; CONFIG_CATALOG 41→30; ConfigCatalogError on retired∩live overlap",
+      "quotedText": "reconcileConfig(existing, catalog?, retired?): ConfigReconcileResult — merge then strip declared-retired paths, recording result.pruned; changed = filled+repaired+pruned>0."
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 — RETIRED_PATHS export beside CONFIG_CATALOG; write-side (toConfig/setup) stops emitting the legacy block",
+      "quotedText": "RETIRED_PATHS: readonly RetiredPath[] declares models.local/embedding/embeddingDim (exact) + models.tiers/models.context/models.agents (prefix); toConfig/setup keep only the canonical local surface."
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 error paths — prune edge behaviours + blind-preservation refinement",
+      "quotedText": "prefix-subtree delete recorded once; falsy-but-present pruned via hasOwnProperty; missing-ancestor no-op; un-catalogued keys not on the retired list preserved byte-for-byte; existing never mutated (COW)."
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 data-model — ConfigReconcileResult.pruned + MaintenanceResult.configReconcile.pruned + Config type trim",
+      "quotedText": "ConfigReconcileResult gains readonly pruned; MaintenanceResult.configReconcile gains readonly pruned:number (pinned by the compile-time contract fixture); the legacy top-level model keys are trimmed from the Config/RecommendedConfig type surface."
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 test strategy — unit/contract/integration/smoke subjects across the existing reconcile suites + legacy-config.json fixture",
+      "quotedText": "config-reconcile.test.ts (prune contract) / config-catalog-contract.test.ts (41→30 + disjointness) / config-reconcile-io.test.ts (write-once) / config-boot-reconcile.test.ts + maintenance-reconcile.test.ts (pruned reporting) / config-reconcile-smoke.test.ts (convergence)."
+    }
+  ]
+}

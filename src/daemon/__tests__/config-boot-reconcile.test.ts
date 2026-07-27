@@ -61,18 +61,30 @@ function getPath(obj: Record<string, unknown>, dotPath: string): unknown {
 const defaultsLiteral = (): Record<string, unknown> =>
 	JSON.parse(readFileSync(join(FIXTURES, 'daemon-defaults-literal.json'), 'utf-8'));
 
-test('first-boot equivalence: every key of the deleted L180-192 literal deep-equals its catalog default', () => {
+// The former L180-192 literal keys that were RETIRED in this story — first boot
+// must NO LONGER write them (they are absent, not defaulted).
+const RETIRED_PREFIXES = ['models.local', 'models.embedding', 'models.embeddingDim', 'models.tiers', 'models.context', 'models.agents'];
+const isRetired = (dp: string): boolean => RETIRED_PREFIXES.some(p => dp === p || dp.startsWith(`${p}.`));
+
+test('first-boot equivalence: surviving former-literal keys match catalog defaults; retired ones are absent', () => {
 	const firstBoot = reconcileConfig(undefined, CONFIG_CATALOG).config;
 	const divergences: string[] = [];
 	for (const [dotPath, value] of flatten(defaultsLiteral())) {
 		const got = getPath(firstBoot, dotPath);
-		try { assert.deepEqual(got, value); } catch { divergences.push(`${dotPath}: literal=${JSON.stringify(value)} default=${JSON.stringify(got)}`); }
+		if (isRetired(dotPath)) {
+			// intentional divergence: the retired keys are no longer written at first boot
+			if (got !== undefined) divergences.push(`RETIRED key ${dotPath} should be absent but is ${JSON.stringify(got)}`);
+		} else {
+			try { assert.deepEqual(got, value); } catch { divergences.push(`${dotPath}: literal=${JSON.stringify(value)} default=${JSON.stringify(got)}`); }
+		}
 	}
-	// Any intended divergence would be listed here and demand its own named check.
-	assert.deepEqual(divergences, [], `former-literal keys diverge from catalog defaults:\n${divergences.join('\n')}`);
+	assert.deepEqual(divergences, [], `former-literal key divergences:\n${divergences.join('\n')}`);
+	// the surviving daemon-wide keys are still catalog defaults
+	assert.equal(getPath(firstBoot, 'logLevel'), 'info');
+	assert.equal(getPath(firstBoot, 'permissions.mode'), 'validate');
 });
 
-test('first boot with no config present → writes the former literal keys + remaining catalog defaults, in one write', () => {
+test('first boot with no config present → writes surviving former keys + canonical catalog defaults; no retired keys, one write', () => {
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-boot-'));
 	try {
 		const configPath = join(dir, 'config.json');
@@ -80,9 +92,10 @@ test('first boot with no config present → writes the former literal keys + rem
 		assert.equal(out.kind, 'first-boot');
 		const written = JSON.parse(readFileSync(configPath, 'utf-8')) as Record<string, unknown>;
 		for (const [dotPath, value] of flatten(defaultsLiteral())) {
-			assert.deepEqual(getPath(written, dotPath), value, `former-literal key ${dotPath}`);
+			if (isRetired(dotPath)) assert.equal(getPath(written, dotPath), undefined, `retired ${dotPath} must not be written`);
+			else assert.deepEqual(getPath(written, dotPath), value, `former-literal key ${dotPath}`);
 		}
-		// A key NOT in the former literal but in the catalog is also present.
+		// the canonical surfaces are present
 		assert.equal(getPath(written, 'models.analyze.coreFloor'), 'mid');
 		assert.equal(getPath(written, 'models.providers.local.embeddingDim'), 1024);
 	} finally {

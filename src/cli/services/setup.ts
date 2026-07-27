@@ -40,19 +40,22 @@ export function apply(rec: ModelRecommendation): string {
 		catch { /* start fresh */ }
 	}
 	const existingModels = (existing['models'] as Record<string, unknown> | undefined) ?? {};
+	const existingProviders = (existingModels['providers'] as Record<string, unknown> | undefined) ?? {};
 	const merged = {
 		...recommended,
 		...existing,
 		models: {
 			...recommended.models,
 			...existingModels,
-			local:        recommended.models.local,
-			embedding:    recommended.models.embedding,
-			embeddingDim: recommended.models.embeddingDim,
-			context:      recommended.models.context,
-			tiers: {
-				...recommended.models.tiers,
-				...((existingModels['tiers'] as Record<string, unknown> | undefined) ?? {}),
+			// Canonical local surface only. Existing values win over the
+			// recommendation so a re-run never clobbers a user's providers.local.
+			providers: {
+				...recommended.models.providers,
+				...existingProviders,
+				local: {
+					...recommended.models.providers.local,
+					...((existingProviders['local'] as Record<string, unknown> | undefined) ?? {}),
+				},
 			},
 		},
 	};

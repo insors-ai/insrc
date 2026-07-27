@@ -53,6 +53,7 @@ export interface MaintenanceResult {
 		readonly changed:  boolean;
 		readonly filled:   number;
 		readonly repaired: number;
+		readonly pruned:   number;
 		readonly error?:   string | undefined;
 	} | undefined;
 }
@@ -163,14 +164,14 @@ export async function runUpdateReconcile(root: string, onLog: LogFn, configPath?
 		const catalog = await loadBuiltCatalog(builtCatalogPath);
 		if (catalog === null) {
 			onLog('config reconcile: freshly built catalog not loadable; deferring to next daemon boot');
-			return { changed: false, filled: 0, repaired: 0, error: 'built catalog not loadable; deferred to daemon boot' };
+			return { changed: false, filled: 0, repaired: 0, pruned: 0, error: 'built catalog not loadable; deferred to daemon boot' };
 		}
 		const outcome = reconcileConfigFile(configPath !== undefined ? { catalog, configPath } : { catalog });
 		return summarizeReconcile(outcome, onLog);
 	} catch (err) {
 		const message = err instanceof Error ? err.message : String(err);
 		onLog(`config reconcile failed: ${message}`);
-		return { changed: false, filled: 0, repaired: 0, error: message };
+		return { changed: false, filled: 0, repaired: 0, pruned: 0, error: message };
 	}
 }
 
@@ -181,30 +182,31 @@ export function summarizeReconcile(outcome: ConfigIoOutcome, onLog: LogFn): Reco
 	switch (outcome.kind) {
 		case 'written':
 		case 'first-boot': {
-			const { filled, repaired } = outcome.result;
-			onLog(`config reconcile: ${filled.length} filled, ${repaired.length} repaired`);
+			const { filled, repaired, pruned } = outcome.result;
+			onLog(`config reconcile: ${filled.length} filled, ${repaired.length} repaired, ${pruned.length} pruned`);
 			for (const p of filled) onLog(`  filled   ${p}`);
 			for (const r of repaired) onLog(`  repaired ${r.path} (discarded ${JSON.stringify(r.discarded)})`);
-			return { changed: outcome.result.changed, filled: filled.length, repaired: repaired.length };
+			for (const p of pruned) onLog(`  pruned   ${p}`);
+			return { changed: outcome.result.changed, filled: filled.length, repaired: repaired.length, pruned: pruned.length };
 		}
 		case 'unchanged':
 			onLog('config reconcile: no changes needed');
-			return { changed: false, filled: 0, repaired: 0 };
+			return { changed: false, filled: 0, repaired: 0, pruned: 0 };
 		case 'catalog-error':
 			onLog(`config reconcile: SHIPPED-CATALOG BUG at ${outcome.catalogPath}: ${outcome.message}`);
-			return { changed: false, filled: 0, repaired: 0, error: `shipped-catalog bug at ${outcome.catalogPath}: ${outcome.message}` };
+			return { changed: false, filled: 0, repaired: 0, pruned: 0, error: `shipped-catalog bug at ${outcome.catalogPath}: ${outcome.message}` };
 		case 'parse-error':
 			onLog(`config reconcile: config.json is not valid JSON (${outcome.message}); left untouched`);
-			return { changed: false, filled: 0, repaired: 0, error: `invalid config JSON: ${outcome.message}` };
+			return { changed: false, filled: 0, repaired: 0, pruned: 0, error: `invalid config JSON: ${outcome.message}` };
 		case 'read-error':
 			onLog(`config reconcile: could not read config.json (${outcome.errno}): ${outcome.message}`);
-			return { changed: false, filled: 0, repaired: 0, error: `read error (${outcome.errno}): ${outcome.message}` };
+			return { changed: false, filled: 0, repaired: 0, pruned: 0, error: `read error (${outcome.errno}): ${outcome.message}` };
 		case 'write-error':
 			onLog(`config reconcile: write failed: ${outcome.message}`);
-			return { changed: outcome.result.changed, filled: outcome.result.filled.length, repaired: outcome.result.repaired.length, error: `write error: ${outcome.message}` };
+			return { changed: outcome.result.changed, filled: outcome.result.filled.length, repaired: outcome.result.repaired.length, pruned: outcome.result.pruned.length, error: `write error: ${outcome.message}` };
 		case 'concurrent-modification':
 			onLog('config reconcile: config.json changed during reconcile; write abandoned');
-			return { changed: outcome.result.changed, filled: outcome.result.filled.length, repaired: outcome.result.repaired.length, error: 'config changed during reconcile; write abandoned' };
+			return { changed: outcome.result.changed, filled: outcome.result.filled.length, repaired: outcome.result.repaired.length, pruned: outcome.result.pruned.length, error: 'config changed during reconcile; write abandoned' };
 	}
 }
 

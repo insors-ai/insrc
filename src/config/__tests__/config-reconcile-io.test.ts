@@ -64,7 +64,7 @@ function withTemp(fn: (configPath: string) => void): void {
 	try { fn(join(dir, 'config.json')); } finally { rmSync(dir, { recursive: true, force: true }); }
 }
 
-test('legacy config on disk → exactly 1 writeFile + 1 rename; three dynamic namespaces byte-identical', () => {
+test('legacy config on disk → exactly 1 writeFile + 1 rename; retired keys pruned, live namespaces byte-identical', () => {
 	withTemp((configPath) => {
 		writeFileSync(configPath, JSON.stringify(legacy(), null, 2));
 		const { seam, counts } = countingSeam();
@@ -73,18 +73,40 @@ test('legacy config on disk → exactly 1 writeFile + 1 rename; three dynamic na
 		assert.equal(counts.writes, 1);
 		assert.equal(counts.renames, 1);
 		const result = JSON.parse(readFileSync(configPath, 'utf-8')) as Record<string, unknown>;
-		const analyze = (result['models'] as Record<string, unknown>)['analyze'] as Record<string, unknown>;
+		const models = result['models'] as Record<string, unknown>;
+		// the LIVE cloud/tiering namespaces survive byte-identical to the baseline
+		const analyze = models['analyze'] as Record<string, unknown>;
 		const bAnalyze = (baseline()['models'] as Record<string, unknown>)['analyze'] as Record<string, unknown>;
 		assert.deepEqual(analyze['roleTiers'], bAnalyze['roleTiers']);
 		assert.deepEqual(analyze['byRepo'], bAnalyze['byRepo']);
-		assert.deepEqual((result['models'] as Record<string, unknown>)['agents'],
-			(baseline()['models'] as Record<string, unknown>)['agents']);
-		// the type-invalid embeddingDim was repaired to the numeric default
-		assert.equal((result['models'] as Record<string, unknown>)['embeddingDim'], 1024);
+		// every retired key is now GONE (incl. the type-invalid embeddingDim + models.agents)
+		for (const k of ['local', 'embedding', 'embeddingDim', 'tiers', 'context', 'agents']) {
+			assert.equal(Object.prototype.hasOwnProperty.call(models, k), false, `models.${k} must be pruned`);
+		}
+		if (out.kind === 'written') assert.ok(out.result.pruned.length >= 5);
 	});
 });
 
-test('already-normalized config → 0 writeFile, 0 rename, mtime unchanged (steady state)', () => {
+test('prune-only change (nothing to fill/repair) → still exactly 1 writeFile + 1 rename', () => {
+	withTemp((configPath) => {
+		// A fully-reconciled doc (no fills/repairs left) with one stray retired key re-added.
+		const normalized = reconcileConfig(legacy(), CONFIG_CATALOG).config as Record<string, unknown>;
+		normalized['models'] = { ...(normalized['models'] as Record<string, unknown>), tiers: { fast: 'stray' } };
+		writeFileSync(configPath, JSON.stringify(normalized, null, 2));
+		const { seam, counts } = countingSeam();
+		const out = reconcileConfigFile({ configPath, catalog: CONFIG_CATALOG, fs: seam });
+		assert.equal(out.kind, 'written');
+		assert.equal(counts.writes, 1);
+		assert.equal(counts.renames, 1);
+		if (out.kind === 'written') {
+			assert.deepEqual(out.result.filled, []);
+			assert.deepEqual(out.result.repaired, []);
+			assert.deepEqual(out.result.pruned, ['models.tiers']);   // prune-only trips changed
+		}
+	});
+});
+
+test('already-pruned/normalized config → 0 writeFile, 0 rename, mtime unchanged (steady state)', () => {
 	withTemp((configPath) => {
 		const normalized = reconcileConfig(legacy(), CONFIG_CATALOG).config;
 		writeFileSync(configPath, `${JSON.stringify(normalized, null, 2)}\n`);

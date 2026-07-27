@@ -24,7 +24,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, resolve } from 'node:path';
 
-import { CONFIG_CATALOG as FROM_CONFIG } from '../config-catalog.js';
+import { CONFIG_CATALOG as FROM_CONFIG, RETIRED_PATHS } from '../config-catalog.js';
 import { CONFIG_CATALOG as FROM_CLI } from '../../cli/config-catalog.js';
 import { ConfigCatalogError, reconcileConfig } from '../reconcile.js';
 
@@ -85,8 +85,43 @@ test('the src/cli re-export is reference-identical to the src/config definition 
 	assert.equal(FROM_CLI, FROM_CONFIG);
 });
 
-test('the real CONFIG_CATALOG has 41 rows', () => {
-	assert.equal(FROM_CONFIG.length, 41);
+test('the real CONFIG_CATALOG has 30 rows (was 41; 11 legacy model rows retired)', () => {
+	assert.equal(FROM_CONFIG.length, 30);
+	// none of the 11 retired dot-paths remain as live catalog rows
+	const live = new Set(FROM_CONFIG.map(r => r.path));
+	for (const p of [
+		'models.local', 'models.embedding', 'models.embeddingDim',
+		'models.tiers.fast', 'models.tiers.standard', 'models.tiers.powerful',
+		'models.context.local', 'models.context.localMaxOutput', 'models.context.claude',
+		'models.context.claudeMaxOutput', 'models.context.charsPerToken',
+	]) {
+		assert.equal(live.has(p), false, `${p} must be removed from CONFIG_CATALOG`);
+	}
+});
+
+test('RETIRED_PATHS covers exactly the 6 declared legacy entries and is disjoint from every CONFIG_CATALOG path', () => {
+	assert.deepEqual(
+		RETIRED_PATHS.map(r => ({ path: r.path, prefix: r.prefix ?? false })),
+		[
+			{ path: 'models.local', prefix: false },
+			{ path: 'models.embedding', prefix: false },
+			{ path: 'models.embeddingDim', prefix: false },
+			{ path: 'models.tiers', prefix: true },
+			{ path: 'models.context', prefix: true },
+			{ path: 'models.agents', prefix: true },
+		],
+	);
+	// disjoint: no live catalog path equals or sits under any retired path
+	for (const r of RETIRED_PATHS) {
+		for (const opt of FROM_CONFIG) {
+			assert.ok(
+				opt.path !== r.path && !opt.path.startsWith(`${r.path}.`),
+				`retired ${r.path} overlaps live ${opt.path}`,
+			);
+		}
+	}
+	// and reconcileConfig against the real catalog + RETIRED_PATHS does not throw
+	assert.doesNotThrow(() => reconcileConfig({}, FROM_CONFIG, RETIRED_PATHS));
 });
 
 test('real CONFIG_CATALOG self-consistency: every row in-domain, every default satisfies its predicate', () => {

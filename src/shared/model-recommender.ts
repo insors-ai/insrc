@@ -405,16 +405,17 @@ function analyzeOllamaConfig(
 export interface RecommendedConfig {
   ollama: { host: string };
   models: {
-    local: string;
-    embedding: string;
-    embeddingDim: number;
-    tiers: { fast: string; standard: string; powerful: string };
-    context: {
-      local: number;
-      localMaxOutput: number;
-      claude: number;
-      claudeMaxOutput: number;
-      charsPerToken: number;
+    // Only the canonical LIVE local surface. The legacy top-level model block
+    // (models.local / embedding / embeddingDim / tiers / context) was retired —
+    // it was write-only and is stripped by the reconcile (see RETIRED_PATHS).
+    providers: {
+      local: {
+        host: string;
+        coreModel: string;
+        embeddingModel: string;
+        embeddingDim: number;
+        charsPerToken: number;
+      };
     };
   };
 }
@@ -423,20 +424,14 @@ export function toConfig(rec: ModelRecommendation): RecommendedConfig {
   return {
     ollama: { host: 'http://localhost:11434' },
     models: {
-      local: rec.coder.model,
-      embedding: rec.embedding.model,
-      embeddingDim: rec.embedding.dims,
-      tiers: {
-        fast: 'claude-haiku-4-5',
-        standard: 'claude-sonnet-4-6',
-        powerful: 'claude-opus-4-6',
-      },
-      context: {
-        local: rec.context.tokens,
-        localMaxOutput: rec.context.maxOutput,
-        claude: 200000,
-        claudeMaxOutput: 8192,
-        charsPerToken: 3,
+      providers: {
+        local: {
+          host: 'http://localhost:11434',
+          coreModel: rec.coder.model,
+          embeddingModel: rec.embedding.model,
+          embeddingDim: rec.embedding.dims,
+          charsPerToken: 3,
+        },
       },
     },
   };

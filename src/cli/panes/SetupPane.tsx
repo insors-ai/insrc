@@ -6,7 +6,8 @@
 /**
  * Setup pane — hardware detection + model recommendation. `a` writes the
  * recommended config; `p` pulls any missing models, streaming ollama's
- * progress into a log (never `stdio:inherit`, which would fight ink).
+ * progress into the shared bottom message box via ui.task (never
+ * `stdio:inherit`, which would fight ink).
  */
 
 import { Box, Text, useInput } from 'ink';
@@ -16,14 +17,13 @@ import type { ReactElement } from 'react';
 import type { SystemInfo } from '../../shared/system-info.js';
 import type { ModelRecommendation } from '../../shared/model-recommender.js';
 import { useServices, useUi, useCaptured } from '../ui/context.js';
-import { Panel, KeyHints, LogView } from '../ui/widgets.js';
+import { Panel, KeyHints } from '../ui/widgets.js';
 
 export function SetupPane(): ReactElement {
 	const svc = useServices();
 	const ui = useUi();
 	const captured = useCaptured();
 	const [busy, setBusy] = useState(false);
-	const [log, setLog] = useState<string[]>([]);
 
 	const info = useMemo<SystemInfo>(() => svc.setup.detect(), [svc]);
 	const rec = useMemo<ModelRecommendation>(() => svc.setup.recommend(info), [svc, info]);
@@ -35,11 +35,13 @@ export function SetupPane(): ReactElement {
 			catch (err) { ui.toast(`✗ ${err instanceof Error ? err.message : String(err)}`); }
 		} else if (input === 'p') {
 			if (toPull.length === 0) { ui.toast('all recommended models already installed'); return; }
-			setBusy(true); setLog([`pulling ${toPull.join(', ')}…`]); ui.capture(true);
-			void svc.setup.pullModels(toPull, tick => setLog(l => [...l.slice(-40), `${tick.model}: ${tick.line}`]))
+			setBusy(true); ui.capture(true);
+			const task = ui.task(`pulling ${toPull.join(', ')}…`);
+			void svc.setup.pullModels(toPull, tick => task.push(`${tick.model}: ${tick.line}`))
 				.then(results => {
 					const failed = results.filter(r => !r.ok);
-					ui.toast(failed.length === 0 ? 'models pulled' : `✗ ${failed.map(f => f.model).join(', ')} failed`);
+					if (failed.length === 0) task.done('models pulled');
+					else task.fail(`${failed.map(f => f.model).join(', ')} failed`);
 				})
 				.finally(() => { setBusy(false); ui.capture(false); });
 		}
@@ -60,13 +62,6 @@ export function SetupPane(): ReactElement {
 				<Text>  embedding {rec.embedding.model} <Text dimColor>({rec.embedding.dims} dims)</Text>{rec.embedding.pull ? <Text color="yellow"> ← needs pull</Text> : <Text />}</Text>
 				<Text>  context   {rec.context.shape} <Text dimColor>({rec.context.tokens} tokens)</Text></Text>
 			</Box>
-
-			{(busy || log.length > 0) && (
-				<Box flexDirection="column" marginTop={1}>
-					<Text dimColor>{busy ? '⏳ pulling…' : 'last pull:'}</Text>
-					<LogView lines={log} />
-				</Box>
-			)}
 
 			<Box marginTop={1}>
 				<KeyHints hints={[['a', 'apply config'], ['p', `pull models${toPull.length > 0 ? ` (${toPull.length})` : ''}`]]} />

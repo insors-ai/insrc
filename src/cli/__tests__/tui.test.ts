@@ -192,6 +192,38 @@ test('Setup pane renders system + recommendation without crashing', async () => 
 	unmount();
 });
 
+test('bottom box: Setup model-pull streams ollama progress into the message box', async () => {
+	const svc = fakeServices();
+	svc.setup.detect = () => ({
+		cpu: { model: 'M-Test', cores: 8 },
+		ram: { totalMb: 32768, freeMb: 16384 },
+		gpu: null,
+		ollama: { available: true, version: '0.1', models: [] },
+	} as unknown as SystemInfo);
+	svc.setup.recommend = () => ({
+		tier: 'balanced',
+		coder: { model: 'qwen3-coder', params: '30b', pull: false },
+		embedding: { model: 'qwen3-embedding', dims: 1024, pull: true },
+		context: { shape: 'medium', tokens: 32768 },
+	} as unknown as ModelRecommendation);
+	svc.setup.modelsToPull = () => ['qwen3-embedding'];
+	svc.setup.pullModels = async (_models, onTick) => {
+		onTick?.({ model: 'qwen3-embedding', line: 'downloading 50%' });
+		return [{ model: 'qwen3-embedding', ok: true }];
+	};
+	const { lastFrame, stdin, unmount } = render(createElement(App, { services: svc, pollMs: 0 }));
+	await settle();
+	stdin.write('4');          // → Setup pane
+	await settle();
+	stdin.write('p');          // pull → ui.task streams into the bottom box
+	await settle();
+	const frame = lastFrame() ?? '';
+	assert.match(frame, /downloading 50%/);   // streamed tick line in the box
+	assert.match(frame, /models pulled/);     // task.done line in the box
+	assert.doesNotMatch(frame, /last pull:/); // old inline log label gone
+	unmount();
+});
+
 test('Model Tiers pane (5) renders effective tiers, coreFloor, and roles from config', async () => {
 	const svc = fakeServices();
 	svc.config.show = async () => ({ models: { analyze: { roleTiers: { 'context.assemble': 'cheap' } } } });

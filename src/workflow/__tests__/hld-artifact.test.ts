@@ -162,6 +162,32 @@ test('checkContractDependencyGraph flags an inversion (consumer not downstream o
 	assert.ok(issues.some(i => /cg2/.test(i)), issues.join(' | '));
 });
 
+test('checkContractDependencyGraph cg2 message names the nearest-common-ancestor re-ownership target', () => {
+	// Cross-cutting contract owned by s3 but consumed by s2, which is in a
+	// different branch (both s2 and s3 depend only on s1). The PREFERRED FIX
+	// must name s1 — the common ancestor — as the re-ownership target.
+	const body: HldBody = {
+		...fixtureBody(),
+		sharedContracts: [
+			{ id: 'gate', name: 'Compliance', purpose: 'cross-cutting gate', interfaceSketch: 'interface Gate { check(): void }', ownedByStory: 's3', consumedByStories: ['s2'], assumptions: [] },
+		],
+		storyBoundaries: [
+			{ storyId: 's1', owns: [], depends: [], internal: '' },
+			{ storyId: 's2', owns: [], depends: ['gate'], internal: '' },
+			{ storyId: 's3', owns: ['gate'], depends: [], internal: '' },
+		],
+	};
+	const dag = [
+		{ id: 's1', dependsOn: [] as string[] },
+		{ id: 's2', dependsOn: ['s1'] },
+		{ id: 's3', dependsOn: ['s1'] },
+	];
+	const cg2 = checkContractDependencyGraph(body, dag).find(i => /cg2/.test(i));
+	assert.ok(cg2, 'expected a cg2 issue');
+	assert.match(cg2!, /re-own 'gate' at 's1'/);
+	assert.match(cg2!, /CANNOT amend the Epic Story graph/);
+});
+
 test('checkContractDependencyGraph flags depends drift from consumedByStories', () => {
 	const body: HldBody = {
 		...fixtureBody(),

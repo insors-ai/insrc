@@ -473,7 +473,11 @@ export function checkContractDependencyGraph(
 		for (const consumer of sc.consumedByStories) {
 			if (consumer === sc.ownedByStory) continue;
 			if (!down.has(consumer)) {
-				details.push(`shared contract '${sc.id}' (owned by '${sc.ownedByStory}') is consumed by '${consumer}', which is NOT downstream of '${sc.ownedByStory}' in the Epic Story graph (cg2). A Story cannot consume a contract owned by a Story it does not depend on. Either drop '${consumer}' from consumedByStories, or propose an Epic amendment so '${consumer}' dependsOn '${sc.ownedByStory}'.`);
+				const ancestor = nearestCommonAncestor(sc, epicStories);
+				const reown = ancestor !== null
+					? ` PREFERRED FIX: re-own '${sc.id}' at '${ancestor}' — the nearest Story that every consumer already transitively depends on — so all consumers are downstream (change ownedByStory to '${ancestor}' and move it into that Story's boundary.owns).`
+					: ` PREFERRED FIX for a genuinely cross-cutting contract: re-own '${sc.id}' at a foundational Story that every consumer already transitively depends on (often the first Story) so all consumers are downstream.`;
+				details.push(`shared contract '${sc.id}' (owned by '${sc.ownedByStory}') is consumed by '${consumer}', which is NOT downstream of '${sc.ownedByStory}' in the Epic Story graph (cg2). A Story cannot consume a contract owned by a Story it does not depend on.${reown} framework.write CANNOT amend the Epic Story graph, so prefer re-ownership over dropping a real consumer; only drop '${consumer}' from consumedByStories if it genuinely does not need '${sc.id}'.`);
 			}
 		}
 	}
@@ -547,6 +551,48 @@ function transitiveDependents(stories: readonly EpicStoryDep[]): Record<string, 
 		for (const a of ancestors[s.id] ?? []) (downstream[a] ??= new Set()).add(s.id);
 	}
 	return downstream;
+}
+
+/** The nearest Story every consumer of `sc` (and its current owner) already
+ *  transitively depends on — the deterministic re-ownership target that makes
+ *  a cross-cutting contract's consumers all downstream, WITHOUT amending the
+ *  Epic graph. It is the deepest member of the intersection of every target's
+ *  inclusive-ancestor set (self + transitive dependsOn); null when the targets
+ *  share no common ancestor (disjoint dependency trees). */
+function nearestCommonAncestor(
+	sc: { readonly ownedByStory: string; readonly consumedByStories: readonly string[] },
+	epicStories: readonly EpicStoryDep[],
+): string | null {
+	const deps = new Map<string, readonly string[]>();
+	for (const s of epicStories) deps.set(s.id, s.dependsOn ?? []);
+	const inclusiveAncestors = (id: string): Set<string> => {
+		const seen = new Set<string>();
+		const walk = (n: string): void => {
+			if (seen.has(n)) return;
+			seen.add(n);
+			for (const d of deps.get(n) ?? []) walk(d);
+		};
+		walk(id);
+		return seen;   // includes `id` itself
+	};
+
+	const targets = [...new Set([sc.ownedByStory, ...sc.consumedByStories])].filter(id => deps.has(id));
+	if (targets.length === 0) return null;
+
+	let inter: Set<string> | null = null;
+	for (const t of targets) {
+		const a = inclusiveAncestors(t);
+		if (inter === null) { inter = new Set<string>(a); continue; }
+		const prev: Set<string> = inter;
+		inter = new Set<string>([...prev].filter((x: string) => a.has(x)));
+	}
+	if (inter === null || inter.size === 0) return null;
+
+	// Nearest = deepest = largest inclusive-ancestor set; tie-break by id for determinism.
+	return [...inter].sort((x, y) => {
+		const d = inclusiveAncestors(y).size - inclusiveAncestors(x).size;
+		return d !== 0 ? d : (x < y ? -1 : 1);
+	})[0] ?? null;
 }
 
 /** Type-level-only interfaceSketch heuristic: no `return`, no `{`

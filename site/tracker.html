@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>tracker — insrc</title>
+<meta name="description" content="Mirror the define → design → plan → build chain into an issue tracker: native Epic/Story/Task issues, sub-issue links, status sync, and design-summary comments. GitHub today (via the gh CLI), provider-pluggable for Jira and others.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13' font-family='monospace' fill='%234ade80'>▌</text></svg>">
+<link rel="stylesheet" href="css/tui.css">
+</head>
+<body>
+<a class="skip" href="#main">skip to content</a>
+
+<nav class="nav"><div class="nav-inner">
+  <span class="brand">insrc<span class="sig">.daemon</span></span>
+  <div class="nav-links">
+    <a href="index.html">home</a>
+    <a href="getting-started.html">getting started</a>
+    <a href="architecture.html">architecture</a>
+    <a href="workflow.html">workflow</a>
+    <a href="tracker.html">tracker</a>
+    <a href="analyze.html">analyze</a>
+    <a href="tools.html">tools</a>
+    <a href="cli.html">cli</a>
+  </div>
+  <button class="theme-btn" type="button" aria-label="toggle theme">◐ light</button>
+</div></nav>
+
+<div class="wrap"><main id="main">
+
+  <h1>Tracker</h1>
+  <p class="lead">The tracker mirrors the workflow chain into an issue tracker: as you approve artifacts, insrc creates and links the matching issues so the whole <code>define → design → plan → build</code> hierarchy is visible to a team that never opens the daemon. It's <strong>opt-in</strong> and <strong>provider-pluggable</strong> — GitHub is the only adapter today (driven through the <code>gh</code> CLI), with the seams in place for Jira and others.</p>
+
+  <div class="flow">
+    <span class="stage">Epic</span><span class="arr">→</span>
+    <span class="stage">Story</span><span class="arr">→</span>
+    <span class="stage">Task</span>
+    <span class="arr" style="opacity:.5">maps to</span>
+    <span class="stage">issue</span><span class="arr">→</span>
+    <span class="stage">sub-issue</span><span class="arr">→</span>
+    <span class="stage">sub-issue</span>
+  </div>
+
+  <p>Nothing in the workflow chain is GitHub-specific — it speaks a small vocabulary (Epic / Story / Task issues, parent→child links, a status label, and a design-summary comment). A provider is an <em>adapter</em> behind that vocabulary. Two design principles carry over from the rest of insrc: <strong>we don't own the connection</strong> (the GitHub adapter shells out to your authenticated <code>gh</code> — no API keys stored, no direct REST), and the tracker <strong>only ever touches issues it created</strong> (it adopts an existing ref by label, never edits or duplicates someone else's issue).</p>
+
+  <h2>What it mirrors</h2>
+
+  <div class="tablewrap"><table>
+    <thead><tr><th>Artifact</th><th>Issue</th><th>Native type</th><th>Link</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Epic</strong> (DEF)</td><td>one issue per Epic</td><td><code>Epic</code></td><td>—</td></tr>
+      <tr><td><strong>Story</strong> (LLD)</td><td>one issue per Story</td><td><code>Story</code></td><td>sub-issue of the Epic</td></tr>
+      <tr><td><strong>Task</strong> (PLAN)</td><td>one issue per PlanTask <span class="badge">opt-in</span></td><td><code>Task</code></td><td>sub-issue of the Story</td></tr>
+      <tr><td><strong>HLD / LLD / amendment</strong></td><td>a comment on the Epic/Story issue</td><td>—</td><td>the design summary</td></tr>
+    </tbody>
+  </table></div>
+
+  <p>Issue titles lead with the hierarchical workflow id; the rendered <code>.md</code> artifact is re-written on approval to carry a <code>**Tracker:** owner/repo#N</code> link, so the doc points at the issue and the issue points back at the doc. Native issue <em>types</em> (<code>Epic</code>/<code>Story</code>/<code>Task</code>) are applied when the org has them and <strong>fail open</strong> to an untyped issue when it doesn't. A small set of status labels (<code>insrc:in-progress</code>, <code>insrc:blocked</code>) is what <code>tracker.sync</code> reads back.</p>
+
+  <h2>Setup</h2>
+
+  <p>One-shot bootstrap that gets a repo's tracker ready. Run it from the CLI (or the TUI command bar):</p>
+
+  <div class="code">
+    <div class="code-head"><span class="name">bash</span><button class="copy" type="button">copy</button></div>
+<pre><code><span class="p">$</span> insrc <span class="c"># then, in the ':' command bar:</span>
+<span class="p">:</span> tracker setup            <span class="c"># labels + native issue types</span>
+<span class="p">:</span> tracker setup --project   <span class="c"># also create a Project + its board views</span></code></pre>
+  </div>
+
+  <p>The engine walks an idempotent, non-fatal checklist and reports each step as <code>done</code> / <code>already</code> / <code>manual</code> / <code>skipped</code> / <code>failed</code>. It performs every automatable step (create the <code>insrc:*</code> labels, create the org issue types, optionally create a Project) and, for the steps a machine can't complete, returns the <strong>exact command</strong> to run — e.g. an org issue-type create that needs the <code>admin:org</code> scope, or the UI-only Project board views. A failure or manual gate on one step never blocks the others.</p>
+
+  <div class="tip"><strong>Prerequisite: the <code>gh</code> CLI, authenticated.</strong> The GitHub adapter never stores a token — it uses your <code>gh</code> session. Run <code>gh auth login</code> first; setup and every tracker workflow preflight with <code>gh auth status</code> and abort cleanly (fail-open, never undoing an approve) if it isn't authenticated.</div>
+
+  <h2>Config</h2>
+
+  <p>Optional, at <code>~/.insrc/github.json</code>. The tracker is <strong>opt-in</strong>: with no matching entry (or no file at all) the adapter resolves to <code>none</code> and both auto-push and the manual <code>tracker.*</code> workflows are disabled. A repo without an explicit entry falls back to its git remote's owner/repo and the built-in label/type defaults, so the common case needs no config beyond <code>"type": "github"</code>.</p>
+
+  <div class="code">
+    <div class="code-head"><span class="name">~/.insrc/github.json</span><button class="copy" type="button">copy</button></div>
+<pre><code>{
+  <span class="s">"default"</span>: {
+    <span class="s">"type"</span>:  <span class="s">"github"</span>,
+    <span class="s">"owner"</span>: <span class="s">"myorg"</span>,
+    <span class="s">"repo"</span>:  <span class="s">"myrepo"</span>,
+    <span class="s">"pushTasks"</span>:       <span class="k">false</span>,
+    <span class="s">"commitArtifacts"</span>: <span class="k">true</span>
+  },
+  <span class="s">"repos"</span>: {
+    <span class="s">"/abs/path/to/repo"</span>: { <span class="s">"type"</span>: <span class="s">"github"</span>, <span class="s">"owner"</span>: <span class="s">"myorg"</span>, <span class="s">"repo"</span>: <span class="s">"other-repo"</span> }
+  }
+}</code></pre>
+  </div>
+
+  <div class="tablewrap"><table>
+    <thead><tr><th>Field</th><th>Default</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td><code>type</code></td><td><code>github</code></td><td>Adapter: <code>github</code> (via <code>gh</code>) or <code>none</code> (disable).</td></tr>
+      <tr><td><code>owner</code> / <code>repo</code></td><td>from git remote</td><td>Target repository; omitted → parsed from the repo's <code>origin</code>.</td></tr>
+      <tr><td><code>epicLabel</code> / <code>storyLabel</code> / <code>taskLabel</code></td><td><code>insrc:epic</code> / <code>insrc:story</code> / <code>insrc:task</code></td><td>Labels used to find + adopt existing issues.</td></tr>
+      <tr><td><code>epicIssueType</code> / <code>storyIssueType</code> / <code>taskIssueType</code></td><td><code>Epic</code> / <code>Story</code> / <code>Task</code></td><td>Native issue-type names; fail open to untyped. <code>''</code> forces untyped.</td></tr>
+      <tr><td><code>pushTasks</code></td><td><code>false</code></td><td>Also create one Task sub-issue per PlanTask on plan approval.</td></tr>
+      <tr><td><code>commitArtifacts</code></td><td><code>true</code></td><td>Commit + push the artifact JSON/MD on approval so the chain is portable.</td></tr>
+      <tr><td><code>useMilestones</code></td><td><code>false</code></td><td>Attach issues to a per-Epic milestone.</td></tr>
+    </tbody>
+  </table></div>
+
+  <p>The resolved target for a repo comes only from its own per-repo entry or its own git remote — a global <code>default</code> never silently retargets a repo it wasn't configured for.</p>
+
+  <h2>Usage</h2>
+
+  <h3>Automatic — on approval</h3>
+  <p>Once a repo has a <code>github</code> config, approving an artifact pushes the matching issue with no extra command (the deterministic path — used by a human <code>insrc workflow approve</code> or a non-GitHub-capable model):</p>
+  <ul>
+    <li><strong>Approve the HLD</strong> → create/adopt the <strong>Epic</strong> issue.</li>
+    <li><strong>Approve an LLD</strong> → create/adopt the <strong>Story</strong> issue and splice it into the Epic's task list.</li>
+    <li>In both cases: write the ref into the artifact's <code>meta.tracker</code>, re-render the <code>.md</code> with the tracker link, and post the design summary as an issue comment.</li>
+  </ul>
+  <div class="tip"><strong>Idempotent + fail-open.</strong> An existing ref (in meta, or discoverable by label) is adopted, never duplicated; a missing <code>gh</code> / config / auth simply skips the push without undoing the approval.</div>
+
+  <h3>Manual — the <code>tracker.*</code> workflows</h3>
+  <p>For explicit control (e.g. a batch push, a status refresh, or attaching a design summary), the three tracker workflows run via <code>insrc_workflow_run</code> (or the CLI):</p>
+
+  <div class="tablewrap"><table>
+    <thead><tr><th>Workflow</th><th>Does</th><th>Params</th></tr></thead>
+    <tbody>
+      <tr><td><code>tracker.push</code></td><td>Push the Epic + all Stories (+ Tasks when <code>pushTasks</code>) as typed issues + sub-issues.</td><td><code>{ epicSlug, force? }</code></td></tr>
+      <tr><td><code>tracker.sync</code></td><td>Pull GitHub issue status back into the artifacts' <code>meta</code> (read-only on your side).</td><td><code>{ epicSlug }</code></td></tr>
+      <tr><td><code>tracker.post</code></td><td>Post an HLD / LLD / amendment summary as an issue comment.</td><td><code>{ epicSlug, target: { kind: hld\|lld\|amendment, storyId?, amendmentId? } }</code></td></tr>
+    </tbody>
+  </table></div>
+
+  <p><code>tracker.sync</code> and <code>tracker.post</code> require a prior <code>tracker.push</code> (they resolve the issue refs off the Epic's meta) and only approved amendments post. As with the whole chain, the tracker enforces its own scope boundary: it never edits an issue it didn't create.</p>
+
+  <h2>Other providers</h2>
+
+  <p>GitHub is the first adapter, not the only intended one. The provider is selected by the config <code>type</code> field and isolated behind three seams — config resolution (<code>src/workflow/config/github.ts</code>), the issue operations (<code>src/workflow/tracker/github.ts</code>: create typed issue, link sub-issue, comment, set status label), and the shared renderers/conventions that turn an artifact into a title + body + summary. A new adapter (say <strong>Jira</strong>) implements the same operation set against its own API and registers a <code>"type": "jira"</code> config shape; the <code>define → design → plan → build</code> pipeline, the approve-time hooks, and the <code>tracker.push / sync / post</code> workflows are unchanged, because they only ever speak Epic/Story/Task + comment + status. Until such an adapter lands, <code>github</code> and <code>none</code> are the supported values.</p>
+
+</main></div>
+
+<footer class="foot"><div class="foot-inner">
+  <span class="seg"><span class="accent">insrc</span> · code-knowledge daemon</span>
+  <span class="seg">TypeScript · ESM · Node 20+</span>
+  <span class="seg">LMDB + Lance + DuckDB</span>
+  <span class="seg"><a href="https://github.com/insors-ai/insrc">github</a></span>
+  <span class="seg" style="margin-left:auto">local-first · no keys · no REST</span>
+</div></footer>
+
+<script src="js/tui.js"></script>
+</body>
+</html>

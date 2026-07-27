@@ -76,6 +76,7 @@ function fakeServices(): Services {
 			approveAmendment: () => ({} as AmendmentRecord),
 			rejectAmendment:  () => ({} as AmendmentRecord),
 			staleness:        () => [],
+			trackerSetup:     () => ({ steps: [], manualRemaining: 0 }),
 		},
 		setup: {
 			detect:       () => ({} as SystemInfo),
@@ -204,6 +205,80 @@ test('Model Tiers pane (5) renders effective tiers, coreFloor, and roles from co
 	assert.match(frame, /coreFloor/);
 	assert.match(frame, /review/);        // a critical role row (→ core)
 	assert.match(frame, /override/);      // the context.assemble override is surfaced (in-window)
+	unmount();
+});
+
+test('Repos pane: `t` runs tracker setup for the selected repo and shows the report', async () => {
+	const svc = fakeServices();
+	svc.daemon.getStatus = async () => status({ repos: [repo('/work/repoA')] });
+	const calls: Array<{ path: string; opts: unknown }> = [];
+	svc.workflow.trackerSetup = (path, opts) => {
+		calls.push({ path, opts });
+		return {
+			steps: [
+				{ key: 'gh-auth', title: 'gh CLI authenticated', status: 'already', detail: 'signed in' },
+				{ key: 'scopes', title: 'OAuth scopes', status: 'manual', detail: 'admin:org missing', action: 'gh auth refresh -s admin:org' },
+			],
+			manualRemaining: 1,
+		};
+	};
+	const { lastFrame, stdin, unmount } = render(createElement(App, { services: svc, pollMs: 0 }));
+	await settle();
+	stdin.write('2'); await settle();   // → Repos pane
+	stdin.write('t'); await settle();   // run tracker setup (deferred a macrotask, covered by settle)
+	const frame = lastFrame() ?? '';
+	assert.equal(calls.length, 1);
+	assert.equal(calls[0]?.path, '/work/repoA');
+	assert.equal(calls[0]?.opts, undefined);          // Project board is NOT included
+	assert.match(frame, /tracker setup/);             // modal title
+	assert.match(frame, /OAuth scopes/);              // a step row
+	assert.match(frame, /gh auth refresh/);           // the manual action command
+	assert.match(frame, /manual action/);             // the summary footer
+	unmount();
+});
+
+test('Repos pane: a throwing tracker setup renders a failed row instead of crashing', async () => {
+	const svc = fakeServices();
+	svc.daemon.getStatus = async () => status({ repos: [repo('/work/repoA')] });
+	svc.workflow.trackerSetup = () => { throw new Error('gh exploded'); };
+	const { lastFrame, stdin, unmount } = render(createElement(App, { services: svc, pollMs: 0 }));
+	await settle();
+	stdin.write('2'); await settle();
+	stdin.write('t'); await settle();
+	const frame = lastFrame() ?? '';
+	assert.match(frame, /tracker setup/);
+	assert.match(frame, /gh exploded/);               // the error surfaces as a failed step detail
+	unmount();
+});
+
+test('Repos pane: `t` with no repos registered is a no-op', async () => {
+	const svc = fakeServices();   // default getStatus → repos: []
+	let called = false;
+	svc.workflow.trackerSetup = () => { called = true; return { steps: [], manualRemaining: 0 }; };
+	const { lastFrame, stdin, unmount } = render(createElement(App, { services: svc, pollMs: 0 }));
+	await settle();
+	stdin.write('2'); await settle();
+	stdin.write('t'); await settle();
+	assert.equal(called, false);
+	assert.match(lastFrame() ?? '', /no repositories registered/);   // still the list, no modal
+	unmount();
+});
+
+test('Repos pane: the tracker modal dismisses on any key back to the list', async () => {
+	const svc = fakeServices();
+	svc.daemon.getStatus = async () => status({ repos: [repo('/work/repoA')] });
+	svc.workflow.trackerSetup = () => ({
+		steps: [{ key: 'gh-auth', title: 'gh CLI authenticated', status: 'already', detail: 'signed in' }],
+		manualRemaining: 0,
+	});
+	const { lastFrame, stdin, unmount } = render(createElement(App, { services: svc, pollMs: 0 }));
+	await settle();
+	stdin.write('2'); await settle();
+	stdin.write('t'); await settle();
+	assert.match(lastFrame() ?? '', /gh CLI authenticated/);   // modal is up
+	stdin.write('x'); await settle();                          // any key dismisses
+	assert.doesNotMatch(lastFrame() ?? '', /gh CLI authenticated/);   // back to the list
+	assert.match(lastFrame() ?? '', /\/work\/repoA/);
 	unmount();
 });
 

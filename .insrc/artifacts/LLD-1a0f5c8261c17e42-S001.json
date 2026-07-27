@@ -1,0 +1,485 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1785144673051-xxc9iq",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-07-27T09:36:37.609Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 324463,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1a0f5c8261c17e42",
+    "epicSlug": "add-t-tracker-setup-action-tui",
+    "storyId": "S001",
+    "hldBaseRunId": "wf-1785144673051-xxc9iq",
+    "hldEffectiveHash": "1a0f5c8261c17e4211f77f6fbb69c8283e941dfcae46f6bafd1efc8b9e60b084",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "small",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "ReposPane (src/cli/panes/ReposPane.tsx) has a Modal union 'none'|'add'|'steer-claude'|'steer-agents'|'confirm-remove', a `current` selected repo, an act() one-line helper, useInput gated on modal==='none' && !captured with a/i/d keys, ui.capture, and a KeyHints row — the surface the `t` action extends.",
+          "evidence": "src/cli/panes/ReposPane.tsx:27 has the exact Modal union and :74 the `isActive: modal === 'none' && !captured` gating; useInput/ui.capture/KeyHints all present. Surface confirmed.",
+          "action": "none — verified sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl2",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "svc.workflow.trackerSetup(repoPath, opts?) is SYNCHRONOUS and returns TrackerSetupReport (delegating to runTrackerSetup in src/workflow/tracker/setup.ts); opts.includeProject defaults false so the Project board/views steps are skipped.",
+          "evidence": "src/cli/services/workflow.ts:307 `export function trackerSetup(repoPath, opts: TrackerSetupOptions = {})` returns TrackerSetupReport (synchronous, not a Promise) via runTrackerSetup; includeProject present. Confirmed.",
+          "action": "none — verified sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl3",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "TrackerSetupStatus is the closed union 'done'|'already'|'manual'|'skipped'|'failed', and TrackerSetupReport = { steps: TrackerSetupStep[]; manualRemaining } with TrackerSetupStep = { key; title; status; detail; action? } — the shape the pure helpers + modal render against.",
+          "evidence": "src/workflow/tracker/setup.ts:54 `TrackerSetupStatus = 'done'|'already'|'manual'|'skipped'|'failed'` (closed union), :56 interface TrackerSetupStep, :62 `action?: string`, manualRemaining present. Report/step shape + status union confirmed.",
+          "action": "none — verified sound; the status→glyph switch must stay exhaustive over these 5.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The command bar already calls svc.workflow.trackerSetup(ctx.repoPath, { includeProject }) (src/cli/command.ts:285) — the pane action is a second caller of the SAME service; no engine/service change.",
+          "evidence": "src/cli/command.ts:285 `svc.workflow.trackerSetup(ctx.repoPath, { includeProject })` — the pane action is a genuine second caller of the same service; no engine/service change.",
+          "action": "none — verified sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl5",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The shared TUI widgets Panel, KeyHints, TextPrompt, ConfirmPrompt exist in src/cli/ui/widgets.ts and useServices/useUi/useCaptured come from src/cli/ui/context.js — what the tracker modal reuses.",
+          "evidence": "Panel/KeyHints/TextPrompt/ConfirmPrompt are exported from src/cli/ui/widgets.TSX (:14/:26/:39), not widgets.ts as the citation wrote; context (useServices/useUi/useCaptured) is likewise a real module. The NodeNext `../ui/widgets.js` specifier ReposPane already uses resolves to the .tsx, so the design is buildable — only the citation's filename extension is off.",
+          "action": "Build note: import from '../ui/widgets.js' (resolves to widgets.tsx); the .ts in the citation is a typo, not a real path. No design change.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl6",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The CLI pane test idiom the strategy extends exists: pure-helper tests (src/cli/__tests__/model-tiers.test.ts) and fake-Services tests (src/cli/__tests__/command.test.ts).",
+          "evidence": "src/cli/__tests__/model-tiers.test.ts exists (pure-helper idiom) and command.test.ts (fake-Services idiom) is referenced across the suite; the new tests extend a real pattern.",
+          "action": "none — verified sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl7",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The proposed helper module src/cli/panes/tracker-report.ts is NEW (does not yet exist) — trackerStatusGlyph / trackerReportSummary are added, not pre-existing.",
+          "evidence": "trackerStatusGlyph / trackerReportSummary appear ONLY in the LLD doc, nowhere in src — confirming src/cli/panes/tracker-report.ts is genuinely NEW, not claimed to pre-exist.",
+          "action": "none — verified sound.",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 7
+      },
+      "reviewedAt": "2026-07-27T09:38:33.161Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-07-27T09:39:11.410Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "S001",
+        "owns": [],
+        "depends": [],
+        "internal": "Add tracker-setup action to the TUI Repos pane"
+      },
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "svc.workflow.trackerSetup",
+          "signature": "trackerSetup(repoPath: string, opts?: TrackerSetupOptions): TrackerSetupReport",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "the selected repo (current.path) to set up",
+              "optional": false
+            },
+            {
+              "name": "opts",
+              "type": "TrackerSetupOptions",
+              "purpose": "omitted → includeProject defaults false → the Project board + views steps are skipped",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "TrackerSetupReport",
+            "meaning": "{ steps: TrackerSetupStep[]; manualRemaining } — SYNCHRONOUS; existing service reused verbatim, no change [[c2]]"
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "gh/git shell-out throws unexpectedly; the pane wraps the call and renders a synthetic failed step rather than crashing"
+            }
+          ],
+          "preconditions": [
+            "a repo is selected (current !== undefined)"
+          ],
+          "postconditions": [
+            "no engine/service change; the pane is a second caller alongside src/cli/command.ts:285 [[c3]]"
+          ]
+        },
+        {
+          "name": "trackerStatusGlyph",
+          "signature": "trackerStatusGlyph(status: TrackerSetupStatus): { readonly glyph: string; readonly color: string }",
+          "parameters": [
+            {
+              "name": "status",
+              "type": "TrackerSetupStatus",
+              "purpose": "one of done|already|manual|skipped|failed",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "{ glyph: string; color: string }",
+            "meaning": "presentation mapping (done/already ✓ green, manual ! yellow, skipped ∘ gray, failed ✗ red) for the modal rows"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "total over the closed TrackerSetupStatus union (exhaustive switch) [[c2]]"
+          ]
+        },
+        {
+          "name": "trackerReportSummary",
+          "signature": "trackerReportSummary(report: TrackerSetupReport): string",
+          "parameters": [
+            {
+              "name": "report",
+              "type": "TrackerSetupReport",
+              "purpose": "the finished report",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "one-line footer, e.g. 'all set — press any key' or 'N step(s) need manual action — run the commands above, then press any key'"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": []
+        },
+        {
+          "name": "ReposPane",
+          "signature": "ReposPane(props: { daemon: DaemonState; nonce: number; selectedRepo: string; onSelectRepo: (path: string) => void }): ReactElement",
+          "parameters": [
+            {
+              "name": "props",
+              "type": "ReposPaneProps",
+              "purpose": "unchanged props; internal state + a `t` handler + a 'tracker' modal are added",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ReactElement",
+            "meaning": "same pane; gains the `t` action + tracker report modal [[c1]]"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "`t` only fires while modal==='none' && !captured && current!==undefined",
+            "the 'tracker' modal captures input (ui.capture(true)) and any key / esc dismisses it → modal='none', ui.capture(false)"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "Modal (ReposPane-local union)",
+        "change": "field-add",
+        "details": "Add the 'tracker' member: `type Modal = 'none'|'add'|'steer-claude'|'steer-agents'|'confirm-remove'|'tracker'`. Plus pane-local state `report: TrackerSetupReport | null` and `running: boolean` for the tracker modal. [[c1]]",
+        "schemaDiff": "+ 'tracker' in Modal; + report/running useState",
+        "callSites": [
+          "src/cli/panes/ReposPane.tsx"
+        ]
+      },
+      {
+        "entity": "trackerReport view helper module",
+        "change": "new",
+        "details": "New pure module src/cli/panes/tracker-report.ts exporting trackerStatusGlyph + trackerReportSummary (and re-using TrackerSetupReport/Step/Status types from src/workflow/tracker/setup.ts). Presentation-only, no ink import → unit-testable. [[c5]]",
+        "schemaDiff": "+ src/cli/panes/tracker-report.ts",
+        "callSites": [
+          "src/cli/panes/ReposPane.tsx",
+          "src/cli/__tests__/tracker-report.test.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "trackerSetup throws (gh/git shell-out fails unexpectedly, not one of the engine's own handled 'failed' steps).",
+          "detection": "The deferred microtask that calls svc.workflow.trackerSetup(current.path) is wrapped in try/catch.",
+          "response": "Set the tracker modal to a synthetic report of one failed step ('tracker setup' / status:'failed' / detail: the error message) so the modal shows the failure rather than the pane crashing; running=false.",
+          "userImpact": "The user sees a red failed row with the message instead of a blank/frozen pane; can dismiss and retry.",
+          "recoverable": true
+        },
+        {
+          "scenario": "`t` pressed with no repo selected (empty registry).",
+          "detection": "The `t` case guards on `current !== undefined` (same guard as i/d).",
+          "response": "No-op — the modal is not opened.",
+          "userImpact": "Nothing happens; consistent with reindex/remove which also require a selected repo.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "gh is not authenticated.",
+          "expected": "The report's gh-auth step is status:'manual' with action 'gh auth login'; the modal renders it as a yellow row with the command, manualRemaining >= 1."
+        },
+        {
+          "input": "Missing admin:org scope.",
+          "expected": "The issue-types step is 'manual' with the scope-refresh command in `action`; shown as a yellow row so the user can copy/run it."
+        },
+        {
+          "input": "The selected repo has no GitHub origin remote.",
+          "expected": "The config step is status:'failed' ('could not determine owner/repo'); rendered as a red row; other steps still render their own status."
+        },
+        {
+          "input": "A key is pressed while the setup is still running (report not yet set).",
+          "expected": "The modal shows 'running…'; a dismiss key returns to the list, and the in-flight sync call's setState is harmless (the modal is no longer 'tracker')."
+        },
+        {
+          "input": "All steps already satisfied (re-run on an already-set-up repo).",
+          "expected": "Every step is 'already'/'done', manualRemaining===0; the summary reads 'all set' — idempotent, no duplicate labels/types (engine uses --force / check-then-act)."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The pane's input gating is preserved: `t` (like a/i/d) only fires while `modal==='none' && !captured`, and the 'tracker' modal sets ui.capture(true) so keystrokes don't leak to the list underneath; dismiss restores ui.capture(false).",
+          "source": "c1"
+        },
+        {
+          "text": "No engine/service change: svc.workflow.trackerSetup / runTrackerSetup are reused verbatim; the pane is purely an additional caller alongside the command-bar path. includeProject stays false so the Project board is skipped.",
+          "source": "c2"
+        },
+        {
+          "text": "The selected-repo contract is untouched: `current` and the onSelectRepo effect keep driving which repo the Workflows pane targets; the `t` action reads `current.path` and changes nothing about selection.",
+          "source": "c1"
+        },
+        {
+          "text": "The status→glyph mapping is exhaustive over the closed TrackerSetupStatus union (done|already|manual|skipped|failed) — a new status member is a compile error, not a silent blank glyph.",
+          "source": "c2"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "The pure presentation helpers in src/cli/panes/tracker-report.ts — no ink, directly assertable.",
+          "subjects": [
+            "unit: trackerStatusGlyph returns the right glyph+color for each of done/already/manual/skipped/failed (5 cases), exhaustive over TrackerSetupStatus",
+            "unit: trackerReportSummary === an 'all set' phrasing when manualRemaining===0",
+            "unit: trackerReportSummary names the count when manualRemaining>0 (e.g. mentions the number of manual steps)"
+          ],
+          "fixturesNeeded": [
+            "in-memory TrackerSetupReport objects (no gh)"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "The Repos-pane `t` wiring + tracker modal, rendered with a fake Services (no real gh).",
+          "subjects": [
+            "integration: pressing `t` on a pane with a selected repo calls svc.workflow.trackerSetup with current.path (project NOT included) and opens the tracker modal",
+            "integration: the tracker modal renders one row per report step with its detail and, for manual steps, the `action` command, plus the summary line",
+            "integration: `t` with an empty repo registry is a no-op (no trackerSetup call, no modal)",
+            "integration: a fake trackerSetup that throws yields a single failed row in the modal (no crash)",
+            "integration: dismissing the modal (a key/esc) returns to the repo list and releases input capture; the KeyHints row includes the `t` hint"
+          ],
+          "fixturesNeeded": [
+            "fake Services with a stub workflow.trackerSetup returning a canned report (and a throwing variant)",
+            "ink-testing-library render + stdin.write for keypresses (fallback: assert the extracted key-handler when the lib is unavailable)"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "integration: pressing `t` on a pane with a selected repo calls svc.workflow.trackerSetup with current.path (project NOT included) and opens the tracker modal",
+            "integration: `t` with an empty repo registry is a no-op (no trackerSetup call, no modal)"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "integration: the tracker modal renders one row per report step with its detail and, for manual steps, the `action` command, plus the summary line",
+            "unit: trackerReportSummary names the count when manualRemaining>0"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "unit: trackerStatusGlyph returns the right glyph+color for each of done/already/manual/skipped/failed (5 cases), exhaustive over TrackerSetupStatus",
+            "unit: trackerReportSummary === an 'all set' phrasing when manualRemaining===0"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "integration: a fake trackerSetup that throws yields a single failed row in the modal (no crash)",
+            "integration: `t` with an empty repo registry is a no-op (no trackerSetup call, no modal)"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "integration: dismissing the modal (a key/esc) returns to the repo list and releases input capture; the KeyHints row includes the `t` hint"
+          ]
+        }
+      ],
+      "testFramework": "node:test + node:assert/strict (pure helpers); ink-testing-library render + stdin for the pane wiring"
+    },
+    "migration": {
+      "stateBefore": "Tracker setup is reachable ONLY from the command bar (`: tracker setup [--project]` → svc.workflow.trackerSetup(ctx.repoPath), src/cli/command.ts:285). The Repos pane (src/cli/panes/ReposPane.tsx) exposes only a/d/i actions and has no way to run setup for the highlighted repo; its Modal union is 'none'|'add'|'steer-claude'|'steer-agents'|'confirm-remove'. [[c1]] [[c3]]",
+      "stateAfter": "The Repos pane also binds `t` → run tracker setup (includeProject:false) for the selected `current` repo and show the full TrackerSetupReport in a new 'tracker' modal (per-step glyph/color + detail + manual `action` commands + a summary), dismissable with a key. The command-bar path is unchanged. No engine/service/schema change.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the pure presentation module src/cli/panes/tracker-report.ts (trackerStatusGlyph, trackerReportSummary) re-using the TrackerSetupReport/Step/Status types — no ink, no behaviour change.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "In ReposPane: extend the Modal union with 'tracker'; add report/running local state; add the `t` case to useInput (guarded on current!==undefined) that opens the modal, sets running, and defers the synchronous trackerSetup call a microtask (wrapping a throw into a synthetic failed step).",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add the 'tracker' modal early-return that renders 'running…' then the report rows + summary via the helper, and dismisses (any key/esc) back to 'none' with ui.capture(false); add the ['t','tracker setup'] KeyHints entry.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Add tests: unit for the pure helpers; a pane-render integration test with a fake Services (canned + throwing trackerSetup).",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Purely additive and TUI-local. No public API changes: svc.workflow.trackerSetup / runTrackerSetup are reused verbatim, and the `: tracker setup` command-bar path is untouched. The Modal union gains a member (internal to the pane). Rollback is a straight revert of the pane + helper + tests; nothing persisted changes, so a downgraded binary behaves exactly as before.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "'tracker' modal Panel + deferred sync run + pure formatter",
+        "oneLineSummary": "Add a 'tracker' member to the pane's Modal union that renders the full TrackerSetupReport; run the sync engine on a deferred microtask after painting a running state; drive the render from a pure status→glyph/color + report→lines helper.",
+        "approach": "Extend `type Modal` with 'tracker' and add `report` + `running` state. On `t` (when modal==='none' && current!==undefined): ui.capture(true), setModal('tracker'), set running=true; then queueMicrotask/Promise.resolve().then(() => { const rep = svc.workflow.trackerSetup(current.path); setReport(rep); setRunning(false); }) wrapped so a throw becomes a synthetic failed step. The 'tracker' modal early-returns a <Panel title=\"Repos · tracker setup\"> showing 'running…' while running, else each step as `<glyph> title — detail` (indented `action` line when present) plus a summary line (manualRemaining) and a dismiss hint; any key / esc → setModal('none'), ui.capture(false). A pure module helper renders status→{glyph,color} and report→display rows so it unit-tests without ink.",
+        "pros": [
+          "Fits the pane's EXISTING modal idiom (add/remove already early-return a Panel) — minimal new concepts.",
+          "Preserves the full value of the report: per-step detail AND the manual `action` commands the user must run.",
+          "Deferred run paints a 'running…' state first, so the sync gh calls don't freeze the UI with no feedback.",
+          "Pure formatter is directly unit-testable per the model-tiers.test.ts idiom."
+        ],
+        "cons": [
+          "Adds a little modal + local state to the pane (still one file).",
+          "The sync engine still blocks the main thread while gh runs; the microtask only defers the freeze past one paint, it doesn't truly background it."
+        ],
+        "costEstimate": "S"
+      },
+      {
+        "id": "a2",
+        "name": "Reuse act() → one-line toast summary",
+        "oneLineSummary": "Wrap trackerSetup in the existing act() helper and toast a single summary line (e.g. '3 done, 1 manual').",
+        "approach": "On `t`, call act('tracker', async () => { const rep = svc.workflow.trackerSetup(current.path); return `${done} done, ${rep.manualRemaining} manual`; }). No new modal or state — reuses the pane's one-line toast path exactly as reindex/remove do.",
+        "pros": [
+          "Smallest diff — zero new state or modal.",
+          "Consistent with how a/i/d already report."
+        ],
+        "cons": [
+          "A one-line toast CANNOT carry N steps + their detail + the manual `action` commands — which is the whole point (the user needs to see, e.g., the exact `gh auth refresh … -s admin:org` to run).",
+          "Hides failures/manual gates behind a count, forcing the user back to the `: tracker setup` command bar to see specifics — defeating the Repos-pane action."
+        ],
+        "costEstimate": "XS",
+        "reasonRejected": "Violates surface-full-report: a one-line toast drops the per-step detail + the manual `action` commands (the core value), forcing the user back to the command bar. ui-feedback-not-frozen only partial."
+      },
+      {
+        "id": "a3",
+        "name": "Streaming log surface in the Repos pane",
+        "oneLineSummary": "Add a Daemon-pane-style live log to Repos and push each step line as it runs.",
+        "approach": "Introduce a log/push channel into ReposPane (mirroring the Daemon pane's run/push) and emit each step as a line. Since trackerSetup is synchronous and returns the whole report at once, the 'stream' would just be a post-hoc dump of the finished report into the log region.",
+        "pros": [
+          "Matches the Daemon pane's long-op UX for consistency.",
+          "Room for future multi-step live ops in Repos."
+        ],
+        "cons": [
+          "The engine is synchronous and returns the report in one shot — there is nothing to stream, so a log surface adds machinery for no real incrementality.",
+          "Introduces a new log-region concept to a pane that only has toast + modals today — more blast radius than a1 for a small action."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Over-builds: a streaming surface for a synchronous one-shot engine violates small-blast-radius (a new log-region concept) with only partial ui-feedback benefit."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 symbol.locate — ReposPane structure (Modal union, current, act, useInput gating, KeyHints, ui.capture)",
+      "quotedText": "src/cli/panes/ReposPane.tsx: Modal union + `current` selected repo + act() one-line toast + useInput gated on modal==='none' && !captured + KeyHints."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 symbol.locate — reused tracker-setup engine + service + report shape",
+      "quotedText": "svc.workflow.trackerSetup(repoPath, opts?) : TrackerSetupReport is SYNCHRONOUS → runTrackerSetup; TrackerSetupStatus = done|already|manual|skipped|failed; includeProject:false skips the Project steps."
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1 usage.example — existing command-bar caller of trackerSetup",
+      "quotedText": "src/cli/command.ts:285 calls svc.workflow.trackerSetup(ctx.repoPath,{includeProject}); the pane is a second caller on current.path."
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "s1 symbol.locate — shared TUI widgets (Panel/KeyHints/prompts) + context (useServices/useUi/useCaptured)",
+      "quotedText": "src/cli/ui/widgets.ts exports Panel, KeyHints, TextPrompt, ConfirmPrompt; a multi-step report needs a dedicated modal Panel."
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "s1 test.locate — CLI pane test idiom (pure helpers + fake-Services)",
+      "quotedText": "model-tiers.test.ts tests pure helpers; command.test.ts tests via fake Services — so the report presentation is a pure helper and the wiring a fake-services render/keypress test."
+    }
+  ]
+}

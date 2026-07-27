@@ -19,12 +19,14 @@ import { useServices, useUi, useCaptured } from '../ui/context.js';
 import { formatMcpOutcome } from '../services/repo.js';
 import { Panel, KeyHints, TextPrompt, ConfirmPrompt } from '../ui/widgets.js';
 import { formatWhen } from '../ui/format.js';
+import { trackerStatusGlyph, trackerReportSummary } from './tracker-report.js';
+import type { TrackerSetupReport } from '../../workflow/tracker/setup.js';
 
 const STATUS_COLOR: Record<RegisteredRepo['status'], string> = {
 	ready: 'green', indexing: 'yellow', pending: 'gray', error: 'red',
 };
 
-type Modal = 'none' | 'add' | 'steer-claude' | 'steer-agents' | 'confirm-remove';
+type Modal = 'none' | 'add' | 'steer-claude' | 'steer-agents' | 'confirm-remove' | 'tracker';
 
 export function ReposPane(props: {
 	daemon: DaemonState;
@@ -41,6 +43,11 @@ export function ReposPane(props: {
 	// CLAUDE.md and AGENTS.md before the repo.add call carries the selection.
 	const [addPath, setAddPath] = useState('');
 	const [steerClaude, setSteerClaude] = useState(false);
+	// Tracker-setup modal: `running` while the (synchronous, gh-shelling) engine
+	// runs on a deferred tick; `report` once it returns (or a synthetic failed
+	// report if it threw).
+	const [running, setRunning] = useState(false);
+	const [report, setReport] = useState<TrackerSetupReport | null>(null);
 
 	const finishAdd = (claude: boolean, agents: boolean): void => {
 		setModal('none'); ui.capture(false);
@@ -65,13 +72,37 @@ export function ReposPane(props: {
 		void fn().then(ui.toast).catch((e: unknown) => ui.toast(`✗ ${verb}: ${e instanceof Error ? e.message : String(e)}`));
 	};
 
+	// Run tracker setup for the selected repo and show its full report in the
+	// 'tracker' modal. trackerSetup is SYNCHRONOUS and shells out to gh, so we
+	// paint the modal in its `running` state first and defer the blocking call a
+	// macrotask (setTimeout 0) so the UI shows feedback instead of freezing.
+	const runTrackerSetup = (repoPath: string): void => {
+		setReport(null); setRunning(true); setModal('tracker'); ui.capture(true);
+		setTimeout(() => {
+			try {
+				setReport(svc.workflow.trackerSetup(repoPath));
+			} catch (e) {
+				setReport({
+					steps: [{ key: 'error', title: 'tracker setup', status: 'failed', detail: e instanceof Error ? e.message : String(e) }],
+					manualRemaining: 0,
+				});
+			} finally {
+				setRunning(false);
+			}
+		}, 0);
+	};
+
 	useInput((input, key) => {
 		if (key.upArrow)   setCursor(c => Math.max(0, c - 1));
 		else if (key.downArrow) setCursor(c => Math.min(repos.length - 1, c + 1));
 		else if (input === 'a') { setModal('add'); ui.capture(true); }
 		else if (input === 'i' && current !== undefined) act('reindex', async () => `reindexing ${await svc.repo.reindex(current.path)}`);
 		else if (input === 'd' && current !== undefined) { setModal('confirm-remove'); ui.capture(true); }
+		else if (input === 't' && current !== undefined) runTrackerSetup(current.path);
 	}, { isActive: modal === 'none' && !captured });
+
+	// The tracker report modal dismisses on any key.
+	useInput(() => { setModal('none'); setReport(null); setRunning(false); ui.capture(false); }, { isActive: modal === 'tracker' });
 
 	if (modal === 'add') {
 		return (
@@ -128,13 +159,40 @@ export function ReposPane(props: {
 		);
 	}
 
+	if (modal === 'tracker') {
+		return (
+			<Panel title="Repos · tracker setup" active>
+				{running || report === null
+					? <Text dimColor>running tracker setup — gh may take a few seconds…</Text>
+					: report.steps.map(s => {
+						const g = trackerStatusGlyph(s.status);
+						return (
+							<Box key={s.key} flexDirection="column">
+								<Box>
+									<Text color={g.color}>{g.glyph} </Text>
+									<Text bold>{s.title}</Text>
+									<Text dimColor> — {s.detail}</Text>
+								</Box>
+								{s.action !== undefined && s.action.length > 0
+									? <Text color="cyan">    {s.action}</Text>
+									: null}
+							</Box>
+						);
+					})}
+				{!running && report !== null
+					? <Box marginTop={1}><Text>{trackerReportSummary(report)}</Text></Box>
+					: null}
+			</Panel>
+		);
+	}
+
 	return (
 		<Panel title="Repos" active>
 			{repos.length === 0
 				? <Text dimColor>{props.daemon.running ? 'no repositories registered — press a to add one' : 'daemon down — start it in the Daemon pane'}</Text>
 				: repos.map((r, i) => <RepoRow key={r.path} repo={r} selected={i === clamped} />)}
 			<Box marginTop={1}>
-				<KeyHints hints={[['↑/↓', 'select'], ['a', 'add'], ['d', 'remove'], ['i', 'reindex']]} />
+				<KeyHints hints={[['↑/↓', 'select'], ['a', 'add'], ['d', 'remove'], ['i', 'reindex'], ['t', 'tracker setup']]} />
 			</Box>
 		</Panel>
 	);

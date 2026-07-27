@@ -15,7 +15,8 @@ import type { ReactElement } from 'react';
 
 import type { DaemonState } from '../hooks/useDaemonStatus.js';
 import { useServices, useUi, useCaptured } from '../ui/context.js';
-import { Panel, KeyHints, LogView, TextPrompt } from '../ui/widgets.js';
+import type { UiTask } from '../ui/context.js';
+import { Panel, KeyHints, TextPrompt } from '../ui/widgets.js';
 import { formatBytes, formatUptime } from '../ui/format.js';
 
 type Modal = 'none' | 'busy' | 'backup';
@@ -25,19 +26,23 @@ export function DaemonPane(props: { daemon: DaemonState; nonce: number }): React
 	const ui = useUi();
 	const captured = useCaptured();
 	const [modal, setModal] = useState<Modal>('none');
-	const [log, setLog] = useState<string[]>([]);
 
 	const d = props.daemon;
-	const busy = modal === 'busy';
 
-	const begin = (title: string): void => { setLog([title]); setModal('busy'); ui.capture(true); };
-	const push = (line: string): void => setLog(l => [...l, line]);
-	const done = (msg: string): void => { push(msg); setModal('none'); ui.capture(false); ui.toast(msg); };
-	const fail = (msg: string): void => { push(`✗ ${msg}`); setModal('none'); ui.capture(false); ui.toast(`✗ ${msg}`); };
-
-	const run = async (title: string, fn: () => Promise<string>): Promise<void> => {
-		begin(title);
-		try { done(await fn()); } catch (err) { fail(err instanceof Error ? err.message : String(err)); }
+	// Run a maintenance op: stream its title + progress lines + terminal result
+	// through the shared bottom message box via ui.task. The 'busy' modal +
+	// capture(true) suspend keys for the op's duration; nothing renders in this
+	// pane's body (which stays just Health + KeyHints).
+	const run = async (title: string, fn: (task: UiTask) => Promise<string>): Promise<void> => {
+		setModal('busy'); ui.capture(true);
+		const task = ui.task(title);
+		try {
+			task.done(await fn(task));
+		} catch (err) {
+			task.fail(err instanceof Error ? err.message : String(err));
+		} finally {
+			setModal('none'); ui.capture(false);
+		}
 	};
 
 	useInput((input) => {
@@ -46,13 +51,13 @@ export function DaemonPane(props: { daemon: DaemonState; nonce: number }): React
 			return r.started ? `daemon running${r.pid !== undefined ? ` (pid ${r.pid})` : ''}` : 'daemon did not become ready within 60 s';
 		});
 		else if (input === 'x') void run('stopping daemon…', async () => { await svc.daemon.stopDaemon(); return 'daemon stopped'; });
-		else if (input === 'R') void run('restarting daemon…', async () => {
-			const r = await svc.daemon.restart(push);
+		else if (input === 'R') void run('restarting daemon…', async (task) => {
+			const r = await svc.daemon.restart(task.push);
 			if (!r.ok) throw new Error(r.error ?? 'restart failed');
 			return 'daemon restarted';
 		});
-		else if (input === 'u') void run('updating daemon…', async () => {
-			const r = await svc.daemon.update({}, push);
+		else if (input === 'u') void run('updating daemon…', async (task) => {
+			const r = await svc.daemon.update({}, task.push);
 			if (!r.ok) throw new Error(r.error ?? 'update failed');
 			return `update complete (${r.steps.join(', ') || 'no-op'})`;
 		});
@@ -78,13 +83,6 @@ export function DaemonPane(props: { daemon: DaemonState; nonce: number }): React
 						}}
 					/>
 				: <Health daemon={d} />}
-
-			{(busy || log.length > 0) && (
-				<Box marginTop={1} flexDirection="column">
-					<Text dimColor>{busy ? '⏳ working…' : 'last run:'}</Text>
-					<LogView lines={log} />
-				</Box>
-			)}
 
 			<Box marginTop={1}>
 				<KeyHints hints={[['s', 'start'], ['x', 'stop'], ['R', 'restart'], ['u', 'update'], ['b', 'backup'], ['c', 'compact']]} />

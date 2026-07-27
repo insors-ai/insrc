@@ -17,9 +17,26 @@ import { createContext, useContext } from 'react';
 
 import type { Services } from '../services/index.js';
 
+/** A streaming handle for a multi-line operation (daemon start/stop/restart/
+ *  update/backup/compact, or a `:` command). `push` appends a progress line,
+ *  `done`/`fail` append the terminal success/error line — all into the single
+ *  bottom message box, never a pane body. */
+export interface UiTask {
+	push(line: string): void;
+	done(message: string): void;
+	fail(message: string): void;
+}
+
 export interface Ui {
-	/** Show a one-line status message (undefined clears it). */
+	/** Append a one-line transient (auto-dismissing) status to the bottom
+	 *  message box; `undefined` clears the current transient. */
 	toast(message?: string): void;
+	/** Append a one-off sticky line to the bottom message box. `error` renders
+	 *  red and persists until superseded; `info` (default) renders dim. */
+	note(line: string, kind?: 'info' | 'error'): void;
+	/** Begin a streaming operation (seeds a title line) and return a handle
+	 *  whose push/done/fail stream into the bottom message box. */
+	task(title: string): UiTask;
 	/** Suspend/resume the app's global keybindings while a modal edits. */
 	capture(on: boolean): void;
 }

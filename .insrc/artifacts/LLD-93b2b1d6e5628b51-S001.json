@@ -1,0 +1,584 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1785146418242-eo8e7i",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-07-27T10:06:18.120Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 359841,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "93b2b1d6e5628b51",
+    "epicSlug": "dock-all-tui-messages-outputs-errors",
+    "storyId": "S001",
+    "hldBaseRunId": "wf-1785146418242-eo8e7i",
+    "hldEffectiveHash": "93b2b1d6e5628b519f40c4752f815997954802007e988d4dcd91340447593817",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "feature",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "ref": "contract/Ui.toast",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/cli/ui/context.ts declares the `Ui` interface with a `toast(message?: string): void` method and a `capture(on: boolean): void` method.",
+          "evidence": "grep confirms src/cli/ui/context.ts:20 `export interface Ui {`, :22 `toast(message?: string): void;`, :24 `capture(on: boolean): void;`. Both signatures resolve in source.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl2",
+          "ref": "migration/stateBefore",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/cli/app.tsx holds a `toast` state rendered as a single line near the bottom of the layout (around app.tsx:112-115), and gates global keys with useInput isActive:!captured.",
+          "evidence": "app.tsx:48 `const [toast, setToast]`, :113 `<Text color=\"green\">{toast}</Text>`, :112 `<Box marginTop={1} flexDirection=\"column\">`, :93 `{ isActive: !captured }`. The single bottom green toast line + capture-gated global keys are exactly as cited.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl3",
+          "ref": "dataModel/DaemonPane.log",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/cli/panes/DaemonPane.tsx keeps pane-local `const [log, setLog]` state and renders an inline LogView block between Health and the KeyHints (around DaemonPane.tsx:82-87).",
+          "evidence": "DaemonPane.tsx:28 `const [log, setLog]`, :82 `{(busy || log.length > 0) && (`, :85 `<LogView lines={log} />`. The inline pane-local log block is confirmed at the cited lines. (SetupPane has a parallel pattern but the LLD's scope is DaemonPane, which is correct.)",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl4",
+          "ref": "errorPaths/daemon-op-throws",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "DaemonPane's `run(title, fn)` helper wraps the op in try/catch and calls `fail(...)` on error; begin/push/done/fail helpers manage the log.",
+          "evidence": "DaemonPane.tsx:38 `const run = async (title, fn)`, :40 `try { done(await fn()); } catch (err) { fail(...) }`, :33 `const begin`, :36 `const fail`. The try/catch→fail error path and begin/push/done/fail helpers exist as described.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl5",
+          "ref": "dataModel/AppBody.cmdOutput",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/cli/app.tsx has `cmdOutput` state and renders CommandBar with an `output` prop; runCmd wraps runCommand in try/catch.",
+          "evidence": "app.tsx:54 `const [cmdOutput, setCmdOutput]`, :102 `<CommandBar output={cmdOutput} running={cmdRunning} onSubmit={runCmd} onClose={closeCmd} />`, :68 `const runCmd = async`. cmdOutput state + output prop + runCmd all confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl6",
+          "ref": "contract/CommandBar",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/cli/ui/CommandBar.tsx accepts an `output: readonly string[]` prop and renders it above the ':' input line, with Esc closing (props.onClose) and a running marker.",
+          "evidence": "CommandBar.tsx:19 `output: readonly string[];` and :26 `useInput((_input, key) => { if (key.escape) props.onClose(); })` confirmed. The `running` grep was swamped by doc matches (50-cap), but the running marker is real in source (props.running conditional renders the `running…` marker vs the TextInput) — a probe-noise artifact, not a contradiction.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl7",
+          "ref": "s1/LogView",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/cli/ui/widgets.tsx exports a LogView component that renders the tail of its lines via slice(-max) with a default max of 12.",
+          "evidence": "widgets.tsx:66 `export function LogView(props: { lines: readonly string[]; max?: number })`, :67 `const max = props.max ?? 12`, :68 `const tail = props.lines.slice(-max)`. Bounded-tail LogView with default max 12 confirmed — reuse target is sound.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl8",
+          "ref": "invariant/c2",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "Exactly four panes other than DaemonPane call ui.toast for one-liners: SetupPane, ReposPane, WorkflowsPane, ModelTiersPane.",
+          "evidence": "grep ui.toast( → SetupPane (4 hits), ReposPane (:72), WorkflowsPane (6 hits), ModelTiersPane (6 hits), and DaemonPane (:35,:36). The four named non-Daemon panes all call ui.toast and no fifth non-Daemon pane does; the premise correctly excludes DaemonPane (which the LLD moves to ui.task). Inventory holds.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl9",
+          "ref": "contract/Ui.task",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The daemon service methods restart and update accept a streaming push callback (so a ui.task push handle can be threaded to svc.daemon.restart(push) / update({}, push)).",
+          "evidence": "DaemonPane.tsx:50 `await svc.daemon.restart(push)` and :55 `await svc.daemon.update({}, push)` are existing, compiling call-sites — the push-callback contract is already exercised today, so threading a ui.task push handle in is sound. (services/index.ts wires restart/update to maintenance.*; existing call-sites prove the signature accepts push.)",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl10",
+          "ref": "testStrategy/framework",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/cli/__tests__/tui.test.ts uses ink-testing-library render + lastFrame + stdin.write, a fakeServices() facade, and a settle() helper.",
+          "evidence": "tui.test.ts:19 `import { render } from 'ink-testing-library'`, :50 `function fakeServices(): Services`, :29 `const settle = () => new Promise(r => setTimeout(r, 25))`, and 27 render/lastFrame/stdin uses (e.g. :117 `const { lastFrame, stdin, unmount } = render(...)`). Test harness matches the strategy exactly.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 10
+      },
+      "reviewedAt": "2026-07-27T10:09:06.301Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-07-27T10:09:45.353Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "S001",
+        "owns": [],
+        "depends": [],
+        "internal": "Dock all TUI messages/outputs/errors in a single bottom message box"
+      },
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "Ui.toast",
+          "signature": "toast(message?: string): void",
+          "parameters": [
+            {
+              "name": "message",
+              "type": "string | undefined",
+              "purpose": "One-line transient status. Appended to the shared bottom message log as a transient (auto-dismissing) success/info line. `undefined` clears the current transient line (back-compat with existing callers that call toast() to clear).",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "Fire-and-forget; schedules a render of the bottom region."
+          },
+          "errors": [],
+          "preconditions": [
+            "Called within UiContext (useUi throws otherwise — unchanged)."
+          ],
+          "postconditions": [
+            "A transient MsgLine with the text is the most-recent line in the bottom box (or the transient is cleared when message is undefined).",
+            "Signature UNCHANGED from today so the four one-liner panes (Setup/Repos/Workflows/ModelTiers) need no edits."
+          ]
+        },
+        {
+          "name": "Ui.note",
+          "signature": "note(line: string, kind?: 'info' | 'error'): void",
+          "parameters": [
+            {
+              "name": "line",
+              "type": "string",
+              "purpose": "A one-off non-transient message line to append to the bottom box.",
+              "optional": false
+            },
+            {
+              "name": "kind",
+              "type": "'info' | 'error' | undefined",
+              "purpose": "Rendering kind; 'error' renders red and sticky, 'info' (default) renders dim.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "Appends one sticky line to the shared message log."
+          },
+          "errors": [],
+          "preconditions": [
+            "Called within UiContext."
+          ],
+          "postconditions": [
+            "The line is appended and bounded to the last N lines; error lines persist until superseded."
+          ]
+        },
+        {
+          "name": "Ui.task",
+          "signature": "task(title: string): { push(line: string): void; done(message: string): void; fail(message: string): void }",
+          "parameters": [
+            {
+              "name": "title",
+              "type": "string",
+              "purpose": "The operation title (e.g. 'updating daemon…'); seeds the message log with the title line and marks a task in-progress.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "{ push(line: string): void; done(message: string): void; fail(message: string): void }",
+            "meaning": "A streaming handle: `push` appends a progress line, `done` appends a success line + ends the task, `fail` appends a red error line + ends the task. Replaces DaemonPane's local begin/push/done/fail. The handle is passed as the streaming callback to svc.daemon.restart(push) / update({}, push)."
+          },
+          "errors": [],
+          "preconditions": [
+            "Called within UiContext.",
+            "Caller sets ui.capture(true) around a modal-driven op exactly as today if it needs to suspend global keys (capture stays a separate concern)."
+          ],
+          "postconditions": [
+            "title then each pushed line then the terminal done/fail line appear in order in the bottom box, bounded to the last N.",
+            "No message renders in any pane body — all task output flows to the single bottom region."
+          ]
+        },
+        {
+          "name": "Ui.capture",
+          "signature": "capture(on: boolean): void",
+          "parameters": [
+            {
+              "name": "on",
+              "type": "boolean",
+              "purpose": "Suspend/resume the app global keybindings while a modal/text field is capturing keys. UNCHANGED.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "Toggles the CaptureContext boolean."
+          },
+          "errors": [],
+          "preconditions": [
+            "Called within UiContext."
+          ],
+          "postconditions": [
+            "Unchanged from today — orthogonal to the message log."
+          ]
+        }
+      ],
+      "dataModel": [
+        {
+          "entity": "MsgLine",
+          "change": "new",
+          "details": "The unit stored in the shared bottom message log: `{ id: number; text: string; kind: 'info' | 'error' | 'success'; transient: boolean }`. `id` is a monotonically increasing key for React + for transient-dismiss targeting. `transient` lines (from toast) auto-clear on a timer; non-transient lines (note/task) persist until they scroll out of the bounded last-N window. `kind` drives colour: success=green, error=red, info=dim.",
+          "schemaDiff": "+ interface MsgLine { id: number; text: string; kind: 'info' | 'error' | 'success'; transient: boolean }",
+          "callSites": [
+            "src/cli/ui/context.ts",
+            "src/cli/app.tsx"
+          ]
+        },
+        {
+          "entity": "AppBody.messages",
+          "change": "new",
+          "details": "New app.tsx state `const [messages, setMessages] = useState<MsgLine[]>([])` — the single source of truth for the bottom region. All Ui methods (toast/note/task) append via a bounded setter that keeps the last N (e.g. 8) lines. Rendered once, at the bottom, via the reused LogView (with an explicit max) + per-line colour by kind.",
+          "schemaDiff": "+ const [messages, setMessages] = useState<MsgLine[]>([])",
+          "callSites": [
+            "src/cli/app.tsx"
+          ]
+        },
+        {
+          "entity": "AppBody.cmdOutput",
+          "change": "field-remove",
+          "details": "Remove the separate `const [cmdOutput,setCmdOutput]` state and the `output` prop passed to CommandBar. The `:` command runner appends its lines to `messages` instead. CommandBar becomes input-only (drops the `output` prop + its render block).",
+          "schemaDiff": "- const [cmdOutput, setCmdOutput] = useState<string[]>([])  ; - <CommandBar output=...>",
+          "callSites": [
+            "src/cli/app.tsx",
+            "src/cli/ui/CommandBar.tsx"
+          ]
+        },
+        {
+          "entity": "DaemonPane.log",
+          "change": "field-remove",
+          "details": "Remove DaemonPane's pane-local `const [log,setLog]` state, the begin/push/done/fail helpers' log mutations, and the inline `<LogView lines={log}/>` block (DaemonPane.tsx:82-87). Replace with a `ui.task(title)` handle whose push/done/fail feed the shared bottom region; the pane body becomes just Health + KeyHints.",
+          "schemaDiff": "- const [log, setLog] = useState<string[]>([]) ; - inline LogView block",
+          "callSites": [
+            "src/cli/panes/DaemonPane.tsx"
+          ]
+        }
+      ],
+      "interactionWithShared": []
+    },
+    "dataModelChanges": [
+      {
+        "entity": "MsgLine",
+        "change": "new",
+        "details": "The unit stored in the shared bottom message log: `{ id: number; text: string; kind: 'info' | 'error' | 'success'; transient: boolean }`. `id` is a monotonically increasing key for React + for transient-dismiss targeting. `transient` lines (from toast) auto-clear on a timer; non-transient lines (note/task) persist until they scroll out of the bounded last-N window. `kind` drives colour: success=green, error=red, info=dim.",
+        "schemaDiff": "+ interface MsgLine { id: number; text: string; kind: 'info' | 'error' | 'success'; transient: boolean }",
+        "callSites": [
+          "src/cli/ui/context.ts",
+          "src/cli/app.tsx"
+        ]
+      },
+      {
+        "entity": "AppBody.messages",
+        "change": "new",
+        "details": "New app.tsx state `const [messages, setMessages] = useState<MsgLine[]>([])` — the single source of truth for the bottom region. All Ui methods (toast/note/task) append via a bounded setter that keeps the last N (e.g. 8) lines. Rendered once, at the bottom, via the reused LogView (with an explicit max) + per-line colour by kind.",
+        "schemaDiff": "+ const [messages, setMessages] = useState<MsgLine[]>([])",
+        "callSites": [
+          "src/cli/app.tsx"
+        ]
+      },
+      {
+        "entity": "AppBody.cmdOutput",
+        "change": "field-remove",
+        "details": "Remove the separate `const [cmdOutput,setCmdOutput]` state and the `output` prop passed to CommandBar. The `:` command runner appends its lines to `messages` instead. CommandBar becomes input-only (drops the `output` prop + its render block).",
+        "schemaDiff": "- const [cmdOutput, setCmdOutput] = useState<string[]>([])  ; - <CommandBar output=...>",
+        "callSites": [
+          "src/cli/app.tsx",
+          "src/cli/ui/CommandBar.tsx"
+        ]
+      },
+      {
+        "entity": "DaemonPane.log",
+        "change": "field-remove",
+        "details": "Remove DaemonPane's pane-local `const [log,setLog]` state, the begin/push/done/fail helpers' log mutations, and the inline `<LogView lines={log}/>` block (DaemonPane.tsx:82-87). Replace with a `ui.task(title)` handle whose push/done/fail feed the shared bottom region; the pane body becomes just Health + KeyHints.",
+        "schemaDiff": "- const [log, setLog] = useState<string[]>([]) ; - inline LogView block",
+        "callSites": [
+          "src/cli/panes/DaemonPane.tsx"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A daemon op (start/stop/restart/update/backup/compact) throws mid-stream.",
+          "detection": "DaemonPane's `run(title, fn)` await is wrapped in try/catch; the catch calls the task handle's `fail(message)`.",
+          "response": "`fail` appends a red, non-transient (sticky) error MsgLine (kind:'error') to the shared bottom log and marks the task ended; the pane body is untouched (just Health + KeyHints).",
+          "userImpact": "The error stays visible in the bottom box until a newer message supersedes it; the pane view never shifts.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A `:` command throws (runCommand rejects).",
+          "detection": "app.tsx `runCmd` wraps the await in try/catch (existing behavior).",
+          "response": "Append a `✗ <message>` error MsgLine to `messages` (kind:'error') instead of the removed `cmdOutput`; the command bar input stays open for the next command.",
+          "userImpact": "Error appears in the bottom box like any other message; no mid-screen block, no Esc required to clear the view.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A transient toast's auto-dismiss timer fires after the component unmounts (test teardown / app exit).",
+          "detection": "The setTimeout callback runs after unmount; React would warn on a setState-after-unmount.",
+          "response": "The dismiss effect returns a cleanup that clears the pending timer on unmount / on the next message, so no orphaned setState fires.",
+          "userImpact": "None (invisible); prevents a React warning and a leaked timer.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "More messages arrive than the bounded window (e.g. an update op pushes 12 lines, N=8).",
+          "expected": "Only the last N lines render (LogView tail slice(-max)); older lines scroll off the top. No layout growth."
+        },
+        {
+          "input": "toast(undefined) called to clear while sticky error/info lines are present.",
+          "expected": "Only the current transient line is removed; sticky note/task lines remain."
+        },
+        {
+          "input": "The message log is empty (fresh app, no op run yet).",
+          "expected": "The bottom region reserves its fixed height and renders blank placeholder line(s) so the layout does not jump when the first message arrives."
+        },
+        {
+          "input": "A transient toast is followed immediately by a sticky error before the dismiss timer fires.",
+          "expected": "The transient dismiss targets only its own MsgLine by id; the sticky error is not removed by the earlier toast's timer."
+        },
+        {
+          "input": "A single message longer than the terminal width.",
+          "expected": "ink soft-wraps the line; the box still shows the last N logical lines (wrapping is cosmetic, consistent with today's LogView)."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "capture()/CaptureContext semantics are unchanged: global keybindings (app useInput isActive:!captured) and each pane's own useInput stay suspended while a modal/text field captures keys. The message-log change is orthogonal to key capture. Cited s1 bundle: 'Root shell layout' (app.tsx useInput isActive:!captured) + context.ts CaptureContext.",
+          "source": "c1"
+        },
+        {
+          "text": "Ui.toast(message?: string): void keeps its EXACT signature and clear-on-undefined behavior, so SetupPane/ReposPane/WorkflowsPane/ModelTiersPane need no edits. Cited s1 bundle: 'All ui.toast call-sites'.",
+          "source": "c2"
+        },
+        {
+          "text": "No message/output/error renders inside any pane body — there is exactly one render site (the bottom region in app.tsx). Cited s1 bundle: 'DaemonPane inline streaming log' (the block being removed) + 'Root shell layout'.",
+          "source": "c3"
+        },
+        {
+          "text": "CommandBar REPL semantics are preserved: Enter runs a command and the bar stays open for the next, `running…` marker while running, Esc closes; only its OUTPUT rendering relocates to the shared bottom box. Cited s1 bundle: 'CommandBar output rendering'.",
+          "source": "c4"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove the message-log reducer/append helper in isolation: bounding to last N, transient-dismiss-by-id, kind colouring selection, and toast(undefined) clearing only the transient.",
+          "subjects": [
+            "the bounded append + transient-clear logic behind the Ui surface (extracted as a pure helper in app.tsx or a small module, e.g. pushMessage/clearTransient over MsgLine[])"
+          ],
+          "fixturesNeeded": [
+            "hand-built MsgLine[] arrays"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Render the whole App via ink-testing-library and assert messages/outputs/errors appear ONLY in the bottom region, pane bodies stay stable, and each source (toast, daemon task streaming, command output, errors) lands in the box.",
+          "subjects": [
+            "src/cli/app.tsx bottom message region",
+            "src/cli/panes/DaemonPane.tsx op streaming (start/update/compact) via ui.task",
+            "src/cli/ui/CommandBar.tsx input-only + command output in the box",
+            "the four toast-only panes still surface their one-liners"
+          ],
+          "fixturesNeeded": [
+            "fakeServices() facade (extended: daemon.update/restart already accept a push callback)",
+            "settle() 25ms helper",
+            "stdin.write driving keys"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "integration: pressing a daemon op key (e.g. 'c' compact / 'u' update) renders the op title + streamed lines + result in the bottom region, and the DaemonPane body (Health + KeyHints) is unchanged (no 'last run:'/LogView between Health and KeyHints)"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "integration: running a ':' command shows its output in the bottom box (not a full-body takeover); the command bar remains just the ':' input line + hints",
+            "integration: existing test 'registered /tmp/viacmd appears' updated to read the bottom region"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "unit: transient toast line is removed after its dismiss tick while a concurrently-added sticky error line remains",
+            "unit: toast(undefined) clears only the transient, leaving note/task lines"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "unit: pushing >N lines keeps only the last N (bounded window, no growth)",
+            "integration: a multi-line update op does not grow the layout beyond the fixed bottom region height"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "unit: an error MsgLine renders with kind:'error' (red) and persists (non-transient)",
+            "integration: a failing daemon op (fakeServices throws) surfaces a red sticky error line in the bottom box, pane body untouched"
+          ]
+        },
+        {
+          "criterionId": "ac6",
+          "provingTests": [
+            "integration: the four one-liner panes (Setup config-written, Repos add toast, Workflows approved, ModelTiers saved) still surface their toast in the bottom region with ui.toast unchanged"
+          ]
+        }
+      ],
+      "testFramework": "node:test (tsx --test) with ink-testing-library render/lastFrame/stdin, matching src/cli/__tests__/tui.test.ts"
+    },
+    "migration": {
+      "stateBefore": "Messages fan out across three inconsistent surfaces (cited s1): (1) a single green toast line at the bottom of app.tsx (app.tsx:112-115) that never auto-clears; (2) DaemonPane's pane-local `log` state rendered as an inline LogView block in the MIDDLE of the pane body between Health and KeyHints (DaemonPane.tsx:82-87), which pushes the view during ops; (3) the `:` command bar output rendered full-body via CommandBar (flexGrow=1) requiring Esc to dismiss. The four other panes only call ui.toast for one-liners.",
+      "stateAfter": "One bounded (last-N) message region docked at the bottom of app.tsx is the single render site for every message. `Ui` gains `note` + `task` alongside the unchanged `toast`; all three append MsgLine entries to one `messages` array. DaemonPane's inline log + local state are gone (body = Health + KeyHints only); it streams via `ui.task`. CommandBar is input-only; the `:` runner appends output to the shared `messages`. Transient toasts auto-dismiss; errors are sticky/red; nothing renders mid-screen.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the `MsgLine` type + `note`/`task` methods to the `Ui` interface in context.ts (toast/capture signatures unchanged). Purely additive to the interface.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "In app.tsx add the `messages` state + a bounded append helper (keep last N) + a transient-dismiss effect; implement `toast` as an append-transient (preserving clear-on-undefined), and `note`/`task` as append helpers; render the single bottom region via the reused LogView with per-line kind colouring. Keep the old single-line toast render removed in the same step so there is exactly one render site.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Rewrite DaemonPane to drop its local `log` state + inline LogView block and route begin/push/done/fail through `ui.task(title)`; pass the handle's push to svc.daemon.restart/update. Pane body becomes Health + KeyHints.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Make CommandBar input-only: drop the `output` prop + its render block, keep the `:` input line + hints + running marker + Esc-close. In app.tsx remove `cmdOutput` state and route the `:` runner's lines into `messages`.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Update src/cli/__tests__/tui.test.ts: repoint the command-output assertion at the bottom region, add the fakeServices message assertions, and add new tests for DaemonPane op streaming in the box + pane-body stability + error stickiness + bounded window. No pane other than DaemonPane/CommandBar changes.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Ui.toast(message?: string): void keeps its EXACT signature and clear-on-undefined semantics, so the four one-liner panes (Setup/Repos/Workflows/ModelTiers) compile and behave unchanged with zero edits. The only breaking internal ripple is the CommandBar prop shape (drops `output`) and DaemonPane's internals — both are internal-to-the-cli-module components with no external consumers. The test fake Ui must add note/task to match the widened interface.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Unified bounded message log; toast becomes sugar",
+        "oneLineSummary": "One append-only bounded message array in app.tsx; Ui exposes `message`/streaming helpers and `toast` is just an append of a transient line.",
+        "chosen": true
+      },
+      {
+        "id": "a2",
+        "name": "Two channels: keep toast, add a separate streaming `log` handle",
+        "oneLineSummary": "Ui = { toast, capture, log }, where `log` is a begin/push/done/fail streaming handle; the bottom box stacks a toast line above a bounded LogView.",
+        "reasonRejected": "Lowest-churn DaemonPane diff, but its two-channel render partially misses the 'single bounded box' the user explicitly chose and creates two overlapping 'show the user something' surfaces (done/fail already double as toast), inviting drift."
+      },
+      {
+        "id": "a3",
+        "name": "Reducer-backed typed message bus",
+        "oneLineSummary": "A useReducer store of typed message events (toast/task-start/task-line/task-end/error) exposed via context; the bottom region subscribes and derives the bounded view.",
+        "reasonRejected": "Achieves the same visible behavior as a1 but with a reducer + action union that is more machinery than a 5-pane TUI needs; identical user value at a larger diff and more indirection."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 symbol.locate — Root shell layout: toast state, bottom region, command-bar wiring (src/cli/app.tsx)",
+      "quotedText": "AppBody holds const [toast,setToast] rendered as a single green line at the bottom (app.tsx:112-115); global keys via useInput(..., { isActive: !captured })."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 search.text — All ui.toast call-sites (Setup/Repos/Workflows/ModelTiers/Daemon panes)",
+      "quotedText": "Panes call ui.toast for success/error one-liners; only DaemonPane additionally streams multi-line via its pane-local log."
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1 usage.example — DaemonPane inline streaming log (src/cli/panes/DaemonPane.tsx:82-87)",
+      "quotedText": "renders LogView INLINE between Health and the KeyHints — this is the block that appears in the middle of the pane and pushes the view."
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "s1 usage.example — CommandBar output rendering (src/cli/ui/CommandBar.tsx)",
+      "quotedText": "Because app.tsx renders it with flexGrow=1 replacing the whole body, its output occupies mid-screen until Esc."
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "s1 symbol.locate — LogView widget (src/cli/ui/widgets.tsx)",
+      "quotedText": "LogView({lines, max=12}) already renders the tail (lines.slice(-max)) of dim lines — exactly the bounded last-N-lines behavior the new bottom box needs."
+    },
+    {
+      "id": "c6",
+      "kind": "analyze-bundle",
+      "ref": "s1 test.locate — existing TUI render tests (src/cli/__tests__/tui.test.ts)",
+      "quotedText": "uses ink-testing-library render/stdin.write/lastFrame + fakeServices + settle(25ms); existing assertions read messages from the bottom."
+    },
+    {
+      "id": "c7",
+      "kind": "stakeholder",
+      "ref": "User design decisions for S001",
+      "quotedText": "(1) bounded fixed-height last-N-lines box, not growing scrollback; (2) command-bar output folds into the same bottom region."
+    }
+  ]
+}

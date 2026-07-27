@@ -32,7 +32,7 @@
 #   ./insrc-daemon-install.sh --help
 #
 # One-liner:
-#   curl -fsSL https://github.com/insors-ai/insrc/releases/download/daemon-v0.2.0/insrc-daemon-install.sh | bash
+#   curl -fsSL https://github.com/insors-ai/insrc/releases/latest/download/insrc-daemon-install.sh | bash
 #
 # Exit codes:
 #   0 success

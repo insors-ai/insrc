@@ -17,7 +17,7 @@ import { CliProvider } from '../../../agent/providers/cli-provider.js';
 import { McpSamplingProvider } from '../../../agent/providers/mcp-sampling-provider.js';
 import { OllamaProvider } from '../../../agent/providers/ollama.js';
 import type { AnalyzeConfig } from '../../../config/analyze.js';
-import { buildShaperProvider, resolveShaperKind, runWithClientProviderContext } from '../shaper-provider.js';
+import { buildShaperProvider, isOllamaModelId, resolveShaperKind, runWithClientProviderContext } from '../shaper-provider.js';
 
 function makeCfg(overrides: Partial<AnalyzeConfig>): AnalyzeConfig {
 	return {
@@ -57,6 +57,46 @@ test('shaperProvider=cli-codex returns a CliProvider', () => {
 	const p = buildShaperProvider(makeCfg({ shaperProvider: 'cli-codex' }));
 	assert.ok(p instanceof CliProvider);
 	assert.equal(p.supportsTools, false);
+});
+
+// ---------------------------------------------------------------------------
+// Guard: never forward an Ollama-shaped model id to a CLI (the haiku/api_error
+// class of bug — a mis-set `shaperProvider: cli-claude` + Ollama `shaperModel`).
+// ---------------------------------------------------------------------------
+
+test('isOllamaModelId is true for `:`-tagged ids, false for CLI model ids', () => {
+	for (const id of ['qwen3.6:35b-a3b', 'qwen3-embedding:0.6b', 'llama3:8b']) assert.equal(isOllamaModelId(id), true, id);
+	for (const id of ['opus', 'sonnet', 'claude-haiku-4-5', 'claude-opus-4-8', '']) assert.equal(isOllamaModelId(id), false, id);
+});
+
+test('cli-claude + explicit Ollama shaperModel → CliProvider with NO model (CLI default)', () => {
+	// makeCfg's default shaperModel is the Ollama id `qwen3.6:35b-a3b`.
+	const p = buildShaperProvider(makeCfg({ shaperProvider: 'cli-claude' }));
+	assert.ok(p instanceof CliProvider);
+	assert.equal(p.defaultModel, undefined);   // dropped, not forwarded to the CLI
+});
+
+test('cli-claude + a real claude shaperModel → forwarded verbatim', () => {
+	const p = buildShaperProvider(makeCfg({ shaperProvider: 'cli-claude', shaperModel: 'claude-haiku-4-5', shaperModelExplicit: true }));
+	assert.ok(p instanceof CliProvider);
+	assert.equal(p.defaultModel, 'claude-haiku-4-5');
+});
+
+test('cli-claude + a role-tier claude model → forwarded (role model wins)', () => {
+	const p = buildShaperProvider(makeCfg({ shaperProvider: 'cli-claude' }), { roleModel: 'opus' });
+	assert.ok(p instanceof CliProvider);
+	assert.equal(p.defaultModel, 'opus');
+});
+
+test('cli-claude + a role-tier model that is Ollama-shaped → also dropped', () => {
+	const p = buildShaperProvider(makeCfg({ shaperProvider: 'cli-claude' }), { roleModel: 'qwen3.6:35b-a3b' });
+	assert.ok(p instanceof CliProvider);
+	assert.equal(p.defaultModel, undefined);
+});
+
+test('ollama path is unchanged: the Ollama model id is still used', () => {
+	const p = buildShaperProvider(makeCfg({ shaperProvider: 'ollama', shaperModel: 'qwen3.6:35b-a3b' }));
+	assert.ok(p instanceof OllamaProvider);   // no guard on the local path
 });
 
 // ---------------------------------------------------------------------------

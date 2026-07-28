@@ -249,6 +249,15 @@ function isShaperKind(v: unknown): v is AnalyzeShaperProviderKind {
 	return v === 'ollama' || v === 'cli-claude' || v === 'cli-codex';
 }
 
+/** True for an Ollama-style model id — one carrying a `:` version tag
+ *  (`qwen3.6:35b-a3b`, `qwen3-embedding:0.6b`). CLI model ids (`opus`,
+ *  `sonnet`, `claude-haiku-4-5`) never contain a `:`. Used to keep a mis-set
+ *  Ollama model from being forwarded to the claude/codex CLI, where it would
+ *  fail with an api_error. */
+export function isOllamaModelId(model: string): boolean {
+	return model.includes(':');
+}
+
 /**
  * Return the `LLMProvider` implementation the analyze framework
  * should use for its structured-output calls.
@@ -304,11 +313,16 @@ export function buildShaperProvider(
 
 	if (effective === 'cli-claude' || effective === 'cli-codex') {
 		const kind = effective === 'cli-claude' ? 'claude' : 'codex';
-		// The default `shaperModel` (`qwen3.6:35b-a3b`) is an Ollama id —
-		// never forward it to a CLI. Prefer an explicit tier model (roleModel),
-		// then an explicitly-set `shaperModel` (e.g. `claude-haiku-4-5` for
-		// cost-sensitive inner calls); otherwise use the CLI's own default.
-		const model = roleModel ?? (cfg.shaperModelExplicit && cfg.shaperModel !== '' ? cfg.shaperModel : undefined);
+		// Prefer an explicit tier model (roleModel), then an explicitly-set
+		// `shaperModel` (e.g. `claude-haiku-4-5` for cost-sensitive inner calls);
+		// otherwise use the CLI's own default.
+		const candidate = roleModel ?? (cfg.shaperModelExplicit && cfg.shaperModel !== '' ? cfg.shaperModel : undefined);
+		// Never forward an Ollama-shaped id (a version tag like `:35b-a3b`) to a
+		// CLI: the claude/codex CLI can't honor it and terminates with an
+		// api_error (falling back to some other model). A mis-set config —
+		// `shaperProvider: cli-claude` paired with an Ollama `shaperModel` — must
+		// degrade to the CLI's own default here, not to a broken subprocess.
+		const model = candidate !== undefined && !isOllamaModelId(candidate) ? candidate : undefined;
 		const source = roleRunner !== undefined ? 'role' : repoOverride !== undefined ? 'repo' : globalExplicit !== undefined ? 'config' : 'client';
 		log.info(
 			{ kind, model: model ?? '(cli default)', source, timeoutMs: overrides?.cliTimeoutMs },

@@ -89,7 +89,9 @@ export class CliProvider implements LLMProvider {
 	readonly supportsTools = false;
 
 	private readonly kind: CliKind;
-	private readonly defaultModel: string | undefined;
+	/** The `--model` id this provider forwards to the CLI, or undefined when it
+	 *  lets the CLI use its own default. Public for logging + testability. */
+	readonly defaultModel: string | undefined;
 	private readonly binPath: string;
 	private readonly timeoutMs: number;
 	private readonly embedDelegate: Pick<LLMProvider, 'embed' | 'capabilities'> | undefined;

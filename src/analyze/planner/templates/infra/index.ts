@@ -4,12 +4,11 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * Infra-target template catalog. Four templates: family discovery,
- * per-family inventory (kubernetes + terraform), aggregator. Mirrors
- * the foundational set from design/analyze-framework-infrastructure.md
- * "Discovery family" + "Inventory family". Helm / GHA / Compose /
- * Ansible / Pulumi / CloudFormation inventory templates land in
- * subsequent commits.
+ * Infra-target template catalog: family discovery, per-family inventory
+ * (kubernetes / terraform / helm / docker / ci), adherence check, aggregator.
+ * Mirrors the foundational set from design/analyze-framework-infrastructure.md
+ * "Discovery family" + "Inventory family". Ansible / Pulumi / CloudFormation
+ * inventory templates land in subsequent commits.
  */
 
 import type { AnalyzeTaskTemplate } from '../../types.js';
@@ -26,7 +25,7 @@ export const infraDiscoveryFamilies: AnalyzeTaskTemplate = {
 	family:      'discovery',
 	kind:        'leaf',
 	revision:    'r1',
-	description: 'Detect every IaC family present in scope (terraform, kubernetes, helm, github-actions, gitlab-ci, docker-compose, ansible, pulumi, cloudformation).',
+	description: 'Detect every IaC family present in scope (terraform, kubernetes, helm, github-actions, gitlab-ci, docker-compose, dockerfile).',
 	inputSchema: {
 		type:                 'object',
 		additionalProperties: false,
@@ -72,6 +71,60 @@ export const infraInventoryTerraform: AnalyzeTaskTemplate = {
 		},
 	},
 	produces:    ['tf-inventory'],
+};
+
+export const infraInventoryHelm: AnalyzeTaskTemplate = {
+	id:          'infra.inventory.helm',
+	target:      'infra',
+	family:      'inventory',
+	kind:        'leaf',
+	revision:    'r1',
+	description: 'Enumerate Helm charts in scope + their metadata (name/version/appVersion/type/dependencies), template file count, and values.yaml top-level keys.',
+	inputSchema: {
+		type:                 'object',
+		additionalProperties: false,
+		required:             ['scopeRef'],
+		properties: {
+			scopeRef: SCOPE_REF_SCHEMA,
+		},
+	},
+	produces:    ['helm-inventory'],
+};
+
+export const infraInventoryDocker: AnalyzeTaskTemplate = {
+	id:          'infra.inventory.docker',
+	target:      'infra',
+	family:      'inventory',
+	kind:        'leaf',
+	revision:    'r1',
+	description: 'Enumerate Dockerfiles (FROM images/stages, EXPOSE ports) and docker-compose files (services, images, ports) in scope.',
+	inputSchema: {
+		type:                 'object',
+		additionalProperties: false,
+		required:             ['scopeRef'],
+		properties: {
+			scopeRef: SCOPE_REF_SCHEMA,
+		},
+	},
+	produces:    ['docker-inventory'],
+};
+
+export const infraInventoryCi: AnalyzeTaskTemplate = {
+	id:          'infra.inventory.ci',
+	target:      'infra',
+	family:      'inventory',
+	kind:        'leaf',
+	revision:    'r1',
+	description: 'Enumerate CI pipelines in scope: GitHub Actions workflows (triggers, jobs, step uses) and .gitlab-ci.yml (stages, jobs).',
+	inputSchema: {
+		type:                 'object',
+		additionalProperties: false,
+		required:             ['scopeRef'],
+		properties: {
+			scopeRef: SCOPE_REF_SCHEMA,
+		},
+	},
+	produces:    ['ci-inventory'],
 };
 
 export const infraAggregateReport: AnalyzeTaskTemplate = {
@@ -143,6 +196,9 @@ export const INFRA_TEMPLATES: readonly AnalyzeTaskTemplate[] = [
 	infraDiscoveryFamilies,
 	infraInventoryKubernetes,
 	infraInventoryTerraform,
+	infraInventoryHelm,
+	infraInventoryDocker,
+	infraInventoryCi,
 	infraAdherenceCheck,
 	infraAggregateReport,
 ];

@@ -130,10 +130,10 @@ test('registerTemplate: family=aggregate AND isAggregator:true is accepted', () 
 // registerBuiltinTemplates -- expected count + collision-free + idempotent
 // ---------------------------------------------------------------------------
 
-test('registerBuiltinTemplates registers exactly 24 builtins (7 code + 5 data + 5 infra + 1 generic + 6 docs) without collision', () => {
+test('registerBuiltinTemplates registers exactly 27 builtins (7 code + 5 data + 8 infra + 1 generic + 6 docs) without collision', () => {
 	freshRegistry();
 	assert.doesNotThrow(() => registerBuiltinTemplates());
-	assert.equal(getTemplateCatalog().length, 24);
+	assert.equal(getTemplateCatalog().length, 27);
 });
 
 test('registerBuiltinTemplates is idempotent (latch prevents double-register)', () => {
@@ -185,11 +185,11 @@ test('getTemplatesForTarget(data) returns 5 data templates', () => {
 	}
 });
 
-test('getTemplatesForTarget(infra) returns 5 infra templates', () => {
+test('getTemplatesForTarget(infra) returns 8 infra templates', () => {
 	freshRegistry();
 	registerBuiltinTemplates();
 	const infra = getTemplatesForTarget('infra');
-	assert.equal(infra.length, 5);
+	assert.equal(infra.length, 8);
 	for (const t of infra) {
 		assert.equal(t.target, 'infra');
 	}

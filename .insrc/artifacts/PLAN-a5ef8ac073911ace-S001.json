@@ -1,0 +1,271 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1785252462644-psln7x",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-07-28T15:31:19.408Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 216728,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a5ef8ac073911ace",
+    "epicSlug": "add-helm-docker-ci-infra-inventory",
+    "storyId": "S001",
+    "lldRunId": "wf-1785251327637-a34n3k",
+    "lldEffectiveHash": "a5ef8ac073911ace4ce1613074cbf0b8b99cdd176aa849dedf2965cc402cf02c",
+    "approvedAt": "2026-07-28T15:31:26.593Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "inventory-helm.ts runtime",
+        "summary": "Create src/analyze/runtimes/infra/inventory-helm.ts: `infraInventoryHelmRuntime: TemplateRuntime` (templateId 'infra.inventory.helm') mirroring inventory-terraform.ts. execute() reuses readScopeRef/resolveRepoPath/walkFiles, filters Chart.yaml (HELM_CHART_RE), and for each chart parses name/version/appVersion/type/dependencies via js-yaml `load`, counts sibling templates/*.yaml, and reads adjacent values.yaml top-level keys — returns { outputs: Map(['helm-inventory', HelmInventory]) }. Sorted deterministic; per-file YAML parse failure swallowed (log.debug+continue); truncated flag surfaced.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "inventory-helm.ts exports infraInventoryHelmRuntime with templateId 'infra.inventory.helm' and output key 'helm-inventory'",
+          "each Chart.yaml yields name/version/appVersion/type/dependencies + templateFileCount + valuesKeys; lists sorted",
+          "malformed Chart/values YAML is skipped (not thrown); truncated surfaced",
+          "tsc passes"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "helm runtime over a Chart.yaml + templates/*.yaml + values.yaml fixture yields helm-inventory with name/version/appVersion/dependencies + templateFileCount + valuesKeys"
+          },
+          {
+            "level": "integration",
+            "name": "a helm chart with no dependencies + no values.yaml is still listed (deps:[], valuesKeys:[], templateFileCount from templates/)"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "inventory-docker.ts runtime",
+        "summary": "Create src/analyze/runtimes/infra/inventory-docker.ts: `infraInventoryDockerRuntime` (templateId 'infra.inventory.docker'). Filters Dockerfiles (DOCKERFILE_RE) — regex-extract FROM image + optional `AS <stage>` + EXPOSE ports — and compose files (COMPOSE_RE) — js-yaml parse services→name/image/ports. Returns { outputs: Map(['docker-inventory', DockerInventory]) } = {dockerfiles[], composeFiles[], truncated}. Deterministic/sorted; compose YAML parse failure swallowed; non-conforming compose shape yields empty services list, not a throw.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "inventory-docker.ts exports infraInventoryDockerRuntime with templateId 'infra.inventory.docker' and output key 'docker-inventory'",
+          "multi-stage Dockerfile FROM+stage + EXPOSE ports extracted; compose service with build-and-no-image kept (image undefined)",
+          "deterministic/sorted; parse failures swallowed",
+          "tsc passes"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "docker runtime over a multi-stage Dockerfile + docker-compose.yaml yields docker-inventory (froms/stages/exposedPorts + services/images/ports)"
+          },
+          {
+            "level": "unit",
+            "name": "Dockerfile multi-stage FROM ... AS <stage> + EXPOSE regex extraction; compose service with build-and-no-image keeps image undefined"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "inventory-ci.ts runtime",
+        "summary": "Create src/analyze/runtimes/infra/inventory-ci.ts: `infraInventoryCiRuntime` (templateId 'infra.inventory.ci'). Filters .github/workflows/*.yml (js-yaml parse name + normalized `on` triggers [string/array/map → sorted string[]] + job ids + step `uses`) and .gitlab-ci.yml (GITLAB_CI_RE; parse stages + job ids excluding reserved keys stages/variables/default/include). Returns { outputs: Map(['ci-inventory', CiInventory]) } = {githubWorkflows[], gitlabCi[], truncated}. Deterministic/sorted; per-file YAML parse failure swallowed.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "inventory-ci.ts exports infraInventoryCiRuntime with templateId 'infra.inventory.ci' and output key 'ci-inventory'",
+          "GHA `on` normalizes across string/array/map to sorted trigger names; job ids + step uses captured; GitLab reserved keys excluded from jobs",
+          "deterministic/sorted; parse failures swallowed",
+          "tsc passes"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "ci runtime over a .github/workflows/ci.yml + .gitlab-ci.yml yields ci-inventory (triggers/jobs/stepUses + stages/jobs)"
+          },
+          {
+            "level": "unit",
+            "name": "GHA `on` normalization across string/array/map to sorted trigger names + GitLab reserved-key exclusion (stages/variables/default/include not counted as jobs)"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Register the 3 runtimes + templates + trim discovery overpromise",
+        "summary": "Wire everything: append infraInventoryHelm/Docker/Ci Runtime (+ re-export lines) to INFRA_RUNTIMES in src/analyze/runtimes/infra/index.ts (5→8); add 3 AnalyzeTaskTemplate descriptors (id 'infra.inventory.<family>', target 'infra', family 'inventory', kind 'leaf', revision 'r1', inputSchema {scopeRef: SCOPE_REF_SCHEMA}, produces ['<family>-inventory']) to INFRA_TEMPLATES in src/analyze/planner/templates/infra/index.ts (5→8); and trim ansible/pulumi/cloudformation from the infra.discovery.families description (index.ts:29). Land as one unit so template↔runtime parity never breaks.",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "INFRA_RUNTIMES and INFRA_TEMPLATES both length 8; each new template.produces[0] === its runtime output-Map key",
+          "the infra.discovery.families description no longer mentions ansible/pulumi/cloudformation",
+          "registerBuiltinRuntimes + registerInfraTemplates register all 3 with no validator error",
+          "tsc + build pass"
+        ],
+        "derivedFrom": [
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "registration parity: all 3 templates register, each template.produces[0] === the runtime output-Map key, INFRA_RUNTIMES.length === INFRA_TEMPLATES.length === 8"
+          },
+          {
+            "level": "unit",
+            "name": "the trimmed infra.discovery.families description no longer mentions ansible/pulumi/cloudformation"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Tests: per-family fixtures + registration + edge cases",
+        "summary": "Extend src/analyze/runtimes/infra/__tests__/infra-runtimes.test.ts (or a sibling): tmp-fixture integration tests for each new runtime (Chart.yaml+templates+values; multi-stage Dockerfile+compose; GHA workflow+.gitlab-ci.yml) asserting output shapes; unit tests for GHA `on` normalization, GitLab reserved-key exclusion, Dockerfile multi-stage/build-only edge cases; registration-parity (INFRA_RUNTIMES/INFRA_TEMPLATES both 8 + produces-key match); description-trim assertion; parse-failure-swallowed + empty-scope cases.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "integration tests cover helm/docker/ci output shapes over tmp fixtures",
+          "unit tests cover on-normalization, gitlab reserved-key exclusion, dockerfile edges, registration parity, description trim, parse-failure-swallowed, empty scope",
+          "full infra + analyze test sweep passes; tsc + build clean"
+        ],
+        "derivedFrom": [
+          "c6",
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "a malformed YAML fixture file is skipped (not thrown) and siblings still inventoried; an empty scope yields a well-formed empty inventory (not an error)"
+          },
+          {
+            "level": "unit",
+            "name": "the assembled infra test file wires all new cases into the existing infra-runtimes.test.ts harness (registerBuiltinRuntimes/getRuntime) and the full sweep is green"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "infraInventoryHelmRuntime.execute over a Chart.yaml + templates/*.yaml + values.yaml fixture → helm-inventory (name/version/deps/templateFileCount/valuesKeys)",
+        "coveredByTaskIds": [
+          "t1",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "infraInventoryDockerRuntime.execute over a multi-stage Dockerfile + docker-compose.yaml fixture → docker-inventory (froms/stages/exposedPorts + services/images/ports)",
+        "coveredByTaskIds": [
+          "t2",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "infraInventoryCiRuntime.execute over a .github/workflows/ci.yml + .gitlab-ci.yml fixture → ci-inventory (triggers/jobs/stepUses + stages/jobs)",
+        "coveredByTaskIds": [
+          "t3",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "GHA `on` normalization across string / array / map forms → sorted trigger names",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "GitLab reserved-key exclusion (stages/variables/default/include not counted as jobs)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "Dockerfile multi-stage FROM + EXPOSE regex extraction; compose service with build-and-no-image",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "registration parity: all 3 templates register + each template.produces[0] === the runtime output-Map key; INFRA_RUNTIMES + INFRA_TEMPLATES both length 8",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "the trimmed infra.discovery.families description no longer mentions ansible/pulumi/cloudformation",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails.api + the inventory-terraform.ts pattern to mirror",
+      "quotedText": "Each new runtime is an infraInventory<Family>Runtime: TemplateRuntime mirroring inventory-terraform.ts (readScopeRef→resolveRepoPath→walkFiles→filter→parse→sorted deterministic output→one produces-key)."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 usage.example — inventory-kubernetes.ts js-yaml precedent",
+      "quotedText": "import { loadAll } from 'js-yaml' (^4.1.0 already a dep); parse per-file in try/catch, log.debug + continue on failure."
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1 symbol.locate — _shared.ts helpers",
+      "quotedText": "readScopeRef, resolveRepoPath (kinds repo|manifest-dir|workspace), walkFiles(cap=5000)→{files,truncated} — reused verbatim by the new runtimes."
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "s1 search.text — discovery-families.ts detection patterns",
+      "quotedText": "HELM_CHART_RE / DOCKERFILE_RE / COMPOSE_RE / .github/workflows / GITLAB_CI_RE — the same patterns the new inventory runtimes filter by."
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 dataModel — INFRA_RUNTIMES + INFRA_TEMPLATES field-adds + discovery description fix",
+      "quotedText": "Append 3 runtimes to INFRA_RUNTIMES (5→8) + 3 templates to INFRA_TEMPLATES (5→8) with matching produces-keys; trim the ansible/pulumi/cloudformation overpromise."
+    },
+    {
+      "id": "c6",
+      "kind": "analyze-bundle",
+      "ref": "s1 test.locate — infra-runtimes.test.ts harness",
+      "quotedText": "node:test + tmp fixtures (mkdtempSync/writeFileSync) + registerBuiltinRuntimes/_resetRuntimeBootstrapLatchForTests + getRuntime; the harness the new tests extend."
+    }
+  ]
+}

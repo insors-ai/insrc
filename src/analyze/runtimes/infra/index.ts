@@ -15,6 +15,9 @@
 import { infraDiscoveryFamiliesRuntime    } from './discovery-families.js';
 import { infraInventoryKubernetesRuntime  } from './inventory-kubernetes.js';
 import { infraInventoryTerraformRuntime   } from './inventory-terraform.js';
+import { infraInventoryHelmRuntime        } from './inventory-helm.js';
+import { infraInventoryDockerRuntime      } from './inventory-docker.js';
+import { infraInventoryCiRuntime          } from './inventory-ci.js';
 import { infraAdherenceCheckRuntime       } from './adherence-check.js';
 import { infraAggregateReportRuntime      } from './aggregate-report.js';
 
@@ -23,6 +26,9 @@ import type { TemplateRuntime } from '../../executor/types.js';
 export { infraDiscoveryFamiliesRuntime    } from './discovery-families.js';
 export { infraInventoryKubernetesRuntime  } from './inventory-kubernetes.js';
 export { infraInventoryTerraformRuntime   } from './inventory-terraform.js';
+export { infraInventoryHelmRuntime        } from './inventory-helm.js';
+export { infraInventoryDockerRuntime      } from './inventory-docker.js';
+export { infraInventoryCiRuntime          } from './inventory-ci.js';
 export {
 	infraAdherenceCheckRuntime,
 	INFRA_ADHERENCE_CHECK_PROMPT_PATH,
@@ -33,6 +39,9 @@ export const INFRA_RUNTIMES: readonly TemplateRuntime[] = [
 	infraDiscoveryFamiliesRuntime,
 	infraInventoryKubernetesRuntime,
 	infraInventoryTerraformRuntime,
+	infraInventoryHelmRuntime,
+	infraInventoryDockerRuntime,
+	infraInventoryCiRuntime,
 	infraAdherenceCheckRuntime,
 	infraAggregateReportRuntime,
 ];

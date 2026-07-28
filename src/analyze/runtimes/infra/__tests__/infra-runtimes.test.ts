@@ -49,10 +49,18 @@ import {
 
 import {
 	INFRA_AGGREGATE_PROMPT_PATH,
+	INFRA_RUNTIMES,
 	infraDiscoveryFamiliesRuntime,
 	infraInventoryKubernetesRuntime,
 	infraInventoryTerraformRuntime,
+	infraInventoryHelmRuntime,
+	infraInventoryDockerRuntime,
+	infraInventoryCiRuntime,
 } from '../index.js';
+import {
+	INFRA_TEMPLATES,
+	infraDiscoveryFamilies,
+} from '../../../planner/templates/infra/index.js';
 import {
 	_baseNameForTest,
 	_classifyFileForTest,
@@ -209,7 +217,7 @@ test('extractResource: label coercion of non-string values', () => {
 // Bootstrap registration
 // ---------------------------------------------------------------------------
 
-test('registerBuiltinRuntimes registers all 4 infra runtimes', () => {
+test('registerBuiltinRuntimes registers all infra runtimes (incl. helm/docker/ci)', () => {
 	_resetRuntimeBootstrapLatchForTests();
 	assert.doesNotThrow(() => registerBuiltinRuntimes());
 	const ids = listRegisteredRuntimes();
@@ -217,6 +225,9 @@ test('registerBuiltinRuntimes registers all 4 infra runtimes', () => {
 		'infra.discovery.families',
 		'infra.inventory.kubernetes',
 		'infra.inventory.terraform',
+		'infra.inventory.helm',
+		'infra.inventory.docker',
+		'infra.inventory.ci',
 		'infra.aggregate.report',
 	]) {
 		assert.notEqual(getRuntime(tid), undefined, `${tid} should be registered`);
@@ -228,6 +239,44 @@ test('runtime templateIds match expected ids', () => {
 	assert.equal(infraDiscoveryFamiliesRuntime.templateId,   'infra.discovery.families');
 	assert.equal(infraInventoryKubernetesRuntime.templateId, 'infra.inventory.kubernetes');
 	assert.equal(infraInventoryTerraformRuntime.templateId,  'infra.inventory.terraform');
+	assert.equal(infraInventoryHelmRuntime.templateId,       'infra.inventory.helm');
+	assert.equal(infraInventoryDockerRuntime.templateId,     'infra.inventory.docker');
+	assert.equal(infraInventoryCiRuntime.templateId,         'infra.inventory.ci');
+});
+
+test('registration parity: INFRA_RUNTIMES and INFRA_TEMPLATES both length 8; produces-key === runtime output key', async () => {
+	assert.equal(INFRA_RUNTIMES.length, 8);
+	assert.equal(INFRA_TEMPLATES.length, 8);
+	// Every template has a matching runtime by id.
+	const runtimeIds = new Set(INFRA_RUNTIMES.map(r => r.templateId));
+	for (const t of INFRA_TEMPLATES) {
+		assert.ok(runtimeIds.has(t.id), `template ${t.id} has a registered runtime`);
+	}
+	// For each new inventory family, the template's produces[0] equals the
+	// runtime's single output-Map key.
+	const empty = mkArgs(mkTask('x', { scopeRef: { kind: 'repo', value: tmpdir() } }, []), 'parity');
+	for (const [tid, key] of [
+		['infra.inventory.helm',   'helm-inventory'],
+		['infra.inventory.docker', 'docker-inventory'],
+		['infra.inventory.ci',     'ci-inventory'],
+	] as const) {
+		const tpl = INFRA_TEMPLATES.find(t => t.id === tid)!;
+		assert.deepEqual(tpl.produces, [key], `${tid} produces === [${key}]`);
+		const rt = INFRA_RUNTIMES.find(r => r.templateId === tid)!;
+		const out = await rt.execute(empty);
+		assert.ok(out.outputs.has(key), `${tid} runtime output Map has key ${key}`);
+	}
+});
+
+test('infra.discovery.families description no longer overpromises ansible/pulumi/cloudformation', () => {
+	const desc = infraDiscoveryFamilies.description;
+	for (const dead of ['ansible', 'pulumi', 'cloudformation']) {
+		assert.ok(!desc.includes(dead), `description should not mention ${dead}`);
+	}
+	// still names the families it actually detects
+	for (const live of ['terraform', 'kubernetes', 'helm', 'github-actions', 'gitlab-ci', 'docker-compose', 'dockerfile']) {
+		assert.ok(desc.includes(live), `description should still name ${live}`);
+	}
 });
 
 // ---------------------------------------------------------------------------
@@ -557,4 +606,204 @@ test('inventory.terraform: extracts resources / data / providers / variables / o
 	assert.equal(mainSummary.outputCount,   1);
 	const tfvarsSummary = inv.files.find(f => f.path === 'tf/backend.tfvars')!;
 	assert.equal(tfvarsSummary.resourceCount, 0);
+});
+
+// ---------------------------------------------------------------------------
+// helm / docker / ci inventory integration (S001) — dedicated rich fixture.
+//
+// The shared fixtureRoot above only carries a bare Chart.yaml + a simple
+// compose + a simple GHA workflow. This second fixture exercises the fuller
+// shapes: a chart with dependencies + templates/ + values.yaml, a multi-stage
+// Dockerfile + a build-only compose service, a GHA workflow with `on` as a MAP
+// + step `uses`, and a .gitlab-ci.yml with stages + reserved keys + a broken
+// workflow that must be skipped (not thrown).
+// ---------------------------------------------------------------------------
+
+let ciFixtureRoot: string;
+
+test.before(() => {
+	ciFixtureRoot = mkdtempSync(join(tmpdir(), 'infra-s001-fix-'));
+	const write = (rel: string, body: string): void => {
+		const abs = join(ciFixtureRoot, rel);
+		mkdirSync(join(abs, '..'), { recursive: true });
+		writeFileSync(abs, body, 'utf8');
+	};
+
+	// helm chart: metadata + dependencies + templates/ + values.yaml
+	write('charts/web/Chart.yaml',
+		[
+			'apiVersion: v2',
+			'name: web',
+			'version: 1.2.3',
+			'appVersion: "4.5.6"',
+			'type: application',
+			'dependencies:',
+			'  - name: redis',
+			'    version: 17.0.0',
+			'    repository: https://charts.bitnami.com/bitnami',
+			'  - name: postgres',
+			'    version: 12.0.0',
+			'',
+		].join('\n'));
+	write('charts/web/templates/deployment.yaml', 'kind: Deployment\n');
+	write('charts/web/templates/service.yaml',    'kind: Service\n');
+	write('charts/web/values.yaml',
+		'replicaCount: 2\nimage:\n  repository: web\nservice:\n  port: 80\n');
+	// a chart with no deps + no values + no templates
+	write('charts/bare/Chart.yaml', 'apiVersion: v2\nname: bare\nversion: 0.0.1\n');
+
+	// docker: multi-stage Dockerfile + a compose with a build-only service
+	write('Dockerfile',
+		[
+			'FROM node:20 AS build',
+			'WORKDIR /app',
+			'EXPOSE 3000',
+			'FROM nginx AS runtime',
+			'EXPOSE 80 443',
+			'',
+		].join('\n'));
+	write('docker-compose.yml',
+		[
+			'services:',
+			'  api:',
+			'    image: api:latest',
+			'    ports:',
+			'      - "8080:8080"',
+			'  worker:',
+			'    build: ./worker',
+			'',
+		].join('\n'));
+
+	// github-actions: `on` as a MAP + step uses
+	write('.github/workflows/release.yml',
+		[
+			'name: Release',
+			'on:',
+			'  push:',
+			'    branches: [main]',
+			'  workflow_dispatch: {}',
+			'jobs:',
+			'  build:',
+			'    runs-on: ubuntu-latest',
+			'    steps:',
+			'      - uses: actions/checkout@v4',
+			'      - uses: actions/setup-node@v4',
+			'      - run: npm ci',
+			'',
+		].join('\n'));
+	// a broken workflow — must be skipped, not thrown
+	write('.github/workflows/broken.yml', 'name: X\non: [push\n  bad: : :\n');
+
+	// gitlab-ci: stages + reserved keys + two jobs
+	write('.gitlab-ci.yml',
+		[
+			'stages:',
+			'  - build',
+			'  - test',
+			'variables:',
+			'  FOO: bar',
+			'default:',
+			'  image: node:20',
+			'build-job:',
+			'  stage: build',
+			'  script: [make]',
+			'test-job:',
+			'  stage: test',
+			'  script: [make test]',
+			'',
+		].join('\n'));
+});
+
+test.after(() => {
+	if (ciFixtureRoot) {
+		try { rmSync(ciFixtureRoot, { recursive: true, force: true }); } catch { /* */ }
+	}
+});
+
+function ciArgs(templateId: string, root: string, runId: string): TemplateExecuteArgs {
+	return mkArgs(mkTask(templateId, { scopeRef: { kind: 'repo', value: root } }, []), runId);
+}
+
+test('inventory.helm: enumerates charts with metadata + deps + templateFileCount + valuesKeys', async () => {
+	const result = await infraInventoryHelmRuntime.execute(ciArgs('infra.inventory.helm', ciFixtureRoot, 'helm-1'));
+	const inv = result.outputs.get('helm-inventory') as {
+		charts: Array<{ path: string; name?: string; version?: string; appVersion?: string; type?: string; dependencies: Array<{ name: string; version?: string; repository?: string }>; templateFileCount: number; valuesKeys: string[] }>;
+		truncated: boolean;
+	};
+	assert.equal(inv.truncated, false);
+	// sorted by path: charts/bare before charts/web
+	assert.deepEqual(inv.charts.map(c => c.path), ['charts/bare/Chart.yaml', 'charts/web/Chart.yaml']);
+
+	const web = inv.charts.find(c => c.path === 'charts/web/Chart.yaml')!;
+	assert.equal(web.name, 'web');
+	assert.equal(web.version, '1.2.3');
+	assert.equal(web.appVersion, '4.5.6');
+	assert.equal(web.type, 'application');
+	assert.equal(web.templateFileCount, 2);                       // deployment.yaml + service.yaml
+	assert.deepEqual(web.valuesKeys, ['image', 'replicaCount', 'service']);   // sorted top-level keys
+	assert.deepEqual(web.dependencies.map(d => d.name), ['postgres', 'redis']); // sorted
+	assert.equal(web.dependencies.find(d => d.name === 'redis')?.repository, 'https://charts.bitnami.com/bitnami');
+
+	// bare chart: still listed, empty deps/values, zero templates
+	const bare = inv.charts.find(c => c.path === 'charts/bare/Chart.yaml')!;
+	assert.deepEqual(bare.dependencies, []);
+	assert.deepEqual(bare.valuesKeys, []);
+	assert.equal(bare.templateFileCount, 0);
+});
+
+test('inventory.docker: multi-stage Dockerfile FROM/stage/EXPOSE + compose services (build-only kept)', async () => {
+	const result = await infraInventoryDockerRuntime.execute(ciArgs('infra.inventory.docker', ciFixtureRoot, 'docker-1'));
+	const inv = result.outputs.get('docker-inventory') as {
+		dockerfiles: Array<{ path: string; froms: Array<{ image: string; stage?: string }>; exposedPorts: string[] }>;
+		composeFiles: Array<{ path: string; services: Array<{ name: string; image?: string; ports: string[] }> }>;
+		truncated: boolean;
+	};
+	const df = inv.dockerfiles.find(d => d.path === 'Dockerfile')!;
+	assert.deepEqual(df.froms, [{ image: 'node:20', stage: 'build' }, { image: 'nginx', stage: 'runtime' }]);
+	assert.deepEqual(df.exposedPorts, ['3000', '443', '80'].sort());   // sorted
+
+	const compose = inv.composeFiles.find(c => c.path === 'docker-compose.yml')!;
+	assert.deepEqual(compose.services.map(s => s.name), ['api', 'worker']);   // sorted
+	const api = compose.services.find(s => s.name === 'api')!;
+	assert.equal(api.image, 'api:latest');
+	assert.deepEqual(api.ports, ['8080:8080']);
+	const worker = compose.services.find(s => s.name === 'worker')!;
+	assert.equal(worker.image, undefined);   // build-only service kept with no image
+	assert.deepEqual(worker.ports, []);
+});
+
+test('inventory.ci: GHA `on` map normalized + step uses; gitlab stages + jobs (reserved keys excluded); broken skipped', async () => {
+	const result = await infraInventoryCiRuntime.execute(ciArgs('infra.inventory.ci', ciFixtureRoot, 'ci-1'));
+	const inv = result.outputs.get('ci-inventory') as {
+		githubWorkflows: Array<{ path: string; name?: string; triggers: string[]; jobs: Array<{ id: string; stepUses: string[] }> }>;
+		gitlabCi: Array<{ path: string; stages: string[]; jobs: string[] }>;
+		truncated: boolean;
+	};
+	// The broken workflow is skipped, so only release.yml remains.
+	const wf = inv.githubWorkflows.find(w => w.path === '.github/workflows/release.yml')!;
+	assert.equal(wf.name, 'Release');
+	assert.deepEqual(wf.triggers, ['push', 'workflow_dispatch']);   // `on` map keys, sorted
+	const build = wf.jobs.find(j => j.id === 'build')!;
+	assert.deepEqual(build.stepUses, ['actions/checkout@v4', 'actions/setup-node@v4']);
+
+	const gl = inv.gitlabCi.find(g => g.path === '.gitlab-ci.yml')!;
+	assert.deepEqual(gl.stages, ['build', 'test']);
+	assert.deepEqual(gl.jobs, ['build-job', 'test-job']);   // stages/variables/default excluded
+});
+
+test('inventory runtimes: empty scope yields well-formed empty inventories, no throw', async () => {
+	const emptyRoot = mkdtempSync(join(tmpdir(), 'infra-empty-'));
+	try {
+		const helm = (await infraInventoryHelmRuntime.execute(ciArgs('infra.inventory.helm', emptyRoot, 'e1'))).outputs.get('helm-inventory') as { charts: unknown[]; truncated: boolean };
+		assert.deepEqual(helm.charts, []);
+		assert.equal(helm.truncated, false);
+		const docker = (await infraInventoryDockerRuntime.execute(ciArgs('infra.inventory.docker', emptyRoot, 'e2'))).outputs.get('docker-inventory') as { dockerfiles: unknown[]; composeFiles: unknown[] };
+		assert.deepEqual(docker.dockerfiles, []);
+		assert.deepEqual(docker.composeFiles, []);
+		const ci = (await infraInventoryCiRuntime.execute(ciArgs('infra.inventory.ci', emptyRoot, 'e3'))).outputs.get('ci-inventory') as { githubWorkflows: unknown[]; gitlabCi: unknown[] };
+		assert.deepEqual(ci.githubWorkflows, []);
+		assert.deepEqual(ci.gitlabCi, []);
+	} finally {
+		rmSync(emptyRoot, { recursive: true, force: true });
+	}
 });

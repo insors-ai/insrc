@@ -20,6 +20,8 @@
 
 import { basename, extname } from 'node:path';
 
+import { loadAll } from 'js-yaml';
+
 import { getDb } from '../../db/client.js';
 import { listEntitiesForRepo } from '../../db/entities.js';
 import { getLogger } from '../../shared/logger.js';
@@ -104,12 +106,15 @@ export async function runManifestsLocate(
 
 		familyCounts[family] += 1;
 
+		// Prefer the real kind parsed from the indexed manifest body; fall back
+		// to the filename heuristic when the body is empty / unparseable.
+		const resourceKind = resourceKindFromBody(e.file, family, e.body)
+			?? inferResourceKind(e.file, family);
+
 		hits.push({
 			file:   e.file,
 			family,
-			...(inferResourceKind(e.file, family) !== undefined
-				? { resourceKind: inferResourceKind(e.file, family)! }
-				: {}),
+			...(resourceKind !== undefined ? { resourceKind } : {}),
 			name:     basename(e.file),
 			entityId: e.id,
 		});
@@ -218,4 +223,43 @@ export function inferResourceKind(file: string, family: ManifestFamily): string 
 
 function capitalise(s: string): string {
 	return s.length === 0 ? s : s[0]!.toUpperCase() + s.slice(1);
+}
+
+/**
+ * Derive the resource kind from the manifest CONTENT rather than the filename.
+ * Reads the indexed entity body (`Entity.body`, already in the graph — no
+ * filesystem read, no LLM) and parses it with js-yaml:
+ *   - kubernetes: the `kind` of the FIRST non-null object document (multi-doc
+ *     safe via loadAll; a ConfigMap+Secret file reports 'ConfigMap').
+ *   - helm: only a `Chart.yaml` carries a chart identity → its `name`; other
+ *     helm files (values.yaml, templates) return undefined.
+ * Returns undefined (so the caller falls back to `inferResourceKind`) when the
+ * body is empty/unparseable, the field is missing/non-string, or the family is
+ * neither kubernetes nor helm. Pure + deterministic; never throws.
+ */
+export function resourceKindFromBody(file: string, family: ManifestFamily, body: string): string | undefined {
+	if (body.length === 0) return undefined;
+	if (family !== 'kubernetes' && family !== 'helm') return undefined;
+
+	let docs: unknown[];
+	try {
+		docs = loadAll(body);
+	} catch {
+		return undefined;
+	}
+
+	if (family === 'helm') {
+		if (basename(file) !== 'Chart.yaml') return undefined;
+		const chart = docs.find(d => d !== null && typeof d === 'object') as Record<string, unknown> | undefined;
+		const name = chart?.['name'];
+		return typeof name === 'string' ? name : undefined;
+	}
+
+	// kubernetes: first non-null object document's string `kind`.
+	for (const d of docs) {
+		if (d === null || typeof d !== 'object') continue;
+		const kind = (d as Record<string, unknown>)['kind'];
+		if (typeof kind === 'string') return kind;
+	}
+	return undefined;
 }

@@ -1,0 +1,442 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1785254354917-48a2nj",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-07-28T16:03:29.052Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 254106,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b6bf7c5369deabe8",
+    "epicSlug": "extract-real-k8s-helm-resourcekind-from",
+    "storyId": "S001",
+    "hldBaseRunId": "wf-1785254354917-48a2nj",
+    "hldEffectiveHash": "b6bf7c5369deabe8080e418756f238cb167c6c35b0e6fae9a3e6f8e6bbfa5b01",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "small",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/analyze/explore/manifests-locate.ts exports inferResourceKind(file, family) which guesses the kind from the basename, and its sole caller runManifestsLocate sets hit.resourceKind from it (the entity `e` is in scope with e.body).",
+          "evidence": "manifests-locate.ts:201 `export function inferResourceKind(...)`, :74 `export async function runManifestsLocate(`, :93 `for (const e of all)`, :111 `resourceKind: inferResourceKind(e.file, family)!`. The function, its sole caller, and the entity-in-scope call site are exactly as cited.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl2",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The indexed Entity carries `body: string`, and the artifact parser stores a non-markdown artifact's full source in body via `truncate(source)` — so a manifest entity's body is the manifest YAML (no filesystem read needed to parse it).",
+          "evidence": "artifact.ts:182 `body: truncate(source)` (also :287, :355) + the truncate fn at :298; Entity.body is a real string field. Confirms a manifest entity's body holds the manifest YAML, so parsing it is not a filesystem read.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/analyze/explore/types.ts declares interface ManifestHit with `resourceKind?: string` (a single optional string) — the shape this story keeps unchanged.",
+          "evidence": "types.ts:590 `export interface ManifestHit {`, :596 `readonly resourceKind?: string;`. The single-optional-string shape the story keeps is confirmed (the real field also carries `readonly`, which the story preserves — no shape change).",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl4",
+          "kind": "external-contract",
+          "severity": "LOW",
+          "premise": "js-yaml is a dependency and exposes loadAll for multi-doc parsing; inventory-kubernetes.ts already imports it — the primitive resourceKindFromBody reuses.",
+          "evidence": "inventory-kubernetes.ts:29 `import { loadAll } from 'js-yaml'`; package.json:52 `\"js-yaml\": \"^4.1.0\"`. loadAll is the established multi-doc parse primitive reused by resourceKindFromBody — no new dependency.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl5",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "There is no existing test file for manifests.locate under src/analyze/explore/__tests__/, so the story adds a new one (a first test for this module).",
+          "evidence": "The only existing test touching the module is phase5-explorations-params.test.ts (imports runManifestsLocate); there is no src/analyze/explore/__tests__/manifests-locate.test.ts in source (the path appears only in the LLD). resourceKindFromBody is net-new (doc-only matches). The new test file + helper are correctly greenfield.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl6",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The infra synthesizer prompt src/prompts/analyze/synthesize.infra.system.md consumes manifests.locate hits including resourceKind (top recurring kinds / by-family / surface layers), so accurate resourceKind flows through unchanged.",
+          "evidence": "synthesize.infra.system.md:15 (hit shape with resourceKind?), :34 (top recurring resourceKind values), :39 (by-family `<resourceKind> — <path>`), :43 (surface `:: <resourceKind>`), :58 (drop when undefined). The synthesizer consumes resourceKind at exactly the cited roles, so an accurate value flows through with no consumer change.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 6
+      },
+      "reviewedAt": "2026-07-28T16:15:02.142Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-07-28T16:24:11.510Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "S001",
+        "owns": [],
+        "depends": [],
+        "internal": "Extract real k8s/helm resourceKind from indexed manifest body in manifests.locate"
+      },
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "resourceKindFromBody",
+          "signature": "export function resourceKindFromBody(file: string, family: ManifestFamily, body: string): string | undefined",
+          "parameters": [
+            {
+              "name": "file",
+              "type": "string",
+              "purpose": "The manifest's relPath — used only to recognise helm Chart.yaml (chart name path).",
+              "optional": false
+            },
+            {
+              "name": "family",
+              "type": "ManifestFamily",
+              "purpose": "Gate: only 'kubernetes' and 'helm' derive a kind; other families return undefined.",
+              "optional": false
+            },
+            {
+              "name": "body",
+              "type": "string",
+              "purpose": "The indexed entity body (Entity.body) — the manifest YAML the artifact indexer already stored; no filesystem read.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string | undefined",
+            "meaning": "For kubernetes: the string `kind` of the FIRST non-null object doc from js-yaml loadAll(body). For helm Chart.yaml: the parsed `name`. Undefined when body is empty, unparseable, the field is missing/non-string, or the family is neither kubernetes nor helm — signalling the caller to fall back to inferResourceKind."
+          },
+          "errors": [],
+          "preconditions": [
+            "body is the Entity.body already present in the graph (no I/O performed)."
+          ],
+          "postconditions": [
+            "Deterministic + pure: same (file, family, body) → same result; no side effects, no LLM, no filesystem access.",
+            "Never throws: any js-yaml parse error is caught internally and yields undefined."
+          ]
+        },
+        {
+          "name": "inferResourceKind",
+          "signature": "export function inferResourceKind(file: string, family: ManifestFamily): string | undefined",
+          "parameters": [
+            {
+              "name": "file",
+              "type": "string",
+              "purpose": "Manifest path whose basename stem is matched against the k8s kind candidate list.",
+              "optional": false
+            },
+            {
+              "name": "family",
+              "type": "ManifestFamily",
+              "purpose": "Gate: kubernetes/helm only.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string | undefined",
+            "meaning": "UNCHANGED. The existing filename-heuristic guess, now demoted to the FALLBACK path used only when resourceKindFromBody returns undefined."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Behavior byte-identical to today; retained verbatim so empty/truncated/unparseable bodies preserve the prior output (no regression)."
+          ]
+        },
+        {
+          "name": "runManifestsLocate",
+          "signature": "export async function runManifestsLocate(exp: Exploration, ctx: ExplorationRunnerContext): Promise<ManifestsLocateOutput>",
+          "parameters": [
+            {
+              "name": "exp",
+              "type": "Exploration",
+              "purpose": "The exploration (params: families filter, topK). Unchanged.",
+              "optional": false
+            },
+            {
+              "name": "ctx",
+              "type": "ExplorationRunnerContext",
+              "purpose": "Runner context (repoPath, ignoreFilter, runId). Unchanged.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<ManifestsLocateOutput>",
+            "meaning": "Unchanged shape. The ONLY change: at the hit-build site it now sets resourceKind = resourceKindFromBody(e.file, family, e.body) ?? inferResourceKind(e.file, family), passing the entity body already in scope."
+          },
+          "errors": [],
+          "preconditions": [
+            "Entities come from listEntitiesForRepo (each carries body)."
+          ],
+          "postconditions": [
+            "ManifestHit.resourceKind is the real content-derived kind when derivable, else the prior filename guess; families counts + all other fields unchanged."
+          ]
+        }
+      ],
+      "dataModel": [
+        {
+          "entity": "ManifestHit.resourceKind (src/analyze/explore/types.ts)",
+          "change": "invariant-change",
+          "details": "No SHAPE change — resourceKind stays `resourceKind?: string`. What changes is its SOURCE/meaning: it now carries the manifest's actual `kind:`/chart `name` parsed from the entity body (fulfilling the field's existing doc 'the kind: field extracted from the entity metadata') rather than a filename guess. All consumers (synthesize.infra.system.md) read it unchanged.",
+          "schemaDiff": "// unchanged: resourceKind?: string  (meaning now content-derived, not filename-guessed)",
+          "callSites": [
+            "src/analyze/explore/types.ts",
+            "src/analyze/explore/manifests-locate.ts",
+            "src/prompts/analyze/synthesize.infra.system.md"
+          ]
+        },
+        {
+          "entity": "manifests-locate.ts hit-build call site",
+          "change": "field-modify",
+          "details": "The `resourceKind` assignment in runManifestsLocate changes from `inferResourceKind(e.file, family)` to `resourceKindFromBody(e.file, family, e.body) ?? inferResourceKind(e.file, family)`. e is already the loop entity so e.body is in scope; no new query.",
+          "schemaDiff": "- resourceKind: inferResourceKind(e.file, family)\n+ resourceKind: resourceKindFromBody(e.file, family, e.body) ?? inferResourceKind(e.file, family)",
+          "callSites": [
+            "src/analyze/explore/manifests-locate.ts"
+          ]
+        }
+      ],
+      "interactionWithShared": []
+    },
+    "dataModelChanges": [
+      {
+        "entity": "ManifestHit.resourceKind (src/analyze/explore/types.ts)",
+        "change": "invariant-change",
+        "details": "No SHAPE change — resourceKind stays `resourceKind?: string`; its SOURCE becomes the content-parsed `kind:`/chart `name` instead of a filename guess, fulfilling the field's existing doc. Consumers unchanged.",
+        "schemaDiff": "// unchanged: resourceKind?: string  (meaning now content-derived)",
+        "callSites": [
+          "src/analyze/explore/types.ts",
+          "src/analyze/explore/manifests-locate.ts",
+          "src/prompts/analyze/synthesize.infra.system.md"
+        ]
+      },
+      {
+        "entity": "manifests-locate.ts hit-build call site",
+        "change": "field-modify",
+        "details": "resourceKind assignment becomes `resourceKindFromBody(e.file, family, e.body) ?? inferResourceKind(e.file, family)`.",
+        "schemaDiff": "- resourceKind: inferResourceKind(e.file, family)\n+ resourceKind: resourceKindFromBody(e.file, family, e.body) ?? inferResourceKind(e.file, family)",
+        "callSites": [
+          "src/analyze/explore/manifests-locate.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The entity body is not valid YAML (js-yaml loadAll throws).",
+          "detection": "The loadAll(body) call inside resourceKindFromBody is wrapped in try/catch.",
+          "response": "The catch returns undefined; the caller's `?? inferResourceKind(...)` falls back to the filename heuristic (prior behavior).",
+          "userImpact": "None — the hit still gets the same resourceKind it would have had before this change; no crash.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The body was truncated by the indexer (>MAX_BODY) such that the parse fails or the kind field is cut off.",
+          "detection": "loadAll either throws (caught) or yields docs whose first object has no string `kind` — resourceKindFromBody returns undefined.",
+          "response": "Falls back to inferResourceKind (filename guess).",
+          "userImpact": "Same as prior behavior for that (rare, very large) manifest; apiVersion/kind sit at the file head so truncation past them is unusual.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A Service manifest misleadingly named `nginx-deployment.yaml` (body kind: Service).",
+          "expected": "resourceKind = 'Service' (content wins over the filename guess of 'Deployment')."
+        },
+        {
+          "input": "A multi-doc manifest (`kind: ConfigMap` then `---` then `kind: Secret`).",
+          "expected": "resourceKind = 'ConfigMap' (the first non-null doc's kind); the file is counted once as before."
+        },
+        {
+          "input": "A helm Chart.yaml with `name: my-chart`.",
+          "expected": "resourceKind = 'my-chart' (the chart name); non-Chart helm files (e.g. values.yaml) return undefined and fall back to the filename heuristic."
+        },
+        {
+          "input": "An empty body (e.g. a File-kind entity or an entity indexed with body '').",
+          "expected": "resourceKindFromBody returns undefined immediately; falls back to inferResourceKind."
+        },
+        {
+          "input": "A terraform/docker/ci family hit (family not kubernetes/helm).",
+          "expected": "resourceKindFromBody returns undefined (family gate); and inferResourceKind also returns undefined — so resourceKind stays absent, exactly as today."
+        },
+        {
+          "input": "A k8s doc whose `kind` value is non-string (malformed) or the first doc is null/`---` only.",
+          "expected": "Skip null/non-object docs; if no doc yields a string kind, return undefined → fallback."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "manifests.locate performs NO filesystem read beyond what the indexer already did + NO LLM — the new derivation reads only Entity.body which is already in the graph (artifact.ts:182 stored it). Cited s1 bundle: 'The Entity.body field that carries the manifest source'.",
+          "source": "c2"
+        },
+        {
+          "text": "ManifestHit.resourceKind stays a single optional string; no consumer (synthesize.infra.system.md) changes. Cited s1 bundle: 'The ManifestHit.resourceKind contract (unchanged) + its synthesizer consumer'.",
+          "source": "c3"
+        },
+        {
+          "text": "No regression: when the body yields no kind (empty/truncated/unparseable), the result is byte-identical to today's filename heuristic because inferResourceKind is retained verbatim as the fallback. Cited s1 bundle: 'The function being reshaped (inferResourceKind) + its sole caller'.",
+          "source": "c1"
+        },
+        {
+          "text": "Determinism preserved: manifests.locate stays deterministic (no LLM); resourceKindFromBody is a pure function of (file, family, body). Cited s1 bundle: 'js-yaml precedent for parsing manifest YAML' (loadAll is deterministic).",
+          "source": "c4"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Exercise the new resourceKindFromBody helper directly (exported, pure — no db/render) across the content/multi-doc/helm/fallback/family-gate cases, plus confirm inferResourceKind's fallback behavior is retained.",
+          "subjects": [
+            "resourceKindFromBody: k8s body kind wins over a misleading filename",
+            "resourceKindFromBody: multi-doc manifest returns the first doc's kind",
+            "resourceKindFromBody: helm Chart.yaml returns the chart name; non-Chart helm file returns undefined",
+            "resourceKindFromBody: empty / unparseable body returns undefined (caller falls back)",
+            "resourceKindFromBody: terraform/docker/ci family returns undefined (family gate)",
+            "inferResourceKind still returns the filename guess (fallback path unchanged)"
+          ],
+          "fixturesNeeded": [
+            "inline manifest body strings (no filesystem, no db)"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "unit: a Service body named nginx-deployment.yaml yields resourceKind 'Service' (content beats filename)"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "unit: a ConfigMap---Secret multi-doc body yields 'ConfigMap' (first doc's kind)"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "unit: a helm Chart.yaml body with name: my-chart yields 'my-chart'; a helm values.yaml returns undefined"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "unit: empty body and unparseable-YAML body both return undefined; combined with the caller's `?? inferResourceKind`, the filename guess is used (no regression)"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "unit: family='terraform'/'docker'/'ci' returns undefined regardless of body"
+          ]
+        }
+      ],
+      "testFramework": "node:test (tsx --test) with assert/strict, a new src/analyze/explore/__tests__/manifests-locate.test.ts calling the exported helpers directly (matching the repo convention)"
+    },
+    "migration": {
+      "stateBefore": "manifests.locate sets ManifestHit.resourceKind purely from a filename guess: inferResourceKind (manifests-locate.ts:201-217, cited s1 'The function being reshaped') matches the basename stem against a k8s kind candidate list, so a mis-named or multi-doc manifest is mislabeled and the value contradicts the field's own doc (types.ts:590, cited s1 'ManifestHit.resourceKind contract'). The full entity (with body) is already in scope at the call site but unused for kind derivation.",
+      "stateAfter": "resourceKind is derived from the manifest CONTENT: a new pure helper resourceKindFromBody parses the indexed Entity.body via js-yaml loadAll and returns the first doc's k8s `kind` (or the helm Chart `name`); the caller uses `resourceKindFromBody(...) ?? inferResourceKind(...)` so the filename guess remains the fallback. No FS read (body is already in the graph), no type change, no consumer change.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the pure helper resourceKindFromBody(file, family, body) to manifests-locate.ts (js-yaml loadAll inside try/catch; first non-null-object doc's string `kind` for kubernetes; parsed `name` for a helm Chart.yaml; undefined otherwise). Purely additive — nothing calls it yet.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Change the single resourceKind assignment in runManifestsLocate to `resourceKindFromBody(e.file, family, e.body) ?? inferResourceKind(e.file, family)`, passing the in-scope entity body. inferResourceKind is left verbatim as the fallback.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add the new unit test file src/analyze/explore/__tests__/manifests-locate.test.ts exercising resourceKindFromBody (content-beats-filename, multi-doc first-kind, helm Chart name, empty/unparseable fallback, non-k8s/helm family gate) + a fallback-path check on inferResourceKind. Test-only.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Backward compatible. resourceKindFromBody is new + additive; inferResourceKind keeps its exact signature and behavior (now the fallback), so any code/tests referencing it are unaffected. ManifestHit / ManifestsLocateOutput shapes are unchanged, so the infra synthesizer prompt and every other consumer read resourceKind exactly as before. The only observable change is that resourceKind is now the ACCURATE content-derived kind when the body is parseable — an improvement, not a break; when it isn't parseable the output is byte-identical to today.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Body-YAML parse, single resourceKind, filename fallback",
+        "oneLineSummary": "Reimplement inferResourceKind to parse the entity body with js-yaml loadAll and return the first doc's `kind` (k8s) / chart `name` (helm Chart.yaml); fall back to the existing filename heuristic on empty/unparseable body. resourceKind stays a single optional string — no type change.",
+        "chosen": true
+      },
+      {
+        "id": "a2",
+        "name": "Extend the contract to resourceKinds[] for multi-doc",
+        "oneLineSummary": "Add a `resourceKinds?: string[]` field to ManifestHit (distinct kinds per file) alongside the single resourceKind, and teach the synthesizer to prefer the list.",
+        "reasonRejected": "Violates no-contract-change: adds a resourceKinds[] field to ManifestHit that ripples to the synthesizer prompt + every ManifestsLocateOutput consumer — over-scopes a small story for a marginal multi-doc gain over a1's first-kind."
+      },
+      {
+        "id": "a3",
+        "name": "Header regex over body (no YAML parse)",
+        "oneLineSummary": "Grep the body for a top-level `kind:` / `name:` line with a regex instead of a full YAML parse.",
+        "reasonRejected": "Only partially accurate (a column-0 `kind:` regex can still match the wrong line and doesn't split multi-doc cleanly) and violates convention-fidelity by introducing a second, ad-hoc manifest-reading strategy vs. the established js-yaml loadAll primitive — a fragile shortcut for no benefit since body is already in memory."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 usage.example — inferResourceKind + its sole caller (manifests-locate.ts:201-217, :110-112)",
+      "quotedText": "inferResourceKind guesses the k8s/helm kind from the basename stem; its ONLY caller is runManifestsLocate, which already has the full entity e in scope so it can pass e.body."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 data-model.trace — Entity.body carries the manifest source (shared/types.ts, artifact.ts:182)",
+      "quotedText": "Non-markdown artifacts are indexed as a single entity with body: truncate(source); reading e.body is not a filesystem read — it's already in the graph, preserving manifests.locate's no-FS contract."
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1 symbol.locate — ManifestHit.resourceKind + its synthesizer consumer (types.ts:590, synthesize.infra.system.md:34/39/43)",
+      "quotedText": "resourceKind's doc already says 'the kind: field extracted from the entity metadata' which the filename guess does NOT honour; the synthesizer consumes it in the top-kinds summary + by-family + surface layers; type unchanged."
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "s1 search.text — js-yaml loadAll precedent (inventory-kubernetes.ts:29, package.json)",
+      "quotedText": "js-yaml ^4.1.0 is already a dep; inventory-kubernetes.ts uses loadAll to parse multi-doc k8s manifests — the exact primitive reused here inside a try/catch that falls back on failure."
+    }
+  ]
+}

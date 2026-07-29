@@ -1,0 +1,431 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1785259771966-kn45el",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-07-28T17:33:48.660Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 256679,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "50e44a40ef3329f9",
+    "epicSlug": "swap-inventory-terraform-ts-off-its",
+    "storyId": "S001",
+    "hldBaseRunId": "wf-1785259771966-kn45el",
+    "hldEffectiveHash": "50e44a40ef3329f9e5165208527200fa896cbc1d05ce218bcbb2b1c6ec2acf53",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "small",
+    "triageRationale": "A single-file body swap in src/analyze/runtimes/infra/inventory-terraform.ts: replace the regex block-extraction with @cdktf/hcl2json parse + JSON walk, keeping the exact tf-inventory output shape and walkFiles/.tf+.tfvars filter. Reuses the per-file try/catch+continue precedent from inventory-kubernetes.ts. Adds one dependency; touches no callers (INFRA_RUNTIMES registry + tf-inventory output key unchanged). More than trivial, well short of feature.",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/analyze/runtimes/infra/inventory-terraform.ts exists and extracts Terraform blocks with two module-level regexes TWO_LABEL_BLOCK_RE and ONE_LABEL_BLOCK_RE, returning an output Map keyed 'tf-inventory'.",
+          "evidence": "Confirmed in source: inventory-terraform.ts:66 defines TWO_LABEL_BLOCK_RE=/^(resource|data)\\s+\"([^\"]+)\"\\s+\"([^\"]+)\"\\s*\\{/gm, :71 ONE_LABEL_BLOCK_RE, and :218 outputs Map keyed 'tf-inventory'. All anchors resolve.",
+          "action": "None — premise accurate; the regexes and output key are exactly as described.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/analyze/runtimes/infra/inventory-kubernetes.ts parses each file inside a try/catch and on a parse throw log.debug's and continues (the per-file swallow-and-continue precedent the swap mirrors).",
+          "evidence": "inventory-kubernetes.ts exists (seen in walkFiles matches at :40/:71). The specific try/catch+log.debug+continue lines were not surfaced because the grep truncated at 50 hits dominated by docs, but the precedent pattern is real and used across the sibling infra runtimes. Not contradicted.",
+          "action": "During build, confirm the k8s runtime's per-file try/catch+log.debug+continue shape directly and mirror it verbatim in the terraform swap.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The terraform runtime is registered in INFRA_RUNTIMES in src/analyze/runtimes/infra/index.ts and declared as infraInventoryTerraform (produces:['tf-inventory']) in INFRA_TEMPLATES in src/analyze/planner/templates/infra/index.ts.",
+          "evidence": "Confirmed: runtimes/infra/index.ts:38 INFRA_RUNTIMES array + :41 registers the terraform runtime; planner/templates/infra/index.ts:58 infraInventoryTerraform with :73 produces:['tf-inventory']; runtime export inventory-terraform.ts:86. Registration + produces-key match the emitted output key.",
+          "action": "None — registration and produces-key contract are accurate; keep both untouched.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/analyze/runtimes/infra/__tests__/infra-runtimes.test.ts is the existing test harness that drives each infra runtime against temp-dir fixtures and asserts the terraform inventory.",
+          "evidence": "Confirmed: infra-runtimes.test.ts:565 drives the runtime with scopeRef and :568 reads result.outputs.get('tf-inventory') — the harness asserts the terraform inventory as described.",
+          "action": "None — extend this existing harness with the new fixtures.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl5",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The shared helper walkFiles used by the infra inventory runtimes lives in src/analyze/runtimes/infra/_shared.ts and caps traversal at 5000 files, returning a truncated flag.",
+          "evidence": "Confirmed: _shared.ts:106 exports walkFiles; :90 DEFAULT_FILE_CAP=5000; callers destructure {files, truncated}. Cap and truncated flag match the premise.",
+          "action": "None — walkFiles/.tf+.tfvars filter + truncated flag preserved as-is.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl6",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "There are exactly 8 infra templates registered (INFRA_TEMPLATES), so the templates.test.ts infra count of 8 the migration must keep green is accurate.",
+          "evidence": "Confirmed: exactly 8 'infra<Name>: AnalyzeTaskTemplate' exports in planner/templates/infra/index.ts (lines 22,40,58,76,94,112,130,144) and templates.test.ts:188 asserts getTemplatesForTarget(infra) returns 8. Count of 8 is accurate.",
+          "action": "None — the swap does not change the infra template count; the 8-infra assertion stays green.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl7",
+          "kind": "external-contract",
+          "severity": "LOW",
+          "premise": "@cdktf/hcl2json is NOT yet a dependency in package.json (the migration adds it at ^0.21.0); its named export parse(filename, contents) returns HCL-as-JSON.",
+          "evidence": "Confirmed: @cdktf/hcl2json has zero source/package.json matches (docs-only), so the premise 'NOT yet a dependency' is TRUE and the migration correctly adds it. The parse() return-shape is an external-contract assertion validated by the earlier live spike, not contradicted by any source.",
+          "action": "During build, add @cdktf/hcl2json ^0.21.0 to package.json and confirm the parse() JSON shape against its shipped TS types (already spike-verified).",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl8",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The terraform runtime uses TF_EXT_RE=/\\.tf$/ and TFVARS_EXT_RE=/\\.tfvars$/ to filter walked files, and a filesSeen Map bumped via bumpFile — the elements the swap preserves.",
+          "evidence": "Confirmed: inventory-terraform.ts:59 TF_EXT_RE=/\\.tf$/, :60 TFVARS_EXT_RE=/\\.tfvars$/, :111 bumpFile defined and called at :135/:144/:153-156. The .tf/.tfvars filter + per-file bump mechanism match the premise (the counter Map's exact identifier name was not separately grepped but the bump mechanism is present).",
+          "action": "None — preserve TF_EXT_RE/TFVARS_EXT_RE filter and the filesSeen/bumpFile counting exactly.",
+          "fixability": "auto"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 8
+      },
+      "reviewedAt": "2026-07-28T19:38:58.037Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-07-28T19:44:07.547Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "S001",
+        "owns": [],
+        "depends": [],
+        "internal": "Swap inventory-terraform onto a real HCL parser (@cdktf/hcl2json)"
+      },
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "InfraInventoryTerraformRuntime.execute",
+          "signature": "execute(input: RuntimeInput): Promise<{ outputs: Map<string, TfInventory> }>",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "RuntimeInput",
+              "purpose": "Carries the scopeRef the runtime resolves to a repo path before walking .tf/.tfvars files.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<{ outputs: Map<string, TfInventory> }>",
+            "meaning": "A single-entry Map keyed 'tf-inventory' (unchanged) whose value is the TfInventory {files, resources, data, modules, providers, variables, outputs, truncated}. Return shape and key are byte-for-byte identical to today; only the internal block extraction changes from regex to parser."
+          },
+          "errors": [
+            {
+              "type": "none-propagated",
+              "condition": "A per-file parse failure is caught internally (log.debug + continue) so a malformed .tf is dropped, not thrown; execute() itself does not add new error exits."
+            }
+          ],
+          "preconditions": [
+            "scopeRef resolves to an existing repo path (unchanged from today).",
+            "@cdktf/hcl2json is installed and its parse export is importable under Node ESM."
+          ],
+          "postconditions": [
+            "Every list in the inventory is sorted deterministically (unchanged).",
+            "resources/data/modules/providers/variables/outputs reflect blocks recovered by the real HCL parser, including non-canonical formatting the old regex missed.",
+            "The 'tf-inventory' output key and TfInventory field set are unchanged; no caller or registry edit."
+          ]
+        },
+        {
+          "name": "parse",
+          "signature": "parse(filename: string, contents: string): Promise<Record<string, any>>",
+          "parameters": [
+            {
+              "name": "filename",
+              "type": "string",
+              "purpose": "The file's path (f.relPath), used by hcl2json for diagnostics; does not affect the parsed shape.",
+              "optional": false
+            },
+            {
+              "name": "contents",
+              "type": "string",
+              "purpose": "The raw .tf/.tfvars file text to parse into HCL-as-JSON.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<Record<string, any>>",
+            "meaning": "HCL-as-JSON: json.resource = {type:{name:[...blocks]}}, json.data likewise; json.module/provider/variable/output = {name:[...blocks]}. Absent top-level keys mean no blocks of that kind. This is the @cdktf/hcl2json named export that replaces the two regexes."
+          },
+          "errors": [
+            {
+              "type": "Error (thrown, caught locally)",
+              "condition": "contents is not valid HCL; caught by the per-file try/catch which log.debug's and continues."
+            }
+          ],
+          "preconditions": [
+            "The WASM module has initialised (first call pays a one-time ~49ms cold init per process)."
+          ],
+          "postconditions": [
+            "On success, returns a plain object whose top-level keys are the HCL block kinds present in the file."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "TfInventory",
+        "change": "invariant-change",
+        "details": "The value stored under the 'tf-inventory' output key. Its field set (files, resources[{file,type,name}], data[{file,type,name}], modules[{file,name}], providers, variables, outputs, truncated) is UNCHANGED. The only invariant change is provenance: block lists are now populated by walking the @cdktf/hcl2json parse() result rather than regex matches, so they include non-canonical-HCL blocks the regex silently dropped. Ordering/sorting and the truncated flag are preserved.",
+        "schemaDiff": "No field added/removed. resources/data/modules/providers/variables/outputs now sourced from parsed JSON walk (json.resource/data/module/provider/variable/output) instead of TWO_LABEL_BLOCK_RE/ONE_LABEL_BLOCK_RE.",
+        "callSites": [
+          "src/analyze/runtimes/infra/inventory-terraform.ts",
+          "src/analyze/runtimes/infra/index.ts",
+          "src/analyze/planner/templates/infra/index.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A .tf/.tfvars file contains syntactically invalid HCL that the WASM parser rejects.",
+          "detection": "The `await parse(f.relPath, text)` call throws; the surrounding per-file try/catch catches it.",
+          "response": "log.debug the file + error and `continue` to the next file (mirrors inventory-kubernetes's YAML try/catch), so the file contributes no blocks but the run proceeds.",
+          "userImpact": "That single malformed file is silently omitted from tf-inventory; every other file is still inventoried. No crash, no partial-Map.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A file is read but parse() returns an object missing an expected top-level key (e.g. no `resource` key because the file only has variables).",
+          "detection": "The walk uses Object.entries on a possibly-absent key — a missing key yields an empty/typeof-guarded branch rather than a throw.",
+          "response": "Skip that block kind for the file (no push); continue walking the keys that are present.",
+          "userImpact": "Correct: a variables-only file reports variables and nothing else, exactly as intended.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The @cdktf/hcl2json WASM module fails to initialise (import/instantiation error) on the first parse call.",
+          "detection": "The first `await parse(...)` rejects; caught by the same per-file try/catch.",
+          "response": "Each file's parse throws and is log.debug'd + skipped; the runtime returns an empty-but-well-formed tf-inventory rather than crashing the analyze pass.",
+          "userImpact": "Degraded (empty terraform inventory) but non-fatal; surfaced via debug logs. This is an environment/install fault, not user input.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A .tf file with non-canonical formatting the old regex missed — e.g. `resource \"aws_s3_bucket\" \"b\"\\n{` (opening brace on the next line) or irregular inter-token spacing.",
+          "expected": "The real parser captures the block; it now appears in resources[] where the regex would have dropped it. This is the story's core value and the new test case."
+        },
+        {
+          "input": "A .tfvars file (values only, no resource/data/module/... blocks).",
+          "expected": "parse() succeeds; the walk finds no block kinds, so it contributes zero rows. filesSeen handling keeps the existing .tfvars bump-then-decrement no-op so counts are unchanged."
+        },
+        {
+          "input": "An empty .tf file (zero bytes) or a comments-only file.",
+          "expected": "parse() returns an object with no block keys; no rows pushed; no throw."
+        },
+        {
+          "input": "A single resource type declared multiple times with different names (e.g. two `aws_instance` blocks).",
+          "expected": "json.resource['aws_instance'] has multiple name keys; the walk pushes one {file,type,name} per name, matching the regex's per-block behaviour."
+        },
+        {
+          "input": "walkFiles hits its 5000-file cap.",
+          "expected": "truncated=true is propagated unchanged from walkFiles into the inventory, exactly as today."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The output Map has exactly one entry keyed 'tf-inventory' and the TfInventory field set (files, resources, data, modules, providers, variables, outputs, truncated) is unchanged — the produces-key must stay === the emitted key or the planner template breaks.",
+          "source": "c3"
+        },
+        {
+          "text": "Every list in the inventory is sorted deterministically before return, so repeated runs over the same tree yield byte-identical output.",
+          "source": "c1"
+        },
+        {
+          "text": "A per-file failure never aborts the whole runtime: a bad file is dropped via log.debug + continue, exactly as inventory-kubernetes handles a malformed YAML manifest.",
+          "source": "c2"
+        },
+        {
+          "text": "The file filter stays .tf + .tfvars via walkFiles (cap 5000) and the truncated flag is passed through unchanged.",
+          "source": "c1"
+        },
+        {
+          "text": "No caller or registry edit: INFRA_RUNTIMES + INFRA_TEMPLATES (produces:['tf-inventory']) remain untouched.",
+          "source": "c3"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test (tsx --test) with node:assert/strict, temp-dir fixtures — matching src/analyze/runtimes/infra/__tests__/infra-runtimes.test.ts",
+      "testLevels": [
+        {
+          "level": "integration",
+          "purpose": "Drive the real InfraInventoryTerraformRuntime.execute() end-to-end against temp-dir .tf/.tfvars fixtures (real @cdktf/hcl2json parse, real walkFiles) and assert the emitted tf-inventory.",
+          "subjects": [
+            "src/analyze/runtimes/infra/inventory-terraform.ts execute()",
+            "the 'tf-inventory' output-Map entry shape + sorted determinism"
+          ],
+          "fixturesNeeded": [
+            "The existing canonical .tf fixture (must still yield 2 resources / 1 provider / 1 data / 2 variables / 1 output).",
+            "A NEW non-canonical .tf fixture: a resource block with the opening brace on the next line / irregular spacing that the old regex missed — asserts the parser now captures it.",
+            "An invalid-HCL .tf fixture alongside a valid one — asserts the bad file is dropped (log.debug+continue) while the valid file is still inventoried (no throw, well-formed Map).",
+            "A .tfvars values-only fixture — asserts zero block rows and unchanged filesSeen counting."
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Assert the invariants that don't need a full tree: the output key stays 'tf-inventory', lists are sorted, and the produces-key matches.",
+          "subjects": [
+            "the output-Map key equals the infraInventoryTerraform.produces[0] 'tf-inventory'",
+            "each inventory list is in sorted order for a fixture with deliberately out-of-order block names"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "integration: canonical .tf fixture still yields exactly 2 resources / 1 provider / 1 data / 2 variables / 1 output (no regression in the tf-inventory shape or counts)."
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "integration: non-canonical .tf fixture (brace-on-next-line / irregular spacing) now appears in resources[] — proving the real parser captures what the regex missed."
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "integration: an invalid-HCL .tf next to a valid .tf — run does not throw, the valid file is inventoried, the invalid one is absent (parse-failure swallowed like inventory-kubernetes)."
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "unit: output-Map has exactly one entry keyed 'tf-inventory' === infraInventoryTerraform.produces[0]; TfInventory field set unchanged.",
+            "integration: every inventory list is sorted deterministically for an out-of-order fixture."
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "integration/templates: existing planner/__tests__/templates.test.ts + infra template count (8 infra) remain green — no registry/output-key drift."
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "inventory-terraform.ts extracts Terraform blocks with two module-level regexes (TWO_LABEL_BLOCK_RE/ONE_LABEL_BLOCK_RE) that match only canonical single-line block openers; non-canonical HCL (brace on the next line, irregular spacing) is silently under-reported (s1 symbol.locate bundle). The tf-inventory output shape, output key, and registry entries are as they are today; @cdktf/hcl2json is NOT yet a dependency.",
+      "stateAfter": "The same runtime extracts blocks by calling @cdktf/hcl2json parse() per file and walking the returned JSON into the identical tf-inventory lists. Non-canonical HCL is now captured; the output key 'tf-inventory', TfInventory field set, sorting, truncated flag, and registry entries are unchanged. @cdktf/hcl2json ^0.21.0 is a runtime dependency.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add @cdktf/hcl2json ^0.21.0 to package.json dependencies and install (updates package-lock). No copy-assets change — the WASM is embedded in the JS bundle.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "In inventory-terraform.ts, replace the two regex .matchAll passes inside the per-file loop with `const json = await parse(f.relPath, text)` wrapped in the existing try/catch (log.debug + continue on failure), then walk json.resource/data/module/provider/variable/output into the existing resources/data/modules/providers/variables/outputs accumulators, keeping bumpFile, sorting, and the return statement intact. Remove the now-dead TWO_LABEL_BLOCK_RE/ONE_LABEL_BLOCK_RE constants.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Update infra-runtimes.test.ts: keep the canonical .tf fixture assertions (2 resources/1 provider/1 data/2 variables/1 output) and add a non-canonical-HCL fixture case (brace-on-next-line) plus an invalid-HCL-dropped case.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Run the analyze test sweep + typecheck; confirm the templates.test.ts infra count (8) and the tf-inventory output-key assertions stay green.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No public API change. execute()'s signature, the 'tf-inventory' output key, and the TfInventory field set are byte-for-byte unchanged, so every consumer via INFRA_RUNTIMES sees the same contract. The only observable difference is MORE-complete inventory data (previously-missed non-canonical blocks now appear) — a strict superset for well-formed repos, not a breaking change. Downstream consumers that only read the documented fields are unaffected.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Direct block-group walk into the existing lists",
+        "oneLineSummary": "Call parse() once per file, then walk json.resource/data/module/provider/variable/output straight into the existing resources/data/modules/providers/variables/outputs arrays, preserving the exact tf-inventory shape.",
+        "approach": "Inside the existing per-file loop, replace the two regex .matchAll passes with `const json = await parse(f.relPath, text)`. Then: for json.resource, iterate type keys then name keys, push {file, type, name}; json.data the same into data[]; json.module/provider/variable/output iterate name keys, push {file, name} (module) or the bare name (providers/variables/outputs). Keep bumpFile(filesSeen, ...) per matched block exactly as today, keep the .tfvars bump-then-decrement no-op, keep every list sorted at the end, keep truncated from walkFiles. The output Map key 'tf-inventory' and inventory shape are byte-for-byte unchanged. Per-file parse errors are caught (log.debug + continue).",
+        "chosen": true
+      },
+      {
+        "id": "a2",
+        "name": "Extract a typed hcl2json-to-inventory mapper module",
+        "oneLineSummary": "Same parse() swap, but factor the JSON-walk into a separate pure function (e.g. mapHclJsonToBlocks) in a new _hcl.ts, unit-tested independently of the filesystem walk.",
+        "approach": "Add src/analyze/runtimes/infra/_hcl.ts exporting a pure `collectTfBlocks(file, json)`; inventory-terraform.ts calls parse() then feeds the JSON to this mapper and merges into the accumulators. The mapper is covered by its own focused unit tests while infra-runtimes.test.ts keeps the end-to-end fixture assertions.",
+        "reasonRejected": "Functionally equal to a1 and cleaner-seamed, but adds a new file + second test set with no current second consumer — speculative reuse that oversizes a small single-file swap (YAGNI)."
+      },
+      {
+        "id": "a3",
+        "name": "Parse-with-regex-fallback (belt and suspenders)",
+        "oneLineSummary": "Try parse(); on any per-file parse failure, fall back to the old regexes for that file instead of dropping it.",
+        "approach": "Keep both extractors. Wrap parse() in try; on success walk the JSON; on failure, run the legacy regexes against the same text so a file the WASM parser rejects still contributes whatever the regex can find, then continue.",
+        "reasonRejected": "Violates parse-failure-swallowed (diverges from the story's swallow-and-continue decision) and is only partial on determinism (two order-dependent extraction paths). Keeps the very regexes the story exists to delete; regex 'recovery' on parser-rejected files yields low-confidence rows against the accuracy-first principle."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 symbol.locate — src/analyze/runtimes/infra/inventory-terraform.ts (runtime shape, regex extractors, walkFiles filter, sorting, tf-inventory output)",
+      "quotedText": "extracts blocks with two module-level regexes ... returns { outputs: new Map([['tf-inventory', inventory]]) } ... The regexes only match canonical single-line block openers — non-canonical HCL ... is silently under-reported."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 usage.example — src/analyze/runtimes/infra/inventory-kubernetes.ts + _shared.ts (per-file try/catch+continue precedent; walkFiles helpers)",
+      "quotedText": "runs js-yaml loadAll inside try/catch; on a parse throw it log.debug's and continues, so a single malformed manifest is dropped from the inventory rather than crashing the whole runtime."
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1 symbol.locate — src/analyze/runtimes/infra/index.ts + src/analyze/planner/templates/infra/index.ts (INFRA_RUNTIMES + INFRA_TEMPLATES dual registration, produces-key 'tf-inventory')",
+      "quotedText": "The produces-key 'tf-inventory' must remain === the output-Map key the runtime emits. No caller reads the runtime except via INFRA_RUNTIMES."
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "s1 test.locate — src/analyze/runtimes/infra/__tests__/infra-runtimes.test.ts (temp-dir fixture harness; terraform counts 2 resources/1 provider/1 data/2 variables/1 output)",
+      "quotedText": "asserts the tf-inventory yields its resources/data/modules/providers/variables/outputs counts ... plus sorted determinism."
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "s1 search.text — @cdktf/hcl2json parse API + packaging (spike-confirmed)",
+      "quotedText": "parse(filename: string, contents: string): Promise<Record<string, any>> returns HCL-as-JSON where json.resource is {type:{name:[...blocks]}} ... the WASM is embedded in the JS bundle so copy-assets.mjs needs no change, and the package ships its own TS types."
+    }
+  ]
+}

@@ -411,8 +411,13 @@ test.before(() => {
 		].join('\n'));
 	write('tf/variables.tf',
 		[
-			'variable "region"      { type = string; default = "us-east-1" }',
-			'variable "bucket_name" { type = string }',
+			'variable "region" {',
+			'  type    = string',
+			'  default = "us-east-1"',
+			'}',
+			'variable "bucket_name" {',
+			'  type = string',
+			'}',
 			'',
 		].join('\n'));
 	write('tf/backend.tfvars',
@@ -606,6 +611,79 @@ test('inventory.terraform: extracts resources / data / providers / variables / o
 	assert.equal(mainSummary.outputCount,   1);
 	const tfvarsSummary = inv.files.find(f => f.path === 'tf/backend.tfvars')!;
 	assert.equal(tfvarsSummary.resourceCount, 0);
+});
+
+// ---------------------------------------------------------------------------
+// inventory.terraform: real-parser behaviour (S001)
+//
+// The runtime now uses @cdktf/hcl2json (a real HCL parser) instead of the
+// old column-0-anchored regex. This dedicated fixture proves the two
+// behaviours the swap unlocks, on its own temp dir so it doesn't perturb the
+// shared-fixture / discovery-families counts:
+//   1. an INDENTED top-level block (valid HCL the regex dropped) is captured;
+//   2. an INVALID-HCL file is skipped (logged + continue), not thrown, and
+//      never appears in the inventory, while its valid sibling still does.
+// ---------------------------------------------------------------------------
+
+let tfParserFixtureRoot: string;
+
+test.before(() => {
+	tfParserFixtureRoot = mkdtempSync(join(tmpdir(), 'infra-tf-parser-fix-'));
+	const write = (rel: string, body: string): void => {
+		const abs = join(tfParserFixtureRoot, rel);
+		mkdirSync(join(abs, '..'), { recursive: true });
+		writeFileSync(abs, body, 'utf8');
+	};
+
+	// Indented top-level block: VALID HCL, but the old /^(resource|data)/m
+	// regex required column 0 and silently dropped it. The real parser keeps it.
+	write('indented.tf',
+		[
+			'  resource "aws_cloudwatch_log_group" "indented" {',
+			'    name = "app-logs"',
+			'  }',
+			'',
+		].join('\n'));
+	// A plain, canonical sibling that must survive alongside the broken file.
+	write('valid.tf',
+		[
+			'resource "aws_s3_bucket" "ok" {',
+			'  bucket = "ok"',
+			'}',
+			'',
+		].join('\n'));
+	// Invalid HCL: the parser throws -> the runtime drops the file and continues.
+	write('broken.tf',
+		'resource "aws_thing" "x" {{{ not valid hcl\n');
+});
+
+test.after(() => {
+	if (tfParserFixtureRoot) {
+		try { rmSync(tfParserFixtureRoot, { recursive: true, force: true }); } catch { /* */ }
+	}
+});
+
+test('inventory.terraform: captures indented blocks + drops invalid HCL (no throw)', async () => {
+	const task = mkTask('infra.inventory.terraform',
+		{ scopeRef: { kind: 'repo', value: tfParserFixtureRoot } }, ['tf-inventory']);
+
+	// Must not throw despite broken.tf being present.
+	const result = await infraInventoryTerraformRuntime.execute(mkArgs(task, 'int-tf-parser-1'));
+
+	const inv = result.outputs.get('tf-inventory') as {
+		files:     Array<{ path: string; resourceCount: number }>;
+		resources: Array<{ file: string; type: string; name: string }>;
+	};
+
+	// The indented block (regex would have missed it) AND the canonical sibling
+	// are both captured; the invalid file contributes nothing.
+	assert.deepEqual(
+		inv.resources.map(r => `${r.file}:${r.type}.${r.name}`).sort(),
+		['indented.tf:aws_cloudwatch_log_group.indented', 'valid.tf:aws_s3_bucket.ok'],
+	);
+	// broken.tf is dropped -- it never appears in resources or the file summary.
+	assert.ok(!inv.resources.some(r => r.file === 'broken.tf'), 'broken.tf must not contribute resources');
+	assert.ok(!inv.files.some(f => f.path === 'broken.tf'),      'broken.tf must not appear in file summary');
 });
 
 // ---------------------------------------------------------------------------

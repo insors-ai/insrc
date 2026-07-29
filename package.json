@@ -20,6 +20,7 @@
     "@anthropic-ai/sdk": "^0.78.0",
     "@aws-sdk/client-dynamodb": "^3.1037.0",
     "@aws-sdk/credential-providers": "^3.1037.0",
+    "@cdktf/hcl2json": "^0.21.0",
     "@clickhouse/client": "^1.18.3",
     "@duckdb/node-api": "1.5.2-r.1",
     "@google/genai": "^1.50.1",

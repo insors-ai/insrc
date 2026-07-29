@@ -111,6 +111,13 @@
         "choice": "Build-manifest-derived paths, convention fallback",
         "rationale": "Accuracy-first: ground report discovery in where the path is actually declared (jest/vitest/nyc, pyproject/setup.cfg, pom/gradle jacoco, build.sbt scoverage), fall back to the per-language convention glob for zero-config, let explicit per-repo config override both, and content-sniff only to confirm a located file's format. Stays strictly read-only (k1).",
         "resolvedAt": "2026-07-29T11:54:49.380Z"
+      },
+      "q22564658": {
+        "question": "Module delimitation: for test-health scoping, is 'a module' a single source file, a directory, or a language package — and how is that boundary chosen per language?",
+        "status": "resolved",
+        "choice": "Layered resolution: native unit → directory fallback → per-repo override",
+        "rationale": "Mirrors the precedence model chosen for report-path discovery: explicit per-repo config first, then the language-native package/build unit when manifests/declarations determine it, then the containing directory as a universal fallback, recording which rule fired so scoping stays auditable and never fails on odd layouts. The module resolves to a graph entity set (satisfies k4/k5).",
+        "resolvedAt": "2026-07-29T11:55:59.786Z"
       }
     }
   },

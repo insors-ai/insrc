@@ -136,6 +136,8 @@ The user gets the same three-dimensional test-health picture whether the module 
 
 - `q91a9c51b` — Coverage-report discovery (from the med-confidence assumption, checklist a2): where in the repo are coverage reports expected to live, and what is the recognized per-language format set (lcov, coverage.xml/coverage.py, istanbul/nyc json, jacoco XML, scoverage)? How does the analyzer locate them read-only without a configured path?
   - **resolved**: Build-manifest-derived paths, convention fallback — Accuracy-first: ground report discovery in where the path is actually declared (jest/vitest/nyc, pyproject/setup.cfg, pom/gradle jacoco, build.sbt scoverage), fall back to the per-language convention glob for zero-config, let explicit per-repo config override both, and content-sniff only to confirm a located file's format. Stays strictly read-only (k1). _(2026-07-29T11:54:49.380Z)_
+- `q22564658` — Module delimitation: for test-health scoping, is 'a module' a single source file, a directory, or a language package — and how is that boundary chosen per language?
+  - **resolved**: Layered resolution: native unit → directory fallback → per-repo override — Mirrors the precedence model chosen for report-path discovery: explicit per-repo config first, then the language-native package/build unit when manifests/declarations determine it, then the containing directory as a universal fallback, recording which rule fired so scoping stays auditable and never fails on odd layouts. The module resolves to a graph entity set (satisfies k4/k5). _(2026-07-29T11:55:59.786Z)_
 
 ## Citations
 

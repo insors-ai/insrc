@@ -5,3 +5,9 @@ out/
 .env
 .env.local
 *.log
+
+# Per-repo runtime ignore config — initialized by initRepoIgnore() on repo.add.
+# Machine-local; must NOT be committed (it otherwise ships a stale ignore list
+# into every `git clone`, incl. the daemon install at ~/.insrc/daemon).
+# NOTE: .insrc/artifacts/ stays tracked (workflow artifacts, by design).
+.insrc/config.json

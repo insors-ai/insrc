@@ -96,9 +96,34 @@ export function tierFieldPath(tier: TierName, field: 'runner' | 'model'): string
 	return `models.analyze.tiers.${tier}.${field}`;
 }
 
-/** The config dot-path for a role's tier override. */
+/** The config dot-path for a role's tier override.
+ *  WARNING: role ids contain dots (e.g. "context.assemble"), so this per-role
+ *  dotted path CANNOT be handed to `config.write` — the daemon splits on every
+ *  '.' and would mis-nest the leaf (roleTiers.context.assemble) where
+ *  parseTiering expects the flat key roleTiers["context.assemble"]. Write the
+ *  whole map at `ROLE_TIERS_PATH` via `nextRoleTiers` instead. Retained only
+ *  for display / reference. */
 export function roleTierPath(roleId: string): string {
 	return `models.analyze.roleTiers.${roleId}`;
+}
+
+/** The dotless config path for the ENTIRE roleTiers map. The map is written
+ *  whole (not per-role) so role ids keep their dots as flat keys. */
+export const ROLE_TIERS_PATH = 'models.analyze.roleTiers';
+
+/** Compute the sparse roleTiers map to persist after setting `roleId` to
+ *  `tier`, or clearing its override when `tier` is null. Role ids stay FLAT
+ *  keys (they contain dots). Pure — the pane writes the result at
+ *  `ROLE_TIERS_PATH`. */
+export function nextRoleTiers(
+	current: Readonly<Record<string, TierName>> | undefined,
+	roleId: string,
+	tier: TierName | null,
+): Record<string, TierName> {
+	const next: Record<string, TierName> = { ...(current ?? {}) };
+	if (tier === null) delete next[roleId];
+	else next[roleId] = tier;
+	return next;
 }
 
 /** The config dot-path for the coreFloor. */

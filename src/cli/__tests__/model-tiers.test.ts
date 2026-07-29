@@ -17,6 +17,7 @@ import assert from 'node:assert/strict';
 import type { AnalyzeTiering } from '../../config/analyze.js';
 import {
 	computeEffectiveTiers, tierFieldPath, roleTierPath, CORE_FLOOR_PATH, isTierName,
+	ROLE_TIERS_PATH, nextRoleTiers,
 } from '../panes/model-tiers.js';
 
 const role = (eff: ReturnType<typeof computeEffectiveTiers>, id: string) => eff.roles.find(r => r.id === id)!;
@@ -105,4 +106,48 @@ test('config dot-path helpers target the right keys', () => {
 test('isTierName guards the tier union', () => {
 	assert.ok(isTierName('core') && isTierName('mid') && isTierName('cheap'));
 	assert.ok(!isTierName('high') && !isTierName(''));
+});
+
+// ── roleTiers write target (regression: dotted role ids must stay FLAT keys) ──
+//
+// Role ids contain dots ("context.assemble"); the daemon's config.write splits
+// the path on every '.'. A per-role dotted path would mis-nest the leaf and the
+// override would never read back (the "steps don't save" bug). The whole map is
+// written at the dotless ROLE_TIERS_PATH instead.
+
+test('ROLE_TIERS_PATH is the dotless map key (no role id appended)', () => {
+	assert.equal(ROLE_TIERS_PATH, 'models.analyze.roleTiers');
+	// This is deliberately NOT the per-role dotted path — that one is unwritable.
+	assert.notEqual(ROLE_TIERS_PATH, roleTierPath('context.assemble'));
+});
+
+test('nextRoleTiers keeps a dotted role id as a single FLAT key', () => {
+	const next = nextRoleTiers(undefined, 'context.assemble', 'core');
+	// The map has one entry keyed by the whole dotted id — NOT nested.
+	assert.deepEqual(next, { 'context.assemble': 'core' });
+	assert.equal(next['context.assemble'], 'core');
+	// prove it did not nest under `context`
+	assert.equal((next as Record<string, unknown>)['context'], undefined);
+	// and prove it round-trips through the real reader
+	assert.equal(computeEffectiveTiers({ roleTiers: next }).roles.find(r => r.id === 'context.assemble')!.assignedTier, 'core');
+});
+
+test('nextRoleTiers merges into an existing map without disturbing other roles', () => {
+	const current = { 'design.contract.detail': 'mid', synthesize: 'cheap' } as const;
+	const next = nextRoleTiers(current, 'context.assemble', 'core');
+	assert.deepEqual(next, { 'design.contract.detail': 'mid', synthesize: 'cheap', 'context.assemble': 'core' });
+});
+
+test('nextRoleTiers with tier=null clears the override (sparse) and leaves siblings', () => {
+	const current = { 'context.assemble': 'core', synthesize: 'cheap' } as const;
+	const next = nextRoleTiers(current, 'context.assemble', null);
+	assert.deepEqual(next, { synthesize: 'cheap' });
+	assert.ok(!('context.assemble' in next));
+});
+
+test('nextRoleTiers does not mutate the input map', () => {
+	const current = { synthesize: 'cheap' } as const;
+	const next = nextRoleTiers(current, 'context.assemble', 'core');
+	assert.deepEqual(current, { synthesize: 'cheap' });   // untouched
+	assert.notEqual(next, current);
 });

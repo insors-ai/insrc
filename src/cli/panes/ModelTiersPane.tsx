@@ -22,6 +22,7 @@ import { useServices, useUi, useCaptured } from '../ui/context.js';
 import { Panel, KeyHints, TextPrompt } from '../ui/widgets.js';
 import {
 	computeEffectiveTiers, tierFieldPath, roleTierPath, CORE_FLOOR_PATH, isTierName,
+	ROLE_TIERS_PATH, nextRoleTiers,
 	type EffectiveTiers, type EffectiveRole,
 } from './model-tiers.js';
 
@@ -98,14 +99,26 @@ export function ModelTiersPane(): ReactElement {
 			if (!isTierName(v)) { ui.toast(`✗ coreFloor must be core | mid | cheap`); setEditing(undefined); ui.capture(false); return; }
 		} else if (row.kind === 'role') {
 			if (!isTierName(v)) { ui.toast(`✗ tier must be core | mid | cheap`); setEditing(undefined); ui.capture(false); return; }
+			// Role ids contain dots (e.g. "context.assemble", "design.contract.detail").
+			// The daemon's config.write splits the path on every '.', so a per-role
+			// dotted path (models.analyze.roleTiers.context.assemble) would MIS-NEST as
+			// roleTiers.context.assemble — unreadable by parseTiering (which reads the
+			// flat key roleTiers["context.assemble"]). Instead write the WHOLE roleTiers
+			// map at the dotless path so the flat dotted key is preserved.
+			const models  = isObj(raw?.['models'])    ? raw!['models']    as Record<string, unknown> : {};
+			const analyze = isObj(models['analyze'])  ? models['analyze']  as Record<string, unknown> : {};
+			const current = isObj(analyze['roleTiers'])
+				? (analyze['roleTiers'] as Record<string, TierName>) : undefined;
 			// Reverting to the taxonomy default clears the override (sparse — no redundant key).
 			const taxDefault = row.role.assignedTier === row.role.effectiveTier && row.role.source === 'taxonomy';
-			if (v === (taxDefault ? row.role.assignedTier : undefined)) { value = null; }
+			const clear = v === (taxDefault ? row.role.assignedTier : undefined);
 			// Critical role below floor: the coreFloor guard clamps it up; note it rather than block.
 			if (row.role.criticality === 'critical' && eff !== undefined) {
 				const rank = { cheap: 0, mid: 1, core: 2 } as const;
 				if (rank[v] < rank[eff.coreFloor]) ui.toast(`note: ${row.role.id} is critical — coreFloor raises it to ${eff.coreFloor}`);
 			}
+			path = ROLE_TIERS_PATH;
+			value = nextRoleTiers(current, row.role.id, clear ? null : v);
 		}
 		setEditing(undefined); ui.capture(false);
 		void svc.config.write(path, value)

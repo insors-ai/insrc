@@ -75,7 +75,7 @@ export interface Services {
 	};
 	readonly config: {
 		show(): Promise<Record<string, unknown>>;
-		write(path: string, value: unknown): Promise<{ ok: boolean }>;
+		write(path: string | string[], value: unknown): Promise<{ ok: boolean }>;
 		reload(): Promise<{ ok: boolean; reloaded?: unknown }>;
 	};
 }

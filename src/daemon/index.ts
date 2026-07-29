@@ -118,6 +118,7 @@ import { compactConversations, type CompactionOpts } from '../db/compaction.js';
 import type { RegisteredRepo, DaemonStatus, Entity, ConfigScope, ConfigSearchOpts, TemplateQuery } from '../shared/types.js';
 import { basename } from 'node:path';
 import { ConfigStore } from '../config/store.js';
+import { setConfigAtPath } from '../config/write-path.js';
 import { reconcileConfigFile } from '../config/reconcile-io.js';
 import { searchConfig, resolveTemplate } from '../config/search.js';
 import * as todosRpc from './todos-rpc.js';
@@ -1150,27 +1151,28 @@ async function main(): Promise<void> {
 		},
 
 		'config.write': async (params) => {
-			const { path: dotPath, value } = params as { path: string; value: unknown };
+			// `path` is either a legacy dot-string (safe for dot-free keys) OR an
+			// array of literal segments — the latter is required for keys that
+			// contain dots (models.analyze.roleTiers.<roleId>, .byRepo.<repoPath>),
+			// which a naive dot-split would mis-nest. See config/write-path.ts.
+			const { path, value } = params as { path: string | string[]; value: unknown };
 			let config: Record<string, unknown> = {};
 			try {
 				config = JSON.parse(readFileSync(PATHS.config, 'utf-8')) as Record<string, unknown>;
 			} catch { /* start fresh */ }
 
-			// Set value at dotted path (e.g. 'models.agents.pair.propose')
-			const keys = dotPath.split('.');
-			let obj: Record<string, unknown> = config;
-			for (let i = 0; i < keys.length - 1; i++) {
-				const key = keys[i]!;
-				if (typeof obj[key] !== 'object' || obj[key] === null) {
-					obj[key] = {};
-				}
-				obj = obj[key] as Record<string, unknown>;
+			try {
+				setConfigAtPath(config, path, value);
+			} catch (err) {
+				// Invalid path (empty / empty segment) — refuse loudly rather than
+				// mis-write; the caller sees ok:false and surfaces a save failure.
+				log.warn({ path, err: (err as Error).message }, 'config.write: invalid path — refused');
+				return { ok: false };
 			}
-			obj[keys[keys.length - 1]!] = value;
 
 			writeFileSync(PATHS.config, JSON.stringify(config, null, 2), 'utf-8');
 			await reloadChatConfig();
-			log.info({ path: dotPath, value }, 'config.write');
+			log.info({ path, value }, 'config.write');
 			return { ok: true };
 		},
 

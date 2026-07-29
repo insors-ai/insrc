@@ -125,6 +125,13 @@
         "choice": "Vector + derived composite, weights and bands published",
         "rationale": "Accuracy-first argues against collapsing four distinct signals into one opaque number: the per-heuristic vector is the authoritative, actionable output; the composite is a declared, reproducible function of it for ranking; publishing the weight table + threshold bands (per-repo overridable) keeps scoring auditable rather than a black-box verdict.",
         "resolvedAt": "2026-07-29T11:56:53.342Z"
+      },
+      "q8f4ff79b": {
+        "question": "Coverage→entity mapping fidelity: when an ingested report gives line/branch data, how is it attributed to graph entities (by line range), and how are partial-overlap and generated-code cases represented honestly?",
+        "status": "resolved",
+        "choice": "Containment + commit-pinned provenance + generated-code quarantine",
+        "rationale": "Directly serves k3 + accuracy-first: strict innermost-containment reports only measured lines (no synthesized proportional smearing); a tri-state covered/uncovered/unknown makes stale or ambiguous line-maps legible (report pinned to the commit/index snapshot it was produced against, degrading to unknown on drift); generated/vendored spans are tagged, excluded from coverage denominators, but still listed so exclusion is visible, never silent.",
+        "resolvedAt": "2026-07-29T11:57:31.158Z"
       }
     }
   },

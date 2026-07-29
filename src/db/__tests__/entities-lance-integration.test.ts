@@ -25,10 +25,10 @@ import {
 	reindexFile,
 } from '../entities.js';
 import { searchEntities } from '../search.js';
-import { loadConfig } from '../../agent/config.js';
+import { loadLocalProviderConfig } from '../../config/local.js';
 import type { Entity, EntityKind } from '../../shared/types.js';
 
-const DIM = loadConfig().models.providers.local.embeddingDim;
+const DIM = loadLocalProviderConfig().embeddingDim;
 const REPO = '/repo/foo';
 const NOW = '2026-05-05T10:00:00.000Z';
 

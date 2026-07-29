@@ -12,10 +12,10 @@ import { closeGraphStore, setGraphStorePath } from '../../db/graph/store.js';
 import { closeLanceConn, setLanceConnPath } from '../../db/lance/conn.js';
 import { _resetConfigVecCache, searchConfigVecs } from '../../db/lance/config-vec.js';
 import { ConfigStore } from '../store.js';
-import { loadConfig } from '../../agent/config.js';
+import { loadLocalProviderConfig } from '../local.js';
 import type { ConfigEntry } from '../../shared/types.js';
 
-const DIM = loadConfig().models.providers.local.embeddingDim;
+const DIM = loadLocalProviderConfig().embeddingDim;
 let dir: string;
 
 function vec(seed: number): number[] {

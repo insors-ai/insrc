@@ -17,9 +17,9 @@ import {
 	deleteSessionVecsForRepo,
 	_resetSessionVecCache,
 } from '../session-vec.js';
-import { loadConfig } from '../../../agent/config.js';
+import { loadLocalProviderConfig } from '../../../config/local.js';
 
-const DIM = loadConfig().models.providers.local.embeddingDim;
+const DIM = loadLocalProviderConfig().embeddingDim;
 let dir: string;
 
 function vec(seed: number): Float32Array {

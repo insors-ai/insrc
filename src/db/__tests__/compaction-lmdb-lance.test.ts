@@ -37,9 +37,9 @@ import {
 	getAllTurnsWithVectorsForRepo,
 } from '../conversations.js';
 import { compactConversations } from '../compaction.js';
-import { loadConfig } from '../../agent/config.js';
+import { loadLocalProviderConfig } from '../../config/local.js';
 
-const DIM = loadConfig().models.providers.local.embeddingDim;
+const DIM = loadLocalProviderConfig().embeddingDim;
 const REPO = '/repo/foo';
 
 let dir: string;

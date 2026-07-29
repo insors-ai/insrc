@@ -30,14 +30,14 @@ import {
 	deleteEntityVecsForRepo,
 	_resetEntityVecCache,
 } from '../entity-vec.js';
-import { loadConfig } from '../../../agent/config.js';
+import { loadLocalProviderConfig } from '../../../config/local.js';
 
 let dir: string;
 
 // Match whatever dim the runtime config carries -- the entity_vec module
-// reads it at module load via loadConfig(), so tests must use the same
+// reads it at module load via loadLocalProviderConfig(), so tests must use the same
 // value to avoid "No vector column found to match" errors at search time.
-const DIM = loadConfig().models.providers.local.embeddingDim;
+const DIM = loadLocalProviderConfig().embeddingDim;
 
 function vec(seed: number): Float32Array {
 	const v = new Float32Array(DIM);

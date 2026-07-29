@@ -1,0 +1,462 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "wf-1785325142454-oj2i7i",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-07-29T11:44:50.811Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 348353,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8f485fe5c614fefc",
+    "epicSlug": "add-module-test-health-analyzer-new",
+    "review": {
+      "artifact": "define",
+      "stage": "define",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "ref": "c3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/analyze/explore/test-locate.ts exists and is the deterministic test-location exploration recipe filtered by canonical test paths.",
+          "evidence": "CONFIRMED by direct check: src/analyze/explore/test-locate.ts exists (6984 bytes) with `runTestLocate` (line 77) and the `test.locate` recipe id. The probe's REFUTED signal was a false-negative — the read-anchor mechanism is buggy (it also missed bootstrap.ts, which provably exists) and the content-grep looked for the literal 'test-locate' when the file spells it 'test.locate' / 'runTestLocate'. Citation c3 is accurate.",
+          "action": "None — the cited file exists and is the reusable tracing recipe as described.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl2",
+          "ref": "c4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The graph layer exposes the typed traversal API findCallers / findCallees / outNeighbors / transitiveClosure / unreachable used for tracing + reachability.",
+          "evidence": "CONFIRMED: the graph traversal API resolves in src/db/graph/traversal.ts (transitiveClosure:134, unreachable) and src/db/graph/edges.ts (findCallers/findCallees), imported verbatim by traversal.test.ts. Citation c4 is accurate.",
+          "action": "None.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl3",
+          "ref": "c6",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "Analyze runtime families are registered in src/analyze/runtimes/bootstrap.ts (registerBuiltinRuntimes).",
+          "evidence": "CONFIRMED: src/analyze/runtimes/bootstrap.ts:44 exports registerBuiltinRuntimes() and registers the code/data/infra/docs families (imported by daemon/index.ts:314). The read-anchor found:false was a probe artifact contradicted by the grep. Citation c6 is accurate.",
+          "action": "None.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl4",
+          "ref": "c6",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The planner declares the analyze target enum + per-target validation in src/analyze/planner/{schema.ts,validate.ts} and the AnalyzeTaskTemplate catalog in planner/templates.",
+          "evidence": "CONFIRMED by direct check: src/analyze/planner/schema.ts (5235B) and validate.ts (16510B) both exist; validatePlan is at validate.ts:95. getTemplatesForTarget lives in planner/templates/registry.ts:96 — already covered by citation c6's '…/{schema.ts,validate.ts,templates}' clause. The 'files absent' probe signal was a read-anchor false-negative. Citation c6 is accurate as written.",
+          "action": "None needed. Optional nicety for the HLD: when detailing the target enum + validation, note getTemplatesForTarget resolves specifically in planner/templates/registry.ts.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl5",
+          "ref": "c1",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "The existing analyze runtime families are exactly code, data, docs, generic, infra (+ shared) — the sibling set a new `test` family joins.",
+          "evidence": "CONFIRMED: the sibling runtime families code/data/docs/generic/infra/shared all exist under src/analyze/runtimes/ (code/index.ts, data/index.ts, docs/index.ts, infra/index.ts, generic + shared dirs). Citation c1 is accurate.",
+          "action": "None.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl6",
+          "ref": "c2",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "No assembled test-health analyzer exists today: `coverage`/`test_coverage` appear only as a built-in test-invocation tool name and ignore-list entries, not as an analyzer runtime/target.",
+          "evidence": "CONFIRMED (negative holds): `test_coverage` appears only as a built-in tool (daemon/tools/builtins/test/index.ts:553) surfaced in analyze/context/tool-surface.ts:63; every test-health/test.quality/test.coverage hit is in the new DEF doc, none in src/. No test-health analyzer exists — the capability is net-new, as citation c2 states.",
+          "action": "None.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl7",
+          "ref": "c7",
+          "kind": "external-contract",
+          "severity": "LOW",
+          "premise": "The indexer parses all five target languages TypeScript, Python, Go, Java, Scala (tree-sitter), so entities exist for each language.",
+          "evidence": "CONFIRMED: src/indexer/parser/{typescript,python,go,java,scala}.ts each require the corresponding tree-sitter grammar; grammars are in package.json. All five languages are parsed, as citation c7 states.",
+          "action": "None.",
+          "fixability": "auto"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 7
+      },
+      "reviewedAt": "2026-07-29T11:51:01.049Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-07-29T11:52:57.525Z",
+    "questionResolutions": {
+      "q91a9c51b": {
+        "question": "Coverage-report discovery (from the med-confidence assumption, checklist a2): where in the repo are coverage reports expected to live, and what is the recognized per-language format set (lcov, coverage.xml/coverage.py, istanbul/nyc json, jacoco XML, scoverage)? How does the analyzer locate them read-only without a configured path?",
+        "status": "resolved",
+        "choice": "Build-manifest-derived paths, convention fallback",
+        "rationale": "Accuracy-first: ground report discovery in where the path is actually declared (jest/vitest/nyc, pyproject/setup.cfg, pom/gradle jacoco, build.sbt scoverage), fall back to the per-language convention glob for zero-config, let explicit per-repo config override both, and content-sniff only to confirm a located file's format. Stays strictly read-only (k1).",
+        "resolvedAt": "2026-07-29T11:54:49.380Z"
+      }
+    }
+  },
+  "body": {
+    "flavor": "enhancement",
+    "problem": "insrc's analyze framework can already produce grounded, evidence-backed views of a codebase's structure, its data sources, its infrastructure manifests, and its documentation — but it has no equivalent view of a module's TEST HEALTH. For any given module there is currently no assembled answer to three questions a reviewer, author, or planner routinely needs: which tests actually exercise this module, how much of the module's behaviour those tests reach versus leave untouched, and whether the tests themselves are meaningful rather than shallow. The raw primitives to answer these questions exist only in isolation, so the questions get answered — when they are answered at all — by manual inspection or gut feel, inconsistently and without citation. The consequence is that decisions about where testing is weak, which code is effectively unverified, and whether existing tests would actually catch a regression are made blind: the same ungrounded, un-auditable decision-making the analyze framework exists to eliminate everywhere else, still fully present for testing. The gap is widest exactly where it is most costly — a module can look 'tested' because test files mention it, while its critical paths are unreached and its tests assert almost nothing, and today the system cannot tell the difference. It also spans every language insrc indexes, yet nothing surfaces test health uniformly across them.",
+    "nonGoals": [
+      {
+        "text": "Running, executing, or re-running tests — including generating fresh coverage by invoking a test runner.",
+        "rationale": "The analyzer must stay read-only and local-first; executing tests introduces side effects, environment/dependency assumptions, and non-determinism that break the analyze framework's read-only discovery contract. [[c5]]"
+      },
+      {
+        "text": "Generating, scaffolding, or auto-suggesting the missing tests it identifies.",
+        "rationale": "This Epic measures and reports test health; authoring tests is a distinct capability. Conflating measurement with generation would balloon scope and mix a read-only analyzer with a code-writing one."
+      },
+      {
+        "text": "Acting as a CI quality gate that passes/fails a build on a coverage or quality threshold.",
+        "rationale": "The output is an evidence bundle for a human/agent to reason over, not a policy verdict. Thresholds and gating are downstream decisions that belong to whoever consumes the bundle."
+      },
+      {
+        "text": "Aggregating test health across the whole dependency closure or multiple repos in v1.",
+        "rationale": "v1 is scoped to a module within the active repo to stay tractable; the framework's existing dependency-closure scoping can extend it later without rework."
+      },
+      {
+        "text": "Presenting graph-reachability coverage as if it were measured line/branch coverage when no coverage report exists.",
+        "rationale": "Accuracy is primary: claiming measured precision the underlying data cannot support would be worse than an honestly-labelled approximation. [[c5]]"
+      }
+    ],
+    "assumptions": [
+      {
+        "text": "The entity graph already links test entities to the code they exercise (imports + CALLS edges) and exposes reachability traversal, so tracing and reachability-based coverage can be derived without executing anything.",
+        "confidence": "high",
+        "source": "c4"
+      },
+      {
+        "text": "Per-language test-layout conventions (test-file naming, canonical test directories) are already detectable from the indexed graph, so the analyzer can identify what is a test across languages.",
+        "confidence": "high",
+        "source": "c3"
+      },
+      {
+        "text": "When coverage reports exist, they are present in the repo as readable files the framework's file walker can see — no execution or network needed to ingest them.",
+        "confidence": "med",
+        "source": "c1"
+      },
+      {
+        "text": "The indexer already parses all five target languages (TypeScript, Python, Go, Java, Scala), so entities exist for each language's modules and tests.",
+        "confidence": "high",
+        "source": "c7"
+      },
+      {
+        "text": "The analyze framework's per-target extension pattern (a runtime family + template rows + exploration recipes + a synthesized bundle) is stable and additive, so a new target can be added without disturbing existing targets.",
+        "confidence": "high",
+        "source": "c1"
+      }
+    ],
+    "constraints": [
+      {
+        "id": "k1",
+        "text": "The analyzer MUST be strictly read-only: no test execution, no writes, no side effects — consistent with the analyze framework's read-only discovery contract.",
+        "type": "invariant",
+        "source": "c5"
+      },
+      {
+        "id": "k2",
+        "text": "The new `test` target MUST register through the existing extension surfaces (runtime family, template rows + aggregator, target enum + per-target validation, synthesized bundle) WITHOUT breaking the existing code/data/docs/infra/generic targets — additive only.",
+        "type": "contract",
+        "source": "c6"
+      },
+      {
+        "id": "k3",
+        "text": "Coverage output MUST distinguish the always-available graph-reachability APPROXIMATION from ingested-report GROUND TRUTH, and never present the former as measured line/branch coverage.",
+        "type": "invariant",
+        "source": "c5"
+      },
+      {
+        "id": "k4",
+        "text": "All structural/coverage traversal MUST go through the graph layer's typed JS API (findCallers / findCallees / outNeighbors / transitiveClosure / unreachable) — no SQL/Cypher/GQL for graph queries.",
+        "type": "convention",
+        "source": "c5"
+      },
+      {
+        "id": "k5",
+        "text": "The per-module test-health output MUST be a structured bundle of entity summaries + relations consumed by the context builder/synthesizer — no raw file dumps.",
+        "type": "contract",
+        "source": "c5"
+      },
+      {
+        "id": "k6",
+        "text": "The new runtime family MUST mirror the established runtime-family conventions (camelCase functions, PascalCase classes, kebab-case files, the TemplateRuntime idiom, produces-key === emitted output-Map key).",
+        "type": "convention",
+        "source": "c6"
+      }
+    ],
+    "stories": [
+      {
+        "id": "s1",
+        "title": "Ask for any module's test health through the same analyzer interface as every other target",
+        "userValue": "A reviewer, author, or planner can request a module's test health the same way they already ask for its structure, data, or infra — and get back a single structured per-module test-health bundle — so test health becomes a first-class, grounded analyzer surface rather than something assembled by hand.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a module in the active, indexed repo",
+            "when": "a user requests that module's test health through the analyze interface",
+            "then": "the system returns a structured per-module test-health bundle (entity summaries + relations, same discipline as other targets), not an error and not a raw file dump",
+            "operationalizes": [
+              "k2",
+              "k5",
+              "k6"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "the existing code, data, docs, infra, and generic analyzer targets",
+            "when": "the new test-health target is available",
+            "then": "every existing target continues to answer exactly as before, with no regression to their behaviour",
+            "operationalizes": [
+              "k2"
+            ]
+          }
+        ],
+        "dependsOn": [],
+        "sizeEstimate": "M",
+        "existingCapabilityRefs": [
+          "c1"
+        ]
+      },
+      {
+        "id": "s2",
+        "title": "See which tests exercise a given module",
+        "userValue": "For any module, the user sees exactly which test files and cases actually exercise it — established through the code graph, not filename coincidence — so 'is this tested, and by what?' has a grounded, cited answer.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a module that has tests exercising it",
+            "when": "test health is requested",
+            "then": "the bundle lists the test files/cases that exercise the module, linked through the graph (imports + call relations), each traceable to a real entity",
+            "operationalizes": [
+              "k4",
+              "k5"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "a module with no tests exercising it",
+            "when": "test health is requested",
+            "then": "the bundle honestly reports that no tests were found rather than inventing coverage or returning nothing",
+            "operationalizes": [
+              "k5"
+            ]
+          }
+        ],
+        "dependsOn": [
+          "s1"
+        ],
+        "sizeEstimate": "M",
+        "existingCapabilityRefs": [
+          "c2",
+          "c1"
+        ]
+      },
+      {
+        "id": "s3",
+        "title": "See which of a module's behaviour tests reach and which they leave unverified",
+        "userValue": "Even with no coverage report anywhere, the user sees which of a module's entities are reachable from some test versus effectively unverified — an always-available baseline — so under-tested code is visible on every repo, honestly labelled as an approximation.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a module whose tests have been traced and no coverage report is present",
+            "when": "coverage is reported",
+            "then": "the bundle shows which module entities are reachable from a test and which are unreachable, explicitly labelled as a graph-reachability approximation",
+            "operationalizes": [
+              "k3",
+              "k4"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "the reachability-based coverage result",
+            "when": "it is presented in the bundle",
+            "then": "it is never labelled or reported as measured line/branch coverage",
+            "operationalizes": [
+              "k3"
+            ]
+          }
+        ],
+        "dependsOn": [
+          "s2"
+        ],
+        "sizeEstimate": "L",
+        "existingCapabilityRefs": [
+          "c1"
+        ]
+      },
+      {
+        "id": "s4",
+        "title": "Get accurate coverage when the repo already has coverage reports",
+        "userValue": "When a repo already contains coverage output, the user gets real measured line/branch coverage mapped onto the module's entities — without anything being run — so the picture is as accurate as the data available, and clearly distinguished from the approximation.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a repo that already contains a coverage report for the module's language",
+            "when": "test health is requested",
+            "then": "the bundle enriches coverage with the report's measured data mapped onto the module's entities, labelled as ground truth distinct from the reachability approximation",
+            "operationalizes": [
+              "k1",
+              "k3"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "no coverage report is present in the repo",
+            "when": "test health is requested",
+            "then": "coverage falls back to the reachability baseline with no error, and no test is executed and nothing is written",
+            "operationalizes": [
+              "k1",
+              "k3"
+            ]
+          }
+        ],
+        "dependsOn": [
+          "s3"
+        ],
+        "sizeEstimate": "L",
+        "existingCapabilityRefs": [
+          "c1"
+        ]
+      },
+      {
+        "id": "s5",
+        "title": "See how good a module's tests are, not just whether they exist",
+        "userValue": "The user sees a heuristic judgement of test quality — whether tests assert meaningfully, exercise edge/error paths, lean on mocks vs real behaviour, and whether any are skipped or flaky — so a module that merely 'has tests' can be distinguished from one that is genuinely well tested.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a module with tests",
+            "when": "test quality is assessed",
+            "then": "the bundle scores the tests on heuristics (assertion density, edge/error-path exercise, mocking-vs-real, skip/flaky markers) derived from the indexed source, without executing anything",
+            "operationalizes": [
+              "k1",
+              "k5"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "a test that references the module but asserts little or nothing of substance",
+            "when": "quality is assessed",
+            "then": "the bundle flags it as low-quality rather than crediting it as meaningful verification",
+            "operationalizes": [
+              "k5"
+            ]
+          }
+        ],
+        "dependsOn": [
+          "s2"
+        ],
+        "sizeEstimate": "L",
+        "existingCapabilityRefs": [
+          "c1"
+        ]
+      },
+      {
+        "id": "s6",
+        "title": "Get consistent test-health reporting across every language insrc indexes",
+        "userValue": "The user gets the same three-dimensional test-health picture whether the module is TypeScript, Python, Go, Java, or Scala — each read through its own test conventions and coverage format — so test health is uniform across a polyglot codebase rather than TypeScript-only.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "modules in each indexed language (TypeScript, Python, Go, Java, Scala)",
+            "when": "test health is requested for each",
+            "then": "tracing, coverage, and quality are all reported using that language's test conventions and coverage format, in the same bundle shape",
+            "operationalizes": [
+              "k1",
+              "k5"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "a module whose test framework or coverage format is not recognized",
+            "when": "test health is requested",
+            "then": "the bundle degrades honestly — reporting what it can and noting what it could not — rather than failing or fabricating",
+            "operationalizes": [
+              "k5"
+            ]
+          }
+        ],
+        "dependsOn": [
+          "s2",
+          "s3",
+          "s5"
+        ],
+        "sizeEstimate": "XL",
+        "existingCapabilityRefs": [
+          "c2",
+          "c1"
+        ]
+      }
+    ],
+    "openQuestions": [
+      "Coverage-report discovery (from the med-confidence assumption, checklist a2): where in the repo are coverage reports expected to live, and what is the recognized per-language format set (lcov, coverage.xml/coverage.py, istanbul/nyc json, jacoco XML, scoverage)? How does the analyzer locate them read-only without a configured path?",
+      "Module delimitation: for test-health scoping, is 'a module' a single source file, a directory, or a language package — and how is that boundary chosen per language?",
+      "Quality scoring shape: how are the per-test heuristics (assertion density, edge/error-path, mocking-vs-real, skip/flaky) combined — a single score, a per-heuristic vector, or both — and are any thresholds surfaced or left entirely to the reader?",
+      "Coverage→entity mapping fidelity: when an ingested report gives line/branch data, how is it attributed to graph entities (by line range), and how are partial-overlap and generated-code cases represented honestly?"
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 analyzeBundles[0] — structural-map of the analyze extension surface (runtimes/planner/explore)",
+      "quotedText": "The framework exposes three registries a new target must touch: runtime families under src/analyze/runtimes/, the AnalyzeTaskTemplate catalog under src/analyze/planner/, and exploration recipes under src/analyze/explore/."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 analyzeBundles[1] — capability-discovery: no existing test-health analyzer",
+      "quotedText": "The tracing + reachability primitives exist (test-locate.ts, the CALLS graph) but there is no assembled per-module test-health analyzer — the capability is net-new."
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/analyze/explore/test-locate.ts",
+      "quotedText": "Deterministic test→subject exploration recipe, path-filtered by canonical test paths (tests/, __tests__/, test_*, *_test, *.spec, *.test)."
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/db/graph (findCallers / findCallees / outNeighbors / transitiveClosure / unreachable)",
+      "quotedText": "Structural queries use the LMDB graph layer's typed JS API for callers/callees/closure/unreachable traversal."
+    },
+    {
+      "id": "c5",
+      "kind": "convention",
+      "ref": "CLAUDE.md — Project principles + Key architectural rules (accuracy-first; read-only analyze; graph-only traversal; no raw file dumps)",
+      "quotedText": "Accuracy is primary; cost is the least priority. Both analyze tools are read-only. No raw file dumps — context is structured entity summaries + relations. Graph traversal uses the typed JS API, no Cypher/GQL/SQL."
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/analyze/runtimes/bootstrap.ts + src/analyze/planner/{schema.ts,validate.ts,templates}",
+      "quotedText": "Runtime families are registered in bootstrap.ts; per-target AnalyzeTaskTemplate rows + the target enum + per-target validation live in the planner; the infra family is the convention to mirror."
+    },
+    {
+      "id": "c7",
+      "kind": "convention",
+      "ref": "CLAUDE.md — Tech stack (tree-sitter parses TypeScript, Python, Go, Java, Scala)",
+      "quotedText": "Parsing: tree-sitter (TypeScript, Python, Go, Java, Scala)."
+    }
+  ]
+}

@@ -1,0 +1,537 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1785430445524-ha0bot",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-07-30T17:05:25.703Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "design.decompose",
+          "tier": "mid",
+          "runner": "cli-claude",
+          "model": "sonnet"
+        },
+        {
+          "role": "context.assemble",
+          "tier": "mid",
+          "runner": "cli-claude",
+          "model": "sonnet"
+        },
+        {
+          "role": "tasks.enumerate",
+          "tier": "mid",
+          "runner": "cli-claude",
+          "model": "sonnet"
+        },
+        {
+          "role": "tasks.critique",
+          "tier": "mid",
+          "runner": "cli-claude",
+          "model": "sonnet"
+        },
+        {
+          "role": "tasks.finalize",
+          "tier": "mid",
+          "runner": "cli-claude",
+          "model": "sonnet"
+        },
+        {
+          "role": "test-strategy.write",
+          "tier": "mid",
+          "runner": "cli-claude",
+          "model": "sonnet"
+        },
+        {
+          "role": "scope.audit",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "opus"
+        },
+        {
+          "role": "synthesize",
+          "tier": "mid",
+          "runner": "cli-claude",
+          "model": "sonnet"
+        }
+      ]
+    },
+    "elapsedMs": 680148,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "870ed3dd246225f4",
+    "epicSlug": "documentation-generation-framework-docgen-produces-self",
+    "storyId": "s1",
+    "lldRunId": "wf-1785424044925-xcu2ce",
+    "lldEffectiveHash": "cb5b27744db290de72c59b4596b1773d0ba24dd335448b4f0a7944f70adc817c",
+    "approvedAt": "2026-07-30T17:08:05.162Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Define shared docgen contract types",
+        "summary": "Author the type-only module for DocumentIR (derived/narrated partition), DocTypeRegistration/DocTypeRegistry, RenderedDocumentShell, and the parameterized DocGenOutcome<T>, exactly matching the LLD's schemaDiffs.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "DocumentIR has derived:{nodes,edges} and narrated:{sections} partitions with no per-item provenance field; IrNode/IrEdge/IrSection match the dataModelChanges schemaDiff",
+          "DocTypeRegistration includes docType, capability, extractorInputSchema, and an extract(input): Promise<DocGenOutcome<DocumentIR>> method signature",
+          "RenderedDocumentShell matches the schemaDiff exactly: backend, html, inlinedRuntimeVersion, diagramFormat literal 'svg', supportsZoomPan literal true",
+          "DocGenOutcome<T> is a generic discriminated union with all 6 status variants and the ok arm named value (not shell)"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "type-shape fixture test: sample DocumentIR/DocTypeRegistration/RenderedDocumentShell/DocGenOutcome literals satisfy the module's exported types under exactOptionalPropertyTypes"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Implement DocGenOutcome map/flatMap combinators",
+        "summary": "Implement the generic map/flatMap helpers so downstream stages can short-circuit non-ok outcomes without re-implementing envelope handling.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "map(outcome, f) transforms only the ok arm's value and returns non-ok variants unchanged, field for field",
+          "flatMap(outcome, f) invokes f only for the ok arm and returns f's outcome; for non-ok input it returns the original variant untouched"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "DocGenOutcome.map: transforms ok arm's value, leaves each non-ok variant's fields unchanged"
+          },
+          {
+            "level": "unit",
+            "name": "DocGenOutcome.flatMap: invokes f only on ok arm and returns f's outcome; passes non-ok input through untouched"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Implement DocTypeRegistry (register/list/get)",
+        "summary": "Implement the registration store with the validation and copy semantics the LLD specifies, as the single dispatch surface for docType lookups.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "register() throws DuplicateDocTypeError when an entry with the same docType is already registered",
+          "register() throws InvalidRegistrationError when extractorInputSchema is not a valid JSON schema object, or capability.id !== docType",
+          "list() returns a copy of all registrations in registration order; mutating the returned array does not alter the registry",
+          "get(docType) returns the matching registration or undefined for an unregistered docType"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "DocTypeRegistry.register/list/get: valid record registers and is retrievable by get; duplicate docType throws DuplicateDocTypeError; malformed extractorInputSchema and capability.id mismatch throw InvalidRegistrationError; list() returns a mutation-safe copy in registration order; get() on an unregistered docType returns undefined"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Export loadMermaidCdnMeta for shell-assembly reuse",
+        "summary": "Export the existing loadMermaidCdnMeta from artifacts-rpc.ts so shell assembly can reuse it instead of standing up parallel plumbing.",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "loadMermaidCdnMeta is exported from src/daemon/artifacts-rpc.ts (or lifted to a shared module) with its existing signature and behavior unchanged",
+          "existing callers of loadMermaidCdnMeta at its current call sites continue to compile and behave identically"
+        ],
+        "derivedFrom": [
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "existing loadMermaidCdnMeta call sites still compile and return identical metadata after the export change"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Implement type-structure extractor over graph codec reads",
+        "summary": "Build the Phase A extractor that reads EntityRow and inheritance/composition edges via the graph codec and emits a derived-only DocumentIR, including empty-scope and source-not-ready detection.",
+        "size": "L",
+        "order": 5,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "extract() builds derived.nodes exclusively from decodeEntityRow reads (src/db/graph/codec.ts) for the requested scope, leaving narrated.sections empty",
+          "inheritance and composition edges for in-scope types are decoded and added to derived.edges with correct kind",
+          "a scope resolving to zero types returns DocGenOutcome<'empty-scope'> with a reason string built at the zero-row read site, propagated via flatMap with no shell assembled",
+          "a repo registered but not finished indexing returns DocGenOutcome<'source-not-ready'> before any graph read is attempted",
+          "a recursive self-referential type produces a self-edge that is not deduplicated away",
+          "two same-named types defined in different files produce two distinct IrNodes keyed by their deterministic entity id",
+          "generatedAtRevision is resolved once at entry and used by every read in the call, so repeated calls against unchanged code are byte-identical"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c7",
+          "c10"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "extractor: mocked decodeEntityRow/decodeEdgeProps returning zero rows yields DocGenOutcome<'empty-scope'> with reason built at the zero-row read site, narrated.sections stays empty"
+          },
+          {
+            "level": "unit",
+            "name": "extractor: mocked reads for a fixed EntityRow + inheritance/composition edge set build derived.nodes/derived.edges exclusively from those reads"
+          },
+          {
+            "level": "integration",
+            "name": "extractor against a real LMDB-backed indexed fixture repo: base/derived and composed-field types produce correctly-typed inheritance/composition edges; recursive self-referential type keeps its self-edge; two same-named types in different files yield two distinct IrNodes by deterministic entity id; generatedAtRevision is stable across repeated calls"
+          },
+          {
+            "level": "integration",
+            "name": "extractor against a registered-but-not-indexed repo fixture returns DocGenOutcome<'source-not-ready'> before any graph read; an unregistered repo path propagates UnregisteredRepoError unchanged"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Assemble RenderedDocumentShell extending RenderedArtifactHtml + loadMermaidCdnMeta",
+        "summary": "Assemble the primary-inline shell from a DocumentIR by extending the existing artifact primitives, including the missing-asset fallback-unavailable path.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "shell assembly builds RenderedDocumentShell.html as a single self-contained file with no view-time network fetch, using RenderedArtifactHtml/ArtifactKind/ArtifactOpts/TemplateInfo (src/shared/artifacts.ts) as the base rather than a parallel document type",
+          "inlinedRuntimeVersion is populated from loadMermaidCdnMeta()'s resolved metadata",
+          "diagramFormat is the literal 'svg' and supportsZoomPan is the literal true",
+          "when the shipped local runtime asset is missing, assembly returns DocGenOutcome<'fallback-unavailable'> with a reason and remedy naming the copy-assets.mjs ship step, via flatMap, instead of throwing or fetching a CDN",
+          "Phase A output always has backend: 'primary-inline'"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c9",
+          "c10"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "shell-assembly: with the shipped runtime asset present, RenderedDocumentShell.html is a single self-contained file with no external network references, diagramFormat 'svg', supportsZoomPan true, backend 'primary-inline'"
+          },
+          {
+            "level": "integration",
+            "name": "shell-assembly: inlinedRuntimeVersion is populated from loadMermaidCdnMeta()'s resolved metadata"
+          },
+          {
+            "level": "integration",
+            "name": "shell-assembly: RenderedDocumentShell is built by extending RenderedArtifactHtml/ArtifactKind/ArtifactOpts/TemplateInfo rather than a parallel document type; existing RenderedArtifactHtml consumers in src/shared/artifacts.ts are unaffected"
+          },
+          {
+            "level": "integration",
+            "name": "shell-assembly: with the shipped runtime asset missing, assembly returns DocGenOutcome<'fallback-unavailable'> via flatMap with a reason and remedy naming copy-assets.mjs, instead of throwing or fetching a CDN"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Wire docgen daemon tool + IPC boundary over DocTypeRegistry",
+        "summary": "Bootstrap the registry with the type-structure extractor and register the single docgen daemon tool as the sole external resolution path, with input validation, not-found/unregistered-repo handling, and a verified single IPC boundary crossing.",
+        "size": "L",
+        "order": 7,
+        "dependsOn": [
+          "t3",
+          "t5",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "the type-structure extractor is registered into DocTypeRegistry exactly once at daemon startup, before any docgen request is served",
+          "the docgen tool is registered via registerTool(tool: Tool) at src/daemon/tools/registry.ts following its existing signature, with no second dispatch map needed to resolve a docType to its extractor",
+          "the tool handler returns DocGenOutcome<'not-found'> carrying the requested symbol when DocTypeRegistry.get returns undefined, rather than throwing",
+          "caller input is validated against the resolved registration's extractorInputSchema before extract() runs; a violation is rejected at the boundary with no graph read performed",
+          "an UnregisteredRepoError from the storage layer propagates to the caller unchanged rather than being modelled as a DocGenOutcome variant",
+          "the tool handler's response never contains a store handle, EntityRow, or DocumentIR — only DocGenOutcome<RenderedDocumentShell>",
+          "a JSON-RPC call for the docgen IPC method (registered in the daemon's IPC handler registry, distinct from the Tool registry) resolves to the same DocTypeRegistry-backed handler as the registered tool, with no second dispatch path — verifying exactly one daemon tool and one IPC method exist for document generation"
+        ],
+        "derivedFrom": [
+          "c6",
+          "c8",
+          "c10"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "docgen-tool: registerTool handler's response contains only DocGenOutcome<RenderedDocumentShell> — never a store handle, EntityRow, or DocumentIR — and DocTypeRegistry.get is the sole resolution path from an external docType request to its extract() implementation"
+          },
+          {
+            "level": "integration",
+            "name": "docgen-tool: requesting an unregistered docType returns DocGenOutcome<'not-found'> carrying the requested symbol, rather than throwing"
+          },
+          {
+            "level": "integration",
+            "name": "docgen-tool: an input payload violating the resolved registration's extractorInputSchema is rejected at the boundary with no graph read performed"
+          },
+          {
+            "level": "integration",
+            "name": "docgen-tool: an UnregisteredRepoError from the storage layer propagates to the caller unchanged rather than being modelled as a DocGenOutcome variant"
+          },
+          {
+            "level": "integration",
+            "name": "docgen IPC method call resolves to the same DocTypeRegistry-backed handler as the registered tool — exactly one daemon tool and one IPC method exist for document generation"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Mirror DocGenOutcome<T> as a hand-written MCP JSON schema",
+        "summary": "Hand-author the JSON schema for the generic DocGenOutcome<T> union so the MCP output surface validates all six status variants under exactOptionalPropertyTypes, wired to the actual registered docgen tool.",
+        "size": "S",
+        "order": 8,
+        "dependsOn": [
+          "t2",
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "a JSON schema exists that validates one sample payload for each of the 6 DocGenOutcome status variants (ok, empty-scope, not-found, truncated, fallback-unavailable, source-not-ready)",
+          "the schema is wired to the MCP output surface for the docgen tool's response, against the tool as actually registered in t7"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c11"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "hand-mirrored DocGenOutcome<T> JSON schema validates one sample payload per status variant (ok, empty-scope, not-found, truncated, fallback-unavailable, source-not-ready) under exactOptionalPropertyTypes, and is wired to the docgen tool as registered in t7's MCP output surface"
+          }
+        ]
+      },
+      {
+        "id": "t9",
+        "title": "Verify offline runtime asset staging for shell assembly",
+        "summary": "Resolve the LLD's flagged low-confidence copy-assets.mjs anchor by confirming at build time that the inlined SVG/svg-pan-zoom runtime is actually staged for offline shell assembly.",
+        "size": "S",
+        "order": 9,
+        "dependsOn": [
+          "t4",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "the build output confirms copy-assets.mjs stages the inlined SVG/svg-pan-zoom runtime asset that loadMermaidCdnMeta resolves for shell assembly",
+          "with the shipped asset present, an assembled RenderedDocumentShell.html contains no external network references",
+          "with the shipped asset deliberately removed, shell assembly returns DocGenOutcome<'fallback-unavailable'> rather than a broken or silently-CDN-fetching document"
+        ],
+        "derivedFrom": [
+          "c9",
+          "c12"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "build-verification: copy-assets.mjs output stages the inlined SVG/svg-pan-zoom runtime asset that loadMermaidCdnMeta resolves; with it present, an assembled RenderedDocumentShell.html has no external network references"
+          },
+          {
+            "level": "integration",
+            "name": "build-verification: with the shipped runtime asset deliberately removed, shell assembly returns DocGenOutcome<'fallback-unavailable'> rather than a broken or silently-CDN-fetching document"
+          }
+        ]
+      },
+      {
+        "id": "t10",
+        "title": "Send back-flow note to consuming stories on DocumentIR/DocGenOutcome shape changes",
+        "summary": "Author and send a single combined back-flow note to consuming stories s2–s7 documenting the DocumentIR reshape from a flat provenance-flagged structure to the derived/narrated partition, and the DocGenOutcome ok arm rename from shell to value, per the LLD's REQUIRED backflow instruction.",
+        "size": "S",
+        "order": 10,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "a single back-flow note is authored covering both changes together: DocumentIR's flat provenance-flagged structure replaced by the derived/narrated partition, and DocGenOutcome's ok arm renamed from shell to value",
+          "the note is sent/attached as a workflow artifact addressed to consuming stories s2, s3, s4, s5, s6, and s7",
+          "the note is delivered in one pass rather than as separate messages per consuming story, per the winning judgment's single-note instruction"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "back-flow note artifact: single note covers both the DocumentIR partition reshape and the DocGenOutcome ok-arm rename, and is addressed to s2, s3, s4, s5, s6, s7 in one delivery"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "DocTypeRegistry.register/list/get",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "DocGenOutcome.map",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "DocGenOutcome.flatMap",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "DocTypeRegistration.extract (type-structure extractor)",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "type-structure extractor + src/db/graph/codec.ts EntityRow/EdgeProps reads",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "repo registry source-not-ready and UnregisteredRepoError paths",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "shell assembly producing RenderedDocumentShell",
+        "coveredByTaskIds": [
+          "t6",
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "loadMermaidCdnMeta export reuse",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "RenderedArtifactHtml/ArtifactKind extension",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "registerTool docgen tool handler",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "DocTypeRegistry.get boundary resolution",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "not-found docType path",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "extractorInputSchema validation rejection path",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "DocGenOutcome<T> MCP JSON schema",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 dataModelChanges: DocumentIR reshaped into derived:{nodes,edges} / narrated:{sections} partitions, replacing the flat provenance-flagged structure",
+      "quotedText": "DocumentIR with derived/narrated partition"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 handoff: DocTypeRegistration/DocTypeRegistry contract — docType, capability, extractorInputSchema, bound extract() method"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 schemaDiff: RenderedDocumentShell — backend, html, inlinedRuntimeVersion, diagramFormat:'svg', supportsZoomPan:true"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 schemaDiff: DocGenOutcome<T> generic discriminated union across 6 status variants, ok arm renamed from shell to value"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 handoff: DocGenOutcome requires map/flatMap combinators so downstream stages short-circuit non-ok outcomes"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 handoff: DocTypeRegistry validation semantics — DuplicateDocTypeError / InvalidRegistrationError and single-registry dispatch requirement"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 handoff: type-structure extractor must read EntityRow + inheritance/composition edges via src/db/graph/codec.ts decodeEntityRow (Buffer-based, codec.ts:165)"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 handoff: docgen daemon tool must be registered via registerTool(tool: Tool) plus a matching IPC method, with DocTypeRegistry.get as the sole resolution path"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 handoff: export loadMermaidCdnMeta from src/daemon/artifacts-rpc.ts for reuse in offline shell assembly (currently unexported)"
+    },
+    {
+      "id": "c10",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 handoff: Phase A scope is fixed to backend:'primary-inline'; extractor and shell assembly must honor source-not-ready / empty-scope / not-found propagation via DocGenOutcome"
+    },
+    {
+      "id": "c11",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 handoff: DocGenOutcome<T> has no generated JSON-schema tooling for generics — MCP output schema must be hand-mirrored for all 6 variants"
+    },
+    {
+      "id": "c12",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 flagged low-confidence (0.486) anchor: copy-assets.mjs staging of the inlined SVG/svg-pan-zoom runtime asset for the offline-guarantee, requiring build-time verification"
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "id": "AMD-870ed3dd246225f4-1",
+  "epicHash": "870ed3dd246225f4",
+  "epicSlug": "documentation-generation-framework-docgen-produces-self",
+  "hldBaseRunId": "wf-1785421889464-2ayzlc",
+  "amendment": {
+    "type": "sharedContract.methodAdd",
+    "contractId": "sc2",
+    "contractName": "DocTypeRegistration",
+    "method": {
+      "name": "extract",
+      "signature": "extract(input: Record<string, unknown>): Promise<DocGenOutcome<DocumentIR>>",
+      "description": "The document-type's own extractor, bound into its registration record rather than living in a separate module-local dispatch map keyed by docType."
+    }
+  },
+  "rationale": "sc2's stated purpose is that 'the daemon tool registry, IPC method table, and MCP tool surface enumerate one source of truth instead of three hand-maintained lists (k4)'. As published, the record carries only docType + capability + extractorInputSchema, so a fourth hand-maintained list is still required at runtime: a map from docType to the extractor that services it. That map is a second registration surface sitting beside the registry and drifting from it in exactly the way k4 exists to prevent — the design judgment scored a1, a3, and a4 all `partial` on sc2 for precisely this reason, and scored a2 `satisfies` only because it binds extract() into the record. Adding the method makes get(docType) the single resolution path from an external request to an implementation, which is also what makes ac5/k2 verifiable at one boundary crossing. The change is additive and localised: register/list/get signatures are unchanged, docType/capability/extractorInputSchema are unchanged, one of four shared contracts is touched (25%, under the rework threshold), and the four consuming stories (s2/s3/s4/s6) each register their own extractor rather than reading a foreign one, so none of them breaks. The one accepted cost is that the record stops being plain data, so capability enumeration crossing IPC/MCP must project the serializable subset (docType + capability + extractorInputSchema) before marshalling — noted here so the HLD carries it rather than each surface rediscovering it. Two further shape changes this LLD makes — sc1's derived/narrated partition and sc4's parameterization with the `shell` → `value` rename — are NOT proposed as amendments because they change shapes s2–s7 already consume; they are raised as a single back-flow note to those stories instead, per the winning judgment's instruction that one pass cover both.",
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "hld-contract",
+      "ref": "sc2 DocTypeRegistration — purpose: 'one source of truth instead of three hand-maintained lists (k4)'"
+    },
+    {
+      "id": "c2",
+      "kind": "design-judgment",
+      "ref": "Winning alternative a2, sc2 verdict `satisfies`: 'binding extract() into DocTypeRegistration removes the second hand-maintained dispatch map that a1, a3, and a4 all carry alongside the registry — the precise drift k4 exists to eliminate'"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "module.profile — src/daemon/tools/registry.ts:18-39, registerTool(tool: Tool): void, the registration pattern the docgen tool follows"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "usage.example — registerTool (entityId 571a8536c489f3be0c4c7af1f4022aa3) returned 0 callers; no precedent dispatch pattern exists to preserve"
+    }
+  ],
+  "proposedBy": {
+    "workflow": "design.story",
+    "runId": "wf-1785424044925-xcu2ce",
+    "storyId": "s1",
+    "stepId": "s4"
+  },
+  "proposedAt": "2026-07-30T15:27:35.477Z",
+  "status": "pending"
+}

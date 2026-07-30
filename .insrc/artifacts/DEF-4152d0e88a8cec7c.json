@@ -1,0 +1,483 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "wf-1785398870461-372j3s",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-07-30T08:13:01.984Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 311508,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "4152d0e88a8cec7c",
+    "epicSlug": "deploy-daemon-shared-server-hosted-context",
+    "review": {
+      "artifact": "define",
+      "stage": "define",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "ref": "c5",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/daemon/server.ts defines IpcServer, the daemon's transport bound to a Unix socket.",
+          "evidence": "CONFIRMED: src/daemon/server.ts:39 `export class IpcServer`; :54 createServer((socket)) + :60 listen(PATHS.sockFile) (~/.insrc/daemon.sock via shared/paths.ts:19), instantiated at daemon/index.ts:443. The Unix-socket transport is real. Citation c5 accurate.",
+          "action": "None — the transport surface the networked HTTP/gRPC transport (s4) extends is exactly as cited.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl2",
+          "ref": "c6",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/db/repos.ts defines validateRepoPath (which requires an existing local absolute directory) and addRepo (registry write).",
+          "evidence": "CONFIRMED: src/db/repos.ts:129 validateRepoPath (+ :101 validateRepoPathShape which throws 'repo path must be absolute' via isAbsolute, then :133 statSync + isDirectory); addRepo at :153. The local-absolute-dir requirement k4 relaxes is real. Citation c6 accurate. (A review sub-grep truncated on analyze/* docs and missed repos.ts — a probe artifact, disproven by direct check.)",
+          "action": "LLD s1 relaxes validateRepoPath's isAbsolute/statSync gate only for the new remote-source kind, per k4.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl3",
+          "ref": "c6",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "RegisteredRepo (src/shared/types.ts) has no git-remote-source, tracked-branch, or shared/server-ownership field — it is a local-path registry row.",
+          "evidence": "CONFIRMED: RegisteredRepo at src/shared/types.ts:621 has fields kind?/namespace?/path/name/addedAt/lastIndexed?/status/errorMsg? — no branch, remote/clone URL, or shared-ownership field. The registry-schema extension (k4/k6) is genuinely net-new. (The branch|shared grep truncated on docs and never scanned types.ts — probe artifact, verified directly.)",
+          "action": "LLD s1 adds the remote-source + branch + shared-ownership fields to RegisteredRepo as optional, additive dimensions (k4).",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl4",
+          "ref": "c7",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/indexer/index.ts exports IndexerService which does per-repo add + local file-watching + a re-index queue, with no git clone/fetch or branch-tracking.",
+          "evidence": "CONFIRMED: src/indexer/index.ts:149 IndexerService, :316 addRepo, watcher.ts:44; every git clone/simple-git/fetch hit is in docs/scripts, zero in src/indexer. Server-side git clone/fetch + branch-tracking is net-new. Citation c7 accurate.",
+          "action": "None — the indexer pipeline s2/s3 extend is as cited (no existing git-acquire path).",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl5",
+          "ref": "c8",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "The daemon has NO networked transport (TCP/HTTP/WebSocket/gRPC) or auth layer — the Unix-socket IpcServer is the only transport.",
+          "evidence": "CONFIRMED as scoped: the daemon's only INBOUND transport is the Unix-socket IpcServer (server.ts:54/:60, index.ts:1567) with no TCP/HTTP/WS/gRPC listener and no auth on the socket — the DEF wording ('the daemon's only transport'). Nuance: OUTBOUND built-in tools do contain HTTP/WebSocket + bearer/basic-auth code (src/daemon/tools/builtins/http/*), which is client-side tool capability, not an inbound transport/auth layer, so the closed-union holds for the transport claim.",
+          "action": "HLD s4 should note the existing http/ws tool infra under daemon/tools/builtins is OUTBOUND (client) capability — the inbound networked transport + auth is genuinely new and must not be conflated with it.",
+          "fixability": "assisted"
+        },
+        {
+          "claimId": "cl6",
+          "ref": "c8",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Storage is a single-writer local substrate: an LMDB graph (src/db/graph) + Lance vectors (src/db/lance), accessed via the daemon (db/client.ts), not a distributed/remote DB.",
+          "evidence": "CONFIRMED: src/db/graph/store.ts uses lmdb-js (import { open } from 'lmdb') as a daemon-lifetime module-singleton env with single-writer semantics (readerCheck stale-reader clearing); src/db/lance/* uses @lancedb/lancedb for entity/session/turn/artifact/config vectors. A single-writer local substrate, not distributed — supporting assumption a1 (no distributed DB needed; k2 daemon-owns-DB). Citation c8 accurate.",
+          "action": "None — confirms the concurrency model (one writer, many remote RPC readers via the daemon) the epic relies on.",
+          "fixability": "auto"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 6
+      },
+      "reviewedAt": "2026-07-30T08:39:09.108Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-07-30T08:43:12.172Z",
+    "questionResolutions": {
+      "q4b91f91b": {
+        "question": "Re-index trigger mechanism (deferred from the topology decisions): as a tracked branch advances, does the server re-index via a git push webhook, a periodic poll/fetch, an explicit API/CLI trigger, or a combination — and how is a re-index de-duplicated/debounced under rapid pushes?",
+        "status": "resolved",
+        "choice": "Combination: one coalescing queue fed by webhook + poll backstop + explicit trigger",
+        "rationale": "Freshness must not depend on webhook config being present/correct: the periodic fetch backstop guarantees eventual convergence, an optional webhook adds latency, and an explicit API/CLI trigger covers on-demand. All three enqueue one per-repo 're-index the tracked branch' job; dedup is one mechanism (at most one in-flight + one queued successor, coalesced to the latest tip SHA; a job whose resolved tip == current index revision is a no-op), and the new revision publishes atomically so queries see only prior-or-new (S003/ac2). Keeps the index revision pinned to a concrete commit (k6).",
+        "resolvedAt": "2026-07-30T08:47:08.576Z"
+      }
+    }
+  },
+  "body": {
+    "flavor": "enhancement",
+    "problem": "insrc's grounded context lives in per-developer silos. Each developer must add and index every repository on their own machine, and the resulting graph + vector index is private to that one process, reachable only over a local socket. On a team this means the same shared codebases are indexed redundantly by everyone — wasteful of time and compute, and inconsistent, because each person's index reflects whatever files and branch they happened to have checked out when they last re-indexed, drifting from their teammates'. There is no way to index a shared codebase ONCE against a known, named branch and let the whole team reuse and search that same grounded context — its API endpoints, function and type signatures, structure, and semantic neighbours. Anyone who does not have a given repo checked out at all — a newcomer, or a developer on an adjacent team who needs to call another team's service — simply cannot query its context. And because each index is bound to a working tree rather than an agreed branch, 'what does this shared codebase actually expose right now' has no single, current, authoritative answer that the team can point tools at; every developer re-derives it locally, at their own cost, from their own possibly-stale checkout.",
+    "nonGoals": [
+      {
+        "text": "Removing or weakening the local-first path for a developer's own / uncommitted repositories.",
+        "rationale": "Local-first is a core project principle; the shared server is ADDITIVE for shared, branch-tracked repos. A developer's personal work must still be served by their local daemon with no dependency on a server. [[c1]]"
+      },
+      {
+        "text": "Executing, building, or running the shared repositories' code on the server.",
+        "rationale": "The server is a read-only context index over tracked source, not a build/CI/runtime host; running arbitrary repo code server-side is a security and scope explosion. [[c3]]"
+      },
+      {
+        "text": "Writing back to, or mutating, the shared source repositories from the server.",
+        "rationale": "The server consumes git as a read-only mirror of tracked branches; it is a context service, not a code host or review system."
+      },
+      {
+        "text": "Real-time, per-keystroke freshness of the shared index.",
+        "rationale": "Shared context is bound to a named branch as of the last re-index trigger, not a live editor buffer; sub-second freshness is a non-goal and conflicts with the branch-agreed semantics. [[c8]]"
+      },
+      {
+        "text": "A general multi-tenant SaaS with strong cross-org data-isolation guarantees beyond repo-level access control, in v1.",
+        "rationale": "v1 targets a team sharing repos on a server they control, with authenticated access control to repos; full tenant isolation is deferred to keep v1 tractable."
+      },
+      {
+        "text": "Reintroducing direct cloud REST for the server's own embeddings or summaries.",
+        "rationale": "The no-direct-cloud-REST rule holds on the server too: server-side reasoning/embeddings go through the local provider or the CLI wrapper, not a reinstated REST provider. [[c4]]"
+      }
+    ],
+    "assumptions": [
+      {
+        "text": "Because the daemon owns all DB access, a shared server needs no distributed database — remote clients query the server process over the network and never open its LMDB/Lance directly, so 'shared reads' are just concurrent RPC into one owner process.",
+        "confidence": "high",
+        "source": "c2"
+      },
+      {
+        "text": "The existing RPC handler set (analyze / graph / vector search) is transport-agnostic enough to be served over a networked transport without rewriting the query logic itself.",
+        "confidence": "med",
+        "source": "c8"
+      },
+      {
+        "text": "The indexer's parse → graph → embed pipeline is source-tree-oriented and produces the same index whether pointed at a locally-added directory or a server-managed git checkout of a branch.",
+        "confidence": "high",
+        "source": "c7"
+      },
+      {
+        "text": "The server can be provisioned with git credentials to clone/fetch the registered repositories and check out the named branch.",
+        "confidence": "med",
+        "source": "c7"
+      },
+      {
+        "text": "The server runs its own local embedder (Ollama) so shared-repo embeddings are generated server-side, consistent with the embeddings-are-local rule applied at the server process rather than each developer's machine.",
+        "confidence": "med",
+        "source": "c1"
+      }
+    ],
+    "constraints": [
+      {
+        "id": "k1",
+        "text": "Local-first MUST be preserved for personal/uncommitted repositories: the local daemon remains authoritative for a developer's own repos, and the shared server is strictly additive — querying shared context must never become a hard dependency for local work.",
+        "type": "invariant",
+        "source": "c1"
+      },
+      {
+        "id": "k2",
+        "text": "Daemon-owns-all-DB-access MUST hold on the server: remote clients query the server daemon over the networked transport and MUST NOT open its LMDB graph or Lance vectors directly. No client-side direct DB access, local or remote.",
+        "type": "invariant",
+        "source": "c2"
+      },
+      {
+        "id": "k3",
+        "text": "The server MUST treat shared repositories as READ-ONLY: it indexes tracked branches without executing, building, or writing back to the source. No side effects on the shared codebase.",
+        "type": "invariant",
+        "source": "c3"
+      },
+      {
+        "id": "k4",
+        "text": "The repo-registry schema change MUST be additive + backward-compatible: existing local-path registrations keep working unchanged; the remote-git-source + tracked-branch + shared/server-ownership fields are optional dimensions on RegisteredRepo, and validateRepoPath's local-directory requirement is relaxed ONLY for the new remote-source kind.",
+        "type": "contract",
+        "source": "c6"
+      },
+      {
+        "id": "k5",
+        "text": "Federated queries MUST merge local + remote results into the SAME structured bundle shape clients already consume (structured entity summaries + relations, no raw file dumps), attaching provenance (which daemon / repo / branch / index-revision) rather than introducing a new client result format.",
+        "type": "contract",
+        "source": "c3"
+      },
+      {
+        "id": "k6",
+        "text": "Every shared result MUST be attributable to a specific repository + named branch + index revision — shared context is bound to an agreed, trackable branch, never to ambiguous local working-tree state.",
+        "type": "invariant",
+        "source": "c6"
+      },
+      {
+        "id": "k7",
+        "text": "The server's own embeddings / summaries MUST go through the local provider (Ollama) or the CLI wrapper — no direct cloud REST provider may be reintroduced server-side.",
+        "type": "invariant",
+        "source": "c4"
+      },
+      {
+        "id": "k8",
+        "text": "The networked transport MUST be authenticated and access-controlled: an unauthenticated or unauthorized client cannot read shared context, and access is scoped per repository.",
+        "type": "invariant",
+        "source": "c5"
+      }
+    ],
+    "stories": [
+      {
+        "id": "s1",
+        "title": "Register a git repository and branch as a shared, server-managed repo",
+        "userValue": "An admin (or developer) can register a codebase with the server by naming its git source and the branch to track — without having a local checkout — so a shared repo becomes a first-class, branch-bound registry entry that the whole team can later reuse.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a git repository source and a branch name, and no pre-existing local checkout",
+            "when": "it is registered as a shared server-managed repo",
+            "then": "the registration is accepted and recorded with its remote source + tracked branch + shared/server ownership, rather than rejected for lacking a local directory",
+            "operationalizes": [
+              "k4",
+              "k6"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "existing local-path repo registrations already in the registry",
+            "when": "the shared-repo registration capability is added",
+            "then": "every existing local registration keeps working exactly as before, with no change to how personal repos are added",
+            "operationalizes": [
+              "k4",
+              "k1"
+            ]
+          }
+        ],
+        "dependsOn": [],
+        "sizeEstimate": "M",
+        "existingCapabilityRefs": [
+          "c6"
+        ]
+      },
+      {
+        "id": "s2",
+        "title": "Index a shared repository once, on the server, from its tracked branch",
+        "userValue": "The server indexes each shared repo a single time by obtaining the code for the named branch itself, so the whole team gets one grounded graph + vector index of that codebase without anyone re-indexing it locally.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a registered shared repo naming a git source + branch",
+            "when": "the server indexes it",
+            "then": "it obtains the code from git at that branch and produces the same kind of structured graph + vector index a locally-added repo would, strictly read-only — without building, executing, or writing back to the source",
+            "operationalizes": [
+              "k3",
+              "k6"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "a registered shared repo the server cannot obtain (unreachable source or missing credentials)",
+            "when": "indexing is attempted",
+            "then": "it fails with a clear, attributable status rather than producing a partial or silently-empty index",
+            "operationalizes": [
+              "k6",
+              "k3"
+            ]
+          }
+        ],
+        "dependsOn": [
+          "s1"
+        ],
+        "sizeEstimate": "L",
+        "existingCapabilityRefs": [
+          "c7"
+        ]
+      },
+      {
+        "id": "s3",
+        "title": "Keep a shared repo's index current as its tracked branch advances",
+        "userValue": "As the tracked branch moves, the shared index refreshes to the new branch tip, so the team always searches current context and never a stale snapshot — without any developer manually re-indexing.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a shared repo whose tracked branch has advanced since it was last indexed",
+            "when": "the re-index trigger fires",
+            "then": "the shared index is refreshed to the new branch tip and its index revision is updated so results reflect the current branch state",
+            "operationalizes": [
+              "k6",
+              "k3"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "a shared index being refreshed",
+            "when": "developers query it during the refresh",
+            "then": "they always see a consistent index revision (the current or the prior one), never a half-updated mix",
+            "operationalizes": [
+              "k6"
+            ]
+          }
+        ],
+        "dependsOn": [
+          "s2"
+        ],
+        "sizeEstimate": "L",
+        "existingCapabilityRefs": [
+          "c7"
+        ]
+      },
+      {
+        "id": "s4",
+        "title": "Reach the daemon securely over the network",
+        "userValue": "A remote client can invoke the daemon's context-query surface over the network with authentication, so developers not on the server host can use it — while the daemon still owns all database access.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "the daemon running as a networked server",
+            "when": "a remote client connects with valid credentials",
+            "then": "it can invoke the daemon's query surface; a client without valid credentials is refused",
+            "operationalizes": [
+              "k8",
+              "k2"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "a remote client querying the server",
+            "when": "it retrieves context",
+            "then": "it does so ONLY through the daemon's networked interface and never opens the server's graph or vector store directly",
+            "operationalizes": [
+              "k2"
+            ]
+          }
+        ],
+        "dependsOn": [],
+        "sizeEstimate": "L",
+        "existingCapabilityRefs": [
+          "c5"
+        ]
+      },
+      {
+        "id": "s5",
+        "title": "Control who can read which shared repositories",
+        "userValue": "The server enforces per-repository access so an authenticated developer sees context only for the shared repos they are authorized for, letting one server safely host repos across teams.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a server hosting several shared repos with per-repo access rules",
+            "when": "an authenticated client queries",
+            "then": "it can read context only for the repos it is authorized for, and repos it is not authorized for do not appear in results",
+            "operationalizes": [
+              "k8"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "an unauthenticated or unauthorized client",
+            "when": "it attempts any shared query",
+            "then": "the request is denied and no shared context is returned",
+            "operationalizes": [
+              "k8"
+            ]
+          }
+        ],
+        "dependsOn": [
+          "s4",
+          "s1"
+        ],
+        "sizeEstimate": "L",
+        "existingCapabilityRefs": [
+          "c5"
+        ]
+      },
+      {
+        "id": "s6",
+        "title": "Search shared and local context together in one federated query",
+        "userValue": "A developer runs a single analyze / graph / vector search and gets results merged from their own local context AND the shared server's context — each result attributable to its repo, branch, and source — so shared reuse feels like one search, with local-first preserved when the server is away.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a developer with a local daemon (personal repos) and access to a shared server",
+            "when": "they run an analyze / graph / vector query",
+            "then": "results from local and remote are merged into the same structured bundle shape they already consume, each entry carrying provenance (which repo / branch / source), with no raw file dumps",
+            "operationalizes": [
+              "k5",
+              "k6",
+              "k1"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "the shared server is unreachable",
+            "when": "the developer runs a query",
+            "then": "their local context still answers (local-first preserved) with a clear note that shared results were unavailable, never a hard failure of the whole query",
+            "operationalizes": [
+              "k1"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "a merged federated result",
+            "when": "it is presented",
+            "then": "every shared entry is attributable to a specific repository + named branch + index revision",
+            "operationalizes": [
+              "k6",
+              "k5"
+            ]
+          }
+        ],
+        "dependsOn": [
+          "s2",
+          "s4",
+          "s5"
+        ],
+        "sizeEstimate": "XL",
+        "existingCapabilityRefs": [
+          "c8"
+        ]
+      }
+    ],
+    "openQuestions": [
+      "Re-index trigger mechanism (deferred from the topology decisions): as a tracked branch advances, does the server re-index via a git push webhook, a periodic poll/fetch, an explicit API/CLI trigger, or a combination — and how is a re-index de-duplicated/debounced under rapid pushes?",
+      "Concrete networked transport + auth model (settled at HLD): HTTP vs gRPC for the wire protocol, and the auth/identity scheme (bearer/API token, mTLS, or OIDC) — and where per-repo access rules (s5) are stored and administered.",
+      "Server-side git credential model (med-confidence assumption): how the server is provisioned with credentials to clone/fetch private repos (deploy key, PAT, SSH agent, git-credential-helper) and how they are scoped per repo + rotated.",
+      "Query-surface transport-agnosticism (med-confidence assumption): are the existing analyze/graph/vector RPC handlers already transport-agnostic, or does exposing them over the network require refactoring the handler/registry boundary — and does that boundary become a shared contract in the HLD?",
+      "Server-side embedder (med-confidence assumption): does the shared server run its own Ollama embedder to honour the embeddings-are-local rule at the server process, and must a client's embedding model/dim match the server's for federated vector search to be comparable?",
+      "Federation multiplicity + merge semantics: may a developer federate across MORE than one shared server, and how are ranking/scores reconciled + deduplicated when the same entity appears in local + one-or-more remote indexes (esp. for vector-search score comparability)?"
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "convention",
+      "ref": "CLAUDE.md — Project principles + Key architectural rule #2 (Local-first: Ollama always available, embeddings are local-only)",
+      "quotedText": "Local-first — Ollama is always available (embeddings are local-only). Cloud LLM access goes through CliProvider; no direct REST."
+    },
+    {
+      "id": "c2",
+      "kind": "convention",
+      "ref": "CLAUDE.md — Key architectural rule #1 (Daemon owns all DB access; CLI/MCP/workbench communicate via IPC only)",
+      "quotedText": "Daemon owns all DB access — CLI, MCP, and the IDE workbench communicate via IPC only. The CLI/MCP/workbench never opens LMDB or LanceDB directly."
+    },
+    {
+      "id": "c3",
+      "kind": "convention",
+      "ref": "CLAUDE.md — analyze tools are read-only; No raw file dumps (structured entity summaries + relations)",
+      "quotedText": "Both analyze tools are read-only. No raw file dumps — context is always structured entity summaries + relations from the graph."
+    },
+    {
+      "id": "c4",
+      "kind": "convention",
+      "ref": "CLAUDE.md — Project principle: No direct cloud REST calls from our process (cloud via CliProvider)",
+      "quotedText": "No direct cloud REST calls from our process. Direct REST providers to Anthropic / OpenAI / Gemini / Mistral must not be reintroduced."
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/daemon/server.ts — IpcServer (the Unix-socket transport; no networked/authenticated transport exists)",
+      "quotedText": "IpcServer (class, lines 39-183) is the daemon's only transport — a Unix socket; a search across src/daemon found no networked (TCP/HTTP/WS/gRPC) or auth layer."
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/db/repos.ts (validateRepoPath:129 / addRepo:153) + src/shared/types.ts (RegisteredRepo:621-641)",
+      "quotedText": "validateRepoPath hard-requires an existing LOCAL absolute directory; RegisteredRepo has no git-remote-source, branch, or shared-ownership field."
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/indexer/index.ts — IndexerService (per-repo add + local file-watch + re-index queue)",
+      "quotedText": "IndexerService does per-repo add + local file-watching (watcher.ts) + a re-index queue; no git clone/fetch or branch-tracking."
+    },
+    {
+      "id": "c8",
+      "kind": "analyze-bundle",
+      "ref": "s1 structural-map — daemon transport + registry + storage + indexer (local-first assumptions)",
+      "quotedText": "The daemon's only transport is the Unix-socket IpcServer; storage is a single-writer local LMDB+Lance substrate; the indexer is source-tree-oriented, not branch/remote-aware."
+    }
+  ]
+}

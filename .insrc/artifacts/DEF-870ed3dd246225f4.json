@@ -170,6 +170,13 @@
         "choice": "One openQuestion for the story-blocking assumption only",
         "rationale": "Split by failure kind: assumption (2) — the primary-renderer legibility threshold — is a genuine unestablished design judgment that S005 presupposes, so raise it as the one Epic-level openQuestion that unblocks S005. Assumption (1) — whether build-step render.ts is the emission integration point — is a checkable fact about this codebase (c12 only failed on an empty-prerequisite grounding call); leave it a documented low-confidence assumption with a verification task inside the story that owns document emission, resolved at LLD time rather than gating the Epic.",
         "resolvedAt": "2026-07-30T14:30:36.637Z"
+      },
+      "qe4330384": {
+        "question": "Item ac3: Six of seven map cleanly. s6's userValue ends '— including for the deployment-design work that is already waiting to consume it', and no criterion covers that consumer: ac1/ac2/ac3/ac4 cover surface parity, daemon-side reads, unregistered-repo failure, and discoverability, none of which tests or even mentions the waiting internal consumer. Either drop the clause or add a criterion grounded in c8.",
+        "status": "resolved",
+        "choice": "Demote the clause to non-normative motivation",
+        "rationale": "The deployment-design consumer is a separate approved Epic; making its end-to-end consumption an S006 acceptance criterion would couple docgen's acceptance to another Epic's path (that Epic tests its own consumption). Keep the \"why now\" as clearly-labeled motivation on S006 so the rationale survives, while the acceptance criteria stay co-extensive with what docgen S006 actually delivers — surface parity, daemon-side reads, unregistered-repo failure, discoverability (7/7 clean ac↔value mapping).",
+        "resolvedAt": "2026-07-30T14:31:09.891Z"
       }
     }
   },

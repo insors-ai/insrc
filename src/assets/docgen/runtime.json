@@ -1,0 +1,7 @@
+{
+  "mermaidVersion": "10.9.1",
+  "svgPanZoomVersion": "3.6.2",
+  "mermaidAsset": "mermaid.min.js",
+  "svgPanZoomAsset": "svg-pan-zoom.min.js",
+  "provenance": "vendored from jsdelivr (npm mermaid@10.9.1, svg-pan-zoom@3.6.2) for offline self-contained docgen output"
+}

@@ -1150,6 +1150,23 @@ async function main(): Promise<void> {
 			}
 		},
 
+		// docgen: generate a self-contained HTML document from the code graph
+		// (Epic 870ed3dd, s1 · t7). The IPC method + the docgen_generate tool +
+		// the MCP surface all enumerate the SAME registry, so they cannot drift
+		// (k4). Reads happen inside the daemon; only the finished shell returns.
+		'docgen.generate': async (params) => {
+			const { docType, repo, path } = params as { docType: string; repo: string; path?: string };
+			const input: Record<string, unknown> = { repo };
+			if (typeof path === 'string' && path.length > 0) input['path'] = path;
+			const mod = await import('../docgen/index.js');
+			return mod.generateDocument(docType, input) as unknown as Record<string, unknown>;
+		},
+
+		'docgen.list': async () => {
+			const mod = await import('../docgen/index.js');
+			return { docTypes: mod.listDocTypes() } as unknown as Record<string, unknown>;
+		},
+
 		'config.write': async (params) => {
 			// `path` is either a legacy dot-string (safe for dot-free keys) OR an
 			// array of literal segments — the latter is required for keys that

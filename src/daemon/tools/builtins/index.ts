@@ -34,6 +34,7 @@ import { registerDbTools } from './db/index.js';
 import { registerDataTools } from './data/index.js';
 import { registerCodeTools } from './code/index.js';
 import { registerDocsTools } from './docs/index.js';
+import { registerDocgenTool } from '../../../docgen/tool.js';
 
 export function registerBuiltinTools(): void {
 	registerGitTools();
@@ -54,4 +55,5 @@ export function registerBuiltinTools(): void {
 	registerDataTools();
 	registerCodeTools();
 	registerDocsTools();
+	registerDocgenTool();
 }

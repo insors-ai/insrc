@@ -143,6 +143,13 @@
         "choice": "Keep prose uncited; verify at LLD time",
         "rationale": "Each story's LLD re-grounds the modules it actually touches, so a stale/wrong reference is caught where it becomes load-bearing. The independent HLD review already verified every named module resolves (loadMermaidCdnMeta @ artifacts-rpc.ts:308, RenderedArtifactHtml @ shared/artifacts.ts:67, graph codec, CliProvider/OllamaProvider, copy-assets.mjs). Adding a groundingRefs sidecar or inline-marker gating is a workflow-framework change (design.epic schema) out of scope for the docgen epic; revisit as its own improvement if HLD grounding drift recurs.",
         "resolvedAt": "2026-07-30T15:03:41.453Z"
+      },
+      "qbeb5f801": {
+        "question": "The S005 primary-vs-fallback dispatch mechanism is settled at the architecture level (one measurable size/fan-out/label-length predicate computed over the DocumentIR, per sc3/k9), but the concrete numeric threshold value that makes a fallback document 'legible' is not specified in this HLD and is deferred to s5's internal implementation — the fallback-renderer legibility threshold itself therefore remains an open design question to settle at story/build time, not just a mechanism question.",
+        "status": "resolved",
+        "choice": "Empirically calibrated constants in s5",
+        "rationale": "Accuracy-first: settle the S005 legibility cutoffs with evidence rather than guesswork — run the size/fan-out/label-length predicate over a corpus of real DocumentIRs from this repo's own indexed graph, pick the values where the primary render stops being readable, freeze them as named constants inside S005 with the calibration recorded in the LLD, and keep the corpus as a regression guard. No config-surface widening (promote to a config knob only if per-repo retuning proves needed); the decision stays inside the story that owns the dispatch.",
+        "resolvedAt": "2026-07-30T15:04:22.447Z"
       }
     }
   },

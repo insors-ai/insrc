@@ -1153,7 +1153,7 @@ async function main(): Promise<void> {
 		'config.write': async (params) => {
 			// `path` is either a legacy dot-string (safe for dot-free keys) OR an
 			// array of literal segments — the latter is required for keys that
-			// contain dots (models.analyze.roleTiers.<roleId>, .byRepo.<repoPath>),
+			// contain dots (models.tasks.<roleId>, .byRepo.<repoPath>),
 			// which a naive dot-split would mis-nest. See config/write-path.ts.
 			const { path, value } = params as { path: string | string[]; value: unknown };
 			let config: Record<string, unknown> = {};

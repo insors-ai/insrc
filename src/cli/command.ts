@@ -312,7 +312,7 @@ async function runSetup(sub: string | undefined, svc: Services, ctx: CommandCtx)
 	const rec = svc.setup.recommend(info);
 	switch (sub) {
 		case undefined: case 'show':
-			return [`tier ${rec.tier} · coder ${rec.coder.model} · embedding ${rec.embedding.model} · context ${rec.context.shape}`];
+			return [`tier ${rec.tier} · local ${rec.coder.model} · embedding ${rec.embedding.model} · context ${rec.context.shape}`];
 		case 'apply':
 			return [`config written to ${svc.setup.apply(rec)}`];
 		case 'pull': {

@@ -64,7 +64,7 @@ export interface ShaperProviderOverrides {
 	 *  request. Ignored when `sampler` is undefined. */
 	readonly modelHints?: readonly string[] | undefined;
 	/** Highest-priority NON-sampler signal: a repo-scoped provider pinned via
-	 *  `models.analyze.byRepo[repoPath].shaperProvider` (resolved by the caller
+	 *  `models.byRepo[repoPath].shaperProvider` (resolved by the caller
 	 *  through `resolveRepoShaperProvider`). Wins over the global config default
 	 *  and the per-run `clientDefault`. Only the active sampler beats it. */
 	readonly repoOverride?: AnalyzeShaperProviderKind | undefined;
@@ -223,7 +223,7 @@ export function resolveRoleProvider(
  * `McpSamplingProvider` rather than a KIND, so it is not represented here.
  *
  * `globalExplicit` is `cfg.shaperProvider` ONLY when the operator explicitly
- * set `models.analyze.shaperProvider` (i.e. `cfg.shaperProviderExplicit`);
+ * set `models.tiers.core.runner` (i.e. `cfg.shaperProviderExplicit`);
  * otherwise pass `undefined` so a defaulted-'ollama' global does not pre-empt
  * the per-run caller. Extracted + exported so the precedence is unit-testable
  * in isolation from provider construction.
@@ -250,7 +250,7 @@ function isShaperKind(v: unknown): v is AnalyzeShaperProviderKind {
 }
 
 /** True for an Ollama-style model id — one carrying a `:` version tag
- *  (`qwen3.6:35b-a3b`, `qwen3-embedding:0.6b`). CLI model ids (`opus`,
+ *  (`qwen3.6:27b`, `qwen3-embedding:0.6b`). CLI model ids (`opus`,
  *  `sonnet`, `claude-haiku-4-5`) never contain a `:`. Used to keep a mis-set
  *  Ollama model from being forwarded to the claude/codex CLI, where it would
  *  fail with an api_error. */
@@ -354,15 +354,15 @@ export function buildShaperProvider(
  * the per-run MCP client sets) — that would spawn a `claude`/`codex` subprocess
  * per doc, serial + quota-burning. This ignores the sampler + client-provider
  * ambient contexts entirely and builds strictly from `cfg.summariser*`,
- * defaulting to LOCAL `ollama` (`qwen3.6:35b-a3b`, a MoE). Only if the operator
- * explicitly sets `models.analyze.summariserProvider` to a `cli-*` does it use
+ * defaulting to LOCAL `ollama` (`qwen3.6:27b`, a MoE). Only if the operator
+ * explicitly sets `models.tiers.cheap.runner` to a `cli-*` does it use
  * a CLI.
  */
 export function buildSummariserProvider(cfg: AnalyzeConfig): LLMProvider {
 	const kind = cfg.summariserProvider;
 	if (kind === 'cli-claude' || kind === 'cli-codex') {
 		const cliKind = kind === 'cli-claude' ? 'claude' : 'codex';
-		// The default summariserModel (`qwen3.6:35b-a3b`) is an Ollama id — never
+		// The default summariserModel (`qwen3.6:27b`) is an Ollama id — never
 		// forward it to a CLI; only pin a CLI model when set explicitly.
 		const model = cfg.summariserModelExplicit && cfg.summariserModel !== '' ? cfg.summariserModel : undefined;
 		log.info({ kind: cliKind, model: model ?? '(cli default)' }, 'summariser provider: routing through CliProvider');

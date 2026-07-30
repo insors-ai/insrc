@@ -39,10 +39,10 @@ const FIXTURES = join(HERE, 'fixtures');
 const readFixture = (name: string): Record<string, unknown> =>
 	JSON.parse(readFileSync(join(FIXTURES, name), 'utf-8'));
 
-/** The LIVE dynamic namespaces (roleTiers/byRepo) that must survive a reconcile. */
-function liveNamespaces(doc: Record<string, unknown>): { roleTiers: unknown; byRepo: unknown } {
-	const analyze = (doc['models'] as Record<string, unknown>)['analyze'] as Record<string, unknown>;
-	return { roleTiers: analyze['roleTiers'], byRepo: analyze['byRepo'] };
+/** The LIVE dynamic namespaces (models.tasks / models.byRepo) that must survive a reconcile. */
+function liveNamespaces(doc: Record<string, unknown>): { tasks: unknown; byRepo: unknown } {
+	const models = doc['models'] as Record<string, unknown>;
+	return { tasks: models['tasks'], byRepo: models['byRepo'] };
 }
 
 test('boot against a legacy config: retired keys stripped, live namespaces byte-identical, then converges', () => {
@@ -58,12 +58,12 @@ test('boot against a legacy config: retired keys stripped, live namespaces byte-
 		const models = after['models'] as Record<string, unknown>;
 		// live namespaces survive byte-identical to the baseline
 		assert.deepEqual(liveNamespaces(after), liveNamespaces(readFixture('legacy-config.baseline.json')));
-		// every retired model key is gone (incl. the type-invalid embeddingDim + models.agents)
-		for (const k of ['local', 'embedding', 'embeddingDim', 'tiers', 'context', 'agents']) {
+		// the old nesting + still-retired ancient leftovers are gone
+		for (const k of ['analyze', 'providers', 'embedding', 'embeddingDim', 'agents']) {
 			assert.equal(Object.prototype.hasOwnProperty.call(models, k), false, `models.${k} must be stripped`);
 		}
-		// canonical catalog defaults filled
-		assert.equal((models['analyze'] as Record<string, unknown>)['coreFloor'], 'mid');
+		// canonical catalog defaults filled (flat surface)
+		assert.equal(models['coreFloor'], 'mid');
 
 		// Second boot against the now-normalized file → zero writes, mtime unchanged (convergence).
 		const mtimeBefore = statSync(configPath).mtimeMs;
@@ -88,14 +88,14 @@ test('first boot against an empty home → surviving former-literal keys written
 		assert.equal(written['logLevel'], literal['logLevel']);
 		assert.deepEqual(written['permissions'], literal['permissions']);
 		assert.deepEqual(written['routing'], literal['routing']);
-		// retired legacy model keys are NOT written at first boot
+		// retired / old-nesting model keys are NOT written at first boot
 		const wm = written['models'] as Record<string, unknown>;
-		for (const k of ['local', 'embedding', 'embeddingDim', 'tiers', 'context']) {
+		for (const k of ['analyze', 'providers', 'embedding', 'embeddingDim', 'context', 'agents']) {
 			assert.equal(Object.prototype.hasOwnProperty.call(wm, k), false, `models.${k} must not be written`);
 		}
-		// the canonical surfaces ARE present
-		assert.equal((wm['analyze'] as Record<string, unknown>)['coreFloor'], 'mid');
-		assert.equal((wm['providers'] as Record<string, Record<string, unknown>>)['local']!['embeddingDim'], 1024);
+		// the canonical flat surfaces ARE present
+		assert.equal(wm['coreFloor'], 'mid');
+		assert.equal((wm['local'] as Record<string, unknown>)['embeddingDim'], 1024);
 	} finally {
 		rmSync(dir, { recursive: true, force: true });
 	}
@@ -107,7 +107,7 @@ test('update chain: newly-catalogued key added, type-invalid key repaired, retir
 	const rows: readonly ConfigOption[] = [
 		{ path: 'logLevel', type: 'enum', default: 'info', desc: '' },
 		{ path: 'svc.port', type: 'number', default: 8080, desc: '' },
-		{ path: 'models.analyze.coreFloor', type: 'enum', default: 'mid', desc: '' },
+		{ path: 'models.coreFloor', type: 'enum', default: 'mid', desc: '' },
 	];
 	const root = mkdtempSync(join(tmpdir(), 'insrc-smoke-root-'));
 	mkdirSync(join(root, 'out', 'config'), { recursive: true });
@@ -120,21 +120,21 @@ test('update chain: newly-catalogued key added, type-invalid key repaired, retir
 	writeFileSync(configPath, JSON.stringify({
 		logLevel: 'info',
 		svc: { port: 'not-a-number' },
-		models: { tiers: { fast: 'x' }, analyze: { roleTiers: { a: 'core' } } },
+		models: { agents: { x: 1 }, tasks: { a: 'core' } },
 	}, null, 2));
 
 	try {
 		const s1 = await runUpdateReconcile(root, () => {}, configPath);
-		assert.ok(s1.filled >= 1);     // models.analyze.coreFloor added
+		assert.ok(s1.filled >= 1);     // models.coreFloor added
 		assert.ok(s1.repaired >= 1);   // svc.port repaired
-		assert.ok(s1.pruned >= 1);     // models.tiers pruned
+		assert.ok(s1.pruned >= 1);     // models.agents pruned
 
 		const after = JSON.parse(readFileSync(configPath, 'utf-8')) as Record<string, unknown>;
 		const models = after['models'] as Record<string, unknown>;
-		assert.equal((models['analyze'] as Record<string, unknown>)['coreFloor'], 'mid');
+		assert.equal(models['coreFloor'], 'mid');
 		assert.equal((after['svc'] as Record<string, unknown>)['port'], 8080);
-		assert.equal(Object.prototype.hasOwnProperty.call(models, 'tiers'), false);   // retired pruned
-		assert.deepEqual((models['analyze'] as Record<string, unknown>)['roleTiers'], { a: 'core' }); // live survived
+		assert.equal(Object.prototype.hasOwnProperty.call(models, 'agents'), false);   // retired pruned
+		assert.deepEqual(models['tasks'], { a: 'core' }); // live survived
 
 		// Repeat run → nothing to do.
 		const s2 = await runUpdateReconcile(root, () => {}, configPath);

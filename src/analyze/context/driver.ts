@@ -52,7 +52,7 @@ import { dirname, isAbsolute, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { OllamaProvider } from '../../agent/providers/ollama.js';
-import { loadAnalyzeConfig } from '../../config/analyze.js';
+import { loadAnalyzeConfig, type AnalyzeConfig } from '../../config/analyze.js';
 import { loadLocalProviderConfig } from '../../config/local.js';
 import { executeTool } from '../../daemon/tools/executor.js';
 import type { ToolDeps } from '../../daemon/tools/types.js';
@@ -287,7 +287,7 @@ export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBund
 	const messages = buildMessages(promptContent, inputs, invocationMode, shaperId);
 
 	// (5) Resolve provider + tool deps.
-	const provider = args.provider ?? buildProvider(cfg.shaperModel, cfg.shaper.ollamaNumCtx);
+	const provider = args.provider ?? buildProvider(localToolLoopModel(cfg), cfg.shaper.ollamaNumCtx);
 	const toolDeps = buildToolDeps({
 		runId,
 		shaperId,
@@ -560,7 +560,7 @@ export async function runShaperToolLoop(
 	const cfg = loadAnalyzeConfig();
 	const promptContent = loadPromptFile(args.promptPath);
 	const messages = buildMessages(promptContent, args.inputs, args.invocationMode, args.shaperId);
-	const provider = args.provider ?? buildProvider(cfg.shaperModel, cfg.shaper.ollamaNumCtx);
+	const provider = args.provider ?? buildProvider(localToolLoopModel(cfg), cfg.shaper.ollamaNumCtx);
 	const toolDeps = buildToolDeps({
 		runId:          args.runId,
 		shaperId:       args.shaperId,
@@ -897,6 +897,18 @@ function deriveEmptyLayers(bundle: AnalyzeContextBundle): BundleLayerName[] {
 function buildProvider(modelId: string, numCtx: number): LLMProvider {
 	const local = loadLocalProviderConfig();
 	return new OllamaProvider(modelId, local.host, numCtx);
+}
+
+/** The local Ollama model for the tool-loop path (classification / task modes),
+ *  which REQUIRES an Ollama provider (`CliProvider.supportsTools === false`).
+ *  Derives from the cheap tier when it is an Ollama runner, else the local
+ *  `coreModel` — never a CLI-only model id (which would break OllamaProvider).
+ *  Replaces the old direct read of the (now derived) `cfg.shaperModel`, which
+ *  can resolve to a CLI model id (e.g. opus) that OllamaProvider cannot honor. */
+function localToolLoopModel(cfg: AnalyzeConfig): string {
+	const cheap = cfg.tiering.tiers?.cheap;
+	if (cheap?.runner === 'ollama' && cheap.model.length > 0) return cheap.model;
+	return loadLocalProviderConfig().coreModel;
 }
 
 interface BuildToolDepsArgs {

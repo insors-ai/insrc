@@ -40,7 +40,7 @@ const { rankOf } = reasoningRoleTaxonomy();
  * Module-private minimum capability applied to critical roles when no
  * `configuredFloor` is supplied (ac2). Governs ONLY the clamp decision — it
  * must never surface beyond this module nor alter the legacy unset-shaperProvider
- * fallback path. `'mid'` mirrors the catalog default for `models.analyze.coreFloor`.
+ * fallback path. `'mid'` mirrors the catalog default for `models.coreFloor`.
  */
 const BUILT_IN_DEFAULT_FLOOR: TierName = 'mid';
 
@@ -82,7 +82,7 @@ export class InvalidTierError extends Error {
 		super(
 			field === 'configuredFloor'
 				? `coreFloor config value '${value}' is not a known tier (core|mid|cheap) — ` +
-				  `fix the models.analyze.coreFloor / byRepo[...].coreFloor key`
+				  `fix the models.coreFloor / byRepo[...].coreFloor key`
 				: `resolvedTier '${value}' is not a known tier (core|mid|cheap) — ` +
 				  `the RoleRouter handed the CoreFloorGuard an off-contract tier`,
 		);

@@ -4,9 +4,10 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * Unit tests for the models.analyze tiering parse/validation (S001 — sc1).
+ * Unit tests for the flat models.* tiering parse/validation (S001 — sc1).
  * Exercises parseTiering directly (no global config file): valid members
  * parse, invalid members are dropped fail-soft, and absent tiering yields {}.
+ * The on-disk task→tier key is `tasks` (internal field: `roleTiers`).
  *
  * Run: npx tsx --test src/config/__tests__/analyze-tiering.test.ts
  */
@@ -38,13 +39,14 @@ test('coreFloor accepts only a TierName; other strings are dropped', () => {
 	assert.equal(parseTiering({ coreFloor: 'high' }).coreFloor, undefined);
 });
 
-test('roleTiers parses valid RoleId→TierName entries and drops non-tier values', () => {
-	const t = parseTiering({ roleTiers: { synthesize: 'mid', 'tracker.render.summary': 'cheap', bogus: 'nope' } });
+test('models.tasks parses valid RoleId→TierName entries and drops non-tier values', () => {
+	// on-disk key is `tasks`; the internal AnalyzeTiering field is `roleTiers`
+	const t = parseTiering({ tasks: { synthesize: 'mid', 'tracker.render.summary': 'cheap', bogus: 'nope' } });
 	assert.deepEqual(t.roleTiers, { synthesize: 'mid', 'tracker.render.summary': 'cheap' });
 });
 
-test('byRepo tiering overrides are parsed per repo path', () => {
-	const t = parseTiering({ byRepo: { '/work/afm': { roleTiers: { review: 'core' }, coreFloor: 'core' } } });
+test('byRepo tiering overrides are parsed per repo path (tasks key)', () => {
+	const t = parseTiering({ byRepo: { '/work/afm': { tasks: { review: 'core' }, coreFloor: 'core' } } });
 	assert.equal(t.byRepo?.['/work/afm']?.coreFloor, 'core');
 	assert.deepEqual(t.byRepo?.['/work/afm']?.roleTiers, { review: 'core' });
 });
@@ -55,8 +57,8 @@ test('absent tiering keys → {} (legacy single-provider path)', () => {
 	assert.deepEqual(parseTiering({ shaperProvider: 'ollama', shaperModel: 'qwen3.6:35b-a3b' }), {});
 });
 
-test('empty tiers:{} / roleTiers:{} are treated as absent, not an error', () => {
-	const t = parseTiering({ tiers: {}, roleTiers: {} });
+test('empty tiers:{} / tasks:{} are treated as absent, not an error', () => {
+	const t = parseTiering({ tiers: {}, tasks: {} });
 	assert.equal(t.tiers, undefined);
 	assert.equal(t.roleTiers, undefined);
 });

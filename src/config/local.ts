@@ -46,7 +46,7 @@ const DEFAULTS: LocalProviderInfraConfig = {
 	host:           'http://localhost:11434',
 	embeddingModel: 'qwen3-embedding:0.6b',
 	embeddingDim:   1024,
-	coreModel:      'qwen3-coder:latest',
+	coreModel:      'qwen3.6:27b',
 	charsPerToken:  3,
 };
 
@@ -65,8 +65,7 @@ export function loadLocalProviderConfig(): LocalProviderInfraConfig {
 	try {
 		const raw = JSON.parse(readFileSync(PATHS.config, 'utf8')) as Record<string, unknown>;
 		const models = isObject(raw['models']) ? raw['models'] as Record<string, unknown> : {};
-		const providers = isObject(models['providers']) ? models['providers'] as Record<string, unknown> : {};
-		const local = isObject(providers['local']) ? providers['local'] as Record<string, unknown> : {};
+		const local = isObject(models['local']) ? models['local'] as Record<string, unknown> : {};
 		cached = {
 			host:           typeof local['host']           === 'string' ? local['host']           as string : DEFAULTS.host,
 			embeddingModel: typeof local['embeddingModel'] === 'string' ? local['embeddingModel'] as string : DEFAULTS.embeddingModel,

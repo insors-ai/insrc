@@ -9,8 +9,8 @@
  *
  * WHY THIS EXISTS: config keys are not all dot-free. Two dynamic-key namespaces
  * use keys that CONTAIN dots (and, for byRepo, slashes):
- *   - `models.analyze.roleTiers.<roleId>`   — role ids like "context.assemble"
- *   - `models.analyze.byRepo.<repoPath>.*`   — absolute repo paths
+ *   - `models.tasks.<roleId>`   — role ids like "context.assemble"
+ *   - `models.byRepo.<repoPath>.*`   — absolute repo paths
  * Splitting a caller-supplied path on every '.' mis-nests such a leaf
  * (roleTiers.context.assemble) so the reader — which expects the flat key
  * roleTiers["context.assemble"] — never sees it, and the write silently

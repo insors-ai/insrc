@@ -4,27 +4,37 @@
     "host": "http://localhost:11434"
   },
   "models": {
-    "local": "qwen3-coder:latest",
     "embedding": "qwen3-embedding:0.6b",
     "embeddingDim": "1024",
-    "tiers": {
-      "fast": "claude-haiku-4-5",
-      "standard": "claude-sonnet-4-6",
-      "powerful": "claude-opus-4-6"
-    },
-    "context": {
-      "local": 16384,
-      "localMaxOutput": 8192,
-      "claude": 200000,
-      "claudeMaxOutput": 8192,
-      "charsPerToken": 3
+    "agents": {
+      "implementation": {
+        "propose": "cli-claude",
+        "review": "cli-claude"
+      }
     },
     "analyze": {
       "shaperProvider": "cli-claude",
+      "shaperModel": "qwen3.6:35b-a3b",
+      "summariserProvider": "ollama",
+      "summariserModel": "qwen3.6:35b-a3b",
+      "coreFloor": "mid",
+      "tiers": {
+        "core": { "runner": "cli-claude", "model": "" },
+        "mid": { "runner": "cli-claude", "model": "sonnet" },
+        "cheap": { "runner": "ollama", "model": "qwen3.6:35b-a3b" }
+      },
       "roleTiers": {
         "design.hld.synthesize": "core",
         "review.claims.enumerate": "mid",
         "tracker.render": "cheap"
+      },
+      "shaper": {
+        "maxToolTurns": 40,
+        "ollamaNumCtx": 32768
+      },
+      "maxPlanDepth": {
+        "XS": 2,
+        "XL": 6
       },
       "byRepo": {
         "/Users/redacted/work/projects/example/repo": {
@@ -33,10 +43,13 @@
         }
       }
     },
-    "agents": {
-      "implementation": {
-        "propose": "cli-claude",
-        "review": "cli-claude"
+    "providers": {
+      "local": {
+        "host": "http://localhost:11434",
+        "coreModel": "qwen3-coder:latest",
+        "embeddingModel": "qwen3-embedding:0.6b",
+        "embeddingDim": 1024,
+        "charsPerToken": 3
       }
     }
   },

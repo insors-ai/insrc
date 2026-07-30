@@ -63,7 +63,7 @@ const defaultsLiteral = (): Record<string, unknown> =>
 
 // The former L180-192 literal keys that were RETIRED in this story — first boot
 // must NO LONGER write them (they are absent, not defaulted).
-const RETIRED_PREFIXES = ['models.local', 'models.embedding', 'models.embeddingDim', 'models.tiers', 'models.context', 'models.agents'];
+const RETIRED_PREFIXES = ['models.embedding', 'models.embeddingDim', 'models.context', 'models.agents', 'models.analyze', 'models.providers'];
 const isRetired = (dp: string): boolean => RETIRED_PREFIXES.some(p => dp === p || dp.startsWith(`${p}.`));
 
 test('first-boot equivalence: surviving former-literal keys match catalog defaults; retired ones are absent', () => {
@@ -96,8 +96,8 @@ test('first boot with no config present → writes surviving former keys + canon
 			else assert.deepEqual(getPath(written, dotPath), value, `former-literal key ${dotPath}`);
 		}
 		// the canonical surfaces are present
-		assert.equal(getPath(written, 'models.analyze.coreFloor'), 'mid');
-		assert.equal(getPath(written, 'models.providers.local.embeddingDim'), 1024);
+		assert.equal(getPath(written, 'models.coreFloor'), 'mid');
+		assert.equal(getPath(written, 'models.local.embeddingDim'), 1024);
 	} finally {
 		rmSync(dir, { recursive: true, force: true });
 	}

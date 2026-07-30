@@ -93,23 +93,24 @@ export function computeEffectiveTiers(tiering: AnalyzeTiering): EffectiveTiers {
 
 /** The config dot-path for a tier's runner/model field (for config.write). */
 export function tierFieldPath(tier: TierName, field: 'runner' | 'model'): string {
-	return `models.analyze.tiers.${tier}.${field}`;
+	return `models.tiers.${tier}.${field}`;
 }
 
 /** The config dot-path for a role's tier override.
  *  WARNING: role ids contain dots (e.g. "context.assemble"), so this per-role
  *  dotted path CANNOT be handed to `config.write` — the daemon splits on every
  *  '.' and would mis-nest the leaf (roleTiers.context.assemble) where
- *  parseTiering expects the flat key roleTiers["context.assemble"]. Write the
+ *  parseTiering expects the flat key tasks["context.assemble"]. Write the
  *  whole map at `ROLE_TIERS_PATH` via `nextRoleTiers` instead. Retained only
  *  for display / reference. */
 export function roleTierPath(roleId: string): string {
-	return `models.analyze.roleTiers.${roleId}`;
+	return `models.tasks.${roleId}`;
 }
 
-/** The dotless config path for the ENTIRE roleTiers map. The map is written
- *  whole (not per-role) so role ids keep their dots as flat keys. */
-export const ROLE_TIERS_PATH = 'models.analyze.roleTiers';
+/** The dotless config path for the ENTIRE task→tier map (`models.tasks`). The
+ *  map is written whole (not per-role) so role ids keep their dots as flat
+ *  keys. */
+export const ROLE_TIERS_PATH = 'models.tasks';
 
 /** Compute the sparse roleTiers map to persist after setting `roleId` to
  *  `tier`, or clearing its override when `tier` is null. Role ids stay FLAT
@@ -127,7 +128,7 @@ export function nextRoleTiers(
 }
 
 /** The config dot-path for the coreFloor. */
-export const CORE_FLOOR_PATH = 'models.analyze.coreFloor';
+export const CORE_FLOOR_PATH = 'models.coreFloor';
 
 /** Whether `v` is a valid tier name (for edit validation). */
 export function isTierName(v: string): v is TierName {

@@ -59,8 +59,8 @@ function row(path: string, type: ConfigOption['type'], def: unknown): ConfigOpti
 
 test('success: fills a newly-catalogued key, reports counts + one detail line per key, preserves dynamic namespaces', async () => {
 	const root = makeRoot([row('newKey', 'string', 'nv'), row('logLevel', 'enum', 'info')]);
-	// models.analyze.roleTiers is a live dynamic namespace (NOT retired) → must survive.
-	const configPath = tempConfig({ logLevel: 'info', models: { analyze: { roleTiers: { a: 'core' } } } });
+	// models.tasks is a live dynamic namespace (NOT retired) → must survive.
+	const configPath = tempConfig({ logLevel: 'info', models: { tasks: { a: 'core' } } });
 	const logs: string[] = [];
 	try {
 		const summary = await runUpdateReconcile(root, l => logs.push(l), configPath);
@@ -71,7 +71,7 @@ test('success: fills a newly-catalogued key, reports counts + one detail line pe
 		assert.ok(logs.some(l => l.includes('newKey')), 'detail line names the catalog dot-path');
 		const written = JSON.parse(readFileSync(configPath, 'utf-8')) as Record<string, unknown>;
 		assert.equal(written['newKey'], 'nv');
-		assert.deepEqual(((written['models'] as Record<string, unknown>)['analyze'] as Record<string, unknown>)['roleTiers'], { a: 'core' }); // dynamic survived
+		assert.deepEqual((written['models'] as Record<string, unknown>)['tasks'], { a: 'core' }); // dynamic survived
 	} finally {
 		rmSync(dirname(configPath), { recursive: true, force: true });
 		rmSync(root, { recursive: true, force: true });
@@ -164,7 +164,7 @@ test('summarizeReconcile emits exactly one summary line + one detail line per fi
 			carried: ['a'],
 			filled: ['b.c', 'd'],
 			repaired: [{ path: 'e.f', discarded: 'bad' }],
-			pruned: ['models.tiers', 'models.local'],
+			pruned: ['models.analyze', 'models.providers'],
 		},
 	}, l => logs.push(l));
 	assert.equal(summary.filled, 2);
@@ -177,7 +177,7 @@ test('summarizeReconcile emits exactly one summary line + one detail line per fi
 	assert.equal(logs.filter(l => /^\s*repaired/.test(l)).length, 1);
 	assert.equal(logs.filter(l => /^\s*pruned/.test(l)).length, 2);
 	assert.ok(logs.some(l => l.includes('e.f') && l.includes('bad'))); // discarded value named
-	assert.ok(logs.some(l => /^\s*pruned\s+models\.tiers/.test(l)));   // pruned path named
+	assert.ok(logs.some(l => /^\s*pruned\s+models\.analyze/.test(l)));   // pruned path named
 });
 
 test('summarizeReconcile: a config with ONLY retired keys to prune reports pruned>0, changed, filled/repaired 0', () => {

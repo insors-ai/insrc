@@ -151,7 +151,7 @@ export interface DecomposeArgs {
 
 /**
  * Ask the shaper model to emit an ExplorationPlan for the given
- * intent. Tight prompt, small output, ~30s on qwen3.6:35b-a3b.
+ * intent. Tight prompt, small output, ~30s on qwen3.6:27b.
  */
 export async function decompose(args: DecomposeArgs): Promise<ExplorationPlan> {
 	const cfg = loadAnalyzeConfig();

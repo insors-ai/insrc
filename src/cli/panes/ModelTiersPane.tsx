@@ -78,10 +78,9 @@ export function ModelTiersPane(): ReactElement {
 	const eff = useMemo<EffectiveTiers | undefined>(() => {
 		if (raw === undefined) return undefined;
 		const models = raw['models'];
-		const analyze = isObj(models) ? models['analyze'] : undefined;
-		if (analyze !== undefined && !isObj(analyze)) { setMalformed(true); return computeEffectiveTiers(parseTiering({})); }
+		if (models !== undefined && !isObj(models)) { setMalformed(true); return computeEffectiveTiers(parseTiering({})); }
 		setMalformed(false);
-		return computeEffectiveTiers(parseTiering(isObj(analyze) ? analyze : {}));
+		return computeEffectiveTiers(parseTiering(isObj(models) ? models : {}));
 	}, [raw]);
 
 	const rows = useMemo<Row[]>(() => (eff !== undefined ? buildRows(eff) : []), [eff]);
@@ -101,9 +100,9 @@ export function ModelTiersPane(): ReactElement {
 			if (!isTierName(v)) { ui.toast(`✗ tier must be core | mid | cheap`); setEditing(undefined); ui.capture(false); return; }
 			// Role ids contain dots (e.g. "context.assemble", "design.contract.detail").
 			// The daemon's config.write splits the path on every '.', so a per-role
-			// dotted path (models.analyze.roleTiers.context.assemble) would MIS-NEST as
-			// roleTiers.context.assemble — unreadable by parseTiering (which reads the
-			// flat key roleTiers["context.assemble"]). Instead write the WHOLE roleTiers
+			// dotted path (models.tasks.context.assemble) would MIS-NEST as
+			// tasks.context.assemble — unreadable by parseTiering (which reads the
+			// flat key tasks["context.assemble"]). Instead write the WHOLE tasks
 			// map at the dotless path so the flat dotted key is preserved.
 			const models  = isObj(raw?.['models'])    ? raw!['models']    as Record<string, unknown> : {};
 			const analyze = isObj(models['analyze'])  ? models['analyze']  as Record<string, unknown> : {};

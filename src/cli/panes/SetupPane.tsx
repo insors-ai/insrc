@@ -58,7 +58,7 @@ export function SetupPane(): ReactElement {
 			</Box>
 			<Box flexDirection="column" marginTop={1}>
 				<Text bold>Recommendation <Text dimColor>({rec.tier})</Text></Text>
-				<Text>  coder     {rec.coder.model} <Text dimColor>({rec.coder.params})</Text>{rec.coder.pull ? <Text color="yellow"> ← needs pull</Text> : <Text />}</Text>
+				<Text>  local     {rec.coder.model} <Text dimColor>({rec.coder.params})</Text>{rec.coder.pull ? <Text color="yellow"> ← needs pull</Text> : <Text />}</Text>
 				<Text>  embedding {rec.embedding.model} <Text dimColor>({rec.embedding.dims} dims)</Text>{rec.embedding.pull ? <Text color="yellow"> ← needs pull</Text> : <Text />}</Text>
 				<Text>  context   {rec.context.shape} <Text dimColor>({rec.context.tokens} tokens)</Text></Text>
 			</Box>

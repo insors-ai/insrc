@@ -62,8 +62,8 @@ You can run in one of three modes:
 
 | Mode | Embedder | Shaper narrow-LLM | Best for |
 | :--- | :--- | :--- | :--- |
-| Full Ollama | qwen3-embedding via Ollama | qwen3.6 via Ollama (`shaperProvider: ollama`) | Local, offline, no CLI OAuth session |
-| Hybrid | qwen3-embedding via Ollama | Claude Code / Codex session (`shaperProvider: cli-claude` / `cli-codex`, or via multi-turn `insrc_analyze_step`) | Best quality — big shaper LLM lives in the CLI |
+| Full Ollama | qwen3-embedding via Ollama | qwen3.6 via Ollama (`tiers.core = { runner: ollama, ... }`) | Local, offline, no CLI OAuth session |
+| Hybrid | qwen3-embedding via Ollama | Claude Code / Codex session (`tiers.core = { runner: cli-claude / cli-codex }`, or via multi-turn `insrc_analyze_step`) | Best quality — big shaper LLM lives in the CLI |
 | ONNX-only | nomic-embed-text-v1.5 in-process | Claude Code / Codex session (multi-turn only) | Minimal footprint — no Ollama install |
 
 Recommended Ollama models (full or hybrid mode only):
@@ -71,7 +71,7 @@ Recommended Ollama models (full or hybrid mode only):
 ```
 ollama pull qwen3-embedding:0.6b     # embeddings (~700 MB)
 ollama pull qwen3-coder:latest       # core / indexer  (~10 GB)
-ollama pull qwen3.6:35b-a3b          # analyze shaper (~20 GB, optional if you're only using cli-claude / cli-codex)
+ollama pull qwen3.6:27b          # analyze shaper (~20 GB, optional if you're only using cli-claude / cli-codex)
 ```
 
 ### Choosing ONNX-only mode
@@ -87,11 +87,9 @@ ONNX, update `~/.insrc/config.json` first:
 ```json
 {
   "models": {
-    "providers": {
-      "local": {
-        "embeddingModel": "nomic-ai/nomic-embed-text-v1.5",
-        "embeddingDim":   768
-      }
+    "local": {
+      "embeddingModel": "nomic-ai/nomic-embed-text-v1.5",
+      "embeddingDim":   768
     }
   }
 }
@@ -304,22 +302,21 @@ Minimal shape:
 ```json
 {
   "models": {
-    "providers": {
-      "local": {
-        "host":           "http://localhost:11434",
-        "embeddingModel": "qwen3-embedding:0.6b",
-        "embeddingDim":   1024,
-        "coreModel":      "qwen3-coder:latest",
-        "charsPerToken":  3
-      }
+    "tiers": {
+      "core":  { "runner": "cli-claude", "model": "opus" },
+      "mid":   { "runner": "cli-claude", "model": "sonnet" },
+      "cheap": { "runner": "ollama",     "model": "qwen3.6:27b" }
     },
-    "analyze": {
-      "shaperProvider": "ollama",
-      "shaperModel":    "qwen3.6:35b-a3b",
-      "shaper": {
-        "structuredOutputRetries": 3,
-        "maxToolTurns":             8
-      }
+    "shaper": {
+      "structuredOutputRetries": 3,
+      "maxToolTurns":             8
+    },
+    "local": {
+      "host":           "http://localhost:11434",
+      "embeddingModel": "qwen3-embedding:0.6b",
+      "embeddingDim":   1024,
+      "coreModel":      "qwen3.6:27b",
+      "charsPerToken":  3
     }
   }
 }
@@ -329,20 +326,24 @@ Key knobs:
 
 | Field | Purpose | Default |
 | :--- | :--- | :--- |
-| `models.providers.local.host` | Ollama HTTP endpoint | `http://localhost:11434` |
-| `models.providers.local.embeddingModel` | Embedding model for the entity vector store | `qwen3-embedding:0.6b` |
-| `models.providers.local.embeddingDim` | Vector dimensionality (pins the Lance schema — changing this requires a full reindex) | `1024` |
-| `models.providers.local.coreModel` | Used by the indexer's embedder for structural summaries | `qwen3-coder:latest` |
-| `models.analyze.shaperProvider` | **Legacy** run-wide backend, now the lowest-precedence fallback beneath the tiers (see [Model tiering](#model-tiering)): `ollama` \| `cli-claude` \| `cli-codex` | *(unset → built-in tier defaults)* |
-| `models.analyze.shaperModel` | Ollama model used when the legacy `shaperProvider = ollama` fallback is in effect | `qwen3.6:35b-a3b` |
-| `models.analyze.shaper.structuredOutputRetries` | Attempts for ajv-guided retry when the LLM emits malformed JSON | `3` |
-| `models.analyze.shaper.maxToolTurns` | Cap on freeform.probe's tool-loop turns | `8` |
+| `models.local.host` | Ollama HTTP endpoint | `http://localhost:11434` |
+| `models.local.embeddingModel` | Embedding model for the entity vector store | `qwen3-embedding:0.6b` |
+| `models.local.embeddingDim` | Vector dimensionality (pins the Lance schema — changing this requires a full reindex) | `1024` |
+| `models.local.coreModel` | Local core/summariser model used by the indexer's embedder for structural summaries | `qwen3.6:27b` |
+| `models.shaper.structuredOutputRetries` | Attempts for ajv-guided retry when the LLM emits malformed JSON | `3` |
+| `models.shaper.maxToolTurns` | Cap on freeform.probe's tool-loop turns | `8` |
 
-`shaperProvider` is the old "one backend for all reasoning" knob. It
-still works — it becomes the second-lowest precedence layer — but the
-daemon now routes **per operation** through capability tiers instead
-(below). Leave it unset unless you want to force a single backend for
-every role that has no explicit tier.
+**Models are named in exactly one place — the three `models.tiers` entries**
+(see [Model tiering](#model-tiering)). There is no separate `shaperProvider` /
+`shaperModel` knob: the interactive shaper is **derived** from `tiers.core` and
+the background summariser from `tiers.cheap`. `models.local.*` is the separate
+local/embedder surface (not a reasoning tier).
+
+> **Config shape note.** The config is a flat `models.*` surface. Older configs
+> that used `models.analyze.*` / `models.providers.local` are **migrated
+> automatically** on the next daemon boot / `daemon-ctl.sh update` — no manual
+> edit needed (the boot reconcile relocates the keys and prunes the old
+> nesting, reporting a `migrated`/`pruned` count in its log).
 
 ### Model tiering
 
@@ -361,51 +362,52 @@ always via the `claude`/`codex` CLI subprocess (never a direct REST call).
 | :--- | :--- | :--- |
 | `core` (high) | `cli-claude` / `opus` | design, review, build, validate, define — the critical roles |
 | `mid` | `cli-claude` / `sonnet` | synthesis, grounding/context assembly, HLD framework/rollout |
-| `cheap` | `ollama` / `qwen3.6:35b-a3b` | classification, narrow probes, tracker rendering, summaries |
+| `cheap` | `ollama` / `qwen3.6:27b` | classification, narrow probes, tracker rendering, summaries |
 
 These built-in defaults apply out of the box — with **no** tiering config,
 critical roles already resolve to `opus`, mid to `sonnet`, and peripheral
-to the local model. The installer preconfigures `models.analyze.tiers` for
+to the local model. The installer preconfigures `models.tiers` for
 your chosen CLI (Claude → `opus`/`sonnet`; Codex → `gpt-5.5`); `cheap`
 stays local either way.
 
-**Config shape** (all additive to `models.analyze.*`; every key optional):
+**Config shape** (flat under `models.*`; every key optional):
 
 ```json
-"analyze": {
+"models": {
   "coreFloor": "core",
   "tiers": {
     "core":  { "runner": "cli-claude", "model": "opus" },
     "mid":   { "runner": "cli-claude", "model": "sonnet" },
-    "cheap": { "runner": "ollama",     "model": "qwen3.6:35b-a3b" }
+    "cheap": { "runner": "ollama",     "model": "qwen3.6:27b" }
   },
-  "roleTiers": { "analyze.synthesize": "cheap" },
+  "tasks": { "analyze.synthesize": "cheap" },
   "byRepo": {
-    "/abs/path/to/repo": { "roleTiers": { "review": "core" }, "coreFloor": "core" }
+    "/abs/path/to/repo": { "tasks": { "review": "core" }, "coreFloor": "core" }
   }
 }
 ```
 
 - `tiers.<core|mid|cheap>.{runner,model}` — the model backing each tier.
-- `roleTiers.<roleId>` — pin a specific role to a tier, overriding its
+  **This is the only place a model is named**; the shaper (`tiers.core`) and
+  summariser (`tiers.cheap`) are derived from it.
+- `tasks.<roleId>` — pin a specific task/role to a tier, overriding its
   taxonomy default (e.g. run `analyze.synthesize` on `cheap`).
 - `coreFloor` — the minimum tier for **critical** roles (default `mid`
   when unset). A critical role assigned below the floor is clamped **up**
   to it (peripheral roles are never clamped — they may run cheaper).
-- `byRepo.<absPath>.*` — the same knobs scoped to one repo; they win over
-  the global values for that repo only.
+- `byRepo.<absPath>.*` — the same knobs (`tiers` / `tasks` / `coreFloor`)
+  scoped to one repo; they win over the global values for that repo only.
 
 **Resolution precedence** (the router applies this at one place):
 
-1. **Tier for the role**: `byRepo.roleTiers[role]` → `roleTiers[role]` →
+1. **Tier for the role**: `byRepo.tasks[role]` → `tasks[role]` →
    the role's taxonomy `defaultTier`.
 2. **coreFloor clamp**: if the role is critical and its tier ranks below
    the effective `coreFloor` (`byRepo.coreFloor` → global `coreFloor` →
    built-in `mid`), raise it to the floor and log the clamp
    (`reason: below-core-floor`).
 3. **Model for that tier**: `byRepo.tiers[tier]` → global `tiers[tier]` →
-   an explicit legacy `shaperProvider`/`shaperModel` → the built-in
-   `DEFAULT_TIERS[tier]`.
+   the built-in `DEFAULT_TIERS[tier]`.
 
 Every resolved `runner` is one of `ollama` \| `cli-claude` \| `cli-codex`;
 there is no path to a direct cloud REST provider at any tier. Each
@@ -423,7 +425,7 @@ workflow artifact records which model actually served each step — see
 
 ## Usage via Ollama
 
-The default (`shaperProvider = ollama`, no MCP client) is
+With an all-local config (`tiers.core.runner = ollama`, no MCP client) it is
 end-to-end local. Every analyze call from the CLI or from a
 custom script routes through Ollama for embeddings + shaper LLM
 work.
@@ -641,7 +643,7 @@ curl http://localhost:11434/api/tags
 # should list your installed models
 ```
 
-If `shaperProvider = ollama` and Ollama is down, adherence-check
+If the shaper tier runs on `ollama` and Ollama is down, adherence-check
 / prose-retrieval / capability-discovery pipelines all block on
 the shaper. Structural-map runs fine — it uses only deterministic
 graph queries.

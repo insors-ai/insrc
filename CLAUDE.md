@@ -216,7 +216,7 @@ questions because:
 | Quick one-shot bundle (fine if you don't mind Ollama)     | `insrc_analyze`         |
 
 - **`insrc_analyze_step`** is multi-turn: the server hands you the decomposer / synthesizer / narrow-LLM prompts + schemas via tool responses, and YOU emit the JSON as your next reasoning step. Every reasoning turn stays in this session — better accuracy, no subprocess spawn, no separate billing. Prefer this by default.
-- **`insrc_analyze`** is one-shot: single tool call, server runs the whole pipeline. Inner narrow-LLM calls route to the daemon's configured `shaperProvider` (Ollama by default, slower + separate billing). Use only when you specifically want the Ollama path.
+- **`insrc_analyze`** is one-shot: single tool call, server runs the whole pipeline. Inner narrow-LLM calls route to the daemon's shaper, derived from `models.tiers.core` (local Ollama when that tier's runner is `ollama` — slower + separate billing). Use only when you specifically want the Ollama path.
 
 ### `insrc_analyze_step` loop shape
 

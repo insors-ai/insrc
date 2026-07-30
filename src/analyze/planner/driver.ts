@@ -117,7 +117,7 @@ export class MaxPlanDepthExceededError extends Error {
 		super(
 			`Plan Builder refused: currentDepth=${currentDepth}+1 exceeds ` +
 				`max-plan-depth for root scope ${rootScope} (cap=${cap}). ` +
-				`Adjust models.analyze.maxPlanDepth.${rootScope} or restructure ` +
+				`Adjust models.maxPlanDepth.${rootScope} or restructure ` +
 				`the parent plan to use leaf templates instead of planner-template ` +
 				`tasks at this depth.`,
 		);

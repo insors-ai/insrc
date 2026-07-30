@@ -33,7 +33,7 @@ function writeConfig(obj: unknown): { path: string; dir: string } {
 
 test('resolveRepoShaperProvider returns the pinned kind for a byRepo entry', () => {
 	const { path, dir } = writeConfig({
-		models: { analyze: { byRepo: { [REPO]: { shaperProvider: 'cli-claude' } } } },
+		models: { byRepo: { [REPO]: { tiers: { core: { runner: 'cli-claude' } } } } },
 	});
 	try {
 		assert.equal(resolveRepoShaperProvider(REPO, path), 'cli-claude');
@@ -44,7 +44,7 @@ test('resolveRepoShaperProvider returns the pinned kind for a byRepo entry', () 
 
 test('resolveRepoShaperProvider returns undefined when the repo has no entry', () => {
 	const { path, dir } = writeConfig({
-		models: { analyze: { byRepo: { '/other/repo': { shaperProvider: 'cli-codex' } } } },
+		models: { byRepo: { '/other/repo': { tiers: { core: { runner: 'cli-codex' } } } } },
 	});
 	try {
 		assert.equal(resolveRepoShaperProvider(REPO, path), undefined);
@@ -54,7 +54,7 @@ test('resolveRepoShaperProvider returns undefined when the repo has no entry', (
 });
 
 test('resolveRepoShaperProvider returns undefined when byRepo section is absent', () => {
-	const { path, dir } = writeConfig({ models: { analyze: { shaperProvider: 'cli-codex' } } });
+	const { path, dir } = writeConfig({ models: { tiers: { core: { runner: 'cli-codex', model: 'x' } } } });
 	try {
 		assert.equal(resolveRepoShaperProvider(REPO, path), undefined);
 	} finally {
@@ -64,7 +64,7 @@ test('resolveRepoShaperProvider returns undefined when byRepo section is absent'
 
 test('resolveRepoShaperProvider ignores an invalid pinned kind', () => {
 	const { path, dir } = writeConfig({
-		models: { analyze: { byRepo: { [REPO]: { shaperProvider: 'gpt-9000' } } } },
+		models: { byRepo: { [REPO]: { tiers: { core: { runner: 'gpt-9000' } } } } },
 	});
 	try {
 		assert.equal(resolveRepoShaperProvider(REPO, path), undefined);
@@ -79,7 +79,7 @@ test('resolveRepoShaperProvider tolerates a missing config file', () => {
 
 test('resolveRepoShaperModel returns the pinned model, else undefined', () => {
 	const { path, dir } = writeConfig({
-		models: { analyze: { byRepo: { [REPO]: { shaperProvider: 'cli-claude', shaperModel: 'claude-haiku-4-5' } } } },
+		models: { byRepo: { [REPO]: { tiers: { core: { runner: 'cli-claude', model: 'claude-haiku-4-5' } } } } },
 	});
 	try {
 		assert.equal(resolveRepoShaperModel(REPO, path), 'claude-haiku-4-5');

@@ -1012,7 +1012,7 @@ async function handleAnalyze(
 /** Map an MCP client's initialize `clientInfo.name` to the CLI shaper
  *  provider it implies: Claude Code → 'cli-claude', Codex → 'cli-codex'.
  *  Undefined for unknown clients (analyze then uses the config default).
- *  An explicit `models.analyze.shaperProvider` overrides this downstream. */
+ *  An explicit `models.tiers.core.runner` overrides this downstream. */
 function detectClientProvider(name: string | undefined): AnalyzeShaperProviderKind | undefined {
 	if (name === undefined) return undefined;
 	const n = name.toLowerCase();

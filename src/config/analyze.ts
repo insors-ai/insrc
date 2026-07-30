@@ -6,14 +6,14 @@
 /**
  * Analyze-framework config loader.
  *
- * The Context Builder's LLM-driven shaper consumes:
- *   - models.analyze.shaperModel               -- Ollama model id; falls
- *     back to loadLocalProviderConfig().coreModel when unset
- *   - models.analyze.shaper.maxToolTurns       -- tool-loop turn cap
- *   - models.analyze.shaper.structuredOutputRetries -- final-emit retry
- *     budget
- *   - models.analyze.shaper.ollamaNumCtx       -- context window override
- *     for the shaper invocation
+ * Models are named in ONE place — the three `models.tiers.{core,mid,cheap}`
+ * entries. Everything else is DERIVED: the interactive shaper provider/model
+ * from `tiers.core`, the background summariser from `tiers.cheap`. This loader
+ * reads the flat `models.*` surface:
+ *   - models.tiers / models.tasks / models.coreFloor / models.byRepo — tiering
+ *   - models.shaper.maxToolTurns / .structuredOutputRetries / .ollamaNumCtx /
+ *     .ollamaNumPredict  -- shaper runtime knobs (NOT model specs)
+ *   - models.maxPlanDepth.{XS,S,M,L,XL}
  *
  * Read from `~/.insrc/config.json` if present, else fall back to defaults
  * declared below. Cached in-process for the daemon's lifetime; the cache
@@ -46,7 +46,7 @@ export interface AnalyzeShaperConfig {
 	 *
 	 * 20480 gives the model ~2.5x headroom over 8192 without eating into
 	 * the prompt half of ollamaNumCtx (32768 total - prompt budget).
-	 * Bump higher via config.json `models.analyze.shaper.ollamaNumPredict`
+	 * Bump higher via config.json `models.shaper.ollamaNumPredict`
 	 * for XL-scope runs on large workspaces.
 	 */
 	readonly ollamaNumPredict:        number;
@@ -90,11 +90,12 @@ export type AnalyzeShaperProviderKind = 'ollama' | 'cli-claude' | 'cli-codex';
 // ---------------------------------------------------------------------------
 // Per-role model tiering (Epic per-role-per-step, Story S001 — sc1).
 //
-// Additive to the models.analyze.* surface: three capability tiers, a role→tier
-// assignment map, a coreFloor guarantee (enforced downstream by S002), and
-// per-repo overrides. The legacy shaperProvider/shaperModel keys stay untouched
-// as the lowest-precedence fallback (S001 does not resolve — the RoleRouter
-// (S003) consumes this schema + the ReasoningRoleTaxonomy (sc4)).
+// The flat models.* surface: three capability tiers (`models.tiers`), a
+// task→tier assignment map (`models.tasks`, internal field `roleTiers`), a
+// coreFloor guarantee (enforced downstream by S002), and per-repo overrides
+// (`models.byRepo`). `tiers` is the ONLY place a model is named — shaper +
+// summariser derive from it. The RoleRouter (S003) consumes this schema + the
+// ReasoningRoleTaxonomy (sc4).
 // ---------------------------------------------------------------------------
 
 /** The three capability tiers, ordered cheap < mid < core (see RoleTaxonomy.rankOf). */
@@ -116,13 +117,13 @@ export type RoleTierAssignment = Readonly<Record<string, TierName>>;
  * legacy `shaperProvider` key — so tiering works out of the box: critical roles
  * (design/review/build/validate) get the high CLI model, mid roles a cheaper CLI
  * model, peripheral roles the local model. Defaults to CLAUDE (the primary CLI);
- * the installer rewrites `models.analyze.tiers` for a Codex user
+ * the installer rewrites `models.tiers` for a Codex user
  * (core `gpt-5.4` / mid `gpt-5.4-mini`), and any config value overrides these.
  */
 export const DEFAULT_TIERS: Readonly<Record<TierName, TierModel>> = {
 	core:  { runner: 'cli-claude', model: 'opus' },
 	mid:   { runner: 'cli-claude', model: 'sonnet' },
-	cheap: { runner: 'ollama',     model: 'qwen3.6:35b-a3b' },
+	cheap: { runner: 'ollama',     model: 'qwen3.6:27b' },
 };
 
 /** The tiering knobs that may appear globally or under a byRepo entry. */
@@ -132,7 +133,7 @@ export interface TieringOverride {
 	readonly coreFloor?: TierName | undefined;
 }
 
-/** The full parsed models.analyze tiering shape (sc1). Always present on
+/** The full parsed models.* tiering shape (sc1). Always present on
  *  AnalyzeConfig; empty (all fields absent) when no tiering config is set, in
  *  which case resolution is identical to the legacy single-provider path. */
 export interface AnalyzeTiering extends TieringOverride {
@@ -140,13 +141,13 @@ export interface AnalyzeTiering extends TieringOverride {
 }
 
 /**
- * Per-repo shaper override, keyed by absolute repo path under
- * `models.analyze.byRepo` in `~/.insrc/config.json`. A repo may pin its own
- * `shaperProvider` (and optionally `shaperModel`); this is the HIGHEST-priority
- * signal in the resolution chain (per-repo > global config > per-run caller >
- * ollama). Read FRESH per lookup (see `resolveRepoShaperProvider`) rather than
- * folded into the cached `AnalyzeConfig`, so a per-repo edit is picked up
- * without poisoning — or being poisoned by — the global cache.
+ * Per-repo shaper override, DERIVED from `models.byRepo[repoPath].tiers.core`
+ * in `~/.insrc/config.json` — a repo pins its own core-tier runner (and
+ * optionally model) and this is the HIGHEST-priority signal in the resolution
+ * chain (per-repo > global config > per-run caller > ollama). Read FRESH per
+ * lookup (see `resolveRepoShaperProvider`) rather than folded into the cached
+ * `AnalyzeConfig`, so a per-repo edit is picked up without poisoning — or being
+ * poisoned by — the global cache.
  */
 export interface RepoShaperOverride {
 	readonly shaperProvider?: AnalyzeShaperProviderKind | undefined;
@@ -154,33 +155,34 @@ export interface RepoShaperOverride {
 }
 
 export interface AnalyzeConfig {
+	/** Interactive shaper backend. DERIVED from `models.tiers.core.runner`. */
 	readonly shaperProvider: AnalyzeShaperProviderKind;
-	/** True when `models.analyze.shaperProvider` was set to a recognized
-	 *  value in config.json (vs. defaulted). When false, the shaper
-	 *  factory may auto-pick a provider from the invoking MCP client
-	 *  (claude → cli-claude, codex → cli-codex). See shaper-provider.ts. */
+	/** True when `models.tiers.core` was set in config.json (vs. defaulted).
+	 *  When false, the shaper factory may auto-pick a provider from the
+	 *  invoking MCP client (claude → cli-claude, codex → cli-codex). */
 	readonly shaperProviderExplicit: boolean;
+	/** Interactive shaper model. DERIVED from `models.tiers.core.model`. */
 	readonly shaperModel:    string;
-	/** True when `models.analyze.shaperModel` was set in config.json.
-	 *  The default (`qwen3.6:35b-a3b`) is an Ollama id, so it must NOT be
-	 *  forwarded to a CLI provider unless the operator explicitly set it. */
+	/** True when `models.tiers.core.model` was set to a non-empty value. An
+	 *  Ollama id must NOT be forwarded to a CLI provider unless set explicitly;
+	 *  an empty core model means "the CLI's own default". */
 	readonly shaperModelExplicit: boolean;
-	/** Provider for BACKGROUND doc-summarisation during indexing. Independent
-	 *  of `shaperProvider` (which is for interactive analyze/workflow reasoning)
-	 *  and defaults to LOCAL `ollama` regardless — summarising every doc through
-	 *  a cloud CLI per doc is slow, serial, and quota-burning. Override via
-	 *  `models.analyze.summariserProvider`. See analyze/summariser/driver.ts. */
+	/** Provider for BACKGROUND doc-summarisation during indexing. DERIVED from
+	 *  `models.tiers.cheap.runner` — the cheap/local tier, so summarising every
+	 *  doc stays local by default (a cloud CLI per doc is slow + quota-burning).
+	 *  See analyze/summariser/driver.ts. */
 	readonly summariserProvider: AnalyzeShaperProviderKind;
-	/** Model for the summariser; defaults to the local MoE `qwen3.6:35b-a3b`
-	 *  (fast despite size). Override via `models.analyze.summariserModel`. */
+	/** Summariser model. DERIVED from `models.tiers.cheap.model` (local MoE
+	 *  `qwen3.6:27b` by default). */
 	readonly summariserModel:    string;
-	/** True when `models.analyze.summariserModel` was set explicitly (guards
-	 *  forwarding an Ollama id to a CLI summariser provider). */
+	/** True when `models.tiers.cheap.model` was set (guards forwarding an Ollama
+	 *  id to a CLI summariser provider). */
 	readonly summariserModelExplicit: boolean;
 	readonly shaper:         AnalyzeShaperConfig;
 	readonly maxPlanDepth:   MaxPlanDepthMap;
-	/** Per-role model tiering (sc1). Empty ({}) when no tiering config is set —
-	 *  in which case resolution stays on the legacy shaperProvider path. */
+	/** Per-role model tiering (sc1). `tiers` is always fully populated (parsed
+	 *  override merged over DEFAULT_TIERS) so the RoleRouter resolves a concrete
+	 *  tier for every role. */
 	readonly tiering:        AnalyzeTiering;
 }
 
@@ -212,136 +214,106 @@ const DEFAULT_MAX_PLAN_DEPTH: MaxPlanDepthMap = {
 	XL: 6,
 };
 
-/**
- * Default shaper model. `qwen3.6:35b-a3b` is preferred over
- * qwen3-coder for shaper work -- the shaper's job is structural
- * comprehension + tool-loop orchestration rather than code
- * generation, and qwen3.6 is a stronger generalist for that surface.
- *
- * The model is in the qwen3.6 family, which emits empty bodies
- * unless `think: false` is sent in the Ollama request body (memory:
- * qwen3_6_needs_think_false). The driver sets `disableThinking: true`
- * on completeStructured for this reason; tool-loop calls get the
- * quirk treatment via the provider's family check on `hasTools`.
- *
- * Override via config.json `models.analyze.shaperModel`.
- */
-const DEFAULT_SHAPER_MODEL = 'qwen3.6:35b-a3b';
-
 let cached: AnalyzeConfig | undefined;
+
+/**
+ * Fully-resolved tiers = the parsed override merged over DEFAULT_TIERS. The
+ * `tiers` block is the SINGLE place a model is named; every derived field below
+ * reads from it. Always returns all three tiers populated, so the RoleRouter
+ * resolves a concrete tier for every role (no legacy cross-tier fallback).
+ */
+function resolveTiers(tiering: AnalyzeTiering): Record<TierName, TierModel> {
+	return {
+		core:  tiering.tiers?.core  ?? DEFAULT_TIERS.core,
+		mid:   tiering.tiers?.mid   ?? DEFAULT_TIERS.mid,
+		cheap: tiering.tiers?.cheap ?? DEFAULT_TIERS.cheap,
+	};
+}
+
+/**
+ * Assemble the AnalyzeConfig from a parsed tiering + runtime knobs. Models are
+ * DERIVED from the tiers — the shaper (interactive reasoning) from `tiers.core`,
+ * the summariser (background/local) from `tiers.cheap`. The `*Explicit` flags
+ * reflect whether that tier was actually set in config (vs. a built-in default),
+ * preserving the "don't forward an unset default to a CLI / auto-pick from the
+ * MCP client" behaviour the downstream shaper factory relies on.
+ */
+function assembleConfig(
+	tiering:      AnalyzeTiering,
+	shaper:       AnalyzeShaperConfig,
+	maxPlanDepth: MaxPlanDepthMap,
+): AnalyzeConfig {
+	const tiers = resolveTiers(tiering);
+	return {
+		shaperProvider:          tiers.core.runner,
+		shaperProviderExplicit:  tiering.tiers?.core !== undefined,
+		shaperModel:             tiers.core.model,
+		shaperModelExplicit:     (tiering.tiers?.core?.model ?? '') !== '',
+		summariserProvider:      tiers.cheap.runner,
+		summariserModel:         tiers.cheap.model,
+		summariserModelExplicit: (tiering.tiers?.cheap?.model ?? '') !== '',
+		shaper,
+		maxPlanDepth,
+		tiering: { ...tiering, tiers },
+	};
+}
 
 export function loadAnalyzeConfig(): AnalyzeConfig {
 	if (cached !== undefined) {
 		return cached;
 	}
 
-	// Default to the analyze-specific shaper model rather than the
-	// generic coreModel: the shaper benefits from a stronger generalist
-	// even if the local coreModel is set for code generation.
-	const fallbackModel = DEFAULT_SHAPER_MODEL;
-
 	if (!existsSync(PATHS.config)) {
-		cached = {
-			shaperProvider: 'ollama',
-			shaperProviderExplicit: false,
-			shaperModel:    fallbackModel,
-			shaperModelExplicit: false,
-			summariserProvider: 'ollama',
-			summariserModel:    fallbackModel,
-			summariserModelExplicit: false,
-			shaper:         DEFAULT_SHAPER,
-			maxPlanDepth:   DEFAULT_MAX_PLAN_DEPTH,
-			tiering:        {},
-		};
+		cached = assembleConfig({}, DEFAULT_SHAPER, DEFAULT_MAX_PLAN_DEPTH);
 		return cached;
 	}
 
 	try {
 		const raw = JSON.parse(readFileSync(PATHS.config, 'utf8')) as Record<string, unknown>;
 		const models = isObject(raw['models']) ? (raw['models'] as Record<string, unknown>) : {};
-		const analyze = isObject(models['analyze'])
-			? (models['analyze'] as Record<string, unknown>)
+		const shaperObj = isObject(models['shaper'])
+			? (models['shaper'] as Record<string, unknown>)
 			: {};
-		const shaperObj = isObject(analyze['shaper'])
-			? (analyze['shaper'] as Record<string, unknown>)
-			: {};
-		const depthObj = isObject(analyze['maxPlanDepth'])
-			? (analyze['maxPlanDepth'] as Record<string, unknown>)
+		const depthObj = isObject(models['maxPlanDepth'])
+			? (models['maxPlanDepth'] as Record<string, unknown>)
 			: {};
 
-		const rawShaper = analyze['shaperProvider'];
-		cached = {
-			shaperProvider: parseShaperProvider(rawShaper),
-			shaperProviderExplicit: rawShaper === 'ollama' || rawShaper === 'cli-claude' || rawShaper === 'cli-codex',
-			shaperModel:
-				typeof analyze['shaperModel'] === 'string'
-					? (analyze['shaperModel'] as string)
-					: fallbackModel,
-			shaperModelExplicit: typeof analyze['shaperModel'] === 'string',
-			summariserProvider: parseShaperProvider(analyze['summariserProvider']),
-			summariserModel:
-				typeof analyze['summariserModel'] === 'string'
-					? (analyze['summariserModel'] as string)
-					: fallbackModel,
-			summariserModelExplicit: typeof analyze['summariserModel'] === 'string',
-			shaper: {
-				maxToolTurns:
-					typeof shaperObj['maxToolTurns'] === 'number'
-						? (shaperObj['maxToolTurns'] as number)
-						: DEFAULT_SHAPER.maxToolTurns,
-				structuredOutputRetries:
-					typeof shaperObj['structuredOutputRetries'] === 'number'
-						? (shaperObj['structuredOutputRetries'] as number)
-						: DEFAULT_SHAPER.structuredOutputRetries,
-				ollamaNumCtx:
-					typeof shaperObj['ollamaNumCtx'] === 'number'
-						? (shaperObj['ollamaNumCtx'] as number)
-						: DEFAULT_SHAPER.ollamaNumCtx,
-				ollamaNumPredict:
-					typeof shaperObj['ollamaNumPredict'] === 'number'
-						? (shaperObj['ollamaNumPredict'] as number)
-						: DEFAULT_SHAPER.ollamaNumPredict,
-			},
-			maxPlanDepth: {
-				XS: typeof depthObj['XS'] === 'number' ? (depthObj['XS'] as number) : DEFAULT_MAX_PLAN_DEPTH.XS,
-				S:  typeof depthObj['S']  === 'number' ? (depthObj['S']  as number) : DEFAULT_MAX_PLAN_DEPTH.S,
-				M:  typeof depthObj['M']  === 'number' ? (depthObj['M']  as number) : DEFAULT_MAX_PLAN_DEPTH.M,
-				L:  typeof depthObj['L']  === 'number' ? (depthObj['L']  as number) : DEFAULT_MAX_PLAN_DEPTH.L,
-				XL: typeof depthObj['XL'] === 'number' ? (depthObj['XL'] as number) : DEFAULT_MAX_PLAN_DEPTH.XL,
-			},
-			tiering: parseTiering(analyze),
+		const shaper: AnalyzeShaperConfig = {
+			maxToolTurns:
+				typeof shaperObj['maxToolTurns'] === 'number'
+					? (shaperObj['maxToolTurns'] as number)
+					: DEFAULT_SHAPER.maxToolTurns,
+			structuredOutputRetries:
+				typeof shaperObj['structuredOutputRetries'] === 'number'
+					? (shaperObj['structuredOutputRetries'] as number)
+					: DEFAULT_SHAPER.structuredOutputRetries,
+			ollamaNumCtx:
+				typeof shaperObj['ollamaNumCtx'] === 'number'
+					? (shaperObj['ollamaNumCtx'] as number)
+					: DEFAULT_SHAPER.ollamaNumCtx,
+			ollamaNumPredict:
+				typeof shaperObj['ollamaNumPredict'] === 'number'
+					? (shaperObj['ollamaNumPredict'] as number)
+					: DEFAULT_SHAPER.ollamaNumPredict,
 		};
+		const maxPlanDepth: MaxPlanDepthMap = {
+			XS: typeof depthObj['XS'] === 'number' ? (depthObj['XS'] as number) : DEFAULT_MAX_PLAN_DEPTH.XS,
+			S:  typeof depthObj['S']  === 'number' ? (depthObj['S']  as number) : DEFAULT_MAX_PLAN_DEPTH.S,
+			M:  typeof depthObj['M']  === 'number' ? (depthObj['M']  as number) : DEFAULT_MAX_PLAN_DEPTH.M,
+			L:  typeof depthObj['L']  === 'number' ? (depthObj['L']  as number) : DEFAULT_MAX_PLAN_DEPTH.L,
+			XL: typeof depthObj['XL'] === 'number' ? (depthObj['XL'] as number) : DEFAULT_MAX_PLAN_DEPTH.XL,
+		};
+
+		cached = assembleConfig(parseTiering(models), shaper, maxPlanDepth);
 		return cached;
 	} catch (err) {
 		log.warn(
 			{ err: (err as Error).message },
 			'failed to parse config.json; using analyze defaults',
 		);
-		cached = {
-			shaperProvider: 'ollama',
-			shaperProviderExplicit: false,
-			shaperModel:    fallbackModel,
-			shaperModelExplicit: false,
-			summariserProvider: 'ollama',
-			summariserModel:    fallbackModel,
-			summariserModelExplicit: false,
-			shaper:         DEFAULT_SHAPER,
-			maxPlanDepth:   DEFAULT_MAX_PLAN_DEPTH,
-			tiering:        {},
-		};
+		cached = assembleConfig({}, DEFAULT_SHAPER, DEFAULT_MAX_PLAN_DEPTH);
 		return cached;
 	}
-}
-
-function parseShaperProvider(raw: unknown): AnalyzeShaperProviderKind {
-	if (raw === 'ollama' || raw === 'cli-claude' || raw === 'cli-codex') return raw;
-	if (raw !== undefined) {
-		log.warn(
-			{ raw },
-			`unknown models.analyze.shaperProvider; falling back to 'ollama'`,
-		);
-	}
-	return 'ollama';
 }
 
 function isObject(x: unknown): x is Record<string, unknown> {
@@ -364,18 +336,20 @@ function isRunner(x: unknown): x is AnalyzeShaperProviderKind {
 	return x === 'ollama' || x === 'cli-claude' || x === 'cli-codex';
 }
 
-/** Parse one TieringOverride (tiers/roleTiers/coreFloor) from a config object. */
+/** Parse one TieringOverride (tiers / tasks / coreFloor) from a config object.
+ *  Note: the on-disk key is `tasks`; the internal AnalyzeTiering field is
+ *  `roleTiers` (the RoleRouter + core-floor guard consume `roleTiers`). */
 function parseTieringOverride(src: Record<string, unknown>, where: string): TieringOverride {
 	const out: { tiers?: Partial<Record<TierName, TierModel>>; roleTiers?: Record<string, TierName>; coreFloor?: TierName } = {};
 
 	if (isObject(src['tiers'])) {
 		const tiers: Partial<Record<TierName, TierModel>> = {};
 		for (const [tier, val] of Object.entries(src['tiers'])) {
-			if (!isTierName(tier)) { log.warn({ where, tier }, 'models.analyze.tiers: unknown tier name; ignored'); continue; }
+			if (!isTierName(tier)) { log.warn({ where, tier }, 'models.tiers: unknown tier name; ignored'); continue; }
 			const runner = isObject(val) ? val['runner'] : undefined;
 			const model  = isObject(val) ? val['model']  : undefined;
 			if (!isRunner(runner) || typeof model !== 'string' || model.length === 0) {
-				log.warn({ where, tier }, 'models.analyze.tiers[tier]: expected { runner: ollama|cli-claude|cli-codex, model: string }; ignored');
+				log.warn({ where, tier }, 'models.tiers[tier]: expected { runner: ollama|cli-claude|cli-codex, model: string }; ignored');
 				continue;
 			}
 			tiers[tier] = { runner, model };
@@ -383,10 +357,10 @@ function parseTieringOverride(src: Record<string, unknown>, where: string): Tier
 		if (Object.keys(tiers).length > 0) out.tiers = tiers;
 	}
 
-	if (isObject(src['roleTiers'])) {
+	if (isObject(src['tasks'])) {
 		const roleTiers: Record<string, TierName> = {};
-		for (const [role, tier] of Object.entries(src['roleTiers'])) {
-			if (!isTierName(tier)) { log.warn({ where, role, tier }, 'models.analyze.roleTiers[role]: not a tier name; ignored'); continue; }
+		for (const [role, tier] of Object.entries(src['tasks'])) {
+			if (!isTierName(tier)) { log.warn({ where, role, tier }, 'models.tasks[role]: not a tier name; ignored'); continue; }
 			roleTiers[role] = tier;
 		}
 		if (Object.keys(roleTiers).length > 0) out.roleTiers = roleTiers;
@@ -395,23 +369,22 @@ function parseTieringOverride(src: Record<string, unknown>, where: string): Tier
 	const floor = src['coreFloor'];
 	if (floor !== undefined) {
 		if (isTierName(floor)) out.coreFloor = floor;
-		else log.warn({ where, coreFloor: floor }, 'models.analyze.coreFloor: not a tier name; ignored');
+		else log.warn({ where, coreFloor: floor }, 'models.coreFloor: not a tier name; ignored');
 	}
 
 	return out;
 }
 
-/** Parse the full models.analyze tiering shape (sc1): the global override plus
- *  per-repo byRepo tiering overrides. Returns {} when no tiering keys are set,
- *  in which case resolution stays on the legacy shaperProvider path. The legacy
- *  byRepo[repo].shaperProvider override is parsed separately by readRepoOverride
- *  and is unaffected. */
-export function parseTiering(analyze: Record<string, unknown>): AnalyzeTiering {
-	const global = parseTieringOverride(analyze, 'global');
+/** Parse the full flat models.* tiering shape: the global override (tiers /
+ *  tasks / coreFloor) plus per-repo `models.byRepo` overrides. Returns {} when
+ *  no tiering keys are set. The per-repo shaper-backend override is derived
+ *  separately from `byRepo[repo].tiers.core` by readRepoOverride. */
+export function parseTiering(models: Record<string, unknown>): AnalyzeTiering {
+	const global = parseTieringOverride(models, 'global');
 	let byRepo: Record<string, TieringOverride> | undefined;
-	if (isObject(analyze['byRepo'])) {
+	if (isObject(models['byRepo'])) {
 		const acc: Record<string, TieringOverride> = {};
-		for (const [repoPath, entry] of Object.entries(analyze['byRepo'])) {
+		for (const [repoPath, entry] of Object.entries(models['byRepo'])) {
 			if (!isObject(entry)) continue;
 			const ov = parseTieringOverride(entry, `byRepo[${repoPath}]`);
 			if (ov.tiers !== undefined || ov.roleTiers !== undefined || ov.coreFloor !== undefined) acc[repoPath] = ov;
@@ -422,7 +395,9 @@ export function parseTiering(analyze: Record<string, unknown>): AnalyzeTiering {
 }
 
 /**
- * Read the `models.analyze.byRepo[repoPath]` override entry FRESH from disk.
+ * Read the `models.byRepo[repoPath]` override entry FRESH from disk and derive
+ * the per-repo shaper backend from its `tiers.core` (the flattened surface's
+ * equivalent of the old byRepo shaperProvider/shaperModel pins).
  *
  * Deliberately NOT cached (and NOT routed through `loadAnalyzeConfig`'s cache):
  * per-repo overrides are consulted at run-resolve time and must reflect the
@@ -436,14 +411,15 @@ export function parseTiering(analyze: Record<string, unknown>): AnalyzeTiering {
 function readRepoOverride(repoPath: string, configPath: string): RepoShaperOverride | undefined {
 	if (!existsSync(configPath)) return undefined;
 	try {
-		const raw     = JSON.parse(readFileSync(configPath, 'utf8')) as Record<string, unknown>;
-		const models  = isObject(raw['models'])       ? (raw['models'] as Record<string, unknown>)      : {};
-		const analyze = isObject(models['analyze'])   ? (models['analyze'] as Record<string, unknown>)  : {};
-		const byRepo  = isObject(analyze['byRepo'])   ? (analyze['byRepo'] as Record<string, unknown>)  : {};
-		const entry   = byRepo[repoPath];
+		const raw    = JSON.parse(readFileSync(configPath, 'utf8')) as Record<string, unknown>;
+		const models = isObject(raw['models'])    ? (raw['models'] as Record<string, unknown>)    : {};
+		const byRepo = isObject(models['byRepo']) ? (models['byRepo'] as Record<string, unknown>) : {};
+		const entry  = byRepo[repoPath];
 		if (!isObject(entry)) return undefined;
-		const provider = entry['shaperProvider'];
-		const model    = entry['shaperModel'];
+		const tiers = isObject(entry['tiers']) ? (entry['tiers'] as Record<string, unknown>) : {};
+		const core  = isObject(tiers['core'])  ? (tiers['core'] as Record<string, unknown>)  : undefined;
+		const provider = core?.['runner'];
+		const model    = core?.['model'];
 		return {
 			...(provider === 'ollama' || provider === 'cli-claude' || provider === 'cli-codex'
 				? { shaperProvider: provider }
@@ -453,7 +429,7 @@ function readRepoOverride(repoPath: string, configPath: string): RepoShaperOverr
 	} catch (err) {
 		log.warn(
 			{ err: (err as Error).message, repoPath },
-			'failed to read models.analyze.byRepo; ignoring per-repo override',
+			'failed to read models.byRepo; ignoring per-repo override',
 		);
 		return undefined;
 	}
@@ -474,7 +450,7 @@ export function resolveRepoShaperProvider(
 
 /**
  * Symmetric to `resolveRepoShaperProvider`: a repo may also pin a model
- * (`models.analyze.byRepo[repoPath].shaperModel`). Returns it fresh from disk,
+ * (`models.byRepo[repoPath].tiers.core.model`). Returns it fresh from disk,
  * or `undefined` when unset. Read FRESH (never the cached global).
  */
 export function resolveRepoShaperModel(

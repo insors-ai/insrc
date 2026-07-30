@@ -4,40 +4,55 @@
     "host": "http://localhost:11434"
   },
   "models": {
-    "local": "qwen3-coder:latest",
-    "embedding": "qwen3-embedding:0.6b",
-    "embeddingDim": "1024",
     "tiers": {
-      "fast": "claude-haiku-4-5",
-      "standard": "claude-sonnet-4-6",
-      "powerful": "claude-opus-4-6"
-    },
-    "context": {
-      "local": 16384,
-      "localMaxOutput": 8192,
-      "claude": 200000,
-      "claudeMaxOutput": 8192,
-      "charsPerToken": 3
-    },
-    "analyze": {
-      "shaperProvider": "cli-claude",
-      "roleTiers": {
-        "design.hld.synthesize": "core",
-        "review.claims.enumerate": "mid",
-        "tracker.render": "cheap"
+      "core": {
+        "runner": "cli-claude",
+        "model": ""
       },
-      "byRepo": {
-        "/Users/redacted/work/projects/example/repo": {
-          "shaperProvider": "cli-claude",
-          "coreFloor": "core"
+      "mid": {
+        "runner": "cli-claude",
+        "model": "sonnet"
+      },
+      "cheap": {
+        "runner": "ollama",
+        "model": "qwen3.6:35b-a3b"
+      }
+    },
+    "tasks": {
+      "design.hld.synthesize": "core",
+      "review.claims.enumerate": "mid",
+      "tracker.render": "cheap"
+    },
+    "coreFloor": "mid",
+    "byRepo": {
+      "/Users/redacted/work/projects/example/repo": {
+        "coreFloor": "core",
+        "tiers": {
+          "core": {
+            "runner": "cli-claude"
+          }
         }
       }
     },
-    "agents": {
-      "implementation": {
-        "propose": "cli-claude",
-        "review": "cli-claude"
-      }
+    "shaper": {
+      "maxToolTurns": 40,
+      "ollamaNumCtx": 32768,
+      "structuredOutputRetries": 3,
+      "ollamaNumPredict": 20480
+    },
+    "maxPlanDepth": {
+      "XS": 2,
+      "XL": 6,
+      "S": 3,
+      "M": 4,
+      "L": 5
+    },
+    "local": {
+      "host": "http://localhost:11434",
+      "coreModel": "qwen3-coder:latest",
+      "embeddingModel": "qwen3-embedding:0.6b",
+      "embeddingDim": 1024,
+      "charsPerToken": 3
     }
   },
   "permissions": {
@@ -46,5 +61,16 @@
   "routing": {
     "mode": "static"
   },
-  "legacyOrphanKey": "kept-blindly"
+  "legacyOrphanKey": "kept-blindly",
+  "analyzer": {
+    "useLocal": false
+  },
+  "classifier": {
+    "confirmIntent": false
+  },
+  "memory": {
+    "implicitCapture": {
+      "enabled": false
+    }
+  }
 }

@@ -36,7 +36,7 @@
  *                and the discarded prior value is recorded
  */
 
-import { CONFIG_CATALOG, RETIRED_PATHS, type ConfigOption, type RetiredPath } from './config-catalog.js';
+import { CONFIG_CATALOG, CONFIG_MIGRATIONS, RETIRED_PATHS, type ConfigMigration, type ConfigOption, type RetiredPath } from './config-catalog.js';
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -62,6 +62,8 @@ export interface ConfigReconcileResult {
 	readonly repaired: readonly ConfigRepair[];
 	/** Declared-retired dot-paths (or prefix-subtree roots) actually removed. */
 	readonly pruned:   readonly string[];
+	/** One-time relocations actually applied, as "from → to" labels. */
+	readonly migrated: readonly string[];
 }
 
 /**
@@ -215,6 +217,18 @@ function hasPath(root: Record<string, unknown>, keys: readonly string[]): boolea
 	return isPlainObject(node) && Object.prototype.hasOwnProperty.call(node, keys[keys.length - 1]!);
 }
 
+/** Read-only: the value at a dot-path (whole ancestor chain must be plain
+ *  objects). Returns undefined if any ancestor is missing/non-object. Caller
+ *  typically verifies hasPath first. */
+function readAt(root: Record<string, unknown>, keys: readonly string[]): unknown {
+	let node: unknown = root;
+	for (const key of keys) {
+		if (!isPlainObject(node)) return undefined;
+		node = node[key];
+	}
+	return node;
+}
+
 /**
  * Copy-on-write DELETE of a key. Mirrors writeLeaf: descends from the owned
  * root, shallow-copying each ancestor once before deleting the leaf key — so
@@ -266,9 +280,11 @@ function assertRetiredDisjoint(catalog: readonly ConfigOption[], retired: readon
  * is never mutated. A non-object `existing` (undefined / null / array /
  * string / number / boolean) is treated as `{}` — every catalog key is filled.
  *
- * After the catalog merge it PRUNES the declared-retired paths: blind
- * preservation of un-catalogued keys is refined to "preserve every
- * un-catalogued key EXCEPT those explicitly on the retired list".
+ * Three phases in order: (1) MIGRATE — relocate legacy dot-paths to their new
+ * home (see CONFIG_MIGRATIONS); (2) FILL/REPAIR — merge catalog defaults; (3)
+ * PRUNE — strip declared-retired paths. Blind preservation of un-catalogued
+ * keys is refined to "preserve every un-catalogued key EXCEPT those explicitly
+ * on the retired list". Idempotent: a second pass reports changed === false.
  *
  * @throws ConfigCatalogError if a catalog row has an out-of-domain type or a
  *         default that fails its own predicate, or a retired path overlaps a
@@ -278,6 +294,7 @@ export function reconcileConfig(
 	existing: unknown,
 	catalog: readonly ConfigOption[] = CONFIG_CATALOG,
 	retired: readonly RetiredPath[] = RETIRED_PATHS,
+	migrations: readonly ConfigMigration[] = CONFIG_MIGRATIONS,
 ): ConfigReconcileResult {
 	assertRetiredDisjoint(catalog, retired);
 
@@ -291,6 +308,25 @@ export function reconcileConfig(
 	const filled:   string[] = [];
 	const repaired: ConfigRepair[] = [];
 	const pruned:   string[] = [];
+	const migrated: string[] = [];
+
+	// Migrate phase (before fill + prune): relocate each legacy path to its new
+	// home iff the source exists and the destination is still absent (never
+	// clobber a value the user already set at the new path). The emptied source
+	// parent is swept by the prune phase (a retired prefix). COW throughout —
+	// `existing` is never mutated; a moved subtree keeps its original reference
+	// until a later fill copies into it.
+	for (const m of migrations) {
+		const fromKeys = m.from.split('.');
+		const toKeys   = m.to.split('.');
+		if (hasPath(config, fromKeys) && !hasPath(config, toKeys)) {
+			const raw   = readAt(config, fromKeys);
+			const value = m.transform !== undefined ? m.transform(raw) : raw;
+			writeLeaf(config, owned, toKeys, value);
+			deleteAt(config, owned, fromKeys);
+			migrated.push(`${m.from} → ${m.to}`);
+		}
+	}
 
 	for (const opt of catalog) {
 		assertRowValid(opt);
@@ -324,6 +360,6 @@ export function reconcileConfig(
 		}
 	}
 
-	const changed = filled.length + repaired.length + pruned.length > 0;
-	return { config, changed, carried, filled, repaired, pruned };
+	const changed = migrated.length + filled.length + repaired.length + pruned.length > 0;
+	return { config, changed, carried, filled, repaired, pruned, migrated };
 }

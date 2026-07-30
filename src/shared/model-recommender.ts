@@ -2,7 +2,7 @@
  * Model recommender — suggests optimal local models based on hardware.
  *
  * Analyzes GPU VRAM, RAM, and installed Ollama models to recommend:
- * - Coder model (for agent inference)
+ * - Local model (the fixed DEFAULT_LOCAL_MODEL generalist + its install state)
  * - Embedding model (for indexing + search)
  * - Context window size
  * - Budget shape name
@@ -10,15 +10,34 @@
 
 import type { SystemInfo } from './system-info.js';
 
+/**
+ * The default local model (Ollama) — the single generalist that backs both the
+ * cheap reasoning tier and the indexer's `coreModel`. The setup flow writes
+ * this rather than a hardware-sized `qwen3-coder` pick, so `config list` /
+ * `insrc setup` agree with the built-in `models.local.coreModel` /
+ * `models.tiers.cheap.model` catalog defaults. Keep in sync with
+ * src/config/config-catalog.ts + src/config/local.ts + src/config/analyze.ts
+ * (DEFAULT_TIERS.cheap) + scripts/insrc-daemon-install.sh.
+ */
+export const DEFAULT_LOCAL_MODEL = 'qwen3.6:27b';
+
+/** Approximate VRAM (MB) the default local model needs at base context — a
+ *  ~27B Q4 MoE. Used only for tier classification + context-shape sizing; the
+ *  model itself is fixed (not hardware-selected). */
+const DEFAULT_LOCAL_MODEL_VRAM_MB = 14000;
+
 // ---------------------------------------------------------------------------
 // Recommendation output
 // ---------------------------------------------------------------------------
 
 export interface ModelRecommendation {
+  // The local generalist model. Fixed to DEFAULT_LOCAL_MODEL (qwen3.6:27b) —
+  // NOT a hardware-sized pick. (Field named `coder` for back-compat; holds the
+  // local model + its install state.)
   coder: {
     model: string;
     pull: boolean;      // true if not already installed
-    params: string;     // e.g. "30.5B"
+    params: string;     // e.g. "27B"
     quantization: string;
     vramNeeded: number; // MB approximate
   };
@@ -48,22 +67,6 @@ export interface OllamaOptimization {
 // ---------------------------------------------------------------------------
 // Model catalog
 // ---------------------------------------------------------------------------
-
-interface ModelProfile {
-  name: string;
-  params: string;
-  quantization: string;
-  vramMb: number;    // approximate VRAM usage at base context
-  quality: number;   // 1-10 relative quality score
-}
-
-const CODER_MODELS: ModelProfile[] = [
-  { name: 'qwen3-coder:1.5b',  params: '1.5B',  quantization: 'Q4_K_M', vramMb: 1200,  quality: 3 },
-  { name: 'qwen3-coder:8b',    params: '8B',     quantization: 'Q4_K_M', vramMb: 5500,  quality: 5 },
-  { name: 'qwen3-coder:14b',   params: '14B',    quantization: 'Q4_K_M', vramMb: 9000,  quality: 7 },
-  { name: 'qwen3-coder:latest', params: '30.5B', quantization: 'Q4_K_M', vramMb: 13500, quality: 9 },
-  { name: 'codestral:latest',   params: '22.2B', quantization: 'Q4_0',   vramMb: 14000, quality: 8 },
-];
 
 interface EmbeddingProfile {
   name: string;
@@ -178,46 +181,35 @@ function pickEmbedding(
   };
 }
 
+/**
+ * The local generalist model. Fixed to `DEFAULT_LOCAL_MODEL` (qwen3.6:27b) — no
+ * longer a hardware-sized `qwen3-coder` pick, so `insrc setup` writes/pulls the
+ * same model the built-in `models.local.coreModel` / `models.tiers.cheap`
+ * catalog defaults name. Hardware only determines the GPU-vs-CPU note + the
+ * context-shape sizing (via `vramNeeded`). (Field stays named `coder` on
+ * ModelRecommendation for back-compat; it now holds the local model.)
+ */
 function pickCoder(
   vramMb: number,
-  ramMb: number,
+  _ramMb: number,
   installed: Set<string>,
   notes: string[],
 ): ModelRecommendation['coder'] {
-  let best = CODER_MODELS[0]!; // 1.5b fallback
-
-  for (const m of CODER_MODELS) {
-    if (m.vramMb <= vramMb) {
-      best = m;
-    }
+  const vramNeeded = DEFAULT_LOCAL_MODEL_VRAM_MB;
+  if (vramMb === 0) {
+    notes.push(`Local model ${DEFAULT_LOCAL_MODEL} will run on CPU (no GPU detected — slower inference)`);
+  } else if (vramNeeded > vramMb) {
+    notes.push(`Local model ${DEFAULT_LOCAL_MODEL} (~${vramNeeded}MB) exceeds usable VRAM (${vramMb}MB) — Ollama offloads to CPU/RAM`);
+  } else {
+    notes.push(`Local model: ${DEFAULT_LOCAL_MODEL} (~${vramNeeded}MB, fits VRAM)`);
   }
-
-  // If no GPU but lots of RAM, can still use larger model on CPU (slow)
-  if (vramMb === 0 && ramMb >= 32000) {
-    const cpuModel = CODER_MODELS.find(m => m.vramMb <= ramMb * 0.4);
-    if (cpuModel && cpuModel.quality > best.quality) {
-      best = cpuModel;
-      notes.push('No GPU detected — coder model will run on CPU (slower inference)');
-    }
-  }
-
-  // Prefer already-installed model if quality is close
-  const installedAlternative = CODER_MODELS.find(
-    m => installed.has(m.name) && m.vramMb <= vramMb && m.quality >= best.quality - 1,
-  );
-  if (installedAlternative && installedAlternative.quality >= best.quality - 1) {
-    best = installedAlternative;
-    notes.push(`Using already-installed ${best.name}`);
-  }
-
-  notes.push(`Coder: ${best.name} (${best.params}, ~${best.vramMb}MB)`);
 
   return {
-    model: best.name,
-    pull: !installed.has(best.name),
-    params: best.params,
-    quantization: best.quantization,
-    vramNeeded: best.vramMb,
+    model: DEFAULT_LOCAL_MODEL,
+    pull: !installed.has(DEFAULT_LOCAL_MODEL),
+    params: '27B',
+    quantization: 'Q4_K_M',
+    vramNeeded,
   };
 }
 
@@ -405,17 +397,15 @@ function analyzeOllamaConfig(
 export interface RecommendedConfig {
   ollama: { host: string };
   models: {
-    // Only the canonical LIVE local surface. The legacy top-level model block
-    // (models.local / embedding / embeddingDim / tiers / context) was retired —
-    // it was write-only and is stripped by the reconcile (see RETIRED_PATHS).
-    providers: {
-      local: {
-        host: string;
-        coreModel: string;
-        embeddingModel: string;
-        embeddingDim: number;
-        charsPerToken: number;
-      };
+    // The flat LIVE local/embedder surface (models.local.*). The model tiers
+    // (models.tiers.*) are NOT written here — they carry built-in defaults and
+    // are configured via the Model Tiers pane / installer.
+    local: {
+      host: string;
+      coreModel: string;
+      embeddingModel: string;
+      embeddingDim: number;
+      charsPerToken: number;
     };
   };
 }
@@ -424,14 +414,12 @@ export function toConfig(rec: ModelRecommendation): RecommendedConfig {
   return {
     ollama: { host: 'http://localhost:11434' },
     models: {
-      providers: {
-        local: {
-          host: 'http://localhost:11434',
-          coreModel: rec.coder.model,
-          embeddingModel: rec.embedding.model,
-          embeddingDim: rec.embedding.dims,
-          charsPerToken: 3,
-        },
+      local: {
+        host: 'http://localhost:11434',
+        coreModel: rec.coder.model,
+        embeddingModel: rec.embedding.model,
+        embeddingDim: rec.embedding.dims,
+        charsPerToken: 3,
       },
     },
   };

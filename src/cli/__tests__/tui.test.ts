@@ -176,7 +176,7 @@ test('Setup pane renders system + recommendation without crashing', async () => 
 	} as unknown as SystemInfo);
 	svc.setup.recommend = () => ({
 		tier: 'balanced',
-		coder: { model: 'qwen3-coder', params: '30b', pull: false },
+		coder: { model: 'qwen3.6:27b', params: '27B', pull: false },
 		embedding: { model: 'qwen3-embedding', dims: 1024, pull: true },
 		context: { shape: 'medium', tokens: 32768 },
 	} as unknown as ModelRecommendation);
@@ -187,7 +187,7 @@ test('Setup pane renders system + recommendation without crashing', async () => 
 	await settle();
 	const frame = lastFrame() ?? '';
 	assert.match(frame, /Recommendation/);
-	assert.match(frame, /qwen3-coder/);
+	assert.match(frame, /qwen3\.6:27b/);
 	assert.match(frame, /pull models \(1\)/);
 	unmount();
 });
@@ -202,7 +202,7 @@ test('bottom box: Setup model-pull streams ollama progress into the message box'
 	} as unknown as SystemInfo);
 	svc.setup.recommend = () => ({
 		tier: 'balanced',
-		coder: { model: 'qwen3-coder', params: '30b', pull: false },
+		coder: { model: 'qwen3.6:27b', params: '27B', pull: false },
 		embedding: { model: 'qwen3-embedding', dims: 1024, pull: true },
 		context: { shape: 'medium', tokens: 32768 },
 	} as unknown as ModelRecommendation);
@@ -226,7 +226,7 @@ test('bottom box: Setup model-pull streams ollama progress into the message box'
 
 test('Model Tiers pane (5) renders effective tiers, coreFloor, and roles from config', async () => {
 	const svc = fakeServices();
-	svc.config.show = async () => ({ models: { analyze: { roleTiers: { 'context.assemble': 'cheap' } } } });
+	svc.config.show = async () => ({ models: { tasks: { 'context.assemble': 'cheap' } } });
 	const { lastFrame, stdin, unmount } = render(createElement(App, { services: svc, pollMs: 0 }));
 	await settle();
 	stdin.write('5');          // → Model Tiers pane

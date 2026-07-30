@@ -40,22 +40,17 @@ export function apply(rec: ModelRecommendation): string {
 		catch { /* start fresh */ }
 	}
 	const existingModels = (existing['models'] as Record<string, unknown> | undefined) ?? {};
-	const existingProviders = (existingModels['providers'] as Record<string, unknown> | undefined) ?? {};
 	const merged = {
 		...recommended,
 		...existing,
 		models: {
 			...recommended.models,
 			...existingModels,
-			// Canonical local surface only. Existing values win over the
-			// recommendation so a re-run never clobbers a user's providers.local.
-			providers: {
-				...recommended.models.providers,
-				...existingProviders,
-				local: {
-					...recommended.models.providers.local,
-					...((existingProviders['local'] as Record<string, unknown> | undefined) ?? {}),
-				},
+			// Flat local/embedder surface only. Existing values win over the
+			// recommendation so a re-run never clobbers a user's models.local.
+			local: {
+				...recommended.models.local,
+				...((existingModels['local'] as Record<string, unknown> | undefined) ?? {}),
 			},
 		},
 	};
@@ -63,7 +58,8 @@ export function apply(rec: ModelRecommendation): string {
 	return PATHS.config;
 }
 
-/** Which recommended models still need pulling. */
+/** Which models to pull for setup: the local model (the config's `coreModel` +
+ *  cheap tier) and the embedder, each only when not already installed. */
 export function modelsToPull(rec: ModelRecommendation): string[] {
 	const out: string[] = [];
 	if (rec.coder.pull) out.push(rec.coder.model);

@@ -13,7 +13,7 @@
  * artifact is stamped `meta.model = '<provider-id>'` (vs `'client'`).
  *
  * Provider selection follows the analyze framework's `buildShaperProvider`:
- * an explicit `models.analyze.shaperProvider` in config wins; otherwise the
+ * an explicit `models.tiers.core.runner` in config wins; otherwise the
  * invoking MCP agent (`params.client`) decides the CLI provider
  * (Claude Code → claude, Codex → codex); Ollama is the config default. So
  * the runner is provider-agnostic — local Ollama or a cloud CLI, per config.

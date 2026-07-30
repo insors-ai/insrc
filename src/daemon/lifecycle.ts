@@ -155,8 +155,8 @@ export async function bootstrapEmbeddingModel(): Promise<void> {
       `${ONNX_EMBEDDING_MODEL}'s ${ONNX_EMBEDDING_DIM}. ` +
       `Vector search + writes DISABLED. To enable: either (a) start Ollama with the ` +
       `configured model, or (b) update ~/.insrc/config.json ` +
-      `(models.providers.local.embeddingModel="${ONNX_EMBEDDING_MODEL}", ` +
-      `models.providers.local.embeddingDim=${ONNX_EMBEDDING_DIM}), ` +
+      `(models.local.embeddingModel="${ONNX_EMBEDDING_MODEL}", ` +
+      `models.local.embeddingDim=${ONNX_EMBEDDING_DIM}), ` +
       `rm -rf ~/.insrc/lance, and re-add repos.`;
     setActiveEmbedderBackend('disabled');
     modelState = { status: 'disabled', backend: 'disabled', reason };

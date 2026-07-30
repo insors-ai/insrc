@@ -85,17 +85,21 @@ test('the src/cli re-export is reference-identical to the src/config definition 
 	assert.equal(FROM_CLI, FROM_CONFIG);
 });
 
-test('the real CONFIG_CATALOG has 30 rows (was 41; 11 legacy model rows retired)', () => {
-	assert.equal(FROM_CONFIG.length, 30);
-	// none of the 11 retired dot-paths remain as live catalog rows
+test('the real CONFIG_CATALOG has 28 rows (flat models.* surface; shaper*/summariser* now derived)', () => {
+	assert.equal(FROM_CONFIG.length, 28);
 	const live = new Set(FROM_CONFIG.map(r => r.path));
+	// the derived + old-nested paths must NOT be live catalog rows
 	for (const p of [
-		'models.local', 'models.embedding', 'models.embeddingDim',
-		'models.tiers.fast', 'models.tiers.standard', 'models.tiers.powerful',
-		'models.context.local', 'models.context.localMaxOutput', 'models.context.claude',
-		'models.context.claudeMaxOutput', 'models.context.charsPerToken',
+		'models.analyze.shaperProvider', 'models.analyze.shaperModel',
+		'models.analyze.summariserProvider', 'models.analyze.summariserModel',
+		'models.analyze.tiers.core.runner', 'models.analyze.coreFloor',
+		'models.providers.local.coreModel', 'models.providers.local.host',
 	]) {
-		assert.equal(live.has(p), false, `${p} must be removed from CONFIG_CATALOG`);
+		assert.equal(live.has(p), false, `${p} must NOT be a live catalog row (flattened/derived)`);
+	}
+	// the flat surface IS live
+	for (const p of ['models.tiers.core.runner', 'models.coreFloor', 'models.local.coreModel', 'models.shaper.ollamaNumCtx']) {
+		assert.equal(live.has(p), true, `${p} must be a live catalog row`);
 	}
 });
 
@@ -103,12 +107,12 @@ test('RETIRED_PATHS covers exactly the 6 declared legacy entries and is disjoint
 	assert.deepEqual(
 		RETIRED_PATHS.map(r => ({ path: r.path, prefix: r.prefix ?? false })),
 		[
-			{ path: 'models.local', prefix: false },
 			{ path: 'models.embedding', prefix: false },
 			{ path: 'models.embeddingDim', prefix: false },
-			{ path: 'models.tiers', prefix: true },
 			{ path: 'models.context', prefix: true },
 			{ path: 'models.agents', prefix: true },
+			{ path: 'models.analyze', prefix: true },
+			{ path: 'models.providers', prefix: true },
 		],
 	);
 	// disjoint: no live catalog path equals or sits under any retired path

@@ -290,44 +290,39 @@ if [ "$ASSUME_YES" -eq 0 ]; then
 fi
 if [ "$CLI_CHOICE" = "codex" ]; then
 	ok "CLI: codex (core=gpt-5.5, mid=gpt-5.5, cheap=local ollama)"
-	ANALYZE_TIERS_JSON='"analyze": {
-			"coreFloor": "core",
-			"tiers": {
-				"core":  { "runner": "cli-codex", "model": "gpt-5.5" },
-				"mid":   { "runner": "cli-codex", "model": "gpt-5.5" },
-				"cheap": { "runner": "ollama",    "model": "qwen3.6:35b-a3b" }
-			}
+	ANALYZE_TIERS_JSON='"coreFloor": "core",
+		"tiers": {
+			"core":  { "runner": "cli-codex", "model": "gpt-5.5" },
+			"mid":   { "runner": "cli-codex", "model": "gpt-5.5" },
+			"cheap": { "runner": "ollama",    "model": "qwen3.6:27b" }
 		},'
 else
 	ok "CLI: claude (core=opus, mid=sonnet, cheap=local ollama)"
-	ANALYZE_TIERS_JSON='"analyze": {
-			"coreFloor": "core",
-			"tiers": {
-				"core":  { "runner": "cli-claude", "model": "opus" },
-				"mid":   { "runner": "cli-claude", "model": "sonnet" },
-				"cheap": { "runner": "ollama",     "model": "qwen3.6:35b-a3b" }
-			}
+	ANALYZE_TIERS_JSON='"coreFloor": "core",
+		"tiers": {
+			"core":  { "runner": "cli-claude", "model": "opus" },
+			"mid":   { "runner": "cli-claude", "model": "sonnet" },
+			"cheap": { "runner": "ollama",     "model": "qwen3.6:27b" }
 		},'
 fi
 
 if [ "$RESOLVED_EMBEDDER" = "onnx" ]; then
 	if [ ! -f "$CONFIG_FILE" ]; then
 		mkdir -p "$HOME/.insrc"
-		# models.analyze.tiers pins the per-role capability tiers for the chosen
-		# CLI. The legacy shaperProvider is deliberately left unset so any role
-		# without an explicit tier still resolves through the router's defaults.
+		# models.tiers pins the per-role capability tiers for the chosen CLI.
+		# The shaper/summariser providers are DERIVED from the tiers (core/cheap)
+		# — there is no separate shaperProvider key. Any role without an explicit
+		# tier resolves through the router's built-in defaults.
 		cat > "$CONFIG_FILE" <<CFG
 {
 	"models": {
 		${ANALYZE_TIERS_JSON}
-		"providers": {
-			"local": {
-				"host":           "http://localhost:11434",
-				"embeddingModel": "nomic-ai/nomic-embed-text-v1.5",
-				"embeddingDim":   768,
-				"coreModel":      "qwen3-coder:latest",
-				"charsPerToken":  3
-			}
+		"local": {
+			"host":           "http://localhost:11434",
+			"embeddingModel": "nomic-ai/nomic-embed-text-v1.5",
+			"embeddingDim":   768,
+			"coreModel":      "qwen3.6:27b",
+			"charsPerToken":  3
 		}
 	}
 }
@@ -349,14 +344,12 @@ elif [ "$RESOLVED_EMBEDDER" = "ollama" ]; then
 {
 	"models": {
 		${ANALYZE_TIERS_JSON}
-		"providers": {
-			"local": {
-				"host":           "http://localhost:11434",
-				"embeddingModel": "qwen3-embedding:0.6b",
-				"embeddingDim":   1024,
-				"coreModel":      "qwen3-coder:latest",
-				"charsPerToken":  3
-			}
+		"local": {
+			"host":           "http://localhost:11434",
+			"embeddingModel": "qwen3-embedding:0.6b",
+			"embeddingDim":   1024,
+			"coreModel":      "qwen3.6:27b",
+			"charsPerToken":  3
 		}
 	}
 }

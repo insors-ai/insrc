@@ -74,14 +74,15 @@ test('legacy config on disk → exactly 1 writeFile + 1 rename; retired keys pru
 		assert.equal(counts.renames, 1);
 		const result = JSON.parse(readFileSync(configPath, 'utf-8')) as Record<string, unknown>;
 		const models = result['models'] as Record<string, unknown>;
-		// the LIVE cloud/tiering namespaces survive byte-identical to the baseline
-		const analyze = models['analyze'] as Record<string, unknown>;
-		const bAnalyze = (baseline()['models'] as Record<string, unknown>)['analyze'] as Record<string, unknown>;
-		assert.deepEqual(analyze['roleTiers'], bAnalyze['roleTiers']);
-		assert.deepEqual(analyze['byRepo'], bAnalyze['byRepo']);
-		// every retired key is now GONE (incl. the type-invalid embeddingDim + models.agents)
-		for (const k of ['local', 'embedding', 'embeddingDim', 'tiers', 'context', 'agents']) {
-			assert.equal(Object.prototype.hasOwnProperty.call(models, k), false, `models.${k} must be pruned`);
+		// the MIGRATED flat namespaces survive byte-identical to the reconciled baseline
+		const bModels = baseline()['models'] as Record<string, unknown>;
+		assert.deepEqual(models['tasks'], bModels['tasks']);
+		assert.deepEqual(models['byRepo'], bModels['byRepo']);
+		assert.deepEqual(models['tiers'], bModels['tiers']);
+		assert.deepEqual(models['local'], bModels['local']);
+		// the old nesting + still-retired ancient leftovers are GONE
+		for (const k of ['analyze', 'providers', 'embedding', 'embeddingDim', 'agents']) {
+			assert.equal(Object.prototype.hasOwnProperty.call(models, k), false, `models.${k} must be gone`);
 		}
 		if (out.kind === 'written') assert.ok(out.result.pruned.length >= 5);
 	});
@@ -91,7 +92,7 @@ test('prune-only change (nothing to fill/repair) → still exactly 1 writeFile +
 	withTemp((configPath) => {
 		// A fully-reconciled doc (no fills/repairs left) with one stray retired key re-added.
 		const normalized = reconcileConfig(legacy(), CONFIG_CATALOG).config as Record<string, unknown>;
-		normalized['models'] = { ...(normalized['models'] as Record<string, unknown>), tiers: { fast: 'stray' } };
+		normalized['models'] = { ...(normalized['models'] as Record<string, unknown>), embedding: 'stray-retired' };
 		writeFileSync(configPath, JSON.stringify(normalized, null, 2));
 		const { seam, counts } = countingSeam();
 		const out = reconcileConfigFile({ configPath, catalog: CONFIG_CATALOG, fs: seam });
@@ -101,7 +102,7 @@ test('prune-only change (nothing to fill/repair) → still exactly 1 writeFile +
 		if (out.kind === 'written') {
 			assert.deepEqual(out.result.filled, []);
 			assert.deepEqual(out.result.repaired, []);
-			assert.deepEqual(out.result.pruned, ['models.tiers']);   // prune-only trips changed
+			assert.deepEqual(out.result.pruned, ['models.embedding']);   // prune-only trips changed
 		}
 	});
 });

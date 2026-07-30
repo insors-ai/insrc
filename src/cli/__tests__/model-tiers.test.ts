@@ -28,7 +28,7 @@ test('empty tiering: tiers = DEFAULT_TIERS (source default), coreFloor = mid (de
 	const eff = computeEffectiveTiers({});
 	assert.deepEqual(eff.tiers.core, { runner: 'cli-claude', model: 'opus' });
 	assert.deepEqual(eff.tiers.mid, { runner: 'cli-claude', model: 'sonnet' });
-	assert.deepEqual(eff.tiers.cheap, { runner: 'ollama', model: 'qwen3.6:35b-a3b' });
+	assert.deepEqual(eff.tiers.cheap, { runner: 'ollama', model: 'qwen3.6:27b' });
 	assert.equal(eff.tierSource.core, 'default');
 	assert.equal(eff.coreFloor, 'mid');
 	assert.equal(eff.coreFloorSource, 'default');
@@ -97,10 +97,10 @@ test('a roleTiers key that is not a current taxonomy role is surfaced as a stale
 // ── path helpers ────────────────────────────────────────────────────────────
 
 test('config dot-path helpers target the right keys', () => {
-	assert.equal(tierFieldPath('core', 'runner'), 'models.analyze.tiers.core.runner');
-	assert.equal(tierFieldPath('cheap', 'model'), 'models.analyze.tiers.cheap.model');
-	assert.equal(roleTierPath('synthesize'), 'models.analyze.roleTiers.synthesize');
-	assert.equal(CORE_FLOOR_PATH, 'models.analyze.coreFloor');
+	assert.equal(tierFieldPath('core', 'runner'), 'models.tiers.core.runner');
+	assert.equal(tierFieldPath('cheap', 'model'), 'models.tiers.cheap.model');
+	assert.equal(roleTierPath('synthesize'), 'models.tasks.synthesize');
+	assert.equal(CORE_FLOOR_PATH, 'models.coreFloor');
 });
 
 test('isTierName guards the tier union', () => {
@@ -116,7 +116,7 @@ test('isTierName guards the tier union', () => {
 // written at the dotless ROLE_TIERS_PATH instead.
 
 test('ROLE_TIERS_PATH is the dotless map key (no role id appended)', () => {
-	assert.equal(ROLE_TIERS_PATH, 'models.analyze.roleTiers');
+	assert.equal(ROLE_TIERS_PATH, 'models.tasks');
 	// This is deliberately NOT the per-role dotted path — that one is unwritable.
 	assert.notEqual(ROLE_TIERS_PATH, roleTierPath('context.assemble'));
 });

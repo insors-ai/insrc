@@ -305,7 +305,16 @@ const CDN_META_PATH = join(
 
 let cdnMetaCache: MermaidCdnMeta | undefined;
 
-async function loadMermaidCdnMeta(): Promise<MermaidCdnMeta> {
+/**
+ * Load the Mermaid CDN metadata (version + script URL + SRI). Exported for the
+ * docgen `RenderedDocumentShell` assembly (Epic 870ed3dd, s1 · sc3), which
+ * reuses the `version` for `inlinedRuntimeVersion`. NOTE: `scriptUrl` here is a
+ * CDN reference; docgen's offline guarantee (k5/ac2) requires the runtime to be
+ * INLINED from a locally-shipped asset, not fetched from this URL — see the
+ * docgen shell-assembly + copy-assets staging (s1 · t6/t9). Behaviour is
+ * unchanged for the existing artifacts-rpc callers.
+ */
+export async function loadMermaidCdnMeta(): Promise<MermaidCdnMeta> {
 	if (cdnMetaCache !== undefined) { return cdnMetaCache; }
 	const raw = await readFile(CDN_META_PATH, 'utf8');
 	const parsed = JSON.parse(raw) as Partial<MermaidCdnMeta>;

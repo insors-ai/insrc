@@ -163,6 +163,13 @@
         "choice": "Fold the asset/surface minimum into s1; re-scope s6/s7 to breadth",
         "rationale": "User-selected walking-skeleton: S001 absorbs the minimum asset-ship + one non-daemon-caller/surface path needed to satisfy its own ac2 (offline self-render) and ac5 (finished document to a non-daemon caller), making it independently deliverable+testable. S006 keeps dependsOn s1 and covers full tool/IPC/MCP surface parity across all doc types; S007 covers the full installed-build asset-delivery breadth.",
         "resolvedAt": "2026-07-30T14:29:14.818Z"
+      },
+      "q4c24ee31": {
+        "question": "Item a2: The Epic contains NO openQuestions block at all, yet carries two confidence:'low' assumptions: (1) 'the existing artifact-render path in the build step ... is an integration point for document emission, though it exports no diagram or docgen types today' (source c11 — and c12 records that symbol.locate on src/mcp failed with prerequisite-empty, so this is unverified); (2) 'some graphs will exceed what the primary renderer can lay out legibly, so a fallback rendering path is expected to be needed' (source c6 — the threshold is asserted, not established). Story s5 builds on assumption (2) as if settled. Fix: raise an openQuestion for each low-confidence assumption before approval.",
+        "status": "resolved",
+        "choice": "One openQuestion for the story-blocking assumption only",
+        "rationale": "Split by failure kind: assumption (2) — the primary-renderer legibility threshold — is a genuine unestablished design judgment that S005 presupposes, so raise it as the one Epic-level openQuestion that unblocks S005. Assumption (1) — whether build-step render.ts is the emission integration point — is a checkable fact about this codebase (c12 only failed on an empty-prerequisite grounding call); leave it a documented low-confidence assumption with a verification task inside the story that owns document emission, resolved at LLD time rather than gating the Epic.",
+        "resolvedAt": "2026-07-30T14:30:36.637Z"
       }
     }
   },

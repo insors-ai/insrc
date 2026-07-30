@@ -100,7 +100,7 @@
         "status": "resolved",
         "choice": "Combination: one coalescing queue fed by webhook + poll backstop + explicit trigger",
         "rationale": "Freshness must not depend on webhook config: the periodic fetch backstop guarantees eventual convergence, an optional webhook adds latency, an explicit API/CLI trigger covers on-demand. All three enqueue one per-repo 're-index the tracked branch' job; dedup is one mechanism (at most one in-flight + one queued successor coalesced to the latest tip SHA; a job whose resolved tip == current index revision is a no-op); the new revision publishes atomically so queries see only prior-or-new (S003/ac2). Index revision stays pinned to a concrete commit (k6).",
-        "resolvedAt": "2026-07-30T09:04:49.584Z"
+        "resolvedAt": "2026-07-30T09:15:17.675Z"
       }
     }
   },

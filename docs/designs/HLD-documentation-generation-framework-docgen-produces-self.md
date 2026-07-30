@@ -1,0 +1,364 @@
+<!-- insrc:artifact HLD-870ed3dd246225f4 -->
+
+# HLD: Adopts a1 as the core architecture: an Intermediate Representation (IR) is the hard boundary between graph-derived content and LLM-narrated content, with a discriminated provenance flag on every IR node/edge/section so no runtime can blur the two
+
+## Framework summary
+
+Adopts a1 as the core architecture: an Intermediate Representation (IR) is the hard boundary between graph-derived content and LLM-narrated content, with a discriminated provenance flag on every IR node/edge/section so no runtime can blur the two. Cross-cutting failure/empty/truncation reporting is implemented once as a shared outcome envelope rather than per-story. a2's registry-enumeration idea is grafted in as an additive registration surface over the IR extractors (not a competing architecture), giving automatic tool/IPC/MCP parity and capability listing for one extra registry module. a3's delivery layer is adopted underneath: both the primary inline renderer and the D2/Graphviz subprocess fallback assemble into the identical single-file shell, which extends (rather than parallels) the existing `loadMermaidCdnMeta` and `RenderedArtifactHtml` primitives.
+
+## Architecture shape
+
+Four layers, all daemon-internal below the registry boundary. (1) Extractors — one per document type (type-structure, component-dependency, call-sequence, narrative-scaffold) — read only the LMDB graph codec / DEPENDS_ON / CALLS edges and Lance vectors, and emit a DocumentIR whose nodes/edges/sections are all provenance:'derived'; extractors never call an LLM. (2) An optional narrative annotator (s4 only) runs after extraction, using CliProvider/OllamaProvider to attach provenance:'narrated' sections to the same IR, citing named entities that must resolve in the graph. (3) A DocTypeRegistry, stood up by the s1 walking skeleton, is the single place every document type registers its extractor + capability description; the daemon tool registry, the IPC method table, and the MCP tool surface all enumerate this one registry, guaranteeing s6's surface parity by construction instead of by three hand-kept lists. (4) A render stage turns any DocumentIR into a RenderedDocumentShell — a single offline HTML file with an inlined SVG runtime, zoom/pan, and no view-time network access — via the primary inline path for all document types, or, only for component-dependency scopes that cross a measurable size threshold, a spawned D2/Graphviz subprocess whose output lands in the identical shell shape. Every request, success or failure, resolves to one DocGenOutcome envelope (ok / empty-scope / not-found / truncated / fallback-unavailable / source-not-ready) that all three access surfaces relay verbatim.
+
+## Shared contracts
+
+### sc1: DocumentIR
+
+**Owner Story:** `s1`
+**Consumed by:** `s2`, `s3`, `s4`, `s5`, `s6`, `s7`
+
+**Purpose:** The type-level boundary that forces structural diagram content to be graph-derived and keeps LLM narrative confined to explicitly flagged, separately-attached sections (k8, k11).
+
+**Interface sketch (type-level):**
+
+```
+type Provenance = 'derived' | 'narrated';
+
+interface IrCitation {
+  entityId?: string | undefined;
+  relationId?: string | undefined;
+}
+
+interface IrNode {
+  id: string;
+  label: string;
+  kind: string; // 'type' | 'module' | 'call-frame' | 'component' | ...
+  provenance: Provenance;
+  citation?: IrCitation | undefined;
+}
+
+interface IrEdge {
+  id: string;
+  from: string; // IrNode id
+  to: string;   // IrNode id
+  kind: string; // 'inherits' | 'depends-on' | 'calls' | 'composes' | ...
+  provenance: Provenance;
+  citation?: IrCitation | undefined;
+}
+
+interface IrSection {
+  id: string;
+  title: string;
+  provenance: Provenance;
+  narrativeText?: string | undefined; // present only when provenance === 'narrated'
+}
+
+interface DocumentIR {
+  docType: string; // matches DocTypeRegistration.docType
+  scopeDescription: string;
+  nodes: IrNode[];
+  edges: IrEdge[];
+  sections: IrSection[];
+  generatedAtRevision: string; // pinned graph index revision
+}
+```
+
+**Assumptions cited:** [[c9]] [[c10]]
+
+### sc2: DocTypeRegistration
+
+**Owner Story:** `s1`
+**Consumed by:** `s2`, `s3`, `s4`, `s6`
+
+**Purpose:** The single registration surface every document-type extractor plugs into, so the daemon tool registry, IPC method table, and MCP tool surface enumerate one source of truth instead of three hand-maintained lists (k4).
+
+**Interface sketch (type-level):**
+
+```
+interface DocTypeCapabilityDescription {
+  id: string; // 'type-structure' | 'component-dependency' | 'call-sequence' | 'narrative'
+  summary: string; // shown verbatim in capability enumeration on every surface
+}
+
+interface DocTypeRegistration {
+  docType: string;
+  capability: DocTypeCapabilityDescription;
+  extractorInputSchema: Record<string, unknown>; // JSON schema for scope/entry-point params
+}
+
+interface DocTypeRegistry {
+  register(entry: DocTypeRegistration): void;
+  list(): DocTypeRegistration[];
+  get(docType: string): DocTypeRegistration | undefined;
+}
+```
+
+**Assumptions cited:** [[c6]]
+
+### sc3: RenderedDocumentShell
+
+**Owner Story:** `s1`
+**Consumed by:** `s2`, `s3`, `s4`, `s5`, `s6`, `s7`
+
+**Purpose:** The single self-contained offline document shape every renderer (primary inline or subprocess fallback) must produce, extending the existing loadMermaidCdnMeta / RenderedArtifactHtml primitives instead of standing up parallel plumbing (k5, k6, k10).
+
+**Interface sketch (type-level):**
+
+```
+type RenderBackend = 'primary-inline' | 'fallback-subprocess';
+
+interface RenderedDocumentShell {
+  docType: string;
+  backend: RenderBackend;
+  html: string; // single self-contained file content
+  inlinedRuntimeVersion: string;
+  diagramFormat: 'svg';
+  supportsZoomPan: true;
+}
+```
+
+**Assumptions cited:** [[c6]] [[c13]] [[c2]]
+
+### sc4: DocGenOutcome
+
+**Owner Story:** `s1`
+**Consumed by:** `s3`, `s5`, `s6`
+
+**Purpose:** The one cross-cutting result/failure envelope every request resolves to, so empty-scope, not-found, truncated, fallback-unavailable, and not-ready reporting is implemented once rather than reinvented per story (k11).
+
+**Interface sketch (type-level):**
+
+```
+type DocGenOutcome =
+  | { status: 'ok'; shell: RenderedDocumentShell }
+  | { status: 'empty-scope'; reason: string }
+  | { status: 'not-found'; symbol: string }
+  | { status: 'truncated'; depthUsed: number }
+  | { status: 'fallback-unavailable'; reason: string; remedy: string }
+  | { status: 'source-not-ready'; reason: string };
+```
+
+**Assumptions cited:** [[c10]]
+
+## Story boundaries
+
+### Story E20260730870ed3dd:S001
+
+**Owns:** `sc1`, `sc2`, `sc3`, `sc4`
+
+The type-structure extractor itself: graph-codec reads over entity rows to find types in scope plus their inheritance/composition edges, emitted as derived-only DocumentIR nodes/edges. The walking-skeleton wiring that stands up DocTypeRegistry with this one entry, the first daemon tool + IPC method for type-structure generation, and the first RenderedDocumentShell assembly extending loadMermaidCdnMeta/RenderedArtifactHtml. Empty-scope detection (zero types in scope) resolving to DocGenOutcome's empty-scope variant. None of this extraction logic, registry bootstrapping detail, or shell-assembly code is consumed by any other Story directly — only the resulting types are shared.
+
+### Story E20260730870ed3dd:S002
+
+**Depends on:** `sc1`, `sc2`, `sc3`
+
+The component/dependency extractor: walking module DEPENDS_ON/import edges into derived IrNodes/IrEdges, including nodes with no in- or out-edges so isolated modules are still emitted. The determinism guarantee that unchanged code re-extracts to an identical IR (compared via generatedAtRevision plus node/edge content, not re-narrated). Registering this extractor into sc2's DocTypeRegistry. None of this traversal or determinism logic is needed outside s2 and its sole downstream, s5, which consumes only the resulting IR.
+
+### Story E20260730870ed3dd:S003
+
+**Depends on:** `sc1`, `sc2`, `sc3`, `sc4`
+
+The call-sequence extractor: CALLS-graph traversal from a resolved entry-point symbol, with cycle/recursion detection that guarantees termination and a fixed traversal depth, both encoded only in this extractor's own control flow (not exposed as shared types beyond the sc4 truncated/not-found outcomes it produces). Entry-point symbol resolution against the indexed graph. Ordering of call steps within the emitted IR sections. This traversal and resolution logic is private to s3.
+
+### Story E20260730870ed3dd:S004
+
+**Depends on:** `sc1`, `sc2`, `sc3`
+
+The narrative annotator: invoking CliProvider/OllamaProvider (existing LLMProvider interface) to produce use-case-flow and deployment-topology narrative text, attaching it to IR sections with provenance:'narrated' and citations to named entities that must first be confirmed present in the graph. The accuracy-over-cost provider/model selection logic (k3) that prefers the more faithful generation path. This generation and grounding-check logic is private to s4; only the resulting provenance-tagged IR is shared.
+
+### Story E20260730870ed3dd:S005
+
+**Depends on:** `sc1`, `sc3`, `sc4`
+
+The single measurable size/legibility threshold predicate over a component-dependency DocumentIR (e.g. combined node+edge count against one fixed limit) that decides primary-vs-fallback dispatch — this predicate and its dispatch decision are private to s5 since no other Story is downstream of it. Spawned-subprocess invocation of D2/Graphviz as the fallback renderer, assembly of its SVG output into sc3's shell shape so it is indistinguishable from the primary path, and detection of a missing fallback binary reported through sc4's fallback-unavailable variant.
+
+### Story E20260730870ed3dd:S006
+
+**Depends on:** `sc1`, `sc2`, `sc3`, `sc4`
+
+Enumerating sc2's DocTypeRegistry to register the docgen capability identically on the daemon tool registry, the IPC method table, and the MCP tool surface, plus the equivalence check that a request through any of the three yields the same DocGenOutcome. The registered/indexed precondition check on the target repo, reported via sc4's source-not-ready variant. This enumeration and precondition-check wiring is private to s6.
+
+### Story E20260730870ed3dd:S007
+
+**Depends on:** `sc1`, `sc3`
+
+Delivering the inlined renderer runtime and any fallback-related templates through copy-assets.mjs/src/assets per the existing asset-shipping convention, and the installed-build verification that an sc3 shell produced there renders identically, on a machine with no prior install and no network, to one produced from a development checkout. This asset-path wiring and installed-build verification is private to s7.
+
+## Non-functional targets
+
+- **Performance:** Each request runs one bounded daemon-side pipeline: extraction is a single graph read, call-sequence traversal is depth-limited with cycle detection to guarantee termination, and only oversized component-dependency scopes pay the extra cost of a spawned-subprocess fallback rather than degrading the primary renderer.
+- **Security:** No new external egress is introduced: the inlined SVG runtime and the D2/Graphviz fallback ship as local assets/binaries with no view-time network dependency, and the only LLM path (s4 narrative) goes through the existing local CliProvider/OllamaProvider, never a direct cloud REST call.
+- **Observability:** Every DocGenOutcome variant (empty-scope, not-found, truncated, fallback-unavailable, source-not-ready) is logged through the existing pino getLogger per module and returned to the caller verbatim, so failures are never silent or reworded between the extraction, render, and surface layers.
+- **Durability:** DocumentIR pins generatedAtRevision to a concrete graph index revision, so repeated generation against unchanged code yields byte-identical derived content (s2/ac2's determinism requirement); generated documents are static files with no runtime dependency on daemon liveness once produced.
+
+## Rollout
+
+### Phase A — Foundational contracts & walking skeleton
+
+**Stories:** `s1`
+**Flag:** `insrc.docgen`
+
+s1 owns all four shared contracts (sc1 DocumentIR, sc2 DocTypeRegistration, sc3 RenderedDocumentShell, sc4 DocGenOutcome) plus the DocTypeRegistry bootstrap and the first extractor+tool+IPC+shell wiring end-to-end. Every downstream Story only consumes these types (per s4's storyBoundaries consumedByStories lists), so this phase must land whole before any other Story can be built or tested against real types.
+
+**Backward compat:** The new daemon tool + IPC method are additive entries; the loadMermaidCdnMeta / RenderedArtifactHtml primitives are extended in place (k10) rather than duplicated, so no existing capability's request/response shape or rendering path changes.
+
+### Phase B — Structural extractors (component/dependency + call-sequence)
+
+**Stories:** `s2`, `s3`
+**Flag:** `insrc.docgen`
+
+Both extractors depend only on s1's sc1-sc3 contracts and DocTypeRegistry, and are mutually independent — s4's storyBoundaries marks s2's traversal/determinism logic and s3's cycle-detection/entry-point resolution as each private to its own Story. Both must exist before s5 (which explicitly dependsOn s2) and before Phase D's cross-surface/installed-build checks, which need more than one document type to meaningfully verify parity.
+
+**Backward compat:** s1's already-shipped type-structure tool/IPC contract stays byte-identical; s2 and s3 register additively into sc2's DocTypeRegistry without touching s1's registration; the generatedAtRevision determinism guarantee (s2/ac2) is preserved for the pre-existing type-structure extractor as well as the new ones.
+
+### Phase C — Narrative annotation & oversized-scope fallback
+
+**Stories:** `s4`, `s5`
+**Flag:** `insrc.docgen`
+
+s4 depends only on s1's contracts and can attach narrated sections to any derived IR already produced. s5's primary-vs-fallback dispatch has an explicit Epic-level dependsOn on s2, so it cannot land before Phase B. Grouping the two completes all content-producing capability — derived, narrated, and size-degraded — before Phase D's cross-cutting exposure and hardening work begins.
+
+**Backward compat:** s4's provenance:'narrated' sections are strictly additive to IR already produced in Phases A/B — no derived node, edge, or section from an earlier phase is altered or reinterpreted. s5's fallback output assembles into the identical RenderedDocumentShell shape already relied upon by earlier-phase consumers, so no downstream code needs to branch on render backend.
+
+### Phase D — Surface parity & installed-build hardening
+
+**Stories:** `s6`, `s7`
+
+s6 enumerates sc2's DocTypeRegistry across the tool/IPC/MCP surfaces to guarantee parity by construction (k4) — a guarantee that is only meaningfully exercised once the full document-type set from Phases A-C is registered. s7's installed-build verification explicitly covers 'any document type' generated from a fresh install with no network, which likewise benefits from every extractor and the fallback path already existing. Landing both last turns the completed feature on for general use.
+
+**Backward compat:** Any tool/IPC/MCP registration already reachable under the feature flag during Phases A-C keeps its name and payload shape when s6 formalizes registry enumeration, so early callers exercising the flagged capability are not broken by the switch away from hand-kept lists. s7's asset delivery reuses the existing copy-assets.mjs convention (k7), leaving non-docgen assets untouched.
+
+**Ordering rationale:** Ordering follows the Epic's dependsOn edges rooted entirely at s1: every other Story's dependsOn resolves either directly to s1 or (for s5) to s2, and s1 is also the sole owner of all four shared contracts (sc1-sc4) per s4's storyBoundaries, so nothing else can compile or be tested until s1's walking skeleton lands whole. Phase B groups s2 and s3 because both depend only on s1's contracts, are mutually independent (s4's storyBoundaries marks each one's traversal/resolution logic as private), and need to exist before anything that requires more than one document type to be meaningful. Phase C holds s4 (narrative annotator, depends only on s1) together with s5 (fallback renderer, whose Epic-level dependsOn is s2), since s5 cannot land before Phase B's s2 ships, and grouping completes all content-producing capability before exposure work begins. Phase D lands s6 and s7 last: s6's registry-enumeration parity guarantee and s7's 'any document type' installed-build verification (per its own ac1) are both cross-cutting checks that only prove something once multiple document types already exist, so front-loading them would leave them exercising a near-empty registry. A single feature flag gates the capability through Phases A-C while the document-type set is incomplete, and is removed in Phase D once s6 formalizes surface parity and s7 confirms the installed-build offline guarantee holds for the full set.
+
+### Risky bits
+
+| Area | Why | Mitigation |
+| :--- | :--- | :--- |
+| IR provenance discipline (sc1) across extractors and the narrative annotator | The entire k8/k11 guarantee — diagrams are graph-backed, narrative is clearly separated — collapses if any extractor (s1-s3) or s4's annotator ever emits a node/edge/section with a missing or wrong provenance tag, letting hallucinated content masquerade as derived fact. | Enforce a schema-level validation gate in s1's IR assembly that rejects any node/edge/section lacking a provenance tag and any 'narrated' section lacking a resolvable citation, before it ever reaches the render stage; cover with tests in every extractor Story, not just s4. |
+| Registry-enumeration parity (sc2) actually replacing hand-kept lists in s6 | s6's entire value proposition is parity-by-construction (k4); if the tool registry, IPC method table, or MCP tool surface implementation quietly falls back to a manually maintained list instead of enumerating DocTypeRegistry, the three surfaces can silently drift apart again with no signal until a user hits a missing capability. | s6 ships an explicit automated equivalence test asserting all three surfaces return identical capability sets sourced from one enumeration call, run in CI so any hand-added surface entry that bypasses the registry fails the build. |
+| Fallback subprocess correctness and availability (s5, k9) | D2/Graphviz may be missing on a given machine, or its SVG output may not truly slot into the identical RenderedDocumentShell shape, breaking either the offline single-file guarantee or the 'indistinguishable from primary path' requirement in ac2. | Detect a missing fallback binary and report it through DocGenOutcome's fallback-unavailable variant with an actionable remedy (ac3); add a golden-shell comparison test asserting fallback-produced shells match the primary path's shape and offline/zoom-pan behavior. |
+
+## Alternatives considered
+
+### a1: Renderer-neutral diagram IR with pluggable render backends — **CHOSEN**
+
+A deterministic graph→diagram intermediate representation is the architectural centre; doc types are IR producers and Mermaid/D2 are interchangeable IR consumers sharing one HTML shell.
+
+A renderer-neutral intermediate representation — participants, edges, groupings, labels, and a per-element provenance flag (derived-from-graph vs narrated) — sits between the graph and any rendering. Deterministic extractors run inside the daemon and read entity rows, module DEPENDS_ON edges, and the CALLS graph through the graph codec, emitting IR and nothing else; each document type (type structure, component/dependency, call sequence, narrative) is an extractor. LLM narrative never reaches the graph: it attaches as annotations onto already-derived IR elements, which is what keeps derived and narrated content separable in the finished document. Size, fan-out, and label-length metrics are computed on the IR, so the S005 threshold that decides primary-vs-fallback is one measurable predicate over one data shape rather than a per-document-type heuristic.
+
+Rendering is a backend that consumes IR. The primary backend emits Mermaid source and assembles it into a single self-contained file built on the repo's existing rendered-artifact HTML primitive, with the renderer runtime inlined from src/assets rather than fetched. The fallback backend spawns D2 or Graphviz, takes the SVG back, and inlines it into the identical shell — so a fallback document differs only in which backend drew the vector content, not in file shape, zoom/pan affordance, or offline behaviour. The S001 walking skeleton is the full vertical column at width one: the IR contract, one extractor, the primary backend, the inlined-asset shell, and one non-daemon caller surface — which is exactly the set needed to satisfy its own offline-render and finished-document criteria.
+
+**Pros:**
+- The fallback document is produced by the same shell code path as the primary one, so s5/ac2's 'indistinguishable when opened offline' holds by construction instead of needing per-path verification
+- The S005 legibility threshold is a single predicate over one IR shape, so the open design question is settled once rather than re-litigated for each of the four document types
+- Cross-cutting failure reporting — empty scope (s1/ac6), depth truncation (s3/ac3), unknown symbol (s3/ac4) — is implemented once at the IR layer and inherited by every document type
+- Narrated-vs-derived provenance is a field on IR elements, so s4/ac3 cannot be forgotten by an individual document type
+- Adding a fifth document type later requires writing one extractor and no renderer, HTML, or asset work
+
+**Cons:**
+- Call sequences are ordered and temporal and do not fit a node/edge graph model, so the IR needs a second shape or a lossy encoding — the one place the abstraction genuinely strains
+- The largest design commitment must be made before S001 can ship, because the walking skeleton has to carry the IR contract even though only one extractor exercises it
+- Two rendering backends must be kept visually consistent (theme, node styling, label truncation) so documents from either path read as one convention — ongoing dual maintenance for the life of the feature
+- If the document-type count stays at four, the IR layer is an abstraction paid for and under-amortised
+
+**Cost estimate:** L
+
+### a3: Documents as a new kind in the existing rendered-artifact pipeline
+
+Rather than standing up a docgen subsystem, extend the two existing Mermaid/rendered-HTML primitives so a generated document is simply another artifact flowing through the path that already carries them.
+
+The retrieval established that exactly two entities in the codebase touch Mermaid and rendered-HTML artifacts — the CDN-metadata loader in the daemon's artifact RPC and the rendered-artifact HTML type in shared. This shape takes the reuse constraint to its conclusion: docgen adds a document kind to that pipeline instead of building a parallel one. The first move is converting the existing renderer-runtime resolution from a network-referencing form to a runtime inlined from the shipped assets, which is the change that actually delivers the offline guarantee — and delivers it to every existing consumer of rendered artifact HTML, not only to documents.
+
+On top of that, each document type is a producer that runs deterministic graph reads inside the daemon and fills an artifact payload; the fallback path produces the same payload with pre-rendered vector content substituted for diagram source. Transport, daemon-side ownership of store access, and HTML assembly are all inherited from the artifact path rather than re-invented, so the three-surface exposure becomes three thin callers over one existing RPC. S001 is the inlining conversion plus one producer plus one caller surface.
+
+**Pros:**
+- Directly discharges the reuse constraint and s7/ac3 by extending the only two existing primitives rather than paralleling them — no second HTML-assembly implementation ever exists
+- Daemon-ownership of store reads (s1/ac5, s6/ac2) is inherited from the existing artifact path instead of being re-established and re-argued for a new subsystem
+- Converting the renderer runtime from network-referenced to inlined fixes the offline guarantee for every current rendered-artifact consumer, not just for generated documents
+- The three surfaces become thin callers over one existing RPC, which shrinks the S006 parity work to dispatch rather than three implementations
+
+**Cons:**
+- Both primitives score 0.095 in retrieval and are low-level — if they turn out to be shaped narrowly around workflow artifacts, documents inherit lifecycle, naming, and storage-location decisions they did not ask for
+- Changing the renderer-runtime resolution from network-referenced to inlined alters behaviour for existing artifact consumers, so re-verifying those consumers becomes in-scope work for this epic
+- An artifact record model may force documents to be persisted and registered when the caller only wants a finished file handed back, adding cleanup and naming concerns absent from the stories
+- Reuse solves delivery only — diagram construction, the S005 threshold, and the fallback dispatch still need an answer this shape does not supply
+- Because the two primitives are shared, a defect introduced during extension has blast radius beyond docgen
+
+**Cost estimate:** M
+
+**Rejected because:** Solves reuse/delivery (k2, k10) but by its own admission leaves diagram construction, the S005 threshold, and fallback dispatch unanswered, and the derived-vs-narrated split (k8) unaddressed — plus blast-radius risk on two low-confidence (0.095) shared primitives. Its delivery layer is adopted underneath the winner (extending loadMermaidCdnMeta / RenderedArtifactHtml) rather than standing alone as the architecture.
+
+### a2: Self-contained doc runtimes behind a registration surface
+
+Each document type is a self-registering runtime owning its own graph queries, diagram emission, and HTML assembly, mirroring the template-runtime registry pattern already in the repo.
+
+Docgen is modelled the way analysis templates already are: a small registration surface (register / get / list, matching the shape of the existing executor and planner template registries) with each document type implemented as an independent runtime behind it. A runtime owns its whole column — the deterministic graph queries it needs, the diagram grammar it emits, and the assembly of the finished single file — sharing only a thin helper for the self-contained HTML shell and inlined renderer runtime. Because each runtime picks its own diagram grammar, the class-diagram, flowchart, and sequence-diagram cases never have to be reconciled into a common model.
+
+The registry's list operation is what makes the three-surface parity story cheap: the tool registration, the IPC method, and the MCP tool all enumerate and dispatch against the same registry, so capability discovery on each surface returns the same set by definition rather than by three parallel hand-maintained lists. S001 is the smallest slice of any option here — the registry, one runtime, the shell helper, the shipped asset, and one non-daemon caller — and subsequent document types land as independent additions that can be developed and reviewed in parallel because they share almost no code.
+
+**Pros:**
+- The registration surface is a direct copy of a pattern the codebase already runs in at least six places, so it needs no novel design and reviewers already know the idiom
+- S006's discovery criterion (ac4) falls out of a single registry enumeration shared by all three surfaces, rather than three hand-maintained capability lists that can drift
+- Each runtime picks the diagram grammar that actually suits it, so no shared model has to be stretched to cover both sequences and dependency graphs
+- S001 is the smallest independently shippable slice of the four options, since only one runtime plus the shell has to exist
+- Stories s2, s3, and s4 can be built concurrently by different people with near-zero merge contention
+
+**Cons:**
+- The S005 size threshold and fallback dispatch have no shared home, so they must either be implemented in each of the four runtimes or retrofitted as a cross-cutting hook after the runtimes already exist
+- 'Fallback documents indistinguishable from primary ones' (s5/ac2) becomes a per-runtime property checked by test rather than a structural guarantee, and regresses silently when a new runtime is added
+- Determinism (s2/ac2) and the derived-vs-narrated distinction (s4/ac3) depend on every runtime independently honouring them, with nothing preventing a runtime from inlining LLM text into a derived section
+- Shared concerns — truncation reporting, empty-scope errors, provenance labelling — tend to be copy-pasted across runtimes and then diverge
+
+**Cost estimate:** M
+
+**Rejected because:** Trades the Epic's invariant constraints (k8 derivation/narrative separation, k9 fallback dispatch, k11 failure reporting) for cost and parallel-development speed — the alternative itself concedes 'nothing preventing a runtime from inlining LLM text into a derived section' and that the S005 threshold has 'no shared home' — a trade k3 (accuracy primary, cost least priority) forbids. Its registry-enumeration pattern (k4), which is genuinely the best answer to surface parity, is grafted into the winner rather than adopted as the base architecture.
+
+### a4: Asset-first template binding
+
+Document types are declarative assets — an HTML shell plus a diagram template plus a query descriptor — shipped through the existing asset path, with the daemon binding a typed data model into them.
+
+Generation is inverted: instead of TypeScript emitting markup, TypeScript resolves a typed data model from the graph and binds it into templates that live as non-code resources alongside the existing artifact templates and are delivered by the existing asset-copy build step. A document type is therefore a triple — a query descriptor naming the deterministic graph reads, a diagram template, and the surrounding HTML shell — and adding or restyling a document type is predominantly an asset edit. The derived and narrated regions are distinct blocks in the template markup, which makes the separation legible at review time.
+
+Because the assets are the artifact, the installed-build story is the architecture rather than a packaging step bolted on afterwards: everything a document needs to render is on the asset path from day one, including the inlined renderer runtime. S001 ships the shell asset, one document template, the binder, one query descriptor, and one non-daemon caller. Matching the repo's existing self-contained document convention is a template-authoring exercise against those files rather than a code change.
+
+**Pros:**
+- S007's asset-breadth criterion is satisfied by construction rather than discovered late, because every non-code resource a document needs is on the existing copy path from the first slice
+- Restyling to match the repo's existing self-contained documents is a template diff a reviewer can read directly, with no generation-logic rebuild
+- The derived-vs-narrated split (s4/ac3) is visible as distinct template regions, making it auditable by reading one file
+- Documents and their templates version together as data, so a rendering-only change never requires touching graph-query code
+
+**Cons:**
+- Templates are untyped strings, so the project's strict compile-time guarantees stop at the template boundary and a data-model/template mismatch surfaces at generation time instead of build time
+- A binding engine is dependency surface the repo does not currently carry, and hand-rolling one is real work that buys nothing the stories asked for
+- Cycle detection and depth truncation for call sequences (s3/ac2, s3/ac3) and the S005 size threshold are control flow, which templates express badly — they land back in TypeScript, splitting each document type's definition across an asset and a module
+- The claimed edit-without-rebuild benefit does not hold in an installed build, where assets only change when the build is re-run
+- Two fallback vector paths still need templating, since pre-rendered vector content and diagram source bind differently into the shell
+
+**Cost estimate:** M
+
+**Rejected because:** Untyped template strings push data-model/template mismatches from build time to generation time — a fidelity regression under k3 (accuracy primary) — and its own cons admit that control-flow-heavy concerns (cycle detection, depth truncation, the S005 threshold) fall back into TypeScript anyway, splitting each document type across an asset and a module. Adds an unneeded binding-engine dependency and is silent on k4 (surface parity) and k10 (reuse of existing primitives). Its template-region provenance split is achieved more cleanly by the winner's IR provenance flags without leaving the type system.
+
+## Open questions
+
+- s6/f2 (partial): architectureShape's references to existing modules — loadMermaidCdnMeta, RenderedArtifactHtml, the graph codec, CliProvider/OllamaProvider, copy-assets.mjs — carry no explicit inline citation markers in the prose itself; grounding is traceable back to s1's analyze bundles but is inferable rather than cited in the artifact text. Worth deciding whether HLD prose should carry inline bundle references going forward.
+- The S005 primary-vs-fallback dispatch mechanism is settled at the architecture level (one measurable size/fan-out/label-length predicate computed over the DocumentIR, per sc3/k9), but the concrete numeric threshold value that makes a fallback document 'legible' is not specified in this HLD and is deferred to s5's internal implementation — the fallback-renderer legibility threshold itself therefore remains an open design question to settle at story/build time, not just a mechanism question.
+
+## Resolved questions
+
+- `q0a7bb99f` — s6/f2 (partial): architectureShape's references to existing modules — loadMermaidCdnMeta, RenderedArtifactHtml, the graph codec, CliProvider/OllamaProvider, copy-assets.mjs — carry no explicit inline citation markers in the prose itself; grounding is traceable back to s1's analyze bundles but is inferable rather than cited in the artifact text. Worth deciding whether HLD prose should carry inline bundle references going forward.
+  - **resolved**: Keep prose uncited; verify at LLD time — Each story's LLD re-grounds the modules it actually touches, so a stale/wrong reference is caught where it becomes load-bearing. The independent HLD review already verified every named module resolves (loadMermaidCdnMeta @ artifacts-rpc.ts:308, RenderedArtifactHtml @ shared/artifacts.ts:67, graph codec, CliProvider/OllamaProvider, copy-assets.mjs). Adding a groundingRefs sidecar or inline-marker gating is a workflow-framework change (design.epic schema) out of scope for the docgen epic; revisit as its own improvement if HLD grounding drift recurs. _(2026-07-30T15:03:41.453Z)_
+
+## Citations
+
+- **[[c2]]** `prior-artifact` `Epic assumptions register — assumption c2, relied on by alternative a3's reuse-based approach and reflected in s4.sharedContracts.sc3 (RenderedDocumentShell) assumptions` — "assumptionsRelied: ["c2", "c6", "c10", "c13"]"
+- **[[c6]]** `prior-artifact` `Epic assumptions register — assumption c6, relied on across all four s2 alternatives and reflected in s4.sharedContracts sc2 (DocTypeRegistration) and sc3 (RenderedDocumentShell) assumptions` — "assumptionsRelied: ["c6", "c9", "c13", "c15"]"
+- **[[c9]]** `prior-artifact` `Epic assumptions register — assumption c9, relied on by the winning IR-centric alternative a1 and reflected in s4.sharedContracts.sc1 (DocumentIR) assumptions` — "assumptionsRelied: ["c6", "c9", "c13", "c15"]"
+- **[[c10]]** `prior-artifact` `Epic assumptions register — assumption c10, relied on by alternative a3's reuse approach and reflected in s4.sharedContracts sc1 (DocumentIR) and sc4 (DocGenOutcome) assumptions` — "assumptionsRelied: ["c2", "c6", "c10", "c13"]"
+- **[[c13]]** `prior-artifact` `Epic assumptions register — assumption c13, relied on by alternatives a1, a3, and a4, and reflected in s4.sharedContracts.sc3 (RenderedDocumentShell) assumptions` — "assumptionsRelied: ["c15", "c13", "c6"]"
+- **[[c15]]** `prior-artifact` `Epic assumptions register — assumption c15, relied on by alternatives a1 and a4` — "assumptionsRelied: ["c6", "c9", "c13", "c15"]"
+- **[[c20]]** `analyze-bundle` `s1 concept.resolve (semantic sweep) bundle — the only two Mermaid/rendered-HTML entities in the indexed graph` — "loadMermaidCdnMeta in src/daemon/artifacts-rpc.ts and RenderedArtifactHtml in src/shared/artifacts.ts — are the ONLY entities in the whole retrieval touching Mermaid or rendered-HTML artifacts"
+- **[[c21]]** `analyze-bundle` `s1 structural-map + convention.detect bundle over src/db/graph (codec.ts, edges.ts, ids.ts, keys.ts, migrations.ts, store.ts, traversal.ts)` — "162 entities across 7 files ... implementing the graph data-structure substrate itself"
+- **[[c22]]** `analyze-bundle` `s1 concept.resolve (S006 tool/IPC/MCP surface-parity target) bundle — src/analyze/executor/registry.ts registration pattern plus the five src/mcp/*/handler.ts step handlers` — "a small registration-surface pattern ... the concrete places a new docgen tool + IPC method + MCP tool must register into to satisfy S006's full-parity criterion"
+- **[[c23]]** `analyze-bundle` `s1 concept.resolve (S007 installed-build asset-breadth target) bundle — copy-assets.mjs, src/assets, src/assets/artifacts/templates, src/analyze/runtimes` — "the concrete path any inlined Mermaid runtime or HTML template for the docgen feature must be delivered through per k7"
+- **[[c24]]** `analyze-bundle` `s1 capability-discovery (code) bundle confirming no existing docgen module across src/mcp, src/mcp/build-step, src/db/graph, src/daemon/tools/builtins/graph, src/mcp/analyze-step` — "0 clear matches, 2 partial and 3 unrelated ... the capability does not exist in any form"
+- **[[c25]]** `analyze-bundle` `s1 capability.reuse-check (S001 walking-skeleton) bundle confirming zero reusable scaffolding for the walking skeleton` — "S001 is therefore confirmed as net-new implementation work with zero existing scaffolding"

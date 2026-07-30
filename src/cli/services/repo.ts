@@ -9,10 +9,24 @@
  */
 
 import { existsSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { homedir } from 'node:os';
+import { join, resolve } from 'node:path';
 
 import { rpc } from '../client.js';
 import type { McpClientOutcome, RegisteredRepo, SteeringSelection } from '../../shared/types.js';
+
+/** Expand a leading `~` / `~/` to the user's home dir, then resolve to an
+ *  absolute path. The TUI command bar has no shell to expand `~`, so a typed
+ *  `~/projects/x` would otherwise `resolve()` to `<cwd>/~/projects/x` and fail.
+ *  Bare relative paths (`.`, `../x`) are handled by `resolve()` as before. */
+export function toAbsPath(path: string): string {
+	const expanded = path === '~'
+		? homedir()
+		: path.startsWith('~/')
+			? join(homedir(), path.slice(2))
+			: path;
+	return resolve(expanded);
+}
 
 export function listRepos(): Promise<RegisteredRepo[]> {
 	return rpc<RegisteredRepo[]>('repo.list');
@@ -33,7 +47,7 @@ export interface AddRepoResult {
  *  approved client; omit it to do neither. Returns the registered path + any
  *  per-client MCP outcomes. */
 export async function addRepo(path: string, steering?: SteeringSelection): Promise<AddRepoResult> {
-	const abs = resolve(path);
+	const abs = toAbsPath(path);
 	if (!existsSync(abs)) {
 		throw new Error(`path does not exist: ${abs}`);
 	}
@@ -56,13 +70,13 @@ export function formatMcpOutcome(clients: readonly McpClientOutcome[] | undefine
 }
 
 export async function removeRepo(path: string): Promise<string> {
-	const abs = resolve(path);
+	const abs = toAbsPath(path);
 	await rpc('repo.remove', { path: abs });
 	return abs;
 }
 
 export async function reindexRepo(path: string): Promise<string> {
-	const abs = resolve(path);
+	const abs = toAbsPath(path);
 	await rpc('repo.reindex', { path: abs });
 	return abs;
 }

@@ -79,7 +79,7 @@ export async function handleStart(
 	};
 
 	log.info(
-		{ runId, workflow: intent.workflow, epicKey, focus: input.focus.slice(0, 80) },
+		{ runId, workflow: intent.workflow, epicKey, focus: (input.focus ?? '').slice(0, 80) },
 		'insrc_workflow_step[start]: emitting decomposer prompt',
 	);
 

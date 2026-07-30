@@ -37,7 +37,7 @@
     <div class="card">
       <div class="glyph">◎</div>
       <h4><code>insrc_analyze</code></h4>
-      <p>One-shot. A single tool call — the server runs the whole pipeline end to end. Inner narrow-LLM calls route to the daemon's configured <code>shaperProvider</code> (Ollama by default), so it's slower and bills separately.</p>
+      <p>One-shot. A single tool call — the server runs the whole pipeline end to end. Inner narrow-LLM calls route to the daemon's shaper, derived from the core model tier (<code>models.tiers.core</code>) — local Ollama when that tier's runner is <code>ollama</code>, so it's slower and bills separately.</p>
     </div>
     <div class="card">
       <div class="glyph">⟳</div>

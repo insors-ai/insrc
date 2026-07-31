@@ -101,18 +101,46 @@ function toFlowchart(ir: DocumentIR, alias: ReadonlyMap<string, string>): string
 	return lines.join('\n');
 }
 
+/** sequenceDiagram source (call-sequence): one participant per 'call-frame'
+ *  node, one `A->>B` message per ordered 'calls' edge, a `Note over B` for a
+ *  cycle-repeat step (edge id carries a ':repeat' suffix) and a `Note over F`
+ *  for each 'truncation' marker (which cites the frame F it attaches to). The
+ *  ordered edge list IS the call order (ac1); the notes show repetition (ac2)
+ *  and depth-truncation (ac3) in the document. */
+function toSequenceDiagram(ir: DocumentIR, alias: ReadonlyMap<string, string>): string {
+	const lines: string[] = ['sequenceDiagram'];
+	for (const n of ir.derived.nodes) {
+		if (n.kind === 'call-frame') lines.push(`  participant ${alias.get(n.id)!} as ${escapeLabel(n.label)}`);
+	}
+	for (const e of ir.derived.edges) {
+		const from = alias.get(e.from);
+		const to   = alias.get(e.to);
+		if (from === undefined || to === undefined) continue;
+		lines.push(`  ${from}->>${to}: call`);
+		if (e.id.endsWith(':repeat')) lines.push(`  Note over ${to}: recursion`);
+	}
+	for (const n of ir.derived.nodes) {
+		if (n.kind !== 'truncation') continue;
+		const frame = n.citation?.entityId !== undefined ? alias.get(n.citation.entityId) : undefined;
+		if (frame !== undefined) lines.push(`  Note over ${frame}: ${escapeLabel(n.label)}`);
+	}
+	return lines.join('\n');
+}
+
 /**
  * Emit Mermaid source from the DERIVED IR, dispatching on docType: a
  * `classDiagram` for type-structure (inheritance), a `flowchart` for
- * component-dependency. Nodes get stable short aliases (n0, n1, …) so the
- * graph-derived entity ids never clash with Mermaid identifier syntax; the real
- * name rides in the label. Pure + deterministic (alias order follows node order).
+ * component-dependency, a `sequenceDiagram` for call-sequence. Nodes get stable
+ * short aliases (n0, n1, …) so the graph-derived entity ids never clash with
+ * Mermaid identifier syntax; the real name rides in the label. Pure +
+ * deterministic (alias order follows node order).
  */
 export function documentIRToMermaid(ir: DocumentIR): string {
 	const alias = new Map<string, string>();
 	ir.derived.nodes.forEach((n, i) => alias.set(n.id, `n${i}`));
+	// docType literal used here to avoid an extractor→shell import cycle.
+	if (ir.docType === 'call-sequence') return toSequenceDiagram(ir, alias);
 	// 'component-dependency' → flowchart; every other docType → classDiagram.
-	// (docType literal used here to avoid an extractor→shell import cycle.)
 	return ir.docType === 'component-dependency' ? toFlowchart(ir, alias) : toClassDiagram(ir, alias);
 }
 

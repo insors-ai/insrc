@@ -24,6 +24,8 @@ import { typeStructureRegistration } from './extract/type-structure.js';
 import { graphTypeReader } from './extract/graph-reader.js';
 import { componentDependencyRegistration } from './extract/component-dependency.js';
 import { componentGraphReader } from './extract/component-graph-reader.js';
+import { callSequenceRegistration } from './extract/call-sequence.js';
+import { callGraphReader } from './extract/call-graph-reader.js';
 import { notFound, type ShellOutcome } from './outcome.js';
 import { assembleShell } from './render/shell.js';
 import type { DocTypeRegistry, SerializableDocTypeRegistration } from './types.js';
@@ -33,6 +35,7 @@ export const docgenRegistry: DocTypeRegistry = (() => {
 	const r = new InMemoryDocTypeRegistry();
 	r.register(typeStructureRegistration(graphTypeReader));           // s1
 	r.register(componentDependencyRegistration(componentGraphReader)); // s2
+	r.register(callSequenceRegistration(callGraphReader));            // s3
 	return r;
 })();
 

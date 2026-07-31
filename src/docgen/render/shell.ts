@@ -24,6 +24,13 @@ import { fileURLToPath } from 'node:url';
 import type { DocumentIR, IrEdge, IrSection, RenderedDocumentShell } from '../types.js';
 import { ok, fallbackUnavailable } from '../outcome.js';
 import type { DocGenOutcome } from '../types.js';
+import {
+	oversized,
+	toGraphvizDot,
+	assembleFallbackShell,
+	graphvizSubprocessRenderer,
+	type SubprocessRenderer,
+} from './fallback.js';
 
 // out/docgen/render/shell.js → ../../assets/docgen
 const ASSET_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'assets', 'docgen');
@@ -221,8 +228,20 @@ mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: 'neutra
  * Mermaid + svg-pan-zoom runtimes and inlines them; if the runtime asset is
  * missing from the build output, returns `fallback-unavailable` naming the
  * copy-assets ship step (never a CDN fetch — ac2).
+ *
+ * Oversized dispatch (s5): a diagram too large for the primary Mermaid layout
+ * (`oversized(ir)`) is rendered via the injected subprocess `renderer` (Graphviz
+ * `dot` / `d2`) into the SAME sc3 offline shell (`backend: 'fallback-subprocess'`),
+ * or reported `fallback-unavailable` naming the tried binaries when no renderer
+ * is present (ac1/ac3). A non-oversized diagram takes the unchanged primary
+ * inline path and is byte-identical to the pre-s5 output — the subprocess
+ * `renderer` is never invoked (ac4/k9). `renderer` defaults to the production
+ * seam and is injectable for tests.
  */
-export async function assembleShell(ir: DocumentIR): Promise<DocGenOutcome<RenderedDocumentShell>> {
+export async function assembleShell(
+	ir: DocumentIR,
+	renderer: SubprocessRenderer = graphvizSubprocessRenderer,
+): Promise<DocGenOutcome<RenderedDocumentShell>> {
 	let runtime: { manifest: RuntimeManifest; mermaid: string; svgPanZoom: string };
 	try {
 		runtime = await loadRuntime();
@@ -232,6 +251,19 @@ export async function assembleShell(ir: DocumentIR): Promise<DocGenOutcome<Rende
 			`ensure src/assets/docgen/{mermaid.min.js,svg-pan-zoom.min.js,runtime.json} ship via copy-assets.mjs into out/assets/docgen/`,
 		);
 	}
+	// Oversized scope → subprocess fallback into the identical sc3 shell (s5).
+	if (oversized(ir)) {
+		const result = await renderer.renderSvg(toGraphvizDot(ir));
+		if (result.status === 'ok') {
+			return ok(assembleFallbackShell(ir, result.svg, runtime.svgPanZoom, runtime.manifest.svgPanZoomVersion));
+		}
+		return fallbackUnavailable(
+			`docgen diagram too large for the primary renderer and no subprocess renderer is available ` +
+				`(tried ${result.triedBinaries.join(', ') || 'none'}${result.reason ? `; ${result.reason}` : ''})`,
+			`install graphviz (provides 'dot') or d2 to enable the oversized-diagram fallback renderer`,
+		);
+	}
+	// Primary inline path — unchanged (byte-identical for non-oversized docs).
 	const mermaidSource = documentIRToMermaid(ir);
 	const html = buildHtml(ir.scopeDescription, mermaidSource, runtime.mermaid, runtime.svgPanZoom, ir.narrated.sections);
 	return ok<RenderedDocumentShell>({

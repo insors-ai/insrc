@@ -1,0 +1,621 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1785490467999-w4m1s6",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-07-31T09:44:28.955Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 600861,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "870ed3dd246225f4",
+    "epicSlug": "documentation-generation-framework-docgen-produces-self",
+    "storyId": "s5",
+    "hldBaseRunId": "wf-1785421889464-2ayzlc",
+    "hldEffectiveHash": "cb5b27744db290de72c59b4596b1773d0ba24dd335448b4f0a7944f70adc817c",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "ref": "c1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/docgen/render/shell.ts exports assembleShell, buildHtml, loadRuntime, and _resetRuntimeCacheForTests — the primary render path s5 branches from, and it reads/inlines the svg-pan-zoom bundle.",
+          "evidence": "shell.ts:225 assembleShell, :172 buildHtml, :41 loadRuntime, :53 _resetRuntimeCacheForTests all present; svgPanZoom inlined by loadRuntime. Confirmed.",
+          "action": "none",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl2",
+          "ref": "c2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/docgen/types.ts declares a RenderBackend union that includes both 'primary-inline' and 'fallback-subprocess', plus a RenderedDocumentShell type, so the s5 fallback backend value already exists (no contract change).",
+          "evidence": "src/docgen/types.ts:110 = `export type RenderBackend = 'primary-inline' | 'fallback-subprocess';` — the fallback backend value already exists (no contract change). RenderedDocumentShell also present. Confirmed.",
+          "action": "none",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl3",
+          "ref": "c2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/docgen/outcome.ts exports a fallbackUnavailable(reason, remedy) constructor that assembleShell returns for the oversized-but-no-renderer case.",
+          "evidence": "src/docgen/outcome.ts:49 = `export const fallbackUnavailable = <T>(reason: string, remedy: string): DocGenOutcome<T> =>`. Signature matches the LLD's use. Confirmed.",
+          "action": "none",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl4",
+          "ref": "c3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The child_process spawn(shell:false) + timeout + SIGKILL + ENOENT-on-error pattern the fallback renderer mirrors exists in src/daemon/tools/builtins/shell/exec-detached.ts and src/agent/providers/cli-provider.ts.",
+          "evidence": "exec-detached.ts:115 spawns with shell:false; cli-provider.ts:458 spawns child; SIGKILL-on-timeout + ENOENT patterns exist in the codebase (live tests). The mirrored pattern is real. Confirmed.",
+          "action": "none",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl5",
+          "ref": "c4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The vendored svg-pan-zoom runtime the fallback inlines is staged via src/assets/docgen/runtime.json + copy-assets.mjs.",
+          "evidence": "runtime.json:5 svgPanZoomAsset='svg-pan-zoom.min.js'; shell.ts:46 reads manifest.svgPanZoomAsset. The vendored bundle staging is real. Confirmed.",
+          "action": "none",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl6",
+          "ref": "c5",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/docgen/extract/component-dependency.ts is the s2 topology extractor whose whole-repo IR oversizes and triggers the fallback (s5 dependsOn s2).",
+          "evidence": "src/docgen/extract/component-dependency.ts exists (s2 extractor). The dependsOn-s2 base is real. Confirmed.",
+          "action": "none",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl7",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "assembleShell today unconditionally takes the primary-inline path and returns backend 'primary-inline'; s5 wraps it in an oversized(ir) branch while keeping the non-oversized path byte-identical.",
+          "evidence": "shell.ts:237 returns ok<RenderedDocumentShell>({...backend:'primary-inline'...}) unconditionally today; s5's oversized branch wraps it. Byte-identical-preservation claim is consistent with the current single-path assembler. Confirmed.",
+          "action": "none",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl8",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "assembleShell currently takes a single DocumentIR argument (no renderer parameter); s5 adds an optional renderer seam parameter.",
+          "evidence": "shell.ts:225 signature is `assembleShell(ir: DocumentIR)` — single arg today; s5 adds the optional renderer seam. Confirmed.",
+          "action": "none",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl9",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "loadRuntime returns { manifest, mermaid, svgPanZoom } where manifest carries svgPanZoomVersion, so the fallback shell can source svg-pan-zoom bytes + version without a new asset path.",
+          "evidence": "shell.ts:31 RuntimeManifest carries svgPanZoomVersion; runtime.json:3 svgPanZoomVersion='3.6.2'. loadRuntime returns {manifest,mermaid,svgPanZoom}. The fallback can source bytes+version without a new asset path. Confirmed.",
+          "action": "none",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl10",
+          "kind": "ordering",
+          "severity": "LOW",
+          "premise": "generateDocument in src/docgen/index.ts calls assembleShell(ir.value) as the final step, so the s5 dispatch change is transparent to the single generation entry point.",
+          "evidence": "src/docgen/index.ts:72 = `return assembleShell(ir.value);` — the single generation entry point; the dispatch change is transparent to it. Confirmed.",
+          "action": "none",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl11",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "toGraphvizDot must use short n0/n1 aliases for node identifiers (mirroring documentIRToMermaid's existing aliasing) so graph-derived entity ids never clash with DOT syntax.",
+          "evidence": "shell.ts:140 = `ir.derived.nodes.forEach((n, i) => alias.set(n.id, `n${i}`));` — the n0/n1 aliasing pattern toGraphvizDot mirrors exists. Confirmed.",
+          "action": "none",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 11
+      },
+      "reviewedAt": "2026-07-31T10:00:38.045Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-07-31T10:02:13.025Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "IR is the hard boundary between graph-derived and LLM-narrated content; cross-cutting failure/empty/truncation reporting is one shared outcome envelope; registry-enumeration gives automatic tool/IPC/MCP parity; both the primary inline renderer and the D2/Graphviz subprocess fallback assemble into the identical single-file shell extending loadMermaidCdnMeta / RenderedArtifactHtml.",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "DocumentIR"
+        },
+        {
+          "id": "sc3",
+          "name": "RenderedDocumentShell"
+        },
+        {
+          "id": "sc4",
+          "name": "DocGenOutcome"
+        }
+      ],
+      "boundary": {
+        "storyId": "s5",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc3",
+          "sc4"
+        ],
+        "internal": "The single measurable size/legibility threshold predicate over a component-dependency DocumentIR (combined node+edge count against one fixed limit) that decides primary-vs-fallback dispatch — private to s5. Spawned-subprocess invocation of D2/Graphviz as the fallback renderer, assembly of its SVG output into sc3's shell shape indistinguishable from primary, and detection of a missing fallback binary reported through sc4's fallback-unavailable variant."
+      },
+      "rolloutPhase": "Phase C — Narrative annotation & oversized-scope fallback"
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "oversized",
+          "signature": "function oversized(ir: DocumentIR, limit?: number): boolean",
+          "parameters": [
+            {
+              "name": "ir",
+              "type": "DocumentIR",
+              "purpose": "The document to size; only ir.derived nodes/edges are counted.",
+              "optional": false
+            },
+            {
+              "name": "limit",
+              "type": "number",
+              "purpose": "The fixed legibility bound; defaults to OVERSIZED_LIMIT (an empirically-calibrated node+edge count, e.g. 60). Injectable for tests.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "boolean",
+            "meaning": "true when ir.derived.nodes.length + ir.derived.edges.length > limit — i.e. the diagram is too large for the primary Mermaid path to lay out legibly (ac1). Pure + deterministic."
+          },
+          "errors": [],
+          "preconditions": [
+            "Reads only ir.derived counts; no I/O."
+          ],
+          "postconditions": [
+            "A small doc (<= limit) returns false so it keeps the primary path (ac4)."
+          ]
+        },
+        {
+          "name": "toGraphvizDot",
+          "signature": "function toGraphvizDot(ir: DocumentIR): string",
+          "parameters": [
+            {
+              "name": "ir",
+              "type": "DocumentIR",
+              "purpose": "The derived diagram to render via the subprocess.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "A Graphviz DOT digraph over the derived nodes/edges: one node per IrNode (label = its label), one edge per IrEdge (from->to). Identifiers are the short aliases (n0,n1,…) so entity ids never clash with DOT syntax; labels are DOT-escaped. Pure + deterministic (k8/k11 — only graph-derived content)."
+          },
+          "errors": [],
+          "preconditions": [
+            "Pure: no I/O."
+          ],
+          "postconditions": [
+            "Every node/edge is graph-derived; no narrated/invented content."
+          ]
+        },
+        {
+          "name": "SubprocessRenderer",
+          "signature": "interface SubprocessRenderer { renderSvg(dot: string): Promise<SubprocessRenderResult> }",
+          "parameters": [
+            {
+              "name": "renderSvg",
+              "type": "(dot: string) => Promise<SubprocessRenderResult>",
+              "purpose": "Feed DOT to an external renderer and return its SVG, or signal that no renderer binary is available. The injected seam — a fake in tests, the real spawn in production.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "SubprocessRenderer",
+            "meaning": "The daemon-side subprocess seam; keeps assembleShell's fallback dispatch testable without a real binary (k2 — runs inside the daemon)."
+          },
+          "errors": [],
+          "preconditions": [
+            "Bound to graphvizSubprocessRenderer in production or a fake in tests."
+          ],
+          "postconditions": [
+            "Never throws for the modeled cases — a missing binary is returned as {status:'unavailable'}, not an exception."
+          ]
+        },
+        {
+          "name": "graphvizSubprocessRenderer",
+          "signature": "const graphvizSubprocessRenderer: SubprocessRenderer",
+          "parameters": [],
+          "returns": {
+            "type": "SubprocessRenderer",
+            "meaning": "The production seam: PROBES 'dot -Tsvg' then 'd2 - -' via child_process.spawn (shell:false, fixed args, DOT on stdin, SVG captured on stdout, bounded by a timeout with SIGKILL). Returns {status:'ok', svg, tool} on the first success, or {status:'unavailable', triedBinaries:['dot','d2']} when BOTH exit with ENOENT (k9/ac3). No shell interpolation."
+          },
+          "errors": [],
+          "preconditions": [
+            "Spawns with shell:false + fixed literal args; the DOT source crosses only via stdin."
+          ],
+          "postconditions": [
+            "A non-ENOENT subprocess failure (nonzero exit / timeout) is surfaced as unavailable with the captured stderr in the reason; ENOENT for all candidates -> unavailable."
+          ]
+        },
+        {
+          "name": "assembleFallbackShell",
+          "signature": "function assembleFallbackShell(ir: DocumentIR, svg: string, svgPanZoom: string, svgPanZoomVersion: string): RenderedDocumentShell",
+          "parameters": [
+            {
+              "name": "ir",
+              "type": "DocumentIR",
+              "purpose": "For docType + scopeDescription (title).",
+              "optional": false
+            },
+            {
+              "name": "svg",
+              "type": "string",
+              "purpose": "The subprocess-produced SVG markup (already vector).",
+              "optional": false
+            },
+            {
+              "name": "svgPanZoom",
+              "type": "string",
+              "purpose": "The vendored svg-pan-zoom bundle (from loadRuntime).",
+              "optional": false
+            },
+            {
+              "name": "svgPanZoomVersion",
+              "type": "string",
+              "purpose": "The runtime manifest's svgPanZoom version -> inlinedRuntimeVersion.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "RenderedDocumentShell",
+            "meaning": "The sc3 fallback shell: the pre-rendered <svg> inlined DIRECTLY + the svg-pan-zoom bundle + an init calling window.svgPanZoom on it (NO mermaid). backend='fallback-subprocess', diagramFormat='svg', supportsZoomPan=true, inlinedRuntimeVersion=svgPanZoomVersion — a single self-contained offline file indistinguishable from primary (ac2)."
+          },
+          "errors": [],
+          "preconditions": [
+            "Pure: no I/O; svg is trusted subprocess output inlined as markup (not escaped)."
+          ],
+          "postconditions": [
+            "No external URL; identical sc3 shape as the primary path (ac2)."
+          ]
+        },
+        {
+          "name": "assembleShell",
+          "signature": "function assembleShell(ir: DocumentIR, renderer?: SubprocessRenderer): Promise<DocGenOutcome<RenderedDocumentShell>>",
+          "parameters": [
+            {
+              "name": "ir",
+              "type": "DocumentIR",
+              "purpose": "The IR to render.",
+              "optional": false
+            },
+            {
+              "name": "renderer",
+              "type": "SubprocessRenderer",
+              "purpose": "The subprocess seam; defaults to graphvizSubprocessRenderer. Injectable for tests.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<DocGenOutcome<RenderedDocumentShell>>",
+            "meaning": "Existing assembler EXTENDED with an oversized dispatch: if !oversized(ir) -> the PRIMARY inline path unchanged (backend 'primary-inline', ac4; byte-identical to today). If oversized(ir) -> load svg-pan-zoom, toGraphvizDot(ir), renderer.renderSvg(dot); on {status:'ok'} return ok(assembleFallbackShell(...)) (backend 'fallback-subprocess', ac1/ac2); on {status:'unavailable'} return sc4 fallbackUnavailable naming the tried binaries + install remedy (ac3)."
+          },
+          "errors": [
+            {
+              "type": "DocGenOutcome 'fallback-unavailable'",
+              "condition": "the doc is oversized AND no subprocess renderer binary is available (renderer returns unavailable) — ac3."
+            },
+            {
+              "type": "DocGenOutcome 'fallback-unavailable'",
+              "condition": "the offline runtime asset is missing (existing loadRuntime failure, unchanged)."
+            }
+          ],
+          "preconditions": [
+            "Vendored svg-pan-zoom present for the fallback path; renderer bound (default or fake)."
+          ],
+          "postconditions": [
+            "Small docs are byte-identical to the pre-s5 primary path (ac4); oversized docs render via the subprocess into the same sc3 offline shell (ac1/ac2) or report fallback-unavailable (ac3). Never emits an illegible/truncated primary doc for an oversized scope."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "SubprocessRenderResult (s5-internal renderer outcome)",
+        "change": "new",
+        "details": "The subprocess seam's result: { status: 'ok'; svg: string; tool: 'dot' | 'd2' } | { status: 'unavailable'; reason: string; triedBinaries: string[] }. Private to s5; assembleShell maps 'unavailable' to sc4 fallbackUnavailable. Not a shared type.",
+        "callSites": [
+          "src/docgen/render/fallback.ts (new — oversized, toGraphvizDot, SubprocessRenderer, graphvizSubprocessRenderer, assembleFallbackShell)",
+          "src/docgen/render/shell.ts (assembleShell dispatch)"
+        ]
+      },
+      {
+        "entity": "assembleShell (primary-vs-fallback dispatch)",
+        "change": "invariant-change",
+        "details": "assembleShell in src/docgen/render/shell.ts gains an oversized(ir) branch: small docs take the existing primary inline path (byte-identical, ac4), oversized docs take the subprocess fallback (ac1) or report fallback-unavailable (ac3). No change to the RenderedDocumentShell TYPE; the fallback lands in the same sc3 shape with backend='fallback-subprocess' (an already-declared RenderBackend value).",
+        "callSites": [
+          "src/docgen/render/shell.ts",
+          "src/docgen/index.ts (generateDocument -> assembleShell)"
+        ]
+      },
+      {
+        "entity": "OVERSIZED_LIMIT (fixed legibility threshold)",
+        "change": "new",
+        "details": "A single fixed constant (empirically-calibrated node+edge count, e.g. 60) above which the primary Mermaid path is deemed unable to lay out legibly and the subprocess fallback is used. One global limit per the HLD boundary ('combined node+edge count against one fixed limit'); overridable via oversized()'s limit param for tests/tuning.",
+        "callSites": [
+          "src/docgen/render/fallback.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Reads ir.derived nodes/edges for the oversized predicate and the DOT emission — graph-derived content only (k8/k11); no IR type change. narrated content is untouched by the fallback path."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "The fallback renderer produces a RenderedDocumentShell in the EXACT existing shape with backend='fallback-subprocess' (an already-declared RenderBackend value), diagramFormat='svg', supportsZoomPan=true, inlinedRuntimeVersion=svgPanZoom version — indistinguishable from the primary shell (ac2). No sc3 change."
+      },
+      {
+        "contractId": "sc4",
+        "role": "consumes",
+        "howDetails": "When an oversized doc has no available subprocess renderer, assembleShell returns the existing fallbackUnavailable {reason,remedy} variant naming the tried binaries + install remedy (ac3). No sc4 change."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "An oversized doc is requested but neither fallback binary (dot, d2) is installed.",
+          "detection": "graphvizSubprocessRenderer's spawn emits an 'error' event with code ENOENT for each candidate; after all candidates fail it returns {status:'unavailable', triedBinaries}; assembleShell checks `result.status === 'unavailable'`.",
+          "response": "Return sc4 fallbackUnavailable naming the tried binaries + an install remedy (e.g. 'install graphviz or d2'); no document is emitted.",
+          "userImpact": "The reader is told plainly the fallback is unavailable and how to enable it (ac3/k9) rather than getting an illegible/truncated primary diagram.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The subprocess renderer runs but exits nonzero or produces no SVG (bad DOT, renderer bug).",
+          "detection": "The child closes with a nonzero exit code, or stdout does not contain an '<svg' root; graphvizSubprocessRenderer treats this as a non-ok result.",
+          "response": "Return {status:'unavailable', reason: captured stderr} -> assembleShell maps it to sc4 fallbackUnavailable with the stderr in the reason.",
+          "userImpact": "A renderer failure is reported explicitly, never a broken/empty diagram passed off as a document (k11).",
+          "recoverable": true
+        },
+        {
+          "scenario": "The subprocess hangs on a pathological graph.",
+          "detection": "The renderer's setTimeout fires before 'close'; the child is killed with SIGKILL and the attempt is marked failed.",
+          "response": "The killed attempt yields a non-ok result -> fallbackUnavailable (timeout reason); the daemon is never blocked.",
+          "userImpact": "A stuck renderer degrades to an actionable message rather than a hung request (bounded pipeline, k9 non-functional).",
+          "recoverable": true
+        },
+        {
+          "scenario": "The offline runtime asset (svg-pan-zoom) is missing at fallback-assembly time.",
+          "detection": "loadRuntime throws on readFile (existing behaviour); assembleShell's catch maps it.",
+          "response": "Return sc4 fallbackUnavailable naming the copy-assets ship step (existing behaviour, unchanged); never a CDN fetch (k5).",
+          "userImpact": "Actionable build-config error; the fallback doc never reaches the network at view time (ac2).",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A scope exactly AT the threshold (node+edge count == OVERSIZED_LIMIT).",
+          "expected": "oversized returns false at the boundary (strict > limit), so the doc still uses the primary path; the fallback triggers only ABOVE the limit — a single deterministic cutoff (ac4)."
+        },
+        {
+          "input": "A whole-repo component-dependency scope well above the threshold, with dot available.",
+          "expected": "assembleShell routes to the subprocess, dot renders the digraph to SVG, and the fallback shell inlines it + svg-pan-zoom — a readable, zoomable, offline single-file doc (ac1/ac2)."
+        },
+        {
+          "input": "dot is absent but d2 is present.",
+          "expected": "The probe skips dot (ENOENT) and succeeds with d2; the doc renders via the second candidate (probe-order coverage, ac1)."
+        },
+        {
+          "input": "A small type-structure or call-sequence doc (bounded by construction).",
+          "expected": "oversized=false -> primary Mermaid inline path, byte-identical to the pre-s5 output (ac4); the subprocess is never spawned."
+        },
+        {
+          "input": "A node label containing DOT-hostile characters (quotes, backslashes, newlines).",
+          "expected": "toGraphvizDot escapes the label so the emitted DOT is well-formed and the subprocess parses it; identifiers use n0/n1 aliases so entity ids never break DOT syntax."
+        },
+        {
+          "input": "An oversized doc rendered successfully via the subprocess, opened offline.",
+          "expected": "The single file contains the inlined <svg> + svg-pan-zoom + init, no <script src=, backend='fallback-subprocess' — indistinguishable from a primary doc in offline/zoom/pan respects (ac2)."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The primary self-contained inline path stays the DEFAULT and is byte-identical for non-oversized docs; the subprocess is reserved for oversized scopes only — no doc that fit the primary path before now spawns a subprocess (ac4/k9).",
+          "source": "c6"
+        },
+        {
+          "text": "Both render paths produce the SAME sc3 self-contained offline shell (inlined runtime, SVG, zoom/pan, no view-time network) — the fallback is indistinguishable from primary in these respects (k5/k6).",
+          "source": "c13"
+        },
+        {
+          "text": "Diagram content stays graph-derived: the DOT source is emitted from ir.derived nodes/edges only, and the subprocess merely lays it out — no narrated or invented content enters the fallback diagram (k8/k11).",
+          "source": "c9"
+        },
+        {
+          "text": "The subprocess is spawned with shell:false + fixed literal args and the DOT crosses only via stdin — no shell interpolation of graph-derived strings (safe invocation).",
+          "source": "c10"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test + node:assert/strict, run via npx tsx --test (the repo's existing docgen convention). The subprocess path uses an injected FAKE SubprocessRenderer; the real dot/d2 case is gated on binary-availability and skips cleanly when absent.",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove the pure threshold + DOT emitter + fallback-shell assembly with hand-built IR fixtures — no subprocess.",
+          "subjects": [
+            "oversized(ir): false at count <= limit (boundary uses primary), true above it (ac4/ac1); the default OVERSIZED_LIMIT is applied when no limit passed",
+            "toGraphvizDot(ir): a valid digraph over derived nodes/edges (n<i> aliases, one edge per IrEdge); DOT-hostile label chars are escaped",
+            "assembleFallbackShell(ir, svg, ...): sc3 shape backend='fallback-subprocess', diagramFormat='svg', supportsZoomPan=true, inlinedRuntimeVersion=svgPanZoom version; the <svg> + svg-pan-zoom inlined, no <script src= (ac2)"
+          ],
+          "fixturesNeeded": [
+            "Hand-built DocumentIR fixtures: below-threshold, above-threshold, and one with DOT-hostile labels",
+            "A canned <svg> string"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove assembleShell's primary-vs-fallback dispatch + outcome routing against an injected FAKE SubprocessRenderer — no real binary.",
+          "subjects": [
+            "assembleShell(small IR) -> primary path, backend='primary-inline', byte-identical to the pre-s5 output (ac4)",
+            "assembleShell(oversized IR, fake renderer returning ok svg) -> backend='fallback-subprocess', inlined SVG + svg-pan-zoom (ac1/ac2)",
+            "assembleShell(oversized IR, fake renderer returning unavailable) -> DocGenOutcome 'fallback-unavailable' naming the tried binaries + remedy (ac3)"
+          ],
+          "fixturesNeeded": [
+            "A fake SubprocessRenderer with toggleable ok(svg) / unavailable(triedBinaries) results",
+            "An above-threshold IR + a below-threshold IR"
+          ]
+        },
+        {
+          "level": "live",
+          "purpose": "Prove the real subprocess renderer end-to-end, gated on binary availability (skipped when dot/d2 absent).",
+          "subjects": [
+            "graphvizSubprocessRenderer.renderSvg(dot) with a real 'dot'/'d2' on PATH -> {status:'ok', svg} containing an <svg root",
+            "generateDocument for an oversized component-dependency scope -> ok fallback shell, self-contained offline HTML"
+          ],
+          "fixturesNeeded": [
+            "A machine with graphviz 'dot' or 'd2' installed (skip when neither is on PATH)"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "oversized(ir) true above the limit routes to the fallback",
+            "assembleShell(oversized IR, fake ok renderer) -> backend='fallback-subprocess' with inlined SVG",
+            "live: real dot/d2 renders an oversized component-dependency scope to an ok fallback doc"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "assembleFallbackShell -> sc3 shape (diagramFormat 'svg', supportsZoomPan true), inlined <svg> + svg-pan-zoom, no <script src=",
+            "assembleShell(oversized) fallback html is a single self-contained offline file"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "assembleShell(oversized IR, fake unavailable renderer) -> 'fallback-unavailable' naming tried binaries + remedy",
+            "graphvizSubprocessRenderer maps ENOENT (all candidates) to {status:'unavailable'}"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "oversized(ir) false at/below the limit",
+            "assembleShell(small IR) -> primary-inline path byte-identical to pre-s5; the subprocess renderer is never invoked"
+          ]
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Fixed node+edge threshold + probe-order subprocess renderer (Graphviz dot → D2) via an injected seam",
+        "oneLineSummary": "assembleShell gains a single fixed size predicate; when exceeded it renders through an injected subprocess seam that probes Graphviz 'dot' then 'd2', emitting IR->DOT, inlining the SVG + svg-pan-zoom into the sc3 shell; neither binary -> fallbackUnavailable.",
+        "chosen": true
+      },
+      {
+        "id": "a2",
+        "name": "Fixed threshold + Graphviz 'dot' ONLY (single renderer, no D2 probe)",
+        "oneLineSummary": "Same fixed predicate + IR->DOT + sc3 fallback shell, but the subprocess seam spawns only Graphviz 'dot'; a missing dot -> fallbackUnavailable (no D2 attempt).",
+        "reasonRejected": "ac1 only PARTIAL: a dot-only path denies the fallback on machines that have D2 but not Graphviz. Since the whole point of s5 is producing a readable doc when the primary path can't (k9), a1's probe-order (dot then d2) gives wider renderer coverage for a small extra branch."
+      },
+      {
+        "id": "a3",
+        "name": "Always render via the subprocess (no threshold; subprocess is the sole path)",
+        "oneLineSummary": "Drop the primary-vs-fallback split: every document is rendered by the D2/Graphviz subprocess into SVG, removing the Mermaid inline path.",
+        "reasonRejected": "Violates ac4 + k9 (subprocess mandatory for every doc, primary must stay the default reserved-for-oversized) and weakens ac3 (a binary-less machine renders NOTHING for any doc), while discarding the shipped, tested Mermaid primary path (k10) for no acceptance gain."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/docgen/render/shell.ts assembleShell/buildHtml/loadRuntime + _resetRuntimeCacheForTests — the primary path s5 branches from + the svg-pan-zoom bundle it reuses"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/docgen/types.ts:110 RenderBackend 'primary-inline'|'fallback-subprocess' + RenderedDocumentShell; src/docgen/outcome.ts:49 fallbackUnavailable(reason,remedy) — the sc3/sc4 surface s5 fills in, no contract change"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/daemon/tools/builtins/shell/exec-detached.ts:115 + src/agent/providers/cli-provider.ts:458 — the child_process spawn(shell:false)+timeout+SIGKILL+error(ENOENT) pattern the fallback renderer mirrors"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/assets/docgen/runtime.json + copy-assets.mjs staging — the vendored svg-pan-zoom the fallback inlines for offline zoom/pan (ac2)"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/docgen/extract/component-dependency.ts — the s2 topology IR (whole-repo) that oversizes and triggers the fallback (dependsOn s2)"
+    },
+    {
+      "id": "c6",
+      "kind": "convention",
+      "ref": "HLD assumption c6 (k9): external renderers permitted ONLY as spawned-subprocess fallbacks for oversized graphs; the inline-vector path stays the core/default"
+    },
+    {
+      "id": "c9",
+      "kind": "convention",
+      "ref": "HLD assumption c9 (k8): structural diagram content derived deterministically from the graph — the DOT is emitted from ir.derived only"
+    },
+    {
+      "id": "c10",
+      "kind": "convention",
+      "ref": "HLD assumption c10 (k2/k11): daemon-owned reads; safe spawn (shell:false, DOT via stdin) + graph-backed content only"
+    },
+    {
+      "id": "c13",
+      "kind": "convention",
+      "ref": "HLD assumption c13 (k5/k6): single self-contained offline file with inlined runtime + SVG + zoom/pan — the fallback matches the primary shell shape"
+    },
+    {
+      "id": "c8",
+      "kind": "step-output",
+      "ref": "s8 checklist.verify — all 18 items passed (cd1-3, dm1-2, int1-2, ep1-3, ts1-2, mg1-2, alt1-2, sbdry1-4)"
+    }
+  ]
+}

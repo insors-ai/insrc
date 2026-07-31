@@ -1,0 +1,651 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1785488046682-skwg6k",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-07-31T09:02:06.057Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 479288,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "870ed3dd246225f4",
+    "epicSlug": "documentation-generation-framework-docgen-produces-self",
+    "storyId": "s4",
+    "hldBaseRunId": "wf-1785421889464-2ayzlc",
+    "hldEffectiveHash": "cb5b27744db290de72c59b4596b1773d0ba24dd335448b4f0a7944f70adc817c",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "LLMProvider in src/shared/types.ts exposes completeStructured and a capabilities object with structuredOutput — the narrator seam's interface.",
+          "evidence": "src/shared/types.ts:177 interface LLMProvider; :216 completeStructured<T>; :232 readonly structuredOutput:boolean — the narrator seam's provider interface exists as cited.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "buildShaperProvider(cfg) exists in src/analyze/context/shaper-provider.ts and returns an LLMProvider (the core-tier, k1-safe provider s4 uses); buildSummariserProvider is the cheap tier.",
+          "evidence": "buildShaperProvider at shaper-provider.ts:277 and buildSummariserProvider both exist — the core-tier (k1-safe) vs cheap-tier provider selection s4 leans on is real.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl3",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The built sc1 IrSection is {id, title, narrativeText} with NO citation field, and DocumentIR uses a structural derived/narrated partition — so s4's grounding is validation-time with no sc1 type change.",
+          "evidence": "types.ts:51 interface IrSection with :54 readonly narrativeText and no citation field; NarratedContent present — grounding-by-validation needs no sc1 change, as the design states.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The s2/s3 base derived extractors s4 composes exist: buildComponentDependencyIR (component-dependency.ts) and buildCallSequenceIR (call-sequence.ts).",
+          "evidence": "buildComponentDependencyIR (component-dependency.ts) and buildCallSequenceIR (call-sequence.ts:97) both exist — the reused s2/s3 base extractors are real.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl5",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The shell's buildHtml today renders ONLY a #docgen-diagram region and has NO narrated/#docgen-narrative region — s4 must add it; assembleShell + escapeHtml exist.",
+          "evidence": "shell.ts has buildHtml + docgen-diagram + escapeHtml + assembleShell; grep -c 'docgen-narrative' src/docgen/render/shell.ts = 0 — the narrated region is genuinely new work, confirming the design's premise.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl6",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "src/docgen/index.ts currently registers 3 doc types (s1/s2/s3) and s4 adds 'narrative' as the 4th; generateDocument is the single generation path.",
+          "evidence": "grep -c 'r.register(' src/docgen/index.ts = 3 (s1/s2/s3); s4 adds 'narrative' as the 4th. generateDocument is the single path. narrativeRegistration currently only in the design docs.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl7",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "DocGenOutcome ok carries `value` and constructors ok/emptyScope exist — makeExtract returns ok(DocumentIR) / short-circuits the base non-ok outcome.",
+          "evidence": "outcome.ts exports ok/emptyScope; DocGenOutcome ok carries `value: T` — makeExtract's ok(DocumentIR)/short-circuit contract holds.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 7
+      },
+      "reviewedAt": "2026-07-31T09:05:03.714Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-07-31T09:09:30.071Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "IR is the hard boundary between graph-derived and LLM-narrated content (structural derived/narrated partition); cross-cutting failure reporting is one shared outcome envelope; registry-enumeration gives automatic tool/IPC/MCP parity; renderers assemble into the identical single self-contained offline shell.",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "DocumentIR"
+        },
+        {
+          "id": "sc2",
+          "name": "DocTypeRegistration"
+        },
+        {
+          "id": "sc3",
+          "name": "RenderedDocumentShell"
+        }
+      ],
+      "boundary": {
+        "storyId": "s4",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3"
+        ],
+        "internal": "The narrative annotator: invoking the existing LLMProvider (Ollama/CliProvider) to produce use-case-flow and deployment-topology narrative text, attaching it to IR sections with provenance=narrated and names first confirmed present in the graph; the accuracy-over-cost provider selection (k3). Private to s4; only the provenance-tagged IR is shared."
+      },
+      "rolloutPhase": "Phase C — Narrative annotation & oversized-scope fallback"
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "NarrativeGenerator",
+          "signature": "interface NarrativeGenerator { available(): boolean; generate(req: NarrationRequest): Promise<readonly RawNarrativeSection[]> }",
+          "parameters": [
+            {
+              "name": "available",
+              "type": "() => boolean",
+              "purpose": "Gate: true only when the bound LLMProvider.capabilities.structuredOutput is true (else s4 returns the derived diagram alone rather than fabricating).",
+              "optional": false
+            },
+            {
+              "name": "generate",
+              "type": "(req: NarrationRequest) => Promise<readonly RawNarrativeSection[]>",
+              "purpose": "Produce raw narrated sections via the injected core-tier LLMProvider.completeStructured (k1-safe, ac2/ac4). Prod wraps buildShaperProvider(core); a fake returns canned output in tests.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "NarrativeGenerator",
+            "meaning": "The injected narrator seam — the ONLY LLM touch-point; keeps makeExtract provider-agnostic + daemon-owned (k2). Serial awaits only."
+          },
+          "errors": [],
+          "preconditions": [
+            "Bound to buildShaperProvider(core-tier) in production (ac4) or a fake in tests."
+          ],
+          "postconditions": [
+            "generate() calls completeStructured once per request; no cloud REST (k1)."
+          ]
+        },
+        {
+          "name": "buildAllowedEntitySet",
+          "signature": "function buildAllowedEntitySet(derived: DocumentIR): ReadonlySet<string>",
+          "parameters": [
+            {
+              "name": "derived",
+              "type": "DocumentIR",
+              "purpose": "The base derived diagram whose graph-present entities bound what narration may name.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ReadonlySet<string>",
+            "meaning": "The allowed vocabulary — derived node labels + node/edge citation entityIds (graph-backed), case/whitespace-normalized for matching."
+          },
+          "errors": [],
+          "preconditions": [
+            "derived is the ok base IR."
+          ],
+          "postconditions": [
+            "Pure + deterministic; no I/O."
+          ]
+        },
+        {
+          "name": "groundSections",
+          "signature": "function groundSections(raw: readonly RawNarrativeSection[], allowed: ReadonlySet<string>): IrSection[]",
+          "parameters": [
+            {
+              "name": "raw",
+              "type": "readonly RawNarrativeSection[]",
+              "purpose": "The narrator's raw sections {title, text, citedNames[]}.",
+              "optional": false
+            },
+            {
+              "name": "allowed",
+              "type": "ReadonlySet<string>",
+              "purpose": "The graph-present vocabulary from buildAllowedEntitySet.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "IrSection[]",
+            "meaning": "Validated narrated sections {id,title,narrativeText}: KEEP only when every citedName ∈ allowed; DROP a section with any ungrounded cited name (fidelity over completeness, ac1/ac4/k11). No sc1 type change."
+          },
+          "errors": [],
+          "preconditions": [
+            "Pure: no I/O; provenance is implied by placement under narrated.sections (k8)."
+          ],
+          "postconditions": [
+            "Every surviving section's cited names are graph-present (ac1); ungrounded sections dropped, never rewritten."
+          ]
+        },
+        {
+          "name": "buildNarrativeDocument",
+          "signature": "function buildNarrativeDocument(base: DocumentIR, sections: readonly IrSection[]): DocumentIR",
+          "parameters": [
+            {
+              "name": "base",
+              "type": "DocumentIR",
+              "purpose": "The base derived diagram (from s2/s3) supplying derived.nodes/edges + generatedAtRevision.",
+              "optional": false
+            },
+            {
+              "name": "sections",
+              "type": "readonly IrSection[]",
+              "purpose": "The grounded narrated sections to attach.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "DocumentIR",
+            "meaning": "A narrative DocumentIR: derived = base.derived (unchanged, graph-backed), narrated.sections = grounded sections, docType='narrative', generatedAtRevision from base. Structural partition keeps provenance type-enforced (k8/ac3)."
+          },
+          "errors": [],
+          "preconditions": [
+            "Pure: no I/O; base.derived carried through verbatim."
+          ],
+          "postconditions": [
+            "derived byte-identical to the base diagram; narration lives ONLY under narrated (k8)."
+          ]
+        },
+        {
+          "name": "makeExtract",
+          "signature": "function makeExtract(bases: Record<string, (input: Record<string, unknown>) => Promise<DocGenOutcome<DocumentIR>>>, generator: NarrativeGenerator): (input: Record<string, unknown>) => Promise<DocGenOutcome<DocumentIR>>",
+          "parameters": [
+            {
+              "name": "bases",
+              "type": "Record<string, extract-fn>",
+              "purpose": "The reused base derived extractors keyed by docType ('call-sequence' flow, 'component-dependency' topology) — the shipped s2/s3 extract fns.",
+              "optional": false
+            },
+            {
+              "name": "generator",
+              "type": "NarrativeGenerator",
+              "purpose": "The injected narrator seam.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "(input) => Promise<DocGenOutcome<DocumentIR>>",
+            "meaning": "Parse {repo, base, symbol|path, question}; run the chosen base extractor (non-ok short-circuits, sc4); build the allowed set; if generator.available() run generate → groundSections → buildNarrativeDocument; else return the base derived IR alone. ok(DocumentIR)."
+          },
+          "errors": [
+            {
+              "type": "DocGenOutcome 'empty-scope'",
+              "condition": "input lacks a non-empty 'repo', a valid 'base' docType, or the base's required scope param (symbol|path)."
+            },
+            {
+              "type": "DocGenOutcome (base outcome)",
+              "condition": "the base extractor's non-ok outcome is returned verbatim (sc4 short-circuit)."
+            }
+          ],
+          "preconditions": [
+            "bases contains the requested base docType; generator bound to a core-tier provider or fake."
+          ],
+          "postconditions": [
+            "Narration is additive: an unavailable/failing generator still yields the grounded derived diagram (ac2 fidelity, no fabrication). Every narrated name is graph-present (ac1)."
+          ]
+        },
+        {
+          "name": "narrativeRegistration",
+          "signature": "function narrativeRegistration(bases: Record<string, extract-fn>, generator: NarrativeGenerator): DocTypeRegistration",
+          "parameters": [
+            {
+              "name": "bases",
+              "type": "Record<string, extract-fn>",
+              "purpose": "The reused base derived extractors.",
+              "optional": false
+            },
+            {
+              "name": "generator",
+              "type": "NarrativeGenerator",
+              "purpose": "The narrator seam bound into extract().",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "DocTypeRegistration",
+            "meaning": "The sc2 registration for docType 'narrative': capability + NARRATIVE_INPUT_SCHEMA (repo + base + symbol?/path? + question) + bound extract()."
+          },
+          "errors": [],
+          "preconditions": [
+            "Registered once into docgenRegistry as the 4th doc type, alongside s1/s2/s3."
+          ],
+          "postconditions": [
+            "Enumerable via registry.list() -> automatic tool/IPC/MCP parity (k4)."
+          ]
+        },
+        {
+          "name": "assembleShell",
+          "signature": "function assembleShell(ir: DocumentIR): Promise<DocGenOutcome<RenderedDocumentShell>>",
+          "parameters": [
+            {
+              "name": "ir",
+              "type": "DocumentIR",
+              "purpose": "The IR to render; when narrated.sections is non-empty the shell now renders them.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<DocGenOutcome<RenderedDocumentShell>>",
+            "meaning": "Existing assembler EXTENDED: buildHtml renders narrated.sections into a distinct '#docgen-narrative' region below the diagram (ac3), escaped + inlined offline (ac5). A derived-only IR produces byte-identical output to today (s1/s2/s3 unaffected). RenderedDocumentShell shape unchanged (sc3)."
+          },
+          "errors": [
+            {
+              "type": "DocGenOutcome 'fallback-unavailable'",
+              "condition": "the offline runtime asset is missing (existing behaviour, unchanged)."
+            }
+          ],
+          "preconditions": [
+            "Vendored runtime present (unchanged)."
+          ],
+          "postconditions": [
+            "Narrated region visually distinct (ac3); no external fetch (ac5); derived-only output byte-identical."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "NarrationRequest / RawNarrativeSection (s4-internal narrator types)",
+        "change": "new",
+        "details": "NarrationRequest = { question: string; scopeDescription: string; derived: DocumentIR }. RawNarrativeSection = { title: string; text: string; citedNames: readonly string[] } — the narrator's structured output BEFORE grounding (completeStructured schema shape). Private to s4; the grounded result is plain sc1 IrSection.",
+        "callSites": [
+          "src/docgen/extract/narrative.ts (new)",
+          "src/docgen/extract/narrative-generator.ts (new — wraps buildShaperProvider(core).completeStructured)"
+        ]
+      },
+      {
+        "entity": "DocumentIR (narrative instance)",
+        "change": "invariant-change",
+        "details": "s4 is the FIRST story to populate sc1's narrated.sections: derived = the base s2/s3 diagram (unchanged, graph-backed), narrated.sections = grounded IrSection {id,title,narrativeText}, docType='narrative'. No change to the sc1 TYPE; grounding is a generation-time validation (groundSections), so NO sc1 amendment is proposed (a1). Provenance stays type-enforced by the structural partition (k8).",
+        "callSites": [
+          "src/docgen/extract/narrative.ts",
+          "src/docgen/types.ts (DocumentIR, owned by s1)"
+        ]
+      },
+      {
+        "entity": "RenderedDocumentShell (narrated rendering)",
+        "change": "invariant-change",
+        "details": "assembleShell/buildHtml in src/docgen/render/shell.ts is extended to render narrated.sections into a distinct '#docgen-narrative' region; no change to the sc3 TYPE. A derived-only IR renders byte-identically to today (the region is only emitted when narrated.sections is non-empty).",
+        "callSites": [
+          "src/docgen/render/shell.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Populates narrated.sections with the built IrSection {id,title,narrativeText}; carries the base s2/s3 derived diagram through verbatim. Grounding is validation-time (groundSections) so NO sc1 type change is needed (the a2 IrSection.citations fieldAdd is a documented, deferred follow-up). Provenance type-enforced by the structural partition (k8)."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "narrativeRegistration -> DocTypeRegistration, registered as the 4th doc type in src/docgen/index.ts; enumerated by the single registry (k4). extractorInputSchema adds base + symbol?/path? + question. No change to sc2."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "Extends assembleShell/buildHtml to render narrated.sections in a distinct offline region (ac3/ac5); the RenderedDocumentShell shape is unchanged and derived-only output stays byte-identical (s1/s2/s3 unaffected)."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The chosen base docType is unknown, or the base's required scope param is missing (no 'repo', bad 'base', no 'symbol'/'path').",
+          "detection": "parseScope finds input['repo']/input['base'] invalid, or bases[base] is undefined, or the base extractor itself returns empty-scope; makeExtract checks the parsed scope + `bases[base] === undefined`.",
+          "response": "Return DocGenOutcome 'empty-scope' naming the missing piece; no base run, no narration.",
+          "userImpact": "The malformed request is reported rather than a blank or fabricated doc.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The base derived extractor fails (entry symbol not indexed, repo not ready, empty scope).",
+          "detection": "The awaited base extract() returns a non-ok DocGenOutcome; makeExtract checks `if (baseOut.status !== 'ok')`.",
+          "response": "Return the base outcome VERBATIM (not-found / source-not-ready / empty-scope) via sc4 short-circuit; the narrator is never invoked.",
+          "userImpact": "The caller gets the exact underlying reason, consistent with s2/s3.",
+          "recoverable": true
+        },
+        {
+          "scenario": "No structured-output-capable provider is available (capabilities.structuredOutput=false, e.g. a stub provider).",
+          "detection": "generator.available() returns false (it checks the bound LLMProvider.capabilities.structuredOutput).",
+          "response": "Skip narration entirely and return ok(base derived IR) — the grounded diagram alone, narrated.sections=[]; log the skip.",
+          "userImpact": "The reader still gets a faithful graph-backed diagram with no narration, rather than fabricated or absent output (ac2 fidelity).",
+          "recoverable": true
+        },
+        {
+          "scenario": "The narrator (completeStructured) throws or times out (model error, malformed JSON after retries).",
+          "detection": "The awaited generator.generate() rejects; makeExtract wraps the call in try/catch.",
+          "response": "Log the provider error and return ok(base derived IR) with narrated.sections=[] — the derived diagram degrades gracefully.",
+          "userImpact": "A model hiccup never denies the developer the graph-backed diagram; narration is best-effort additive.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The narrator names entities NOT in the indexed code (hallucinated symbols).",
+          "detection": "groundSections checks each RawNarrativeSection.citedNames ⊆ the buildAllowedEntitySet vocabulary; any name not in the set marks the section ungrounded.",
+          "response": "DROP the offending section (not rewritten or kept with a warning) — only fully-grounded sections survive into narrated.sections.",
+          "userImpact": "Every symbol the final narrative names is graph-present (ac1/k11); the reader never sees an invented reference.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The offline runtime asset is missing at shell-assembly time.",
+          "detection": "assembleShell's loadRuntime throws on readFile; caught (existing behaviour shared with s1/s2/s3).",
+          "response": "Return DocGenOutcome 'fallback-unavailable' naming the copy-assets ship step; never a CDN fetch (k5).",
+          "userImpact": "Actionable build-config error; no view-time network dependency (ac5).",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "The narrator returns valid sections but ALL cite an ungrounded name.",
+          "expected": "groundSections drops every section; narrated.sections=[]; the doc renders as the grounded diagram alone (fidelity over completeness, ac4)."
+        },
+        {
+          "input": "The narrator returns zero sections.",
+          "expected": "narrated.sections=[]; ok(derived diagram); the narrated region is omitted from the HTML (no empty block), so a reader still gets the diagram (ac5)."
+        },
+        {
+          "input": "A narrated section cites a name using different casing/whitespace than the derived label.",
+          "expected": "buildAllowedEntitySet is case/whitespace-normalized so an exact-entity reference in any reasonable casing is accepted; a genuinely different name is still rejected (identity, not fuzzy match)."
+        },
+        {
+          "input": "base='component-dependency' (topology) vs base='call-sequence' (flow).",
+          "expected": "The same makeExtract serves both by dispatching to bases[base]; the derived diagram differs (flowchart vs sequenceDiagram) but narration + grounding + rendering are identical."
+        },
+        {
+          "input": "narrativeText contains HTML-hostile characters (<, >, &) from the model.",
+          "expected": "The shell's escapeHtml escapes the prose before inlining into '#docgen-narrative', so the single-file document stays well-formed offline (ac5) and cannot inject markup."
+        },
+        {
+          "input": "A derived-only doc (s1/s2/s3, narrated.sections=[]) rendered by the extended shell.",
+          "expected": "buildHtml emits NO narrated region; output is byte-identical to the pre-s4 shell — s1/s2/s3 regression-safe."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Structural diagram content stays graph-derived and the LLM is confined to narrated.sections — s4 carries the base derived diagram through verbatim and never lets narration into derived (k8, type-enforced by the sc1 partition).",
+          "source": "c9"
+        },
+        {
+          "text": "No direct cloud REST from this process: narration goes only through the injected LLMProvider (buildShaperProvider: Ollama-local / CLI-OAuth), with no fallback reaching a cloud endpoint (k1).",
+          "source": "c7"
+        },
+        {
+          "text": "Every symbol/participant/component named in the final document is graph-present — derived nodes are graph-cited and narrated names are validated ⊆ the derived entity set, ungrounded ones dropped (k11).",
+          "source": "c10"
+        },
+        {
+          "text": "Reads + generation happen inside the daemon via injected seams (graph reader, narrator); the pure builders perform no I/O, so callers reach the capability only over IPC (k2).",
+          "source": "c10"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test + node:assert/strict, run via npx tsx --test (the repo's existing convention; mirrors the s1/s2/s3 docgen tests). LLM-touching tests use an injected FAKE NarrativeGenerator; any real-provider path is gated behind INSRC_LIVE_TESTS and skips cleanly when unset.",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove the pure grounding + document-assembly core with hand-built fixtures — no model, no graph.",
+          "subjects": [
+            "buildAllowedEntitySet: derives the allowed vocabulary from a derived IR's node labels + citation entityIds (case/whitespace-normalized)",
+            "groundSections: keeps a section whose citedNames are all ∈ allowed; DROPS a section with any ungrounded cited name (ac1/k11)",
+            "groundSections: all-ungrounded input -> [] (fidelity over completeness, ac4)",
+            "buildNarrativeDocument: derived = base.derived byte-identical, narrated.sections = grounded sections, docType='narrative' (k8 partition)"
+          ],
+          "fixturesNeeded": [
+            "A hand-built base DocumentIR (small component-dependency or call-sequence IR with known node labels + citations)",
+            "RawNarrativeSection fixtures: fully-grounded, partially-ungrounded, all-ungrounded"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove makeExtract's orchestration + outcome routing against an injected FAKE NarrativeGenerator + fake base extractors — no real model (ac2 without a network call).",
+          "subjects": [
+            "makeExtract with a grounded fake generator -> ok narrative doc: derived diagram + grounded narrated.sections",
+            "makeExtract when generator.available()=false -> ok(base derived IR), narrated.sections=[] (graceful, no fabrication)",
+            "makeExtract when generator.generate() rejects -> ok(base derived IR), narrated.sections=[] (degrade, logged)",
+            "makeExtract propagates a base extractor's non-ok outcome verbatim",
+            "makeExtract -> 'empty-scope' on missing repo/base/scope param",
+            "makeExtract dispatches base='call-sequence' vs 'component-dependency' to the right base extractor"
+          ],
+          "fixturesNeeded": [
+            "A fake NarrativeGenerator (canned RawNarrativeSection[] + toggleable available())",
+            "Fake base extract fns returning a canned ok IR and canned non-ok outcomes"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove the shell renders a distinct narrated region offline without regressing s1/s2/s3.",
+          "subjects": [
+            "assembleShell(narrative IR) HTML contains a distinct '#docgen-narrative' region with section titles + escaped narrativeText",
+            "narrativeText with <, >, & is escaped (no markup injection); no <script src= (offline, ac5)",
+            "assembleShell(derived-only IR, narrated.sections=[]) emits NO narrated region -> byte-identical to the pre-s4 shell"
+          ],
+          "fixturesNeeded": [
+            "A narrative DocumentIR with a couple of grounded sections (one with HTML-hostile chars); a derived-only IR"
+          ]
+        },
+        {
+          "level": "live",
+          "purpose": "Prove the real core-tier provider path end-to-end (ac2/ac4 with an actual local model), gated + skipped in CI.",
+          "subjects": [
+            "generateDocument('narrative', {repo, base:'component-dependency', path, question}) via buildShaperProvider(core) -> ok doc whose narrated names are all graph-present, self-contained offline HTML",
+            "the provider used is the local Ollama/CLI provider (no cloud REST egress)"
+          ],
+          "fixturesNeeded": [
+            "INSRC_LIVE_TESTS=1 + a ready-indexed repo + a configured core-tier provider (skips when unset)"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "groundSections keeps grounded / drops ungrounded sections",
+            "makeExtract with a grounded fake generator -> narrated names ⊆ the derived entity set; derived diagram nodes are graph-cited",
+            "live: generateDocument('narrative') -> every narrated name is graph-present"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "makeExtract routes narration only through the injected NarrativeGenerator (fake in unit; buildShaperProvider core in live) — no cloud REST path exists",
+            "live: the provider is the local Ollama/CLI provider"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "buildNarrativeDocument keeps derived byte-identical + narration under narrated (structural partition, k8)",
+            "assembleShell renders a distinct '#docgen-narrative' region separable from the diagram"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "groundSections drops ungrounded sections (fidelity over completeness)",
+            "makeExtract uses the core-tier generator (not the cheap summariser) and, when unavailable/failing, degrades to the faithful diagram rather than fabricating"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "assembleShell(narrative IR) HTML has no <script src=, inlined runtimes, SVG diagram + escaped narrated region in one file",
+            "assembleShell(derived-only IR) stays byte-identical (offline guarantee unbroken)"
+          ]
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Compose s2/s3 derived diagram + validation-grounded narration + core-tier provider (no contract change)",
+        "oneLineSummary": "A 'narrative' doc type that runs a chosen base derived extractor for the diagram, then generates narrated sections via the core-tier LLMProvider and validates every cited name against the derived entity set — dropping ungrounded claims; the shell gains a distinct narrated region.",
+        "chosen": true
+      },
+      {
+        "id": "a2",
+        "name": "Compose + sc1 IrSection.citations fieldAdd (amendment) for stored back-links",
+        "oneLineSummary": "Same composition + validation as a1, but amend sc1's IrSection with a non-breaking citations field so each narrated section stores the entityIds it references.",
+        "reasonRejected": "sc1 'partial' — amending a shared contract owned by s1 adds coordination + re-review for a benefit ac3 does not require (a1's structural partition + distinct render region already satisfy 'distinguishable'). The citations fieldAdd is a clean deferred FOLLOW-UP if clickable provenance is later wanted."
+      },
+      {
+        "id": "a3",
+        "name": "Standalone narrative extractor with its own derived scaffold",
+        "oneLineSummary": "s4 builds its OWN derived diagram instead of composing s2/s3, then narrates + validates over it.",
+        "reasonRejected": "Duplicates the shipped s2/s3 CALLS/IMPORTS + citation logic — violates k10 (reuse before re-plumbing) and the HLD's 'additive registration over IR extractors', adding a second graph-faithfulness surface for the riskiest story. ac1 only 'partial'; no AC it satisfies better than a1."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/shared/types.ts:177 LLMProvider (complete + completeStructured<T> + capabilities.structuredOutput) — the narrator seam's provider interface"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/analyze/context/shaper-provider.ts:277 buildShaperProvider(core-tier, k1-safe Ollama/CLI) vs buildSummariserProvider(cheap) — ac2/ac4 provider selection"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/docgen/types.ts:51 IrSection {id,title,narrativeText} (no citation field) + DocumentIR derived/narrated partition — grounding is validation-time, no sc1 change"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/docgen/extract/call-sequence.ts + component-dependency.ts — the reused s2/s3 base derived extractors (the grounded diagram scaffold)"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/docgen/render/shell.ts assembleShell/buildHtml (line 184/208) — renders ONLY #docgen-diagram today; s4 adds the distinct #docgen-narrative region (ac3/ac5)"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/docgen/index.ts docgenRegistry + generateDocument — s4 registers 'narrative' as the 4th doc type; docgen_generate/docgen.generate inherited (k4)"
+    },
+    {
+      "id": "c7",
+      "kind": "convention",
+      "ref": "HLD assumption c7 (k1): no direct cloud REST; LLM content via the local/CLI provider only"
+    },
+    {
+      "id": "c9",
+      "kind": "convention",
+      "ref": "HLD assumption c9 (k8): structural diagram content graph-derived, LLM confined to narrative"
+    },
+    {
+      "id": "c10",
+      "kind": "convention",
+      "ref": "HLD assumption c10 (k2/k11): daemon owns access; every named symbol graph-present, no raw dumps"
+    },
+    {
+      "id": "c8",
+      "kind": "step-output",
+      "ref": "s8 checklist.verify — all 18 items passed (cd1-3, dm1-2, int1-2, ep1-3, ts1-2, mg1-2, alt1-2, sbdry1-4)"
+    }
+  ]
+}

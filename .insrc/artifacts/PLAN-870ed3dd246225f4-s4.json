@@ -1,0 +1,429 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1785488985062-nhsmhx",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-07-31T09:13:41.612Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 236386,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "870ed3dd246225f4",
+    "epicSlug": "documentation-generation-framework-docgen-produces-self",
+    "storyId": "s4",
+    "lldRunId": "wf-1785488046682-skwg6k",
+    "lldEffectiveHash": "cb5b27744db290de72c59b4596b1773d0ba24dd335448b4f0a7944f70adc817c",
+    "review": {
+      "artifact": "plan",
+      "stage": "plan",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "pl1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "t2 wires the k1-safe provider: buildShaperProvider (shaper-provider.ts) + loadAnalyzeConfig (config/analyze.ts) both exist.",
+          "evidence": "buildShaperProvider at shaper-provider.ts:277 and loadAnalyzeConfig at config/analyze.ts:261 both exist — t2's k1-safe provider wiring is real.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "pl2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "t3's target shell.ts has assembleShell + buildHtml + escapeHtml today and NO narrated region (no '#docgen-narrative') — t3 adds it.",
+          "evidence": "shell.ts has assembleShell + buildHtml + escapeHtml; grep -c 'docgen-narrative' src/docgen/render/shell.ts = 0 — the narrated region is genuinely new work t3 adds.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "pl3",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "src/docgen/index.ts currently registers 3 doc types (s1/s2/s3); t4 wires the s2/s3 registrations as bases and adds 'narrative' as the 4th.",
+          "evidence": "grep -c 'r.register(' src/docgen/index.ts = 3 (s1/s2/s3); callSequenceRegistration + componentDependencyRegistration present to reuse as bases; t4 adds 'narrative' as the 4th. narrativeRegistration only in docs.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "pl4",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "t4's 'no new tool/IPC surface' premise holds: docgen_generate tool + docgen.generate IPC exist and enumerate the registry.",
+          "evidence": "DOCGEN_TOOL_ID='docgen_generate' (tool.ts:25) and the docgen.generate IPC handler (daemon/index.ts:1157) exist and use listDocTypes — t4's 'no new tool/IPC surface' premise holds.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "pl5",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The s2/s3 base registrations t4 reuses exist: callSequenceRegistration + componentDependencyRegistration (each returns a DocTypeRegistration with a bound extract).",
+          "evidence": "callSequenceRegistration (call-sequence.ts:221) + componentDependencyRegistration both exist and return a DocTypeRegistration with a bound extract — the base extractors t4 wires are real.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "pl6",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The new s4 files (narrative.ts, narrative-generator.ts, narrative.test.ts) do NOT yet exist — they are this plan's build output.",
+          "evidence": "buildNarrativeDocument = 0 in src (only in the design docs); narrative.ts does not exist (ls: No such file) — correctly identifying the new s4 files as this plan's build output.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "pl7",
+          "kind": "ordering",
+          "severity": "LOW",
+          "premise": "The task DAG (t1<-{}, t2<-t1, t3<-t1, t4<-{t1,t2,t3}, t5<-{t1,t2,t3,t4}) is acyclic with order 1..5 a valid topological sort, respecting storyDependsOn=[s1].",
+          "evidence": "Task graph t1<-{}, t2<-t1, t3<-t1, t4<-{t1,t2,t3}, t5<-{t1,t2,t3,t4} is acyclic; order 1..5 is a valid topological sort; every task sits after s1 (storyDependsOn respected).",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 7
+      },
+      "reviewedAt": "2026-07-31T09:15:18.453Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-07-31T09:16:57.197Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Narrative pure core + grounding + orchestration + registration factory",
+        "summary": "Create src/docgen/extract/narrative.ts: NARRATIVE_DOCTYPE='narrative'; the NarrativeGenerator interface + NarrationRequest {question,scopeDescription,derived} + RawNarrativeSection {title,text,citedNames[]} types; the THREE pure fns — buildAllowedEntitySet(derived)->ReadonlySet<string> (node labels + node/edge citation entityIds, case/whitespace-normalized), groundSections(raw,allowed)->IrSection[] (KEEP only when every citedName ∈ allowed, DROP any section with an ungrounded name — fidelity terminal), buildNarrativeDocument(base,sections)->DocumentIR (derived=base.derived verbatim, narrated.sections=grounded, docType='narrative'); parseScope + NARRATIVE_INPUT_SCHEMA {repo,base,symbol?/path?,question}; makeExtract(bases,generator) orchestration (run bases[base] extract, short-circuit non-ok; build allowed set; if generator.available() generate→ground→buildNarrativeDocument, wrapped in try/catch degrade; else ok(base derived IR)); narrativeRegistration(bases,generator). Consumes sc1/sc2/sc4; mirrors the s2/s3 pure-core + injected-seam pattern. The grounding + degrade logic is the accuracy-critical part — every degrade branch is proven in t5, not assumed.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "buildAllowedEntitySet returns node labels + citation entityIds, case/whitespace-normalized",
+          "groundSections keeps fully-grounded sections + DROPS any section with an ungrounded cited name; all-ungrounded -> []",
+          "buildNarrativeDocument: derived === base.derived (byte-identical), narrated.sections=grounded, docType='narrative'",
+          "makeExtract: grounded fake generator -> ok narrative doc; available()=false or generate() rejects -> ok(base derived IR) narrated.sections=[]; base non-ok short-circuits verbatim; missing repo/base/scope -> empty-scope",
+          "npx tsc --noEmit clean"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "buildAllowedEntitySet: derives the allowed vocabulary from a derived IR's node labels + citation entityIds (case/whitespace-normalized)"
+          },
+          {
+            "level": "unit",
+            "name": "groundSections: keeps a section whose citedNames are all ∈ allowed; DROPS a section with any ungrounded cited name (ac1/k11)"
+          },
+          {
+            "level": "unit",
+            "name": "groundSections: all-ungrounded input -> [] (fidelity over completeness, ac4)"
+          },
+          {
+            "level": "unit",
+            "name": "buildNarrativeDocument: derived = base.derived byte-identical, narrated.sections = grounded sections, docType='narrative' (k8 partition)"
+          },
+          {
+            "level": "unit",
+            "name": "makeExtract with a grounded fake generator -> ok narrative doc: derived diagram + grounded narrated.sections"
+          },
+          {
+            "level": "unit",
+            "name": "makeExtract when generator.available()=false -> ok(base derived IR), narrated.sections=[] (graceful, no fabrication)"
+          },
+          {
+            "level": "unit",
+            "name": "makeExtract when generator.generate() rejects -> ok(base derived IR), narrated.sections=[] (degrade, logged)"
+          },
+          {
+            "level": "unit",
+            "name": "makeExtract propagates a base extractor's non-ok outcome verbatim"
+          },
+          {
+            "level": "unit",
+            "name": "makeExtract -> 'empty-scope' on missing repo/base/scope param"
+          },
+          {
+            "level": "unit",
+            "name": "makeExtract dispatches base='call-sequence' vs 'component-dependency' to the right base extractor"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Provider-backed NarrativeGenerator (core-tier, k1-safe)",
+        "summary": "Create src/docgen/extract/narrative-generator.ts implementing NarrativeGenerator against buildShaperProvider(loadAnalyzeConfig()) (core tier, k1-safe — Ollama-local/CLI-OAuth, never cloud REST): available() returns provider.capabilities.structuredOutput; generate(req) builds a prompt from req.derived (the graph-present vocabulary + diagram) + req.question and calls provider.completeStructured(messages, RAW_SECTIONS_SCHEMA) exactly ONCE (serial await, no Promise.all). The prompt instructs the model to name ONLY entities present in the provided derived diagram (grounding hint) and to list citedNames per section. Exports the constructed narrativeGenerator singleton for index wiring. The real prompt/schema round-trip is exercised live-gated (t5); the available()/serial contract is unit-checkable.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "available() reflects provider.capabilities.structuredOutput",
+          "generate() calls completeStructured exactly once (serial) and returns RawNarrativeSection[]",
+          "the provider is buildShaperProvider(core) — no direct cloud REST import/path (k1)",
+          "npx tsc --noEmit clean"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "live",
+            "name": "generateDocument('narrative', {repo, base:'component-dependency', path, question}) via buildShaperProvider(core) -> ok doc whose narrated names are all graph-present, self-contained offline HTML"
+          },
+          {
+            "level": "live",
+            "name": "the provider used is the local Ollama/CLI provider (no cloud REST egress)"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Extend the shell to render a distinct narrated region (offline)",
+        "summary": "Extend src/docgen/render/shell.ts: thread ir.narrated.sections through assembleShell -> buildHtml; when non-empty, append a distinct '#docgen-narrative' region below the diagram — per section a title + escapeHtml(narrativeText), with a small inline style so narrated content is visually separable from the derived diagram (ac3), all inlined (no external fetch, ac5). When narrated.sections is EMPTY, emit NOTHING new so derived-only output (s1/s2/s3) is byte-identical. escapeHtml/assembleShell reused. This is the ONE regression-risk touch on a shared s1/s2/s3 file; the byte-identical check below is the load-bearing guard.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "assembleShell(narrative IR) HTML has a distinct '#docgen-narrative' region with section titles + escaped narrativeText",
+          "narrativeText with <, >, & is escaped (no markup injection); still no <script src= (offline, ac5)",
+          "assembleShell(derived-only IR, narrated.sections=[]) emits NO narrated region -> byte-identical to the pre-s4 shell — HARD GATE",
+          "npx tsc --noEmit clean"
+        ],
+        "derivedFrom": [
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "assembleShell(narrative IR) HTML contains a distinct '#docgen-narrative' region with section titles + escaped narrativeText"
+          },
+          {
+            "level": "unit",
+            "name": "narrativeText with <, >, & is escaped (no markup injection); no <script src= (offline, ac5)"
+          },
+          {
+            "level": "unit",
+            "name": "assembleShell(derived-only IR, narrated.sections=[]) emits NO narrated region -> byte-identical to the pre-s4 shell"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Register narrative as the 4th doc type (base wiring + generator)",
+        "summary": "In src/docgen/index.ts import narrativeRegistration + narrativeGenerator, build bases={'call-sequence': callSequenceRegistration(callGraphReader).extract, 'component-dependency': componentDependencyRegistration(componentGraphReader).extract} from the already-constructed s2/s3 registrations, and r.register(narrativeRegistration(bases, narrativeGenerator)) as the 4th doc type. No new tool/IPC code — docgen_generate + docgen.generate enumerate the registry, so k4 tool/IPC/MCP parity is inherited.",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "docgenRegistry.list() includes 'narrative' (4 doc types total)",
+          "generateDocument('narrative', {repo, base, ...}) resolves through get->extract->assembleShell to an ok shell",
+          "no edit to src/docgen/tool.ts or the daemon IPC handler is required for s4 to be exposed"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "makeExtract routes narration only through the injected NarrativeGenerator (fake in unit; buildShaperProvider core in live) — no cloud REST path exists"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Fake-generator unit suite + shell regression + live-gated path",
+        "summary": "Create src/docgen/extract/__tests__/narrative.test.ts: pure buildAllowedEntitySet/groundSections/buildNarrativeDocument fixtures (grounded/partial/all-ungrounded/casing); makeExtract against a FAKE NarrativeGenerator covering the FULL degrade matrix (grounded ok, available()=false degrade, generate() rejects degrade, all-ungrounded, base non-ok short-circuit, empty-scope, base dispatch) + fake base extract fns; shell narrated-region render + HTML-escaping + the derived-only byte-identical regression (the t3 backstop); an INSRC_LIVE_TESTS-gated real-provider case (skips when unset). Then run the full docgen suite + npm run build.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "the new narrative tests pass; full docgen suite green (56 + new cases)",
+          "npm run build clean",
+          "every makeExtract degrade branch (unavailable / throws / all-ungrounded / base-non-ok) is covered by the fake-generator matrix",
+          "the live-provider case is gated behind INSRC_LIVE_TESTS and skips cleanly when unset; derived-only byte-identical regression holds (s1/s2/s3 unaffected)"
+        ],
+        "derivedFrom": [
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "full narrative.test.ts suite green + full docgen suite (56 + new) green; derived-only byte-identical regression"
+          },
+          {
+            "level": "live",
+            "name": "INSRC_LIVE_TESTS-gated real-provider narrative round-trip (skips when unset)"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "buildAllowedEntitySet: derives the allowed vocabulary from a derived IR's node labels + citation entityIds (case/whitespace-normalized)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "groundSections: keeps a section whose citedNames are all ∈ allowed; DROPS a section with any ungrounded cited name (ac1/k11)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "groundSections: all-ungrounded input -> [] (fidelity over completeness, ac4)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "buildNarrativeDocument: derived = base.derived byte-identical, narrated.sections = grounded sections, docType='narrative' (k8 partition)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "makeExtract with a grounded fake generator -> ok narrative doc: derived diagram + grounded narrated.sections",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "makeExtract when generator.available()=false -> ok(base derived IR), narrated.sections=[] (graceful, no fabrication)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "makeExtract when generator.generate() rejects -> ok(base derived IR), narrated.sections=[] (degrade, logged)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "makeExtract propagates a base extractor's non-ok outcome verbatim",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "makeExtract -> 'empty-scope' on missing repo/base/scope param",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "makeExtract dispatches base='call-sequence' vs 'component-dependency' to the right base extractor",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "assembleShell(narrative IR) HTML contains a distinct '#docgen-narrative' region with section titles + escaped narrativeText",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "narrativeText with <, >, & is escaped (no markup injection); no <script src= (offline, ac5)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "assembleShell(derived-only IR, narrated.sections=[]) emits NO narrated region -> byte-identical to the pre-s4 shell",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "generateDocument('narrative', {repo, base:'component-dependency', path, question}) via buildShaperProvider(core) -> ok doc whose narrated names are all graph-present, self-contained offline HTML",
+        "coveredByTaskIds": [
+          "t2",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "the provider used is the local Ollama/CLI provider (no cloud REST egress)",
+        "coveredByTaskIds": [
+          "t2",
+          "t5"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 contractDetails.api buildAllowedEntitySet + groundSections + buildNarrativeDocument — the pure grounding + assembly core"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 contractDetails.api NarrativeGenerator + makeExtract + dataModelChanges NarrationRequest/RawNarrativeSection — the narrator seam + orchestration"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 errorPaths — makeExtract degrade matrix (no-provider/throws/all-ungrounded/base-non-ok/empty-scope) + the fidelity-over-completeness drop rule"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 contractDetails.api narrativeRegistration + interactionWithShared sc1/sc2 — registration + the validation-grounding (no sc1 amendment) decision"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 citations c1/c2 — LLMProvider.completeStructured + buildShaperProvider(core) the k1-safe provider the generator wraps"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 contractDetails.api assembleShell + interactionWithShared sc3 — the distinct #docgen-narrative offline region (ac3/ac5), derived-only byte-identical"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 interactionWithShared sc2 — registry enumeration gives automatic docgen_generate tool + docgen.generate IPC parity (k4), no new surface; reuse of s2/s3 base registrations"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 testStrategy — the fake-NarrativeGenerator unit suite (grounding + degrade matrix + shell) + the INSRC_LIVE_TESTS-gated real-provider path"
+    }
+  ]
+}

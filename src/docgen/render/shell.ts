@@ -71,16 +71,8 @@ function escapeLabel(label: string): string {
 	return label.replace(/["`\r\n]/g, ' ').trim();
 }
 
-/**
- * Emit Mermaid `classDiagram` source from the DERIVED IR. Nodes get stable
- * short aliases (n0, n1, …) so the graph-derived entity ids (hex-32) never
- * clash with Mermaid identifier syntax; the real name rides in the label.
- * Pure + deterministic (alias order follows node order).
- */
-export function documentIRToMermaid(ir: DocumentIR): string {
-	const alias = new Map<string, string>();
-	ir.derived.nodes.forEach((n, i) => alias.set(n.id, `n${i}`));
-
+/** classDiagram source (type-structure): class decls + inherit/implement arrows. */
+function toClassDiagram(ir: DocumentIR, alias: ReadonlyMap<string, string>): string {
 	const lines: string[] = ['classDiagram'];
 	for (const n of ir.derived.nodes) {
 		const a = alias.get(n.id)!;
@@ -92,6 +84,36 @@ export function documentIRToMermaid(ir: DocumentIR): string {
 		if (line !== undefined) lines.push(line);
 	}
 	return lines.join('\n');
+}
+
+/** flowchart source (component-dependency): a box per component + `A --> B`
+ *  dependency arrows. Isolated components render as edge-less boxes (ac3). */
+function toFlowchart(ir: DocumentIR, alias: ReadonlyMap<string, string>): string {
+	const lines: string[] = ['flowchart LR'];
+	for (const n of ir.derived.nodes) {
+		lines.push(`  ${alias.get(n.id)!}["${escapeLabel(n.label)}"]`);
+	}
+	for (const e of ir.derived.edges) {
+		const from = alias.get(e.from);
+		const to   = alias.get(e.to);
+		if (from !== undefined && to !== undefined) lines.push(`  ${from} --> ${to}`);
+	}
+	return lines.join('\n');
+}
+
+/**
+ * Emit Mermaid source from the DERIVED IR, dispatching on docType: a
+ * `classDiagram` for type-structure (inheritance), a `flowchart` for
+ * component-dependency. Nodes get stable short aliases (n0, n1, …) so the
+ * graph-derived entity ids never clash with Mermaid identifier syntax; the real
+ * name rides in the label. Pure + deterministic (alias order follows node order).
+ */
+export function documentIRToMermaid(ir: DocumentIR): string {
+	const alias = new Map<string, string>();
+	ir.derived.nodes.forEach((n, i) => alias.set(n.id, `n${i}`));
+	// 'component-dependency' → flowchart; every other docType → classDiagram.
+	// (docType literal used here to avoid an extractor→shell import cycle.)
+	return ir.docType === 'component-dependency' ? toFlowchart(ir, alias) : toClassDiagram(ir, alias);
 }
 
 // ── HTML shell ────────────────────────────────────────────────────────────────

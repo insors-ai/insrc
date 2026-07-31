@@ -22,6 +22,8 @@
 import { InMemoryDocTypeRegistry, toSerializable } from './registry.js';
 import { typeStructureRegistration } from './extract/type-structure.js';
 import { graphTypeReader } from './extract/graph-reader.js';
+import { componentDependencyRegistration } from './extract/component-dependency.js';
+import { componentGraphReader } from './extract/component-graph-reader.js';
 import { notFound, type ShellOutcome } from './outcome.js';
 import { assembleShell } from './render/shell.js';
 import type { DocTypeRegistry, SerializableDocTypeRegistration } from './types.js';
@@ -29,7 +31,8 @@ import type { DocTypeRegistry, SerializableDocTypeRegistration } from './types.j
 /** The process-wide docgen registry, bootstrapped with the Phase A doc types. */
 export const docgenRegistry: DocTypeRegistry = (() => {
 	const r = new InMemoryDocTypeRegistry();
-	r.register(typeStructureRegistration(graphTypeReader));
+	r.register(typeStructureRegistration(graphTypeReader));           // s1
+	r.register(componentDependencyRegistration(componentGraphReader)); // s2
 	return r;
 })();
 

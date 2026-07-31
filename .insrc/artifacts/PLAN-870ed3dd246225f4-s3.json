@@ -1,0 +1,416 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1785476757753-7ryf8d",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-07-31T05:49:45.222Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 227432,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "870ed3dd246225f4",
+    "epicSlug": "documentation-generation-framework-docgen-produces-self",
+    "storyId": "s3",
+    "lldRunId": "wf-1785474995815-k7r3n1",
+    "lldEffectiveHash": "cb5b27744db290de72c59b4596b1773d0ba24dd335448b4f0a7944f70adc817c",
+    "review": {
+      "artifact": "plan",
+      "stage": "plan",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "pl1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "t3's target src/docgen/render/shell.ts has documentIRToMermaid with existing classDiagram + flowchart branches that t3 extends with a third; a call-sequence branch does NOT yet exist.",
+          "evidence": "shell.ts has documentIRToMermaid with flowchart + classDiagram branches; grep -c 'sequenceDiagram' src/docgen/render/shell.ts = 0, so t3's third branch is genuinely new work that extends a real dispatch.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "pl2",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "src/docgen/index.ts currently registers exactly 2 doc types (type-structure s1 + component-dependency s2); t4 adds call-sequence as the 3rd.",
+          "evidence": "grep -c 'r.register(' src/docgen/index.ts = 2 (typeStructureRegistration s1 + componentDependencyRegistration s2); t4 correctly adds call-sequence as the 3rd. callSequenceRegistration currently appears only in the LLD/PLAN docs, not src.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "pl3",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "t4's 'no new tool/IPC surface' premise holds: docgen_generate tool + docgen.generate IPC exist from s1 and enumerate the registry via listDocTypes.",
+          "evidence": "docgen_generate, docgen.generate, listDocTypes, and generateDocument all resolve in src — the s1 tool + IPC exist and enumerate the registry, so t4's 'no new tool/IPC surface' premise holds.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "pl4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The CALLS-graph primitives t1/t2 bind to all exist: outNeighbors (kindFilter CALLS), findEntitiesByName, entityIdsByU64s/entityU64ForId, listRepos.",
+          "evidence": "outNeighbors, findEntitiesByName, entityIdsByU64s, and listRepos all exist as exported functions — the CALLS-graph primitives t1/t2 bind to are real.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "pl5",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The s2 extractor + reader files the plan mirrors exist (component-dependency.ts, component-graph-reader.ts); the new s3 files (call-sequence.ts, call-graph-reader.ts, call-sequence.test.ts) do NOT yet exist (they are this plan's build output).",
+          "evidence": "The mirrored s2 files (component-dependency.ts buildComponentDependencyIR + componentGraphReader) exist; the new s3 files (call-sequence.ts, call-graph-reader.ts) do NOT exist (ls: No such file), correctly identifying them as this plan's build output. buildCallSequenceIR appears only in the design docs.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "pl6",
+          "kind": "ordering",
+          "severity": "LOW",
+          "premise": "The task DAG (t1<-{}, t2<-t1, t3<-t1, t4<-{t1,t2,t3}, t5<-{t1,t2,t3,t4}) is acyclic with order 1..5 a valid topological sort, respecting storyDependsOn=[s1].",
+          "evidence": "Task graph t1<-{}, t2<-t1, t3<-t1, t4<-{t1,t2,t3}, t5<-{t1,t2,t3,t4} is acyclic; order 1..5 is a valid topological sort; every task sits after s1 (storyDependsOn respected).",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 6
+      },
+      "reviewedAt": "2026-07-31T05:50:54.643Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-07-31T06:04:57.463Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Call-sequence pure core + bounded DFS + read-seam + registration factory",
+        "summary": "Create src/docgen/extract/call-sequence.ts: CALL_SEQUENCE_DOCTYPE='call-sequence'; the read-seam interface CallGraphReader + types CallSequenceScope, CallFrameRef {entityId,name,file,startLine}, CallWalk {entry,frames,steps:{from,to,repeat}[],truncatedFrameIds,depthUsed}; the pure buildCallSequenceIR(walk,revision,scopeDescription) (frames->'call-frame' nodes with 'name (file:line)' label + entityId citation, ordered 'calls' edges, cycle-repeat steps kept as marked edges to the existing frame, 'truncation' marker nodes stating depthUsed; narrated.sections=[]); parseScope + CALL_SEQUENCE_INPUT_SCHEMA (repo + symbol + optional maxDepth); makeExtract (the bounded depth-limited DFS over reader.calleesOf with an on-path visited set for cycle termination + a maxDepth cap, materializing the CallWalk, routing to notFound/sourceNotReady/emptyScope/ok); callSequenceRegistration. The DFS + pure builder are tightly coupled (the DFS materializes the exact CallWalk the builder consumes) so they stay in one file, mirroring s2's single-file t1; DFS risk is contained by t5's cyclic/deep fake-reader tests. Consumes sc1/sc2/sc4 unchanged.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "buildCallSequenceIR yields 'call-frame' nodes (entityId-cited) + ordered 'calls' edges; narrated.sections=[]",
+          "a repeat=true step is kept as a marked 'calls' edge to the existing frame, never re-expanded (ac2)",
+          "a truncatedFrameId yields a derived 'truncation' marker node stating depthUsed (ac3)",
+          "repeated calls to the same callee preserve BOTH ordered steps (sequence multiplicity, no dedupe)",
+          "makeExtract's DFS terminates on a cyclic adjacency (ac2) and stops at maxDepth (ac3); routes not-found (ac4)/source-not-ready/empty-scope",
+          "same walk -> deep-equal IR (determinism); npx tsc --noEmit clean"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "buildCallSequenceIR: frames -> 'call-frame' nodes + ordered 'calls' edges with entityId citations (ac1)"
+          },
+          {
+            "level": "unit",
+            "name": "a repeat=true step kept as a marked 'calls' edge to the existing frame (ac2), never re-expanded"
+          },
+          {
+            "level": "unit",
+            "name": "a truncatedFrameId yields a derived 'truncation' marker node stating depthUsed (ac3)"
+          },
+          {
+            "level": "unit",
+            "name": "repeated calls to the same callee preserve BOTH ordered steps (no dedupe)"
+          },
+          {
+            "level": "unit",
+            "name": "same walk -> deep-equal IR (determinism); narrated.sections=[]"
+          },
+          {
+            "level": "unit",
+            "name": "makeExtract -> 'not-found' when resolveEntryPoint returns undefined (ac4)"
+          },
+          {
+            "level": "unit",
+            "name": "makeExtract -> 'source-not-ready' / 'empty-scope'"
+          },
+          {
+            "level": "unit",
+            "name": "makeExtract over a CYCLIC fake reader terminates and marks the repeat step (ac2)"
+          },
+          {
+            "level": "unit",
+            "name": "makeExtract over a deeper-than-maxDepth fake reader stops at the cap, records truncatedFrameIds + depthUsed, returns ok (ac3)"
+          },
+          {
+            "level": "unit",
+            "name": "makeExtract drops a dangling callee but keeps the calling frame (k11)"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Graph-backed CallGraphReader",
+        "summary": "Create src/docgen/extract/call-graph-reader.ts implementing CallGraphReader: revision via listRepos ('ready' -> lastIndexed ?? addedAt); resolveEntryPoint via findEntitiesByName filtered to 'function'/'method' with a deterministic pick (stable (file,startLine) order) for the multi-match case; calleesOf via entityU64ForId + outNeighbors(u64,{kindFilter:['CALLS']}) + entityIdsByU64s, resolved to {entityId,name,file,startLine}, dropping any callee whose u64 has no resolvable id (dangling edge). Serial per-frame loop (no Promise.all over graph reads). Reads inside the daemon (k2); direct analogue of s2's component-graph-reader.ts.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "reader implements the t1 CallGraphReader interface exactly",
+          "resolveEntryPoint returns undefined for an unindexed symbol (ac4) and a deterministic single frame for a multi-match name",
+          "calleesOf resolves CALLS successors to CallFrameRef in edge order and drops dangling targets (k11)",
+          "revision returns undefined for a repo not in 'ready' status; npx tsc --noEmit clean"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "generateDocument('call-sequence', {repo, symbol, maxDepth}) -> ok shell with a sequenceDiagram, entity-cited"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Add the sequenceDiagram dispatch branch to the shell renderer",
+        "summary": "Extend src/docgen/render/shell.ts documentIRToMermaid with a THIRD branch: docType 'call-sequence' -> a new toSequenceDiagram emitter ('sequenceDiagram', one participant per 'call-frame' alias, 'from ->> to' per ordered 'calls' edge, 'Note over <target>' for a cycle-repeat step and for each 'truncation' marker). Keep toClassDiagram (type-structure) + toFlowchart (component-dependency) byte-identical. assembleShell/buildHtml/escapeHtml/escapeLabel untouched (sc3 offline shell unchanged). This is the ONE regression-risk touch on a shared s1/s2 file; the byte-identical check below is the load-bearing guard.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "documentIRToMermaid(call-sequence IR) starts with 'sequenceDiagram' and emits a message per ordered 'calls' edge",
+          "cycle-repeat + 'truncation' markers render as 'Note over' the target",
+          "type-structure classDiagram + component-dependency flowchart output stay byte-identical — HARD GATE",
+          "assembleShell still returns the sc3 shell (offline, inlined runtimes, SVG, zoom/pan); npx tsc --noEmit clean"
+        ],
+        "derivedFrom": [
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "documentIRToMermaid(call-sequence IR) starts with 'sequenceDiagram' + A->>B per ordered 'calls' edge"
+          },
+          {
+            "level": "unit",
+            "name": "cycle-repeat + truncation markers render as Note over the target"
+          },
+          {
+            "level": "unit",
+            "name": "type-structure (classDiagram) + component-dependency (flowchart) output stay byte-identical"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Register call-sequence as the 3rd doc type",
+        "summary": "In src/docgen/index.ts import callSequenceRegistration + callGraphReader and r.register(callSequenceRegistration(callGraphReader)) alongside the s1 type-structure + s2 component-dependency registrations. No new tool/IPC code — docgen_generate + docgen.generate enumerate the registry, so k4 tool/IPC/MCP parity is inherited automatically.",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "docgenRegistry.list() includes 'call-sequence' (3 doc types total)",
+          "generateDocument('call-sequence', {repo, symbol, maxDepth}) resolves through get->extract->assembleShell to an ok shell",
+          "no edit to src/docgen/tool.ts or the daemon IPC handler is required for s3 to be exposed"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "rendered HTML is a single self-contained file, no <script src=, states depth/truncation when the cap is hit"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Unit tests (traversal-specific) + end-to-end verification",
+        "summary": "Create src/docgen/extract/__tests__/call-sequence.test.ts: pure-core buildCallSequenceIR fixtures (linear chain, cycle, depth-truncated frame, leaf, double-call, determinism); makeExtract against a fake CallGraphReader with cyclic/deep/dangling adjacency exercising cycle-termination (ac2), depth-cap (ac3), not-found (ac4), source-not-ready/empty-scope; the sequenceDiagram render + a byte-identical s1/s2 regression assertion (the t3 backstop). Then run the full docgen suite + npm run build + a live-graph smoke on a real entry-point symbol.",
+        "size": "S",
+        "order": 5,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "the new call-sequence tests pass; full docgen suite green (43 + new cases)",
+          "npm run build clean",
+          "live smoke: generateDocument('call-sequence',{repo, symbol:<real fn>, maxDepth}) -> ok sequenceDiagram, entity-cited, single self-contained file (no <script src=), truncation stated when the cap is hit"
+        ],
+        "derivedFrom": [
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "full call-sequence.test.ts suite green + full docgen suite (43 + new) green"
+          },
+          {
+            "level": "smoke",
+            "name": "live-graph call-sequence smoke on a real entry-point symbol: sequenceDiagram, entity-cited, offline HTML, truncation stated at the cap"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "buildCallSequenceIR: frames -> 'call-frame' nodes + ordered 'calls' edges with entityId citations (ac1)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "a repeat=true step kept as a marked 'calls' edge to the existing frame (ac2), never re-expanded",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "a truncatedFrameId yields a derived 'truncation' marker node stating depthUsed (ac3)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "repeated calls to the same callee preserve BOTH ordered steps (no dedupe)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "same walk -> deep-equal IR (determinism); narrated.sections=[]",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "makeExtract -> 'not-found' when resolveEntryPoint returns undefined (ac4)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "makeExtract -> 'source-not-ready' / 'empty-scope'",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "makeExtract over a CYCLIC fake reader terminates and marks the repeat step (ac2)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "makeExtract over a deeper-than-maxDepth fake reader stops at the cap, records truncatedFrameIds + depthUsed, returns ok (ac3)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "makeExtract drops a dangling callee but keeps the calling frame (k11)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "documentIRToMermaid(call-sequence IR) starts with 'sequenceDiagram' + A->>B per ordered 'calls' edge",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "cycle-repeat + truncation markers render as Note over the target",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "type-structure (classDiagram) + component-dependency (flowchart) output stay byte-identical",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "generateDocument('call-sequence', {repo, symbol, maxDepth}) -> ok shell with a sequenceDiagram, entity-cited",
+        "coveredByTaskIds": [
+          "t2",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "rendered HTML is a single self-contained file, no <script src=, states depth/truncation when the cap is hit",
+        "coveredByTaskIds": [
+          "t4",
+          "t5"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 contractDetails.api buildCallSequenceIR + dataModelChanges CallWalk/CallFrameRef — the pure core + IR shape"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 contractDetails.api CallGraphReader + makeExtract — the read-seam + bounded-DFS extractor"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 errorPaths — makeExtract outcome routing (not-found/source-not-ready/empty-scope) + edgeCases (cycle, depth, leaf, double-call, dangling)"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 contractDetails.api callSequenceRegistration + interactionWithShared sc2/sc4 — registration + the in-IR-truncation (not terminal sc4 'truncated') decision"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 citations c1/c2/c3 — the CALLS graph primitives (outNeighbors CALLS, findEntitiesByName, entityIdsByU64s, listRepos, Entity.startLine) the reader binds to"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 contractDetails.api documentIRToMermaid + interactionWithShared sc3 — the third sequenceDiagram dispatch branch on the shared shell"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 interactionWithShared sc2 — registry enumeration gives automatic docgen_generate tool + docgen.generate IPC parity (k4), no new surface"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 testStrategy — the pure-core + fake-reader traversal unit suite + live-graph smoke closing the green-unit/broken-integration gap"
+    }
+  ]
+}

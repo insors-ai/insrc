@@ -1,0 +1,610 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1785474995815-k7r3n1",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-07-31T05:24:15.754Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 459854,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "870ed3dd246225f4",
+    "epicSlug": "documentation-generation-framework-docgen-produces-self",
+    "storyId": "s3",
+    "hldBaseRunId": "wf-1785421889464-2ayzlc",
+    "hldEffectiveHash": "cb5b27744db290de72c59b4596b1773d0ba24dd335448b4f0a7944f70adc817c",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "outNeighbors exists in src/db/graph/edges.ts and accepts a kindFilter option (used with ['CALLS']), and CALLS is a RelationKind in src/shared/types.ts.",
+          "evidence": "outNeighbors at edges.ts:87; kindFilter option + 'CALLS' RelationKind both present. The CALLS traversal primitive the design leans on exists.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "findCallees is a real domain wrapper (1-hop CALLS successors) in src/db/search.ts.",
+          "evidence": "findCallees at search.ts:193 (1-hop CALLS successors) exists as cited.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "findEntitiesByName exists in src/db/entities.ts for resolving an entry-point symbol (ac4), and getEntity exists there too.",
+          "evidence": "findEntitiesByName:578, getEntity, entityIdsByU64s, entityU64ForId all exist in entities.ts — entry-point resolution (ac4) + u64 mapping are real.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "'function' and 'method' are valid EntityKind values in src/shared/types.ts (the entry-point kinds), and Entity carries startLine.",
+          "evidence": "'function'/'method' EntityKind values + Entity.startLine present in types.ts — participant identity (ac1) is graph-backed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl5",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The sc4 DocGenOutcome constructors notFound/truncated/sourceNotReady/emptyScope/ok exist in src/docgen/outcome.ts.",
+          "evidence": "sc4 constructors notFound, truncated, sourceNotReady, emptyScope all exported from outcome.ts — the outcome variants s3 routes to exist.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl6",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "documentIRToMermaid in src/docgen/render/shell.ts currently dispatches classDiagram (type-structure) vs flowchart (component-dependency); s3 adds a third sequenceDiagram branch.",
+          "evidence": "documentIRToMermaid at shell.ts:111 with flowchart LR + classDiagram branches present — s3's third sequenceDiagram branch extends a real dispatch.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl7",
+          "kind": "external-contract",
+          "severity": "LOW",
+          "premise": "The vendored Mermaid runtime (src/assets/docgen/mermaid.min.js) supports 'sequenceDiagram', so the a1 render form is available offline.",
+          "evidence": "'sequenceDiagram' appears in the vendored mermaid.min.js (11 matches) — the a1 render form is available offline.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl8",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "transitiveClosure exists in src/db/graph/traversal.ts (correctly rejected by the design as unbounded/cycle-collapsing in favor of a bounded DFS).",
+          "evidence": "transitiveClosure at traversal.ts:134 exists; the design correctly rejects it (unbounded/cycle-collapsing) in favor of a bounded DFS — a sound, evidence-based rejection.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl9",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "sc1 DocumentIR's IrNode.kind and IrEdge.kind are open string fields already listing 'call-frame' and 'calls', so s3's new kind values need no type change.",
+          "evidence": "types.ts has interface IrNode/IrEdge with open string kind fields and already references 'call-frame'; s3's new kind values need no type change.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 9
+      },
+      "reviewedAt": "2026-07-31T05:30:18.711Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-07-31T05:45:45.966Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "IR is the hard boundary between graph-derived and LLM-narrated content; cross-cutting failure/empty/truncation reporting is one shared outcome envelope; registry-enumeration gives automatic tool/IPC/MCP parity; both the inline renderer and the D2/Graphviz fallback assemble into the identical single-file shell extending loadMermaidCdnMeta / RenderedArtifactHtml.",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "DocumentIR"
+        },
+        {
+          "id": "sc2",
+          "name": "DocTypeRegistration"
+        },
+        {
+          "id": "sc3",
+          "name": "RenderedDocumentShell"
+        },
+        {
+          "id": "sc4",
+          "name": "DocGenOutcome"
+        }
+      ],
+      "boundary": {
+        "storyId": "s3",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc4"
+        ],
+        "internal": "The call-sequence extractor: CALLS-graph traversal from a resolved entry-point symbol, with cycle/recursion detection that guarantees termination and a fixed traversal depth, both encoded only in this extractor's own control flow. Entry-point symbol resolution against the indexed graph. Ordering of call steps within the emitted IR. Private to s3."
+      },
+      "rolloutPhase": "Phase B — Structural extractors (component/dependency + call-sequence)"
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "CallGraphReader",
+          "signature": "interface CallGraphReader { revision(repoRoot: string): Promise<string | undefined>; resolveEntryPoint(scope: CallSequenceScope): Promise<CallFrameRef | undefined>; calleesOf(entityId: string): Promise<readonly CallFrameRef[]> }",
+          "parameters": [
+            {
+              "name": "revision",
+              "type": "(repoRoot: string) => Promise<string | undefined>",
+              "purpose": "Pinned index revision (undefined when the repo is not 'ready'); same source as s1/s2 readers (listRepos).",
+              "optional": false
+            },
+            {
+              "name": "resolveEntryPoint",
+              "type": "(scope: CallSequenceScope) => Promise<CallFrameRef | undefined>",
+              "purpose": "Resolve the entry-point symbol to a function/method entity via findEntitiesByName; undefined when not indexed (ac4).",
+              "optional": false
+            },
+            {
+              "name": "calleesOf",
+              "type": "(entityId: string) => Promise<readonly CallFrameRef[]>",
+              "purpose": "1-hop CALLS successors in recorded edge order via outNeighbors(u64,{kindFilter:['CALLS']}) + entityIdsByU64s; resolved to name+file+startLine (ac1).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "CallGraphReader",
+            "meaning": "Injected daemon-side read seam; a fake in tests, graph-backed in production (k2). Traversal/cycle/depth logic is NOT in the reader — only raw reads."
+          },
+          "errors": [],
+          "preconditions": [
+            "Bound to the daemon graph layer (k2) or a test fake."
+          ],
+          "postconditions": [
+            "Performs only reads; never traverses or mutates."
+          ]
+        },
+        {
+          "name": "buildCallSequenceIR",
+          "signature": "function buildCallSequenceIR(walk: CallWalk, revision: string, scopeDescription: string): DocumentIR",
+          "parameters": [
+            {
+              "name": "walk",
+              "type": "CallWalk",
+              "purpose": "The completed bounded-DFS result: ordered frames, ordered steps, per-step cycle-repeat flags, truncated frame ids, depthUsed.",
+              "optional": false
+            },
+            {
+              "name": "revision",
+              "type": "string",
+              "purpose": "Pinned index revision -> generatedAtRevision (determinism).",
+              "optional": false
+            },
+            {
+              "name": "scopeDescription",
+              "type": "string",
+              "purpose": "Human-readable label for the IR + rendered title.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "DocumentIR",
+            "meaning": "Derived-only IR: one 'call-frame' node per distinct visited entity (label 'name (file:line)', entityId citation); one 'calls' edge per step in visitation order; cycle-repeat steps kept as marked 'calls' edges to the existing frame (ac2); each truncated frame gets a derived 'truncation' marker node stating depthUsed (ac3). narrated.sections=[]."
+          },
+          "errors": [],
+          "preconditions": [
+            "Pure: no graph reads; the walk is fully materialized by the DFS in makeExtract."
+          ],
+          "postconditions": [
+            "Same walk -> deep-equal IR (determinism).",
+            "Every node/edge graph-backed with an entityId citation (k11); no fabricated frames.",
+            "Cycle-repeat + truncation are DERIVED, not narrated (k8)."
+          ]
+        },
+        {
+          "name": "makeExtract",
+          "signature": "function makeExtract(reader: CallGraphReader): (input: Record<string, unknown>) => Promise<DocGenOutcome<DocumentIR>>",
+          "parameters": [
+            {
+              "name": "reader",
+              "type": "CallGraphReader",
+              "purpose": "Injected graph read-seam.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "(input) => Promise<DocGenOutcome<DocumentIR>>",
+            "meaning": "Parses scope (repo + symbol + optional maxDepth), resolves the entry point, runs a bounded DFS over calleesOf with a visited set (termination, ac2), materializes the CallWalk, returns ok(buildCallSequenceIR(...)) or a typed sc4 failure."
+          },
+          "errors": [
+            {
+              "type": "DocGenOutcome 'not-found'",
+              "condition": "resolveEntryPoint returns undefined (ac4)."
+            },
+            {
+              "type": "DocGenOutcome 'source-not-ready'",
+              "condition": "reader.revision returns undefined."
+            },
+            {
+              "type": "DocGenOutcome 'empty-scope'",
+              "condition": "input has no non-empty 'repo' or 'symbol'."
+            }
+          ],
+          "preconditions": [
+            "maxDepth defaults to a fixed bound (e.g. 12); the DFS never exceeds it (termination + ac3)."
+          ],
+          "postconditions": [
+            "Depth-truncation returns ok(IR-with-marker), NOT terminal sc4 'truncated', so the partial doc renders with the truncation stated (ac3); sc4 'truncated' stays available but unused by s3.",
+            "Cycles/recursion terminate via the visited set and are shown as repetition (ac2)."
+          ]
+        },
+        {
+          "name": "callSequenceRegistration",
+          "signature": "function callSequenceRegistration(reader: CallGraphReader): DocTypeRegistration",
+          "parameters": [
+            {
+              "name": "reader",
+              "type": "CallGraphReader",
+              "purpose": "The graph read-seam bound into extract().",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "DocTypeRegistration",
+            "meaning": "The sc2 registration for docType 'call-sequence': capability + CALL_SEQUENCE_INPUT_SCHEMA (repo + symbol + optional maxDepth) + bound extract()."
+          },
+          "errors": [],
+          "preconditions": [
+            "Registered once into docgenRegistry as the 3rd doc type, alongside type-structure (s1) + component-dependency (s2)."
+          ],
+          "postconditions": [
+            "Enumerable via registry.list() -> automatic tool/IPC/MCP parity (k4)."
+          ]
+        },
+        {
+          "name": "documentIRToMermaid",
+          "signature": "function documentIRToMermaid(ir: DocumentIR): string",
+          "parameters": [
+            {
+              "name": "ir",
+              "type": "DocumentIR",
+              "purpose": "The derived IR; dispatch on ir.docType.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "Adds a THIRD dispatch branch: 'call-sequence' -> Mermaid 'sequenceDiagram' (participant per call-frame, A->>B per ordered 'calls' edge, Note over target for cycle-repeat + truncation markers). 'component-dependency' -> flowchart (s2); other -> classDiagram (s1) — both byte-unchanged."
+          },
+          "errors": [],
+          "preconditions": [
+            "Node aliases follow node order; labels escaped."
+          ],
+          "postconditions": [
+            "Pure + deterministic; assembleShell reused unchanged (sc3 offline shell). s1/s2 output byte-identical."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "CallWalk (s3-internal traversal result)",
+        "change": "new",
+        "details": "The bounded-DFS output the pure builder consumes: { entry: CallFrameRef; frames: CallFrameRef[]; steps: {from,to,repeat}[] (ordered; repeat=true when 'to' was already on the visited path — ac2); truncatedFrameIds: string[] (cut at maxDepth — ac3); depthUsed: number }. CallFrameRef = { entityId, name, file, startLine }. Private to s3.",
+        "callSites": [
+          "src/docgen/extract/call-sequence.ts (new)",
+          "src/docgen/extract/call-graph-reader.ts (new)"
+        ]
+      },
+      {
+        "entity": "DocumentIR (call-sequence instance)",
+        "change": "invariant-change",
+        "details": "s3 populates sc1 with docType 'call-sequence': 'call-frame' nodes + derived 'truncation' marker nodes; 'calls' edges with cycle-repeat steps kept as marked edges to the existing frame. narrated.sections stays empty (k8). No change to the sc1 TYPE — only new kind-string values the open field already permits.",
+        "callSites": [
+          "src/docgen/extract/call-sequence.ts",
+          "src/docgen/types.ts (DocumentIR, owned by s1)"
+        ]
+      },
+      {
+        "entity": "sc4 DocGenOutcome usage by s3",
+        "change": "invariant-change",
+        "details": "DECISION: s3 uses sc4 'not-found' (ac4), 'source-not-ready', 'empty-scope', and returns ok(IR) even when depth-truncated — depth-truncation is an in-IR derived marker (ac3 requires the partial doc to render). s3 does NOT emit terminal sc4 'truncated'. Non-breaking: no sc4 field added/removed/renamed; the variant stays unused by s3. NO HLD amendment proposed.",
+        "callSites": [
+          "src/docgen/outcome.ts (notFound/sourceNotReady/emptyScope/ok; truncated left unused by s3)"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Derived-only DocumentIR using sc1's listed 'call-frame' node kind + 'calls' edge kind, plus a derived 'truncation' marker node kind (open string field). narrated.sections=[]; generatedAtRevision pinned. No type change."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "callSequenceRegistration -> DocTypeRegistration, registered as the 3rd doc type in src/docgen/index.ts; enumerated by the single registry (k4). extractorInputSchema adds symbol + optional maxDepth. No change to sc2."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "Renders through assembleShell unchanged; only a new documentIRToMermaid 'sequenceDiagram' branch is added. Same self-contained offline HTML, inlined runtimes, SVG, zoom/pan (k5/k6)."
+      },
+      {
+        "contractId": "sc4",
+        "role": "consumes",
+        "howDetails": "Uses 'not-found' (ac4), 'source-not-ready', 'empty-scope', and 'ok'. Deliberately does NOT use terminal 'truncated' — depth-truncation is shown in-document via a derived IR marker on ok (ac3). No change to sc4."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The chosen entry-point symbol is not present in the indexed code (ac4).",
+          "detection": "reader.resolveEntryPoint(scope) returns undefined because findEntitiesByName yields no 'function'/'method' entity; makeExtract checks if (entry === undefined).",
+          "response": "Return notFound(symbol); no traversal, no IR.",
+          "userImpact": "Told the symbol was not found rather than a fabricated sequence (k11).",
+          "recoverable": true
+        },
+        {
+          "scenario": "The repo is registered but not finished indexing.",
+          "detection": "reader.revision resolves undefined (status !== 'ready'); makeExtract checks if (revision === undefined).",
+          "response": "Return sourceNotReady(repo); no partial document.",
+          "userImpact": "Retriable once indexing completes.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The input lacks a usable repo or entry-point symbol.",
+          "detection": "parseScope finds input['repo'] or input['symbol'] not a non-empty string; makeExtract checks if (scope === undefined).",
+          "response": "Return emptyScope with a 'no repo/symbol' message.",
+          "userImpact": "The malformed request is reported.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The offline runtime asset is missing from the build output.",
+          "detection": "assembleShell's loadRuntime throws on readFile; caught (shared with s1/s2).",
+          "response": "Return fallbackUnavailable naming copy-assets; never a CDN fetch (k5).",
+          "userImpact": "Actionable build-config error, no view-time network.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A callee u64 has no resolvable entity id (dangling CALLS edge).",
+          "detection": "entityIdsByU64s returns no id for a CALLS neighbor u64, so it is dropped in calleesOf.",
+          "response": "The dangling call is omitted; the calling frame is still emitted.",
+          "userImpact": "Only graph-backed frames appear (k11).",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "An entry point whose CALLS form a cycle/recursion (ac2).",
+          "expected": "The visited set stops re-expanding an on-path frame; the repeating call is kept as a repeat=true 'calls' step (Note over target); generation terminates."
+        },
+        {
+          "input": "A call sequence deeper than maxDepth (ac3).",
+          "expected": "DFS stops at maxDepth; each frame with un-expanded callees is a truncatedFrameId, rendered as a derived 'truncation' marker stating depthUsed, on an ok document."
+        },
+        {
+          "input": "A symbol matching multiple indexed functions/methods.",
+          "expected": "resolveEntryPoint picks deterministically (stable (file,startLine) order); file:line disambiguates in the header (determinism + ac1)."
+        },
+        {
+          "input": "An entry point that calls nothing (leaf).",
+          "expected": "A valid ok document with one participant and no 'calls' steps — not an error."
+        },
+        {
+          "input": "The same entry point documented twice with no code change.",
+          "expected": "Deep-equal IR (ordered frames/steps + pinned generatedAtRevision)."
+        },
+        {
+          "input": "A frame that calls the same callee twice at the same level.",
+          "expected": "Two ordered 'calls' steps preserved (sequence multiplicity) — unlike s2's dedupe."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "All call-sequence content is derived deterministically from the indexed CALLS graph; the LLM is never in this path (narrated.sections stays empty).",
+          "source": "c9"
+        },
+        {
+          "text": "Graph reads happen inside the daemon via the injected reader; the DFS/build performs no I/O beyond reader calls (k2).",
+          "source": "c10"
+        },
+        {
+          "text": "Every frame and call is graph-backed with an entityId citation — no raw dump, no invented frame; unresolved targets are dropped (k11).",
+          "source": "c10"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test + node:assert/strict, run via npx tsx --test (the repo's existing convention; mirrors type-structure.test.ts + component-dependency.test.ts).",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove the pure buildCallSequenceIR core over hand-built CallWalk fixtures — no graph, no daemon.",
+          "subjects": [
+            "buildCallSequenceIR: frames -> 'call-frame' nodes + ordered 'calls' edges with entityId citations (ac1)",
+            "a repeat=true step kept as a marked 'calls' edge to the existing frame (ac2), never re-expanded",
+            "a truncatedFrameId yields a derived 'truncation' marker node stating depthUsed (ac3)",
+            "repeated calls to the same callee preserve BOTH ordered steps (no dedupe)",
+            "same walk -> deep-equal IR (determinism); narrated.sections=[]"
+          ],
+          "fixturesNeeded": [
+            "Hand-built CallWalk fixtures: linear chain, cycle, depth-truncated frame, leaf, double-call frame"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove makeExtract's bounded DFS + outcome routing against an injected fake CallGraphReader (cycle-termination + depth-capping).",
+          "subjects": [
+            "makeExtract -> 'not-found' when resolveEntryPoint returns undefined (ac4)",
+            "makeExtract -> 'source-not-ready' / 'empty-scope'",
+            "makeExtract over a CYCLIC fake reader terminates and marks the repeat step (ac2)",
+            "makeExtract over a deeper-than-maxDepth fake reader stops at the cap, records truncatedFrameIds + depthUsed, returns ok (ac3)",
+            "makeExtract drops a dangling callee but keeps the calling frame (k11)"
+          ],
+          "fixturesNeeded": [
+            "A fake CallGraphReader with a cyclic adjacency, a deep chain, and a dangling callee; canned revision + entry point"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove the new sequenceDiagram render branch without regressing s1/s2.",
+          "subjects": [
+            "documentIRToMermaid(call-sequence IR) starts with 'sequenceDiagram' + A->>B per ordered 'calls' edge",
+            "cycle-repeat + truncation markers render as Note over the target",
+            "type-structure (classDiagram) + component-dependency (flowchart) output stay byte-identical"
+          ],
+          "fixturesNeeded": [
+            "A small call-sequence IR with repeat + truncation markers; existing s1/s2 IRs for the byte-identical check"
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "Prove the full generateDocument path end-to-end against the live indexed graph.",
+          "subjects": [
+            "generateDocument('call-sequence', {repo, symbol, maxDepth}) -> ok shell with a sequenceDiagram, entity-cited",
+            "rendered HTML is a single self-contained file, no <script src=, states depth/truncation when the cap is hit"
+          ],
+          "fixturesNeeded": [
+            "The insrc repo indexed + 'ready'; a known real entry-point symbol with non-trivial fan-out"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "buildCallSequenceIR: frames -> 'call-frame' nodes + ordered 'calls' edges with citations",
+            "documentIRToMermaid emits sequenceDiagram A->>B in order",
+            "smoke: entity-cited live call sequence, every step a real CALLS relation"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "buildCallSequenceIR: repeat step kept + marked, not re-expanded",
+            "makeExtract over a cyclic fake reader terminates and marks repetition",
+            "documentIRToMermaid renders the cycle repeat as a Note"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "buildCallSequenceIR: truncatedFrameId -> derived 'truncation' marker stating depthUsed",
+            "makeExtract over a deeper-than-maxDepth reader stops + returns ok(IR-with-marker)",
+            "smoke: a depth-capped live document states the truncation point + depth used"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "makeExtract -> 'not-found' when resolveEntryPoint returns undefined (no fabricated sequence)"
+          ]
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Depth-limited DFS + sequenceDiagram + in-IR derived truncation/cycle markers",
+        "oneLineSummary": "Bounded DFS over CALLS from the resolved entry point; render as a Mermaid sequenceDiagram; cycle-repetition and depth-truncation are DERIVED marker nodes/edges inside the ok IR; sc4 not-found for a missing entry point.",
+        "chosen": true
+      },
+      {
+        "id": "a2",
+        "name": "Depth-limited DFS + reuse s2's flowchart call-tree + in-IR markers",
+        "oneLineSummary": "Same DFS + markers, but render as a flowchart call-tree instead of a sequenceDiagram.",
+        "reasonRejected": "Only PARTIAL on ac1 (a flowchart loses call ORDER, which ac1 requires) and ac2 (a cycle reads as an ordinary back-edge, weakening 'shown as such'). k3 (accuracy over cost) tips against the small shell saving."
+      },
+      {
+        "id": "a3",
+        "name": "Literal sc4 terminal outcomes for truncation (no in-IR marker)",
+        "oneLineSummary": "Depth-truncation returns the terminal sc4 'truncated' outcome and cycles are silently collapsed.",
+        "reasonRejected": "Violates ac3 (the terminal 'truncated' carries no shell -> NO document on truncation) and ac2 (silent cycle collapse hides repetition). Contract-literal but requirement-breaking."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/db/graph/edges.ts:87 outNeighbors + src/shared/types.ts:532 CALLS RelationKind + src/db/search.ts:193 findCallees — the CALLS traversal primitives"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/db/entities.ts:578 findEntitiesByName + :553 getEntity + src/shared/types.ts:519-520 'function'/'method' kinds — entry-point resolution (ac4)"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/shared/types.ts:556 Entity.startLine + name + file — participant identity for ac1 labels/citations"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/docgen/outcome.ts:46-47 notFound/truncated constructors + sc4 DocGenOutcome variants (ok/empty-scope/not-found/source-not-ready)"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/docgen/extract/type-structure.ts + component-dependency.ts + render/shell.ts + index.ts — the s1/s2 extractor+reader+shell-dispatch pattern s3 extends"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/assets/docgen/mermaid.min.js — vendored Mermaid 10.9.1 supports 'sequenceDiagram' (the a1 render form)"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/db/graph/traversal.ts:134 transitiveClosure — rejected as unbounded + cycle-collapsing; s3 needs its own bounded DFS"
+    },
+    {
+      "id": "c9",
+      "kind": "convention",
+      "ref": "HLD assumption c9 (k8): structural content derived deterministically from the indexed graph, LLM confined to narrative"
+    },
+    {
+      "id": "c10",
+      "kind": "convention",
+      "ref": "HLD assumption c10 (k2/k11): daemon owns DB access; no raw dumps, every frame/call graph-backed"
+    },
+    {
+      "id": "c8",
+      "kind": "step-output",
+      "ref": "s8 checklist.verify — all 18 items passed (cd1-3, dm1-2, int1-2, ep1-3, ts1-2, mg1-2, alt1-2, sbdry1-4)"
+    }
+  ]
+}

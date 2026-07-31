@@ -1,0 +1,632 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1785496342516-nu9vox",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-07-31T12:29:33.920Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 4631332,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "870ed3dd246225f4",
+    "epicSlug": "documentation-generation-framework-docgen-produces-self",
+    "storyId": "s6",
+    "hldBaseRunId": "wf-1785421889464-2ayzlc",
+    "hldEffectiveHash": "cb5b27744db290de72c59b4596b1773d0ba24dd335448b4f0a7944f70adc817c",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "ref": "c1",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "generateDocument in src/docgen/index.ts already forwards the WHOLE input object to the resolved extractor (reg.extract(input)) rather than a reconstructed {repo,path} — the hinge that makes a1's whole-input pass-through require no generateDocument signature change.",
+          "evidence": "src/docgen/index.ts:70 `const ir = await reg.extract(input);` — the whole input object is passed to the extractor; :68 docgenRegistry.get(docType). The a1 no-signature-change hinge is real. Confirmed.",
+          "action": "none",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl2",
+          "ref": "c3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/docgen/tool.ts currently hard-threads only {docType,repo,path}: its execute() builds extractInput={repo}(+path) and its inputSchema fixes properties to docType/repo/path — the gap s6 generalizes.",
+          "evidence": "tool.ts:68 `const extractInput: Record<string,unknown> = { repo };` + :69 adds only path; DOCGEN_TOOL_ID='docgen_generate' (:25). The {repo,path}-only threading gap is real and localized to tool.ts. Confirmed.",
+          "action": "none",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl3",
+          "ref": "c4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/daemon/index.ts registers 'docgen.generate' and 'docgen.list' IPC handlers, and docgen.generate currently destructures only {docType, repo, path}.",
+          "evidence": "daemon/index.ts:1157 'docgen.generate' handler, :1158 `const { docType, repo, path } = params`; :1165 'docgen.list'. The IPC surface + its {docType,repo,path} destructuring exist as described. Confirmed.",
+          "action": "none",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl4",
+          "ref": "insrc_docgen",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "There is currently NO docgen MCP surface: src/mcp/ contains no docgen tool registration, so insrc_docgen is genuinely the missing third surface s6 adds.",
+          "evidence": "grep insrc_docgen + docgen over src/ returns 0 hits in src/mcp (matches are docs only). No docgen MCP surface exists yet — insrc_docgen is genuinely the missing third surface. Confirmed.",
+          "action": "none",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl5",
+          "ref": "c5",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/mcp/server.ts registers MCP tools via server.registerTool(name, {title, description, annotations, inputSchema}, handler) — the pattern insrc_docgen follows.",
+          "evidence": "src/mcp/server.ts:128 (and 7 more) `server.registerTool(` — the registration pattern insrc_docgen follows. Confirmed.",
+          "action": "none",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl6",
+          "ref": "c6",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/docgen/schema.ts exports RENDERED_DOCUMENT_SHELL_SCHEMA and DOCGEN_OUTCOME_SCHEMA — the hand-mirrored MCP output shapes the new tool uses.",
+          "evidence": "schema.ts:17 RENDERED_DOCUMENT_SHELL_SCHEMA + DOCGEN_OUTCOME_SCHEMA (pinned by schema.test.ts). The MCP output shapes exist. Confirmed.",
+          "action": "none",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl7",
+          "ref": "c7",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/mcp/resolve-repo.ts exports resolveRepoPath(explicit, deps) for repo resolution and src/mcp/daemon-stream.ts exposes unary daemon RPC helpers — the daemon-owned read path the MCP handler uses (ac2).",
+          "evidence": "src/mcp/resolve-repo.ts:50 `export async function resolveRepoPath(explicit, deps)`; src/mcp/daemon-stream.ts:253/265 startRun/pollRun unary RPC. The MCP daemon-owned read path exists. (Other resolveRepoPath in analyze/ are unrelated namesakes.) Confirmed.",
+          "action": "none",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl8",
+          "ref": "c8",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The narrative doc type requires base+question (NARRATIVE_INPUT_SCHEMA) and call-sequence requires a symbol entry-point — per-type inputs the current {repo,path} threading drops, making those types unreachable on the tool/IPC surfaces pre-s6.",
+          "evidence": "narrative.ts:135 NARRATIVE_INPUT_SCHEMA, :138 `required: ['repo','base','question']` — inputs the {repo,path} threading drops, making narrative unreachable pre-s6. Confirmed.",
+          "action": "none",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl9",
+          "ref": "c2",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "toSerializable in src/docgen/registry.ts projects {docType, capability, extractorInputSchema}, and listDocTypes maps the registry through it — the single enumeration source every surface reads, including extractorInputSchema.",
+          "evidence": "registry.ts:94 toSerializable projecting :98 `extractorInputSchema: entry.extractorInputSchema`; listDocTypes maps the registry through it (daemon/index.ts:1167). Single enumeration source incl. extractorInputSchema. Confirmed.",
+          "action": "none",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl10",
+          "ref": "c3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "registerDocgenTool() is wired into the daemon tool builtins bootstrap at src/daemon/tools/builtins/index.ts, so the tool surface is registered at daemon boot.",
+          "evidence": "builtins/index.ts:37 import registerDocgenTool + :58 registerDocgenTool() — the tool surface is registered at daemon boot. Confirmed.",
+          "action": "none",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl11",
+          "ref": "sc4",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "DocGenOutcome (sc4) already carries the source-not-ready variant that the ac3 registered/indexed precondition reuses, so no new outcome variant is introduced.",
+          "evidence": "outcome.ts:48 `sourceNotReady = <T>(reason) => ({ status: 'source-not-ready', reason })` — the sc4 variant the ac3 precondition reuses already exists; no new variant. Confirmed.",
+          "action": "none",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 11
+      },
+      "reviewedAt": "2026-07-31T12:32:23.151Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-07-31T12:34:28.495Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "docgen registers IR extractors on one sc2 DocTypeRegistry so the daemon tool registry, the IPC method table, and an MCP tool all enumerate a single source of truth (k4). Cross-cutting failure reporting is the shared sc4 DocGenOutcome envelope; reads stay daemon-side (k2).",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "DocumentIR"
+        },
+        {
+          "id": "sc2",
+          "name": "DocTypeRegistration"
+        },
+        {
+          "id": "sc3",
+          "name": "RenderedDocumentShell"
+        },
+        {
+          "id": "sc4",
+          "name": "DocGenOutcome"
+        }
+      ],
+      "boundary": {
+        "storyId": "s6",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc4"
+        ],
+        "internal": "Enumerating sc2's DocTypeRegistry to expose docgen identically on the daemon tool registry, the IPC method table, and the MCP tool surface; the equivalence that a request through any of the three yields the same DocGenOutcome; and the registered/indexed precondition reported via sc4 source-not-ready. Private to s6."
+      },
+      "rolloutPhase": "Phase D — Surface parity & installed-build hardening"
+    },
+    "contractDetails": {
+      "surfaceLevel": "public",
+      "api": [
+        {
+          "name": "generateDocument",
+          "signature": "function generateDocument(docType: string, input: Record<string, unknown>): Promise<ShellOutcome>",
+          "parameters": [
+            {
+              "name": "docType",
+              "type": "string",
+              "purpose": "The registered document type to generate; resolved against docgenRegistry.get (unknown → not-found).",
+              "optional": false
+            },
+            {
+              "name": "input",
+              "type": "Record<string, unknown>",
+              "purpose": "The FULL per-request input forwarded verbatim to the resolved type's extractor (repo + any of path/symbol/base/question/maxDepth its extractorInputSchema declares). Already whole-passed to reg.extract — no signature change.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<ShellOutcome>",
+            "meaning": "The single generation entry point all three surfaces funnel through (k4). Reshaped internally to run the registered/indexed precondition BEFORE extraction so an unregistered/unindexed repo returns source-not-ready rather than an empty shell (ac3)."
+          },
+          "errors": [
+            {
+              "type": "DocGenOutcome not-found",
+              "condition": "docType is not registered in docgenRegistry."
+            },
+            {
+              "type": "DocGenOutcome source-not-ready",
+              "condition": "the target repo is not registered or has not finished indexing (no pinned graph revision) — the ac3 precondition, enforced once here so every surface inherits it (k11/k2)."
+            },
+            {
+              "type": "DocGenOutcome empty-scope",
+              "condition": "the extractor's parseScope rejects the input (a required per-type field like symbol/question absent) or the scope yields no entities."
+            },
+            {
+              "type": "DocGenOutcome fallback-unavailable",
+              "condition": "the runtime asset is missing or an oversized diagram has no subprocess renderer (s5)."
+            }
+          ],
+          "preconditions": [
+            "docgenRegistry is bootstrapped (daemon boot).",
+            "Runs inside the daemon (k2) — reads never cross to the caller process."
+          ],
+          "postconditions": [
+            "The whole input flows to the extractor, so call-sequence (needs symbol) and narrative (needs base+question) become reachable identically once a surface forwards the full input (ac1).",
+            "A non-ok outcome carries its reason/symbol verbatim for the surface to render (sc4)."
+          ]
+        },
+        {
+          "name": "listDocTypes",
+          "signature": "function listDocTypes(): readonly SerializableDocTypeRegistration[]",
+          "parameters": [],
+          "returns": {
+            "type": "readonly SerializableDocTypeRegistration[]",
+            "meaning": "The registry projected through toSerializable ({docType, capability, extractorInputSchema}) — the ONE enumeration source every surface reads to advertise capabilities + per-type input schema (k4). Unchanged signature; s6 makes all three surfaces consume it."
+          },
+          "errors": [],
+          "preconditions": [
+            "docgenRegistry bootstrapped."
+          ],
+          "postconditions": [
+            "Adding a 5th doc type later appears on all three surfaces with zero surface edits (ac4)."
+          ]
+        },
+        {
+          "name": "docgenTool",
+          "signature": "const docgenTool: Tool  // id = DOCGEN_TOOL_ID ('docgen_generate'), registered via registerDocgenTool()",
+          "parameters": [],
+          "returns": {
+            "type": "Tool",
+            "meaning": "The daemon tool-surface entry, RESHAPED: its inputSchema is generalized from the fixed {docType, repo, path} to a registry-derived shape ({docType, repo} + the union of registered extractorInputSchema properties) built from listDocTypes(), and execute() forwards the FULL validated input to generateDocument instead of reconstructing {repo, path?} — so every registered doc type is reachable via the tool (ac1/ac4). Non-ok outcomes render through the existing describeOutcome."
+          },
+          "errors": [
+            {
+              "type": "ToolResult success=false",
+              "condition": "missing docType/repo, or any non-ok DocGenOutcome (rendered via describeOutcome, outcome carried in data)."
+            }
+          ],
+          "preconditions": [
+            "registerDocgenTool() called once at daemon boot (already wired in daemon/tools/builtins/index.ts)."
+          ],
+          "postconditions": [
+            "The tool advertises + accepts the same capabilities the IPC + MCP surfaces do (ac1); the finished shell rides in ToolResult.data, never the raw stores (ac2)."
+          ]
+        },
+        {
+          "name": "insrc_docgen",
+          "signature": "server.registerTool('insrc_docgen', { title, description, annotations, inputSchema }, handler): void  // new MCP registration in src/mcp/server.ts",
+          "parameters": [
+            {
+              "name": "inputSchema",
+              "type": "Record<string, unknown>",
+              "purpose": "Derived from the registry ({docType} + repo + the union of listDocTypes()[].extractorInputSchema properties), obtained via the docgen.list IPC — the schema is the registry, hand-written nowhere (k4).",
+              "optional": false
+            },
+            {
+              "name": "handler",
+              "type": "(args, extra) => Promise<CallToolResult>",
+              "purpose": "Resolves the repo via resolveRepoPath($INSRC_REPO/cwd), then calls the docgen.generate / docgen.list IPC over the daemon socket and returns the DocGenOutcome shaped by DOCGEN_OUTCOME_SCHEMA. NEVER imports generateDocument — the read stays in the daemon (ac2).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "Registers the missing THIRD surface: the assistant-facing MCP tool, bringing docgen to full tool/IPC/MCP parity (ac1/ac4). readOnlyHint=true, openWorldHint=false (scope is the indexed repo)."
+          },
+          "errors": [
+            {
+              "type": "CallToolResult isError",
+              "condition": "the daemon IPC returns a non-ok DocGenOutcome (source-not-ready / not-found / empty-scope / fallback-unavailable), or is unreachable — surfaced with an actionable reason (ac3)."
+            }
+          ],
+          "preconditions": [
+            "The daemon is running and exposes docgen.generate/docgen.list (already registered in daemon/index.ts).",
+            "$INSRC_REPO or an explicit repo arg resolves to a registered repo."
+          ],
+          "postconditions": [
+            "A request through the MCP tool yields the SAME DocGenOutcome status as the tool + IPC surfaces for the same {docType, repo, scope} (ac1).",
+            "The MCP process performs no store access — only the finished document/outcome crosses back (ac2)."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "docgen_generate tool inputSchema + execute() input threading",
+        "change": "field-modify",
+        "details": "src/docgen/tool.ts: replace the hard {docType, repo, path} inputSchema with a registry-derived schema (from listDocTypes() extractorInputSchema union) and change execute() to forward the whole validated input to generateDocument rather than reconstructing extractInput={repo}(+path). Makes call-sequence + narrative reachable via the tool (ac1). No change to Tool/ToolResult types. Backward-compatible: repo stays required, path optional.",
+        "callSites": [
+          "src/docgen/tool.ts"
+        ]
+      },
+      {
+        "entity": "docgen.generate / docgen.list IPC handlers input threading",
+        "change": "invariant-change",
+        "details": "src/daemon/index.ts: the docgen.generate handler forwards the whole params object (minus docType) to generateDocument instead of destructuring only {docType, repo, path}; docgen.list already returns listDocTypes(). Brings the IPC surface to parity with the tool (ac1). No IPC method rename — the IDE fork's mirrored types stay valid.",
+        "callSites": [
+          "src/daemon/index.ts"
+        ]
+      },
+      {
+        "entity": "insrc_docgen MCP tool",
+        "change": "new",
+        "details": "New MCP surface: a server.registerTool('insrc_docgen', …) registration + handler that resolves the repo, calls the docgen.generate/docgen.list IPC (daemon-owned read, ac2), derives its input schema from the registry, and returns outcomes shaped by DOCGEN_OUTCOME_SCHEMA. The previously-missing third surface (ac1/ac4).",
+        "callSites": [
+          "src/mcp/server.ts",
+          "src/docgen/schema.ts",
+          "src/mcp/resolve-repo.ts"
+        ]
+      },
+      {
+        "entity": "generateDocument registered/indexed precondition (ac3)",
+        "change": "invariant-change",
+        "details": "src/docgen/index.ts generateDocument: enforce the registered+indexed precondition centrally before extraction so an unregistered/unindexed repo returns sc4 source-not-ready with an actionable reason on every surface, rather than each extractor/surface re-checking (k11). Reuses the existing source-not-ready variant the extractors already emit for the no-revision case.",
+        "callSites": [
+          "src/docgen/index.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "All three surfaces enumerate docgenRegistry via listDocTypes()/toSerializable — one source of truth for docType + capability.summary + extractorInputSchema (k4). No registry change; s6 wires it to the two existing consumers + the new MCP consumer."
+      },
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Unchanged: content stays graph-derived through generateDocument's extractors; s6 only routes requests to them, never touching the IR shape or provenance (k8/k11)."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "Every surface returns the existing RenderedDocumentShell verbatim; the MCP surface shapes it with RENDERED_DOCUMENT_SHELL_SCHEMA. No shell change."
+      },
+      {
+        "contractId": "sc4",
+        "role": "consumes",
+        "howDetails": "All surfaces resolve to the shared DocGenOutcome envelope; the ac3 registered/indexed precondition reuses its source-not-ready variant, and the MCP output is shaped by DOCGEN_OUTCOME_SCHEMA. Reporting is implemented once, not per surface (k11)."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A document is requested for a repo that is not registered, or is registered but has not finished indexing (no pinned graph revision).",
+          "detection": "generateDocument runs the registered/indexed precondition before extraction: it checks the target repo against the repo registry / the presence of a pinned graph index revision and finds it absent (the extractors already surface the no-revision case as source-not-ready).",
+          "response": "Return sc4 source-not-ready with an actionable reason (register + finish indexing the repo); no extraction runs and no shell is produced.",
+          "userImpact": "The caller on any surface learns the repo must be registered/indexed rather than receiving an empty or partially-populated document (ac3).",
+          "recoverable": true
+        },
+        {
+          "scenario": "An unknown docType is requested on any surface.",
+          "detection": "docgenRegistry.get(docType) returns undefined inside generateDocument.",
+          "response": "Return sc4 not-found carrying the unknown docType symbol; surfaces render it via describeOutcome (tool) / DOCGEN_OUTCOME_SCHEMA (MCP).",
+          "userImpact": "The caller sees the exact unrecognised type and can re-enumerate the valid ones via listDocTypes (ac4).",
+          "recoverable": true
+        },
+        {
+          "scenario": "A per-type required input is missing now that the surfaces forward the whole input (e.g. call-sequence without a symbol, narrative without a question/base).",
+          "detection": "The resolved extractor's parseScope validates the forwarded input against its own requirements and returns undefined, which the extractor maps to empty-scope.",
+          "response": "Return sc4 empty-scope with the extractor's reason naming what the doc type needs; no partial document.",
+          "userImpact": "The caller learns which field the chosen doc type requires — a capability previously unreachable entirely on the tool/IPC surfaces (ac1).",
+          "recoverable": true
+        },
+        {
+          "scenario": "The MCP tool cannot reach the daemon (socket down, daemon not started) or the IPC call errors.",
+          "detection": "The MCP handler's unary RPC to docgen.generate/docgen.list rejects or returns a transport error over the daemon socket.",
+          "response": "The handler catches it and returns a CallToolResult isError with an actionable reason (daemon not reachable), never a partial/fabricated document; the read is never attempted in the MCP process (ac2).",
+          "userImpact": "The assistant caller is told the daemon is unreachable and how to recover, distinct from a content-level failure.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The generalized surface input schema drifts from the registry (a hand-maintained copy is introduced).",
+          "detection": "The parity contract test asserts each surface's advertised docTypes + per-type input fields equal listDocTypes()/the docgen.list IPC output; a divergence fails the test.",
+          "response": "Build fails in CI before merge; the surface is forced back to enumerating the registry rather than a hand-written list (k4).",
+          "userImpact": "Prevents a capability appearing on one surface but missing/mis-described on another from ever shipping (ac1/ac4).",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "The same {docType, repo, scope} requested through the daemon tool, the IPC method, and the MCP tool.",
+          "expected": "All three yield an equivalent document — the same DocGenOutcome status and (for ok) the same RenderedDocumentShell docType/backend — because they funnel through the one generateDocument (ac1)."
+        },
+        {
+          "input": "A doc type whose only inputs are {repo} (+optional path), e.g. type-structure, requested via the generalized registry-derived schema.",
+          "expected": "Works unchanged — the union schema keeps repo required + path optional, so pre-s6 {docType,repo,path} requests remain valid (backward-compatible)."
+        },
+        {
+          "input": "Capabilities enumerated on each surface before any document is generated.",
+          "expected": "All four registered doc types (type-structure, component-dependency, call-sequence, narrative) appear identically on the tool inputSchema, the docgen.list IPC, and the MCP tool, each with its capability.summary (ac4)."
+        },
+        {
+          "input": "A hypothetical 5th doc type registered into docgenRegistry later.",
+          "expected": "It appears on all three surfaces with no surface-code edit, because every surface enumerates listDocTypes() (ac4)."
+        },
+        {
+          "input": "A caller passes extra/unknown keys in the input object alongside the valid ones.",
+          "expected": "The whole input is forwarded; the extractor's parseScope reads only the keys it needs and ignores the rest — no hard failure from surplus keys (permissive pass-through)."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The existing IPC method names (docgen.generate, docgen.list) and the daemon tool id (docgen_generate / DOCGEN_TOOL_ID) stay stable — the IDE fork + mirrored IPC types depend on them; s6 generalizes their input handling without renaming the surfaces.",
+          "source": "c6"
+        },
+        {
+          "text": "Pre-s6 requests using the {docType, repo, path} shape for type-structure + component-dependency keep working byte-identically — the generalized schema keeps repo required and path optional, so no previously-valid request breaks.",
+          "source": "c6"
+        },
+        {
+          "text": "Reads stay daemon-side: no surface (tool/IPC/MCP) imports generateDocument into its own process; the MCP tool reaches the graph only over the daemon socket, returning just the finished outcome (k2).",
+          "source": "c10"
+        },
+        {
+          "text": "Capability enumeration remains single-source from docgenRegistry via listDocTypes()/toSerializable — s6 adds no hand-maintained per-surface doc-type list (k4).",
+          "source": "c6"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test + node:assert/strict, run via npx tsx --test (the repo's existing docgen + MCP convention). Parity/enumeration are pure in-process assertions; the MCP handler is tested against a fake daemon-RPC seam so no live daemon is required.",
+      "testLevels": [
+        {
+          "level": "contract",
+          "purpose": "Prove all three surfaces enumerate the SAME registry (no hand-maintained list, no drift) — the k4 parity guarantee.",
+          "subjects": [
+            "The daemon tool's advertised docTypes + per-type input fields equal listDocTypes() (docType + capability.summary + extractorInputSchema union)",
+            "The MCP tool's derived inputSchema is built from listDocTypes()/docgen.list output, not a hand-written list — same docType set + per-type fields as the tool",
+            "docgen.list IPC returns exactly listDocTypes(); the three advertised capability sets are identical",
+            "A doc type absent from one surface fails the parity assertion (drift guard)"
+          ],
+          "fixturesNeeded": [
+            "The bootstrapped docgenRegistry (all four s1-s4 types)",
+            "A helper extracting the advertised docType set + input-field union from each surface descriptor"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove the generalized input threading + the centralized source-not-ready precondition on generateDocument, with a fake registry/extractor.",
+          "subjects": [
+            "generateDocument forwards the WHOLE input to the resolved extractor, so a call-sequence request carrying {repo, symbol} and a narrative request carrying {repo, base, question} reach parseScope (no longer dropped to {repo,path})",
+            "generateDocument returns source-not-ready for an unregistered/unindexed repo BEFORE extraction (ac3), and not-found for an unknown docType",
+            "a per-type required field missing (call-sequence without symbol) surfaces empty-scope with the extractor's reason",
+            "the docgen_generate tool execute() forwards the full validated input (not just {repo,path}) and renders non-ok via describeOutcome",
+            "backward-compat: a {docType:'type-structure', repo, path} request still validates + runs unchanged"
+          ],
+          "fixturesNeeded": [
+            "A fake DocTypeRegistry with a recording extractor that echoes the input it received",
+            "A stub repo-registry/index-revision state (registered+indexed vs absent)"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove the new MCP tool handler keeps reads daemon-side and shapes output per the schema, against a fake daemon-RPC seam.",
+          "subjects": [
+            "the insrc_docgen handler resolves the repo via resolveRepoPath then calls the docgen.generate/docgen.list IPC seam — it never imports/invokes generateDocument in-process (ac2)",
+            "an ok DocGenOutcome from the seam is returned shaped by DOCGEN_OUTCOME_SCHEMA / RENDERED_DOCUMENT_SHELL_SCHEMA",
+            "a non-ok outcome (source-not-ready/not-found/empty-scope) is surfaced as a CallToolResult isError carrying the reason (ac3)",
+            "a daemon-unreachable RPC rejection becomes an actionable isError, not a fabricated document"
+          ],
+          "fixturesNeeded": [
+            "A fake unary-RPC dep returning canned DocGenOutcome / rejection",
+            "A stubbed resolveRepoPath via its injectable deps"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove equivalence: the same request through each surface yields the same DocGenOutcome status against one shared in-process generateDocument.",
+          "subjects": [
+            "the same {docType, repo, scope} routed through the tool execute(), the docgen.generate IPC handler, and the MCP handler (over a fake in-process daemon) yields the SAME DocGenOutcome status + (for ok) the same shell docType/backend (ac1)",
+            "call-sequence and narrative — previously unreachable on tool/IPC — now succeed identically on all three (ac1)"
+          ],
+          "fixturesNeeded": [
+            "An in-process wiring of the three surface adapters over a single fake/real generateDocument"
+          ]
+        },
+        {
+          "level": "live",
+          "purpose": "End-to-end smoke over the real daemon (gated), proving parity + daemon-owned reads against a genuinely registered+indexed repo.",
+          "subjects": [
+            "against a registered+indexed repo, docgen.generate IPC + the insrc_docgen MCP tool each return an ok self-contained shell for the same request (ac1/ac2)",
+            "an unregistered repo path returns source-not-ready over the live IPC (ac3)"
+          ],
+          "fixturesNeeded": [
+            "INSRC_LIVE_TESTS gate + a running daemon with a registered+indexed repo; skips cleanly when unset"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "contract: the tool + MCP + docgen.list IPC advertise the identical docType set + per-type input fields from listDocTypes()",
+            "integration: same {docType,repo,scope} through all three surfaces yields the same DocGenOutcome status; call-sequence + narrative now reachable on every surface",
+            "live: docgen.generate IPC + insrc_docgen MCP return equivalent ok shells for the same request"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "unit: the insrc_docgen handler calls the daemon RPC seam and never imports/runs generateDocument in-process",
+            "live: the MCP tool returns only the finished outcome from a registered repo, performing no store access in the MCP process"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "unit: generateDocument returns source-not-ready for an unregistered/unindexed repo before extraction; empty-scope for a missing per-type field",
+            "unit: the MCP handler surfaces a non-ok outcome as an actionable isError",
+            "live: an unregistered repo path returns source-not-ready over the live IPC"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "contract: enumerating capabilities on each surface lists all four registered doc types with their capability.summary from the single registry",
+            "contract: a doc type registered only in docgenRegistry appears on all three surfaces without a per-surface edit (drift guard)"
+          ]
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Shared daemon-side request boundary + registry-derived input schemas (whole-input pass-through)",
+        "oneLineSummary": "generateDocument runs the registered/indexed precondition then already forwards the WHOLE input to each extractor; all three surfaces become thin adapters that forward raw args and derive their advertised input schema from listDocTypes()[].extractorInputSchema; the MCP tool is added as the missing surface.",
+        "chosen": true
+      },
+      {
+        "id": "a2",
+        "name": "Per-doc-type discriminated input schema validated at each surface",
+        "oneLineSummary": "Each surface generates a oneOf-over-docType input schema from the registry and validates the caller's input against the selected type's branch BEFORE calling the daemon.",
+        "reasonRejected": "Best ac4 field-level discoverability but L cost: a schema-composition + ajv validation layer wired into all three surfaces plus a requiredness-duplication risk (parseScope vs composed schema, an sc4 drift risk) the M-sized Story does not warrant."
+      },
+      {
+        "id": "a3",
+        "name": "Opaque params bag ({docType, repo, params}) with daemon-only validation",
+        "oneLineSummary": "Every surface accepts a fixed {docType, repo, params} envelope and forwards params untouched; no per-type input schema advertised anywhere.",
+        "reasonRejected": "Violates ac4 — enumeration advertises no per-type inputs, so a discovering agent can't see call-sequence needs a symbol or narrative a question — and under-uses sc2's extractorInputSchema, throwing away the discoverability the registry exists to provide."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/docgen/index.ts — generateDocument (resolve->extract->assembleShell; already whole-passes input to reg.extract) + listDocTypes + docgenRegistry: the single generation + enumeration entry points s6 wires to three surfaces"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/docgen/registry.ts toSerializable — the {docType,capability,extractorInputSchema} projection every surface enumerates (k4)"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/docgen/tool.ts — docgenTool/DOCGEN_TOOL_ID='docgen_generate'/registerDocgenTool/describeOutcome: the daemon tool surface whose {docType,repo,path} inputSchema + execute() s6 generalizes"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/daemon/index.ts (~1157) 'docgen.generate' + 'docgen.list' handlers — the IPC surface (currently destructures only {docType,repo,path}) s6 generalizes to forward the whole input"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/mcp/server.ts server.registerTool(name,{title,description,annotations,inputSchema},handler) — the 8-registration pattern the new insrc_docgen MCP tool follows"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/docgen/schema.ts RENDERED_DOCUMENT_SHELL_SCHEMA + DOCGEN_OUTCOME_SCHEMA — the hand-mirrored MCP output shape (schema.test.ts pins it)"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/mcp/resolve-repo.ts resolveRepoPath + src/mcp/daemon-stream.ts unary RPC helpers — the MCP-tool repo resolution + daemon-owned read path (ac2)"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "src/docgen/extract/narrative.ts NARRATIVE_INPUT_SCHEMA (repo/base/question + symbol/path/maxDepth) + src/docgen/extract/call-sequence.ts — the per-type inputs the current {repo,path} threading drops, making those types unreachable pre-s6"
+    },
+    {
+      "id": "c9",
+      "kind": "convention",
+      "ref": "HLD k4 (c6): the capability must be exposed as a daemon tool, an IPC method, AND an MCP tool, enumerated from one registry"
+    },
+    {
+      "id": "c10",
+      "kind": "convention",
+      "ref": "HLD k2 (c10): the daemon owns all DB access; MCP/tool/IPC callers reach graph content only over IPC"
+    },
+    {
+      "id": "c11",
+      "kind": "step-output",
+      "ref": "s8 checklist.verify — all 18 items passed (cd1-3, dm1-2, int1-2, ep1-3, ts1-2, mg1-2, alt1-2, sbdry1-4)"
+    }
+  ]
+}

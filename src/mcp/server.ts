@@ -48,6 +48,7 @@ import { handleWorkflowStep } from './workflow-step/handler.js';
 import { handleBuildStep } from './build-step/handler.js';
 import { handleReviewStep } from './review-step/handler.js';
 import { handleTriageStep } from './triage-step/handler.js';
+import { handleDocgen } from './docgen/handler.js';
 import { renderBundleAsMarkdown } from './bundle-md.js';
 import { makeSamplerFromMcpServer } from './sampling-bridge.js';
 import { startRun, pollRun, abortRun, approveWorkflow, type UnaryRpcDeps } from './daemon-stream.js';
@@ -725,6 +726,63 @@ export function buildInsrcMcpServer(): McpServer {
 			},
 		},
 		async (rawArgs) => handleWorkflowApprove(rawArgs),
+	);
+
+	// -------------------------------------------------------------------
+	// insrc_docgen -- the assistant-facing surface for docgen (s6). The
+	// third surface alongside the daemon tool (docgen_generate) + the IPC
+	// method (docgen.generate/.list), all enumerating the ONE registry (k4).
+	// The read happens inside the daemon; this tool only forwards + returns
+	// the finished self-contained document / outcome (k2/ac2).
+	// -------------------------------------------------------------------
+	server.registerTool(
+		'insrc_docgen',
+		{
+			title: 'insrc docgen (generate a self-contained code document)',
+			description:
+				'Generate a self-contained, offline HTML developer document from the ' +
+				'indexed code graph (diagram inlined, zoom/pan, no network). Read-only; ' +
+				'the graph is read INSIDE the daemon and only the finished document ' +
+				'crosses back.\n\n' +
+				'`docType` is a registered document type — e.g. type-structure (class/' +
+				'inheritance), component-dependency (module topology), call-sequence (a ' +
+				'flow from an entry-point `symbol`), or narrative (a `base` diagram + an ' +
+				'LLM answer to `question`). Enumerate the authoritative current set + ' +
+				'each type\'s inputs via the daemon docgen.list surface rather than ' +
+				'assuming this list.\n\n' +
+				'Per-type scope fields: `path` (subtree), `symbol` (call-sequence entry ' +
+				'point), `base` + `question` (narrative), `maxDepth` (traversal cap). ' +
+				'`repo` falls back to the session workspace / INSRC_REPO and must be ' +
+				'registered + finished indexing (else source-not-ready).',
+			annotations: {
+				readOnlyHint:   true,
+				idempotentHint: false,   // regeneration can differ if the index advanced
+				openWorldHint:  false,   // scope is the indexed repo, not the open web
+			},
+			inputSchema: {
+				docType: z.string().min(1)
+					.describe('Registered docgen document type (enumerate the current set via docgen.list).'),
+				repo: z.string()
+					.describe('Absolute repo path; falls back to the session workspace / INSRC_REPO. Must be registered + indexed.')
+					.optional(),
+				path: z.string()
+					.describe('Repo-relative subtree to scope the document (type-structure / component-dependency).')
+					.optional(),
+				symbol: z.string()
+					.describe('Entry-point symbol (required for call-sequence).')
+					.optional(),
+				base: z.string()
+					.describe('Base diagram for a narrative doc: call-sequence | component-dependency.')
+					.optional(),
+				question: z.string()
+					.describe('The question a narrative document should answer (required for narrative).')
+					.optional(),
+				maxDepth: z.number().int().positive()
+					.describe('Traversal depth cap (call-sequence / narrative-over-call-sequence).')
+					.optional(),
+			},
+		},
+		async (rawArgs) => handleDocgen(rawArgs as Parameters<typeof handleDocgen>[0]),
 	);
 
 	return server;

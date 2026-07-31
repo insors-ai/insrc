@@ -1155,9 +1155,10 @@ async function main(): Promise<void> {
 		// the MCP surface all enumerate the SAME registry, so they cannot drift
 		// (k4). Reads happen inside the daemon; only the finished shell returns.
 		'docgen.generate': async (params) => {
-			const { docType, repo, path } = params as { docType: string; repo: string; path?: string };
-			const input: Record<string, unknown> = { repo };
-			if (typeof path === 'string' && path.length > 0) input['path'] = path;
+			// Forward the WHOLE params (minus docType) so every registered doc type's
+			// per-type fields (symbol/base/question/maxDepth/path) reach its extractor
+			// — parity with the tool + MCP surfaces (s6/ac1). No {repo,path} reshaping.
+			const { docType, ...input } = (params ?? {}) as { docType: string } & Record<string, unknown>;
 			const mod = await import('../docgen/index.js');
 			return mod.generateDocument(docType, input) as unknown as Record<string, unknown>;
 		},

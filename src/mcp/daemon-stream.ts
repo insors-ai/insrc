@@ -26,6 +26,7 @@ import { getLogger } from '../shared/logger.js';
 import type { RunWorkflowResult, WorkflowProgress } from '../daemon/workflow-rpc.js';
 import type { RunStatus } from '../daemon/workflow-run-registry.js';
 import type { WorkflowApproveResult } from '../workflow/gates.js';
+import type { DocGenOutcome, RenderedDocumentShell, SerializableDocTypeRegistration } from '../docgen/types.js';
 
 const log = getLogger('mcp:workflow-run');
 
@@ -287,4 +288,22 @@ export function approveWorkflow(
 /** Abort a detached run mid-flight. */
 export function abortRun(runId: string, deps: UnaryRpcDeps = {}): Promise<{ ok: boolean }> {
 	return unaryRpc<{ ok: boolean }>('workflow.run.abort', { runId }, deps);
+}
+
+/** Forward a docgen generation request to the daemon `docgen.generate` IPC. The
+ *  read happens entirely inside the daemon (k2/ac2) — only the finished outcome
+ *  crosses back. `params` is the whole `{ docType, repo, ...perTypeFields }`. */
+export function docgenGenerate(
+	params: Record<string, unknown>,
+	deps: UnaryRpcDeps = {},
+): Promise<DocGenOutcome<RenderedDocumentShell>> {
+	return unaryRpc<DocGenOutcome<RenderedDocumentShell>>('docgen.generate', params, deps);
+}
+
+/** Enumerate the registered docgen doc types via the daemon `docgen.list` IPC —
+ *  the single registry source the MCP tool derives its input schema from (k4). */
+export function docgenList(
+	deps: UnaryRpcDeps = {},
+): Promise<{ docTypes: readonly SerializableDocTypeRegistration[] }> {
+	return unaryRpc<{ docTypes: readonly SerializableDocTypeRegistration[] }>('docgen.list', {}, deps);
 }

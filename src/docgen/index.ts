@@ -26,6 +26,8 @@ import { componentDependencyRegistration } from './extract/component-dependency.
 import { componentGraphReader } from './extract/component-graph-reader.js';
 import { callSequenceRegistration } from './extract/call-sequence.js';
 import { callGraphReader } from './extract/call-graph-reader.js';
+import { narrativeRegistration } from './extract/narrative.js';
+import { narrativeGenerator } from './extract/narrative-generator.js';
 import { notFound, type ShellOutcome } from './outcome.js';
 import { assembleShell } from './render/shell.js';
 import type { DocTypeRegistry, SerializableDocTypeRegistration } from './types.js';
@@ -34,8 +36,16 @@ import type { DocTypeRegistry, SerializableDocTypeRegistration } from './types.j
 export const docgenRegistry: DocTypeRegistry = (() => {
 	const r = new InMemoryDocTypeRegistry();
 	r.register(typeStructureRegistration(graphTypeReader));           // s1
-	r.register(componentDependencyRegistration(componentGraphReader)); // s2
-	r.register(callSequenceRegistration(callGraphReader));            // s3
+	const componentDependency = componentDependencyRegistration(componentGraphReader); // s2
+	const callSequence = callSequenceRegistration(callGraphReader);   // s3
+	r.register(componentDependency);
+	r.register(callSequence);
+	// s4 narrative composes the s2/s3 derived extractors as its diagram bases +
+	// the core-tier narrator seam (k1-safe). No new tool/IPC surface.
+	r.register(narrativeRegistration({
+		'component-dependency': componentDependency.extract,
+		'call-sequence':        callSequence.extract,
+	}, narrativeGenerator));
 	return r;
 })();
 

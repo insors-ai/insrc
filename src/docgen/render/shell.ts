@@ -21,7 +21,7 @@ import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import type { DocumentIR, IrEdge, RenderedDocumentShell } from '../types.js';
+import type { DocumentIR, IrEdge, IrSection, RenderedDocumentShell } from '../types.js';
 import { ok, fallbackUnavailable } from '../outcome.js';
 import type { DocGenOutcome } from '../types.js';
 
@@ -150,9 +150,36 @@ function escapeHtml(s: string): string {
 	return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+/** Render narrated sections (s4) into a self-contained, visually distinct region
+ *  (ac3): a labelled band with a coloured top border, all styles inline so the
+ *  document stays offline (ac5). Returns '' for a derived-only document so its
+ *  HTML is byte-identical to the pre-s4 shell (s1/s2/s3 unaffected). */
+function renderNarrative(sections: readonly IrSection[]): string {
+	if (sections.length === 0) return '';
+	const blocks = sections.map(s =>
+		`<section style="margin:0 0 1rem 0"><h3 style="margin:.2rem 0">${escapeHtml(s.title)}</h3>` +
+		`<p style="margin:.2rem 0;white-space:pre-wrap">${escapeHtml(s.narrativeText)}</p></section>`,
+	).join('\n');
+	return `\n<div id="docgen-narrative" style="padding:12px 16px;border-top:3px solid #4051b5;background:#f6f7fb;font-size:14px;line-height:1.5">\n` +
+		`<h2 style="margin:.3rem 0;color:#4051b5">Narrative <span style="font-weight:normal;font-size:12px;color:#666">(LLM-authored — the diagram above is derived from the code)</span></h2>\n` +
+		`${blocks}\n</div>`;
+}
+
 /** Build the self-contained HTML document. Both runtimes are inlined; there is
- *  no external URL anywhere in the output. */
-function buildHtml(title: string, mermaidSource: string, mermaid: string, svgPanZoom: string): string {
+ *  no external URL anywhere in the output. When `sections` is non-empty a
+ *  distinct narrated region is appended below the diagram (s4); an empty
+ *  `sections` yields byte-identical output to the pre-s4 shell. */
+function buildHtml(
+	title: string,
+	mermaidSource: string,
+	mermaid: string,
+	svgPanZoom: string,
+	sections: readonly IrSection[],
+): string {
+	const narrative = renderNarrative(sections);
+	// A narrative doc shares the viewport between diagram + prose; a derived-only
+	// doc keeps the full-height diagram (no inline style → byte-identical).
+	const diagramStyle = narrative !== '' ? ' style="height:65vh"' : '';
 	const init = `
 mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: 'neutral' });
 (async () => {
@@ -181,7 +208,7 @@ mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: 'neutra
 </head>
 <body>
 <div id="docgen-error"></div>
-<div id="docgen-diagram"><pre class="mermaid">${escapeHtml(mermaidSource)}</pre></div>
+<div id="docgen-diagram"${diagramStyle}><pre class="mermaid">${escapeHtml(mermaidSource)}</pre></div>${narrative}
 <script>${mermaid}</script>
 <script>${svgPanZoom}</script>
 <script>${init}</script>
@@ -206,7 +233,7 @@ export async function assembleShell(ir: DocumentIR): Promise<DocGenOutcome<Rende
 		);
 	}
 	const mermaidSource = documentIRToMermaid(ir);
-	const html = buildHtml(ir.scopeDescription, mermaidSource, runtime.mermaid, runtime.svgPanZoom);
+	const html = buildHtml(ir.scopeDescription, mermaidSource, runtime.mermaid, runtime.svgPanZoom, ir.narrated.sections);
 	return ok<RenderedDocumentShell>({
 		docType:              ir.docType,
 		backend:              'primary-inline',

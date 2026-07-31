@@ -1,0 +1,578 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1785473021567-2ki0qv",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-07-31T04:51:51.503Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 489828,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "870ed3dd246225f4",
+    "epicSlug": "documentation-generation-framework-docgen-produces-self",
+    "storyId": "s2",
+    "hldBaseRunId": "wf-1785421889464-2ayzlc",
+    "hldEffectiveHash": "cb5b27744db290de72c59b4596b1773d0ba24dd335448b4f0a7944f70adc817c",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/docgen/extract/component-dependency.ts exports componentKey, buildComponentDependencyIR, makeExtract, componentDependencyRegistration, and COMPONENT_DEPENDENCY_DOCTYPE.",
+          "evidence": "component-dependency.ts: componentKey:60, buildComponentDependencyIR:74, makeExtract:128, componentDependencyRegistration:150 all resolve as exported functions; COMPONENT_DEPENDENCY_DOCTYPE present.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl2",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "buildComponentDependencyIR emits a derived-only DocumentIR: IrNode kind 'component', IrEdge kind 'depends-on', and empty narrated.sections.",
+          "evidence": "component-dependency.ts:87 sets kind:'component', :99 pushes kind:'depends-on', :106 narrated:{sections:[]}. Derived-only IR confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl3",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "buildComponentDependencyIR dedupes cross-component edges and skips intra-component (a===b) imports.",
+          "evidence": "component-dependency.ts:95 `if (a === undefined || b === undefined || a === b) continue` and the seen.has/seen.add dedupe set are present in the file.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The graph-backed ComponentGraphReader in component-graph-reader.ts uses listEntitiesByKinds(['file']), outNeighbors with IMPORTS kindFilter, entityIdsByU64s, and reads revision from listRepos.",
+          "evidence": "component-graph-reader.ts:18 imports listEntitiesByKinds/entityU64ForId/entityIdsByU64s; :45 calls listEntitiesByKinds(undefined, FILE_KINDS, {repo}); :57 outNeighbors(u64,{kindFilter:['IMPORTS']}); listRepos used for revision.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl5",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "documentIRToMermaid in shell.ts dispatches on docType: a flowchart for 'component-dependency' and classDiagram otherwise.",
+          "evidence": "shell.ts:111 documentIRToMermaid dispatches; :114 comment 'component-dependency -> flowchart; every other docType -> classDiagram'; :92 'flowchart LR'; :76 'classDiagram'.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl6",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/docgen/index.ts registers componentDependencyRegistration(componentGraphReader) as a second doc type alongside typeStructureRegistration.",
+          "evidence": "index.ts:34 registers typeStructureRegistration(graphTypeReader) // s1 and :35 componentDependencyRegistration(componentGraphReader) // s2 — the 2nd doc type as claimed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl7",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "component-dependency.test.ts contains the s2 unit tests (componentKey, aggregation, dedupe, determinism, isolated-node, flowchart render, extract outcomes).",
+          "evidence": "component-dependency.test.ts contains 9 top-level test() cases covering componentKey, aggregation, intra/out-of-scope drop, isolated-node, dedupe, determinism, flowchart render, and extract outcomes — matching the LLD's test strategy.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl8",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "makeExtract returns typed DocGenOutcome failures ('source-not-ready' when revision is undefined, 'empty-scope' when no repo or no files) rather than throwing.",
+          "evidence": "component-dependency.ts:135 returns sourceNotReady(...) when revision undefined; emptyScope imported and returned for no-repo/no-files; outcomes are returned, not thrown.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl9",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "assembleShell in shell.ts returns fallback-unavailable when the offline runtime asset is missing and never references a CDN script src.",
+          "evidence": "shell.ts:175 returns fallbackUnavailable on the loadRuntime (:41) catch; the HTML uses inline <script> blocks with no external src — offline guarantee holds.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 9
+      },
+      "reviewedAt": "2026-07-31T05:00:18.271Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-07-31T05:00:49.986Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Adopts a1 as the core architecture: an Intermediate Representation (IR) is the hard boundary between graph-derived content and LLM-narrated content, with a discriminated provenance flag on every IR node/edge/section so no runtime can blur the two. Cross-cutting failure/empty/truncation reporting is implemented once as a shared outcome envelope rather than per-story. a2's registry-enumeration idea is grafted in as an additive registration surface over the IR extractors (not a competing architecture), giving automatic tool/IPC/MCP parity and capability listing for one extra registry module. a3's delivery layer is adopted underneath: both the primary inline renderer and the D2/Graphviz subprocess fallback assemble into the identical single-file shell, which extends (rather than parallels) the existing loadMermaidCdnMeta and RenderedArtifactHtml primitives.",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "DocumentIR"
+        },
+        {
+          "id": "sc2",
+          "name": "DocTypeRegistration"
+        },
+        {
+          "id": "sc3",
+          "name": "RenderedDocumentShell"
+        }
+      ],
+      "boundary": {
+        "storyId": "s2",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3"
+        ],
+        "internal": "The component/dependency extractor: walking module DEPENDS_ON/import edges into derived IrNodes/IrEdges, including nodes with no in- or out-edges so isolated modules are still emitted. The determinism guarantee that unchanged code re-extracts to an identical IR (compared via generatedAtRevision plus node/edge content, not re-narrated). Registering this extractor into sc2's DocTypeRegistry."
+      },
+      "rolloutPhase": "Phase B — Structural extractors (component/dependency + call-sequence)"
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "componentKey",
+          "signature": "function componentKey(fileAbs: string, repoRoot: string, path: string | undefined): string",
+          "parameters": [
+            {
+              "name": "fileAbs",
+              "type": "string",
+              "purpose": "Absolute path of a file entity (Entity.file is absolute).",
+              "optional": false
+            },
+            {
+              "name": "repoRoot",
+              "type": "string",
+              "purpose": "Registered repo root; combined with path to form the scope base.",
+              "optional": false
+            },
+            {
+              "name": "path",
+              "type": "string | undefined",
+              "purpose": "Repo-relative scope prefix; when absent the base is the repo root.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "The component the file belongs to: the first path segment under join(repoRoot, path), or the bare relative path when the file sits directly in the scope base."
+          },
+          "errors": [],
+          "preconditions": [
+            "fileAbs should lie under the scope base; if it does not, the raw relative remainder is used as the key (defensive)."
+          ],
+          "postconditions": [
+            "Deterministic pure function of its inputs (no I/O)."
+          ]
+        },
+        {
+          "name": "buildComponentDependencyIR",
+          "signature": "function buildComponentDependencyIR(files: readonly FileEntityLite[], imports: readonly FileImportEdge[], repoRoot: string, path: string | undefined, revision: string, scopeDescription: string): DocumentIR",
+          "parameters": [
+            {
+              "name": "files",
+              "type": "readonly FileEntityLite[]",
+              "purpose": "In-scope file entities ({id, absolute file}).",
+              "optional": false
+            },
+            {
+              "name": "imports",
+              "type": "readonly FileImportEdge[]",
+              "purpose": "Resolved file->file IMPORTS edges among the in-scope files.",
+              "optional": false
+            },
+            {
+              "name": "repoRoot",
+              "type": "string",
+              "purpose": "Repo root for componentKey aggregation.",
+              "optional": false
+            },
+            {
+              "name": "path",
+              "type": "string | undefined",
+              "purpose": "Scope prefix for componentKey aggregation.",
+              "optional": true
+            },
+            {
+              "name": "revision",
+              "type": "string",
+              "purpose": "Pinned graph index revision written to generatedAtRevision (determinism, ac2).",
+              "optional": false
+            },
+            {
+              "name": "scopeDescription",
+              "type": "string",
+              "purpose": "Human-readable scope label carried into the IR + the rendered title.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "DocumentIR",
+            "meaning": "A derived-only DocumentIR: one IrNode {kind:'component'} per distinct component, one deduped IrEdge {kind:'depends-on'} per cross-component import, narrated.sections=[]."
+          },
+          "errors": [],
+          "preconditions": [
+            "Pure: performs no graph reads; all data arrives via parameters."
+          ],
+          "postconditions": [
+            "Same inputs -> deep-equal output (ac2).",
+            "Intra-component and out-of-scope (unresolved-endpoint) imports produce no edge.",
+            "Every component that owns a file is emitted as a node even with no edge in or out (ac3).",
+            "Cross-component edges are deduped by (from,to)."
+          ]
+        },
+        {
+          "name": "makeExtract",
+          "signature": "function makeExtract(reader: ComponentGraphReader): (input: Record<string, unknown>) => Promise<DocGenOutcome<DocumentIR>>",
+          "parameters": [
+            {
+              "name": "reader",
+              "type": "ComponentGraphReader",
+              "purpose": "Injected graph read-seam (revision / filesInScope / importEdges); a fake in tests, the graph-backed reader in production.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "(input) => Promise<DocGenOutcome<DocumentIR>>",
+            "meaning": "The bound extractor used in the DocTypeRegistration: parses scope, reads, and returns an outcome-wrapped IR."
+          },
+          "errors": [
+            {
+              "type": "DocGenOutcome 'empty-scope'",
+              "condition": "input has no non-empty 'repo' string, or no files are found in scope."
+            },
+            {
+              "type": "DocGenOutcome 'source-not-ready'",
+              "condition": "reader.revision returns undefined (repo not finished indexing)."
+            }
+          ],
+          "preconditions": [
+            "reader is bound to the daemon graph layer (k2) or a test fake."
+          ],
+          "postconditions": [
+            "On success returns ok(DocumentIR); never throws for the modeled failure cases — they are returned as typed outcomes (observability)."
+          ]
+        },
+        {
+          "name": "componentDependencyRegistration",
+          "signature": "function componentDependencyRegistration(reader: ComponentGraphReader): DocTypeRegistration",
+          "parameters": [
+            {
+              "name": "reader",
+              "type": "ComponentGraphReader",
+              "purpose": "The graph read-seam bound into the registration's extract().",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "DocTypeRegistration",
+            "meaning": "The sc2 registration for docType 'component-dependency': capability summary + COMPONENT_DEPENDENCY_INPUT_SCHEMA + bound extract()."
+          },
+          "errors": [],
+          "preconditions": [
+            "Registered exactly once into the process-wide docgenRegistry alongside s1's type-structure registration."
+          ],
+          "postconditions": [
+            "Enumerable via registry.list() -> automatic tool/IPC/MCP parity (k4)."
+          ]
+        },
+        {
+          "name": "documentIRToMermaid",
+          "signature": "function documentIRToMermaid(ir: DocumentIR): string",
+          "parameters": [
+            {
+              "name": "ir",
+              "type": "DocumentIR",
+              "purpose": "The derived IR to render; dispatch is on ir.docType.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "Mermaid source: a 'flowchart LR' with n<i>[label] boxes and 'from --> to' dependency arrows for docType 'component-dependency'; the existing 'classDiagram' for every other docType (type-structure output byte-unchanged)."
+          },
+          "errors": [],
+          "preconditions": [
+            "Node aliases (n0, n1, …) follow node order so entity ids never clash with Mermaid identifier syntax."
+          ],
+          "postconditions": [
+            "Pure + deterministic; consumed unchanged by assembleShell to produce the sc3 RenderedDocumentShell."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "DocumentIR (component-dependency instance)",
+        "change": "invariant-change",
+        "details": "s2 introduces the 'component-dependency' docType instance of sc1: derived.nodes carry kind='component' (label = componentKey), derived.edges carry kind='depends-on', narrated.sections is always empty. No structural change to the sc1 type itself — s2 only populates it. NOTE: sc1's HLD sketch listed a 'composes' edge kind; s2 does not emit it because the code graph records no composition edge — only IMPORTS-derived depends-on. This is a documented back-flow note, not a contract change.",
+        "callSites": [
+          "src/docgen/extract/component-dependency.ts (buildComponentDependencyIR)",
+          "src/docgen/types.ts (DocumentIR definition, owned by s1)"
+        ]
+      },
+      {
+        "entity": "FileEntityLite / FileImportEdge / ComponentScope",
+        "change": "new",
+        "details": "Three s2-internal read-seam DTOs: FileEntityLite {id, file:absolute}, FileImportEdge {fromFileId, toFileId}, ComponentScope {repoRoot, path?}. They decouple the pure aggregation core from the daemon graph layer so the core is testable with fixtures.",
+        "callSites": [
+          "src/docgen/extract/component-dependency.ts",
+          "src/docgen/extract/component-graph-reader.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Produces a valid derived-only DocumentIR (narrated.sections=[]); node/edge kinds ('component','depends-on') fall within sc1's open kind strings. Populates generatedAtRevision from the reader for the ac2 determinism guarantee. Consumes the as-built structural derived/narrated partition (not the HLD's per-item provenance flag)."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "Plugs in via componentDependencyRegistration -> DocTypeRegistration and is register()'d as the 2nd doc type in src/docgen/index.ts, so it is enumerated by the single registry that drives tool/IPC/MCP surfaces (k4). No change to sc2."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "Renders through the shared assembleShell unchanged; the only extension is documentIRToMermaid dispatching a flowchart body for this docType. The resulting RenderedDocumentShell (single self-contained offline HTML, inlined runtimes, SVG, zoom/pan) satisfies ac4 identically to s1."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The repo is registered but has not finished indexing (no pinned revision).",
+          "detection": "reader.revision(repoRoot) resolves undefined because listRepos finds the repo with status !== 'ready'; makeExtract checks if (revision === undefined).",
+          "response": "Return DocGenOutcome 'source-not-ready' naming the repo; no IR is built and no partial document is written.",
+          "userImpact": "Caller is told the source isn't ready yet rather than getting an empty or wrong diagram; retriable once indexing completes.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The scope resolves to zero in-scope files (empty repo, or a path prefix that matches nothing).",
+          "detection": "reader.filesInScope returns an empty array; makeExtract checks if (files.length === 0).",
+          "response": "Return DocGenOutcome 'empty-scope' naming the scope location; no nodes/edges fabricated.",
+          "userImpact": "Caller sees an explicit empty-scope reason instead of a blank diagram; fix by choosing a populated scope.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The input carries no usable repo (missing or empty 'repo').",
+          "detection": "parseScope returns undefined because input['repo'] is not a non-empty string; makeExtract checks if (scope === undefined).",
+          "response": "Return DocGenOutcome 'empty-scope' with a 'no repo in scope input' message.",
+          "userImpact": "Caller is told the request was malformed rather than silently getting nothing.",
+          "recoverable": true
+        },
+        {
+          "scenario": "An in-scope file imports an external/unresolved module (bare package or unindexed path).",
+          "detection": "In the reader, entityIdsByU64s has no id for the neighbor u64, so the edge is skipped; in the pure core, componentByFileId.get(toFileId) is undefined for any endpoint not in scope.",
+          "response": "The import produces no depends-on edge (silently dropped as out-of-scope); the source component is still emitted as a node.",
+          "userImpact": "External dependencies never pollute an intra-repo module picture; nothing is invented (k11).",
+          "recoverable": true
+        },
+        {
+          "scenario": "The offline runtime asset is missing from the build output (e.g. copy-assets did not stage mermaid/svg-pan-zoom).",
+          "detection": "assembleShell's loadRuntime throws on readFile; caught and mapped.",
+          "response": "Return DocGenOutcome 'fallback-unavailable' naming the copy-assets ship step; never falls back to a CDN fetch (k5).",
+          "userImpact": "Caller gets an actionable build-config error instead of a document that would try to reach the network at view time.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A component that neither imports nor is imported by any other in-scope component (isolated module).",
+          "expected": "It is emitted as an edge-less IrNode and rendered as a lone flowchart box (ac3) — never dropped."
+        },
+        {
+          "input": "Two or more files in component A each import files in component B.",
+          "expected": "A single deduped A->B depends-on edge (dedupe by (from,to)), not one per file pair."
+        },
+        {
+          "input": "A file imports another file in the SAME component (intra-directory import).",
+          "expected": "No edge (a===b is skipped); the component still appears as a node."
+        },
+        {
+          "input": "A file that sits directly in the scope base (e.g. src/config.ts under scope 'src').",
+          "expected": "componentKey returns the bare filename ('config.ts') as its own single-file component node."
+        },
+        {
+          "input": "A component label containing Mermaid-hostile characters (quotes, angle brackets, newlines).",
+          "expected": "escapeLabel strips quotes/backticks/newlines for the Mermaid alias label, and escapeHtml escapes the whole Mermaid source in the <pre>; the browser decodes it before Mermaid reads textContent, so the diagram still renders (ac4)."
+        },
+        {
+          "input": "Whole-repo scope (no path) vs a drilled-in subtree (path prefix).",
+          "expected": "The same extractor serves both; componentKey is computed relative to the scope base, so component granularity shifts to the next segment under the chosen path."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "All structural content is derived deterministically from the indexed graph (file entities + IMPORTS edges); the LLM is never in the component/dependency path (narrated.sections stays empty).",
+          "source": "c9"
+        },
+        {
+          "text": "Graph reads happen inside the daemon via the injected reader; the pure core performs no I/O, so callers reach the data only through the daemon (over IPC for CLI/MCP/IDE).",
+          "source": "c10"
+        },
+        {
+          "text": "Every path and component shown is graph-backed — no raw file dump and no invented node or edge; out-of-scope/unresolved endpoints are dropped rather than guessed.",
+          "source": "c10"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test + node:assert/strict, run via npx tsx --test (the repo's existing convention; mirrors src/docgen/extract/__tests__/type-structure.test.ts).",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove the pure aggregation core and the Mermaid flowchart emission in isolation, with fixtures — no graph, no daemon.",
+          "subjects": [
+            "componentKey (segment-under-scope logic, bare-file fallback)",
+            "buildComponentDependencyIR (cross-module edge, intra-component drop, out-of-scope drop, isolated-node, dedupe, determinism deep-equal)",
+            "documentIRToMermaid (flowchart LR body, n<i>[label] boxes, from --> to arrows, no classDiagram)"
+          ],
+          "fixturesNeeded": [
+            "Hand-built FileEntityLite[] under a synthetic /repo root (src/db/*, src/config/*, src/lonely/*)",
+            "Hand-built FileImportEdge[] covering cross-module, intra-module, duplicate, and out-of-scope endpoints"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove makeExtract's outcome routing (the daemon-facing extractor) against an injected fake ComponentGraphReader without a real Ollama/graph.",
+          "subjects": [
+            "makeExtract -> 'source-not-ready' when reader.revision is undefined",
+            "makeExtract -> 'empty-scope' when filesInScope is empty",
+            "makeExtract -> ok(DocumentIR) with the expected edge count on a populated fake reader"
+          ],
+          "fixturesNeeded": [
+            "A reader() helper returning canned {revision, files, imports} (already in component-dependency.test.ts)"
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "Prove the full generateDocument path end-to-end against the live indexed graph produces a real, offline, edge-bearing document (the guard against a green-unit / broken-integration gap).",
+          "subjects": [
+            "generateDocument('component-dependency', {repo, path:'src'}) -> ok shell with component nodes + depends-on edges",
+            "The rendered HTML contains the flowchart arrows (as escaped --&gt;, decoded by the browser) and no <script src= (offline)"
+          ],
+          "fixturesNeeded": [
+            "The insrc repo itself, indexed and 'ready' in the daemon registry"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "buildComponentDependencyIR: files -> component nodes; cross-module import -> depends-on edge",
+            "documentIRToMermaid renders a component IR as a FLOWCHART with --> arrows",
+            "smoke: generateDocument on live graph yields 15 components + 44 depends-on edges, each traceable to a real IMPORTS relation"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "same input -> deep-equal IR (determinism)",
+            "makeExtract ok-case returns a DocumentIR with generatedAtRevision pinned from the reader"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "an isolated component (no imports in/out) is still a node (ac3)"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "smoke: rendered HTML is a single self-contained file with no <script src= (runtimes inlined) and SVG zoom/pan wired via assembleShell — shared with s1's shell tests which assert the inlined-runtime / svg / zoom-pan shell shape"
+          ]
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "File-import aggregation to directory-level components (AS BUILT)",
+        "oneLineSummary": "A component = the first path segment under the scope base; a component A depends-on B iff any file in A has a file->file IMPORTS edge to a file in B.",
+        "chosen": true
+      },
+      {
+        "id": "a2",
+        "name": "Module-entity-level components (use indexed 'module' entities directly)",
+        "oneLineSummary": "Skip directory aggregation; treat each indexed module/package entity as a node and read module->module dependency edges directly.",
+        "reasonRejected": "Fails ac1 (violates): the graph records no intra-repo module->module dependency edges — file->file IMPORTS is the substrate and repo->package DEPENDS_ON is external-only — so local components would draw an edgeless diagram or re-derive from file imports anyway. Would also require an amendment to the shipped contract."
+      },
+      {
+        "id": "a3",
+        "name": "Per-file nodes with import edges (no aggregation)",
+        "oneLineSummary": "Every source file is its own node; every file->file IMPORTS edge is drawn directly, no directory collapse.",
+        "reasonRejected": "Violates ac4: at repo scope the file-level graph is far too large for a single legible SVG and immediately trips the s5 oversized-fallback path; answers 'which file imports which' (partial ac1) not the story's 'how do modules depend on one another'."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/docgen/extract/component-dependency.ts (commit 77f4296) — componentKey, buildComponentDependencyIR, makeExtract, componentDependencyRegistration, the read-seam DTOs, COMPONENT_DEPENDENCY_INPUT_SCHEMA"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/docgen/extract/component-graph-reader.ts — graph-backed ComponentGraphReader (listEntitiesByKinds ['file'] + outNeighbors IMPORTS + entityIdsByU64s; revision from listRepos)"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/docgen/render/shell.ts — documentIRToMermaid docType dispatch (toFlowchart / toClassDiagram) + assembleShell; src/docgen/index.ts registration of the 2nd doc type"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/docgen/types.ts — DocumentIR structural derived/narrated partition (sc1 as built by s1); src/docgen/README.md back-flow notes"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/docgen/extract/__tests__/component-dependency.test.ts — the 9 unit tests (componentKey, aggregation, dedupe, determinism, isolated-node, flowchart render, outcome routing)"
+    },
+    {
+      "id": "c9",
+      "kind": "convention",
+      "ref": "HLD assumption c9 (k8): structural diagram content derived deterministically from the indexed graph, LLM confined to narrative"
+    },
+    {
+      "id": "c10",
+      "kind": "convention",
+      "ref": "HLD assumption c10 (k2/k11): daemon owns DB access; no raw file dumps, every path/symbol graph-backed"
+    },
+    {
+      "id": "c6",
+      "kind": "step-output",
+      "ref": "s8 checklist.verify — all 18 items passed (cd1-3, dm1-2, int1-2, ep1-3, ts1-2, mg1-2, alt1-2, sbdry1-4)"
+    }
+  ]
+}

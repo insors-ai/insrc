@@ -9,6 +9,7 @@
  * import from `workflow/index.js`.
  */
 
+import { registerBrainstormRunners }  from './runners/brainstorm/index.js';
 import { registerDefineRunners }      from './runners/define/index.js';
 import { registerDesignEpicRunners }  from './runners/design-epic/index.js';
 import { registerDesignStoryRunners } from './runners/design-story/index.js';
@@ -23,6 +24,7 @@ let registered = false;
 export function registerWorkflowRunners(): void {
 	if (registered) return;
 	registerStubRunners();
+	registerBrainstormRunners();
 	registerDefineRunners();
 	registerDesignEpicRunners();
 	registerDesignStoryRunners();

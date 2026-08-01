@@ -1,0 +1,526 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1785591199795-7gd4h8",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-08-01T13:44:57.391Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 697542,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "abd1ecf6a5f5063e",
+    "epicSlug": "frame-epic-new-pre-workflow-brainstorm",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1785587820064-46kctq",
+    "hldEffectiveHash": "688a10691972f5e2069b092dff9d1d20b3da79ca83733140f0918eaac0bc5b46",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "l-reg",
+          "ref": "sc2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "executor.ts exports registerRunner (throws on duplicate) + getRunner (throws on miss); the brainstorm stage reuses this single registry.",
+          "evidence": "src/workflow/executor.ts:57 `export function registerRunner(r: StepRunner): void` and :65 `export function getRunner(workflow, runnerId): StepRunner` — the single registry the brainstorm stage reuses (k5). Confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "l-tmpl",
+          "ref": "sc2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "registerDesignStoryRunners is an idempotent (registered-guarded) registration entry point at design-story/index.ts — the template registerBrainstormRunners mirrors.",
+          "evidence": "src/workflow/runners/design-story/index.ts:541 registerDesignStoryRunners + :542 `if (registered) return` — the idempotent registered-guard template (shared by all 6 runner modules); registerBrainstormRunners mirrors it. Confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "l-central",
+          "ref": "sc2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "registerWorkflowRunners at workflow/index.ts is the central boot registration site (calls the design register*Runners); s1 adds registerBrainstormRunners there.",
+          "evidence": "src/workflow/index.ts:23 `export function registerWorkflowRunners(): void` — the central boot registration site s1 adds registerBrainstormRunners to. Confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "l-state",
+          "ref": "sc3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "state-store.ts exposes saveState/loadState (throws on unknown/expired)/releaseState — the opaque-token continuation machinery BrainstormElicitState reuses (k9).",
+          "evidence": "src/mcp/workflow-step/state-store.ts:38/52/64 saveState/loadState/releaseState (typed to WorkflowStepStatePayload, distinct from the analyze-step/review-step stores) — the opaque-token continuation machinery BrainstormElicitState reuses (k9). Confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "l-dispatch",
+          "ref": "sc3",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "The workflow-step handler dispatch is keyed on phase (start/plan/step/synthesize/resolve_question/review_deferred), NOT on workflow — so a new workflow 'brainstorm' needs no new handler case (k8).",
+          "evidence": "src/mcp/workflow-step/handler.ts:58 `switch (step.phase)` with cases start(:59)/synthesize(:62)/resolve_question(:63)/review_deferred(:64) — dispatch is keyed on phase, not workflow, so a new 'brainstorm' workflow needs no new handler case (k8). Closed-union confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "l-stub",
+          "ref": "k10",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The chat-agent brainstorm.addIdea is an offlineRpc stub at daemon/index.ts:1354 — the k10 collision the new stage stays distinct from.",
+          "evidence": "src/daemon/index.ts:1354 `'brainstorm.addIdea': offlineRpc('brainstorm.addIdea')` — the chat-agent stub the new stage stays distinct from (k10). Confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "l-standalone",
+          "ref": "sc2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "StandaloneStoryContext is the design-story standalone-context interface StandaloneBrainstormContext peers.",
+          "evidence": "src/workflow/runners/design-story/standalone.ts:23 `export interface StandaloneStoryContext` — the standalone-context interface StandaloneBrainstormContext peers. Confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 7
+      },
+      "reviewedAt": "2026-08-01T13:46:00.509Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-08-01T14:12:46.557Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Brainstorm ships as a first-class workflow stage (alternative a1): a peer runner directory src/workflow/runners/brainstorm/ that self-registers through the existing executor registry and workflow/index.ts registerWorkflowRunners; a new persisted SpecArtifact peer file in src/workflow/artifacts/ with a specArtifactPaths peer in storage.ts (hash-addressed, listed, approval-stamped identically to DEF/HLD/LLD/PLAN); and an additive elicitation phase on the existing insrc_workflow_step MCP surface that reuses state-store.ts and the questions-gate primitive and preserves the opaque state token verbatim. The single cross-cutting SpecArtifact shape (intent, scope boundary, non-goals, decisions-with-ruled-out-alternatives, open items) is read unchanged by both define (s8) and standalone design.story (s9). Nothing touches the shared/chat-agent brainstorm.addIdea stub.",
+      "ownedContracts": [
+        {
+          "id": "sc2",
+          "name": "Brainstorm stage runner registration",
+          "purpose": "The peer-runner scaffold that makes brainstorm a first-class stage: a registerBrainstormRunners entry point that self-registers the stage's step runners through the existing executor registry and is wired into workflow/index.ts registerWorkflowRunners, mirroring design-story/design-epic (k4,k5). The elicitation-behaviour stories attach their steps to this scaffold.",
+          "interfaceSketch": "// src/workflow/runners/brainstorm/index.ts (peer of runners/design-story/index.ts)\ninterface RegisterBrainstormRunners { (): void; }\ninterface BrainstormStageRegistration { readonly workflow: 'brainstorm'; readonly register: RegisterBrainstormRunners; }\ninterface StandaloneBrainstormContext { readonly focus: string; }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c3"
+          ]
+        },
+        {
+          "id": "sc3",
+          "name": "Brainstorm MCP elicitation phase + continuation state",
+          "purpose": "The additive, controller-driven multi-turn surface on insrc_workflow_step: new request/response types dispatched from the existing handler through phases/, reusing state-store.ts for continuation and questions-gate to surface clarifying questions, with the opaque state token preserved verbatim (k3,k8,k9). Elicitation-behaviour stories emit/consume these turn messages.",
+          "interfaceSketch": "interface BrainstormElicitState { readonly workingStatement: string; readonly answered: readonly string[]; readonly openQuestions: readonly string[]; }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c1",
+            "c14"
+          ]
+        }
+      ],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [
+          "sc2",
+          "sc3"
+        ],
+        "depends": [],
+        "internal": "The stage's registration wiring and the shape of the additive MCP phase dispatch: how registerBrainstormRunners hooks into registerWorkflowRunners, the stage's own step-runner ids, and the phase-dispatch branch in the workflow-step handler. The optionality/routing that keeps small and trivial requests from being forced through the stage (ac5) is internal to s1's registration + triage-untouched wiring and is not a contract other stories consume."
+      },
+      "rolloutPhase": "Phase A — Foundational stage scaffold",
+      "nonFunctional": {
+        "performance": "Elicitation is interactive and controller-paced; there is no daemon-side latency SLA because the daemon runs no autonomous loop (k2). The stage sits on the critical design path and uses the core model tier — correctness of the elicited spec is never traded for fewer or cheaper model calls (k13).",
+        "security": "No new external surface. The MCP layer never opens LMDB/LanceDB; the SpecArtifact is read/written only through daemon IPC (k11). The stage is namespaced distinctly from the shared/chat-agent brainstorm.addIdea offlineRpc stub and never invokes it (k10).",
+        "observability": "The stage emits the same step-start/step-done/synthesize progress frames as the existing stages, and the SpecArtifact appears in the same artifact listing surfaces (ac3).",
+        "durability": "The SpecArtifact is hash-addressed and written atomically via the existing storage writeAtomic path; an abandoned conversation persists nothing (s3/ac5), and an unapproved spec cannot be consumed (k12)."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "registerBrainstormRunners",
+          "signature": "export function registerBrainstormRunners(): void",
+          "parameters": [],
+          "returns": {
+            "type": "void",
+            "meaning": "Idempotently registers the brainstorm stage's step runners with the executor registry. Owns sc2. Called once from registerWorkflowRunners() at daemon boot."
+          },
+          "errors": [
+            {
+              "type": "Error 'registerRunner: duplicate runner'",
+              "condition": "Only if invoked without the module-level `registered` guard and a runner key collides; the guard (if (registered) return) makes real re-invocation a no-op."
+            }
+          ],
+          "preconditions": [
+            "The executor registry (registerRunner) is importable — module load order matches design-story/design-epic."
+          ],
+          "postconditions": [
+            "Every brainstorm step runner is registered under workflow id 'brainstorm'; a second call returns immediately (registered guard)."
+          ]
+        },
+        {
+          "name": "registerRunner",
+          "signature": "registerRunner(r: StepRunner): void",
+          "parameters": [
+            {
+              "name": "r",
+              "type": "StepRunner",
+              "purpose": "A brainstorm step runner (workflow:'brainstorm', a runnerId, and its run fn) to add to the single executor registry — reused, not a new registry (k5).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "Adds the runner to the process-wide registry; getRunner('brainstorm', runnerId) then resolves it."
+          },
+          "errors": [
+            {
+              "type": "Error 'registerRunner: duplicate runner'",
+              "condition": "A runner key (workflow+runnerId) is registered twice — executor.ts:57 throws."
+            }
+          ],
+          "preconditions": [
+            "r.workflow === 'brainstorm' and r.runnerId is unique within the stage."
+          ],
+          "postconditions": [
+            "The brainstorm runner is dispatchable through the existing executor step loop."
+          ]
+        },
+        {
+          "name": "registerWorkflowRunners",
+          "signature": "export function registerWorkflowRunners(): void",
+          "parameters": [],
+          "returns": {
+            "type": "void",
+            "meaning": "The central boot-time registration site (workflow/index.ts:23). This story ADDS a registerBrainstormRunners() call beside registerDesignEpicRunners()/registerDesignStoryRunners() — the only edit to this existing function."
+          },
+          "errors": [],
+          "preconditions": [
+            "Called once at daemon boot (existing behaviour)."
+          ],
+          "postconditions": [
+            "The brainstorm stage is registered alongside the existing stages; no other stage's registration changes."
+          ]
+        },
+        {
+          "name": "saveState",
+          "signature": "saveState(payload: WorkflowStepStatePayload): string",
+          "parameters": [
+            {
+              "name": "payload",
+              "type": "WorkflowStepStatePayload",
+              "purpose": "Carries the brainstorm run's BrainstormElicitState between turns — reusing the existing workflow-step state store, NOT a new store (k9).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "The opaque continuation token echoed back to the controller and preserved verbatim across turns (k8)."
+          },
+          "errors": [],
+          "preconditions": [
+            "The brainstorm workflow run is in-flight."
+          ],
+          "postconditions": [
+            "The state is retrievable via loadState(token); releaseState(token) frees it on completion/abandonment."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "BrainstormElicitState",
+        "change": "new",
+        "details": "The per-run elicitation continuation state owned by sc3: { workingStatement: string; answered: readonly string[]; openQuestions: readonly string[] }. Persisted INSIDE the existing WorkflowStepStatePayload via state-store saveState/loadState (k9), so the opaque token is the only cross-turn handle. s1 defines the type + wiring; s2-s5 populate/interpret its fields.",
+        "schemaDiff": "+ interface BrainstormElicitState { readonly workingStatement: string; readonly answered: readonly string[]; readonly openQuestions: readonly string[]; }",
+        "callSites": [
+          "src/mcp/workflow-step/state-store.ts",
+          "src/mcp/workflow-step/state.ts"
+        ]
+      },
+      {
+        "entity": "BrainstormStageRegistration / StandaloneBrainstormContext",
+        "change": "new",
+        "details": "sc2 types in the new src/workflow/runners/brainstorm/ module: BrainstormStageRegistration { workflow:'brainstorm'; register: RegisterBrainstormRunners } and StandaloneBrainstormContext { focus: string } (peer of design-story's StandaloneStoryContext at standalone.ts:23) for the outside-an-Epic invocation path.",
+        "schemaDiff": "+ interface StandaloneBrainstormContext { readonly focus: string; }",
+        "callSites": [
+          "src/workflow/runners/design-story/standalone.ts",
+          "src/workflow/index.ts"
+        ]
+      },
+      {
+        "entity": "workflow id 'brainstorm'",
+        "change": "new",
+        "details": "A new value in the workflow-id space (peer of 'define'/'design.epic'/'design.story'/'plan'/'build'), distinct from the chat-agent brainstorm.addIdea offlineRpc method (k10). Recognized by the executor + the workflow-step start phase as a valid workflow to drive through the existing phase dispatch.",
+        "callSites": [
+          "src/workflow/executor.ts",
+          "src/mcp/workflow-step/phases/start.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc2",
+        "role": "implements",
+        "howDetails": "s1 owns sc2: creates src/workflow/runners/brainstorm/index.ts exporting registerBrainstormRunners (idempotent `registered`-guarded, mirroring design-story/index.ts:541), a sibling schemas.ts for the stage's per-step JSON schemas, and standalone.ts holding StandaloneBrainstormContext. registerBrainstormRunners() is added to registerWorkflowRunners() (workflow/index.ts) and self-registers each runner via executor.registerRunner — the existing registry, no parallel path (k5)."
+      },
+      {
+        "contractId": "sc3",
+        "role": "implements",
+        "howDetails": "s1 owns sc3: defines BrainstormElicitState and realizes the 'additive elicitation phase' as the new 'brainstorm' workflow driven through the EXISTING workflow-step handler phases (start/plan/step/synthesize/resolve_question — handler.ts:58 is keyed on phase, not workflow), reusing state-store saveState/loadState/releaseState for continuation with the opaque token preserved verbatim (k8,k9) and the existing questions-gate for clarifying questions (k3). No new handler case, no new store. s1 ships only the scaffold + state type; the turn behaviour is s2-s5."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A brainstorm step runner is registered under a runnerId that already exists for the 'brainstorm' workflow (e.g. a copy-paste duplicate in registerBrainstormRunners).",
+          "detection": "executor.registerRunner (executor.ts:57) computes the workflow+runnerId key and throws `registerRunner: duplicate runner '<key>'` when the key is already present.",
+          "response": "The Error propagates at daemon boot (registration is synchronous at startup), failing fast so the collision is fixed before any run; it is never swallowed.",
+          "userImpact": "Daemon fails to start until the duplicate runnerId is corrected — a build-time class of bug, not a user-facing runtime failure.",
+          "recoverable": false
+        },
+        {
+          "scenario": "A brainstorm run resumes with a continuation token that is unknown or has expired.",
+          "detection": "state-store.loadState(token) (state-store.ts:52) throws for an unknown/expired token — the same path every existing stage uses.",
+          "response": "The scaffold propagates that throw as a clear 'unknown or expired brainstorm session' error rather than silently minting a fresh run; the full plain-language message + preserved-answers guarantee is s5's responsibility, but s1 must not convert the throw into a silent new session.",
+          "userImpact": "The user is told the session reference is no longer valid instead of losing their answers to a silently restarted conversation.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The workflow-step start phase receives workflow:'brainstorm' but no runner is registered for the requested runnerId (a boot-wiring gap — registerBrainstormRunners not added to registerWorkflowRunners, or a missing runner).",
+          "detection": "executor.getRunner('brainstorm', runnerId) (executor.ts:65) throws when nothing is registered for the key.",
+          "response": "The run fails with a registry-miss error identifying the missing runner; it does not fall back to another stage.",
+          "userImpact": "The brainstorm stage is unavailable until the boot wiring is corrected — surfaced immediately, not as a wrong-stage silent success.",
+          "recoverable": false
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "registerWorkflowRunners() (hence registerBrainstormRunners()) is invoked more than once at boot.",
+          "expected": "The module-level `registered` guard (if (registered) return) makes every call after the first a no-op; no duplicate-runner throw, registration is idempotent."
+        },
+        {
+          "input": "Brainstorm is invoked standalone (outside an Epic) with just a rough one-line focus (StandaloneBrainstormContext { focus }).",
+          "expected": "The scaffold accepts the focus string and starts a brainstorm run through the standalone path, mirroring design-story's StandaloneStoryContext; no Epic context is required."
+        },
+        {
+          "input": "A small/trivial request that triage routes straight to build or a standalone story, never invoking brainstorm.",
+          "expected": "The brainstorm stage is simply not entered; triage is untouched and the given route works unchanged (ac5). No code forces the request through the stage."
+        },
+        {
+          "input": "A brainstorm run completes or is abandoned.",
+          "expected": "releaseState(token) frees the continuation state; a subsequent resume with that token hits the unknown-token path above."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The opaque state-token contract is preserved verbatim: existing stages' saveState->token->loadState round-trip and token shape are unchanged; brainstorm only ADDS BrainstormElicitState into the existing payload, never alters the token format or the existing phases' behaviour.",
+          "source": "c7"
+        },
+        {
+          "text": "The workflow-step handler phase dispatch (start/plan/step/synthesize/resolve_question/review_deferred) is unchanged for every existing workflow; brainstorm adds a new workflow value, not a new or modified phase case.",
+          "source": "c14"
+        },
+        {
+          "text": "The chat-agent brainstorm.addIdea offlineRpc remains separately addressable and is never imported or invoked by the new stage; the two 'brainstorm' concepts stay distinct.",
+          "source": "c13"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test + node:assert/strict, run via `npx tsx --test` (repo convention; workflow suites live under src/workflow/__tests__ and src/mcp/workflow-step/__tests__)",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove the registration scaffold + state type in isolation without a live daemon.",
+          "subjects": [
+            "registerBrainstormRunners is idempotent — a second call is a no-op (registered guard), no duplicate-runner throw",
+            "after registerBrainstormRunners(), getRunner('brainstorm', <runnerId>) resolves each brainstorm step runner",
+            "BrainstormElicitState round-trips through state-store saveState->token->loadState unchanged, and releaseState frees it",
+            "StandaloneBrainstormContext accepts a bare focus string (peer of StandaloneStoryContext)"
+          ],
+          "fixturesNeeded": [
+            "a minimal StepRunner stub for the brainstorm workflow",
+            "_clearWorkflowStateStoreForTests between cases"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove brainstorm behaves like any other multi-turn stage over the real workflow-step handler.",
+          "subjects": [
+            "insrc_workflow_step start with workflow:'brainstorm' returns a continuation token whose shape matches the other stages' tokens (opaque, round-trippable)",
+            "a resume with an unknown/expired token surfaces a clear error rather than silently starting fresh",
+            "existing stages (design.story etc.) still start/step/synthesize unchanged after brainstorm is registered — no phase-dispatch regression"
+          ],
+          "fixturesNeeded": [
+            "a temp repo registered with the daemon (mirrors define-e2e/design-story-e2e harness)"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "Pin the invariants s1 must not break.",
+          "subjects": [
+            "registerWorkflowRunners() calls registerBrainstormRunners() beside the existing register*Runners (source-level assertion)",
+            "the brainstorm runner module imports NOTHING from the chat-agent brainstorm.addIdea path — an import-guard test enforcing k10 separateness",
+            "the workflow-step handler phase switch gains NO new case (start/plan/step/synthesize/resolve_question/review_deferred unchanged) — source assertion that brainstorm is a new workflow value, not a new phase"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "unit: getRunner('brainstorm', runnerId) resolves after registration (stage is a peer)",
+            "integration: start workflow:'brainstorm' returns a continuation token identical in shape/behaviour to other multi-turn stages",
+            "contract: registerWorkflowRunners() registers brainstorm beside the existing stages"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "unit: BrainstormElicitState persists + reloads via the shared state-store round-trip (no separate store)",
+            "integration: a two-turn brainstorm carries progress forward through the same in-flight state-store token — one continuous conversation"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "integration: a brainstorm run dispatches through the shared executor step loop (getRunner + run), the same path existing stages use",
+            "contract: no parallel execution/persistence path is introduced (registration wires only into executor/state-store)"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "contract: import-guard test — the brainstorm runner module never imports or references brainstorm.addIdea",
+            "unit: the workflow id 'brainstorm' and the offlineRpc 'brainstorm.addIdea' are independently addressable (distinct namespaces)"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "contract: triage route table is unchanged — a small/trivial classification still routes to build/standalone-story and never inserts the brainstorm stage",
+            "unit: nothing in registration forces a request through brainstorm — the stage is only entered on explicit workflow:'brainstorm' invocation"
+          ]
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Brainstorm as a new workflow over the existing phase dispatch + state-store",
+        "oneLineSummary": "Register 'brainstorm' as a workflow whose runners drive through the existing start/plan/step/synthesize handler phases, with BrainstormElicitState carried inside the existing state-store payload — no new handler case, no new store.",
+        "approach": "src/workflow/runners/brainstorm/index.ts exports registerBrainstormRunners (idempotent module-level `registered` guard, mirroring design-story/index.ts:541) that calls executor.registerRunner once per stage step, and is added to workflow/index.ts registerWorkflowRunners(). The stage is a workflow id 'brainstorm' — the workflow-step handler.ts:58 switch is keyed on `phase`, NOT on workflow, so brainstorm plugs into the SAME dispatch with zero new cases. BrainstormElicitState rides the existing state-store saveState/loadState/releaseState opaque-token machinery; clarifying questions reuse the questions-gate + resolve_question phase. This story ships only the scaffold; questioning/convergence is s2-s5.",
+        "pros": [
+          "Honors k8 (extend not fork) and k9 (reuse state store) maximally — the handler switch, step loop, and state persistence are untouched.",
+          "Mirrors the exact design-story registration template (k4,k5); an in-flight brainstorm behaves identically to any other stage (ac1,ac2).",
+          "k10 is trivially satisfied — the workflow id lives in the workflow layer, never referencing brainstorm.addIdea.",
+          "Smallest surface: no new MCP transport, no new dispatch branch."
+        ],
+        "cons": [
+          "The HLD sketch named BrainstormPhase='start'|'answer' as if new phases; this alternative realizes them via the existing step loop instead, so the LLD refines (does not contradict) the HLD sketch — recorded in back-flow notes.",
+          "Placeholder step runners exist before s2-s5 fill them, so the scaffold alone produces no useful spec (expected for a Phase A foundation)."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "New top-level MCP handler phase for brainstorm turns",
+        "oneLineSummary": "Add a literal new `case` (e.g. 'answer') to the workflow-step handler switch with its own BrainstormTurnRequest/Response dispatch path, as the HLD interfaceSketch's BrainstormPhase suggested.",
+        "approach": "Extend src/mcp/workflow-step/handler.ts:58 with a new phase case dispatched to a new phases/brainstorm handler carrying BrainstormTurnRequest -> BrainstormTurnResponse, separate from the generic step loop. State still uses state-store, but the turn protocol is a distinct branch beside start/plan/step/synthesize.",
+        "pros": [
+          "Matches the HLD sc3 interfaceSketch literally (BrainstormPhase 'start'|'answer').",
+          "A bespoke turn protocol could express ask/confirm/done more directly than the generic step loop."
+        ],
+        "cons": [
+          "Forks the handler dispatch — a second, differently-shaped turn mechanism weakens k8 (extend rather than fork) and k3 (mirror the existing gate, not a new mechanism).",
+          "Duplicates step-loop concerns (continuation, synthesize) that the generic phases already provide.",
+          "More surface + a new contract for existing stages to ignore, for no capability the generic loop lacks."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Ranked 2. Forks the handler dispatch with a new case — sc3/k8 and ac1 only partially met (the turn protocol diverges from how other stages are driven), for no capability the generic loop lacks."
+      },
+      {
+        "id": "a3",
+        "name": "Dedicated brainstorm state store separate from workflow-step state-store",
+        "oneLineSummary": "Persist BrainstormElicitState in its own session store keyed independently of the workflow-step state-store.",
+        "approach": "A parallel state store (own token namespace) holds the elicitation continuation state, decoupled from src/mcp/workflow-step/state-store.ts.",
+        "pros": [
+          "Brainstorm state schema evolves without touching the shared WorkflowStepStatePayload."
+        ],
+        "cons": [
+          "Directly violates k9 (reuse the existing state store, no separate session storage).",
+          "A second continuation-token mechanism the user could confuse with the workflow one; breaks the 'one continuous conversation, not a side session' guarantee (ac2).",
+          "Duplicates expiry/release logic already in state-store.ts."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Ranked 3. A dedicated store directly violates k9 and IS the 'separately-tracked side session' ac2 forbids (sc3 violates)."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 capability-discovery / symbol-locate — questions-gate primitive",
+      "quotedText": "src/mcp/workflow-step/questions-gate.ts is the clarifying-question gate the brainstorm elicitation reuses (k3); usage.example returned 0 callers so it is adapted, not a proven extension point."
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1 module-profile — design-story runner template + executor registry",
+      "quotedText": "design-story/index.ts:541 registerDesignStoryRunners is idempotent (registered guard) and calls executor.registerRunner (executor.ts:57) per step — the exact template registerBrainstormRunners mirrors (k4,k5)."
+    },
+    {
+      "id": "c7",
+      "kind": "analyze-bundle",
+      "ref": "s1 module-profile — workflow-step state-store",
+      "quotedText": "state-store.ts saveState(:38)/loadState(:52, throws on unknown/expired)/releaseState(:64) is the opaque-token machinery BrainstormElicitState persists through with the token preserved verbatim (k8,k9)."
+    },
+    {
+      "id": "c13",
+      "kind": "code",
+      "ref": "src/daemon/index.ts:1354",
+      "quotedText": "'brainstorm.addIdea': offlineRpc('brainstorm.addIdea') — the chat-agent stub the new stage must never import or invoke (k10)."
+    },
+    {
+      "id": "c14",
+      "kind": "analyze-bundle",
+      "ref": "s1 module-profile — workflow-step handler dispatch",
+      "quotedText": "handler.ts:58 dispatches a workflow-agnostic phase switch (start/plan/step/synthesize/resolve_question/review_deferred), so brainstorm plugs in as a new workflow value with no new case (k8)."
+    }
+  ]
+}

@@ -134,6 +134,7 @@ export interface DecomposerPrompt {
 export function prepareDecompose(intent: WorkflowIntent): DecomposerPrompt {
 	switch (intent.workflow) {
 		case 'stub':         return stubDecomposer(intent);
+		case 'brainstorm':   return brainstormDecomposer(intent);
 		case 'define':       return defineDecomposer(intent);
 		case 'design.epic':  return designEpicDecomposer(intent);
 		case 'design.story': return designStoryDecomposer(intent);
@@ -174,6 +175,51 @@ function stubDecomposer(intent: WorkflowIntent): DecomposerPrompt {
 					properties: {
 						id:     { type: 'string', pattern: '^s[1-3]$' },
 						runner: { enum: ['echo.a', 'echo.b', 'echo.c'] },
+						params: { type: 'object' },
+						note:   { type: 'string' },
+					},
+					additionalProperties: false,
+				},
+			},
+		},
+		additionalProperties: false,
+	} as const;
+	return { systemPrompt, userTurn, schema: schema as unknown as Record<string, unknown> };
+}
+
+/** SCAFFOLD decomposer for the `brainstorm` stage (Story S001). Emits a
+ *  single-step plan (`elicit`) so the stage is invokable through the existing
+ *  step loop; the real multi-turn elicitation plan is S002–S005. Keeping it a
+ *  one-step plan here is deliberate — this story only proves the stage is a
+ *  first-class, driveable peer. Synthesize/finalize (the persisted spec) is
+ *  Story S006's SpecArtifact, so `prepareSynthesize` intentionally still
+ *  reports brainstorm as not-yet-supported until then. */
+function brainstormDecomposer(intent: WorkflowIntent): DecomposerPrompt {
+	const systemPrompt = [
+		'You are the workflow decomposer for the `brainstorm` stage (pre-workflow spec elicitation).',
+		'',
+		'SCAFFOLD: emit a plan with EXACTLY one step of runner `elicit` and id `s1`.',
+		'The interactive questioning/convergence behaviour is added by later stories; do not add extra steps.',
+		'',
+		'The plan must satisfy the schema below.',
+	].join('\n');
+	const userTurn = `Focus (the rough idea): ${intent.focus}\nRepo: ${intent.repoPath}\nEmit the plan JSON now.`;
+	const schema = {
+		type: 'object',
+		required: ['workflow', 'steps'],
+		properties: {
+			workflow:  { const: 'brainstorm' },
+			rationale: { type: 'string' },
+			steps: {
+				type:     'array',
+				minItems: 1,
+				maxItems: 1,
+				items: {
+					type: 'object',
+					required: ['id', 'runner', 'params'],
+					properties: {
+						id:     { type: 'string', pattern: '^s1$' },
+						runner: { enum: ['elicit'] },
 						params: { type: 'object' },
 						note:   { type: 'string' },
 					},

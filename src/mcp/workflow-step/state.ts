@@ -27,6 +27,17 @@ export type WorkflowStepStage =
 	| 'awaiting_llm_step'      // executor is paused on an llm-pause runner
 	| 'awaiting_synthesize';   // all steps done; client should emit the artifact
 
+/** Per-run elicitation continuation state for the `brainstorm` stage
+ *  (Epic `frame-epic-new-pre-workflow-brainstorm`, Story S001 — sc3). Carried
+ *  INSIDE the existing WorkflowStepStatePayload so it rides the existing
+ *  state-store save/load/release opaque-token machinery — no new store (k9).
+ *  S001 defines the shape + wiring; S002–S005 populate/interpret its fields. */
+export interface BrainstormElicitState {
+	readonly workingStatement: string;
+	readonly answered:         readonly string[];
+	readonly openQuestions:    readonly string[];
+}
+
 export interface WorkflowStepStatePayload {
 	readonly version:  typeof STATE_VERSION;
 	readonly runId:    string;
@@ -42,6 +53,10 @@ export interface WorkflowStepStatePayload {
 	/** Present in `awaiting_synthesize`: the finalized step outputs
 	 *  the synthesizer prompt renders. */
 	readonly stepOutputs?: Readonly<Record<string, unknown>>;
+	/** Present only for `brainstorm` runs: the elicitation continuation state
+	 *  (sc3). Optional + additive — every existing stage leaves it unset and its
+	 *  save/load round-trip is unchanged (k8/k9). */
+	readonly brainstorm?: BrainstormElicitState;
 	readonly stage:    WorkflowStepStage;
 }
 

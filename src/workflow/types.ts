@@ -71,6 +71,7 @@ export interface WorkflowIntent {
 
 export const WORKFLOW_NAMES = [
 	'stub',            // Phase A only
+	'brainstorm',      // Phase 0 — pre-workflow spec elicitation (Epic frame-epic-new-pre-workflow-brainstorm)
 	'define',          // Phase B
 	'design.epic',     // Phase C
 	'design.story',   // Phase D

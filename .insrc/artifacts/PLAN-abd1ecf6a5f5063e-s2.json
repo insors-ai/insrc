@@ -1,0 +1,343 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1785603941564-ukwwg8",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-08-01T17:15:01.649Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "design.decompose",
+          "tier": "mid",
+          "runner": "cli-claude",
+          "model": "sonnet"
+        },
+        {
+          "role": "context.assemble",
+          "tier": "mid",
+          "runner": "cli-claude",
+          "model": "sonnet"
+        },
+        {
+          "role": "tasks.enumerate",
+          "tier": "mid",
+          "runner": "cli-claude",
+          "model": "sonnet"
+        },
+        {
+          "role": "tasks.critique",
+          "tier": "mid",
+          "runner": "cli-claude",
+          "model": "sonnet"
+        },
+        {
+          "role": "tasks.finalize",
+          "tier": "mid",
+          "runner": "cli-claude",
+          "model": "sonnet"
+        },
+        {
+          "role": "test-strategy.write",
+          "tier": "mid",
+          "runner": "cli-claude",
+          "model": "sonnet"
+        },
+        {
+          "role": "scope.audit",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "opus"
+        },
+        {
+          "role": "synthesize",
+          "tier": "mid",
+          "runner": "cli-claude",
+          "model": "sonnet"
+        }
+      ]
+    },
+    "elapsedMs": 560075,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "abd1ecf6a5f5063e",
+    "epicSlug": "frame-epic-new-pre-workflow-brainstorm",
+    "storyId": "s2",
+    "lldRunId": "wf-1785602839477-zcq43o",
+    "lldEffectiveHash": "688a10691972f5e2069b092dff9d1d20b3da79ca83733140f0918eaac0bc5b46",
+    "review": {
+      "artifact": "plan",
+      "stage": "plan",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "p2-schema",
+          "ref": "t1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/workflow/runners/brainstorm/schemas.ts exists with the s1 placeholder (brainstormElicitSchema) that t1 replaces with the category+questions shape.",
+          "evidence": "src/workflow/runners/brainstorm/schemas.ts:1 found; brainstormElicitSchema is exported there (imported by registration.test) — the s1 placeholder t1 replaces with the category+questions shape. Confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p2-cat",
+          "ref": "t1",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "The BRAINSTORM_CATEGORY_CLASSES ids are exactly requirements/design/implementation/testing/general — the enum t1's schema category must equal.",
+          "evidence": "src/shared/brainstorm-classes.ts:23 BRAINSTORM_CATEGORY_CLASSES; ids requirements(:25) … general(:41) — the enum (requirements/design/implementation/testing/general) t1's schema category must equal. Confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p2-elicit",
+          "ref": "t2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The elicit StepRunner exists in src/workflow/runners/brainstorm/index.ts (s1 placeholder) for t2 to reshape into an llm-pause runner.",
+          "evidence": "src/workflow/runners/brainstorm/index.ts:39 `const elicit: StepRunner` + registerBrainstormRunners wired into workflow/index.ts:27 — the s1 placeholder t2 reshapes into an llm-pause runner (registration untouched). Confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p2-pause",
+          "ref": "t2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "llmPauseRunner is a per-module inline helper in design-story/design-epic/plan (the pattern t2 mirrors, not a shared import).",
+          "evidence": "function llmPauseRunner is a PER-MODULE inline helper at design-epic/index.ts:44, design-story/index.ts:107, plan/index.ts:63 — the pattern t2 mirrors locally (not a shared import), exactly as the plan states. Confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p2-tasks",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "The plan enumerates exactly 2 tasks (t1, t2) with DAG t2 depends on t1.",
+          "evidence": "The plan enumerates exactly two tasks t1 (schema) and t2 (runner conversion), DAG t2→t1. Confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 5
+      },
+      "reviewedAt": "2026-08-01T17:19:06.596Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-08-01T17:23:01.470Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Define the elicit first-turn response schema in schemas.ts",
+        "summary": "Replace the s1 open-object placeholder for the 'elicit' step in src/workflow/runners/brainstorm/schemas.ts with brainstormElicitSchema: an ajv-shape requiring category (enum = BRAINSTORM_CATEGORY_CLASSES ids from src/shared/brainstorm-classes.ts: requirements/design/implementation/testing/general) and questions (array of string, minItems 1), additionalProperties:false, and deliberately NO spec field so a converged-spec or empty-questions response fails validation on the first turn.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "brainstormElicitSchema is valid ajv JSON Schema requiring exactly ['category','questions'] with additionalProperties:false",
+          "category is an enum whose members equal exactly the BRAINSTORM_CATEGORY_CLASSES ids (requirements/design/implementation/testing/general) — no invented or missing member",
+          "questions is typed array of string with minItems:1, so an empty or absent questions array fails validation",
+          "the schema has no 'spec' property, so a spec-shaped response fails validation on the first turn"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c4",
+          "c5",
+          "c1",
+          "c33"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "brainstormElicitSchema (ajv) rejects a response with additional 'spec' field or with empty/absent questions, and accepts a valid {category, questions[]} payload"
+          },
+          {
+            "level": "unit",
+            "name": "brainstormElicitSchema category enum equals exactly the BRAINSTORM_CATEGORY_CLASSES ids (requirements/design/implementation/testing/general), no invented or missing member"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Convert the elicit StepRunner to an llm-pause via llmPauseRunner in index.ts",
+        "summary": "In src/workflow/runners/brainstorm/index.ts, reshape the already-registered `elicit` StepRunner from the s1 output-runner placeholder into an llm-pause runner built with the existing llmPauseRunner(spec) helper (mirroring the inline pattern used by design-story/design-epic/plan runners, not a shared import). buildPrompt embeds the run's focus plus the BRAINSTORM_CATEGORY_CLASSES vocabulary/descriptions and instructs the controller to classify the idea and emit clarifying questions targeting unstated scope/exclusions/success gaps; schema is t1's brainstormElicitSchema. registerBrainstormRunners() and the executor registration call in this same file are left structurally untouched (same runner id, same registration signature) — this task only edits the elicit runner's body. Also add an integration test proving the reshaped runner round-trips correctly through the real insrc_workflow_step dispatch, not just in isolation.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "elicit.run() returns a StepRunnerLlmPause (type:'llm-pause') on the first turn, never an 'output' with a spec",
+          "buildPrompt embeds both the run's focus and the BRAINSTORM_CATEGORY_CLASSES descriptions in the emitted prompt text",
+          "the runner is built via the existing llmPauseRunner(spec) helper using t1's brainstormElicitSchema, following the inline pattern of the design-story/design-epic/plan runners rather than a new shared abstraction",
+          "the diff for this task touches only the elicit runner's buildPrompt/schema wiring inside index.ts; registerBrainstormRunners' call sites and other runner ids are byte-identical to s1's output",
+          "an integration test driving insrc_workflow_step for a standalone brainstorm run confirms: the first step returned is an ask/emit_step (not synthesize) carrying t1's brainstormElicitSchema, a valid {category, questions[]} controller response is accepted and the run pauses, and the opaque state token is unchanged across the turn"
+        ],
+        "derivedFrom": [
+          "c7",
+          "c8",
+          "c2",
+          "c6",
+          "c9",
+          "c10",
+          "c3",
+          "c33",
+          "c11"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "elicit.run() returns a StepRunnerLlmPause (type:'llm-pause') on the first turn, never an 'output' with a spec"
+          },
+          {
+            "level": "unit",
+            "name": "elicit buildPrompt output contains both the run's focus text and the BRAINSTORM_CATEGORY_CLASSES descriptions"
+          },
+          {
+            "level": "integration",
+            "name": "insrc_workflow_step start (workflow:'brainstorm') → plan → the returned step is emit_step for 'elicit' carrying brainstormElicitSchema, not a synthesize step"
+          },
+          {
+            "level": "integration",
+            "name": "posting a valid {category, questions[]} controller response to the elicit step validates and pauses the run without writing a spec artifact"
+          },
+          {
+            "level": "integration",
+            "name": "the opaque continuation state token is unchanged across the elicit ask turn"
+          },
+          {
+            "level": "live",
+            "name": "(gated INSRC_LIVE_TESTS=1) given a rough idea leaving scope/exclusions/success unstated, the emitted questions target those gaps and are not a restatement"
+          },
+          {
+            "level": "live",
+            "name": "(gated INSRC_LIVE_TESTS=1) given an idea recognisable as requirements vs design vs implementation, the chosen category and questions reflect that categorisation"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "the elicit runner's run() returns a StepRunnerLlmPause (type:'llm-pause') on the first turn, NOT an 'output' (it asks, it does not answer)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "the elicit response schema requires `category` (enum = the BRAINSTORM_CATEGORY ids) and `questions` (array, minItems 1) and has NO spec field — a spec-shaped or empty-questions response fails ajv validation",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "buildPrompt embeds the run focus and the BRAINSTORM_CATEGORY_CLASSES descriptions so the emitted prompt reflects the reused vocabulary (c33)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "the elicit schema's category enum is exactly the BrainstormCategory union (no invented member)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "insrc_workflow_step start with workflow:'brainstorm' → plan → step returns emit_step for `elicit` with the category+questions schema (an llm-pause), not a synthesize",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "a controller step response of { category, questions[] } validates and the run pauses (no spec artifact is written this turn)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "the opaque continuation token round-trips unchanged across the ask turn (k8/k9)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "given a rough idea leaving scope/exclusions/success unstated, the emitted questions target those gaps and are not a restatement (ac2)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "given an idea recognisable as requirements vs design vs implementation, the chosen category + questions reflect that categorisation (ac3)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 analyze bundle — brainstorm runner placeholder conventions"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD S002 AC1"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1 analyze bundle — llmPauseRunner inline pattern (design-story/design-epic/plan)"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD S002 AC2"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD S002 AC3"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD S002 AC4"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD S002 SC2"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD S002 SC3"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "LLD S002 K4"
+    },
+    {
+      "id": "c10",
+      "kind": "prior-artifact",
+      "ref": "LLD S002 K5"
+    },
+    {
+      "id": "c11",
+      "kind": "prior-artifact",
+      "ref": "LLD S002 A1"
+    },
+    {
+      "id": "c33",
+      "kind": "analyze-bundle",
+      "ref": "s1 analyze bundle — BRAINSTORM_CATEGORY_CLASSES vocabulary/descriptions"
+    }
+  ]
+}

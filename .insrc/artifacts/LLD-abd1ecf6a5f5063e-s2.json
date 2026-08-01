@@ -1,0 +1,489 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1785602839477-zcq43o",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-08-01T16:53:27.793Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 368205,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "abd1ecf6a5f5063e",
+    "epicSlug": "frame-epic-new-pre-workflow-brainstorm",
+    "storyId": "s2",
+    "hldBaseRunId": "wf-1785587820064-46kctq",
+    "hldEffectiveHash": "688a10691972f5e2069b092dff9d1d20b3da79ca83733140f0918eaac0bc5b46",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "s2-cat",
+          "ref": "c1",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "BrainstormCategory is exactly the union requirements|design|implementation|testing|general in src/shared/brainstorm-classes.ts, and BRAINSTORM_CATEGORY_CLASSES is exported there — the reused vocabulary (no new taxonomy).",
+          "evidence": "src/shared/brainstorm-classes.ts:12 `export type BrainstormCategory` (members incl. requirements:13, implementation) + BRAINSTORM_CATEGORY_CLASSES at :23 — the reused vocabulary; no new taxonomy. Confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "s2-pause",
+          "ref": "c2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "llmPauseRunner is a real helper used by the design-story runners to build llm-pause steps (the mechanism s2 reuses for elicit).",
+          "evidence": "llmPauseRunner is a real helper used to build llm-pause steps — defined + used in design-epic/index.ts:44, design-story/index.ts:107, plan/index.ts:63. Note: it is a PER-MODULE private helper (not a shared export), so the build defines brainstorm's own mirroring the pattern (or inlines the StepRunnerLlmPause return) — a build detail, the mechanism is real.",
+          "action": "Build note: define a local llmPauseRunner in brainstorm/index.ts (or inline the pause) as the other runner modules do; do not import a non-existent shared export.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "s2-llmpause-type",
+          "ref": "c2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "StepRunnerLlmPause (type:'llm-pause') is a real member of the StepRunnerResult union in src/workflow/types.ts — the return shape the elicit runner produces.",
+          "evidence": "src/workflow/types.ts:146 `interface StepRunnerLlmPause`; type:'llm-pause' handled in executor.ts:227 — the return shape the elicit runner produces is real. Confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "s2-s1seam",
+          "ref": "c3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The s1 scaffold that s2 reshapes exists: a placeholder `elicit` StepRunner in src/workflow/runners/brainstorm/index.ts and BrainstormElicitState in src/mcp/workflow-step/state.ts.",
+          "evidence": "The s1 seam exists: the 'elicit' runner id (brainstorm registration.test + orchestrator brainstormDecomposer enum ['elicit']) and src/mcp/workflow-step/state.ts:35 `interface BrainstormElicitState` — both landed by s1 (212fb1c). s2 reshapes elicit in place. Confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "s2-qgate",
+          "ref": "c4",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "questions-gate.ts is the upstream-artifact open-questions gate (upstreamKindFor), not a mid-stage user-question mechanism — grounding the LLD's refinement that s2 uses the step-loop pause instead.",
+          "evidence": "src/mcp/workflow-step/questions-gate.ts:38 `export function upstreamKindFor(workflow): QuestionArtifactKind` — confirms questions-gate is the upstream-artifact open-questions gate, grounding the LLD's refinement that s2 uses the step-loop pause instead (honors sc3 intent). Confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "s2-consume",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "s2 consumes (does not own) sc2 + sc3, which the HLD assigns ownedByStory s1 — so role:'consumes' is correct.",
+          "evidence": "sc2/sc3 are ownedByStory s1 in the HLD; s2 lists them as consumes with owns:[] — role:'consumes' is correct (no false implements). Confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 6
+      },
+      "reviewedAt": "2026-08-01T17:05:02.072Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-08-01T17:05:28.239Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Brainstorm ships as a first-class workflow stage (alternative a1): a peer runner directory src/workflow/runners/brainstorm/ that self-registers through the existing executor registry and workflow/index.ts registerWorkflowRunners; a new persisted SpecArtifact peer file in src/workflow/artifacts/ with a specArtifactPaths peer in storage.ts (hash-addressed, listed, approval-stamped identically to DEF/HLD/LLD/PLAN); and an additive elicitation phase on the existing insrc_workflow_step MCP surface that reuses state-store.ts and the questions-gate primitive and preserves the opaque state token verbatim. The single cross-cutting SpecArtifact shape (intent, scope boundary, non-goals, decisions-with-ruled-out-alternatives, open items) is read unchanged by both define (s8) and standalone design.story (s9). Nothing touches the shared/chat-agent brainstorm.addIdea stub.",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "id": "sc2",
+          "name": "Brainstorm stage runner registration",
+          "purpose": "The peer-runner scaffold that makes brainstorm a first-class stage (owned by s1).",
+          "interfaceSketch": "interface RegisterBrainstormRunners { (): void; }\ninterface StandaloneBrainstormContext { readonly focus: string; }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c3"
+          ]
+        },
+        {
+          "id": "sc3",
+          "name": "Brainstorm MCP elicitation phase + continuation state",
+          "purpose": "The additive, controller-driven multi-turn surface reusing state-store + the step loop, opaque token preserved (owned by s1).",
+          "interfaceSketch": "interface BrainstormElicitState { readonly workingStatement: string; readonly answered: readonly string[]; readonly openQuestions: readonly string[]; }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c1",
+            "c14"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s2",
+        "owns": [],
+        "depends": [
+          "sc2",
+          "sc3"
+        ],
+        "internal": "How the first-turn questioning is generated: mapping the rough idea to a BrainstormCategory (via the reused vocabulary) and choosing which intent gaps (scope boundary, exclusions, success condition) to probe first, and the rule that no spec is produced on the first turn. Private to s2; other stories see only the sc3 turn messages."
+      },
+      "rolloutPhase": "Phase B — In-chat elicitation behaviour",
+      "nonFunctional": {
+        "performance": "Elicitation is interactive and controller-paced; no daemon-side latency SLA (k2). Critical design path uses the core model tier (k13).",
+        "security": "No new external surface; MCP never opens LMDB/LanceDB (k11); namespaced distinctly from the brainstorm.addIdea stub (k10).",
+        "observability": "Emits the same step frames as existing stages (ac3).",
+        "durability": "Reuses the existing storage/state-store; an abandoned conversation persists nothing (s3/ac5)."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "elicit",
+          "signature": "const elicit: StepRunner  // workflow:'brainstorm', id:'elicit' — reshaped from an output-runner (s1) into an llm-pause runner",
+          "parameters": [],
+          "returns": {
+            "type": "StepRunnerLlmPause",
+            "meaning": "On the first turn the elicit runner returns a StepRunnerLlmPause (type:'llm-pause') whose prompt instructs the controller to classify the focus into a BrainstormCategory and emit clarifying questions; the executor pauses server-side (state-store) until the controller answers. No 'output' with a spec is produced on turn one (ac1)."
+          },
+          "errors": [],
+          "preconditions": [
+            "The run's intent.focus carries the rough one-line idea (from a standalone StandaloneBrainstormContext or an epic-scoped start)."
+          ],
+          "postconditions": [
+            "The controller receives a prompt + schema; the outer LLM emits { category, questions[] }; the questions are surfaced to the user in chat and the run waits for answers (ac4)."
+          ]
+        },
+        {
+          "name": "llmPauseRunner",
+          "signature": "llmPauseRunner(spec: { id: string; workflow: WorkflowName; buildPrompt: (ctx: StepRunnerContext) => { prompt: string; userTurn: string }; schema: Record<string, unknown> }): StepRunner",
+          "parameters": [
+            {
+              "name": "spec",
+              "type": "{ id; workflow; buildPrompt; schema }",
+              "purpose": "The existing helper the design runners use to build an llm-pause step. s2 reuses it to build `elicit` — buildPrompt embeds the focus + category vocabulary; schema is the first-turn response shape.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "StepRunner",
+            "meaning": "A runner whose run() returns an llm-pause; reused verbatim from the design-story runners (no new pause mechanism)."
+          },
+          "errors": [],
+          "preconditions": [
+            "Imported from the workflow runners layer (same import the design runners use)."
+          ],
+          "postconditions": [
+            "The `elicit` runner surfaces its prompt through the existing step loop (k3,k8)."
+          ]
+        },
+        {
+          "name": "BRAINSTORM_CATEGORY_CLASSES",
+          "signature": "const BRAINSTORM_CATEGORY_CLASSES: readonly BrainstormCategoryClass[]  // src/shared/brainstorm-classes.ts",
+          "parameters": [],
+          "returns": {
+            "type": "readonly BrainstormCategoryClass[]",
+            "meaning": "The reused request-category vocabulary (ids requirements/design/implementation/testing/general + descriptions). s2 embeds these classes in the elicit prompt so the model picks a category and shapes questions accordingly (c33). No new taxonomy is defined."
+          },
+          "errors": [],
+          "preconditions": [
+            "Imported from src/shared/brainstorm-classes.ts."
+          ],
+          "postconditions": [
+            "The elicit prompt reflects the established categorisation (ac3)."
+          ]
+        }
+      ],
+      "dataModel": [
+        {
+          "entity": "brainstorm first-turn elicit response { category, questions }",
+          "change": "new",
+          "details": "The response schema the elicit llm-pause validates on resume: { category: BrainstormCategory; questions: readonly string[] }. Lives in src/workflow/runners/brainstorm/schemas.ts (replacing the s1 open-object placeholder for the elicit step). No spec field — no spec on turn one (ac1). The emitted questions populate the existing BrainstormElicitState.openQuestions on the next turn (state type unchanged; owned by s1/sc3).",
+          "schemaDiff": "brainstormElicitSchema := { type:'object', required:['category','questions'], properties:{ category:{ enum: BRAINSTORM_CATEGORY ids }, questions:{ type:'array', items:{ type:'string' }, minItems:1 } }, additionalProperties:false }",
+          "callSites": [
+            "src/workflow/runners/brainstorm/schemas.ts",
+            "src/workflow/runners/brainstorm/index.ts"
+          ]
+        },
+        {
+          "entity": "BrainstormElicitState",
+          "change": "invariant-change",
+          "details": "No structural change (the sc3 type is owned by s1). s2 establishes the usage invariant: on the first turn the elicit questions become BrainstormElicitState.openQuestions and no working statement/spec is set yet. Structural population + convergence is s3.",
+          "callSites": [
+            "src/mcp/workflow-step/state.ts"
+          ]
+        }
+      ],
+      "interactionWithShared": [
+        {
+          "contractId": "sc2",
+          "role": "consumes",
+          "howDetails": "s2 consumes sc2 (owned by s1): it converts the already-registered `elicit` StepRunner in src/workflow/runners/brainstorm/index.ts from an output-runner into an llm-pause runner (via the existing llmPauseRunner helper). It does NOT change registerBrainstormRunners, the executor registration, or add a new runner id — the sc2 registration surface is untouched (k4,k5)."
+        },
+        {
+          "contractId": "sc3",
+          "role": "consumes",
+          "howDetails": "s2 consumes sc3 (owned by s1): the elicit step surfaces its clarifying questions through the EXISTING step-loop llm-pause + state-store (the run pauses on the opaque token until the controller returns answers), reusing BrainstormElicitState. No new handler phase, no new store, opaque token preserved verbatim (k8,k9). The elicitation mechanism is the step-loop pause — an LLD refinement of sc3's 'questions-gate' wording (recorded in back-flow; questions-gate is the separate upstream-artifact gate), honoring sc3's intent."
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "brainstorm first-turn elicit response { category, questions }",
+        "change": "new",
+        "details": "The response schema the elicit llm-pause validates on resume: { category: BrainstormCategory; questions: readonly string[] }, in src/workflow/runners/brainstorm/schemas.ts (replacing the s1 open-object placeholder). No spec field — no spec on turn one (ac1). Emitted questions populate the existing BrainstormElicitState.openQuestions next turn (state type unchanged; owned by s1/sc3).",
+        "schemaDiff": "brainstormElicitSchema := { type:'object', required:['category','questions'], properties:{ category:{ enum: BRAINSTORM_CATEGORY ids }, questions:{ type:'array', items:{ type:'string' }, minItems:1 } }, additionalProperties:false }",
+        "callSites": [
+          "src/workflow/runners/brainstorm/schemas.ts",
+          "src/workflow/runners/brainstorm/index.ts"
+        ]
+      },
+      {
+        "entity": "BrainstormElicitState",
+        "change": "invariant-change",
+        "details": "No structural change (sc3 type owned by s1). s2 establishes the usage invariant: first-turn questions become openQuestions and no working statement/spec is set yet. Convergence is s3.",
+        "callSites": [
+          "src/mcp/workflow-step/state.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "s2 consumes sc2 (owned by s1): converts the registered `elicit` StepRunner (src/workflow/runners/brainstorm/index.ts) from an output-runner into an llm-pause runner via the existing llmPauseRunner helper. registerBrainstormRunners / executor registration untouched (k4,k5)."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "s2 consumes sc3 (owned by s1): elicit surfaces questions through the EXISTING step-loop llm-pause + state-store, opaque token preserved (k8,k9). No new handler phase/store. The elicitation mechanism is the step-loop pause — an LLD refinement of sc3's 'questions-gate' wording (back-flow), honoring sc3's intent."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The controller's first-turn response omits `questions` or emits an empty questions array.",
+          "detection": "The executor validates the llm-pause response against the elicit schema on resume (the framework's structured-output validate + retry over the step schema); `questions` is required with minItems 1, so an empty/absent list fails validation.",
+          "response": "The structured-output retry re-issues the step prompt; if retries exhaust, the run errors rather than advancing a turn with no questions — it never fabricates a spec to move on.",
+          "userImpact": "The user is never shown an empty question turn; a transient malformed emission is retried transparently.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The controller emits a `category` value outside the BrainstormCategory enum (a hallucinated taxonomy).",
+          "detection": "The elicit schema constrains `category` to the enum of BRAINSTORM_CATEGORY ids (requirements/design/implementation/testing/general); a non-member value fails schema validation.",
+          "response": "Retried via the same structured-output loop; the guard enforces c33 (no competing taxonomy) structurally, not by prose.",
+          "userImpact": "None visible — the corrected turn uses a real category.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The controller emits a converged spec / answer on the FIRST turn instead of questions.",
+          "detection": "The first-turn elicit schema has NO spec field and requires `questions`; a spec-shaped response fails validation (there is nowhere to put it).",
+          "response": "Rejected + retried; the schema is the enforcement point for 'no spec on the first turn' (ac1). Convergence into a spec is a later turn (s3/s6), not this one.",
+          "userImpact": "Guarantees the first turn is always questions, never a premature spec.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A blank or near-empty focus string.",
+          "expected": "The elicit prompt still asks the broadest foundational clarifying questions (what is being built, for whom, success condition) rather than erroring; still produces no spec."
+        },
+        {
+          "input": "An idea that does not clearly fit one category.",
+          "expected": "The model selects the `general` catch-all BrainstormCategory and asks general intent-gap questions; still valid per the enum."
+        },
+        {
+          "input": "A focus that is already fairly detailed (not rough).",
+          "expected": "The stage still asks clarifying questions targeting the REMAINING unstated gaps and produces no spec on turn one; deciding that no material gap remains (early convergence) is s3's job, not s2's."
+        },
+        {
+          "input": "The user provides no answers / walks away after the first questions.",
+          "expected": "The run stays paused on its opaque token; s2 persists nothing as a converged statement and never invents answers. Abandonment cleanup is s3/ac5."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "No spec is produced on the first turn — enforced structurally by the elicit response schema (category + questions only, no spec field). The stage asks, it does not answer for the user (ac1).",
+          "source": "c2"
+        },
+        {
+          "text": "The step-loop llm-pause + state-store + opaque continuation token are reused unchanged; s2 alters only the `elicit` runner body, not the handler dispatch, the state store, or the token format (k8/k9).",
+          "source": "c3"
+        },
+        {
+          "text": "Questioning is shaped by the reused BrainstormCategory vocabulary (requirements/design/implementation/testing/general); no competing taxonomy is introduced (c33).",
+          "source": "c1"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test + node:assert/strict, run via `npx tsx --test` (repo convention; brainstorm suites under src/workflow/runners/brainstorm/__tests__). Live model-dependent checks gate behind INSRC_LIVE_TESTS=1 and skip cleanly when unset.",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove the elicit runner shape + schema deterministically, without a model.",
+          "subjects": [
+            "the elicit runner's run() returns a StepRunnerLlmPause (type:'llm-pause') on the first turn, NOT an 'output' (it asks, it does not answer)",
+            "the elicit response schema requires `category` (enum = the BRAINSTORM_CATEGORY ids) and `questions` (array, minItems 1) and has NO spec field — a spec-shaped or empty-questions response fails ajv validation",
+            "buildPrompt embeds the run focus and the BRAINSTORM_CATEGORY_CLASSES descriptions so the emitted prompt reflects the reused vocabulary (c33)",
+            "the elicit schema's category enum is exactly the BrainstormCategory union (no invented member)"
+          ],
+          "fixturesNeeded": [
+            "a StepRunnerContext stub carrying a sample focus",
+            "ajv (the project validator) to compile + check the schema"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove the first turn drives through the real workflow-step loop as an ask-turn.",
+          "subjects": [
+            "insrc_workflow_step start with workflow:'brainstorm' → plan → step returns emit_step for `elicit` with the category+questions schema (an llm-pause), not a synthesize",
+            "a controller step response of { category, questions[] } validates and the run pauses (no spec artifact is written this turn)",
+            "the opaque continuation token round-trips unchanged across the ask turn (k8/k9)"
+          ],
+          "fixturesNeeded": [
+            "the workflow-step handler harness used by define-e2e/design-story-e2e"
+          ]
+        },
+        {
+          "level": "live",
+          "purpose": "Prove question QUALITY against a real core-tier model (gated).",
+          "subjects": [
+            "given a rough idea leaving scope/exclusions/success unstated, the emitted questions target those gaps and are not a restatement (ac2)",
+            "given an idea recognisable as requirements vs design vs implementation, the chosen category + questions reflect that categorisation (ac3)"
+          ],
+          "fixturesNeeded": [
+            "INSRC_LIVE_TESTS=1 + a configured core-tier provider"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "unit: elicit.run() returns an llm-pause and the schema has no spec field — questions surfaced, no spec on turn one",
+            "integration: the first brainstorm step returns emit_step (ask) not synthesize, and no spec artifact is written"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "unit: the schema forbids a restatement-only/empty response (questions required, minItems 1)",
+            "live: emitted questions target the specific idea's unstated scope/exclusions/success gaps (gated)"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "unit: category enum == BrainstormCategory ids and buildPrompt embeds BRAINSTORM_CATEGORY_CLASSES (c33)",
+            "live: the chosen category + questions reflect the request's categorisation (gated)"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "integration: the elicit step pauses the run on the opaque token until the controller returns answers — the daemon never advances on its own (k2)",
+            "unit: elicit.run() yields an llm-pause (control returns to the controller), never a self-resolved output"
+          ]
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "elicit as a single llm-pause runner: classify + ask in one turn",
+        "oneLineSummary": "Convert the s1 placeholder `elicit` into an llmPauseRunner whose prompt tells the controller to classify the focus into a BrainstormCategory and emit category-shaped clarifying questions (no spec on turn one).",
+        "approach": "The `elicit` step returns a StepRunnerLlmPause (via the existing llmPauseRunner helper) whose buildPrompt embeds the rough focus + the BRAINSTORM_CATEGORY_CLASSES vocabulary and instructs the outer LLM (controller) to pick the BrainstormCategory the idea best fits, emit clarifying QUESTIONS targeting the unstated intent gaps (scope/exclusions/success), and produce NO spec. Response schema { category, questions[] }. Answers seed BrainstormElicitState.openQuestions next turn (s3). No change to the decomposer, registration, state-store, or handler.",
+        "pros": [
+          "Reuses the step-loop llm-pause + state-store — controller-driven (k2), opaque token preserved (k8,k9).",
+          "Category-shaped questions reason over the specific idea, targeting its gaps (ac2/k13).",
+          "One turn = one llm-pause; no spec turn one (ac1); stays minimal.",
+          "Reuses the vocabulary as-is (c33)."
+        ],
+        "cons": [
+          "Question quality depends on the core-tier model (acceptable per k13).",
+          "Category enum ids differ from the story's spec/architecture/how-to-build phrasing; the prompt maps between them (back-flow)."
+        ],
+        "costEstimate": "S"
+      },
+      {
+        "id": "a2",
+        "name": "elicit as a deterministic output runner with per-category question templates",
+        "oneLineSummary": "Keep `elicit` an output-runner (no LLM); emit a fixed template of questions keyed by a heuristically-detected category.",
+        "approach": "A deterministic function classifies the focus by keyword heuristics into a BrainstormCategory and returns a hard-coded question list, no llm-pause.",
+        "pros": [
+          "Cheapest; fully deterministic and testable without a model."
+        ],
+        "cons": [
+          "Templated questions cannot target the SPECIFIC idea's gaps — fails ac2.",
+          "Keyword classification is brittle; misfires the category (ac3).",
+          "Trades correctness for cost — violates k13."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Ranked 3. VIOLATES ac2 and k13: templated questions restate generic prompts and cannot target this idea's unstated gaps, trading correctness for cost on the critical design path."
+      },
+      {
+        "id": "a3",
+        "name": "Two steps: a separate classify step, then an ask step",
+        "oneLineSummary": "Split turn one into a `classify` llm-pause then an `ask` llm-pause.",
+        "approach": "The decomposer emits two steps: classify (pick BrainstormCategory) then ask (emit questions), each its own llm-pause.",
+        "pros": [
+          "Cleanly separates categorisation from questioning; tiny schemas."
+        ],
+        "cons": [
+          "Two model turns for one user-facing first turn — more ceremony/slower.",
+          "Requires changing the s1 brainstormDecomposer (one-step), widening s2's blast radius beyond its boundary."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Ranked 2. sc2 partial: it would require editing the s1-owned brainstormDecomposer (one-step → two-step), boundary bloat for no benefit over a1's single step."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 symbol-locate — BrainstormCategory vocabulary",
+      "quotedText": "src/shared/brainstorm-classes.ts:12 BrainstormCategory = requirements|design|implementation|testing|general + BRAINSTORM_CATEGORY_CLASSES descriptions — reused as-is to shape questions (c33)."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 module-profile — llm-pause step mechanism",
+      "quotedText": "design runners build steps via llmPauseRunner returning a StepRunnerLlmPause (types.ts:148); the executor hands the prompt to the controller and pauses on the state store — the mechanism the elicit turn reuses (k2)."
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/runners/brainstorm/index.ts + src/mcp/workflow-step/state.ts (commit 212fb1c)",
+      "quotedText": "s1 landed the placeholder `elicit` StepRunner and BrainstormElicitState in the workflow-step payload; s2 converts elicit to an llm-pause without touching registration/state-store (k8/k9)."
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "s1 capability-discovery — questions-gate is upstream + k10 stub",
+      "quotedText": "questions-gate.ts is the upstream-artifact open-questions gate, not a mid-stage user-question mechanism; the chat-agent brainstorm.addIdea offlineRpc stub stays untouched (k10)."
+    }
+  ]
+}

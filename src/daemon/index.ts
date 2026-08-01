@@ -297,6 +297,15 @@ async function main(): Promise<void> {
 	const { validateAnalyzePrompts, registerBuiltinTemplates } = await import('../analyze/index.js');
 	validateAnalyzePrompts();
 
+	// 6d′. Validate the docgen runtime assets (mermaid + svg-pan-zoom + manifest)
+	//      exist + are non-empty in this build (Epic 870ed3dd, s7). Mirrors the
+	//      prompt validator: a mis-staged asset in an installed build is a
+	//      fail-fast startup refusal (DocgenAssetValidationError re-raises to the
+	//      top-level fatal handler) rather than a silent generation-time
+	//      fallbackUnavailable.
+	const { validateDocgenAssets } = await import('../docgen/asset-validator.js');
+	await validateDocgenAssets();
+
 	// 6e. Register the analyze framework's task-template catalog
 	//     (design/analyze-plan-builder.md "Param resolution from
 	//     context"). The Plan Builder picks tasks from this catalog;

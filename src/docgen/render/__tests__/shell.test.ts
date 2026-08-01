@@ -13,8 +13,11 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
-import { documentIRToMermaid, assembleShell } from '../shell.js';
+import { documentIRToMermaid, assembleShell, _resetRuntimeCacheForTests, _setDocgenAssetDirForTests } from '../shell.js';
 import { isOk } from '../../outcome.js';
 import type { DocumentIR } from '../../types.js';
 
@@ -80,4 +83,44 @@ test('assembleShell: offline self-contained shell — runtime INLINED, no extern
 	// the diagram source is embedded
 	assert.match(shell.html, /class n0/);
 	assert.match(shell.html, /Base/);
+});
+
+// ── s7 · t6: the generation-time degrade path is preserved behind the boot check ──
+
+test('assembleShell: assets absent → sc4 fallbackUnavailable naming copy-assets (UNCHANGED s1 degrade), not a throw', async () => {
+	const empty = mkdtempSync(join(tmpdir(), 'docgen-noassets-'));   // a dir with NO runtime assets
+	_setDocgenAssetDirForTests(empty);                               // also resets the runtime cache
+	try {
+		const out = await assembleShell(ir());
+		assert.equal(out.status, 'fallback-unavailable');
+		if (out.status === 'fallback-unavailable') {
+			assert.match(out.reason, /runtime asset/i);
+			assert.match(out.remedy, /copy-assets/);
+		}
+	} finally {
+		_setDocgenAssetDirForTests(undefined);                       // restore + reset cache
+		_resetRuntimeCacheForTests();
+		rmSync(empty, { recursive: true, force: true });
+	}
+});
+
+// ── s7 · t7: offline self-contained holds for the s5 subprocess-fallback backend too ──
+
+test('assembleShell: the s5 fallback backend is ALSO self-contained offline (both backends, ac4)', async () => {
+	// an oversized IR forces the subprocess fallback; a fake renderer supplies the SVG.
+	const nodes = Array.from({ length: 70 }, (_, i) => ({ id: `n${i}`, label: `C${i}`, kind: 'component' }));
+	const bigIR: DocumentIR = {
+		docType: 'component-dependency', scopeDescription: 'whole repo',
+		derived: { nodes, edges: [] }, narrated: { sections: [] }, generatedAtRevision: 'r1',
+	};
+	const fakeRenderer = { renderSvg: async () => ({ status: 'ok' as const, svg: '<svg xmlns="http://www.w3.org/2000/svg"><g/></svg>', tool: 'dot' as const }) };
+	const out = await assembleShell(bigIR, fakeRenderer);
+	assert.ok(isOk(out));
+	if (isOk(out)) {
+		assert.equal(out.value.backend, 'fallback-subprocess');
+		assert.doesNotMatch(out.value.html, /<script[^>]*\bsrc=/i);   // offline: nothing fetched at view time
+		assert.doesNotMatch(out.value.html, /<link[^>]*\bhref=/i);
+		assert.match(out.value.html, /svgPanZoom|svg-pan-zoom/);      // svg-pan-zoom inlined
+		assert.equal(out.value.supportsZoomPan, true);
+	}
 });

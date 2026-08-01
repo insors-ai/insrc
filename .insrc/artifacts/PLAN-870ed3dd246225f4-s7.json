@@ -1,0 +1,541 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1785528706456-g4il53",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-07-31T20:23:03.787Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "design.decompose",
+          "tier": "mid",
+          "runner": "cli-claude",
+          "model": "sonnet"
+        },
+        {
+          "role": "context.assemble",
+          "tier": "mid",
+          "runner": "cli-claude",
+          "model": "sonnet"
+        },
+        {
+          "role": "tasks.enumerate",
+          "tier": "mid",
+          "runner": "cli-claude",
+          "model": "sonnet"
+        },
+        {
+          "role": "tasks.critique",
+          "tier": "mid",
+          "runner": "cli-claude",
+          "model": "sonnet"
+        },
+        {
+          "role": "tasks.finalize",
+          "tier": "mid",
+          "runner": "cli-claude",
+          "model": "sonnet"
+        },
+        {
+          "role": "test-strategy.write",
+          "tier": "mid",
+          "runner": "cli-claude",
+          "model": "sonnet"
+        },
+        {
+          "role": "scope.audit",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "opus"
+        },
+        {
+          "role": "synthesize",
+          "tier": "mid",
+          "runner": "cli-claude",
+          "model": "sonnet"
+        }
+      ]
+    },
+    "elapsedMs": 677293,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "870ed3dd246225f4",
+    "epicSlug": "documentation-generation-framework-docgen-produces-self",
+    "storyId": "s7",
+    "lldRunId": "wf-1785526646157-51k4x3",
+    "lldEffectiveHash": "cb5b27744db290de72c59b4596b1773d0ba24dd335448b4f0a7944f70adc817c",
+    "review": {
+      "artifact": "plan",
+      "stage": "plan",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "pl1",
+          "ref": "t1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/docgen/render/shell.ts has a private ASSET_DIR constant + a loadRuntime that reads/parses runtime.json + a RuntimeManifest type — the symbols t1 promotes to DOCGEN_ASSET_DIR + resolveDocgenRuntimeManifest().",
+          "evidence": "shell.ts:36 `const ASSET_DIR = join(...,'assets','docgen')`, :38 RuntimeManifest, :48 loadRuntime, :50 `JSON.parse(await readFile(join(ASSET_DIR,'runtime.json')))` — the exact symbols t1 promotes/extracts. Confirmed.",
+          "action": "none",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "pl2",
+          "ref": "t2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/analyze/context/boot-validator.ts is the model t2 mirrors: validateAnalyzePrompts collects failures {componentId,path,reason} into a typed AnalyzePromptValidationError with a Fix: line, using stat/readFile + body.trim().length===0.",
+          "evidence": "boot-validator.ts:141 validateAnalyzePrompts, :74 AnalyzePromptValidationError, componentId in failures, :83 'Fix:' line — the pattern t2 mirrors. Confirmed.",
+          "action": "none",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "pl3",
+          "ref": "t2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/assets/docgen/runtime.json declares mermaidAsset + svgPanZoomAsset, the two bundle filenames validateDocgenAssets stat+non-empty-checks.",
+          "evidence": "runtime.json:4 mermaidAsset='mermaid.min.js', :5 svgPanZoomAsset='svg-pan-zoom.min.js' — the two bundle filenames the validator checks. Confirmed.",
+          "action": "none",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "pl4",
+          "ref": "t3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/daemon/index.ts calls validateAnalyzePrompts() at boot — t3 inserts validateDocgenAssets() immediately after it, before the daemon accepts requests.",
+          "evidence": "daemon/index.ts:298 `validateAnalyzePrompts();` at boot — the insertion point for validateDocgenAssets(). Confirmed.",
+          "action": "none",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "pl5",
+          "ref": "t4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/analyze/context/__tests__/boot-validator.test.ts is the test pattern t4 mirrors (present-assets pass silently; missing/empty throws the typed error).",
+          "evidence": "boot-validator.test.ts:76 `assert.doesNotThrow(() => validateAnalyzePrompts())` + throw-branch assertions on err.missing[].componentId — the test pattern t4 mirrors. Confirmed.",
+          "action": "none",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "pl6",
+          "ref": "t6",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "assembleShell in shell.ts already wraps loadRuntime and returns sc4 fallbackUnavailable naming copy-assets on a read failure — the degrade path t6 asserts stays unchanged.",
+          "evidence": "shell.ts:247 `runtime = await loadRuntime();` inside the try mapping failure to fallbackUnavailable; :60 _resetRuntimeCacheForTests — the degrade path + cache-reset seam t6 uses. Confirmed.",
+          "action": "none",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "pl7",
+          "ref": "t7",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/docgen/render/__tests__/shell.test.ts holds the offline self-contained assertion (no <script src=, runtime inlined >1MB) that t7 extends to both backends.",
+          "evidence": "shell.test.ts:64 'assembleShell: offline self-contained shell — runtime INLINED' asserting no external fetch + inlined runtime + supportsZoomPan — the assertion t7 extends. Confirmed.",
+          "action": "none",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "pl8",
+          "ref": "tasks",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "The plan enumerates exactly 7 tasks t1–t7.",
+          "evidence": "Seven task sections S007:T001–T007 present; t1–t3 implementation + t4–t7 tests. Confirmed.",
+          "action": "none",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "pl9",
+          "ref": "tasks",
+          "kind": "ordering",
+          "severity": "LOW",
+          "premise": "The task dependency DAG is acyclic and well-formed: t1(—); t2->t1; t3->t2; t4->t2; t5->t2; t6->t1; t7->t1.",
+          "evidence": "DAG: t1(—); t2->t1; t3->t2; t4->t2; t5->t2; t6->t1; t7->t1. Acyclic, every dep precedes its dependent; t1's shared extraction precedes both the validator (t2) and the regression/smoke tests (t6/t7). Confirmed.",
+          "action": "none",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "pl10",
+          "ref": "t2",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The empty-body rule the validator reuses (body.trim().length===0) exists in the boot-validator model.",
+          "evidence": "boot-validator.ts:173 `if (body.trim().length === 0)` — the empty-body rule validateDocgenAssets reuses. Confirmed.",
+          "action": "none",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 10
+      },
+      "reviewedAt": "2026-08-01T05:43:21.348Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-08-01T05:43:56.602Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Extract DOCGEN_ASSET_DIR + resolveDocgenRuntimeManifest() in shell.ts",
+        "summary": "In src/docgen/render/shell.ts, promote the private ASSET_DIR constant to an exported DOCGEN_ASSET_DIR constant, using the identical import.meta.url-relative resolution already in place. Extract a shared resolveDocgenRuntimeManifest(): RuntimeManifest helper that reads and parses runtime.json from DOCGEN_ASSET_DIR, and repoint loadRuntime() to obtain the manifest via this helper instead of reading runtime.json itself, keeping loadRuntime()'s existing runtimeCache memoization layered on top of the helper's result. No behavior change: same resolved path, same manifest contents, same memoization.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "DOCGEN_ASSET_DIR is exported from shell.ts and resolves to the same directory the previous private ASSET_DIR resolved to",
+          "resolveDocgenRuntimeManifest() is exported from shell.ts, reads runtime.json from DOCGEN_ASSET_DIR, and is the single call site loadRuntime() uses to obtain the parsed manifest — no independent runtime.json read remains in loadRuntime()",
+          "loadRuntime()'s resolved path, manifest contents, and runtimeCache memoization behavior are unchanged after the extraction"
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "DOCGEN_ASSET_DIR resolves to the same directory loadRuntime reads from"
+          },
+          {
+            "level": "unit",
+            "name": "loadRuntime output is byte-identical after ASSET_DIR→DOCGEN_ASSET_DIR extraction"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Implement validateDocgenAssets + DocgenAssetValidationError/DocgenAssetFailure",
+        "summary": "Add validateDocgenAssets(): void, mirroring validateAnalyzePrompts in src/analyze/context/boot-validator.ts, that calls the shared resolveDocgenRuntimeManifest() helper (from t1) to obtain the parsed runtime.json manifest from DOCGEN_ASSET_DIR, then stat+non-empty-checks manifest.mermaidAsset and manifest.svgPanZoomAsset. Introduce DocgenAssetFailure {componentId, path, reason} and DocgenAssetValidationError, which collects every failure (missing runtime.json, missing bundle(s), empty bundle, malformed manifest JSON) into one throw carrying a single actionable Fix: line naming the copy-assets ship step. Read-only: stat + readFile only, no mutation, no network call, no new asset-shipping path.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "validateDocgenAssets() returns silently when runtime.json and both referenced bundles are present and non-empty under DOCGEN_ASSET_DIR",
+          "validateDocgenAssets() throws a single DocgenAssetValidationError listing every failing component (not just the first) when runtime.json is missing, a bundle is missing, a bundle is empty, or the manifest is malformed JSON — each DocgenAssetFailure entry carries componentId/path/reason, and the thrown error's message contains exactly one Fix: line naming copy-assets for the whole collected error, not one per entry",
+          "validateDocgenAssets() obtains the manifest via the shared resolveDocgenRuntimeManifest() helper rather than an independent runtime.json read, and performs only read-only stat/readFile calls (no writes, no fetches), introducing no second asset-shipping path"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c5",
+          "c2",
+          "c15"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "validateDocgenAssets returns silently when all assets present and non-empty"
+          },
+          {
+            "level": "unit",
+            "name": "validateDocgenAssets collects every missing/empty/malformed-manifest failure into one DocgenAssetValidationError throw with one Fix: line"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Wire validateDocgenAssets into daemon boot sequence",
+        "summary": "In src/daemon/index.ts, call validateDocgenAssets() immediately after the existing validateAnalyzePrompts() call, before the daemon accepts requests. A thrown DocgenAssetValidationError propagates to the same top-level fatal handler used for prompt-validation failures (log + clean exit).",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "validateDocgenAssets() is invoked in src/daemon/index.ts directly after validateAnalyzePrompts() and before the daemon begins accepting IPC requests",
+          "A thrown DocgenAssetValidationError during boot is caught by the existing top-level fatal handler, logged, and causes a clean daemon exit rather than a partial or degraded boot"
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "validateDocgenAssets runs clean against the real built DOCGEN_ASSET_DIR (daemon boot path)"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Unit tests for validateDocgenAssets branches",
+        "summary": "Add unit tests, mirroring src/analyze/context/boot-validator.test.ts, against a controllable/temp asset dir covering: full pass (no throw), missing runtime.json, one or more missing bundles collected into a single throw, an empty bundle, malformed manifest JSON, and an assertion that DOCGEN_ASSET_DIR is the same directory loadRuntime resolves.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "Unit tests cover the pass case and every DocgenAssetValidationError branch (missing runtime.json, missing bundle(s) collected together, empty bundle, malformed manifest), each asserting componentId/path/reason and that the thrown error's message contains exactly one Fix: line naming copy-assets for the whole error",
+          "A unit test asserts DOCGEN_ASSET_DIR is the identical path both validateDocgenAssets and loadRuntime resolve, and that both obtain the manifest via the shared resolveDocgenRuntimeManifest() helper rather than independent runtime.json reads"
+        ],
+        "derivedFrom": [
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "validateDocgenAssets returns silently when all assets present and non-empty"
+          },
+          {
+            "level": "unit",
+            "name": "validateDocgenAssets throws DocgenAssetValidationError naming runtime.json when missing, with a copy-assets Fix: line"
+          },
+          {
+            "level": "unit",
+            "name": "validateDocgenAssets collects every missing bundle into one throw (not just the first)"
+          },
+          {
+            "level": "unit",
+            "name": "validateDocgenAssets reports 'file is empty' for a whitespace-only bundle"
+          },
+          {
+            "level": "unit",
+            "name": "validateDocgenAssets reports a manifest parse failure for malformed runtime.json"
+          },
+          {
+            "level": "unit",
+            "name": "DOCGEN_ASSET_DIR resolves to the same directory loadRuntime reads from"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Integration test against the real built asset tree",
+        "summary": "Add an integration test that runs against the real `npm run build` output, asserting runtime.json and its referenced mermaidAsset/svgPanZoomAsset resolve to present, non-empty files under out/assets/docgen, that validateDocgenAssets() runs clean against the real DOCGEN_ASSET_DIR, and that the same asset filenames are git-tracked under src/assets/docgen for the installer clone path.",
+        "size": "S",
+        "order": 5,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "Integration test asserts runtime.json plus its referenced bundles are present and non-empty under the built out/assets/docgen tree",
+          "validateDocgenAssets() completes without throwing when run against the real built DOCGEN_ASSET_DIR, and the referenced asset filenames are confirmed to also exist under the git-tracked src/assets/docgen source tree"
+        ],
+        "derivedFrom": [
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "built out/assets/docgen has present, non-empty runtime.json + referenced mermaidAsset/svgPanZoomAsset"
+          },
+          {
+            "level": "integration",
+            "name": "validateDocgenAssets runs clean against the real built DOCGEN_ASSET_DIR"
+          },
+          {
+            "level": "integration",
+            "name": "manifest-referenced asset filenames are git-tracked under src/assets/docgen"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Regression test: generation-time fallback unchanged",
+        "summary": "Add or extend a unit test that, with the runtime cache reset and DOCGEN_ASSET_DIR pointed at an asset-less dir, confirms assembleShell still returns the existing sc4 fallbackUnavailable outcome (naming copy-assets) rather than throwing, and that loadRuntime's output is byte-identical for a given built tree after the ASSET_DIR/DOCGEN_ASSET_DIR + resolveDocgenRuntimeManifest extraction.",
+        "size": "S",
+        "order": 6,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "With DOCGEN_ASSET_DIR pointed at a dir with no assets, assembleShell() returns the unchanged sc4 fallbackUnavailable outcome naming copy-assets instead of throwing",
+          "loadRuntime()'s resolved output is unchanged (same path, same memoized bytes) after the ASSET_DIR/DOCGEN_ASSET_DIR + resolveDocgenRuntimeManifest extraction"
+        ],
+        "derivedFrom": [
+          "c8",
+          "c13"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "assembleShell still returns sc4 fallbackUnavailable naming copy-assets when DOCGEN_ASSET_DIR has no assets, rather than throwing"
+          },
+          {
+            "level": "unit",
+            "name": "loadRuntime output is byte-identical for a given built tree after the ASSET_DIR→DOCGEN_ASSET_DIR extraction"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Extend offline self-contained smoke test",
+        "summary": "Extend src/docgen/render/__tests__/shell.test.ts's existing offline assertion to confirm a built-tree sc3 shell inlines the runtime (>1MB), has no `<script src=` / `<link href=`, and carries supportsZoomPan, for both the primary inline backend and the s5 subprocess-fallback backend.",
+        "size": "S",
+        "order": 7,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Smoke test confirms a generated shell from the built tree has no external <script src=/<link href= references and inlines a >1MB runtime with supportsZoomPan true",
+          "The same offline/self-contained assertion passes for both the primary inline renderer path and the s5 subprocess-fallback renderer path"
+        ],
+        "derivedFrom": [
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "built-tree sc3 shell inlines a >1MB runtime with no <script src=/<link href= and carries supportsZoomPan"
+          },
+          {
+            "level": "smoke",
+            "name": "offline self-contained assertion holds for both the primary inline backend and the s5 subprocess-fallback backend"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "all assets present + non-empty → returns silently (no throw)",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "runtime.json missing → throws DocgenAssetValidationError listing runtime.json with an ENOENT/'file not found' reason + a copy-assets 'Fix:' line",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "a manifest-referenced bundle (mermaid.min.js / svg-pan-zoom.min.js) missing → the error lists EVERY missing bundle in one throw (not just the first)",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "a referenced bundle present but empty (whitespace-only) → error reason 'file is empty'",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "runtime.json malformed JSON → error names the manifest parse failure",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "DOCGEN_ASSET_DIR is the SAME path loadRuntime reads from (one source of truth — assert the validator and loadRuntime resolve the identical dir)",
+        "coveredByTaskIds": [
+          "t1",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "runtime.json + its referenced mermaidAsset + svgPanZoomAsset resolve to present, NON-EMPTY files under the built out/assets/docgen (proves copy-assets staged them via the existing path)",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "validateDocgenAssets() runs clean (no throw) against the real DOCGEN_ASSET_DIR — the daemon-boot check passes on this build",
+        "coveredByTaskIds": [
+          "t3",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "the three assets are git-tracked (so an installer clone receives them) — asserted via the manifest referencing filenames that exist in src/assets/docgen too",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "with the runtime cache reset + DOCGEN_ASSET_DIR pointed at a dir with no assets, assembleShell returns sc4 fallbackUnavailable naming copy-assets (UNCHANGED s1 behaviour) rather than throwing",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "loadRuntime output is byte-identical for a given built tree after the ASSET_DIR → DOCGEN_ASSET_DIR extraction (no renderer-output change)",
+        "coveredByTaskIds": [
+          "t1",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "a generated sc3 shell from the built tree inlines the runtime (>1MB), has NO `<script src=` / `<link href=`, and carries supportsZoomPan — so a document moved to a network-less machine renders fully with zoom/pan",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "both backends: the primary inline shell AND (s5) the fallback shell are self-contained offline",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s7 handoff: export DOCGEN_ASSET_DIR + extract resolveDocgenRuntimeManifest() from shell.ts as the shared source of truth for the runtime.json manifest"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s7 handoff: validateDocgenAssets() mirrors validateAnalyzePrompts in src/analyze/context/boot-validator.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s7 handoff: DocgenAssetFailure {componentId, path, reason} + DocgenAssetValidationError collect every failure into one throw carrying a single Fix: line naming copy-assets"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s7 handoff: wire validateDocgenAssets() into src/daemon/index.ts immediately after validateAnalyzePrompts(), before the daemon accepts requests"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s7 handoff: validateDocgenAssets() stat+non-empty-checks manifest.mermaidAsset and manifest.svgPanZoomAsset from the parsed runtime.json manifest"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s7 handoff: unit tests mirror src/analyze/context/boot-validator.test.ts against a controllable/temp asset dir"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s7 handoff: integration test against the real npm run build output confirms assets present under out/assets/docgen and the same filenames git-tracked under src/assets/docgen"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD s7 handoff: assembleShell must preserve the sc4 fallbackUnavailable degrade path naming copy-assets, not throw, when assets are absent"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "LLD s7 handoff: sc3 self-contained offline shell — no <script src=>/<link href=>, inlines a >1MB runtime, carries supportsZoomPan, for both the primary inline backend and the s5 subprocess-fallback backend"
+    },
+    {
+      "id": "c13",
+      "kind": "prior-artifact",
+      "ref": "LLD s7 handoff: loadRuntime()'s resolved path, manifest contents, and memoization must remain byte-identical after the ASSET_DIR/DOCGEN_ASSET_DIR + resolveDocgenRuntimeManifest extraction"
+    },
+    {
+      "id": "c15",
+      "kind": "prior-artifact",
+      "ref": "LLD s7 handoff: malformed runtime.json JSON must be reported as a manifest parse failure within the single collected DocgenAssetValidationError throw"
+    }
+  ]
+}

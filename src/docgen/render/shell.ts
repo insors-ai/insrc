@@ -32,25 +32,50 @@ import {
 	type SubprocessRenderer,
 } from './fallback.js';
 
-// out/docgen/render/shell.js → ../../assets/docgen
-const ASSET_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'assets', 'docgen');
+/** The single source of truth for where the docgen runtime assets live
+ *  (out/assets/docgen, resolved from import.meta.url). Both the renderer
+ *  (loadRuntime) and the boot-time asset validator (validateDocgenAssets, s7)
+ *  read from here, so they can never disagree about the asset location.
+ *  out/docgen/render/shell.js → ../../assets/docgen */
+export const DOCGEN_ASSET_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'assets', 'docgen');
 
-interface RuntimeManifest {
+/** Test-only override of the asset dir, shared by loadRuntime +
+ *  resolveDocgenRuntimeManifest + the s7 validator so a test can point ALL of
+ *  them at a temp dir at once. Undefined in production → DOCGEN_ASSET_DIR. */
+let assetDirOverride: string | undefined;
+export function _setDocgenAssetDirForTests(dir?: string): void { assetDirOverride = dir; runtimeCache = undefined; }
+
+/** The docgen asset dir currently in effect (the test override when set, else
+ *  DOCGEN_ASSET_DIR). The one resolver every asset read goes through. */
+export function docgenAssetDir(): string { return assetDirOverride ?? DOCGEN_ASSET_DIR; }
+
+export interface RuntimeManifest {
 	readonly mermaidVersion:    string;
 	readonly svgPanZoomVersion: string;
 	readonly mermaidAsset:      string;
 	readonly svgPanZoomAsset:   string;
 }
 
+/** Read + parse runtime.json from the docgen asset dir. The SINGLE manifest read
+ *  both loadRuntime (renderer) and validateDocgenAssets (boot check) share, so
+ *  there is no second notion of the manifest's location or shape (s7 · t1). */
+export async function resolveDocgenRuntimeManifest(): Promise<RuntimeManifest> {
+	return JSON.parse(await readFile(join(docgenAssetDir(), 'runtime.json'), 'utf8')) as RuntimeManifest;
+}
+
 let runtimeCache: { manifest: RuntimeManifest; mermaid: string; svgPanZoom: string } | undefined;
 
-/** Load + cache the vendored runtime (manifest + both minified bundles). */
+/** Load + cache the vendored runtime (manifest + both minified bundles). The
+ *  manifest comes via the shared resolveDocgenRuntimeManifest(); the bundle
+ *  reads resolve against the same docgenAssetDir(). Unchanged behaviour: same
+ *  resolved path, same contents, same memoization. */
 async function loadRuntime(): Promise<{ manifest: RuntimeManifest; mermaid: string; svgPanZoom: string }> {
 	if (runtimeCache !== undefined) return runtimeCache;
-	const manifest = JSON.parse(await readFile(join(ASSET_DIR, 'runtime.json'), 'utf8')) as RuntimeManifest;
+	const manifest = await resolveDocgenRuntimeManifest();
+	const dir = docgenAssetDir();
 	const [mermaid, svgPanZoom] = await Promise.all([
-		readFile(join(ASSET_DIR, manifest.mermaidAsset), 'utf8'),
-		readFile(join(ASSET_DIR, manifest.svgPanZoomAsset), 'utf8'),
+		readFile(join(dir, manifest.mermaidAsset), 'utf8'),
+		readFile(join(dir, manifest.svgPanZoomAsset), 'utf8'),
 	]);
 	runtimeCache = { manifest, mermaid, svgPanZoom };
 	return runtimeCache;

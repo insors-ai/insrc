@@ -106,6 +106,39 @@ environment. Explicit `repo` overrides it. The repo must be
 registered with the insrc daemon (`insrc repo add /path/to/repo`)
 and finished indexing.
 
+## Generating code documents via `insrc_docgen` (insrc MCP server)
+
+When the user asks you to **produce a document, diagram, or visual map OF the
+code** — a class/type diagram, a module-dependency map, a call flow from an
+entry point, or a narrated walkthrough — reach for **`insrc_docgen`** rather
+than hand-writing Mermaid or dumping files. It generates a SINGLE self-contained
+OFFLINE HTML file from the indexed code graph (diagram + runtime inlined,
+zoom/pan, no network); every node and edge is graph-derived, so no path or
+symbol is hallucinated.
+
+Call **`insrc_docgen({ docType, repo?, … })`**. `docType` is a registered
+document type; the current set (enumerated from the one registry, so it may
+grow):
+
+| docType                | produces                                                        | key inputs              |
+|------------------------|-----------------------------------------------------------------|-------------------------|
+| `type-structure`       | classes/interfaces/types + inheritance in a scope               | `path?`                 |
+| `component-dependency` | module/component dependency topology                            | `path?`                 |
+| `call-sequence`        | a call flow from an entry-point symbol                          | `symbol` (req), `maxDepth?` |
+| `narrative`            | a base diagram + an LLM-authored, graph-grounded walkthrough    | `base` + `question` (req) |
+
+- `repo` falls back to `$INSRC_REPO`; it must be registered + finished indexing
+  (else the tool returns `source-not-ready` — register + index it first).
+- Read-only + daemon-owned: the graph is read INSIDE the daemon and only the
+  finished document/outcome crosses back. Render or save the returned HTML for
+  the user; do not hand-build the diagram yourself.
+- Same capability is reachable as the daemon `docgen_generate` tool and the
+  `docgen.generate` / `docgen.list` IPC — all enumerate the same registry, so
+  they never drift.
+
+Use `insrc_docgen` for "draw / diagram / document / map the code"; use analyze
+for "explain / does X exist"; use the workflow for "define / design / build".
+
 ## Building features via insrc — classify FIRST, review before approve
 
 When the user asks you to **build / add / implement a feature** (not a question
@@ -211,8 +244,10 @@ their yes call `insrc_workflow_approve({ artifactPath })` (see the
 ### Analyze vs workflow — decision heuristic
 
 - User asks a **question about the codebase** → analyze.
-- User asks you to **produce a document / decision / push** →
-  workflow.
+- User asks you to **draw / diagram / document / map the code** (a
+  visual, self-contained HTML doc from the graph) → `insrc_docgen`.
+- User asks you to **produce a design artifact / decision / push**
+  (Epic, HLD, LLD, tracker) → workflow.
 - User asks "does X exist?" during workflow → use analyze from
   inside the workflow step's LLM turn (context.assemble prompts
   explicitly call for `insrc_analyze_step` invocations).

@@ -20,12 +20,17 @@ import type { MaintenanceResult } from '../maintenance.js';
 // (or renaming ok/steps) breaks this assignment.
 export const _minimalResult: MaintenanceResult = { ok: true, steps: [] };
 
-// The full shape, with the additive optional summary present. `error` inside
-// configReconcile is `string | undefined` (exactOptionalPropertyTypes).
+// The full shape, with the additive optional summaries present. `error` inside
+// configReconcile is `string | undefined` (exactOptionalPropertyTypes);
+// `steeringRefresh` is a flat per-file outcome list (SteeringRefreshReport).
 export const _fullResult: MaintenanceResult = {
 	ok: false,
-	steps: ['sync', 'install', 'build', 'reconcile'],
+	steps: ['sync', 'install', 'build', 'reconcile', 'steering-refresh'],
 	configReconcile: { changed: true, filled: 3, repaired: 1, pruned: 6, error: undefined },
+	steeringRefresh: [
+		{ file: '/repo/CLAUDE.md', action: 'replaced' },
+		{ file: '/repo/AGENTS.md', action: 'skipped', note: 'no markers' },
+	],
 };
 
 // Pin the existing field types exactly (retyping `ok` or `steps` breaks these).
@@ -39,3 +44,9 @@ export const _stepsIsStringArray: ExactlyStringArray<MaintenanceResult['steps']>
 export type _ConfigReconcileOptional =
 	Record<never, never> extends Pick<MaintenanceResult, 'configReconcile'> ? true : never;
 export const _configReconcileOptional: _ConfigReconcileOptional = true;
+
+// `steeringRefresh` is likewise additive + optional — omittable exactly like
+// `configReconcile`. Making it required (or renaming it) breaks this.
+export type _SteeringRefreshOptional =
+	Record<never, never> extends Pick<MaintenanceResult, 'steeringRefresh'> ? true : never;
+export const _steeringRefreshOptional: _SteeringRefreshOptional = true;

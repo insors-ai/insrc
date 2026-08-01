@@ -21,13 +21,14 @@
  */
 
 import { spawn } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
 import { startDaemon, stopDaemon } from './daemon.js';
 import { loadBuiltCatalog } from '../../config/config-catalog-loader.js';
 import { reconcileConfigFile, type ConfigIoOutcome } from '../../config/reconcile-io.js';
+import { refreshSteeringAcrossRepos, type SteeringRefreshDeps, type SteeringRefreshReport } from '../../daemon/steering-inject.js';
 
 /** Where the installed daemon checkout lives. */
 export const DAEMON_ROOT = process.env['INSRC_DAEMON_ROOT'] ?? join(homedir(), '.insrc', 'daemon');
@@ -56,6 +57,14 @@ export interface MaintenanceResult {
 		readonly pruned:   number;
 		readonly error?:   string | undefined;
 	} | undefined;
+	/**
+	 * Additive, optional per-file report of the post-build steering-block
+	 * refresh (S001). Mirrors `configReconcile`: present on paths that reach the
+	 * post-build phase, absent (or `undefined`) when the refresh could not run
+	 * or was not reached. Optionality is written explicitly per
+	 * exactOptionalPropertyTypes.
+	 */
+	readonly steeringRefresh?: SteeringRefreshReport | undefined;
 }
 
 export type LogFn = (line: string) => void;
@@ -145,8 +154,22 @@ export async function update(opts: UpdateOptions, onLog: LogFn): Promise<Mainten
 		const configReconcile = await runUpdateReconcile(root, onLog);   // writes ~/.insrc/config.json (PATHS.config)
 		steps.push('reconcile');
 
+		// Post-build steering refresh. Like the reconcile above, it runs STRICTLY
+		// after the build and is best-effort: `runUpdateSteeringRefresh` already
+		// swallows every failure into `undefined`, and this outer guard is a
+		// belt-and-suspenders so a steering-refresh fault can NEVER flip a
+		// successful update to failed. It re-stamps the freshly built steering
+		// block into every registered repo that already carries the markers.
+		let steeringRefresh: SteeringRefreshReport | undefined;
+		try {
+			steeringRefresh = await runUpdateSteeringRefresh(root, onLog);
+		} catch (err) {
+			onLog(`steering refresh failed: ${err instanceof Error ? err.message : String(err)}`);
+		}
+		steps.push('steering-refresh');
+
 		onLog('update complete (daemon NOT restarted)');
-		return { ok: true, steps, configReconcile };
+		return { ok: true, steps, configReconcile, steeringRefresh };
 	} catch (err) {
 		return { ok: false, steps, error: err instanceof Error ? err.message : String(err) };
 	}
@@ -172,6 +195,45 @@ export async function runUpdateReconcile(root: string, onLog: LogFn, configPath?
 		const message = err instanceof Error ? err.message : String(err);
 		onLog(`config reconcile failed: ${message}`);
 		return { changed: false, filled: 0, repaired: 0, pruned: 0, error: message };
+	}
+}
+
+/** Re-stamp the freshly-built steering block into every registered repo that
+ *  already carries the markers, reporting per-repo detail on `onLog` and
+ *  returning the flat per-file report. Never throws — any top-level failure
+ *  (block asset missing, `listRepos` rejection) is caught, logged, and yields
+ *  `undefined`, so an update never fails on a best-effort refresh.
+ *
+ *  The block is read from the DAEMON ROOT's freshly-built `out/prompts` (not
+ *  this CLI process's own build) — mirroring `runUpdateReconcile`, which loads
+ *  the freshly built catalog from `root/out` rather than the resident module.
+ *
+ *  `deps` is a test seam (prod walks the real registry + fs): overrides are
+ *  merged AFTER the root-derived `readBlock`, so a test can inject
+ *  `listRepos`/`readFile`/`writeFile` without opening LMDB or touching disk. */
+export async function runUpdateSteeringRefresh(
+	root: string,
+	onLog: LogFn,
+	deps?: Partial<SteeringRefreshDeps>,
+): Promise<SteeringRefreshReport | undefined> {
+	try {
+		const blockPath = join(root, 'out', 'prompts', 'steering-block.md');
+		const block = readFileSync(blockPath, 'utf8').trim();
+		if (block.length === 0) throw new Error(`steering block asset is empty: ${blockPath}`);
+
+		const report = await refreshSteeringAcrossRepos({ readBlock: () => block, ...deps });
+		const refreshed = report.filter(o => o.action === 'replaced').length;
+		const skipped   = report.filter(o => o.action === 'skipped').length;
+		onLog(`steering refresh: ${refreshed} refreshed, ${skipped} skipped across ${report.length} file(s)`);
+		for (const o of report) {
+			if (o.action === 'replaced') onLog(`  refreshed ${o.file}`);
+			else if (o.note !== undefined) onLog(`  ${o.action}   ${o.file} (${o.note})`);
+		}
+		return report;
+	} catch (err) {
+		const message = err instanceof Error ? err.message : String(err);
+		onLog(`steering refresh failed: ${message}`);
+		return undefined;
 	}
 }
 

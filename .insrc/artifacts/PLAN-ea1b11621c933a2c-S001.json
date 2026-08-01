@@ -1,0 +1,485 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1785576214590-o4pg46",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-08-01T09:32:37.982Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "design.decompose",
+          "tier": "mid",
+          "runner": "cli-claude",
+          "model": "sonnet"
+        },
+        {
+          "role": "context.assemble",
+          "tier": "mid",
+          "runner": "cli-claude",
+          "model": "sonnet"
+        },
+        {
+          "role": "tasks.enumerate",
+          "tier": "mid",
+          "runner": "cli-claude",
+          "model": "sonnet"
+        },
+        {
+          "role": "tasks.critique",
+          "tier": "mid",
+          "runner": "cli-claude",
+          "model": "sonnet"
+        },
+        {
+          "role": "tasks.finalize",
+          "tier": "mid",
+          "runner": "cli-claude",
+          "model": "sonnet"
+        },
+        {
+          "role": "test-strategy.write",
+          "tier": "mid",
+          "runner": "cli-claude",
+          "model": "sonnet"
+        },
+        {
+          "role": "scope.audit",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "opus"
+        },
+        {
+          "role": "synthesize",
+          "tier": "mid",
+          "runner": "cli-claude",
+          "model": "sonnet"
+        }
+      ]
+    },
+    "elapsedMs": 543388,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ea1b11621c933a2c",
+    "epicSlug": "daemon-update-automatically-refresh-insrc-steering",
+    "storyId": "S001",
+    "lldRunId": "wf-1785574573864-90235b",
+    "lldEffectiveHash": "ea1b11621c933a2c7ab989074e128c8a8fa085840e174c1a9a6945d7f6c2fdde",
+    "review": {
+      "artifact": "plan",
+      "stage": "plan",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "pl1",
+          "ref": "t1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/daemon/steering-inject.ts exports the pure upsertMarkedSection returning UpsertResult with the two 'created' arms + duplicate/malformed guards + SteeringFileOutcome — the exact logic t1's refreshMarkedSection clones (minus the created arms).",
+          "evidence": "steering-inject.ts:90 upsertMarkedSection, :95+:104 the two `action:'created'` arms t1 collapses to skipped, :80 UpsertResult, :45 SteeringFileOutcome. refreshMarkedSection has 0 src hits (docs only) — correctly a new replace-only sibling. Confirmed.",
+          "action": "none",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "pl2",
+          "ref": "t3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "MaintenanceResult carries an existing OPTIONAL configReconcile field that t3's additive steeringRefresh field mirrors; the type is declared in src/cli/services/type-contracts/maintenance-result.ts.",
+          "evidence": "maintenance.ts:42 interface MaintenanceResult; type-contracts/maintenance-result.ts present; configReconcile is the existing optional field the additive steeringRefresh mirrors; steeringRefresh has 0 src hits (new). Confirmed.",
+          "action": "none",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "pl3",
+          "ref": "t2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/db/repos.ts exports listRepos returning RegisteredRepo[] (each with a path) — the registry t2's walk iterates; readSteeringBlock is the production readBlock default.",
+          "evidence": "repos.ts:213 `export async function listRepos(_db): Promise<RegisteredRepo[]>`; steering-inject.ts:64 readSteeringBlock — the walk's registry source + the production readBlock default. Confirmed.",
+          "action": "none",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "pl4",
+          "ref": "t4/t5",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/cli/services/maintenance.ts update() runs a best-effort post-build runUpdateReconcile after npm run build and does NOT restart the daemon — the precedent + insertion point runUpdateSteeringRefresh (t4) is wired beside (t5).",
+          "evidence": "maintenance.ts:148 'update complete (daemon NOT restarted)'; runUpdateReconcile is the exported post-build best-effort step (16 src refs); runUpdateSteeringRefresh 0 src (new) — the precedent + insertion point are precise. Confirmed.",
+          "action": "none",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "pl5",
+          "ref": "tasks",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "The plan enumerates exactly 5 tasks (t1, t2, t3, t4, t5).",
+          "evidence": "Five task sections t1–t5 present (t1 refreshMarkedSection, t3 field, t2 walk, t4 wrapper, t5 wiring). The count re-derives from the task table + headers. Confirmed.",
+          "action": "none",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "pl6",
+          "ref": "tasks",
+          "kind": "ordering",
+          "severity": "LOW",
+          "premise": "The task dependency DAG is acyclic and well-formed: t1(—), t3(—); t2->t1; t4->t2; t5->t4,t3.",
+          "evidence": "DAG: t1(—), t3(—); t2->t1; t4->t2; t5->t4,t3. Acyclic, every dep precedes its dependent; the pure fn (t1) + type (t3) precede the walk (t2) which precedes the wrapper (t4) + wiring (t5). Confirmed.",
+          "action": "none",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "pl7",
+          "ref": "t1",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "refreshMarkedSection is NEW (does not exist yet in steering-inject.ts), a replace-only variant of the existing upsertMarkedSection.",
+          "evidence": "refreshMarkedSection / refreshSteeringAcrossRepos / runUpdateSteeringRefresh all have 0 hits in src/ — all three are genuinely new deliverables, not restatements of existing symbols. Confirmed.",
+          "action": "none",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 7
+      },
+      "reviewedAt": "2026-08-01T09:39:25.269Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-08-01T09:45:30.896Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add refreshMarkedSection pure function to steering-inject.ts",
+        "summary": "Implement the replace-only sibling of upsertMarkedSection in src/daemon/steering-inject.ts: same marker-detection, duplicate-guard, and malformed-guard logic, but both 'created' arms (absent file, present-without-markers) return {content:null, action:'skipped'} instead of adding a block. Export SteeringRefreshDeps and SteeringRefreshReport (SteeringFileOutcome list) types alongside it. No change to existing upsertMarkedSection or injectSteeringBlock.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "refreshMarkedSection(existing, block) returns action:'replaced' with the new content when existing has well-formed markers and a stale block; content outside the markers is preserved byte-for-byte",
+          "refreshMarkedSection returns action:'unchanged', content:null when the block already matches (idempotent, no write signaled)",
+          "refreshMarkedSection returns action:'skipped', content:null — never 'created' — when existing is null or the file has no markers (opt-out honoured)",
+          "refreshMarkedSection returns action:'unchanged'/'skipped' with a note, and leaves the file untouched, on duplicate or malformed markers",
+          "SteeringRefreshDeps ({listRepos, readBlock, readFile, writeFile}) and SteeringRefreshReport (SteeringFileOutcome list) types are exported from steering-inject.ts",
+          "upsertMarkedSection and injectSteeringBlock source is unchanged"
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "refreshMarkedSection: present + stale block returns 'replaced', surrounding content preserved byte-for-byte"
+          },
+          {
+            "level": "unit",
+            "name": "refreshMarkedSection: present + identical block returns 'unchanged' with content:null, no write"
+          },
+          {
+            "level": "unit",
+            "name": "refreshMarkedSection: absent file returns 'skipped', never 'created'"
+          },
+          {
+            "level": "unit",
+            "name": "refreshMarkedSection: present file without markers returns 'skipped', never 'created'/appended"
+          },
+          {
+            "level": "unit",
+            "name": "refreshMarkedSection: duplicate/malformed markers return unchanged/skipped + note, file untouched"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Add optional steeringRefresh field to MaintenanceResult",
+        "summary": "Add an optional steeringRefresh?: SteeringRefreshReport field to the MaintenanceResult type (src/cli/services/type-contracts/maintenance-result.ts), mirroring the existing optional configReconcile field. Purely additive — no existing reader/caller changes required.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "MaintenanceResult declares steeringRefresh?: SteeringRefreshReport, matching the shape/optionality pattern of the existing configReconcile field",
+          "The project type-checks with no changes required at any existing MaintenanceResult call site (field is additive)"
+        ],
+        "derivedFrom": [
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "MaintenanceResult type accepts optional steeringRefresh: SteeringRefreshReport mirroring configReconcile shape"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Add refreshSteeringAcrossRepos walk to steering-inject.ts",
+        "summary": "Implement refreshSteeringAcrossRepos(deps?): Promise<SteeringRefreshReport> in src/daemon/steering-inject.ts. Walks deps.listRepos() and, for each repo's CLAUDE.md and AGENTS.md independently, reads the file via deps.readFile, runs refreshMarkedSection with the block from deps.readBlock, and writes via deps.writeFile only when action==='replaced'. Any per-file read/write error is caught and recorded as a skipped SteeringFileOutcome with a note; the walk continues rather than aborting. When deps (or any of its four members) is omitted, construct production defaults for all of listRepos (global registry), readBlock (readSteeringBlock over the fresh out/prompts), readFile, and writeFile (node fs) — not listRepos alone.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "refreshSteeringAcrossRepos(deps) calls deps.listRepos() and, per repo, checks CLAUDE.md and AGENTS.md independently",
+          "For each file it calls refreshMarkedSection with the fresh block and calls deps.writeFile only when the result action is 'replaced'",
+          "A per-file read or write error is caught and recorded as {action:'skipped', note} in the report; the walk continues to the remaining repos/files rather than throwing",
+          "A repo whose files are absent or lack markers (opted out) is left untouched across the whole walk — never gains a new block",
+          "A repo with CLAUDE.md markers present but AGENTS.md absent refreshes CLAUDE.md and records AGENTS.md as skipped, independently",
+          "Zero registered repos (empty listRepos result) yields an empty SteeringRefreshReport and triggers no writes",
+          "The walk performs no LMDB repo-row upsert and issues no re-index call — it only reads the registry and touches repo markdown files",
+          "refreshSteeringAcrossRepos() called with no arguments constructs valid production defaults for all four dependencies (listRepos, readBlock, readFile, writeFile), not just listRepos"
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "refreshSteeringAcrossRepos: mixed repo list — stale written, opted-out skipped-not-created, malformed untouched"
+          },
+          {
+            "level": "unit",
+            "name": "refreshSteeringAcrossRepos: per-file read rejection recorded skipped+note, walk continues to remaining repos"
+          },
+          {
+            "level": "unit",
+            "name": "refreshSteeringAcrossRepos: per-file write rejection recorded skipped+note, other repos still refreshed"
+          },
+          {
+            "level": "unit",
+            "name": "refreshSteeringAcrossRepos: CLAUDE.md refreshed while sibling AGENTS.md skipped independently"
+          },
+          {
+            "level": "unit",
+            "name": "refreshSteeringAcrossRepos: zero registered repos yields empty report, no writes"
+          },
+          {
+            "level": "unit",
+            "name": "refreshSteeringAcrossRepos: writeFile invoked only when action is 'replaced'"
+          },
+          {
+            "level": "unit",
+            "name": "refreshSteeringAcrossRepos: called with no deps constructs valid production defaults for all four members"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Add runUpdateSteeringRefresh best-effort wrapper to maintenance.ts",
+        "summary": "Implement runUpdateSteeringRefresh(root, onLog): Promise<SteeringRefreshReport | undefined> in src/cli/services/maintenance.ts. Resolves the freshly-built steering-block.md (out/prompts), calls refreshSteeringAcrossRepos with production deps, emits a per-repo/summary log line via onLog (mirroring runUpdateReconcile's logging shape), and wraps the whole call in a try/catch so any top-level failure (missing block asset, listRepos rejection) is caught and logged, returning undefined instead of throwing.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "runUpdateSteeringRefresh reads the freshly-built steering-block.md from out/prompts (post-build) and passes it as the deps.readBlock source into refreshSteeringAcrossRepos with production deps (real listRepos, real fs readFile/writeFile)",
+          "On success it emits a per-repo/summary log line via onLog, mirroring runUpdateReconcile's logging shape, and returns the SteeringRefreshReport",
+          "readBlock/asset-missing failure is caught, logged, and the function returns undefined without throwing",
+          "listRepos rejection is caught, logged, and the function returns undefined without throwing"
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "runUpdateSteeringRefresh: readBlock/asset missing is caught and logged, returns undefined"
+          },
+          {
+            "level": "unit",
+            "name": "runUpdateSteeringRefresh: listRepos rejection is caught, returns undefined"
+          },
+          {
+            "level": "unit",
+            "name": "runUpdateSteeringRefresh: happy path returns SteeringRefreshReport and emits onLog summary line"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Wire runUpdateSteeringRefresh into maintenance.update() post-build flow",
+        "summary": "In src/cli/services/maintenance.ts update(), call runUpdateSteeringRefresh(root, onLog) strictly after npm run build, beside the existing runUpdateReconcile call, in its own try/catch that never flips ok:false. Push 'steering-refresh' onto steps and, on success, set result.steeringRefresh (from the MaintenanceResult.steeringRefresh field) to the returned report. Leave the git-sync/install/build arms and the 'daemon NOT restarted' behavior unchanged.",
+        "size": "S",
+        "order": 5,
+        "dependsOn": [
+          "t4",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "update() calls runUpdateSteeringRefresh(root, onLog) after the existing post-build runUpdateReconcile step, inside its own try/catch",
+          "A steering-refresh failure (thrown error or undefined result) never sets MaintenanceResult.ok to false — only a real git-sync/install/build failure does",
+          "steps.push('steering-refresh') is added to the returned steps array on every update() run that reaches the post-build phase",
+          "On a successful refresh, MaintenanceResult.steeringRefresh carries the report returned by runUpdateSteeringRefresh",
+          "update() issues no daemon-restart call — the 'daemon NOT restarted' contract is preserved",
+          "The git-sync, npm install, and npm run build arms of update() are unchanged"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "maintenance.update: forced steering-refresh failure does not flip ok:false; steps includes 'steering-refresh'"
+          },
+          {
+            "level": "integration",
+            "name": "maintenance.update: successful run sets MaintenanceResult.steeringRefresh with per-repo report"
+          },
+          {
+            "level": "integration",
+            "name": "maintenance.update: steering-refresh runs strictly after build step and issues no daemon-restart call"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "present + stale block → action 'replaced', surrounding user content preserved byte-for-byte",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "present + identical block → action 'unchanged' (content:null), no write",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "absent file (existing=null) → action 'skipped', NEVER 'created'",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "present file WITHOUT markers → action 'skipped', NEVER 'created'/appended (opt-out honoured)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "duplicate or malformed markers → unchanged/skipped + note, file left byte-for-byte untouched",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "mixed repo list: repo with stale block → written (replaced); opted-out repo (no markers / files absent) → skipped, not created; repo with malformed markers → untouched",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "a repo file whose read rejects (moved/deleted) → recorded skipped+note, walk CONTINUES to the remaining repos",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "a repo whose write rejects (perm) though stale → recorded skipped+note, other repos still refreshed",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "CLAUDE.md present-with-markers but AGENTS.md absent → CLAUDE.md refreshed, AGENTS.md skipped (per-file opt-out)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "zero registered repos → empty report, no writes",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "writes happen ONLY on action==='replaced' (identical/skip never write) — assert the fake writeFile call set",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "readBlock/asset missing → catches, logs, returns undefined (does not throw)",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "listRepos rejects → catches, returns undefined",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "happy path → returns a SteeringRefreshReport with the per-repo outcomes + emits an onLog summary line",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "a forced steering-refresh failure (deps seam throws) does NOT flip the update to ok:false — update stays ok:true and steps includes 'steering-refresh'",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "on a successful run, MaintenanceResult.steeringRefresh carries the per-repo report (mirrors configReconcile)",
+        "coveredByTaskIds": [
+          "t5",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "the refresh runs strictly AFTER the build step (ordering) and the daemon is NOT restarted (no restart call)",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 refreshMarkedSection: replace-only sibling of upsertMarkedSection",
+      "quotedText": "both 'created' arms (absent file, present-without-markers) return {content:null, action:'skipped'} instead of adding a block"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 wire steering-refresh into maintenance.update() post-build flow",
+      "quotedText": "call runUpdateSteeringRefresh(root, onLog) strictly after npm run build, beside the existing runUpdateReconcile call, in its own try/catch that never flips ok:false"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 refreshSteeringAcrossRepos walk over registered repos",
+      "quotedText": "Walks deps.listRepos() and, for each repo's CLAUDE.md and AGENTS.md independently, reads the file via deps.readFile, runs refreshMarkedSection with the block from deps.readBlock, and writes via deps.writeFile only when action==='replaced'"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 runUpdateSteeringRefresh best-effort wrapper in maintenance.ts",
+      "quotedText": "wraps the whole call in a try/catch so any top-level failure (missing block asset, listRepos rejection) is caught and logged, returning undefined instead of throwing"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 MaintenanceResult.steeringRefresh field addition",
+      "quotedText": "Add an optional steeringRefresh?: SteeringRefreshReport field to the MaintenanceResult type, mirroring the existing optional configReconcile field"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 daemon NOT restarted / update() arms unchanged constraint",
+      "quotedText": "Leave the git-sync/install/build arms and the 'daemon NOT restarted' behavior unchanged"
+    }
+  ]
+}

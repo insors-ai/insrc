@@ -28,10 +28,19 @@ export type WorkflowStepStage =
 	| 'awaiting_synthesize';   // all steps done; client should emit the artifact
 
 /** Per-run elicitation continuation state for the `brainstorm` stage
- *  (Epic `frame-epic-new-pre-workflow-brainstorm`, Story S001 — sc3). Carried
- *  INSIDE the existing WorkflowStepStatePayload so it rides the existing
- *  state-store save/load/release opaque-token machinery — no new store (k9).
- *  S001 defines the shape + wiring; S002–S005 populate/interpret its fields. */
+ *  (Epic `frame-epic-new-pre-workflow-brainstorm`, sc3). Carried INSIDE the
+ *  existing WorkflowStepStatePayload so it rides the existing state-store
+ *  save/load/release opaque-token machinery — no new store, no new field (k9).
+ *  S001 defined the shape + wiring; S003 (Phase B — convergence) pins its
+ *  semantics as the running mirror of the `elicit` runner's convergence:
+ *   - `workingStatement` — the current understanding, folded from the user's
+ *     answers and shown back every turn (ac2);
+ *   - `answered` — the points already settled, so they are never re-asked (ac1);
+ *   - `openQuestions` — the still-unresolved gaps (mirrors the runner's
+ *     `openItems`), which the next turn probes (ac4).
+ *  The shape is unchanged from S001 and round-trips through the state-store
+ *  byte-for-byte across every paused convergence turn; only the meaning is now
+ *  load-bearing rather than a placeholder. */
 export interface BrainstormElicitState {
 	readonly workingStatement: string;
 	readonly answered:         readonly string[];

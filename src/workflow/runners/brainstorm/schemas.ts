@@ -7,16 +7,27 @@
  * Per-step JSON schemas for the `brainstorm` stage.
  *
  * S001 registered the stage with an open-object placeholder. S002 (Phase B —
- * first elicitation turn, sc3) replaces it with `brainstormElicitSchema`: the
- * response the `elicit` llm-pause validates on resume.
+ * first elicitation turn) gave `elicit` a first-turn `{ category, questions }`
+ * shape. S003 (Phase B — convergence, sc3) EVOLVES it into the converged
+ * `{ category, workingStatement, openItems, confirmed }` shape: the response the
+ * single paused `elicit` step validates on resume once the controller has run the
+ * whole clarify → fold → show → confirm conversation in chat.
  *
  * The shape enforces the story's guarantees STRUCTURALLY:
  *  - `category` is constrained to the reused BrainstormCategory vocabulary
  *    (BRAINSTORM_CATEGORY_CLASSES ids) — no competing taxonomy is invented (c33).
- *  - `questions` is a non-empty string list — the turn must ASK.
- *  - there is deliberately NO `spec` field, so a converged-spec or empty-questions
- *    response fails validation: no spec is produced on the first turn (ac1).
- * Convergence into a working statement / spec is S003–S006.
+ *  - `workingStatement` (minLength 1) is the current understanding — an empty
+ *    string fails validation, so a `confirmed:true` with nothing converged is
+ *    rejected here (ep1).
+ *  - `openItems` is the still-unresolved gap list; `confirmed` is the explicit
+ *    user-agreement flag (ac3).
+ *  - the s2 `questions` field is FULLY REMOVED (not deprecated), and
+ *    additionalProperties:false rejects a stale client still sending it.
+ *
+ * The business rule that a `confirmed:true` payload must carry ZERO openItems is
+ * deliberately NOT expressed in ajv here (schema-shape only) — it is owned by the
+ * `elicit` runner's finalize() (S003 index.ts), which leaves the run paused and
+ * re-prompts on the remaining openItems. No persisted spec artifact yet (S006).
  */
 
 import { BRAINSTORM_CATEGORY_CLASSES } from '../../../shared/brainstorm-classes.js';
@@ -26,13 +37,16 @@ import { BRAINSTORM_CATEGORY_CLASSES } from '../../../shared/brainstorm-classes.
  *  so it can never drift from the shared vocabulary. */
 const BRAINSTORM_CATEGORY_IDS: readonly string[] = BRAINSTORM_CATEGORY_CLASSES.map(c => c.id);
 
-/** First-turn elicit response: pick a category + ask clarifying questions; no spec. */
+/** Converged elicit response: a category, the folded working statement, the
+ *  still-open gaps, and the explicit confirmation flag. */
 export const brainstormElicitSchema: Record<string, unknown> = {
 	type: 'object',
-	required: ['category', 'questions'],
+	required: ['category', 'workingStatement', 'openItems', 'confirmed'],
 	additionalProperties: false,
 	properties: {
-		category:  { enum: [...BRAINSTORM_CATEGORY_IDS] },
-		questions: { type: 'array', items: { type: 'string' }, minItems: 1 },
+		category:         { enum: [...BRAINSTORM_CATEGORY_IDS] },
+		workingStatement: { type: 'string', minLength: 1 },
+		openItems:        { type: 'array', items: { type: 'string' } },
+		confirmed:        { type: 'boolean' },
 	},
 };

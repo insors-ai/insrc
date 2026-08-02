@@ -1,0 +1,256 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1785646268921-vw71z7",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-08-02T04:53:33.931Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 144939,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "abd1ecf6a5f5063e",
+    "epicSlug": "frame-epic-new-pre-workflow-brainstorm",
+    "storyId": "s5",
+    "lldRunId": "wf-1785645522647-9j9b7g",
+    "lldEffectiveHash": "688a10691972f5e2069b092dff9d1d20b3da79ca83733140f0918eaac0bc5b46",
+    "review": {
+      "artifact": "plan",
+      "stage": "plan",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "p1",
+          "ref": "tasks",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "The plan enumerates exactly two tasks t1/t2 with the linear DAG t1 -> t2.",
+          "evidence": "The plan Tasks table enumerates t1, t2 with DAG t1<-t2. Confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p2",
+          "ref": "t1",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "t1's target src/mcp/workflow-step/state.ts defines WorkflowStateDecodeError with code union 'malformed'|'wrong-version'|'wrong-stage' and decodeState catching StateTokenNotFound — the exact edit site for adding 'not-found'.",
+          "evidence": "src/mcp/workflow-step/state.ts:72 `export class WorkflowStateDecodeError`; the code union ('wrong-stage' present), decodeState, and StateTokenNotFound handling live here — the exact edit site t1 targets. Confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p3",
+          "ref": "t1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "loadState throws StateTokenNotFound in src/mcp/workflow-step/state-store.ts (the throw site t1's catch arm re-maps).",
+          "evidence": "src/mcp/workflow-step/state-store.ts exports loadState which throws StateTokenNotFound (the throw site t1's catch arm re-maps to 'not-found'). Confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p4",
+          "ref": "t2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The two test suites t2 extends exist: src/mcp/workflow-step/__tests__/state-store.test.ts and src/workflow/runners/brainstorm/__tests__/elicit.test.ts.",
+          "evidence": "src/mcp/workflow-step/__tests__/state-store.test.ts (imports _workflowStateStoreSize) and the brainstorm elicit.test.ts (startRun/resumeRun) both exist — the suites t2 extends. Confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p5",
+          "ref": "t2",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "encodeState + resumeRun exist (encodeState in workflow-step/state.ts, resumeRun in workflow/executor.ts) — the round-trip + resume entry points the parity tests drive.",
+          "evidence": "encodeState is exported in workflow-step/state.ts and resumeRun at src/workflow/executor.ts:114 — the round-trip + resume entry points the parity tests drive. Confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 5
+      },
+      "reviewedAt": "2026-08-02T04:54:20.959Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-08-02T05:17:30.818Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add a distinct 'not-found' WorkflowStateDecodeError code and map StateTokenNotFound to it",
+        "summary": "In src/mcp/workflow-step/state.ts, extend the WorkflowStateDecodeError code union from 'malformed' | 'wrong-version' | 'wrong-stage' to additionally include 'not-found', and change decodeState's catch arm so a caught StateTokenNotFound constructs WorkflowStateDecodeError('not-found', err.message) instead of ('malformed', ...). The plain StateTokenNotFound message is preserved verbatim. Additive only: 'malformed' still covers the structural shape-guard rejection, and 'wrong-version'/'wrong-stage' are untouched. No change to state-store.ts, phases/step.ts, or handler.ts (they already surface a thrown WorkflowStateDecodeError as {next:'error', isError:true} with no fresh-start fallback). No new store, opaque token unchanged.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "the WorkflowStateDecodeError code union in state.ts includes 'not-found' alongside the existing 'malformed'/'wrong-version'/'wrong-stage'",
+          "decodeState's catch arm constructs WorkflowStateDecodeError('not-found', err.message) for a caught StateTokenNotFound, preserving the message verbatim",
+          "the shape-guard rejection (too short/long/non-string) still throws 'malformed'; assertStage still throws 'wrong-stage'",
+          "no edit to state-store.ts / phases/step.ts / handler.ts; no new store; tsc clean"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "decodeState on an unknown or released token throws WorkflowStateDecodeError with code 'not-found' (not 'malformed'), carrying the plain StateTokenNotFound message"
+          },
+          {
+            "level": "unit",
+            "name": "decodeState on a structurally-garbage token (too short/long/non-string) still throws code 'malformed' — distinct from 'not-found'"
+          },
+          {
+            "level": "unit",
+            "name": "decodeState on a valid token at the wrong stage still throws 'wrong-stage' (unchanged)"
+          },
+          {
+            "level": "unit",
+            "name": "the WorkflowStateDecodeError code union includes 'not-found' and the existing three members are unchanged"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Add decode-error taxonomy + resume-parity tests",
+        "summary": "Extend src/mcp/workflow-step/__tests__/state-store.test.ts with the decodeState taxonomy cases (ac2): an unknown/released token -> 'not-found' with the plain message; a garbage-shaped token -> 'malformed'; a valid token at the wrong stage -> 'wrong-stage'. Extend src/workflow/runners/brainstorm/__tests__/elicit.test.ts with the resume-parity cases (ac1/ac3): a brainstorm run paused mid-convergence round-trips through encodeState/decodeState with the folded workingStatement/answered/openItems + stepOutputs intact and resumeRun continues from the same openItems; and an uninterrupted vs interrupted-then-resumed run with identical answers produces a byte-identical converged step output. node:test + assert/strict; no new harness.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "state-store.test.ts asserts decodeState -> 'not-found' (distinct from 'malformed') for an unknown/released token, 'malformed' for a garbage-shaped token, and 'wrong-stage' for a valid token at the wrong stage",
+          "elicit.test.ts asserts a paused mid-convergence run round-trips through encodeState/decodeState preserving workingStatement/answered/openItems + stepOutputs, and resumeRun continues from the same openItems",
+          "elicit.test.ts asserts an uninterrupted run and an interrupted-then-resumed run with identical answers produce a byte-identical converged step output (ac3)",
+          "the full brainstorm + workflow-step sweep passes and tsc is clean"
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "a brainstorm run paused mid-convergence (confirmed:false) is saved via encodeState, then decodeState rehydrates the identical WorkflowStepStatePayload (workingStatement/answered/openItems + executor stepOutputs intact)"
+          },
+          {
+            "level": "unit",
+            "name": "resumeRun on the rehydrated executor state continues from the same openItems and finalizes correctly — no answer is dropped or re-asked"
+          },
+          {
+            "level": "unit",
+            "name": "running a brainstorm to convergence uninterrupted vs interrupting-then-resuming (via encodeState->decodeState->resumeRun) with the same answers yields a byte-identical converged step output"
+          },
+          {
+            "level": "integration",
+            "name": "insrc_workflow_step phase='step' with an unknown/expired token returns {next:'error', isError:true} carrying the plain not-found message and does NOT begin a fresh conversation (ac2)"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "decodeState on an unknown or released token throws WorkflowStateDecodeError with code 'not-found' (not 'malformed'), carrying the plain StateTokenNotFound message",
+        "coveredByTaskIds": [
+          "t1",
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "decodeState on a structurally-garbage token (too short/long/non-string) still throws code 'malformed' — distinct from 'not-found'",
+        "coveredByTaskIds": [
+          "t1",
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "decodeState on a valid token at the wrong stage still throws 'wrong-stage' (unchanged)",
+        "coveredByTaskIds": [
+          "t1",
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "the WorkflowStateDecodeError code union includes 'not-found' and the existing three members are unchanged",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "a brainstorm run paused mid-convergence (confirmed:false) is saved via encodeState, then decodeState rehydrates the identical WorkflowStepStatePayload (workingStatement/answered/openItems + executor stepOutputs intact)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "resumeRun on the rehydrated executor state continues from the same openItems and finalizes correctly — no answer is dropped or re-asked",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "running a brainstorm to convergence uninterrupted vs interrupting-then-resuming (via encodeState->decodeState->resumeRun) with the same answers yields a byte-identical converged step output",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "both paths apply the same s3/s4 finalize gates on the same accumulated state (no parallel/divergent rehydration path)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "insrc_workflow_step phase='step' with the token returned by the previous turn resumes the run and preserves state (the opaque token round-trips per turn, k8/k9)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "insrc_workflow_step phase='step' with an unknown/expired token returns {next:'error', isError:true} carrying the plain not-found message and does NOT begin a fresh conversation (ac2)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 contractDetails.api: decodeState (resume rehydrates the full folded payload; maps StateTokenNotFound to 'not-found')"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 dataModelChanges: WorkflowStateDecodeError.code field-modify (additive 'not-found' member + decodeState catch arm)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 contractDetails.api: WorkflowStateDecodeError (code union gains 'not-found'; handler surfaces {next:'error'}, no fresh-start fallback)"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 testStrategy: decode-error taxonomy + resume-parity/convergence-parity suites under state-store.test.ts + brainstorm/elicit.test.ts"
+    }
+  ]
+}

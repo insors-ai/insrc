@@ -20,6 +20,12 @@ import {
 	releaseState,
 	saveState,
 } from '../state-store.js';
+import {
+	assertStage,
+	decodeState,
+	encodeState,
+	WorkflowStateDecodeError,
+} from '../state.js';
 import type { WorkflowStepStatePayload } from '../state.js';
 
 const fixture = (): WorkflowStepStatePayload => ({
@@ -64,4 +70,49 @@ test('token is URL-safe base64 (no +, /, =)', () => {
 	_clearWorkflowStateStoreForTests();
 	const token = saveState(fixture());
 	assert.ok(/^[A-Za-z0-9_-]{22}$/.test(token), `token '${token}' violates URL-safe shape`);
+});
+
+// ---------------------------------------------------------------------------
+// S005/t2 — the decodeState error taxonomy (ac2: report an unknown/expired
+// continuation reference plainly, distinct from a malformed token).
+// ---------------------------------------------------------------------------
+
+const decodeErr = (fn: () => unknown): WorkflowStateDecodeError => {
+	try { fn(); }
+	catch (e) {
+		if (e instanceof WorkflowStateDecodeError) return e;
+		throw new Error(`expected WorkflowStateDecodeError, got ${String(e)}`);
+	}
+	throw new Error('expected a throw, got none');
+};
+
+test("s5/t2: decodeState on an unknown/released token throws code 'not-found' with the plain message", () => {
+	_clearWorkflowStateStoreForTests();
+	const token = encodeState(fixture());   // valid shape, real token
+	releaseState(token);                     // now it is gone (mirrors TTL-expiry / completion)
+	const err = decodeErr(() => decodeState(token));
+	assert.equal(err.code, 'not-found');     // distinct from 'malformed'
+	assert.match(err.message, /not found|expired|already been completed|restart/i);   // the plain StateTokenNotFound text, preserved
+});
+
+test("s5/t2: decodeState on a structurally-garbage token throws code 'malformed' (distinct from 'not-found')", () => {
+	_clearWorkflowStateStoreForTests();
+	assert.equal(decodeErr(() => decodeState('short')).code, 'malformed');                 // too short
+	assert.equal(decodeErr(() => decodeState('x'.repeat(200))).code, 'malformed');         // too long
+	assert.equal(decodeErr(() => decodeState(undefined as unknown as string)).code, 'malformed');   // non-string
+});
+
+test("s5/t2: assertStage on a valid token at the wrong stage throws 'wrong-stage' (unchanged)", () => {
+	_clearWorkflowStateStoreForTests();
+	const token = encodeState(fixture());    // stage is 'awaiting_plan'
+	const payload = decodeState(token);      // resolves fine (valid, present)
+	const err = decodeErr(() => assertStage(payload, 'awaiting_llm_step'));
+	assert.equal(err.code, 'wrong-stage');
+});
+
+test("s5/t2: the WorkflowStateDecodeError code union carries 'not-found' plus the original three", () => {
+	// A construction-level guard: all four codes are constructible and round-trip on `.code`.
+	for (const code of ['malformed', 'wrong-version', 'wrong-stage', 'not-found'] as const) {
+		assert.equal(new WorkflowStateDecodeError(code, 'x').code, code);
+	}
 });

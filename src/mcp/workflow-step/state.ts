@@ -70,7 +70,7 @@ export interface WorkflowStepStatePayload {
 }
 
 export class WorkflowStateDecodeError extends Error {
-	readonly code: 'malformed' | 'wrong-version' | 'wrong-stage';
+	readonly code: 'malformed' | 'wrong-version' | 'wrong-stage' | 'not-found';
 	constructor(code: WorkflowStateDecodeError['code'], msg: string) {
 		super(msg);
 		this.code = code;
@@ -101,7 +101,10 @@ export function decodeState(token: string): WorkflowStepStatePayload {
 		return loadState(token);
 	} catch (err) {
 		if (err instanceof StateTokenNotFound) {
-			throw new WorkflowStateDecodeError('malformed', err.message);
+			// An unknown / TTL-expired / already-completed continuation reference —
+			// distinct from a structurally-malformed token, so the caller (resume)
+			// can report it plainly rather than as garbage (S005/ac2).
+			throw new WorkflowStateDecodeError('not-found', err.message);
 		}
 		throw err;
 	}

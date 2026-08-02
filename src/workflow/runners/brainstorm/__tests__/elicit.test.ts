@@ -19,6 +19,9 @@ import { registerBrainstormRunners } from '../index.js';
 import { brainstormElicitSchema } from '../schemas.js';
 import { startRun, resumeRun } from '../../../executor.js';
 import { BRAINSTORM_CATEGORY_CLASSES } from '../../../../shared/brainstorm-classes.js';
+import { encodeState, decodeState } from '../../../../mcp/workflow-step/state.js';
+import { _clearWorkflowStateStoreForTests } from '../../../../mcp/workflow-step/state-store.js';
+import type { WorkflowStepStatePayload } from '../../../../mcp/workflow-step/state.js';
 import type { WorkflowIntent, WorkflowPlan } from '../../../types.js';
 
 const CATEGORY_IDS = BRAINSTORM_CATEGORY_CLASSES.map(c => c.id);
@@ -246,5 +249,70 @@ test('s4/t2: a confirmed:false intermediate turn with partial decisions passes t
 	assert.equal(resumed.type, 'complete');
 	if (resumed.type === 'complete') {
 		assert.deepEqual(resumed.stepOutputs['s1'], midway);
+	}
+});
+
+// ---------------------------------------------------------------------------
+// s5/t2 — resume parity: a paused brainstorm rehydrated from its opaque
+// continuation token preserves answers (ac1) and converges byte-identically
+// to an uninterrupted run (ac3).
+// ---------------------------------------------------------------------------
+
+/** Wrap a paused executor state in the MCP payload the same way the step phase
+ *  does, so encodeState/decodeState exercises the real continuation carriage. */
+const pausedPayload = (intentFocus: string, executor: unknown): WorkflowStepStatePayload => ({
+	version:     1,
+	runId:       'run-resume',
+	epicKey:     'resume-key',
+	startedAtMs: 1000,
+	intent:      intent(intentFocus),
+	executor:    executor as WorkflowStepStatePayload['executor'],
+	stage:       'awaiting_llm_step',
+});
+
+test('s5/t2: a paused mid-convergence run round-trips through encodeState/decodeState with state intact (ac1)', async () => {
+	registerBrainstormRunners();
+	_clearWorkflowStateStoreForTests();
+	const paused = await startRun(intent('a settings page'), oneStepPlan, 'run-bs-r1', 'slug-bs-r1');
+	assert.equal(paused.type, 'paused');
+	if (paused.type !== 'paused') return;
+
+	// Encode the paused executor state to an opaque token, then decode it back.
+	const token = encodeState(pausedPayload('a settings page', paused.state));
+	const decoded = decodeState(token);
+	assert.deepEqual(decoded.executor, paused.state);   // the folded state rehydrates identically (nothing dropped)
+
+	// Resume from the rehydrated executor state — questioning continues, answer preserved.
+	const answer = { category: 'requirements', workingStatement: 'A settings page scoped to notifications.', openItems: [], confirmed: true, decisions: [], nonGoals: [] };
+	const resumed = await resumeRun(decoded.executor!, answer, 'slug-bs-r1');
+	assert.equal(resumed.type, 'complete');
+	if (resumed.type === 'complete') {
+		assert.deepEqual(resumed.stepOutputs['s1'], answer);
+	}
+});
+
+test('s5/t2: an interrupted-then-resumed run converges byte-identically to an uninterrupted one (ac3)', async () => {
+	registerBrainstormRunners();
+	const answer = { category: 'design', workingStatement: 'A dark-mode toggle in the editor pane only.', openItems: [], confirmed: true, decisions: [], nonGoals: [] };
+
+	// Uninterrupted: start -> resume directly.
+	const p1 = await startRun(intent('dark mode'), oneStepPlan, 'run-bs-r2a', 'slug-bs-r2a');
+	assert.equal(p1.type, 'paused');
+	if (p1.type !== 'paused') return;
+	const uninterrupted = await resumeRun(p1.state, answer, 'slug-bs-r2a');
+
+	// Interrupted: start -> encode/decode the pause -> resume from the rehydrated state.
+	_clearWorkflowStateStoreForTests();
+	const p2 = await startRun(intent('dark mode'), oneStepPlan, 'run-bs-r2b', 'slug-bs-r2b');
+	assert.equal(p2.type, 'paused');
+	if (p2.type !== 'paused') return;
+	const decoded = decodeState(encodeState(pausedPayload('dark mode', p2.state)));
+	const resumedAfterInterrupt = await resumeRun(decoded.executor!, answer, 'slug-bs-r2b');
+
+	assert.equal(uninterrupted.type, 'complete');
+	assert.equal(resumedAfterInterrupt.type, 'complete');
+	if (uninterrupted.type === 'complete' && resumedAfterInterrupt.type === 'complete') {
+		// Same answers on the same accumulated state -> byte-identical converged step output.
+		assert.deepEqual(resumedAfterInterrupt.stepOutputs['s1'], uninterrupted.stepOutputs['s1']);
 	}
 });

@@ -29,6 +29,8 @@ import type { HldArtifact }    from './artifacts/hld.js';
 import { computeHldEffectiveHash, extractHldContextSlice } from './artifacts/lld.js';
 import type { HldContextSlice, LldArtifact } from './artifacts/lld.js';
 import type { PlanArtifact } from './artifacts/plan.js';
+import { isSpecBody } from './artifacts/spec.js';
+import type { SpecArtifact } from './artifacts/spec.js';
 import { effectiveReviewVerdict } from './review/resolve.js';
 import type { ReviewReport } from './review/types.js';
 import type { ReviewResolution } from './types.js';
@@ -39,6 +41,8 @@ import {
 	hldArtifactPaths,
 	lldArtifactPaths,
 	planArtifactPaths,
+	specArtifactId,
+	specArtifactPaths,
 	writeAtomic,
 } from './storage.js';
 
@@ -68,6 +72,30 @@ export class ReviewBlockedError extends Error {
 	constructor(msg: string, readonly summary: string) {
 		super(msg);
 		this.name = 'ReviewBlockedError';
+	}
+}
+
+/** Thrown when a brainstorm SpecArtifact JSON does not exist at the
+ *  hash-addressed path (never persisted / wrong specHash). The spec peer of
+ *  `ArtifactMissingError`; kept distinct so the `spec.resolveApproved` IPC can
+ *  map it to a `not-found` code (S007/sc4). */
+export class SpecArtifactNotFoundError extends Error {
+	constructor(msg: string) {
+		super(msg);
+		this.name = 'SpecArtifactNotFoundError';
+	}
+}
+
+/** Thrown when a SpecArtifact is resolved as a consumable seed but its
+ *  `meta.approvedAt` is unset/empty — the read-side approval gate (k12). The
+ *  spec peer of `ArtifactNotApprovedError`; kept distinct so a consumer (and
+ *  the `spec.resolveApproved` IPC's `not-approved` code) can tell the user
+ *  approval is still outstanding rather than that the spec is missing
+ *  (S007/ac4). */
+export class SpecNotApprovedError extends Error {
+	constructor(msg: string) {
+		super(msg);
+		this.name = 'SpecNotApprovedError';
 	}
 }
 
@@ -340,6 +368,72 @@ export function requireApprovedPlan(repoPath: string, epicHash: string, storyId:
 		);
 	}
 	return plan;
+}
+
+/** Read the canonical brainstorm SpecArtifact JSON from disk (approved or
+ *  not). The spec peer of `readDefineArtifact` / `readPlanArtifact`; a spec is
+ *  NOT Epic-scoped, so it is keyed by its own 16-hex `specHash` (S006/sc1).
+ *  Throws `SpecArtifactNotFoundError` when the JSON is absent and a plain
+ *  `Error` when the JSON parses but its body fails the `isSpecBody` guard
+ *  (corrupt / incompatible record). */
+export function readSpecArtifact(repoPath: string, specHash: string): SpecArtifact {
+	const paths = specArtifactPaths(repoPath, specHash);
+	if (!existsSync(paths.json)) {
+		throw new SpecArtifactNotFoundError(
+			`Spec ${specArtifactId(specHash)} not found at ${paths.json}. ` +
+			`Run the \`brainstorm\` stage to produce it before consuming it as a focus.`,
+		);
+	}
+	const artifact = JSON.parse(readFileSync(paths.json, 'utf8')) as SpecArtifact;
+	if (!isSpecBody((artifact as { body?: unknown }).body)) {
+		throw new Error(
+			`Spec ${specArtifactId(specHash)} at ${paths.json} is malformed — its body ` +
+			`does not match the SpecArtifact shape. Re-run the \`brainstorm\` stage.`,
+		);
+	}
+	return artifact;
+}
+
+/** Same as `readSpecArtifact` but refuses when the spec is unapproved — the
+ *  read-side of sc4, the throwing peer of `requireApprovedPlan`. A downstream
+ *  stage (`define` / standalone `design.story`) resolves an approved spec as
+ *  its focus ONLY through this gate, so an unapproved spec is never consumed
+ *  (k12). Throws `SpecNotApprovedError` (naming the SPEC id, stating approval
+ *  is outstanding) when `meta.approvedAt` is unset/empty, so the caller can
+ *  relay that to the user (ac4). */
+export function requireApprovedSpec(repoPath: string, specHash: string): SpecArtifact {
+	const spec = readSpecArtifact(repoPath, specHash);
+	if (spec.meta.approvedAt === undefined || spec.meta.approvedAt.length === 0) {
+		const path = specArtifactPaths(repoPath, specHash, spec.meta.epicSlug).md;
+		throw new SpecNotApprovedError(
+			`Spec ${specArtifactId(specHash)} is not approved — its approval is still outstanding. ` +
+			`Review it and run \`insrc workflow approve ${path}\` before a stage consumes it.`,
+		);
+	}
+	return spec;
+}
+
+/** The structured result the `spec.resolveApproved` IPC returns: either the
+ *  approved spec, or an error carrying a stable `code` the consumer branches
+ *  on (S007/sc4). */
+export type SpecResolveResult =
+	| { readonly spec: SpecArtifact }
+	| { readonly error: string; readonly code: 'not-approved' | 'not-found' };
+
+/** Pure resolver for the `spec.resolveApproved` IPC: wraps `requireApprovedSpec`
+ *  and maps its throws to a structured `{ error, code }` — `SpecNotApprovedError`
+ *  → `not-approved` (ac4), `SpecArtifactNotFoundError` → `not-found`. Any other
+ *  error (e.g. a malformed body) propagates so it surfaces as a genuine fault
+ *  rather than a resolvable "spec state". Kept as a standalone pure function so
+ *  the mapping is unit-testable without standing up a daemon socket. */
+export function resolveApprovedSpec(repoPath: string, specHash: string): SpecResolveResult {
+	try {
+		return { spec: requireApprovedSpec(repoPath, specHash) };
+	} catch (err) {
+		if (err instanceof SpecNotApprovedError)     return { error: err.message, code: 'not-approved' };
+		if (err instanceof SpecArtifactNotFoundError) return { error: err.message, code: 'not-found' };
+		throw err;
+	}
 }
 
 /** The in-memory read-model the `build` workflow's `context.assemble`

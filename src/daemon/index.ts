@@ -565,6 +565,25 @@ async function main(): Promise<void> {
 			});
 		},
 
+		// Read-side of sc4 (S007): resolve a brainstorm SpecArtifact by its
+		// specHash, refusing an unapproved one. `define` / standalone
+		// `design.story` reach an approved spec ONLY through this IPC — never by
+		// opening the artifact file directly (k11). Non-throwing: the pure
+		// resolver maps not-approved / not-found to a structured { error, code }
+		// the consumer relays to the user (ac4).
+		'spec.resolveApproved': async (params) => {
+			const p = (params ?? {}) as { repo?: string; specHash?: string };
+			const repoPath = (p.repo !== undefined && p.repo.length > 0 ? p.repo : process.env['INSRC_REPO']) ?? '';
+			if (repoPath.length === 0) {
+				return { error: 'spec.resolveApproved: `repo` is required', code: 'not-found' as const };
+			}
+			if (typeof p.specHash !== 'string' || p.specHash.length === 0) {
+				return { error: 'spec.resolveApproved: `specHash` is required', code: 'not-found' as const };
+			}
+			const { resolveApprovedSpec } = await import('../workflow/gates.js');
+			return resolveApprovedSpec(repoPath, p.specHash);
+		},
+
 		'repo.reindex': async (params) => {
 			const { path: repoPath } = params as { path: string };
 			const repos = await listRepos(db);

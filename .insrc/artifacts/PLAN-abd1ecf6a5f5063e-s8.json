@@ -1,0 +1,293 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1785672219173-zm56ks",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-08-02T12:06:37.617Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 178401,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "abd1ecf6a5f5063e",
+    "epicSlug": "frame-epic-new-pre-workflow-brainstorm",
+    "storyId": "s8",
+    "lldRunId": "wf-1785671718263-sylld9",
+    "lldEffectiveHash": "688a10691972f5e2069b092dff9d1d20b3da79ca83733140f0918eaac0bc5b46",
+    "review": {
+      "artifact": "plan",
+      "stage": "plan",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "p1",
+          "ref": "t1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "requireApprovedSpec exists in gates.ts (the s7 sc4 reader t1's resolveStageFocus imports + consumes).",
+          "evidence": "CONFIRMED: src/workflow/gates.ts:404 export function requireApprovedSpec(repoPath, specHash): SpecArtifact.",
+          "action": "none — verified sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p2",
+          "ref": "t1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "SpecArtifact + isSpecBody exist in artifacts/spec.ts (composeSpecFocus reads the spec body).",
+          "evidence": "CONFIRMED: src/workflow/artifacts/spec.ts:66 SpecArtifact + :156 isSpecBody — the record composeSpecFocus reads.",
+          "action": "none — verified sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p3",
+          "ref": "t2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "finalizeDefine is at orchestrator.ts:817 (t2 stamps meta.seededFromSpec there); finalizeDefineExtend is the separate extend branch.",
+          "evidence": "CONFIRMED: src/workflow/orchestrator.ts:817 finalizeDefine + :911 finalizeDefineExtend (separate extend branch) — t2 stamps meta at :817.",
+          "action": "none — verified sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p4",
+          "ref": "t2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "renderDefineMarkdown is in artifacts/define.ts (t2 adds the Seeded-from header line).",
+          "evidence": "CONFIRMED: src/workflow/artifacts/define.ts:86 export function renderDefineMarkdown — t2 adds the Seeded-from header line here.",
+          "action": "none — verified sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p5",
+          "ref": "t3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "Both define entry points build the WorkflowIntent (start.ts:62 + workflow-rpc.ts:414) — the two sites t3 wires to call resolveStageFocus.",
+          "evidence": "CONFIRMED: src/daemon/workflow-rpc.ts:414 + src/mcp/workflow-step/phases/start.ts:62 both build `const intent: WorkflowIntent =` — the two sites t3 wires.",
+          "action": "none — verified sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p6",
+          "ref": "t1",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "ArtifactMetaBase is in types.ts (t1 adds the optional seededFromSpec field, peer to specHash).",
+          "evidence": "CONFIRMED: src/workflow/types.ts:288 interface ArtifactMetaBase; the specHash? optional field peer confirmed at types.ts:340 earlier this session — seededFromSpec is added as its peer.",
+          "action": "none — verified sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p7",
+          "ref": "t4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The s6/s7 tmp-repo fixture pattern (specArtifactPaths + writeAtomic + approveArtifactByJsonPath) exists in src/workflow/__tests__/ for t4 to reuse.",
+          "evidence": "CONFIRMED: src/workflow/__tests__/spec-resolver.test.ts exists (authored in s7) and uses the specArtifactPaths + writeAtomic + approveArtifactByJsonPath tmp-repo fixture pattern t4 reuses. The grep returned 50 docs+src matches; the file + helpers are present.",
+          "action": "none — verified sound.",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 7
+      },
+      "reviewedAt": "2026-08-02T12:07:34.543Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-08-02T12:40:38.144Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add src/workflow/seed-focus.ts (composeSpecFocus + resolveStageFocus) + the seededFromSpec meta field",
+        "summary": "Create src/workflow/seed-focus.ts: composeSpecFocus(spec: SpecArtifact): string (deterministic framing = intent + scopeBoundary + non-goals + each decision's chosen/ruledOut/reason) and resolveStageFocus(repoPath, focus, params): { focus, seededFromSpec? } (when params.specHash is a non-empty string -> requireApprovedSpec(repoPath, specHash) [gates.ts:404] then { focus: composeSpecFocus(spec), seededFromSpec: specHash }; else { focus }). In src/workflow/types.ts add the OPTIONAL `seededFromSpec?: string` to ArtifactMetaBase (peer of specHash at :340). Imports: SpecArtifact from artifacts/spec.js, requireApprovedSpec from gates.js.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "seed-focus.ts exports composeSpecFocus + resolveStageFocus with the LLD signatures",
+          "resolveStageFocus with a non-empty params.specHash returns a composed focus + seededFromSpec; with none returns the plain focus verbatim + seededFromSpec unset",
+          "composeSpecFocus is deterministic (same spec -> same string) and includes intent/scope/every nonGoal/every decision",
+          "an unapproved/missing specHash propagates SpecNotApprovedError/SpecArtifactNotFoundError",
+          "ArtifactMetaBase carries optional seededFromSpec; tsc --noEmit clean"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "seed-focus.test.ts: resolveStageFocus approved->composed focus+seededFromSpec, plain->verbatim+unset, unapproved/missing->throws; composeSpecFocus deterministic + includes intent/scope/nonGoals/decisions (covered in t4)"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Stamp meta.seededFromSpec in finalizeDefine + surface it in renderDefineMarkdown",
+        "summary": "In src/workflow/orchestrator.ts finalizeDefine (:817), when intent.params.specHash is a non-empty string, add seededFromSpec to the DefineArtifact meta literal (alongside epicHash/epicSlug). In src/workflow/artifacts/define.ts renderDefineMarkdown (:86), when meta.seededFromSpec is set emit a `**Seeded from:** SPEC-<hash>` line in the header so the Epic identifies its source (ac3, k7). No change to the finalizeDefineExtend branch (:911) beyond what already applies.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "finalizeDefine writes meta.seededFromSpec = intent.params.specHash when present; leaves it unset otherwise (ac3/ac4)",
+          "renderDefineMarkdown emits the seeded-from line only when meta.seededFromSpec is set",
+          "tsc --noEmit clean"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "seed-focus.test.ts: finalizeDefine with intent.params.specHash set -> meta.seededFromSpec = hash + renderDefineMarkdown contains SPEC-<hash>; unset -> absent (covered in t4)"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Wire both define entry points to call resolveStageFocus",
+        "summary": "In src/mcp/workflow-step/phases/start.ts (:62) and src/daemon/workflow-rpc.ts (:414), call resolveStageFocus(repoPath, focus, params) just before building the WorkflowIntent and use its returned focus as intent.focus (params, which already carries specHash, is unchanged so finalizeDefine can read it). No change to the define step prompts. Preserve the plain-focus path exactly (call is a passthrough when no specHash).",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "both start.ts and workflow-rpc.ts build intent.focus from resolveStageFocus(...).focus",
+          "a plain-focus start is byte-identical (no specHash -> focus unchanged) (ac4)",
+          "tsc --noEmit clean"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "seed-focus.test.ts: the plain-focus passthrough (resolveStageFocus with no specHash returns focus verbatim) proves the wiring is byte-identical for the plain path (covered in t4)"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Unit tests for the seeding helper + provenance stamping",
+        "summary": "Add src/workflow/__tests__/seed-focus.test.ts (node:test + assert/strict, reusing the s6/s7 tmp-repo + specArtifactPaths + writeAtomic + approveArtifactByJsonPath fixtures): resolveStageFocus approved-spec -> composed focus contains intent/scope/each nonGoal/each decision + seededFromSpec set (ac1/ac2); plain focus -> verbatim + seededFromSpec unset (ac4); unapproved/missing -> throws the sc4 errors. Add a finalizeDefine test (or extend an existing one): intent.params.specHash set -> meta.seededFromSpec = hash + renderDefineMarkdown output contains SPEC-<hash>; unset -> absent (ac3/ac4).",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "seed-focus.test.ts covers approved/plain/unapproved/missing + composeSpecFocus decision+nonGoal inclusion (ac1/ac2/ac4)",
+          "a finalize test proves meta.seededFromSpec stamp + renderer line (ac3) and its absence on a plain-focus run (ac4)",
+          "full workflow + workflow-step + daemon sweep + tsc --noEmit clean"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "seed-focus.test.ts: resolveStageFocus (approved/plain/unapproved/missing) + composeSpecFocus (intent/scope/every nonGoal/every decision) + finalizeDefine seededFromSpec stamp/renderer + plain-focus absence (ac1/ac2/ac3/ac4)"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "resolveStageFocus (shared seeding helper)",
+        "coveredByTaskIds": [
+          "t1",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "composeSpecFocus",
+        "coveredByTaskIds": [
+          "t1",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "requireApprovedSpec (sc4, s7)",
+        "coveredByTaskIds": [
+          "t1",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "finalizeDefine (orchestrator.ts)",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "renderDefineMarkdown (define.ts)",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "ArtifactMetaBase.seededFromSpec (types.ts)",
+        "coveredByTaskIds": [
+          "t1",
+          "t4"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s8 contractDetails.api.resolveStageFocus + start.ts seam",
+      "quotedText": "The shared seeding helper + the controller-driven entry point (start.ts:62) that calls it before building the WorkflowIntent."
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s8 contractDetails.api.composeSpecFocus + workflow-rpc.ts seam",
+      "quotedText": "composeSpecFocus renders the spec body into the framing focus; the daemon-driven entry point (workflow-rpc.ts:414) calls resolveStageFocus."
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s8 contractDetails.api.finalizeDefine + renderDefineMarkdown",
+      "quotedText": "finalizeDefine stamps meta.seededFromSpec from intent.params.specHash; renderDefineMarkdown surfaces it (ac3)."
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s8 testStrategy.unit",
+      "quotedText": "Unit proof of the helper + provenance: approved/plain/unapproved/missing + composeSpecFocus inclusion + finalize stamp/renderer."
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s8 dataModelChanges.ArtifactMetaBase.seededFromSpec",
+      "quotedText": "The additive optional seededFromSpec field on ArtifactMetaBase (peer to specHash/epicHash)."
+    }
+  ]
+}

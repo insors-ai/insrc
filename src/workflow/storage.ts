@@ -55,6 +55,8 @@ export const DESIGNS_DIR = 'docs/designs';
 export const PLANS_DIR   = 'docs/plans';
 export const BUILDS_DIR  = 'docs/builds';
 export const STUB_DIR    = 'docs/stub';
+/** Human-facing markdown root for `brainstorm` SpecArtifacts (S006/sc1). */
+export const SPECS_DIR   = 'docs/specs';
 
 // ---------------------------------------------------------------------------
 // Atomic write
@@ -159,6 +161,9 @@ export function planArtifactId(epicHash: string, storyId: string): string {
 export function buildArtifactId(epicHash: string, storyId: string): string {
 	return `BUILD-${epicHash}-${storyId}`;
 }
+/** Canonical `.json` basename ID for a brainstorm SpecArtifact (S006/sc1) —
+ *  hash-based identity, independent of the display slug. Not Epic-scoped. */
+export function specArtifactId(specHash: string): string { return `SPEC-${specHash}`; }
 
 /** HTML-comment marker embedded at the top of every rendered markdown
  *  artifact. Because the `.md` is named by slug while the `.json` is
@@ -198,6 +203,21 @@ export function defineArtifactPaths(repoPath: string, epicHash: string, epicSlug
 	return {
 		md:   join(repoPath, DEFINES_DIR,   `DEF-${fileSeg(epicSlug ?? epicHash)}.md`),
 		json: join(repoPath, ARTIFACTS_DIR, `${defineArtifactId(epicHash)}.json`),
+	};
+}
+
+/** Paths for a brainstorm SpecArtifact (S006/sc1): markdown (named by
+ *  `slug`) in `docs/specs/`, canonical JSON (named by `specHash`) in
+ *  `.insrc/artifacts/`. A Spec precedes the Epic chain, so it is keyed by
+ *  its own run-derived `specHash`, not an `epicHash`. Omit `slug` when only
+ *  the JSON is needed — the markdown half then falls back to the hash. */
+export function specArtifactPaths(repoPath: string, specHash: string, slug?: string): {
+	readonly md:   string;
+	readonly json: string;
+} {
+	return {
+		md:   join(repoPath, SPECS_DIR,     `SPEC-${fileSeg(slug ?? specHash)}.md`),
+		json: join(repoPath, ARTIFACTS_DIR, `${specArtifactId(specHash)}.json`),
 	};
 }
 
@@ -311,6 +331,7 @@ export function hldMdRel(epicSlug: string): string { return `${DESIGNS_DIR}/HLD-
 export function lldMdRel(epicSlug: string, storyId: string): string { return `${DESIGNS_DIR}/LLD-${fileSeg(epicSlug)}-${storyId}.md`; }
 export function planMdRel(epicSlug: string, storyId: string): string { return `${PLANS_DIR}/PLAN-${fileSeg(epicSlug)}-${storyId}.md`; }
 export function buildMdRel(epicSlug: string, storyId: string): string { return `${BUILDS_DIR}/BUILD-${fileSeg(epicSlug)}-${storyId}.md`; }
+export function specMdRel(slug: string): string { return `${SPECS_DIR}/SPEC-${fileSeg(slug)}.md`; }
 
 /** Path for a single amendment record. The amendmentId is already
  *  `AMD-<epicHash>-<n>` (see `amendments/store.ts`). */
@@ -356,11 +377,20 @@ export function pathsForWorkflow(args: {
 	readonly runId:         string;
 	readonly epicHash?:     string | undefined;
 	readonly epicSlug?:     string | undefined;
+	readonly specHash?:     string | undefined;   // from finalized meta (brainstorm)
 	readonly storyId?:      string | undefined;   // from finalized meta
 	readonly storyIdParam?: string | undefined;   // from intent.params
 }): { readonly md: string; readonly json: string } {
-	const { workflow, repoPath, epicKey, runId, epicHash, epicSlug, storyId, storyIdParam } = args;
+	const { workflow, repoPath, epicKey, runId, epicHash, epicSlug, specHash, storyId, storyIdParam } = args;
 	if (workflow === 'stub') return stubArtifactPaths(repoPath, epicKey);
+	// A brainstorm SpecArtifact is NOT Epic-scoped — it is keyed by its own
+	// run-derived specHash (S006/sc1). Routed before the epicHash guard.
+	if (workflow === 'brainstorm') {
+		if (specHash === undefined) {
+			throw new Error(`pathsForWorkflow: workflow 'brainstorm' finalized without meta.specHash`);
+		}
+		return specArtifactPaths(repoPath, specHash, epicSlug);
+	}
 	if (epicHash === undefined) {
 		throw new Error(`pathsForWorkflow: workflow '${workflow}' finalized without meta.epicHash`);
 	}

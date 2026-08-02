@@ -332,6 +332,12 @@ export interface ArtifactMetaBase {
 	 *  in meta for display in prompts / titles / CLI hints. Files
 	 *  are named by hash, never by slug. */
 	readonly epicSlug?:    string;
+	/** Canonical 16-char identity for a `brainstorm` SpecArtifact (S006/sc1).
+	 *  A SpecArtifact is NOT Epic-scoped — it precedes the Epic chain — so it
+	 *  carries its own run-derived hash here rather than an `epicHash`. Files
+	 *  are named `SPEC-<specHash>` (json) / `SPEC-<slug>` (md). Absent on every
+	 *  non-brainstorm artifact. */
+	readonly specHash?:    string;
 	/** Open-question resolutions, keyed by the stable questionId
 	 *  derived from each `body.openQuestions` entry. Written by the
 	 *  cross-stage open-question gate (`insrc_workflow_step`

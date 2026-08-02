@@ -47,6 +47,13 @@ import {
 	type ExtendScope,
 } from './artifacts/extend.js';
 import {
+	isCitationArray as isSpecCitationArray,
+	isSpecBody,
+	renderSpecMarkdown,
+	SPEC_SCHEMA_VERSION,
+	type SpecArtifact,
+} from './artifacts/spec.js';
+import {
 	checkContractDependencyGraph,
 	checkInterfaceSketchTypeLevel,
 	checkOwnershipConsistency,
@@ -251,6 +258,7 @@ export function prepareSynthesize(
 ): SynthesizerPrompt {
 	switch (intent.workflow) {
 		case 'stub':         return stubSynthesizer(intent, stepOutputs);
+		case 'brainstorm':   return brainstormSynthesizer(intent, stepOutputs);
 		case 'define':       return defineSynthesizer(intent, stepOutputs);
 		case 'design.epic':  return designEpicSynthesizer(intent, stepOutputs);
 		case 'design.story': return designStorySynthesizer(intent, stepOutputs);
@@ -362,6 +370,7 @@ export function finalizeArtifact(
 	try {
 		switch (intent.workflow) {
 			case 'stub':         return finalizeStub(intent, stepOutputs, runId, elapsedMs, llmResponse, model, attribution);
+			case 'brainstorm':   return finalizeBrainstorm(intent, stepOutputs, runId, elapsedMs, llmResponse, model, attribution);
 			case 'define':       return finalizeDefine(intent, stepOutputs, runId, elapsedMs, llmResponse, model, attribution);
 			case 'design.epic':  return finalizeDesignEpic(intent, stepOutputs, runId, elapsedMs, llmResponse, model, attribution);
 			case 'design.story': return finalizeDesignStory(intent, stepOutputs, runId, elapsedMs, llmResponse, model, attribution);
@@ -519,6 +528,165 @@ function defineDecomposer(intent: WorkflowIntent): DecomposerPrompt {
 		additionalProperties: false,
 	} as const;
 	return { systemPrompt, userTurn, schema: schema as unknown as Record<string, unknown> };
+}
+
+// ---------------------------------------------------------------------------
+// brainstorm — turn the converged `elicit` output into a durable SpecArtifact
+// (Epic frame-epic-new-pre-workflow-brainstorm, S006 / sc1).
+// ---------------------------------------------------------------------------
+
+function brainstormSynthesizer(
+	intent:      WorkflowIntent,
+	stepOutputs: Readonly<Record<string, unknown>>,
+): SynthesizerPrompt {
+	const systemPrompt = [
+		'You are the synthesizer for the `brainstorm` stage. The single `elicit` step (s1) already',
+		'ran the whole convergence conversation and resumed with the CONFIRMED converged output.',
+		'Turn that s1 output into a durable SpecArtifact JSON matching the schema below.',
+		'',
+		'HARD RULES:',
+		'- `body.category` MUST equal s1.category verbatim.',
+		'- Split s1.workingStatement into TWO fields: `body.intent` (what the request IS) and',
+		'  `body.scopeBoundary` (where it stops / what it deliberately does not cover). Both non-empty.',
+		'- `body.decisions` MUST preserve s1.decisions verbatim (same chosen / ruledOut / reason).',
+		'- `body.nonGoals` MUST preserve s1.nonGoals verbatim — and it MUST already contain every',
+		'  `decisions[].ruledOut` direction (the elicit gate guaranteed this; do not drop any).',
+		'- `body.openItems` MUST preserve s1.openItems verbatim (empty on a confirmed spec).',
+		'- Do NOT invent facts absent from s1. Do NOT add a category outside s1.category.',
+		'- `citations[]` grounds the spec in the elicitation: at least one citation of',
+		'  { kind: "step-output", ref: "s1" }. Cite ids as `cN`.',
+	].join('\n');
+	const userTurn = [
+		`Focus (the rough idea): ${intent.focus}`,
+		'',
+		'Step outputs:',
+		'```json',
+		JSON.stringify(stepOutputs, null, 2),
+		'```',
+		'',
+		'Emit the SpecArtifact JSON now.',
+	].join('\n');
+	const schema = {
+		type: 'object',
+		required: ['body', 'citations'],
+		properties: {
+			body: {
+				type: 'object',
+				required: ['category', 'intent', 'scopeBoundary', 'nonGoals', 'decisions', 'openItems'],
+				properties: {
+					category:      { enum: ['requirements', 'design', 'implementation', 'testing', 'general'] },
+					intent:        { type: 'string', minLength: 1 },
+					scopeBoundary: { type: 'string', minLength: 1 },
+					nonGoals:      { type: 'array', items: { type: 'string', minLength: 1 } },
+					decisions: {
+						type: 'array',
+						items: {
+							type: 'object',
+							required: ['chosen', 'ruledOut', 'reason'],
+							properties: {
+								chosen:   { type: 'string', minLength: 1 },
+								ruledOut: { type: 'array', items: { type: 'string', minLength: 1 } },
+								reason:   { type: 'string', minLength: 1 },
+							},
+							additionalProperties: false,
+						},
+					},
+					openItems:     { type: 'array', items: { type: 'string', minLength: 1 } },
+				},
+				additionalProperties: false,
+			},
+			citations: {
+				type: 'array',
+				minItems: 1,
+				items: {
+					type: 'object',
+					required: ['id', 'kind', 'ref'],
+					properties: {
+						id:         { type: 'string', pattern: '^c\\d+$' },
+						kind:       { enum: ['step-output', 'analyze-bundle', 'doc', 'code', 'stakeholder', 'convention', 'prior-artifact'] },
+						ref:        { type: 'string', minLength: 1 },
+						quotedText: { type: 'string' },
+					},
+					additionalProperties: false,
+				},
+			},
+		},
+		additionalProperties: false,
+	} as const;
+	return { systemPrompt, userTurn, schema: schema as unknown as Record<string, unknown> };
+}
+
+function finalizeBrainstorm(
+	intent:      WorkflowIntent,
+	_stepOutputs: Readonly<Record<string, unknown>>,
+	runId:       string,
+	elapsedMs:   number,
+	llmResponse: Record<string, unknown>,
+	model:       string,
+	attribution?: ArtifactModelAttribution,
+): FinalizeResult {
+	if (typeof llmResponse !== 'object' || llmResponse === null) {
+		return { ok: false, failure: schemaFailure(`synthesizer response is not an object`) };
+	}
+	const body      = (llmResponse as { body?: unknown }).body;
+	const citations = (llmResponse as { citations?: unknown }).citations;
+	if (!isSpecBody(body)) {
+		return { ok: false, failure: schemaFailure(`body does not match SpecArtifactBody shape (needs non-empty category/intent/scopeBoundary + string arrays)`) };
+	}
+	if (!isSpecCitationArray(citations)) {
+		return { ok: false, failure: schemaFailure(`citations must be an array of { id, kind, ref }`) };
+	}
+	// Fork-integrity invariant (defense in depth — the elicit `ruled-out-not-
+	// recorded` gate already enforces this at convergence): every ruled-out
+	// direction must survive into the spec's non-goals, so a rejected option is
+	// never silently dropped from the durable record (sc1, c32).
+	const nonGoalSet = new Set(body.nonGoals);
+	const dropped: string[] = [];
+	for (const d of body.decisions) {
+		for (const r of d.ruledOut) {
+			if (!nonGoalSet.has(r)) dropped.push(r);
+		}
+	}
+	if (dropped.length > 0) {
+		return { ok: false, failure: { ok: false, kind: 'schema', message: 'ruled-out directions missing from nonGoals', details: dropped } };
+	}
+	// A SpecArtifact is not Epic-scoped — it mints its OWN run-derived identity.
+	const specHash = computeEpicHash(runId);
+	const slug     = safeDeriveSlug(intent.focus);
+	const artifact: SpecArtifact = {
+		meta: {
+			workflow:      'brainstorm',
+			runId,
+			repoPath:      intent.repoPath,
+			createdAt:     new Date().toISOString(),
+			attribution:   attribution ?? singleModelAttribution(model),
+			elapsedMs,
+			repoIndexedAt: intent.repoIndexedAt,
+			schemaVersion: SPEC_SCHEMA_VERSION,
+			specHash,
+			epicSlug:      slug,
+		},
+		body,
+		citations,
+	};
+	const renderedBody = renderSpecMarkdown(artifact);
+	const check = validateBodyAndCitations(artifact, renderedBody);
+	if (!check.ok) return { ok: false, failure: check };
+	const renderedMd = renderedBody + renderCitationBlock(citations);
+	const renderedJson = JSON.stringify(artifact, null, 2) + '\n';
+	log.info(
+		{ workflow: 'brainstorm', runId, size: renderedMd.length, citations: citations.length, decisions: body.decisions.length },
+		'finalizeBrainstorm: SpecArtifact ready',
+	);
+	return {
+		ok: true,
+		finalized: {
+			workflow:   'brainstorm',
+			renderedMd,
+			renderedJson,
+			artifact,
+		},
+	};
 }
 
 function defineSynthesizer(

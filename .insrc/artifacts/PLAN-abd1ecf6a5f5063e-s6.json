@@ -1,0 +1,353 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1785669011539-dpmve9",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-08-02T11:13:47.746Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 216183,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "abd1ecf6a5f5063e",
+    "epicSlug": "frame-epic-new-pre-workflow-brainstorm",
+    "storyId": "s6",
+    "lldRunId": "wf-1785664607438-ogsjgd",
+    "lldEffectiveHash": "688a10691972f5e2069b092dff9d1d20b3da79ca83733140f0918eaac0bc5b46",
+    "review": {
+      "artifact": "plan",
+      "stage": "plan",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "p1",
+          "ref": "tasks",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "The plan enumerates exactly four tasks t1/t2/t3/t4 with the linear DAG t1 -> t2 -> t3 -> t4.",
+          "evidence": "The plan Tasks table enumerates t1/t2/t3/t4 with DAG t1<-t2<-t3<-t4. Confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p2",
+          "ref": "t1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The artifact record+renderer template t1 mirrors (define.ts importing artifactIdMarker + WorkflowArtifact) exists, and no artifacts/spec.ts exists yet.",
+          "evidence": "src/workflow/artifacts/define.ts:20/:23 import artifactIdMarker + WorkflowArtifact (the record+renderer template); no artifacts/spec.ts exists in src yet — exactly what t1 creates. Confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p3",
+          "ref": "t2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "storage.ts holds defineArtifactId/defineArtifactPaths/defineMdRel + ARTIFACTS_DIR + writeAtomic (the peers t2 mirrors); no specArtifactId/specArtifactPaths/SPECS_DIR exists yet.",
+          "evidence": "src/workflow/storage.ts:147 defineArtifactId, :194 defineArtifactPaths, :50 ARTIFACTS_DIR present; no specArtifactId/SPECS_DIR in src yet — the additive peers t2 adds. Confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p4",
+          "ref": "t3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "orchestrator.ts prepareSynthesize + finalizeArtifact throw 'not yet supported' for brainstorm (the arms t3 replaces), and finalizeDefine is the pattern; category at :137 already routes brainstorm in prepareDecompose.",
+          "evidence": "src/workflow/orchestrator.ts routes brainstorm (case :137) and defines finalizeDefine (:649); prepareSynthesize/finalizeArtifact throw 'not yet supported' for brainstorm (the arms t3 replaces, mirroring finalizeDefine). Confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p5",
+          "ref": "t1",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "BrainstormCategory (reused for SpecArtifactBody.category) is defined in src/shared/brainstorm-classes.ts.",
+          "evidence": "src/shared/brainstorm-classes.ts:12 `export type BrainstormCategory` — the union reused for SpecArtifactBody.category. Confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p6",
+          "ref": "t4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The workflow artifact test home exists (src/workflow/__tests__/ with define-artifact.test.ts) where t4's spec-artifact.test.ts lands.",
+          "evidence": "src/workflow/__tests__/define-artifact.test.ts imports from ../artifacts/define.js — the artifact-test home t4's spec-artifact.test.ts joins. Confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 6
+      },
+      "reviewedAt": "2026-08-02T11:14:47.788Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-08-02T11:17:36.003Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add the SpecArtifact record + renderSpecMarkdown (artifacts/spec.ts)",
+        "summary": "Create src/workflow/artifacts/spec.ts mirroring define.ts: declare SpecDecision { chosen, ruledOut[], reason }, SpecArtifactBody { category: BrainstormCategory, intent, scopeBoundary, nonGoals[], decisions: SpecDecision[], openItems[] }, and SpecArtifact = WorkflowArtifact<SpecArtifactBody> with kind 'spec' + specHash + shared meta (createdAt, optional approvedAt/review + attribution). Add renderSpecMarkdown(artifact) emitting Intent / Scope boundary / Non-goals / Decisions (each with ruledOut + reason) / Open items sections headed by artifactIdMarker(specArtifactId(...)). category reuses the REAL BrainstormCategory union from shared/brainstorm-classes.ts; SpecDecision uses `chosen`.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "SpecArtifactBody has category (BrainstormCategory), intent, scopeBoundary, nonGoals[], decisions: SpecDecision[] {chosen,ruledOut[],reason}, openItems[]; SpecArtifact adds kind 'spec' + specHash + meta",
+          "renderSpecMarkdown emits one section per body field (Intent/Scope boundary/Non-goals/Decisions/Open items) + the artifactIdMarker header, not a transcript",
+          "a fork-free body (decisions:[]/nonGoals:[]) renders valid markdown with empty sections",
+          "spec.ts imports WorkflowArtifact from ../types.js + artifactIdMarker/specArtifactId from ../storage.js, mirroring define.ts; tsc clean"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "renderSpecMarkdown emits Intent / Scope boundary / Non-goals / Decisions (each with ruledOut + reason) / Open items sections and the artifactIdMarker(specArtifactId(...)) header — not a conversation transcript"
+          },
+          {
+            "level": "unit",
+            "name": "the SpecArtifactBody carries category (a real BrainstormCategory id) + intent + scopeBoundary + nonGoals[] + decisions[{chosen,ruledOut,reason}] + openItems[]"
+          },
+          {
+            "level": "unit",
+            "name": "a fork-free body (decisions:[]/nonGoals:[]) renders valid markdown with empty sections"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Add the storage peers (SPECS_DIR, specArtifactId, specArtifactPaths, specMdRel)",
+        "summary": "In src/workflow/storage.ts add a SPECS_DIR const (docs dir for the spec md, peer of DEFINES_DIR/PLANS_DIR), specArtifactId(specHash)='SPEC-<specHash>' (peer of defineArtifactId), specArtifactPaths(repoPath, specHash) returning { md under SPECS_DIR, json under ARTIFACTS_DIR } (peer of defineArtifactPaths), and specMdRel(specHash) (peer of defineMdRel). Hash-addressed; the existing writeAtomic is the write path (no new write helper).",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "specArtifactId(specHash) === 'SPEC-<specHash>'",
+          "specArtifactPaths(repoPath, specHash).json is under ARTIFACTS_DIR ('.insrc/artifacts') and .md is under SPECS_DIR; both absolute paths",
+          "SPECS_DIR + specMdRel are declared as peers of the DEFINES_DIR/defineMdRel family",
+          "tsc clean; no change to existing storage exports"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "specArtifactId(specHash) === 'SPEC-<specHash>'"
+          },
+          {
+            "level": "unit",
+            "name": "specArtifactPaths(repoPath, specHash).json is under ARTIFACTS_DIR ('.insrc/artifacts') so it is listed identically to DEF/HLD/LLD/PLAN, and .md is under SPECS_DIR; both absolute"
+          },
+          {
+            "level": "unit",
+            "name": "the same specHash yields the same paths (stable identifier)"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Wire the brainstorm synthesize/finalize in orchestrator.ts",
+        "summary": "In src/workflow/orchestrator.ts replace the brainstorm 'not yet supported' throws: add a brainstormSynthesizer (prepareSynthesize case 'brainstorm') that emits a synth prompt+schema instructing the LLM to structure the converged elicit stepOutputs (workingStatement -> distinct intent + scopeBoundary; decisions/nonGoals/openItems 1:1) into a SpecArtifactBody; and finalizeBrainstorm (finalizeArtifact case 'brainstorm') that validates the body, computes specHash, builds the SpecArtifact (meta.createdAt + attribution, approvedAt unset), and writes {md,json} via specArtifactPaths + writeAtomic + renderSpecMarkdown — mirroring defineSynthesizer/finalizeDefine. The other workflows' arms are untouched.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "prepareSynthesize('brainstorm', stepOutputs) no longer throws and returns a synth prompt+schema targeting the SpecArtifactBody",
+          "finalizeArtifact 'brainstorm' with a valid synthesized body writes exactly one SpecArtifact (json under ARTIFACTS_DIR + md under SPECS_DIR) with meta.approvedAt unset",
+          "finalizeArtifact 'brainstorm' rejects (retryable, writes nothing) a body missing a required field (e.g. empty scopeBoundary)",
+          "the stub/define/design.epic/design.story/plan synth+finalize arms are unchanged; tsc clean"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "orchestrator prepareSynthesize(intent 'brainstorm', stepOutputs) no longer throws 'not yet supported' and returns a synth prompt/schema targeting the SpecArtifactBody"
+          },
+          {
+            "level": "integration",
+            "name": "finalizeArtifact for 'brainstorm' with a valid synthesized body writes exactly one SpecArtifact (json+md), body carrying intent/scopeBoundary/nonGoals/decisions/openItems, meta.approvedAt unset"
+          },
+          {
+            "level": "integration",
+            "name": "finalizeArtifact rejects (retryable, writes nothing) a synthesized body missing a required field (e.g. empty scopeBoundary)"
+          },
+          {
+            "level": "integration",
+            "name": "the other workflows' synth/finalize arms are unaffected (a stub/define finalize still works)"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Add the SpecArtifact record/storage + orchestrator-seam tests",
+        "summary": "Add src/workflow/__tests__/spec-artifact.test.ts (node:test + assert/strict): render + field-set unit cases, specArtifactId/specArtifactPaths path cases, and a writeAtomic round-trip (write json -> read back deep-equal, idempotent on same specHash). Add an orchestrator wiring test: brainstorm prepareSynthesize/finalizeArtifact no longer throw and a converged elicit stepOutputs fixture yields exactly one SpecArtifact carrying intent/scopeBoundary/nonGoals/decisions/openItems (approvedAt unset), plus a rejects-under-structured-body case. Run the workflow sweep + tsc.",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "spec-artifact.test.ts covers render (sections + marker), paths (ARTIFACTS_DIR json + SPECS_DIR md), and writeAtomic round-trip deep-equal + idempotent re-write",
+          "an orchestrator test proves brainstorm synth/finalize no longer throw and produce exactly one SpecArtifact from a converged stepOutputs, plus the under-structured-body rejection",
+          "the full workflow + workflow-step sweep passes and tsc is clean"
+        ],
+        "derivedFrom": [
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "writing the SpecArtifact json via writeAtomic to specArtifactPaths(...).json and reading it back parses to a deep-equal record"
+          },
+          {
+            "level": "unit",
+            "name": "writing the same body twice (deterministic specHash) overwrites idempotently and reads back identical content"
+          },
+          {
+            "level": "live",
+            "name": "a full brainstorm run to convergence produces a SpecArtifact whose intent + scopeBoundary read as a genuine structured statement (not a restatement of the raw idea) and whose decisions/nonGoals reflect the conversation"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "renderSpecMarkdown emits Intent / Scope boundary / Non-goals / Decisions (each with ruledOut + reason) / Open items sections and the artifactIdMarker(specArtifactId(...)) header — not a conversation transcript",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "the SpecArtifactBody carries category (a real BrainstormCategory id) + intent + scopeBoundary + nonGoals[] + decisions[{chosen,ruledOut,reason}] + openItems[]",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "a fork-free body (decisions:[]/nonGoals:[]) renders valid markdown with empty sections",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "specArtifactId(specHash) === 'SPEC-<specHash>'",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "specArtifactPaths(repoPath, specHash).json is under ARTIFACTS_DIR ('.insrc/artifacts') so it is listed identically to DEF/HLD/LLD/PLAN, and .md is under SPECS_DIR; both absolute",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "the same specHash yields the same paths (stable identifier)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "writing the SpecArtifact json via writeAtomic to specArtifactPaths(...).json and reading it back parses to a deep-equal record",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "writing the same body twice (deterministic specHash) overwrites idempotently and reads back identical content",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "orchestrator prepareSynthesize(intent 'brainstorm', stepOutputs) no longer throws 'not yet supported' and returns a synth prompt/schema targeting the SpecArtifactBody",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "finalizeArtifact for 'brainstorm' with a valid synthesized body writes exactly one SpecArtifact (json+md), body carrying intent/scopeBoundary/nonGoals/decisions/openItems, meta.approvedAt unset",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "finalizeArtifact rejects (retryable, writes nothing) a synthesized body missing a required field (e.g. empty scopeBoundary)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "the other workflows' synth/finalize arms are unaffected (a stub/define finalize still works)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "a full brainstorm run to convergence produces a SpecArtifact whose intent + scopeBoundary read as a genuine structured statement (not a restatement of the raw idea) and whose decisions/nonGoals reflect the conversation",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 contractDetails.api: SpecArtifact + renderSpecMarkdown (the record family + renderer in artifacts/spec.ts)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 dataModelChanges: SpecArtifact/SpecArtifactBody/SpecDecision new record (field set + BrainstormCategory + chosen)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 dataModelChanges: specArtifactId/specArtifactPaths/specMdRel/SPECS_DIR storage peers (json under ARTIFACTS_DIR, md under SPECS_DIR, writeAtomic)"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 contractDetails.api: finalizeBrainstorm (+ brainstormSynthesizer) validating + persisting the SpecArtifact, approvedAt unset"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 dataModelChanges + interactionWithShared: brainstorm synth/finalize wiring replacing the orchestrator 'not yet supported' throws; sc1 implemented"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 testStrategy: record/render/paths/round-trip + orchestrator-seam + live suites under src/workflow/__tests__/"
+    }
+  ]
+}

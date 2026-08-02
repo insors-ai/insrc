@@ -1,0 +1,574 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1785664607438-ogsjgd",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-08-02T10:04:24.496Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 456989,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "abd1ecf6a5f5063e",
+    "epicSlug": "frame-epic-new-pre-workflow-brainstorm",
+    "storyId": "s6",
+    "hldBaseRunId": "wf-1785587820064-46kctq",
+    "hldEffectiveHash": "688a10691972f5e2069b092dff9d1d20b3da79ca83733140f0918eaac0bc5b46",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "q1",
+          "ref": "contract/SpecArtifact",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "define.ts and plan.ts are the artifact record+renderer template s6's new spec.ts mirrors (typed body + renderer importing artifactIdMarker + WorkflowArtifact).",
+          "evidence": "src/workflow/artifacts/define.ts:20 imports artifactIdMarker+defineArtifactId, :23 imports WorkflowArtifact; declares the typed body + renderer — the template SpecArtifact/spec.ts mirrors. Confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "q2",
+          "ref": "contract/specArtifactPaths",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "storage.ts holds the <t>ArtifactId/<t>ArtifactPaths/<t>MdRel family + ARTIFACTS_DIR + writeAtomic that specArtifactId/specArtifactPaths/specMdRel/SPECS_DIR mirror; no spec* peer exists yet.",
+          "evidence": "src/workflow/storage.ts:194 defineArtifactPaths, :50 ARTIFACTS_DIR, :71 writeAtomic present; no specArtifactPaths/SPECS_DIR in src yet (all matches in docs) — exactly the additive peers s6 introduces. Confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "q3",
+          "ref": "dataModel/wiring",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "orchestrator.ts prepareSynthesize + finalizeArtifact currently throw 'not yet supported' for workflow 'brainstorm' (the arms s6 replaces); finalizeDefine/finalizePlan are the pattern.",
+          "evidence": "src/workflow/orchestrator.ts routes brainstorm (case at :137) and defines finalizeDefine (:649); prepareSynthesize/finalizeArtifact throw 'not yet supported' for brainstorm (the arms s6 replaces, mirroring finalizeDefine/finalizePlan). Confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "q4",
+          "ref": "contract/SpecArtifact",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "WorkflowArtifact<Body> is the generic artifact envelope in types.ts that SpecArtifact specializes.",
+          "evidence": "src/workflow/types.ts:396 `export interface WorkflowArtifact<Body = unknown>` — the generic envelope SpecArtifact specializes. Confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "q5",
+          "ref": "dataModel/SpecArtifactBody",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "BrainstormCategory (the real union reused for SpecArtifactBody.category) is defined in src/shared/brainstorm-classes.ts.",
+          "evidence": "src/shared/brainstorm-classes.ts:12 `export type BrainstormCategory` + :23 BRAINSTORM_CATEGORY_CLASSES — the real union reused for SpecArtifactBody.category. Confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "q6",
+          "ref": "dataModel/mapping",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The converged elicit output the synthesizer maps from is { category, workingStatement, openItems, confirmed, decisions[{chosen,ruledOut,reason}], nonGoals } in brainstorm/schemas.ts.",
+          "evidence": "The probe over-capped on docs (50 matches all in md artifacts), but the shipped s3/s4 brainstormElicitSchema in src/workflow/runners/brainstorm/schemas.ts carries workingStatement/openItems/confirmed/decisions{chosen,ruledOut,reason}/nonGoals (commits aeea535/b48d53a) — the converged output the synthesizer maps from. Confirmed via the shipped schema.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 6
+      },
+      "reviewedAt": "2026-08-02T10:05:34.061Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-08-02T11:10:03.451Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Brainstorm ships as a first-class workflow stage (alternative a1): a peer runner directory src/workflow/runners/brainstorm/ that self-registers through the existing executor registry and workflow/index.ts registerWorkflowRunners; a new persisted SpecArtifact peer file in src/workflow/artifacts/ with a specArtifactPaths peer in storage.ts (hash-addressed, listed, approval-stamped identically to DEF/HLD/LLD/PLAN); and an additive elicitation phase on the existing insrc_workflow_step MCP surface that reuses state-store.ts and the questions-gate primitive and preserves the opaque state token verbatim. The single cross-cutting SpecArtifact shape (intent, scope boundary, non-goals, decisions-with-ruled-out-alternatives, open items) is read unchanged by both define (s8) and standalone design.story (s9). Nothing touches the shared/chat-agent brainstorm.addIdea stub.",
+      "ownedContracts": [
+        {
+          "id": "sc1",
+          "name": "SpecArtifact record + hash-addressed persistence",
+          "purpose": "The one durable, structured spec both downstream stages read. A typed record (like define.ts/plan.ts) persisted hash-addressed with approval stamping via a storage.ts peer, so it is listed and approval-gated identically to every other workflow artifact and no consumer-specific variant exists (k1,k6,k7).",
+          "interfaceSketch": "// src/workflow/artifacts/spec.ts (peer of define.ts / plan.ts)\nimport type { BrainstormCategory } from '../../shared/brainstorm-classes.js';\ninterface SpecDecision {\n  readonly choice:   string;\n  readonly ruledOut: readonly string[];   // alternatives explicitly excluded\n  readonly reason:   string;\n}\ninterface SpecArtifactBody {\n  readonly category:      BrainstormCategory;      // 'spec' | 'architecture' | 'how-to-build' (reused vocab)\n  readonly intent:        string;\n  readonly scopeBoundary: string;\n  readonly nonGoals:      readonly string[];\n  readonly decisions:     readonly SpecDecision[];\n  readonly openItems:     readonly string[];\n}\ninterface SpecArtifact {\n  readonly kind:     'spec';\n  readonly specHash: string;                        // deterministic hash id\n  readonly body:     SpecArtifactBody;\n  readonly meta: {\n    readonly createdAt:   string;\n    readonly approvedAt?: string | undefined;       // set only by the approve gate (k12)\n    readonly review?:     unknown;                  // stamped by insrc_review_step\n  };\n}\n// src/workflow/storage.ts (peer of defineArtifactPaths/planArtifactPaths) — call-signature interface\ninterface SpecArtifactPathsResult {\n  readonly md:   string;\n  readonly json: string;\n}\ninterface SpecArtifactPaths {\n  (repoPath: string, specHash: string): SpecArtifactPathsResult;\n}",
+          "ownedByStory": "s6",
+          "consumedByStories": [
+            "s7",
+            "s8",
+            "s9"
+          ],
+          "assumptions": [
+            "c5",
+            "c6"
+          ]
+        }
+      ],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s6",
+        "owns": [
+          "sc1"
+        ],
+        "depends": [],
+        "internal": "The concrete SpecArtifact serialization + markdown rendering and the specArtifactPaths hash-addressing + atomic write, plus how the spec is surfaced in the existing artifact listing. The field set is the sc1 contract; the on-disk format details and renderer are internal to s6."
+      },
+      "rolloutPhase": "Phase C — Persist + review/approve the spec",
+      "nonFunctional": {
+        "performance": "Elicitation is interactive and controller-paced; there is no daemon-side latency SLA because the daemon runs no autonomous loop (k2). The stage sits on the critical design path and uses the core model tier — correctness of the elicited spec is never traded for fewer or cheaper model calls (k13).",
+        "security": "No new external surface. The MCP layer never opens LMDB/LanceDB; the SpecArtifact is read/written only through daemon IPC (k11). The stage is namespaced distinctly from the shared/chat-agent brainstorm.addIdea offlineRpc stub and never invokes it (k10).",
+        "observability": "The stage emits the same step-start/step-done/synthesize progress frames as the existing stages, and the SpecArtifact appears in the same artifact listing surfaces, so an in-flight or completed brainstorm is observable exactly like any other stage (ac3).",
+        "durability": "The SpecArtifact is hash-addressed and written atomically via the existing storage writeAtomic path; reading it back returns identical content. Approval is a durable meta.approvedAt stamp; an abandoned conversation persists nothing (s3/ac5), and an unapproved spec cannot be consumed (k12)."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "SpecArtifact",
+          "signature": "interface SpecArtifactBody { readonly category: BrainstormCategory; readonly intent: string; readonly scopeBoundary: string; readonly nonGoals: readonly string[]; readonly decisions: readonly SpecDecision[]; readonly openItems: readonly string[] }\ninterface SpecDecision { readonly chosen: string; readonly ruledOut: readonly string[]; readonly reason: string }\ntype SpecArtifact = WorkflowArtifact<SpecArtifactBody> & { readonly kind: 'spec'; readonly specHash: string }",
+          "parameters": [],
+          "returns": {
+            "type": "SpecArtifact",
+            "meaning": "The durable, structured spec record both downstream stages read (sc1). Declared in a new src/workflow/artifacts/spec.ts peer of define.ts/plan.ts, using the shared WorkflowArtifact<Body> envelope + ArtifactMetaBase (createdAt, optional approvedAt/review + model attribution). category reuses the REAL BrainstormCategory union; SpecDecision uses `chosen` (matching the s4 elicit field)."
+          },
+          "errors": [],
+          "preconditions": [
+            "Constructed only from a confirmed converged elicit output (s3/s4)."
+          ],
+          "postconditions": [
+            "kind is 'spec'; meta.approvedAt is unset at creation (set only by s7's approve gate, k12)."
+          ]
+        },
+        {
+          "name": "renderSpecMarkdown",
+          "signature": "function renderSpecMarkdown(artifact: SpecArtifact): string",
+          "parameters": [
+            {
+              "name": "artifact",
+              "type": "SpecArtifact",
+              "purpose": "The record to render to the human-facing markdown.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "Markdown that reads as a structured statement of the request — Intent / Scope boundary / Non-goals / Decisions (each with ruled-out alternatives + reason) / Open items sections — headed by artifactIdMarker(specArtifactId(...)) for lookup. Not a transcript (ac2). Peer of define.ts's renderer."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Contains the artifactId marker and one section per SpecArtifactBody field."
+          ]
+        },
+        {
+          "name": "specArtifactId",
+          "signature": "function specArtifactId(specHash: string): string",
+          "parameters": [
+            {
+              "name": "specHash",
+              "type": "string",
+              "purpose": "The deterministic hash id of the converged spec.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "The stable artifact id `SPEC-<specHash>` (peer of defineArtifactId/planArtifactId), used for the json filename + the md marker."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": []
+        },
+        {
+          "name": "specArtifactPaths",
+          "signature": "function specArtifactPaths(repoPath: string, specHash: string): { readonly md: string; readonly json: string }",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "The registered repo root.",
+              "optional": false
+            },
+            {
+              "name": "specHash",
+              "type": "string",
+              "purpose": "The deterministic spec hash id.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "{ md: string; json: string }",
+            "meaning": "The two on-disk paths (sc1): json under the shared ARTIFACTS_DIR ('.insrc/artifacts/SPEC-<hash>.json') so it is listed identically to DEF/HLD/LLD/PLAN, and md under a new SPECS_DIR. Direct peer of defineArtifactPaths/planArtifactPaths."
+          },
+          "errors": [],
+          "preconditions": [
+            "repoPath is a registered repo."
+          ],
+          "postconditions": [
+            "Both paths are absolute; json sits under ARTIFACTS_DIR (ac3)."
+          ]
+        },
+        {
+          "name": "finalizeBrainstorm",
+          "signature": "// orchestrator.ts finalizeArtifact case 'brainstorm'\nfunction finalizeBrainstorm(intent: WorkflowIntent, stepOutputs: Readonly<Record<string, unknown>>, runId: string, elapsedMs: number, llmResponse: unknown, model: string, attribution: ArtifactModelAttribution): FinalizeResult",
+          "parameters": [
+            {
+              "name": "llmResponse",
+              "type": "unknown",
+              "purpose": "The brainstormSynthesizer output structuring the converged elicit result into a SpecArtifactBody.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "FinalizeResult",
+            "meaning": "Validates the SpecArtifactBody, computes specHash, builds the SpecArtifact (meta.createdAt + model attribution, approvedAt unset), and writes {md,json} via specArtifactPaths + writeAtomic — mirroring finalizeDefine/finalizePlan. Replaces the current brainstorm 'not yet supported' throw in finalizeArtifact; the paired brainstormSynthesizer replaces the throw in prepareSynthesize."
+          },
+          "errors": [
+            {
+              "type": "validation error",
+              "condition": "The synthesized body is missing a required SpecArtifactBody field or malformed — finalize rejects (retryable) rather than persisting a partial spec."
+            }
+          ],
+          "preconditions": [
+            "The brainstorm run reached synthesize with a confirmed converged elicit output."
+          ],
+          "postconditions": [
+            "Exactly one SpecArtifact json+md is written atomically; nothing consumer-specific (ac4); no LMDB/Lance access (k11)."
+          ]
+        }
+      ],
+      "dataModel": [
+        {
+          "entity": "SpecArtifact (+ SpecArtifactBody, SpecDecision)",
+          "change": "new",
+          "details": "New record family in src/workflow/artifacts/spec.ts mirroring define.ts/plan.ts: SpecArtifactBody { category: BrainstormCategory, intent, scopeBoundary, nonGoals[], decisions: SpecDecision[], openItems[] }, SpecDecision { chosen, ruledOut[], reason }, SpecArtifact = WorkflowArtifact<SpecArtifactBody> with kind 'spec' + specHash + shared meta. Plus renderSpecMarkdown. This is sc1's record; the field set is the contract, the on-disk/render details are internal to s6.",
+          "schemaDiff": "",
+          "callSites": [
+            "src/workflow/artifacts/define.ts",
+            "src/workflow/types.ts",
+            "src/shared/brainstorm-classes.ts"
+          ]
+        },
+        {
+          "entity": "specArtifactId / specArtifactPaths / specMdRel / SPECS_DIR",
+          "change": "new",
+          "details": "New storage peers in src/workflow/storage.ts mirroring defineArtifactId/defineArtifactPaths/defineMdRel: a SPECS_DIR const (docs dir for the md), specArtifactId(specHash)='SPEC-<hash>', specArtifactPaths(repoPath, specHash) -> { md under SPECS_DIR, json under ARTIFACTS_DIR }, specMdRel(specHash). Hash-addressed + written via the existing writeAtomic (k6/k7).",
+          "schemaDiff": "",
+          "callSites": [
+            "src/workflow/storage.ts"
+          ]
+        },
+        {
+          "entity": "brainstorm synthesize/finalize wiring",
+          "change": "invariant-change",
+          "details": "orchestrator.ts prepareSynthesize + finalizeArtifact currently THROW 'not yet supported' for workflow 'brainstorm'. s6 replaces both arms: a brainstormSynthesizer structures the converged elicit output (s3/s4) into a SpecArtifactBody, and finalizeBrainstorm persists the SpecArtifact. The brainstorm workflow now yields an artifact end-to-end. No change to the other workflows' arms.",
+          "schemaDiff": "- prepareSynthesize: case 'brainstorm' -> throw 'not yet supported'\n+ prepareSynthesize: case 'brainstorm' -> brainstormSynthesizer(intent, stepOutputs)\n- finalizeArtifact:   case 'brainstorm' -> throw 'not yet supported'\n+ finalizeArtifact:   case 'brainstorm' -> finalizeBrainstorm(...)",
+          "callSites": [
+            "src/workflow/orchestrator.ts"
+          ]
+        }
+      ],
+      "interactionWithShared": [
+        {
+          "contractId": "sc1",
+          "role": "implements",
+          "howDetails": "s6 OWNS sc1 (HLD ownedByStory=s6): it defines the SpecArtifact record + renderSpecMarkdown (artifacts/spec.ts) and the specArtifactId/specArtifactPaths/specMdRel storage peers (storage.ts), and wires the brainstorm synthesize/finalize to produce+persist exactly one SpecArtifact — hash-addressed under ARTIFACTS_DIR, markdown under SPECS_DIR, written via writeAtomic, listed + approval-stamped identically to DEF/HLD/LLD/PLAN (k1/k6/k7). meta.approvedAt is left unset for s7's approve gate (sc4)."
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "SpecArtifact (+ SpecArtifactBody, SpecDecision)",
+        "change": "new",
+        "details": "New record family in src/workflow/artifacts/spec.ts mirroring define.ts/plan.ts: SpecArtifactBody { category: BrainstormCategory, intent, scopeBoundary, nonGoals[], decisions: SpecDecision[], openItems[] }, SpecDecision { chosen, ruledOut[], reason }, SpecArtifact = WorkflowArtifact<SpecArtifactBody> with kind 'spec' + specHash + shared meta. Plus renderSpecMarkdown. This is sc1's record; the field set is the contract, the on-disk/render details are internal to s6.",
+        "schemaDiff": "",
+        "callSites": [
+          "src/workflow/artifacts/define.ts",
+          "src/workflow/types.ts",
+          "src/shared/brainstorm-classes.ts"
+        ]
+      },
+      {
+        "entity": "specArtifactId / specArtifactPaths / specMdRel / SPECS_DIR",
+        "change": "new",
+        "details": "New storage peers in src/workflow/storage.ts mirroring defineArtifactId/defineArtifactPaths/defineMdRel: a SPECS_DIR const (docs dir for the md), specArtifactId(specHash)='SPEC-<hash>', specArtifactPaths(repoPath, specHash) -> { md under SPECS_DIR, json under ARTIFACTS_DIR }, specMdRel(specHash). Hash-addressed + written via the existing writeAtomic (k6/k7).",
+        "schemaDiff": "",
+        "callSites": [
+          "src/workflow/storage.ts"
+        ]
+      },
+      {
+        "entity": "brainstorm synthesize/finalize wiring",
+        "change": "invariant-change",
+        "details": "orchestrator.ts prepareSynthesize + finalizeArtifact currently THROW 'not yet supported' for workflow 'brainstorm'. s6 replaces both arms: a brainstormSynthesizer structures the converged elicit output (s3/s4) into a SpecArtifactBody, and finalizeBrainstorm persists the SpecArtifact. The brainstorm workflow now yields an artifact end-to-end. No change to the other workflows' arms.",
+        "schemaDiff": "- prepareSynthesize: case 'brainstorm' -> throw 'not yet supported'\n+ prepareSynthesize: case 'brainstorm' -> brainstormSynthesizer(intent, stepOutputs)\n- finalizeArtifact:   case 'brainstorm' -> throw 'not yet supported'\n+ finalizeArtifact:   case 'brainstorm' -> finalizeBrainstorm(...)",
+        "callSites": [
+          "src/workflow/orchestrator.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "implements",
+        "howDetails": "s6 OWNS sc1 (HLD ownedByStory=s6): it defines the SpecArtifact record + renderSpecMarkdown (artifacts/spec.ts) and the specArtifactId/specArtifactPaths/specMdRel storage peers (storage.ts), and wires the brainstorm synthesize/finalize to produce+persist exactly one SpecArtifact — hash-addressed under ARTIFACTS_DIR, markdown under SPECS_DIR, written via writeAtomic, listed + approval-stamped identically to DEF/HLD/LLD/PLAN (k1/k6/k7). meta.approvedAt is left unset for s7's approve gate (sc4)."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The brainstormSynthesizer emits a body missing a required SpecArtifactBody field (e.g. no scopeBoundary), or a decisions entry missing chosen/ruledOut/reason.",
+          "detection": "finalizeBrainstorm validates the synthesized body against the SpecArtifactBody shape (the same validate-before-write discipline finalizeDefine/finalizePlan use) before constructing the SpecArtifact.",
+          "response": "finalize returns a retryable error and writes NOTHING (validation precedes writeAtomic); the synth turn is re-issued rather than persisting a partial spec.",
+          "userImpact": "No half-formed spec ever lands on disk; the run either produces a complete structured spec or none.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The synthesizer collapses the whole request into intent and leaves scopeBoundary empty (or vice-versa) — an under-structured statement that would read like a transcript.",
+          "detection": "renderSpecMarkdown + the shape validation require both intent and scopeBoundary to be non-empty strings; an empty scopeBoundary fails validation before persistence.",
+          "response": "Rejected as a validation error (retryable); the synthesizer prompt requires the converged statement be split into distinct intent + scope boundary.",
+          "userImpact": "The recorded spec always reads as a structured statement (ac2), not a single blob.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A writeAtomic partial-failure (e.g. the md write succeeds but the json write is interrupted), risking a spec listed without its canonical record or vice-versa.",
+          "detection": "writeAtomic writes to <path>.tmp then renames; finalize writes json + md through it and surfaces any thrown fs error. A crash between the two leaves at most a completed file and a stale .tmp, never a torn file.",
+          "response": "The fs error propagates out of finalize (the run errors); because each file is written tmp-then-rename, no partially-written artifact is readable, and re-running finalize with the same specHash overwrites idempotently.",
+          "userImpact": "A reader never sees a torn spec; at worst the run is retried and the same hash-addressed pair is rewritten.",
+          "recoverable": true
+        },
+        {
+          "scenario": "finalizeBrainstorm is reached but the run never actually confirmed (a caller drives synthesize on an unconfirmed elicit output).",
+          "detection": "The converged elicit output carries confirmed:true only after the s3 gate; the synthesizer input is the finalized step output, which the executor only advances past on a confirmed resume. An unconfirmed output would not have reached synthesize.",
+          "response": "Structurally unreachable via the normal executor path; if forced, the missing/short converged fields fail the same body validation.",
+          "userImpact": "Only a user-confirmed converged statement is ever persisted as a spec (k12 lineage; abandonment persists nothing).",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A fork-free convergence: decisions:[] and nonGoals:[] (the user's idea had a single obvious scope).",
+          "expected": "A valid SpecArtifact with empty decisions/nonGoals arrays; renderSpecMarkdown emits the sections as empty (e.g. '_none_'), still a complete structured spec (ac2)."
+        },
+        {
+          "input": "Two different converged specs produced in the same repo (two brainstorm runs).",
+          "expected": "Each gets its own specHash -> distinct SPEC-<hash>.json under ARTIFACTS_DIR + md under SPECS_DIR; both are listed alongside the other artifacts, neither overwrites the other (ac1/ac3)."
+        },
+        {
+          "input": "The identical converged body is finalized twice (deterministic content).",
+          "expected": "specHash is deterministic over the body, so the same SPEC-<hash> pair is produced and writeAtomic overwrites idempotently — reading back returns identical content (ac1)."
+        },
+        {
+          "input": "openItems is non-empty on the confirmed spec (the user confirmed intent but left some questions open).",
+          "expected": "The open items are recorded in the SpecArtifactBody.openItems section — a valid spec (a confirmed statement may still carry open items; that is orthogonal to convergence)."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The SpecArtifact json lands under the SAME ARTIFACTS_DIR as DEF/HLD/LLD/PLAN and is written via the existing writeAtomic tmp-then-rename path — s6 adds no parallel persistence path and the MCP layer never opens LMDB/Lance (k6/k7/k11).",
+          "source": "c5"
+        },
+        {
+          "text": "The other workflows' prepareSynthesize/finalizeArtifact arms (stub/define/design.epic/design.story/plan) are unchanged; s6 only replaces the brainstorm 'not yet supported' throws.",
+          "source": "c7"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test + node:assert/strict via `npx tsx --test`, matching the existing src/workflow/**/__tests__/ artifact + storage suites",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove the SpecArtifact record + renderSpecMarkdown produce a structured statement (ac2) with the sc1 field set.",
+          "subjects": [
+            "renderSpecMarkdown emits Intent / Scope boundary / Non-goals / Decisions (each with ruledOut + reason) / Open items sections and the artifactIdMarker(specArtifactId(...)) header — not a conversation transcript",
+            "the SpecArtifactBody carries category (a real BrainstormCategory id) + intent + scopeBoundary + nonGoals[] + decisions[{chosen,ruledOut,reason}] + openItems[]",
+            "a fork-free body (decisions:[]/nonGoals:[]) renders valid markdown with empty sections"
+          ],
+          "fixturesNeeded": [
+            "a hand-built SpecArtifact fixture"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove specArtifactPaths/specArtifactId hash-address the spec under the shared artifact surface (ac1/ac3).",
+          "subjects": [
+            "specArtifactId(specHash) === 'SPEC-<specHash>'",
+            "specArtifactPaths(repoPath, specHash).json is under ARTIFACTS_DIR ('.insrc/artifacts') so it is listed identically to DEF/HLD/LLD/PLAN, and .md is under SPECS_DIR; both absolute",
+            "the same specHash yields the same paths (stable identifier)"
+          ],
+          "fixturesNeeded": [
+            "a temp repoPath"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove durable round-trip: a written SpecArtifact reads back identical (ac1).",
+          "subjects": [
+            "writing the SpecArtifact json via writeAtomic to specArtifactPaths(...).json and reading it back parses to a deep-equal record",
+            "writing the same body twice (deterministic specHash) overwrites idempotently and reads back identical content"
+          ],
+          "fixturesNeeded": [
+            "a temp repo dir",
+            "writeAtomic + fs read"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove the brainstorm synthesize/finalize seam produces exactly one structured SpecArtifact from a converged elicit output (ac2/ac4) and no longer throws.",
+          "subjects": [
+            "orchestrator prepareSynthesize(intent 'brainstorm', stepOutputs) no longer throws 'not yet supported' and returns a synth prompt/schema targeting the SpecArtifactBody",
+            "finalizeArtifact for 'brainstorm' with a valid synthesized body writes exactly one SpecArtifact (json+md), body carrying intent/scopeBoundary/nonGoals/decisions/openItems, meta.approvedAt unset",
+            "finalizeArtifact rejects (retryable, writes nothing) a synthesized body missing a required field (e.g. empty scopeBoundary)",
+            "the other workflows' synth/finalize arms are unaffected (a stub/define finalize still works)"
+          ],
+          "fixturesNeeded": [
+            "a converged elicit stepOutputs fixture",
+            "a temp repo intent"
+          ]
+        },
+        {
+          "level": "live",
+          "purpose": "Gated (INSRC_LIVE_TESTS=1) end-to-end: a real converged brainstorm run yields a well-structured SpecArtifact.",
+          "subjects": [
+            "a full brainstorm run to convergence produces a SpecArtifact whose intent + scopeBoundary read as a genuine structured statement (not a restatement of the raw idea) and whose decisions/nonGoals reflect the conversation"
+          ],
+          "fixturesNeeded": [
+            "a live core-tier provider (INSRC_LIVE_TESTS=1)",
+            "a scripted converged conversation"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "unit: writing the SpecArtifact json via writeAtomic + reading it back is deep-equal (durable, stable id)",
+            "unit: the same specHash yields the same paths and idempotent overwrite reads back identical content",
+            "unit: specArtifactId is the stable 'SPEC-<specHash>' identifier"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "unit: renderSpecMarkdown emits the Intent/Scope/Non-goals/Decisions(+ruledOut/reason)/Open-items sections, not a transcript",
+            "integration: the synthesized SpecArtifactBody carries the distinct structured fields; finalize rejects an under-structured body (empty scopeBoundary)",
+            "live: a real run's intent + scopeBoundary read as a structured statement"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "unit: specArtifactPaths(...).json is under the shared ARTIFACTS_DIR (same listing/lookup as the other artifacts) with the md under SPECS_DIR",
+            "unit: renderSpecMarkdown carries the artifactIdMarker for lookup"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "integration: a converged elicit output produces exactly ONE SpecArtifact whose single body serves both downstream entries — no consumer-specific variant is written",
+            "unit: SpecArtifactBody has no consumer-tagged fields (one shape)"
+          ]
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Peer SpecArtifact record + storage peer, structured body, wired through the brainstorm synthesize/finalize seam",
+        "oneLineSummary": "A new src/workflow/artifacts/spec.ts (record + renderer) + storage.ts peers (SPECS_DIR/specArtifactId/specArtifactPaths/specMdRel) mirroring define/plan; the brainstorm synthesizer structures the converged elicit output into the single SpecArtifactBody { intent, scopeBoundary, nonGoals, decisions, openItems } and finalize persists it hash-addressed via writeAtomic.",
+        "approach": "Realize sc1 exactly as the HLD prescribes. (1) src/workflow/artifacts/spec.ts declares SpecArtifactBody { category, intent, scopeBoundary, nonGoals, decisions:[{chosen,ruledOut,reason}], openItems }, SpecArtifact = WorkflowArtifact<SpecArtifactBody> with kind 'spec' + specHash + meta (createdAt, optional approvedAt/review/model), and renderSpecMarkdown emitting the structured sections + artifactIdMarker (peer of define.ts/plan.ts). (2) storage.ts gains SPECS_DIR, specArtifactId(specHash), specArtifactPaths(repoPath, specHash) -> { md under SPECS_DIR, json under ARTIFACTS_DIR }, specMdRel. (3) orchestrator.ts: a brainstormSynthesizer (prepareSynthesize case) prompts the LLM to STRUCTURE the converged workingStatement into distinct intent + scopeBoundary and carry decisions/nonGoals/openItems 1:1; finalizeBrainstorm (finalizeArtifact case) validates, computes specHash, writes {md,json} via specArtifactPaths+writeAtomic, stamps meta.createdAt + attribution, leaving approvedAt unset (s7's gate). The 'not yet supported' brainstorm arms are removed. ONE artifact, no consumer variant; listed + approval-gated exactly like DEF/HLD/LLD/PLAN. Category reuses the REAL BrainstormCategory union (recorded refinement).",
+        "pros": [
+          "Directly implements sc1 + k1/k6/k7: one cross-cutting SpecArtifact, listed/approval-stamped identically to every other artifact via the existing ARTIFACTS_DIR + writeAtomic path (ac1/ac3/ac4).",
+          "ac2 is structural: the synthesizer splits the converged statement into typed intent + scopeBoundary + non-goals + decisions + open-items, so the record reads as a statement of the request, not a transcript.",
+          "Reuses the proven define/plan artifact+storage+finalize template end-to-end — no new subsystem, no new persistence path; MCP never touches LMDB/Lance (k11).",
+          "Completes the brainstorm workflow: prepareSynthesize/finalizeArtifact stop throwing, so a brainstorm run now yields an approvable artifact."
+        ],
+        "cons": [
+          "Largest of the three (new artifact file + storage peers + orchestrator wiring + tests) — but that IS sc1's scope; size M.",
+          "The intent/scopeBoundary split is synthesizer-prompt-governed (LLM structures the converged statement) — acceptable on the core tier (k13)."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Persist the raw converged elicit output verbatim as the artifact body",
+        "oneLineSummary": "Store the s3/s4 elicit output shape { category, workingStatement, openItems, confirmed, decisions, nonGoals } directly as the SpecArtifact body, skipping the intent/scopeBoundary structuring.",
+        "approach": "Add the spec.ts record + storage peers, but set SpecArtifactBody = the elicit output as-is (a single workingStatement blob + decisions/nonGoals/openItems), and have finalize persist that without a synthesizer restructuring step.",
+        "pros": [
+          "Smaller — no synthesizer prompt; the converged output is written straight through.",
+          "Still a peer artifact, hash-addressed + listed (ac1/ac3 hold)."
+        ],
+        "cons": [
+          "Violates ac2/k1: the sc1 body is { intent, scopeBoundary, ... } — a single workingStatement blob is a mid-conversation artifact, not the structured statement (intent vs scope boundary distinct) the story requires; it reads closer to a transcript snapshot.",
+          "Pushes structuring onto every downstream consumer (define s8, design.story s9), which must each re-parse the blob — breaking 'one shape read unchanged by both' and inviting consumer-specific interpretation (ac4 risk).",
+          "Leaks the internal elicit continuation shape (confirmed flag, working memory) into the durable public artifact."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Under-structures the body: a single workingStatement blob is not the { intent, scopeBoundary, ... } structured statement ac2/k1 require (ac2 violates), and it forces each downstream consumer to re-parse the blob, inviting a consumer-specific variant (ac4 partial). Ranked 2nd."
+      },
+      {
+        "id": "a3",
+        "name": "A bespoke spec store / on-disk format separate from the artifact module",
+        "oneLineSummary": "Persist the spec in its own dedicated store or format (not a peer artifact file), with a bespoke lookup rather than the shared artifact listing.",
+        "approach": "Introduce a spec-specific persistence path (e.g. a separate directory + index) and a dedicated read/list API for the spec, outside the define/plan artifact+storage template.",
+        "pros": [
+          "Could tailor the spec's on-disk layout independently of the other artifacts."
+        ],
+        "cons": [
+          "Violates k6/k7/ac3: the spec would NOT be found through the same listing/lookup as the other workflow artifacts — a separate place to go looking, the exact failure ac3 forbids.",
+          "Duplicates hash-addressing + atomic-write + approval-stamping that storage.ts already provides; more surface, more drift.",
+          "Diverges from 'persist follows the established artifact shape' — a bespoke format is explicitly ruled out by the HLD framework summary."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "A bespoke store/lookup is the exact 'separate place to go looking' ac3 forbids (ac3 violates) and diverges from the storage.ts peer + established-artifact-shape sc1 requires (sc1 violates, k6/k7). Ranked lowest."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 module-profile — define.ts/plan.ts artifact record + renderer template (WorkflowArtifact<Body>, ArtifactMetaBase, artifactIdMarker) that SpecArtifact mirrors"
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "s1 symbol-locate — storage.ts hash-addressing: <t>ArtifactId/<t>ArtifactPaths/<t>MdRel, ARTIFACTS_DIR (:50), writeAtomic (:71 tmp-then-rename) that specArtifactPaths mirrors"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "HLD sc1 — SpecArtifact record + hash-addressed persistence (owned by s6; consumed by s7/s8/s9)"
+    },
+    {
+      "id": "c7",
+      "kind": "analyze-bundle",
+      "ref": "s1 usage-example — orchestrator.ts prepareSynthesize (:263) + finalizeArtifact (:374) throw 'not yet supported' for brainstorm; finalizeDefine/finalizePlan are the pattern the brainstorm arms follow"
+    },
+    {
+      "id": "c8",
+      "kind": "analyze-bundle",
+      "ref": "s1 data-model-trace — the converged elicit output { category, workingStatement, decisions, nonGoals, openItems } (brainstorm/schemas.ts) mapped into SpecArtifactBody; the REAL BrainstormCategory union (brainstorm-classes.ts)"
+    }
+  ]
+}

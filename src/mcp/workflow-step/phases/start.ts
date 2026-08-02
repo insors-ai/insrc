@@ -28,6 +28,7 @@ import { deriveSlug } from '../../../workflow/slug.js';
 import { assertEpicHash, computeEpicHash } from '../../../workflow/hash.js';
 import type { WorkflowIntent } from '../../../workflow/types.js';
 import { prepareDecompose } from '../../../workflow/orchestrator.js';
+import { resolveStageFocus } from '../../../workflow/seed-focus.js';
 import { preflightUpstreamQuestions } from '../questions-gate.js';
 import { encodeState, STATE_VERSION, type WorkflowStepStatePayload } from '../state.js';
 import type { WorkflowStepEmitPlan, WorkflowStepInputStart, WorkflowStepResolveQuestions } from '../types.js';
@@ -59,9 +60,15 @@ export async function handleStart(
 
 	const epicKey = epicKeyFor(input.workflow, input.focus, params, runId);
 
+	// Spec-seeded focus (S008/sc4): when the start params carry a `specHash`,
+	// resolve the approved spec and compose the framing focus from it; otherwise
+	// a pure passthrough (plain-focus path byte-identical). Read-only; an
+	// unapproved/missing spec throws the sc4 error, aborting the seeded start.
+	const { focus: resolvedFocus } = resolveStageFocus(repoPath, input.focus, params);
+
 	const intent: WorkflowIntent = {
 		workflow:      input.workflow,
-		focus:         input.focus,
+		focus:         resolvedFocus,
 		repoPath,
 		repoIndexedAt: null,
 		params,

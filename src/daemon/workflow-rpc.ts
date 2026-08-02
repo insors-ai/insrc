@@ -34,6 +34,7 @@ import { createRoleRouter, type RoleRouter } from '../analyze/context/role-route
 import type { RoleId } from '../config/role-taxonomy.js';
 import { loadAnalyzeConfig, resolveRepoShaperProvider, type AnalyzeConfig, type AnalyzeShaperProviderKind } from '../config/analyze.js';
 import { registerWorkflowRunners } from '../workflow/index.js';
+import { resolveStageFocus } from '../workflow/seed-focus.js';
 import { prepareDecompose, prepareSynthesize, finalizeArtifact, type FinalizedArtifact } from '../workflow/orchestrator.js';
 import { startRun, resumeRun } from '../workflow/executor.js';
 import type { BoundaryFinding } from '../workflow/synthesizer.js';
@@ -411,7 +412,10 @@ export function prepareWorkflowRun(rawParams: unknown): PreparedWorkflowRun {
 	// + default storyId, identical to the MCP `insrc_workflow_step` entry.
 	augmentStandaloneParams(params, runId);
 	const epicKey = epicKeyFor(p.workflow, p.focus, params, runId);
-	const intent: WorkflowIntent = { workflow: p.workflow, focus: p.focus, repoPath, repoIndexedAt: null, params };
+	// Spec-seeded focus (S008/sc4): passthrough unless params.specHash is present,
+	// in which case the approved spec's framing becomes the focus.
+	const { focus: resolvedFocus } = resolveStageFocus(repoPath, p.focus, params);
+	const intent: WorkflowIntent = { workflow: p.workflow, focus: resolvedFocus, repoPath, repoIndexedAt: null, params };
 
 	const cfg = loadAnalyzeConfig();
 	const clientDefault: AnalyzeShaperProviderKind | undefined =

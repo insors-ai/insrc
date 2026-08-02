@@ -93,6 +93,11 @@ export function renderDefineMarkdown(artifact: DefineArtifact): string {
 	lines.push(`# Epic: ${firstSentence(body.problem)}`);
 	lines.push('');
 	lines.push(`**Flavor:** ${body.flavor}`);
+	// Provenance (S008/ac3): identify the approved spec this Epic was seeded from.
+	const seededFromSpec = (artifact.meta as { seededFromSpec?: string }).seededFromSpec;
+	if (typeof seededFromSpec === 'string' && seededFromSpec.length > 0) {
+		lines.push(`**Seeded from:** \`SPEC-${seededFromSpec}\``);
+	}
 	const epicRef = (artifact.meta as { tracker?: { epicRef?: string } }).tracker?.epicRef;
 	if (typeof epicRef === 'string' && epicRef.includes('#')) {
 		lines.push(trackerRefLine(epicRef));

@@ -338,6 +338,13 @@ export interface ArtifactMetaBase {
 	 *  are named `SPEC-<specHash>` (json) / `SPEC-<slug>` (md). Absent on every
 	 *  non-brainstorm artifact. */
 	readonly specHash?:    string;
+	/** Provenance: the 16-char specHash of the approved brainstorm SpecArtifact
+	 *  this artifact was SEEDED FROM (S008/sc4). Written by `finalizeDefine`
+	 *  (and standalone `design.story` in S009) when the run's start params
+	 *  carried a `specHash`, so the Epic/LLD identifies its source spec. Absent
+	 *  on a plain-focus run (the seeding path is additive — the plain path is
+	 *  byte-identical). Peer to `specHash`/`epicHash`. */
+	readonly seededFromSpec?: string;
 	/** Open-question resolutions, keyed by the stable questionId
 	 *  derived from each `body.openQuestions` entry. Written by the
 	 *  cross-stage open-question gate (`insrc_workflow_step`

@@ -865,6 +865,12 @@ function finalizeDefine(
 	// workflows can look up their Epic by hash and display the slug.
 	const epicHash = computeEpicHash(runId);
 	const epicSlug = safeDeriveSlug(intent.focus);
+	// Provenance (S008/ac3): when this Epic was seeded from an approved spec, the
+	// start params carry its specHash — stamp it so the Epic identifies its
+	// source. Absent on a plain-focus run (ac4).
+	const seededFromSpec = typeof intent.params['specHash'] === 'string' && intent.params['specHash'].length > 0
+		? intent.params['specHash'] as string
+		: undefined;
 	const artifact: DefineArtifact = {
 		meta: {
 			workflow:      'define',
@@ -877,6 +883,7 @@ function finalizeDefine(
 			schemaVersion: DEFINE_SCHEMA_VERSION,
 			epicHash,
 			epicSlug,
+			...(seededFromSpec !== undefined ? { seededFromSpec } : {}),
 		},
 		body,
 		citations,

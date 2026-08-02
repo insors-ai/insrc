@@ -35,6 +35,8 @@ const converged = (over: Record<string, unknown> = {}): Record<string, unknown> 
 	workingStatement: 'A dark-mode toggle in the settings pane, scoped to the editor only.',
 	openItems: [],
 	confirmed: true,
+	decisions: [],
+	nonGoals: [],
 	...over,
 });
 
@@ -60,15 +62,43 @@ test('t1: schema REJECTS a non-boolean confirmed and a category outside the voca
 	assert.equal(validate(converged({ category: 'spec' })), false);   // 'spec' is not a real id
 });
 
-test('t1: workingStatement/openItems/confirmed are all required', () => {
-	assert.equal(validate({ category: 'requirements', openItems: [], confirmed: true }), false);          // no workingStatement
-	assert.equal(validate({ category: 'requirements', workingStatement: 'x', confirmed: true }), false);  // no openItems
-	assert.equal(validate({ category: 'requirements', workingStatement: 'x', openItems: [] }), false);    // no confirmed
+test('t1: category/workingStatement/openItems/confirmed/decisions/nonGoals are all required', () => {
+	assert.equal(validate({ category: 'requirements', openItems: [], confirmed: true, decisions: [], nonGoals: [] }), false);          // no workingStatement
+	assert.equal(validate({ category: 'requirements', workingStatement: 'x', confirmed: true, decisions: [], nonGoals: [] }), false);  // no openItems
+	assert.equal(validate({ category: 'requirements', workingStatement: 'x', openItems: [], decisions: [], nonGoals: [] }), false);    // no confirmed
+	assert.equal(validate({ category: 'requirements', workingStatement: 'x', openItems: [], confirmed: true, nonGoals: [] }), false);  // no decisions
+	assert.equal(validate({ category: 'requirements', workingStatement: 'x', openItems: [], confirmed: true, decisions: [] }), false); // no nonGoals
 });
 
 test('t1: the category enum equals exactly the BRAINSTORM_CATEGORY_CLASSES ids', () => {
 	const enumMembers = ((brainstormElicitSchema['properties'] as Record<string, { enum: string[] }>)['category']!).enum;
 	assert.deepEqual([...enumMembers].sort(), [...CATEGORY_IDS].sort());
+});
+
+// ---------------------------------------------------------------------------
+// s4/t1 — the additive decisions[] + nonGoals[] capture fields
+// ---------------------------------------------------------------------------
+
+test('s4/t1: schema accepts a well-formed decisions[] entry and a nonGoals[] list', () => {
+	assert.equal(validate(converged({
+		decisions: [{ chosen: 'editor-only', ruledOut: ['whole-app'], reason: 'smaller blast radius' }],
+		nonGoals: ['whole-app'],
+	})), true);
+});
+
+test('s4/t1: schema accepts a fork-free payload with decisions:[] and nonGoals:[]', () => {
+	assert.equal(validate(converged({ decisions: [], nonGoals: [] })), true);
+});
+
+test('s4/t1: schema REJECTS a decisions entry missing a field or with empty chosen/reason', () => {
+	assert.equal(validate(converged({ decisions: [{ chosen: 'x', ruledOut: [] }] })), false);              // no reason
+	assert.equal(validate(converged({ decisions: [{ chosen: '', ruledOut: [], reason: 'r' }] })), false);  // empty chosen
+	assert.equal(validate(converged({ decisions: [{ chosen: 'x', ruledOut: [], reason: '' }] })), false);  // empty reason
+});
+
+test('s4/t1: schema REJECTS additionalProperties in a decisions entry and a non-array nonGoals', () => {
+	assert.equal(validate(converged({ decisions: [{ chosen: 'x', ruledOut: [], reason: 'r', extra: 1 }] })), false);
+	assert.equal(validate(converged({ nonGoals: 'whole-app' })), false);
 });
 
 // ---------------------------------------------------------------------------
@@ -108,6 +138,19 @@ test('t2: buildPrompt embeds the focus, the category vocabulary, and the converg
 	assert.match(p, /do NOT stop early|not stop early/i);   // no early stop (ac4)
 });
 
+test('s4/t2: buildPrompt embeds the fork rule and the decisions/nonGoals capture instructions', async () => {
+	registerBrainstormRunners();
+	const tick = await startRun(intent('add search'), oneStepPlan, 'run-bs-fork', 'slug-bs-fork');
+	assert.equal(tick.type, 'paused');
+	if (tick.type !== 'paused') return;
+	const p = tick.state.pause!.prompt;
+	assert.match(p, /more than one plausible scope|OPTIONS & TRADEOFFS/);   // fork detection (ac1)
+	assert.match(p, /do NOT silently pick|not silently pick/i);             // present options, don't silently pick
+	assert.match(p, /decisions/);                                          // structured decision capture (ac2/c32)
+	assert.match(p, /ruledOut/);                                           // ruled-out alternatives
+	assert.match(p, /nonGoals/);                                           // exclusions (ac3)
+});
+
 test('t2: a confirmed:false intermediate turn completes the step, carrying the converged shape forward', async () => {
 	registerBrainstormRunners();
 	const paused = await startRun(intent('a CLI flag'), oneStepPlan, 'run-bs-3', 'slug-bs-3');
@@ -139,12 +182,69 @@ test('t2: finalize REJECTS confirmed:true with non-empty openItems as a retryabl
 	const paused = await startRun(intent('a CLI flag'), oneStepPlan, 'run-bs-5', 'slug-bs-5');
 	assert.equal(paused.type, 'paused');
 	if (paused.type !== 'paused') return;
-	const premature = { category: 'implementation', workingStatement: 'A --json flag.', openItems: ['still deciding the scope'], confirmed: true };
+	const premature = { category: 'implementation', workingStatement: 'A --json flag.', openItems: ['still deciding the scope'], confirmed: true, decisions: [], nonGoals: [] };
 	const resumed = await resumeRun(paused.state, premature, 'slug-bs-5');
 	assert.equal(resumed.type, 'error');
 	if (resumed.type === 'error') {
 		assert.equal(resumed.code, 'convergence-incomplete');
 		assert.equal(resumed.retryable, true);   // the run stays paused; controller re-prompts on the remaining openItems
 		assert.equal(resumed.stepId, 's1');
+	}
+});
+
+// ---------------------------------------------------------------------------
+// s4/t2 — the fork-integrity finalize gate (ruled-out must be recorded)
+// ---------------------------------------------------------------------------
+
+test('s4/t2: finalize REJECTS confirmed:true when a ruled-out direction is absent from nonGoals', async () => {
+	registerBrainstormRunners();
+	const paused = await startRun(intent('add search'), oneStepPlan, 'run-bs-6', 'slug-bs-6');
+	assert.equal(paused.type, 'paused');
+	if (paused.type !== 'paused') return;
+	const dropped = {
+		category: 'requirements', workingStatement: 'Full-text search over notes.', openItems: [], confirmed: true,
+		decisions: [{ chosen: 'full-text', ruledOut: ['semantic', 'title-only'], reason: 'users search body text' }],
+		nonGoals: ['semantic'],   // 'title-only' was ruled out but not recorded
+	};
+	const resumed = await resumeRun(paused.state, dropped, 'slug-bs-6');
+	assert.equal(resumed.type, 'error');
+	if (resumed.type === 'error') {
+		assert.equal(resumed.code, 'ruled-out-not-recorded');
+		assert.equal(resumed.retryable, true);
+		assert.match(resumed.message, /title-only/);   // names the dropped direction
+	}
+});
+
+test('s4/t2: finalize ACCEPTS confirmed:true when every ruled-out direction is recorded as a nonGoal', async () => {
+	registerBrainstormRunners();
+	const paused = await startRun(intent('add search'), oneStepPlan, 'run-bs-7', 'slug-bs-7');
+	assert.equal(paused.type, 'paused');
+	if (paused.type !== 'paused') return;
+	const clean = {
+		category: 'requirements', workingStatement: 'Full-text search over notes.', openItems: [], confirmed: true,
+		decisions: [{ chosen: 'full-text', ruledOut: ['semantic', 'title-only'], reason: 'users search body text' }],
+		nonGoals: ['semantic', 'title-only'],
+	};
+	const resumed = await resumeRun(paused.state, clean, 'slug-bs-7');
+	assert.equal(resumed.type, 'complete');
+	if (resumed.type === 'complete') {
+		assert.deepEqual(resumed.stepOutputs['s1'], clean);   // both gates pass; the decision record is carried forward (ac2/ac3)
+	}
+});
+
+test('s4/t2: a confirmed:false intermediate turn with partial decisions passes through (no gate)', async () => {
+	registerBrainstormRunners();
+	const paused = await startRun(intent('add search'), oneStepPlan, 'run-bs-8', 'slug-bs-8');
+	assert.equal(paused.type, 'paused');
+	if (paused.type !== 'paused') return;
+	const midway = {
+		category: 'requirements', workingStatement: 'Search over notes (scope TBD).', openItems: ['index cost?'], confirmed: false,
+		decisions: [{ chosen: 'full-text', ruledOut: ['semantic'], reason: 'simpler' }],
+		nonGoals: [],   // not yet reconciled — allowed while confirmed:false
+	};
+	const resumed = await resumeRun(paused.state, midway, 'slug-bs-8');
+	assert.equal(resumed.type, 'complete');
+	if (resumed.type === 'complete') {
+		assert.deepEqual(resumed.stepOutputs['s1'], midway);
 	}
 });

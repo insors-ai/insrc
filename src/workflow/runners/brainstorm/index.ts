@@ -79,26 +79,57 @@ function categoryVocabularyBlock(): string {
 // in chat, then resume ONCE with the confirmed converged statement.
 // ---------------------------------------------------------------------------
 
-/** finalize gate: a `confirmed:true` payload MUST carry an empty openItems list.
- *  A schema-valid confirm with gaps still open is a RETRYABLE error — the run
- *  stays paused (state token unchanged) so the controller re-prompts on the
- *  remaining items rather than advancing to synthesize. Everything else (a
- *  confirmed:false intermediate turn, or a clean confirmed:true) passes through
- *  as the step output. */
+/** finalize gate — two composed business rules the ajv schema cannot express.
+ *  On a `confirmed:true` payload:
+ *   1. openItems MUST be empty (S003 'convergence-incomplete'); and
+ *   2. every `decisions[].ruledOut` direction MUST also appear in `nonGoals`
+ *      (S004 'ruled-out-not-recorded') — a ruled-out option cannot be dropped;
+ *      it has to be recorded as an explicit non-goal (ac3, c32).
+ *  Either failure is a RETRYABLE error — the run stays paused (state token
+ *  unchanged) so the controller re-prompts rather than advancing to synthesize.
+ *  Everything else (a confirmed:false intermediate turn, or a clean
+ *  confirmed:true) passes through as the step output. */
 const finalizeElicit: StepRunnerFinalize = async (llmResponse) => {
 	const confirmed = llmResponse['confirmed'] === true;
-	const openItems = llmResponse['openItems'];
-	const openCount = Array.isArray(openItems) ? openItems.length : 0;
-	if (confirmed && openCount > 0) {
-		return {
-			type:      'error',
-			code:      'convergence-incomplete',
-			message:
-				`elicit: confirmed:true requires openItems to be empty, but ${openCount} ` +
-				`open item(s) remain — keep probing those, or resume with confirmed:false. ` +
-				`The run stays paused; re-send once the statement is genuinely agreed.`,
-			retryable: true,
-		};
+	if (confirmed) {
+		const openItems = llmResponse['openItems'];
+		const openCount = Array.isArray(openItems) ? openItems.length : 0;
+		if (openCount > 0) {
+			return {
+				type:      'error',
+				code:      'convergence-incomplete',
+				message:
+					`elicit: confirmed:true requires openItems to be empty, but ${openCount} ` +
+					`open item(s) remain — keep probing those, or resume with confirmed:false. ` +
+					`The run stays paused; re-send once the statement is genuinely agreed.`,
+				retryable: true,
+			};
+		}
+		// Fork integrity: every direction the user ruled out must be recorded as
+		// a non-goal, so a rejected option survives into the record (ac3, c32).
+		const nonGoals = Array.isArray(llmResponse['nonGoals']) ? (llmResponse['nonGoals'] as unknown[]) : [];
+		const nonGoalSet = new Set(nonGoals.map(g => String(g)));
+		const decisions = Array.isArray(llmResponse['decisions']) ? (llmResponse['decisions'] as unknown[]) : [];
+		const dropped: string[] = [];
+		for (const d of decisions) {
+			const ruledOut = (d && typeof d === 'object' && Array.isArray((d as Record<string, unknown>)['ruledOut']))
+				? ((d as Record<string, unknown>)['ruledOut'] as unknown[])
+				: [];
+			for (const r of ruledOut) {
+				if (!nonGoalSet.has(String(r))) dropped.push(String(r));
+			}
+		}
+		if (dropped.length > 0) {
+			return {
+				type:      'error',
+				code:      'ruled-out-not-recorded',
+				message:
+					`elicit: ${dropped.length} ruled-out direction(s) are not recorded as non-goals ` +
+					`(${dropped.join('; ')}). Every direction the user ruled out must appear in nonGoals ` +
+					`before confirming. The run stays paused; add them and re-send.`,
+				retryable: true,
+			};
+		}
 	}
 	return { type: 'output', output: llmResponse };
 };
@@ -122,13 +153,25 @@ const elicit = llmPauseRunner({
 			'sharpens). Keep probing a large/ambiguous request until intent is genuinely pinned — do NOT stop early',
 			'to save turns or model calls.',
 			'',
+			'OPTIONS & TRADEOFFS (at a fork):',
+			'- When more than one plausible scope or approach is open, do NOT silently pick one and move on. PRESENT',
+			'  the options WITH their tradeoffs and ask the user to choose.',
+			'- Once the user chooses, record the fork in `decisions[]` as { chosen, ruledOut: [...the alternatives],',
+			'  reason }. Capture the REASONING, not just the final wording.',
+			'- Every direction you put in a decision\'s `ruledOut` MUST also be added to `nonGoals` — an explicitly',
+			'  ruled-out direction is an exclusion, not conversational noise. A `confirmed: true` whose ruled-out',
+			'  directions are not all in `nonGoals` will be rejected and the run stays paused.',
+			'- If the user cannot answer a question and leaves it open, record it in `openItems` — never resolve it by',
+			'  assumption. A fork the user defers stays open, not force-decided.',
+			'- A fork-free conversation is fine: leave `decisions` and `nonGoals` as empty arrays.',
+			'',
 			'CONVERGENCE / CONFIRMATION:',
 			'- When no material gap remains, PRESENT the converged workingStatement and ask the user to confirm.',
 			'- The turn is NOT done until the user explicitly confirms. Only then resume with `confirmed: true` and',
 			'  an EMPTY `openItems` list. A `confirmed: true` with any open item left will be rejected and the run',
 			'  stays paused.',
 			'- While gaps remain (or the user has not agreed), resume with `confirmed: false`, the folded',
-			'  `workingStatement`, and the still-open `openItems`.',
+			'  `workingStatement`, the still-open `openItems`, and the decisions/nonGoals recorded so far.',
 			'- If the user abandons the conversation, simply never resume this step — nothing is recorded.',
 			'',
 			'Produce NO persisted spec on this turn — that is a later stage. Do not invent a category outside the list.',
@@ -137,12 +180,15 @@ const elicit = llmPauseRunner({
 			categoryVocabularyBlock(),
 			'',
 			'Emit JSON matching the schema: { "category": <one id>, "workingStatement": <current understanding>, ' +
-				'"openItems": [<still-unresolved gaps>], "confirmed": <boolean> }.',
+				'"openItems": [<still-unresolved gaps>], "confirmed": <boolean>, ' +
+				'"decisions": [{ "chosen": <direction>, "ruledOut": [<alternatives>], "reason": <why> }], ' +
+				'"nonGoals": [<explicit exclusions — must include every ruledOut direction>] }.',
 		].join('\n'),
 		userTurn: [
 			`The rough idea (focus): ${ctx.intent.focus}`,
 			'',
 			'Begin the convergence: fold what you know, show the current understanding, and ask about the open gaps.',
+			'At any fork, present the options with tradeoffs and record the choice + ruled-out alternatives + reason.',
 			'Resume this step only once the user has confirmed the converged statement.',
 		].join('\n'),
 	}),

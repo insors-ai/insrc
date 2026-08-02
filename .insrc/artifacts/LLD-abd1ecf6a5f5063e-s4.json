@@ -1,0 +1,487 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1785612928635-hd5w32",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-08-01T19:40:54.635Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 325930,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "abd1ecf6a5f5063e",
+    "epicSlug": "frame-epic-new-pre-workflow-brainstorm",
+    "storyId": "s4",
+    "hldBaseRunId": "wf-1785587820064-46kctq",
+    "hldEffectiveHash": "688a10691972f5e2069b092dff9d1d20b3da79ca83733140f0918eaac0bc5b46",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "q1",
+          "ref": "dataModel/brainstormElicitSchema",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "brainstormElicitSchema is an exported const in src/workflow/runners/brainstorm/schemas.ts currently at the s3 converged shape { category, workingStatement, openItems, confirmed } that s4 extends with decisions + nonGoals.",
+          "evidence": "src/workflow/runners/brainstorm/schemas.ts:42 `export const brainstormElicitSchema` — the s3 converged schema s4 extends. Confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "q2",
+          "ref": "contract/elicit",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The `elicit` StepRunner (id 'elicit', workflow 'brainstorm') in src/workflow/runners/brainstorm/index.ts has a finalize that already returns a retryable StepRunnerError (s3's 'convergence-incomplete'), the mechanism s4 reuses.",
+          "evidence": "src/workflow/runners/brainstorm/index.ts:106 `const elicit = llmPauseRunner`, :88 `const finalizeElicit: StepRunnerFinalize`, :95 `code: 'convergence-incomplete'` — the s3 retryable-finalize mechanism s4 reuses. Confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "q3",
+          "ref": "contract/elicit",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "StepRunnerFinalize may return StepRunnerError with a `retryable` flag, and resumeRun (executor.ts) surfaces a finalize error via handleStep (phases/step.ts) as {next:'error',retryable} without advancing the stored state — the basis of the s4 fork-integrity gate.",
+          "evidence": "src/workflow/executor.ts:154 `const finalize: StepRunnerFinalize`, :156 `if (result.type === 'error') return errorTick(...result.retryable)`; src/mcp/workflow-step/phases/step.ts:51 resumeRun -> surfaces the error without advancing. The retryable-error-leaves-paused mechanism holds. Confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "q4",
+          "ref": "interaction/sc3",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "BrainstormElicitState { workingStatement, answered, openQuestions } is defined in src/mcp/workflow-step/state.ts and s4 adds no new field/store to it.",
+          "evidence": "src/mcp/workflow-step/state.ts:44 `export interface BrainstormElicitState` { workingStatement, answered, openQuestions } — s4 adds no field/store to it. Confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "q5",
+          "ref": "interaction/sc2",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "registerBrainstormRunners is the sc2 scaffold registered in src/workflow/index.ts registerWorkflowRunners(), which s4 leaves structurally untouched (edits only the elicit runner body + schema).",
+          "evidence": "src/workflow/runners/brainstorm/index.ts:161 registerBrainstormRunners, called at src/workflow/index.ts:27 inside registerWorkflowRunners() — the sc2 scaffold s4 leaves untouched. Confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "q6",
+          "ref": "dataModel/brainstormElicitSchema",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "The category enum s4 keeps unchanged is BRAINSTORM_CATEGORY_CLASSES ids in src/shared/brainstorm-classes.ts.",
+          "evidence": "src/shared/brainstorm-classes.ts:23 BRAINSTORM_CATEGORY_CLASSES with ids from :25 'requirements' onward — the enum s4 keeps unchanged. Confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "q7",
+          "ref": "testStrategy",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The brainstorm test suite s4 extends lives at src/workflow/runners/brainstorm/__tests__/elicit.test.ts and drives schema + runner via startRun/resumeRun with node:test + ajv.",
+          "evidence": "src/workflow/runners/brainstorm/__tests__/elicit.test.ts imports startRun/resumeRun (executor) + BRAINSTORM_CATEGORY_CLASSES + ajv and asserts convergence-incomplete (:146) — the suite s4 extends. Confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 7
+      },
+      "reviewedAt": "2026-08-01T19:41:49.126Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-08-01T19:42:13.633Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Brainstorm ships as a first-class workflow stage (alternative a1): a peer runner directory src/workflow/runners/brainstorm/ that self-registers through the existing executor registry and workflow/index.ts registerWorkflowRunners; a new persisted SpecArtifact peer file in src/workflow/artifacts/ with a specArtifactPaths peer in storage.ts (hash-addressed, listed, approval-stamped identically to DEF/HLD/LLD/PLAN); and an additive elicitation phase on the existing insrc_workflow_step MCP surface that reuses state-store.ts and the questions-gate primitive and preserves the opaque state token verbatim. The single cross-cutting SpecArtifact shape (intent, scope boundary, non-goals, decisions-with-ruled-out-alternatives, open items) is read unchanged by both define (s8) and standalone design.story (s9). Nothing touches the shared/chat-agent brainstorm.addIdea stub.",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "id": "sc2",
+          "name": "Brainstorm stage runner registration",
+          "purpose": "The peer-runner scaffold that makes brainstorm a first-class stage: a registerBrainstormRunners entry point that self-registers the stage's step runners through the existing executor registry and is wired into workflow/index.ts registerWorkflowRunners, mirroring design-story/design-epic (k4,k5). The elicitation-behaviour stories attach their steps to this scaffold.",
+          "interfaceSketch": "// src/workflow/runners/brainstorm/index.ts (peer of runners/design-story/index.ts)\n// Self-registers via executor.registerRunner; added to workflow/index.ts registerWorkflowRunners().\ninterface RegisterBrainstormRunners {\n  (): void;\n}\n// The stage identifier is distinct from the chat-agent 'brainstorm' concept (k10).\ninterface BrainstormStageRegistration {\n  readonly workflow: 'brainstorm';\n  readonly register: RegisterBrainstormRunners;\n}\n// Standalone context (peer of design-story/standalone.ts StandaloneStoryContext):\ninterface StandaloneBrainstormContext {\n  readonly focus: string;                 // the rough one-line idea\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c3"
+          ]
+        },
+        {
+          "id": "sc3",
+          "name": "Brainstorm MCP elicitation phase + continuation state",
+          "purpose": "The additive, controller-driven multi-turn surface on insrc_workflow_step: new request/response types dispatched from the existing handler through phases/, reusing state-store.ts for continuation and questions-gate to surface clarifying questions, with the opaque state token preserved verbatim (k3,k8,k9). Elicitation-behaviour stories emit/consume these turn messages.",
+          "interfaceSketch": "// additive on src/mcp/workflow-step/types.ts + a phases/ handler dispatched from handler.ts\ntype BrainstormPhase = 'start' | 'answer';        // additive phases; existing phases untouched\ninterface BrainstormElicitState {                  // persisted via existing state-store.ts\n  readonly workingStatement: string;               // current understanding shown each turn\n  readonly answered:         readonly string[];\n  readonly openQuestions:    readonly string[];\n}\ninterface BrainstormTurnRequest {\n  readonly phase:   BrainstormPhase;\n  readonly answers?: readonly string[];\n  readonly state?:   string;                        // opaque continuation token, preserved verbatim\n}\ninterface BrainstormTurnResponse {\n  readonly next:      'ask' | 'confirm' | 'done';\n  readonly questions?: readonly string[];           // surfaced to the user in chat\n  readonly workingStatement?: string;\n  readonly state:     string;                       // opaque token echoed back\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c1",
+            "c14"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s4",
+        "owns": [],
+        "depends": [
+          "sc2",
+          "sc3"
+        ],
+        "internal": "Option/tradeoff handling: detecting a fork with more than one plausible scope, presenting options with tradeoffs, and recording the chosen direction, the ruled-out alternatives (as non-goals), and unanswered items (as open items) into the working statement. Private to s4; it writes into the sc1 body shape but the record type itself is owned by s6."
+      },
+      "rolloutPhase": "Phase B — In-chat elicitation behaviour",
+      "nonFunctional": {
+        "performance": "Elicitation is interactive and controller-paced; there is no daemon-side latency SLA because the daemon runs no autonomous loop (k2). The stage sits on the critical design path and uses the core model tier — correctness of the elicited spec is never traded for fewer or cheaper model calls (k13).",
+        "security": "No new external surface. The MCP layer never opens LMDB/LanceDB; the SpecArtifact is read/written only through daemon IPC (k11). The stage is namespaced distinctly from the shared/chat-agent brainstorm.addIdea offlineRpc stub and never invokes it (k10).",
+        "observability": "The stage emits the same step-start/step-done/synthesize progress frames as the existing stages, and the SpecArtifact appears in the same artifact listing surfaces, so an in-flight or completed brainstorm is observable exactly like any other stage (ac3).",
+        "durability": "The SpecArtifact is hash-addressed and written atomically via the existing storage writeAtomic path; reading it back returns identical content. Approval is a durable meta.approvedAt stamp; an abandoned conversation persists nothing (s3/ac5), and an unapproved spec cannot be consumed (k12)."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "brainstormElicitSchema",
+          "signature": "export const brainstormElicitSchema: Record<string, unknown>",
+          "parameters": [],
+          "returns": {
+            "type": "Record<string, unknown>",
+            "meaning": "The ajv schema the paused `elicit` step validates on resume. s4 EXTENDS the s3 converged shape { category, workingStatement, openItems, confirmed } with two additive structured fields: `decisions` (array of { chosen:string, ruledOut:string[], reason:string } capturing each resolved fork — c32/ac2) and `nonGoals` (string[] of explicit exclusions — ac3). additionalProperties:false; category enum unchanged; both new fields required (default to empty arrays for a fork-free conversation). openItems (from s3) already records ac4's unresolved items."
+          },
+          "errors": [
+            {
+              "type": "ajv validation failure",
+              "condition": "A resume payload with a malformed decisions entry (missing chosen/ruledOut/reason), a non-array nonGoals, or an unknown field is rejected by the schema on resume."
+            }
+          ],
+          "preconditions": [
+            "The `elicit` step is paused carrying this schema."
+          ],
+          "postconditions": [
+            "A validated payload carries decisions[] and nonGoals[] forward; the business rule that every decisions[].ruledOut direction also appears in nonGoals is enforced by finalize, not ajv."
+          ]
+        },
+        {
+          "name": "elicit",
+          "signature": "const elicit: StepRunner  // { id:'elicit', workflow:'brainstorm', run(ctx): StepRunnerLlmPause, finalize(llmResponse): StepRunnerOutput | StepRunnerError }",
+          "parameters": [
+            {
+              "name": "ctx",
+              "type": "StepRunnerContext",
+              "purpose": "Carries intent.focus and accumulating step context the buildPrompt reads.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "StepRunnerLlmPause | StepRunnerOutput | StepRunnerError",
+            "meaning": "s4 augments the s3 buildPrompt with fork-handling: when more than one plausible scope/approach is open, present the options WITH tradeoffs and ask the user to choose rather than silently picking (ac1); fold the chosen direction, ruled-out alternatives, and reason into decisions[] (ac2); record each explicitly-ruled-out direction as a nonGoal (ac3); leave an unanswerable question in openItems rather than assuming (ac4). The runner id, workflow, and registration stay byte-identical to s3."
+          },
+          "errors": [
+            {
+              "type": "ruled-out-not-recorded",
+              "condition": "finalize receives a confirmed:true payload where some decisions[].ruledOut direction is absent from nonGoals — returned as a RETRYABLE StepRunnerError so the run stays paused and the controller re-records the exclusion (reuses s3's convergence-incomplete mechanism)."
+            }
+          ],
+          "preconditions": [
+            "registerBrainstormRunners() has run (sc2); the run is a `brainstorm` workflow whose one-step plan is `elicit`."
+          ],
+          "postconditions": [
+            "The daemon runs no loop (k2); the run advances to synthesize only on a confirmed:true payload with empty openItems (s3) AND every ruled-out direction recorded as a nonGoal (s4)."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "brainstormElicitSchema",
+        "change": "field-add",
+        "details": "Add `decisions` and `nonGoals` to the converged elicit response schema in src/workflow/runners/brainstorm/schemas.ts. `decisions` is an array of objects { chosen:string(minLength 1), ruledOut:string[], reason:string(minLength 1) } — the structured narrowing record (c32). `nonGoals` is string[]. Both required; additionalProperties:false at both the top level and inside each decisions entry. Additive only — s3's category/workingStatement/openItems/confirmed are unchanged.",
+        "schemaDiff": "  required: [...'category','workingStatement','openItems','confirmed']\n+ required: [...,'decisions','nonGoals']\n+ properties.decisions: { type:'array', items:{ type:'object', required:['chosen','ruledOut','reason'], additionalProperties:false, properties:{ chosen:{type:'string',minLength:1}, ruledOut:{type:'array',items:{type:'string'}}, reason:{type:'string',minLength:1} } } }\n+ properties.nonGoals: { type:'array', items:{ type:'string' } }",
+        "callSites": [
+          "src/workflow/runners/brainstorm/schemas.ts",
+          "src/workflow/runners/brainstorm/index.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "s4's option/tradeoff behaviour lives on the same `elicit` runner registered by sc2's registerBrainstormRunners. s4 edits only the runner's buildPrompt + finalize + the schema; the runner id, registration, and decomposer are untouched (boundary: owns [], depends [sc2])."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "s4 consumes the MCP elicitation phase + continuation state: it grows the brainstormElicitSchema the paused step carries and reuses the single llm-pause + state-store with the opaque token preserved (k8/k9). No new BrainstormElicitState field or store is introduced. The daemon runs no loop (k2); the persisted SpecArtifact record type that ultimately holds decisions/non-goals/open-items is owned by s6, not s4."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The controller resumes confirmed:true but a direction listed in some decisions[].ruledOut is not present in nonGoals — a ruled-out option was about to be dropped rather than recorded.",
+          "detection": "finalize() computes the set difference of every decisions[].ruledOut entry against nonGoals; if any ruled-out direction is missing, it returns a RETRYABLE StepRunnerError 'ruled-out-not-recorded' (reusing the s3 convergence-incomplete mechanism), which resumeRun -> handleStep surfaces as {next:'error',retryable} without advancing the stored state.",
+          "response": "The run stays paused on the same state token; the controller re-records the missing exclusion as a nonGoal and re-sends. No advance to synthesize.",
+          "userImpact": "An explicitly ruled-out direction cannot silently vanish — it is forced into the record as a non-goal (ac3, c32).",
+          "recoverable": true
+        },
+        {
+          "scenario": "A resume payload contains a decisions entry missing `chosen`, `ruledOut`, or `reason`, or an empty `chosen`/`reason` string, or a non-array nonGoals.",
+          "detection": "ajv validation against brainstormElicitSchema on resume: required + minLength + item-type checks on the decisions object and nonGoals array fail before finalize runs.",
+          "response": "The resume is rejected as a schema error; the run stays paused and the controller re-emits a well-formed decision record.",
+          "userImpact": "A half-captured decision (a choice with no reason, or a malformed exclusion) cannot enter the record — the narrowing reasoning is captured completely or not at all (c32).",
+          "recoverable": true
+        },
+        {
+          "scenario": "The conversation reaches a genuine fork (>1 plausible scope) but the model silently picks one and folds it into workingStatement without presenting options or recording a decision.",
+          "detection": "Not machine-detectable from a single payload (a fork that was never surfaced leaves no trace); it is caught by the buildPrompt HARD RULE forbidding silent selection and by the live tests that assert options-with-tradeoffs are presented at a fork (ac1). It is a prompt-adherence risk, not a silent code pass.",
+          "response": "The prompt mandates presenting options and asking the user to choose at any fork; the core-tier model (k13) and the live acceptance tests guard adherence.",
+          "userImpact": "If it regressed, a scoping choice would be made for the user without their input — the exact failure ac1 exists to prevent; covered by the live test rather than a runtime gate.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A fork-free conversation — the request has a single obvious scope, no options were weighed.",
+          "expected": "decisions:[] and nonGoals:[] are valid; the run confirms on the s3 rules alone. The additive s4 fields do not force a decision that was never made."
+        },
+        {
+          "input": "One decision rules out multiple directions at once (decisions[].ruledOut has several entries).",
+          "expected": "finalize requires ALL of them to appear in nonGoals; a confirm missing any one is rejected 'ruled-out-not-recorded'. Every ruled-out direction is recorded (ac3)."
+        },
+        {
+          "input": "The user leaves a fork itself unresolved — cannot pick between the presented options and wants to defer.",
+          "expected": "The undecided fork is recorded in openItems (ac4) rather than being forced into a decisions[] entry with an arbitrary chosen; the prompt records the deferral as open, not resolved by assumption."
+        },
+        {
+          "input": "The same direction is both chosen in one decision and ruled out in another (revised across turns).",
+          "expected": "The latest fold governs: the running workingStatement + decisions reflect the final choice, and only genuinely-excluded directions land in nonGoals; a stale contradictory entry is corrected before confirm, consistent with s3's re-fold-on-revision behaviour."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "s3's convergence gate is unchanged: a confirmed:true payload must still carry empty openItems ('convergence-incomplete'). s4's 'ruled-out-not-recorded' gate is ADDITIVE and composes with it — both must pass before the run advances to synthesize.",
+          "source": "c30"
+        },
+        {
+          "text": "The elicit runner adds no new BrainstormElicitState field and no new store; the s3 single llm-pause + state-store + opaque-token round-trip is preserved verbatim (k8/k9). s4 only grows the response schema and the prompt/finalize.",
+          "source": "c31"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test + node:assert/strict via `npx tsx --test` (with ajv for schema assertions), matching the s3 brainstorm suites under src/workflow/runners/brainstorm/__tests__/",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove the extended brainstormElicitSchema structurally captures decisions + nonGoals and rejects a half-captured decision, while leaving the s3 shape intact.",
+          "subjects": [
+            "schema accepts a payload with a well-formed decisions[] entry { chosen, ruledOut[], reason } and a nonGoals[] list",
+            "schema accepts a fork-free payload with decisions:[] and nonGoals:[]",
+            "schema REJECTS a decisions entry missing chosen/ruledOut/reason, and an empty chosen or reason (minLength:1)",
+            "schema REJECTS additionalProperties inside a decisions entry and a non-array nonGoals",
+            "schema still requires + preserves the s3 fields (category/workingStatement/openItems/confirmed) unchanged"
+          ],
+          "fixturesNeeded": [
+            "a fresh Ajv compile of the extended brainstormElicitSchema"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove the elicit finalize gate enforces fork-integrity (every ruled-out direction must be a non-goal) additively with the s3 convergence gate, driven through the real executor.",
+          "subjects": [
+            "finalize REJECTS a confirmed:true payload whose decisions[].ruledOut names a direction absent from nonGoals as a retryable 'ruled-out-not-recorded' error, leaving the run paused",
+            "finalize ACCEPTS a confirmed:true payload where every ruledOut direction also appears in nonGoals (and openItems is empty)",
+            "finalize still REJECTS confirmed:true with non-empty openItems ('convergence-incomplete') — the s3 gate is unchanged and composes with s4's",
+            "a confirmed:false intermediate turn carrying partial decisions passes through as the step output",
+            "buildPrompt embeds the fork rule (present options + tradeoffs, do not silently pick) and the decisions/nonGoals capture instructions"
+          ],
+          "fixturesNeeded": [
+            "a one-step brainstorm plan { id:'s1', runner:'elicit' } driven via startRun/resumeRun",
+            "a stub WorkflowIntent with a rough focus"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove the extended turn round-trips through the real insrc_workflow_step dispatch with the opaque token preserved and no new store.",
+          "subjects": [
+            "insrc_workflow_step start (workflow:'brainstorm') -> plan -> emit_step for `elicit` carrying the extended schema (decisions/nonGoals present)",
+            "a 'ruled-out-not-recorded' finalize error surfaces as {next:'error',retryable} and the state token is unchanged so the controller re-sends",
+            "BrainstormElicitState shape is unchanged — no new field/store introduced by s4"
+          ],
+          "fixturesNeeded": [
+            "a temp repo intent",
+            "state-store helpers (_clearWorkflowStateStoreForTests / _workflowStateStoreSize)"
+          ]
+        },
+        {
+          "level": "live",
+          "purpose": "Gated (INSRC_LIVE_TESTS=1) end-to-end option/tradeoff quality: forks are surfaced, the choice + reasoning is captured, exclusions become non-goals, and deferrals stay open.",
+          "subjects": [
+            "given a request with >1 plausible scope, the stage presents options WITH tradeoffs and asks the user to choose rather than silently picking (ac1)",
+            "after the user chooses, decisions[] carries the chosen direction, the ruled-out alternatives, and the reason into the converged statement (ac2)",
+            "an explicitly ruled-out direction appears as a nonGoal in the confirmed statement (ac3)",
+            "a question the user leaves open is recorded in openItems, not resolved by assumption (ac4)"
+          ],
+          "fixturesNeeded": [
+            "a live core-tier provider (INSRC_LIVE_TESTS=1)",
+            "a scripted multi-scope idea + canned choices/deferrals"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "unit: buildPrompt embeds the fork rule (present options+tradeoffs, do not silently pick)",
+            "live: given a >1-scope request, options with tradeoffs are presented and the user is asked to choose"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "unit: schema accepts a well-formed decisions[] entry { chosen, ruledOut, reason }; a payload carrying it round-trips as the step output",
+            "live: after the user chooses, decisions[] carries chosen + ruledOut + reason into the converged statement"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "unit: finalize rejects confirmed:true when a decisions[].ruledOut direction is absent from nonGoals ('ruled-out-not-recorded'), and accepts when all are present",
+            "live: an explicitly ruled-out direction appears as a nonGoal in the confirmed statement"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "unit: a deferred/undecided fork is representable in openItems and a confirm with unresolved openItems is still rejected by the s3 gate",
+            "live: a question the user leaves open is recorded in openItems, not resolved by assumption"
+          ]
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Structured decision-capture fields on the same elicit output + fork-integrity finalize gate",
+        "oneLineSummary": "Extend brainstormElicitSchema with decisions[] {chosen, ruledOut[], reason} and nonGoals[]; buildPrompt presents options+tradeoffs at a fork; finalize enforces that a ruled-out direction is recorded as a non-goal.",
+        "approach": "Continue s3's single-pause pattern. Extend the converged elicit output schema (src/workflow/runners/brainstorm/schemas.ts) with two additive structured fields: `decisions` (array of { chosen:string, ruledOut:string[], reason:string }) capturing each fork the user resolved (ac2/c32), and `nonGoals` (string[]) capturing explicit exclusions (ac3). openItems already carries ac4's unresolved items. buildPrompt (src/workflow/runners/brainstorm/index.ts) gains fork-handling: when more than one plausible scope/approach is open, present the options WITH their tradeoffs and ask the user to choose rather than silently picking (ac1, k2/k13); fold the chosen direction, ruled-out alternatives, and the reason into decisions, and every explicitly-ruled-out direction into nonGoals. Reuse s3's retryable-finalize mechanism for a fork-integrity invariant: a confirmed:true payload whose decisions[].ruledOut names a direction absent from nonGoals is rejected as retryable 'ruled-out-not-recorded' so the run stays paused and the controller re-records it. Same single pause, controller-conducted (k2); no new BrainstormElicitState field/store (sc3); the persisted record type stays owned by s6.",
+        "pros": [
+          "Makes c32 structural: the narrowing reasoning (chosen/ruledOut/reason) is a typed field, not prose that can be dropped.",
+          "ac3 (ruled-out -> explicit non-goal) and ac4 (unresolved -> open item) become schema-enforced + finalize-gated, not best-effort.",
+          "Directly continues s3's proven single-pause + retryable-finalize pattern — no executor/decomposer/state change, stays in s4's boundary.",
+          "Additive: existing s3 confirmed/openItems behaviour is untouched; a fork-free conversation simply emits empty decisions/nonGoals."
+        ],
+        "cons": [
+          "Grows the elicit schema again (s3 test updated) — a legitimate incremental Phase-B change, recorded in back-flow.",
+          "Fork-DETECTION quality (recognising when >1 scope is genuinely open) is prompt-governed — acceptable per k13 (core tier)."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Free-text prose capture inside workingStatement (no structured fields)",
+        "oneLineSummary": "Record the chosen direction, ruled-out alternatives, and reasons as prose woven into the existing workingStatement string, adding no new schema fields.",
+        "approach": "Leave brainstormElicitSchema at s3's shape and instruct buildPrompt to narrate the option/tradeoff reasoning inside workingStatement prose (e.g. 'chose X over Y because Z; not doing W'). No decisions[] or nonGoals[] fields; the downstream SpecArtifact would parse structure out of prose later.",
+        "pros": [
+          "Zero schema change — the smallest possible diff.",
+          "No new finalize invariant to enforce."
+        ],
+        "cons": [
+          "Violates c32's intent operationally: the reasoning is capturable but not CAPTURED as structure — ruled-out directions live as prose that ac3 requires be an explicit non-goal, so ac3/ac4 cannot be structurally guaranteed.",
+          "Pushes structure-extraction to s6/downstream, re-parsing free text — lossy and non-deterministic, the opposite of 'the choice survives into the record'.",
+          "No enforcement point: nothing can gate 'a ruled-out direction was dropped'."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Abandons structural capture — the exact thing c32/ac3/ac4 require. A ruled-out direction lives as prose (ac3 violates) with no enforcement point, and downstream re-parsing is lossy. Ranked 2nd."
+      },
+      {
+        "id": "a3",
+        "name": "A dedicated `options` executor step/phase for fork presentation",
+        "oneLineSummary": "Add a separate first-class executor step that presents options and records the decision, distinct from the elicit convergence step.",
+        "approach": "Introduce an `options` runner/step in the brainstorm plan that pauses specifically to present a fork and capture the choice, alongside the elicit step, so decision-capture is its own stage in the plan.",
+        "pros": [
+          "Decision capture would be a first-class step with its own progress frame."
+        ],
+        "cons": [
+          "Forks are dynamic and unknowable at decompose time (a conversation may hit zero or many) — a fixed extra step either fires spuriously or misses forks, the same defect that sank s3's fixed-N alternative.",
+          "Requires changing the s1-owned brainstormDecomposer (one-step plan) — reaches beyond s4's boundary into s1 wiring.",
+          "Splits the working statement across two paused steps, breaking the single-pause convergence model s3 established and complicating k2."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Mis-models dynamic forks (a fixed step fires spuriously or misses forks), requires editing the s1-owned decomposer (sc2 partial), and splits the working statement across two pauses breaking the single-pause model (sc3 partial). Ranked lowest."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 symbol-locate — s3's converged brainstormElicitSchema { category, workingStatement, openItems, confirmed } + the elicit llm-pause with finalize gate (schemas.ts, index.ts), commit aeea535"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "HLD sc2 — Brainstorm stage runner registration (owned by s1, consumed by s4)"
+    },
+    {
+      "id": "c14",
+      "kind": "prior-artifact",
+      "ref": "HLD sc3 — Brainstorm MCP elicitation phase + continuation state (owned by s1, consumed by s4)"
+    },
+    {
+      "id": "c22",
+      "kind": "stakeholder",
+      "ref": "Story S004 local constraint c32 — the narrowing reasoning (directions ruled out, tradeoffs weighed, option chosen) must be captured, not just the final wording"
+    },
+    {
+      "id": "c23",
+      "kind": "analyze-bundle",
+      "ref": "s1 data-model-trace — the SpecArtifact body shape { intent, scope boundary, non-goals, decisions-with-ruled-out-alternatives, open items } is owned by s6; s4 only populates the elicit output (artifacts/define.ts, hld.ts)"
+    },
+    {
+      "id": "c24",
+      "kind": "analyze-bundle",
+      "ref": "s1 usage-example — s3's retryable-finalize mechanism (StepRunnerError surfaced by resumeRun->handleStep without advancing state) that s4 reuses for fork-integrity (index.ts, phases/step.ts, state.ts)"
+    },
+    {
+      "id": "c30",
+      "kind": "prior-artifact",
+      "ref": "s3 LLD/build (commit aeea535) — the convergence gate: confirmed:true requires empty openItems ('convergence-incomplete'), with which s4's fork-integrity gate composes"
+    },
+    {
+      "id": "c31",
+      "kind": "analyze-bundle",
+      "ref": "s1 usage-example + HLD sc3 — the single llm-pause + state-store + opaque-token round-trip (k8/k9); s4 adds no new BrainstormElicitState field/store"
+    }
+  ]
+}

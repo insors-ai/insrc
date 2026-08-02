@@ -1,0 +1,509 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1785674788330-77cw4a",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-08-02T12:51:52.727Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 324335,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "abd1ecf6a5f5063e",
+    "epicSlug": "frame-epic-new-pre-workflow-brainstorm",
+    "storyId": "s9",
+    "hldBaseRunId": "wf-1785587820064-46kctq",
+    "hldEffectiveHash": "688a10691972f5e2069b092dff9d1d20b3da79ca83733140f0918eaac0bc5b46",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "q1",
+          "ref": "sc4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "seed-focus.ts (s8) exports resolveStageFocus + composeSpecFocus — the shared helper the standalone route reuses (ac1/ac2/ac4).",
+          "evidence": "CONFIRMED: src/workflow/seed-focus.ts:49 export function composeSpecFocus + :73 export function resolveStageFocus — the shared s8 helper the standalone route reuses.",
+          "action": "none — verified sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "q2",
+          "ref": "s9",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "finalizeStandaloneLld exists in orchestrator.ts (the standalone LLD finalizer s9 stamps seededFromSpec into).",
+          "evidence": "CONFIRMED: src/workflow/orchestrator.ts:1629 function finalizeStandaloneLld — the standalone LLD finalizer s9 stamps seededFromSpec into.",
+          "action": "none — verified sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "q3",
+          "ref": "ac3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "routeForSizeClass exists in triage/classify.ts and maps epic->define / feature|small->design.story — the ac3 guard's route table.",
+          "evidence": "CONFIRMED: src/workflow/triage/classify.ts:29 routeForSizeClass; :33 epic->startStage 'define' (standalone:false); :36/:39 feature/small->startStage 'design.story' (standalone:true) — the ac3 guard's route table.",
+          "action": "none — verified sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "q4",
+          "ref": "ac3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "SizeClass / SIZE_CLASSES are defined in triage/types.ts — the size vocabulary specScopeFitsStandalone is total over.",
+          "evidence": "CONFIRMED: src/workflow/triage/types.ts:16 type SizeClass = 'epic'|'feature'|'small'|'trivial' + :18 SIZE_CLASSES — the size vocabulary specScopeFitsStandalone is total over.",
+          "action": "none — verified sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "q5",
+          "ref": "s9",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "renderLldMarkdown exists in artifacts/lld.ts — where the seeded-from provenance is surfaced on the standalone LLD.",
+          "evidence": "CONFIRMED: src/workflow/artifacts/lld.ts:220 export function renderLldMarkdown — where the seeded-from provenance is surfaced on the standalone LLD.",
+          "action": "none — verified sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "q6",
+          "ref": "dataModel",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "ArtifactMetaBase.seededFromSpec already exists (added in s8) — s9 only extends WHERE it is written (no new field).",
+          "evidence": "CONFIRMED: src/workflow/types.ts:347 readonly seededFromSpec?: string — the field already exists (added in s8, also used by artifacts/define.ts:97). s9 only extends where it is written; no new field.",
+          "action": "none — verified sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "q7",
+          "ref": "boundary",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "The HLD assigns s9 no owned contracts and lists it as consumer of sc1 + sc4, matching this LLD (owns=[], consumes sc1/sc4).",
+          "evidence": "Confirmed by direct read this session of .insrc/artifacts/HLD-abd1ecf6a5f5063e.json: the s9 storyBoundary is owns=[], depends [sc1, sc4], matching this LLD. The probe returned 0/not-found because its regex used \\s* against the 2-space-indented JSON and the scan is scoped to src/ (the artifact lives under .insrc/), not because the ownership differs.",
+          "action": "none — cross-artifact ownership matches the HLD.",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 7
+      },
+      "reviewedAt": "2026-08-02T12:52:35.560Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-08-02T13:14:47.773Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Brainstorm ships as a first-class workflow stage (alternative a1): a peer runner directory src/workflow/runners/brainstorm/ that self-registers through the existing executor registry and workflow/index.ts registerWorkflowRunners; a new persisted SpecArtifact peer file in src/workflow/artifacts/ with a specArtifactPaths peer in storage.ts (hash-addressed, listed, approval-stamped identically to DEF/HLD/LLD/PLAN); and an additive elicitation phase on the existing insrc_workflow_step MCP surface that reuses state-store.ts and the questions-gate primitive and preserves the opaque state token verbatim. The single cross-cutting SpecArtifact shape (intent, scope boundary, non-goals, decisions-with-ruled-out-alternatives, open items) is read unchanged by both define (s8) and standalone design.story (s9). Nothing touches the shared/chat-agent brainstorm.addIdea stub.",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "SpecArtifact record + hash-addressed persistence",
+          "purpose": "The one durable, structured spec both downstream stages read. A typed record (like define.ts/plan.ts) persisted hash-addressed with approval stamping via a storage.ts peer, so it is listed and approval-gated identically to every other workflow artifact and no consumer-specific variant exists (k1,k6,k7).",
+          "interfaceSketch": "// src/workflow/artifacts/spec.ts (peer of define.ts / plan.ts)\nimport type { BrainstormCategory } from '../../shared/brainstorm-classes.js';\ninterface SpecDecision {\n  readonly choice:   string;\n  readonly ruledOut: readonly string[];   // alternatives explicitly excluded\n  readonly reason:   string;\n}\ninterface SpecArtifactBody {\n  readonly category:      BrainstormCategory;      // 'spec' | 'architecture' | 'how-to-build' (reused vocab)\n  readonly intent:        string;\n  readonly scopeBoundary: string;\n  readonly nonGoals:      readonly string[];\n  readonly decisions:     readonly SpecDecision[];\n  readonly openItems:     readonly string[];\n}\ninterface SpecArtifact {\n  readonly kind:     'spec';\n  readonly specHash: string;                        // deterministic hash id\n  readonly body:     SpecArtifactBody;\n  readonly meta: {\n    readonly createdAt:   string;\n    readonly approvedAt?: string | undefined;       // set only by the approve gate (k12)\n    readonly review?:     unknown;                  // stamped by insrc_review_step\n  };\n}\n// src/workflow/storage.ts (peer of defineArtifactPaths/planArtifactPaths) — call-signature interface\ninterface SpecArtifactPathsResult {\n  readonly md:   string;\n  readonly json: string;\n}\ninterface SpecArtifactPaths {\n  (repoPath: string, specHash: string): SpecArtifactPathsResult;\n}",
+          "ownedByStory": "s6",
+          "consumedByStories": [
+            "s7",
+            "s8",
+            "s9"
+          ],
+          "assumptions": [
+            "c5",
+            "c6"
+          ]
+        },
+        {
+          "id": "sc4",
+          "name": "Approved-spec-as-focus consumption contract",
+          "purpose": "The read-side contract by which define and standalone design.story accept an approved SpecArtifact as their focus instead of a raw string, gated on approval (k12) and leaving the plain-focus path byte-identical (k1). Owned where approval lives (s7); consumed by the two seeding stories.",
+          "interfaceSketch": "// consumed by define (s8) + standalone design.story (s9) start params\ninterface SpecFocusInput {\n  readonly specHash: string;                        // supplied instead of a plain focus string\n}\n// The two stages accept EITHER shape; plain-string behaviour is unchanged.\ntype StageFocus = string | SpecFocusInput;\n// Resolution goes through daemon IPC (k11) and refuses an unapproved spec (k12):\ninterface ResolveApprovedSpec {\n  (specHash: string): SpecArtifact;                 // rejects when meta.approvedAt is unset\n}",
+          "ownedByStory": "s7",
+          "consumedByStories": [
+            "s8",
+            "s9"
+          ],
+          "assumptions": [
+            "c11",
+            "c16"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s9",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc4"
+        ],
+        "internal": "How standalone design.story consumes the same approved spec: seeding the LLD from the spec's recorded intent/scope/decisions and surfacing a scope-too-large mismatch rather than silently narrowing. The plain-focus path is unchanged. Internal to the design-story standalone runner."
+      },
+      "rolloutPhase": "Phase D — Seed the downstream stages",
+      "nonFunctional": {
+        "performance": "Elicitation is interactive and controller-paced; there is no daemon-side latency SLA because the daemon runs no autonomous loop (k2). The stage sits on the critical design path and uses the core model tier — correctness of the elicited spec is never traded for fewer or cheaper model calls (k13).",
+        "security": "No new external surface. The MCP layer never opens LMDB/LanceDB; the SpecArtifact is read/written only through daemon IPC (k11). The stage is namespaced distinctly from the shared/chat-agent brainstorm.addIdea offlineRpc stub and never invokes it (k10).",
+        "observability": "The stage emits the same step-start/step-done/synthesize progress frames as the existing stages, and the SpecArtifact appears in the same artifact listing surfaces, so an in-flight or completed brainstorm is observable exactly like any other stage (ac3).",
+        "durability": "The SpecArtifact is hash-addressed and written atomically via the existing storage writeAtomic path; reading it back returns identical content. Approval is a durable meta.approvedAt stamp; an abandoned conversation persists nothing (s3/ac5), and an unapproved spec cannot be consumed (k12)."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "specScopeFitsStandalone",
+          "signature": "function specScopeFitsStandalone(sizeClass: SizeClass): boolean",
+          "parameters": [
+            {
+              "name": "sizeClass",
+              "type": "SizeClass",
+              "purpose": "The size the triage classifier assigned to the seeded spec framing.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "boolean",
+            "meaning": "true when the size routes to the standalone design.story stage (feature | small), false when it belongs elsewhere (epic -> define; trivial -> build). The pure, deterministic ac3 core: `routeForSizeClass(sizeClass).startStage === 'design.story'`."
+          },
+          "errors": [],
+          "preconditions": [
+            "sizeClass is a member of SIZE_CLASSES"
+          ],
+          "postconditions": [
+            "Pure + total over SizeClass; no side effects"
+          ]
+        },
+        {
+          "name": "routeForSizeClass",
+          "signature": "function routeForSizeClass(sizeClass: SizeClass): TriageRoute",
+          "parameters": [
+            {
+              "name": "sizeClass",
+              "type": "SizeClass",
+              "purpose": "The classified size tier.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "TriageRoute",
+            "meaning": "The existing triage route table (classify.ts): epic -> { startStage:'define', standalone:false }, feature/small -> { startStage:'design.story', standalone:true }. Consumed unchanged by specScopeFitsStandalone."
+          },
+          "errors": [],
+          "preconditions": [
+            "Existing triage capability (s7-independent, predates this Epic)"
+          ],
+          "postconditions": [
+            "Unchanged — s9 reads it, does not modify it"
+          ]
+        },
+        {
+          "name": "resolveStageFocus",
+          "signature": "function resolveStageFocus(repoPath: string, focus: string, params: Record<string, unknown>): { readonly focus: string; readonly seededFromSpec?: string }",
+          "parameters": [
+            {
+              "name": "params",
+              "type": "Record<string, unknown>",
+              "purpose": "Standalone start params; carries the optional specHash + standalone:true.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "{ focus: string; seededFromSpec?: string }",
+            "meaning": "The shared s8 seeding helper, UNCHANGED. Already called by start.ts/workflow-rpc.ts for every start, so a standalone start with params.specHash gets the composed spec framing (ac1/ac2) and a plain start is a passthrough (ac4). s9 adds no code here."
+          },
+          "errors": [
+            {
+              "type": "SpecNotApprovedError",
+              "condition": "unapproved specHash (from requireApprovedSpec)"
+            },
+            {
+              "type": "SpecArtifactNotFoundError",
+              "condition": "missing specHash"
+            }
+          ],
+          "preconditions": [
+            "Shipped in s8"
+          ],
+          "postconditions": [
+            "No change in s9"
+          ]
+        },
+        {
+          "name": "finalizeStandaloneLld",
+          "signature": "function finalizeStandaloneLld(intent: WorkflowIntent, ...): FinalizeResult",
+          "parameters": [
+            {
+              "name": "intent",
+              "type": "WorkflowIntent",
+              "purpose": "Carries params.specHash (the seed) so the standalone LLD meta can be stamped.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "FinalizeResult",
+            "meaning": "Unchanged shape; the LLD meta it builds (orchestrator.ts:1660, already carrying standalone:true + sizeClass) now ALSO spreads seededFromSpec = intent.params.specHash when present, mirroring s8's finalizeDefine. renderLldMarkdown surfaces it (ac-parity with s8 provenance)."
+          },
+          "errors": [],
+          "preconditions": [
+            "Existing standalone finalizer (orchestrator.ts:1629)"
+          ],
+          "postconditions": [
+            "meta.seededFromSpec identifies the source spec on a seeded standalone LLD; absent on a plain-focus run (ac4)"
+          ]
+        }
+      ],
+      "dataModel": [
+        {
+          "entity": "LldArtifact.meta.seededFromSpec (standalone path)",
+          "change": "invariant-change",
+          "details": "No new field — ArtifactMetaBase.seededFromSpec was added in s8. s9 extends WHERE it is written: finalizeStandaloneLld now stamps it (from intent.params.specHash) so a spec-seeded standalone LLD carries the same provenance a spec-seeded DEF does. Additive + optional; absent on a plain-focus standalone run (the plain path is byte-identical). renderLldMarkdown surfaces it.",
+          "callSites": [
+            "src/workflow/orchestrator.ts",
+            "src/workflow/artifacts/lld.ts",
+            "src/workflow/types.ts"
+          ]
+        }
+      ],
+      "interactionWithShared": [
+        {
+          "contractId": "sc4",
+          "role": "consumes",
+          "howDetails": "Consumes sc4 via the shared resolveStageFocus already wired into the start seam (s8) — a standalone start with params.specHash gets the approved spec's composed framing (ac1/ac2), refusing an unapproved spec (k12). s9 adds no new consumption path; it verifies the standalone route + adds the ac3 scope guard + provenance stamp. s9 owns no contract."
+        },
+        {
+          "contractId": "sc1",
+          "role": "consumes",
+          "howDetails": "Reads the shipped s6 SpecArtifactBody through the same composeSpecFocus (intent/scope/nonGoals/decisions[].chosen). No differently-shaped spec is required for the standalone route (ac2) — the single cross-cutting record serves both consumers."
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "LldArtifact.meta.seededFromSpec (standalone path)",
+        "change": "invariant-change",
+        "details": "No new field — ArtifactMetaBase.seededFromSpec was added in s8. s9 extends WHERE it is written: finalizeStandaloneLld now stamps it (from intent.params.specHash) so a spec-seeded standalone LLD carries the same provenance a spec-seeded DEF does. Additive + optional; absent on a plain-focus standalone run (the plain path is byte-identical). renderLldMarkdown surfaces it.",
+        "callSites": [
+          "src/workflow/orchestrator.ts",
+          "src/workflow/artifacts/lld.ts",
+          "src/workflow/types.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc4",
+        "role": "consumes",
+        "howDetails": "Consumes sc4 via the shared resolveStageFocus already wired into the start seam (s8) — a standalone start with params.specHash gets the approved spec's composed framing (ac1/ac2), refusing an unapproved spec (k12). s9 adds no new consumption path; it verifies the standalone route + adds the ac3 scope guard + provenance stamp. s9 owns no contract."
+      },
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Reads the shipped s6 SpecArtifactBody through the same composeSpecFocus (intent/scope/nonGoals/decisions[].chosen). No differently-shaped spec is required for the standalone route (ac2) — the single cross-cutting record serves both consumers."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A standalone feature design is seeded from a spec whose agreed scope is plainly larger than a single feature (sizes as epic).",
+          "detection": "The seeded framing is sized by the triage classifier and specScopeFitsStandalone(size) returns false (routeForSizeClass(size).startStage !== 'design.story' — epic routes to define).",
+          "response": "Surface the mismatch to the user ('this spec's scope sizes as <epic> — it belongs in `define`, not a standalone feature design') and do NOT proceed into the standalone LLD; the scope is never silently narrowed to fit (ac3, k13).",
+          "userImpact": "The user is told the spec is too big for the single-feature route and pointed at define, instead of getting a design that quietly drops part of the agreed scope.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A standalone design.story is seeded from an unapproved or missing spec.",
+          "detection": "resolveStageFocus (s8) calls requireApprovedSpec, which throws SpecNotApprovedError (unset approvedAt) / SpecArtifactNotFoundError (no such spec).",
+          "response": "The seeded start aborts before the LLD runs; the sc4 error propagates (rides the s8 behavior — no new handling in s9).",
+          "userImpact": "The user is told the spec must be approved / does not exist, rather than designing from an unapproved seed (k12).",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A plain focus string and no params.specHash on the standalone route.",
+          "expected": "resolveStageFocus is a pure passthrough and no scope guard runs (the guard only fires when seeded from a spec); the standalone stage behaves exactly as today (ac4, c34)."
+        },
+        {
+          "input": "An approved spec that sizes as feature or small.",
+          "expected": "specScopeFitsStandalone(size) is true (routeForSizeClass -> design.story); the standalone design proceeds from the spec framing (ac1) and finalizeStandaloneLld stamps meta.seededFromSpec."
+        },
+        {
+          "input": "The SAME approved spec started once via define (Epic) and once via standalone design.story.",
+          "expected": "Both read the identical SpecArtifact through the same composeSpecFocus — same statement of intent, no differently-shaped spec required (ac2)."
+        },
+        {
+          "input": "A spec that sizes as trivial seeded into a standalone design.story.",
+          "expected": "specScopeFitsStandalone('trivial') is false (routeForSizeClass -> build, not design.story) — the mismatch is surfaced (an LLD is not the right route for a trivial change) rather than silently produced."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The plain-focus standalone path is byte-identical — when no specHash is supplied the scope guard never runs and the standalone stage's behaviour + outputs are exactly as today (the spec is an ADDITIONAL input only).",
+          "source": "c21"
+        },
+        {
+          "text": "The seeding helper + the spec record are stage-neutral — the standalone route reuses the same resolveStageFocus/composeSpecFocus over the same SpecArtifact shape as define; no consumer-specific variant.",
+          "source": "c11"
+        },
+        {
+          "text": "Scope size is judged by the framework's ONE sizing authority (the triage classifier + routeForSizeClass), not a cheap heuristic, and a too-large scope is surfaced rather than narrowed — accuracy is not traded on the critical design path.",
+          "source": "c17"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove the ac3 scope guard: specScopeFitsStandalone is true for feature/small and false for epic/trivial (mismatch surfaced, never narrowed), grounded on the same routeForSizeClass table triage uses.",
+          "subjects": [
+            "specScopeFitsStandalone",
+            "routeForSizeClass (triage)"
+          ],
+          "fixturesNeeded": [
+            "the SizeClass enum (SIZE_CLASSES) — no I/O needed; a pure-function table test"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove provenance parity: a spec-seeded standalone design.story finalize stamps meta.seededFromSpec + renderLldMarkdown surfaces it; a plain-focus standalone run leaves it unset (ac4).",
+          "subjects": [
+            "finalizeStandaloneLld (orchestrator.ts)",
+            "renderLldMarkdown (lld.ts)",
+            "LldArtifact.meta.seededFromSpec"
+          ],
+          "fixturesNeeded": [
+            "a standalone design.story stepOutputs fixture + a standalone intent (params.standalone:true, storyId) with params.specHash set vs unset"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove ac1/ac2/ac4 for the standalone route ride the shared s8 helper: resolveStageFocus over a standalone param bag with an approved spec yields the same composed framing as the define route; plain focus is a passthrough.",
+          "subjects": [
+            "resolveStageFocus (shared, s8)",
+            "composeSpecFocus (shared, s8)"
+          ],
+          "fixturesNeeded": [
+            "the s8 tmp-repo + approved SPEC-*.json fixture (specArtifactPaths + writeAtomic + approveArtifactByJsonPath)",
+            "a standalone param bag {standalone:true, specHash} vs a plain {standalone:true} bag"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "unit: resolveStageFocus on a standalone param bag with an approved specHash returns a composed focus containing the spec's intent/scope/decisions (design proceeds from the spec, not a one-liner)"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "unit: resolveStageFocus produces the byte-identical composed focus for the SAME approved spec whether the param bag is the define shape or the standalone shape (same statement of intent; same SpecArtifact shape, no consumer-specific variant)"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "unit: specScopeFitsStandalone('epic') === false and specScopeFitsStandalone('trivial') === false (mismatch surfaced) while 'feature'/'small' === true — the guard fires for a too-large spec rather than narrowing"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "unit: resolveStageFocus on a standalone param bag with NO specHash returns the plain focus verbatim + seededFromSpec unset; finalizeStandaloneLld leaves meta.seededFromSpec unset on a plain-focus standalone run"
+          ]
+        }
+      ],
+      "testFramework": "node:test + node:assert/strict, run via `npx tsx --test` (project convention; extends the s8 seed-focus.test.ts fixture pattern in src/workflow/__tests__/)"
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Classifier-fed scope guard (reuse triage sizer) + provenance parity",
+        "oneLineSummary": "A pure specScopeFitsStandalone(sizeClass) guard (routeForSizeClass(sizeClass).startStage === 'design.story') fed by the existing triage classifier over the seeded spec framing; surfaces a mismatch when the spec sizes epic, and stamps meta.seededFromSpec on the standalone LLD.",
+        "chosen": true
+      },
+      {
+        "id": "a2",
+        "name": "Deterministic heuristic on the spec body (no classifier)",
+        "oneLineSummary": "Infer scope-too-large from a deterministic signal on the SpecArtifact body (e.g. decisions/non-goals count or category) instead of the triage classifier.",
+        "reasonRejected": "Only PARTIAL on ac3 (a count/category heuristic is a poor proxy for scope size — misjudges the very 'plainly larger than a feature' case) and VIOLATES k13: it trades accuracy for a cheap heuristic on the critical design path and forks a second, divergent sizing notion from the triage sizer the rest of the framework trusts."
+      },
+      {
+        "id": "a3",
+        "name": "Provenance stamp only — no scope guard",
+        "oneLineSummary": "Add only the meta.seededFromSpec stamp; rely on triage/the user to have sized correctly upstream, with no standalone-start mismatch check.",
+        "reasonRejected": "VIOLATES ac3 outright — a user who directly starts a standalone feature design from an epic-scoped spec gets the scope silently narrowed with no mismatch surfaced, exactly what ac3 forbids; ac3 is s9's net-new value beyond s8."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/seed-focus.ts",
+      "quotedText": "The shared s8 resolveStageFocus/composeSpecFocus, wired unconditionally into start.ts — a standalone start with params.specHash already gets the composed spec framing (ac1/ac2/ac4 ride this)."
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/orchestrator.ts",
+      "quotedText": "finalizeStandaloneLld (:1629; meta at :1660 carries standalone:true + sizeClass) — s9 spreads seededFromSpec from intent.params.specHash for provenance parity with finalizeDefine."
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/triage/classify.ts",
+      "quotedText": "routeForSizeClass: the pure size->route table (epic->define, feature/small->design.story) that specScopeFitsStandalone compares against for the ac3 guard."
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/triage/types.ts",
+      "quotedText": "SizeClass / SIZE_CLASSES — the size vocabulary specScopeFitsStandalone is total over."
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/lld.ts",
+      "quotedText": "renderLldMarkdown surfaces meta.seededFromSpec on a seeded standalone LLD (mirroring renderDefineMarkdown's Seeded-from header)."
+    },
+    {
+      "id": "c11",
+      "kind": "prior-artifact",
+      "ref": "DEF-abd1ecf6a5f5063e:k1",
+      "quotedText": "The artifact is a cross-cutting contract consumable as focus by BOTH define and standalone design.story, not specialised to either — the seeding helper + spec record are stage-neutral."
+    },
+    {
+      "id": "c17",
+      "kind": "prior-artifact",
+      "ref": "DEF-abd1ecf6a5f5063e:k13",
+      "quotedText": "Accuracy governs this stage: it must not trade correctness for cheaper calls — scope size is judged by the framework's one sizing authority, and a too-large scope is surfaced, never narrowed."
+    },
+    {
+      "id": "c21",
+      "kind": "prior-artifact",
+      "ref": "DEF-abd1ecf6a5f5063e:c34",
+      "quotedText": "The spec is an ADDITIONAL input to the standalone feature-design stage; its behaviour + outputs given a plain focus string are unchanged."
+    }
+  ]
+}

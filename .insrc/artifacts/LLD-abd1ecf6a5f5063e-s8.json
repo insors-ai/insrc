@@ -1,0 +1,518 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1785671718263-sylld9",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-08-02T12:00:34.811Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 316497,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "abd1ecf6a5f5063e",
+    "epicSlug": "frame-epic-new-pre-workflow-brainstorm",
+    "storyId": "s8",
+    "hldBaseRunId": "wf-1785587820064-46kctq",
+    "hldEffectiveHash": "688a10691972f5e2069b092dff9d1d20b3da79ca83733140f0918eaac0bc5b46",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "q1",
+          "ref": "sc4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "start.ts (handleStart) builds the WorkflowIntent from input.focus + params — the controller-driven seam resolveStageFocus hooks.",
+          "evidence": "CONFIRMED: src/mcp/workflow-step/phases/start.ts:62 `const intent: WorkflowIntent = {` + :64 `focus: input.focus` — the controller-driven seam resolveStageFocus hooks.",
+          "action": "none — verified sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "q2",
+          "ref": "sc4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "workflow-rpc.ts builds the WorkflowIntent from p.focus + params — the daemon-driven peer seam; both entry points would call resolveStageFocus.",
+          "evidence": "CONFIRMED: src/daemon/workflow-rpc.ts:414 `const intent: WorkflowIntent = { workflow: p.workflow, focus: p.focus, ... }` — the daemon-driven peer seam.",
+          "action": "none — verified sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "q3",
+          "ref": "s8",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The define chain reads intent.focus (defineDecomposer + scope.assess + defineSynthesizer) and finalizeDefine builds the DEF meta — so overriding intent.focus seeds framing and finalizeDefine can stamp seededFromSpec.",
+          "evidence": "CONFIRMED: src/workflow/orchestrator.ts:492 defineDecomposer(intent) + :817 finalizeDefine(...) — the define chain reads intent.focus and finalizeDefine builds the DEF meta, so overriding intent.focus seeds framing and finalizeDefine can stamp seededFromSpec.",
+          "action": "none — verified sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "q4",
+          "ref": "sc4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "requireApprovedSpec (the s7 sc4 reader) exists in gates.ts and refuses an unapproved spec — resolveStageFocus consumes it.",
+          "evidence": "CONFIRMED: src/workflow/gates.ts:404 export function requireApprovedSpec(repoPath, specHash): SpecArtifact — the s7 sc4 reader resolveStageFocus consumes.",
+          "action": "none — verified sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "q5",
+          "ref": "dataModel",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "ArtifactMetaBase (types.ts) is the meta type the additive optional seededFromSpec field is added to (peer to specHash/epicHash).",
+          "evidence": "CONFIRMED: src/workflow/types.ts:288 interface ArtifactMetaBase + :340 `readonly specHash?: string` — the additive optional seededFromSpec field is a peer of specHash on this interface.",
+          "action": "none — verified sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "q6",
+          "ref": "boundary",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "The HLD assigns s8 no owned contracts and lists it as consumer of sc1 + sc4, matching this LLD (owns=[], consumes sc1/sc4).",
+          "evidence": "Confirmed by direct read this session of .insrc/artifacts/HLD-abd1ecf6a5f5063e.json: the s8 storyBoundary is owns=[], depends [sc1, sc4], matching this LLD. The probe returned 0/not-found because its regex used \\s* against the 2-space-indented JSON and the scan is scoped to src/ (the artifact lives under .insrc/), not because the ownership differs.",
+          "action": "none — cross-artifact ownership matches the HLD.",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 6
+      },
+      "reviewedAt": "2026-08-02T12:01:34.227Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-08-02T12:03:08.409Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Brainstorm ships as a first-class workflow stage (alternative a1): a peer runner directory src/workflow/runners/brainstorm/ that self-registers through the existing executor registry and workflow/index.ts registerWorkflowRunners; a new persisted SpecArtifact peer file in src/workflow/artifacts/ with a specArtifactPaths peer in storage.ts (hash-addressed, listed, approval-stamped identically to DEF/HLD/LLD/PLAN); and an additive elicitation phase on the existing insrc_workflow_step MCP surface that reuses state-store.ts and the questions-gate primitive and preserves the opaque state token verbatim. The single cross-cutting SpecArtifact shape (intent, scope boundary, non-goals, decisions-with-ruled-out-alternatives, open items) is read unchanged by both define (s8) and standalone design.story (s9). Nothing touches the shared/chat-agent brainstorm.addIdea stub.",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "SpecArtifact record + hash-addressed persistence",
+          "purpose": "The one durable, structured spec both downstream stages read. A typed record (like define.ts/plan.ts) persisted hash-addressed with approval stamping via a storage.ts peer, so it is listed and approval-gated identically to every other workflow artifact and no consumer-specific variant exists (k1,k6,k7).",
+          "interfaceSketch": "// src/workflow/artifacts/spec.ts (peer of define.ts / plan.ts)\nimport type { BrainstormCategory } from '../../shared/brainstorm-classes.js';\ninterface SpecDecision {\n  readonly choice:   string;\n  readonly ruledOut: readonly string[];   // alternatives explicitly excluded\n  readonly reason:   string;\n}\ninterface SpecArtifactBody {\n  readonly category:      BrainstormCategory;      // 'spec' | 'architecture' | 'how-to-build' (reused vocab)\n  readonly intent:        string;\n  readonly scopeBoundary: string;\n  readonly nonGoals:      readonly string[];\n  readonly decisions:     readonly SpecDecision[];\n  readonly openItems:     readonly string[];\n}\ninterface SpecArtifact {\n  readonly kind:     'spec';\n  readonly specHash: string;                        // deterministic hash id\n  readonly body:     SpecArtifactBody;\n  readonly meta: {\n    readonly createdAt:   string;\n    readonly approvedAt?: string | undefined;       // set only by the approve gate (k12)\n    readonly review?:     unknown;                  // stamped by insrc_review_step\n  };\n}\n// src/workflow/storage.ts (peer of defineArtifactPaths/planArtifactPaths) — call-signature interface\ninterface SpecArtifactPathsResult {\n  readonly md:   string;\n  readonly json: string;\n}\ninterface SpecArtifactPaths {\n  (repoPath: string, specHash: string): SpecArtifactPathsResult;\n}",
+          "ownedByStory": "s6",
+          "consumedByStories": [
+            "s7",
+            "s8",
+            "s9"
+          ],
+          "assumptions": [
+            "c5",
+            "c6"
+          ]
+        },
+        {
+          "id": "sc4",
+          "name": "Approved-spec-as-focus consumption contract",
+          "purpose": "The read-side contract by which define and standalone design.story accept an approved SpecArtifact as their focus instead of a raw string, gated on approval (k12) and leaving the plain-focus path byte-identical (k1). Owned where approval lives (s7); consumed by the two seeding stories.",
+          "interfaceSketch": "// consumed by define (s8) + standalone design.story (s9) start params\ninterface SpecFocusInput {\n  readonly specHash: string;                        // supplied instead of a plain focus string\n}\n// The two stages accept EITHER shape; plain-string behaviour is unchanged.\ntype StageFocus = string | SpecFocusInput;\n// Resolution goes through daemon IPC (k11) and refuses an unapproved spec (k12):\ninterface ResolveApprovedSpec {\n  (specHash: string): SpecArtifact;                 // rejects when meta.approvedAt is unset\n}",
+          "ownedByStory": "s7",
+          "consumedByStories": [
+            "s8",
+            "s9"
+          ],
+          "assumptions": [
+            "c11",
+            "c16"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s8",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc4"
+        ],
+        "internal": "How define's start/scope.assess consumes an approved spec: mapping the spec's intent/scope/non-goals/decisions into the framing inputs, not re-asking settled decisions, and recording provenance so the Epic identifies its seed spec. The plain-focus path is unchanged. Internal to define's runner."
+      },
+      "rolloutPhase": "Phase D — Seed the downstream stages",
+      "nonFunctional": {
+        "performance": "Elicitation is interactive and controller-paced; there is no daemon-side latency SLA because the daemon runs no autonomous loop (k2). The stage sits on the critical design path and uses the core model tier — correctness of the elicited spec is never traded for fewer or cheaper model calls (k13).",
+        "security": "No new external surface. The MCP layer never opens LMDB/LanceDB; the SpecArtifact is read/written only through daemon IPC (k11). The stage is namespaced distinctly from the shared/chat-agent brainstorm.addIdea offlineRpc stub and never invokes it (k10).",
+        "observability": "The stage emits the same step-start/step-done/synthesize progress frames as the existing stages, and the SpecArtifact appears in the same artifact listing surfaces, so an in-flight or completed brainstorm is observable exactly like any other stage (ac3).",
+        "durability": "The SpecArtifact is hash-addressed and written atomically via the existing storage writeAtomic path; reading it back returns identical content. Approval is a durable meta.approvedAt stamp; an abandoned conversation persists nothing (s3/ac5), and an unapproved spec cannot be consumed (k12)."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "resolveStageFocus",
+          "signature": "function resolveStageFocus(repoPath: string, focus: string, params: Record<string, unknown>): { readonly focus: string; readonly seededFromSpec?: string }",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "Registered repo root, passed to requireApprovedSpec.",
+              "optional": false
+            },
+            {
+              "name": "focus",
+              "type": "string",
+              "purpose": "The caller's plain focus string (used verbatim when no spec is supplied).",
+              "optional": false
+            },
+            {
+              "name": "params",
+              "type": "Record<string, unknown>",
+              "purpose": "Stage start params; read for the optional specHash (the SpecFocusInput shape).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "{ focus: string; seededFromSpec?: string }",
+            "meaning": "When params.specHash is a non-empty string: focus = a deterministic composition of the approved spec's intent + scopeBoundary + non-goals + decisions, and seededFromSpec = that specHash. Otherwise: focus returned verbatim, seededFromSpec omitted (plain-focus passthrough, ac4)."
+          },
+          "errors": [
+            {
+              "type": "SpecNotApprovedError",
+              "condition": "params.specHash names an unapproved spec (propagated from requireApprovedSpec) — the seeded start aborts, never framing from an unapproved spec (k12/ac?)."
+            },
+            {
+              "type": "SpecArtifactNotFoundError",
+              "condition": "params.specHash names a spec that does not exist."
+            }
+          ],
+          "preconditions": [
+            "repoPath is a registered repo"
+          ],
+          "postconditions": [
+            "No disk mutation — read-only resolution",
+            "When seededFromSpec is set, the returned focus verbatim contains the spec's decisions + non-goals (so scope.assess cannot re-ask/contradict them, ac2)"
+          ]
+        },
+        {
+          "name": "composeSpecFocus",
+          "signature": "function composeSpecFocus(spec: SpecArtifact): string",
+          "parameters": [
+            {
+              "name": "spec",
+              "type": "SpecArtifact",
+              "purpose": "The approved spec whose body is rendered into a framing focus string.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "A deterministic, human-readable framing that states the spec's intent, scope boundary, explicit non-goals, and each decision (chosen + ruled-out alternatives + reason) — the text scope.assess frames from (ac1)."
+          },
+          "errors": [],
+          "preconditions": [
+            "spec.body passed isSpecBody at read time"
+          ],
+          "postconditions": [
+            "Pure + deterministic — same spec yields the same focus string"
+          ]
+        },
+        {
+          "name": "requireApprovedSpec",
+          "signature": "function requireApprovedSpec(repoPath: string, specHash: string): SpecArtifact",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "Registered repo root.",
+              "optional": false
+            },
+            {
+              "name": "specHash",
+              "type": "string",
+              "purpose": "The approved spec to resolve as the seed (from the sc4 resolver, s7).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "SpecArtifact",
+            "meaning": "The approved spec; throws when unapproved/missing. Consumed by resolveStageFocus (sc4)."
+          },
+          "errors": [
+            {
+              "type": "SpecNotApprovedError",
+              "condition": "meta.approvedAt unset (k12)."
+            },
+            {
+              "type": "SpecArtifactNotFoundError",
+              "condition": "no spec at that hash."
+            }
+          ],
+          "preconditions": [
+            "s7 shipped this reader"
+          ],
+          "postconditions": [
+            "An unapproved spec is never returned"
+          ]
+        },
+        {
+          "name": "finalizeDefine",
+          "signature": "function finalizeDefine(intent: WorkflowIntent, stepOutputs, runId: string, elapsedMs: number, llmResponse, model?: string, attribution?): FinalizeResult",
+          "parameters": [
+            {
+              "name": "intent",
+              "type": "WorkflowIntent",
+              "purpose": "Carries params.specHash (the seed) so the Define meta can be stamped.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "FinalizeResult",
+            "meaning": "Unchanged shape; the meta it builds now additionally carries seededFromSpec = intent.params.specHash when present (ac3)."
+          },
+          "errors": [],
+          "preconditions": [
+            "Existing finalizeDefine (orchestrator.ts)"
+          ],
+          "postconditions": [
+            "meta.seededFromSpec identifies the Epic's source spec; absent on a plain-focus Epic (ac4)"
+          ]
+        }
+      ],
+      "dataModel": [
+        {
+          "entity": "ArtifactMetaBase.seededFromSpec",
+          "change": "field-add",
+          "details": "New OPTIONAL field on ArtifactMetaBase: the source spec's 16-hex specHash, written by finalizeDefine (and finalizeDesignStory in s9) when the run was seeded from a spec. Absent on every non-seeded artifact (ac4). Additive, peer to specHash/epicHash — no existing field changes. renderDefineMarkdown surfaces it in the header so the Epic identifies its seed (ac3, k7).",
+          "callSites": [
+            "src/workflow/types.ts",
+            "src/workflow/orchestrator.ts",
+            "src/workflow/artifacts/define.ts"
+          ]
+        }
+      ],
+      "interactionWithShared": [
+        {
+          "contractId": "sc4",
+          "role": "consumes",
+          "howDetails": "resolveStageFocus consumes sc4's read-side: on a SpecFocusInput (params.specHash) it calls requireApprovedSpec (s7) to obtain the approved spec, refusing an unapproved/missing one (k11/k12). This is exactly sc4's 'consumed at start params' shape; s8 owns no contract."
+        },
+        {
+          "contractId": "sc1",
+          "role": "consumes",
+          "howDetails": "composeSpecFocus reads the shipped s6 SpecArtifactBody (intent, scopeBoundary, nonGoals, decisions[].chosen/ruledOut/reason) to build the framing focus. Binds to the real s6 shape (chosen, real BrainstormCategory), not the HLD sc1 sketch's `choice`."
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "ArtifactMetaBase.seededFromSpec",
+        "change": "field-add",
+        "details": "New OPTIONAL field on ArtifactMetaBase: the source spec's 16-hex specHash, written by finalizeDefine (and finalizeDesignStory in s9) when the run was seeded from a spec. Absent on every non-seeded artifact (ac4). Additive, peer to specHash/epicHash — no existing field changes. renderDefineMarkdown surfaces it in the header so the Epic identifies its seed (ac3, k7).",
+        "callSites": [
+          "src/workflow/types.ts",
+          "src/workflow/orchestrator.ts",
+          "src/workflow/artifacts/define.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc4",
+        "role": "consumes",
+        "howDetails": "resolveStageFocus consumes sc4's read-side: on a SpecFocusInput (params.specHash) it calls requireApprovedSpec (s7) to obtain the approved spec, refusing an unapproved/missing one (k11/k12). This is exactly sc4's 'consumed at start params' shape; s8 owns no contract."
+      },
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "composeSpecFocus reads the shipped s6 SpecArtifactBody (intent, scopeBoundary, nonGoals, decisions[].chosen/ruledOut/reason) to build the framing focus. Binds to the real s6 shape (chosen, real BrainstormCategory), not the HLD sc1 sketch's `choice`."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "define is started with a SpecFocusInput whose spec is not approved.",
+          "detection": "resolveStageFocus calls requireApprovedSpec, which sees meta.approvedAt unset and throws SpecNotApprovedError.",
+          "response": "The seeded start aborts before any WorkflowIntent is built; the sc4 error (naming the SPEC id + outstanding approval) propagates to the caller/user. No Epic is framed from an unapproved spec (k12).",
+          "userImpact": "The user is told the spec must be approved first, rather than getting an Epic silently framed from an unreviewed spec.",
+          "recoverable": true
+        },
+        {
+          "scenario": "define is started with a specHash that does not resolve to any persisted spec.",
+          "detection": "requireApprovedSpec -> readSpecArtifact finds no json at specArtifactPaths(repoPath, specHash).json and throws SpecArtifactNotFoundError.",
+          "response": "The seeded start aborts; the not-found error propagates.",
+          "userImpact": "The user learns the referenced spec does not exist rather than framing from an empty seed.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A plain focus string and no params.specHash.",
+          "expected": "resolveStageFocus returns the focus verbatim with seededFromSpec unset; the define chain + meta are byte-identical to today (ac4, c30)."
+        },
+        {
+          "input": "An approved spec with empty decisions and empty nonGoals (a fork-free brainstorm).",
+          "expected": "composeSpecFocus still frames from intent + scopeBoundary; the decisions/non-goals sections are simply empty — no error, and scope.assess proceeds from the intent/scope (ac1)."
+        },
+        {
+          "input": "BOTH a non-empty focus string AND a params.specHash are supplied.",
+          "expected": "The spec wins — resolveStageFocus composes the focus from the spec (the SpecFocusInput is the explicit seed); the plain focus string is ignored. Deterministic, single rule (no merge)."
+        },
+        {
+          "input": "An approved spec seeds the Epic, then a user inspects the resulting DEF artifact.",
+          "expected": "meta.seededFromSpec = the source specHash and renderDefineMarkdown shows it — the Epic is identifiable back to its spec (ac3)."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The plain-focus path is byte-identical — when no specHash is supplied, resolveStageFocus is a pure passthrough and the define stage's behaviour + outputs are exactly as today (the spec is an ADDITIONAL input only).",
+          "source": "c21"
+        },
+        {
+          "text": "The seeding helper is stage-neutral — the same resolveStageFocus serves define (s8) and standalone design.story (s9); the spec is not specialised to either consumer.",
+          "source": "c11"
+        },
+        {
+          "text": "An unapproved spec is never consumed as a seed — resolveStageFocus resolves only through requireApprovedSpec, which refuses an unapproved spec.",
+          "source": "c16"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove resolveStageFocus + composeSpecFocus: an approved spec composes a focus containing intent/scope/nonGoals/decisions + sets seededFromSpec; a plain focus passes through verbatim with seededFromSpec unset (ac4); an unapproved/missing spec throws the sc4 error.",
+          "subjects": [
+            "resolveStageFocus (shared seeding helper)",
+            "composeSpecFocus",
+            "requireApprovedSpec (sc4, s7)"
+          ],
+          "fixturesNeeded": [
+            "a tmp repo with an approved SPEC-*.json (intent/scopeBoundary/nonGoals/decisions populated) via specArtifactPaths + writeAtomic + approveArtifactByJsonPath",
+            "a peer unapproved SPEC-*.json",
+            "no-spec params + a plain focus string"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove finalizeDefine stamps meta.seededFromSpec from intent.params.specHash (ac3) and leaves it unset on a plain-focus run (ac4); renderDefineMarkdown surfaces it.",
+          "subjects": [
+            "finalizeDefine (orchestrator.ts)",
+            "renderDefineMarkdown (define.ts)",
+            "ArtifactMetaBase.seededFromSpec (types.ts)"
+          ],
+          "fixturesNeeded": [
+            "a define stepOutputs fixture (new-capability) + an intent with params.specHash set vs unset"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "unit: resolveStageFocus on an approved spec returns a composed focus that contains the spec's intent + scopeBoundary + non-goals + decisions (framing proceeds from the spec, not a one-liner)"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "unit: composeSpecFocus output includes every decision (chosen + ruledOut + reason) and every non-goal verbatim, so the framing input already carries the settled decisions/exclusions (not re-asked / not contradicted)"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "unit: finalizeDefine with intent.params.specHash set writes meta.seededFromSpec = that hash; renderDefineMarkdown output contains the source spec id"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "unit: resolveStageFocus with no specHash returns the focus verbatim + seededFromSpec unset; finalizeDefine leaves meta.seededFromSpec unset on a plain-focus run (plain path byte-identical)"
+          ]
+        }
+      ],
+      "testFramework": "node:test + node:assert/strict, run via `npx tsx --test` (project convention; extends the s6/s7 spec fixture pattern in src/workflow/__tests__/)"
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Shared resolveStageFocus helper: compose intent.focus from the spec + stamp meta.seededFromSpec",
+        "oneLineSummary": "A single helper both define entry points call at intent-build time: when params.specHash is present, requireApprovedSpec -> compose a framing focus string from the spec body + carry specHash for finalizeDefine to stamp; plain focus passes through untouched.",
+        "chosen": true
+      },
+      {
+        "id": "a2",
+        "name": "Structured spec on the intent: intent.spec consumed directly by scope.assess",
+        "oneLineSummary": "Thread the resolved SpecArtifact through a new intent.spec field and change the define scope.assess step to read the structured spec fields directly instead of a composed focus string.",
+        "reasonRejected": "Most faithful but L-sized: forks scope.assess into spec-aware vs plain branches (risks the ac4 byte-identical guarantee) and widens the shared WorkflowIntent type with a stage-specific field — more to get wrong on the critical path than a1's focus override for an M story (partial on ac4/k1)."
+      },
+      {
+        "id": "a3",
+        "name": "Controller composes the focus; no define-side seeding",
+        "oneLineSummary": "The controller resolves the spec via the 'spec.resolveApproved' IPC and passes a plain composed focus string to define start; define is unchanged.",
+        "reasonRejected": "Smallest surface but violates ac3 (no define-side param -> the Epic cannot record its seed spec) and only partially honors sc4 (seeding becomes controller-only, so the daemon-driven insrc_workflow_run path does not seed); also re-implements composition per caller (drift)."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/mcp/workflow-step/phases/start.ts",
+      "quotedText": "handleStart builds the WorkflowIntent from input.focus+params at :64 — the controller-driven seam resolveStageFocus hooks."
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/daemon/workflow-rpc.ts",
+      "quotedText": "buildContext builds the WorkflowIntent from p.focus+params at :414 — the daemon-driven peer seam; both call resolveStageFocus."
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/orchestrator.ts",
+      "quotedText": "The define chain (defineDecomposer, scope.assess, defineSynthesizer) reads intent.focus verbatim; finalizeDefine builds the DEF meta — stamps meta.seededFromSpec from params.specHash."
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/gates.ts",
+      "quotedText": "requireApprovedSpec (s7 sc4 reader) resolves the approved spec + refuses unapproved; the read-only in-process gate resolveStageFocus consumes."
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/types.ts",
+      "quotedText": "ArtifactMetaBase — gains the additive optional seededFromSpec field (peer to specHash/epicHash)."
+    },
+    {
+      "id": "c11",
+      "kind": "prior-artifact",
+      "ref": "DEF-abd1ecf6a5f5063e:k1",
+      "quotedText": "The artifact is a cross-cutting contract consumable as focus by BOTH define and standalone design.story, not specialised to either — the helper is stage-neutral."
+    },
+    {
+      "id": "c16",
+      "kind": "prior-artifact",
+      "ref": "DEF-abd1ecf6a5f5063e:k12",
+      "quotedText": "The artifact requires explicit user approval before a downstream stage consumes it — an unapproved spec is never seeded (requireApprovedSpec refuses it)."
+    },
+    {
+      "id": "c21",
+      "kind": "prior-artifact",
+      "ref": "DEF-abd1ecf6a5f5063e:c30",
+      "quotedText": "The spec is an ADDITIONAL input to the framing stage; the stage's own behaviour and outputs when given a plain focus string are unchanged."
+    }
+  ]
+}

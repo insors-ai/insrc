@@ -1,0 +1,950 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "wf-1785738904302-e4uuox",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-08-03T06:51:25.695Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "design.decompose",
+          "tier": "mid",
+          "runner": "cli-claude",
+          "model": "sonnet"
+        },
+        {
+          "role": "define.scope.assess",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "opus"
+        },
+        {
+          "role": "define.epic.frame",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "opus"
+        },
+        {
+          "role": "define.stories.compose",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "opus"
+        },
+        {
+          "role": "scope.audit",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "opus"
+        },
+        {
+          "role": "synthesize",
+          "tier": "mid",
+          "runner": "cli-claude",
+          "model": "sonnet"
+        }
+      ]
+    },
+    "elapsedMs": 981383,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "761a43a6fa645815",
+    "epicSlug": "add-daemon-driven-code-review-stage",
+    "review": {
+      "artifact": "define",
+      "stage": "define",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "ref": "c1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "reviewArtifactFile(opts: ReviewArtifactOpts): Promise<ReviewArtifactResult> is defined in src/workflow/review/run-artifact.ts around lines 66-104 and is the existing artifact-review entry point.",
+          "evidence": "grep + read confirm `export async function reviewArtifactFile(opts: ReviewArtifactOpts): Promise<ReviewArtifactResult>` at src/workflow/review/run-artifact.ts:66 — exact anchor match.",
+          "action": "None; citation c1 is sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl2",
+          "ref": "c2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "ReviewArtifactOpts and ReviewArtifactResult — the input/verdict shapes the code-review record is asked to mirror — are declared in src/workflow/review/run-artifact.ts around lines 30-51.",
+          "evidence": "`export interface ReviewArtifactOpts` at run-artifact.ts:30 and `export interface ReviewArtifactResult` at :46 — both within the cited 30-51 range.",
+          "action": "None; citation c2 is sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl3",
+          "ref": "c3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "handleReviewStep(input: unknown): Promise<ReviewStepMcpEnvelope> is the controller-drivable MCP entry point for insrc_review_step, in src/mcp/review-step/handler.ts around lines 32-43.",
+          "evidence": "`export async function handleReviewStep(input: unknown): Promise<ReviewStepMcpEnvelope>` at src/mcp/review-step/handler.ts:32 — exact anchor match.",
+          "action": "None; citation c3 is sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl4",
+          "ref": "c4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The review-step multi-turn phase envelope types (ReviewStepInputStart, InputClaims, InputVerdicts, EmitClaims, EmitVerdicts, Done, Error, StatePayload, McpEnvelope) are declared in src/mcp/review-step/types.ts within lines 30-146.",
+          "evidence": "ReviewStepInputStart at types.ts:30 and ReviewStepEmitClaims at :71 confirmed; the phase-envelope types (EmitClaims/EmitVerdicts/StatePayload) all resolve within src/mcp/review-step/types.ts as cited (30-146).",
+          "action": "None; citation c4 is sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl5",
+          "ref": "c5",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "reviewArtifact(repoPath: string, artifactPath: string): Promise<ReviewArtifactResult> is the CLI-service call site driving reviewArtifactFile, in src/cli/services/workflow.ts around lines 234-250.",
+          "evidence": "`export async function reviewArtifact(repoPath, artifactPath): Promise<ReviewArtifactResult>` at src/cli/services/workflow.ts:234, also wired in cli/command.ts:188 and services/index.ts:54 — the CLI surface c5 names really exists.",
+          "action": "None; citation c5 is sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl6",
+          "ref": "c6",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "A daemon-side LLMProvider-driven review/workflow driver exists at src/daemon/workflow-rpc.ts (the low-confidence assumption a5 leans on this path existing).",
+          "evidence": "src/daemon/workflow-rpc.ts exists (read at :1 found=true); runWorkflowServerSide/runStart are the documented server-side entrypoints (referenced by prior LLD-add-build-workflow s3). The path claim c6 is confirmed. The DEF itself correctly flags the INTERNAL SHAPE as unverified (assumption a5 = low, self-noted open question), which is honest, not a citation defect.",
+          "action": "None required for citation soundness; the fit-of-shape question is already tracked as the DEF's own open item and should be resolved during the HLD when workflow-rpc.ts is profiled.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl7",
+          "ref": "c7",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "The src/workflow/review/ module comprises 12 files, and includes probe.ts, verify.ts, calibration.ts, extract.ts, resolve.ts, apply.ts, report.ts, run-artifact.ts and index.ts as its sole declared entrypoint.",
+          "evidence": "Direct re-derivation: `ls src/workflow/review/*.ts` (excluding __tests__) = 12 files, including probe.ts, verify.ts, calibration.ts, extract.ts, resolve.ts, apply.ts, report.ts, run-artifact.ts and index.ts — exactly matching module.profile c7 (12 files, sole entrypoint index.ts).",
+          "action": "None; the sizing inventory c7 is accurate.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl8",
+          "ref": "c9",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "The build workflow Epic (185807ba9a6b35d3) exists and its final story finalizes the build run into a reviewable record of what was built — an input this stage consumes and must not re-derive.",
+          "evidence": "DEF-185807ba9a6b35d3.md exists (docs/defines/DEF-add-build-workflow-insrc-5th-stage.md:1) — the build Epic c9 names is real, and this DEF correctly treats its build-run record as an input.",
+          "action": "None; cross-artifact trace c9 holds.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl9",
+          "ref": "c10",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "The plan workflow Epic (1cd9a4c34f403a80) has a story that states the tests each unit of work should produce — the approved expectation the coverage dimension checks against.",
+          "evidence": "DEF-1cd9a4c34f403a80.md exists (docs/defines/DEF-add-plan-workflow-insrc-framework-4th.md:1) — the plan Epic c10 names is real; its 'state the tests each unit should produce' story is the coverage dimension's approved expectation.",
+          "action": "None; cross-artifact trace c10 holds.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl10",
+          "ref": "c11",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "A separate module-test-health analyzer Epic (8f485fe5c614fefc) already frames a module-scoped read-only view of test health, distinct from this Story-diff-scoped gate — the non-goal that avoids duplicate scopes.",
+          "evidence": "DEF-8f485fe5c614fefc.md and HLD-8f485fe5c614fefc.md both exist — the module-test-health analyzer Epic c11 names is real, correctly cited as the separately-owned module-scoped view this Epic must not duplicate.",
+          "action": "None; the non-goal boundary against 8f485fe5c614fefc is well-grounded.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl11",
+          "ref": "non-goal/capability",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "No existing capability in the repo already performs a post-build code review of a Story's changed files against its approved design/plan; the existing review subsystem audits DESIGN artifacts (DEF/HLD/LLD/PLAN) only, so this Epic is genuinely new rather than an amendment.",
+          "evidence": "grep code[_-]?review / reviewCode|codeReview surface matches ONLY inside this new DEF (k1, ac2, S007 headers) — no pre-existing post-build code-review capability in src/. The existing src/workflow/review + src/mcp/review-step subsystems audit DESIGN artifacts (reviewArtifactFile premise-audits DEF/HLD/LLD/PLAN), confirming this Epic is genuinely new rather than an amendment.",
+          "action": "None; the 'genuinely new' basis for a fresh Define (c13) holds.",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 11
+      },
+      "reviewedAt": "2026-08-03T06:54:46.433Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-08-03T06:57:39.730Z"
+  },
+  "body": {
+    "flavor": "enhancement",
+    "problem": "Once a Story's approved design and plan are turned into actual code, nothing in the chain independently examines the code that came out. The scrutiny that exists lands elsewhere: the design artifacts are premise-audited as prose before they are approved, and the build stage closes out by recording what its own run did. Neither one looks at the changed files a Story produced. So there is no point at which someone other than the author asks whether the implementation actually honours the design contract, the plan's ordered task breakdown, and the Story's acceptance criteria; whether it obeys the repo's documented rules and the local conventions of the modules it touched; whether the new and changed symbols are exercised by tests — including the per-task tests the plan itself called for — and whether those tests pass; or whether the code carries correctness risks, avoidable complexity, duplication, or unhandled error paths. A Story can therefore reach completion with code that no second pair of eyes has assessed, and any divergence between what was approved and what was written stays invisible until it resurfaces later as defects or as accumulated drift from the design.",
+    "nonGoals": [
+      {
+        "text": "Replacing, absorbing, or altering the existing design-artifact review that premise-audits DEF/HLD/LLD/PLAN prose",
+        "rationale": "That review answers a different question — whether the design's stated premises hold — and operates on artifact text, not on produced code. Both are needed; collapsing them would lose the artifact-level audit and muddy the verdict semantics this Epic must mirror."
+      },
+      {
+        "text": "Repo-wide or module-wide code-health assessment",
+        "rationale": "Scope here is a single Story's changed files judged against that Story's approved design and plan. A module-scoped, read-only view of test health is already framed by a separate Epic (8f485fe5c614fefc); duplicating it would produce two competing answers with different scopes."
+      },
+      {
+        "text": "Modifying, repairing, or re-authoring the code under review",
+        "rationale": "Authoring code belongs to the build stage. A stage that both writes and judges the same code is not an independent second opinion, which is the entire point of this Epic."
+      },
+      {
+        "text": "Re-deriving or replacing the build stage's own record of what a run did",
+        "rationale": "That record is owned by the build Epic (185807ba9a6b35d3) and is an input to this stage, not something to reproduce. Re-deriving it would fork the source of truth for what was built."
+      },
+      {
+        "text": "Reviewing code that was not produced under an approved design and plan for a Story",
+        "rationale": "Without an approved contract to review against, the adherence and coverage dimensions have no reference point, and the result would degrade into generic linting."
+      },
+      {
+        "text": "Judging whether the approved design or plan was itself the right decision",
+        "rationale": "That judgement was already made and approved upstream. Re-opening it here would turn a code gate into a design re-litigation and would block Stories for reasons the author cannot act on in code."
+      }
+    ],
+    "assumptions": [
+      {
+        "text": "The build stage yields an identifiable, per-Story set of changed files (a diff) that a downstream stage can consume as its subject.",
+        "confidence": "med",
+        "source": "c9"
+      },
+      {
+        "text": "The approved plan artifact states the tests each unit of work should produce, giving the coverage dimension an approved expectation to check against rather than an invented one.",
+        "confidence": "high",
+        "source": "c10"
+      },
+      {
+        "text": "The existing artifact-review input/result shapes are stable enough to serve as the template for a code-level equivalent's persisted report and verdict.",
+        "confidence": "high",
+        "source": "c2"
+      },
+      {
+        "text": "The multi-turn phase contract of the existing controller-drivable review tool is a workable template for a code-level controller path, so the independent-eyes loop does not need a new interaction model.",
+        "confidence": "high",
+        "source": "c4"
+      },
+      {
+        "text": "A daemon-side, LLMProvider-driven review driver already exists at the cited path and is the pattern to follow; only its path and resolver ranking are grounded — its internal shape was never profiled, so the fit is unverified.",
+        "confidence": "low",
+        "source": "c6"
+      },
+      {
+        "text": "Per-file convention detection is too thin to ground a standards judgement — sampling one file put every signal below the confidence threshold — so the standards dimension must lean on repo-level documented rules plus multi-file sampling.",
+        "confidence": "high",
+        "source": "c12"
+      },
+      {
+        "text": "The indexed graph covers the Story's new and changed symbols closely enough after a build for structured grounding, so the reviewer does not need raw file dumps to reason about them.",
+        "confidence": "med",
+        "source": "c16"
+      },
+      {
+        "text": "The L scope is set by the size of the module this stage must mirror — 12 files, 96 entities, ~114 KB — rather than by the number of review dimensions.",
+        "confidence": "med",
+        "source": "c7"
+      },
+      {
+        "text": "No existing Epic in the chain frames this problem: the build Epic stops at the run record and the review module audits artifacts, so a new Define is required rather than an amendment.",
+        "confidence": "high",
+        "source": "c13"
+      },
+      {
+        "text": "The existing CLI service call site for artifact review indicates the surface area a code-level equivalent will also have to expose, beyond the daemon-internal path.",
+        "confidence": "med",
+        "source": "c5"
+      }
+    ],
+    "constraints": [
+      {
+        "id": "k1",
+        "text": "The persisted code-review record must carry a block/warn/pass verdict and mirror the report shape of the existing artifact review, so downstream approval logic reads one verdict vocabulary.",
+        "type": "contract",
+        "source": "c2"
+      },
+      {
+        "id": "k2",
+        "text": "The controller-drivable path must follow the established multi-turn phase envelope contract (start / emit / done / error / opaque state) used by the existing review step tool.",
+        "type": "contract",
+        "source": "c4"
+      },
+      {
+        "id": "k3",
+        "text": "All model access goes through the LLMProvider abstraction; cloud access is via the locally installed CLI binaries only. Direct cloud REST calls from our process must not be introduced.",
+        "type": "invariant",
+        "source": "c14"
+      },
+      {
+        "id": "k4",
+        "text": "Nothing that reaches an LLM provider — cloud or local embed/complete — may be issued under Promise.all; calls stay serial.",
+        "type": "invariant",
+        "source": "c17"
+      },
+      {
+        "id": "k5",
+        "text": "The daemon owns all DB access; the MCP tool and any CLI surface reach storage only through IPC, never by opening LMDB or LanceDB directly.",
+        "type": "invariant",
+        "source": "c16"
+      },
+      {
+        "id": "k6",
+        "text": "Grounding context is structured entity summaries and relations from the graph, not raw file dumps.",
+        "type": "invariant",
+        "source": "c16"
+      },
+      {
+        "id": "k7",
+        "text": "Approval must remain the existing gated act — an artifact is presented, the user explicitly approves, and a blocking review verdict is enforced unless explicitly overridden.",
+        "type": "contract",
+        "source": "c8"
+      },
+      {
+        "id": "k8",
+        "text": "The new stage must remain distinct from the artifact review the documentation describes: that one is scoped to artifacts and to pre-approve, with no code-level equivalent after build.",
+        "type": "stakeholder",
+        "source": "c8"
+      },
+      {
+        "id": "k9",
+        "text": "The stage runs after build and consumes its output; it is the immediate downstream neighbour of the build Epic and must not duplicate that Epic's run record.",
+        "type": "contract",
+        "source": "c9"
+      },
+      {
+        "id": "k10",
+        "text": "Accuracy is primary and cost is the least priority: review is a critical role, so it must not be served below the high model tier to save cost.",
+        "type": "invariant",
+        "source": "c14"
+      },
+      {
+        "id": "k11",
+        "text": "Implementation follows the repo's TypeScript conventions: .js extensions on import paths, import type for type-only imports, getLogger instead of console.log, strict-mode handling of optional and indexed access.",
+        "type": "convention",
+        "source": "c17"
+      },
+      {
+        "id": "k12",
+        "text": "The standards dimension must evaluate against the repo's documented rules as its baseline, since those rules are the stated contract the code is expected to honour.",
+        "type": "convention",
+        "source": "c17"
+      }
+    ],
+    "stories": [
+      {
+        "id": "s1",
+        "title": "A code review is scoped to exactly the code one Story produced",
+        "userValue": "Whoever reads the review can trust that every judgement is about this Story's own changes, so findings are attributable to the Story's author and actionable inside the Story rather than being generic noise about the wider repo.",
+        "sizeEstimate": "M",
+        "dependsOn": [],
+        "existingCapabilityRefs": [
+          "c10",
+          "c13"
+        ],
+        "localConstraints": [
+          {
+            "id": "c101",
+            "text": "Code produced without an approved design and plan for a Story is not a valid review subject — without an approved contract the adherence and coverage judgements have no reference point.",
+            "type": "invariant",
+            "source": "c17"
+          },
+          {
+            "id": "c102",
+            "text": "The review only reports; it never modifies, repairs, or re-authors the code it is judging, because a stage that both writes and judges the same code is not an independent second opinion.",
+            "type": "invariant",
+            "source": "c6"
+          }
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a Story whose build has finished and whose build record already states what that run did",
+            "when": "a code review of that Story is requested",
+            "then": "the review's subject is exactly the set of files that Story's build changed, unrelated code is not judged, and the build's own record is consumed as input rather than re-derived",
+            "operationalizes": [
+              "k9"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "a Story that has no approved design and no approved plan",
+            "when": "a code review of that Story is requested",
+            "then": "no verdict is produced and the requester is told that there is no approved contract to review against",
+            "operationalizes": [
+              "k9"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "the review needs to understand the new and changed behaviour in the Story's files",
+            "when": "it assembles its grounding",
+            "then": "it works from structured summaries of the affected symbols and their relationships rather than from raw file contents",
+            "operationalizes": [
+              "k6"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "any surface — daemon-internal or external — needs stored knowledge about the Story's symbols",
+            "when": "that knowledge is fetched",
+            "then": "it is obtained through the daemon rather than by any other surface reading the stores directly",
+            "operationalizes": [
+              "k5"
+            ]
+          },
+          {
+            "id": "ac5",
+            "given": "a code review of a Story is in progress or has finished",
+            "when": "the Story's files are inspected afterwards",
+            "then": "they are byte-for-byte unchanged by the review",
+            "operationalizes": [
+              "k9"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "s2",
+        "title": "See whether the implementation honours the approved design, the plan's tasks, and the Story's acceptance criteria",
+        "userValue": "Divergence between what was approved and what was actually written becomes visible at the moment it happens, instead of resurfacing later as defects or as silent drift away from the design.",
+        "sizeEstimate": "L",
+        "dependsOn": [
+          "s1"
+        ],
+        "existingCapabilityRefs": [
+          "c14"
+        ],
+        "localConstraints": [
+          {
+            "id": "c103",
+            "text": "Whether the approved design or plan was the right decision is out of scope; that judgement was made and approved upstream and cannot be acted on in code by the Story's author.",
+            "type": "stakeholder",
+            "source": "c17"
+          }
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a Story with an approved design contract, an ordered task breakdown, and stated acceptance criteria",
+            "when": "the adherence judgement runs over the Story's changed code",
+            "then": "each place where the code departs from an approved expectation is reported as a finding that names the specific expectation it failed to meet",
+            "operationalizes": [
+              "k9"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "an implementation that satisfies every approved expectation",
+            "when": "the adherence judgement runs",
+            "then": "it reports no divergence rather than manufacturing findings to appear thorough",
+            "operationalizes": [
+              "k10"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "code that faithfully implements a design decision the reviewer would have made differently",
+            "when": "the adherence judgement runs",
+            "then": "no finding is raised against that decision, because the decision itself is not what is under review",
+            "operationalizes": [
+              "k8"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "the adherence judgement requires model reasoning",
+            "when": "that reasoning is obtained",
+            "then": "it comes through the sanctioned local model path with no direct cloud calls, and is never served below the tier reserved for critical roles",
+            "operationalizes": [
+              "k3",
+              "k10"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "s3",
+        "title": "See whether the code obeys the repo's documented rules and the conventions of the modules it touched",
+        "userValue": "Rule and convention drift is caught while the change is still fresh, so the codebase keeps reading as one system instead of accumulating per-Story dialects.",
+        "sizeEstimate": "M",
+        "dependsOn": [
+          "s1"
+        ],
+        "existingCapabilityRefs": [
+          "c16",
+          "c13"
+        ],
+        "localConstraints": [
+          {
+            "id": "c104",
+            "text": "Convention signals sampled from too few examples are reported as observations, not as violations — single-file sampling put every signal below the confidence threshold in the scoping evidence.",
+            "type": "convention",
+            "source": "c16"
+          }
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a Story's changed files and the repo's documented rules",
+            "when": "the standards judgement runs",
+            "then": "the documented rules are used as the baseline and each breach is reported as a finding naming the rule it breached",
+            "operationalizes": [
+              "k12"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "changed code that breaks a documented TypeScript rule — a missing import extension, a type-only import written as a value import, direct console output instead of the logger, or unhandled optional and indexed access",
+            "when": "the standards judgement runs",
+            "then": "each such breach is reported individually with its location",
+            "operationalizes": [
+              "k11",
+              "k12"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "a change that touches modules with their own local idioms",
+            "when": "the standards judgement samples those conventions",
+            "then": "the sample spans the touched modules rather than a single file, and any convention drawn from too few examples is surfaced as a low-confidence observation rather than a breach",
+            "operationalizes": [
+              "k12"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "code that reaches a model provider for completions or embeddings",
+            "when": "the standards judgement runs",
+            "then": "concurrent fan-out of those calls is reported as a breach of the serial-calls rule",
+            "operationalizes": [
+              "k4",
+              "k12"
+            ]
+          },
+          {
+            "id": "ac5",
+            "given": "code on a surface other than the daemon that reaches storage directly, or that assembles context from raw file contents",
+            "when": "the standards judgement runs",
+            "then": "each is reported as a breach of the daemon-owns-storage and structured-grounding rules",
+            "operationalizes": [
+              "k5",
+              "k6"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "s4",
+        "title": "See whether the Story's new and changed behaviour is actually exercised by passing tests",
+        "userValue": "A Story cannot quietly complete with untested behaviour or with the very tests its own plan promised still missing or red.",
+        "sizeEstimate": "L",
+        "dependsOn": [
+          "s1"
+        ],
+        "existingCapabilityRefs": [
+          "c13"
+        ],
+        "localConstraints": [
+          {
+            "id": "c105",
+            "text": "Coverage here is scoped to the Story's changed behaviour, not to the overall health of the modules it touched; a module-scoped, read-only view of test health is owned elsewhere and duplicating it would produce two competing answers.",
+            "type": "invariant",
+            "source": "c12"
+          }
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a Story whose approved plan states the tests each unit of work should produce",
+            "when": "the coverage judgement runs",
+            "then": "every promised test is reported as present or missing, and each present one as passing or failing",
+            "operationalizes": [
+              "k9"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "symbols the Story newly added or changed",
+            "when": "the coverage judgement runs",
+            "then": "each one is reported as exercised or not exercised by a test, using the recorded relationships between tests and the code they reach",
+            "operationalizes": [
+              "k6"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "behaviour with a test that exists but does not pass",
+            "when": "the coverage judgement reports",
+            "then": "it is distinguished from behaviour with no test at all, because the two call for different responses",
+            "operationalizes": [
+              "k10"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "modules the Story touched that have pre-existing gaps unrelated to this Story's change",
+            "when": "the coverage judgement runs",
+            "then": "those gaps are not reported as findings against this Story",
+            "operationalizes": [
+              "k9"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "s5",
+        "title": "See the correctness, complexity, duplication, and error-handling risks the change carries",
+        "userValue": "Problems that are neither a rule breach nor a design divergence — a mishandled failure path, a needlessly tangled routine, a third copy of the same logic — get named before they are merged and forgotten.",
+        "sizeEstimate": "M",
+        "dependsOn": [
+          "s1"
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a Story's changed code",
+            "when": "the quality judgement runs",
+            "then": "correctness risks, avoidable complexity, duplication, and unhandled error paths are each reported as findings carrying a location and a severity",
+            "operationalizes": [
+              "k1"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "a suspected duplication of logic that already exists elsewhere in the repo",
+            "when": "the quality judgement reports it",
+            "then": "the existing counterpart is identified, so the reader can confirm the overlap instead of taking the claim on trust",
+            "operationalizes": [
+              "k6"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "a finding that turns out to be a matter of taste rather than a risk",
+            "when": "the quality judgement reports",
+            "then": "it is not raised at a severity that would block the Story",
+            "operationalizes": [
+              "k1"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "the quality judgement requires model reasoning over the change",
+            "when": "that reasoning is obtained",
+            "then": "it is served at no less than the tier reserved for critical roles, and cost is not traded against the accuracy of the judgement",
+            "operationalizes": [
+              "k10",
+              "k3"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "s6",
+        "title": "The four judgements become one persisted review record with a block, warn, or pass verdict",
+        "userValue": "Everyone downstream — the author, the approver, and anything that gates on the outcome — reads one durable record in one verdict vocabulary, rather than four separate opinions that have to be reconciled by hand.",
+        "sizeEstimate": "M",
+        "dependsOn": [
+          "s2",
+          "s3",
+          "s4",
+          "s5"
+        ],
+        "existingCapabilityRefs": [
+          "c13",
+          "c14",
+          "c15"
+        ],
+        "localConstraints": [
+          {
+            "id": "c106",
+            "text": "The record must stay recognisably separate from the design-artifact review: that one audits the premises of design prose before approval, this one audits produced code after build. Both continue to exist.",
+            "type": "contract",
+            "source": "c6"
+          }
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "completed adherence, standards, coverage, and quality judgements for a Story",
+            "when": "the review is finalised",
+            "then": "a single record is persisted that carries all four dimensions' findings and one overall verdict of block, warn, or pass",
+            "operationalizes": [
+              "k1"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "a persisted code-review record",
+            "when": "anything downstream reads its verdict",
+            "then": "the verdict vocabulary and report shape match the existing artifact review's, so no downstream reader needs a second interpretation",
+            "operationalizes": [
+              "k1"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "a Story that has both a design-artifact review and a code review",
+            "when": "either record is read",
+            "then": "each is identifiable as its own kind of review with its own subject, and neither replaces or overwrites the other",
+            "operationalizes": [
+              "k8"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "several dimensions of a review that each need model reasoning",
+            "when": "the review runs",
+            "then": "those requests are issued one after another rather than concurrently against the provider",
+            "operationalizes": [
+              "k4"
+            ]
+          },
+          {
+            "id": "ac5",
+            "given": "a review run that fails partway through",
+            "when": "the outcome is reported",
+            "then": "no record is left claiming a pass, and the failure is stated as a failure rather than as an absence of findings",
+            "operationalizes": [
+              "k1"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "s7",
+        "title": "A blocking code-review verdict holds the Story back until it is addressed or explicitly overridden",
+        "userValue": "The review is a real gate rather than advice — a Story cannot reach completion carrying blocking findings unless someone knowingly and visibly decides otherwise.",
+        "sizeEstimate": "S",
+        "dependsOn": [
+          "s6"
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a Story whose code review returned a blocking verdict",
+            "when": "completion of that Story is attempted",
+            "then": "it is refused and the blocking reason is relayed to the person attempting it",
+            "operationalizes": [
+              "k7",
+              "k1"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "a blocking verdict the user has decided to accept anyway",
+            "when": "they explicitly override it",
+            "then": "completion proceeds and the override is recorded alongside the verdict it bypassed",
+            "operationalizes": [
+              "k7"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "a code review that returned warn rather than block",
+            "when": "completion is attempted",
+            "then": "it is allowed and the warnings are still surfaced to the user before they act",
+            "operationalizes": [
+              "k7",
+              "k1"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "a Story ready to complete",
+            "when": "the user is asked to approve it",
+            "then": "the review outcome is presented first and approval remains an explicit act by the user rather than something taken automatically on their behalf",
+            "operationalizes": [
+              "k7"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "s8",
+        "title": "An independent reviewer outside the daemon can drive the same code review turn by turn",
+        "userValue": "The review can be performed by a second set of eyes rather than by the same reasoning that produced the code — which is the whole reason the gate is worth having.",
+        "sizeEstimate": "M",
+        "dependsOn": [
+          "s6"
+        ],
+        "existingCapabilityRefs": [
+          "c14",
+          "c15"
+        ],
+        "localConstraints": [
+          {
+            "id": "c107",
+            "text": "A review performed by the same model that authored the code is a self-review; the independent path exists so the judging reasoning can be different from the authoring reasoning.",
+            "type": "stakeholder",
+            "source": "c6"
+          }
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "an external controller that wants to review a Story's code itself",
+            "when": "it starts a code review",
+            "then": "it is handed the work one turn at a time — a start, one or more turns where it supplies its own judgement, and a terminal done or error — matching the turn-taking contract the existing controller-driven review already uses",
+            "operationalizes": [
+              "k2"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "an in-progress controller-driven review",
+            "when": "the controller takes its next turn",
+            "then": "it carries back an opaque token from the previous turn unchanged, and the review resumes exactly where it left off",
+            "operationalizes": [
+              "k2"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "a controller-driven review that reaches its terminal turn",
+            "when": "the outcome is persisted",
+            "then": "it produces the same kind of record and the same verdict vocabulary as a review the daemon drove on its own",
+            "operationalizes": [
+              "k1",
+              "k2"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "a controller driving a review from outside the daemon",
+            "when": "it needs grounding about the Story's code",
+            "then": "it receives structured summaries served through the daemon, and never reaches the stores itself",
+            "operationalizes": [
+              "k5",
+              "k6"
+            ]
+          },
+          {
+            "id": "ac5",
+            "given": "a controller that supplies malformed or incomplete judgement on a turn",
+            "when": "that turn is submitted",
+            "then": "the review returns an error naming what was wrong instead of silently accepting it and producing a verdict",
+            "operationalizes": [
+              "k2"
+            ]
+          }
+        ]
+      }
+    ],
+    "openQuestions": [
+      "Item a2: HONEST FAIL. Exactly one assumption is low-confidence — \"A daemon-side, LLMProvider-driven review driver already exists at the cited path and is the pattern to follow; only its path and resolver ranking are grounded — its internal shape was never profiled, so the fit is unverified.\" The Epic object has no openQuestions field at all (keys are problem, nonGoals, assumptions, constraints, citations), so this assumption maps to nothing. It is precisely the case the rule exists for: c6/c15 ground only the path and a 0.314 resolver rank for src/daemon/workflow-rpc.ts, and s1 explicitly records that no module.profile or symbol.locate ran against it. Fix: add an openQuestion asking whether workflow-rpc.ts's driver shape actually fits a code-review path, and link assumptions[4] to it.",
+      "Item ac2: Every operationalizes id is real — all 35 criteria reference only k1–k12, no dangling ids. But several point at a constraint they do not operationalize, while the Story's own localConstraints c101–c107 are referenced by nothing at all. Clearest cases: s1.ac2 (no approved design/plan ⇒ no verdict) cites k9 (runs after build, must not duplicate the run record) when its actual basis is local c101; s1.ac5 (files byte-for-byte unchanged) cites k9 when its basis is local c102; s2.ac3 (no finding against a design decision the reviewer would have made differently) cites k8 (stay distinct from the artifact review) when its basis is local c103. Also s2.ac1 and s4.ac1/ac4 lean on k9 for adherence/coverage claims k9 does not cover. Fix: allow operationalizes to reference localConstraint ids and repoint these; otherwise the constraint-to-criterion trace is decorative in those spots.",
+      "Item s1a: Seven of eight userValue paragraphs stand on their own (s1 attributability, s3 \"per-Story dialects\", s4 \"quietly complete\", s5 \"a third copy of the same logic\", s6 four opinions reconciled by hand, s7 gate-not-advice, s8 second set of eyes). s2's is a near-verbatim inversion of the Epic problem's closing clause: Story — \"instead of resurfacing later as defects or as silent drift away from the design\"; Epic — \"until it resurfaces later as defects or as accumulated drift from the design.\" That is a restatement, not an independent statement of this slice's value. Rewrite s2.userValue around what the adherence check specifically buys (a named approved expectation to point at when code departs from it)."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/review/run-artifact.ts:66-104",
+      "quotedText": "reviewArtifactFile(opts: ReviewArtifactOpts): Promise<ReviewArtifactResult> — the existing artifact-review entry point; premise-audits DEF/HLD/LLD/PLAN text, not code."
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/review/run-artifact.ts:30-51",
+      "quotedText": "ReviewArtifactOpts (30-44) and ReviewArtifactResult (46-51) — the input/verdict shapes the proposed code-review record is asked to mirror."
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/mcp/review-step/handler.ts:32-43",
+      "quotedText": "handleReviewStep(input: unknown): Promise<ReviewStepMcpEnvelope> — the controller-drivable MCP entry point insrc_review_step exposes."
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/mcp/review-step/types.ts:30-146",
+      "quotedText": "ReviewStepInputStart (30-34), InputClaims (37-41), InputVerdicts (45-49), EmitClaims (71-78), EmitVerdicts (80-89), Done (91-103), Error (105-112), StatePayload (124-136), McpEnvelope (142-146) — the full multi-turn phase contract."
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/cli/services/workflow.ts:234-250",
+      "quotedText": "reviewArtifact(repoPath: string, artifactPath: string): Promise<ReviewArtifactResult> — CLI-service call site that drives reviewArtifactFile."
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/daemon/workflow-rpc.ts",
+      "quotedText": "Ranked 0.314 by concept.resolve for \"workflow-rpc daemon self-review LLMProvider R2 controller review\". Only its path and resolver ranking are grounded here; its internal shape was not profiled."
+    },
+    {
+      "id": "c7",
+      "kind": "analyze-bundle",
+      "ref": "module.profile — src/workflow/review/",
+      "quotedText": "Directory profile: 12 files, 96 entities, 114,411 bytes, sole declared entrypoint src/workflow/review/index.ts. Members include probe.ts, verify.ts, calibration.ts, extract.ts, resolve.ts, apply.ts, report.ts, source-roots.ts."
+    },
+    {
+      "id": "c8",
+      "kind": "doc",
+      "ref": "CLAUDE.md — \"Building features via insrc — classify FIRST, review before approve\"",
+      "quotedText": "\"insrc_review_step before approve — the independent 'two sets of eyes' review (a daemon self-review is the SAME model that authored the artifact).\" ... \"It stamps approvedAt and enforces the review block-verdict: a blocked artifact returns in skipped[] with a reason; pass overrideReview only with the user's explicit override.\""
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "Epic 185807ba9a6b35d3 / add-build-workflow-insrc-5th-stage",
+      "quotedText": "s5 'Finalize the run into a reviewable, approvable record of what was built' — the record of the build run's own actions; the Epic's problem statement never raises independently auditing the produced code against the LLD/PLAN."
+    },
+    {
+      "id": "c10",
+      "kind": "prior-artifact",
+      "ref": "Epic 1cd9a4c34f403a80 / add-plan-workflow-insrc-framework-4th",
+      "quotedText": "s4: 'State the tests each unit of work should produce' — a direct input to the coverage dimension, but this Epic only produces the plan; it never verifies code against it."
+    },
+    {
+      "id": "c11",
+      "kind": "prior-artifact",
+      "ref": "Epic 8f485fe5c614fefc / add-module-test-health-analyzer-new",
+      "quotedText": "s3: 'See which of a module's behaviour tests reach and which they leave unverified' — a read-only ANALYZE target scoped to a module, not a workflow gate scoped to a Story's diff."
+    },
+    {
+      "id": "c12",
+      "kind": "convention",
+      "ref": "convention.detect — src/workflow/review/run-artifact.ts",
+      "quotedText": "Every sample fell below the 5-entity confidence threshold: function naming n=2 (camelCase), class naming n=2 (PascalCase), file naming n=1 (kebab-case), no test files detected, no base-class idioms, 0 private-prefix and 0 dunder methods across 5 total entities."
+    },
+    {
+      "id": "c13",
+      "kind": "step-output",
+      "ref": "s1 scope/context — decision + flavorEvidence",
+      "quotedText": "decision: \"new\", scope: \"L\", flavor: \"enhancement\"; \"Existing code to extend + no matching Epic => enhancement, and a new Define is required.\""
+    },
+    {
+      "id": "c14",
+      "kind": "doc",
+      "ref": "CLAUDE.md — \"Project principles\"",
+      "quotedText": "\"Accuracy is primary; cost is the least priority.\" ... \"No direct cloud REST calls from our process. Cloud LLM access happens through the locally-installed claude and codex CLI binaries (via CliProvider).\" ... the coreFloor guarantees critical roles (design, review, build, validate) are never served below the high tier."
+    },
+    {
+      "id": "c15",
+      "kind": "analyze-bundle",
+      "ref": "concept.resolve (second pass) — daemon self-review driver",
+      "quotedText": "Ranked src/workflow/review/ top (0.351) followed by src/daemon/workflow-rpc.ts (0.314), with src/daemon/ (0.244), src/mcp/review-step/ (0.181-0.264) and src/workflow/artifacts/ (0.187) trailing. Every top-ranked neighbour is artifact-oriented — nothing surfaced that reviews built code."
+    },
+    {
+      "id": "c16",
+      "kind": "doc",
+      "ref": "CLAUDE.md — \"Key architectural rules\"",
+      "quotedText": "\"Daemon owns all DB access — CLI, MCP, and the IDE workbench communicate via IPC only.\" ... \"No raw file dumps — context is always structured entity summaries + relations from the graph.\""
+    },
+    {
+      "id": "c17",
+      "kind": "doc",
+      "ref": "CLAUDE.md — \"Code conventions\"",
+      "quotedText": "\"Always use .js extension in import paths\" ... \"Use import type for type-only imports\" ... \"Use getLogger('module-name') — never use console.log\" ... \"Never Promise.all anything that reaches an LLM provider (cloud or local Ollama embed / complete); always serial for...of with sequential awaits.\""
+    },
+    {
+      "id": "c18",
+      "kind": "code",
+      "ref": "src/workflow/review/run-artifact.ts:66-104",
+      "quotedText": "reviewArtifactFile(opts: ReviewArtifactOpts): Promise<ReviewArtifactResult> — the existing artifact-review entry point; premise-audits DEF/HLD/LLD/PLAN text, not code."
+    }
+  ]
+}

@@ -1,0 +1,318 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1785744743147-ayror3",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-08-03T08:16:26.030Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 242806,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "761a43a6fa645815",
+    "epicSlug": "add-daemon-driven-code-review-stage",
+    "storyId": "s1",
+    "lldRunId": "wf-1785742820116-unucjl",
+    "lldEffectiveHash": "47535369867a9e9c71a300e7ca347a1a6437356df9b3c75b91fec292dcf80f63",
+    "review": {
+      "artifact": "plan",
+      "stage": "plan",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "p1",
+          "ref": "t3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/db/graph/edges.ts exports inNeighbors and outNeighbors — the traversal functions t3's assembleCodeReviewGrounding uses for callers/callees/testsReaching.",
+          "evidence": "outNeighbors at src/db/graph/edges.ts:87 and inNeighbors at :104 both confirmed — the traversal functions t3 uses for callers/callees/testsReaching exist.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p2",
+          "ref": "t4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/daemon/index.ts registers request/response IPC handlers including 'repo.reindex' and 'workflow.approve' — the simple-handler shape t4's new 'codeReview.grounding' handler mirrors.",
+          "evidence": "'workflow.approve' at src/daemon/index.ts:551 and 'repo.reindex' at :587 confirmed as simple `async (params) =>` handlers — the exact shape t4's new 'codeReview.grounding' handler mirrors.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p3",
+          "ref": "t1",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "src/workflow/code-review/ does not exist yet — t1 creates it as a new module (purely additive, no existing file modified).",
+          "evidence": "The only match for 'code-review/types' is inside the plan doc itself (docs/plans/PLAN-add-daemon-driven-code-review-stage-s1.md) — no src/workflow/code-review/ file exists, confirming t1 creates a genuinely new module.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p4",
+          "ref": "t1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "Severity is exported from src/workflow/review/types.ts and is imported (not redefined) by t1's DimensionFinding.",
+          "evidence": "Severity = 'HIGH'|'MED'|'LOW' at src/workflow/review/types.ts:41 — t1 imports it (not redefines).",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p5",
+          "ref": "t2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "t2's reused seams all exist: requireApprovedLld (gates.ts:255), requireApprovedPlan (gates.ts:354), and gitDiffTool (git/diff.ts:54).",
+          "evidence": "requireApprovedLld at src/workflow/gates.ts:255, requireApprovedPlan at :354, and gitDiffTool at src/daemon/tools/builtins/git/diff.ts:54 all confirmed — every seam t2 reuses exists at the cited location.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p6",
+          "ref": "tasks",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "The plan enumerates exactly 4 tasks (t1-t4) with a valid dependency chain t1 -> {t2,t3} -> t4.",
+          "evidence": "For this epic (E20260803761a43a6) the plan lists exactly T001-T004 (lines 18/27/37/47 of the plan doc); other S001:T00x matches are unrelated epics' plans. The dependency chain t1 -> {t2,t3} -> t4 was verified acyclic + topologically ordered at checklist.verify.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 6
+      },
+      "reviewedAt": "2026-08-03T08:17:13.240Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-08-03T08:18:39.564Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Declare the sc1/sc2/sc3 types in a new src/workflow/code-review/ module",
+        "summary": "Create src/workflow/code-review/types.ts declaring ReviewDimension = 'adherence'|'conventions'|'coverage'|'quality', DimensionFinding + DimensionResult (importing Severity from src/workflow/review/types.ts — not redefining it), CodeReviewSubject + the discriminated CodeReviewSubjectResult, and ChangedSymbolSummary + CodeReviewGrounding. Type-only, purely additive; follows repo conventions (.js import extensions, import type). buildRecord is typed as the persisted build record (StandaloneBuildRecord), consumed for identity.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "The module type-checks under strict mode and DimensionFinding.severity is the Severity imported from src/workflow/review/types.ts (not a local copy)",
+          "ReviewDimension is the exact 4-member union; CodeReviewSubjectResult is a discriminated union with reason 'no-approved-contract'|'no-build-record'",
+          "No existing file is modified (new module only)"
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "sc3 type-shape assertions: a representative DimensionResult literal exercises each ReviewDimension and compiles against DimensionFinding/DimensionResult"
+          },
+          {
+            "level": "unit",
+            "name": "type-level check that DimensionFinding.severity IS the Severity imported from src/workflow/review/types.ts (assignability both ways)"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Implement resolveCodeReviewSubject (sc1 resolver)",
+        "summary": "Add resolveCodeReviewSubject(repoPath, epicHash, storyId) that composes requireApprovedLld + requireApprovedPlan (catching ArtifactMissingError/ArtifactNotApprovedError => {ok:false, reason:'no-approved-contract'}) and derives changedFiles from gitDiffTool over the Story's build commit range (ToolError/unresolvable range => {ok:false, reason:'no-build-record'}); UnregisteredRepoError propagates unchanged. Read-only; the build record is read for identity only, never mutated.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "ac1: subject.changedFiles equals the GitDiffData.files set exactly (no unrelated paths); the build record is read for identity only and not mutated",
+          "ac2: missing/unapproved LLD or PLAN yields {ok:false, reason:'no-approved-contract'} with no subject/verdict; unresolvable range yields {ok:false, reason:'no-build-record'}",
+          "An unregistered repo surfaces UnregisteredRepoError UNCHANGED — it is NOT collapsed into a no-approved-contract/no-build-record result (operator-misconfig path)",
+          "ac5: the resolver invokes only read operations — no write/edit tool is called (files byte-unchanged)"
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "resolveCodeReviewSubject returns subject.changedFiles exactly equal to the fake GitDiffData.files (no extra/unrelated paths) and reads the build record for identity only (record not mutated)"
+          },
+          {
+            "level": "unit",
+            "name": "requireApprovedLld/requireApprovedPlan throw-to-result mapping: missing LLD and unapproved PLAN each yield {ok:false, reason:'no-approved-contract'}"
+          },
+          {
+            "level": "unit",
+            "name": "gitDiffTool ToolError (unresolvable range) yields {ok:false, reason:'no-build-record'}; empty-diff yields {ok:true} with changedFiles=[]"
+          },
+          {
+            "level": "unit",
+            "name": "unregistered repo surfaces UnregisteredRepoError unchanged (not collapsed into a reason result)"
+          },
+          {
+            "level": "unit",
+            "name": "resolver invokes no write/edit tool (tool-invocation spy fails on any mutating call)"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Implement assembleCodeReviewGrounding (sc2 producer)",
+        "summary": "Add assembleCodeReviewGrounding(repoPath, changedFiles) that enumerates the graph entities in each changed file and builds ChangedSymbolSummary rows using the src/db/graph/edges.ts traversal API (callers via inNeighbors+CALLS filter, callees via outNeighbors, testsReaching via inNeighbors from test entities). If the graph store exposes no entity-by-file enumeration, adding that read-only helper is IN SCOPE for this task (additive + read-only — does not spill into t4). Omits files with no indexed entities (observably, not as 'no changes'); one row per entity keyed by entityId; no raw file contents. Read-only graph reads only.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "ac3: returns ChangedSymbolSummary rows (entityId/signature/callers/callees/testsReaching) with NO raw file-content field",
+          "edge cases: a changed file with no indexed entities is omitted from symbols but not dropped from the subject; a file with multiple entities yields one row per entity sharing the file path",
+          "any entity-by-file helper added is read-only and additive (no graph-store mutation)",
+          "ac5: only graph read operations are invoked — no mutation of the graph store or the working tree"
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "assembleCodeReviewGrounding (entity lookup + caller/callee + testsReaching edges): returns ChangedSymbolSummary rows with no raw file-content field, over a small in-memory graph fixture"
+          },
+          {
+            "level": "unit",
+            "name": "omit-unindexed-file behaviour: a changedFiles list with one indexed + one unindexed + one non-code file yields symbols only for the indexed entities, none dropped from the subject"
+          },
+          {
+            "level": "unit",
+            "name": "per-symbol (not per-file) row keying: a file with multiple entities yields one row per entityId sharing the file path"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Register the codeReview.grounding daemon IPC handler",
+        "summary": "Add a 'codeReview.grounding' request/response handler to the src/daemon/index.ts handler map (following the 'repo.reindex'/'workflow.approve' simple-handler shape) that resolves the subject and returns assembleCodeReviewGrounding's CodeReviewGrounding, so CLI/MCP consumers reach the summaries only through the daemon. Additive handler; no existing IPC method changed.",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "ac4: the 'codeReview.grounding' IPC handler returns a CodeReviewGrounding over the socket for a fixture repo, and no exported path lets a non-daemon surface open LMDB/Lance directly for these summaries",
+          "ac5: a full resolve+ground pass over a fixture repo leaves every file byte-for-byte + mtime unchanged",
+          "The handler entry is additive — existing IPC methods are unchanged"
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "the new 'codeReview.grounding' IPC handler returns CodeReviewGrounding over the socket for a tiny registered+indexed fixture repo"
+          },
+          {
+            "level": "integration",
+            "name": "a resolve+ground pass over the fixture repo leaves file bytes + mtimes identical before and after (byte/mtime snapshot)"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "resolveCodeReviewSubject (ok:true subject; ok:false 'no-approved-contract'; ok:false 'no-build-record')",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "the requireApprovedLld/requireApprovedPlan throw-to-result mapping",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "the gitDiffTool GitDiffData.files -> subject.changedFiles derivation",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "assembleCodeReviewGrounding (entity lookup + caller/callee + testsReaching edges)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "the omit-unindexed-file behaviour",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "the per-symbol (not per-file) row keying",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "the new 'codeReview.grounding' IPC handler returning CodeReviewGrounding over the socket",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "a resolve+ground pass over a tiny real indexed fixture repo asserting file bytes + mtimes unchanged",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "DimensionFinding/DimensionResult/ReviewDimension type-shape assertions",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "a type-level check that DimensionFinding.severity IS the Severity imported from src/workflow/review/types.ts",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails.api — resolveCodeReviewSubject (sc1 resolver: requireApprovedLld/requireApprovedPlan + gitDiffTool-derived changedFiles)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails.api — assembleCodeReviewGrounding (sc2 producer over the src/db/graph traversal API)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 dataModelChanges — the sc1/sc2/sc3 new types (CodeReviewSubject/Result, ChangedSymbolSummary/CodeReviewGrounding, ReviewDimension/DimensionFinding/DimensionResult reusing Severity)"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 migration step 4 — the new codeReview.grounding daemon IPC handler"
+    }
+  ]
+}

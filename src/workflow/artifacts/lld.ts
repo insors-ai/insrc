@@ -231,6 +231,11 @@ export function renderLldMarkdown(artifact: LldArtifact): string {
 	lines.push(`**Epic:** \`${meta.epicSlug}\``);
 	lines.push(`**HLD base run:** \`${meta.hldBaseRunId}\``);
 	lines.push(`**HLD effective hash:** \`${meta.hldEffectiveHash.slice(0, 12)}...\``);
+	// Provenance (S009/ac3): identify the approved spec this standalone LLD was seeded from.
+	const seededFromSpec = (meta as { seededFromSpec?: string }).seededFromSpec;
+	if (typeof seededFromSpec === 'string' && seededFromSpec.length > 0) {
+		lines.push(`**Seeded from:** \`SPEC-${seededFromSpec}\``);
+	}
 	const storyRef = (meta as { tracker?: { storyRef?: string } }).tracker?.storyRef;
 	if (typeof storyRef === 'string' && storyRef.includes('#')) {
 		lines.push(trackerRefLine(storyRef));

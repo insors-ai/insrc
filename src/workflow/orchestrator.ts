@@ -1656,6 +1656,12 @@ function finalizeStandaloneLld(
 	const sizeClass = readSizeClassParam(intent);
 	const triageRationale = typeof intent.params['triageRationale'] === 'string'
 		? (intent.params['triageRationale'] as string) : undefined;
+	// Provenance (S009/ac3-parity with s8): when this standalone LLD was seeded
+	// from an approved spec, the start params carry its specHash — stamp it so
+	// the LLD identifies its source. Absent on a plain-focus run (ac4).
+	const seededFromSpec = typeof intent.params['specHash'] === 'string' && intent.params['specHash'].length > 0
+		? intent.params['specHash'] as string
+		: undefined;
 
 	const artifact: LldArtifact = {
 		meta: {
@@ -1678,6 +1684,7 @@ function finalizeStandaloneLld(
 			standalone:           true,
 			...(sizeClass !== undefined ? { sizeClass } : {}),
 			...(triageRationale !== undefined ? { triageRationale } : {}),
+			...(seededFromSpec !== undefined ? { seededFromSpec } : {}),
 		},
 		body,
 		citations,

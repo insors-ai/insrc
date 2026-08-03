@@ -32,6 +32,8 @@
 
 import { requireApprovedSpec } from './gates.js';
 import type { SpecArtifact } from './artifacts/spec.js';
+import { routeForSizeClass } from './triage/classify.js';
+import type { SizeClass } from './triage/types.js';
 
 /** The result of resolving a stage's focus: the (possibly composed) focus text
  *  plus, when seeded, the source spec's identity for provenance stamping. */
@@ -65,6 +67,17 @@ export function composeSpecFocus(spec: SpecArtifact): string {
 		}
 	}
 	return lines.join('\n');
+}
+
+/** ac3 scope guard (S009): does a spec sized `sizeClass` by the triage classifier
+ *  belong on the STANDALONE `design.story` route? True for `feature`/`small`
+ *  (they route to `design.story`); false for `epic` (routes to `define`) and
+ *  `trivial` (routes to `build`). A pure, total comparison over `SizeClass` that
+ *  reuses the framework's ONE sizing authority (`routeForSizeClass`), so a
+ *  standalone feature design seeded from a too-large spec is SURFACED, never
+ *  silently narrowed (k13). */
+export function specScopeFitsStandalone(sizeClass: SizeClass): boolean {
+	return routeForSizeClass(sizeClass).startStage === 'design.story';
 }
 
 /** Resolve a stage's focus, seeding it from an approved spec when the start

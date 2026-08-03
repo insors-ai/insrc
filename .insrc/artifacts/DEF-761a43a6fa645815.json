@@ -173,7 +173,16 @@
       "reviewedAt": "2026-08-03T06:54:46.433Z",
       "model": "client"
     },
-    "approvedAt": "2026-08-03T06:57:39.730Z"
+    "approvedAt": "2026-08-03T06:57:39.730Z",
+    "questionResolutions": {
+      "q9f2f4374": {
+        "question": "Item a2: HONEST FAIL. Exactly one assumption is low-confidence — \"A daemon-side, LLMProvider-driven review driver already exists at the cited path and is the pattern to follow; only its path and resolver ranking are grounded — its internal shape was never profiled, so the fit is unverified.\" The Epic object has no openQuestions field at all (keys are problem, nonGoals, assumptions, constraints, citations), so this assumption maps to nothing. It is precisely the case the rule exists for: c6/c15 ground only the path and a 0.314 resolver rank for src/daemon/workflow-rpc.ts, and s1 explicitly records that no module.profile or symbol.locate ran against it. Fix: add an openQuestion asking whether workflow-rpc.ts's driver shape actually fits a code-review path, and link assumptions[4] to it.",
+        "status": "resolved",
+        "choice": "Ground the assumption now (profile workflow-rpc.ts)",
+        "rationale": "Accuracy-first: the HLD's context.assemble already profiles src/daemon/workflow-rpc.ts, so its driver shape becomes an observed fact and assumptions[4] resolves to a grounded citation (or is dropped) rather than surviving as a low-confidence inference.",
+        "resolvedAt": "2026-08-03T07:18:10.038Z"
+      }
+    }
   },
   "body": {
     "flavor": "enhancement",

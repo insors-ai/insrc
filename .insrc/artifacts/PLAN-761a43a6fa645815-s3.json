@@ -1,0 +1,253 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1785753762975-q9yqcl",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-08-03T10:45:49.679Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 186668,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "761a43a6fa645815",
+    "epicSlug": "add-daemon-driven-code-review-stage",
+    "storyId": "s3",
+    "lldRunId": "wf-1785752878857-liuoe5",
+    "lldEffectiveHash": "47535369867a9e9c71a300e7ca347a1a6437356df9b3c75b91fec292dcf80f63",
+    "review": {
+      "artifact": "plan",
+      "stage": "plan",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "pl1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The template src/workflow/code-review/dimensions/adherence.ts (c1) exists with the schema/prompt/judge seams t1 mirrors: ADHERENCE_FINDINGS_SCHEMA, buildAdherencePrompt, private fileOf, judgeAdherence.",
+          "evidence": "adherence.ts has every seam t1 mirrors: ADHERENCE_FINDINGS_SCHEMA (:49), buildAdherencePrompt (:74), fileOf (:109), judgeAdherence (:119). The template is real.",
+          "action": "none — verified sound",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "pl2",
+          "kind": "external-contract",
+          "severity": "LOW",
+          "premise": "The reused helpers exist as t1 relies on: validateAgainstSchema and withStructuredRetry(call, validate, maxAttempts) with the third arg POSITIONAL (c3) in src/agent/providers/structured-output.ts.",
+          "evidence": "structured-output.ts exports validateAgainstSchema (:80) and withStructuredRetry (:182) — the helpers t1 reuses with the positional maxAttempts.",
+          "action": "none — verified sound",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "pl3",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The sc3 DimensionFinding fields the judge maps through (c2) — expectationRef and confidence 'observation'|'breach' — exist in src/workflow/code-review/types.ts unchanged, and ReviewDimension includes 'conventions'.",
+          "evidence": "types.ts:48 confidence?: 'observation' | 'breach' | undefined; expectationRef? present; ReviewDimension (types.ts:33) includes 'conventions'. The judge maps these existing fields through with no contract change.",
+          "action": "none — verified sound",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "pl4",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "The fake-provider test harness t2 mirrors exists in adherence.test.ts (c1/c6): the `as unknown as LLMProvider` fake pattern and node:test/node:assert usage.",
+          "evidence": "adherence.test.ts uses `as unknown as LLMProvider` (the src/ hit at dimensions/__tests__/adherence.test.ts), and node:test + node:assert/strict is the repo-wide convention. The fake-provider harness t2 mirrors exists.",
+          "action": "none — verified sound",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "pl5",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "The target module src/workflow/code-review/dimensions/conventions.ts does not exist yet — t1 creates it (purely additive; no judgeConventions in src/ before this plan).",
+          "evidence": "judgeConventions / CONVENTIONS_FINDINGS_SCHEMA appear only in the design docs, not in any src/ file — conventions.ts does not exist yet, so t1 creating it is purely additive.",
+          "action": "none — verified sound",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "pl6",
+          "kind": "ordering",
+          "severity": "LOW",
+          "premise": "Task ordering is acyclic and topological: t1 (order 1, no deps) precedes t2 (order 2, dependsOn t1); the Story's storyDependsOn s1 is already satisfied on disk.",
+          "evidence": "ReviewDimension is defined in src/workflow/code-review/types.ts:33 (s1 shipped), so storyDependsOn s1 is satisfied; t1 (order 1, no deps) → t2 (order 2, dependsOn t1) is acyclic and topological.",
+          "action": "none — verified sound",
+          "fixability": "auto"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 6
+      },
+      "reviewedAt": "2026-08-03T10:46:38.960Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-08-03T10:48:23.185Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Create conventions.ts — schema, DOCUMENTED_RULES, prompt builder, judge",
+        "summary": "Add src/workflow/code-review/dimensions/conventions.ts mirroring the shipped adherence.ts: (a) CONVENTIONS_FINDINGS_SCHEMA (StructuredSchema, additionalProperties:false, findings[] of {severity enum HIGH|MED|LOW, location, message, expectationRef?, confidence? enum 'breach'|'observation'}; required=['findings'], each finding requires severity/location/message); (b) a private readonly DOCUMENTED_RULES constant — each entry {id, text} — enumerating the checkable CLAUDE.md rules (import .js extension; import type; shared-types-not-SDK; getLogger not console.log; strict-mode optional/indexed handling; deterministic entity IDs; no Promise.all over LLM/serial=k4; daemon-owns-storage=k5; structured-grounding-not-raw-dumps=k6; prompt-structure-trailing); (c) buildConventionsPrompt(subject, grounding, extraNote): LLMMessage[] with the standards-checking system charge (no-manufactured-findings + breach-vs-observation confidence discipline + multi-module sampling instruction) and the user message placing grounding.symbols then the DOCUMENTED_RULES baseline and output-shape reminder TRAILING; (d) private fileOf(location) splitting on ':'; (e) judgeConventions(subject, grounding, provider): Promise<DimensionResult> — one StructuredCall over provider.completeStructured(buildConventionsPrompt(...note), CONVENTIONS_FINDINGS_SCHEMA), a StructuredValidator via validateAgainstSchema(CONVENTIONS_FINDINGS_SCHEMA, raw), await withStructuredRetry(call, validate, 3) POSITIONAL, then map output.findings to DimensionFinding{dimension:'conventions'} spreading expectationRef/confidence conditionally (exactOptionalPropertyTypes) and dropping any finding whose fileOf(location) is outside new Set(subject.changedFiles). Imports use .js extensions; type-only imports use import type; no console.log; no Promise.all.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "src/workflow/code-review/dimensions/conventions.ts exists exporting judgeConventions, buildConventionsPrompt, CONVENTIONS_FINDINGS_SCHEMA; DOCUMENTED_RULES is module-private",
+          "judgeConventions issues exactly ONE provider.completeStructured call (no Promise.all) wrapped in withStructuredRetry(call, validate, 3) and propagates the throw on 3-attempt exhaustion (no catch-to-empty)",
+          "returned findings all carry dimension:'conventions', map expectationRef + confidence through, and every finding.location file is in subject.changedFiles (out-of-scope dropped)",
+          "buildConventionsPrompt places grounding.symbols, then DOCUMENTED_RULES + the output-shape reminder, at the TAIL of the user message; system charge forbids manufactured findings and carries the breach-vs-observation discipline",
+          "tsc --noEmit is clean; imports carry .js extensions and type-only imports use import type; getLogger (not console.log) if any logging"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "buildConventionsPrompt: DOCUMENTED_RULES baseline + output-shape reminder are TRAILING (after grounding.symbols); system charge forbids manufactured findings + carries breach-vs-observation discipline"
+          },
+          {
+            "level": "unit",
+            "name": "CONVENTIONS_FINDINGS_SCHEMA: per-finding requires severity/location/message; expectationRef + confidence optional; additionalProperties:false"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Fake-provider unit tests for the conventions judge",
+        "summary": "Add src/workflow/code-review/dimensions/__tests__/conventions.test.ts mirroring adherence.test.ts: a fakeProvider(scripted) returning {provider, calls} cast `as unknown as LLMProvider` (only completeStructured present, so any other provider method call throws), a subject(changedFiles) factory (stub approvedLld/Plan cast via unknown), and a grounding(n) factory producing ChangedSymbolSummary[] spanning ≥2 files. Cover: (ac1) a documented-rule breach maps to a finding with the rule id in expectationRef + confidence:'breach' and dimension==='conventions', and buildConventionsPrompt embeds the DOCUMENTED_RULES baseline; (ac2) three distinct TS-rule breaches each survive individually with correct file:line, plus a CONVENTIONS_FINDINGS_SCHEMA per-finding shape assertion; (ac3) a thin-sample idiom finding tagged confidence:'observation' maps through as observation, and the system charge carries the low-confidence-observation discipline; (ac4) a Promise.all-over-LLM breach citing the k4 rule id survives with confidence:'breach'; (ac5) direct-storage (k5) + raw-dump (k6) breaches map through, and an out-of-changedFiles finding is dropped; plus exactly-one-call and retry-exhaustion-propagation (invalid output → assert.rejects) and a prompt-trailing assertion. ADDED per critique: (edge-a) grounding(0) still returns {dimension:'conventions', findings:[]} with no error; (edge-b) a fake returning {findings:[]} yields an empty result (no manufactured finding). No live model.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "src/workflow/code-review/dimensions/__tests__/conventions.test.ts runs under `npx tsx --test` with node:test + node:assert/strict and a fake LLMProvider (no live model)",
+          "tests cover ac1-ac5 plus exactly-one-call, retry-exhaustion propagation (assert.rejects), out-of-subject drop, the prompt-trailing placement, AND the two empty-result edge cases (empty grounding.symbols → findings:[]; clean-code fake {findings:[]} → no manufactured finding)",
+          "the full `npx tsx --test 'src/workflow/code-review/**/*.test.ts'` sweep passes (S001 + S002 + S003 green; any live test skips cleanly when INSRC_LIVE_TESTS unset)"
+        ],
+        "derivedFrom": [
+          "c6",
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "ac1: documented-rule breach → finding with rule id in expectationRef + confidence:'breach' + dimension:'conventions'"
+          },
+          {
+            "level": "unit",
+            "name": "ac2: three distinct TS-rule breaches each survive individually with correct file:line"
+          },
+          {
+            "level": "unit",
+            "name": "ac3: thin-sample idiom drift tagged confidence:'observation' (not breach); system charge carries the low-confidence discipline; grounding spans ≥2 files"
+          },
+          {
+            "level": "unit",
+            "name": "ac4: a Promise.all-over-LLM breach citing the k4 rule id survives with confidence:'breach'"
+          },
+          {
+            "level": "unit",
+            "name": "ac5: direct-storage (k5) + raw-dump (k6) breaches map through; an out-of-changedFiles finding is dropped"
+          },
+          {
+            "level": "unit",
+            "name": "judgeConventions issues exactly ONE completeStructured call (no other provider method touched)"
+          },
+          {
+            "level": "unit",
+            "name": "retry-exhaustion: invalid model output on all 3 attempts → assert.rejects (no fabricated clean pass)"
+          },
+          {
+            "level": "unit",
+            "name": "edge: grounding(0) → {dimension:'conventions', findings:[]} with no error"
+          },
+          {
+            "level": "unit",
+            "name": "edge: clean-code fake {findings:[]} → empty result, no manufactured finding"
+          },
+          {
+            "level": "live",
+            "name": "judgeConventions against a real buildShaperProvider provider on a fixture with a KNOWN .js-import-extension breach (INSRC_LIVE_TESTS-gated, skips when unset)"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "judgeConventions (mapping to DimensionResult{conventions}, expectationRef rule id, confidence tier, out-of-scope drop, exactly-one-call, retry-exhaustion propagation)",
+        "coveredByTaskIds": [
+          "t1",
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "CONVENTIONS_FINDINGS_SCHEMA (per-finding shape: severity/location/message required; expectationRef+confidence optional; additionalProperties:false)",
+        "coveredByTaskIds": [
+          "t1",
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "buildConventionsPrompt (DOCUMENTED_RULES + output-shape reminder TRAILING; decision/no-manufactured discipline in system message)",
+        "coveredByTaskIds": [
+          "t1",
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "judgeConventions against a real buildShaperProvider-resolved provider",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/code-review/dimensions/adherence.ts — the shipped S002 judge template (schema/prompt/judge seams + fake-provider test harness) conventions.ts mirrors"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 contractDetails — sc3 DimensionFinding fields (expectationRef, confidence 'observation'|'breach') the judge maps through without a contract change"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/agent/providers/structured-output.ts — validateAgainstSchema + withStructuredRetry(call, validate, maxAttempts) positional signature the judge reuses"
+    },
+    {
+      "id": "c4",
+      "kind": "doc",
+      "ref": "CLAUDE.md 'Code conventions' — the checkable documented rules the DOCUMENTED_RULES constant enumerates (k4/k5/k6/k11/k12)"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 contractDetails/api — judgeConventions + buildConventionsPrompt + CONVENTIONS_FINDINGS_SCHEMA signatures + postconditions (one serial call, scope-drop, TRAILING prompt)"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 testStrategy — the unit + live test levels, subjects, and acceptance mapping (ac1-ac5) t2 implements"
+    }
+  ]
+}

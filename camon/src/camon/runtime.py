@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import os
+import re
 import subprocess
+import sys
 from dataclasses import dataclass
-from pathlib import Path
 
 import psutil
 
@@ -28,9 +30,30 @@ def detect_mitmproxy() -> ProxyState:
             except (psutil.AccessDenied, psutil.NoSuchProcess):
                 continue
     except (psutil.AccessDenied, OSError, PermissionError):
-        # Sandboxed or restricted environments may not permit process enumeration.
-        return ProxyState(False)
+        pass
+    managed_pid = _known_service_pid()
+    if managed_pid is not None and managed_pid not in pids:
+        pids.append(managed_pid)
     return ProxyState(bool(pids), tuple(pids))
+
+
+def _known_service_pid() -> int | None:
+    """Read the bootstrap-managed service when process enumeration is restricted."""
+    if sys.platform == "darwin":
+        command = ["launchctl", "print", f"gui/{os.getuid()}/local.mitmproxy"]
+        result = subprocess.run(command, check=False, capture_output=True, text=True)
+        match = re.search(r"^\s*pid = (\d+)$", result.stdout, flags=re.MULTILINE)
+        return int(match.group(1)) if match else None
+    if sys.platform.startswith("linux"):
+        result = subprocess.run(
+            ["systemctl", "--user", "show", "--property", "MainPID", "--value", "mitmproxy-local.service"],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        value = result.stdout.strip()
+        return int(value) if value.isdecimal() and int(value) > 0 else None
+    return None
 
 
 def restart_managed(config: AppConfig) -> subprocess.Popen[str]:
@@ -51,8 +74,3 @@ def restart_managed(config: AppConfig) -> subprocess.Popen[str]:
     pid_path.parent.mkdir(parents=True, exist_ok=True)
     pid_path.write_text(str(process.pid), encoding="utf-8")
     return process
-
-
-def addon_manifest(config: AppConfig) -> str:
-    addon_path = Path(__file__).with_name("addon.py")
-    return f"# Add this to your existing mitmproxy command\n-s {addon_path}\n"

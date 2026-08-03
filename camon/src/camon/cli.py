@@ -8,9 +8,10 @@ from typing import Annotated
 import typer
 
 from .config import AppConfig
+from .registration import register_local_addon
 from .reporting import export as export_report
 from .reporting import render_report
-from .runtime import addon_manifest, detect_mitmproxy, restart_managed
+from .runtime import detect_mitmproxy, restart_managed
 from .storage import Storage
 
 app = typer.Typer(help="Passive coding-agent usage monitor.", no_args_is_help=False)
@@ -18,7 +19,7 @@ app = typer.Typer(help="Passive coding-agent usage monitor.", no_args_is_help=Fa
 
 def _services() -> tuple[AppConfig, Storage]:
     config = AppConfig.load()
-    return config, Storage(config.database_path)
+    return config, Storage(config.database_path, config.retention_days)
 
 
 @app.callback(invoke_without_command=True)
@@ -43,9 +44,12 @@ def status() -> None:
 
 @app.command()
 def register() -> None:
-    """Print the addon registration snippet; do not change proxy state."""
-    config, _ = _services()
-    typer.echo(addon_manifest(config))
+    """Register the addon with the known local bootstrap service."""
+    try:
+        typer.echo(register_local_addon(AppConfig.load().retention_days))
+    except (FileNotFoundError, RuntimeError, ValueError) as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(code=1) from error
 
 
 @app.command()

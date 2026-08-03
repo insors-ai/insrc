@@ -45,4 +45,6 @@ plutil -lint "$rendered" >/dev/null
 grep -Fq '<string>/tmp/mitmdump with spaces</string>' "$rendered"
 grep -Fq '<string>127.0.0.1</string>' "$rendered"
 grep -Fq '<string>8181</string>' "$rendered"
+parsed_pid="$(printf '  pid = 48102\n' | awk '/^[[:space:]]*pid = [0-9]+([[:space:]]|$)/ { print $3; exit }')"
+[[ "$parsed_pid" == "48102" ]]
 printf 'Bootstrap validation passed.\n'

@@ -47,8 +47,9 @@ CREATE TABLE IF NOT EXISTS agent_rules (
 
 
 class Storage:
-    def __init__(self, database_path: Path | str) -> None:
+    def __init__(self, database_path: Path | str, retention_days: int = 7) -> None:
         self.path = Path(database_path)
+        self.retention_days = retention_days
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self.initialize()
 
@@ -67,6 +68,19 @@ class Storage:
             connection.execute("PRAGMA journal_mode=WAL")
             connection.execute("PRAGMA foreign_keys=ON")
             connection.executescript(SCHEMA)
+        self.purge_expired()
+
+    def purge_expired(self) -> None:
+        """Remove observations outside the configured retention window."""
+        cutoff = datetime.now(UTC) - timedelta(days=self.retention_days)
+        cutoff_timestamp = cutoff.isoformat()
+        cutoff_day = cutoff.date().isoformat()
+        with self.connection() as connection:
+            connection.execute("DELETE FROM requests WHERE timestamp < ?", (cutoff_timestamp,))
+            connection.execute("DELETE FROM sessions WHERE last_seen_at < ?", (cutoff_timestamp,))
+            connection.execute("DELETE FROM daily_usage WHERE day < ?", (cutoff_day,))
+            connection.execute("DELETE FROM addon_status WHERE seen_at < ?", (cutoff_timestamp,))
+            connection.execute("DELETE FROM process_instances WHERE started_at < ?", (cutoff_timestamp,))
 
     def heartbeat(self, status: AddonStatus) -> None:
         with self.connection() as connection:

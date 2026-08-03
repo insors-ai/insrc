@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from camon.models import AddonStatus, Attribution, UsageEvent
 from camon.storage import Storage
@@ -23,3 +23,20 @@ def test_heartbeat_health(tmp_path):
     assert not storage.addon_healthy()
     storage.heartbeat(AddonStatus(instance_id="test"))
     assert storage.addon_healthy()
+
+
+def test_storage_purges_data_outside_retention_window(tmp_path):
+    database = tmp_path / "camon.sqlite3"
+    storage = Storage(database, retention_days=7)
+    storage.record(
+        UsageEvent(
+            timestamp=datetime.now(UTC) - timedelta(days=8), method="GET", host="api.openai.com", path="/",
+            provider="openai", attribution=Attribution(), session_key="expired-session",
+        )
+    )
+
+    fresh_storage = Storage(database, retention_days=7)
+
+    assert fresh_storage.recent_requests() == []
+    assert fresh_storage.sessions() == []
+    assert fresh_storage.summary() == []

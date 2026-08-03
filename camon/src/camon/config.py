@@ -29,7 +29,14 @@ class AppConfig(BaseModel):
     mitmproxy_command: list[str] = Field(default_factory=list)
     managed_pid_path: Path | None = None
     refresh_seconds: float = 2.0
+    retention_days: int = Field(default=7, ge=1)
+    proxy_host: str = "127.0.0.1"
+    proxy_port: int = Field(default=8080, ge=1, le=65535)
     agent_rules: list[AgentRule] = Field(default_factory=list)
+
+    @property
+    def proxy_url(self) -> str:
+        return f"http://{self.proxy_host}:{self.proxy_port}"
 
     @classmethod
     def load(cls, path: Path | None = None) -> AppConfig:

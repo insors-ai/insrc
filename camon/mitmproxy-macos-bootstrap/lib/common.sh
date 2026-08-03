@@ -139,7 +139,7 @@ service_target() { printf 'gui/%s/%s' "$(id -u)" "$LAUNCH_AGENT_LABEL"; }
 service_loaded() { launchctl print "$(service_target)" >/dev/null 2>&1; }
 
 service_pid() {
-  launchctl print "$(service_target)" 2>/dev/null | awk '/^[[:space:]]*pid = [0-9]+;/ { gsub(/;/, "", $3); print $3; exit }'
+  launchctl print "$(service_target)" 2>/dev/null | awk '/^[[:space:]]*pid = [0-9]+([[:space:]]|$)/ { print $3; exit }'
 }
 
 listener_pids() { lsof -t -nP -iTCP:"$MITMPROXY_PORT" -sTCP:LISTEN 2>/dev/null || true; }

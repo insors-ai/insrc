@@ -10,19 +10,23 @@ import psutil
 from .config import AgentRule
 from .models import Attribution
 
-KNOWN_NAMES = {
-    "claude": "claude-code", "codex": "codex-cli", "cursor": "cursor",
-    "continue": "continue", "cline": "cline", "roo": "roo-code", "aider": "aider",
-}
+KNOWN_PATTERNS = (
+    (r"\bclaude(?:[- ]code)?\b", "claude-code"),
+    (r"\bcodex\b", "codex-cli"),
+    (r"\bcursor\b", "cursor"),
+    (r"\bcontinue\b", "continue"),
+    (r"\bcline\b", "cline"),
+    (r"\broo(?:[- ]code)?\b", "roo-code"),
+    (r"\baider\b", "aider"),
+)
 
 
 def classify_text(text: str, rules: Iterable[AgentRule] = ()) -> str | None:
     for rule in sorted((item for item in rules if item.enabled), key=lambda item: item.priority):
         if re.search(rule.pattern, text, re.IGNORECASE):
             return rule.name
-    lowered = text.lower()
-    for needle, agent in KNOWN_NAMES.items():
-        if needle in lowered:
+    for pattern, agent in KNOWN_PATTERNS:
+        if re.search(pattern, text, re.IGNORECASE):
             return agent
     return None
 

@@ -262,9 +262,10 @@ and CSV/JSON reports. Its addon never blocks or modifies proxy traffic, and it
 does not persist prompts, completions, authentication headers, or raw request/
 response payloads by default.
 
-After installing CAMON's Python dependencies, use `camon register` to print the
-addon load snippet, add that snippet to your existing mitmproxy command, then
-inspect its state with `camon status` or open the live dashboard with `camon`.
+After installing CAMON's Python dependencies, run `camon register` to attach its
+addon to the known local bootstrap service and restart that user service. The
+command refuses to modify unmanaged or non-local services. Then inspect its state
+with `camon status` or open the live dashboard with `camon`.
 
 ------------------------------------------------------------------------
 

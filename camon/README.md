@@ -43,3 +43,44 @@ counts, and attribution metadata. It does not store authentication headers,
 prompts, completions, or raw bodies. The addon is observational: it never changes
 flow state, headers, body, destination, or response.
 
+## Retention
+
+CAMON automatically purges requests, sessions, daily aggregates, stale addon
+heartbeats, and process records older than seven days. Set a different window in
+your CAMON TOML configuration (default location:
+`~/Library/Application Support/camon/config.toml` on macOS):
+
+```toml
+retention_days = 14
+```
+
+After changing the setting, run `camon register` to apply it to the addon and
+restart the local service. The retention window must be at least one day.
+
+## Agent setup
+
+The TUI's **Setup** tab detects supported agent processes and commands. Select
+an agent and press `e` to configure opt-in proxy routing. For Claude Code this
+merges `HTTP_PROXY`, `HTTPS_PROXY`, `ALL_PROXY`, `NO_PROXY`, and the local
+mitmproxy certificate path (`NODE_EXTRA_CA_CERTS`) into
+`~/.claude/settings.json`, preserving unrelated settings; restart Claude Code
+afterward. Other agents receive an opt-in `camon-<agent>` launcher in
+`~/.insrc/camon/bin`. CAMON never changes the system proxy or shell profiles.
+
+## Install the TUI
+
+On macOS or Linux, run the top-level installer:
+
+```bash
+./install.sh
+```
+
+It detects the platform and asks whether to run the matching local mitmproxy
+bootstrap. It only installs CAMON after confirming that `mitmdump` is available.
+CAMON is installed in `~/.insrc/camon/venv`; its `camon` launcher is written to
+`~/.insrc/camon/bin` and added idempotently to Bash or Zsh's `PATH`. Use
+`./install.sh --no-path` to skip the shell-startup-file change. When the known
+platform bootstrap service exists, the installer also registers CAMON's addon and
+restarts that local service with the compatible `mitmdump` installed in CAMON's
+virtual environment. This avoids the dependency restrictions of bundled
+mitmproxy packages. Run `camon register` to repeat that explicit action.

@@ -1,0 +1,16 @@
+[Unit]
+Description=Local mitmproxy service
+After=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=@CONFIG_PATH@
+ExecStart=@EXEC_START@
+WorkingDirectory=@WORKING_DIRECTORY@
+Restart=on-failure
+RestartSec=2
+StandardOutput=append:@STDOUT_LOG@
+StandardError=append:@STDERR_LOG@
+
+[Install]
+WantedBy=default.target

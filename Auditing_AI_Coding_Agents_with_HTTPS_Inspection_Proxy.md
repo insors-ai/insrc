@@ -5,6 +5,11 @@
 > **Update:** This version includes a configuration matrix and preferred
 > proxy configuration methods for common AI coding agents.
 
+> **Local implementation:** The adjacent [`camon`](./camon/) module provides a
+> passive mitmproxy usage monitor, plus standalone macOS and Linux helpers for
+> running a localhost-only mitmproxy service. None of these helpers configure a
+> system proxy or route applications automatically.
+
 ## Configuration Matrix
 
   -----------------------------------------------------------------------------------
@@ -56,6 +61,11 @@ brew install mitmproxy
 mitmproxy --version
 ```
 
+For a persistent, user-level `mitmdump` service instead of a manually started
+proxy, use the standalone [macOS bootstrap](./camon/mitmproxy-macos-bootstrap/).
+It manages a localhost LaunchAgent and its CA trust, but deliberately leaves
+application proxy configuration to you.
+
 ## Linux
 
 ``` bash
@@ -66,6 +76,10 @@ pipx install mitmproxy
 
 mitmproxy --version
 ```
+
+For a persistent systemd user service, use the standalone [Linux
+bootstrap](./camon/mitmproxy-linux-bootstrap/). It supports the listed Linux
+package-manager paths and keeps the listener restricted to `127.0.0.1`.
 
 ## Windows
 
@@ -91,6 +105,12 @@ Proxy:
 
     127.0.0.1:8080
 
+If you installed one of the platform bootstraps above, use its lifecycle scripts
+instead: [macOS lifecycle commands](./camon/mitmproxy-macos-bootstrap/README.md#lifecycle)
+or [Linux lifecycle commands](./camon/mitmproxy-linux-bootstrap/README.md#lifecycle).
+Both run `mitmdump` on `127.0.0.1:8080` by default, without changing proxy
+settings for any application.
+
 ------------------------------------------------------------------------
 
 # Installing the CA Certificate
@@ -114,6 +134,10 @@ certificate store.
 sudo cp mitmproxy-ca-cert.pem /usr/local/share/ca-certificates/
 sudo update-ca-certificates
 ```
+
+The Linux bootstrap defaults to user-scoped NSS trust when `certutil` is
+available. System-wide trust is opt-in via `--system-cert`; see its
+[certificate-trust notes](./camon/mitmproxy-linux-bootstrap/README.md#installation).
 
 ### Windows
 
@@ -229,6 +253,19 @@ Inspect the resulting POST request and review:
 -   Timing
 -   Payload size
 
+## Optional: CAMON passive monitoring
+
+The [`CAMON`](./camon/README.md) module can observe a mitmproxy instance and
+store normalized request metadata, provider/model information, token usage, and
+best-effort coding-agent attribution in SQLite. It provides a Textual dashboard
+and CSV/JSON reports. Its addon never blocks or modifies proxy traffic, and it
+does not persist prompts, completions, authentication headers, or raw request/
+response payloads by default.
+
+After installing CAMON's Python dependencies, use `camon register` to print the
+addon load snippet, add that snippet to your existing mitmproxy command, then
+inspect its state with `camon status` or open the live dashboard with `camon`.
+
 ------------------------------------------------------------------------
 
 # Useful mitmproxy Filters
@@ -264,3 +301,15 @@ HTTPS inspection cannot show:
 It answers one critical question:
 
 > **What actually left my machine?**
+
+------------------------------------------------------------------------
+
+## Module summary
+
+[`camon`](./camon/) is a self-contained companion module for this guide. It
+contains the passive CAMON monitor and two independently usable bootstrap
+packages: [macOS](./camon/mitmproxy-macos-bootstrap/) LaunchAgent management and
+[Linux](./camon/mitmproxy-linux-bootstrap/) systemd-user-service management.
+The bootstraps only install/manage a local `mitmdump` listener and CA setup;
+they never configure global or per-application proxy routing. Routing a coding
+agent through `http://127.0.0.1:8080` remains an explicit user decision.

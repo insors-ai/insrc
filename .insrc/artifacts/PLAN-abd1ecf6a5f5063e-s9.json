@@ -1,0 +1,260 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1785676512750-h5xjjh",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-08-02T13:17:30.841Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 138066,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "abd1ecf6a5f5063e",
+    "epicSlug": "frame-epic-new-pre-workflow-brainstorm",
+    "storyId": "s9",
+    "lldRunId": "wf-1785674788330-77cw4a",
+    "lldEffectiveHash": "688a10691972f5e2069b092dff9d1d20b3da79ca83733140f0918eaac0bc5b46",
+    "review": {
+      "artifact": "plan",
+      "stage": "plan",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "p1",
+          "ref": "t1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "seed-focus.ts exists (s8) — the module t1 adds specScopeFitsStandalone into, exporting resolveStageFocus.",
+          "evidence": "CONFIRMED: src/workflow/seed-focus.ts:73 export function resolveStageFocus — the module exists (s8); t1 adds specScopeFitsStandalone alongside it.",
+          "action": "none — verified sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p2",
+          "ref": "t1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "routeForSizeClass + SizeClass are importable from triage/classify.ts + triage/types.ts, and routeForSizeClass returns startStage 'design.story' for feature/small (the guard's basis).",
+          "evidence": "CONFIRMED: classify.ts:29 routeForSizeClass, types.ts:16 SizeClass = 'epic'|'feature'|'small'|'trivial', classify.ts:36/39 feature/small -> startStage 'design.story' — the guard's route table + vocabulary.",
+          "action": "none — verified sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p3",
+          "ref": "t2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "finalizeStandaloneLld is at orchestrator.ts:1629 (where t2 spreads seededFromSpec into the LLD meta) and finalizeDefine's stamp pattern is nearby.",
+          "evidence": "CONFIRMED (read found): src/workflow/orchestrator.ts:1629 function finalizeStandaloneLld — where t2 spreads seededFromSpec into the standalone LLD meta.",
+          "action": "none — verified sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p4",
+          "ref": "t2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "renderLldMarkdown is at artifacts/lld.ts:220 (where t2 adds the Seeded-from header line).",
+          "evidence": "CONFIRMED (read found): src/workflow/artifacts/lld.ts:220 export function renderLldMarkdown — where t2 adds the Seeded-from header line.",
+          "action": "none — verified sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p5",
+          "ref": "t2",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "ArtifactMetaBase.seededFromSpec already exists (types.ts) so t2 writes it without a type change.",
+          "evidence": "CONFIRMED: seededFromSpec?: string is read by src/workflow/__tests__/seed-focus.test.ts:157/167 and the field is on ArtifactMetaBase (types.ts:347, added s8) — t2 writes it with no type change.",
+          "action": "none — verified sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p6",
+          "ref": "t3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The s8 seed-focus.test.ts fixture pattern (specArtifactPaths + writeAtomic + approveArtifactByJsonPath + resolveStageFocus) exists for t3 to reuse.",
+          "evidence": "CONFIRMED: src/workflow/__tests__/seed-focus.test.ts exists (authored in s8) and uses the specArtifactPaths + writeAtomic + approveArtifactByJsonPath + resolveStageFocus fixtures t3 reuses. The grep returned 50 docs+src matches; the file + helpers are present.",
+          "action": "none — verified sound.",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 6
+      },
+      "reviewedAt": "2026-08-02T13:18:14.024Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-08-03T06:07:31.028Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add the pure specScopeFitsStandalone(sizeClass) guard to seed-focus.ts",
+        "summary": "In src/workflow/seed-focus.ts add `export function specScopeFitsStandalone(sizeClass: SizeClass): boolean` returning `routeForSizeClass(sizeClass).startStage === 'design.story'` (true for feature/small; false for epic/trivial). Import routeForSizeClass from './triage/classify.js' + SizeClass from './triage/types.js'. Pure + total over SizeClass. This is the deterministic ac3 core the standalone seeding path consults to surface a scope-too-large mismatch (never narrow).",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "seed-focus.ts exports specScopeFitsStandalone with the LLD signature",
+          "specScopeFitsStandalone('feature')===true, ('small')===true, ('epic')===false, ('trivial')===false (matches routeForSizeClass)",
+          "tsc --noEmit clean"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "seed-focus.test.ts: specScopeFitsStandalone table — feature/small true, epic/trivial false (covered in t3)"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Stamp meta.seededFromSpec in finalizeStandaloneLld + surface it in renderLldMarkdown",
+        "summary": "In src/workflow/orchestrator.ts finalizeStandaloneLld (:1629, meta literal ~:1660), when intent.params.specHash is a non-empty string spread ...{seededFromSpec} into the LLD meta (beside standalone:true/sizeClass), mirroring s8's finalizeDefine (:867). In src/workflow/artifacts/lld.ts renderLldMarkdown (:220), when (meta as {seededFromSpec?:string}).seededFromSpec is set emit a `**Seeded from:** SPEC-<hash>` header line (mirroring define.ts:97). ArtifactMetaBase.seededFromSpec already exists (types.ts:347) — no type change.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "finalizeStandaloneLld writes meta.seededFromSpec = intent.params.specHash when present; leaves it unset otherwise (ac4)",
+          "renderLldMarkdown emits the seeded-from line only when meta.seededFromSpec is set",
+          "tsc --noEmit clean"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "seed-focus.test.ts: finalizeArtifact('design.story') standalone+specHash -> meta.seededFromSpec = hash + renderLldMarkdown contains SPEC-<hash>; plain -> unset (covered in t3)"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Unit tests for the ac3 guard + standalone provenance parity",
+        "summary": "Extend src/workflow/__tests__/seed-focus.test.ts (or a peer): (ac3) specScopeFitsStandalone table — epic/trivial false, feature/small true; (ac4/provenance) finalizeArtifact('design.story') with a standalone intent (params.standalone:true, storyId, sizeClass:'feature', specHash) + a minimal standalone LLD body -> meta.seededFromSpec = hash + renderLldMarkdown contains SPEC-<hash>; a plain (no specHash) standalone run -> unset + no seeded-from line; (ac1/ac2) resolveStageFocus over a {standalone:true, specHash} bag yields the same composed framing as the define-shape bag (reuse s8 tmp-repo/approved-spec fixtures).",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "a pure table test proves specScopeFitsStandalone across all four SizeClasses (ac3)",
+          "a finalize test proves meta.seededFromSpec stamp + renderer line on a seeded standalone LLD and its absence on a plain run (ac4)",
+          "a parity test proves resolveStageFocus composes the same framing for the standalone param bag as for define (ac1/ac2)",
+          "full workflow + workflow-step sweep + tsc --noEmit clean"
+        ],
+        "derivedFrom": [
+          "c5",
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "seed-focus.test.ts: specScopeFitsStandalone table (ac3) + finalizeStandaloneLld seededFromSpec stamp/renderer + plain-absence (ac4) + resolveStageFocus standalone-vs-define parity (ac1/ac2)"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "specScopeFitsStandalone",
+        "coveredByTaskIds": [
+          "t1",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "routeForSizeClass (triage)",
+        "coveredByTaskIds": [
+          "t1",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "finalizeStandaloneLld (orchestrator.ts)",
+        "coveredByTaskIds": [
+          "t2",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "renderLldMarkdown (lld.ts)",
+        "coveredByTaskIds": [
+          "t2",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "LldArtifact.meta.seededFromSpec",
+        "coveredByTaskIds": [
+          "t2",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "resolveStageFocus (shared, s8)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "composeSpecFocus (shared, s8)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s9 contractDetails.api.specScopeFitsStandalone (seed-focus.ts)",
+      "quotedText": "The pure ac3 guard specScopeFitsStandalone(sizeClass)=routeForSizeClass(sizeClass).startStage==='design.story', landing in seed-focus.ts beside resolveStageFocus."
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s9 contractDetails.api.finalizeStandaloneLld + dataModel.seededFromSpec",
+      "quotedText": "finalizeStandaloneLld spreads seededFromSpec from intent.params.specHash; renderLldMarkdown surfaces the Seeded-from line."
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s9 contractDetails.api.routeForSizeClass (triage/classify.ts)",
+      "quotedText": "The existing triage route table (epic->define, feature/small->design.story) the guard compares against."
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s9 contractDetails.api.specScopeFitsStandalone.SizeClass (triage/types.ts)",
+      "quotedText": "SizeClass / SIZE_CLASSES — the size vocabulary the guard is total over."
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s9 testStrategy.unit",
+      "quotedText": "Unit proof: the guard table (ac3), the finalize provenance stamp + renderer (ac4), and the standalone resolveStageFocus parity (ac1/ac2)."
+    }
+  ]
+}

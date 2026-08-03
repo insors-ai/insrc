@@ -584,6 +584,27 @@ async function main(): Promise<void> {
 			return resolveApprovedSpec(repoPath, p.specHash);
 		},
 
+		// sc2 (code-review S001): daemon-served code-review grounding. The
+		// dimension judgements and the controller path reach the changed-symbol
+		// summaries ONLY through this IPC — no surface opens LMDB directly
+		// (ac4, k5). Read-only. Resolving the subject may DECLINE with a
+		// no-verdict reason (no approved contract / no build) rather than a
+		// verdict (ac2); on ok, grounding is structured entity summaries, never
+		// raw file text (ac3, k6).
+		'codeReview.grounding': async (params) => {
+			const p = (params ?? {}) as { repo?: string; epicHash?: string; storyId?: string };
+			const repoPath = (p.repo !== undefined && p.repo.length > 0 ? p.repo : process.env['INSRC_REPO']) ?? '';
+			if (repoPath.length === 0) { return { error: 'codeReview.grounding: `repo` is required' }; }
+			if (typeof p.epicHash !== 'string' || p.epicHash.length === 0) { return { error: 'codeReview.grounding: `epicHash` is required' }; }
+			if (typeof p.storyId !== 'string' || p.storyId.length === 0) { return { error: 'codeReview.grounding: `storyId` is required' }; }
+			const { resolveCodeReviewSubject } = await import('../workflow/code-review/subject.js');
+			const subject = await resolveCodeReviewSubject(repoPath, p.epicHash, p.storyId);
+			if (!subject.ok) { return { ok: false as const, reason: subject.reason }; }
+			const { assembleCodeReviewGrounding, realGroundingDeps } = await import('../workflow/code-review/grounding.js');
+			const grounding = await assembleCodeReviewGrounding(repoPath, subject.subject.changedFiles, await realGroundingDeps());
+			return { ok: true as const, grounding };
+		},
+
 		'repo.reindex': async (params) => {
 			const { path: repoPath } = params as { path: string };
 			const repos = await listRepos(db);

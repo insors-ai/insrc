@@ -43,6 +43,9 @@ CREATE TABLE IF NOT EXISTS daily_usage (
     request_count INTEGER NOT NULL DEFAULT 0,
     PRIMARY KEY(day, agent, provider, model)
 );
+CREATE TABLE IF NOT EXISTS maintenance_status (
+    name TEXT PRIMARY KEY, completed_at TEXT NOT NULL, records_removed INTEGER NOT NULL DEFAULT 0
+);
 """
 
 
@@ -129,10 +132,20 @@ class AddonStorage:
         cutoff_timestamp = datetime.fromtimestamp(cutoff, UTC).isoformat()
         cutoff_day = cutoff_timestamp[:10]
         with self._connection() as connection:
-            connection.execute("DELETE FROM requests WHERE timestamp < ?", (cutoff_timestamp,))
-            connection.execute("DELETE FROM sessions WHERE last_seen_at < ?", (cutoff_timestamp,))
-            connection.execute("DELETE FROM daily_usage WHERE day < ?", (cutoff_day,))
-            connection.execute("DELETE FROM addon_status WHERE seen_at < ?", (cutoff_timestamp,))
+            removed = sum(
+                connection.execute(statement, (value,)).rowcount
+                for statement, value in (
+                    ("DELETE FROM requests WHERE timestamp < ?", cutoff_timestamp),
+                    ("DELETE FROM sessions WHERE last_seen_at < ?", cutoff_timestamp),
+                    ("DELETE FROM daily_usage WHERE day < ?", cutoff_day),
+                    ("DELETE FROM addon_status WHERE seen_at < ?", cutoff_timestamp),
+                )
+            )
+            connection.execute(
+                """INSERT INTO maintenance_status(name, completed_at, records_removed) VALUES ('retention_purge', ?, ?)
+                ON CONFLICT(name) DO UPDATE SET completed_at=excluded.completed_at, records_removed=excluded.records_removed""",
+                (datetime.now(UTC).isoformat(), removed),
+            )
         self.last_purge = time.monotonic()
 
     def _maybe_purge(self) -> None:

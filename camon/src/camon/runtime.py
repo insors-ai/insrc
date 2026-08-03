@@ -7,6 +7,7 @@ import re
 import subprocess
 import sys
 from dataclasses import dataclass
+from datetime import UTC, datetime
 
 import psutil
 
@@ -17,24 +18,31 @@ from .config import AppConfig
 class ProxyState:
     running: bool
     pids: tuple[int, ...] = ()
+    started_at: datetime | None = None
 
 
 def detect_mitmproxy() -> ProxyState:
     pids: list[int] = []
+    start_times: list[datetime] = []
     try:
         for process in psutil.process_iter(["pid", "name", "cmdline"]):
             try:
                 text = " ".join([process.info.get("name") or "", *(process.info.get("cmdline") or [])]).lower()
                 if "mitmproxy" in text or "mitmdump" in text or "mitmweb" in text:
                     pids.append(process.pid)
-            except (psutil.AccessDenied, psutil.NoSuchProcess):
+                    start_times.append(datetime.fromtimestamp(process.create_time(), UTC))
+            except (psutil.AccessDenied, psutil.NoSuchProcess, OSError):
                 continue
     except (psutil.AccessDenied, OSError, PermissionError):
         pass
     managed_pid = _known_service_pid()
     if managed_pid is not None and managed_pid not in pids:
         pids.append(managed_pid)
-    return ProxyState(bool(pids), tuple(pids))
+        try:
+            start_times.append(datetime.fromtimestamp(psutil.Process(managed_pid).create_time(), UTC))
+        except (psutil.AccessDenied, psutil.NoSuchProcess, OSError):
+            pass
+    return ProxyState(bool(pids), tuple(pids), min(start_times, default=None))
 
 
 def _known_service_pid() -> int | None:

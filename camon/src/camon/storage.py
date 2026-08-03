@@ -43,6 +43,9 @@ CREATE TABLE IF NOT EXISTS agent_rules (
     id INTEGER PRIMARY KEY, name TEXT NOT NULL, pattern TEXT NOT NULL UNIQUE,
     priority INTEGER NOT NULL DEFAULT 100, enabled INTEGER NOT NULL DEFAULT 1
 );
+CREATE TABLE IF NOT EXISTS maintenance_status (
+    name TEXT PRIMARY KEY, completed_at TEXT NOT NULL, records_removed INTEGER NOT NULL DEFAULT 0
+);
 """
 
 
@@ -76,11 +79,21 @@ class Storage:
         cutoff_timestamp = cutoff.isoformat()
         cutoff_day = cutoff.date().isoformat()
         with self.connection() as connection:
-            connection.execute("DELETE FROM requests WHERE timestamp < ?", (cutoff_timestamp,))
-            connection.execute("DELETE FROM sessions WHERE last_seen_at < ?", (cutoff_timestamp,))
-            connection.execute("DELETE FROM daily_usage WHERE day < ?", (cutoff_day,))
-            connection.execute("DELETE FROM addon_status WHERE seen_at < ?", (cutoff_timestamp,))
-            connection.execute("DELETE FROM process_instances WHERE started_at < ?", (cutoff_timestamp,))
+            removed = sum(
+                connection.execute(statement, (value,)).rowcount
+                for statement, value in (
+                    ("DELETE FROM requests WHERE timestamp < ?", cutoff_timestamp),
+                    ("DELETE FROM sessions WHERE last_seen_at < ?", cutoff_timestamp),
+                    ("DELETE FROM daily_usage WHERE day < ?", cutoff_day),
+                    ("DELETE FROM addon_status WHERE seen_at < ?", cutoff_timestamp),
+                    ("DELETE FROM process_instances WHERE started_at < ?", cutoff_timestamp),
+                )
+            )
+            connection.execute(
+                """INSERT INTO maintenance_status(name, completed_at, records_removed) VALUES ('retention_purge', ?, ?)
+                ON CONFLICT(name) DO UPDATE SET completed_at=excluded.completed_at, records_removed=excluded.records_removed""",
+                (datetime.now(UTC).isoformat(), removed),
+            )
 
     def heartbeat(self, status: AddonStatus) -> None:
         with self.connection() as connection:
@@ -148,7 +161,18 @@ class Storage:
 
     def sessions(self, limit: int = 50) -> list[dict[str, Any]]:
         with self.connection() as connection:
-            rows = connection.execute("SELECT * FROM sessions ORDER BY last_seen_at DESC LIMIT ?", (limit,)).fetchall()
+            rows = connection.execute(
+                """SELECT session_key, agent, request_count, last_seen_at, 'reported' AS source FROM sessions
+                UNION ALL
+                SELECT 'observed:' || agent || ':' || strftime('%Y-%m-%d %H:', timestamp) ||
+                       CASE WHEN CAST(strftime('%M', timestamp) AS INTEGER) < 30 THEN '00' ELSE '30' END,
+                       agent, COUNT(*), MAX(timestamp), '30 min activity window'
+                FROM requests WHERE session_key IS NULL
+                GROUP BY agent, strftime('%Y-%m-%d %H:', timestamp),
+                         CASE WHEN CAST(strftime('%M', timestamp) AS INTEGER) < 30 THEN '00' ELSE '30' END
+                ORDER BY last_seen_at DESC LIMIT ?""",
+                (limit,),
+            ).fetchall()
         return [dict(row) for row in rows]
 
     def provider_summary(self) -> list[dict[str, Any]]:
@@ -159,3 +183,31 @@ class Storage:
                 ORDER BY request_count DESC"""
             ).fetchall()
         return [dict(row) for row in rows]
+
+    def overview_stats(self) -> dict[str, Any]:
+        """Return compact dashboard statistics without retaining request payloads."""
+        with self.connection() as connection:
+            totals = connection.execute(
+                """SELECT COUNT(*) AS request_count, COUNT(DISTINCT agent) AS agent_count,
+                COUNT(DISTINCT provider) AS provider_count, MAX(timestamp) AS last_request_at FROM requests"""
+            ).fetchone()
+            sessions = connection.execute("SELECT COUNT(*) AS session_count FROM sessions").fetchone()
+            maintenance = connection.execute(
+                "SELECT completed_at, records_removed FROM maintenance_status WHERE name = 'retention_purge'"
+            ).fetchone()
+        database_bytes = sum(
+            candidate.stat().st_size
+            for candidate in (self.path, self.path.with_name(f"{self.path.name}-wal"), self.path.with_name(f"{self.path.name}-shm"))
+            if candidate.exists()
+        )
+        return {
+            "database_bytes": database_bytes,
+            "retention_days": self.retention_days,
+            "request_count": int(totals["request_count"] if totals else 0),
+            "session_count": int(sessions["session_count"] if sessions else 0),
+            "agent_count": int(totals["agent_count"] if totals else 0),
+            "provider_count": int(totals["provider_count"] if totals else 0),
+            "last_request_at": totals["last_request_at"] if totals else None,
+            "last_pruned_at": maintenance["completed_at"] if maintenance else None,
+            "last_pruned_records": int(maintenance["records_removed"] if maintenance else 0),
+        }

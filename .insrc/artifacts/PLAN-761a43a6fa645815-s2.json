@@ -1,0 +1,268 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1785751796075-bsn4v2",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-08-03T10:13:54.440Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 238316,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "761a43a6fa645815",
+    "epicSlug": "add-daemon-driven-code-review-stage",
+    "storyId": "s2",
+    "lldRunId": "wf-1785746445877-nkg03b",
+    "lldEffectiveHash": "47535369867a9e9c71a300e7ca347a1a6437356df9b3c75b91fec292dcf80f63",
+    "review": {
+      "artifact": "plan",
+      "stage": "plan",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "p1",
+          "ref": "t2/c1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "withStructuredRetry's real signature takes a POSITIONAL maxAttempts number (call, validate, maxAttempts), not an opts object — the correction t2 pins.",
+          "evidence": "withStructuredRetry<T> at src/agent/providers/structured-output.ts:182 with `maxAttempts:  number` at :185 — the POSITIONAL signature t2 pins is correct (the LLD's opts-object sketch was rightly corrected).",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p2",
+          "ref": "t2/c1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "provider.completeStructured (LLMProvider) + validateAgainstSchema exist — the two structured-output symbols t2 composes.",
+          "evidence": "completeStructured<T> at src/shared/types.ts:216 (read found; implemented in cli-provider/mcp-sampling providers) and validateAgainstSchema<T> at structured-output.ts:80 — the two structured-output symbols t2 composes exist.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p3",
+          "ref": "t1/c2",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "sc3 DimensionFinding carries the fields the ADHERENCE_FINDINGS_SCHEMA maps 1:1 onto (severity, location, message, expectationRef) and dimension is fixed to 'adherence'.",
+          "evidence": "DimensionFinding at src/workflow/code-review/types.ts:37 with location (:41), message (:42), expectationRef (:44) — the fields ADHERENCE_FINDINGS_SCHEMA maps 1:1 onto exist exactly.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p4",
+          "ref": "t3/c3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "buildShaperProvider exists — the resolver the live test uses to obtain a real high-tier CliProvider/Ollama provider.",
+          "evidence": "buildShaperProvider at src/analyze/context/shaper-provider.ts:277 — the resolver the live test uses exists.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p5",
+          "ref": "t1",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "src/workflow/code-review/dimensions/ (adherence.ts) does not exist yet — t1 creates it; the plan lists exactly 3 tasks (t1-t3).",
+          "evidence": "grep for dimensions/adherence and judgeAdherence returns 0 src matches — confirming the adherence module is genuinely new (t1 creates it); the plan lists exactly T001-T003 for this Story.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 5
+      },
+      "reviewedAt": "2026-08-03T10:14:56.969Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-08-03T10:22:08.445Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add ADHERENCE_FINDINGS_SCHEMA + the adherence prompt builder",
+        "summary": "Create src/workflow/code-review/dimensions/adherence.ts and declare ADHERENCE_FINDINGS_SCHEMA (a StructuredSchema = Readonly<Record<string,unknown>>): an array of findings each with { severity, location, message, expectationRef } that maps 1:1 onto sc3 DimensionFinding. Add a pure prompt-builder that assembles an LLMMessage[] from subject.approvedLld + subject.approvedPlan + Story ACs + grounding.symbols, with the finding schema placed TRAILING (repo prompt-structure rule) and an explicit instruction that the approved DECISION itself is out of scope (only departures are findings).",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "ADHERENCE_FINDINGS_SCHEMA's per-finding shape maps 1:1 onto sc3 DimensionFinding (severity/location/message/expectationRef); dimension is fixed to 'adherence' by the judge, not the model",
+          "the prompt builder emits an LLMMessage[] with the schema TRAILING and the decision-out-of-scope instruction present (ac3, c103/k8)",
+          "reasons only over grounding.symbols (structured summaries), never raw file text (k6); no existing file modified"
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "ADHERENCE_FINDINGS_SCHEMA per-finding shape maps 1:1 onto sc3 DimensionFinding (severity/location/message/expectationRef)"
+          },
+          {
+            "level": "unit",
+            "name": "the prompt places the finding schema TRAILING (structural assertion on the assembled messages) and includes the decision-out-of-scope instruction"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Implement judgeAdherence (single serial call + map + scope)",
+        "summary": "Add judgeAdherence(subject, grounding, provider): Promise<DimensionResult> that wraps ONE provider.completeStructured(messages, ADHERENCE_FINDINGS_SCHEMA) in withStructuredRetry(call, validateAgainstSchema(...), 3) — using the REAL positional maxAttempts signature, not an opts object — maps the validated findings onto DimensionResult{dimension:'adherence'} (populating expectationRef), and drops any finding whose location file is not in subject.changedFiles. Empty model output => findings:[]; empty grounding => findings:[]; a validation/provider failure after the cap PROPAGATES (never a fabricated pass). Read-only, exactly one provider call, no Promise.all.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "judgeAdherence calls withStructuredRetry(call, validateAgainstSchema(...), 3) with the POSITIONAL maxAttempts (matching the real helper), not an opts object",
+          "ac1: returns one DimensionFinding per scripted departure, each with expectationRef; ac2: no departures / empty grounding => findings:[] (no manufactured findings)",
+          "out-of-subject findings (location file not in subject.changedFiles) are dropped",
+          "ac4: exactly ONE completeStructured call is issued on the injected provider and no other provider method is touched (serial k4; LLMProvider-only k3)",
+          "a schema-validation or provider failure after the retry cap propagates as StructuredOutputError — never an empty 'no divergence' pass (S006 ac5)"
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "judgeAdherence maps model findings to DimensionResult{dimension:'adherence'} with expectationRef populated (ac1)"
+          },
+          {
+            "level": "unit",
+            "name": "empty model output => DimensionResult with findings:[] (ac2, no manufactured findings)"
+          },
+          {
+            "level": "unit",
+            "name": "empty grounding (no symbols) => findings:[] without a wasted judgement error"
+          },
+          {
+            "level": "unit",
+            "name": "out-of-subject finding (location file not in changedFiles) is dropped"
+          },
+          {
+            "level": "unit",
+            "name": "exactly one provider.completeStructured call is issued and no other provider method is touched (serial, k4; provider-abstraction only, k3)"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Add the fake-provider unit tests + live-gated test",
+        "summary": "Add src/workflow/code-review/dimensions/__tests__/adherence.test.ts: a fake LLMProvider (completeStructured returns scripted output; a call-counting spy) drives the offline cases — findings-with-expectationRef (ac1), empty/satisfied + empty-grounding (ac2), faithful-but-differently-decided => no finding + a prompt-content assertion the decision-out-of-scope instruction is present (ac3), exactly-one-call/no-other-method (ac4), out-of-subject drop, and an invalid-output-exhausts-retry failure case. A live case (buildShaperProvider-resolved real provider) gates behind INSRC_LIVE_TESTS.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "all four ACs (ac1-ac4) have a passing offline unit test using a fake LLMProvider; no real model call in the default sweep",
+          "the retry-exhaustion failure test asserts StructuredOutputError propagates (no fabricated pass)",
+          "the live case skips cleanly when INSRC_LIVE_TESTS is unset"
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "a faithful-but-differently-decided case yields findings:[] — the decision itself is not reported (ac3), with a prompt-content assertion the out-of-scope instruction is present"
+          },
+          {
+            "level": "unit",
+            "name": "invalid model output => StructuredOutputError propagates after the retry cap (no empty 'no divergence' pass)"
+          },
+          {
+            "level": "live",
+            "name": "a real buildShaperProvider-resolved provider (CliProvider/Ollama, no cloud REST, high tier k10) produces a schema-valid DimensionResult"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "judgeAdherence maps model findings to DimensionResult{dimension:'adherence'} with expectationRef populated (ac1)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "empty model output => DimensionResult with findings:[] (ac2, no manufactured findings)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "out-of-subject finding (location file not in changedFiles) is dropped",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "exactly one provider.completeStructured call is issued and no other provider method is touched (serial, k4; provider-abstraction only, k3)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "empty grounding (no symbols) => findings:[] without a wasted judgement error",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "invalid model output => StructuredOutputError propagates after the retry cap (no empty 'no divergence' pass)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "the prompt places the finding schema TRAILING (structural assertion on the assembled messages)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "a real buildShaperProvider-resolved provider produces a schema-valid DimensionResult",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "the resolved provider is a CliProvider/Ollama (no direct cloud REST) at no less than the high tier (k10)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 contractDetails.api — judgeAdherence (single serial completeStructured + withStructuredRetry, map to DimensionResult{adherence}, drop out-of-subject)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 dataModelChanges — ADHERENCE_FINDINGS_SCHEMA (StructuredSchema mapping 1:1 to sc3 DimensionFinding) + the schema-trailing prompt"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 testStrategy — fake-LLMProvider offline unit cases for ac1-ac4 + retry-failure + the live-gated real-provider check"
+    }
+  ]
+}

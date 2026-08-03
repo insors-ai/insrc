@@ -19,6 +19,9 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
+DEFAULT_AGENT_LOG_MAX_BYTES = 10 * 1024 * 1024
+LOG_ROTATIONS = 5
+
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS addon_status (
     instance_id TEXT PRIMARY KEY, seen_at TEXT NOT NULL, version TEXT NOT NULL, pid INTEGER
@@ -45,6 +48,11 @@ CREATE TABLE IF NOT EXISTS daily_usage (
 );
 CREATE TABLE IF NOT EXISTS maintenance_status (
     name TEXT PRIMARY KEY, completed_at TEXT NOT NULL, records_removed INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS agent_logging (
+    agent TEXT PRIMARY KEY, enabled INTEGER NOT NULL DEFAULT 0 CHECK(enabled IN (0, 1)),
+    log_dir TEXT NOT NULL, max_bytes INTEGER NOT NULL DEFAULT 10485760 CHECK(max_bytes > 0),
+    updated_at TEXT NOT NULL
 );
 """
 
@@ -183,6 +191,23 @@ class AddonStorage:
             columns = [description[0] for description in cursor.description or ()]
             return [dict(zip(columns, row, strict=True)) for row in cursor.fetchall()]
 
+    def agent_logging(self, agent: str) -> tuple[Path, int] | None:
+        """Return an enabled agent's logging destination, if configured."""
+        with self._connection() as connection:
+            row = connection.execute(
+                "SELECT log_dir, max_bytes FROM agent_logging WHERE agent = ? AND enabled = 1", (agent,)
+            ).fetchone()
+        if row is None:
+            return None
+        try:
+            directory = Path(str(row[0])).expanduser()
+            max_bytes = max(1, int(row[1]))
+        except (TypeError, ValueError):
+            return None
+        if not directory.is_absolute():
+            return None
+        return directory, max_bytes
+
 
 class CamonAddon:
     def __init__(self, config: Any = None) -> None:
@@ -194,6 +219,7 @@ class CamonAddon:
         self.last_heartbeat = 0.0
         self.stop_heartbeat = threading.Event()
         self.heartbeat_thread: threading.Thread | None = None
+        self.log_lock = threading.Lock()
 
     @property
     def storage(self) -> AddonStorage:
@@ -241,6 +267,85 @@ class CamonAddon:
             input_tokens, output_tokens, int(estimated), duration, session, agent, None, None, source, confidence,
         )
         self.storage.record(values, timestamp.date().isoformat())
+        self._log_agent_traffic(
+            agent,
+            timestamp,
+            request.method,
+            host,
+            path,
+            response.status_code,
+            _provider(host),
+            model,
+            input_tokens,
+            output_tokens,
+            estimated,
+            duration,
+            len(getattr(request, "content", None) or b""),
+            len(content or b""),
+        )
+
+    def _log_agent_traffic(
+        self,
+        agent: str,
+        timestamp: datetime,
+        method: str,
+        host: str,
+        path: str,
+        status_code: int | None,
+        provider: str,
+        model: str | None,
+        input_tokens: int,
+        output_tokens: int,
+        estimated: bool,
+        duration_ms: float | None,
+        request_bytes: int,
+        response_bytes: int,
+    ) -> None:
+        """Append a privacy-preserving access record for an enabled agent."""
+        setting = self.storage.agent_logging(agent)
+        if setting is None:
+            return
+        directory, max_bytes = setting
+        filename = f"{agent}.{timestamp.strftime('%Y%m%d')}.log"
+        target = directory / filename
+        record = {
+            "timestamp": timestamp.isoformat(),
+            "agent": agent,
+            "method": method,
+            "host": host,
+            "path": path,
+            "status_code": status_code,
+            "provider": provider,
+            "model": model,
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens,
+            "estimated_tokens": estimated,
+            "duration_ms": duration_ms,
+            "request_bytes": request_bytes,
+            "response_bytes": response_bytes,
+        }
+        line = json.dumps(record, separators=(",", ":"), ensure_ascii=False) + "\n"
+        try:
+            with self.log_lock:
+                directory.mkdir(parents=True, exist_ok=True)
+                self._rotate_log(target, len(line.encode("utf-8")), max_bytes)
+                with target.open("a", encoding="utf-8") as handle:
+                    handle.write(line)
+        except OSError:
+            # Optional disk logging must not impede proxy traffic.
+            return
+
+    @staticmethod
+    def _rotate_log(target: Path, incoming_size: int, max_bytes: int) -> None:
+        if not target.exists() or target.stat().st_size + incoming_size <= max_bytes:
+            return
+        oldest = target.with_name(f"{target.name}.{LOG_ROTATIONS}")
+        oldest.unlink(missing_ok=True)
+        for index in range(LOG_ROTATIONS - 1, 0, -1):
+            source = target.with_name(f"{target.name}.{index}")
+            if source.exists():
+                source.replace(target.with_name(f"{target.name}.{index + 1}"))
+        target.replace(target.with_name(f"{target.name}.1"))
 
     def _heartbeat(self) -> None:
         if time.monotonic() - self.last_heartbeat >= 2:

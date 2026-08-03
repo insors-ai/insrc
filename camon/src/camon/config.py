@@ -30,6 +30,7 @@ class AppConfig(BaseModel):
     managed_pid_path: Path | None = None
     refresh_seconds: float = 2.0
     retention_days: int = Field(default=7, ge=1)
+    background_color: str = Field(default="#071a33", pattern=r"^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$")
     proxy_host: str = "127.0.0.1"
     proxy_port: int = Field(default=8080, ge=1, le=65535)
     agent_rules: list[AgentRule] = Field(default_factory=list)

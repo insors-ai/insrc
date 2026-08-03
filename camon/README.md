@@ -34,7 +34,12 @@ equivalent). Set `CAMON_DATABASE` or `CAMON_CONFIG` to override it. An example:
 database_path = "/tmp/camon.sqlite3"
 managed_mitmproxy = false
 mitmproxy_command = ["mitmproxy", "-s", "/path/to/addon.py"]
+background_color = "#071a33"
 ```
+
+The dashboard defaults to dark navy. Set `background_color` to any `#RGB` or
+`#RRGGBB` colour, or override it for one launch with
+`camon --background-color "#102a43"`.
 
 Attribution first attempts a local socket-to-PID match, then process name,
 command-line rules, parent process chain, and finally an HTTP User-Agent
@@ -70,6 +75,12 @@ mitmproxy certificate path (`NODE_EXTRA_CA_CERTS`) into
 `~/.claude/settings.json`, preserving unrelated settings; restart Claude Code
 afterward. Other agents receive an opt-in `camon-<agent>` launcher in
 `~/.insrc/camon/bin`. CAMON never changes the system proxy or shell profiles.
+
+The **Agents** tab can independently enable metadata traffic logs for a selected
+agent. Set the destination (default: `/tmp/.insrc/camon`) and toggle logging.
+CAMON writes JSON Lines access records to `<logdir>/<agent>.YYYYmmdd.log`;
+files rotate at 10 MiB and retain five rotated copies. These logs omit request
+and response bodies, prompts, credentials, headers, and query strings.
 
 ## Install the TUI
 

@@ -23,12 +23,18 @@ def _services() -> tuple[AppConfig, Storage]:
 
 
 @app.callback(invoke_without_command=True)
-def main(ctx: typer.Context) -> None:
+def main(
+    ctx: typer.Context,
+    background_color: Annotated[str | None, typer.Option("--background-color", help="Temporary TUI background colour (#RGB or #RRGGBB).")] = None,
+) -> None:
     """Launch the live dashboard when invoked without a subcommand."""
     if ctx.invoked_subcommand is None:
         from .tui import CamonApp
 
-        CamonApp().run()
+        config = AppConfig.load()
+        if background_color is not None:
+            config = AppConfig.model_validate({**config.model_dump(), "background_color": background_color})
+        CamonApp(config).run()
 
 
 @app.command()

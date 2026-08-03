@@ -1,7 +1,7 @@
 from datetime import UTC, datetime, timedelta
 
 from camon.models import AddonStatus, Attribution, UsageEvent
-from camon.storage import Storage
+from camon.storage import DEFAULT_AGENT_LOG_DIR, Storage
 
 
 def test_storage_records_request_session_and_daily_usage(tmp_path):
@@ -79,3 +79,32 @@ def test_storage_overview_stats(tmp_path):
     assert stats["provider_count"] == 1
     assert stats["last_request_at"] is not None
     assert stats["database_bytes"] >= 0
+
+
+def test_storage_activity_series_includes_empty_days(tmp_path):
+    storage = Storage(tmp_path / "camon.sqlite3")
+    storage.record(
+        UsageEvent(
+            timestamp=datetime.now(UTC), method="POST", host="api.openai.com", path="/v1/responses",
+            provider="openai", input_tokens=10, output_tokens=5, attribution=Attribution(agent="codex-cli"),
+        )
+    )
+
+    activity = storage.activity_series(days=3)
+
+    assert len(activity) == 3
+    assert activity[-1]["request_count"] == 1
+    assert activity[-1]["token_count"] == 15
+    assert activity[0]["request_count"] == 0
+
+
+def test_storage_persists_per_agent_logging_preferences(tmp_path):
+    storage = Storage(tmp_path / "camon.sqlite3")
+    log_dir = tmp_path / "traffic"
+
+    storage.configure_agent_logging("claude-code", True, log_dir, max_bytes=1024)
+
+    assert storage.agent_logging_settings() == {
+        "claude-code": {"enabled": True, "log_dir": str(log_dir), "max_bytes": 1024}
+    }
+    assert DEFAULT_AGENT_LOG_DIR.is_absolute()

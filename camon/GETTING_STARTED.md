@@ -230,9 +230,14 @@ For example:
 ```toml
 retention_days = 14
 refresh_seconds = 2.0
+background_color = "#071a33"
 proxy_host = "127.0.0.1"
 proxy_port = 8080
 ```
+
+CAMON uses a dark-navy dashboard by default. Change `background_color` to a
+`#RGB` or `#RRGGBB` value, for example `"#102a43"`. To try a colour without
+editing the file, run `camon --background-color "#102a43"`.
 
 After changing `retention_days`, run this so the addon service receives the
 same setting and restarts:
@@ -245,6 +250,23 @@ The installed `camon` launcher uses
 `~/.insrc/camon/camon.sqlite3`. For a different database, set `CAMON_DATABASE`
 before invoking CAMON. Use `CAMON_CONFIG` to load a configuration file from a
 different location.
+
+## Per-agent traffic logs
+
+Open the **Agents** tab, select an agent, set the log directory, and press
+**Toggle logging** (or `l`). The default directory is `/tmp/.insrc/camon`.
+Logging takes effect in the running addon without restarting mitmproxy.
+
+CAMON writes one JSON Lines access log per agent and UTC day:
+
+```text
+<logdir>/<agent>.YYYYmmdd.log
+```
+
+Each file rotates at 10 MiB, retaining five numbered rotated copies. The log
+contains request metadata such as host, path, response status, duration, byte
+counts, and token usage; it deliberately excludes prompts, response bodies,
+credentials, headers, and query strings.
 
 ## Troubleshooting
 

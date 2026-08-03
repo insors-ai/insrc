@@ -11,6 +11,9 @@ from typing import Any
 
 from .models import AddonStatus, UsageEvent
 
+DEFAULT_AGENT_LOG_DIR = Path("/tmp/.insrc/camon")
+DEFAULT_AGENT_LOG_MAX_BYTES = 10 * 1024 * 1024
+
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS addon_status (
     instance_id TEXT PRIMARY KEY, seen_at TEXT NOT NULL, version TEXT NOT NULL, pid INTEGER
@@ -45,6 +48,11 @@ CREATE TABLE IF NOT EXISTS agent_rules (
 );
 CREATE TABLE IF NOT EXISTS maintenance_status (
     name TEXT PRIMARY KEY, completed_at TEXT NOT NULL, records_removed INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS agent_logging (
+    agent TEXT PRIMARY KEY, enabled INTEGER NOT NULL DEFAULT 0 CHECK(enabled IN (0, 1)),
+    log_dir TEXT NOT NULL, max_bytes INTEGER NOT NULL DEFAULT 10485760 CHECK(max_bytes > 0),
+    updated_at TEXT NOT NULL
 );
 """
 
@@ -183,6 +191,63 @@ class Storage:
                 ORDER BY request_count DESC"""
             ).fetchall()
         return [dict(row) for row in rows]
+
+    def agent_logging_settings(self) -> dict[str, dict[str, object]]:
+        """Return persistent per-agent traffic logging preferences."""
+        with self.connection() as connection:
+            rows = connection.execute("SELECT agent, enabled, log_dir, max_bytes FROM agent_logging").fetchall()
+        return {
+            str(row["agent"]): {
+                "enabled": bool(row["enabled"]),
+                "log_dir": str(row["log_dir"]),
+                "max_bytes": int(row["max_bytes"]),
+            }
+            for row in rows
+        }
+
+    def configure_agent_logging(
+        self, agent: str, enabled: bool, log_dir: Path | str, max_bytes: int = DEFAULT_AGENT_LOG_MAX_BYTES
+    ) -> None:
+        """Persist one agent's log destination and enabled state."""
+        directory = Path(log_dir).expanduser()
+        if not agent or any(character not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_." for character in agent):
+            raise ValueError("Agent name contains unsupported characters.")
+        if not directory.is_absolute():
+            raise ValueError("Log directory must be an absolute path.")
+        if max_bytes < 1:
+            raise ValueError("Maximum log size must be positive.")
+        directory.mkdir(parents=True, exist_ok=True)
+        with self.connection() as connection:
+            connection.execute(
+                """INSERT INTO agent_logging(agent, enabled, log_dir, max_bytes, updated_at) VALUES (?, ?, ?, ?, ?)
+                ON CONFLICT(agent) DO UPDATE SET enabled=excluded.enabled, log_dir=excluded.log_dir,
+                max_bytes=excluded.max_bytes, updated_at=excluded.updated_at""",
+                (agent, int(enabled), str(directory), max_bytes, datetime.now(UTC).isoformat()),
+            )
+
+    def activity_series(self, days: int = 14) -> list[dict[str, Any]]:
+        """Return a gap-free daily request and token series for the activity graph."""
+        today = datetime.now(UTC).date()
+        first_day = today - timedelta(days=days - 1)
+        with self.connection() as connection:
+            rows = connection.execute(
+                """SELECT day, SUM(request_count) AS request_count,
+                SUM(input_tokens + output_tokens) AS token_count
+                FROM daily_usage WHERE day >= ? GROUP BY day""",
+                (first_day.isoformat(),),
+            ).fetchall()
+        totals = {
+            str(row["day"]): (int(row["request_count"] or 0), int(row["token_count"] or 0))
+            for row in rows
+        }
+        return [
+            {
+                "day": (first_day + timedelta(days=offset)).isoformat(),
+                "request_count": totals.get((first_day + timedelta(days=offset)).isoformat(), (0, 0))[0],
+                "token_count": totals.get((first_day + timedelta(days=offset)).isoformat(), (0, 0))[1],
+            }
+            for offset in range(days)
+        ]
 
     def overview_stats(self) -> dict[str, Any]:
         """Return compact dashboard statistics without retaining request payloads."""

@@ -188,6 +188,13 @@
         "choice": "Widen operationalizes to accept local constraint ids",
         "rationale": "Smallest change that makes the constraint-to-criterion trace true end-to-end: repoints s1.ac2→c101, s1.ac5→c102, s2.ac3→c103 (and s2.ac1, s4.ac1/ac4 to their real local basis) and gives the orphaned c101–c107 referents, without amending the Epic or inflating the cross-cutting key-constraint set with story-local material.",
         "resolvedAt": "2026-08-03T07:19:12.800Z"
+      },
+      "q264aa78f": {
+        "question": "Item s1a: Seven of eight userValue paragraphs stand on their own (s1 attributability, s3 \"per-Story dialects\", s4 \"quietly complete\", s5 \"a third copy of the same logic\", s6 four opinions reconciled by hand, s7 gate-not-advice, s8 second set of eyes). s2's is a near-verbatim inversion of the Epic problem's closing clause: Story — \"instead of resurfacing later as defects or as silent drift away from the design\"; Epic — \"until it resurfaces later as defects or as accumulated drift from the design.\" That is a restatement, not an independent statement of this slice's value. Rewrite s2.userValue around what the adherence check specifically buys (a named approved expectation to point at when code departs from it).",
+        "status": "resolved",
+        "choice": "Anchor on the named approved expectation",
+        "rationale": "Smallest edit that makes s2's userValue stand on its own: value becomes that an adherence finding cites a specific approved design clause the code departs from — the reviewer points at a named expectation, not taste, and the author can argue against the document. Removes the Epic-problem echo without reopening the Epic, and stays distinct from s1 (attributability), s7 (enforcement), s8 (independence).",
+        "resolvedAt": "2026-08-03T07:19:43.936Z"
       }
     }
   },

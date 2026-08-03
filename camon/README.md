@@ -18,8 +18,12 @@ mitmproxy -s /path/to/camon/src/camon/addon.py
 ```
 
 Then use `camon status`, `camon` (dashboard), `camon report`, or `camon export`.
-`camon register` writes a small addon manifest for operators; it never restarts a
-proxy. `camon restart` refuses unless `managed_mitmproxy = true` is set in config.
+`camon register` adds the addon to CAMON's known local bootstrap service and
+restarts that service. `camon restart` refuses unless `managed_mitmproxy = true`
+is set in config.
+
+For an end-to-end install and use walkthrough, see
+[Getting Started](GETTING_STARTED.md).
 
 ## Configuration
 

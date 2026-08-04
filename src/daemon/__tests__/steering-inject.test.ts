@@ -240,6 +240,8 @@ test('readSteeringBlock: resolves the shipped prompts/steering-block.md and is n
 	assert.ok(block.length > 200, 'block body is substantial');
 	assert.match(block, /insrc_triage/, 'block steers toward triage');
 	assert.match(block, /insrc_review_step/, 'block steers toward review');
+	assert.match(block, /brainstorm/i, 'block steers toward the pre-workflow brainstorm stage');
+	assert.match(block, /insrc_code_review_step/, 'block steers toward the post-build code review');
 });
 
 // ---------------------------------------------------------------------------

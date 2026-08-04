@@ -146,6 +146,19 @@ about the code — that's analyze), do NOT hand-pick `define` / `design.story` /
 `build` yourself, and do NOT just start editing files. The framework's core
 guarantee is that **every feature, big or small, is tracked**. Follow this:
 
+0. **`brainstorm` FIRST when the idea is rough.** If the request is a vague or
+   ambiguous idea rather than a crisp spec, run the **`brainstorm`** workflow
+   stage before triage: `insrc_workflow_step`/`insrc_workflow_run` with
+   `workflow: 'brainstorm'`. It's a SINGLE paused `elicit` turn — YOU conduct the
+   whole clarify → fold → show → confirm convergence in chat (fold each answer
+   into a running statement, show it back every turn, re-ask only the still-open
+   gaps; at a fork present the options + record the choice's `ruledOut`
+   alternatives in `nonGoals`), then resume ONCE with `confirmed: true` and no
+   open items. Review + approve the resulting **SpecArtifact** (same
+   present-ask-approve as below), then seed `insrc_triage` / `define` /
+   `design.story` from the approved spec. Skip brainstorm when the request is
+   already a clear, scoped spec — go straight to triage.
+
 1. **`insrc_triage` FIRST.** It sizes the request (grounded on your own
    `insrc_analyze_step` passes) and routes it to the right start stage:
    - **epic** → `define` (full chain — new subsystem / many stories)
@@ -182,6 +195,19 @@ guarantee is that **every feature, big or small, is tracked**. Follow this:
    review-blocked artifact comes back in `skipped[]` with a reason (relay it);
    pass `overrideReview` only with the user's explicit override reason. Then
    continue the routed chain to the next stage.
+
+5. **Code review AFTER the build — then complete the Story.** Once the build
+   has produced its changes, run **`insrc_code_review_step`** over the changed
+   code (multi-turn: `phase:'start'` with `{ epicHash, storyId, repo? }` →
+   `emit_judgements` hands you the four dimension prompts + grounding → emit the
+   `{ judgements }` JSON → `done`). It writes a code-review record (adherence /
+   conventions / coverage / quality → block/warn/pass) — DISTINCT from
+   `insrc_review_step`, which reviews the design artifact. PRESENT the verdict,
+   then COMPLETE the Story by approving its **BUILD** artifact
+   (`insrc_workflow_approve` on the BUILD md/path). BUILD approval is the
+   code-review-gated completion act: under `codeReview.enforce` (config,
+   **off / advisory by default**) a `block` — or no review having run — withholds
+   completion into `skipped[]` unless you pass an explicit `overrideReview`.
 
 Skip triage only for a genuine one-liner the user explicitly scoped, or when
 they name a specific stage. Everything else goes through the front door so it

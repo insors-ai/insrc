@@ -162,6 +162,16 @@ analyze below), do NOT hand-pick `define` / `design.story` / `build`, and do NOT
 just start editing. The framework's core guarantee is that **every feature, big
 or small, is tracked**. Route it:
 
+0. **`brainstorm` FIRST when the idea is rough.** If the ask is a vague/ambiguous
+   idea rather than a crisp spec, run the `brainstorm` workflow stage before
+   triage — `insrc_workflow_step`/`insrc_workflow_run` with `workflow:'brainstorm'`.
+   It's a SINGLE paused `elicit` turn: YOU conduct the whole clarify→fold→show→
+   confirm convergence in chat (fold each answer into a running statement, show it
+   back, re-ask only open gaps; at a fork record the choice's `ruledOut` in
+   `nonGoals`), then resume ONCE with `confirmed:true` + no open items. Review +
+   approve the resulting `SpecArtifact`, then seed `insrc_triage`/`define`/
+   `design.story` from it. Skip brainstorm when the request is already a clear
+   scoped spec.
 1. **`insrc_triage` FIRST.** It sizes the request (grounded on your own
    `insrc_analyze_step` passes) and returns a pre-filled `nextCall`:
    epic → `define`; feature → standalone `design.story` → plan → build;
@@ -179,6 +189,16 @@ or small, is tracked**. Route it:
    pending artifact under the epic. It stamps `approvedAt` and enforces the
    review block-verdict: a blocked artifact returns in `skipped[]` with a reason
    (relay it); pass `overrideReview` only with the user's explicit override.
+5. **Code review AFTER build — then complete the Story.** Once the build has
+   produced its changes, run `insrc_code_review_step` over the changed code
+   (`start` → `emit_judgements` → emit `{ judgements }` → `done`). It writes a
+   code-review record (adherence/conventions/coverage/quality → block/warn/pass)
+   — DISTINCT from `insrc_review_step` (which reviews the design artifact).
+   PRESENT the verdict, then COMPLETE the Story by approving its **BUILD** artifact
+   (`insrc_workflow_approve` on the BUILD). BUILD approval is the code-review-gated
+   completion act: under `codeReview.enforce` (config, off/advisory by default) a
+   `block` — or no review having run — withholds completion into `skipped[]`
+   unless the user gives an explicit `overrideReview`.
 
 Skip triage only for a one-liner the user explicitly scoped, or when they name a
 stage. See [`plans/feature-triage-router.md`](plans/feature-triage-router.md).

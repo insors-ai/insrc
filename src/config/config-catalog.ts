@@ -81,6 +81,7 @@ export const CONFIG_CATALOG: readonly ConfigOption[] = [
 	{ path: 'analyzer.useLocal',     type: 'boolean', default: false,           desc: 'force code/data analyzers to local Ollama instead of cloud' },
 	{ path: 'classifier.confirmIntent', type: 'boolean', default: false,        desc: 'prompt to confirm the classified intent each turn' },
 	{ path: 'memory.implicitCapture.enabled', type: 'boolean', default: false,  desc: 'implicit memory capture during retrieval (backstop)' },
+	{ path: 'codeReview.enforce',    type: 'boolean', default: false,           desc: 'enforce a blocking code-review verdict at Story completion (off ⇒ advisory)' },
 
 	// ── model tiers — THE single model-spec surface (src/config/analyze.ts → models.tiers) ──
 	// A (runner, model) pair is named ONLY here. The shaper + summariser providers

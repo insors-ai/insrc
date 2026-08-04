@@ -1,0 +1,244 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1785825066229-9podsp",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-08-04T06:34:04.291Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 178000,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "761a43a6fa645815",
+    "epicSlug": "add-daemon-driven-code-review-stage",
+    "storyId": "s5",
+    "lldRunId": "wf-1785824079379-d3tx07",
+    "lldEffectiveHash": "47535369867a9e9c71a300e7ca347a1a6437356df9b3c75b91fec292dcf80f63",
+    "review": {
+      "artifact": "plan",
+      "stage": "plan",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "qp1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The template conventions.ts + coverage.ts exist with the schema/prompt/judge seams t1 mirrors.",
+          "evidence": "conventions.ts:53 CONVENTIONS_FINDINGS_SCHEMA, coverage.ts:105 buildCoveragePrompt, coverage.ts:150 judgeCoverage all exist — the template t1 mirrors is real.",
+          "action": "none — verified sound",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "qp2",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "sc3 DimensionFinding in types.ts carries the optional counterpartRef field (the quality duplication-counterpart, distinct from expectationRef), and sc2 ChangedSymbolSummary carries signature/callers/callees.",
+          "evidence": "types.ts declares counterpartRef?: string on DimensionFinding and callers (types.ts:70) + callees (types.ts:72) on ChangedSymbolSummary — quality's distinctive sc3 field and the duplication signal both exist on the shipped contracts.",
+          "action": "none — verified sound",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "qp3",
+          "kind": "external-contract",
+          "severity": "LOW",
+          "premise": "src/agent/providers/structured-output.ts exports validateAgainstSchema and withStructuredRetry(call, validate, maxAttempts) which throws after the cap — the helpers t1 reuses with the positional maxAttempts.",
+          "evidence": "structured-output.ts:80 validateAgainstSchema and :182 withStructuredRetry (throws after the cap) — the helpers t1 reuses with positional maxAttempts.",
+          "action": "none — verified sound",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "qp4",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "No src/workflow/code-review/dimensions/quality.ts exists yet — t1 creates it (purely additive; no judgeQuality in src/).",
+          "evidence": "judgeQuality / QUALITY_FINDINGS_SCHEMA appear only in the design docs, not in any src/ file — quality.ts does not exist yet, so t1 is purely additive.",
+          "action": "none — verified sound",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "qp5",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The fake-provider test harness t2 mirrors exists in coverage.test.ts (`as unknown as LLMProvider`, node:test + node:assert/strict).",
+          "evidence": "coverage.test.ts (src/) uses `as unknown as LLMProvider` and node:test is the repo-wide convention — the fake-provider harness t2 mirrors exists.",
+          "action": "none — verified sound",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "qp6",
+          "kind": "ordering",
+          "severity": "LOW",
+          "premise": "Task ordering is acyclic and topological (t1 order 1 no deps → t2 order 2 dependsOn t1); storyDependsOn s1 is satisfied on disk (ReviewDimension incl. 'quality').",
+          "evidence": "types.ts:33 ReviewDimension includes 'quality' — storyDependsOn s1 is satisfied; t1 (order 1, no deps) → t2 (order 2, dependsOn t1) is acyclic and topological.",
+          "action": "none — verified sound",
+          "fixability": "auto"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 6
+      },
+      "reviewedAt": "2026-08-04T06:34:57.575Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-08-04T06:37:47.838Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Create quality.ts — schema, prompt builder, judge",
+        "summary": "Add src/workflow/code-review/dimensions/quality.ts mirroring the shipped conventions.ts/coverage.ts: (a) QUALITY_FINDINGS_SCHEMA — the adherence per-finding shape (StructuredSchema, additionalProperties:false, findings[] of {severity enum HIGH|MED|LOW, location, message}) but its distinctive optional field is counterpartRef (NOT expectationRef) + optional confidence enum 'breach'|'observation'; required=['findings'], each finding requires severity/location/message; (b) buildQualityPrompt(subject, grounding, extraNote): LLMMessage[] with the QUALITY system charge (report the FOUR risk classes correctness/avoidable-complexity/duplication/unhandled-error each with location + severity; when flagging duplication name the existing counterpart in counterpartRef, citing only symbols visible in the grounding or their callers/callees; cap matters of taste at LOW severity so they never block; no manufactured findings) and the user message placing grounding.symbols (signature/callers/callees) then the output-shape reminder TRAILING; (c) private fileOf(location) splitting on ':'; (d) judgeQuality(subject, grounding, provider): Promise<DimensionResult> — one StructuredCall over provider.completeStructured(buildQualityPrompt(...note), QUALITY_FINDINGS_SCHEMA), a StructuredValidator via validateAgainstSchema(QUALITY_FINDINGS_SCHEMA, raw), await withStructuredRetry(call, validate, 3) POSITIONAL, then map output.findings to DimensionFinding{dimension:'quality'} spreading counterpartRef/confidence conditionally (exactOptionalPropertyTypes) and dropping any finding whose fileOf(location) is outside new Set(subject.changedFiles). Reads ONLY grounding.symbols + subject.changedFiles (not approvedPlan/buildRecord). Imports use .js extensions; type-only imports use import type; no console.log; no Promise.all.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "src/workflow/code-review/dimensions/quality.ts exists exporting judgeQuality, buildQualityPrompt, QUALITY_FINDINGS_SCHEMA",
+          "QUALITY_FINDINGS_SCHEMA's distinctive optional field is counterpartRef (NOT expectationRef); each finding requires severity/location/message; counterpartRef + confidence optional; additionalProperties:false",
+          "judgeQuality issues exactly ONE provider.completeStructured call (no Promise.all) wrapped in withStructuredRetry(call, validate, 3) and propagates the throw on 3-attempt exhaustion (no catch-to-empty)",
+          "returned findings all carry dimension:'quality', map counterpartRef + confidence through, and every finding.location file is in subject.changedFiles (out-of-scope dropped); reads only grounding.symbols + subject.changedFiles",
+          "buildQualityPrompt places grounding.symbols (signature/callers/callees) then the output-shape reminder at the TAIL; system charge enumerates the four risk classes, instructs counterpartRef on duplication, and caps matters of taste at LOW severity",
+          "tsc --noEmit is clean; imports carry .js extensions and type-only imports use import type"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "QUALITY_FINDINGS_SCHEMA: distinctive field is counterpartRef (not expectationRef); per-finding requires severity/location/message; counterpartRef + confidence optional; additionalProperties:false"
+          },
+          {
+            "level": "unit",
+            "name": "buildQualityPrompt: grounding.symbols (signature/callers/callees) then output-shape reminder TRAILING; charge enumerates the four risk classes, instructs counterpartRef on duplication, caps taste at LOW"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Fake-provider unit tests for the quality judge",
+        "summary": "Add src/workflow/code-review/dimensions/__tests__/quality.test.ts mirroring coverage.test.ts: a fakeProvider(scripted) returning {provider, calls} cast `as unknown as LLMProvider` (only completeStructured present, so any stray method throws), a subject(changedFiles) factory stubbing approvedLld/Plan via unknown (unused by quality), and a grounding(symbols) factory producing ChangedSymbolSummary[] with populated signature/callers/callees so a duplication finding can name a counterpart. Cover: (ac1) the four risk classes (correctness/complexity/duplication/unhandled-error) each map to a finding with location + severity, plus a QUALITY_FINDINGS_SCHEMA per-finding shape assertion; (ac2) a duplication finding maps counterpartRef through naming the existing symbol (dimension==='quality'), and buildQualityPrompt's charge mentions counterpartRef + the user payload includes the callers/callees edges; (ac3) a matter-of-taste finding maps through at LOW severity (never HIGH), and the system charge caps taste at LOW; (ac4) judgeQuality issues exactly ONE completeStructured call through the injected provider (no other provider method); plus out-of-changedFiles drop, retry-exhaustion-propagation (invalid output → assert.rejects), the two empty-result edge cases (empty grounding → findings:[]; no-risk fake {findings:[]} → no manufactured finding), and a prompt-trailing assertion. No live model.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "src/workflow/code-review/dimensions/__tests__/quality.test.ts runs under `npx tsx --test` with node:test + node:assert/strict and a fake LLMProvider (no live model)",
+          "tests cover ac1-ac4 plus out-of-scope drop, retry-exhaustion propagation (assert.rejects), the two empty-result edge cases, and the prompt-trailing placement",
+          "the full `npx tsx --test 'src/workflow/code-review/**/*.test.ts'` sweep passes (S001-S005 green; any live test skips cleanly when INSRC_LIVE_TESTS unset)"
+        ],
+        "derivedFrom": [
+          "c5",
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "ac1: the four risk classes (correctness/complexity/duplication/unhandled-error) each map to a finding with location + severity"
+          },
+          {
+            "level": "unit",
+            "name": "ac2: duplication finding maps counterpartRef through naming the existing symbol (dimension:'quality'); prompt charge mentions counterpartRef + payload includes callers/callees"
+          },
+          {
+            "level": "unit",
+            "name": "ac3: a matter-of-taste finding maps through at LOW severity (never HIGH); charge caps taste at LOW"
+          },
+          {
+            "level": "unit",
+            "name": "ac4: judgeQuality issues exactly ONE completeStructured call through the injected provider (no other provider method touched)"
+          },
+          {
+            "level": "unit",
+            "name": "out-of-changedFiles finding is dropped"
+          },
+          {
+            "level": "unit",
+            "name": "retry-exhaustion: invalid model output on all 3 attempts → assert.rejects (no fabricated clean pass)"
+          },
+          {
+            "level": "unit",
+            "name": "edge: empty grounding → {dimension:'quality', findings:[]} with no error"
+          },
+          {
+            "level": "unit",
+            "name": "edge: no-risk fake {findings:[]} → empty result, no manufactured finding"
+          },
+          {
+            "level": "live",
+            "name": "judgeQuality against a real buildShaperProvider provider on a fixture with a KNOWN duplication (INSRC_LIVE_TESTS-gated, skips when unset)"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "judgeQuality (mapping to DimensionResult{quality}; counterpartRef=existing duplication counterpart; the four risk classes with location+severity; taste at LOW; out-of-scope drop; exactly-one-call; retry-exhaustion propagation)",
+        "coveredByTaskIds": [
+          "t1",
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "QUALITY_FINDINGS_SCHEMA (per-finding shape: severity/location/message required; counterpartRef+confidence optional; additionalProperties:false)",
+        "coveredByTaskIds": [
+          "t1",
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "buildQualityPrompt (grounding.symbols signature/callers/callees TRAILING; charge enumerates the four risk classes, instructs counterpartRef on duplication, caps taste at LOW)",
+        "coveredByTaskIds": [
+          "t1",
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "judgeQuality against a real buildShaperProvider-resolved provider",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/code-review/dimensions/conventions.ts + coverage.ts — the shipped dimension-judge template (schema/prompt/judge seams + fake-provider test harness) quality.ts mirrors"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 contractDetails — sc3 counterpartRef (the duplication-counterpart field, NOT expectationRef) + sc2 signature/callers/callees the duplication signal"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/agent/providers/structured-output.ts — validateAgainstSchema + withStructuredRetry(call, validate, maxAttempts) positional signature the judge reuses"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 contractDetails/api + errorPaths — judgeQuality + buildQualityPrompt + QUALITY_FINDINGS_SCHEMA signatures + postconditions (one serial call, scope-drop, four risk classes, counterpartRef on duplication, taste-cap at LOW)"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 testStrategy — the unit + live test levels, subjects, and acceptance mapping (ac1-ac4) t2 implements"
+    }
+  ]
+}

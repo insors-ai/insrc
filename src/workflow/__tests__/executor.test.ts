@@ -26,6 +26,7 @@ import {
 	substitutePlaceholders,
 } from '../executor.js';
 import type { StepRunner, WorkflowIntent, WorkflowPlan } from '../types.js';
+import type { LLMProvider } from '../../shared/types.js';
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -191,4 +192,87 @@ test('startRun pauses on an llm-pause runner + resumeRun continues', async () =>
 		assert.deepEqual(resumed.stepOutputs['s2'], { fromLlm: { userAnswer: 'yes' } });
 		assert.deepEqual(resumed.stepOutputs['s3'], { post: true });
 	}
+});
+
+// ---------------------------------------------------------------------------
+// S010 — the additive finalize `llm-pause` re-pause contract + draftProvider dep
+// ---------------------------------------------------------------------------
+
+/** A runner whose finalize() re-pauses the SAME step for `turns-1` turns, then
+ *  outputs — the executor shape the brainstorm adaptive elicit loop relies on. */
+function multiTurnRunner(id: string, turns: number): StepRunner {
+	let seen = 0;
+	return {
+		id, workflow: 'stub',
+		async run() {
+			return { type: 'llm-pause', prompt: 'p', userTurn: 'u0', schema: { type: 'object' }, preparedBlob: { turn: 0 } };
+		},
+		async finalize() {
+			seen += 1;
+			if (seen < turns) {
+				return { type: 'llm-pause', prompt: 'p', userTurn: `u${seen}`, schema: { type: 'object' }, preparedBlob: { turn: seen } };
+			}
+			return { type: 'output', output: { turns: seen } };
+		},
+	};
+}
+
+test('S010: a finalize returning llm-pause RE-PAUSES the same step (nextStepIndex unchanged), then completes', async () => {
+	_clearRunnerRegistryForTests();
+	registerRunner(multiTurnRunner('m', 3));
+	const plan: WorkflowPlan = { workflow: 'stub', steps: [{ id: 's1', runner: 'm', params: {} }] };
+
+	let tick = await startRun(intent, plan, 'run-mt', 'slug-mt');
+	assert.equal(tick.type, 'paused');
+	if (tick.type !== 'paused') return;
+	const idx = tick.state.nextStepIndex;
+
+	// resume #1 + #2 both RE-PAUSE the same step, index unchanged.
+	for (let i = 0; i < 2; i++) {
+		tick = await resumeRun(tick.state, {}, 'slug-mt');
+		assert.equal(tick.type, 'paused', `resume #${i + 1} re-pauses`);
+		if (tick.type !== 'paused') return;
+		assert.equal(tick.state.nextStepIndex, idx, 'nextStepIndex UNCHANGED on re-pause');
+		assert.equal(tick.state.pause!.stepId, 's1');
+	}
+
+	// resume #3 outputs → the run completes.
+	tick = await resumeRun(tick.state, {}, 'slug-mt');
+	assert.equal(tick.type, 'complete');
+	if (tick.type === 'complete') assert.deepEqual(tick.stepOutputs['s1'], { turns: 3 });
+});
+
+test('S010: the executor threads draftProvider into BOTH run() and finalize() ctx; absent → undefined (byte-identical)', async () => {
+	_clearRunnerRegistryForTests();
+	const seen: { run?: boolean; finalize?: boolean } = {};
+	registerRunner({
+		id: 'probe', workflow: 'stub',
+		async run(ctx) {
+			seen.run = ctx.draftProvider !== undefined;
+			return { type: 'llm-pause', prompt: 'p', userTurn: 'u', schema: { type: 'object' }, preparedBlob: {} };
+		},
+		async finalize(_r, _b, ctx) {
+			seen.finalize = ctx.draftProvider !== undefined;
+			return { type: 'output', output: {} };
+		},
+	});
+	const plan: WorkflowPlan = { workflow: 'stub', steps: [{ id: 's1', runner: 'probe', params: {} }] };
+	const fakeProvider = {} as unknown as LLMProvider;
+
+	// supplied → present in BOTH contexts.
+	const p1 = await startRun(intent, plan, 'run-dp', 'slug-dp', { draftProvider: fakeProvider });
+	assert.equal(p1.type, 'paused');
+	if (p1.type !== 'paused') return;
+	await resumeRun(p1.state, {}, 'slug-dp', { draftProvider: fakeProvider });
+	assert.equal(seen.run, true, 'draftProvider reached run() ctx');
+	assert.equal(seen.finalize, true, 'draftProvider reached finalize() ctx');
+
+	// absent → undefined in both (the pre-S010 behaviour).
+	seen.run = undefined; seen.finalize = undefined;
+	const p2 = await startRun(intent, plan, 'run-dp2', 'slug-dp2');
+	assert.equal(p2.type, 'paused');
+	if (p2.type !== 'paused') return;
+	await resumeRun(p2.state, {}, 'slug-dp2');
+	assert.equal(seen.run, false, 'no draftProvider → undefined in run()');
+	assert.equal(seen.finalize, false, 'no draftProvider → undefined in finalize()');
 });

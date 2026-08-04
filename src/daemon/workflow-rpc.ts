@@ -37,6 +37,7 @@ import { registerWorkflowRunners } from '../workflow/index.js';
 import { resolveStageFocus } from '../workflow/seed-focus.js';
 import { prepareDecompose, prepareSynthesize, finalizeArtifact, type FinalizedArtifact } from '../workflow/orchestrator.js';
 import { startRun, resumeRun } from '../workflow/executor.js';
+import { resolveDraftDeps } from '../workflow/draft-deps.js';
 import type { BoundaryFinding } from '../workflow/synthesizer.js';
 import { appendProgressLog, appendRunLog, pathsForWorkflow, writeAtomic } from '../workflow/storage.js';
 import { reviewArtifactFile } from '../workflow/review/index.js';
@@ -206,8 +207,12 @@ export async function runWorkflowServerSide(
 	opts.onProgress?.({ phase: 'plan-ready' });
 
 	// 2. Execute — drive each llm-pause through the provider; skipped steps
-	//    auto-advance inside the executor (no provider call).
-	let tick = await startRun(intent, plan, runId, epicKey);
+	//    auto-advance inside the executor (no provider call). Brainstorm's
+	//    adaptive `elicit` runner drafts one decision per turn through the
+	//    mid-tier draftProvider threaded here (S010); `{}` for every other
+	//    workflow (byte-identical drive).
+	const draftDeps = resolveDraftDeps(intent.workflow, intent.repoPath);
+	let tick = await startRun(intent, plan, runId, epicKey, draftDeps);
 	while (tick.type === 'paused') {
 		checkAbort();
 		const pause = tick.state.pause;
@@ -224,7 +229,7 @@ export async function runWorkflowServerSide(
 		}
 		opts.onProgress?.({ phase: 'step-start', stepId: pause.stepId, runner: pause.runner });
 		const stepJson = await providerFor(pause.runner, pause.stepId).completeStructured<Record<string, unknown>>(msgs(pause.prompt, userTurn), pause.schema, sco(pause.stepId));
-		tick = await resumeRun(tick.state, stepJson, epicKey);
+		tick = await resumeRun(tick.state, stepJson, epicKey, draftDeps);
 		opts.onProgress?.({ phase: 'step-done', stepId: pause.stepId, runner: pause.runner });
 	}
 	if (tick.type === 'error') {

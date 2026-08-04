@@ -3,6 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import type { LLMProvider } from '../shared/types.js';
 import type { ReviewReport } from './review/types.js';
 import type { SizeClass } from './triage/types.js';
 
@@ -174,16 +175,25 @@ export interface StepRunnerContext {
 	readonly stepOutputs: Readonly<Record<string, unknown>>;
 	/** Substituted-in params — placeholders already resolved. */
 	readonly params:      Record<string, unknown>;
+	/** Optional mid-tier "draft" provider (Epic brainstorm S010). A runner
+	 *  that must reason during `run()`/`finalize()` (the adaptive brainstorm
+	 *  `elicit` decision loop) uses this to draft one decision per turn. The
+	 *  executor threads it from an optional executor-level dep into BOTH the
+	 *  `run()` and `finalize()` contexts; absent (undefined) on every run whose
+	 *  caller does not supply it — existing runners ignore it entirely. */
+	readonly draftProvider?: LLMProvider | undefined;
 }
 
 /** A finalize function: given the outer LLM's structured response +
  *  the prepared blob from the pause, produce the step's final
- *  output. */
+ *  output — OR, for a multi-turn runner (the brainstorm adaptive
+ *  `elicit` loop), another `llm-pause` that RE-PAUSES the same step
+ *  for the next decision turn. */
 export type StepRunnerFinalize = (
 	llmResponse:  Record<string, unknown>,
 	preparedBlob: unknown,
 	ctx:          StepRunnerContext,
-) => Promise<StepRunnerOutput | StepRunnerError>;
+) => Promise<StepRunnerOutput | StepRunnerLlmPause | StepRunnerError>;
 
 /** A registered runner. `run` executes the step; `finalize` (if
  *  present) resolves an `llm-pause` back into an output. */

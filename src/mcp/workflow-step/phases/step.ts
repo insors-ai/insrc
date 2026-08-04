@@ -16,6 +16,7 @@
 
 import { getLogger } from '../../../shared/logger.js';
 import { resumeRun } from '../../../workflow/executor.js';
+import { resolveDraftDeps } from '../../../workflow/draft-deps.js';
 import { prepareSynthesize } from '../../../workflow/orchestrator.js';
 import { assertStage, decodeState, encodeState, STATE_VERSION, type WorkflowStepStatePayload } from '../state.js';
 import type {
@@ -48,7 +49,8 @@ export async function handleStep(
 		);
 	}
 
-	const tick = await resumeRun(state.executor, input.response, state.epicKey);
+	const draftDeps = resolveDraftDeps(state.intent.workflow, state.intent.repoPath);
+	const tick = await resumeRun(state.executor, input.response, state.epicKey, draftDeps);
 	log.info(
 		{ runId: state.runId, tickType: tick.type, stepId: input.stepId },
 		'insrc_workflow_step[step]: executor tick',

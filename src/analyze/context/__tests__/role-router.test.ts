@@ -57,6 +57,14 @@ test('empty tiering → critical (core) role resolves to the built-in core defau
 	assert.equal(r.clampedByFloor, false);
 });
 
+test('S010: brainstorm.decision.draft is peripheral → mid and is NOT floor-clamped', () => {
+	// The adaptive elicit draft role resolves to the mid tier (never cheap/local)
+	// and, being peripheral, is passed through the coreFloor guard unclamped.
+	const r = resolveRole('brainstorm.decision.draft', cfg(), undefined);
+	assert.equal(r.tier, 'mid');
+	assert.equal(r.clampedByFloor, false);
+});
+
 test('empty tiering BUT an explicit legacy shaperProvider still wins over the built-in defaults', () => {
 	const r = resolveRole(PERIPH, cfg({}, { shaperProvider: 'cli-codex', shaperProviderExplicit: true }), undefined,
 		{ clientDefault: undefined });

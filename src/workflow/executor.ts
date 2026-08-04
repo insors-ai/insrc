@@ -27,6 +27,7 @@
  */
 
 import { getLogger } from '../shared/logger.js';
+import type { LLMProvider } from '../shared/types.js';
 import type {
 	ExecutorPause,
 	ExecutorState,
@@ -43,6 +44,35 @@ import { PLACEHOLDER_RE } from './types.js';
 import { appendRunLog } from './storage.js';
 
 const log = getLogger('workflow:executor');
+
+/** Optional executor-level dependencies (Epic brainstorm S010). Threaded by
+ *  the drive layer (daemon `workflow.run` + MCP `workflow-step`) into EVERY
+ *  `StepRunnerContext` the executor constructs — both `run()` and `finalize()`.
+ *  Every field is optional; an empty `{}` (the default) makes `startRun` /
+ *  `resumeRun` byte-identical to before this seam existed. */
+export interface ExecutorDeps {
+	/** Mid-tier provider for runners that draft during `run()`/`finalize()`. */
+	readonly draftProvider?: LLMProvider | undefined;
+}
+
+/** Build the runner ctx, folding in the optional executor deps. The
+ *  `draftProvider` key is included ONLY when supplied so a no-deps run yields
+ *  a ctx byte-identical to the pre-S010 shape. */
+function makeCtx(
+	base: {
+		intent:      WorkflowIntent;
+		plan:        WorkflowPlan;
+		runId:       string;
+		stepOutputs: Readonly<Record<string, unknown>>;
+		params:      Record<string, unknown>;
+	},
+	deps: ExecutorDeps,
+): StepRunnerContext {
+	return {
+		...base,
+		...(deps.draftProvider !== undefined ? { draftProvider: deps.draftProvider } : {}),
+	};
+}
 
 // ---------------------------------------------------------------------------
 // Runner registry
@@ -92,6 +122,7 @@ export async function startRun(
 	plan:   WorkflowPlan,
 	runId:  string,
 	slug:   string,
+	deps:   ExecutorDeps = {},
 ): Promise<ExecutorTickResult> {
 	const state: ExecutorState = {
 		intent,
@@ -100,7 +131,7 @@ export async function startRun(
 		nextStepIndex: 0,
 		stepOutputs:   {},
 	};
-	return runFrom(state, slug);
+	return runFrom(state, slug, deps);
 }
 
 // ---------------------------------------------------------------------------
@@ -115,6 +146,7 @@ export async function resumeRun(
 	state:       ExecutorState,
 	llmResponse: Record<string, unknown>,
 	slug:        string,
+	deps:        ExecutorDeps = {},
 ): Promise<ExecutorTickResult> {
 	const { pause } = state;
 	if (pause === undefined) {
@@ -144,17 +176,49 @@ export async function resumeRun(
 		);
 	}
 	const params = substitutePlaceholders(step.params, state.stepOutputs);
-	const ctx: StepRunnerContext = {
+	const ctx: StepRunnerContext = makeCtx({
 		intent:      state.intent,
 		plan:        state.plan,
 		runId:       state.runId,
 		stepOutputs: state.stepOutputs,
 		params,
-	};
+	}, deps);
 	const finalize: StepRunnerFinalize = runner.finalize;
 	const result = await finalize(llmResponse, pause.preparedBlob, ctx);
 	if (result.type === 'error') {
 		return errorTick(step.id, result.code, result.message, result.retryable);
+	}
+
+	// A multi-turn runner (brainstorm adaptive `elicit`, S010) may finalize
+	// into ANOTHER llm-pause: re-pause the SAME step (nextStepIndex UNCHANGED)
+	// so the next decision turn runs against a fresh prompt. Strictly additive
+	// — the output/error paths below are untouched.
+	if (result.type === 'llm-pause') {
+		const repause: ExecutorPause = {
+			stepId:       step.id,
+			runner:       pause.runner,
+			prompt:       result.prompt,
+			userTurn:     result.userTurn,
+			schema:       result.schema,
+			preparedBlob: result.preparedBlob,
+		};
+		appendRunLog(slug, state.plan.workflow, state.runId, {
+			ts:     new Date().toISOString(),
+			event:  'step-paused',
+			stepId: step.id,
+			runner: pause.runner,
+		});
+		return {
+			type:  'paused',
+			state: {
+				intent:        state.intent,
+				plan:          state.plan,
+				runId:         state.runId,
+				nextStepIndex: state.nextStepIndex,
+				stepOutputs:   state.stepOutputs,
+				pause:         repause,
+			},
+		};
 	}
 
 	appendRunLog(slug, state.plan.workflow, state.runId, {
@@ -178,14 +242,14 @@ export async function resumeRun(
 		nextStepIndex: nextState.nextStepIndex,
 		stepOutputs:   nextState.stepOutputs,
 	};
-	return runFrom(clean, slug);
+	return runFrom(clean, slug, deps);
 }
 
 // ---------------------------------------------------------------------------
 // Core loop
 // ---------------------------------------------------------------------------
 
-async function runFrom(state: ExecutorState, slug: string): Promise<ExecutorTickResult> {
+async function runFrom(state: ExecutorState, slug: string, deps: ExecutorDeps = {}): Promise<ExecutorTickResult> {
 	let i = state.nextStepIndex;
 	const outputs = { ...state.stepOutputs };
 	while (i < state.plan.steps.length) {
@@ -200,13 +264,13 @@ async function runFrom(state: ExecutorState, slug: string): Promise<ExecutorTick
 				false,
 			);
 		}
-		const ctx: StepRunnerContext = {
+		const ctx: StepRunnerContext = makeCtx({
 			intent:      state.intent,
 			plan:        state.plan,
 			runId:       state.runId,
 			stepOutputs: outputs,
 			params,
-		};
+		}, deps);
 		appendRunLog(slug, state.plan.workflow, state.runId, {
 			ts:     new Date().toISOString(),
 			event:  'step-start',

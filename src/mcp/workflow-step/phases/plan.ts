@@ -18,6 +18,7 @@
 
 import { getLogger } from '../../../shared/logger.js';
 import { startRun } from '../../../workflow/executor.js';
+import { resolveDraftDeps } from '../../../workflow/draft-deps.js';
 import { prepareSynthesize } from '../../../workflow/orchestrator.js';
 import { assertStage, decodeState, encodeState, STATE_VERSION, type WorkflowStepStatePayload } from '../state.js';
 import type {
@@ -46,7 +47,8 @@ export async function handlePlan(
 		return errorResult('empty-plan', `plan.steps is empty`, false);
 	}
 
-	const tick = await startRun(state.intent, input.plan, state.runId, state.epicKey);
+	const draftDeps = resolveDraftDeps(state.intent.workflow, state.intent.repoPath);
+	const tick = await startRun(state.intent, input.plan, state.runId, state.epicKey, draftDeps);
 	log.info(
 		{ runId: state.runId, workflow: state.intent.workflow, tickType: tick.type },
 		'insrc_workflow_step[plan]: executor tick',

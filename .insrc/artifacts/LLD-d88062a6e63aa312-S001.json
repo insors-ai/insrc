@@ -1,0 +1,551 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1785870051230-po3dyg",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-08-04T19:09:56.031Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 544722,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d88062a6e63aa312",
+    "epicSlug": "make-code-review-work-any-subset",
+    "storyId": "S001",
+    "hldBaseRunId": "wf-1785870051230-po3dyg",
+    "hldEffectiveHash": "d88062a6e63aa31212d797a8844e58f74159613182eac1463041b1d52a83f651",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "feature",
+    "triageRationale": "Feature (supersedes the earlier plan-only-optional LLD 65418c64c5b700e5): make BOTH the LLD and plan optional so a small/trivial story with any/no artifacts can be code-reviewed. Three-mode behavioural fork + a nullability change (approvedLld/approvedPlan both -> |null) + removing the no-approved-contract failure, threaded through subject.ts + types.ts + adherence/coverage builders + handler.ts. Reuses the four-dimension pipeline.",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "resolveCodeReviewSubject is defined in src/workflow/code-review/subject.ts and resolves the LLD then plan contracts, returning a CodeReviewSubjectResult.",
+          "evidence": "Anchor src/workflow/code-review/subject.ts:88 resolves (found:true); grep confirms `function resolveCodeReviewSubject` (2 hits) and 50 uses of the symbol — the resolver exists as cited.",
+          "action": "None — citation verified.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "CodeReviewSubject declares approvedLld and approvedPlan fields, and CodeReviewSubjectResult declares the failure-reason union, in src/workflow/code-review/types.ts.",
+          "evidence": "types.ts:97 and types.ts:107 both resolve; grep confirms approvedLld, approvedPlan, no-approved-contract, and no-build-record all present in the tree — the fields + failure-reason union exist as cited.",
+          "action": "None — citation verified.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "buildAdherencePrompt in src/workflow/code-review/dimensions/adherence.ts dereferences subject.approvedPlan.body (the null-deref bug this story fixes), and judgeAdherence always issues a provider.completeStructured call.",
+          "evidence": "adherence.ts:119 resolves EXACTLY to `export async function judgeAdherence(`; grep confirms `approvedPlan.body` (22 hits) and completeStructured usage — the null-deref bug and the always-provider-call both exist as cited. The :98 anchor is within buildAdherencePrompt's message assembly (found:true); the exact deref line may sit a few lines off but the pattern is present in-file.",
+          "action": "None — citation verified; line offset is immaterial (grep confirms the deref exists).",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "buildCoveragePrompt and promisedTestsOf live in src/workflow/code-review/dimensions/coverage.ts, and promisedTestsOf is already null-plan-tolerant.",
+          "evidence": "coverage.ts:84 resolves; grep confirms buildCoveragePrompt (44) and promisedTestsOf (7) both exist in the coverage dimension as cited.",
+          "action": "None — citation verified.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl5",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The MCP code-review handler resolves the subject via resolveCodeReviewSubject and relays resolved.reason generically on an ok:false no-subject result, with no per-reason branch.",
+          "evidence": "handler.ts:176 resolves; grep confirms resolveCodeReviewSubject, no-subject (10), resolved.reason (6), and buildAdherencePrompt in the MCP handler — the generic reason relay exists as cited.",
+          "action": "None — citation verified.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl6",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "conventions.ts and quality.ts do NOT read approvedLld or approvedPlan, so they are contract-independent and unchanged across all three modes.",
+          "evidence": "approvedLld/approvedPlan grep returns 50 hits tree-wide (capped), consistent with the fields being read in adherence/coverage but the claim that conventions.ts/quality.ts do NOT read them cannot be refuted by the capped global grep — no counter-evidence surfaced. The design does not depend on this beyond leaving those two modules untouched, which is verifiable at build time.",
+          "action": "Build-time verification: conventions.ts + quality.ts remain unedited in this story; confirm no approvedLld/approvedPlan reference is added there.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl7",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "The code-review dimensions are the four named (adherence, conventions, coverage, quality), each a distinct module under src/workflow/code-review/dimensions/.",
+          "evidence": "grep for dimension:'(adherence|conventions|coverage|quality)' and DimensionResult both return hits — the four-dimension inventory is consistent with the tree.",
+          "action": "None — inventory consistent.",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 7
+      },
+      "reviewedAt": "2026-08-04T19:11:38.084Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-08-04T19:19:19.625Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "S001",
+        "owns": [],
+        "depends": [],
+        "internal": "Make the LLD and plan optional for code review (three modes)"
+      },
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "resolveCodeReviewSubject",
+          "signature": "(repoPath: string, epicHash: string, storyId: string, deps?: SubjectDeps) => Promise<CodeReviewSubjectResult>",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "Registered repo root.",
+              "optional": false
+            },
+            {
+              "name": "epicHash",
+              "type": "string",
+              "purpose": "Epic hash keying the story.",
+              "optional": false
+            },
+            {
+              "name": "storyId",
+              "type": "string",
+              "purpose": "Story id keying the (optional) LLD/plan.",
+              "optional": false
+            },
+            {
+              "name": "deps",
+              "type": "SubjectDeps",
+              "purpose": "Injected requireApprovedLld/requireApprovedPlan/changedFiles/readBuildRecord (test seam).",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<CodeReviewSubjectResult>",
+            "meaning": "{ok:true, subject} with approvedLld and/or approvedPlan possibly null; {ok:false, reason:'no-build-record'} ONLY when there are no changed files."
+          },
+          "errors": [
+            {
+              "type": "no-build-record (reason)",
+              "condition": "the changedFiles derivation throws NoBuildChangesError (unchanged) — now the ONLY ok:false reason."
+            },
+            {
+              "type": "propagated",
+              "condition": "UnregisteredRepoError + any non-Artifact error still propagate."
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "The LLD and plan are EACH resolved in their own try mapping ArtifactMissingError|ArtifactNotApprovedError -> null (a non-Artifact error re-throws). A missing/unapproved contract is NO LONGER a failure; the resolver never returns 'no-approved-contract'. ok:true even when both are null (a trivial/no-contract story is reviewable)."
+          ]
+        },
+        {
+          "name": "judgeAdherence",
+          "signature": "(subject: CodeReviewSubject, grounding: CodeReviewGrounding, provider: LLMProvider) => Promise<DimensionResult>",
+          "parameters": [
+            {
+              "name": "subject",
+              "type": "CodeReviewSubject",
+              "purpose": "Carries the (nullable) approvedLld + approvedPlan.",
+              "optional": false
+            },
+            {
+              "name": "grounding",
+              "type": "CodeReviewGrounding",
+              "purpose": "Changed-symbol summaries.",
+              "optional": false
+            },
+            {
+              "name": "provider",
+              "type": "LLMProvider",
+              "purpose": "The tier-resolved judge provider.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<DimensionResult>",
+            "meaning": "The adherence dimension result; EMPTY findings in mode C (no contract)."
+          },
+          "errors": [
+            {
+              "type": "propagated",
+              "condition": "withStructuredRetry throws after MAX_ATTEMPTS when a contract IS present (unchanged); never a fabricated pass."
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "SHORT-CIRCUIT: when approvedLld===null && approvedPlan===null, return an empty DimensionResult (dimension:'adherence', findings:[]) WITHOUT any provider call — guaranteed no fabricated departure. Otherwise issue the single serial completeStructured call as today, scoped to changedFiles."
+          ]
+        },
+        {
+          "name": "buildAdherencePrompt",
+          "signature": "(subject: CodeReviewSubject, grounding: CodeReviewGrounding, extraNote: string | undefined) => LLMMessage[]",
+          "parameters": [
+            {
+              "name": "subject",
+              "type": "CodeReviewSubject",
+              "purpose": "Carries the nullable approvedLld + approvedPlan.",
+              "optional": false
+            },
+            {
+              "name": "grounding",
+              "type": "CodeReviewGrounding",
+              "purpose": "Changed-symbol summaries.",
+              "optional": false
+            },
+            {
+              "name": "extraNote",
+              "type": "string | undefined",
+              "purpose": "Correction from a prior validation attempt.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "LLMMessage[]",
+            "meaning": "The adherence judge messages, branched on which contracts are present."
+          },
+          "errors": [
+            {
+              "type": "none",
+              "condition": "pure builder; MUST NOT dereference a null approvedLld/approvedPlan (the adherence.ts:98 unconditional plan deref is the bug). Only ever called when a contract exists (judgeAdherence short-circuits mode C before building)."
+            }
+          ],
+          "preconditions": [
+            "At least one of approvedLld/approvedPlan is non-null (mode A or B)"
+          ],
+          "postconditions": [
+            "LLD+PLAN (mode A): includes the LLD body + the '## Approved plan' body section + implementation-correctness framing (code correctly IMPLEMENTS the plan tasks + acceptance checks AND honours the LLD). LLD only (mode B): includes the LLD body, OMITS the plan section, frames as an LLD-contract review. The trailing structural-payload order is preserved."
+          ]
+        },
+        {
+          "name": "buildCoveragePrompt",
+          "signature": "(subject: CodeReviewSubject, grounding: CodeReviewGrounding, extraNote: string | undefined) => LLMMessage[]",
+          "parameters": [
+            {
+              "name": "subject",
+              "type": "CodeReviewSubject",
+              "purpose": "Carries the nullable approvedPlan whose tasks[].tests are the promised tests.",
+              "optional": false
+            },
+            {
+              "name": "grounding",
+              "type": "CodeReviewGrounding",
+              "purpose": "Changed symbols + testsReaching edges.",
+              "optional": false
+            },
+            {
+              "name": "extraNote",
+              "type": "string | undefined",
+              "purpose": "Correction from a prior attempt.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "LLMMessage[]",
+            "meaning": "The coverage judge messages; the promised-tests framing conditioned on plan presence."
+          },
+          "errors": [
+            {
+              "type": "none",
+              "condition": "promisedTestsOf already yields [] for a null plan; no throw."
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "Plan PRESENT: keeps the promised-tests section + the missing-promised-test rule. Plan NULL (mode B or C): empty promised-tests list + framing 'no approved plan — judge testsReaching coverage of the changed symbols only; do not report missing promised tests'. testsReaching-based coverage is unchanged in all modes."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "CodeReviewSubject.approvedLld / approvedPlan",
+        "change": "field-modify",
+        "details": "Widen both to nullable: approvedLld: LldArtifact | null and approvedPlan: PlanArtifact | null. The review MODE is the derivable predicate over presence: (A) both present, (B) LLD only, (C) neither — no stored mode field. conventions/quality read neither, so they are mode-agnostic.",
+        "schemaDiff": "CodeReviewSubject.approvedLld: LldArtifact -> LldArtifact | null; CodeReviewSubject.approvedPlan: PlanArtifact -> PlanArtifact | null",
+        "callSites": [
+          "src/workflow/code-review/types.ts:97",
+          "src/workflow/code-review/subject.ts:122",
+          "src/workflow/code-review/dimensions/adherence.ts:98",
+          "src/workflow/code-review/dimensions/coverage.ts:84"
+        ]
+      },
+      {
+        "entity": "CodeReviewSubjectResult (failure-reason union)",
+        "change": "invariant-change",
+        "details": "Trim the failure union from {ok:false; reason:'no-approved-contract'|'no-build-record'} to {ok:false; reason:'no-build-record'}. Since neither contract is required, 'no-approved-contract' is no longer produced; removing it keeps the surface honest (no unreachable state). The handler relays reasons generically (handler.ts:176) so no handler branch is lost.",
+        "schemaDiff": "CodeReviewSubjectResult failure reason: 'no-approved-contract'|'no-build-record' -> 'no-build-record'",
+        "callSites": [
+          "src/workflow/code-review/types.ts:107",
+          "src/workflow/code-review/subject.ts:102",
+          "src/mcp/code-review-step/handler.ts:176"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The changed-file derivation finds NO changed files (nothing built to review).",
+          "detection": "resolveCodeReviewSubject's changedFiles derivation throws NoBuildChangesError (unchanged from today, subject.ts:110-113).",
+          "response": "Return {ok:false, reason:'no-build-record'} — now the ONLY ok:false path. handler.ts:176 relays it generically as a no-subject error.",
+          "userImpact": "Code review declines with a clear 'nothing changed to review' reason rather than a hollow pass.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The LLD (or plan) file is present on disk but its meta.approvedAt is unset (unapproved contract).",
+          "detection": "requireApprovedLld / requireApprovedPlan throws ArtifactNotApprovedError, caught in that contract's OWN try.",
+          "response": "Map to null for that contract (NOT a failure). The review proceeds in the degraded mode (B if only the plan is unapproved, C if both are).",
+          "userImpact": "An in-progress story with an unapproved contract is still reviewable against whatever IS approved (or as a pure code review) — no more hard 'no-approved-contract' refusal.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A non-Artifact error is raised while resolving a contract (e.g. UnregisteredRepoError, a JSON parse failure on a corrupt artifact).",
+          "detection": "The catch in each contract's try re-throws anything that is NOT ArtifactMissingError|ArtifactNotApprovedError.",
+          "response": "Propagate — a genuine fault must surface, never be silently swallowed into a null contract that would mask corruption as 'mode C'.",
+          "userImpact": "A real repo/artifact fault fails loudly instead of degrading to a hollow no-contract review.",
+          "recoverable": false
+        },
+        {
+          "scenario": "Adherence judging is requested in mode C (both contracts null) — there is no design contract to assess against.",
+          "detection": "judgeAdherence checks approvedLld===null && approvedPlan===null at entry.",
+          "response": "Short-circuit: return an empty DimensionResult (dimension:'adherence', findings:[]) with NO provider call, so the model cannot fabricate a departure from a non-existent contract.",
+          "userImpact": "Mode-C reviews report zero adherence findings honestly (conventions/quality/coverage still run) instead of hallucinated ones.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "LLD approved, plan absent (mode B — the small-story route that Fix D targets).",
+          "expected": "ok:true, approvedLld set, approvedPlan null. Adherence judges vs the LLD contract only (buildAdherencePrompt omits the plan section). Coverage uses testsReaching only (promisedTestsOf yields [])."
+        },
+        {
+          "input": "LLD absent, plan approved (asymmetric — plan without an LLD).",
+          "expected": "ok:true, approvedLld null, approvedPlan set. Adherence judges vs the plan tasks/acceptance checks (buildAdherencePrompt includes the plan section, omits the LLD body). Not the small-story route but structurally valid — no throw."
+        },
+        {
+          "input": "Both LLD and plan approved (mode A — the full feature route).",
+          "expected": "ok:true, both set. Adherence = implementation-correctness (code vs plan tasks+acceptance AND the LLD). Coverage keeps the promised-tests section. Byte-identical to today's behavior."
+        },
+        {
+          "input": "Both contracts null but there ARE changed files (mode C — a trivial story with no design artifacts).",
+          "expected": "ok:true, both null. Adherence returns empty (no provider call); conventions + quality + coverage(testsReaching-only) run normally. A pure code review with no design contract."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "conventions + quality dimensions read neither approvedLld nor approvedPlan and MUST run byte-identically in all three modes — they are contract-independent.",
+          "source": "c3"
+        },
+        {
+          "text": "No fabricated adherence: the adherence dimension NEVER reports a finding when there is no contract to assess against (guaranteed by the judgeAdherence short-circuit that skips the provider call entirely in mode C).",
+          "source": "c3"
+        },
+        {
+          "text": "A non-Artifact error while resolving a contract must still propagate — only ArtifactMissingError|ArtifactNotApprovedError map to null; corruption/registration faults never degrade silently to mode C.",
+          "source": "c1"
+        },
+        {
+          "text": "The MCP handler relays resolved.reason generically (handler.ts:176) with no per-reason branch, so trimming 'no-approved-contract' from the union requires no handler edit and loses no user-facing message.",
+          "source": "c4"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove resolveCodeReviewSubject resolves each contract independently and only fails with 'no-build-record'.",
+          "subjects": [
+            "resolveCodeReviewSubject: LLD+plan approved -> ok:true both set (mode A)",
+            "resolveCodeReviewSubject: LLD approved, plan missing/unapproved -> ok:true, approvedPlan null (mode B)",
+            "resolveCodeReviewSubject: plan approved, LLD missing -> ok:true, approvedLld null (asymmetric)",
+            "resolveCodeReviewSubject: both missing/unapproved but changed files present -> ok:true, both null (mode C)",
+            "resolveCodeReviewSubject: no changed files -> ok:false, reason:'no-build-record'",
+            "resolveCodeReviewSubject: non-Artifact error while resolving a contract propagates (not mapped to null)"
+          ],
+          "fixturesNeeded": [
+            "SubjectDeps stub with injectable requireApprovedLld/requireApprovedPlan/changedFiles/readBuildRecord (throw ArtifactMissingError/ArtifactNotApprovedError/NoBuildChangesError/a generic Error on demand)"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove the three-mode fork points in the dimensions never deref null and adherence never fabricates in mode C.",
+          "subjects": [
+            "judgeAdherence: both contracts null -> returns empty DimensionResult with NO provider call (spy provider asserts zero calls)",
+            "judgeAdherence: a contract present -> issues exactly one completeStructured call (unchanged)",
+            "buildAdherencePrompt: mode A includes LLD body + '## Approved plan' section + implementation-correctness framing",
+            "buildAdherencePrompt: mode B (LLD only) includes LLD body, OMITS plan section, no null deref",
+            "buildCoveragePrompt: plan present keeps promised-tests section; plan null emits empty list + softened 'testsReaching only' framing",
+            "conventions + quality prompt builders byte-identical across all three modes (no approvedLld/approvedPlan read)"
+          ],
+          "fixturesNeeded": [
+            "A spy LLMProvider recording completeStructured call count",
+            "Minimal CodeReviewSubject fixtures for each of the 3 modes + the asymmetric case",
+            "A minimal CodeReviewGrounding fixture with changed symbols + testsReaching edges"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "resolveCodeReviewSubject: LLD approved, plan missing/unapproved -> ok:true, approvedPlan null (mode B)",
+            "resolveCodeReviewSubject: both missing/unapproved but changed files present -> ok:true, both null (mode C)",
+            "resolveCodeReviewSubject: no changed files -> ok:false, reason:'no-build-record'"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "judgeAdherence: both contracts null -> returns empty DimensionResult with NO provider call (spy provider asserts zero calls)",
+            "buildAdherencePrompt: mode B (LLD only) includes LLD body, OMITS plan section, no null deref"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "buildCoveragePrompt: plan present keeps promised-tests section; plan null emits empty list + softened 'testsReaching only' framing",
+            "conventions + quality prompt builders byte-identical across all three modes (no approvedLld/approvedPlan read)"
+          ]
+        }
+      ],
+      "testFramework": "node:test via npx tsx --test"
+    },
+    "migration": {
+      "stateBefore": "resolveCodeReviewSubject (subject.ts:88) resolves requireApprovedLld THEN requireApprovedPlan in ONE try (subject.ts:98-99); a missing/unapproved EITHER contract returns {ok:false, reason:'no-approved-contract'} (subject.ts:100-102). CodeReviewSubject.approvedLld/approvedPlan are non-null (types.ts:97); CodeReviewSubjectResult's failure union is 'no-approved-contract'|'no-build-record' (types.ts:107). buildAdherencePrompt unconditionally derefs subject.approvedPlan.body (adherence.ts:98) and judgeAdherence always calls the provider (adherence.ts:119/127). Net: a small/trivial story with no plan (or no LLD) can never be code-reviewed. Cited: subject.ts:88/98/122, types.ts:97/107, adherence.ts:98/119.",
+      "stateAfter": "Both contracts are optional. approvedLld: LldArtifact|null and approvedPlan: PlanArtifact|null. resolveCodeReviewSubject resolves each contract in its OWN try, mapping ArtifactMissingError|ArtifactNotApprovedError -> null and re-throwing non-Artifact errors; the only ok:false failure is 'no-build-record' (no changed files), so 'no-approved-contract' is dropped from the union. Three derived modes: (A) both present -> implementation-correctness; (B) LLD only -> LLD-contract review; (C) neither -> pure code review, adherence short-circuits to empty (no provider call). conventions + quality run byte-identically in all modes.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Widen the CodeReviewSubject fields: change approvedLld to LldArtifact|null and approvedPlan to PlanArtifact|null (types.ts:97).",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Trim the CodeReviewSubjectResult failure union to reason:'no-build-record' only, removing the now-unreachable 'no-approved-contract' (types.ts:107).",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Split the single contract-resolution try in resolveCodeReviewSubject into two independent trys (LLD, then plan), each catching ArtifactMissingError|ArtifactNotApprovedError -> assign null for that contract and re-throwing anything else; remove the no-approved-contract early-return (subject.ts:98-102).",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Guard buildAdherencePrompt against a null contract: branch the payload assembly so it includes the LLD body only when approvedLld is set and the '## Approved plan' section only when approvedPlan is set; never deref a null (fixes the adherence.ts:98 hard deref).",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Add the mode-C short-circuit to judgeAdherence: when approvedLld===null && approvedPlan===null, return an empty DimensionResult without any provider call (guard placed BEFORE the completeStructured call at adherence.ts:127).",
+          "rollbackable": true
+        },
+        {
+          "order": 6,
+          "action": "Soften buildCoveragePrompt framing when approvedPlan is null: emit an empty promised-tests list plus the 'no approved plan — judge testsReaching coverage only; do not report missing promised tests' instruction; leave the plan-present path unchanged.",
+          "rollbackable": true
+        },
+        {
+          "order": 7,
+          "action": "Add the unit tests for the three modes + the asymmetric case + no-build-record + the judgeAdherence zero-provider-call assertion; run the code-review test suite.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "The change is source-compatible for existing callers: mode A (LLD+plan both approved — the full feature route) resolves identically to today and adherence/coverage prompts are byte-identical. Consumers that pattern-match CodeReviewSubjectResult on reason==='no-approved-contract' would no longer see that value — but the only consumer (handler.ts:176) relays resolved.reason generically with no per-reason branch, so no call-site breaks. Readers of subject.approvedLld/approvedPlan must now handle null; all in-repo readers (adherence/coverage) are updated in this same story, and conventions/quality never read them.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Both nullable; adherence short-circuits to empty in mode C; trim the dead reason",
+        "oneLineSummary": "approvedLld + approvedPlan both -> |null; judgeAdherence returns an empty result WITHOUT a provider call when both are null; buildAdherencePrompt/buildCoveragePrompt branch on presence; 'no-approved-contract' removed from the failure union (only 'no-build-record' remains).",
+        "chosen": true
+      },
+      {
+        "id": "a2",
+        "name": "Both nullable; adherence handled purely by a mode-C prompt; retain the union",
+        "oneLineSummary": "Same nullability, but judgeAdherence always calls the provider with a mode-C 'no contract -> return empty' prompt, and 'no-approved-contract' stays in the union as an unreachable member.",
+        "reasonRejected": "Smallest diff but VIOLATES the mode-C no-hallucination constraint — still calls the provider in mode C and relies on the model to self-report empty against no contract, so it can emit a fabricated adherence finding with no expectationRef. Accuracy-first rules it out. Also leaves a dead 'no-approved-contract' reason."
+      },
+      {
+        "id": "a3",
+        "name": "Both nullable; short-circuit adherence; RETAIN the reason union for API stability",
+        "oneLineSummary": "a1's short-circuit + nullability, but keep 'no-approved-contract' in the failure union (unreachable) to avoid touching the exported type.",
+        "reasonRejected": "Matches a1 on correctness (same short-circuit) but leaves an unreachable 'no-approved-contract' reason — partial on honest-surface; a future reader may wrongly assume the resolver still gates on the contract. a1's union trim is contained in-story, so the API-stability upside does not outweigh the misleading dead state."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/code-review/subject.ts:88 — symbol.locate: resolveCodeReviewSubject required-contract gate",
+      "quotedText": "resolveCodeReviewSubject (subject.ts:88) resolves deps.requireApprovedLld THEN deps.requireApprovedPlan in ONE try; either ArtifactMissingError|ArtifactNotApprovedError -> {ok:false, reason:'no-approved-contract'}; non-Artifact errors propagate."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/code-review/types.ts:97,107 — data-model.trace: CodeReviewSubject fields + failure-reason union",
+      "quotedText": "CodeReviewSubject has readonly approvedLld: LldArtifact + readonly approvedPlan: PlanArtifact. CodeReviewSubjectResult = {ok:true; subject} | {ok:false; reason:'no-approved-contract'|'no-build-record'}."
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/code-review/dimensions/adherence.ts:98,119 + coverage.ts:84 — usage.example: three-mode fork points",
+      "quotedText": "buildAdherencePrompt unconditionally does JSON.stringify(subject.approvedPlan.body) (THROWS on null). judgeAdherence ALWAYS issues one provider.completeStructured call. buildCoveragePrompt reads promisedTestsOf which already yields [] for a null plan. conventions.ts + quality.ts do NOT read approvedLld/approvedPlan."
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "src/mcp/code-review-step/handler.ts:29,176 — symbol.locate: handler subject/reason handling",
+      "quotedText": "handler.ts on ok:false returns errorResult('no-subject', `... ${resolved.reason}`) — it RELAYS resolved.reason generically, with NO special-case branch for 'no-approved-contract'. So removing that reason needs no handler edit."
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/code-review/__tests__ + dimensions/__tests__ — test.locate: code-review tests to extend",
+      "quotedText": "New coverage: subject -> ok:true with approvedLld=null and/or approvedPlan=null; judgeAdherence returns EMPTY (no provider call) when both null; buildAdherencePrompt three-way framing; buildCoveragePrompt softened when no plan. node:test via npx tsx --test."
+    },
+    {
+      "id": "c6",
+      "kind": "step-output",
+      "ref": "s3 judge — winner a1",
+      "quotedText": "a1 wins on the correctness-critical spine: mode-C adherence is GUARANTEED empty via a judge short-circuit (a2 violates this), the three modes are delivered, and it removes the now-unreachable no-approved-contract reason (a3 only partial)."
+    }
+  ]
+}

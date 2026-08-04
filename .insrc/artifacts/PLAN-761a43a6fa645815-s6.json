@@ -1,0 +1,295 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1785826832969-z3crmh",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-08-04T07:08:16.616Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 463633,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "761a43a6fa645815",
+    "epicSlug": "add-daemon-driven-code-review-stage",
+    "storyId": "s6",
+    "lldRunId": "wf-1785825806747-x7hhbj",
+    "lldEffectiveHash": "47535369867a9e9c71a300e7ca347a1a6437356df9b3c75b91fec292dcf80f63",
+    "review": {
+      "artifact": "plan",
+      "stage": "plan",
+      "verdict": "pass",
+      "findings": [],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 0
+      },
+      "reviewedAt": "2026-08-04T07:11:11.452Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-08-04T07:11:30.677Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "sc4 record types (CodeReviewBody / CodeReviewArtifact / CodeReviewOutcome)",
+        "summary": "Add the sc4 record types to src/workflow/code-review/types.ts (beside sc1/sc2/sc3): CodeReviewBody { readonly kind: 'code-review'; readonly epicHash: string; readonly storyId: string; readonly subject: { readonly changedFiles: readonly string[] }; readonly dimensions: readonly DimensionResult[]; readonly verdict: ReviewVerdict; readonly counts: { readonly high: number; readonly med: number; readonly low: number } }; CodeReviewMeta extends ArtifactMetaBase; CodeReviewArtifact = { readonly meta: CodeReviewMeta; readonly body: CodeReviewBody }; CodeReviewOutcome = { readonly ok: true; readonly artifact: CodeReviewArtifact } | { readonly ok: false; readonly error: string }. Reuse ReviewVerdict/Severity from ../review/types.js and ArtifactMetaBase from the artifacts meta base via import type. Type-only — no runtime behaviour. .js import extensions; import type for type-only.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "src/workflow/code-review/types.ts exports CodeReviewBody, CodeReviewArtifact, CodeReviewOutcome (+ CodeReviewMeta)",
+          "CodeReviewBody carries kind:'code-review', epicHash, storyId, subject.changedFiles, dimensions: DimensionResult[], verdict: ReviewVerdict (imported from ../review/types.js), counts:{high,med,low}",
+          "CodeReviewArtifact = {meta: CodeReviewMeta extends ArtifactMetaBase, body: CodeReviewBody}; CodeReviewOutcome is the {ok:true,artifact}|{ok:false,error} discriminated union",
+          "tsc --noEmit is clean; imports carry .js extensions and type-only imports use import type"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "sc4 types compile + shape assertion: a constructed CodeReviewArtifact literal type-checks (meta extends ArtifactMetaBase, body carries kind/verdict/counts/dimensions) — exercised indirectly by the runner tests that build the record"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Additive storage peers codeReviewArtifactId / codeReviewArtifactPaths",
+        "summary": "Add to src/workflow/storage.ts, alongside buildArtifactId (:161) + buildArtifactPaths (:285): codeReviewArtifactId(epicHash, storyId): string => `CR-${epicHash}-${storyId}`, and codeReviewArtifactPaths(repoPath, epicHash, storyId, epicSlug?): {readonly md; readonly json} with json = join(repoPath, ARTIFACTS_DIR, `${codeReviewArtifactId(epicHash, storyId)}.json`) and md using the fileSeg(epicSlug ?? epicHash) convention buildArtifactPaths uses (choose the code-review docs dir or ARTIFACTS-adjacent per the sibling pattern). No existing storage function is edited; the CR- namespace is new.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "src/workflow/storage.ts exports codeReviewArtifactId => 'CR-<epic>-<story>' and codeReviewArtifactPaths => {md, json}",
+          "codeReviewArtifactPaths.json lands under ARTIFACTS_DIR ('.insrc/artifacts') as `${codeReviewArtifactId(...)}.json`, mirroring buildArtifactPaths",
+          "the CR- prefix is distinct from every existing artifact id prefix (DEF/HLD/LLD/PLAN/BUILD/EXT/SPEC); no existing *ArtifactId/*ArtifactPaths edited",
+          "tsc --noEmit is clean"
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "codeReviewArtifactId returns 'CR-<epic>-<story>' (starts 'CR-', distinct from BUILD-/LLD-/PLAN-...); codeReviewArtifactPaths.json is join(repoPath, ARTIFACTS_DIR, id+'.json') — asserted in the runner test's ac3"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "The runner runCodeReview (serial loop + verdict fold + validate-then-write)",
+        "summary": "Add src/workflow/code-review/runner.ts exporting runCodeReview(subject: CodeReviewSubject, provider: LLMProvider, opts: RunCodeReviewOpts, deps = DEFAULT_DEPS): Promise<CodeReviewOutcome>, plus the sc5 types RunCodeReviewOpts {runId, modelLabel, signal?, onProgress?}, CodeReviewProgress {phase: 'grounding'|'dimension-start'|'dimension-done'|'finalize'|'done'|'error', dimension?, detail?}, and CodeReviewRunnerDeps {judges: readonly {dimension: ReviewDimension; judge: (s,g,p)=>Promise<DimensionResult>}[]; assembleGrounding; write}. DEFAULT_DEPS wires the four shipped judges in fixed order [adherence, conventions, coverage, quality], assembleCodeReviewGrounding (S001, grounding.ts:61), and writeAtomic (storage.ts:73). Flow, ALL inside one try/catch that converts throws to {ok:false, error} BEFORE any write: (1) emit 'grounding'; assembleGrounding(subject.repoPath, subject.changedFiles) — on throw return {ok:false}; (2) SERIAL for-of the judges (never Promise.all, k4): check opts.signal?.aborted at each iteration boundary (return {ok:false,'aborted'} if set), emit 'dimension-start', await judge(subject, grounding, provider) collecting DimensionResult[], emit 'dimension-done' — a throwing judge propagates to the catch => {ok:false} with NO write (ac5); (3) fold verdict: flatten all findings, count severities => counts:{high,med,low}, verdict = counts.high>0 ? 'block' : counts.med>0 ? 'warn' : 'pass'; (4) build the CodeReviewArtifact (meta stamped with runId/modelLabel/epicHash/storyId/kind; body{kind:'code-review', epicHash, storyId, subject:{changedFiles}, dimensions, verdict, counts}); (5) VALIDATE in memory (verdict ∈ {'pass','warn','block'}, counts consistent, dimensions length===judges.length) — on failure return {ok:false} WITHOUT writing; (6) emit 'finalize'; write BOTH files from codeReviewArtifactPaths — deps.write(paths.json, JSON.stringify(artifact,null,2)+'\\n') and deps.write(paths.md, renderCodeReviewMd(artifact)) where renderCodeReviewMd is a private minimal markdown summary (the insrc:artifact marker + verdict + counts + per-dimension findings, like the sibling artifacts); emit 'done'; return {ok:true, artifact}. Read-only over source; imports .js + import type; getLogger not console.log; no Promise.all.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "src/workflow/code-review/runner.ts exports runCodeReview + the sc5 types (RunCodeReviewOpts, CodeReviewProgress, CodeReviewRunnerDeps) + DEFAULT_DEPS wiring the four shipped judges (fixed order) + assembleCodeReviewGrounding + writeAtomic",
+          "the four judges run in a SERIAL for-of loop (no Promise.all over the provider); opts.signal.aborted is checked at each iteration boundary",
+          "verdict fold: any HIGH=>block, else any MED=>warn, else pass; counts:{high,med,low} are the true totals over all four dimensions' findings",
+          "a throwing judge / grounding failure / in-memory validation failure / aborted signal returns {ok:false, error} and calls deps.write ZERO times (ac5 — no partial/pass record)",
+          "on success exactly one CodeReviewArtifact is built + validated in memory THEN BOTH files written via deps.write at codeReviewArtifactPaths (.json = JSON.stringify(artifact,null,2)+newline; .md = private renderCodeReviewMd summary with the insrc:artifact marker); body.dimensions has all four, body.verdict+counts mirror ReviewReport",
+          "tsc --noEmit clean; imports .js + import type; no console.log; no Promise.all"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c1",
+          "c3",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "runCodeReview serial for-of over the four injected judges in [adherence,conventions,coverage,quality] order (ac4, no overlap)"
+          },
+          {
+            "level": "unit",
+            "name": "runCodeReview folds verdict (any HIGH=>block, else any MED=>warn, else pass) + counts over aggregated findings (ac2)"
+          },
+          {
+            "level": "unit",
+            "name": "runCodeReview builds+validates in memory THEN writes both .json+.md at codeReviewArtifactPaths (ac1/ac3)"
+          },
+          {
+            "level": "unit",
+            "name": "runCodeReview returns CodeReviewOutcome {ok:false} + writes nothing on throwing-judge / validation-failure / aborted-signal (ac5)"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Fake-provider unit tests for the runner",
+        "summary": "Add src/workflow/code-review/__tests__/runner.test.ts: inject a fake CodeReviewRunnerDeps — judges = ordered stub fns that push their dimension to a shared call-order array (with an await tick + an in-flight flag to prove no overlap) and return scripted DimensionResults; assembleGrounding = stub returning a canned CodeReviewGrounding; write = a spy capturing (path, content). Plus a fake LLMProvider (cast as unknown) passed through, a subject(changedFiles, epicHash, storyId) factory, and RunCodeReviewOpts with an onProgress spy. Cover: (ac1) all-four-return-findings => ONE record with body.dimensions length 4 + folded verdict + counts; (ac2) verdict-fold table (any-HIGH=>block, any-MED-no-HIGH=>warn, only-LOW/empty=>pass) + counts totals; (ac3) the write spy's json basename is codeReviewArtifactId(...) (starts 'CR-') and body.kind==='code-review'; (ac4) the four judges ran serially in [adherence,conventions,coverage,quality] order, no overlap; (ac5) a throwing 2nd judge => {ok:false} + write spy NEVER called + judges 3-4 not run; an in-memory validation failure => {ok:false} + no write; a pre-aborted signal => {ok:false} + no write. Also assert BOTH .json and .md are written on success (two write-spy calls). No live model.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "src/workflow/code-review/__tests__/runner.test.ts runs under `npx tsx --test` with node:test + node:assert/strict and injected fakes (no live daemon/Ollama)",
+          "tests cover ac1-ac5: single-record aggregation, verdict-fold table + counts, CR- id + kind, serial order, and the three no-write-on-failure paths (throwing judge / validation failure / aborted signal); plus both .json+.md written on success",
+          "the full `npx tsx --test 'src/workflow/code-review/**/*.test.ts'` sweep passes (S001-S006 green; any live test skips cleanly when INSRC_LIVE_TESTS unset)"
+        ],
+        "derivedFrom": [
+          "c6",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "ac1: all-four-return-findings => ONE record with body.dimensions length 4 + folded verdict + counts"
+          },
+          {
+            "level": "unit",
+            "name": "ac2: verdict-fold table (HIGH=>block, MED-no-HIGH=>warn, only-LOW/empty=>pass) + counts totals; verdict∈{'pass','warn','block'}"
+          },
+          {
+            "level": "unit",
+            "name": "ac3: write spy json basename is codeReviewArtifactId(...) ('CR-' prefix) and body.kind==='code-review'"
+          },
+          {
+            "level": "unit",
+            "name": "ac4: the four judges ran serially in [adherence,conventions,coverage,quality] order with no overlap"
+          },
+          {
+            "level": "unit",
+            "name": "ac5: throwing 2nd judge => {ok:false}, write spy NEVER called, judges 3-4 not run"
+          },
+          {
+            "level": "unit",
+            "name": "ac5: in-memory validation failure => {ok:false} + no write"
+          },
+          {
+            "level": "unit",
+            "name": "ac5: pre-aborted opts.signal => {ok:false} + no write"
+          },
+          {
+            "level": "unit",
+            "name": "success writes BOTH .json and .md (two write-spy calls)"
+          },
+          {
+            "level": "live",
+            "name": "runCodeReview with DEFAULT_DEPS against a real buildShaperProvider on a fixture Story writes a real CR-<epic>-<story> record (INSRC_LIVE_TESTS-gated, skips when unset)"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Thin daemon 'codeReview.run' StreamHandler",
+        "summary": "Add the daemon-driven entrypoint completing sc5: a new src/daemon/code-review-rpc.ts exporting codeReviewRunStart(params, send, signal) that resolves the high-tier provider via buildShaperProvider (shaper-provider.ts:277), resolves the subject via resolveCodeReviewSubject from S001 and DECLINES (sends an error/decline frame, no run) when it returns {ok:false, reason}, otherwise builds RunCodeReviewOpts {runId, modelLabel, signal, onProgress: frame=>send(...)} streaming CodeReviewProgress, calls runCodeReview, and sends the terminal outcome + 'done'/'error' — mirroring workflow-rpc.ts's runStart + WorkflowProgress (:106). Register 'codeReview.run' in daemon/index.ts's stream-handlers map next to the existing 'codeReview.grounding' handler (index.ts:594). Thin wiring only; the load-bearing logic is t3's runCodeReview. Verified by tsc (+ optional live-gated smoke).",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "src/daemon/code-review-rpc.ts exports codeReviewRunStart (a StreamHandler peer of workflow-rpc's runStart) that resolves provider via buildShaperProvider, resolves the subject, streams CodeReviewProgress via send, calls runCodeReview, and returns the outcome",
+          "when resolveCodeReviewSubject returns {ok:false, reason} the handler DECLINES (sends an error/decline frame; runCodeReview is NOT called)",
+          "'codeReview.run' is registered in daemon/index.ts's stream-handlers map (a NEW key beside 'codeReview.grounding'; no existing handler changed)",
+          "tsc --noEmit is clean; the handler is thin wiring — no verdict/fold/persist logic duplicated from the runner; review remains read-only at the high tier (k10)"
+        ],
+        "derivedFrom": [
+          "c7",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "tsc typecheck: codeReviewRunStart wires buildShaperProvider + resolveCodeReviewSubject + runCodeReview and is registered under 'codeReview.run' (compile-verified; runtime IPC is live-gated)"
+          },
+          {
+            "level": "live",
+            "name": "over-the-socket 'codeReview.run' against a fixture repo streams CodeReviewProgress and writes a CR- record; declines with an error frame when no approved contract/build (INSRC_LIVE_TESTS-gated)"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "runCodeReview (serial for-of over the four injected judges in order; fold verdict from aggregated severities; build sc4 record; validate-then-write; return CodeReviewOutcome)",
+        "coveredByTaskIds": [
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "verdict fold (any HIGH=>block, else any MED=>warn, else pass) over the aggregated DimensionFinding severities + counts",
+        "coveredByTaskIds": [
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "codeReviewArtifactId / codeReviewArtifactPaths ('CR-<epic>-<story>' id + {md,json} under ARTIFACTS_DIR)",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "the CodeReviewOutcome discriminated union (ok:true carries artifact; ok:false carries error and writes nothing)",
+        "coveredByTaskIds": [
+          "t1",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "runCodeReview with DEFAULT_DEPS (the four real judges + real assembler + writeAtomic) against a real buildShaperProvider-resolved provider",
+        "coveredByTaskIds": [
+          "t4",
+          "t5"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 handoff — sc4 CodeReviewBody record contract (kind:'code-review', epicHash, storyId, subject.changedFiles, dimensions: DimensionResult[], verdict: ReviewVerdict, counts:{high,med,low})"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 handoff — sc4 CodeReviewArtifact = {meta: CodeReviewMeta extends ArtifactMetaBase, body: CodeReviewBody} + CodeReviewOutcome {ok:true,artifact}|{ok:false,error} discriminated union"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 handoff — storage namespace: codeReviewArtifactId 'CR-<epic>-<story>' + codeReviewArtifactPaths {md,json} under ARTIFACTS_DIR, additive peers of buildArtifactId:161/buildArtifactPaths:285"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 handoff — sc5 CodeReviewRunner: runCodeReview(subject, provider, opts, deps=DEFAULT_DEPS) serial for-of over the four shipped judges + assembleCodeReviewGrounding + writeAtomic; RunCodeReviewOpts/CodeReviewProgress/CodeReviewRunnerDeps"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 handoff — verdict-fold + no-pass-on-failure invariant (ac5): any HIGH=>block, else any MED=>warn, else pass; validate-in-memory THEN write; a throwing judge/grounding/validation/abort returns {ok:false} with ZERO writes"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 handoff — fake-provider test discipline: injected CodeReviewRunnerDeps (ordered stub judges + assembleGrounding stub + write spy), node:test + node:assert/strict, no live model; mirrors the shipped dimension tests"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 handoff — thin daemon 'codeReview.run' StreamHandler: codeReviewRunStart resolves buildShaperProvider + resolveCodeReviewSubject (declines on {ok:false,reason}) + runCodeReview, registered beside 'codeReview.grounding' (daemon/index.ts:594)"
+    }
+  ]
+}

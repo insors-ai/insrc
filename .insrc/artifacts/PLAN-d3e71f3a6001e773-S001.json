@@ -1,0 +1,353 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1785863472891-gsighv",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-08-04T17:15:09.868Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 236967,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d3e71f3a6001e773",
+    "epicSlug": "build-ledger-plan-driven-builds-today",
+    "storyId": "S001",
+    "lldRunId": "wf-1785861871369-hn8p08",
+    "lldEffectiveHash": "d3e71f3a6001e773a2a5a47af54e84a86573aeebbea2434fd46de9b914d8e37d",
+    "review": {
+      "artifact": "plan",
+      "stage": "plan",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "ref": "t3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "handleValidate in src/mcp/build-step/phases/validate.ts computes `passed` and returns { next:'done', verdict, passed } (near validate.ts:85) — the hook point for the plan-driven persist.",
+          "evidence": "reads confirm the `const passed =` + `return { next:'done', verdict, passed }` region near validate.ts:84-85 — the plan-driven persist hook point is exactly where t3 places it.",
+          "action": "none — verified sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl2",
+          "ref": "t3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "validate.ts exports a test seam _setBuildValidateProviderForTests (+ providerOverride) so the integration test can inject a fake ValidateProvider offline.",
+          "evidence": "grep resolves _setBuildValidateProviderForTests + providerOverride in validate.ts — the offline test seam t3/t4 rely on exists.",
+          "action": "none — verified sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl3",
+          "ref": "t1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The Trivial standalone persist call is at src/mcp/build-step/phases/implement.ts:133 (persistStandaloneBuildRecord), the caller that must keep typechecking against the widened record type.",
+          "evidence": "reads confirm persistStandaloneBuildRecord( at implement.ts:133 (the Trivial branch) — the caller that must keep typechecking against the widened type.",
+          "action": "none — verified sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl4",
+          "ref": "t2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "buildArtifactPaths (src/workflow/storage.ts) is the reused path mapper for BUILD-<epicHash>-<storyId>.json + md that persistBuildRecord writes through.",
+          "evidence": "reads confirm export function buildArtifactPaths at storage.ts:293 + writeAtomic — the reused path mapper/writer for persistBuildRecord.",
+          "action": "none — verified sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl5",
+          "ref": "t4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The completion gate (approveWorkflowTarget / the BUILD- prefix predicate) + pendingArtifactJsonPaths live in src/workflow/gates.ts, consumed by the t4 consumability test; approveArtifactByJsonPath stamps approvedAt.",
+          "evidence": "grep resolves startsWith('BUILD-') at gates.ts:648 + approveArtifactByJsonPath + pendingArtifactJsonPaths — the completion gate the t4 consumability test drives.",
+          "action": "none — verified sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl6",
+          "ref": "t4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The test suites the plan extends exist: src/workflow/__tests__/approve-build-completion.test.ts + src/workflow/runners/build/__tests__.",
+          "evidence": "grep resolves approveWorkflowTarget in approve-build-completion.test.ts + the standalone-record suite under runners/build/__tests__ — the suites t4 extends exist.",
+          "action": "none — verified sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl7",
+          "kind": "ordering",
+          "severity": "LOW",
+          "premise": "The task dependency graph is a linear acyclic chain t1->t2->t3->t4 with order 1..4 a valid topological sort.",
+          "evidence": "By inspection: t1[] , t2[t1], t3[t2], t4[t3] — a linear acyclic chain; order 1..4 is a valid topological sort.",
+          "action": "none — verified sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl8",
+          "ref": "t2",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "Every task derivedFrom id (c1,c2,c3,c5) resolves to a citation defined in this plan; the LLD handoff deliverables (record type, upsert+gate invariants, validate persistence, tests) are collectively covered.",
+          "evidence": "Every task derivedFrom id is c1/c2/c3/c5, all defined in the plan's citations[]; the LLD deliverables (record type c2, upsert+gate c3, validate persistence c1, tests c5) are collectively covered.",
+          "action": "none — verified sound.",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 8
+      },
+      "reviewedAt": "2026-08-04T17:16:07.637Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-08-04T17:21:53.869Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Generalize the BUILD record type (standalone true->boolean + optional provenance)",
+        "summary": "In src/workflow/runners/build/standalone-record.ts widen the record type: introduce BuildRecord with meta.standalone: boolean (was the `true` literal), + optional meta.updatedAt and optional body.tasks?: { id: string; passed?: boolean }[] and body.commit?: string. Keep StandaloneBuildRecord as a standalone:true narrowing (alias) so existing Trivial callers (implement.ts:133) still typecheck. Strict ESM .js imports, import type, exactOptionalPropertyTypes-safe optionals.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "standalone-record.ts exports BuildRecord with meta.standalone:boolean + optional meta.updatedAt + body.tasks?[]/commit?; StandaloneBuildRecord remains a standalone:true narrowing",
+          "existing StandaloneBuildRecord callers (implement.ts:133 Trivial branch) typecheck unchanged; tsc --noEmit clean"
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "StandaloneBuildRecord callers (implement.ts:133) still typecheck against the widened type"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Add persistBuildRecord (upsert read-merge-write) + make persistStandaloneBuildRecord a thin wrapper",
+        "summary": "Add persistBuildRecord(repoPath, rec: BuildRecord): { md; json } that READS any existing BUILD-<epicHash>-<storyId>.json (via buildArtifactPaths), MERGES on top (union body.tasks[] by id with passed refreshed, preserve createdAt + meta.approvedAt/rejectedAt/reviewOverride, refresh meta.updatedAt), and writeAtomic-writes json+md; a malformed/absent prior file fails open to a fresh write (try/catch, getLogger warn). Re-point persistStandaloneBuildRecord to delegate to persistBuildRecord with standalone:true so the Trivial output is byte-identical. Reuse buildArtifactPaths + the existing md renderer (extend it to render the plan-driven tasks/commit when present).",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "persistBuildRecord writes json+md at buildArtifactPaths; a prior record is read + merged (tasks unioned, createdAt + approvedAt/rejectedAt/reviewOverride preserved, updatedAt refreshed); a malformed prior file fails open to a fresh write",
+          "persistStandaloneBuildRecord delegates to persistBuildRecord (standalone:true) with byte-identical Trivial json+md output",
+          "tsc --noEmit clean; getLogger used (no console.log)"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "persistBuildRecord writes a fresh BUILD-<epicHash>-<storyId>.json (standalone:false) at buildArtifactPaths when none exists"
+          },
+          {
+            "level": "unit",
+            "name": "a second call UNIONS tasks[] by id, preserves createdAt, refreshes updatedAt (one record, not N)"
+          },
+          {
+            "level": "unit",
+            "name": "an existing meta.approvedAt (+ rejectedAt/reviewOverride) is PRESERVED across an upsert"
+          },
+          {
+            "level": "unit",
+            "name": "a malformed prior record is treated as absent (fail-open fresh write), not a throw"
+          },
+          {
+            "level": "unit",
+            "name": "persistStandaloneBuildRecord still writes standalone:true json + the same md via the thin wrapper"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Persist the plan-driven BUILD record from the validate phase",
+        "summary": "In src/mcp/build-step/phases/validate.ts handleValidate, after computing `passed` and before `return { next:'done', verdict, passed }` (validate.ts:85), for a plan-driven target whose resolved.ref carries epicHash + storyId, call persistBuildRecord to upsert BUILD-<epicHash>-<storyId>.json (standalone:false) recording { id: resolved.ref.taskId, passed }. Gate: skip when epicHash/storyId is absent (no BUILD-undefined path). Wrap the persist in try/catch so a writeAtomic failure is logged and the verdict is returned unchanged (persistence never alters/blocks the verdict). Use the real return type (BuildStepDone | BuildStepError).",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "handleValidate upserts a standalone:false BUILD record recording the validated task + passed for a plan-driven target, right before returning the (unchanged) verdict",
+          "persistence is SKIPPED when the resolved ref lacks epicHash/storyId (no BUILD-undefined write) and a persist throw is caught so the verdict is still returned",
+          "the returned { next:'done', verdict, passed } shape is unchanged; tsc --noEmit clean"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "handleValidate on a plan-driven target upserts BUILD-<epicHash>-<storyId>.json (standalone:false) recording the validated task + passed, after computing the verdict"
+          },
+          {
+            "level": "integration",
+            "name": "a target with no resolvable epicHash/storyId SKIPS persistence (no BUILD-undefined path) and still returns the verdict"
+          },
+          {
+            "level": "integration",
+            "name": "a persistence failure (writeAtomic throw) is caught and the verdict is returned unchanged (persistence never fails validate)"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Tests: persistBuildRecord upsert/fail-open, Trivial regression, validate-persist integration, completion consumability",
+        "summary": "Extend src/workflow/runners/build/__tests__ with persistBuildRecord unit tests (fresh write; union tasks + preserve createdAt/approvedAt across upsert; malformed-prior fail-open) + a Trivial regression (persistStandaloneBuildRecord byte-identical). Add a build-step validate integration test using _setBuildValidateProviderForTests with a fake verdict provider (plan-driven target persists standalone:false; no-identity skips; persist-throw returns the verdict). Add a completion-consumability assertion (approveWorkflowTarget stamps approvedAt on the persisted record) reusing the approve-build-completion.test.ts patterns. node:test via npx tsx --test; run the workflow + mcp sweeps green.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "unit tests cover persistBuildRecord fresh/upsert-union/preserve-approvedAt/fail-open + the Trivial byte-identical regression",
+          "an integration test drives handleValidate with a fake provider proving plan-driven persist / no-identity skip / persist-throw-returns-verdict",
+          "a consumability test proves approveWorkflowTarget stamps approvedAt on the persisted plan-driven record; the full workflow + mcp sweeps pass"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "approveWorkflowTarget on the persisted BUILD-<epicHash>-<storyId>.json stamps meta.approvedAt (keys on the BUILD- prefix + meta.{epicHash,storyId})"
+          },
+          {
+            "level": "unit",
+            "name": "the record appears in the epic-batch sweep (pendingArtifactJsonPaths) like a back-filled BUILD"
+          },
+          {
+            "level": "unit",
+            "name": "full workflow + mcp sweeps green after the record-writer + validate-persist changes"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "persistBuildRecord writes a fresh BUILD-<epicHash>-<storyId>.json (standalone:false) at buildArtifactPaths when none exists",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "a second call UNIONS tasks[] by id, preserves createdAt, refreshes updatedAt (one record, not N)",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "an existing meta.approvedAt (+ rejectedAt/reviewOverride) is PRESERVED across an upsert",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "a malformed prior record is treated as absent (fail-open fresh write), not a throw",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "persistStandaloneBuildRecord still writes standalone:true json + the same md via the thin wrapper",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "StandaloneBuildRecord callers (implement.ts:133) still typecheck against the widened type",
+        "coveredByTaskIds": [
+          "t1",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "handleValidate on a plan-driven target upserts BUILD-<epicHash>-<storyId>.json (standalone:false) recording the validated task + passed, after computing the verdict",
+        "coveredByTaskIds": [
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "a target with no resolvable epicHash/storyId SKIPS persistence (no BUILD-undefined path) and still returns the verdict",
+        "coveredByTaskIds": [
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "a persistence failure (writeAtomic throw) is caught and the verdict is returned unchanged (persistence never fails validate)",
+        "coveredByTaskIds": [
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "approveWorkflowTarget on the persisted BUILD-<epicHash>-<storyId>.json stamps meta.approvedAt (keys on the BUILD- prefix + meta.{epicHash,storyId})",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "the record appears in the epic-batch sweep (pendingArtifactJsonPaths) like a back-filled BUILD",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails/errorPaths — handleValidate (validate.ts:85) persists the plan-driven BUILD record after the verdict; verdict shape unchanged (a1)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 dataModelChanges — BuildRecord generalized from StandaloneBuildRecord (standalone true->boolean + optional tasks[]/commit/updatedAt); persistStandaloneBuildRecord thin wrapper"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 invariantsToPreserve — completion gate keys on BUILD- prefix + meta.{epicHash,storyId}; upsert preserves createdAt/approvedAt/rejectedAt/reviewOverride (gates.ts)"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 testStrategy — node:test suites approve-build-completion.test.ts + runners/build/__tests__ + a validate integration test via _setBuildValidateProviderForTests"
+    }
+  ]
+}

@@ -1,0 +1,369 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1785865264786-q930nt",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-08-04T17:45:05.639Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 240816,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3e701ba812813029",
+    "epicSlug": "specartifact-md-json-path-resolution-jsonpathformd",
+    "storyId": "S001",
+    "hldBaseRunId": "wf-1785865264786-q930nt",
+    "hldEffectiveHash": "3e701ba812813029e422e03a5cb88be99ea7f315de8c768b2dea59bf0a45cd70",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "small",
+    "triageRationale": "Small: one-file resolver bug in jsonPathForMd (gates.ts) whose docs-dir segment lists (repoRootFromDocsPath + swapDocsToArtifacts) omit /docs/specs/; shared by approve + review so one fix covers both. Light design choice: centralize the docs-dir list to prevent recurrence. Regression test warranted.",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "ref": "c1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "jsonPathForMd (gates.ts:750) resolves via readArtifactIdMarker + repoRootFromDocsPath, with a swapExt(swapDocsToArtifacts) fallback; repoRootFromDocsPath (gates.ts:784) + swapDocsToArtifacts (gates.ts:801) hardcode a docs-dir segment list that omits /docs/specs/.",
+          "evidence": "grep/read confirm jsonPathForMd + repoRootFromDocsPath + swapDocsToArtifacts in gates.ts, and that /docs/specs/ is absent from their hardcoded segment lists — the bug + fix site as described.",
+          "action": "none — verified sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl2",
+          "ref": "c2",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "storage.ts exports the canonical docs-dir constants DEFINES_DIR/DESIGNS_DIR/PLANS_DIR/BUILDS_DIR/STUB_DIR/REVIEWS_DIR/SPECS_DIR (with SPECS_DIR='docs/specs'), from which DOCS_ARTIFACT_DIRS is derived.",
+          "evidence": "reads confirm export const SPECS_DIR + REVIEWS_DIR + DEFINES_DIR + STUB_DIR in storage.ts — the canonical constants DOCS_ARTIFACT_DIRS derives from.",
+          "action": "none — verified sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl3",
+          "ref": "c3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "jsonPathForMd is the shared resolver consumed by insrc_review_step's start phase (src/mcp/review-step/phases/start.ts) so fixing it fixes both approve + review transitively.",
+          "evidence": "grep resolves jsonPathForMd imported in src/mcp/review-step/phases/start.ts — the shared-resolver consumer, so the review path is fixed transitively.",
+          "action": "none — verified sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl4",
+          "ref": "edge",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A SpecArtifact md carries the `<!-- insrc:artifact SPEC-<hash> -->` marker that readArtifactIdMarker reads to rebuild the hash-named json path.",
+          "evidence": "grep/read confirm the `<!-- insrc:artifact SPEC-<hash> -->` marker on the real spec md — readArtifactIdMarker will rebuild the hash-named json once /docs/specs/ is recognized.",
+          "action": "none — verified sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl5",
+          "ref": "inv",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "docs/stub is the side-by-side exception (md+json under the same slug basename) and must stay excluded from the artifact-dir swap.",
+          "evidence": "read confirms the docs/stub side-by-side branch in gates.ts — STUB_DIR must stay excluded from the artifact-dir swap, as the design preserves.",
+          "action": "none — verified sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl6",
+          "ref": "ts",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The existing jsonPathForMd unit tests live in src/workflow/__tests__/gates.test.ts and are the suite the new docs/specs case extends.",
+          "evidence": "read confirms the existing jsonPathForMd tests in gates.test.ts — the suite the new docs/specs case extends.",
+          "action": "none — verified sound.",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 6
+      },
+      "reviewedAt": "2026-08-04T17:45:59.931Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-08-04T17:52:06.974Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "S001",
+        "owns": [],
+        "depends": [],
+        "internal": "Resolve SpecArtifact md paths to their hash-named json"
+      },
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "jsonPathForMd",
+          "signature": "(mdPath: string) => string",
+          "parameters": [
+            {
+              "name": "mdPath",
+              "type": "string",
+              "purpose": "A docs md/html (or json) artifact path to resolve to its json.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "The resolved .insrc/artifacts/<ID>.json path (or the input unchanged for json / stub side-by-side)."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "input is not .md/.html/.json (unchanged)."
+            }
+          ],
+          "preconditions": [
+            "mdPath is an artifact path under a recognized docs dir"
+          ],
+          "postconditions": [
+            "A docs/specs/SPEC-<slug>.md (carrying the insrc:artifact marker) now resolves to .insrc/artifacts/SPEC-<hash>.json via the marker path; docs/reviews likewise; behavior for defines/designs/plans/builds/stub/json is unchanged. Signature unchanged — both approve + review consumers are fixed transitively."
+          ]
+        },
+        {
+          "name": "repoRootFromDocsPath",
+          "signature": "(p: string) => string | undefined",
+          "parameters": [
+            {
+              "name": "p",
+              "type": "string",
+              "purpose": "An artifact md path.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string | undefined",
+            "meaning": "The repo root (prefix before the /docs/<dir>/ segment), or undefined when no recognized docs dir segment is present."
+          },
+          "errors": [
+            {
+              "type": "none",
+              "condition": "total function."
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "Recognizes every docs dir in DOCS_ARTIFACT_DIRS + STUB_DIR (now including docs/specs + docs/reviews), derived from the storage.ts constants instead of a hardcoded literal list."
+          ]
+        },
+        {
+          "name": "swapDocsToArtifacts",
+          "signature": "(p: string) => string",
+          "parameters": [
+            {
+              "name": "p",
+              "type": "string",
+              "purpose": "An artifact md path (legacy hash-named fallback).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "The path with its /docs/<dir>/ segment swapped to /.insrc/artifacts/ (stub excluded, side-by-side)."
+          },
+          "errors": [
+            {
+              "type": "none",
+              "condition": "total function; returns input unchanged when no artifact docs dir matches."
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "Swaps for every dir in DOCS_ARTIFACT_DIRS (now including docs/specs + docs/reviews); STUB_DIR stays side-by-side (excluded)."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "DOCS_ARTIFACT_DIRS (new exported constant in storage.ts)",
+        "change": "new",
+        "details": "A single canonical list of the docs directories whose rendered md maps to a hash/slug-named json under ARTIFACTS_DIR: [DEFINES_DIR, DESIGNS_DIR, PLANS_DIR, BUILDS_DIR, SPECS_DIR, REVIEWS_DIR]. STUB_DIR is intentionally EXCLUDED (its md+json sit side-by-side). Exported from storage.ts (the source of the *_DIR constants) so the gates.ts resolver derives its segment lists from one place — removing the duplication that omitted /docs/specs/.",
+        "schemaDiff": "+export const DOCS_ARTIFACT_DIRS = [DEFINES_DIR, DESIGNS_DIR, PLANS_DIR, BUILDS_DIR, SPECS_DIR, REVIEWS_DIR] as const;",
+        "callSites": [
+          "src/workflow/storage.ts",
+          "src/workflow/gates.ts:784",
+          "src/workflow/gates.ts:801"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A spec md has no readable insrc:artifact marker (hand-written / pre-marker file) so the marker path can't rebuild the hash-named json.",
+          "detection": "readArtifactIdMarker returns undefined (file unreadable or no marker); jsonPathForMd sees id===undefined and takes the fallback branch.",
+          "response": "Fall through to swapExt(swapDocsToArtifacts(md)) — which now recognizes docs/specs and swaps to .insrc/artifacts/SPEC-<same-basename>.json. For a marker-less slug-named spec this may not match the hash-named json, but it is strictly no worse than today and never throws.",
+          "userImpact": "A marker-bearing spec (the normal rendered case) resolves correctly; a marker-less one degrades to the legacy swap, same as any other artifact type.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A docs/specs/SPEC-<slug>.md carrying `<!-- insrc:artifact SPEC-<hash> -->`.",
+          "expected": "repoRootFromDocsPath now recognizes /docs/specs/ -> repo root; marker path returns <root>/.insrc/artifacts/SPEC-<hash>.json (the real spec json)."
+        },
+        {
+          "input": "A docs/reviews/CR-<slug>.md (also previously unrecognized).",
+          "expected": "Now recognized via DOCS_ARTIFACT_DIRS; resolves to its .insrc/artifacts json like any other artifact."
+        },
+        {
+          "input": "A docs/stub/x.md.",
+          "expected": "Unchanged — STUB_DIR stays the side-by-side exception (excluded from DOCS_ARTIFACT_DIRS); returns docs/stub/x.json."
+        },
+        {
+          "input": "An already-json path, or a defines/designs/plans/builds md.",
+          "expected": "Byte-identical to today (json passthrough; existing dirs still resolve)."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "jsonPathForMd's signature (mdPath: string) => string is unchanged; the shared resolver keeps working for insrc_workflow_approve + insrc_review_step with no consumer edits (both fixed transitively).",
+          "source": "c3"
+        },
+        {
+          "text": "docs/stub remains the side-by-side exception (md+json under the same slug basename) — it must stay EXCLUDED from the artifact-dir swap, or stub json resolution breaks.",
+          "source": "c1"
+        },
+        {
+          "text": "The explicit allow-list semantics are preserved: only the enumerated DOCS_ARTIFACT_DIRS map into .insrc/artifacts; non-artifact docs dirs are not mapped (no over-broad matching).",
+          "source": "c1"
+        },
+        {
+          "text": "DOCS_ARTIFACT_DIRS is derived from the same *_DIR constants storage.ts uses to WRITE the artifacts, so the read-resolver and the write-paths cannot drift.",
+          "source": "c2"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test via `npx tsx --test` (extends the existing src/workflow/__tests__/gates.test.ts jsonPathForMd suite)",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "jsonPathForMd resolves a SpecArtifact md (marker path) to its hash-named json, and preserves every existing resolution.",
+          "subjects": [
+            "a docs/specs/SPEC-<slug>.md carrying the insrc:artifact marker resolves to <root>/.insrc/artifacts/SPEC-<hash>.json (marker path)",
+            "a docs/reviews/CR-<slug>.md now resolves to its .insrc/artifacts json (also newly covered)",
+            "docs/defines + docs/designs still resolve (regression); docs/stub stays side-by-side; a json path passes through unchanged",
+            "DOCS_ARTIFACT_DIRS is exported from storage.ts and excludes STUB_DIR"
+          ],
+          "fixturesNeeded": [
+            "mkdtemp repo with a docs/specs/SPEC-<slug>.md file whose head carries `<!-- insrc:artifact SPEC-<hash> -->`",
+            "no-file path-only cases for the existing dirs (fallback swap)"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "a docs/specs/SPEC-<slug>.md carrying the insrc:artifact marker resolves to <root>/.insrc/artifacts/SPEC-<hash>.json (marker path)"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "docs/defines + docs/designs still resolve (regression); docs/stub stays side-by-side; a json path passes through unchanged",
+            "a docs/reviews/CR-<slug>.md now resolves to its .insrc/artifacts json (also newly covered)"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "DOCS_ARTIFACT_DIRS is exported from storage.ts and excludes STUB_DIR"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "repoRootFromDocsPath (gates.ts:784) + swapDocsToArtifacts (gates.ts:801) each hardcode a literal docs-dir segment list that omits /docs/specs/ (and /docs/reviews/), while storage.ts holds the canonical *_DIR constants incl. SPECS_DIR/REVIEWS_DIR (per the s1 gates + storage bundles). A spec md therefore fails to resolve to its .insrc/artifacts json.",
+      "stateAfter": "storage.ts exports DOCS_ARTIFACT_DIRS (derived from the *_DIR constants, excluding STUB_DIR); the two gates.ts helpers derive their segment lists from it, so docs/specs + docs/reviews resolve and the list can't drift from the write-paths.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the exported DOCS_ARTIFACT_DIRS constant in storage.ts (defines/designs/plans/builds/specs/reviews; stub excluded).",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "In gates.ts, replace the two hardcoded literal segment arrays with segments derived from DOCS_ARTIFACT_DIRS (repoRootFromDocsPath additionally keeps STUB_DIR; swapDocsToArtifacts excludes it).",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Extend gates.test.ts with the docs/specs marker-path case + regression assertions for the existing dirs and stub.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Pure superset. No public API signature changes (jsonPathForMd/repoRootFromDocsPath/swapDocsToArtifacts keep their signatures); the resolver recognizes MORE docs dirs (specs, reviews) and behaves byte-identically for defines/designs/plans/builds/stub/json. No on-disk data changes; existing artifacts + their md/json layout are untouched. Both approve + review consumers are fixed transitively with no edits.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Centralize a DOCS_ARTIFACT_DIRS list derived from the storage.ts *_DIR constants",
+        "oneLineSummary": "Export one canonical docs-dir list from storage.ts and drive both gates.ts helpers off it, so /docs/specs/ (and /docs/reviews/) are covered and the list can never drift again.",
+        "chosen": true
+      },
+      {
+        "id": "a2",
+        "name": "Minimal: add '/docs/specs/' to the two hardcoded arrays",
+        "oneLineSummary": "Append '/docs/specs/' (and '/docs/reviews/') to the literal segment lists, leaving them hardcoded.",
+        "reasonRejected": "VIOLATES prevent-recurrence: leaves the duplicated hardcoded lists — the exact drift that caused THIS bug recurs on the next docs dir. Rejected for leaving the root cause."
+      },
+      {
+        "id": "a3",
+        "name": "Generic /docs/<segment>/ matcher",
+        "oneLineSummary": "Rewrite the helpers to match any /docs/<name>/ segment generically via a regex.",
+        "reasonRejected": "VIOLATES no-overbroad-mapping: would map ANY /docs/<name>/ (incl. non-artifact prose docs) into .insrc/artifacts, discarding the deliberate explicit allow-list. Accuracy-first favors the enumerated a1."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 symbol.locate — src/workflow/gates.ts:750/784/801: jsonPathForMd marker-path + fallback; repoRootFromDocsPath + swapDocsToArtifacts hardcode a docs-dir list omitting /docs/specs/ (+/docs/reviews/); docs/stub is the side-by-side exception"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 search.text — src/workflow/storage.ts:50-61 canonical *_DIR constants (ARTIFACTS_DIR, DEFINES/DESIGNS/PLANS/BUILDS/STUB/REVIEWS/SPECS_DIR); DOCS_ARTIFACT_DIRS derives from these to remove the duplication"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1 usage.example — jsonPathForMd is the shared resolver consumed by insrc_review_step (src/mcp/review-step/phases/start.ts) + insrc_workflow_approve (cli/services/workflow.ts); the spec md carries the `<!-- insrc:artifact SPEC-<hash> -->` marker so both surfaces are fixed transitively"
+    }
+  ]
+}

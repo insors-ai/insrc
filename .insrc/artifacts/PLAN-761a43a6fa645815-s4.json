@@ -1,0 +1,252 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1785757020775-q685do",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-08-03T11:40:32.371Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 211540,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "761a43a6fa645815",
+    "epicSlug": "add-daemon-driven-code-review-stage",
+    "storyId": "s4",
+    "lldRunId": "wf-1785754381044-msgah1",
+    "lldEffectiveHash": "47535369867a9e9c71a300e7ca347a1a6437356df9b3c75b91fec292dcf80f63",
+    "review": {
+      "artifact": "plan",
+      "stage": "plan",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "pv1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The template conventions.ts (and adherence.ts) exist with the schema/prompt/judge seams t1 mirrors: CONVENTIONS_FINDINGS_SCHEMA, buildConventionsPrompt, judgeConventions.",
+          "evidence": "conventions.ts:53 CONVENTIONS_FINDINGS_SCHEMA, :105 buildConventionsPrompt, :148 judgeConventions all exist — the template t1 mirrors is real.",
+          "action": "none — verified sound",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "pv2",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "coverage's two inputs exist on the consumed contracts: sc2 ChangedSymbolSummary.testsReaching (types.ts) and sc1 approvedPlan whose PlanTask carries tests (plan.ts); sc1 buildRecord is nullable (StandaloneBuildRecord|null).",
+          "evidence": "types.ts has testsReaching: readonly string[] and buildRecord on CodeReviewSubject; plan.ts declares `readonly tests: readonly TaskTestRef[]` on PlanTask. coverage's two inputs (testsReaching + approvedPlan.body.tasks[].tests) plus the nullable buildRecord exist on the consumed contracts.",
+          "action": "none — verified sound",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "pv3",
+          "kind": "external-contract",
+          "severity": "LOW",
+          "premise": "src/agent/providers/structured-output.ts exports validateAgainstSchema and withStructuredRetry(call, validate, maxAttempts) which throws after the cap — the helpers t1 reuses with the positional maxAttempts.",
+          "evidence": "structured-output.ts:80 validateAgainstSchema and :182 withStructuredRetry (throws after the cap) — the helpers t1 reuses with positional maxAttempts.",
+          "action": "none — verified sound",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "pv4",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "No src/workflow/code-review/dimensions/coverage.ts exists yet — t1 creates it (purely additive; no judgeCoverage in src/).",
+          "evidence": "judgeCoverage / COVERAGE_FINDINGS_SCHEMA appear only in the design docs, not in any src/ file — coverage.ts does not exist yet, so t1 is purely additive.",
+          "action": "none — verified sound",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "pv5",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The fake-provider test harness t2 mirrors exists in conventions.test.ts (`as unknown as LLMProvider`, node:test + node:assert/strict).",
+          "evidence": "conventions.test.ts (src/) uses `as unknown as LLMProvider` and node:test is the repo-wide convention — the fake-provider harness t2 mirrors exists.",
+          "action": "none — verified sound",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "pv6",
+          "kind": "ordering",
+          "severity": "LOW",
+          "premise": "Task ordering is acyclic and topological (t1 order 1 no deps → t2 order 2 dependsOn t1); storyDependsOn s1 is satisfied on disk (ReviewDimension incl. 'coverage' + PlanTask.tests shipped).",
+          "evidence": "types.ts:33 ReviewDimension includes 'coverage' and PlanTask exists (plan.ts) — storyDependsOn s1 is satisfied; t1 (order 1, no deps) → t2 (order 2, dependsOn t1) is acyclic and topological.",
+          "action": "none — verified sound",
+          "fixability": "auto"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 6
+      },
+      "reviewedAt": "2026-08-03T11:41:25.013Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-08-04T06:11:09.915Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Create coverage.ts — schema, two-input prompt builder, judge",
+        "summary": "Add src/workflow/code-review/dimensions/coverage.ts mirroring the shipped conventions.ts: (a) COVERAGE_FINDINGS_SCHEMA — IDENTICAL to CONVENTIONS_FINDINGS_SCHEMA (StructuredSchema, additionalProperties:false, findings[] of {severity enum HIGH|MED|LOW, location, message, expectationRef?, confidence? enum 'breach'|'observation'}; required=['findings'], each finding requires severity/location/message); (b) buildCoveragePrompt(subject, grounding, extraNote): LLMMessage[] with the COVERAGE system charge (report each changed symbol exercised/not per testsReaching; each promised test present/missing and passing/failing/unverified; distinguish present-failing from no-test; NEVER assert a pass-state the buildRecord does not support — frame unknown as 'unverified'; exclude pre-existing gaps in touched-but-unchanged neighbours; no-manufactured-findings) and the user message placing grounding.symbols (with testsReaching) then approvedPlan.body.tasks[].tests (the promised tests) then the output-shape reminder TRAILING; tolerate a null subject.buildRecord (degrade to 'pass-state unverified'); (c) private fileOf(location) splitting on ':'; (d) judgeCoverage(subject, grounding, provider): Promise<DimensionResult> — one StructuredCall over provider.completeStructured(buildCoveragePrompt(...note), COVERAGE_FINDINGS_SCHEMA), a StructuredValidator via validateAgainstSchema(COVERAGE_FINDINGS_SCHEMA, raw), await withStructuredRetry(call, validate, 3) POSITIONAL, then map output.findings to DimensionFinding{dimension:'coverage'} spreading expectationRef/confidence conditionally (exactOptionalPropertyTypes) and dropping any finding whose fileOf(location) is outside new Set(subject.changedFiles). Imports use .js extensions; type-only imports use import type; no console.log; no Promise.all.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "src/workflow/code-review/dimensions/coverage.ts exists exporting judgeCoverage, buildCoveragePrompt, COVERAGE_FINDINGS_SCHEMA",
+          "judgeCoverage issues exactly ONE provider.completeStructured call (no Promise.all) wrapped in withStructuredRetry(call, validate, 3) and propagates the throw on 3-attempt exhaustion (no catch-to-empty)",
+          "returned findings all carry dimension:'coverage', map expectationRef + confidence through, and every finding.location file is in subject.changedFiles (out-of-scope dropped)",
+          "buildCoveragePrompt places grounding.symbols+testsReaching, then approvedPlan.body.tasks[].tests, then the output-shape reminder at the TAIL of the user message; system charge distinguishes present-failing from no-test, forbids asserting an unsupported pass-state, and excludes pre-existing neighbour gaps",
+          "buildCoveragePrompt and judgeCoverage tolerate a null subject.buildRecord (the prompt degrades to 'pass-state unverified'; the judge runs without throwing)",
+          "tsc --noEmit is clean; imports carry .js extensions and type-only imports use import type"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "buildCoveragePrompt: grounding.symbols+testsReaching, then approvedPlan promised tests, then output-shape reminder are TRAILING; system charge distinguishes present-failing from no-test, forbids an unsupported pass-state, excludes pre-existing neighbour gaps"
+          },
+          {
+            "level": "unit",
+            "name": "COVERAGE_FINDINGS_SCHEMA: per-finding requires severity/location/message; expectationRef + confidence optional; additionalProperties:false"
+          },
+          {
+            "level": "unit",
+            "name": "judgeCoverage + buildCoveragePrompt tolerate subject.buildRecord===null (runs, returns a valid DimensionResult, prompt degrades to 'unverified')"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Fake-provider unit tests for the coverage judge",
+        "summary": "Add src/workflow/code-review/dimensions/__tests__/coverage.test.ts mirroring conventions.test.ts: a fakeProvider(scripted) returning {provider, calls} cast `as unknown as LLMProvider` (only completeStructured present, so any stray method throws), a subject(changedFiles, promisedTests?) factory stubbing approvedPlan.body.tasks[].tests (for ac1) and a buildRecord summary (for ac3) cast via unknown, and a grounding(symbols) factory letting testsReaching be empty vs populated per symbol (for ac2), spanning ≥2 changed files. Cover: (ac1) a promised test absent from the grounding is a HIGH missing-promised-test finding naming it in expectationRef + confidence:'breach', and buildCoveragePrompt embeds the promised test names in the trailing payload; (ac2) a changed symbol with testsReaching.length===0 is a HIGH not-exercised finding (symbol in expectationRef), and a symbol WITH testsReaching yields no gap finding; (ac3) a present-but-failing/unverified test is confidence:'observation' and distinct from a wholly-missing test (confidence:'breach'), and the system charge carries the present-failing-vs-no-test + no-unsupported-pass-state discipline; (ac4) an out-of-changedFiles finding is dropped and the system charge instructs excluding pre-existing neighbour gaps; plus exactly-one-call, retry-exhaustion-propagation (invalid output → assert.rejects), the two empty-result edge cases (empty grounding+no promised tests → findings:[]; all-covered fake {findings:[]} → no manufactured finding), a null-buildRecord tolerance test (judgeCoverage runs and returns a valid result with subject.buildRecord===null), and a prompt-trailing assertion. No live model.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "src/workflow/code-review/dimensions/__tests__/coverage.test.ts runs under `npx tsx --test` with node:test + node:assert/strict and a fake LLMProvider (no live model)",
+          "tests cover ac1-ac4 plus exactly-one-call, retry-exhaustion propagation (assert.rejects), the two empty-result edge cases, a null-buildRecord tolerance (judgeCoverage runs with buildRecord===null), and the prompt-trailing placement",
+          "the full `npx tsx --test 'src/workflow/code-review/**/*.test.ts'` sweep passes (S001-S004 green; any live test skips cleanly when INSRC_LIVE_TESTS unset)"
+        ],
+        "derivedFrom": [
+          "c5",
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "ac1: promised test absent from grounding → HIGH missing-promised-test finding, expectationRef=test name, confidence:'breach'; prompt embeds promised test names"
+          },
+          {
+            "level": "unit",
+            "name": "ac2: changed symbol with testsReaching.length===0 → HIGH not-exercised (symbol in expectationRef); symbol WITH testsReaching → no gap finding"
+          },
+          {
+            "level": "unit",
+            "name": "ac3: present-but-failing/unverified test → confidence:'observation' distinct from wholly-missing (confidence:'breach'); charge carries the discipline"
+          },
+          {
+            "level": "unit",
+            "name": "ac4: out-of-changedFiles finding dropped; charge instructs excluding pre-existing neighbour gaps"
+          },
+          {
+            "level": "unit",
+            "name": "judgeCoverage issues exactly ONE completeStructured call (no other provider method touched)"
+          },
+          {
+            "level": "unit",
+            "name": "retry-exhaustion: invalid model output on all 3 attempts → assert.rejects (no fabricated clean pass)"
+          },
+          {
+            "level": "unit",
+            "name": "edge: empty grounding + no promised tests → {dimension:'coverage', findings:[]} with no error"
+          },
+          {
+            "level": "unit",
+            "name": "edge: all-covered fake {findings:[]} → empty result, no manufactured finding"
+          },
+          {
+            "level": "unit",
+            "name": "null-buildRecord: judgeCoverage runs and returns a valid DimensionResult with subject.buildRecord===null"
+          },
+          {
+            "level": "live",
+            "name": "judgeCoverage against a real buildShaperProvider provider on a fixture with a KNOWN zero-testsReaching symbol + a missing promised test (INSRC_LIVE_TESTS-gated, skips when unset)"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "judgeCoverage (mapping to DimensionResult{coverage}; expectationRef=uncovered symbol / missing promised test; confidence breach=missing vs observation=present-weak/unverified; out-of-scope drop; exactly-one-call; retry-exhaustion propagation)",
+        "coveredByTaskIds": [
+          "t1",
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "COVERAGE_FINDINGS_SCHEMA (per-finding shape: severity/location/message required; expectationRef+confidence optional; additionalProperties:false)",
+        "coveredByTaskIds": [
+          "t1",
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "buildCoveragePrompt (grounding.symbols+testsReaching, approvedPlan promised tests, output-shape reminder TRAILING; charge distinguishes present-failing from no-test and excludes pre-existing neighbour gaps)",
+        "coveredByTaskIds": [
+          "t1",
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "judgeCoverage against a real buildShaperProvider-resolved provider",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/code-review/dimensions/conventions.ts + adherence.ts — the shipped dimension-judge template (schema/prompt/judge seams + fake-provider test harness) coverage.ts mirrors"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 contractDetails — coverage's two inputs: sc2 grounding.symbols[].testsReaching (ac2) + sc1 approvedPlan.body.tasks[].tests (ac1) + buildRecord (ac3, nullable)"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/agent/providers/structured-output.ts — validateAgainstSchema + withStructuredRetry(call, validate, maxAttempts) positional signature the judge reuses"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 contractDetails/api + errorPaths — judgeCoverage + buildCoveragePrompt + COVERAGE_FINDINGS_SCHEMA signatures + postconditions (one serial call, scope-drop, TRAILING two-input prompt, present-failing vs no-test, no unsupported pass-state)"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 testStrategy — the unit + live test levels, subjects, and acceptance mapping (ac1-ac4) t2 implements"
+    }
+  ]
+}

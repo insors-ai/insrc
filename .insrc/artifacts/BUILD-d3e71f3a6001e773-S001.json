@@ -1,0 +1,33 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": false,
+    "epicHash": "d3e71f3a6001e773",
+    "storyId": "S001",
+    "createdAt": "2026-08-04T17:34:06.508Z",
+    "updatedAt": "2026-08-04T17:34:06.508Z",
+    "sizeClass": "feature",
+    "approvedAt": "2026-08-04T17:37:55.789Z"
+  },
+  "body": {
+    "commit": "a2fbe67",
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      }
+    ]
+  }
+}

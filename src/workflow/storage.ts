@@ -55,6 +55,8 @@ export const DESIGNS_DIR = 'docs/designs';
 export const PLANS_DIR   = 'docs/plans';
 export const BUILDS_DIR  = 'docs/builds';
 export const STUB_DIR    = 'docs/stub';
+/** Human-facing markdown root for code-review records (code-review S006/sc4). */
+export const REVIEWS_DIR  = 'docs/reviews';
 /** Human-facing markdown root for `brainstorm` SpecArtifacts (S006/sc1). */
 export const SPECS_DIR   = 'docs/specs';
 
@@ -164,6 +166,12 @@ export function buildArtifactId(epicHash: string, storyId: string): string {
 /** Canonical `.json` basename ID for a brainstorm SpecArtifact (S006/sc1) —
  *  hash-based identity, independent of the display slug. Not Epic-scoped. */
 export function specArtifactId(specHash: string): string { return `SPEC-${specHash}`; }
+/** Canonical `.json` basename ID for a code-review record (code-review S006 /
+ *  sc4) — one per Story, in its OWN `CR-` namespace so it never collides with
+ *  or overwrites the design-artifact review or the `BUILD-` record. */
+export function codeReviewArtifactId(epicHash: string, storyId: string): string {
+	return `CR-${epicHash}-${storyId}`;
+}
 
 /** HTML-comment marker embedded at the top of every rendered markdown
  *  artifact. Because the `.md` is named by slug while the `.json` is
@@ -300,6 +308,26 @@ export function buildArtifactPaths(
 /** Filename prefix that identifies every Build belonging to an Epic. */
 export function buildFilenamePrefix(epicHash: string): string {
 	return `BUILD-${epicHash}-`;
+}
+
+/** Paths for a code-review record (code-review S006/sc4) — one per Story. The
+ *  direct peer of `buildArtifactPaths`: slug-named markdown under `docs/reviews/`,
+ *  canonical hash-named JSON under `.insrc/artifacts/` in the `CR-` namespace.
+ *  `epicSlug` is the trailing optional so `(repo, hash, storyId)` JSON-only
+ *  callers keep working. */
+export function codeReviewArtifactPaths(
+	repoPath: string,
+	epicHash: string,
+	storyId:  string,
+	epicSlug?: string,
+): {
+	readonly md:   string;
+	readonly json: string;
+} {
+	return {
+		md:   join(repoPath, REVIEWS_DIR,   `CR-${fileSeg(epicSlug ?? epicHash)}-${storyId}.md`),
+		json: join(repoPath, ARTIFACTS_DIR, `${codeReviewArtifactId(epicHash, storyId)}.json`),
+	};
 }
 
 /** Canonical id + paths for an Extend artifact (`define` extend branch).

@@ -20,7 +20,8 @@
  *     eventual aggregate record speaks one severity vocabulary.
  */
 
-import type { Severity } from '../review/types.js';
+import type { Severity, ReviewVerdict } from '../review/types.js';
+import type { ArtifactMetaBase } from '../types.js';
 import type { LldArtifact } from '../artifacts/lld.js';
 import type { PlanArtifact } from '../artifacts/plan.js';
 import type { StandaloneBuildRecord } from '../runners/build/standalone-record.js';
@@ -104,3 +105,57 @@ export interface CodeReviewSubject {
 export type CodeReviewSubjectResult =
 	| { readonly ok: true;  readonly subject: CodeReviewSubject }
 	| { readonly ok: false; readonly reason: 'no-approved-contract' | 'no-build-record' };
+
+// ---------------------------------------------------------------------------
+// sc4 — the aggregate persisted code-review record (owned here, produced by
+// the S006 runner). Mirrors the WorkflowArtifact `{ meta, body }` shape so the
+// storage + meta machinery is reused, and mirrors the review vocabulary
+// (ReviewVerdict + counts, VERBATIM from ../review/types.js) so a downstream
+// reader interprets one verdict language.
+// ---------------------------------------------------------------------------
+
+/** The persisted code-review body: the four dimension results + the folded
+ *  verdict + severity counts. `kind` + `subject` keep it distinct in kind from
+ *  the design-artifact review, and `verdict`/`counts` mirror ReviewReport so no
+ *  second interpretation is needed. */
+export interface CodeReviewBody {
+	readonly kind:       'code-review';
+	readonly epicHash:   string;
+	readonly storyId:    string;
+	/** The exact review subject: the Story's changed files (git-derived). */
+	readonly subject:    { readonly changedFiles: readonly string[] };
+	/** All four dimension results (adherence / conventions / coverage / quality). */
+	readonly dimensions: readonly DimensionResult[];
+	/** Folded from the aggregated finding severities: any HIGH → block,
+	 *  else any MED → warn, else pass. Reused VERBATIM from ../review/types.js. */
+	readonly verdict:    ReviewVerdict;
+	/** True severity totals over every dimension's findings. */
+	readonly counts:     { readonly high: number; readonly med: number; readonly low: number };
+}
+
+/** Meta for a code-review record. Mirrors every {@link ArtifactMetaBase} field
+ *  (so meta-stamping + the review/approval machinery are reused) but narrows the
+ *  discriminant `workflow` to `'code-review'`: the record is produced by the
+ *  runner directly, not by a chain workflow, so it is NOT a `WorkflowName`.
+ *  `epicHash`/`storyId` are required (they key the `CR-<epic>-<story>` id). */
+export interface CodeReviewMeta extends Omit<ArtifactMetaBase, 'workflow'> {
+	readonly workflow: 'code-review';
+	readonly epicHash: string;
+	readonly storyId:  string;
+}
+
+/** The persisted code-review artifact — the same `{ meta, body }` shape as
+ *  LldArtifact / PlanArtifact, written at `CR-<epic>-<story>`. */
+export interface CodeReviewArtifact {
+	readonly meta: CodeReviewMeta;
+	readonly body: CodeReviewBody;
+}
+
+/** Schema version for the sc4 payload. Bump on a breaking body-shape change. */
+export const CODE_REVIEW_SCHEMA_VERSION = 1;
+
+/** The runner's return type. The `ok:false` arm is the ac5 no-pass-on-partial-
+ *  failure signal — a run that fails partway returns it and writes nothing. */
+export type CodeReviewOutcome =
+	| { readonly ok: true;  readonly artifact: CodeReviewArtifact }
+	| { readonly ok: false; readonly error: string };

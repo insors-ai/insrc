@@ -1609,6 +1609,16 @@ async function main(): Promise<void> {
 			const mod = await import('./workflow-rpc.js');
 			return mod.runStart(params, send, signal);
 		},
+		// Daemon-side code-review runner (code-review S006/sc5): resolves the
+		// high-tier provider + the fixed sc1 subject (declining, not verdicting,
+		// when there is no approved contract/build), drives runCodeReview's serial
+		// four-judge loop, streams CodeReviewProgress frames, and persists the sc4
+		// CR-<epic>-<story> record. Peer of workflow.run; the load-bearing logic
+		// lives in runCodeReview.
+		'codeReview.run': async (params, send, signal) => {
+			const mod = await import('./code-review-rpc.js');
+			return mod.codeReviewRunStart(params, send, signal);
+		},
 		'ollama.pull': async (params, send, signal) => {
 			const { model } = params as { model: string };
 			const { Ollama } = await import('ollama');

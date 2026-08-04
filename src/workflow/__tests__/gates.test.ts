@@ -24,7 +24,7 @@ import {
 	rejectArtifactByJsonPath,
 	requireApprovedEpic,
 } from '../gates.js';
-import { defineArtifactPaths } from '../storage.js';
+import { defineArtifactPaths, DOCS_ARTIFACT_DIRS, STUB_DIR } from '../storage.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
 
@@ -52,6 +52,35 @@ test('jsonPathForMd leaves docs/stub layout untouched', () => {
 
 test('jsonPathForMd returns json paths unchanged', () => {
 	assert.equal(jsonPathForMd('/a/b/c.json'), '/a/b/c.json');
+});
+
+// S001 — SpecArtifact (docs/specs) + docs/reviews now resolve; drift-proof list.
+
+test('jsonPathForMd resolves a docs/specs SPEC md → its hash-named json via the insrc:artifact marker', () => {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-gates-spec-'));
+	try {
+		const specHash = 'b77e3f38969bc8f4';
+		const md = join(repo, 'docs', 'specs', 'SPEC-redesign-brainstorm-elicit.md');
+		mkdirSync(dirname(md), { recursive: true });
+		writeFileSync(md, `<!-- insrc:artifact SPEC-${specHash} -->\n\n# Spec\n`);
+		assert.equal(jsonPathForMd(md), join(repo, '.insrc/artifacts', `SPEC-${specHash}.json`));
+	} finally {
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
+test('jsonPathForMd swaps a docs/reviews CR md → .insrc/artifacts json (fallback, previously unrecognized)', () => {
+	assert.equal(
+		jsonPathForMd(`/repo/docs/reviews/CR-${HASH}-s1.md`),
+		`/repo/.insrc/artifacts/CR-${HASH}-s1.json`,
+	);
+});
+
+test('DOCS_ARTIFACT_DIRS is the artifact-dir allow-list and EXCLUDES the side-by-side stub dir', () => {
+	const dirs: readonly string[] = DOCS_ARTIFACT_DIRS;
+	assert.ok(dirs.includes('docs/specs'), 'docs/specs is covered');
+	assert.ok(dirs.includes('docs/reviews'), 'docs/reviews is covered');
+	assert.ok(!dirs.includes(STUB_DIR), 'stub stays the side-by-side exception');
 });
 
 test('jsonPathForMd rejects unknown extensions', () => {

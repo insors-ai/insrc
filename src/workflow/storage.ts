@@ -60,6 +60,14 @@ export const REVIEWS_DIR  = 'docs/reviews';
 /** Human-facing markdown root for `brainstorm` SpecArtifacts (S006/sc1). */
 export const SPECS_DIR   = 'docs/specs';
 
+/** The docs directories whose rendered markdown maps to a hash/slug-named JSON
+ *  under {@link ARTIFACTS_DIR}. The single source of truth for the md→json
+ *  resolver in `gates.ts` (`repoRootFromDocsPath` / `swapDocsToArtifacts`), so
+ *  the allow-list can never drift from these `*_DIR` write-path constants (S001
+ *  `specartifact-md-json-path-resolution`). {@link STUB_DIR} is DELIBERATELY
+ *  EXCLUDED — a stub's md + json sit side-by-side under the same slug basename. */
+export const DOCS_ARTIFACT_DIRS = [DEFINES_DIR, DESIGNS_DIR, PLANS_DIR, BUILDS_DIR, SPECS_DIR, REVIEWS_DIR] as const;
+
 // ---------------------------------------------------------------------------
 // Atomic write
 // ---------------------------------------------------------------------------

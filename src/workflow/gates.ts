@@ -39,6 +39,8 @@ import type { ReviewResolution } from './types.js';
 import {
 	ARTIFACT_ID_MARKER_RE,
 	ARTIFACTS_DIR,
+	DOCS_ARTIFACT_DIRS,
+	STUB_DIR,
 	defineArtifactPaths,
 	hldArtifactPaths,
 	lldArtifactPaths,
@@ -781,7 +783,11 @@ function readArtifactIdMarker(mdPath: string): string | undefined {
 /** `.../docs/defines/DEF-<slug>.md` → `.../` (the repo root). Returns
  *  undefined when the path has no recognised `docs/` segment. */
 function repoRootFromDocsPath(p: string): string | undefined {
-	for (const seg of ['/docs/defines/', '/docs/designs/', '/docs/plans/', '/docs/builds/', '/docs/stub/']) {
+	// Every docs artifact dir (defines/designs/plans/builds/specs/reviews) PLUS
+	// the side-by-side stub dir — derived from the storage.ts constants so the
+	// allow-list can't drift (S001).
+	for (const dir of [...DOCS_ARTIFACT_DIRS, STUB_DIR]) {
+		const seg = `/${dir}/`;
 		const i = p.indexOf(seg);
 		if (i >= 0) return p.slice(0, i);
 	}
@@ -798,10 +804,14 @@ function swapExt(p: string): string {
  *  swapped. If no such segment is present, the path is returned as-
  *  is (older layouts / non-standard callers). */
 function swapDocsToArtifacts(p: string): string {
-	for (const seg of ['/docs/defines/', '/docs/designs/', '/docs/plans/', '/docs/builds/']) {
+	// Every docs artifact dir maps into .insrc/artifacts (derived from the
+	// storage.ts constants, S001). STUB_DIR is excluded — its md + json sit
+	// side by side; no swap.
+	for (const dir of DOCS_ARTIFACT_DIRS) {
+		const seg = `/${dir}/`;
 		const i = p.indexOf(seg);
 		if (i >= 0) {
-			return p.slice(0, i) + '/.insrc/artifacts/' + p.slice(i + seg.length);
+			return p.slice(0, i) + '/' + ARTIFACTS_DIR + '/' + p.slice(i + seg.length);
 		}
 	}
 	// `docs/stub/*` files keep md + json side by side; no swap.

@@ -1,0 +1,84 @@
+<!-- insrc:artifact SPEC-8b4be30d648eaeb8 -->
+
+# Spec: Add an indexing-readiness gate to insrc_code_review_step's `start` phase: before building grounding from the repo graph, check whether the daemon's index is current for the files changed in this review, using a combined signal — `queue.isProcessing` AND each changed file's `lastIndexedAt` watermark compared against its mtime.
+
+**Category:** requirements
+
+## Intent
+
+Add an indexing-readiness gate to insrc_code_review_step's `start` phase: before building grounding from the repo graph, check whether the daemon's index is current for the files changed in this review, using a combined signal — `queue.isProcessing` AND each changed file's `lastIndexedAt` watermark compared against its mtime. If stale, `start` never silently falls through to a hollow PASS; instead it returns an explicit intermediate result (`next: 'confirm_wait'`) carrying the stale file list and an estimated wait, which the controller relays to the user in chat. Only an explicit resume call (`phase: 'start', proceed: true`) begins a bounded block-and-poll that repeatedly re-checks `queue.isProcessing`/`lastIndexedAt` until fresh; the tool never calls `repo.reindex` itself (the file-watcher already enqueues changed files, so the poll just waits for those files to drain from the queue). The bound on that poll is a configurable timeout read from insrc config (a `codeReview.*` key alongside `codeReview.enforce`, with a sensible baked-in default). If the poll times out without the index becoming fresh, the tool re-prompts with another confirm_wait-style turn offering to keep waiting longer or abort, rather than deciding unilaterally.
+
+## Scope boundary
+
+The gate lives entirely inside insrc_code_review_step and reuses the daemon's existing index-status surface (`queue.isProcessing`, the `lastIndexedAt` watermark, and the `repo.reindex` IPC) as-is — it never invents a new index-status surface and never triggers `repo.reindex` from within code review. It does not silently wait, does not decide unilaterally on timeout, and never produces a no-verdict decline. If the user explicitly declines to keep waiting (at the initial confirm_wait turn or a later timeout re-prompt), the tool falls back to a non-graph-grounded review mode (diff-only heuristic checks) rather than judging against empty grounding; that fallback result is tagged `groundingMode: 'degraded'` and its computed verdict is capped at `warn`, so a degraded review can never register as a full `pass` or silently satisfy the `codeReview.enforce` completion gate. The stage stops short of pinning the specific default timeout value, poll interval, or the exact diff-only heuristic rules — those are LLD/implementation detail, not a brainstorm-level UX/scope fork.
+
+## Non-goals
+
+- Inventing a new index-status surface — reuse queue.isProcessing, lastIndexedAt, and repo.reindex IPC as-is
+- Changing the freshness signal itself (settled: combined queue.isProcessing + per-file lastIndexedAt vs mtime)
+- Triggering repo.reindex from within code review (settled: block-and-poll only, no reindex call)
+- A pure decline-and-stop path with no waiting at all — ruled out by the block-and-poll remediation choice
+- Silently deciding to wait without a user-visible pause turn — ruled out by the explicit confirm_wait/proceed handshake
+- The tool unilaterally deciding what happens on timeout — ruled out by the re-prompt choice
+- A decline path that produces no verdict at all — ruled out by the diff-only fallback-mode choice
+- A fallback verdict that can register as a full pass — ruled out by the groundingMode:'degraded' + warn-cap marking choice
+- A dynamic timeout derived from queue depth or other new daemon signals — would require a new index-status surface, already ruled out
+- Pinning the specific default timeout value, poll interval, or exact diff-only heuristic rules — implementation detail for the LLD stage, not a brainstorm-level UX/scope fork
+- queue.isProcessing only
+- Per-file lastIndexedAt watermark vs changed-file mtime/commit-time
+- Content hash comparison (hash at last index vs current file content)
+- Ask-then-act: return a new 'stale, confirm reindex?' turn; only on the driving user's explicit confirmation does the tool call repo.reindex and poll to completion before resuming start
+- Trigger repo.reindex then poll automatically, no confirmation turn — always self-heal on staleness
+- Decline immediately with an actionable message ('index stale for N files, run repo.reindex and retry') and no polling at all
+- Implicit auto-wait: `start` just block-and-polls automatically (no new phase, no chat round-trip) since the timeout already bounds the risk; on timeout it declines with an actionable message.
+- Config-gated: a `codeReview` config flag chooses between explicit-pause (option A) and implicit auto-wait (option B), defaulting to auto-wait — mirroring the existing `codeReview.enforce` off/advisory pattern.
+- Fail closed: abort the review with an actionable message (e.g. 'indexing still in progress, rerun once complete'); no judgements are emitted and no code-review record is written
+- Degrade with a flagged warning: proceed using whatever grounding is available (possibly incomplete for the stale files), and mark the resulting record as grounded against a stale index
+- Abort clean: return a terminal result stating code review was skipped due to a stale index — no dimension judges run, no PASS/block/warn verdict is produced at all
+- Proceed anyway with explicitly flagged degraded grounding: run the four dimension judges on whatever the graph currently has, but stamp the verdict with a visible STALE-INDEX caveat
+- Tag the record with `groundingMode: 'degraded'` but let the diff-only judges compute the verdict normally (including `pass`)
+- No new field — just prepend a warning banner to the judgement summary shown to the user
+- Force a dedicated `unverified` status distinct from pass/warn/block — the enforce gate treats it identically to `block` until a human re-runs review once the graph is fresh
+- Fixed constant wall-clock timeout hard-coded in the tool (e.g. ~60s)
+- Poll-count bound (N re-checks at a fixed interval) instead of a wall-clock deadline
+
+## Decisions
+
+- **Combined: queue.isProcessing AND lastIndexedAt watermark vs mtime** — Options and framing come directly from the open UX question already posed in the brainstorm focus text; recommending the combined signal because code review is one of this repo's accuracy-critical roles per CLAUDE.md, and a single signal alone leaves a known gap (queue-only misses the post-commit race; watermark-only misses mid-index churn).
+  - Ruled out: _queue.isProcessing only_, _Per-file lastIndexedAt watermark vs changed-file mtime/commit-time_, _Content hash comparison (hash at last index vs current file content)_
+- **Block-and-poll only: pause and repeatedly re-check queue.isProcessing/lastIndexedAt until fresh (bounded by a timeout), without ever calling repo.reindex itself** — When the start phase detects the index is stale for changed files, what should insrc_code_review_step do before serving grounding? The user constrained this: repo.reindex runs an entire index scan (too heavy); the file-watcher already enqueues changed files on write, so the tool only needs to wait for those specific files to drain from the queue — no reindex call.
+  - Ruled out: _Ask-then-act: return a new 'stale, confirm reindex?' turn; only on the driving user's explicit confirmation does the tool call repo.reindex and poll to completion before resuming start_, _Trigger repo.reindex then poll automatically, no confirmation turn — always self-heal on staleness_, _Decline immediately with an actionable message ('index stale for N files, run repo.reindex and retry') and no polling at all_
+- **Explicit pause turn: `start` detects staleness and returns a new intermediate result (e.g. `next: 'confirm_wait'`) with the stale file list and estimated wait; the controller relays this to the user in chat, and only an explicit resume call (e.g. `phase: 'start', proceed: true`) begins the bounded block-and-poll.** — How should the block-and-poll wait actually solicit "user approval" within insrc_code_review_step's multi-turn start → emit_judgements → done protocol, rather than just happening silently inside one call?
+  - Ruled out: _Implicit auto-wait: `start` just block-and-polls automatically (no new phase, no chat round-trip) since the timeout already bounds the risk; on timeout it declines with an actionable message._, _Config-gated: a `codeReview` config flag chooses between explicit-pause (option A) and implicit auto-wait (option B), defaulting to auto-wait — mirroring the existing `codeReview.enforce` off/advisory pattern._
+- **Re-prompt: return another confirm_wait-style turn offering to keep waiting longer or abort, instead of the tool deciding unilaterally** — CLAUDE.md states accuracy is primary and cost is the least priority — this gate exists specifically to prevent a hollow PASS from empty grounding, so the timeout path shouldn't reintroduce that risk. The abort branch of the re-prompt remains the user-chosen fail-closed exit, so fail-closed stays reachable without being unilateral.
+  - Ruled out: _Fail closed: abort the review with an actionable message (e.g. 'indexing still in progress, rerun once complete'); no judgements are emitted and no code-review record is written_, _Degrade with a flagged warning: proceed using whatever grounding is available (possibly incomplete for the stale files), and mark the resulting record as grounded against a stale index_
+- **Fall back to a non-graph-grounded review mode (e.g. diff-only heuristic checks) instead of the four LLM judges** — When the user explicitly declines to keep waiting for the index (at the initial confirm_wait turn, or at a later timeout re-prompt), what should insrc_code_review_step do? The user wants a real review signal even on decline, not a bare abort — accepting that this is a second (diff-grounded) review pathway distinct from the four graph-grounded dimension judges.
+  - Ruled out: _Abort clean: return a terminal result stating code review was skipped due to a stale index — no dimension judges run, no PASS/block/warn verdict is produced at all_, _Proceed anyway with explicitly flagged degraded grounding: run the four dimension judges on whatever the graph currently has, but stamp the verdict with a visible STALE-INDEX caveat_
+- **Tag the record with `groundingMode: 'degraded'` and cap the computed verdict at `warn` — diff-only findings can never yield an overall `pass`, regardless of how clean the diff looks** — When the tool falls back to the non-graph-grounded (diff-only heuristic) review mode, how should that result be marked in the code-review record and verdict — so a degraded review can't be mistaken for a full grounded one, especially by the codeReview.enforce completion gate? Implies the full graph-grounded path should stamp a distinguishable groundingMode (e.g. 'full').
+  - Ruled out: _Tag the record with `groundingMode: 'degraded'` but let the diff-only judges compute the verdict normally (including `pass`)_, _No new field — just prepend a warning banner to the judgement summary shown to the user_, _Force a dedicated `unverified` status distinct from pass/warn/block — the enforce gate treats it identically to `block` until a human re-runs review once the graph is fresh_
+- **Configurable timeout via existing insrc config (e.g. a codeReview.* key alongside codeReview.enforce)** — What actually bounds the block-and-poll's timeout in insrc_code_review_step's start phase, before it re-prompts with another confirm_wait turn? Configurable per-install with a sensible baked-in default; the poll interval stays a fixed internal constant.
+  - Ruled out: _Fixed constant wall-clock timeout hard-coded in the tool (e.g. ~60s)_, _Poll-count bound (N re-checks at a fixed interval) instead of a wall-clock deadline_
+
+## Citations
+
+- **[[c1]]** `step-output` `s1` — "The confirmed brainstorm elicitation (s1) converged the indexing-readiness gate: combined freshness signal, block-and-poll (no repo.reindex), explicit confirm_wait/proceed handshake, re-prompt on time"
+- **[[c2]]** `prior-artifact` `Code-review S001 completion (commit 08121ac) — the hollow-PASS incident that motivated this gate: grounding.symbols came back empty because the daemon graph was not re-indexed after the build commit, so all four dimension judges ran against empty grounding.`
+- **[[c3]]** `doc` `CLAUDE.md — 'Accuracy is primary; cost is the least priority' + the model-tiering principle making design/review/build/validate accuracy-critical core roles; the gate exists to keep code review from silently passing on empty grounding.`
+
+<!-- insrc:review -->
+
+## Review
+
+### ✅ Review `PASS` — brainstorm (brainstorm)
+
+**0 HIGH · 0 MED · 7 LOW** · model `client` · reviewed 2026-08-04T21:14:58.169Z
+
+| Ref | Kind | Severity | Fixability | Premise | Evidence | Action |
+| --- | --- | --- | --- | --- | --- | --- |
+| cl1 | external-contract | LOW | manual | insrc_code_review_step has a `start` phase whose handler resolves the review subject + grounding before the four dimension judges run — the phase the freshness gate hooks into. | src/mcp/code-review-step exists (25 hits) with handleStart + resolveCodeReviewSubject wired — the start phase the gate hooks into is real. | None — verified. |
+| cl2 | external-contract | LOW | manual | The daemon exposes an index queue with an `isProcessing` (in-flight) signal the gate can read as one half of the combined freshness check. | isProcessing resolves (12 hits) alongside queue/queueDepth in the daemon — the queue-in-flight half of the combined signal exists as an existing surface. | None — verified. |
+| cl3 | external-contract | LOW | manual | The daemon tracks a per-repo/per-file lastIndexed watermark (lastIndexedAt / lastIndexed) the gate compares against a changed file's mtime. | lastIndexedAt (34) / lastIndexed / indexedAt all resolve — a per-repo/file index watermark exists to compare against mtime. | None — verified. |
+| cl4 | external-contract | LOW | manual | A repo reindex IPC (repo.reindex) exists on the daemon — the surface the spec deliberately does NOT call from code review (reuse as-is, no trigger). | reindex resolves (47 hits incl. repo.reindex) — the reindex IPC the spec reuses-but-never-triggers exists. | None — verified. |
+| cl5 | external-contract | LOW | manual | A `codeReview.enforce` config key already exists (the completion-gate policy the degraded/warn-cap fallback must not silently satisfy), and the new timeout key lives alongside it as codeReview.*. | codeReview + enforce + codeReview.enforce all resolve — the completion-gate policy key the degraded/warn-cap fallback must not satisfy exists, and the new timeout key can sit alongside it. | None — verified. |
+| cl6 | inventory | LOW | manual | Code review has exactly four dimension judges — adherence, conventions, coverage, quality — which run against graph grounding and which the diff-only fallback replaces. | ReviewDimension + the dimension:'adherence\|conventions\|coverage\|quality' literal set resolve — the four judges are exactly as the spec states. | None — verified. |
+| cl7 | semantic | LOW | manual | Code-review grounding is a symbols[] set built from the repo graph — an empty grounding.symbols is what produces the hollow PASS this gate exists to prevent (the S001 incident). | CodeReviewGrounding + grounding.symbols resolve — grounding is a symbols[] set built from the graph, so an empty symbols[] is the hollow-PASS mechanism the gate targets (matches the S001 incident in c2). | None — verified. |

@@ -1,0 +1,23 @@
+{
+  "id": "AMD-abd1ecf6a5f5063e-1",
+  "epicHash": "abd1ecf6a5f5063e",
+  "epicSlug": "frame-epic-new-pre-workflow-brainstorm",
+  "hldBaseRunId": "wf-1785587820064-46kctq",
+  "amendment": {
+    "type": "storyBoundary.addStory",
+    "storyId": "s10",
+    "internal": "Private implementation of s10: Rebuild the elicit convergence as an adaptive, daemon-drafted, decision-at-a-time loop"
+  },
+  "rationale": "Extends Epic `frame-epic-new-pre-workflow-brainstorm` (abd1ecf6a5f5063e) — the adaptive decision-at-a-time elicit loop is a new slice of that epic's existing brainstorm-elicitation capability (its s3 'converge a vague idea through in-chat iteration' + s4 'see the options and tradeoffs, and have the chosen direction recorded'), building on src/workflow/runners/brainstorm/ + src/workflow/executor.ts. Not a new Epic.",
+  "citations": [],
+  "proposedBy": {
+    "workflow": "define",
+    "runId": "wf-1785853981489-6jx4pj",
+    "storyId": "s10",
+    "stepId": "scope.assess"
+  },
+  "proposedAt": "2026-08-04T14:35:19.276Z",
+  "status": "approved",
+  "approvedAt": "2026-08-04T14:37:51.724Z",
+  "approvedBy": "client"
+}

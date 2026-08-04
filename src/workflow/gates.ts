@@ -25,6 +25,8 @@ import { makeStaleAck } from './amendments/staleness.js';
 import { listApprovedAmendments } from './amendments/store.js';
 import { renderDefineMarkdown } from './artifacts/define.js';
 import type { DefineArtifact, DefineStory } from './artifacts/define.js';
+import { enforceCodeReviewGate } from './code-review/gate.js';
+import type { CodeReviewGateResult } from './code-review/gate.js';
 import type { HldArtifact }    from './artifacts/hld.js';
 import { computeHldEffectiveHash, extractHldContextSlice } from './artifacts/lld.js';
 import type { HldContextSlice, LldArtifact } from './artifacts/lld.js';
@@ -551,11 +553,30 @@ export interface WorkflowApproveRequest {
 	readonly overrideReview?: string;
 }
 
+/** The code-review gate outcome for a single story-scoped artifact, projected
+ *  from {@link CodeReviewGateResult} for the controller to PRESENT alongside the
+ *  approval act. A SEPARATE surfacing from `meta.review` — it reflects the CODE
+ *  review's `body.verdict`, never the design-artifact review. The `overrideReason`
+ *  / `at` arm carries the OVERRIDE audit on `status === 'overridden'` so the
+ *  presented outcome records a bypass, not only the stamped `approvedAt`. */
+export interface CodeReviewApprovalOutcome {
+	readonly path:    string;
+	readonly storyId: string;
+	readonly status:  CodeReviewGateResult['status'];
+	readonly message?: string;
+	readonly counts?:  { readonly high: number; readonly med: number; readonly low: number };
+	readonly overrideReason?: string;
+	readonly at?:     string;
+}
+
 /** Non-lossy result: approved artifacts + review-blocked ones (kept distinct
- *  so a batch never silently drops a blocked artifact). */
+ *  so a batch never silently drops a blocked artifact). `codeReview[]` is the
+ *  additive code-review gate surfacing (one entry per story-scoped artifact the
+ *  gate ran on) — `approved`/`skipped` shapes are unchanged. */
 export interface WorkflowApproveResult {
 	readonly approved: readonly { readonly path: string; readonly result: ApprovalResult }[];
 	readonly skipped:  readonly { readonly path: string; readonly reason: string }[];
+	readonly codeReview: readonly CodeReviewApprovalOutcome[];
 }
 
 /** JSON paths of every DEF/HLD/LLD/PLAN artifact under `epicHash` that is not
@@ -583,14 +604,35 @@ function pendingArtifactJsonPaths(repoPath: string, epicHash: string): string[] 
  *  NOT run the tracker (gh-push/commit) leg — that stays in the cli-services
  *  `approve()` used by the TUI. Throws ArtifactMissingError (single not found)
  *  or NoPendingArtifactsError (empty epic sweep). */
-export function approveWorkflowTarget(req: WorkflowApproveRequest): WorkflowApproveResult {
-	const opts = req.overrideReview !== undefined ? { overrideReview: req.overrideReview } : undefined;
-	const approved: { path: string; result: ApprovalResult }[] = [];
-	const skipped:  { path: string; reason: string }[] = [];
+export function approveWorkflowTarget(
+	req: WorkflowApproveRequest,
+	opts?: { readonly enforce?: boolean },
+): WorkflowApproveResult {
+	const approveOpts = req.overrideReview !== undefined ? { overrideReview: req.overrideReview } : undefined;
+	const approved:   { path: string; result: ApprovalResult }[] = [];
+	const skipped:    { path: string; reason: string }[] = [];
+	const codeReview: CodeReviewApprovalOutcome[] = [];
 
 	const approveOne = (jsonPath: string): void => {
+		// Code-review gate: a SEPARATE check over the CODE review's body.verdict —
+		// runs BEFORE the meta.review approve and never merges into it. Story-scoped
+		// artifacts (meta.epicHash && meta.storyId) only; a `blocked` verdict
+		// withholds completion (routed to skipped[], no approvedAt stamp). Every
+		// other status is advisory and falls through to the unchanged approve below.
+		const meta = readArtifactMeta(jsonPath);
+		if (meta !== undefined && meta.epicHash !== undefined && meta.storyId !== undefined) {
+			const gate = enforceCodeReviewGate(req.repoPath, meta.epicHash, meta.storyId, {
+				...(req.overrideReview !== undefined ? { overrideReview: req.overrideReview } : {}),
+				...(opts?.enforce !== undefined ? { enforce: opts.enforce } : {}),
+			});
+			codeReview.push(projectGateOutcome(jsonPath, meta.storyId, gate));
+			if (gate.status === 'blocked') {
+				skipped.push({ path: jsonPath, reason: gate.message });
+				return;   // withhold completion — no meta.review approve, no approvedAt
+			}
+		}
 		try {
-			approved.push({ path: jsonPath, result: approveArtifactByJsonPath(jsonPath, opts) });
+			approved.push({ path: jsonPath, result: approveArtifactByJsonPath(jsonPath, approveOpts) });
 		} catch (err) {
 			if (err instanceof ReviewBlockedError) {
 				skipped.push({ path: jsonPath, reason: err.summary });
@@ -611,7 +653,39 @@ export function approveWorkflowTarget(req: WorkflowApproveRequest): WorkflowAppr
 	} else {
 		throw new Error('approveWorkflowTarget: exactly one of artifactPath | epicHash is required');
 	}
-	return { approved, skipped };
+	return { approved, skipped, codeReview };
+}
+
+/** Read `{ epicHash, storyId }` off an artifact JSON's meta. Returns undefined
+ *  when the file is missing / unparseable / has no meta — the code-review gate
+ *  then never runs (the subsequent approve surfaces the real error). */
+function readArtifactMeta(jsonPath: string): { epicHash?: string; storyId?: string } | undefined {
+	try {
+		if (!existsSync(jsonPath)) return undefined;
+		const meta = (JSON.parse(readFileSync(jsonPath, 'utf8')) as { meta?: { epicHash?: string; storyId?: string } }).meta;
+		return typeof meta === 'object' && meta !== null ? meta : undefined;
+	} catch {
+		return undefined;
+	}
+}
+
+/** Project a {@link CodeReviewGateResult} into the presented
+ *  {@link CodeReviewApprovalOutcome}, carrying `message`/`counts` where the arm
+ *  has them and the override audit (`overrideReason`/`at`) on `overridden`. */
+function projectGateOutcome(path: string, storyId: string, gate: CodeReviewGateResult): CodeReviewApprovalOutcome {
+	const base = { path, storyId, status: gate.status };
+	switch (gate.status) {
+		case 'no-review':
+			return base;
+		case 'pass':
+			return { ...base, counts: gate.counts };
+		case 'warn':
+			return { ...base, counts: gate.counts, message: gate.message };
+		case 'blocked':
+			return { ...base, counts: gate.counts, message: gate.message };
+		case 'overridden':
+			return { ...base, counts: gate.counts, overrideReason: gate.overrideReason, at: gate.at };
+	}
 }
 
 export interface RejectionResult {

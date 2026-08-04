@@ -27,6 +27,7 @@ import type { RunWorkflowResult, WorkflowProgress } from '../daemon/workflow-rpc
 import type { RunStatus } from '../daemon/workflow-run-registry.js';
 import type { WorkflowApproveResult } from '../workflow/gates.js';
 import type { DocGenOutcome, RenderedDocumentShell, SerializableDocTypeRegistration } from '../docgen/types.js';
+import type { CodeReviewGrounding } from '../workflow/code-review/types.js';
 
 const log = getLogger('mcp:workflow-run');
 
@@ -288,6 +289,30 @@ export function approveWorkflow(
 /** Abort a detached run mid-flight. */
 export function abortRun(runId: string, deps: UnaryRpcDeps = {}): Promise<{ ok: boolean }> {
 	return unaryRpc<{ ok: boolean }>('workflow.run.abort', { runId }, deps);
+}
+
+/** Fetch the code-review grounding (code-review S001 sc2) over the daemon
+ *  `codeReview.grounding` IPC. This is the ONLY graph access for the controller
+ *  path (`insrc_code_review_step`, S008) — the MCP tool never opens LMDB/Lance
+ *  directly (k5/k6). The daemon resolves the subject internally and returns
+ *  structured symbol summaries; a decline / error / unreachable socket all map
+ *  to `{ ok:false, reason }` (never a throw), so the handler can relay a clean
+ *  `error` frame. */
+export function fetchCodeReviewGrounding(
+	params: { repo: string; epicHash: string; storyId: string },
+	deps: UnaryRpcDeps = {},
+): Promise<{ ok: true; grounding: CodeReviewGrounding } | { ok: false; reason: string }> {
+	return unaryRpc<{ ok?: boolean; grounding?: CodeReviewGrounding; reason?: string; error?: string }>(
+		'codeReview.grounding', params, deps,
+	).then(
+		(res) => {
+			if (res.ok === true && res.grounding !== undefined) {
+				return { ok: true as const, grounding: res.grounding };
+			}
+			return { ok: false as const, reason: res.reason ?? res.error ?? 'code-review grounding unavailable' };
+		},
+		(err: unknown) => ({ ok: false as const, reason: err instanceof Error ? err.message : String(err) }),
+	);
 }
 
 /** Forward a docgen generation request to the daemon `docgen.generate` IPC. The

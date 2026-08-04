@@ -1,0 +1,357 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Procix Software India. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+/**
+ * Top-level dispatcher for `insrc_code_review_step` (code-review S008) — the
+ * controller-driven, multi-turn CODE-review surface. Mirrors
+ * `mcp/review-step/handler.ts`.
+ *
+ * Loop: start → emit_judgements → judgements → done.
+ *   - phase='start': resolve the sc1 subject in-process (decline → error) +
+ *     fetch the sc2 grounding over the daemon IPC (unavailable → error), save
+ *     the opaque state, and hand the controller the four per-dimension prompts +
+ *     a DimensionResult[] schema + the grounding.
+ *   - phase='judgements': load the state, VALIDATE the four controller-supplied
+ *     DimensionResults (malformed → error, nothing written), scope-drop
+ *     out-of-changedFiles findings (daemon-path parity), then drive the SAME
+ *     sc5 `runCodeReview` with injected deps so the persisted record is
+ *     byte-identical to the daemon-driven path.
+ */
+
+import { getLogger } from '../../shared/logger.js';
+import type { LLMProvider } from '../../shared/types.js';
+import { resolveCodeReviewSubject } from '../../workflow/code-review/subject.js';
+import { fetchCodeReviewGrounding } from '../daemon-stream.js';
+import { runCodeReview, type CodeReviewRunnerDeps } from '../../workflow/code-review/runner.js';
+import { codeReviewArtifactPaths, writeAtomic } from '../../workflow/storage.js';
+import { buildAdherencePrompt } from '../../workflow/code-review/dimensions/adherence.js';
+import { buildConventionsPrompt } from '../../workflow/code-review/dimensions/conventions.js';
+import { buildCoveragePrompt } from '../../workflow/code-review/dimensions/coverage.js';
+import { buildQualityPrompt } from '../../workflow/code-review/dimensions/quality.js';
+import type {
+	CodeReviewGrounding,
+	CodeReviewSubject,
+	DimensionFinding,
+	DimensionResult,
+	ReviewDimension,
+} from '../../workflow/code-review/types.js';
+import { StateTokenNotFound, loadState, releaseState, saveState } from './state-store.js';
+import type {
+	CodeReviewStepError,
+	CodeReviewStepInput,
+	CodeReviewStepMcpEnvelope,
+	CodeReviewStepOutput,
+} from './types.js';
+
+const log = getLogger('mcp:code-review-step:handler');
+
+/** The four dimensions in fixed evaluation order — the same set the S006
+ *  runner's DEFAULT_JUDGES uses; the judgements turn must cover exactly these. */
+const DIMENSIONS: readonly ReviewDimension[] = ['adherence', 'conventions', 'coverage', 'quality'];
+
+/** Injectable seams so the handler tests stub the daemon/graph/runner. */
+export interface CodeReviewStepDeps {
+	readonly resolveSubject: typeof resolveCodeReviewSubject;
+	readonly fetchGrounding: typeof fetchCodeReviewGrounding;
+	readonly runReview:      typeof runCodeReview;
+	readonly write:          (absPath: string, content: string) => void;
+}
+
+const DEFAULT_DEPS: CodeReviewStepDeps = {
+	resolveSubject: resolveCodeReviewSubject,
+	fetchGrounding: fetchCodeReviewGrounding,
+	runReview:      runCodeReview,
+	write:          writeAtomic,
+};
+
+/** A read-only stand-in provider. On the controller path the injected judges
+ *  return the supplied judgements without ever calling the provider, so it is
+ *  never touched — it only satisfies runCodeReview's signature. */
+const DUMMY_PROVIDER = { capabilities: { structuredOutput: true } } as unknown as LLMProvider;
+
+/** The JSON Schema the controller's `{ judgements: DimensionResult[] }` must
+ *  match — one DimensionResult per dimension; each finding pins its location to
+ *  a `file:line` string (a malformed location is a bad-judgements error, never a
+ *  silent drop). Handed back in the emit_judgements frame. */
+const JUDGEMENTS_SCHEMA: Record<string, unknown> = {
+	type: 'object',
+	additionalProperties: false,
+	required: ['judgements'],
+	properties: {
+		judgements: {
+			type: 'array',
+			minItems: 4,
+			maxItems: 4,
+			items: {
+				type: 'object',
+				additionalProperties: false,
+				required: ['dimension', 'findings'],
+				properties: {
+					dimension: { type: 'string', enum: [...DIMENSIONS] },
+					findings: {
+						type: 'array',
+						items: {
+							type: 'object',
+							additionalProperties: false,
+							required: ['dimension', 'severity', 'location', 'message'],
+							properties: {
+								dimension:      { type: 'string', enum: [...DIMENSIONS] },
+								severity:       { type: 'string', enum: ['HIGH', 'MED', 'LOW'] },
+								location:       { type: 'string', description: '`file:line` inside the Story\'s changed set' },
+								message:        { type: 'string' },
+								expectationRef: { type: 'string' },
+								counterpartRef: { type: 'string' },
+								confidence:     { type: 'string', enum: ['observation', 'breach'] },
+							},
+						},
+					},
+				},
+			},
+		},
+	},
+};
+
+export async function handleCodeReviewStep(
+	input: unknown,
+	deps:  CodeReviewStepDeps = DEFAULT_DEPS,
+): Promise<CodeReviewStepMcpEnvelope> {
+	const result = await dispatch(input, deps);
+	return {
+		content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+		...(result.next === 'error' ? { isError: true } : {}),
+	};
+}
+
+async function dispatch(input: unknown, deps: CodeReviewStepDeps): Promise<CodeReviewStepOutput> {
+	if (typeof input !== 'object' || input === null || !('phase' in input)) {
+		return errorResult('bad-input', 'insrc_code_review_step: input must be an object with a `phase` field.', false);
+	}
+	const step = input as CodeReviewStepInput;
+	try {
+		switch (step.phase) {
+			case 'start':      return await handleStart(step, deps);
+			case 'judgements': return await handleJudgements(step, deps);
+			default:
+				return errorResult(
+					'bad-phase',
+					`insrc_code_review_step: unknown phase '${(step as { phase: string }).phase}'. Expected 'start' | 'judgements'.`,
+					false,
+				);
+		}
+	} catch (err) {
+		if (err instanceof StateTokenNotFound) {
+			return errorResult('state-not-found', err.message, false);
+		}
+		const msg = err instanceof Error ? err.message : String(err);
+		log.warn({ phase: step.phase, err: msg }, 'insrc_code_review_step: uncaught error');
+		return errorResult('internal', msg, false);
+	}
+}
+
+// ---------------------------------------------------------------------------
+// start
+// ---------------------------------------------------------------------------
+
+async function handleStart(
+	step: CodeReviewStepInput & { phase: 'start' },
+	deps: CodeReviewStepDeps,
+): Promise<CodeReviewStepOutput> {
+	if (typeof step.epicHash !== 'string' || step.epicHash.length === 0) {
+		return errorResult('bad-input', 'insrc_code_review_step: `epicHash` is required for phase=start.', false);
+	}
+	if (typeof step.storyId !== 'string' || step.storyId.length === 0) {
+		return errorResult('bad-input', 'insrc_code_review_step: `storyId` is required for phase=start.', false);
+	}
+	const repo = step.repo !== undefined && step.repo.length > 0 ? step.repo : process.env['INSRC_REPO'];
+	if (repo === undefined || repo.length === 0) {
+		return errorResult('no-repo', 'insrc_code_review_step: no repo (pass `repo` or set INSRC_REPO).', false);
+	}
+
+	// 1. Resolve the fixed sc1 subject (file+git, in-process). A DECLINE is not a
+	//    verdict — the review cannot start.
+	const resolved = await deps.resolveSubject(repo, step.epicHash, step.storyId);
+	if (!resolved.ok) {
+		return errorResult('no-subject', `insrc_code_review_step: cannot review — ${resolved.reason}.`, false);
+	}
+	const subject = resolved.subject;
+
+	// 2. Fetch the sc2 grounding ONLY over the daemon IPC (k5/k6).
+	const g = await deps.fetchGrounding({ repo, epicHash: step.epicHash, storyId: step.storyId });
+	if (!g.ok) {
+		return errorResult('grounding-unavailable', `insrc_code_review_step: grounding unavailable — ${g.reason}.`, true);
+	}
+	const grounding = g.grounding;
+
+	// 3. Save opaque state + hand the controller the four prompts + the schema.
+	const token = saveState({
+		runId:       `cr-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+		startedAtMs: Date.now(),
+		repo,
+		epicHash:    step.epicHash,
+		storyId:     step.storyId,
+		subject,
+		grounding,
+	});
+
+	return {
+		next:     'emit_judgements',
+		guidance: 'Judge each of the four dimensions (adherence, conventions, coverage, quality) over the grounding below, ' +
+			'then call phase=\'judgements\' with judgements=<your JSON> + state. Emit one DimensionResult per dimension; each ' +
+			'finding\'s location must be a `file:line` inside the Story\'s changed set.',
+		prompts: [
+			buildAdherencePrompt(subject, grounding, undefined),
+			buildConventionsPrompt(subject, grounding, undefined),
+			buildCoveragePrompt(subject, grounding, undefined),
+			buildQualityPrompt(subject, grounding, undefined),
+		],
+		schema:    JUDGEMENTS_SCHEMA,
+		grounding,
+		state:     token,
+	};
+}
+
+// ---------------------------------------------------------------------------
+// judgements
+// ---------------------------------------------------------------------------
+
+async function handleJudgements(
+	step: CodeReviewStepInput & { phase: 'judgements' },
+	deps: CodeReviewStepDeps,
+): Promise<CodeReviewStepOutput> {
+	if (typeof step.state !== 'string' || step.state.length === 0) {
+		return errorResult('bad-input', 'insrc_code_review_step: `state` is required for phase=judgements.', false);
+	}
+	const payload = loadState(step.state);   // throws StateTokenNotFound → caught in dispatch
+
+	// Validate the controller's judgements BEFORE driving the runner. A fault
+	// returns an error frame and writes nothing (ac5).
+	const validated = validateJudgements(step.judgements?.judgements, payload.subject);
+	if (!validated.ok) {
+		return errorResult('bad-judgements', `insrc_code_review_step: ${validated.message}`, true);
+	}
+	const byDimension = validated.byDimension;
+
+	// Drive the SAME sc5 runCodeReview with injected deps: each judge returns the
+	// matching (already scope-dropped) DimensionResult; grounding is replayed from
+	// state; write persists via writeAtomic. So the record is byte-identical to
+	// the daemon-driven path (ac3/k2).
+	const injected: CodeReviewRunnerDeps = {
+		judges: DIMENSIONS.map((dimension) => ({
+			dimension,
+			// eslint-disable-next-line @typescript-eslint/require-await
+			judge: async (): Promise<DimensionResult> => byDimension.get(dimension)!,
+		})),
+		assembleGrounding: async (): Promise<CodeReviewGrounding> => payload.grounding,
+		write: deps.write,
+	};
+
+	return await driveRunner(step.state, payload.subject, injected, deps);
+}
+
+async function driveRunner(
+	token:    string,
+	subject:  CodeReviewSubject,
+	injected: CodeReviewRunnerDeps,
+	deps:     CodeReviewStepDeps,
+): Promise<CodeReviewStepOutput> {
+	const runId = `cr-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+	const outcome = await deps.runReview(subject, DUMMY_PROVIDER, { runId, modelLabel: 'client' }, injected);
+	if (!outcome.ok) {
+		return errorResult('fold-failed', `insrc_code_review_step: ${outcome.error}`, true);
+	}
+	releaseState(token);   // consumed — a resend of this token fails loadState (no double-write)
+	const paths = codeReviewArtifactPaths(subject.repoPath, subject.epicHash, subject.storyId);
+	return {
+		next:     'done',
+		verdict:  outcome.artifact.body.verdict,
+		counts:   outcome.artifact.body.counts,
+		path:     paths.md,
+		jsonPath: paths.json,
+	};
+}
+
+// ---------------------------------------------------------------------------
+// Validation + scope-drop
+// ---------------------------------------------------------------------------
+
+type ValidateResult =
+	| { readonly ok: true;  readonly byDimension: Map<ReviewDimension, DimensionResult> }
+	| { readonly ok: false; readonly message: string };
+
+/** Validate the controller's DimensionResult[] covers exactly the four
+ *  dimensions with well-formed findings (severity enum + `file:line` location),
+ *  then scope-drop each dimension's findings to the Story's changed set (the
+ *  same drop the daemon-path judges apply). */
+function validateJudgements(raw: readonly DimensionResult[] | undefined, subject: CodeReviewSubject): ValidateResult {
+	if (raw === undefined || !Array.isArray(raw) || raw.length === 0) {
+		return { ok: false, message: 'judgements is missing or empty; supply one DimensionResult per dimension.' };
+	}
+	const changed = new Set(subject.changedFiles);
+	const seen = new Set<ReviewDimension>();
+	const byDimension = new Map<ReviewDimension, DimensionResult>();
+
+	for (const dr of raw) {
+		if (typeof dr !== 'object' || dr === null || typeof dr.dimension !== 'string') {
+			return { ok: false, message: 'each judgement must be a DimensionResult with a `dimension` + `findings`.' };
+		}
+		if (!DIMENSIONS.includes(dr.dimension as ReviewDimension)) {
+			return { ok: false, message: `unknown dimension '${dr.dimension}'; expected one of ${DIMENSIONS.join(', ')}.` };
+		}
+		const dimension = dr.dimension as ReviewDimension;
+		if (seen.has(dimension)) {
+			return { ok: false, message: `duplicate dimension '${dimension}'.` };
+		}
+		seen.add(dimension);
+		if (!Array.isArray(dr.findings)) {
+			return { ok: false, message: `dimension '${dimension}' has no findings array.` };
+		}
+		const kept: DimensionFinding[] = [];
+		for (const f of dr.findings) {
+			const bad = validateFinding(f, dimension);
+			if (bad !== null) return { ok: false, message: bad };
+			// scope-drop: keep only findings whose file is in the changed set
+			// (daemon-path parity). fileOf = the substring before the first ':'.
+			if (changed.has(fileOf((f as DimensionFinding).location))) kept.push(f as DimensionFinding);
+		}
+		byDimension.set(dimension, { dimension, findings: kept });
+	}
+
+	const missing = DIMENSIONS.filter(d => !seen.has(d));
+	if (missing.length > 0) {
+		return { ok: false, message: `missing dimension(s): ${missing.join(', ')}.` };
+	}
+	return { ok: true, byDimension };
+}
+
+/** Returns an error message if the finding is malformed, else null. */
+function validateFinding(f: unknown, dimension: ReviewDimension): string | null {
+	if (typeof f !== 'object' || f === null) return `dimension '${dimension}' has a non-object finding.`;
+	const o = f as Record<string, unknown>;
+	if (o['severity'] !== 'HIGH' && o['severity'] !== 'MED' && o['severity'] !== 'LOW') {
+		return `dimension '${dimension}' has a finding with severity '${String(o['severity'])}' (expected HIGH|MED|LOW).`;
+	}
+	if (typeof o['location'] !== 'string' || !o['location'].includes(':')) {
+		return `dimension '${dimension}' has a finding whose location '${String(o['location'])}' is not a \`file:line\`.`;
+	}
+	if (typeof o['message'] !== 'string' || o['message'].length === 0) {
+		return `dimension '${dimension}' has a finding with no message.`;
+	}
+	return null;
+}
+
+/** Extract the repo-relative file from a `file:line` location (mirrors the
+ *  dimension modules' private `fileOf`). */
+function fileOf(location: string): string {
+	const i = location.indexOf(':');
+	return i >= 0 ? location.slice(0, i) : location;
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function errorResult(code: string, message: string, retryable: boolean): CodeReviewStepError {
+	return { next: 'error', error: { code, message, retryable } };
+}

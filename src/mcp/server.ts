@@ -47,6 +47,7 @@ import { handleAnalyzeStep } from './analyze-step/handler.js';
 import { handleWorkflowStep } from './workflow-step/handler.js';
 import { handleBuildStep } from './build-step/handler.js';
 import { handleReviewStep } from './review-step/handler.js';
+import { handleCodeReviewStep } from './code-review-step/handler.js';
 import { handleTriageStep } from './triage-step/handler.js';
 import { handleDocgen } from './docgen/handler.js';
 import { renderBundleAsMarkdown } from './bundle-md.js';
@@ -552,6 +553,67 @@ export function buildInsrcMcpServer(): McpServer {
 			},
 		},
 		async (rawArgs, _extra) => handleReviewStep(rawArgs),
+	);
+
+	// -------------------------------------------------------------------
+	// insrc_code_review_step — controller-driven, multi-turn CODE review
+	// (code-review S008). Peer of insrc_review_step, but over a Story's built
+	// CODE (not a design artifact): the daemon resolves the fixed subject +
+	// serves grounding over IPC and folds/persists the record via the SAME sc5
+	// runCodeReview; YOU (the controller) supply each of the four dimensions'
+	// judgement — a second set of eyes off the provider that authored the code.
+	// -------------------------------------------------------------------
+	server.registerTool(
+		'insrc_code_review_step',
+		{
+			title: 'insrc code review (controller-driven, multi-turn)',
+			description:
+				'Controller-driven CODE review of a Story\'s built code across four ' +
+				'dimensions (adherence / conventions / coverage / quality). The daemon ' +
+				'resolves the fixed subject + serves grounding over IPC and folds + ' +
+				'persists the record; YOU emit each dimension\'s judgement — a second set ' +
+				'of eyes off the provider that authored the code. Produces the same ' +
+				'block/warn/pass CodeReviewArtifact (at CR-<epic>-<story>) as a daemon-' +
+				'driven review.\n\n' +
+				'Multi-turn loop:\n\n' +
+				'  1. phase=\'start\' with { epicHash, storyId, repo? }. Server resolves the ' +
+				'subject (declines with an error if there is no approved contract / build) ' +
+				'and fetches grounding, returning { next: \'emit_judgements\', prompts, ' +
+				'schema, grounding, state } — `prompts` are the four per-dimension charges, ' +
+				'`grounding` is the ground truth you judge against.\n' +
+				'  2. Emit the judgements JSON ({ judgements: DimensionResult[] } — one per ' +
+				'dimension, each finding a `file:line` location), then phase=\'judgements\' ' +
+				'with judgements=<your JSON> + state. Server folds + persists and returns ' +
+				'{ next: \'done\', verdict, counts, path, jsonPath }.\n\n' +
+				'Preserve `state` verbatim between calls; a malformed turn returns a ' +
+				'next:\'error\' frame naming the fault (nothing is written).',
+			annotations: {
+				readOnlyHint:   false,   // writes the CR record
+				idempotentHint: false,
+				openWorldHint:  false,
+			},
+			inputSchema: {
+				phase: z.enum(['start', 'judgements'])
+					.describe('Which turn of the loop this call carries.'),
+				epicHash: z.string()
+					.describe('Only for phase=start. The Epic hash keying the Story.')
+					.optional(),
+				storyId: z.string()
+					.describe('Only for phase=start. The Story id keying the review.')
+					.optional(),
+				repo: z.string()
+					.describe('Only for phase=start. Absolute repo path; falls back to INSRC_REPO env.')
+					.optional(),
+				judgements: z.object({ judgements: z.array(z.record(z.string(), z.unknown())).optional() })
+					.passthrough()
+					.describe('Only for phase=judgements. The four DimensionResult judgements your LLM emitted (matches the emit_judgements schema).')
+					.optional(),
+				state: z.string()
+					.describe('Opaque continuation token from the prior response. Required after phase=start.')
+					.optional(),
+			},
+		},
+		async (rawArgs, _extra) => handleCodeReviewStep(rawArgs),
 	);
 
 	// -------------------------------------------------------------------

@@ -1,0 +1,37 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": false,
+    "epicHash": "d88062a6e63aa312",
+    "storyId": "S001",
+    "createdAt": "2026-08-05T00:00:00.000Z",
+    "updatedAt": "2026-08-05T00:00:00.000Z",
+    "approvedAt": "2026-08-04T19:35:51.413Z"
+  },
+  "body": {
+    "focus": "Make the LLD and plan optional for code review (three modes)",
+    "commit": "0c1f4da",
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      }
+    ]
+  }
+}

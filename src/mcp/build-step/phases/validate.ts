@@ -19,6 +19,7 @@ import { runWithRoutingContext, currentRoutingContext } from '../../../analyze/c
 import { loadAnalyzeConfig } from '../../../config/analyze.js';
 import { getLogger } from '../../../shared/logger.js';
 import { renderValidatePrompt, resolveRepoPath, resolveTaskRef } from '../render.js';
+import { persistBuildRecord } from '../../../workflow/runners/build/standalone-record.js';
 import type { BuildStepDone, BuildStepError, BuildStepInputValidate } from '../types.js';
 
 const log = getLogger('mcp:build-step:validate');
@@ -82,6 +83,27 @@ export async function handleValidate(input: BuildStepInputValidate): Promise<Bui
 			);
 		}
 		const passed = (verdict as { passed?: unknown }).passed === true;
+
+		// S001: persist the plan-driven BUILD ledger record as a SIDE EFFECT of the
+		// verdict, so story completion has a real BUILD-<epicHash>-<storyId> record
+		// to approve without a hand-back-fill. Gated on a resolvable epic+story
+		// identity (never write a BUILD-undefined path); a persistence failure is
+		// swallowed so it can never convert a real verdict into an error.
+		const { epicHash, storyId, taskId } = resolved.ref;
+		if (epicHash.length > 0 && storyId.length > 0) {
+			try {
+				const now = new Date().toISOString();
+				persistBuildRecord(repoPath, {
+					meta: { workflow: 'build', standalone: false, epicHash, storyId, createdAt: now, updatedAt: now },
+					body: { tasks: [{ id: taskId, passed }] },
+				});
+			} catch (err) {
+				log.warn(
+					{ storyId, taskId, err: err instanceof Error ? err.message : String(err) },
+					'insrc_build_step[validate]: BUILD ledger persist failed; returning the verdict unchanged',
+				);
+			}
+		}
 		return { next: 'done', verdict, passed };
 	});
 }

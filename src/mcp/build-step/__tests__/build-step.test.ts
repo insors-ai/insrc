@@ -15,14 +15,14 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
 import { handleBuildStep } from '../handler.js';
 import { _setBuildValidateProviderForTests } from '../phases/validate.js';
 import { approveArtifactByJsonPath } from '../../../workflow/gates.js';
-import { ARTIFACTS_DIR, lldArtifactId, planArtifactId } from '../../../workflow/storage.js';
+import { ARTIFACTS_DIR, buildArtifactPaths, lldArtifactId, planArtifactId } from '../../../workflow/storage.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
 const CREATED_AT = '2026-07-18T00:00:00.000Z';
@@ -223,6 +223,54 @@ test('validate: failed verdict → passed:false; unparseable output → error', 
 		out = outputOf(await handleBuildStep({ phase: 'validate', target: 's1/t1', repo }));
 		assert.equal(out['next'], 'error');
 		assert.match((out['error'] as { code: string }).code, /unparseable-verdict/);
+	} finally {
+		_setBuildValidateProviderForTests(undefined);
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
+// ---------------------------------------------------------------------------
+// validate — persists the plan-driven BUILD ledger record (S001)
+// ---------------------------------------------------------------------------
+
+test('validate: persists a plan-driven BUILD ledger record (standalone:false) recording the task + passed', async () => {
+	const repo = mkRepo();
+	try {
+		seedDef(repo); seedLld(repo); seedPlan(repo, true);
+		_setBuildValidateProviderForTests({
+			async runEditSession() { return { text: '```json\n' + JSON.stringify({ taskId: 't1', passed: true }) + '\n```' }; },
+		});
+		const out = outputOf(await handleBuildStep({ phase: 'validate', target: 's1/t1', repo }));
+		assert.equal(out['next'], 'done');
+		assert.equal(out['passed'], true);
+
+		const { json } = buildArtifactPaths(repo, HASH, 's1');
+		assert.ok(existsSync(json), 'a BUILD-<epicHash>-<storyId>.json record was persisted');
+		const rec = JSON.parse(readFileSync(json, 'utf8')) as { meta: Record<string, unknown>; body: Record<string, unknown> };
+		assert.equal(rec.meta['standalone'], false);
+		assert.equal(rec.meta['workflow'], 'build');
+		assert.equal(rec.meta['epicHash'], HASH);
+		assert.equal(rec.meta['storyId'], 's1');
+		assert.deepEqual(rec.body['tasks'], [{ id: 't1', passed: true }]);
+	} finally {
+		_setBuildValidateProviderForTests(undefined);
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
+test('validate: a BUILD-record persist failure is swallowed — the verdict is still returned', async () => {
+	const repo = mkRepo();
+	try {
+		seedDef(repo); seedLld(repo); seedPlan(repo, true);
+		// Force writeAtomic to throw by making the record json path a DIRECTORY.
+		const { json } = buildArtifactPaths(repo, HASH, 's1');
+		mkdirSync(json, { recursive: true });
+		_setBuildValidateProviderForTests({
+			async runEditSession() { return { text: '```json\n' + JSON.stringify({ taskId: 't1', passed: true }) + '\n```' }; },
+		});
+		const out = outputOf(await handleBuildStep({ phase: 'validate', target: 's1/t1', repo }));
+		assert.equal(out['next'], 'done', 'persistence failure never converts a real verdict into an error');
+		assert.equal(out['passed'], true);
 	} finally {
 		_setBuildValidateProviderForTests(undefined);
 		rmSync(repo, { recursive: true, force: true });

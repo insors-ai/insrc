@@ -76,8 +76,17 @@ export function buildAdherencePrompt(
 	grounding: CodeReviewGrounding,
 	extraNote: string | undefined,
 ): LLMMessage[] {
+	const hasLld  = subject.approvedLld  !== null;
+	const hasPlan = subject.approvedPlan !== null;
+
+	// The framing follows the mode: implementation-correctness when the plan is
+	// present (code must IMPLEMENT the plan's tasks + acceptance checks AND
+	// honour the LLD); LLD-contract-only when there is no plan.
+	const contractLine = hasPlan
+		? 'You are an independent code reviewer judging ADHERENCE: whether a Story\'s changed code correctly IMPLEMENTS its approved plan (PLAN — the ordered tasks + their acceptance checks) AND honours its approved design (LLD).'
+		: 'You are an independent code reviewer judging ADHERENCE: whether a Story\'s changed code honours its approved design (LLD). (No plan was approved — judge against the LLD contract only.)';
 	const system = [
-		'You are an independent code reviewer judging ADHERENCE: whether a Story\'s changed code honours its APPROVED design (LLD) and plan (PLAN).',
+		contractLine,
 		'Report ONLY places where the code DEPARTS from an approved expectation. For each departure, name the specific approved expectation it failed to meet in `expectationRef`.',
 		'Do NOT raise a finding against a design decision merely because you would have decided differently — the approved decision itself is OUT OF SCOPE; only departures from it are findings.',
 		'If the code satisfies every approved expectation, return an EMPTY findings array. Never manufacture findings to appear thorough.',
@@ -85,13 +94,16 @@ export function buildAdherencePrompt(
 		extraNote ? `\nCorrection from a previous attempt:\n${extraNote}` : '',
 	].filter(s => s.length > 0).join('\n');
 
-	// Structural payload trailing: the approved contract, then the changed
-	// symbols, then the output-shape reminder — last, per the prompt rule.
+	// Structural payload trailing: the approved contract(s) — each emitted ONLY
+	// when present (never dereference a null) — then the changed symbols, then
+	// the output-shape reminder last, per the prompt rule.
 	const user = [
-		'## Approved design (LLD body)',
-		'```json', JSON.stringify(subject.approvedLld.body, null, 2), '```',
-		'## Approved plan (PLAN body — the ordered tasks + their acceptance checks)',
-		'```json', JSON.stringify(subject.approvedPlan.body, null, 2), '```',
+		...(hasLld
+			? ['## Approved design (LLD body)', '```json', JSON.stringify(subject.approvedLld!.body, null, 2), '```']
+			: []),
+		...(hasPlan
+			? ['## Approved plan (PLAN body — the ordered tasks + their acceptance checks)', '```json', JSON.stringify(subject.approvedPlan!.body, null, 2), '```']
+			: []),
 		'## The Story\'s changed symbols (structured summaries — the code under review)',
 		'```json', JSON.stringify(grounding.symbols, null, 2), '```',
 		'## Output',
@@ -121,6 +133,14 @@ export async function judgeAdherence(
 	grounding: CodeReviewGrounding,
 	provider:  LLMProvider,
 ): Promise<DimensionResult> {
+	// Mode C — NO approved LLD and NO approved plan: there is no design contract
+	// to assess adherence against. Short-circuit to an EMPTY result WITHOUT any
+	// provider call, so the model can never fabricate a departure from a
+	// contract that does not exist (accuracy-first; guaranteed-empty).
+	if (subject.approvedLld === null && subject.approvedPlan === null) {
+		return { dimension: DIMENSION, findings: [] };
+	}
+
 	const { withStructuredRetry } = await import('../../../agent/providers/structured-output.js');
 
 	const call: StructuredCall = (note) =>

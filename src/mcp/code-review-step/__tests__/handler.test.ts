@@ -187,7 +187,7 @@ test('ac5: missing/empty judgements, wrong-dimension set, malformed finding, mal
 
 test('ac5: a declined subject (no-subject) and a grounding-unavailable start => next:error, no state saved', async () => {
 	reset();
-	const declined = makeDeps({ resolveSubject: async () => ({ ok: false, reason: 'no-approved-contract' }) });
+	const declined = makeDeps({ resolveSubject: async () => ({ ok: false, reason: 'no-build-record' }) });
 	const d1 = parse(await handleCodeReviewStep({ phase: 'start', epicHash: EPIC, storyId: STORY, repo: '/repo' }, declined.deps));
 	assert.ok(d1.next === 'error' && d1.error.code === 'no-subject');
 

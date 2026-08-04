@@ -82,6 +82,10 @@ export const COVERAGE_FINDINGS_SCHEMA: StructuredSchema = {
 /** Flatten the approved plan's promised per-task tests into a flat list the
  *  prompt can name (ac1). Tolerates a plan stub whose tasks/tests are absent. */
 function promisedTestsOf(subject: CodeReviewSubject): { level?: string; name: string }[] {
+	// A null approvedPlan (mode B/C) has no promised tests. Guard the null
+	// BEFORE the cast — the cast only tolerated a missing body.tasks, not a
+	// genuinely absent plan.
+	if (subject.approvedPlan === null) return [];
 	const tasks = (subject.approvedPlan as { body?: { tasks?: readonly { tests?: readonly { level?: string; name: string }[] }[] } }).body?.tasks ?? [];
 	const out: { level?: string; name: string }[] = [];
 	for (const t of tasks) {
@@ -107,12 +111,20 @@ export function buildCoveragePrompt(
 	grounding: CodeReviewGrounding,
 	extraNote: string | undefined,
 ): LLMMessage[] {
+	const hasPlan = subject.approvedPlan !== null;
 	const system = [
 		'You are an independent code reviewer judging COVERAGE: whether a Story\'s new/changed behaviour is actually exercised by passing tests.',
 		'For each changed symbol, use its `testsReaching` edges (tests that reach it) as the ground-truth: a changed symbol with an EMPTY testsReaching is a not-exercised gap — report it HIGH with the symbol named in `expectationRef` and confidence:"breach".',
-		'For each test the approved plan PROMISED (listed below), report whether it is present or missing. A promised test with no corresponding test in the grounding is a HIGH missing-promised-test finding naming the test in `expectationRef`, confidence:"breach".',
+		// The promised-tests rule applies ONLY when a plan was approved. With no
+		// plan there is no promised-tests list, so judge testsReaching coverage
+		// of the changed symbols only and never report a "missing promised test".
+		hasPlan
+			? 'For each test the approved plan PROMISED (listed below), report whether it is present or missing. A promised test with no corresponding test in the grounding is a HIGH missing-promised-test finding naming the test in `expectationRef`, confidence:"breach".'
+			: 'No plan was approved, so there is no promised-tests list — judge the testsReaching coverage of the changed symbols ONLY; do NOT report any missing-promised-test finding.',
 		'DISTINGUISH a test that is present but does NOT pass (or whose pass-state cannot be confirmed) from a wholly-missing test: the former is a distinct finding with confidence:"observation" and a message saying "present but failing/unverified" — NOT reported as "no test". Never assert a pass-state the build record does not support.',
-		'Do NOT report pre-existing gaps in touched-but-unchanged neighbours — coverage is scoped to THIS Story\'s changed behaviour only. If every changed symbol is exercised and every promised test is present and passing, return an EMPTY findings array. Never manufacture findings.',
+		hasPlan
+			? 'Do NOT report pre-existing gaps in touched-but-unchanged neighbours — coverage is scoped to THIS Story\'s changed behaviour only. If every changed symbol is exercised and every promised test is present and passing, return an EMPTY findings array. Never manufacture findings.'
+			: 'Do NOT report pre-existing gaps in touched-but-unchanged neighbours — coverage is scoped to THIS Story\'s changed behaviour only. If every changed symbol is exercised, return an EMPTY findings array. Never manufacture findings.',
 		'Reason only over the structured symbol summaries + testsReaching edges and the promised-tests list provided — you are not given raw file contents and you cannot run any test.',
 		extraNote ? `\nCorrection from a previous attempt:\n${extraNote}` : '',
 	].filter(s => s.length > 0).join('\n');
@@ -122,7 +134,9 @@ export function buildCoveragePrompt(
 	const user = [
 		'## The Story\'s changed symbols (structured summaries with their test-reaching edges)',
 		'```json', JSON.stringify(grounding.symbols, null, 2), '```',
-		'## The approved plan\'s promised tests (each should be present and passing)',
+		hasPlan
+			? '## The approved plan\'s promised tests (each should be present and passing)'
+			: '## The approved plan\'s promised tests (none — no plan was approved)',
 		'```json', JSON.stringify(promisedTestsOf(subject), null, 2), '```',
 		`## Build-record signal\n${buildRecordSummary(subject)}`,
 		'## Output',

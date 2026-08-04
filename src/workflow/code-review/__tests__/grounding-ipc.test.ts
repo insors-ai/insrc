@@ -60,12 +60,15 @@ test('codeReview.grounding: returns { ok:true, grounding } with structured summa
 	assert.equal(res.grounding.symbols[0]!.file, 'src/a.ts');
 });
 
-test('codeReview.grounding: no approved contract yields { ok:false, reason:no-approved-contract }, never a grounding', async () => {
+test('codeReview.grounding: a missing contract (S001) is NOT a decline — the subject resolves (mode B) and a grounding is still produced', async () => {
 	const res = await handlerCompose('/repo', 'epic', 's1', {
 		...okSubjectDeps,
 		requireApprovedLld: () => { throw new ArtifactMissingError('missing LLD'); },
 	}, groundingDeps);
-	assert.deepEqual(res, { ok: false, reason: 'no-approved-contract' });
+	assert.equal(res.ok, true);
+	if (!res.ok) return;
+	assert.equal(res.grounding.symbols.length, 1);
+	assert.equal(res.grounding.symbols[0]!.name, 'alpha');
 });
 
 test('codeReview.grounding: no build yields { ok:false, reason:no-build-record }, never a grounding', async () => {

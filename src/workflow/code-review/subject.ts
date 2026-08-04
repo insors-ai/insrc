@@ -9,12 +9,17 @@
  * Composes the existing approval gates and the git changed-file set into a
  * `CodeReviewSubjectResult`, WITHOUT ever producing a verdict:
  *
- *   - a missing/unapproved LLD or PLAN (the gates throw) => {ok:false,
- *     reason:'no-approved-contract'} — there is no contract to review against;
+ *   - the LLD and the PLAN are each resolved in their OWN try; a missing/
+ *     unapproved contract (the gate throws `ArtifactMissingError` /
+ *     `ArtifactNotApprovedError`) maps that ONE contract to `null` — it is NO
+ *     LONGER a failure. The review MODE is then derivable from which contracts
+ *     are present: (A) both → implementation-correctness, (B) LLD only →
+ *     LLD-contract review, (C) neither → pure code review;
  *   - a changed-file set that cannot be derived (git unavailable / not a repo)
- *     => {ok:false, reason:'no-build-record'} — nothing was built to review;
- *   - `UnregisteredRepoError` PROPAGATES unchanged (operator misconfiguration,
- *     not a missing-contract condition).
+ *     => {ok:false, reason:'no-build-record'} — nothing was built to review.
+ *     This is now the ONLY decline reason;
+ *   - `UnregisteredRepoError` (and any other non-Artifact error) PROPAGATES
+ *     unchanged (operator misconfiguration, not a missing-contract condition).
  *
  * The changed-file set is git-DERIVED — the build record is consumed for
  * identity only and is never re-recorded or duplicated (k9). Since the tracked
@@ -90,18 +95,23 @@ export async function resolveCodeReviewSubject(
 	storyId:  string,
 	deps:     SubjectDeps = DEFAULT_DEPS,
 ): Promise<CodeReviewSubjectResult> {
-	// 1. Approved contract (LLD + PLAN). A gate throw (missing / unapproved)
-	//    becomes 'no-approved-contract'; UnregisteredRepoError propagates.
-	let approvedLld:  LldArtifact;
-	let approvedPlan: PlanArtifact;
+	// 1. Approved contracts (LLD + PLAN) — each OPTIONAL, resolved in its OWN
+	//    try so a missing/unapproved contract maps to `null` for that field
+	//    only (never a failure). A non-Artifact error (UnregisteredRepoError,
+	//    a corrupt-artifact parse fault, …) still propagates unchanged — it must
+	//    never be silently swallowed into a null that would mask corruption as
+	//    "mode C".
+	let approvedLld:  LldArtifact  | null = null;
+	let approvedPlan: PlanArtifact | null = null;
 	try {
-		approvedLld  = deps.requireApprovedLld(repoPath, epicHash, storyId);
+		approvedLld = deps.requireApprovedLld(repoPath, epicHash, storyId);
+	} catch (err) {
+		if (!(err instanceof ArtifactMissingError || err instanceof ArtifactNotApprovedError)) throw err;
+	}
+	try {
 		approvedPlan = deps.requireApprovedPlan(repoPath, epicHash, storyId);
 	} catch (err) {
-		if (err instanceof ArtifactMissingError || err instanceof ArtifactNotApprovedError) {
-			return { ok: false, reason: 'no-approved-contract' };
-		}
-		throw err;   // UnregisteredRepoError and anything unexpected propagate unchanged
+		if (!(err instanceof ArtifactMissingError || err instanceof ArtifactNotApprovedError)) throw err;
 	}
 
 	// 2. The git-derived changed-file set. A derivation failure => 'no-build-record'.

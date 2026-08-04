@@ -168,6 +168,33 @@ test('buildCoveragePrompt: a null buildRecord degrades the pass-state to unverif
 	assert.match(user, /UNVERIFIED/);
 });
 
+// ---- S001: plan-null softening (mode B/C) ----
+
+/** A mode-B/C subject with NO approved plan. */
+const subjectNoPlan = (changedFiles: readonly string[] = ['src/a.ts']): CodeReviewSubject => ({
+	...subject(changedFiles), approvedPlan: null,
+});
+
+test('buildCoveragePrompt: plan present keeps the promised-tests section + the missing-promised-test HIGH rule', () => {
+	const msgs = buildCoveragePrompt(subject(['src/a.ts'], [{ level: 'unit', name: 'alpha exercised' }]), groundingTwoFiles(), undefined);
+	const sys  = msgs.find(m => m.role === 'system')!.content as string;
+	const user = msgs.find(m => m.role === 'user')!.content as string;
+	assert.match(sys, /missing-promised-test finding/);
+	assert.match(user, /each should be present and passing/);
+});
+
+test('buildCoveragePrompt: plan null emits an empty promised-tests list + softened testsReaching-only framing (no throw)', () => {
+	// No throw proves promisedTestsOf tolerates the null plan.
+	const msgs = buildCoveragePrompt(subjectNoPlan(), groundingTwoFiles(), undefined);
+	const sys  = msgs.find(m => m.role === 'system')!.content as string;
+	const user = msgs.find(m => m.role === 'user')!.content as string;
+	assert.match(sys, /No plan was approved/);
+	assert.match(sys, /do NOT report any missing-promised-test finding/);
+	assert.ok(!/missing-promised-test finding naming/.test(sys), 'the promised-test HIGH rule is omitted when no plan');
+	assert.match(user, /none — no plan was approved/);
+	assert.match(user, /\[\]/, 'the promised-tests payload is an empty list');
+});
+
 // ---- t1: schema shape + prompt trailing ----
 
 test('COVERAGE_FINDINGS_SCHEMA: per-finding requires severity/location/message; expectationRef + confidence optional', () => {

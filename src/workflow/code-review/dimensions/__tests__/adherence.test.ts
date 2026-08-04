@@ -19,6 +19,16 @@ const subject = (changedFiles: readonly string[] = ['src/a.ts']): CodeReviewSubj
 	buildRecord: null,
 });
 
+/** Mode B — LLD approved, no plan. */
+const subjectLldOnly = (changedFiles: readonly string[] = ['src/a.ts']): CodeReviewSubject => ({
+	...subject(changedFiles), approvedPlan: null,
+});
+
+/** Mode C — neither contract approved. */
+const subjectNoContract = (changedFiles: readonly string[] = ['src/a.ts']): CodeReviewSubject => ({
+	...subject(changedFiles), approvedLld: null, approvedPlan: null,
+});
+
 const grounding = (n = 1): CodeReviewGrounding => ({
 	symbols: Array.from({ length: n }, (_, i) => ({
 		entityId: `e${i}`, file: 'src/a.ts', kind: 'function', name: `fn${i}`,
@@ -116,4 +126,38 @@ test('ADHERENCE_FINDINGS_SCHEMA per-finding shape is 1:1 with sc3 DimensionFindi
 test('buildAdherencePrompt: the output-shape reminder is TRAILING (after the changed symbols)', () => {
 	const user = buildAdherencePrompt(subject(), grounding(), undefined).find(m => m.role === 'user')!.content as string;
 	assert.ok(user.indexOf('## Output') > user.indexOf('changed symbols'), 'output shape comes after the symbols (trailing)');
+});
+
+// ---- S001: three-mode fork points ----
+
+test('judgeAdherence: both contracts null (mode C) -> empty result with ZERO provider calls', async () => {
+	const { provider, calls } = fakeProvider({ findings: [{ severity: 'HIGH', location: 'src/a.ts:1', message: 'fabricated' }] });
+	const res = await judgeAdherence(subjectNoContract(), grounding(), provider);
+	assert.deepEqual(res, { dimension: 'adherence', findings: [] });
+	assert.equal(calls(), 0, 'no provider call in mode C — never a fabricated departure');
+});
+
+test('judgeAdherence: a contract present -> issues exactly one completeStructured call (mode B unchanged)', async () => {
+	const { provider, calls } = fakeProvider({ findings: [] });
+	await judgeAdherence(subjectLldOnly(), grounding(), provider);
+	assert.equal(calls(), 1);
+});
+
+test('buildAdherencePrompt: mode A includes the LLD body + the Approved plan section + implementation-correctness framing', () => {
+	const msgs = buildAdherencePrompt(subject(), grounding(), undefined);
+	const sys  = msgs.find(m => m.role === 'system')!.content as string;
+	const user = msgs.find(m => m.role === 'user')!.content as string;
+	assert.match(user, /## Approved design \(LLD body\)/);
+	assert.match(user, /## Approved plan/);
+	assert.match(sys, /IMPLEMENTS/);
+});
+
+test('buildAdherencePrompt: mode B (LLD only) includes the LLD body, OMITS the plan section, no null deref', () => {
+	// The very fact that this returns (no throw) proves the null approvedPlan is not dereferenced.
+	const msgs = buildAdherencePrompt(subjectLldOnly(), grounding(), undefined);
+	const sys  = msgs.find(m => m.role === 'system')!.content as string;
+	const user = msgs.find(m => m.role === 'user')!.content as string;
+	assert.match(user, /## Approved design \(LLD body\)/);
+	assert.ok(!user.includes('## Approved plan'), 'no plan section when there is no approved plan');
+	assert.match(sys, /No plan was approved/);
 });

@@ -47,23 +47,58 @@ test('resolveCodeReviewSubject: empty diff is a valid trivial subject (not an er
 	assert.deepEqual(res.subject.changedFiles, []);
 });
 
-// ---- ac2: missing/unapproved contract -> no-approved-contract (no verdict) ----
+// ---- S001: LLD + PLAN both OPTIONAL — three modes keyed on presence ----
 
-test('resolveCodeReviewSubject: missing LLD -> no-approved-contract', async () => {
-	const res = await resolveCodeReviewSubject('/repo', 'epic', 's1', deps({
-		requireApprovedLld: () => { throw new ArtifactMissingError('no LLD'); },
-	}));
-	assert.deepEqual(res, { ok: false, reason: 'no-approved-contract' });
+test('resolveCodeReviewSubject: LLD+plan approved -> ok:true both set (mode A)', async () => {
+	const res = await resolveCodeReviewSubject('/repo', 'epic', 's1', deps());
+	assert.equal(res.ok, true);
+	if (!res.ok) return;
+	assert.equal(res.subject.approvedLld, fakeLld);
+	assert.equal(res.subject.approvedPlan, fakePlan);
 });
 
-test('resolveCodeReviewSubject: unapproved PLAN -> no-approved-contract', async () => {
+test('resolveCodeReviewSubject: LLD approved, plan missing/unapproved -> ok:true, approvedPlan null (mode B)', async () => {
 	const res = await resolveCodeReviewSubject('/repo', 'epic', 's1', deps({
 		requireApprovedPlan: () => { throw new ArtifactNotApprovedError('plan not approved'); },
 	}));
-	assert.deepEqual(res, { ok: false, reason: 'no-approved-contract' });
+	assert.equal(res.ok, true);
+	if (!res.ok) return;
+	assert.equal(res.subject.approvedLld, fakeLld);
+	assert.equal(res.subject.approvedPlan, null);
 });
 
-// ---- no-build-record: git derivation fails ----
+test('resolveCodeReviewSubject: plan approved, LLD missing -> ok:true, approvedLld null (asymmetric)', async () => {
+	const res = await resolveCodeReviewSubject('/repo', 'epic', 's1', deps({
+		requireApprovedLld: () => { throw new ArtifactMissingError('no LLD'); },
+	}));
+	assert.equal(res.ok, true);
+	if (!res.ok) return;
+	assert.equal(res.subject.approvedLld, null);
+	assert.equal(res.subject.approvedPlan, fakePlan);
+});
+
+test('resolveCodeReviewSubject: both missing/unapproved but changed files present -> ok:true, both null (mode C)', async () => {
+	const res = await resolveCodeReviewSubject('/repo', 'epic', 's1', deps({
+		requireApprovedLld:  () => { throw new ArtifactMissingError('no LLD'); },
+		requireApprovedPlan: () => { throw new ArtifactNotApprovedError('plan not approved'); },
+	}));
+	assert.equal(res.ok, true);
+	if (!res.ok) return;
+	assert.equal(res.subject.approvedLld, null);
+	assert.equal(res.subject.approvedPlan, null);
+	assert.deepEqual(res.subject.changedFiles, ['src/a.ts', 'src/b.ts']);
+});
+
+test('resolveCodeReviewSubject: non-Artifact error while resolving a contract propagates (not mapped to null)', async () => {
+	await assert.rejects(
+		() => resolveCodeReviewSubject('/repo', 'epic', 's1', deps({
+			requireApprovedPlan: () => { throw new TypeError('corrupt artifact'); },
+		})),
+		(err: unknown) => err instanceof TypeError,
+	);
+});
+
+// ---- no-build-record: git derivation fails — now the ONLY ok:false reason ----
 
 test('resolveCodeReviewSubject: git derivation failure -> no-build-record', async () => {
 	const res = await resolveCodeReviewSubject('/repo', 'epic', 's1', deps({

@@ -85,26 +85,35 @@ export interface CodeReviewGrounding {
 // ---------------------------------------------------------------------------
 
 /** The fixed subject of a code review: exactly the files the Story's build
- *  changed (git-derived) plus its approved LLD + PLAN. The build record is
- *  consumed for identity only — it is never re-derived or duplicated. */
+ *  changed (git-derived) plus its approved LLD + PLAN — BOTH optional. The
+ *  build record is consumed for identity only — it is never re-derived or
+ *  duplicated.
+ *
+ *  `approvedLld` / `approvedPlan` are each nullable, so the review MODE is a
+ *  derivable predicate over their presence: (A) both present →
+ *  implementation-correctness; (B) LLD only → LLD-contract review; (C) neither
+ *  → pure code review with no design contract. The conventions + quality
+ *  dimensions read neither, so they are mode-agnostic. */
 export interface CodeReviewSubject {
 	readonly repoPath:     string;
 	readonly epicHash:     string;
 	readonly storyId:      string;
 	/** The build record's changed set = the exact subject. git-derived. */
 	readonly changedFiles: readonly string[];
-	readonly approvedLld:  LldArtifact;
-	readonly approvedPlan: PlanArtifact;
+	readonly approvedLld:  LldArtifact | null;
+	readonly approvedPlan: PlanArtifact | null;
 	/** Consumed for identity; the code-review stage never re-records this. */
 	readonly buildRecord:  StandaloneBuildRecord | null;
 }
 
 /** Resolving a subject either yields the subject, or a REASON that is NOT a
- *  verdict: a review without an approved contract or a build has nothing to
- *  judge, so it declines rather than passing/failing. */
+ *  verdict. Since NEITHER contract is required any more, a missing/unapproved
+ *  LLD/PLAN is no longer a failure (it maps to a null field on the subject);
+ *  the only decline reason is `no-build-record` — a review with no changed
+ *  files has nothing to judge, so it declines rather than passing/failing. */
 export type CodeReviewSubjectResult =
 	| { readonly ok: true;  readonly subject: CodeReviewSubject }
-	| { readonly ok: false; readonly reason: 'no-approved-contract' | 'no-build-record' };
+	| { readonly ok: false; readonly reason: 'no-build-record' };
 
 // ---------------------------------------------------------------------------
 // sc4 — the aggregate persisted code-review record (owned here, produced by

@@ -1,0 +1,77 @@
+{
+  "meta": {
+    "workflow": "build",
+    "runId": "build-s10-bd6042f",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-08-04T16:28:37.000Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "abd1ecf6a5f5063e",
+    "epicSlug": "frame-epic-new-pre-workflow-brainstorm",
+    "storyId": "s10",
+    "standalone": false,
+    "approvedAt": "2026-08-04T16:29:51.697Z"
+  },
+  "body": {
+    "summary": "Back-filled BUILD ledger entry for Story s10 (adaptive decision-at-a-time elicit loop). The build was implemented by hand from the approved PLAN (PLAN-abd1ecf6a5f5063e-s10, review PASS 0H/0M/13L) and committed as bd6042f; this record is its completion ledger entry.",
+    "commit": "bd6042f476b4dadef8bb2ad6ce59f1b3ff104173",
+    "planRef": "PLAN-abd1ecf6a5f5063e-s10",
+    "lldRef": "LLD-abd1ecf6a5f5063e-s10",
+    "codeReviewRef": "CR-abd1ecf6a5f5063e-s10",
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Executor re-pause contract: additive finalize 'llm-pause' variant + resumeRun branch",
+        "files": [
+          "src/workflow/types.ts",
+          "src/workflow/executor.ts"
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "StepRunnerContext.draftProvider + thread into run() and finalize() ctx",
+        "files": [
+          "src/workflow/types.ts",
+          "src/workflow/executor.ts"
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "role-taxonomy: peripheral/mid brainstorm.decision.draft role",
+        "files": [
+          "src/config/role-taxonomy.ts"
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Drive-layer wiring: resolve mid draftProvider + inject (daemon + MCP paths)",
+        "files": [
+          "src/workflow/draft-deps.ts",
+          "src/daemon/workflow-rpc.ts",
+          "src/mcp/workflow-step/phases/plan.ts",
+          "src/mcp/workflow-step/phases/step.ts"
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Reworked adaptive elicit runner + decision schemas (replaces finalizeElicit)",
+        "files": [
+          "src/workflow/runners/brainstorm/index.ts",
+          "src/workflow/runners/brainstorm/schemas.ts"
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Fake-provider unit tests (ac1-ac4) + executor re-pause/threading regression + mid-role test",
+        "files": [
+          "src/workflow/runners/brainstorm/__tests__/elicit.test.ts",
+          "src/workflow/__tests__/executor.test.ts",
+          "src/analyze/context/__tests__/role-router.test.ts"
+        ]
+      }
+    ],
+    "verification": "tsc --noEmit clean; workflow + mcp sweeps 693 pass / 0 fail (2 unrelated pre-existing failures confirmed on clean HEAD: provider-bypass-audit stale allowlist + sqlite-driver ABI)."
+  },
+  "citations": []
+}

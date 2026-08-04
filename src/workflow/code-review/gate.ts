@@ -99,7 +99,7 @@ export function enforceCodeReviewGate(
 	if (verdict === 'warn') return { status: 'warn', counts, message: `code review returned warn (${countsStr(counts)})` };
 
 	// verdict === 'block' from here.
-	const enforce = opts?.enforce ?? readEnforceFlag();
+	const enforce = resolveEnforce(opts?.enforce);
 	if (!enforce) {
 		// Advisory: distinguishable from a genuine warn via advisory:true + a
 		// message naming the demoted block verdict. NEVER withholds completion.
@@ -127,6 +127,16 @@ export function enforceCodeReviewGate(
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+/** Resolve the EFFECTIVE enforcement value the gate uses for a call: an explicit
+ *  override (the test seam / opts.enforce) when provided, else the
+ *  `codeReview.enforce` config flag (default false). Exported so callers that
+ *  layer their own behavior on a gate result (e.g. the BUILD-completion withhold
+ *  in `approveWorkflowTarget`) resolve the SAME value the gate resolved, without
+ *  reaching into the private {@link readEnforceFlag}. */
+export function resolveEnforce(explicit?: boolean): boolean {
+	return explicit ?? readEnforceFlag();
+}
 
 /** Read the `codeReview.enforce` flag from `~/.insrc/config.json`. Fail-safe:
  *  defaults to FALSE when the file is absent, unparseable, or the key is missing,

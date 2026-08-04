@@ -18,14 +18,14 @@
  */
 
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 
 import { getEffectiveHld } from './amendments/effective.js';
 import { makeStaleAck } from './amendments/staleness.js';
 import { listApprovedAmendments } from './amendments/store.js';
 import { renderDefineMarkdown } from './artifacts/define.js';
 import type { DefineArtifact, DefineStory } from './artifacts/define.js';
-import { enforceCodeReviewGate } from './code-review/gate.js';
+import { enforceCodeReviewGate, resolveEnforce } from './code-review/gate.js';
 import type { CodeReviewGateResult } from './code-review/gate.js';
 import type { HldArtifact }    from './artifacts/hld.js';
 import { computeHldEffectiveHash, extractHldContextSlice } from './artifacts/lld.js';
@@ -579,12 +579,14 @@ export interface WorkflowApproveResult {
 	readonly codeReview: readonly CodeReviewApprovalOutcome[];
 }
 
-/** JSON paths of every DEF/HLD/LLD/PLAN artifact under `epicHash` that is not
- *  yet approved (meta.approvedAt absent). Sorted; malformed files skipped. */
+/** JSON paths of every DEF/HLD/LLD/PLAN/BUILD artifact under `epicHash` that is
+ *  not yet approved (meta.approvedAt absent). BUILD is the story-completion
+ *  approval target, so it joins the batch sweep alongside the design artifacts.
+ *  Sorted; malformed files skipped. */
 function pendingArtifactJsonPaths(repoPath: string, epicHash: string): string[] {
 	const dir = join(repoPath, ARTIFACTS_DIR);
 	if (!existsSync(dir)) return [];
-	const re = new RegExp(`^(DEF|HLD|LLD|PLAN)-${epicHash}(-.*)?\\.json$`);
+	const re = new RegExp(`^(DEF|HLD|LLD|PLAN|BUILD)-${epicHash}(-.*)?\\.json$`);
 	const out: string[] = [];
 	for (const name of readdirSync(dir).sort()) {
 		if (!re.test(name)) continue;
@@ -612,6 +614,9 @@ export function approveWorkflowTarget(
 	const approved:   { path: string; result: ApprovalResult }[] = [];
 	const skipped:    { path: string; reason: string }[] = [];
 	const codeReview: CodeReviewApprovalOutcome[] = [];
+	// Resolve enforcement ONCE with the same resolver the gate uses, so the gate
+	// call and the BUILD-completion withhold below never disagree.
+	const effectiveEnforce = resolveEnforce(opts?.enforce);
 
 	const approveOne = (jsonPath: string): void => {
 		// Code-review gate: a SEPARATE check over the CODE review's body.verdict —
@@ -629,6 +634,21 @@ export function approveWorkflowTarget(
 			if (gate.status === 'blocked') {
 				skipped.push({ path: jsonPath, reason: gate.message });
 				return;   // withhold completion — no meta.review approve, no approvedAt
+			}
+			// Story-completion (BUILD approval) requires a code review to have RUN
+			// when enforcing: a BUILD with no CR record (gate 'no-review') is withheld
+			// rather than silently completing. Scoped to the BUILD artifact — keyed on
+			// the 'BUILD-' id prefix (buildArtifactId), NOT meta.workflow — and only
+			// under effective enforcement with no explicit override. Every other kind,
+			// enforce-off, and an overrideReview bypass fall through unchanged (fail-open).
+			if (
+				effectiveEnforce &&
+				gate.status === 'no-review' &&
+				req.overrideReview === undefined &&
+				basename(jsonPath).startsWith('BUILD-')
+			) {
+				skipped.push({ path: jsonPath, reason: 'completion requires a code review; none was run' });
+				return;   // withhold completion — no approvedAt
 			}
 		}
 		try {

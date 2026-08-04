@@ -132,9 +132,12 @@ test('ac3: CR pass → approved, codeReview[] pass + counts', () => {
 // ac5 — strictly additive: absent / DEF-HLD / enforce-off leave approval alone
 // ---------------------------------------------------------------------------
 
-test('ac5: absent CR record → approved byte-identical, codeReview[] no-review', () => {
+test('ac5: absent CR record (non-BUILD) → approved byte-identical, codeReview[] no-review', () => {
+	// A non-BUILD story artifact: the gate fails OPEN (absent => no-review) and
+	// completion proceeds. The BUILD-under-enforce require-review withhold is a
+	// separate, BUILD-scoped rule covered by approve-build-completion.test.ts.
 	withRepo((repo, dir) => {
-		const p = writeArtifact(dir, `BUILD-${HASH}-s1.json`, { workflow: 'build', storyId: 's1' });
+		const p = writeArtifact(dir, `LLD-${HASH}-s1.json`, { workflow: 'design.story', storyId: 's1' });
 		// no writeCR — the record is absent
 		const out = approveWorkflowTarget({ repoPath: repo, artifactPath: p }, { enforce: true });
 		assert.equal(out.approved.length, 1);
@@ -205,9 +208,12 @@ test('ac6: clean meta.review + CR block → withheld ONLY by the code-review gat
 	});
 });
 
-test('ac6: corrupt CR record → no-review fail-open, approved', () => {
+test('ac6: corrupt CR record (non-BUILD) → no-review fail-open, approved', () => {
+	// Fail-open: an unreadable CR record never manufactures a block. Asserted on a
+	// non-BUILD artifact so it isolates the gate's fail-open from the BUILD-completion
+	// withhold (a corrupt record on a BUILD under enforce is withheld — see ac3 there).
 	withRepo((repo, dir) => {
-		const p = writeArtifact(dir, `BUILD-${HASH}-s1.json`, { workflow: 'build', storyId: 's1' });
+		const p = writeArtifact(dir, `LLD-${HASH}-s1.json`, { workflow: 'design.story', storyId: 's1' });
 		writeCR(repo, 's1', 'corrupt');
 		const out = approveWorkflowTarget({ repoPath: repo, artifactPath: p }, { enforce: true });
 		assert.equal(out.approved.length, 1, 'an unreadable CR record never manufactures a block');

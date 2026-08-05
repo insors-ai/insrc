@@ -5,7 +5,8 @@
     "epicHash": "761a43a6fa645815",
     "storyId": "s10",
     "createdAt": "2026-08-05T07:35:15.073Z",
-    "updatedAt": "2026-08-05T07:35:15.073Z"
+    "updatedAt": "2026-08-05T07:35:15.073Z",
+    "approvedAt": "2026-08-05T07:53:56.682Z"
   },
   "body": {
     "focus": "s10 diff-only degraded fallback: assembleDiffCodeReviewGrounding (working-tree diff, HEAD^ fallback), runCodeReview groundingMode+capVerdictAtWarn, decline branch -> diff-only path",

@@ -852,6 +852,48 @@
             ]
           }
         ]
+      },
+      {
+        "id": "s9",
+        "title": "Wait for a fresh index before grounding a Story's code review",
+        "userValue": "insrc_code_review_step must never silently produce a hollow PASS when the daemon graph is stale for the Story's changed files (the S001 incident: empty grounding.symbols after an un-reindexed commit). This story adds an indexing-readiness gate to the start phase: it detects staleness with a combined signal (queue.isProcessing AND each changed file's lastIndexedAt watermark vs its mtime); on stale it returns an explicit confirm_wait turn carrying the stale-file list; on an explicit proceed:true resume it runs a bounded block-and-poll that waits for the queued files to drain (never calling repo.reindex — the file-watcher already enqueues them), bounded by a configurable codeReview.* timeout; on timeout it re-prompts (keep waiting longer / abort) rather than deciding unilaterally. Records produced by the fresh graph-grounded path are stamped groundingMode:'full'. On decline/abort the review fails closed with no verdict for now — the sibling Story B replaces that fail-closed exit with a diff-only degraded review. Scope reuses the daemon index-status surface (queue.isProcessing at src/daemon/queue.ts:154, the lastIndexedAt watermark, repo.reindex IPC) as-is and never triggers repo.reindex.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "the daemon index is stale for at least one file the Story changed (its lastIndexedAt predates the file mtime, or the queue is still processing it)",
+            "when": "insrc_code_review_step's start phase runs",
+            "then": "it returns a confirm_wait result carrying the stale-file list instead of proceeding to grounding, so a hollow PASS against empty grounding.symbols is impossible",
+            "operationalizes": []
+          },
+          {
+            "id": "ac2",
+            "given": "a confirm_wait result was returned",
+            "when": "the caller resumes start with proceed:true",
+            "then": "the tool block-and-polls the combined signal (queue.isProcessing AND per-file lastIndexedAt vs mtime) until the changed files are fresh, without ever calling repo.reindex, then serves grounding and runs the four dimension judges",
+            "operationalizes": []
+          },
+          {
+            "id": "ac3",
+            "given": "the block-and-poll has run longer than the configurable codeReview.* timeout without the index becoming fresh",
+            "when": "the timeout fires",
+            "then": "the tool returns another confirm_wait-style turn offering keep-waiting-longer or abort, rather than unilaterally deciding to abort or proceed",
+            "operationalizes": []
+          },
+          {
+            "id": "ac4",
+            "given": "the daemon index is already fresh for every changed file",
+            "when": "start runs",
+            "then": "it proceeds directly to grounding + the four judges with no confirm_wait turn, and the resulting code-review record is stamped groundingMode:'full'",
+            "operationalizes": []
+          },
+          {
+            "id": "ac5",
+            "given": "the user declines to wait (aborts at the initial confirm_wait or a later timeout re-prompt)",
+            "when": "the abort is received",
+            "then": "the review fails closed for now — no dimension judges run and no verdict/record is written (an interim behaviour that Story B's diff-only fallback supersedes)",
+            "operationalizes": []
+          }
+        ]
       }
     ],
     "openQuestions": [

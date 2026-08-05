@@ -1,0 +1,42 @@
+{
+  "id": "AMD-761a43a6fa645815-1",
+  "epicHash": "761a43a6fa645815",
+  "epicSlug": "add-daemon-driven-code-review-stage",
+  "hldBaseRunId": "wf-1785741597494-lbzdo7",
+  "amendment": {
+    "type": "storyBoundary.addStory",
+    "storyId": "s9",
+    "internal": "Private implementation of s9: Wait for a fresh index before grounding a Story's code review"
+  },
+  "rationale": "Extends Epic `add-daemon-driven-code-review-stage` (761a43a6) — building the freshness gate on the existing code-review stage (src/workflow/code-review/*, src/mcp/code-review-step/*, reading src/daemon/queue.ts). This is Story A of two; a follow-up extend adds the diff-only fallback pathway (Story B).",
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "docs/designs/HLD-add-daemon-driven-code-review-stage.md",
+      "quotedText": "Flag: insrc.codeReview.enforce — the completion-gate policy the freshness gate's groundingMode marking must interoperate with."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "docs/specs/SPEC-indexing-readiness-gate-insrc-code-review.md",
+      "quotedText": "Approved SpecArtifact SPEC-8b4be30d648eaeb8 — the converged brainstorm this story implements (combined signal, block-and-poll no-reindex, confirm_wait/proceed, re-prompt on timeout)."
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/daemon/queue.ts:154",
+      "quotedText": "isProcessing(): boolean — the queue-in-flight freshness signal reused as-is."
+    }
+  ],
+  "proposedBy": {
+    "workflow": "define",
+    "runId": "wf-1785904715589-yc1l3a",
+    "storyId": "s9",
+    "stepId": "scope.assess"
+  },
+  "proposedAt": "2026-08-05T04:47:34.061Z",
+  "status": "approved",
+  "approvedAt": "2026-08-05T05:03:58.498Z",
+  "approvedBy": "user:in-chat-approval"
+}

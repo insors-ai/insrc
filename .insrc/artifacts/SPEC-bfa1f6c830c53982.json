@@ -86,7 +86,8 @@
       },
       "reviewedAt": "2026-08-05T09:35:32.150Z",
       "model": "client"
-    }
+    },
+    "approvedAt": "2026-08-05T10:48:13.934Z"
   },
   "body": {
     "category": "design",

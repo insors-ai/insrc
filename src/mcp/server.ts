@@ -611,6 +611,11 @@ export function buildInsrcMcpServer(): McpServer {
 				state: z.string()
 					.describe('Opaque continuation token from the prior response. Required after phase=start.')
 					.optional(),
+				proceed: z.boolean()
+					.describe('Only when resuming a phase=start `confirm_wait` (the index was stale). ' +
+						'true = wait for a fresh index (block-and-poll); false = abort the review (no verdict). ' +
+						'Pass together with the `state` from the confirm_wait turn.')
+					.optional(),
 			},
 		},
 		async (rawArgs, _extra) => handleCodeReviewStep(rawArgs),

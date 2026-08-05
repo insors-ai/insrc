@@ -39,7 +39,7 @@ export function DebugPane(props: DebugPaneProps): ReactElement {
 	useInput((_input, key) => {
 		if (sections.length === 0) return;
 		const idx = Math.max(0, sections.findIndex(s => s.id === active));
-		if (key.rightArrow || key.tab) {
+		if (key.rightArrow) {
 			const next = sections[(idx + 1) % sections.length]!.id;
 			setActive(prev => (next === prev ? prev : next));
 		} else if (key.leftArrow) {

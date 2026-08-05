@@ -1,0 +1,477 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1785907685502-97lst5",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-08-05T05:33:06.275Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 300691,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "761a43a6fa645815",
+    "epicSlug": "add-daemon-driven-code-review-stage",
+    "storyId": "s9",
+    "lldRunId": "wf-1785906598929-39vvjl",
+    "lldEffectiveHash": "48d9de9916c63edc69ab72daa80e9ee08e96148564e6257314474ecb327ed627",
+    "review": {
+      "artifact": "plan",
+      "stage": "plan",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "ref": "t1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "codeReview.enforce is a CONFIG_CATALOG entry at src/config/config-catalog.ts:84 — where t1's additive codeReview.freshnessTimeoutMs peer lands.",
+          "evidence": "config-catalog.ts:84 resolves (codeReview.enforce CONFIG_CATALOG entry) — t1's peer key lands there.",
+          "action": "None — verified.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl2",
+          "ref": "t2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The daemon handler map registers codeReview.grounding at src/daemon/index.ts:594 and queue.isProcessing is at src/daemon/queue.ts:154 — the peer + surfaces t2's codeReview.freshness handler registers beside and reads.",
+          "evidence": "index.ts:594 (codeReview.grounding handler) + queue.ts:154 (isProcessing getter) both resolve — the peer + surfaces t2 registers beside/reads.",
+          "action": "None — verified.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl3",
+          "ref": "t2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The per-file indexedAt watermark exists on EntityRow at src/db/graph/codec.ts:159 (parsed at src/db/entities.ts:101) — the granularity t2's freshness compute reads.",
+          "evidence": "codec.ts:159 + entities.ts:101 (indexedAt) resolve — the per-file watermark t2's compute reads exists.",
+          "action": "None — verified.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl4",
+          "ref": "t3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "fetchCodeReviewGrounding is the controller IPC client at src/mcp/daemon-stream.ts:301 — the peer t3's fetchCodeReviewFreshness mirrors.",
+          "evidence": "daemon-stream.ts:301 (export function fetchCodeReviewGrounding) resolves — the client peer t3 mirrors.",
+          "action": "None — verified.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl5",
+          "ref": "t4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "runCodeReview (src/workflow/code-review/runner.ts) + the record body types (src/workflow/code-review/types.ts) exist — where t4 stamps groundingMode:'full'.",
+          "evidence": "runCodeReview + CodeReviewBody/CodeReviewArtifact resolve — the record-fold/persist path t4 stamps groundingMode:'full' on exists.",
+          "action": "None — verified.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl6",
+          "ref": "t5",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The code-review-step protocol types t5 extends exist: CodeReviewStepInputStart (types.ts:31), the output union (types.ts:91), CodeReviewStepStatePayload (types.ts:100).",
+          "evidence": "types.ts:31 (CodeReviewStepInputStart) + :100 (CodeReviewStepStatePayload) + the output union resolve — the protocol types t5 extends exist.",
+          "action": "None — verified.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl7",
+          "ref": "t6",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "handler.ts imports fetchCodeReviewGrounding (handler.ts:26) with DEFAULT_DEPS + DIMENSIONS + state-store seams — the start phase t6 inserts the gate before, and the state-store (StateTokenNotFound/loadState) the abort path uses.",
+          "evidence": "handler.ts:26 (fetchCodeReviewGrounding import) + DEFAULT_DEPS + StateTokenNotFound/loadState resolve — the start-phase insertion point + state-store seams t6 uses exist.",
+          "action": "None — verified.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl8",
+          "ref": "tasks",
+          "kind": "ordering",
+          "severity": "LOW",
+          "premise": "The task dependency graph (t3←t2; t6←{t3,t4,t5}; t7←{t2,t6}) is acyclic and order 1..7 is a valid topological order.",
+          "evidence": "Edges t3←t2, t6←{t3,t4,t5}, t7←{t2,t6} form a DAG; order 1..7 places each task after its deps. Acyclic + valid topological order.",
+          "action": "None — consistent.",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 8
+      },
+      "reviewedAt": "2026-08-05T05:34:06.016Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-08-05T05:35:56.096Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add the codeReview.freshnessTimeoutMs config key",
+        "summary": "Add an additive CONFIG_CATALOG entry { path:'codeReview.freshnessTimeoutMs', type:'number', default:120000, desc:'max ms the code-review freshness gate block-and-polls before re-prompting' } beside codeReview.enforce in src/config/config-catalog.ts. No existing config migrates; reconcileConfig carries it forward with the baked-in default.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "config-catalog.ts has a codeReview.freshnessTimeoutMs entry (type number, sensible baked-in default) beside codeReview.enforce",
+          "reconcileConfig surfaces the key with its default and honours a per-repo/global override, with no migration of existing config"
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "reconcileConfig carries codeReview.freshnessTimeoutMs with its baked-in default and honours a per-repo/global override"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Add the read-only codeReview.freshness daemon IPC handler + freshness compute",
+        "summary": "Register an additive 'codeReview.freshness' handler in the daemon handler map (src/daemon/index.ts) beside codeReview.grounding, validating repo/epicHash/storyId like its peer. It computes { isProcessing: queue.isProcessing, staleFiles } where staleFiles is the subset of changedFiles whose per-file indexedAt watermark (src/db/graph/codec.ts:159 / entities.ts:101) predates the file's mtime; a changed path with no indexable entity is excluded (repo-level lastIndexed fallback), a never-indexed indexable file is stale. Strictly read-only — never calls repo.reindex, mutates no store.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "'codeReview.freshness' is a registered daemon IPC handler beside codeReview.grounding; missing repo/epicHash/storyId returns { error }",
+          "isProcessing mirrors queue.isProcessing; the handler never triggers repo.reindex and mutates no store",
+          "a changed file whose per-file indexedAt predates its mtime is in staleFiles; watermark>=mtime is NOT; a non-indexable path is excluded; a never-indexed indexable file is stale"
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "freshness compute: a changed file whose per-file indexedAt predates its mtime -> in staleFiles"
+          },
+          {
+            "level": "unit",
+            "name": "freshness compute: a changed file whose watermark is >= mtime -> NOT in staleFiles"
+          },
+          {
+            "level": "unit",
+            "name": "freshness compute: a changed path with no indexable graph entity -> excluded from staleFiles (does not block forever)"
+          },
+          {
+            "level": "unit",
+            "name": "freshness compute: a never-indexed changed file (watermark 0) -> stale"
+          },
+          {
+            "level": "unit",
+            "name": "freshness compute: isProcessing mirrors queue.isProcessing and the handler never triggers repo.reindex (assert no reindex call on the injected queue/graph fakes)"
+          },
+          {
+            "level": "unit",
+            "name": "codeReview.freshness handler: missing repo/epicHash/storyId -> { error } (parity with codeReview.grounding validation)"
+          },
+          {
+            "level": "integration",
+            "name": "the 'codeReview.freshness' IPC handler returns { isProcessing, staleFiles } over the Unix socket for a fixture repo (peer of the existing codeReview.grounding IPC integration test)"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Add the fetchCodeReviewFreshness controller IPC client",
+        "summary": "Add fetchCodeReviewFreshness to src/mcp/daemon-stream.ts as an additive peer of fetchCodeReviewGrounding (daemon-stream.ts:301): it forwards { repo, epicHash, storyId, changedFiles } to the codeReview.freshness IPC and returns { isProcessing, staleFiles }, propagating an { error }/socket failure as a code-review-step error. No graph is opened controller-side (k5).",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "fetchCodeReviewFreshness calls the codeReview.freshness IPC and returns { isProcessing, staleFiles }",
+          "an IPC { error } or socket failure is surfaced as a propagated error (parity with fetchCodeReviewGrounding), never a silent fall-through"
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "fetchCodeReviewFreshness: forwards params to the codeReview.freshness IPC and returns { isProcessing, staleFiles }; an { error }/socket failure propagates as a code-review-step error"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Add the groundingMode field to the code-review record + stamp 'full'",
+        "summary": "Widen the code-review record body type in src/workflow/code-review/types.ts with an additive groundingMode field (this story only ever writes 'full'), and stamp groundingMode:'full' at the record-build/runCodeReview path (src/workflow/code-review/runner.ts) for the graph-grounded run. Existing records without the field remain readable; the completion gate + readers ignore the extra field.",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "the code-review record body type carries groundingMode and every record runCodeReview writes on the graph-grounded path is stamped groundingMode:'full'",
+          "existing records without groundingMode still parse; no downstream verdict-reader breaks"
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "runCodeReview stamps groundingMode:'full' on the persisted record body; a record without groundingMode still parses (no verdict-reader breaks)"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Extend the code-review-step protocol types for the confirm_wait handshake",
+        "summary": "In src/mcp/code-review-step/types.ts: add optional proceed?/state? to CodeReviewStepInputStart (:31); add the CodeReviewStepConfirmWait member { next:'confirm_wait'; staleFiles; isProcessing; guidance; state } to the CodeReviewStepOutput union (:91); make CodeReviewStepStatePayload.grounding optional (:100) so the pre-grounding confirm_wait state is representable. All additive to the existing start/judgements envelope (k2).",
+        "size": "S",
+        "order": 5,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "CodeReviewStepInputStart accepts optional proceed?/state?; the plain { phase:'start', epicHash, storyId, repo? } call still typechecks",
+          "CodeReviewStepOutput includes the ConfirmWait member; CodeReviewStepStatePayload.grounding is optional"
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "types compile: CodeReviewStepInputStart accepts optional proceed?/state?, the plain start call still typechecks, and the ConfirmWait output member is assignable (tsc over the code-review-step module)"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Insert the freshness gate + block-and-poll + re-prompt/abort into the start phase",
+        "summary": "In src/mcp/code-review-step/handler.ts, before fetchCodeReviewGrounding: call fetchCodeReviewFreshness(subject.changedFiles). If stale (isProcessing OR staleFiles non-empty) and no proceed → saveState + return CodeReviewStepConfirmWait. On proceed:true → block-and-poll fetchCodeReviewFreshness at a fixed internal interval until fresh or codeReview.freshnessTimeoutMs, re-prompting (confirm_wait) on timeout; on abort → fail closed (no runReview, no write). On fresh → continue to fetchCodeReviewGrounding + emit_judgements unchanged, and thread groundingMode:'full' into the record path. Wire the fetchFreshness + sleep/now seams into DEFAULT_DEPS (handler.ts:62). Map freshness IPC errors + StateTokenNotFound to CodeReviewStepError.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t3",
+          "t4",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "stale + no proceed returns confirm_wait with the stale-file list and NEVER calls fetchGrounding; fresh proceeds to emit_judgements as today",
+          "proceed:true block-and-polls until fresh (never repo.reindex) then continues; timeout returns confirm_wait again (re-prompt); abort fails closed with no judges + no record",
+          "the fresh path stamps groundingMode:'full'; freshness IPC error → next:'error' (freshness-unavailable); missing/released state token → next:'error' state-not-found"
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "start: stale (staleFiles non-empty) and no proceed -> returns next:'confirm_wait' carrying the stale-file list + state, and fetchGrounding is NEVER called"
+          },
+          {
+            "level": "unit",
+            "name": "start: isProcessing true (empty staleFiles) and no proceed -> also returns confirm_wait"
+          },
+          {
+            "level": "unit",
+            "name": "start: fresh (empty staleFiles AND not processing) -> no confirm_wait; calls fetchGrounding then returns emit_judgements"
+          },
+          {
+            "level": "unit",
+            "name": "proceed:true resume: fetchFreshness reports stale for 2 ticks then fresh -> the poll loops (asserts ≥N fetchFreshness calls via the fake), never calls a reindex seam, then continues to grounding"
+          },
+          {
+            "level": "unit",
+            "name": "proceed:true resume: freshness never becomes fresh before codeReview.freshnessTimeoutMs (fake clock) -> returns confirm_wait again (the re-prompt), not a unilateral proceed/abort"
+          },
+          {
+            "level": "unit",
+            "name": "abort resume (proceed:false + state) -> terminal fail-closed result: runReview is NEVER invoked and the write seam is NEVER called"
+          },
+          {
+            "level": "unit",
+            "name": "the fresh path stamps groundingMode:'full' on the persisted record (assert the write payload / runReview input carries groundingMode:'full')"
+          },
+          {
+            "level": "unit",
+            "name": "freshness IPC error on the initial check -> next:'error' (freshness-unavailable), no confirm_wait, no write"
+          },
+          {
+            "level": "unit",
+            "name": "proceed resume with a released/missing state token -> next:'error' state-not-found (retryable:false), nothing written"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Add the unit + integration tests and run the suites green",
+        "summary": "Wire the tests authored alongside t1-t6 into the suites and run them green: the handler unit tests + daemon freshness-compute unit tests (incl. non-indexable-path exclusion + never-indexed=stale as distinct assertions) + the gated integration tests (codeReview.freshness IPC socket round-trip + config reconcile). Confirm the code-review + mcp suites pass and no untouched dimension/conventions/quality behaviour regressed.",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t2",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "unit tests cover all ac1-ac5 handler behaviours + the daemon freshness compute cases (incl. non-indexable-path exclusion + never-indexed=stale as distinct assertions), using injected seams (no real daemon/wall-clock)",
+          "the gated integration test exercises the codeReview.freshness IPC over the socket + config reconcile",
+          "npx tsx --test over src/mcp/code-review-step/**/*.test.ts + the daemon freshness test passes green"
+        ],
+        "derivedFrom": [
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "full code-review + mcp sweep passes green (npx tsx --test), confirming no untouched conventions/quality/dimension behaviour regressed"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "start: stale (staleFiles non-empty) and no proceed -> returns next:'confirm_wait' carrying the stale-file list + state, and fetchGrounding is NEVER called",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "start: isProcessing true (empty staleFiles) and no proceed -> also returns confirm_wait",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "start: fresh (empty staleFiles AND not processing) -> no confirm_wait; calls fetchGrounding then returns emit_judgements",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "proceed:true resume: fetchFreshness reports stale for 2 ticks then fresh -> the poll loops (asserts ≥N fetchFreshness calls via the fake), never calls a reindex seam, then continues to grounding",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "proceed:true resume: freshness never becomes fresh before codeReview.freshnessTimeoutMs (fake clock) -> returns confirm_wait again (the re-prompt), not a unilateral proceed/abort",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "abort resume (proceed:false + state) -> terminal fail-closed result: runReview is NEVER invoked and the write seam is NEVER called",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "the fresh path stamps groundingMode:'full' on the persisted record (assert the write payload / runReview input carries groundingMode:'full')",
+        "coveredByTaskIds": [
+          "t6",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "freshness IPC error on the initial check -> next:'error' (freshness-unavailable), no confirm_wait, no write",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "proceed resume with a released/missing state token -> next:'error' state-not-found (retryable:false), nothing written",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "freshness compute: a changed file whose per-file indexedAt predates its mtime -> in staleFiles",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "freshness compute: a changed file whose watermark is >= mtime -> NOT in staleFiles",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "freshness compute: a changed path with no indexable graph entity -> excluded from staleFiles (does not block forever)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "freshness compute: a never-indexed changed file (watermark 0) -> stale",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "freshness compute: isProcessing mirrors queue.isProcessing and the handler never triggers repo.reindex (assert no reindex call on the injected queue/graph fakes)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "codeReview.freshness handler: missing repo/epicHash/storyId -> { error } (parity with codeReview.grounding validation)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "the 'codeReview.freshness' IPC handler returns { isProcessing, staleFiles } over the Unix socket for a fixture repo (peer of the existing codeReview.grounding IPC integration test)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "reconcileConfig carries codeReview.freshnessTimeoutMs with its baked-in default and honours a per-repo/global override",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s9 contractDetails.codeReview.freshness — the new read-only daemon IPC computing { isProcessing, staleFiles } from queue.isProcessing + the per-file watermark, never repo.reindex",
+      "quotedText": "'codeReview.freshness': (params: { repo, epicHash, storyId, changedFiles }) => Promise<{ isProcessing, staleFiles } | { error }> — read-only, additive peer of codeReview.grounding."
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s9 contractDetails.fetchCodeReviewFreshness — the controller IPC client peer of fetchCodeReviewGrounding",
+      "quotedText": "fetchCodeReviewFreshness(deps, params) => Promise<{ isProcessing, staleFiles }> — the controller's only access to queue/graph freshness (k5); propagates { error }/socket failure."
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s9 contractDetails.handleCodeReviewStep (reshaped start phase) — the gate + confirm_wait/proceed handshake + bounded block-and-poll + re-prompt/abort",
+      "quotedText": "Before fetchCodeReviewGrounding: fetchCodeReviewFreshness; stale => confirm_wait; proceed => block-and-poll until fresh or codeReview.freshnessTimeoutMs then re-prompt; fresh => grounding + judges; abort => fail closed."
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s9 dataModelChanges — CodeReviewStepInputStart proceed?/state?, the ConfirmWait output, optional state grounding, the record groundingMode field, and the codeReview.freshnessTimeoutMs config key",
+      "quotedText": "Additive: CodeReviewStepInputStart += proceed?/state?; CodeReviewStepOutput += ConfirmWait; state grounding optional; CodeReviewBody += groundingMode:'full'; CONFIG_CATALOG += codeReview.freshnessTimeoutMs."
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s9 testStrategy — handler unit (gate/poll/timeout/abort/groundingMode/errors), daemon freshness-compute unit, and the gated IPC round-trip + config reconcile integration",
+      "quotedText": "node:test via npx tsx --test; injected fetchFreshness/fetchGrounding/runReview/write + fake sleep/now seams for the handler; fake queue+watermark for the compute; gated socket harness for the IPC."
+    }
+  ]
+}

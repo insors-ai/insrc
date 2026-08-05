@@ -894,6 +894,55 @@
             "operationalizes": []
           }
         ]
+      },
+      {
+        "id": "s10",
+        "title": "Fall back to a diff-only degraded review when the index cannot be made fresh",
+        "userValue": "s9 currently FAILS CLOSED (returns 'review-declined', no verdict) when the user declines to wait for a fresh index at the confirm_wait/timeout prompt. This story replaces that dead-end with a DIFF-ONLY non-graph review pathway: instead of aborting, it reviews the raw changed-file diff directly (not the graph symbol summaries), so the user still gets a real review signal without waiting for indexing. The fallback record is tagged groundingMode:'degraded' (distinguishing it from s9's graph-grounded groundingMode:'full') and its computed verdict is CAPPED at warn — a diff-only review can never yield an overall 'pass', so it can never silently satisfy the codeReview.enforce completion gate; completing a Story on a degraded review always requires an explicit override. This story also FOLDS IN a distinct gap the s9 dogfood surfaced: resolveCodeReviewSubject derives changedFiles from the git WORKING-TREE diff, which is empty after a build→commit→review ordering, so a review finds nothing to judge regardless of index freshness (the actual dominant cause of the hollow PASS). The diff-only path must derive a NON-EMPTY changed set — falling back to the last commit's diff (git show HEAD) when the working tree is clean — so it has real content to review. Scope: the four-dimension judge vocabulary is reused where practical (a diff-scoped charge), the diff content is bounded structured hunks (not unbounded raw dumps), all model access stays through the LLMProvider abstraction (no cloud REST), and the review remains read-only over the code it judges.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "the user declines to wait for a fresh index (proceed:false at the initial confirm_wait, or abort at a timeout re-prompt)",
+            "when": "insrc_code_review_step processes the decline",
+            "then": "instead of failing closed with 'review-declined', it runs a diff-only review over the changed-file diff and produces a persisted code-review record",
+            "operationalizes": []
+          },
+          {
+            "id": "ac2",
+            "given": "the working tree is clean (all of a Story's build changes are already committed) so the working-tree diff is empty",
+            "when": "the diff-only path derives its changed set",
+            "then": "it falls back to the last commit's diff (git show HEAD) so the review has a non-empty set of changed files + hunks to judge, rather than reviewing nothing",
+            "operationalizes": []
+          },
+          {
+            "id": "ac3",
+            "given": "a diff-only review runs",
+            "when": "its record is persisted",
+            "then": "the record is tagged groundingMode:'degraded' (distinct from the graph-grounded groundingMode:'full')",
+            "operationalizes": []
+          },
+          {
+            "id": "ac4",
+            "given": "a diff-only review's four-dimension findings would otherwise fold to a clean pass",
+            "when": "the verdict is computed",
+            "then": "the verdict is capped at warn — a degraded review can never register an overall 'pass'",
+            "operationalizes": []
+          },
+          {
+            "id": "ac5",
+            "given": "codeReview.enforce is on and a Story's only code-review record is a groundingMode:'degraded' one (verdict warn)",
+            "when": "the completion gate evaluates the Story",
+            "then": "the degraded review does NOT satisfy the gate on its own — completion still requires an explicit override, exactly as a non-pass verdict does",
+            "operationalizes": []
+          },
+          {
+            "id": "ac6",
+            "given": "the graph index IS fresh (s9's path)",
+            "when": "a code review runs",
+            "then": "it is unchanged — the full graph-grounded four-dimension review runs and stamps groundingMode:'full' with an uncapped verdict (the diff-only fallback is reached only on a decline)",
+            "operationalizes": []
+          }
+        ]
       }
     ],
     "openQuestions": [

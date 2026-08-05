@@ -1,0 +1,42 @@
+{
+  "id": "AMD-761a43a6fa645815-2",
+  "epicHash": "761a43a6fa645815",
+  "epicSlug": "add-daemon-driven-code-review-stage",
+  "hldBaseRunId": "wf-1785741597494-lbzdo7",
+  "amendment": {
+    "type": "storyBoundary.addStory",
+    "storyId": "s10",
+    "internal": "Private implementation of s10: Fall back to a diff-only degraded review when the index cannot be made fresh"
+  },
+  "rationale": "Extends Epic `add-daemon-driven-code-review-stage` (761a43a6) — Story B of the Fix-C pair (sibling of s9). Builds the diff-only degraded-review fallback on the s9 gate (src/mcp/code-review-step/handler.ts, src/workflow/code-review/{runner,grounding,types,subject}.ts) and folds in the working-tree-diff changedFiles fix surfaced by the s9 dogfood.",
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "docs/specs/SPEC-indexing-readiness-gate-insrc-code-review.md",
+      "quotedText": "Approved SpecArtifact SPEC-8b4be30d648eaeb8 decisions d5 (diff-only fallback on decline) + d6 (groundingMode:'degraded' + warn-cap) — the settled scope this story implements."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": ".insrc/artifacts/LLD-761a43a6fa645815-s9.json",
+      "quotedText": "s9 stamps groundingMode:'full' and fails closed on decline; the LLD explicitly notes Story B replaces that fail-closed exit + widens groundingMode to 'full' | 'degraded'."
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/code-review/subject.ts",
+      "quotedText": "resolveCodeReviewSubject derives changedFiles from the working-tree git_diff — empty after commit (the dogfood finding s10 folds in)."
+    }
+  ],
+  "proposedBy": {
+    "workflow": "define",
+    "runId": "wf-1785911818211-7k0t2x",
+    "storyId": "s10",
+    "stepId": "scope.assess"
+  },
+  "proposedAt": "2026-08-05T06:38:27.555Z",
+  "status": "approved",
+  "approvedAt": "2026-08-05T06:43:12.729Z",
+  "approvedBy": "user:in-chat-approval"
+}

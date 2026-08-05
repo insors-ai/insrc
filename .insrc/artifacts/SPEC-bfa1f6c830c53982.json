@@ -1,0 +1,222 @@
+{
+  "meta": {
+    "workflow": "brainstorm",
+    "runId": "wf-1785917047656-rdqj1n",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-08-05T09:33:59.668Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 5391995,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "specHash": "bfa1f6c830c53982",
+    "epicSlug": "add-debug-pane-tab-insrc-tui",
+    "review": {
+      "artifact": "brainstorm",
+      "stage": "brainstorm",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "The insrc TUI's existing panes are implemented as PascalCase *Pane.tsx files under src/cli/panes (Daemon/Repos/Workflows/Setup, plus ModelTiers), wired into the app.tsx pane host.",
+          "evidence": "The pane files resolve as real paths in sibling probes (src/cli/panes/DaemonPane.tsx:53, src/cli/panes/ReposPane.tsx:62) and the earlier module.profile listed DaemonPane/ReposPane/WorkflowsPane/SetupPane/ModelTiersPane under src/cli/panes. The literal-filename grep returned 0 only because ripgrep scans contents, not names — the inventory holds.",
+          "action": "None — confirmed via sibling paths + the analyze bundle.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The daemon exposes a `daemon.status` IPC that the CLI daemon service consumes to infer running/stopped (getStatus throw = stopped), and the stop path sends a `daemon.shutdown` RPC rather than a process signal.",
+          "evidence": "daemon.status handler at src/daemon/index.ts:849, consumed by src/cli/services/daemon.ts:50 (rpc<DaemonStatus>('daemon.status')); daemon.shutdown at daemon/index.ts:1347 + daemon.ts:77; getStatus-throw-means-stopped shown at cli/__tests__/tui.test.ts:107; stopDaemon at command.ts:84 + DaemonPane.tsx:53. Confirmed — the status card + stopped-inference + shutdown-RPC premises hold.",
+          "action": "None — anchors resolve.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The daemon entry point that a `ps` cmdline scan would match is out/daemon/index.js (the compiled daemon binary the installer/CLI spawns).",
+          "evidence": "The daemon entry is DEFINED at src/cli/services/daemon.ts:24 as DAEMON_ENTRY = join(__dirname, '../../daemon/index.js') — i.e. the resolved absolute path ends in 'daemon/index.js' (compiled: .../out/daemon/index.js under the install root). The spec's 'out/daemon/index.js' is approximately right; the ps cmdline scan should anchor on the resolved DAEMON_ENTRY, not a hard-coded 'out/daemon/index.js' literal.",
+          "action": "Design (LLD) should ground the ps cmdline pattern on src/cli/services/daemon.ts:24 DAEMON_ENTRY (suffix 'daemon/index.js') rather than a fixed 'out/' prefix — noted, not a spec blocker.",
+          "fixability": "assisted"
+        },
+        {
+          "claimId": "cl4",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "Exactly two physical log files exist under PATHS.logDir today — daemon.log (daemon mode) and agent.log (shared by CLI mode and MCP mode) — written via the shared logger, and they are rotated (pino-roll).",
+          "evidence": "src/shared/paths.ts:104-105 define daemonLog + agentLog under LOG_DIR; src/shared/logger.ts has three pino-roll transports (lines 66/101/130) for the daemon/cli/mcp modes, with cli+mcp both routing to agentLog (src/bin/insrc-mcp.ts:39 setLogMode('mcp')). Exactly two physical files, rotated, agent.log shared by CLI + MCP — confirmed.",
+          "action": "None — the two-file + rotation premise (the basis for collapsing to two log categories) holds.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl5",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "MCP client registration/connection status is obtained by running each CLI's `mcp list` (the same mechanism mcp-register.ts uses to register the insrc MCP server).",
+          "evidence": "src/daemon/mcp-register.ts (registerMcpClients) drives `mcp list` (mcp-register.test.ts:38 isList = args[0]==='mcp' && args[1]==='list') and `mcp add` via argv arrays. The per-client registration/status mechanism the MCP section reuses exists and is confirmed.",
+          "action": "None — anchor resolves.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl6",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "There is no existing debug-status IPC that enumerates the daemon's connected socket clients (label/pid/connected-at) — the spec proposes it as a NEW daemon IPC surface.",
+          "evidence": "No matches for debug-status/debugStatus/debug.status or any connected-clients/clientList/socketClients enumeration anywhere in src/ — confirming the debug-status IPC (status fields + live IPC client list) is genuinely a NEW surface the spec introduces, as claimed.",
+          "action": "None — the 'new IPC' premise is correct; design must add both the tracking + the method.",
+          "fixability": "auto"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 6
+      },
+      "reviewedAt": "2026-08-05T09:35:32.150Z",
+      "model": "client"
+    }
+  },
+  "body": {
+    "category": "design",
+    "intent": "Add a Debug pane/tab to the insrc TUI (alongside the existing Daemon / Repos / Workflows / Setup panes), navigated via inner sub-tabs — Daemon | MCP | Logs, keypress-switched, one section rendered full-height at a time. (1) Daemon: a status card (running/stopped, pid, uptime, version, socket path, managed-repo count + index state) sourced from the existing `daemon.status` IPC, polled continuously ('stopped' inferred the same way the existing Daemon pane does — the status RPC throwing/timing out); below it an orphan scan that shells out to `ps`, matches node processes by cmdline pattern against the daemon entry (`out/daemon/index.js`), excludes the managed daemon's own PID (from its status), and runs once on pane entry plus on an explicit refresh keypress. The pane's ONLY actionable control anywhere is a MULTI-SELECT guarded kill: the user selects ONE OR MORE detected orphan/zombie processes (the UI only recommends which look stray; selection is always explicit) and kills the selected set behind a confirm prompt, sending SIGTERM then escalating to SIGKILL after a ~3s timeout per still-alive PID. POSIX-only; on non-POSIX platforms (Windows) the section renders a 'orphan scan not supported on this platform' message instead of the scan UI. (2) MCP (read-only): (a) per-client (claude, codex) registration+connection status via each CLI's `mcp list`, run once on pane entry plus on-demand refresh; (b) the daemon's live IPC clients attached to the socket (label/pid/connected-at per client), sourced from a NEW daemon debug-status IPC call the TUI polls continuously. (3) Logs: the default view lists two categories — 'Daemon logs' (daemon.log) and 'Agent logs' (agent.log, shared by workflow/agent runs and the MCP subprocess); selecting one opens a live tail scoped to that category, sourced by the CLI tailing the known log file directly via fs.watch (no daemon IPC), resolving the most-recent ROTATED segment and following across rotation, with a persistent one-line filter bar (level / module / free-text search) above the tail that the user edits inline via keypress-driven field focus while the tail streams.",
+    "scopeBoundary": "The pane is read-only EXCEPT for the single guarded multi-select orphan-kill control. It does NOT restart the managed daemon (that already lives in the main Daemon tab), does NOT disconnect/kill IPC clients from the MCP section, and offers no remediation action beyond the orphan kill. The Logs section tails at most ONE category at a time and does not split 'Agent logs' into separate workflow-run vs MCP-subprocess categories (no separate on-disk files exist today — only daemon.log and the shared agent.log). The orphan scan/kill is POSIX-only (macOS/Linux) — Windows gets a graceful 'not supported' message, not a cross-platform scan/kill path. Log data is read straight from disk (no new log-streaming IPC); the only new daemon IPC surface is the debug-status call (status card fields + live IPC client list).",
+    "nonGoals": [
+      "Restarting the managed daemon from the Debug pane",
+      "Disconnecting/killing an IPC client from the MCP section",
+      "Tailing more than one log category at once",
+      "Splitting Agent logs into separate Workflow-run and MCP-subprocess categories (no separate on-disk files exist today)",
+      "Any remediation action beyond the single guarded orphan-kill control",
+      "Orphan scan / kill support on non-POSIX platforms (Windows) — graceful degrade message only",
+      "Ask the managed daemon itself via IPC to report any orphan sightings it has tracked",
+      "Scan for stale lock/socket artifacts under ~/.insrc/ that don't correspond to any live process, and flag the inverse (live daemon-like processes with no matching lock) as orphans",
+      "Daemon-mediated streaming — a new IPC method subscribes and the daemon pushes tailed lines over the existing socket connection",
+      "Hybrid — daemon-authored logs (Daemon, Workflow/agent run) stream via IPC; MCP subprocess logs are file-tailed directly since that process isn't spawned by our daemon",
+      "OS-level socket introspection — the CLI itself inspects ~/.insrc/daemon.sock (e.g. via lsof/ss) to count connected peers, no daemon changes",
+      "Drop live IPC client enumeration — MCP section only shows per-client registration status (claude/codex via `mcp list`), no daemon-socket client list at all",
+      "Continuous polling, same cadence as the debug-status IPC call, for all three sources uniformly",
+      "All three sources poll continuously, but `ps` scan and `mcp list` use a longer interval (e.g. 5-10x) than the debug-status call",
+      "All three sources are on-demand only (explicit refresh key), no background polling anywhere including the debug-status IPC call",
+      "Split at the source: add a distinct log mode/transport (e.g. 'workflow' vs 'mcp') so each now writes its own physical file, and the pane tails each file directly per decision 3",
+      "Keep the single agent.log; tag each record with a source field at write time and have the tailer filter client-side per category",
+      "SIGTERM only — send once, no automatic follow-up",
+      "SIGKILL immediately",
+      "Read-only — display status/logs only, no mutating actions from the pane",
+      "Fully actionable ops console — kill orphans, restart the managed daemon, disconnect misbehaving IPC clients",
+      "Always-visible stacked panels — Daemon card, MCP card, and Logs section stacked top-to-bottom on one screen, scrollable as a whole",
+      "Master-detail split — a persistent left column with compact Daemon+MCP status, right column dedicated to Logs (category list or active tail)",
+      "POSIX-only, section hidden on Windows — the Daemon section's orphan-scan subview simply doesn't render outside macOS/Linux",
+      "True cross-platform — implement a Windows scan path (tasklist/wmic) and Windows-safe kill (taskkill) alongside the POSIX path",
+      "Key-triggered overlay editor — press a key (e.g. 'f') to open a modal over the tail to set level/module/search, closes back to a full-height tail view",
+      "Per-field hotkeys with a compact status line — single always-on summary line (e.g. \"level:ERROR module:* search:''\"), each field edited via its own dedicated keypress ('l' cycles level, '/' opens search input)"
+    ],
+    "decisions": [
+      {
+        "chosen": "Process scan by cmdline pattern (ps for node processes running the daemon entry, e.g. `out/daemon/index.js`), excluding whatever PID the managed daemon's own pidfile/status reports",
+        "ruledOut": [
+          "Ask the managed daemon itself via IPC to report any orphan sightings it has tracked",
+          "Scan for stale lock/socket artifacts under ~/.insrc/ that don't correspond to any live process, and flag the inverse (live daemon-like processes with no matching lock) as orphans"
+        ],
+        "reason": "How should the Daemon section decide a running process is a 'stray/orphan insrc daemon' rather than the currently-managed one, so the kill action targets the right PID?"
+      },
+      {
+        "chosen": "Direct file tail — the CLI reads/tails known log-file paths itself (fs.watch), using the existing ~/.insrc path layout",
+        "ruledOut": [
+          "Daemon-mediated streaming — a new IPC method subscribes and the daemon pushes tailed lines over the existing socket connection",
+          "Hybrid — daemon-authored logs (Daemon, Workflow/agent run) stream via IPC; MCP subprocess logs are file-tailed directly since that process isn't spawned by our daemon"
+        ],
+        "reason": "Neither decision 1 (read-only + guarded kill) nor decision 2 (orphan detection heuristic) constrains this — both left the Logs section's data-access mechanism unspecified, and it's a real architecture fork (new IPC surface vs. direct file access) that implementation can't proceed without."
+      },
+      {
+        "chosen": "New daemon IPC method — the daemon tracks its own connected socket clients (label/pid/connected-at per client) and exposes them via a new debug-status call the TUI polls",
+        "ruledOut": [
+          "OS-level socket introspection — the CLI itself inspects ~/.insrc/daemon.sock (e.g. via lsof/ss) to count connected peers, no daemon changes",
+          "Drop live IPC client enumeration — MCP section only shows per-client registration status (claude/codex via `mcp list`), no daemon-socket client list at all"
+        ],
+        "reason": "The MCP section needs to show \"the daemon's live IPC clients currently attached to the socket.\" How should the Debug pane obtain that data?"
+      },
+      {
+        "chosen": "Debug-status IPC call polls continuously; `ps` scan and `mcp list` run once on pane entry plus on-demand refresh (explicit keypress)",
+        "ruledOut": [
+          "Continuous polling, same cadence as the debug-status IPC call, for all three sources uniformly",
+          "All three sources poll continuously, but `ps` scan and `mcp list` use a longer interval (e.g. 5-10x) than the debug-status call",
+          "All three sources are on-demand only (explicit refresh key), no background polling anywhere including the debug-status IPC call"
+        ],
+        "reason": "The daemon debug-status IPC call (status card + IPC client list) is already decided to be continuously polled by the TUI. Should the two subprocess-spawning sources — the orphan-process `ps` scan and the per-client `mcp list` calls — poll on that same continuous cadence, or refresh less aggressively since each spawns an external process?"
+      },
+      {
+        "chosen": "Collapse to the two categories that actually exist — rename to 'Daemon logs' and 'Agent logs' (workflow runs + MCP subprocess together) — and drop the three-way split",
+        "ruledOut": [
+          "Split at the source: add a distinct log mode/transport (e.g. 'workflow' vs 'mcp') so each now writes its own physical file, and the pane tails each file directly per decision 3",
+          "Keep the single agent.log; tag each record with a source field at write time and have the tailer filter client-side per category"
+        ],
+        "reason": "On-disk today there are only two log files — daemon.log and a shared agent.log written by both CLI-mode (workflow/agent runs) and MCP-mode (MCP subprocess), interleaved. The Debug pane names three separately-tailable categories (Daemon / Workflow-agent-run / MCP subprocess). How should the pane resolve that mismatch so selecting \"Workflow/agent run logs\" vs \"MCP subprocess logs\" actually tails distinct content rather than the same file?"
+      },
+      {
+        "chosen": "SIGTERM, then escalate to SIGKILL after a short timeout (e.g. 3s) if still alive",
+        "ruledOut": [
+          "SIGTERM only — send once, no automatic follow-up",
+          "SIGKILL immediately"
+        ],
+        "reason": "Checked src/cli/services/daemon.ts: the existing DaemonPane's running/stopped inference and the managed daemon's stop path are both IPC-based (getStatus() throw = stopped; stopDaemon() sends `daemon.shutdown` over RPC, not a signal) — confirming the daemon-down-detection question is already answered by existing precedent, but leaving the orphan-kill signal choice genuinely undecided since no signal-based kill exists anywhere in this codebase to anchor on."
+      },
+      {
+        "chosen": "Read-only + one guarded action: kill detected orphan daemon process(es) (confirm prompt) — MULTI-SELECT: the user selects one or more detected orphans and kills the selected set behind a single confirm prompt",
+        "ruledOut": [
+          "Read-only — display status/logs only, no mutating actions from the pane",
+          "Fully actionable ops console — kill orphans, restart the managed daemon, disconnect misbehaving IPC clients"
+        ],
+        "reason": "Is the Debug pane purely a read-only diagnostic view, or does it let the user take remediation actions (kill an orphan process, restart the daemon, disconnect an IPC client) directly from the pane? Refined per the user: the sole mutating action is a MULTI-SELECT orphan kill (one or more selected instances via short keys), the UI only recommends which look stray, and the kill decision is always an explicit user selection behind a confirm guard."
+      },
+      {
+        "chosen": "Inner sub-tabs — a second-level tab bar (Daemon | MCP | Logs) inside the Debug pane, switched via keypress; one section rendered full-height at a time",
+        "ruledOut": [
+          "Always-visible stacked panels — Daemon card, MCP card, and Logs section stacked top-to-bottom on one screen, scrollable as a whole",
+          "Master-detail split — a persistent left column with compact Daemon+MCP status, right column dedicated to Logs (category list or active tail)"
+        ],
+        "reason": "Within the Debug pane, how are the three sections (Daemon / MCP / Logs) arranged and navigated — especially since selecting a Logs category needs to open a live, filterable, scrollable tail that wants real screen space?"
+      },
+      {
+        "chosen": "POSIX-only, graceful degrade with a message — section renders but shows 'orphan scan not supported on this platform' instead of the scan UI",
+        "ruledOut": [
+          "POSIX-only, section hidden on Windows — the Daemon section's orphan-scan subview simply doesn't render outside macOS/Linux",
+          "True cross-platform — implement a Windows scan path (tasklist/wmic) and Windows-safe kill (taskkill) alongside the POSIX path"
+        ],
+        "reason": "The orphan-scan/kill mechanism relies on `ps` cmdline parsing and POSIX signals (SIGTERM/SIGKILL) — inherently platform-specific. The codebase has no existing process.platform branching, and package.json declares no `os` restriction, so this is genuinely undecided. What should the Debug pane do on non-POSIX platforms (Windows)?"
+      },
+      {
+        "chosen": "Persistent filter bar — a fixed one-line row above the tail (level/module/search fields), always visible; keypress moves focus between fields to edit them inline",
+        "ruledOut": [
+          "Key-triggered overlay editor — press a key (e.g. 'f') to open a modal over the tail to set level/module/search, closes back to a full-height tail view",
+          "Per-field hotkeys with a compact status line — single always-on summary line (e.g. \"level:ERROR module:* search:''\"), each field edited via its own dedicated keypress ('l' cycles level, '/' opens search input)"
+        ],
+        "reason": "The Logs tail supports live filtering by level, module, and free-text search — but how does the user actually invoke and edit those filters while the tail is streaming?"
+      }
+    ],
+    "openItems": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "step-output",
+      "ref": "s1",
+      "quotedText": "Confirmed converged brainstorm output for the Debug pane (10 recorded decisions). The user's explicit confirmation refined the orphan-kill to MULTI-SELECT (one or more selected instances); the shaper-drafted non-goal 'one orphan process killed at a time' was dropped as it is not any decision's ruledOut direction and contradicts decision 7 + the user's confirmation."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "src/cli structural map — panes are *Pane.tsx wired into app.tsx's switcher, backed by services/ (Services + makeServices); daemon logs under PATHS.logDir (daemon.log + agent.log); MCP registration via mcp-register.ts / `mcp list`."
+    }
+  ]
+}

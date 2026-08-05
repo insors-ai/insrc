@@ -396,3 +396,38 @@ test("':' opens the command bar and runs a typed command", async () => {
 	assert.match(lastFrame() ?? '', /registered \/tmp\/viacmd/);   // output rendered inline
 	unmount();
 });
+
+// ---------------------------------------------------------------------------
+// Debug pane wiring (Story s1, t4) — the 6th peer pane in the switcher.
+// ---------------------------------------------------------------------------
+
+test('the tab bar renders a 6th 6:Debug peer tab', async () => {
+	const { lastFrame, unmount } = render(createElement(App, { services: fakeServices(), pollMs: 0 }));
+	await settle();
+	assert.match(lastFrame() ?? '', /6:Debug/);
+	unmount();
+});
+
+test("pressing '6' opens the Debug pane and hides the previously active pane", async () => {
+	const { lastFrame, stdin, unmount } = render(createElement(App, { services: fakeServices(), pollMs: 0 }));
+	await settle();
+	assert.doesNotMatch(lastFrame() ?? '', /Daemon diagnostics/); // DebugPane not shown yet (index 0)
+	stdin.write('6');
+	await settle();
+	const frame = lastFrame() ?? '';
+	assert.match(frame, /Daemon diagnostics/);            // DebugPane's daemon-section placeholder
+	assert.match(frame, /←\/→ section/);                  // DebugPane's own key hint (unique to it)
+	// one-pane-at-a-time: DebugPane showing means index 0's DaemonPane body is unmounted
+	unmount();
+});
+
+test('Tab-cycling from the last pane wraps forward to Debug (TABS.length-driven)', async () => {
+	const { lastFrame, stdin, unmount } = render(createElement(App, { services: fakeServices(), pollMs: 0 }));
+	await settle();
+	stdin.write('5');            // Tiers (index 4)
+	await settle();
+	stdin.write('\t');           // Tab → Debug (index 5)
+	await settle();
+	assert.match(lastFrame() ?? '', /Daemon diagnostics/); // DebugPane is now shown
+	unmount();
+});

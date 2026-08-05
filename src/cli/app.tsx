@@ -29,8 +29,9 @@ import { ReposPane } from './panes/ReposPane.js';
 import { WorkflowsPane } from './panes/WorkflowsPane.js';
 import { SetupPane } from './panes/SetupPane.js';
 import { ModelTiersPane } from './panes/ModelTiersPane.js';
+import { DebugPane } from './panes/DebugPane.js';
 
-const TABS = ['Daemon', 'Repos', 'Workflows', 'Setup', 'Tiers'] as const;
+const TABS = ['Daemon', 'Repos', 'Workflows', 'Setup', 'Tiers', 'Debug'] as const;
 
 /** How long a transient toast line lingers before its auto-dismiss timer fires. */
 const TOAST_MS = 4000;
@@ -123,11 +124,11 @@ function AppBody(props: { pollMs?: number; initialPane?: number }): ReactElement
 	useInput((input, key) => {
 		if (input === ':') { openCmd(); return; }
 		if (input === 'q') { exit(); return; }
-		if (input >= '1' && input <= '5') { setPane(Number(input) - 1); return; }
+		if (input >= '1' && input <= '6') { setPane(Number(input) - 1); return; }
 		if (key.tab && key.shift) { setPane(p => (p + TABS.length - 1) % TABS.length); return; }
 		if (key.tab)              { setPane(p => (p + 1) % TABS.length); return; }
 		if (input === 'r') { setNonce(n => n + 1); ui.toast('refreshed'); return; }
-		if (input === '?') { ui.toast(': command · 1-5/Tab switch · r refresh · q quit'); return; }
+		if (input === '?') { ui.toast(': command · 1-6/Tab switch · r refresh · q quit'); return; }
 	}, { isActive: !captured });
 
 	return (
@@ -144,12 +145,13 @@ function AppBody(props: { pollMs?: number; initialPane?: number }): ReactElement
 									{pane === 2 && <WorkflowsPane repoPath={selectedRepo} nonce={nonce} />}
 									{pane === 3 && <SetupPane />}
 									{pane === 4 && <ModelTiersPane />}
+									{pane === 5 && <DebugPane services={services} />}
 								</>}
 					</Box>
 					{/* The one and only message render site — docked at the bottom. */}
 					<MessageBox messages={messages} />
 					{!cmdMode && (
-						<KeyHints hints={[[':', 'command'], ['1-5/Tab', 'switch'], ['r', 'refresh'], ['q', 'quit']]} />
+						<KeyHints hints={[[':', 'command'], ['1-6/Tab', 'switch'], ['r', 'refresh'], ['q', 'quit']]} />
 					)}
 				</Box>
 			</CaptureContext.Provider>

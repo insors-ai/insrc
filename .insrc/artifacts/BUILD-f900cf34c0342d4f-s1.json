@@ -1,0 +1,37 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": false,
+    "epicHash": "f900cf34c0342d4f",
+    "storyId": "s1",
+    "createdAt": "2026-08-05T12:52:46.868Z",
+    "updatedAt": "2026-08-05T12:55:00.000Z",
+    "approvedAt": "2026-08-05T12:54:23.106Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      }
+    ],
+    "focus": "Debug pane scaffold (sc1): types, DebugService facade, DebugPane, 5->6 app.tsx switcher",
+    "commit": "1d7d5bb00f20f5f8ca1896f62f0a85468fce1997"
+  }
+}

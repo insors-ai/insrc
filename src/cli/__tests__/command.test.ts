@@ -67,6 +67,13 @@ function ctxWith(overrides: Partial<Services> = {}): { ctx: CommandCtx; spies: S
 			write: async (path, value) => { spies.configWrite.push({ path, value }); return { ok: true }; },
 			reload: async () => ({ ok: true }),
 		},
+		debug: {
+			sections: [
+				{ id: 'daemon', title: 'Daemon' },
+				{ id: 'mcp', title: 'MCP' },
+				{ id: 'logs', title: 'Logs' },
+			],
+		},
 		...overrides,
 	};
 	const ctx: CommandCtx = {

@@ -90,6 +90,13 @@ function fakeServices(): Services {
 			write:  async () => ({ ok: true }),
 			reload: async () => ({ ok: true }),
 		},
+		debug: {
+			sections: [
+				{ id: 'daemon', title: 'Daemon' },
+				{ id: 'mcp', title: 'MCP' },
+				{ id: 'logs', title: 'Logs' },
+			],
+		},
 	};
 }
 

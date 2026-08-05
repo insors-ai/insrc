@@ -16,6 +16,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { listEpics } from '../services/workflow.js';
+import { makeServices } from '../services/index.js';
 import { formatBytes, formatUptime, formatWhen } from '../ui/format.js';
 
 // ---------------------------------------------------------------------------
@@ -74,4 +75,21 @@ test('formatWhen handles empty + invalid', () => {
 	assert.equal(formatWhen(undefined), 'never');
 	assert.equal(formatWhen(''), 'never');
 	assert.equal(formatWhen('not-a-date'), 'not-a-date');
+});
+
+// ---------------------------------------------------------------------------
+// makeServices — sc1 debug facade (Story s1, t2). Pure construction; no socket.
+// ---------------------------------------------------------------------------
+
+test('makeServices().debug.sections lists the three sections in DebugSectionId order', () => {
+	const svc = makeServices();
+	assert.deepEqual(svc.debug.sections.map(s => s.id), ['daemon', 'mcp', 'logs']);
+	assert.deepEqual(svc.debug.sections.map(s => s.title), ['Daemon', 'MCP', 'Logs']);
+});
+
+test('makeServices() still returns every pre-existing facade (additive-only)', () => {
+	const svc = makeServices();
+	for (const key of ['daemon', 'repo', 'workflow', 'setup', 'config', 'debug'] as const) {
+		assert.equal(typeof svc[key], 'object', `Services.${key} present`);
+	}
 });

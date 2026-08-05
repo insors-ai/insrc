@@ -11,6 +11,7 @@
  */
 
 import type { DaemonStatus, RegisteredRepo, SteeringSelection  } from '../../shared/types.js';
+import type { DebugService } from './debug-types.js';
 import type { SystemInfo } from '../../shared/system-info.js';
 import type { ModelRecommendation } from '../../shared/model-recommender.js';
 import type { ChainReport } from '../../workflow/chain.js';
@@ -24,6 +25,7 @@ import * as workflow from './workflow.js';
 import * as setup from './setup.js';
 import * as config from './config.js';
 import * as maintenance from './maintenance.js';
+import * as debug from './debug.js';
 import { isRunning } from './lifecycle.js';
 import type { EpicSummary, ApproveOutcome } from './workflow.js';
 import type { PullTick, PullResult } from './setup.js';
@@ -78,6 +80,7 @@ export interface Services {
 		write(path: string | string[], value: unknown): Promise<{ ok: boolean }>;
 		reload(): Promise<{ ok: boolean; reloaded?: unknown }>;
 	};
+	readonly debug: DebugService;
 }
 
 export function makeServices(): Services {
@@ -129,6 +132,9 @@ export function makeServices(): Services {
 			show:   config.showConfig,
 			write:  config.writeConfig,
 			reload: config.reloadConfig,
+		},
+		debug: {
+			sections: debug.sections,
 		},
 	};
 }

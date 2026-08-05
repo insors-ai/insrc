@@ -82,6 +82,7 @@ export const CONFIG_CATALOG: readonly ConfigOption[] = [
 	{ path: 'classifier.confirmIntent', type: 'boolean', default: false,        desc: 'prompt to confirm the classified intent each turn' },
 	{ path: 'memory.implicitCapture.enabled', type: 'boolean', default: false,  desc: 'implicit memory capture during retrieval (backstop)' },
 	{ path: 'codeReview.enforce',    type: 'boolean', default: false,           desc: 'enforce a blocking code-review verdict at Story completion (off ⇒ advisory)' },
+	{ path: 'codeReview.freshnessTimeoutMs', type: 'number', default: 120000,   desc: 'max ms the code-review freshness gate block-and-polls for a fresh index before re-prompting' },
 
 	// ── model tiers — THE single model-spec surface (src/config/analyze.ts → models.tiers) ──
 	// A (runner, model) pair is named ONLY here. The shaper + summariser providers

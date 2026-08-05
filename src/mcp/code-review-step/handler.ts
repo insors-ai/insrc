@@ -22,8 +22,10 @@
 
 import { getLogger } from '../../shared/logger.js';
 import type { LLMProvider } from '../../shared/types.js';
+import { existsSync, readFileSync } from 'node:fs';
+import { PATHS } from '../../shared/paths.js';
 import { resolveCodeReviewSubject } from '../../workflow/code-review/subject.js';
-import { fetchCodeReviewGrounding } from '../daemon-stream.js';
+import { fetchCodeReviewGrounding, fetchCodeReviewFreshness } from '../daemon-stream.js';
 import { runCodeReview, type CodeReviewRunnerDeps } from '../../workflow/code-review/runner.js';
 import { codeReviewArtifactPaths, writeAtomic } from '../../workflow/storage.js';
 import { buildAdherencePrompt } from '../../workflow/code-review/dimensions/adherence.js';
@@ -51,19 +53,48 @@ const log = getLogger('mcp:code-review-step:handler');
  *  runner's DEFAULT_JUDGES uses; the judgements turn must cover exactly these. */
 const DIMENSIONS: readonly ReviewDimension[] = ['adherence', 'conventions', 'coverage', 'quality'];
 
-/** Injectable seams so the handler tests stub the daemon/graph/runner. */
+/** Injectable seams so the handler tests stub the daemon/graph/runner. The s9
+ *  gate adds `fetchFreshness` (the daemon freshness IPC), plus `sleep`/`now`
+ *  (deterministic block-and-poll under test) and `freshnessTimeoutMs` (the poll
+ *  bound, from config). */
 export interface CodeReviewStepDeps {
 	readonly resolveSubject: typeof resolveCodeReviewSubject;
 	readonly fetchGrounding: typeof fetchCodeReviewGrounding;
+	readonly fetchFreshness: typeof fetchCodeReviewFreshness;
 	readonly runReview:      typeof runCodeReview;
 	readonly write:          (absPath: string, content: string) => void;
+	readonly sleep:          (ms: number) => Promise<void>;
+	readonly now:            () => number;
+	readonly freshnessTimeoutMs: () => number;
+}
+
+/** The fixed poll interval for the block-and-poll (an internal constant, NOT a
+ *  config knob — only the overall wall-clock bound is configurable). */
+const POLL_INTERVAL_MS = 1500;
+
+/** Read `codeReview.freshnessTimeoutMs` from `~/.insrc/config.json`. Fail-safe:
+ *  defaults to the catalog default (120000) when the file is absent, unparseable,
+ *  or the key is missing/invalid, and NEVER throws. */
+function readFreshnessTimeoutMs(): number {
+	try {
+		if (!existsSync(PATHS.config)) return 120000;
+		const raw = JSON.parse(readFileSync(PATHS.config, 'utf8')) as { codeReview?: { freshnessTimeoutMs?: unknown } };
+		const v = raw.codeReview?.freshnessTimeoutMs;
+		return typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : 120000;
+	} catch {
+		return 120000;
+	}
 }
 
 const DEFAULT_DEPS: CodeReviewStepDeps = {
 	resolveSubject: resolveCodeReviewSubject,
 	fetchGrounding: fetchCodeReviewGrounding,
+	fetchFreshness: fetchCodeReviewFreshness,
 	runReview:      runCodeReview,
 	write:          writeAtomic,
+	sleep:          (ms) => new Promise<void>((resolve) => { setTimeout(resolve, ms); }),
+	now:            () => Date.now(),
+	freshnessTimeoutMs: readFreshnessTimeoutMs,
 };
 
 /** A read-only stand-in provider. On the controller path the injected judges
@@ -158,27 +189,95 @@ async function handleStart(
 	step: CodeReviewStepInput & { phase: 'start' },
 	deps: CodeReviewStepDeps,
 ): Promise<CodeReviewStepOutput> {
-	if (typeof step.epicHash !== 'string' || step.epicHash.length === 0) {
-		return errorResult('bad-input', 'insrc_code_review_step: `epicHash` is required for phase=start.', false);
-	}
-	if (typeof step.storyId !== 'string' || step.storyId.length === 0) {
-		return errorResult('bad-input', 'insrc_code_review_step: `storyId` is required for phase=start.', false);
-	}
-	const repo = step.repo !== undefined && step.repo.length > 0 ? step.repo : process.env['INSRC_REPO'];
-	if (repo === undefined || repo.length === 0) {
-		return errorResult('no-repo', 'insrc_code_review_step: no repo (pass `repo` or set INSRC_REPO).', false);
+	// A resume past a confirm_wait carries the opaque state token (which holds the
+	// subject + identity). An initial start resolves the subject fresh.
+	const resuming = typeof step.state === 'string' && step.state.length > 0;
+
+	let repo:     string;
+	let epicHash: string;
+	let storyId:  string;
+	let subject:  CodeReviewSubject;
+
+	if (resuming) {
+		const payload = loadState(step.state!);   // throws StateTokenNotFound → caught in dispatch
+		repo = payload.repo; epicHash = payload.epicHash; storyId = payload.storyId;
+		subject = payload.subject;
+
+		// proceed:false is an explicit DECLINE — fail closed, no verdict, no record
+		// (s9 ac5; the sibling diff-only fallback story supersedes this exit).
+		if (step.proceed !== true) {
+			releaseState(step.state!);
+			return errorResult(
+				'review-declined',
+				'insrc_code_review_step: review declined — the index is stale for the changed files and waiting was aborted; no verdict was produced.',
+				false,
+			);
+		}
+	} else {
+		if (typeof step.epicHash !== 'string' || step.epicHash.length === 0) {
+			return errorResult('bad-input', 'insrc_code_review_step: `epicHash` is required for phase=start.', false);
+		}
+		if (typeof step.storyId !== 'string' || step.storyId.length === 0) {
+			return errorResult('bad-input', 'insrc_code_review_step: `storyId` is required for phase=start.', false);
+		}
+		const r = step.repo !== undefined && step.repo.length > 0 ? step.repo : process.env['INSRC_REPO'];
+		if (r === undefined || r.length === 0) {
+			return errorResult('no-repo', 'insrc_code_review_step: no repo (pass `repo` or set INSRC_REPO).', false);
+		}
+		repo = r; epicHash = step.epicHash; storyId = step.storyId;
+
+		// 1. Resolve the fixed sc1 subject (file+git, in-process). A DECLINE is not
+		//    a verdict — the review cannot start.
+		const resolved = await deps.resolveSubject(repo, epicHash, storyId);
+		if (!resolved.ok) {
+			return errorResult('no-subject', `insrc_code_review_step: cannot review — ${resolved.reason}.`, false);
+		}
+		subject = resolved.subject;
 	}
 
-	// 1. Resolve the fixed sc1 subject (file+git, in-process). A DECLINE is not a
-	//    verdict — the review cannot start.
-	const resolved = await deps.resolveSubject(repo, step.epicHash, step.storyId);
-	if (!resolved.ok) {
-		return errorResult('no-subject', `insrc_code_review_step: cannot review — ${resolved.reason}.`, false);
-	}
-	const subject = resolved.subject;
+	// 1b. INDEXING-READINESS GATE (s9) — BEFORE grounding. Grounding must never be
+	//     assembled against a stale graph (empty grounding.symbols = the S001
+	//     hollow PASS). The combined signal is queue.isProcessing OR any changed
+	//     file's watermark being behind its mtime.
+	const freshParams = { repo, epicHash, storyId, changedFiles: subject.changedFiles };
 
-	// 2. Fetch the sc2 grounding ONLY over the daemon IPC (k5/k6).
-	const g = await deps.fetchGrounding({ repo, epicHash: step.epicHash, storyId: step.storyId });
+	if (resuming) {
+		// proceed:true → bounded block-and-poll until fresh or the timeout, then
+		// re-prompt. Reuses the SAME state token across re-prompts (still valid
+		// until fresh/aborted).
+		const deadline = deps.now() + deps.freshnessTimeoutMs();
+		for (;;) {
+			const f = await deps.fetchFreshness(freshParams);
+			if (!f.ok) {
+				return errorResult('freshness-unavailable', `insrc_code_review_step: freshness check unavailable — ${f.reason}.`, true);
+			}
+			if (!f.isProcessing && f.staleFiles.length === 0) break;   // fresh → proceed to grounding
+			if (deps.now() >= deadline) {
+				return confirmWaitResult(f.staleFiles, f.isProcessing, step.state!);   // re-prompt (same token)
+			}
+			await deps.sleep(POLL_INTERVAL_MS);
+		}
+		// Fresh: consume the confirm_wait token; a fresh emit_judgements state is
+		// saved below.
+		releaseState(step.state!);
+	} else {
+		const f = await deps.fetchFreshness(freshParams);
+		if (!f.ok) {
+			return errorResult('freshness-unavailable', `insrc_code_review_step: freshness check unavailable — ${f.reason}.`, true);
+		}
+		if (f.isProcessing || f.staleFiles.length > 0) {
+			const token = saveState({
+				runId:       `cr-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+				startedAtMs: Date.now(),
+				repo, epicHash, storyId, subject,
+				// grounding intentionally omitted — not fetched until the index is fresh.
+			});
+			return confirmWaitResult(f.staleFiles, f.isProcessing, token);
+		}
+	}
+
+	// 2. Fresh → fetch the sc2 grounding ONLY over the daemon IPC (k5/k6).
+	const g = await deps.fetchGrounding({ repo, epicHash, storyId });
 	if (!g.ok) {
 		return errorResult('grounding-unavailable', `insrc_code_review_step: grounding unavailable — ${g.reason}.`, true);
 	}
@@ -188,11 +287,7 @@ async function handleStart(
 	const token = saveState({
 		runId:       `cr-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
 		startedAtMs: Date.now(),
-		repo,
-		epicHash:    step.epicHash,
-		storyId:     step.storyId,
-		subject,
-		grounding,
+		repo, epicHash, storyId, subject, grounding,
 	});
 
 	return {
@@ -212,6 +307,27 @@ async function handleStart(
 	};
 }
 
+/** Build a `confirm_wait` result relaying the stale-file list + how to resume. */
+function confirmWaitResult(
+	staleFiles:   readonly string[],
+	isProcessing: boolean,
+	token:        string,
+): CodeReviewStepOutput {
+	const detail = staleFiles.length > 0
+		? `${staleFiles.length} changed file(s) are not freshly indexed` +
+			(staleFiles.length <= 10 ? `: ${staleFiles.join(', ')}` : `: ${staleFiles.slice(0, 10).join(', ')}, …`)
+		: 'the index queue is still processing';
+	return {
+		next:     'confirm_wait',
+		guidance: `The daemon graph is not fresh for this Story's changed code (${detail}). Reviewing now would ground against a ` +
+			'stale/empty graph (a hollow PASS). Resume with { phase:\'start\', state, proceed:true } to wait for a fresh index, ' +
+			'or { phase:\'start\', state, proceed:false } to abort the review.',
+		staleFiles,
+		isProcessing,
+		state: token,
+	};
+}
+
 // ---------------------------------------------------------------------------
 // judgements
 // ---------------------------------------------------------------------------
@@ -224,6 +340,14 @@ async function handleJudgements(
 		return errorResult('bad-input', 'insrc_code_review_step: `state` is required for phase=judgements.', false);
 	}
 	const payload = loadState(step.state);   // throws StateTokenNotFound → caught in dispatch
+
+	// A judgements turn always resumes an emit_judgements state, which carries the
+	// fetched grounding. A confirm_wait state (grounding not yet fetched) is not a
+	// valid judgements resume — guard rather than deref undefined.
+	if (payload.grounding === undefined) {
+		return errorResult('bad-state', 'insrc_code_review_step: this state is awaiting a proceed/abort resume, not judgements.', false);
+	}
+	const grounding = payload.grounding;
 
 	// Validate the controller's judgements BEFORE driving the runner. A fault
 	// returns an error frame and writes nothing (ac5).
@@ -243,7 +367,7 @@ async function handleJudgements(
 			// eslint-disable-next-line @typescript-eslint/require-await
 			judge: async (): Promise<DimensionResult> => byDimension.get(dimension)!,
 		})),
-		assembleGrounding: async (): Promise<CodeReviewGrounding> => payload.grounding,
+		assembleGrounding: async (): Promise<CodeReviewGrounding> => grounding,
 		write: deps.write,
 	};
 

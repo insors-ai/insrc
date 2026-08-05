@@ -40,14 +40,21 @@ function parse(env: { content: readonly { text: string }[] }): CodeReviewStepOut
 	return JSON.parse(env.content[0]!.text) as CodeReviewStepOutput;
 }
 
-/** Injected deps: canned subject + grounding, a REAL runCodeReview, a write spy. */
+/** Injected deps: canned subject + grounding, a REAL runCodeReview, a write spy.
+ *  The s9 freshness seam defaults to FRESH (isProcessing:false, no stale files)
+ *  so a plain start flows straight to emit_judgements as before; sleep is a no-op
+ *  and now/timeout are fixed unless a test overrides them. */
 function makeDeps(overrides: Partial<CodeReviewStepDeps> = {}): { deps: CodeReviewStepDeps; writes: { path: string; content: string }[] } {
 	const writes: { path: string; content: string }[] = [];
 	const deps: CodeReviewStepDeps = {
 		resolveSubject: async () => ({ ok: true, subject: subject() }),
 		fetchGrounding: async () => ({ ok: true, grounding }),
+		fetchFreshness: async () => ({ ok: true, isProcessing: false, staleFiles: [] }),
 		runReview:      runCodeReview,
 		write:          (path, content) => { writes.push({ path, content }); },
+		sleep:          async () => {},
+		now:            () => 0,
+		freshnessTimeoutMs: () => 120000,
 		...overrides,
 	};
 	return { deps, writes };
@@ -209,4 +216,109 @@ test('resending the same judgements token after done fails loadState (no double-
 	const second = parse(await handleCodeReviewStep({ phase: 'judgements', judgements: judgements(), state: start.state }, deps));
 	assert.ok(second.next === 'error' && second.error.code === 'state-not-found');
 	assert.equal(writes.length, writesAfterFirst, 'no second write on the consumed token');
+});
+
+// ---------------------------------------------------------------------------
+// s9 — the indexing-readiness freshness gate
+// ---------------------------------------------------------------------------
+
+// ac1: stale (staleFiles non-empty) and no proceed => confirm_wait, no grounding.
+test('s9: start with a stale index (staleFiles) => next:confirm_wait with the stale list + state, and fetchGrounding is NEVER called', async () => {
+	reset();
+	let groundingCalls = 0;
+	const { deps } = makeDeps({
+		fetchFreshness: async () => ({ ok: true, isProcessing: false, staleFiles: ['src/a.ts'] }),
+		fetchGrounding: async () => { groundingCalls++; return { ok: true, grounding }; },
+	});
+	const out = parse(await handleCodeReviewStep({ phase: 'start', epicHash: EPIC, storyId: STORY, repo: '/repo' }, deps));
+	assert.ok(out.next === 'confirm_wait', 'stale => confirm_wait');
+	assert.deepEqual(out.staleFiles, ['src/a.ts']);
+	assert.ok(typeof out.state === 'string' && out.state.length > 0, 'a resume token');
+	assert.equal(groundingCalls, 0, 'grounding is NOT fetched against a stale graph');
+});
+
+// ac1: isProcessing (empty staleFiles) also gates.
+test('s9: start with isProcessing:true (empty staleFiles) => confirm_wait too', async () => {
+	reset();
+	const { deps } = makeDeps({ fetchFreshness: async () => ({ ok: true, isProcessing: true, staleFiles: [] }) });
+	const out = parse(await handleCodeReviewStep({ phase: 'start', epicHash: EPIC, storyId: STORY, repo: '/repo' }, deps));
+	assert.ok(out.next === 'confirm_wait');
+	assert.equal(out.isProcessing, true);
+});
+
+// ac4: fresh => straight to emit_judgements; the persisted record is groundingMode:'full'.
+test('s9: a fresh index proceeds directly to emit_judgements and the persisted record is groundingMode:full (ac4)', async () => {
+	reset();
+	const { done, writes } = await runFullFlow();   // makeDeps defaults to fresh
+	assert.ok(done.next === 'done');
+	const json = writes.find(w => w.path.endsWith('.json'))!;
+	const body = (JSON.parse(json.content) as { body: { groundingMode: string } }).body;
+	assert.equal(body.groundingMode, 'full', 'the graph-grounded record is stamped full');
+});
+
+// ac2: proceed:true block-and-polls until fresh, never reindexes, then continues.
+test('s9: proceed:true block-and-polls the freshness IPC (stale twice then fresh) then continues to emit_judgements', async () => {
+	reset();
+	let ticks = 0;
+	let sleeps = 0;
+	const { deps } = makeDeps({
+		fetchFreshness: async () => {
+			ticks += 1;
+			return ticks < 3
+				? { ok: true, isProcessing: false, staleFiles: ['src/a.ts'] }
+				: { ok: true, isProcessing: false, staleFiles: [] };
+		},
+		sleep: async () => { sleeps += 1; },
+	});
+	// initial stale → confirm_wait
+	const cw = parse(await handleCodeReviewStep({ phase: 'start', epicHash: EPIC, storyId: STORY, repo: '/repo' }, deps));
+	assert.ok(cw.next === 'confirm_wait');
+	ticks = 0;   // reset the counter for the resume poll
+	// resume proceed:true → polls until fresh (3rd tick) then emit_judgements
+	const resumed = parse(await handleCodeReviewStep({ phase: 'start', state: cw.state, proceed: true }, deps));
+	assert.ok(resumed.next === 'emit_judgements', 'fresh after polling → emit_judgements');
+	assert.ok(ticks >= 3, 'the poll looped until fresh');
+	assert.ok(sleeps >= 1, 'it slept between poll ticks (never reindexed)');
+});
+
+// ac3: timeout during the poll => confirm_wait again (re-prompt), not a unilateral decision.
+test('s9: proceed:true that never becomes fresh before the timeout re-prompts with confirm_wait (ac3)', async () => {
+	reset();
+	let clock = 0;
+	const { deps, writes } = makeDeps({
+		fetchFreshness: async () => ({ ok: true, isProcessing: false, staleFiles: ['src/a.ts'] }),
+		now: () => clock,
+		sleep: async () => { clock += 1000; },   // advance the fake clock each poll
+		freshnessTimeoutMs: () => 2500,
+	});
+	const cw = parse(await handleCodeReviewStep({ phase: 'start', epicHash: EPIC, storyId: STORY, repo: '/repo' }, deps));
+	assert.ok(cw.next === 'confirm_wait');
+	const reprompt = parse(await handleCodeReviewStep({ phase: 'start', state: cw.state, proceed: true }, deps));
+	assert.ok(reprompt.next === 'confirm_wait', 'timeout re-prompts rather than deciding');
+	assert.equal(writes.length, 0, 'nothing written on a timeout re-prompt');
+});
+
+// ac5: abort (proceed:false) => fail closed, no judges, no record.
+test('s9: proceed:false (abort) fails closed — no runReview, no write, terminal error', async () => {
+	reset();
+	let reviewCalls = 0;
+	const { deps, writes } = makeDeps({
+		fetchFreshness: async () => ({ ok: true, isProcessing: false, staleFiles: ['src/a.ts'] }),
+		runReview:      async (...args) => { reviewCalls++; return runCodeReview(...args); },
+	});
+	const cw = parse(await handleCodeReviewStep({ phase: 'start', epicHash: EPIC, storyId: STORY, repo: '/repo' }, deps));
+	assert.ok(cw.next === 'confirm_wait');
+	const aborted = parse(await handleCodeReviewStep({ phase: 'start', state: cw.state, proceed: false }, deps));
+	assert.ok(aborted.next === 'error' && aborted.error.code === 'review-declined', 'abort => fail-closed error');
+	assert.equal(reviewCalls, 0, 'no judges ran');
+	assert.equal(writes.length, 0, 'no record written');
+});
+
+// error: freshness IPC failure => error frame, no confirm_wait, no write.
+test('s9: a freshness-IPC failure on the initial check => next:error (freshness-unavailable), no confirm_wait, no write', async () => {
+	reset();
+	const { deps, writes } = makeDeps({ fetchFreshness: async () => ({ ok: false, reason: 'daemon is not running' }) });
+	const out = parse(await handleCodeReviewStep({ phase: 'start', epicHash: EPIC, storyId: STORY, repo: '/repo' }, deps));
+	assert.ok(out.next === 'error' && out.error.code === 'freshness-unavailable');
+	assert.equal(writes.length, 0);
 });

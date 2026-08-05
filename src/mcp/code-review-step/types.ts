@@ -27,12 +27,23 @@ import type { CodeReviewGrounding, CodeReviewSubject, DimensionResult } from '..
 export type CodeReviewStepPhase = 'start' | 'judgements';
 
 /** Kick off a code review over a built Story. The daemon resolves the fixed
- *  subject + serves grounding; the controller then judges each dimension. */
+ *  subject + serves grounding; the controller then judges each dimension.
+ *
+ *  s9 (indexing-readiness gate): when `start` finds the index STALE for the
+ *  changed files it returns a `confirm_wait` result carrying an opaque `state`.
+ *  The caller resumes by re-calling `start` with that `state` plus `proceed`:
+ *  `proceed:true` begins the bounded block-and-poll (wait for a fresh index);
+ *  `proceed:false` aborts the review (fail-closed, no verdict). A plain start
+ *  call (no `state`/`proceed`) is unchanged. */
 export interface CodeReviewStepInputStart {
 	readonly phase:    'start';
-	readonly epicHash: string;
-	readonly storyId:  string;
+	readonly epicHash?: string | undefined;
+	readonly storyId?:  string | undefined;
 	readonly repo?:    string | undefined;
+	/** Resume past a `confirm_wait`: true = wait for a fresh index, false = abort. */
+	readonly proceed?: boolean | undefined;
+	/** The opaque state token returned by a prior `confirm_wait` turn. */
+	readonly state?:   string | undefined;
 }
 
 /** The controller's four dimension judgements (one DimensionResult per
@@ -71,6 +82,20 @@ export interface CodeReviewStepEmitJudgements {
 	readonly state:    string;
 }
 
+/** s9: the index is stale for the changed files. The controller relays the
+ *  stale-file list to the user and resumes `start` with the opaque `state` and
+ *  `proceed:true` (wait) or `proceed:false` (abort). Returned both on the initial
+ *  stale detection and as the timeout re-prompt. */
+export interface CodeReviewStepConfirmWait {
+	readonly next:         'confirm_wait';
+	readonly guidance:     string;
+	/** The changed files whose index watermark is behind their mtime. */
+	readonly staleFiles:   readonly string[];
+	/** Whether the index queue is still processing (the other half of the signal). */
+	readonly isProcessing: boolean;
+	readonly state:        string;
+}
+
 export interface CodeReviewStepDone {
 	readonly next:     'done';
 	readonly verdict:  ReviewVerdict;
@@ -90,6 +115,7 @@ export interface CodeReviewStepError {
 
 export type CodeReviewStepOutput =
 	| CodeReviewStepEmitJudgements
+	| CodeReviewStepConfirmWait
 	| CodeReviewStepDone
 	| CodeReviewStepError;
 
@@ -105,8 +131,11 @@ export interface CodeReviewStepStatePayload {
 	readonly storyId:     string;
 	/** The resolved sc1 subject (used to key + scope the record on the judgements turn). */
 	readonly subject:     CodeReviewSubject;
-	/** The daemon-served grounding, replayed to the runner's assembleGrounding. */
-	readonly grounding:   CodeReviewGrounding;
+	/** The daemon-served grounding, replayed to the runner's assembleGrounding.
+	 *  UNDEFINED in a `confirm_wait` state saved by the s9 gate — at that point
+	 *  grounding has not been fetched yet (the gate precedes fetchGrounding); the
+	 *  post-poll path fetches it and saves the full payload before emit_judgements. */
+	readonly grounding?:  CodeReviewGrounding | undefined;
 }
 
 // ---------------------------------------------------------------------------

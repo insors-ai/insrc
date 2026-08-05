@@ -605,6 +605,36 @@ async function main(): Promise<void> {
 			return { ok: true as const, grounding };
 		},
 
+		// Code-review s9 — the indexing-readiness freshness check. Read-only:
+		// returns { isProcessing, staleFiles } for the changed set computed from
+		// queue.isProcessing + the per-file graph watermark (never a reindex, never
+		// a store mutation). The controller-side gate (insrc_code_review_step) polls
+		// this before assembling grounding so a stale graph cannot yield a hollow
+		// PASS. Additive sibling of codeReview.grounding.
+		'codeReview.freshness': async (params) => {
+			const p = (params ?? {}) as { repo?: string; epicHash?: string; storyId?: string; changedFiles?: unknown };
+			const repoPath = (p.repo !== undefined && p.repo.length > 0 ? p.repo : process.env['INSRC_REPO']) ?? '';
+			if (repoPath.length === 0) { return { error: 'codeReview.freshness: `repo` is required' }; }
+			if (typeof p.epicHash !== 'string' || p.epicHash.length === 0) { return { error: 'codeReview.freshness: `epicHash` is required' }; }
+			if (typeof p.storyId !== 'string' || p.storyId.length === 0) { return { error: 'codeReview.freshness: `storyId` is required' }; }
+			const changedFiles = Array.isArray(p.changedFiles) ? p.changedFiles.filter((f): f is string => typeof f === 'string') : [];
+			const { computeCodeReviewFreshness, realFreshnessGraphDeps } = await import('../workflow/code-review/freshness.js');
+			const graphDeps = await realFreshnessGraphDeps();
+			const repos = await listRepos(db);
+			const repoRow = repos.find(r => r.path === repoPath);
+			const result = await computeCodeReviewFreshness(repoPath, changedFiles, {
+				isProcessing: () => queue.isProcessing,
+				repoLastIndexed: async () => {
+					const li = repoRow?.lastIndexed;
+					if (li === undefined) return 0;
+					const ms = typeof li === 'number' ? li : Date.parse(String(li));
+					return Number.isFinite(ms) ? ms : 0;
+				},
+				...graphDeps,
+			});
+			return { isProcessing: result.isProcessing, staleFiles: result.staleFiles };
+		},
+
 		'repo.reindex': async (params) => {
 			const { path: repoPath } = params as { path: string };
 			const repos = await listRepos(db);

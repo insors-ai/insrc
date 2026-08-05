@@ -226,10 +226,14 @@ function buildArtifact(
 		storyId:       subject.storyId,
 	};
 	const body: CodeReviewBody = {
-		kind:       'code-review',
-		epicHash:   subject.epicHash,
-		storyId:    subject.storyId,
-		subject:    { changedFiles: subject.changedFiles },
+		kind:          'code-review',
+		epicHash:      subject.epicHash,
+		storyId:       subject.storyId,
+		// s9: the runner is the graph-grounded path (the four judges over graph
+		// symbol summaries), so it always stamps 'full'. The diff-only fallback
+		// story stamps 'degraded' on its own path.
+		groundingMode: 'full',
+		subject:       { changedFiles: subject.changedFiles },
 		dimensions,
 		verdict,
 		counts,

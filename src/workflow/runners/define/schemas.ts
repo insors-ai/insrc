@@ -213,7 +213,13 @@ export const storiesComposeSchema = {
 							type: 'object',
 							required: ['id', 'text', 'type', 'source'],
 							properties: {
-								id:     { type: 'string', pattern: '^c\\d+$' },
+								// `id` uses the `lc` namespace (NOT `c`) so a local-constraint id
+								// echoed into a downstream LLD body reads as `[[lcN]]` — which the
+								// synthesizer's c-only citation guard ignores (exactly like `[[kN]]`)
+								// rather than hard-failing it as a dangling citation. See
+								// LLD-dcbb529e465417af-S001. `source` stays `^c\d+$`: it references a
+								// real DEF citation and must remain in the citation namespace.
+								id:     { type: 'string', pattern: '^lc\\d+$' },
 								text:   { type: 'string' },
 								type:   { enum: ['convention', 'contract', 'invariant', 'stakeholder'] },
 								source: { type: 'string', pattern: '^c\\d+$' },

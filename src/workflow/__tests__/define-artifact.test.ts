@@ -117,6 +117,27 @@ test('renderDefineMarkdown escapes pipes in constraint text', () => {
 	assert.ok(md.includes('foo \\| bar'), md);
 });
 
+// S001 — the renderer emits an lc-namespaced local constraint generically
+// (id shown verbatim, source cited) — it uses c.id generically, so the c->lc
+// rename needs no renderer change.
+test('S001: renderDefineMarkdown renders an lc-namespaced local constraint with its source citation intact', () => {
+	const body: DefineBody = {
+		...fixture(),
+		stories: [{
+			id: 's1', title: 't', userValue: 'v',
+			acceptanceCriteria: [{ id: 'ac1', given: 'g', when: 'w', then: 'z', operationalizes: [] }],
+			localConstraints: [{ id: 'lc1', text: 'must not X', type: 'convention', source: 'c1' }],
+		}],
+	};
+	const md = renderDefineMarkdown({
+		meta: { workflow: 'define', runId: 'x', repoPath: '/', createdAt: '', model: 'client', elapsedMs: 0, repoIndexedAt: null, schemaVersion: 1 },
+		body,
+		citations: [{ id: 'c1', kind: 'doc', ref: 'x' }],
+	});
+	assert.ok(md.includes('`lc1`'), `the lc-namespaced id renders verbatim: ${md}`);
+	assert.ok(md.includes('[[c1]]'), 'the local constraint still cites its c-namespaced source');
+});
+
 // ---------------------------------------------------------------------------
 // isDefineBody
 // ---------------------------------------------------------------------------

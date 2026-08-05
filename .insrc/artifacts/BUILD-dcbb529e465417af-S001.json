@@ -1,0 +1,14 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": true,
+    "sizeClass": "small",
+    "epicHash": "dcbb529e465417af",
+    "storyId": "S001",
+    "createdAt": "2026-08-05T10:41:11.660Z"
+  },
+  "body": {
+    "focus": "Renamespace DEF local-constraint ids off the citation c-namespace: localConstraints[].id ^c\\d+$ -> ^lc\\d+$ (schemas.ts) + align the define runner prompt guidance (define/index.ts) so new DEFs mint lcN ids; source stays ^c\\d+$. Going-forward only; existing DEFs unmigrated. Tests: schema accepts lc/rejects c + source stays c; validateCitations ignores lc/k refs but still fails dangling c-refs; renderer renders lc-local-constraint with its source citation.",
+    "producesLld": true
+  }
+}

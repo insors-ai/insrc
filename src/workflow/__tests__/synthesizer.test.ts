@@ -66,6 +66,20 @@ test('validateCitations fails on non-cN id shape', () => {
 	assert.equal(r.ok, false);
 });
 
+// S001 — the c-only guard IGNORES lc-refs (and k-refs), so a body echoing a
+// Story's lc-namespaced local constraint does not fail as a dangling citation.
+test('S001: validateCitations IGNORES lc-refs and k-refs — an lc/k ref absent from the citation list does NOT fail', () => {
+	const body = 'A local constraint [[lc7]] and an epic constraint [[k1]] are echoed here, plus a real [[c1]].';
+	assert.deepEqual(validateCitations(body, cits), { ok: true });
+});
+
+// S001 — the guard is NOT weakened: a genuine dangling c-ref still hard-fails.
+test('S001: validateCitations still FAILS a genuine dangling c-ref (the guard is not weakened by S001)', () => {
+	const r = validateCitations('A dangling [[c7]] ref not in the list.', cits);
+	assert.equal(r.ok, false);
+	if (!r.ok) assert.equal(r.kind, 'citations');
+});
+
 // ---------------------------------------------------------------------------
 // checkScopeBoundary
 // ---------------------------------------------------------------------------

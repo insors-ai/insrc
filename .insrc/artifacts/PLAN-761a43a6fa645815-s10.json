@@ -1,0 +1,366 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1785913740182-y56y1x",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-08-05T07:14:31.578Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 331334,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "761a43a6fa645815",
+    "epicSlug": "add-daemon-driven-code-review-stage",
+    "storyId": "s10",
+    "lldRunId": "wf-1785912225300-ttqgac",
+    "lldEffectiveHash": "c348dfab1232ed8f32ee416ac2e84fcf4566f6c166450b0655efb411a80a3334",
+    "approvedAt": "2026-08-05T07:23:19.336Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Widen CodeReviewBody.groundingMode to 'full' | 'degraded'",
+        "summary": "In src/workflow/code-review/types.ts widen the s9-added CodeReviewBody.groundingMode field from the literal 'full' to the union 'full' | 'degraded'. Additive value; existing 'full' records unaffected. No change to ChangedSymbolSummary/CodeReviewGrounding (reused as-is).",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "CodeReviewBody.groundingMode is typed 'full' | 'degraded' in types.ts",
+          "the package still type-checks (tsc) with the widened union",
+          "no existing 'full' stamping site breaks"
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "types: a CodeReviewBody with groundingMode 'degraded' type-checks and round-trips (compile-time + a value assertion)"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Add groundingMode + capVerdictAtWarn opts to runCodeReview",
+        "summary": "In src/workflow/code-review/runner.ts add optional groundingMode?: 'full'|'degraded' (default 'full') and capVerdictAtWarn?: boolean (default false) to RunCodeReviewOpts; thread groundingMode into buildArtifact (stamp body.groundingMode = opts.groundingMode ?? 'full', replacing the hardcoded 'full') and apply capVerdictAtWarn in foldVerdict (when true, promote a folded 'pass' to 'warn'; NEVER lower a block/warn). Both default to today's behaviour so existing callers are byte-identical.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "RunCodeReviewOpts carries optional groundingMode + capVerdictAtWarn",
+          "buildArtifact stamps body.groundingMode from opts (default 'full')",
+          "foldVerdict with capVerdictAtWarn:true maps a would-be 'pass' to 'warn' and leaves block/warn unchanged",
+          "with neither opt set, buildArtifact stamps 'full' and foldVerdict is unchanged (default parity)"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "runner: runCodeReview with opts.groundingMode:'degraded' -> the persisted record body.groundingMode === 'degraded'"
+          },
+          {
+            "level": "unit",
+            "name": "runner: capVerdictAtWarn:true + all-empty findings (would fold pass) -> verdict 'warn'"
+          },
+          {
+            "level": "unit",
+            "name": "runner: capVerdictAtWarn:true + a HIGH finding -> verdict stays 'block' (cap never lowers block/warn)"
+          },
+          {
+            "level": "unit",
+            "name": "runner: NO groundingMode/cap opts -> body.groundingMode === 'full' and the verdict fold is unchanged (default parity)"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Add assembleDiffCodeReviewGrounding + DiffGroundingDeps (working-tree diff, HEAD^ fallback)",
+        "summary": "In src/workflow/code-review/grounding.ts add assembleDiffCodeReviewGrounding(repoPath, deps?) — a peer of assembleCodeReviewGrounding — plus a DiffGroundingDeps seam (workingTreeDiff + lastCommitDiff over the git_diff builtin) and a real default. It derives the changed set from the working-tree diff; when that is empty it falls back to gitDiffTool { from:'HEAD^' } (last commit); when HEAD has no parent it falls back to the root commit's contents; and it emits a CodeReviewGrounding whose symbols[] is one per-file pseudo-ChangedSymbolSummary (kind:'file', name:file, hunks in signature, empty edges; a binary marker where no textual hunks). Returns { grounding, changedFiles }. Read-only; hunks bounded by git_diff maxBytes. An empty result is a valid grounding (symbols:[]), not an error; a git failure on BOTH paths propagates.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "assembleDiffCodeReviewGrounding(repoPath, deps?) returns { grounding, changedFiles } with one pseudo-ChangedSymbolSummary per changed file",
+          "non-empty working tree uses the working-tree diff and does NOT call the HEAD^ seam",
+          "empty working tree falls back to { from:'HEAD^' }; HEAD-with-no-parent falls back to the root commit; both-empty yields symbols:[]",
+          "a binary changed file yields a pseudo-symbol with a binary marker (no hunks) still present in changedFiles",
+          "the assembler is read-only (never mutates / reindexes / commits) and a both-paths git failure propagates"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "assembler: working tree NON-empty -> one row per working-tree changed file (kind:'file', name:file, hunks in signature); HEAD^ seam NOT called"
+          },
+          {
+            "level": "unit",
+            "name": "assembler: working tree EMPTY -> falls back to { from:'HEAD^' } diff; symbols reflect the last commit's changed files"
+          },
+          {
+            "level": "unit",
+            "name": "assembler: a binary changed file -> a pseudo-symbol with a binary marker (no hunks), still present in changedFiles"
+          },
+          {
+            "level": "unit",
+            "name": "assembler: both working-tree and HEAD^ empty -> a valid grounding with symbols:[] (no crash)"
+          },
+          {
+            "level": "unit",
+            "name": "assembler: a truncated GitDiffData still yields a valid grounding (bounded hunks, review proceeds, no crash)"
+          },
+          {
+            "level": "unit",
+            "name": "assembler: neither git call mutates (the injected git seam is read-only; no reindex/commit invoked)"
+          },
+          {
+            "level": "integration",
+            "name": "assembler: a clean-working-tree fixture repo with one commit -> real gitDiffTool returns the last commit's changed files + hunks via the HEAD^ fallback"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Add the degraded state marker + assembleDiffGrounding dep seam",
+        "summary": "Add optional groundingMode?: 'degraded' to CodeReviewStepStatePayload (src/mcp/code-review-step/types.ts) so the judgements turn knows to drive runCodeReview with the degraded+cap options, and add assembleDiffGrounding: typeof assembleDiffCodeReviewGrounding to CodeReviewStepDeps (src/mcp/code-review-step/handler.ts) with a real default wired into DEFAULT_DEPS. Both additive; the existing subject + optional grounding fields + s9 seams unchanged.",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "CodeReviewStepStatePayload carries optional groundingMode?: 'degraded'",
+          "CodeReviewStepDeps carries assembleDiffGrounding wired to the real assembleDiffCodeReviewGrounding in DEFAULT_DEPS",
+          "the s9 seams (resolveSubject/fetchGrounding/fetchFreshness/runReview/write/sleep/now/freshnessTimeoutMs) are unchanged"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "state/deps: a saved CodeReviewStepStatePayload with groundingMode:'degraded' round-trips through saveState/loadState, and DEFAULT_DEPS.assembleDiffGrounding is the real assembler"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Replace the decline branch with the diff-only degraded path",
+        "summary": "In src/mcp/code-review-step/handler.ts replace the s9 decline exit (errorResult('review-declined', ...) at ~handler.ts:211) with: call deps.assembleDiffGrounding(repo); on a both-paths git failure return a CodeReviewStepError (code 'diff-unavailable', retryable:true) and write NO record; otherwise saveState({subject, grounding, groundingMode:'degraded'}) and return next:'emit_judgements' over the diff grounding. In the judgements turn, when the loaded state is marked groundingMode:'degraded', drive runCodeReview with groundingMode:'degraded' + capVerdictAtWarn:true; otherwise (graph path) pass neither. The fresh path + proceed:true poll + graph judgements turn stay byte-identical to s9 (ac6).",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t2",
+          "t3",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "the decline branch (proceed:false + state) calls assembleDiffGrounding and returns next:'emit_judgements' (no 'review-declined' error)",
+          "a both-paths diff failure returns next:'error' code 'diff-unavailable' and writes NO record",
+          "the degraded judgements turn drives runReview with groundingMode:'degraded' + capVerdictAtWarn:true and persists a record",
+          "the fresh path + proceed:true poll + graph judgements turn are unchanged (graph path passes neither opt)"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "handler: decline (proceed:false + state) -> assembleDiffGrounding is called, next:'emit_judgements' over the diff grounding, and NO 'review-declined' error"
+          },
+          {
+            "level": "unit",
+            "name": "handler: the degraded judgements turn drives runReview with groundingMode:'degraded' + capVerdictAtWarn:true (assert the runReview spy's opts) and persists a record"
+          },
+          {
+            "level": "unit",
+            "name": "handler: a diff-unavailable failure (assembleDiffGrounding rejects) -> next:'error' (diff-unavailable), no write"
+          },
+          {
+            "level": "unit",
+            "name": "handler ac6 regression: a fresh index (no decline) still returns emit_judgements over graph grounding and drives runReview with the default opts (groundingMode:'full', no cap)"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Tests: decline diff-only path, assembler fallback, runner opts, enforce gate",
+        "summary": "Finalize the s10 test suite, node:test via npx tsx --test. In src/mcp/code-review-step/__tests__/handler.test.ts: extend makeDeps with an injectable assembleDiffGrounding + a runReview spy that records opts; REPLACE the s9 abort->review-declined assertion (~handler.test.ts:312) with the diff-only expectation. In src/workflow/code-review/__tests__: add the enforce-gate degraded-warn test; confirm the assembler + runner unit tests (from t2/t3/t5) and the gated integration test all pass. Run the code-review + mcp suites green.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "handler.test.ts abort->review-declined assertion is replaced by the diff-only expectation and the decline/degraded/diff-unavailable/ac6 tests pass",
+          "the assembler unit tests (working-tree, HEAD^ fallback, binary, both-empty, truncated-diff bounded grounding, read-only) + the gated real-git integration test pass",
+          "the runner groundingMode-stamp + warn-cap unit tests and the degraded-warn enforce-gate test pass",
+          "the full code-review + mcp suites run green"
+        ],
+        "derivedFrom": [
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "gate: the codeReview.enforce gate over a groundingMode:'degraded' record with verdict 'warn' withholds completion (requires an override), exactly as any non-pass verdict does"
+          },
+          {
+            "level": "unit",
+            "name": "handler: the abort path no longer returns 'review-declined' (the s9 assertion is replaced by the diff-only expectation)"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "decline (proceed:false + state) -> assembleDiffGrounding is called, next:'emit_judgements' is returned over the diff grounding, and NO 'review-declined' error",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "the degraded judgements turn drives runReview with groundingMode:'degraded' + capVerdictAtWarn:true (assert the runReview spy's opts) and persists a record",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "ac6 regression: a fresh index (no decline) still returns emit_judgements over graph grounding and the judgements turn drives runReview with the default opts (groundingMode:'full', no cap)",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "a diff-unavailable failure (assembleDiffGrounding rejects) -> next:'error' (diff-unavailable), no write",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "the abort path no longer returns 'review-declined' (the s9 test is replaced by the diff-only expectation)",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "working tree NON-empty -> grounding.symbols has one row per working-tree changed file (kind:'file', name:file, hunks in signature); the HEAD^ seam is NOT called",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "working tree EMPTY -> falls back to the { from:'HEAD^' } diff; grounding.symbols reflects the last commit's changed files (ac2)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "a binary changed file -> a pseudo-symbol with a binary marker (no hunks), still present in changedFiles",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "both working-tree and HEAD^ empty -> a valid grounding with symbols:[] (no crash)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "neither git call mutates (assert the injected git seam is read-only; no reindex/commit invoked)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "runCodeReview with opts.groundingMode:'degraded' -> the persisted record body.groundingMode === 'degraded'",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "runCodeReview with opts.capVerdictAtWarn:true + all-empty findings (would fold pass) -> verdict 'warn' (ac4)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "capVerdictAtWarn:true + a HIGH finding -> verdict stays 'block' (the cap never lowers block/warn)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "runCodeReview with NO groundingMode/cap opts -> body.groundingMode === 'full' and the verdict fold is unchanged (ac6 default parity)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "the codeReview.enforce gate over a groundingMode:'degraded' record with verdict 'warn' withholds completion (requires an override), exactly as any non-pass verdict does (ac5)",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "a clean-working-tree fixture repo with one commit -> assembleDiffCodeReviewGrounding (real gitDiffTool) returns the last commit's changed files + hunks via the HEAD^ fallback",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s10 — CodeReviewBody.groundingMode widen + handleCodeReviewStep decline branch (src/workflow/code-review/types.ts, src/mcp/code-review-step/handler.ts)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s10 — assembleDiffCodeReviewGrounding + git_diff {from:'HEAD^'} last-commit fallback (src/workflow/code-review/grounding.ts, src/daemon/tools/builtins/git/diff.ts, src/workflow/code-review/subject.ts)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s10 — runCodeReview RunCodeReviewOpts groundingMode + capVerdictAtWarn; buildArtifact stamp + foldVerdict warn-cap (src/workflow/code-review/runner.ts)"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s10 — CodeReviewStepStatePayload.groundingMode marker + CodeReviewStepDeps.assembleDiffGrounding seam; codeReview.enforce verdict gate (src/mcp/code-review-step/types.ts, src/workflow/code-review/gate.ts)"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s10 — chosenAlternative a1 (diff → pseudo-symbol grounding, reuse the four judges + runner)"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s10 — testStrategy + HLD boundary (s10 owns/depends []; node:test via npx tsx --test)"
+    }
+  ]
+}

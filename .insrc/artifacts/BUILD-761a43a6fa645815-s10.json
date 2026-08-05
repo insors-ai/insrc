@@ -1,0 +1,40 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": false,
+    "epicHash": "761a43a6fa645815",
+    "storyId": "s10",
+    "createdAt": "2026-08-05T07:35:15.073Z",
+    "updatedAt": "2026-08-05T07:35:15.073Z"
+  },
+  "body": {
+    "focus": "s10 diff-only degraded fallback: assembleDiffCodeReviewGrounding (working-tree diff, HEAD^ fallback), runCodeReview groundingMode+capVerdictAtWarn, decline branch -> diff-only path",
+    "producesLld": false,
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      }
+    ]
+  }
+}

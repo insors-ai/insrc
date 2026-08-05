@@ -86,6 +86,15 @@ export interface RunCodeReviewOpts {
 	readonly modelLabel:  string;
 	readonly signal?:     AbortSignal | undefined;
 	readonly onProgress?: ((f: CodeReviewProgress) => void) | undefined;
+	/** How this run was grounded — stamped verbatim onto `body.groundingMode`.
+	 *  Defaults to `'full'` (the graph-grounded path). The s10 diff-only fallback
+	 *  passes `'degraded'`. */
+	readonly groundingMode?: 'full' | 'degraded' | undefined;
+	/** When true, a folded `'pass'` is promoted to `'warn'` (block + warn are
+	 *  NEVER lowered). Defaults to false. The s10 diff-only path sets it so a
+	 *  degraded review can never register a `pass` — it reasons over diff hunks
+	 *  rather than graph symbols, so a clean fold is not trustworthy as a pass. */
+	readonly capVerdictAtWarn?: boolean | undefined;
 }
 
 /** Incremental progress frame streamed through `onProgress`. */
@@ -152,9 +161,11 @@ export async function runCodeReview(
 			emit({ phase: 'dimension-done', dimension: slot.dimension });
 		}
 
-		// 3. Fold the verdict from the aggregated severities.
+		// 3. Fold the verdict from the aggregated severities. On the degraded
+		//    (diff-only) path the fold is warn-capped: a clean fold can never be a
+		//    pass, because the judges reasoned over diff hunks, not graph symbols.
 		const counts  = foldCounts(dimensions);
-		const verdict = foldVerdict(counts);
+		const verdict = foldVerdict(counts, opts.capVerdictAtWarn === true);
 
 		// 4. Build the record.
 		const artifact = buildArtifact(subject, dimensions, verdict, counts, opts, startedAtMs);
@@ -198,9 +209,15 @@ function foldCounts(dimensions: readonly DimensionResult[]): { readonly high: nu
 }
 
 /** The verdict fold — mirrors the artifact-review vocabulary VERBATIM: any HIGH
- *  → block, else any MED → warn, else pass (LOW neither warns nor blocks). */
-function foldVerdict(counts: { readonly high: number; readonly med: number; readonly low: number }): ReviewVerdict {
-	return counts.high > 0 ? 'block' : counts.med > 0 ? 'warn' : 'pass';
+ *  → block, else any MED → warn, else pass (LOW neither warns nor blocks). When
+ *  `capAtWarn` is set a would-be `'pass'` is promoted to `'warn'` — the cap NEVER
+ *  lowers a `block`/`warn` (it only raises the floor for a clean fold). */
+function foldVerdict(
+	counts: { readonly high: number; readonly med: number; readonly low: number },
+	capAtWarn = false,
+): ReviewVerdict {
+	const verdict: ReviewVerdict = counts.high > 0 ? 'block' : counts.med > 0 ? 'warn' : 'pass';
+	return capAtWarn && verdict === 'pass' ? 'warn' : verdict;
 }
 
 /** Assemble the sc4 record. `meta` mirrors ArtifactMetaBase (so the storage +
@@ -229,10 +246,9 @@ function buildArtifact(
 		kind:          'code-review',
 		epicHash:      subject.epicHash,
 		storyId:       subject.storyId,
-		// s9: the runner is the graph-grounded path (the four judges over graph
-		// symbol summaries), so it always stamps 'full'. The diff-only fallback
-		// story stamps 'degraded' on its own path.
-		groundingMode: 'full',
+		// s9: the graph-grounded path stamps 'full' (the default). s10's diff-only
+		// fallback passes opts.groundingMode:'degraded' to stamp its own path.
+		groundingMode: opts.groundingMode ?? 'full',
 		subject:       { changedFiles: subject.changedFiles },
 		dimensions,
 		verdict,
@@ -263,7 +279,9 @@ function validateArtifact(a: CodeReviewArtifact, expectedDims: readonly ReviewDi
 	if (refold.high !== b.counts.high || refold.med !== b.counts.med || refold.low !== b.counts.low) {
 		return `counts {${b.counts.high},${b.counts.med},${b.counts.low}} disagree with the folded severities {${refold.high},${refold.med},${refold.low}}`;
 	}
-	const expectedVerdict = foldVerdict(refold);
+	// A degraded record is warn-capped: its verdict must never be a bare 'pass'.
+	// Re-fold with the same cap so the check is consistent with what was built.
+	const expectedVerdict = foldVerdict(refold, b.groundingMode === 'degraded');
 	if (b.verdict !== expectedVerdict) {
 		return `verdict '${b.verdict}' disagrees with the counts (expected '${expectedVerdict}')`;
 	}

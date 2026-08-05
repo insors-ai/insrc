@@ -27,6 +27,16 @@ const subject = (): CodeReviewSubject => ({
 
 const grounding: CodeReviewGrounding = { symbols: [] };
 
+/** A canned diff-only grounding: one per-file pseudo-symbol for a changed file
+ *  recovered from the diff (kind:'file', hunks in signature). */
+const DIFF_CHANGED = ['src/a.ts'];
+const diffGrounding: CodeReviewGrounding = {
+	symbols: [{
+		entityId: 'diff:src/a.ts', file: 'src/a.ts', kind: 'file', name: 'src/a.ts',
+		signature: '@@ -1 +1 @@\n-old\n+new', callers: [], callees: [], testsReaching: [],
+	}],
+};
+
 /** A well-formed judgements payload: one DimensionResult per dimension. */
 function judgements(
 	perDim: Partial<Record<ReviewDimension, DimensionResult['findings']>> = {},
@@ -50,6 +60,7 @@ function makeDeps(overrides: Partial<CodeReviewStepDeps> = {}): { deps: CodeRevi
 		resolveSubject: async () => ({ ok: true, subject: subject() }),
 		fetchGrounding: async () => ({ ok: true, grounding }),
 		fetchFreshness: async () => ({ ok: true, isProcessing: false, staleFiles: [] }),
+		assembleDiffGrounding: async () => ({ grounding: diffGrounding, changedFiles: DIFF_CHANGED }),
 		runReview:      runCodeReview,
 		write:          (path, content) => { writes.push({ path, content }); },
 		sleep:          async () => {},
@@ -298,22 +309,6 @@ test('s9: proceed:true that never becomes fresh before the timeout re-prompts wi
 	assert.equal(writes.length, 0, 'nothing written on a timeout re-prompt');
 });
 
-// ac5: abort (proceed:false) => fail closed, no judges, no record.
-test('s9: proceed:false (abort) fails closed — no runReview, no write, terminal error', async () => {
-	reset();
-	let reviewCalls = 0;
-	const { deps, writes } = makeDeps({
-		fetchFreshness: async () => ({ ok: true, isProcessing: false, staleFiles: ['src/a.ts'] }),
-		runReview:      async (...args) => { reviewCalls++; return runCodeReview(...args); },
-	});
-	const cw = parse(await handleCodeReviewStep({ phase: 'start', epicHash: EPIC, storyId: STORY, repo: '/repo' }, deps));
-	assert.ok(cw.next === 'confirm_wait');
-	const aborted = parse(await handleCodeReviewStep({ phase: 'start', state: cw.state, proceed: false }, deps));
-	assert.ok(aborted.next === 'error' && aborted.error.code === 'review-declined', 'abort => fail-closed error');
-	assert.equal(reviewCalls, 0, 'no judges ran');
-	assert.equal(writes.length, 0, 'no record written');
-});
-
 // error: freshness IPC failure => error frame, no confirm_wait, no write.
 test('s9: a freshness-IPC failure on the initial check => next:error (freshness-unavailable), no confirm_wait, no write', async () => {
 	reset();
@@ -321,4 +316,95 @@ test('s9: a freshness-IPC failure on the initial check => next:error (freshness-
 	const out = parse(await handleCodeReviewStep({ phase: 'start', epicHash: EPIC, storyId: STORY, repo: '/repo' }, deps));
 	assert.ok(out.next === 'error' && out.error.code === 'freshness-unavailable');
 	assert.equal(writes.length, 0);
+});
+
+// ---------------------------------------------------------------------------
+// s10 — the diff-only (degraded) fallback on the decline branch
+// ---------------------------------------------------------------------------
+
+/** A runReview spy that records the opts each call received, then delegates to
+ *  the real runCodeReview so a record is actually persisted. */
+function reviewSpy(): { runReview: CodeReviewStepDeps['runReview']; opts: Parameters<typeof runCodeReview>[2][] } {
+	const opts: Parameters<typeof runCodeReview>[2][] = [];
+	const runReview: CodeReviewStepDeps['runReview'] = async (s, p, o, d) => { opts.push(o); return runCodeReview(s, p, o, d); };
+	return { runReview, opts };
+}
+
+/** Drive start (stale) → confirm_wait → resume proceed:false (decline). */
+async function declineTo(deps: CodeReviewStepDeps): Promise<CodeReviewStepOutput> {
+	const cw = parse(await handleCodeReviewStep({ phase: 'start', epicHash: EPIC, storyId: STORY, repo: '/repo' }, deps));
+	assert.ok(cw.next === 'confirm_wait', 'stale index => confirm_wait');
+	return parse(await handleCodeReviewStep({ phase: 'start', state: cw.state, proceed: false }, deps));
+}
+
+// ac1: decline no longer fails closed — it runs the diff-only path.
+test('s10: proceed:false (decline) calls assembleDiffGrounding and returns emit_judgements over the diff grounding — NO review-declined error', async () => {
+	reset();
+	let diffCalls = 0;
+	const { deps } = makeDeps({
+		fetchFreshness: async () => ({ ok: true, isProcessing: false, staleFiles: ['src/a.ts'] }),
+		assembleDiffGrounding: async () => { diffCalls++; return { grounding: diffGrounding, changedFiles: DIFF_CHANGED }; },
+	});
+	const declined = await declineTo(deps);
+	assert.ok(declined.next === 'emit_judgements', 'decline => diff-only emit_judgements, not an error');
+	assert.equal(diffCalls, 1, 'the diff grounding was assembled');
+	assert.deepEqual(declined.grounding, diffGrounding, 'the emit_judgements frame carries the diff grounding');
+});
+
+// ac3 + ac4: the degraded judgements turn drives runReview with the degraded+cap opts and persists a record.
+test('s10: the degraded judgements turn drives runReview with groundingMode:degraded + capVerdictAtWarn:true and persists a degraded record', async () => {
+	reset();
+	const { runReview, opts } = reviewSpy();
+	const { deps, writes } = makeDeps({
+		fetchFreshness: async () => ({ ok: true, isProcessing: false, staleFiles: ['src/a.ts'] }),
+		runReview,
+	});
+	const declined = await declineTo(deps);
+	assert.ok(declined.next === 'emit_judgements');
+	// a clean set of judgements (no findings) — would fold to pass, but the cap raises it to warn.
+	const done = parse(await handleCodeReviewStep({ phase: 'judgements', judgements: judgements(), state: declined.state }, deps));
+	assert.ok(done.next === 'done', 'the degraded review persists a record');
+	assert.equal(done.verdict, 'warn', 'a clean degraded fold is warn-capped, never pass (ac4)');
+	assert.equal(opts.length, 1);
+	assert.equal(opts[0]!.groundingMode, 'degraded', 'runReview got groundingMode:degraded (ac3)');
+	assert.equal(opts[0]!.capVerdictAtWarn, true, 'runReview got capVerdictAtWarn:true (ac4)');
+	const json = writes.find(w => w.path.endsWith('.json'))!;
+	const body = (JSON.parse(json.content) as { body: { groundingMode: string; verdict: string } }).body;
+	assert.equal(body.groundingMode, 'degraded', 'the persisted record is stamped degraded');
+	assert.equal(body.verdict, 'warn');
+});
+
+// error: the diff cannot be read => diff-unavailable, nothing written.
+test('s10: a diff-unavailable failure (assembleDiffGrounding rejects) => next:error (diff-unavailable), no write', async () => {
+	reset();
+	const { DiffUnavailableError } = await import('../../../workflow/code-review/grounding.js');
+	const { deps, writes } = makeDeps({
+		fetchFreshness: async () => ({ ok: true, isProcessing: false, staleFiles: ['src/a.ts'] }),
+		assembleDiffGrounding: async () => { throw new DiffUnavailableError('not a git repo'); },
+	});
+	const out = await declineTo(deps);
+	assert.ok(out.next === 'error' && out.error.code === 'diff-unavailable', 'unreadable diff => diff-unavailable error');
+	assert.ok(out.next === 'error' && out.error.retryable === true);
+	assert.equal(writes.length, 0, 'no record written when the diff cannot be read');
+});
+
+// ac6 regression: the fresh graph path is byte-identical to s9 — runReview gets the DEFAULT opts (no degraded, no cap).
+test('s10 ac6: a fresh index (no decline) still drives runReview with the DEFAULT opts (no groundingMode, no cap) and stamps full', async () => {
+	reset();
+	const { runReview, opts } = reviewSpy();
+	const { deps, writes } = await (async () => {
+		const m = makeDeps({ runReview });   // makeDeps defaults to a fresh index
+		const startEnv = await handleCodeReviewStep({ phase: 'start', epicHash: EPIC, storyId: STORY, repo: '/repo' }, m.deps);
+		const start = parse(startEnv);
+		assert.ok(start.next === 'emit_judgements');
+		const doneEnv = await handleCodeReviewStep({ phase: 'judgements', judgements: judgements(), state: start.state }, m.deps);
+		return { deps: m.deps, writes: m.writes, done: parse(doneEnv) };
+	})();
+	void deps;
+	assert.equal(opts.length, 1);
+	assert.equal(opts[0]!.groundingMode, undefined, 'fresh path passes no groundingMode (⇒ full)');
+	assert.equal(opts[0]!.capVerdictAtWarn, undefined, 'fresh path passes no cap');
+	const json = writes.find(w => w.path.endsWith('.json'))!;
+	const body = (JSON.parse(json.content) as { body: { groundingMode: string } }).body;
+	assert.equal(body.groundingMode, 'full', 'the fresh path still stamps full');
 });

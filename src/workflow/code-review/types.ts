@@ -132,12 +132,14 @@ export interface CodeReviewBody {
 	readonly epicHash:   string;
 	readonly storyId:    string;
 	/** How the review was grounded: `'full'` = the graph-grounded path (the four
-	 *  dimension judges over freshly-indexed symbol summaries). Story s9 (the
-	 *  indexing-readiness gate) only ever writes `'full'`; the sibling diff-only
-	 *  fallback story widens this to `'full' | 'degraded'`. A downstream completion
-	 *  gate distinguishes a full graph-grounded review from a degraded one by this
-	 *  field. */
-	readonly groundingMode: 'full';
+	 *  dimension judges over freshly-indexed symbol summaries); `'degraded'` = the
+	 *  diff-only fallback (s10), where the judges reason over the changed-file diff
+	 *  hunks rather than graph symbol summaries because the index could not be made
+	 *  fresh. Story s9 (the indexing-readiness gate) only ever writes `'full'`; s10
+	 *  (the diff-only degraded fallback) is the sole producer of `'degraded'`. A
+	 *  downstream completion gate distinguishes a full graph-grounded review from a
+	 *  degraded one by this field. */
+	readonly groundingMode: 'full' | 'degraded';
 	/** The exact review subject: the Story's changed files (git-derived). */
 	readonly subject:    { readonly changedFiles: readonly string[] };
 	/** All four dimension results (adherence / conventions / coverage / quality). */

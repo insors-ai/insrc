@@ -26,6 +26,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { PATHS } from '../../shared/paths.js';
 import { resolveCodeReviewSubject } from '../../workflow/code-review/subject.js';
 import { fetchCodeReviewGrounding, fetchCodeReviewFreshness } from '../daemon-stream.js';
+import { assembleDiffCodeReviewGrounding, DiffUnavailableError } from '../../workflow/code-review/grounding.js';
 import { runCodeReview, type CodeReviewRunnerDeps } from '../../workflow/code-review/runner.js';
 import { codeReviewArtifactPaths, writeAtomic } from '../../workflow/storage.js';
 import { buildAdherencePrompt } from '../../workflow/code-review/dimensions/adherence.js';
@@ -61,6 +62,8 @@ export interface CodeReviewStepDeps {
 	readonly resolveSubject: typeof resolveCodeReviewSubject;
 	readonly fetchGrounding: typeof fetchCodeReviewGrounding;
 	readonly fetchFreshness: typeof fetchCodeReviewFreshness;
+	/** s10: build the diff-only (degraded) grounding on the decline branch. */
+	readonly assembleDiffGrounding: typeof assembleDiffCodeReviewGrounding;
 	readonly runReview:      typeof runCodeReview;
 	readonly write:          (absPath: string, content: string) => void;
 	readonly sleep:          (ms: number) => Promise<void>;
@@ -90,6 +93,7 @@ const DEFAULT_DEPS: CodeReviewStepDeps = {
 	resolveSubject: resolveCodeReviewSubject,
 	fetchGrounding: fetchCodeReviewGrounding,
 	fetchFreshness: fetchCodeReviewFreshness,
+	assembleDiffGrounding: assembleDiffCodeReviewGrounding,
 	runReview:      runCodeReview,
 	write:          writeAtomic,
 	sleep:          (ms) => new Promise<void>((resolve) => { setTimeout(resolve, ms); }),
@@ -203,15 +207,14 @@ async function handleStart(
 		repo = payload.repo; epicHash = payload.epicHash; storyId = payload.storyId;
 		subject = payload.subject;
 
-		// proceed:false is an explicit DECLINE — fail closed, no verdict, no record
-		// (s9 ac5; the sibling diff-only fallback story supersedes this exit).
+		// proceed:false is an explicit DECLINE. s10: instead of failing closed, fall
+		// back to a DIFF-ONLY (degraded) review — review the changed-file diff hunks
+		// directly rather than the graph. Freshness is NOT re-checked (the decline is
+		// the user's explicit choice), so a decline never silently upgrades to a full
+		// graph review.
 		if (step.proceed !== true) {
 			releaseState(step.state!);
-			return errorResult(
-				'review-declined',
-				'insrc_code_review_step: review declined — the index is stale for the changed files and waiting was aborted; no verdict was produced.',
-				false,
-			);
+			return await beginDiffOnlyReview(repo, epicHash, storyId, subject, deps);
 		}
 	} else {
 		if (typeof step.epicHash !== 'string' || step.epicHash.length === 0) {
@@ -290,6 +293,60 @@ async function handleStart(
 		repo, epicHash, storyId, subject, grounding,
 	});
 
+	return emitJudgementsResult(subject, grounding, token);
+}
+
+/**
+ * s10 — the DIFF-ONLY (degraded) review path, reached from the decline branch.
+ * Builds the diff-only grounding (working-tree diff, else the last commit), saves
+ * a `groundingMode:'degraded'` emit_judgements state, and hands the controller the
+ * SAME four charges over the diff hunks. The subject's `changedFiles` is REPLACED
+ * with the diff-derived set so the record subject + the judgements scope-drop
+ * reflect what was actually reviewed. A diff that cannot be read is a
+ * `diff-unavailable` error, not a silent empty pass.
+ */
+async function beginDiffOnlyReview(
+	repo:     string,
+	epicHash: string,
+	storyId:  string,
+	subject:  CodeReviewSubject,
+	deps:     CodeReviewStepDeps,
+): Promise<CodeReviewStepOutput> {
+	let grounding: CodeReviewGrounding;
+	let changedFiles: readonly string[];
+	try {
+		const diff = await deps.assembleDiffGrounding(repo);
+		grounding = diff.grounding;
+		changedFiles = diff.changedFiles;
+	} catch (err) {
+		if (err instanceof DiffUnavailableError) {
+			return errorResult('diff-unavailable', `insrc_code_review_step: could not read the changed-file diff — ${err.message}.`, true);
+		}
+		throw err;
+	}
+
+	// Re-key the subject to the diff-derived changed set (post-commit the s9
+	// working-tree set is empty; the diff path recovers it from the last commit).
+	const diffSubject: CodeReviewSubject = { ...subject, changedFiles };
+
+	const token = saveState({
+		runId:       `cr-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+		startedAtMs: Date.now(),
+		repo, epicHash, storyId, subject: diffSubject, grounding,
+		groundingMode: 'degraded',
+	});
+
+	return emitJudgementsResult(diffSubject, grounding, token);
+}
+
+/** Build the emit_judgements frame — the four per-dimension charges over the
+ *  grounding + the judgements schema. Shared by the fresh graph path and the s10
+ *  diff-only path (the four prompt builders consume grounding.symbols unchanged). */
+function emitJudgementsResult(
+	subject:   CodeReviewSubject,
+	grounding: CodeReviewGrounding,
+	token:     string,
+): CodeReviewStepOutput {
 	return {
 		next:     'emit_judgements',
 		guidance: 'Judge each of the four dimensions (adherence, conventions, coverage, quality) over the grounding below, ' +
@@ -371,7 +428,13 @@ async function handleJudgements(
 		write: deps.write,
 	};
 
-	return await driveRunner(step.state, payload.subject, injected, deps);
+	// s10: a degraded state (built from the diff on the decline branch) drives the
+	// runner with groundingMode:'degraded' + capVerdictAtWarn:true, so the record is
+	// marked degraded and a clean fold can never register a pass. The graph path
+	// passes neither (⇒ 'full', uncapped) — byte-identical to s9.
+	const degraded = payload.groundingMode === 'degraded';
+
+	return await driveRunner(step.state, payload.subject, injected, deps, degraded);
 }
 
 async function driveRunner(
@@ -379,9 +442,17 @@ async function driveRunner(
 	subject:  CodeReviewSubject,
 	injected: CodeReviewRunnerDeps,
 	deps:     CodeReviewStepDeps,
+	degraded: boolean,
 ): Promise<CodeReviewStepOutput> {
 	const runId = `cr-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-	const outcome = await deps.runReview(subject, DUMMY_PROVIDER, { runId, modelLabel: 'client' }, injected);
+	const outcome = await deps.runReview(
+		subject,
+		DUMMY_PROVIDER,
+		degraded
+			? { runId, modelLabel: 'client', groundingMode: 'degraded', capVerdictAtWarn: true }
+			: { runId, modelLabel: 'client' },
+		injected,
+	);
 	if (!outcome.ok) {
 		return errorResult('fold-failed', `insrc_code_review_step: ${outcome.error}`, true);
 	}

@@ -267,3 +267,47 @@ test('DEFAULT_DEPS: wires exactly the four shipped judges in [adherence,conventi
 	assert.equal(typeof DEFAULT_DEPS.assembleGrounding, 'function');
 	assert.equal(typeof DEFAULT_DEPS.write, 'function');
 });
+
+// ---------------------------------------------------------------------------
+// s10 — groundingMode stamp + the warn-cap fold (RunCodeReviewOpts additions)
+// ---------------------------------------------------------------------------
+
+// ac3: opts.groundingMode:'degraded' is stamped verbatim on the record.
+test('s10: runCodeReview with opts.groundingMode:degraded stamps body.groundingMode === degraded', async () => {
+	const { deps, provider } = makeDeps();
+	const { opts } = runOpts();
+	const out = await runCodeReview(subject(), provider, { ...opts, groundingMode: 'degraded', capVerdictAtWarn: true }, deps);
+	assert.ok(out.ok);
+	assert.equal(out.artifact.body.groundingMode, 'degraded');
+});
+
+// ac4: capVerdictAtWarn promotes a would-be pass to warn (a degraded review can never pass).
+test('s10: capVerdictAtWarn:true + all-empty findings (would fold pass) => verdict warn', async () => {
+	const { deps, provider } = makeDeps();   // all judges return empty => would fold to pass
+	const { opts } = runOpts();
+	const out = await runCodeReview(subject(), provider, { ...opts, groundingMode: 'degraded', capVerdictAtWarn: true }, deps);
+	assert.ok(out.ok);
+	assert.equal(out.artifact.body.verdict, 'warn', 'a clean degraded fold is capped up to warn');
+	assert.deepEqual(out.artifact.body.counts, { high: 0, med: 0, low: 0 }, 'the cap raises the verdict, not the counts');
+});
+
+// ac4: the cap NEVER lowers a block/warn.
+test('s10: capVerdictAtWarn:true + a HIGH finding => verdict stays block (the cap never lowers block/warn)', async () => {
+	const { deps, provider } = makeDeps({
+		results: { adherence: { dimension: 'adherence', findings: [finding('HIGH', 'adherence')] } },
+	});
+	const { opts } = runOpts();
+	const out = await runCodeReview(subject(), provider, { ...opts, groundingMode: 'degraded', capVerdictAtWarn: true }, deps);
+	assert.ok(out.ok);
+	assert.equal(out.artifact.body.verdict, 'block', 'a HIGH still blocks under the warn-cap');
+});
+
+// ac6: with NO opts the record stamps 'full' and the fold is unchanged (default parity with s9).
+test('s10 ac6: runCodeReview with NO groundingMode/cap opts stamps full and the verdict fold is unchanged (default parity)', async () => {
+	const { deps, provider } = makeDeps();   // all empty
+	const { opts } = runOpts();
+	const out = await runCodeReview(subject(), provider, opts, deps);
+	assert.ok(out.ok);
+	assert.equal(out.artifact.body.groundingMode, 'full', 'default groundingMode is full');
+	assert.equal(out.artifact.body.verdict, 'pass', 'without the cap a clean fold is pass (unchanged)');
+});

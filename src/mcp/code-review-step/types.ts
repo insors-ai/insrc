@@ -136,6 +136,11 @@ export interface CodeReviewStepStatePayload {
 	 *  grounding has not been fetched yet (the gate precedes fetchGrounding); the
 	 *  post-poll path fetches it and saves the full payload before emit_judgements. */
 	readonly grounding?:  CodeReviewGrounding | undefined;
+	/** s10: `'degraded'` marks a diff-only fallback state (the decline branch built
+	 *  its grounding from the changed-file diff, not the graph). The judgements turn
+	 *  reads this to drive `runCodeReview` with `groundingMode:'degraded'` +
+	 *  `capVerdictAtWarn:true`; the graph path omits it (⇒ `'full'`, uncapped). */
+	readonly groundingMode?: 'degraded' | undefined;
 }
 
 // ---------------------------------------------------------------------------

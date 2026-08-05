@@ -28,6 +28,9 @@
  */
 
 import type { CodeReviewGrounding, ChangedSymbolSummary } from './types.js';
+import { gitDiffTool } from '../../daemon/tools/builtins/git/diff.js';
+import type { GitDiffData, GitDiffFileStat } from '../../daemon/tools/builtins/git/diff.js';
+import type { ToolDeps } from '../../daemon/tools/types.js';
 
 /** A graph entity, flattened to just what a summary/edge needs. */
 export interface GroundedEntity {
@@ -137,6 +140,163 @@ export async function realGroundingDeps(): Promise<GroundingDeps> {
 			const out: GroundedEntity[] = [];
 			for (const id of ids) { const r = await rowById(id); if (r) out.push(r); }
 			return out;
+		},
+	};
+}
+
+// ---------------------------------------------------------------------------
+// s10 — the DIFF-ONLY (degraded) grounding assembler.
+//
+// When the index cannot be made fresh and the user declines to wait (the s9
+// confirm_wait/timeout decline), the code-review stage falls back to reviewing
+// the changed-file DIFF directly rather than graph symbol summaries. This
+// assembler is the sc2 producer for that path: it derives the changed set from
+// the working-tree diff, falls back to the last commit (`git_diff {from:'HEAD^'}`,
+// then the root commit) when the tree is clean, and emits a `CodeReviewGrounding`
+// whose `symbols[]` is ONE synthesized `ChangedSymbolSummary` PER CHANGED FILE
+// (kind:'file', name:the file, the file's unified-diff hunks carried in
+// `signature`, caller/callee/test edges empty). The four dimension prompt
+// builders serialize `grounding.symbols` UNCHANGED, so they consume this diff
+// grounding exactly as they consume the graph grounding — the record is marked
+// `groundingMode:'degraded'` so a downstream reader knows the review reasoned
+// over hunks, not entities. Read-only throughout (git_diff never mutates).
+// ---------------------------------------------------------------------------
+
+/** Git's canonical empty-tree object — diffing it against HEAD yields the whole
+ *  root commit, so a single-commit repo (no HEAD^) is still reviewable. */
+const EMPTY_TREE_HASH = '4b825dc642cb6eb9a060e54bf8d69288fbee4904';
+
+/** One resolved diff: the per-file numstat + the raw unified-diff body (hunks). */
+export interface DiffResult {
+	readonly files: readonly GitDiffFileStat[];
+	readonly body:  string;
+	readonly truncated: boolean;
+}
+
+/** Raised by a diff seam that cannot read a diff at all (not a git repository /
+ *  git failed on BOTH the working-tree read and the last-commit fallback). The
+ *  caller maps it to a `diff-unavailable` error — a diff that cannot be read must
+ *  never silently produce an empty degraded pass. */
+export class DiffUnavailableError extends Error {
+	constructor(message: string) {
+		super(message);
+		this.name = 'DiffUnavailableError';
+	}
+}
+
+/** The injectable git seams the diff assembler composes. Defaults wire the real
+ *  `git_diff` builtin; tests supply fakes so the assembler is exercised without a
+ *  real repo. Both are READ-ONLY. */
+export interface DiffGroundingDeps {
+	/** The working-tree changed set (unstaged ∪ staged) + its hunks. Empty `files`
+	 *  ⇒ a clean tree (the caller falls back to `lastCommitDiff`); a git failure
+	 *  throws `DiffUnavailableError`. */
+	readonly workingTreeDiff: (repoPath: string) => Promise<DiffResult>;
+	/** The last commit's changed set + hunks (`HEAD^..HEAD`, else the root commit
+	 *  vs the empty tree). A git failure throws `DiffUnavailableError`. */
+	readonly lastCommitDiff:  (repoPath: string) => Promise<DiffResult>;
+}
+
+/**
+ * Assemble the diff-only (degraded) grounding for the Story's changed set.
+ * Read-only. Derives the changed set from the working-tree diff; when that is
+ * empty (a clean tree, e.g. after build → commit → review) it falls back to the
+ * last commit. Emits one per-file pseudo-`ChangedSymbolSummary` carrying the
+ * file's hunks. An empty result is a valid grounding (`symbols:[]`), NOT an
+ * error; a git failure on both paths propagates as `DiffUnavailableError`.
+ */
+export async function assembleDiffCodeReviewGrounding(
+	repoPath: string,
+	deps:     DiffGroundingDeps = realDiffGroundingDeps(),
+): Promise<{ grounding: CodeReviewGrounding; changedFiles: readonly string[] }> {
+	let diff = await deps.workingTreeDiff(repoPath);
+	if (diff.files.length === 0) {
+		// Clean working tree — fall back to the last commit (HEAD^..HEAD, else root).
+		diff = await deps.lastCommitDiff(repoPath);
+	}
+	const symbols = buildDiffSymbols(diff);
+	return { grounding: { symbols }, changedFiles: symbols.map(s => s.file) };
+}
+
+/** Turn a resolved diff into one per-file pseudo-`ChangedSymbolSummary`. A binary
+ *  file carries a marker in place of hunks; a text file carries its unified-diff
+ *  section. Caller/callee/test edges are empty (there is no graph on this path). */
+function buildDiffSymbols(diff: DiffResult): ChangedSymbolSummary[] {
+	const byFile = splitDiffByFile(diff.body);
+	const truncNote = diff.truncated ? '\n[diff truncated — reviewed over a bounded slice]' : '';
+	return diff.files.map((f): ChangedSymbolSummary => {
+		const hunks = f.change === 'binary'
+			? `[binary file changed — no textual hunks]`
+			: (byFile.get(f.path) ?? byFile.get(f.origPath ?? '') ?? `[no hunk text for ${f.path}]`);
+		return {
+			entityId:      `diff:${f.path}`,
+			file:          f.path,
+			kind:          'file',
+			name:          f.path,
+			signature:     hunks + truncNote,
+			callers:       [],
+			callees:       [],
+			testsReaching: [],
+		};
+	});
+}
+
+/** Split a unified-diff body into per-file sections keyed by the new (`b/`) path.
+ *  Robust to the deterministic `git diff --no-color` output the builtin emits. */
+function splitDiffByFile(body: string): Map<string, string> {
+	const map = new Map<string, string>();
+	if (!body) return map;
+	for (const section of body.split(/^(?=diff --git )/m)) {
+		if (!section.startsWith('diff --git')) continue;
+		const m = section.match(/^diff --git a\/(.+?) b\/(.+?)\s*$/m);
+		const path = m?.[2];
+		if (path) map.set(path, section.trimEnd());
+	}
+	return map;
+}
+
+/** Extract the raw unified-diff body from a `git_diff` builtin result. The builtin
+ *  renders the hunks inside a ```diff fenced block in its `output`; this pulls
+ *  that block back out verbatim. */
+function extractDiffBody(output: string): string {
+	const m = output.match(/```diff\n([\s\S]*?)\n```/);
+	return m?.[1] ?? '';
+}
+
+/** Run one `git_diff` invocation and return its resolved {@link DiffResult}. Throws
+ *  {@link DiffUnavailableError} when the builtin reports a git failure. */
+async function runDiff(repoPath: string, input: Record<string, unknown>): Promise<DiffResult> {
+	const toolDeps: ToolDeps = { sessionId: 'code-review', repoPath, send: () => {}, requestId: 0 };
+	const res = await gitDiffTool.execute({ cwd: repoPath, ...input }, toolDeps);
+	if (!res.success) {
+		throw new DiffUnavailableError(`git_diff failed for ${repoPath}: ${res.error ?? res.output}`);
+	}
+	const data = res.data as GitDiffData | undefined;
+	if (!data) throw new DiffUnavailableError(`git_diff returned no data for ${repoPath}`);
+	return { files: data.files, body: extractDiffBody(res.output), truncated: data.truncated };
+}
+
+/** The real diff seams, backed by the `git_diff` builtin. Read-only. */
+export function realDiffGroundingDeps(): DiffGroundingDeps {
+	return {
+		async workingTreeDiff(repoPath) {
+			// Union the unstaged + staged diffs (matches subject.ts's changed set).
+			const unstaged = await runDiff(repoPath, { staged: false });
+			const staged   = await runDiff(repoPath, { staged: true });
+			const byPath = new Map<string, GitDiffFileStat>();
+			for (const f of [...unstaged.files, ...staged.files]) byPath.set(f.path, f);
+			const body = [unstaged.body, staged.body].filter(Boolean).join('\n');
+			return { files: [...byPath.values()], body, truncated: unstaged.truncated || staged.truncated };
+		},
+		async lastCommitDiff(repoPath) {
+			// HEAD^..HEAD (the last commit). If HEAD has no parent (a single-commit
+			// repo), diff the empty tree against HEAD so the root commit is reviewable.
+			try {
+				return await runDiff(repoPath, { from: 'HEAD^' });
+			} catch (err) {
+				if (!(err instanceof DiffUnavailableError)) throw err;
+				return await runDiff(repoPath, { from: EMPTY_TREE_HASH });
+			}
 		},
 	};
 }

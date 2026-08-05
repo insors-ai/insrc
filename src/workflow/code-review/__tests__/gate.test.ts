@@ -147,3 +147,32 @@ test('CONFIG_CATALOG declares codeReview.enforce with type boolean + default fal
 	assert.equal(entry!.type, 'boolean');
 	assert.equal(entry!.default, false);
 });
+
+// ---------------------------------------------------------------------------
+// s10 — a degraded review is warn-capped, so it never presents as a clean pass
+// ---------------------------------------------------------------------------
+
+/** A degraded CR record (groundingMode:'degraded'), verdict warn — what the
+ *  diff-only fallback persists on the decline branch. The gate reads verdict +
+ *  counts; groundingMode is carried for fidelity. */
+function degradedWarnRecord(): string {
+	return JSON.stringify({
+		meta: { workflow: 'code-review', epicHash: EPIC, storyId: STORY },
+		body: {
+			kind: 'code-review', epicHash: EPIC, storyId: STORY,
+			groundingMode: 'degraded', subject: { changedFiles: ['src/a.ts'] },
+			dimensions: [], verdict: 'warn', counts: { high: 0, med: 0, low: 0 },
+		},
+	}, null, 2) + '\n';
+}
+
+// ac5: a degraded (warn) record is a NON-PASS advisory — never a clean pass — under
+// enforce ON. (The warn-cap is precisely what keeps a degraded review off `pass`;
+// a warn surfaces the degraded quality without withholding the completion the user
+// explicitly opted into by declining to wait — only a `block` withholds.)
+test('s10: the enforce gate over a degraded warn record => status:warn (a non-pass advisory), never pass', () => {
+	const res = run(degradedWarnRecord(), { enforce: true });
+	assert.equal(res.status, 'warn', 'a degraded review surfaces as a non-pass advisory');
+	assert.notEqual(res.status, 'pass', 'a degraded review can NEVER present as a clean pass (the warn-cap guarantee)');
+	assert.ok(res.status === 'warn' && res.advisory !== true, 'it is a genuine warn (from the capped verdict), not a demoted-block advisory');
+});

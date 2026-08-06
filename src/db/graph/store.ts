@@ -125,7 +125,7 @@ const MAX_DBS = 32;
  *           workspace rows whose path is empty / banned / non-
  *           existent, and bumps the version.
  */
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 
 const META_SCHEMA_VERSION = 'schema_version';
 

@@ -356,6 +356,27 @@ const MIGRATION_V2_TO_V3: Migration = {
 };
 
 /**
+ * v3 → v4: register the external-service graph vocabulary (sc1 —
+ * E20260806914cbf5e:S001). The new `externalEndpoint` EntityKind, the four
+ * boundary RelationKinds (CALLS_HTTP/PUBLISHES_TO/SUBSCRIBES_TO/CALLS_RPC),
+ * and the optional endpoint fields on EntityRow are all purely ADDITIVE:
+ * pre-v4 rows never carry them and decode unchanged (forward-compatible
+ * msgpack). So this step performs NO row rewrite — its only job is to
+ * advance schema_version so store-open version checks stay coherent
+ * (a v4-written index is not silently read by v3 code), without any
+ * destructive rebuild (durability NF).
+ */
+const MIGRATION_V3_TO_V4: Migration = {
+	from: 3,
+	to:   4,
+	description: 'register external-service graph vocabulary (sc1): additive EntityKind/RelationKind + endpoint fields; no row rewrite',
+	run: () => {
+		// No-op: the vocabulary additions are forward-compatible and require
+		// no data migration. Advancing schema_version is handled by the runner.
+	},
+};
+
+/**
  * Helper that mirrors `indexer/parser/base.ts:makeEntityId` without
  * importing it (the parser layer doesn't depend on db internals
  * and we don't want to introduce a cycle).
@@ -385,6 +406,7 @@ function readStringByU64(store: GraphStore, u64: bigint): string | undefined {
 export const MIGRATIONS: readonly Migration[] = [
 	MIGRATION_V1_TO_V2,
 	MIGRATION_V2_TO_V3,
+	MIGRATION_V3_TO_V4,
 ];
 
 /**

@@ -1,0 +1,38 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": false,
+    "epicHash": "914cbf5ea9026b92",
+    "storyId": "s1",
+    "createdAt": "2026-08-06T17:24:36.946Z",
+    "updatedAt": "2026-08-06T17:24:36.946Z",
+    "approvedAt": "2026-08-06T17:54:04.993Z"
+  },
+  "body": {
+    "focus": "S001 (sc1) — ExternalEndpoint graph vocabulary: externalEndpoint EntityKind + four boundary RelationKinds (CALLS_HTTP/PUBLISHES_TO/SUBSCRIBES_TO/CALLS_RPC), inline endpoint fields on Entity/EntityRow, deterministic per-repo endpoint id, canonical DEPENDS_ON_CLOSURE_KINDS, SCHEMA_VERSION 3->4 no-op migration. Additive, no data migration.",
+    "producesLld": false,
+    "commit": "a2bf532",
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      }
+    ]
+  }
+}

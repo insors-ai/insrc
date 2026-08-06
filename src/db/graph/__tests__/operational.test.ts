@@ -142,7 +142,10 @@ test('SCHEMA_VERSION constant is exported and stable', () => {
 	// v3 added by plans/repo-registry-strict-contract.md (RepoKind
 	// discriminator + namespace-keyed shared-modules rows + the
 	// v2->v3 forward migration).
-	assert.equal(SCHEMA_VERSION, 3);
+	// v4 (E20260806914cbf5e:S001, sc1) registers the external-service graph
+	// vocabulary — additive EntityKind/RelationKind + endpoint fields, no-op
+	// v3->v4 migration (no row rewrite).
+	assert.equal(SCHEMA_VERSION, 4);
 });
 
 // ---------------------------------------------------------------------------

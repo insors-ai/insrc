@@ -28,6 +28,7 @@ import { Packr, Unpackr } from 'msgpackr';
 import type { RelationKind } from './keys.js';
 import type {
 	EntityKind,
+	ExternalProtocol,
 	Language,
 	PlanStatus as DomainPlanStatus,
 	PlanStepStatus as DomainPlanStepStatus,
@@ -157,6 +158,14 @@ export interface EntityRow {
 	contentHash:    string;
 	embeddingModel: string;     // empty until embedded
 	indexedAt:      number;     // unix ms
+
+	// External-service endpoint fields (sc1 — E20260806914cbf5e:S001).
+	// Present only for kind === 'externalEndpoint'; absent rows decode
+	// with these undefined (forward-compatible msgpack pass-through).
+	protocol?:      ExternalProtocol;
+	resolved?:      boolean;
+	target?:        string;
+	rawExpression?: string;
 }
 
 export type { Language };

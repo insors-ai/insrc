@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>cli — insrc</title>
-<meta name="description" content="The insrc interactive TUI: a full-screen ink (React) terminal app with Daemon / Repos / Workflows / Setup panes, a vim-style command bar, and all DB access delegated to the daemon over its Unix socket.">
+<meta name="description" content="The insrc interactive TUI: a full-screen ink (React) terminal app with Daemon / Repos / Workflows / Setup / Tiers / Debug panes, a vim-style command bar, and all DB access delegated to the daemon over its Unix socket.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13' font-family='monospace' fill='%234ade80'>▌</text></svg>">
 <link rel="stylesheet" href="css/tui.css">
 </head>
@@ -29,7 +29,7 @@
 <div class="wrap"><main id="main">
 
   <h1>The insrc CLI</h1>
-  <p class="lead">The <code>insrc</code> command is a full-screen interactive TUI — an ink (React) terminal app with four panes: Daemon, Repos, Workflows, and Setup. It replaced the old commander subcommands entirely; there are no <code>insrc &lt;verb&gt;</code> subcommands, only the interactive app and its built-in command bar.</p>
+  <p class="lead">The <code>insrc</code> command is a full-screen interactive TUI — an ink (React) terminal app with six panes: Daemon, Repos, Workflows, Setup, Tiers, and Debug. It replaced the old commander subcommands entirely; there are no <code>insrc &lt;verb&gt;</code> subcommands, only the interactive app and its built-in command bar.</p>
 
   <h2 id="cli">A full-screen terminal app</h2>
   <p>Launch it from anywhere — the launch directory becomes the default selected repo. The <code>insrc</code> bin resolves to <code>out/cli/index.js</code> (built) with source at <code>src/cli/index.tsx</code>.</p>
@@ -41,11 +41,11 @@
 
   <div class="panel"><span class="panel-title">global keys</span>
     <p class="mt0">These work from any pane (a pane suspends them while it has an open prompt / modal):</p>
-    <p><kbd>:</kbd> open the command bar · <kbd>1</kbd>–<kbd>4</kbd> jump to a pane · <kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd> cycle panes · <kbd>r</kbd> refresh · <kbd>?</kbd> help · <kbd>q</kbd> quit</p>
+    <p><kbd>:</kbd> open the command bar · <kbd>1</kbd>–<kbd>6</kbd> jump to a pane · <kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd> cycle panes · <kbd>r</kbd> refresh · <kbd>?</kbd> help · <kbd>q</kbd> quit</p>
   </div>
 
-  <h2 id="panes">The four panes</h2>
-  <p>Panes are ordered <strong>Daemon</strong> (1), <strong>Repos</strong> (2), <strong>Workflows</strong> (3), <strong>Setup</strong> (4). Each pane owns a small set of single-key actions shown in its footer hint bar.</p>
+  <h2 id="panes">The six panes</h2>
+  <p>Panes are ordered <strong>Daemon</strong> (1), <strong>Repos</strong> (2), <strong>Workflows</strong> (3), <strong>Setup</strong> (4), <strong>Tiers</strong> (5), and <strong>Debug</strong> (6). Each pane owns a small set of single-key actions shown in its footer hint bar.</p>
 
   <h3 id="pane-daemon">Daemon — health &amp; lifecycle</h3>
   <p>A live health readout (uptime, queue depth, embeddings pending, model-pull status, LMDB size on disk, registered repo count) plus the full maintenance lifecycle. Long-running operations — restart, update, backup — stream their progress into a live log below the readout.</p>
@@ -121,8 +121,48 @@
   </div>
   <p><strong>Keys:</strong> <kbd>a</kbd> apply the recommended config · <kbd>p</kbd> pull the missing models.</p>
 
+  <h3 id="pane-tiers">Tiers — per-role model tiering</h3>
+  <p>Accuracy is the primary principle, and the Tiers pane is where it is enforced concretely. It shows the <strong>effective</strong> model tier for each role — computed by overlaying your config onto the built-in defaults and the role taxonomy (<code>computeEffectiveTiers</code>) — and lets you edit a tier's runner/model, the <code>coreFloor</code>, or a single role's override. The <code>coreFloor</code> guarantees the <strong>critical</strong> roles (design, review, build, validate) are never served below the high tier; <strong>peripheral</strong> roles (classification, narrow probes, tracker rendering, summaries) may trade capability for cost on cheaper local models. Reads and writes go through the daemon like every other pane (<code>models.analyze.tiers</code> / <code>coreFloor</code> / <code>roleTiers</code>).</p>
+  <div class="term" style="margin:16px 0">
+    <div class="term-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="term-title">insrc — Tiers</span></div>
+    <div class="term-body">
+<pre style="margin:0"><code><span class="fn">┌─ Tiers · effective per-role ──────────────────────┐</span>
+<span class="fn">│</span> <span class="o">core</span>   <span class="c">(coreFloor: high)</span>                          <span class="fn">│</span>
+<span class="fn">│</span>   design    <span class="p">high</span>   cli-claude                     <span class="fn">│</span>
+<span class="fn">│</span>   review    <span class="p">high</span>   cli-claude                     <span class="fn">│</span>
+<span class="fn">│</span>   build     <span class="p">high</span>   cli-claude                     <span class="fn">│</span>
+<span class="fn">│</span> <span class="o">peripheral</span>                                        <span class="fn">│</span>
+<span class="fn">│</span>   classify  <span class="c">low</span>    ollama:qwen3.6:35b-a3b         <span class="fn">│</span>
+<span class="fn">│</span>   summarise <span class="c">low</span>    ollama:qwen3.6:35b-a3b         <span class="fn">│</span>
+<span class="fn">└───────────────────────────────────────────────────┘</span>
+<span class="c"> ↵</span> edit tier   <span class="c">f</span> coreFloor   <span class="c">o</span> role override</code></pre>
+    </div>
+  </div>
+
+  <h3 id="pane-debug">Debug — daemon internals</h3>
+  <p>A diagnostics pane hosting three inner sections, one shown full-height at a time; navigate them with <kbd>←</kbd> / <kbd>→</kbd> (the outer switcher keeps <kbd>1</kbd>–<kbd>6</kbd>/<kbd>Tab</kbd>). The section registry is injected as a services facade, so the views stay thin:</p>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Section</th><th>Shows</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Daemon</strong></td><td>Live daemon status — pid, uptime, socket — plus an orphan-process scan and a kill action for stale daemons left behind by a crash.</td></tr>
+      <tr><td><strong>MCP</strong></td><td>The registered MCP clients (Claude Code / Codex) and a debug-status probe over the daemon's IPC, so you can see what's actually connected.</td></tr>
+      <tr><td><strong>Logs</strong></td><td>A live tail of the daemon's rotating log file, in-pane.</td></tr>
+    </tbody>
+  </table></div>
+  <div class="term" style="margin:16px 0">
+    <div class="term-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="term-title">insrc — Debug</span></div>
+    <div class="term-body">
+<pre style="margin:0"><code><span class="fn">┌─ Debug · Daemon ──────────────────────────────────┐</span>
+<span class="fn">│</span>   pid     48213   uptime 2h14m                     <span class="fn">│</span>
+<span class="fn">│</span>   socket  ~/.insrc/daemon.sock  <span class="p">● up</span>              <span class="fn">│</span>
+<span class="fn">│</span>   orphans <span class="p">none</span>                                    <span class="fn">│</span>
+<span class="fn">└───────────────────────────────────────────────────┘</span>
+<span class="c"> ←/→</span> section   <span class="c">Daemon · MCP · Logs</span></code></pre>
+    </div>
+  </div>
+
   <h2 id="ipc">Talking to the daemon</h2>
-  <p>The CLI never opens LMDB or LanceDB directly. Every pane action goes through the daemon over JSON-RPC on its Unix socket at <code>~/.insrc/daemon.sock</code>, via the service functions in <code>src/cli/services/</code> — <code>daemon</code>, <code>repo</code>, <code>workflow</code>, <code>config</code>, <code>setup</code>, <code>maintenance</code>, and <code>lifecycle</code>. The panes are thin views over that services facade; the daemon owns all DB access.</p>
+  <p>The CLI never opens LMDB or LanceDB directly. Every pane action goes through the daemon over JSON-RPC on its Unix socket at <code>~/.insrc/daemon.sock</code>, via the service functions in <code>src/cli/services/</code> — <code>daemon</code>, <code>repo</code>, <code>workflow</code>, <code>config</code>, <code>setup</code>, <code>maintenance</code>, <code>lifecycle</code>, and <code>debug</code>. The panes are thin views over that services facade; the daemon owns all DB access.</p>
 
   <h3 id="command-bar">The command bar</h3>
   <p>Press <kbd>:</kbd> for a vim-style command line — the same operations the panes expose via keys, but typed, plus a few that have no key. It runs against the same services facade and prints its output inline.</p>
@@ -146,7 +186,7 @@
       <tr><td><code>tracker</code></td><td><code>setup [--project]</code> — bootstrap the GitHub tracker (config, labels, issue types, project)</td></tr>
       <tr><td><code>config</code></td><td><code>list [search]</code> · <code>get &lt;key&gt;</code> · <code>set &lt;key&gt; &lt;value&gt;</code> · <code>unset &lt;key&gt;</code> · <code>reload</code> (dot-path keys)</td></tr>
       <tr><td><code>setup</code></td><td><code>show</code> · <code>apply</code> · <code>pull</code></td></tr>
-      <tr><td><code>pane</code></td><td><code>daemon|repos|workflows|setup</code> · plus <code>help</code> and <code>quit</code></td></tr>
+      <tr><td><code>pane</code></td><td><code>daemon|repos|workflows|setup|tiers|debug</code> · plus <code>help</code> and <code>quit</code></td></tr>
     </tbody>
   </table></div>
   <div class="note">The command bar is the same interpreter for every workflow verb — including <code>tracker setup</code>, which has no pane key. It's pure logic over the services facade, so it unit-tests directly with a fake Services.</div>

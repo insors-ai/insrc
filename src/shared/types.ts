@@ -524,7 +524,9 @@ export type EntityKind =
   | 'variable'
   | 'document'
   | 'section'
-  | 'config';
+  | 'config'
+  // External-service dependency node (sc1 — E20260806914cbf5e:S001)
+  | 'externalEndpoint';
 
 export type RelationKind =
   | 'DEFINES'
@@ -534,7 +536,26 @@ export type RelationKind =
   | 'IMPLEMENTS'
   | 'DEPENDS_ON'
   | 'EXPORTS'
-  | 'REFERENCES';
+  | 'REFERENCES'
+  // External-service boundary edges (sc1 — E20260806914cbf5e:S001)
+  | 'CALLS_HTTP'
+  | 'PUBLISHES_TO'
+  | 'SUBSCRIBES_TO'
+  | 'CALLS_RPC';
+
+/**
+ * Protocol class of an external-service dependency (sc1). One of:
+ * `http` (HTTP/REST), `messaging` (publish/subscribe topic or queue),
+ * `rpc` (typed RPC such as gRPC/Thrift).
+ */
+export type ExternalProtocol = 'http' | 'messaging' | 'rpc';
+
+/** The four external-service boundary relation kinds (sc1). */
+export type ExternalBoundaryRelation =
+  | 'CALLS_HTTP'
+  | 'PUBLISHES_TO'
+  | 'SUBSCRIBES_TO'
+  | 'CALLS_RPC';
 
 export interface Entity {
   /** Stable deterministic ID: SHA256(repo + file + kind + name), hex-32 */
@@ -571,6 +592,17 @@ export interface Entity {
   embeddingModel?: string;
   /** True for non-code artifacts (docs, configs, plans). Enables code vs artifact filtering. */
   artifact?:       boolean;
+
+  // External-service endpoint fields (sc1 — E20260806914cbf5e:S001).
+  // Populated only for kind === 'externalEndpoint'.
+  /** Protocol class of the external dependency. */
+  protocol?:       ExternalProtocol;
+  /** false => the target could not be statically pinned. */
+  resolved?:       boolean;
+  /** Resolved identity: host+path | topic/queue | rpc service.method; '' when unresolved. */
+  target?:         string;
+  /** Raw call expression; present only when resolved === false. */
+  rawExpression?:  string;
 }
 
 export interface Relation {

@@ -1,0 +1,572 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1786032756701-97jw9l",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-08-06T16:56:41.124Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 2644224,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "914cbf5ea9026b92",
+    "epicSlug": "work-framed-approved-spec-proceed-from",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1786031712974-qqqe5k",
+    "hldEffectiveHash": "fd544bcd90a023e29bb48b2f6460dacf5dc6eaab956d8dff2bd59eceadab5516",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "ref": "data-model/EntityKind",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "EntityKind is a string union declared in src/shared/types.ts (cited around line 515) to which S001 adds 'externalEndpoint'.",
+          "evidence": "Confirmed: src/shared/types.ts:515 `export type EntityKind =`. NOTE the evidence also shows a SECOND declaration at src/db/graph/keys.ts:77 `export type EntityKind = keyof typeof ENTITY_KIND_BYTE;` — keys.ts re-derives EntityKind from a byte map. The citation itself is accurate; the dual-declaration is the subject of cl3-adjacent finding below.",
+          "action": "None — citation verified.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl2",
+          "ref": "data-model/RelationKind",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "RelationKind is an intra-code string union declared in src/shared/types.ts (cited around line 529) to which S001 adds CALLS_HTTP/PUBLISHES_TO/SUBSCRIBES_TO/CALLS_RPC.",
+          "evidence": "Confirmed: src/shared/types.ts:529 `export type RelationKind =` and src/db/graph/keys.ts:37 `export type RelationKind = keyof typeof RELATION_KIND_BYTE;`. The LLD correctly cites keys.ts for the RelationKind byte mapping.",
+          "action": "None — citation verified.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl3",
+          "ref": "data-model/Entity",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The Entity record is declared in src/shared/types.ts (cited around line 539) carrying id/kind/name and optional fields (signature, isExported), which S001 extends with optional endpoint fields inline.",
+          "evidence": "Confirmed: src/shared/types.ts:539 `export interface Entity`, codec.ts:132 `export interface EntityRow`, and src/shared/types.ts:565 `isExported?: boolean;` — the inline-optional-field pattern the LLD mirrors is real.",
+          "action": "None — citation verified.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl4",
+          "ref": "contract/transitiveClosure",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "transitiveClosure is defined in src/db/graph/traversal.ts (cited around line 134) and accepts a kindFilter over RelationKind used by the DEPENDS_ON closure.",
+          "evidence": "Confirmed: transitiveClosure is exported from src/db/graph/traversal.js (imported in traversal.test.ts:23) and kindFilter is a real traversal option (outNeighbors/inNeighbors { kindFilter: [...] } across analyze/explore/*). Signature-level claim holds.",
+          "action": "None — citation verified.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl5",
+          "ref": "contract/decodeEntityRow",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The graph codec src/db/graph/codec.ts defines encodeEntityRow/decodeEntityRow (EntityRow around line 133) as pass-through msgpack, and decodeRepoRow (around line 113) uses the additive-decode `?? default` precedent S001 relies on.",
+          "evidence": "Confirmed: encodeEntityRow/decodeEntityRow exported from src/db/graph/codec.ts (codec.test.ts round-trips them), and the additive-decode precedent is real at src/db/graph/codec.ts:117 `kind: raw.kind ?? 'workspace'` (the LLD cited ~113; the pattern is at 117 — within the same decodeRepoRow block).",
+          "action": "None — citation verified (line ~113 vs actual 117 is immaterial).",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl6",
+          "ref": "data-model/keys",
+          "kind": "citation",
+          "severity": "MED",
+          "premise": "src/db/graph/keys.ts maps each RelationKind to a u8 byte used in the edge key, where S001 appends four new bytes.",
+          "evidence": "keys.ts owns BOTH byte maps: RELATION_KIND_BYTE (keys.ts:37) AND ENTITY_KIND_BYTE (keys.ts:77), each with `export type <Kind> = keyof typeof <MAP>`. The LLD's EntityKind data-model change lists call sites `src/shared/types.ts` + `src/db/graph/codec.ts` but OMITS `src/db/graph/keys.ts` — yet because EntityKind is re-derived as `keyof typeof ENTITY_KIND_BYTE`, adding the 'externalEndpoint' node kind REQUIRES appending it to ENTITY_KIND_BYTE in keys.ts too (exactly parallel to how the LLD already handles the new RelationKind byte). Left unstated, the build could add the member to shared/types.ts only and diverge the two EntityKind unions / miss the entity-kind byte.",
+          "action": "Add src/db/graph/keys.ts (ENTITY_KIND_BYTE append) to the EntityKind data-model change's call sites + schemaDiff, mirroring the RelationKind entry.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "keys.ts:77 shows EntityKind = keyof typeof ENTITY_KIND_BYTE, so a new node kind needs a byte in ENTITY_KIND_BYTE, not just a member in the shared/types.ts union. Make the EntityKind change symmetric with the RelationKind change (which already cites keys.ts).",
+            "artifactEdits": [
+              {
+                "find": "src/shared/types.ts EntityKind: + | 'externalEndpoint'",
+                "replace": "src/shared/types.ts EntityKind: + | 'externalEndpoint'\nsrc/db/graph/keys.ts: append 'externalEndpoint' to the ENTITY_KIND_BYTE map (keys.ts re-derives `EntityKind = keyof typeof ENTITY_KIND_BYTE`, so the node kind needs a stable u8 byte here too, parallel to the new RelationKind bytes)"
+              }
+            ]
+          }
+        },
+        {
+          "claimId": "cl7",
+          "ref": "data-model/ids",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/db/graph/ids.ts allocates internal u64 store ids (allocateEntityId/allocateEntityIdInTxn), distinct from the deterministic SHA256 string Entity.id used for endpoint dedup.",
+          "evidence": "Confirmed: src/db/graph/ids.ts exports allocateEntityId / allocateEntityIdInTxn (ids.test.ts + db/entities.ts:47 import). The u64-vs-deterministic-string-id duality the LLD relies on is real.",
+          "action": "None — citation verified.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl8",
+          "ref": "data-model/migrations",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/db/graph/migrations.ts is a forward-migration runner with a Migration registry and a schema_version meta key; S001 requires no data-rewrite migration.",
+          "evidence": "Partially confirmed: the `schema_version` meta key + a forward-migration seam are real (migration-v2-to-v3.test.ts, derived-indices 'v1->v2 migration on env open'). The literal `Migration` type / `run(` method names did not grep in src, so the exact runner shape should be confirmed at build — but the load-bearing claim (an additive schema_version marker seam exists; no data-rewrite migration needed) holds.",
+          "action": "Confirm the migration-runner type name at build time; no design change.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl9",
+          "ref": "closed-union/boundary-kinds",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "The four boundary relation kinds CALLS_HTTP, PUBLISHES_TO, SUBSCRIBES_TO, CALLS_RPC are the complete set added, one per protocol boundary class.",
+          "evidence": "Confirmed absent by design: CALLS_HTTP/PUBLISHES_TO/SUBSCRIBES_TO/CALLS_RPC do not yet exist in src — they are the NEW vocabulary this LLD introduces. Not a defect; the closed set of four is intentional (one per boundary class).",
+          "action": "None — new symbols expected to be absent pre-build.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl10",
+          "ref": "cross-artifact/sc1",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "The HLD (914cbf5ea9026b92) owns sc1 ExternalEndpoint graph vocabulary with ownedByStory s1, which this LLD implements verbatim.",
+          "evidence": "The src-only grep could not read the HLD artifact (evidence engine scoped to src/), so the cross-artifact trace is unverified by this pass. The HLD (docs/designs/HLD-work-framed-approved-spec-proceed-from.md, committed) does declare sc1 ownedByStory s1 — authored + reviewed this session. Low risk.",
+          "action": "None — trace holds per the committed HLD.",
+          "fixability": "auto"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 1,
+        "low": 9
+      },
+      "reviewedAt": "2026-08-06T16:59:09.659Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-08-06T17:09:35.825Z",
+    "reviewOverride": {
+      "reason": "true",
+      "at": "2026-08-06T17:09:35.825Z"
+    }
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Pipeline-integrated external-service graph tracing. The graph gains one new node kind (ExternalEndpoint, carrying a protocol + resolved/unresolved tag) and four typed boundary edge kinds (CALLS_HTTP, PUBLISHES_TO, SUBSCRIBES_TO, CALLS_RPC), added once to the graph vocabulary and gated by a graph-schema migration so existing indexes evolve without a full re-index. Per-language outbound and inbound detectors run as thin plugins inside the existing tree-sitter parse; a shared protocol-agnostic resolution engine turns indirect/configured targets into a concrete identity (or an explicit unresolved marker) from layered config sources with a fixed precedence. Cross-repo linking is a separate daemon-side matching pass, keyed off a per-repo service-identity registry, that forms a real dependency edge onto the target repo's actual handler entity and inserts it into the DEPENDS_ON closure; the same pass, re-fired on repo register/re-index events, is the out-of-order backfill.",
+      "ownedContracts": [
+        {
+          "id": "sc1",
+          "name": "ExternalEndpoint graph vocabulary",
+          "purpose": "The first-class node kind + four typed boundary edge kinds for external-service dependencies, the per-repo deterministic endpoint id, and their participation in the DEPENDS_ON closure. Foundation every detector + the matcher writes into.",
+          "interfaceSketch": "type ExternalProtocol = 'http' | 'messaging' | 'rpc';\n// EntityKind gains 'externalEndpoint'; RelationKind gains the four boundary kinds below.\ninterface ExternalEndpointEntity {\n  kind: 'externalEndpoint';\n  repo: string;\n  protocol: ExternalProtocol;\n  resolved: boolean;              // false => could not be statically pinned\n  target: string;                // resolved host+path | topic/queue | rpc service.method ; '' when unresolved\n  rawExpression?: string;        // present only when resolved === false\n  // deterministic per-repo id: SHA256(repo + '' + 'externalEndpoint' + protocol + ':' + (target || rawExpression)), hex-32\n}\ntype ExternalBoundaryRelation = 'CALLS_HTTP' | 'PUBLISHES_TO' | 'SUBSCRIBES_TO' | 'CALLS_RPC';\n// closure rule: an ExternalBoundaryRelation and any cross-repo edge built on it are treated as\n// DEPENDS_ON-closure edges by the traversal, so closure queries reach them.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s3",
+            "s4",
+            "s5",
+            "s8",
+            "s9"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        }
+      ],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [
+          "sc1"
+        ],
+        "depends": [],
+        "internal": "The concrete LMDB codec encoding for the new node/edge kinds, the graph-schema migration that evolves already-stored indexes to carry them, and the exact traversal change that makes boundary/cross-repo edges count as DEPENDS_ON-closure edges are all internal to S001 — consumers see only the sc1 node/edge vocabulary + the closure guarantee, not how it is serialized or migrated."
+      },
+      "rolloutPhase": "Phase A — Graph foundation + resolution",
+      "nonFunctional": {
+        "performance": "Detection reuses the single existing tree-sitter parse per file — no second parse pass is added to indexing. The cross-repo matching pass is bounded per registry/re-index event (it re-evaluates only endpoints whose match could have changed), not a full-workspace rescan on every index.",
+        "security": "Detection is static and at-rest — config, .env, k8s, and docker sources are read as text, never executed (k6). Resolution uses config/secret values only to derive a service IDENTITY (host/topic/service string) recorded as the endpoint target; raw secret contents beyond the resolved identity string are not persisted as graph data.",
+        "observability": "Unresolved endpoints are first-class and queryable (they carry the raw expression), so coverage gaps are visible rather than silent; cross-repo edges vs endpoint-only outcomes are distinguishable so an operator can see where matching did and did not link.",
+        "durability": "New nodes/edges use deterministic ids (repo + resolved target), and the vocabulary lands behind a graph-schema migration, so re-indexing is stable and idempotent and existing indexes evolve without a destructive full rebuild."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "transitiveClosure",
+          "signature": "async function transitiveClosure(roots: Iterable<bigint>, opts: { kindFilter?: ReadonlySet<RelationKind> | readonly RelationKind[]; ... }): Promise<Set<bigint>>",
+          "parameters": [
+            {
+              "name": "roots",
+              "type": "Iterable<bigint>",
+              "purpose": "u64 store-id roots to walk from (unchanged).",
+              "optional": false
+            },
+            {
+              "name": "opts",
+              "type": "{ kindFilter?: ReadonlySet<RelationKind> | readonly RelationKind[] }",
+              "purpose": "Traversal options; the DEPENDS_ON-closure caller's kindFilter set is what gains the four boundary RelationKinds (and later the cross-repo edge kind).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<Set<bigint>>",
+            "meaning": "The reachable u64 id set. Signature UNCHANGED by S001; the only change is that the DEPENDS_ON-closure kind set the caller passes now includes CALLS_HTTP/PUBLISHES_TO/SUBSCRIBES_TO/CALLS_RPC so boundary edges are traversable within the closure (ac2). Existing closure semantics over existing kinds are unchanged — the new kinds are purely added."
+          },
+          "errors": [],
+          "preconditions": [
+            "The boundary RelationKinds have stable u8 byte assignments (keys.ts) before any closure over them runs."
+          ],
+          "postconditions": [
+            "A closure query from a repo reaches its ExternalEndpoint nodes via the boundary edges (ac2); a graph with no boundary edges yields a byte-identical closure to before."
+          ]
+        },
+        {
+          "name": "decodeEntityRow",
+          "signature": "function decodeEntityRow(b: Buffer): EntityRow",
+          "parameters": [
+            {
+              "name": "b",
+              "type": "Buffer",
+              "purpose": "A stored msgpack entity row.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "EntityRow",
+            "meaning": "The decoded row. Signature UNCHANGED; S001 relies on the existing forward-compatible pass-through decode (the decodeRepoRow `?? default` precedent) so a pre-S001 row — which never carries kind:'externalEndpoint' nor the endpoint optional fields — decodes byte-identically, and a new externalEndpoint row round-trips its protocol/resolved/target/rawExpression."
+          },
+          "errors": [],
+          "preconditions": [
+            "EntityKind + the endpoint optional fields are additive to the EntityRow type (no removed/renamed field)."
+          ],
+          "postconditions": [
+            "encode(decode(x)) === x for both pre-S001 rows and new externalEndpoint rows (forward + backward compatible)."
+          ]
+        }
+      ],
+      "dataModel": [
+        {
+          "entity": "EntityKind (src/shared/types.ts)",
+          "change": "field-add",
+          "details": "The EntityKind string union gains a new member 'externalEndpoint'. Purely additive to the union; existing kinds unchanged. This is the sc1 node kind. NOTE: keys.ts re-derives EntityKind as keyof typeof ENTITY_KIND_BYTE, so the new member must also be appended to the ENTITY_KIND_BYTE byte map in src/db/graph/keys.ts (parallel to the RelationKind byte).",
+          "schemaDiff": "src/shared/types.ts EntityKind: + | 'externalEndpoint'\nsrc/db/graph/keys.ts: append 'externalEndpoint' to the ENTITY_KIND_BYTE map (keys.ts re-derives `EntityKind = keyof typeof ENTITY_KIND_BYTE`, so the node kind needs a stable u8 byte here too, parallel to the new RelationKind bytes)",
+          "callSites": [
+            "src/shared/types.ts",
+            "src/db/graph/keys.ts",
+            "src/db/graph/codec.ts"
+          ]
+        },
+        {
+          "entity": "RelationKind + its u8 byte mapping (src/shared/types.ts + src/db/graph/keys.ts)",
+          "change": "field-add",
+          "details": "RelationKind gains four members CALLS_HTTP / PUBLISHES_TO / SUBSCRIBES_TO / CALLS_RPC, each assigned a NEW, stable, append-only u8 byte in keys.ts (never reusing/renumbering existing bytes, since the byte is encoded in the edge key). These are the sc1 boundary edge kinds distinguishing HTTP call / publish / subscribe / RPC call (ac1).",
+          "schemaDiff": "src/shared/types.ts RelationKind: + | 'CALLS_HTTP' | 'PUBLISHES_TO' | 'SUBSCRIBES_TO' | 'CALLS_RPC'\nsrc/db/graph/keys.ts: append four new u8 byte values for the above (next free bytes after the existing kinds)",
+          "callSites": [
+            "src/shared/types.ts",
+            "src/db/graph/keys.ts",
+            "src/db/graph/codec.ts"
+          ]
+        },
+        {
+          "entity": "Entity / EntityRow endpoint fields (src/shared/types.ts + src/db/graph/codec.ts)",
+          "change": "field-add",
+          "details": "The Entity/EntityRow record gains optional fields populated only for kind==='externalEndpoint': protocol ('http'|'messaging'|'rpc'), resolved (boolean), target (string; '' when unresolved), rawExpression? (string; present only when resolved===false) — modeled inline exactly as existing optional fields (signature, isExported, hash) are. The deterministic per-repo endpoint id is SHA256(repo + '' + 'externalEndpoint' + protocol + ':' + (target||rawExpression)) hex-32, so repeated call-sites to one target in one repo dedup to a single node (k2).",
+          "schemaDiff": "src/shared/types.ts Entity: + protocol?: ExternalProtocol; + resolved?: boolean; + target?: string; + rawExpression?: string;  (all optional, only set for externalEndpoint)",
+          "callSites": [
+            "src/shared/types.ts",
+            "src/db/graph/codec.ts"
+          ]
+        },
+        {
+          "entity": "DEPENDS_ON-closure kind set (src/db/graph/traversal.ts)",
+          "change": "invariant-change",
+          "details": "The invariant 'the DEPENDS_ON closure spans only the existing intra-code relation kinds' becomes 'the closure also spans the four external boundary kinds (and the future cross-repo edge kind)'. Concretely the kindFilter set the DEPENDS_ON-closure passes to transitiveClosure gains CALLS_HTTP/PUBLISHES_TO/SUBSCRIBES_TO/CALLS_RPC. Additive: a graph with no boundary edges has an unchanged closure (ac2, k1).",
+          "schemaDiff": "src/db/graph/traversal.ts: the DEPENDS_ON closure kind set gains the four boundary RelationKinds",
+          "callSites": [
+            "src/db/graph/traversal.ts"
+          ]
+        },
+        {
+          "entity": "Graph schema version marker (src/db/graph/migrations.ts)",
+          "change": "invariant-change",
+          "details": "No DATA migration is required: the new EntityKind/RelationKind values are additive, pre-existing rows never carry them, and decode is forward-compatible (decodeRepoRow precedent), so existing indexes read correctly as-is with NO destructive rebuild (durability NF). An OPTIONAL schema_version marker bump may be registered as a no-op documentation step; it performs no row rewrite. This refines the HLD frameworkSummary phrase 'gated by a graph-schema migration' to 'additive + forward-compatible', which strengthens (does not contradict) the HLD durability NF 'existing indexes evolve without a destructive full rebuild' — so no HLD amendment is needed (the migration mechanics are S001-internal per the story boundary).",
+          "schemaDiff": "src/db/graph/migrations.ts: (optional) register a no-op schema_version marker step; NO run() row rewrite",
+          "callSites": [
+            "src/db/graph/migrations.ts"
+          ]
+        }
+      ],
+      "interactionWithShared": [
+        {
+          "contractId": "sc1",
+          "role": "implements",
+          "howDetails": "S001 owns sc1 and implements it verbatim: the ExternalEndpoint EntityKind + endpoint fields (Entity/EntityRow), the four boundary RelationKinds (shared/types.ts + keys.ts byte mapping + codec), the per-repo deterministic endpoint id (k2), and the closure participation (traversal kindFilter, ac2/k1). Downstream consumers s3/s4/s5 write endpoint nodes + boundary edges via this vocabulary; s8/s9 read endpoints + add the cross-repo edge kind into the same closure set."
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "EntityKind (src/shared/types.ts)",
+        "change": "field-add",
+        "details": "The EntityKind string union gains a new member 'externalEndpoint'. Purely additive to the union; existing kinds unchanged. This is the sc1 node kind. NOTE: keys.ts re-derives EntityKind as keyof typeof ENTITY_KIND_BYTE, so the new member must also be appended to the ENTITY_KIND_BYTE byte map in src/db/graph/keys.ts (parallel to the RelationKind byte).",
+        "schemaDiff": "src/shared/types.ts EntityKind: + | 'externalEndpoint'\nsrc/db/graph/keys.ts: append 'externalEndpoint' to the ENTITY_KIND_BYTE map (keys.ts re-derives `EntityKind = keyof typeof ENTITY_KIND_BYTE`, so the node kind needs a stable u8 byte here too, parallel to the new RelationKind bytes)",
+        "callSites": [
+          "src/shared/types.ts",
+          "src/db/graph/keys.ts",
+          "src/db/graph/codec.ts"
+        ]
+      },
+      {
+        "entity": "RelationKind + its u8 byte mapping (src/shared/types.ts + src/db/graph/keys.ts)",
+        "change": "field-add",
+        "details": "RelationKind gains four members CALLS_HTTP / PUBLISHES_TO / SUBSCRIBES_TO / CALLS_RPC, each assigned a NEW, stable, append-only u8 byte in keys.ts (never reusing/renumbering existing bytes, since the byte is encoded in the edge key). These are the sc1 boundary edge kinds distinguishing HTTP call / publish / subscribe / RPC call (ac1).",
+        "schemaDiff": "src/shared/types.ts RelationKind: + | 'CALLS_HTTP' | 'PUBLISHES_TO' | 'SUBSCRIBES_TO' | 'CALLS_RPC'\nsrc/db/graph/keys.ts: append four new u8 byte values for the above (next free bytes after the existing kinds)",
+        "callSites": [
+          "src/shared/types.ts",
+          "src/db/graph/keys.ts",
+          "src/db/graph/codec.ts"
+        ]
+      },
+      {
+        "entity": "Entity / EntityRow endpoint fields (src/shared/types.ts + src/db/graph/codec.ts)",
+        "change": "field-add",
+        "details": "The Entity/EntityRow record gains optional fields populated only for kind==='externalEndpoint': protocol ('http'|'messaging'|'rpc'), resolved (boolean), target (string; '' when unresolved), rawExpression? (string; present only when resolved===false) — modeled inline exactly as existing optional fields (signature, isExported, hash) are. The deterministic per-repo endpoint id is SHA256(repo + '' + 'externalEndpoint' + protocol + ':' + (target||rawExpression)) hex-32, so repeated call-sites to one target in one repo dedup to a single node (k2).",
+        "schemaDiff": "src/shared/types.ts Entity: + protocol?: ExternalProtocol; + resolved?: boolean; + target?: string; + rawExpression?: string;  (all optional, only set for externalEndpoint)",
+        "callSites": [
+          "src/shared/types.ts",
+          "src/db/graph/codec.ts"
+        ]
+      },
+      {
+        "entity": "DEPENDS_ON-closure kind set (src/db/graph/traversal.ts)",
+        "change": "invariant-change",
+        "details": "The invariant 'the DEPENDS_ON closure spans only the existing intra-code relation kinds' becomes 'the closure also spans the four external boundary kinds (and the future cross-repo edge kind)'. Concretely the kindFilter set the DEPENDS_ON-closure passes to transitiveClosure gains CALLS_HTTP/PUBLISHES_TO/SUBSCRIBES_TO/CALLS_RPC. Additive: a graph with no boundary edges has an unchanged closure (ac2, k1).",
+        "schemaDiff": "src/db/graph/traversal.ts: the DEPENDS_ON closure kind set gains the four boundary RelationKinds",
+        "callSites": [
+          "src/db/graph/traversal.ts"
+        ]
+      },
+      {
+        "entity": "Graph schema version marker (src/db/graph/migrations.ts)",
+        "change": "invariant-change",
+        "details": "No DATA migration is required: the new EntityKind/RelationKind values are additive, pre-existing rows never carry them, and decode is forward-compatible (decodeRepoRow precedent), so existing indexes read correctly as-is with NO destructive rebuild (durability NF). An OPTIONAL schema_version marker bump may be registered as a no-op documentation step; it performs no row rewrite. This refines the HLD frameworkSummary phrase 'gated by a graph-schema migration' to 'additive + forward-compatible', which strengthens (does not contradict) the HLD durability NF 'existing indexes evolve without a destructive full rebuild' — so no HLD amendment is needed (the migration mechanics are S001-internal per the story boundary).",
+        "schemaDiff": "src/db/graph/migrations.ts: (optional) register a no-op schema_version marker step; NO run() row rewrite",
+        "callSites": [
+          "src/db/graph/migrations.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "implements",
+        "howDetails": "S001 owns sc1 and implements it verbatim: the ExternalEndpoint EntityKind + endpoint fields (Entity/EntityRow), the four boundary RelationKinds (shared/types.ts + keys.ts byte mapping + codec), the per-repo deterministic endpoint id (k2), and the closure participation (traversal kindFilter, ac2/k1). Downstream consumers s3/s4/s5 write endpoint nodes + boundary edges via this vocabulary; s8/s9 read endpoints + add the cross-repo edge kind into the same closure set."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A boundary edge references an external-endpoint node whose deterministic string id was never written (dangling endpoint reference during a partial/interrupted index).",
+          "detection": "At edge-write time the writer looks up the target node by its deterministic string id and finds no row; at traversal time transitiveClosure resolves the u64 target and the entity fetch returns undefined.",
+          "response": "Writer refuses to persist a boundary edge to a non-existent endpoint node (endpoint node is upserted first, edge second, within the same index transaction); a traversal that still encounters an unresolvable target skips that edge rather than throwing, so the closure degrades gracefully instead of crashing.",
+          "userImpact": "No crash and no phantom edge; at worst the endpoint is simply absent until the repo finishes indexing, when the node+edge appear together.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Two distinct RelationKind members are accidentally assigned the same u8 byte in keys.ts (byte collision on the append), so edges of different boundary kinds become indistinguishable in the key space.",
+          "detection": "A build-time / test-time assertion over the RelationKind→byte map catches a duplicate byte value (the codec round-trip test decodes a kind different from the one encoded).",
+          "response": "The byte map is append-only with an exhaustive uniqueness assertion; the codec round-trip test fails loudly in CI before any such map ships, forcing a distinct next-free byte.",
+          "userImpact": "Caught in development, never reaches a user index; if it somehow shipped, ac1's four-way distinguishability would break, which the test prevents.",
+          "recoverable": true
+        },
+        {
+          "scenario": "An externalEndpoint row is decoded on an OLDER daemon build that predates the new EntityKind (forward-read of a newer index by older code).",
+          "detection": "Older decode reads kind:'externalEndpoint' as an unknown string; the existing additive-decode path (decodeRepoRow `?? default` precedent) leaves the field as-is rather than validating against a closed enum.",
+          "response": "Decode is pass-through and does not enum-validate kind, so an unknown kind decodes as an inert node the older code simply never queries for; no throw. (This is a tolerated one-way concern — the project runs a single daemon build, so newer-index-on-older-code is not a supported live path, only a robustness guarantee.)",
+          "userImpact": "None in the supported single-build deployment; the additive decode guarantees no hard failure even in the unsupported skew case.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "An unresolved outbound call whose target cannot be statically determined — resolved:false, target:'' , rawExpression set to the raw call expression.",
+          "expected": "A first-class externalEndpoint node is still created (the 'always create a node, tag resolved/unresolved' brainstorm decision), with its deterministic id keyed off (target||rawExpression) so the rawExpression provides identity; it participates in the closure exactly like a resolved node."
+        },
+        {
+          "input": "Two different call-sites in the SAME repo reaching the identical resolved target+protocol.",
+          "expected": "Both hash to the same deterministic string id → a single deduped externalEndpoint node (k2), with two boundary edges (one per call-site code entity) pointing at it."
+        },
+        {
+          "input": "The same resolved target reached from TWO different repos.",
+          "expected": "Two distinct externalEndpoint nodes — one per repo — because repo is part of the deterministic id (per-repo dedup, brainstorm node-dedup decision); cross-repo unification is s8/s9's job via the cross-repo edge, not id collision here."
+        },
+        {
+          "input": "A repo with zero outbound external calls is indexed, and a dependency-closure query is run from it.",
+          "expected": "No externalEndpoint nodes and no boundary edges are created; the closure result is byte-identical to pre-S001 (additive invariant, ac2/k1)."
+        },
+        {
+          "input": "A single call-site expression that is simultaneously plausible as two protocols (ambiguous) — deferred resolution.",
+          "expected": "S001's vocabulary can represent whichever single protocol the resolver (s2) ultimately assigns; S001 itself does not resolve — it only provides one protocol-typed node shape, so ambiguity handling is out of this story's scope and lands in the resolution/detection stories."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The deterministic entity id remains SHA256(repo + file + kind + name) hex-32; the externalEndpoint id fits this scheme with file='' and name=(protocol + ':' + (target||rawExpression)), so id determinism and the existing name_index/dedup contract are unchanged for all existing kinds.",
+          "source": "c1"
+        },
+        {
+          "text": "The DEPENDS_ON dependency-closure over existing relation kinds returns exactly what it did before — the four boundary kinds are ADDED to the closure's considered set, never replacing or altering traversal over existing kinds (a boundary-edge-free graph yields an unchanged closure).",
+          "source": "c1"
+        },
+        {
+          "text": "encode/decode of every pre-S001 entity and edge row round-trips unchanged; existing indexes read correctly with no destructive rebuild (additive, forward-compatible decode).",
+          "source": "c1"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test via `npx tsx --test` (matching the existing src/db/graph/**/__tests__ suites)",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove the new EntityKind/RelationKind vocabulary + endpoint fields round-trip through the msgpack codec and that the RelationKind→u8 byte map stays collision-free and append-only.",
+          "subjects": [
+            "encodeEntityRow/decodeEntityRow round-trip of an externalEndpoint EntityRow (resolved and unresolved variants, all endpoint fields present/absent)",
+            "encode/decode of each of the four boundary RelationKind edge bytes (CALLS_HTTP/PUBLISHES_TO/SUBSCRIBES_TO/CALLS_RPC)",
+            "RelationKind→byte map exhaustive uniqueness assertion (no duplicate byte; new bytes appended after existing)",
+            "deterministic endpoint id = SHA256(repo + '' + 'externalEndpoint' + protocol + ':' + (target||rawExpression)) hex-32 — same inputs → same id; per-repo distinctness"
+          ],
+          "fixturesNeeded": [
+            "An in-memory/temp LMDB graph store (existing src/db/graph test harness)",
+            "A pre-S001 EntityRow + edge byte fixture (legacy row that never carries the new kind/fields)"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove a boundary edge from a code entity to an externalEndpoint node is created and is traversable within the DEPENDS_ON dependency-closure, and that a graph with no boundary edges yields an unchanged closure.",
+          "subjects": [
+            "transitiveClosure from a repo root reaches its externalEndpoint node via a boundary edge when the closure kindFilter includes the four boundary kinds (ac2)",
+            "closure over an existing-kinds-only graph is byte-identical to pre-S001 (additive invariant)",
+            "per-repo dedup: two boundary edges from two call-sites to the same resolved target+protocol resolve to a single endpoint node (k2)",
+            "two repos reaching the same target produce two distinct per-repo endpoint nodes"
+          ],
+          "fixturesNeeded": [
+            "A small synthetic graph: one code entity + one resolved externalEndpoint + one boundary edge, built via the graph store API",
+            "A second synthetic graph with zero boundary edges (the unchanged-closure control)"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "Pin the sc1 shared-contract shape (node kind string, four relation-kind names, endpoint field set, id derivation) so downstream consumers s3/s4/s5/s8/s9 build against a fixed vocabulary.",
+          "subjects": [
+            "ExternalEndpointEntity field set + protocol enum ('http'|'messaging'|'rpc') matches sc1",
+            "the four ExternalBoundaryRelation names match sc1 exactly",
+            "forward-compatible decode: a pre-S001 row/edge decodes unchanged (no throw, no field loss)"
+          ],
+          "fixturesNeeded": [
+            "A frozen sc1 vocabulary fixture (the literal kind/relation/field names) to assert the type surface against"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "unit: encode/decode round-trip of a resolved externalEndpoint EntityRow + each of the four boundary edge-kind bytes (a first-class node + typed, four-way-distinguishable boundary relationship exist)",
+            "integration: a code entity → externalEndpoint boundary edge is written and read back with the correct protocol-typed relation kind",
+            "unit: deterministic per-repo endpoint id dedups two same-target call-sites into one node (k2)"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "integration: transitiveClosure from the repo root reaches the externalEndpoint node via the boundary edge when the closure kindFilter includes the four boundary kinds",
+            "integration: a boundary-edge-free graph's closure is byte-identical to pre-S001 (the added kinds never alter existing-kind traversal, k1)"
+          ]
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Inline endpoint fields on EntityRow + per-class RelationKind bytes + closure kindFilter inclusion (additive, no data migration)",
+        "oneLineSummary": "Add 'externalEndpoint' to EntityKind with endpoint-specific OPTIONAL fields inline on the Entity/EntityRow shape (as signature/isExported already are), add four new RelationKind byte values in keys.ts, include the four kinds in the DEPENDS_ON-closure kindFilter, and rely on the existing forward-compatible decode — no data-rewrite migration.",
+        "chosen": true,
+        "pros": [
+          "Smallest surface that satisfies the HLD contract verbatim: one EntityKind + four RelationKinds + closure inclusion, all additive to unions the codec already stores as-is.",
+          "Reuses the established forward-compat decode precedent (decodeRepoRow's `?? default`), so pre-S001 indexes read unchanged with ZERO data migration — matching the durability NF (no destructive rebuild).",
+          "Endpoint fields inline on EntityRow means one lookup to read an endpoint node (no join), consistent with how existing optional entity fields work.",
+          "Per-repo deterministic string id gives k2 dedup for free through the existing name/id machinery."
+        ],
+        "cons": [
+          "EntityRow gains four optional fields only ever set for one kind, slightly widening the shared Entity shape for every entity.",
+          "Requires stable u8 byte assignment for the new relation kinds that must never be reused/renumbered later (an append-only discipline on keys.ts)."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Endpoint props in a separate side-table keyed by entity id",
+        "oneLineSummary": "Add the 'externalEndpoint' EntityKind + four RelationKinds, but store protocol/resolved/target/rawExpression in a dedicated endpoint-props sub-DB keyed by the entity id rather than inline on EntityRow.",
+        "reasonRejected": "Functionally reaches ac1/ac2 but weakens sc1/k2: it splits an endpoint's identity across EntityRow + a side-row so the deterministic-id/dedup invariant must hold across two stores, and adds a new sub-DB + codec + join for a niche node kind — diverging from the inline-optional-field pattern existing entity fields already use. (s3: partial on sc1 and k2.)",
+        "costEstimate": "L"
+      },
+      {
+        "id": "a3",
+        "name": "Materialize a parallel DEPENDS_ON edge per boundary edge (leave traversal untouched)",
+        "oneLineSummary": "Same node + four boundary RelationKinds as a1, but achieve closure participation by ALSO writing a real DEPENDS_ON edge alongside each boundary edge, so the existing closure kindFilter is unchanged.",
+        "reasonRejected": "Avoids touching traversal but doubles edges per call-site and introduces a desync integrity hazard (a boundary edge missing its shadow, or vice versa), and conflates the semantic DEPENDS_ON kind with boundary kinds so 'real code dep vs external boundary' is no longer readable from the edge kind alone — more storage + risk for no benefit over a1's kindFilter change. (s3: partial on k1 and sc1.)",
+        "costEstimate": "M"
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 data-model.trace — src/shared/types.ts EntityKind:515 / RelationKind:529 / Entity:539",
+      "quotedText": "EntityKind is a code-only string union; RelationKind is intra-code; the Entity record carries id (deterministic SHA256(repo+file+kind+name) hex-32) + optional fields. S001 adds one EntityKind + four RelationKinds + endpoint-specific optional fields."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 symbol.locate — src/db/graph/ids.ts (u64 store id vs deterministic string id)",
+      "quotedText": "The per-repo ExternalEndpoint dedup keys off the DETERMINISTIC STRING id — SHA256(repo + '' + 'externalEndpoint' + protocol + ':' + (target||rawExpression)) — so two call-sites to the same target in one repo hash to one node."
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1 usage.example — src/db/graph/codec.ts + keys.ts (additive-decode precedent)",
+      "quotedText": "decodeRepoRow shows the additive-decode pattern (kind: raw.kind ?? 'workspace'); adding a new EntityKind string + new RelationKind byte values is additive to the codec."
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "s1 usage.example — src/db/graph/traversal.ts transitiveClosure:134 (kindFilter)",
+      "quotedText": "For ac2 the four ExternalBoundaryRelation kinds must be INCLUDED in whichever kindFilter the closure uses; the change is additive."
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "s1 data-model.trace — src/db/graph/migrations.ts (no data migration for additive kinds)",
+      "quotedText": "The new EntityKind/RelationKind values are purely ADDITIVE — no data-rewrite migration is required; a schema_version bump is optional (a marker)."
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "HLD 914cbf5ea9026b92 — sc1 ExternalEndpoint graph vocabulary (ownedByStory s1)",
+      "quotedText": "The first-class node kind + four typed boundary edge kinds, the per-repo deterministic endpoint id, and their participation in the DEPENDS_ON closure."
+    },
+    {
+      "id": "c7",
+      "kind": "step-output",
+      "ref": "s3 alternatives.judge — winner a1 over a2/a3",
+      "quotedText": "a1 is the only alternative scoring satisfies on sc1 + k1 + k2 together with the smallest additive surface."
+    }
+  ]
+}

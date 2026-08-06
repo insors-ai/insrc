@@ -31,6 +31,28 @@ import { decodeEntityRow } from './codec.js';
 import { getGraphStore } from './store.js';
 import { compileKindFilter, neighborsSync } from './edges.js';
 
+/**
+ * The relation kinds that count as dependency-closure edges (sc1 —
+ * E20260806914cbf5e:S001). The single source of truth for "what a
+ * DEPENDS_ON-style closure traverses": the intra-code `DEPENDS_ON` edge
+ * plus the four external-service boundary kinds, so a closure query from a
+ * code entity reaches its ExternalEndpoint nodes (ac2). Additive — with no
+ * boundary edges present, a closure over this set returns exactly what a
+ * `['DEPENDS_ON']` closure returned.
+ *
+ * NOTE: repo-level reachability (`db/search.ts` resolveClosure, which walks
+ * repo→repo `DEPENDS_ON` edges) is intentionally NOT switched to this set;
+ * boundary edges are entity-level, so this constant governs entity-level
+ * closure queries that must surface endpoints.
+ */
+export const DEPENDS_ON_CLOSURE_KINDS: readonly RelationKind[] = [
+	'DEPENDS_ON',
+	'CALLS_HTTP',
+	'PUBLISHES_TO',
+	'SUBSCRIBES_TO',
+	'CALLS_RPC',
+];
+
 export interface TraversalOpts {
 	/**
 	 * Relation kinds to traverse. Default: all kinds. The filter applies

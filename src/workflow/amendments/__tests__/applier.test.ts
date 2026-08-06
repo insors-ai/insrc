@@ -14,6 +14,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import type { HldBody } from '../../artifacts/hld.js';
+import { checkContractDependencyGraph } from '../../artifacts/hld.js';
 import { AmendmentApplyError, applyAmendments } from '../applier.js';
 import type { Amendment, AmendmentRecord } from '../types.js';
 
@@ -184,7 +185,7 @@ test('reassignOwnership refuses wrong oldOwner', () => {
 // storyBoundary.addConsumer
 // ---------------------------------------------------------------------------
 
-test('addConsumer appends consumer + depends edge', () => {
+test('addConsumer appends consumer + depends edge (S002 ac4: stays cg3 inverse-consistent)', () => {
 	const next = applyAmendments(baseBody(), [rec('a-6', {
 		type: 'storyBoundary.addConsumer',
 		contractId: 'sc1', consumer: 's3',
@@ -192,6 +193,14 @@ test('addConsumer appends consumer + depends edge', () => {
 	assert.deepEqual(next.sharedContracts[0]!.consumedByStories, ['s2', 's3']);
 	const s3 = next.storyBoundaries.find(sb => sb.storyId === 's3')!;
 	assert.deepEqual(s3.depends, ['sc1']);
+	// The amendment mirrors the edge into BOTH tables, so the graph's cg3
+	// (depends == inverse of consumedByStories) stays satisfied — no drift.
+	const dag = [
+		{ id: 's1', dependsOn: [] as string[] },
+		{ id: 's2', dependsOn: ['s1'] },
+		{ id: 's3', dependsOn: ['s1'] },
+	];
+	assert.equal(checkContractDependencyGraph(next, dag).filter(i => /cg3/.test(i)).length, 0);
 });
 
 test('addConsumer refuses when consumer is already the owner', () => {

@@ -1,0 +1,17 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": true,
+    "sizeClass": "small",
+    "triageRationale": "Two deterministic robustness fixes confined to src/workflow: a null-guard in safeDeriveSlug and an auto-reconcile pass in finalizeDesignEpic reusing logic the cg3 validator already computes. No schema/IPC change.",
+    "epicHash": "c90f3fe60b90dd44",
+    "storyId": "S001",
+    "createdAt": "2026-08-06T13:28:55.521Z",
+    "approvedAt": "2026-08-06T13:40:06.618Z"
+  },
+  "body": {
+    "focus": "Harden the workflow synthesizer finalize path: (1) guard safeDeriveSlug against an undefined focus (orchestrator.ts:1298); (2) deterministically rebuild storyBoundaries[].depends as the exact inverse of consumedByStories in finalizeDesignEpic before checkContractDependencyGraph, so cg3 is satisfied by construction and design.epic never aborts on depends drift. cg1/cg2 unchanged; new reconcileDependsFromConsumers helper in artifacts/hld.ts; amendment applier already consistent.",
+    "producesLld": true,
+    "commit": "df32896"
+  }
+}

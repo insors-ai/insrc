@@ -1,0 +1,509 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1786021931426-mnt2ye",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-08-06T13:17:58.434Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 346940,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c90f3fe60b90dd44",
+    "epicSlug": "harden-workflow-synthesizer-finalize-path-against",
+    "storyId": "S001",
+    "hldBaseRunId": "wf-1786021931426-mnt2ye",
+    "hldEffectiveHash": "c90f3fe60b90dd4453119b58f40712b1eedfc983de1d55bf06542eedde63406e",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "small",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "safeDeriveSlug is defined in src/workflow/orchestrator.ts and its catch fallback dereferences focus.slice (crash on undefined focus).",
+          "evidence": "read orchestrator.ts:1298 -> FOUND `function safeDeriveSlug(focus: string): string {`; grep confirms the `return focus.slice(0, 40)` fallback exists — the undefined-crash site is real.",
+          "action": "None — citation verified.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "safeDeriveSlug is called by four finalize arms passing intent.focus: finalizeDefine, finalizeDesignEpic, finalizeDesignStory, finalizeStandaloneLld.",
+          "evidence": "grep `safeDeriveSlug(intent.focus)` -> 6 matches; reads confirm the finalizeDesignEpic (:1224) and finalizeStandaloneLld (:1640) call sites verbatim.",
+          "action": "None — all four caller sites are real.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "deriveSlug is defined in src/workflow/slug.ts and takes a string focus (the slugger safeDeriveSlug wraps; untouched by this story).",
+          "evidence": "read slug.ts:40 -> FOUND `export function deriveSlug(focus: string): string {` — the wrapped slugger is real and untouched.",
+          "action": "None — citation verified.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "checkContractDependencyGraph in src/workflow/artifacts/hld.ts computes cg3's `expected` map as the exact inverse of consumedByStories (skip self-consumption) and flags depends drift.",
+          "evidence": "checkContractDependencyGraph + the `const expected: Record<string, Set<string>>` map + the cg3 'exact inverse of consumedByStories' message all resolve (hld.ts:486, :501). The deterministic expected-map the reconcile reuses is real.",
+          "action": "None — the cg3 expected-map construction is confirmed.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl5",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "cg1 (findGraphCycle) and cg2 (transitiveDependents downstream check) are computed from consumedByStories + the epic graph in checkContractDependencyGraph — the semantic gates the reconcile must not affect.",
+          "evidence": "hld.ts:464 findGraphCycle (cg1) + :470 transitiveDependents (cg2) confirmed — both computed from consumedByStories/epic graph, so the reconcile (depends-only) provably leaves them unchanged.",
+          "action": "None — semantic premise verified.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl6",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "StoryBoundary.depends is a readonly string[] of shared-contract ids and consumedByStories is a readonly string[] of story ids — the two inverse tables; HldBody shape is unchanged by this story.",
+          "evidence": "hld.ts:40 `readonly depends: readonly string[]; // shared-contract ids` + :33 `readonly consumedByStories: readonly string[]; // story ids` — the two inverse tables exist with the stated shapes; no shape change needed.",
+          "action": "None — citation verified.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl7",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "finalizeDesignEpic in src/workflow/orchestrator.ts calls checkContractDependencyGraph and rejects with 'HLD contract dependency graph inconsistent' — the site where reconcile is inserted before the check.",
+          "evidence": "finalizeDesignEpic + `checkContractDependencyGraph(body, epic.body.stories)` at orchestrator.ts:1234 + the 'HLD contract dependency graph inconsistent' rejection all resolve — the insertion site (before this call) is real.",
+          "action": "None — the reconcile insertion site is confirmed.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl8",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The amendment applier's storyBoundary.addConsumer arm (src/workflow/amendments/applier.ts) appends to consumedByStories without mirroring depends — the consistency site this story updates.",
+          "evidence": "applier.ts:229 `c.id === a.contractId ? { ...c, consumedByStories: [...c.consumedByStories, a.consumer] } : c` — the addConsumer arm appends to consumedByStories without mirroring depends, exactly as described.",
+          "action": "None — the applier consistency site is real.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl9",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The test suites the new tests extend exist: src/workflow/__tests__/hld-artifact.test.ts (checkContractDependencyGraph) and src/workflow/__tests__/slug.test.ts (deriveSlug/safeDeriveSlug).",
+          "evidence": "Both test suites exist (hld-artifact.test.ts + slug.test.ts) and heavily reference checkContractDependencyGraph/deriveSlug (34 hits each) — the patterns the new tests extend are real.",
+          "action": "None — the test subjects are confirmed.",
+          "fixability": "auto"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 9
+      },
+      "reviewedAt": "2026-08-06T13:19:14.432Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-08-06T13:20:11.689Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "S001",
+        "owns": [],
+        "depends": [],
+        "internal": "Harden workflow finalize: guard slug derivation + auto-reconcile the HLD depends graph"
+      },
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "safeDeriveSlug",
+          "signature": "function safeDeriveSlug(focus: string | undefined): string",
+          "parameters": [
+            {
+              "name": "focus",
+              "type": "string | undefined",
+              "purpose": "The run's focus text (intent.focus). Widened from `string` to `string | undefined` — it is undefined in practice when a run is started without a focus.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "A stable, non-empty display slug. Unchanged for a valid focus (delegates to deriveSlug, else the .slice fallback). NEW: for undefined/empty focus it returns a stable non-empty default (e.g. 'untitled') instead of dereferencing focus.slice and throwing."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Never throws — for any input (including undefined/'') it returns a non-empty string.",
+            "For a non-empty focus the returned slug is byte-identical to the pre-fix behaviour (deriveSlug, else the lowercased .slice(0,40) fallback)."
+          ]
+        },
+        {
+          "name": "reconcileDependsFromConsumers",
+          "signature": "function reconcileDependsFromConsumers(body: HldBody): HldBody",
+          "parameters": [
+            {
+              "name": "body",
+              "type": "HldBody",
+              "purpose": "The synthesized HLD body whose storyBoundaries[].depends may have drifted from sharedContracts[].consumedByStories.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "HldBody",
+            "meaning": "A NEW HldBody, structurally identical except each storyBoundaries[].depends is replaced by the exact inverse of consumedByStories — for each shared contract sc, every consumer in sc.consumedByStories (excluding sc.ownedByStory self-consumption) gets sc.id added to that story's depends; the result is deduped + sorted. Reuses the exact `expected`-map construction checkContractDependencyGraph's cg3 already performs (hld.ts:486-493), so applying this before cg3 makes cg3 pass by construction."
+          },
+          "errors": [],
+          "preconditions": [
+            "Called only after isHldBody(body) passes (the shape is valid).",
+            "consumedByStories is treated as the single source of truth; depends is overwritten, not merged."
+          ],
+          "postconditions": [
+            "checkContractDependencyGraph(result, epicStories) yields ZERO cg3 issues.",
+            "consumedByStories, sharedContracts, ownedByStory, and every other field are byte-identical to the input — only storyBoundaries[].depends values change.",
+            "cg1 (cycle) and cg2 (downstream) outcomes are UNCHANGED vs the input, because they are computed from consumedByStories + the epic graph, which this helper does not touch."
+          ]
+        },
+        {
+          "name": "finalizeDesignEpic",
+          "signature": "function finalizeDesignEpic(intent: WorkflowIntent, stepOutputs: Readonly<Record<string, unknown>>, runId: string, elapsedMs: number, llmResponse: Record<string, unknown>, model: string, attribution?: ArtifactModelAttribution): FinalizeResult",
+          "parameters": [
+            {
+              "name": "llmResponse",
+              "type": "Record<string, unknown>",
+              "purpose": "The synthesizer response carrying body (HldBody) + citations. The reconcile step operates on body before the graph check.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "FinalizeResult",
+            "meaning": "Unchanged shape. NEW internal step: after isHldBody(body) passes (~:1193) and before checkContractDependencyGraph (~:1234), body is replaced by reconcileDependsFromConsumers(body). Downstream checks + the rendered/persisted artifact use the reconciled body, so the on-disk depends is always the exact inverse of consumedByStories. checkContractDependencyGraph still runs (cg1/cg2 gate real errors; cg3 now always passes)."
+          },
+          "errors": [
+            {
+              "type": "'HLD contract dependency graph inconsistent' (schema failure)",
+              "condition": "STILL returned for a genuine cg1 cycle or cg2 non-downstream consumer — those are computed from consumedByStories, which reconcile does NOT alter. Only the cg3 (depends drift) sub-case is eliminated by construction."
+            }
+          ],
+          "preconditions": [
+            "epic = requireApprovedEpic(intent.repoPath, epicHash) resolved (unchanged)."
+          ],
+          "postconditions": [
+            "A cg3-only drift no longer aborts the run after 4 retries — finalize succeeds and writes an HLD whose depends is reconciled.",
+            "The persisted HldBody's storyBoundaries[].depends equals the inverse of consumedByStories."
+          ]
+        },
+        {
+          "name": "applyAmendment (storyBoundary.addConsumer arm)",
+          "signature": "// existing applier arm at src/workflow/amendments/applier.ts:225 — no signature change",
+          "parameters": [
+            {
+              "name": "a",
+              "type": "StoryBoundaryAddConsumer amendment",
+              "purpose": "Adds `a.consumer` to `a.contractId`'s consumedByStories. Post-fix, the arm must also keep depends consistent.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "HldBody",
+            "meaning": "The amended body. NEW: after appending a.consumer to the contract's consumedByStories, the arm reconciles depends (either by adding a.contractId to a.consumer's storyBoundary.depends, or by routing the amended body through reconcileDependsFromConsumers) so the two tables stay inverse-consistent — matching the finalize invariant."
+          },
+          "errors": [],
+          "preconditions": [
+            "The contract a.contractId exists and a.consumer is a real story id (existing applier guards, unchanged)."
+          ],
+          "postconditions": [
+            "consumedByStories AND depends both reflect the new consumer edge — no drift introduced by the amendment."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "StoryBoundary.depends (src/workflow/artifacts/hld.ts)",
+        "change": "invariant-change",
+        "details": "No shape change — depends stays `readonly string[]` (shared-contract ids). The INVARIANT changes from 'the synthesizer must emit depends as the exact inverse of consumedByStories, else cg3 rejects' to 'depends is DERIVED at finalize from consumedByStories (the single source of truth), so it is the exact inverse by construction'. cg3 shifts from a gate that can abort to a post-condition that always holds.",
+        "schemaDiff": "hld.ts: + export function reconcileDependsFromConsumers(body: HldBody): HldBody  // reuses the cg3 `expected` map (486-493)\norchestrator.ts finalizeDesignEpic (~:1193..:1234): + const body2 = reconcileDependsFromConsumers(body); // then validate + render body2 instead of body",
+        "callSites": [
+          "src/workflow/orchestrator.ts",
+          "src/workflow/artifacts/hld.ts",
+          "src/workflow/amendments/applier.ts"
+        ]
+      },
+      {
+        "entity": "safeDeriveSlug (src/workflow/orchestrator.ts)",
+        "change": "invariant-change",
+        "details": "Param widened `string` -> `string | undefined`; the function now guarantees a non-empty return for ANY input, including undefined/''. deriveSlug (slug.ts) is untouched. The four callers (finalizeDefine:867, finalizeDesignEpic:1224, finalizeDesignStory:1492, finalizeStandaloneLld:1640) pass intent.focus unchanged and compile unchanged (widening is source-compatible).",
+        "schemaDiff": "orchestrator.ts:1298: - function safeDeriveSlug(focus: string): string { try { return deriveSlug(focus); } catch { return focus.slice(0,40)... }\n+ function safeDeriveSlug(focus: string | undefined): string { if (!focus) return 'untitled'; try { return deriveSlug(focus); } catch { return focus.slice(0,40)... || 'untitled' } }",
+        "callSites": [
+          "src/workflow/orchestrator.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A genuine cg1 dependency cycle in consumedByStories (two Stories each consume a contract owned by the other).",
+          "detection": "checkContractDependencyGraph's cg1 findGraphCycle over the induced consumer->owner graph (hld.ts:463-467) — computed from consumedByStories, which reconcileDependsFromConsumers does NOT modify.",
+          "response": "finalizeDesignEpic STILL returns the 'HLD contract dependency graph inconsistent' schema failure with the cg1 message. Reconciliation does not mask it — it only touches depends, never consumedByStories or the epic graph.",
+          "userImpact": "A real, unbuildable design error is still surfaced with the narrow-consumedByStories fix hint — unchanged from today.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A genuine cg2 inversion (a consumer that is NOT downstream of the contract owner in the Epic Story graph).",
+          "detection": "checkContractDependencyGraph's cg2 loop (hld.ts:471-483) against transitiveDependents(epicStories) — also computed from consumedByStories + the epic graph, untouched by reconcile.",
+          "response": "finalizeDesignEpic STILL returns the schema failure with the cg2 re-ownership hint. Only the cg3 (depends drift) sub-case is eliminated by construction.",
+          "userImpact": "A Story consuming a contract it cannot legally reach is still caught — unchanged.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "The synthesizer emits storyBoundaries[].depends that DRIFTS from consumedByStories (extra edge, missing edge, or a story that consumes nothing but lists a depend).",
+          "expected": "reconcileDependsFromConsumers overwrites each depends with the exact inverse of consumedByStories BEFORE checkContractDependencyGraph, so cg3 finds zero issues and finalize succeeds — the run no longer aborts after 4 retries."
+        },
+        {
+          "input": "A shared contract whose consumedByStories includes its own ownedByStory (self-consumption).",
+          "expected": "reconcile skips the self-edge exactly as cg3's expected map does (owner == consumer continue), so the owner's depends does NOT gain its own contract — identical to the validator's expectation."
+        },
+        {
+          "input": "A Story that consumes no contract.",
+          "expected": "Its depends is set to the empty array [] by reconcile; cg3 passes (nothing expected, nothing present)."
+        },
+        {
+          "input": "finalize reached with intent.focus === undefined (a run started without a focus).",
+          "expected": "safeDeriveSlug(undefined) returns the stable default 'untitled' instead of throwing; finalize proceeds and the artifact carries a non-empty epicSlug."
+        },
+        {
+          "input": "intent.focus is a valid, non-empty string (the normal case).",
+          "expected": "safeDeriveSlug returns the identical slug it returned before the fix (deriveSlug, else the lowercased .slice(0,40) fallback) — no behavioural change for the happy path."
+        },
+        {
+          "input": "An amendment adds a consumer to a contract (storyBoundary.addConsumer).",
+          "expected": "The applier appends to consumedByStories AND reconciles depends so the consumer story's depends gains the contract id — the two tables stay inverse-consistent, matching the finalize invariant."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "cg1 (acyclicity) and cg2 (downstream-ownership) remain hard-failing semantic gates computed from consumedByStories + the epic Story graph; reconcileDependsFromConsumers touches ONLY storyBoundaries[].depends and must not alter consumedByStories, sharedContracts, ownedByStory, or the cg1/cg2 outcomes.",
+          "source": "c3"
+        },
+        {
+          "text": "The reconciliation MUST use the exact same inverse-of-consumedByStories construction that cg3 already computes (skip self-consumption, dedup) — so reconcile(body) provably makes checkContractDependencyGraph's cg3 pass; the two must not drift apart.",
+          "source": "c3"
+        },
+        {
+          "text": "HldBody's shape is unchanged — depends stays a required readonly string[] of shared-contract ids; only its VALUE at finalize is derived. No emit-schema / isHldBody / renderer change.",
+          "source": "c3"
+        },
+        {
+          "text": "safeDeriveSlug's happy path is byte-identical for a non-empty focus (deriveSlug, else lowercased .slice(0,40)); the guard only adds a stable non-empty default for undefined/'' — the four callers (finalizeDefine, finalizeDesignEpic, finalizeDesignStory, finalizeStandaloneLld) pass intent.focus unchanged.",
+          "source": "c1"
+        },
+        {
+          "text": "The depends/consumedByStories consistency must hold wherever consumedByStories is written — not only at finalize but also in the amendment applier's addConsumer arm — so downstream readers of depends never see a drifted projection.",
+          "source": "c5"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove the cg3 reconciliation repairs drift while cg1/cg2 still gate, and safeDeriveSlug never throws — all as pure functions over hand-built HldBody fixtures, no daemon/LLM.",
+          "subjects": [
+            "reconcileDependsFromConsumers(body) with a DRIFTED depends (extra edge / missing edge / story-with-no-consumption listing a depend) -> checkContractDependencyGraph(result).cg3 issues == 0",
+            "reconcileDependsFromConsumers is a pure inverse: for each contract sc, every non-self consumer's depends gains sc.id; a no-consumption story's depends becomes []; result is deduped+sorted; consumedByStories/sharedContracts/ownedByStory byte-identical to input",
+            "reconcile does NOT mask a genuine cg1 cycle: a body with two mutually-consuming stories still yields a cg1 issue after reconcile",
+            "reconcile does NOT mask a genuine cg2 inversion: a consumer not downstream of the owner still yields a cg2 issue after reconcile",
+            "safeDeriveSlug(undefined) and safeDeriveSlug('') return a stable non-empty default without throwing",
+            "safeDeriveSlug('a valid focus string') returns the identical slug as before the fix (deriveSlug happy path) and safeDeriveSlug('!!') (deriveSlug throws) returns the lowercased .slice fallback, non-empty",
+            "the amendment applier storyBoundary.addConsumer arm leaves depends inverse-consistent (the consumer story's depends gains the contract id, matching its updated consumedByStories)"
+          ],
+          "fixturesNeeded": [
+            "Hand-built HldBody fixtures in the style of src/workflow/__tests__/hld-artifact.test.ts: a clean 3-story/2-contract body; a drifted-depends variant; a cg1-cycle variant; a cg2-inversion variant",
+            "An EpicStoryDep[] fixture matching the fixtures so checkContractDependencyGraph's cg2 has a real epic graph",
+            "A storyBoundary.addConsumer amendment fixture for the applier test"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "unit: safeDeriveSlug(undefined) -> stable non-empty default, no throw",
+            "unit: safeDeriveSlug('') -> stable non-empty default, no throw",
+            "unit: safeDeriveSlug(valid focus) byte-identical to pre-fix; safeDeriveSlug('!!') -> non-empty .slice fallback"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "unit: reconcileDependsFromConsumers repairs a drifted/omitted depends so checkContractDependencyGraph cg3 == 0",
+            "unit: reconcile is the exact inverse (per-contract consumer edges, self-skip, dedup+sort, no-consumption story -> []) and leaves consumedByStories/sharedContracts unchanged"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "unit: reconcile does NOT mask a genuine cg1 cycle (cg1 issue still raised)",
+            "unit: reconcile does NOT mask a genuine cg2 non-downstream consumer (cg2 issue still raised)"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "unit: the applier storyBoundary.addConsumer arm keeps depends inverse-consistent with the updated consumedByStories"
+          ]
+        }
+      ],
+      "testFramework": "node:test via `npx tsx --test`, extending src/workflow/__tests__/hld-artifact.test.ts (checkContractDependencyGraph + the new reconcileDependsFromConsumers over hand-built HldBody + EpicStoryDep fixtures) and src/workflow/__tests__/slug.test.ts (safeDeriveSlug undefined/''/valid/throwing-focus cases). Pure functions — no daemon, LLM, or wall-clock."
+    },
+    "migration": {
+      "stateBefore": "src/workflow/orchestrator.ts + src/workflow/artifacts/hld.ts today: (1) safeDeriveSlug(focus: string) (orchestrator.ts:1298) dereferences focus.slice in its catch, so finalize throws 'Cannot read properties of undefined (reading slice)' when intent.focus === undefined (c1). (2) finalizeDesignEpic (orchestrator.ts:1179) runs checkContractDependencyGraph (:1234), whose cg3 (hld.ts:485-503) REJECTS when storyBoundaries[].depends is not the exact inverse of consumedByStories; the LLM must hand-mirror the two tables across the 8-story fan-out and exhausts all 4 retries. The validator already computes the correct depends deterministically (the `expected` map, hld.ts:486-493) but uses it only to reject, not to repair (c3). The amendment applier's addConsumer arm (applier.ts:225) appends to consumedByStories without mirroring depends (c5).",
+      "stateAfter": "(1) safeDeriveSlug accepts string | undefined and returns a stable non-empty default for undefined/'' before touching .slice — finalize never throws on a missing focus; the happy path is byte-identical (c1). (2) finalizeDesignEpic derives depends deterministically: reconcileDependsFromConsumers(body) rebuilds each storyBoundaries[].depends as the exact inverse of consumedByStories (reusing cg3's own `expected` construction) BEFORE checkContractDependencyGraph, so cg3 passes by construction and design.epic no longer aborts on drift; cg1/cg2 still gate genuine cycles/inversions (c3). The amendment applier keeps depends inverse-consistent when it adds a consumer (c5).",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Widen safeDeriveSlug's parameter from `focus: string` to `focus: string | undefined` and add a leading guard that returns a stable non-empty default (e.g. 'untitled') when focus is undefined/empty, before deriveSlug or .slice is reached. Leave the deriveSlug happy path + the .slice fallback (now guarded by a non-empty focus) intact.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add an exported pure helper reconcileDependsFromConsumers(body: HldBody): HldBody in src/workflow/artifacts/hld.ts that rebuilds each storyBoundaries[].depends as the exact inverse of consumedByStories — reusing the same construction cg3's `expected` map already performs (skip self-consumption, dedup, sort) — returning a new body with consumedByStories/sharedContracts/ownedByStory untouched.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "In finalizeDesignEpic, after isHldBody(body) passes and before checkContractDependencyGraph, replace body with reconcileDependsFromConsumers(body) so all downstream validation, rendering, and persistence use the reconciled body. checkContractDependencyGraph still runs unchanged (cg1/cg2 gate real errors; cg3 is now always satisfied).",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Update the amendment applier's storyBoundary.addConsumer arm (applier.ts:225) to keep depends inverse-consistent after appending a consumer to consumedByStories — either add the contract id to the consumer story's storyBoundary.depends or route the amended body through reconcileDependsFromConsumers.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Extend src/workflow/__tests__/slug.test.ts (safeDeriveSlug undefined/''/valid/throwing-focus) and src/workflow/__tests__/hld-artifact.test.ts (reconcile repairs cg3 drift; cg1 cycle + cg2 inversion still reject after reconcile; applier keeps depends consistent).",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "safeDeriveSlug is an internal helper; widening its param to string | undefined is source-compatible with all four callers (finalizeDefine:867, finalizeDesignEpic:1224, finalizeDesignStory:1492, finalizeStandaloneLld:1640), which pass intent.focus unchanged, and its output is byte-identical for any non-empty focus. reconcileDependsFromConsumers is a NEW additive export — no existing signature changes. HldBody's shape is unchanged (depends stays a required readonly string[]); only the depends VALUE written at finalize is now derived rather than trusted, so any previously-VALID HLD (whose depends already equalled the inverse) is byte-identical, and any previously-INVALID (drifted) HLD that would have aborted now finalizes with a corrected depends. No IPC/schema/emit-schema change; existing approved HLD artifacts on disk are unaffected (they are not re-finalized).",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Guard safeDeriveSlug + derive depends in finalizeDesignEpic (reuse the validator's expected map)",
+        "oneLineSummary": "Widen safeDeriveSlug to accept undefined (stable default before .slice), and in finalizeDesignEpic rebuild each storyBoundary.depends as the exact inverse of consumedByStories via a shared helper before checkContractDependencyGraph runs.",
+        "approach": "Fix 1: change safeDeriveSlug(focus: string) to (focus: string | undefined); at the top, if focus is undefined/empty, return a stable non-empty default (e.g. 'untitled') so neither deriveSlug nor .slice ever sees undefined. All four callers pass intent.focus unchanged. Fix 2: export the inverse computation as a tiny pure helper (e.g. reconcileDependsFromConsumers(body): HldBody) placed alongside checkContractDependencyGraph in hld.ts — it reuses the exact `expected` construction (skip self-consumption, dedup, sort) that cg3 already performs, returning a new HldBody with each storyBoundary.depends replaced by its derived set. finalizeDesignEpic calls it right after isHldBody passes and before checkContractDependencyGraph, so cg3 is satisfied by construction. cg1/cg2 run unchanged over consumedByStories + the epic graph. The amendment applier's addConsumer path also calls the same helper (or appends the mirrored depends edge) to stay consistent.",
+        "pros": [
+          "Reuses the validator's OWN expected-map logic as the single source of truth — the reconciliation and cg3 can never disagree because they compute the same thing.",
+          "cg1 (cycle) and cg2 (downstream) stay untouched, so genuine design errors still hard-fail — only the bookkeeping drift is auto-repaired.",
+          "HldBody shape unchanged; no schema/IPC change; all four safeDeriveSlug callers compile unchanged (widening a param is source-compatible).",
+          "A shared reconcile helper keeps finalize + the amendment applier consistent from one definition."
+        ],
+        "cons": [
+          "Introduces one small exported helper in hld.ts (minor surface addition) that must be kept in lock-step with cg3's expected construction — mitigated by a test asserting reconcile(body) makes checkContractDependencyGraph's cg3 pass.",
+          "depends becomes authoritative-derived, so a human hand-editing an approved HLD's depends[] would see it overwritten on any re-finalize — acceptable since depends is documented as the inverse of consumedByStories."
+        ],
+        "costEstimate": "S",
+        "chosen": true
+      },
+      {
+        "id": "a2",
+        "name": "Relax cg3 to a warning + guard slug inline",
+        "oneLineSummary": "Leave depends as the LLM emitted it but downgrade cg3 from a hard reject to a non-blocking warning (keep cg1/cg2 hard); guard safeDeriveSlug inline.",
+        "approach": "Fix 1 identical to a1. Fix 2: instead of reconciling, change finalizeDesignEpic so cg3 issues are collected but do NOT fail the finalize (cg1/cg2 still fail). The emitted depends is persisted as-is even if it drifts from consumedByStories.",
+        "pros": [
+          "Smallest change to the validator call site — no new helper.",
+          "design.epic stops aborting on cg3 drift."
+        ],
+        "cons": [
+          "Leaves the two tables INCONSISTENT on disk — downstream readers of depends (lld.ts consumedContracts is keyed off consumedByStories, but any depends consumer) get stale/contradictory data. Trades a loud abort for a silent data-integrity bug.",
+          "Does not make depends trustworthy; it just stops checking it — the opposite of 'accuracy is primary'.",
+          "cg3's helpful 'you drifted' message is lost with no compensating repair."
+        ],
+        "costEstimate": "XS",
+        "reasonRejected": "Cheapest but violates table consistency — downgrading a correctness check to a warning contradicts 'accuracy is primary'; it stops checking rather than repairing (rank 2)."
+      },
+      {
+        "id": "a3",
+        "name": "Force the synthesizer to omit depends + always derive it",
+        "oneLineSummary": "Drop depends from the synthesizer output schema entirely and always compute it at finalize from consumedByStories.",
+        "approach": "Fix 1 identical to a1. Fix 2: remove depends from the design.epic emit schema so the LLM never emits it, and populate it purely from consumedByStories at finalize. cg3 becomes vacuous (or is removed).",
+        "pros": [
+          "Eliminates the drift at the source — the LLM cannot get depends wrong if it never emits it.",
+          "Single source of truth by construction."
+        ],
+        "cons": [
+          "Changes the HldBody emit schema (a schema/contract change) — larger blast radius than the triage 'no schema change' scoping; touches design-epic/schemas.ts + isHldBody + every fixture that supplies depends.",
+          "isHldBody + StoryBoundary currently require depends; making it optional ripples through the type + renderer + tests.",
+          "More churn for the same end-state a1 reaches without a schema change."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Reaches the same end-state as a1 but only by changing the emit schema (M cost, wide blast radius) — unnecessary churn when a1 achieves it with the shape unchanged (rank 3)."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 usage.example — safeDeriveSlug crash on undefined focus (src/workflow/orchestrator.ts:1298)",
+      "quotedText": "the catch dereferences `focus.slice`, so when finalize is reached with intent.focus === undefined the fallback itself throws 'Cannot read properties of undefined (reading slice)'. Called from finalizeDefine (:867), finalizeDesignEpic (:1224), finalizeDesignStory (:1492), finalizeStandaloneLld (:1640)."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 symbol.locate — deriveSlug (src/workflow/slug.ts:40)",
+      "quotedText": "deriveSlug turns a focus string into a display slug and THROWS on a too-short / all-stopword focus ... The fix stays entirely inside safeDeriveSlug (orchestrator.ts) — deriveSlug itself is untouched."
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1 data-model.trace + usage.example — checkContractDependencyGraph cg1/cg2/cg3 + the expected map (src/workflow/artifacts/hld.ts:447,485-503, orchestrator.ts:1179)",
+      "quotedText": "cg3 (485-503) builds an `expected` map (486-493) as the exact inverse of consumedByStories, then flags any storyBoundary.depends that differs ... Because `expected` is already the deterministic ground truth, the fix DERIVES depends from it ... reconciliation must run AFTER isHldBody passes and BEFORE checkContractDependencyGraph."
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "s1 test.locate — src/workflow/__tests__/hld-artifact.test.ts + slug.test.ts",
+      "quotedText": "hld-artifact.test.ts already exercises checkContractDependencyGraph (cg1 cycle, cg2 downstream, cg3 inverse) over hand-built HldBody fixtures ... slug.test.ts exercises deriveSlug/safeDeriveSlug. Framework: node:test via `npx tsx --test`."
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "s1 symbol.locate — amendment applier addConsumer arm (src/workflow/amendments/applier.ts:225)",
+      "quotedText": "it appends to consumedByStories but does NOT mirror the edge into the consumer story's depends. Post-fix, depends is a derived projection, so an amendment that adds a consumer must also add the contract id to that story's storyBoundary.depends ... to keep the two tables consistent."
+    }
+  ]
+}

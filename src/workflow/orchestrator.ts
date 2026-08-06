@@ -62,6 +62,7 @@ import {
 	HLD_SCHEMA_VERSION,
 	isCitationArray as isHldCitationArray,
 	isHldBody,
+	reconcileDependsFromConsumers,
 	renderHldMarkdown,
 	type HldArtifact,
 } from './artifacts/hld.js';
@@ -1188,9 +1189,9 @@ function finalizeDesignEpic(
 	if (typeof llmResponse !== 'object' || llmResponse === null) {
 		return { ok: false, failure: schemaFailure(`synthesizer response is not an object`) };
 	}
-	const body      = (llmResponse as { body?: unknown }).body;
+	const rawBody   = (llmResponse as { body?: unknown }).body;
 	const citations = (llmResponse as { citations?: unknown }).citations;
-	if (!isHldBody(body)) {
+	if (!isHldBody(rawBody)) {
 		return { ok: false, failure: schemaFailure(
 			`body does not match HldBody shape. Every field is REQUIRED, including nested arrays — ` +
 			`each sharedContracts[] entry needs {id,name,purpose,interfaceSketch,ownedByStory,consumedByStories[],assumptions[]}; ` +
@@ -1199,6 +1200,11 @@ function finalizeDesignEpic(
 			`rolloutOverview needs {phases[]:{name,includesStories[],rationale,backwardCompat,featureFlag},orderingRationale,riskyBits[]:{area,why,mitigation}}. ` +
 			`Emit empty arrays [] where you have no items — never omit a field.`) };
 	}
+	// Derive `depends` deterministically from `consumedByStories` (the single
+	// source of truth) BEFORE the graph check, so cg3 is satisfied by
+	// construction and a bookkeeping drift never aborts the run. cg1/cg2 still
+	// gate genuine cycles/inversions (they read consumedByStories, unchanged).
+	const body = reconcileDependsFromConsumers(rawBody);
 	if (!isHldCitationArray(citations)) {
 		return { ok: false, failure: schemaFailure(`citations must be an array of { id, kind, ref }`) };
 	}
@@ -1293,11 +1299,15 @@ function requireEpicHash(intent: WorkflowIntent): string {
 }
 
 /** Best-effort slug derivation for display. If the focus is too
- *  short / all-stopwords, fall back to the runId prefix so we
- *  always populate meta.epicSlug with something readable. */
-function safeDeriveSlug(focus: string): string {
+ *  short / all-stopwords, fall back to the sliced focus so we always
+ *  populate meta.epicSlug with something readable. A run started without
+ *  a focus reaches finalize with `intent.focus === undefined`; guard it
+ *  up front so neither `deriveSlug` nor the `.slice` fallback ever
+ *  dereferences undefined (which would throw and abort the whole run). */
+export function safeDeriveSlug(focus: string | undefined): string {
+	if (focus === undefined || focus.length === 0) return 'untitled';
 	try { return deriveSlug(focus); }
-	catch { return focus.slice(0, 40).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'epic'; }
+	catch { return focus.slice(0, 40).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'untitled'; }
 }
 
 // ---------------------------------------------------------------------------

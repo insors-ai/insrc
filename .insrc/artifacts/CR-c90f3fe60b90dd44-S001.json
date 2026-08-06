@@ -1,0 +1,62 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1786023446875-q1wgh9",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-08-06T13:37:26.876Z",
+    "model": "client",
+    "elapsedMs": 2,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c90f3fe60b90dd44",
+    "storyId": "S001"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "c90f3fe60b90dd44",
+    "storyId": "S001",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "src/workflow/__tests__/hld-artifact.test.ts",
+        "src/workflow/__tests__/slug.test.ts",
+        "src/workflow/amendments/__tests__/applier.test.ts",
+        "src/workflow/artifacts/hld.ts",
+        "src/workflow/orchestrator.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/artifacts/hld.ts:460",
+            "message": "reconcileDependsFromConsumers rebuilds the exact same `expected: Record<string, Set<string>>` inverse-of-consumedByStories map that checkContractDependencyGraph's cg3 constructs (hld.ts:516) — an intentional but real duplication that must stay in lock-step (the design accepted this; a test asserts reconcile makes cg3 pass). Acceptable as-is; a future refactor could factor the shared map builder.",
+            "counterpartRef": "checkContractDependencyGraph",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 1
+    }
+  }
+}

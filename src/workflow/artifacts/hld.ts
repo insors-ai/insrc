@@ -444,6 +444,36 @@ export interface EpicStoryDep {
  *
  *  Returns human-readable issue strings (empty ⇒ consistent). The messages
  *  tell the LLM how to fix it (narrow consumedByStories, or amend the Epic). */
+/** Rebuild each `storyBoundaries[].depends` as the exact INVERSE of
+ *  `sharedContracts[].consumedByStories` — `consumedByStories` is the single
+ *  source of truth, `depends` is a derived projection. Reuses the SAME
+ *  construction {@link checkContractDependencyGraph}'s cg3 uses to compute its
+ *  `expected` map (skip self-consumption, dedup, sort), so applying this before
+ *  cg3 makes cg3 pass by construction — the 8-story fan-out no longer has to
+ *  hand-mirror two tables and abort after 4 retries on a bookkeeping drift.
+ *
+ *  Returns a NEW body; `consumedByStories`, `sharedContracts`, `ownedByStory`,
+ *  and every other field are untouched, so the cg1 (cycle) and cg2 (downstream)
+ *  outcomes — computed from `consumedByStories` + the Epic graph — are
+ *  unchanged. ONLY `storyBoundaries[].depends` values change. */
+export function reconcileDependsFromConsumers(body: HldBody): HldBody {
+	const expected: Record<string, Set<string>> = {};
+	for (const sb of body.storyBoundaries) expected[sb.storyId] = new Set();
+	for (const sc of body.sharedContracts) {
+		for (const consumer of sc.consumedByStories) {
+			if (consumer === sc.ownedByStory) continue;   // self-consumption is a no-op (matches cg3)
+			(expected[consumer] ??= new Set()).add(sc.id);
+		}
+	}
+	return {
+		...body,
+		storyBoundaries: body.storyBoundaries.map(sb => ({
+			...sb,
+			depends: [...(expected[sb.storyId] ?? new Set<string>())].sort(),
+		})),
+	};
+}
+
 export function checkContractDependencyGraph(
 	body:        HldBody,
 	epicStories: readonly EpicStoryDep[],

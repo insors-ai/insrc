@@ -18,7 +18,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import type { DebugSectionId, DebugSection, DebugService, DebugPaneProps } from '../debug-types.js';
+import type { DebugSectionId, DebugSection, DebugService, DebugPaneProps, DaemonCardModel } from '../debug-types.js';
 
 /** Exhaustiveness check: every DebugSectionId member must be handled — a fourth
  *  member (or a dropped one) makes this fail to compile at the `never` binding. */
@@ -52,4 +52,29 @@ test('DebugSection / DebugService / DebugPaneProps shapes hold', () => {
 	assert.deepEqual(props.services.debug.sections.map(s => s.id), ['daemon', 'mcp', 'logs']);
 	// DebugSection carries only id + title — no view/component field.
 	assert.deepEqual(Object.keys(sections[0]!).sort(), ['id', 'title']);
+});
+
+test('DaemonCardModel discriminates reachable vs unreachable (Story s2)', () => {
+	const up: DaemonCardModel = {
+		reachable: true,
+		uptimeSec: 3661,
+		repoCount: 2,
+		repos: [
+			{ name: 'repoA', status: 'ready' },
+			{ name: 'repoB', status: 'indexing' },
+		],
+		socket: '/home/u/.insrc/daemon.sock',
+		pid: 4242,
+		version: '1.2.3',
+	};
+	const down: DaemonCardModel = { reachable: false };
+
+	// Narrowing on `reachable` gates every running field.
+	assert.equal(up.reachable === true && up.repos.map(r => r.status).join(','), 'ready,indexing');
+	assert.equal(down.reachable, false);
+	assert.equal('uptimeSec' in down, false); // unreachable carries no running fields
+
+	// Optional client-known fields may be omitted (graceful degradation).
+	const partial: DaemonCardModel = { reachable: true, uptimeSec: 5, repoCount: 0, repos: [], socket: '/s' };
+	assert.equal(partial.reachable === true && partial.pid, undefined);
 });

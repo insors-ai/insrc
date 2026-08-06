@@ -16,6 +16,8 @@
  * no React type leaks into the services layer.
  */
 
+import type { RegisteredRepo } from '../../shared/types.js';
+
 /** The closed union of the three Debug-pane inner sections, in authored order. */
 export type DebugSectionId = 'daemon' | 'mcp' | 'logs';
 
@@ -38,3 +40,24 @@ export interface DebugService {
 export interface DebugPaneProps {
 	readonly services: { readonly debug: DebugService };
 }
+
+/**
+ * The Daemon-section status-card view-model (Story s2). A discriminated union
+ * so `reachable` gates every running field — the unreachable variant carries
+ * NO stale/blank fields. Structured data only (no display formatting / React);
+ * the DaemonSection component owns presentation.
+ *
+ * Daemon-held fields (uptimeSec, repoCount, repos+index-state) come over the
+ * daemon.status IPC; socket/pid/version are client-known reads (best-effort).
+ */
+export type DaemonCardModel =
+	| {
+			readonly reachable: true;
+			readonly uptimeSec: number;
+			readonly repoCount: number;
+			readonly repos: readonly { readonly name: string; readonly status: RegisteredRepo['status'] }[];
+			readonly socket: string;
+			readonly pid?: number | undefined;
+			readonly version?: string | undefined;
+	  }
+	| { readonly reachable: false };

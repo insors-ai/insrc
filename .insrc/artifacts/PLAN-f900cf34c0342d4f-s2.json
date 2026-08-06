@@ -1,0 +1,293 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1785998623411-678zy3",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-08-06T06:47:23.221Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 219796,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f900cf34c0342d4f",
+    "epicSlug": "seed-from-approved-specartifact-spec-bfa1f6c830c53982",
+    "storyId": "s2",
+    "lldRunId": "wf-1785934499823-xtpgmp",
+    "lldEffectiveHash": "ddca67745f5ce27a72fd98622c88c10523b7fb157faee13556f302030c37eece",
+    "approvedAt": "2026-08-06T06:48:01.444Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add the DaemonCardModel type",
+        "summary": "Add the DaemonCardModel discriminated-union type to src/cli/services/debug-types.ts (colocated with the sc1 types): `{ reachable: true; uptimeSec: number; repoCount: number; repos: readonly { name: string; status: RegisteredRepo['status'] }[]; socket: string; pid?: number | undefined; version?: string | undefined } | { reachable: false }`. Import RegisteredRepo type from ../../shared/types.js. Additive type surface, referenced by nothing yet.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "DaemonCardModel is a discriminated union keyed on `reachable`",
+          "the reachable variant carries uptimeSec/repoCount/repos[]/socket + optional pid/version; repos[].status reuses RegisteredRepo['status']",
+          "the unreachable variant is exactly { reachable: false } (no running fields)",
+          "tsc compiles the new type"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "debug-types compile-guard: a fixture builds both DaemonCardModel variants (reachable with all fields, unreachable) and narrows on `reachable` — verified by the suite compiling"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Add daemonStatus() to the DebugService facade + impl",
+        "summary": "Add `daemonStatus(): Promise<DaemonCardModel>` to the DebugService interface (debug-types.ts) and implement it in src/cli/services/debug.ts: delegate to getStatus() (from ./daemon.js) for uptime/repos (count only workspace repos), attach socket=PATHS.sockFile, pid from PATHS.pidFile (existsSync-guarded, parse numeric), and best-effort version from join(DAEMON_ROOT,'package.json').version (catch to undefined). Catch any getStatus reject and RESOLVE to { reachable:false } (never throw). Bind `daemonStatus: debug.daemonStatus` onto the existing makeServices() debug entry in src/cli/services/index.ts. Additive; `sections` unchanged. Build note (s3 critique): land t2 together-with t5 in one increment so the CLI suites compile at every committed step.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "DebugService interface gains `daemonStatus(): Promise<DaemonCardModel>`; `sections` + sibling facades unchanged",
+          "debug.daemonStatus() resolves { reachable:true } with uptimeSec/repoCount/repos[]/socket (+pid/version when available) on a successful getStatus",
+          "debug.daemonStatus() resolves { reachable:false } and never throws when getStatus rejects",
+          "only workspace repos are counted (shared-modules rows excluded); version/pid degrade to undefined when unresolvable",
+          "makeServices().debug.daemonStatus is bound; tsc compiles"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "debug.daemonStatus(): a resolving getStatus stub yields { reachable:true } with uptimeSec/repoCount/repos[]/socket (+pid/version when available)"
+          },
+          {
+            "level": "unit",
+            "name": "debug.daemonStatus(): a rejecting getStatus stub yields { reachable:false } and never throws"
+          },
+          {
+            "level": "unit",
+            "name": "debug.daemonStatus(): unresolvable version / absent pidfile leave version/pid undefined but keep the reachable variant"
+          },
+          {
+            "level": "unit",
+            "name": "debug.daemonStatus(): only workspace repos are counted (shared-modules rows excluded)"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Add the DaemonSection component",
+        "summary": "Add the DaemonSection component (src/cli/panes/, e.g. DaemonSection.tsx or colocated in panes/debug/) taking `{ services: { readonly debug: DebugService } }`. Drive debug.daemonStatus() via a useEffect+useState once-fetch (mirroring useDaemonStatus's pollMs=0 once pattern) and render inside a Box/Text: reachable -> running + formatUptime(uptimeSec) (from ../ui/format.js) + socket + version/pid (rendered only when present, omitted when undefined) + repo-count with each repo's index state; unreachable -> a single 'stopped / unreachable' line. Read-only, no useInput/keys (k5).",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "DaemonSection reachable model renders running + uptime (formatUptime) + socket + version/pid (when present) + repo-count with each repo's index state",
+          "the version/pid lines are OMITTED when those optional fields are undefined (graceful degradation)",
+          "DaemonSection { reachable:false } renders a single 'stopped / unreachable' line and NONE of the running fields",
+          "zero-repo reachable model renders repo-count 0 with no per-repo rows; an 'indexing'/'error' repo renders that exact status",
+          "the component registers no keybindings (read-only, k5); tsc compiles"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "DaemonSection: reachable model renders running + formatUptime(uptimeSec) + socket + version/pid (when present) + repo-count with each repo's index state"
+          },
+          {
+            "level": "unit",
+            "name": "DaemonSection: { reachable:false } renders a single 'stopped / unreachable' line and NONE of the running fields"
+          },
+          {
+            "level": "unit",
+            "name": "DaemonSection: zero-repo reachable model renders repo-count 0 with no per-repo rows"
+          },
+          {
+            "level": "unit",
+            "name": "DaemonSection: a repo with status 'indexing'/'error' renders that exact index state (not collapsed to ready)"
+          },
+          {
+            "level": "unit",
+            "name": "DaemonSection: version/pid lines are omitted when those optional fields are undefined"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Swap the DebugPane 'daemon' placeholder for DaemonSection",
+        "summary": "In src/cli/panes/DebugPane.tsx, replace the SECTION_VIEWS['daemon'] placeholder entry with `() => <DaemonSection services={{ debug: props.services.debug }} />` (the DebugPane already holds the debug facade via DebugPaneProps). The 'mcp'/'logs' placeholders + the section-hosting shape/navigation stay unchanged.",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "selecting the Daemon section renders DaemonSection (not the s1 placeholder) fed the debug facade",
+          "the 'mcp'/'logs' placeholders and DebugPane navigation/hosting are unchanged",
+          "tsc compiles + existing s1 DebugPane tests still pass (aside from the daemon-section body change)"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "DebugPane: selecting the Daemon section renders DaemonSection's running card (not the s1 placeholder) from the injected debug facade"
+          },
+          {
+            "level": "integration",
+            "name": "DebugPane: with an unreachable daemonStatus() the Daemon section shows the stopped/unreachable line"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Update the in-repo debug-facade test fakes for daemonStatus",
+        "summary": "Update every in-repo `debug` facade fake to add a conformant `daemonStatus: async () => (...)` stub so the widened DebugService compiles: fakeServices() in src/cli/__tests__/tui.test.ts, the ctxWith base in src/cli/__tests__/command.test.ts, and the `{ debug: { sections } }` props built in src/cli/panes/__tests__/DebugPane.test.ts. Build note (s3 critique): apply together-with t2 in ONE increment (mirrors s1's t2+t5 lockstep) so the CLI suites compile at every committed step; dependsOn stays [t2] (the true compile dependency).",
+        "size": "S",
+        "order": 5,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "every in-repo debug-facade fake includes a daemonStatus stub returning a valid DaemonCardModel",
+          "`npx tsx --test 'src/cli/**/*.test.ts'` compiles against the widened DebugService",
+          "no existing assertion behaviour changes beyond the additive daemonStatus stub"
+        ],
+        "derivedFrom": [
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "the CLI suite (tui.test.ts + command.test.ts + DebugPane.test.ts) compiles + all existing assertions still pass with the fakes carrying a daemonStatus stub (regression guard)"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "debug.daemonStatus(): a resolving getStatus stub yields { reachable:true } with uptimeSec/repoCount/repos[]/socket (+pid/version when available)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "debug.daemonStatus(): a rejecting getStatus stub yields { reachable:false } and never throws",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "debug.daemonStatus(): unresolvable version / absent pidfile leave version/pid undefined but keep the reachable variant",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "debug.daemonStatus(): only workspace repos are counted (shared-modules rows excluded)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "DaemonSection: reachable model renders running + formatUptime(uptimeSec) + socket + version/pid (when present) + repo-count with each repo's index state",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "DaemonSection: { reachable:false } renders a single 'stopped / unreachable' line and NONE of the running fields",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "DaemonSection: zero-repo reachable model renders repo-count 0 with no per-repo rows",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "DaemonSection: a repo with status 'indexing'/'error' renders that exact index state (not collapsed to ready)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "DebugPane: selecting the Daemon section renders DaemonSection's running card (not the s1 placeholder) from the injected debug facade",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "DebugPane: with an unreachable daemonStatus() the Daemon section shows the stopped/unreachable line",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 interactionWithShared sc1 + contractDetails (DebugService.daemonStatus / DaemonSection consume the sc1 facade + DebugPane hosting)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 contractDetails DaemonCardModel + getStatus/DaemonStatus (daemon.status IPC read; RegisteredRepo['status'])"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1 symbol.locate — client-known fields: PATHS.sockFile (paths.ts:19) + PATHS.pidFile (paths.ts:18) read client-side, existsSync-guarded"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "s1 symbol.locate — best-effort version source: DAEMON_ROOT (src/cli/services/maintenance.ts:34 = $INSRC_DAEMON_ROOT ?? ~/.insrc/daemon) join package.json .version, catch to undefined"
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "s1 usage.example — DaemonPane health-render idiom + formatUptime (src/cli/ui/format.ts:18) + useDaemonStatus once-fetch (pollMs=0) pattern the DaemonSection mirrors"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 dataModelChanges — DebugPane SECTION_VIEWS['daemon'] field-modify (swap the s1 placeholder for DaemonSection), src/cli/panes/DebugPane.tsx"
+    },
+    {
+      "id": "c7",
+      "kind": "analyze-bundle",
+      "ref": "s1 test.locate — in-repo `debug` facade fakes (tui.test.ts fakeServices, command.test.ts ctxWith, DebugPane.test.ts props) that must add a daemonStatus stub for the widened interface to compile"
+    }
+  ]
+}

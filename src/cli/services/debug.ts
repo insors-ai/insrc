@@ -13,10 +13,10 @@
  */
 
 import { execFileSync, spawn } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, watch as fsWatch } from 'node:fs';
 import { join } from 'node:path';
 
-import type { DebugSection, DaemonCardModel, OrphanScanResult, OrphanProcess, KillOutcome, DebugStatusModel, McpClientStatus } from './debug-types.js';
+import type { DebugSection, DaemonCardModel, OrphanScanResult, OrphanProcess, KillOutcome, DebugStatusModel, McpClientStatus, LogCategory, LogCategoryId, LogLine, LogFilter } from './debug-types.js';
 import type { AttachedClient, DaemonStatus } from '../../shared/types.js';
 import { getStatus, DAEMON_ENTRY } from './daemon.js';
 import { pidFromFile } from './lifecycle.js';
@@ -342,4 +342,164 @@ export function attachedClients(): Promise<DebugStatusModel> {
 /** The Story-s4 `mcpStatus()` facade method — bound onto the `debug` entry. */
 export function mcpStatus(): Promise<readonly McpClientStatus[]> {
 	return mcpStatusWith({ runList: realRunList });
+}
+
+// --- Story s5: rotation-aware log tailer + filter -----------------------------
+
+/** How many trailing lines the initial tail emits (bounded). */
+const TAIL_MAX_LINES = 500;
+
+/** The tailable log categories (daemon + agent), in order. */
+const LOG_CATEGORIES: readonly LogCategory[] = [
+	{ id: 'daemon', title: 'Daemon', stem: 'daemon' },
+	{ id: 'agent', title: 'Agent', stem: 'agent' },
+];
+
+/** The Story-s5 `logCategories()` facade method — static, opens no stream. */
+export function logCategories(): readonly LogCategory[] {
+	return LOG_CATEGORIES;
+}
+
+/**
+ * Injectable fs seam for the tailer (Story s5) — split out so rotation/append/
+ * parse are unit-testable without a real disk watcher. `listSegments` returns the
+ * `<stem>.*.log` files under logDir sorted ascending by rotation number (the
+ * active segment is the last); `readLines` returns a file's current lines; `watch`
+ * installs a directory watcher firing on any append/creation and returns an
+ * unwatch. `maxLines` bounds the initial tail.
+ */
+export interface TailDeps {
+	readonly logDir: string;
+	readonly listSegments: (dir: string, stem: string) => string[];
+	readonly readLines: (file: string) => string[];
+	readonly watch: (dir: string, onEvent: () => void) => () => void;
+	readonly maxLines: number;
+}
+
+/** Best-effort parse of a raw tail line into a LogLine. A pino-JSON line fills
+ *  time/level/module(name)/msg; a non-JSON / partial line keeps only `raw`. */
+function parseLogLine(raw: string): LogLine {
+	try {
+		const o = JSON.parse(raw) as Record<string, unknown>;
+		if (o !== null && typeof o === 'object') {
+			return {
+				raw,
+				...(typeof o['time'] === 'number' ? { time: o['time'] } : {}),
+				...(typeof o['level'] === 'number' ? { level: o['level'] } : {}),
+				...(typeof o['name'] === 'string' ? { module: o['name'] } : {}),
+				...(typeof o['msg'] === 'string' ? { msg: o['msg'] } : {}),
+			};
+		}
+	} catch { /* non-JSON — raw only */ }
+	return { raw };
+}
+
+/**
+ * Rotation-aware tail of a category `stem` (Story s5). Resolves the active
+ * `<stem>.<N>.<ext>` segment (highest-N / last), emits its last-`maxLines` lines,
+ * then on each fs event emits only the newly-appended lines; when a newer segment
+ * appears it re-resolves and follows it (lc2). A `disposed` guard suppresses any
+ * post-dispose emit. NEVER throws to the caller — a missing dir / read / watch
+ * error degrades to an empty (initial) emit + a quiet retry on the next event.
+ * Returns an idempotent dispose() that removes the watcher.
+ */
+export function tailLogWith(stem: string, onLines: (lines: readonly LogLine[]) => void, deps: TailDeps): () => void {
+	let disposed = false;
+	let activeFile: string | undefined;
+	let seen = 0; // count of lines of activeFile already emitted
+
+	const resolveActive = (): string | undefined => {
+		try {
+			const segs = deps.listSegments(deps.logDir, stem);
+			return segs.length > 0 ? segs[segs.length - 1] : undefined;
+		} catch {
+			return undefined;
+		}
+	};
+
+	const emit = (initial: boolean): void => {
+		if (disposed) return;
+		const active = resolveActive();
+		if (active === undefined) {
+			if (initial) onLines([]); // loaded-but-empty; a later event retries
+			return;
+		}
+		if (active !== activeFile) { activeFile = active; seen = 0; } // new/rotated segment
+		let lines: string[];
+		try {
+			lines = deps.readLines(active);
+		} catch {
+			return; // transient read error — retry on the next event
+		}
+		if (lines.length < seen) seen = 0;                                  // truncated/replaced → re-tail
+		if (seen === 0 && lines.length > deps.maxLines) seen = lines.length - deps.maxLines; // initial: last-N only
+		const fresh = lines.slice(seen);
+		seen = lines.length;
+		if (initial || fresh.length > 0) onLines(fresh.map(parseLogLine));
+	};
+
+	emit(true);
+	let unwatch: () => void = () => {};
+	try {
+		unwatch = deps.watch(deps.logDir, () => { if (!disposed) emit(false); });
+	} catch { /* no watcher installable — the initial emit still delivered */ }
+
+	return () => {
+		if (disposed) return;
+		disposed = true;
+		try { unwatch(); } catch { /* ignore */ }
+	};
+}
+
+/**
+ * Pure filter predicate over a LogLine (Story s5). minLevel keeps lines whose
+ * numeric level >= minLevel (a line with no level — non-JSON — is dropped by an
+ * active minLevel); module is a case-insensitive substring match on LogLine.module
+ * (a line with no module is dropped by an active module filter); text is a
+ * case-insensitive substring over LogLine.raw. Unset fields impose no constraint;
+ * active fields are ANDed. Free-text still matches a non-JSON line via `raw`.
+ */
+export function matchesFilter(line: LogLine, filter: LogFilter): boolean {
+	if (filter.minLevel !== undefined) {
+		if (line.level === undefined || line.level < filter.minLevel) return false;
+	}
+	if (filter.module !== undefined && filter.module !== '') {
+		if (line.module === undefined || !line.module.toLowerCase().includes(filter.module.toLowerCase())) return false;
+	}
+	if (filter.text !== undefined && filter.text !== '') {
+		if (!line.raw.toLowerCase().includes(filter.text.toLowerCase())) return false;
+	}
+	return true;
+}
+
+/** Real fs seam bound to node:fs, resolving `<stem>.<N>.log` segments under logDir. */
+const realTailDeps: TailDeps = {
+	logDir: PATHS.logDir,
+	listSegments: (dir, stem) => {
+		const re = new RegExp(`^${stem}\\.(\\d+)\\.log$`);
+		const matched: { file: string; n: number }[] = [];
+		for (const name of readdirSync(dir)) {
+			const m = re.exec(name);
+			if (m !== null && m[1] !== undefined) matched.push({ file: join(dir, name), n: Number.parseInt(m[1], 10) });
+		}
+		matched.sort((a, b) => a.n - b.n);
+		return matched.map(x => x.file);
+	},
+	readLines: file => {
+		const lines = readFileSync(file, 'utf8').split('\n');
+		if (lines.length > 0 && lines[lines.length - 1] === '') lines.pop(); // drop trailing empty
+		return lines;
+	},
+	watch: (dir, onEvent) => {
+		const w = fsWatch(dir, { persistent: false }, () => onEvent());
+		w.on('error', () => { /* watcher error — swallow; a re-open happens on the next tailLog */ });
+		return () => { try { w.close(); } catch { /* ignore */ } };
+	},
+	maxLines: TAIL_MAX_LINES,
+};
+
+/** The Story-s5 `tailLog()` facade method — bound onto the `debug` entry. */
+export function tailLog(categoryId: LogCategoryId, onLines: (lines: readonly LogLine[]) => void): () => void {
+	const stem = LOG_CATEGORIES.find(c => c.id === categoryId)?.stem ?? categoryId;
+	return tailLogWith(stem, onLines, realTailDeps);
 }

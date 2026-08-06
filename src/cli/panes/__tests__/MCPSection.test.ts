@@ -38,6 +38,8 @@ function makeDebug(f: Fakes): { debug: DebugService; attachedCalls: () => number
 		killOrphans: async () => [],
 		attachedClients: async () => { attachedCalls++; return f.status ?? { reachable: false }; },
 		mcpStatus: async () => f.mcp ?? [],
+		logCategories: () => [{ id: 'daemon', title: 'Daemon', stem: 'daemon' }, { id: 'agent', title: 'Agent', stem: 'agent' }],
+		tailLog: () => () => {},
 	};
 	return { debug, attachedCalls: () => attachedCalls };
 }

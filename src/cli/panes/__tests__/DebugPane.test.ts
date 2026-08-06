@@ -30,7 +30,7 @@ const settle = (): Promise<void> => new Promise(r => setTimeout(r, 25));
 const RIGHT = '[C';
 
 function renderPane(sections: readonly DebugSection[], captured = false): ReturnType<typeof render> {
-	const props: DebugPaneProps = { services: { debug: { sections, daemonStatus: async () => ({ reachable: false }), scanOrphans: () => ({ supported: false }), killOrphans: async () => [], attachedClients: async () => ({ reachable: false }), mcpStatus: async () => [] } } };
+	const props: DebugPaneProps = { services: { debug: { sections, daemonStatus: async () => ({ reachable: false }), scanOrphans: () => ({ supported: false }), killOrphans: async () => [], attachedClients: async () => ({ reachable: false }), mcpStatus: async () => [], logCategories: () => [{ id: 'daemon', title: 'Daemon', stem: 'daemon' }, { id: 'agent', title: 'Agent', stem: 'agent' }], tailLog: () => () => {} } } };
 	return render(createElement(CaptureContext.Provider, { value: captured }, createElement(DebugPane, props)));
 }
 
@@ -102,7 +102,7 @@ test('an empty section list renders the pane frame without throwing', async () =
 // --- Story s2, t4: the Daemon section now mounts the live DaemonSection ---
 
 function renderWithDaemon(card: import('../../services/debug-types.js').DaemonCardModel): ReturnType<typeof render> {
-	const props: DebugPaneProps = { services: { debug: { sections: THREE, daemonStatus: async () => card, scanOrphans: () => ({ supported: false }), killOrphans: async () => [], attachedClients: async () => ({ reachable: false }), mcpStatus: async () => [] } } };
+	const props: DebugPaneProps = { services: { debug: { sections: THREE, daemonStatus: async () => card, scanOrphans: () => ({ supported: false }), killOrphans: async () => [], attachedClients: async () => ({ reachable: false }), mcpStatus: async () => [], logCategories: () => [{ id: 'daemon', title: 'Daemon', stem: 'daemon' }, { id: 'agent', title: 'Agent', stem: 'agent' }], tailLog: () => () => {} } } };
 	return render(createElement(CaptureContext.Provider, { value: false }, createElement(DebugPane, props)));
 }
 
@@ -122,5 +122,20 @@ test('with an unreachable daemonStatus() the Daemon section shows the stopped/un
 	const { lastFrame, unmount } = renderWithDaemon({ reachable: false });
 	await settle();
 	assert.match(lastFrame() ?? '', /stopped \/ unreachable/);
+	unmount();
+});
+
+// --- Story s5, t4: the Logs section is now live (the last placeholder is gone) ---
+
+test('navigating to the logs section renders LogsSection (the s1 placeholder is gone)', async () => {
+	const { lastFrame, stdin, unmount } = renderPane(THREE);
+	await settle();
+	stdin.write(RIGHT);  // daemon -> mcp
+	await settle();
+	stdin.write(RIGHT);  // mcp -> logs
+	await settle();
+	const frame = lastFrame() ?? '';
+	assert.match(frame, /select a category/);     // LogsSection's empty-selection prompt
+	assert.doesNotMatch(frame, /coming soon/);      // the placeholder is gone
 	unmount();
 });

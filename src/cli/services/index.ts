@@ -140,6 +140,8 @@ export function makeServices(): Services {
 			killOrphans:     debug.killOrphans,
 			attachedClients: debug.attachedClients,
 			mcpStatus:       debug.mcpStatus,
+			logCategories:   debug.logCategories,
+			tailLog:         debug.tailLog,
 		},
 	};
 }

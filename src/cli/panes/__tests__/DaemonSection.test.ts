@@ -30,6 +30,8 @@ function renderSection(card: DaemonCardModel): ReturnType<typeof render> {
 		killOrphans: async () => [],
 		attachedClients: async () => ({ reachable: false }),
 		mcpStatus: async () => [],
+		logCategories: () => [{ id: 'daemon', title: 'Daemon', stem: 'daemon' }, { id: 'agent', title: 'Agent', stem: 'agent' }],
+		tailLog: () => () => {},
 	};
 	return render(createElement(DaemonSection, { services: { debug } }));
 }
@@ -111,6 +113,8 @@ function renderOrphans(opts: {
 		},
 		attachedClients: async () => ({ reachable: false }),
 		mcpStatus: async () => [],
+		logCategories: () => [{ id: 'daemon', title: 'Daemon', stem: 'daemon' }, { id: 'agent', title: 'Agent', stem: 'agent' }],
+		tailLog: () => () => {},
 	};
 	const r = render(createElement(DaemonSection, { services: { debug } }));
 	return Object.assign(r, { killCalls });

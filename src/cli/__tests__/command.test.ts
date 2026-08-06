@@ -78,6 +78,8 @@ function ctxWith(overrides: Partial<Services> = {}): { ctx: CommandCtx; spies: S
 			killOrphans: async () => [],
 			attachedClients: async () => ({ reachable: false }),
 			mcpStatus: async () => [],
+			logCategories: () => [{ id: 'daemon', title: 'Daemon', stem: 'daemon' }, { id: 'agent', title: 'Agent', stem: 'agent' }],
+			tailLog: () => () => {},
 		},
 		...overrides,
 	};

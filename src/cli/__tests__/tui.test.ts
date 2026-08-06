@@ -101,6 +101,8 @@ function fakeServices(): Services {
 			killOrphans: async () => [],
 			attachedClients: async () => ({ reachable: false }),
 			mcpStatus: async () => [],
+			logCategories: () => [{ id: 'daemon', title: 'Daemon', stem: 'daemon' }, { id: 'agent', title: 'Agent', stem: 'agent' }],
+			tailLog: () => () => {},
 		},
 	};
 }

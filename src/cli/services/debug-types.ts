@@ -51,6 +51,14 @@ export interface DebugService {
 	/** Per-MCP-client registration/connection status (Story s4): a client-side
 	 *  `<cli> mcp list` parse per claude/codex. Read-only; daemon-independent. */
 	mcpStatus(): Promise<readonly McpClientStatus[]>;
+	/** The tailable log categories (Story s5): the daemon + agent logs. Static,
+	 *  synchronous — listing opens no stream. */
+	logCategories(): readonly LogCategory[];
+	/** Start a rotation-aware fs.watch tail of a category's active segment (Story
+	 *  s5): emits the tail then follows appends + rotation (lc2), calling onLines
+	 *  with each batch of parsed lines. Returns a dispose() that stops the watch
+	 *  and guarantees no further emit. Read-only; never throws to the caller (k4). */
+	tailLog(categoryId: LogCategoryId, onLines: (lines: readonly LogLine[]) => void): () => void;
 }
 
 /** The DebugPane's props: a narrowed view of `Services` exposing only `debug`. */
@@ -128,4 +136,43 @@ export interface McpClientStatus {
 	readonly available: boolean;
 	readonly registered: boolean;
 	readonly connected: boolean;
+}
+
+/** The closed union of tailable log categories (Story s5). */
+export type LogCategoryId = 'daemon' | 'agent';
+
+/** A tailable log category (Story s5): `id` (the closed union), `title`
+ *  (display), and `stem` (the pino-roll file stem used to glob `<stem>.*.log`
+ *  under PATHS.logDir). Structured data only. */
+export interface LogCategory {
+	readonly id: LogCategoryId;
+	readonly title: string;
+	readonly stem: string;
+}
+
+/**
+ * One parsed tail line (Story s5). `raw` is always the verbatim line (free-text
+ * filter matches it); time/level/module/msg are the best-effort pino-JSON fields
+ * (level = numeric pino level, module = pino `name`). A non-JSON / partial line
+ * keeps only `raw` so level/module filters skip it while free-text still matches.
+ */
+export interface LogLine {
+	readonly raw: string;
+	readonly time?: number;
+	readonly level?: number;
+	readonly module?: string;
+	readonly msg?: string;
+}
+
+/**
+ * The Logs-section filter bar state (Story s5), applied as a pure predicate over
+ * the ring buffer: minLevel (keep lines whose numeric level >= minLevel; a line
+ * with no level is dropped by an active minLevel), module (case-insensitive match
+ * on LogLine.module), text (case-insensitive substring over LogLine.raw). An
+ * unset field imposes no constraint. CLI-side view state — not persisted.
+ */
+export interface LogFilter {
+	readonly minLevel?: number;
+	readonly module?: string;
+	readonly text?: string;
 }

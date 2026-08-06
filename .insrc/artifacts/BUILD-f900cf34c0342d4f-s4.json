@@ -1,0 +1,45 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": false,
+    "epicHash": "f900cf34c0342d4f",
+    "storyId": "s4",
+    "createdAt": "2026-08-06T00:00:00.000Z",
+    "approvedAt": "2026-08-06T08:57:51.059Z"
+  },
+  "body": {
+    "focus": "MCP section — connected socket clients (debug-status IPC) + per-client MCP registration in the Debug pane",
+    "producesLld": false,
+    "commit": "cc91da9",
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": true
+      }
+    ]
+  }
+}

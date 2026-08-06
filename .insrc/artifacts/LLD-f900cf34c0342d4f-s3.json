@@ -1,0 +1,633 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1786000128848-p3vzsl",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-08-06T07:19:53.245Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 664341,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f900cf34c0342d4f",
+    "epicSlug": "seed-from-approved-specartifact-spec-bfa1f6c830c53982",
+    "storyId": "s3",
+    "hldBaseRunId": "wf-1785928117126-v61buv",
+    "hldEffectiveHash": "ddca67745f5ce27a72fd98622c88c10523b7fb157faee13556f302030c37eece",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "ref": "dm/c2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "DAEMON_ENTRY is a module-private const defined in src/cli/services/daemon.ts around line 24 (join(__dirname,'../../daemon/index.js')), which s3 exports.",
+          "evidence": "read src/cli/services/daemon.ts:24 = \"const DAEMON_ENTRY = join(__dirname, '../../daemon/index.js');\" — the module-private const is exactly at the cited line.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl2",
+          "ref": "dm/c2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "pidFromFile is a module-private function in src/cli/services/lifecycle.ts around line 20 that reads PATHS.pidFile for the managed pid, which s3 exports.",
+          "evidence": "read src/cli/services/lifecycle.ts:20 = \"function pidFromFile(): number | undefined {\" — the module-private managed-pid read is at the cited line.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl3",
+          "ref": "c2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The managed-pid liveness probe pattern is process.kill(pid, 0) in src/cli/services/lifecycle.ts (pidAlive), which the kill re-uses to detect SIGTERM survivors.",
+          "evidence": "grep matched process.kill(pid, 0) in lifecycle.ts (pidAlive at :28) — the liveness-probe primitive the kill re-uses is real.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl4",
+          "ref": "c2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "execSync from node:child_process is the existing subprocess precedent (src/shared/system-info.ts) that the orphan `ps` scan mirrors.",
+          "evidence": "read src/shared/system-info.ts:7 = \"import { execSync } from 'node:child_process';\" — the subprocess precedent is at the cited line.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl5",
+          "ref": "c3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "ConfirmPrompt is an existing modal widget exported from src/cli/ui/widgets.tsx (around line 56) that the guarded kill gates behind.",
+          "evidence": "read src/cli/ui/widgets.tsx:56 = \"export function ConfirmPrompt(props: { label: string; onYes: () => voi...\" — the confirm-gate modal is exported at the cited line.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl6",
+          "ref": "c2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The SIGTERM-then-drain(-then-force) stop sequence exists in scripts/daemon-ctl.sh (around lines 142-149), which the killOrphans escalation mirrors.",
+          "evidence": "read scripts/daemon-ctl.sh:148 = 'log \"SIGTERM daemon (pid $pid)\"' — the SIGTERM-then-drain stop sequence the escalation mirrors is real.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl7",
+          "ref": "sc1/c1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The DebugService interface + the s2 DaemonSection component the orphan area augments exist from s1/s2 (src/cli/services/debug-types.ts + src/cli/panes/DaemonSection.tsx).",
+          "evidence": "grep matched `interface DebugService` (debug-types.ts) and `export function DaemonSection` in src — the sc1 facade + s2 component s3 augments both exist.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl8",
+          "ref": "contractDetails",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "scanOrphans/killOrphans/OrphanScanResult/OrphanProcess/KillOutcome do not exist in src yet; they are this Story's new sc1 additions.",
+          "evidence": "grep for scanOrphans|killOrphans|OrphanScanResult|OrphanProcess|KillOutcome returned zero src hits — these are genuinely new sc1 additions, as the LLD claims.",
+          "action": "none — the new-surface premise holds",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl9",
+          "ref": "killOrphans",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "killOrphans acts only on the explicit pid list, re-excludes the managed pid, escalates SIGTERM->SIGKILL for survivors, and never throws (folds errors into per-pid KillOutcome).",
+          "evidence": "No source probe (design intention for the NEW killOrphans method). Internally consistent: the artifact's killOrphans postconditions state explicit-pids-only + managed-pid re-exclusion + SIGTERM->SIGKILL + per-pid KillOutcome (never throws), and its readonly number[] signature type-enforces the explicit-selection guarantee; build + code-review verify the impl.",
+          "action": "none — design intention, verified internally consistent; enforced at build/code-review",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl10",
+          "ref": "interactionWithShared",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "The HLD assigns sc1 ownership to s1; s3 depends on (consumes) sc1 and adds scanOrphans/killOrphans via an additive sharedContract.methodAdd amendment, not by owning sc1.",
+          "evidence": "Cross-artifact: the approved HLD boundary assigns sc1 to s1; the s3 LLD interactionWithShared declares role=consumes for sc1 and records scanOrphans/killOrphans as an additive sharedContract.methodAdd (not an ownership claim), consistent with the flat s2 daemonStatus precedent (cl7 grep shows the shared DebugService base).",
+          "action": "none — cross-artifact trace consistent",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 10
+      },
+      "reviewedAt": "2026-08-06T07:21:06.784Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-08-06T07:36:56.742Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "A new Debug pane (peer *Pane.tsx in app.tsx's switcher, k6) with pane-local inner sub-tab navigation over three sections — Daemon, MCP, Logs — backed by a new debug service added to makeServices. The chosen shape (a1) keeps the daemon surface minimal: the status card reuses the existing daemon.status IPC, and the ONE genuinely new daemon contract (a read-only debug-status IPC that returns the daemon's own list of currently-attached socket clients, backed by per-connection tracking in the socket server) is built and consumed entirely inside the MCP-section story. Everything else is client-side: the POSIX orphan scan/kill keys on the managed daemon entry and OS signals (k3), and the log viewer fs.watch-tails the two rotated files on disk (k4) — so the Daemon and Logs sections keep working when the daemon is unreachable. The only cross-STORY contract is the pane's section-hosting shape + the debug-service facade that every section plugs into; it is owned by the foundational scaffold story (S001) that every section story already depends on.",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "Debug pane section-hosting shape + DebugService facade",
+          "purpose": "The single client-side foundation every Debug section plugs into: how the DebugPane hosts and switches its inner sections (Daemon/MCP/Logs, one full-height at a time) and the DebugService facade (added to makeServices) that each section's data access extends. Owned by the scaffold story so the four section stories — which all depend on it — build against one stable shape.",
+          "interfaceSketch": "// src/cli — type-level only\nexport type DebugSectionId = 'daemon' | 'mcp' | 'logs';\n\nexport interface DebugSection {\n  readonly id: DebugSectionId;\n  readonly title: string;\n  // the section's view is a React component rendered full-height when selected;\n  // each section story supplies its own component + wires its data via DebugService\n}\n\n// Facade added to the Services object returned by makeServices(); each section\n// story augments it with its own read methods (status card fields, orphan scan/kill,\n// mcp list + debug-status clients, log tail). s1 defines the empty facade + registration.\nexport interface DebugService {\n  readonly sections: readonly DebugSection[];\n}\n\nexport interface DebugPaneProps {\n  readonly services: { readonly debug: DebugService };\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s3",
+        "owns": [],
+        "depends": [
+          "sc1"
+        ],
+        "internal": "The POSIX orphan scan (a `ps` cmdline match on the resolved DAEMON_ENTRY excluding the managed pid), the multi-select + confirm-gated kill (graceful signal then forced escalation), and the non-POSIX 'not supported' degrade (k3). Entirely client-side; no daemon IPC, no shared contract beyond sc1."
+      },
+      "rolloutPhase": "Phase B — diagnostic sections",
+      "nonFunctional": {
+        "performance": "The debug-status IPC (attached-client list + any polled status) is bounded to the number of live socket connections; the orphan `ps` scan and `mcp list` are on-entry + explicit-refresh only (not continuous) to avoid steady subprocess churn; the log tail is fs.watch event-driven, not a poll loop.",
+        "security": "All daemon-held state is read over IPC only — the CLI never opens the daemon's stores or socket internals (k1); no direct cloud/network access is introduced. The pane is read-only except the one confirm-gated, explicitly-multi-selected orphan kill (k2); it never restarts the daemon or disconnects a client (k5).",
+        "observability": "This Epic IS an observability surface; it adds no logging of its own beyond what already flows to the two log files it tails. The new debug-status handler is a plain additive read handler with no persistent side effects.",
+        "durability": "No new persistent state — the connected-client registry is in-memory and rebuilt from live connections; the orphan kill is a one-shot OS action behind an explicit confirm, and nothing the pane does mutates on-disk data."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "DebugService",
+          "signature": "export interface DebugService { readonly sections: readonly DebugSection[]; daemonStatus(): Promise<DaemonCardModel>; scanOrphans(): OrphanScanResult; killOrphans(pids: readonly number[]): Promise<KillOutcome[]> }",
+          "parameters": [],
+          "returns": {
+            "type": "interface",
+            "meaning": "The sc1 facade gains two additive methods for the Daemon-section orphan area: `scanOrphans()` (read) and `killOrphans(pids)` (the single guarded mutating action). Existing `sections` + `daemonStatus` unchanged. Same flat extension model as s2."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Additive to sc1 — existing members unchanged; s1/s2 fakes stubbing `debug` must add scanOrphans + killOrphans stubs."
+          ]
+        },
+        {
+          "name": "scanOrphans",
+          "signature": "scanOrphans(): OrphanScanResult",
+          "parameters": [],
+          "returns": {
+            "type": "OrphanScanResult",
+            "meaning": "On POSIX: runs a one-shot `ps` cmdline scan, matches the RESOLVED absolute DAEMON_ENTRY (.../daemon/index.js), EXCLUDES the managed daemon's own pid (read from PATHS.pidFile), and returns { supported:true; orphans } as recommendations. On non-POSIX (process.platform==='win32') returns { supported:false }. On-entry/explicit-refresh only (not a poll loop). Read-only — a recommendation, never an action (lc1)."
+          },
+          "errors": [
+            {
+              "type": "n/a (never throws to the view)",
+              "condition": "A `ps` failure / parse error resolves to { supported:true; orphans:[] } rather than throwing (the scan degrades to 'no orphans found')."
+            }
+          ],
+          "preconditions": [
+            "Matches the resolved absolute DAEMON_ENTRY path (not a loose substring); always excludes the managed pid."
+          ],
+          "postconditions": [
+            "orphans lists only daemon-entry processes that are NOT the managed daemon; never includes the managed pid.",
+            "Read-only; no process is signalled by scanning (k2)."
+          ]
+        },
+        {
+          "name": "killOrphans",
+          "signature": "killOrphans(pids: readonly number[]): Promise<KillOutcome[]>",
+          "parameters": [
+            {
+              "name": "pids",
+              "type": "readonly number[]",
+              "purpose": "The EXPLICITLY-selected orphan pids to terminate. The caller (DaemonSection) passes only the operator's confirmed selection — there is no 'all' overload.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<KillOutcome[]>",
+            "meaning": "For each pid: SIGTERM, then after ~3s re-probe liveness (process.kill(pid,0)); if still alive, SIGKILL. Resolves to one KillOutcome per input pid. The service defensively re-excludes the managed pid (never kills the running managed daemon — k5) and no-ops on non-POSIX."
+          },
+          "errors": [
+            {
+              "type": "KillOutcome{result:'error'}",
+              "condition": "process.kill throws for a pid (e.g. EPERM) — captured as that pid's outcome, never thrown; other selected pids still processed."
+            }
+          ],
+          "preconditions": [
+            "Acts ONLY on the passed pid list (lc1/k2 — never 'all scanned'); the managed pid is re-excluded even if passed.",
+            "Reached only after the DaemonSection's ConfirmPrompt yes (ac2)."
+          ],
+          "postconditions": [
+            "Exactly the selected (non-managed) pids are signalled; graceful SIGTERM first, forced SIGKILL only if still alive after ~3s.",
+            "Returns a per-pid outcome ('terminated' | 'forced' | 'not-found' | 'error')."
+          ]
+        },
+        {
+          "name": "OrphanScanResult",
+          "signature": "export type OrphanScanResult = { supported: true; orphans: readonly OrphanProcess[] } | { supported: false }",
+          "parameters": [],
+          "returns": {
+            "type": "type-alias (new)",
+            "meaning": "Discriminated on `supported` so ac3 (non-POSIX 'not supported') is a first-class variant the DaemonSection renders without any platform logic of its own. Structured data only."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": []
+        },
+        {
+          "name": "OrphanProcess",
+          "signature": "export interface OrphanProcess { readonly pid: number; readonly command: string }",
+          "parameters": [],
+          "returns": {
+            "type": "interface (new)",
+            "meaning": "One scanned candidate: its pid + the ps command line (for the operator to review before selecting). No selection/kill state — that is pane-local UI state."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": []
+        },
+        {
+          "name": "KillOutcome",
+          "signature": "export interface KillOutcome { readonly pid: number; readonly result: 'terminated' | 'forced' | 'not-found' | 'error' }",
+          "parameters": [],
+          "returns": {
+            "type": "interface (new)",
+            "meaning": "Per-pid kill result: 'terminated' (died on SIGTERM), 'forced' (survived to SIGKILL), 'not-found' (already gone), 'error' (signal threw, e.g. EPERM). Lets the UI report exactly what happened to each selected process."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": []
+        },
+        {
+          "name": "DaemonSection",
+          "signature": "export function DaemonSection(props: { services: { readonly debug: DebugService } }): ReactElement",
+          "parameters": [
+            {
+              "name": "props",
+              "type": "{ services: { readonly debug: DebugService } }",
+              "purpose": "Supplies the `debug` facade whose scanOrphans()/killOrphans() the orphan area drives (plus daemonStatus() from s2).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ReactElement",
+            "meaning": "The existing s2 Daemon-section component grows an orphan area BELOW the status card: on POSIX it renders the scanOrphans() recommendations with a pane-local multi-select (Set<number>) + a refresh key; requesting a kill opens a ConfirmPrompt (capture-gated), and only on explicit yes calls killOrphans(selectedPids) and reports the per-pid outcomes. On non-POSIX (scanOrphans -> {supported:false}) it renders a 'not supported on this platform' line (ac3). This is the ONLY mutating control in the whole pane (k2)."
+          },
+          "errors": [],
+          "preconditions": [
+            "Mounted only while the Debug pane's active section is 'daemon'; the kill is reachable only through the ConfirmPrompt."
+          ],
+          "postconditions": [
+            "ac1: lists non-managed daemon-entry processes as recommendations (POSIX).",
+            "ac2: kill requires ConfirmPrompt yes and terminates exactly the selected pids (SIGTERM then SIGKILL).",
+            "ac3: non-POSIX shows 'not supported on this platform' instead of a scan/kill control."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "DebugService (src/cli/services/debug-types.ts + debug.ts + index.ts)",
+        "change": "field-add",
+        "details": "Add scanOrphans(): OrphanScanResult + killOrphans(pids): Promise<KillOutcome[]> to the DebugService interface (debug-types.ts) and their impls in debug.ts — injectable-deps helpers (scanOrphansWith(deps) / killOrphansWith(deps) taking a ps-runner, a kill(pid,signal) fn, a clock/wait fn, a platform flag, and the managed pid) with zero-arg facade wrappers bound onto the existing makeServices() debug entry. The service resolves the absolute DAEMON_ENTRY (reused from daemon.ts, exported for s3) + the managed pid (reused from lifecycle.ts's pidFromFile, exported for s3). Additive; existing members unchanged.",
+        "schemaDiff": "interface DebugService { ...; + scanOrphans(): OrphanScanResult; + killOrphans(pids: readonly number[]): Promise<KillOutcome[]> }",
+        "callSites": [
+          "src/cli/services/debug.ts",
+          "src/cli/services/index.ts",
+          "src/cli/services/daemon.ts",
+          "src/cli/services/lifecycle.ts",
+          "src/cli/panes/DaemonSection.tsx"
+        ]
+      },
+      {
+        "entity": "OrphanScanResult / OrphanProcess / KillOutcome (src/cli/services/debug-types.ts)",
+        "change": "new",
+        "details": "New view-model types colocated with the sc1 types: OrphanScanResult (discriminated on supported), OrphanProcess ({pid,command}), KillOutcome ({pid,result}). Structured data only.",
+        "schemaDiff": "+ export type OrphanScanResult = { supported:true; orphans: readonly OrphanProcess[] } | { supported:false }\n+ export interface OrphanProcess { readonly pid: number; readonly command: string }\n+ export interface KillOutcome { readonly pid: number; readonly result: 'terminated'|'forced'|'not-found'|'error' }",
+        "callSites": [
+          "src/cli/services/debug-types.ts",
+          "src/cli/services/debug.ts",
+          "src/cli/panes/DaemonSection.tsx"
+        ]
+      },
+      {
+        "entity": "DaemonSection (src/cli/panes/DaemonSection.tsx)",
+        "change": "field-modify",
+        "details": "Grow the s2 Daemon-section component with the orphan area below the status card: a scanOrphans()-driven recommendation list, a pane-local multi-select (Set<number>) + refresh key via useInput, and a ConfirmPrompt-gated killOrphans(selection) with per-pid outcome reporting; a non-POSIX 'not supported' line. No change to the s2 status card, DebugSectionId, or DebugPane hosting.",
+        "schemaDiff": "DaemonSection adds an orphan-area block (scan list + multi-select + ConfirmPrompt-gated kill) under the status card",
+        "callSites": [
+          "src/cli/panes/DaemonSection.tsx",
+          "src/cli/ui/widgets.tsx"
+        ]
+      },
+      {
+        "entity": "DAEMON_ENTRY (src/cli/services/daemon.ts) + pidFromFile (src/cli/services/lifecycle.ts)",
+        "change": "field-modify",
+        "details": "Export the currently module-private DAEMON_ENTRY (daemon.ts:24) and pidFromFile (lifecycle.ts:20) so the debug service reuses the SAME resolved daemon-entry path + managed-pid read rather than duplicating a second constant/read. Purely a visibility change (add `export`); no behaviour change.",
+        "schemaDiff": "daemon.ts: `const DAEMON_ENTRY` -> `export const DAEMON_ENTRY`; lifecycle.ts: `function pidFromFile` -> `export function pidFromFile`",
+        "callSites": [
+          "src/cli/services/daemon.ts",
+          "src/cli/services/lifecycle.ts",
+          "src/cli/services/debug.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "s3 consumes sc1 (HLD boundary: s3 depends=[sc1]) and extends it per sc1's stated model: it augments the DebugService facade with two additive FLAT methods (scanOrphans + killOrphans, recorded via the sharedContract.methodAdd amendment) and grows the s2 DaemonSection component with the orphan area. It does NOT change the section-hosting shape, DebugSectionId, navigation, or add a new section (all owned by s1). Entirely client-side (no daemon IPC); killOrphans is the single mutating action in the pane (k2), gated behind ConfirmPrompt (ac2), acting only on the explicit selection with the managed pid re-excluded (lc1/k5); POSIX-only with a non-POSIX degrade (k3)."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The `ps` subprocess fails to run or its output cannot be parsed (ps missing, non-zero exit, unexpected format).",
+          "detection": "The ps-runner throws / returns a non-parseable string; scanOrphansWith catches it around the exec + parse.",
+          "response": "Resolve the scan to { supported:true; orphans:[] } (POSIX but 'no orphans found') rather than throwing to the view. No process is signalled.",
+          "userImpact": "The operator sees an empty orphan list instead of a crash; a later refresh retries the scan.",
+          "recoverable": true
+        },
+        {
+          "scenario": "process.kill throws for a selected pid during termination (e.g. EPERM insufficient permissions, or the pid vanished between scan and kill).",
+          "detection": "The kill(pid, signal) call throws inside killOrphansWith's per-pid try/catch.",
+          "response": "Record that pid's KillOutcome as 'error' (permission/other) or 'not-found' (ESRCH), continue processing the remaining selected pids, and never re-throw. The per-pid outcomes are returned to the UI.",
+          "userImpact": "The operator sees per-pid results — e.g. 'pid 1234: error (permission denied)' — while other selected pids are still handled; nothing crashes.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A selected pid is the managed daemon's pid (stale scan, or a caller passes it).",
+          "detection": "killOrphansWith compares each pid against the managed pid (pidFromFile) before signalling.",
+          "response": "The managed pid is re-excluded and NEVER signalled (k5) — it is dropped from the kill set (reported 'not-found'/skipped), even though the scan already excludes it. Defence-in-depth.",
+          "userImpact": "The running managed daemon is never terminated by the orphan kill, even under a race; the operator keeps the process they rely on.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A selected orphan survives the graceful SIGTERM (ignores/handles it) past the ~3s window.",
+          "detection": "After the ~3s wait, killOrphansWith re-probes liveness via process.kill(pid, 0) and finds the process still alive.",
+          "response": "Escalate to SIGKILL for that pid and record the outcome as 'forced'.",
+          "userImpact": "The stubborn orphan is force-terminated; the operator sees 'forced' rather than a silent no-op.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "The scan finds no daemon-entry processes other than the managed daemon (the healthy common case).",
+          "expected": "scanOrphans returns { supported:true; orphans:[] }; the orphan area shows 'no orphan processes found' — no select/kill control is actionable, no confirm can fire."
+        },
+        {
+          "input": "The operator opens the ConfirmPrompt then chooses No (or dismisses it).",
+          "expected": "killOrphans is NEVER called; no process is signalled; the selection remains for the operator to reconsider (ac2 confirm-gate holds)."
+        },
+        {
+          "input": "The operator requests a kill with an empty selection.",
+          "expected": "The kill action is inert (disabled / no-op) — there is nothing to confirm or terminate; killOrphans is not invoked (lc1: acts only on an explicit non-empty selection)."
+        },
+        {
+          "input": "The daemon is not running (no pidfile) while orphan daemon-entry processes exist.",
+          "expected": "The managed pid is undefined, so NO pid is excluded on that basis; every matching daemon-entry process is a candidate the operator may select and kill — the scan still works with the daemon down (the moment it matters most)."
+        },
+        {
+          "input": "A repeat scan (refresh) after the operator already killed some orphans.",
+          "expected": "The refreshed scan re-derives the list from live `ps` output (never an append-only cache), so killed pids drop off and any newly-appeared ones show up; a missed/duplicate never persists."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The orphan scan matches the RESOLVED absolute DAEMON_ENTRY (the daemon/index.js entry path) and ALWAYS excludes the managed daemon's own pid (from PATHS.pidFile via pidFromFile); it never signals a process merely by scanning. The kill re-excludes the managed pid as defence-in-depth so the running managed daemon is never terminated.",
+          "source": "c2"
+        },
+        {
+          "text": "SIGTERM-then-SIGKILL escalation mirrors the existing daemon-ctl.sh stop sequence: graceful SIGTERM first, re-probe liveness (process.kill(pid,0)) after a wait, and force SIGKILL only if still alive — never a bare SIGKILL and never a blanket signal.",
+          "source": "c2"
+        },
+        {
+          "text": "The kill is the ONLY mutating action in the entire Debug pane (k2) and acts SOLELY on the operator's explicit, confirmed, non-empty selection — never automatically, never a 'kill all', and only after a ConfirmPrompt yes.",
+          "source": "c3"
+        },
+        {
+          "text": "Scan + kill are POSIX-only (ps + OS signals); on non-POSIX (process.platform==='win32') the section shows a 'not supported on this platform' message with no scan/kill control (k3).",
+          "source": "c2"
+        },
+        {
+          "text": "The orphan area is added to the s2 DaemonSection and consumes only the sc1 `debug` facade (new flat scanOrphans/killOrphans methods); it does not alter DebugSectionId, the section registry, DebugPane hosting, or navigation (all owned by s1), and stays entirely client-side (no daemon IPC).",
+          "source": "c1"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove scanOrphansWith(deps) matches the resolved DAEMON_ENTRY, excludes the managed pid, degrades ps failures to an empty list, and returns the not-supported variant off-POSIX — all with injected deps (no real ps).",
+          "subjects": [
+            "scanOrphansWith: canned ps output with a daemon-entry line + the managed-pid line + an unrelated node line -> { supported:true; orphans } containing ONLY the non-managed daemon-entry pid(s)",
+            "scanOrphansWith: platform 'win32' -> { supported:false } (no ps invoked)",
+            "scanOrphansWith: a throwing/garbled ps-runner -> { supported:true; orphans:[] } (never throws)",
+            "scanOrphansWith: managed pid undefined (daemon down) -> every matching daemon-entry process is a candidate (nothing excluded on that basis)"
+          ],
+          "fixturesNeeded": [
+            "An injectable ps-runner returning canned `ps -o pid,command` text",
+            "An injected platform flag + managed-pid value + resolved DAEMON_ENTRY path"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove killOrphansWith(deps) does SIGTERM-then-(after wait)-SIGKILL only for survivors, acts on exactly the passed pids, re-excludes the managed pid, and folds signal errors into per-pid outcomes — with an injected clock/kill (no real processes, no real 3s delay).",
+          "subjects": [
+            "killOrphansWith([p]) where p dies on SIGTERM -> kill called with (p,'SIGTERM') then liveness-probe clears; outcome 'terminated', NO SIGKILL sent",
+            "killOrphansWith([p]) where p survives -> (p,'SIGTERM') then after the injected wait (p,0) shows alive -> (p,'SIGKILL'); outcome 'forced'",
+            "killOrphansWith([managedPid, p]) -> the managed pid is re-excluded/never signalled; only p is processed (k5)",
+            "killOrphansWith([p]) where kill throws EPERM/ESRCH -> outcome 'error'/'not-found', no re-throw, other pids still processed",
+            "killOrphansWith([]) -> no kill calls, resolves []; and off-POSIX -> no-op"
+          ],
+          "fixturesNeeded": [
+            "An injectable kill(pid,signal) fn recording every (pid,signal) call + a scripted liveness map (alive-after-SIGTERM per pid)",
+            "An injectable wait/clock fn so the ~3s escalation window is instant in tests",
+            "An injected managed-pid + platform flag"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove the DaemonSection orphan area renders the scan recommendations, enforces the confirm gate, and calls killOrphans only with the explicit selection — against a fake facade (no real ps/kill).",
+          "subjects": [
+            "DaemonSection orphan area (POSIX): renders scanOrphans() rows (pid + command) as recommendations; empty -> 'no orphan processes found'",
+            "DaemonSection: selecting pids + requesting kill opens a ConfirmPrompt; choosing No never calls killOrphans; choosing Yes calls killOrphans with EXACTLY the selected pids and shows the per-pid outcomes",
+            "DaemonSection: a kill request with an empty selection is inert (killOrphans not invoked)",
+            "DaemonSection (non-POSIX, scanOrphans -> {supported:false}): renders 'not supported on this platform' with no scan/kill control"
+          ],
+          "fixturesNeeded": [
+            "A fake `{ debug }` facade whose scanOrphans() returns supported/unsupported fixtures and whose killOrphans() records its pid argument + returns canned KillOutcome[]",
+            "ink-testing-library render + stdin keypresses for select / kill-request / confirm-yes/no"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove the widened DebugService compiles + the whole CLI suite stays green with the new scanOrphans/killOrphans facade methods.",
+          "subjects": [
+            "makeServices().debug exposes scanOrphans + killOrphans bound to the real impls",
+            "the in-repo debug fakes (tui/command/DebugPane/DaemonSection tests) carry scanOrphans + killOrphans stubs so the suite compiles"
+          ],
+          "fixturesNeeded": [
+            "Real makeServices() call (no real ps invoked at construction time)"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "unit: scanOrphansWith returns non-managed daemon-entry pids from canned ps output (excludes the managed pid + unrelated processes)",
+            "unit: DaemonSection orphan area renders the scanOrphans() rows as recommendations (empty -> 'no orphan processes found')"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "unit: DaemonSection kill request opens ConfirmPrompt; Yes calls killOrphans with exactly the selected pids, No never calls it",
+            "unit: killOrphansWith does SIGTERM then SIGKILL-only-for-survivors on exactly the passed pids and returns per-pid outcomes",
+            "unit: killOrphansWith re-excludes the managed pid and folds signal errors into outcomes (never throws)"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "unit: scanOrphansWith on platform 'win32' -> { supported:false } (no ps invoked)",
+            "unit: DaemonSection with an unsupported scan result renders 'not supported on this platform' and shows no scan/kill control"
+          ]
+        }
+      ],
+      "testFramework": "node:test (via `npx tsx --test`) with ink-testing-library for the DaemonSection orphan-area render + stdin select/confirm keypresses, and injectable ps-runner/kill/clock/platform/managed-pid deps for the scanOrphansWith/killOrphansWith service unit tests — matching the s2 debug-service (buildDaemonCard injectable-deps) + DaemonSection harness; NO real ps/process.kill in tests."
+    },
+    "migration": {
+      "stateBefore": "After s2, the Debug pane's Daemon section (src/cli/panes/DaemonSection.tsx) shows only the status card (reachable/unreachable) from debug.daemonStatus(); there is no orphan-process surface anywhere in the pane. The DebugService facade (src/cli/services/debug-types.ts) carries sections (s1) + daemonStatus (s2). The daemon-entry path DAEMON_ENTRY is module-private in src/cli/services/daemon.ts:24 and the managed-pid read pidFromFile is module-private in src/cli/services/lifecycle.ts:20; there is no client-side ps scan or process-kill surface (the only process management is scripts/daemon-ctl.sh's SIGTERM-then-drain stop). [grounded on the s1 DAEMON_ENTRY/pidFromFile + system-info execSync/signal + ConfirmPrompt analyze bundles]",
+      "stateAfter": "The DebugService facade gains two additive FLAT methods — scanOrphans(): OrphanScanResult and killOrphans(pids): Promise<KillOutcome[]> — impl'd in debug.ts via injectable-deps helpers (scanOrphansWith/killOrphansWith) and bound onto the existing makeServices() debug entry. New OrphanScanResult/OrphanProcess/KillOutcome types are colocated with the sc1 types. DAEMON_ENTRY (daemon.ts) and pidFromFile (lifecycle.ts) are exported so the debug service reuses them. The s2 DaemonSection grows an orphan area below the status card (POSIX scan list + multi-select + ConfirmPrompt-gated kill; non-POSIX 'not supported' line). The in-repo debug fakes gain scanOrphans/killOrphans stubs. No daemon-side change; no change to sc1's hosting shape, DebugSectionId, or navigation.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the OrphanScanResult / OrphanProcess / KillOutcome types to the sc1 types module (additive type surface, referenced by nothing yet).",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add `export` to the module-private DAEMON_ENTRY (daemon.ts:24) and pidFromFile (lifecycle.ts:20) — a visibility-only change so the debug service reuses the same resolved entry path + managed-pid read; no behaviour change to existing callers.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add scanOrphans + killOrphans to the DebugService interface and implement scanOrphansWith(deps) / killOrphansWith(deps) in debug.ts — injectable ps-runner/kill/clock/platform/managed-pid deps; the scan matches the resolved DAEMON_ENTRY excluding the managed pid (win32 -> {supported:false}); the kill does SIGTERM -> wait ~3s -> SIGKILL over exactly the passed pids, re-excluding the managed pid, folding signal errors into per-pid outcomes. Bind zero-arg wrappers onto the makeServices() debug entry. Additive.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Grow the DaemonSection component (s2) with the orphan area: scanOrphans()-driven recommendation list + pane-local multi-select (Set<number>) + refresh key, a ConfirmPrompt-gated killOrphans(selection) with per-pid outcome reporting, and the non-POSIX 'not supported' line. This is the single user-visible new behaviour (the pane's only mutating control). No change to the s2 status card / hosting.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Update the in-repo Services `debug` fakes (tui.test.ts, command.test.ts, DebugPane.test.ts, DaemonSection.test.ts) to add conformant scanOrphans + killOrphans stubs so the suites compile against the widened DebugService. Land WITH step 3 (the interface widening) in one increment (same lockstep as s1/t5, s2/t5).",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "The DebugService change is additive (two new methods); sections + daemonStatus and every sibling facade are unchanged, so s1/s2 code and all existing panes compile and behave as before. The DAEMON_ENTRY / pidFromFile change is a pure visibility widening (const -> export const; function -> export function) — no existing caller or behaviour changes. In-repo callers constructing a `debug` facade literal (the test fakes) must add scanOrphans + killOrphans stubs to stay interface-conformant; this is an internal (non-published) contract, caught at compile time (same shape as the s1/t5 + s2/t5 additive-fake updates). No daemon IPC, socket, DaemonStatus, or on-disk shape changes — s3 adds only a client-side ps scan + OS-signal kill; the IDE-fork IPC contract is untouched. The kill is a new one-shot OS action gated behind an explicit confirm; it mutates no persistent state.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Two flat facade methods: scanOrphans() + killOrphans(pids) with the escalation policy in the service",
+        "oneLineSummary": "Augment DebugService with scanOrphans(): OrphanScanResult (POSIX ps-match on DAEMON_ENTRY excluding the managed pid, or a not-supported marker off-POSIX) and killOrphans(pids: readonly number[]): Promise<KillResult> (SIGTERM → re-probe after ~3s → SIGKILL, over EXACTLY the given pids); the DaemonSection owns selection + ConfirmPrompt and calls killOrphans on confirm.",
+        "approach": "Two additive methods on the sc1 DebugService facade (same flat model as s2's daemonStatus): `scanOrphans(): OrphanScanResult` where OrphanScanResult = `{ supported: true; orphans: readonly { pid: number; command: string }[] } | { supported: false }`, and `killOrphans(pids: readonly number[]): Promise<KillOutcome[]>` where each KillOutcome = `{ pid; result: 'terminated' | 'forced' | 'not-found' | 'error' }`. The debug service impl takes injectable deps (a ps-runner, a kill(pid,signal) fn, a platform flag, the managed pid) so the SIGTERM-then-wait-~3s-then-SIGKILL ESCALATION lives entirely in the service and is unit-tested without real processes; scanOrphans returns { supported:false } when platform==='win32'. killOrphans acts only on the passed pid list (never 'all scanned'), and the service defensively re-excludes the managed pid. DaemonSection (s2) grows an orphan area below the status card: a multi-select list (pane-local Set<number>), a refresh key, and a ConfirmPrompt gate that calls killOrphans(selected) only on explicit yes.",
+        "pros": [
+          "Faithful to sc1 + the s2 precedent: flat additive facade methods, escalation + platform logic in the service where injectable deps make them fully unit-testable (match/exclude, POSIX/non-POSIX, SIGTERM→SIGKILL, explicit-pids-only)",
+          "killOrphans(pids) signature structurally enforces lc1/k2 — it CANNOT kill 'all scanned'; the caller must pass an explicit selection, and the service re-excludes the managed pid as a second guard",
+          "OrphanScanResult discriminated on `supported` makes ac3 (non-POSIX 'not supported') a first-class variant the component renders without platform logic of its own",
+          "Per-pid KillOutcome lets the UI report exactly what happened to each selected process; the component stays a near-pure renderer + selection/confirm controller"
+        ],
+        "cons": [
+          "Two new facade methods + their view-models is the largest sc1 augmentation so far (this is the L-sized story)",
+          "The ~3s escalation wait makes killOrphans genuinely async/timed; the unit test must inject a fake timer/clock to avoid a real 3s delay"
+        ],
+        "costEstimate": "L"
+      },
+      {
+        "id": "a2",
+        "name": "Read method on the facade + a low-level killProcess primitive, escalation in the component",
+        "oneLineSummary": "Facade exposes scanOrphans() plus a thin killProcess(pid, signal) primitive; the DaemonSection component orchestrates the SIGTERM → wait ~3s → SIGKILL sequence and the confirm gate in the view.",
+        "approach": "scanOrphans() is as in a1, but the mutating surface is a minimal `killProcess(pid: number, signal: 'SIGTERM' | 'SIGKILL'): void` primitive on the facade. The DaemonSection then owns the escalation policy: on confirm it sends SIGTERM to each selected pid, starts a ~3s timer, re-checks liveness, and sends SIGKILL to survivors. The service is thinner; the component holds the timed state machine.",
+        "pros": [
+          "Thinnest service surface — killProcess is a trivial one-liner over process.kill",
+          "The component already owns timers/state for its once-fetch, so the escalation timer is 'nearby'"
+        ],
+        "cons": [
+          "Pushes the SIGTERM→SIGKILL ESCALATION POLICY (the security-sensitive core of k2) into a React component with a live 3s timer — far harder to unit-test than a service fn with an injected clock, and timer/unmount races risk a SIGKILL firing after the pane is gone",
+          "A generic killProcess(pid, signal) primitive is a sharper, more misusable tool than killOrphans(pids) — it invites callers to kill arbitrary pids/signals, weakening the lc1/k2 'explicit selection only' guarantee the type system could otherwise enforce",
+          "Spreads process-management logic across services/ AND panes/, the split s1/s2 deliberately avoided (data in services/, render in panes/)"
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "ac1/ac3/k3/k5 hold, but ac2/k2/lc1/sc1 all drop to partial: putting the security-sensitive SIGTERM→SIGKILL escalation + live timer in the component makes it hard to test and race-prone, and a generic killProcess primitive weakens the type-enforced 'explicit selection only' guarantee a1 gets for free."
+      },
+      {
+        "id": "a3",
+        "name": "Nested `orphans` sub-facade { scan(); kill(pids) }",
+        "oneLineSummary": "Group the two methods under a nested DebugService.orphans sub-object ({ scan(); kill(pids) }) instead of two flat methods.",
+        "approach": "Same scanOrphans/killOrphans semantics + injectable-deps service impl as a1, but exposed as `DebugService.orphans = { scan(): OrphanScanResult; kill(pids): Promise<KillOutcome[]> }`. The DaemonSection consumes debug.orphans.scan()/kill().",
+        "pros": [
+          "Namespaces the orphan surface, so a reader sees the scan+kill pair grouped",
+          "Same testable service core as a1 (escalation + platform in the service)"
+        ],
+        "cons": [
+          "Diverges from the sc1/s2 precedent — s2's daemonStatus is a FLAT method on DebugService, so a nested sub-object is an inconsistent shape the reviewer must reconcile (and s4/s5 would then face 'flat or nested?')",
+          "Nesting buys nothing for two methods; it is structure for its own sake on an interface the HLD says holds only a handful of read methods",
+          "Slightly more awkward test fakes (stub a nested object vs two flat methods)"
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Functionally equal to a1 on every ac + k2/k3/k5/lc1 with the same testable service core, but sc1=partial: the nested `orphans` sub-object diverges from s2's flat daemonStatus precedent for no benefit on a two-method surface — pure structure cost."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "HLD sc1 (Debug pane section-hosting shape + DebugService facade), boundary s3 depends=[sc1]; interfaceSketch comment '... orphan scan/kill ...' + the s2 DaemonSection/DebugPane hosting s3 extends without changing"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s3 symbol.locate/usage.example — DAEMON_ENTRY (src/cli/services/daemon.ts:24) + pidFromFile/pidAlive managed-pid exclusion (src/cli/services/lifecycle.ts:20-28, process.kill(pid,0)); execSync ps precedent (src/shared/system-info.ts:7); SIGTERM-then-drain-then-force (scripts/daemon-ctl.sh:142-149); POSIX via os.platform()/process.platform!=='win32'"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s3 symbol.locate — ConfirmPrompt (src/cli/ui/widgets.tsx:56) + the capture/useCaptured modal idiom (DaemonPane run(), src/cli/ui/context.ts) the k2 confirm-gated kill reuses; kill is the pane's ONLY mutating action"
+    }
+  ]
+}

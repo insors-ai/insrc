@@ -97,6 +97,8 @@ function fakeServices(): Services {
 				{ id: 'logs', title: 'Logs' },
 			],
 			daemonStatus: async () => ({ reachable: false }),
+			scanOrphans: () => ({ supported: false }),
+			killOrphans: async () => [],
 		},
 	};
 }

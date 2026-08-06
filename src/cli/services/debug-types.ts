@@ -37,6 +37,14 @@ export interface DebugService {
 	/** Daemon-section status card (Story s2): daemon.status over IPC + client-known
 	 *  fields, folded into a discriminated reachable/unreachable view-model. */
 	daemonStatus(): Promise<DaemonCardModel>;
+	/** Orphan daemon-process scan (Story s3): a POSIX-only, read-only `ps`
+	 *  recommendation of stray daemon-entry processes (the managed daemon excluded).
+	 *  Synchronous — a one-shot scan on mount / explicit refresh, never a poll (lc1). */
+	scanOrphans(): OrphanScanResult;
+	/** Terminate the EXPLICITLY-selected orphan pids (Story s3): the single guarded
+	 *  mutating action in the whole pane (k2). SIGTERM → wait → SIGKILL-for-survivors,
+	 *  the managed pid re-excluded (k5); returns one outcome per input pid. */
+	killOrphans(pids: readonly number[]): Promise<KillOutcome[]>;
 }
 
 /** The DebugPane's props: a narrowed view of `Services` exposing only `debug`. */
@@ -64,3 +72,29 @@ export type DaemonCardModel =
 			readonly version?: string | undefined;
 	  }
 	| { readonly reachable: false };
+
+/**
+ * Orphan-scan result (Story s3). Discriminated on `supported` so the non-POSIX
+ * degrade (ac3) is a first-class variant the DaemonSection renders with no
+ * platform logic of its own. Structured data only — the pane owns presentation.
+ */
+export type OrphanScanResult =
+	| { readonly supported: true; readonly orphans: readonly OrphanProcess[] }
+	| { readonly supported: false };
+
+/** One scanned orphan candidate: its pid + the `ps` command line (for review). */
+export interface OrphanProcess {
+	readonly pid: number;
+	readonly command: string;
+}
+
+/**
+ * Per-pid kill result (Story s3): 'terminated' (died on SIGTERM), 'forced'
+ * (survived to SIGKILL), 'not-found' (already gone / the managed pid, skipped),
+ * 'error' (the signal threw, e.g. EPERM). Lets the UI report what happened to
+ * each selected process.
+ */
+export interface KillOutcome {
+	readonly pid: number;
+	readonly result: 'terminated' | 'forced' | 'not-found' | 'error';
+}

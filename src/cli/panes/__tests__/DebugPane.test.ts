@@ -30,7 +30,7 @@ const settle = (): Promise<void> => new Promise(r => setTimeout(r, 25));
 const RIGHT = '[C';
 
 function renderPane(sections: readonly DebugSection[], captured = false): ReturnType<typeof render> {
-	const props: DebugPaneProps = { services: { debug: { sections, daemonStatus: async () => ({ reachable: false }) } } };
+	const props: DebugPaneProps = { services: { debug: { sections, daemonStatus: async () => ({ reachable: false }), scanOrphans: () => ({ supported: false }), killOrphans: async () => [] } } };
 	return render(createElement(CaptureContext.Provider, { value: captured }, createElement(DebugPane, props)));
 }
 
@@ -102,7 +102,7 @@ test('an empty section list renders the pane frame without throwing', async () =
 // --- Story s2, t4: the Daemon section now mounts the live DaemonSection ---
 
 function renderWithDaemon(card: import('../../services/debug-types.js').DaemonCardModel): ReturnType<typeof render> {
-	const props: DebugPaneProps = { services: { debug: { sections: THREE, daemonStatus: async () => card } } };
+	const props: DebugPaneProps = { services: { debug: { sections: THREE, daemonStatus: async () => card, scanOrphans: () => ({ supported: false }), killOrphans: async () => [] } } };
 	return render(createElement(CaptureContext.Provider, { value: false }, createElement(DebugPane, props)));
 }
 

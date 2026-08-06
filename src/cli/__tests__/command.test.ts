@@ -74,6 +74,8 @@ function ctxWith(overrides: Partial<Services> = {}): { ctx: CommandCtx; spies: S
 				{ id: 'logs', title: 'Logs' },
 			],
 			daemonStatus: async () => ({ reachable: false }),
+			scanOrphans: () => ({ supported: false }),
+			killOrphans: async () => [],
 		},
 		...overrides,
 	};

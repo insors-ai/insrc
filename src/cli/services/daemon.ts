@@ -20,8 +20,10 @@ import type { DaemonStatus } from '../../shared/types.js';
 import { waitForReady, waitForStop } from './lifecycle.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-/** Daemon entry point relative to this compiled file (out/cli/services). */
-const DAEMON_ENTRY = join(__dirname, '../../daemon/index.js');
+/** Daemon entry point relative to this compiled file (out/cli/services).
+ *  Exported so the debug service (Story s3) matches orphan daemon processes
+ *  against the SAME resolved absolute entry path rather than a second constant. */
+export const DAEMON_ENTRY = join(__dirname, '../../daemon/index.js');
 
 export interface BackupResult {
 	readonly targetDir:  string;

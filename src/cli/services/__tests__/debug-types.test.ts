@@ -18,7 +18,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import type { DebugSectionId, DebugSection, DebugService, DebugPaneProps, DaemonCardModel } from '../debug-types.js';
+import type { DebugSectionId, DebugSection, DebugService, DebugPaneProps, DaemonCardModel, OrphanScanResult, OrphanProcess, KillOutcome } from '../debug-types.js';
 
 /** Exhaustiveness check: every DebugSectionId member must be handled — a fourth
  *  member (or a dropped one) makes this fail to compile at the `never` binding. */
@@ -77,4 +77,20 @@ test('DaemonCardModel discriminates reachable vs unreachable (Story s2)', () => 
 	// Optional client-known fields may be omitted (graceful degradation).
 	const partial: DaemonCardModel = { reachable: true, uptimeSec: 5, repoCount: 0, repos: [], socket: '/s' };
 	assert.equal(partial.reachable === true && partial.pid, undefined);
+});
+
+test('OrphanScanResult / OrphanProcess / KillOutcome shapes hold (Story s3)', () => {
+	const proc: OrphanProcess = { pid: 5150, command: 'node /x/daemon/index.js' };
+	const supported: OrphanScanResult = { supported: true, orphans: [proc] };
+	const unsupported: OrphanScanResult = { supported: false };
+
+	// Discriminated on `supported`; the unsupported variant carries NO orphans field.
+	assert.equal(supported.supported === true && supported.orphans[0]!.pid, 5150);
+	assert.equal(unsupported.supported, false);
+	assert.equal('orphans' in unsupported, false);
+
+	// KillOutcome result is exactly the four-member union.
+	const results: readonly KillOutcome['result'][] = ['terminated', 'forced', 'not-found', 'error'];
+	const outcomes: readonly KillOutcome[] = results.map((result, i) => ({ pid: 5150 + i, result }));
+	assert.deepEqual(outcomes.map(o => o.result), ['terminated', 'forced', 'not-found', 'error']);
 });

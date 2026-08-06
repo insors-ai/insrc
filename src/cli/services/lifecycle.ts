@@ -17,7 +17,10 @@ import { existsSync, readFileSync, rmSync } from 'node:fs';
 
 import { PATHS } from '../../shared/paths.js';
 
-function pidFromFile(): number | undefined {
+/** The managed daemon's pid from PATHS.pidFile — undefined if absent/non-numeric.
+ *  Exported so the debug service (Story s3) excludes the managed daemon from the
+ *  orphan scan/kill using the SAME read rather than duplicating pidfile parsing. */
+export function pidFromFile(): number | undefined {
 	if (!existsSync(PATHS.pidFile)) return undefined;
 	try {
 		const pid = Number(readFileSync(PATHS.pidFile, 'utf8').trim());

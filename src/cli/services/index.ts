@@ -136,6 +136,8 @@ export function makeServices(): Services {
 		debug: {
 			sections:     debug.sections,
 			daemonStatus: debug.daemonStatus,
+			scanOrphans:  debug.scanOrphans,
+			killOrphans:  debug.killOrphans,
 		},
 	};
 }

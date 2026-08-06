@@ -1,0 +1,33 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": false,
+    "epicHash": "914cbf5ea9026b92",
+    "storyId": "s2",
+    "createdAt": "2026-08-06T19:29:02.797Z",
+    "updatedAt": "2026-08-06T19:29:02.797Z"
+  },
+  "body": {
+    "focus": "S002 (sc2) — Target resolution engine: ResolvedTarget/ConfigSourceLayer shared types; four at-rest config parsers (.env/Dockerfile+compose/k8s-manifest/localConfig) + buildConfigSourceMap (precedence k8s>docker>envFile>localConfig); pure resolveAgainst core (cycle/depth-guarded interpolation, partial-pin=>unresolved); async daemon-side resolve adapter (config-entity discovery + .env at-rest scan, per-repo memoized). Static/at-rest only, never kubectl.",
+    "producesLld": false,
+    "commit": "6bd7d9d",
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      }
+    ]
+  }
+}

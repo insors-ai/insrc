@@ -28,6 +28,8 @@ function renderSection(card: DaemonCardModel): ReturnType<typeof render> {
 		daemonStatus: async () => card,
 		scanOrphans: () => ({ supported: false }),
 		killOrphans: async () => [],
+		attachedClients: async () => ({ reachable: false }),
+		mcpStatus: async () => [],
 	};
 	return render(createElement(DaemonSection, { services: { debug } }));
 }
@@ -107,6 +109,8 @@ function renderOrphans(opts: {
 			killCalls.push([...pids]);
 			return opts.onKill ? opts.onKill(pids) : pids.map(p => ({ pid: p, result: 'terminated' as const }));
 		},
+		attachedClients: async () => ({ reachable: false }),
+		mcpStatus: async () => [],
 	};
 	const r = render(createElement(DaemonSection, { services: { debug } }));
 	return Object.assign(r, { killCalls });

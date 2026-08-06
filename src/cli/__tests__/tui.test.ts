@@ -99,6 +99,8 @@ function fakeServices(): Services {
 			daemonStatus: async () => ({ reachable: false }),
 			scanOrphans: () => ({ supported: false }),
 			killOrphans: async () => [],
+			attachedClients: async () => ({ reachable: false }),
+			mcpStatus: async () => [],
 		},
 	};
 }

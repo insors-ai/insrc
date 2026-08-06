@@ -22,6 +22,7 @@ import type { DebugSectionId, DebugPaneProps } from '../services/debug-types.js'
 import { useCaptured } from '../ui/context.js';
 import { Panel, KeyHints } from '../ui/widgets.js';
 import { DaemonSection } from './DaemonSection.js';
+import { MCPSection } from './MCPSection.js';
 
 export function DebugPane(props: DebugPaneProps): ReactElement {
 	const captured = useCaptured();
@@ -32,10 +33,10 @@ export function DebugPane(props: DebugPaneProps): ReactElement {
 	/** Section bodies keyed by id. Built per-render so the daemon view can close
 	 *  over the injected `debug` facade. Typed as a Partial string map so an
 	 *  unknown/renamed id falls through to the inline guard rather than throwing.
-	 *  Daemon is live (s2); mcp/logs remain placeholders until s4/s5. */
+	 *  Daemon (s2) + MCP (s4) are live; logs remains a placeholder until s5. */
 	const SECTION_VIEWS: Partial<Record<string, () => ReactElement>> = {
 		daemon: () => <DaemonSection services={{ debug }} />,
-		mcp:    () => <Text dimColor>MCP diagnostics — coming soon.</Text>,
+		mcp:    () => <MCPSection services={{ debug }} />,
 		logs:   () => <Text dimColor>Log viewer — coming soon.</Text>,
 	};
 

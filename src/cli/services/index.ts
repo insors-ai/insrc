@@ -134,10 +134,12 @@ export function makeServices(): Services {
 			reload: config.reloadConfig,
 		},
 		debug: {
-			sections:     debug.sections,
-			daemonStatus: debug.daemonStatus,
-			scanOrphans:  debug.scanOrphans,
-			killOrphans:  debug.killOrphans,
+			sections:        debug.sections,
+			daemonStatus:    debug.daemonStatus,
+			scanOrphans:     debug.scanOrphans,
+			killOrphans:     debug.killOrphans,
+			attachedClients: debug.attachedClients,
+			mcpStatus:       debug.mcpStatus,
 		},
 	};
 }

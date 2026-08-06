@@ -16,7 +16,7 @@
  * no React type leaks into the services layer.
  */
 
-import type { RegisteredRepo } from '../../shared/types.js';
+import type { AttachedClient, RegisteredRepo } from '../../shared/types.js';
 
 /** The closed union of the three Debug-pane inner sections, in authored order. */
 export type DebugSectionId = 'daemon' | 'mcp' | 'logs';
@@ -45,6 +45,12 @@ export interface DebugService {
 	 *  mutating action in the whole pane (k2). SIGTERM → wait → SIGKILL-for-survivors,
 	 *  the managed pid re-excluded (k5); returns one outcome per input pid. */
 	killOrphans(pids: readonly number[]): Promise<KillOutcome[]>;
+	/** Attached-socket-client list (Story s4): reads the daemon.debug-status IPC
+	 *  and folds it into a discriminated reachable/unreachable model. Read-only. */
+	attachedClients(): Promise<DebugStatusModel>;
+	/** Per-MCP-client registration/connection status (Story s4): a client-side
+	 *  `<cli> mcp list` parse per claude/codex. Read-only; daemon-independent. */
+	mcpStatus(): Promise<readonly McpClientStatus[]>;
 }
 
 /** The DebugPane's props: a narrowed view of `Services` exposing only `debug`. */
@@ -97,4 +103,29 @@ export interface OrphanProcess {
 export interface KillOutcome {
 	readonly pid: number;
 	readonly result: 'terminated' | 'forced' | 'not-found' | 'error';
+}
+
+/**
+ * The MCP-section attached-client view-model (Story s4). A discriminated union
+ * (mirroring DaemonCardModel): `reachable` gates the client list so the
+ * unreachable variant carries no stale data. `clients` are the daemon's live
+ * socket connections (label/pid/connected-at) read over the daemon.debug-status
+ * IPC. Structured data only — the MCPSection component owns presentation.
+ */
+export type DebugStatusModel =
+	| { readonly reachable: true; readonly clients: readonly AttachedClient[] }
+	| { readonly reachable: false };
+
+/**
+ * One MCP client's registration/connection status (Story s4), derived from a
+ * client-side `<cli> mcp list` parse. `available` = the CLI is on PATH and the
+ * listing succeeded; `registered` = an `insrc` server line is present;
+ * `connected` = that line reports a live connection. Independent of daemon
+ * reachability. One entry per known client (claude, codex); never omitted.
+ */
+export interface McpClientStatus {
+	readonly client: 'claude' | 'codex';
+	readonly available: boolean;
+	readonly registered: boolean;
+	readonly connected: boolean;
 }

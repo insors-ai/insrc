@@ -30,7 +30,7 @@ const settle = (): Promise<void> => new Promise(r => setTimeout(r, 25));
 const RIGHT = '[C';
 
 function renderPane(sections: readonly DebugSection[], captured = false): ReturnType<typeof render> {
-	const props: DebugPaneProps = { services: { debug: { sections, daemonStatus: async () => ({ reachable: false }), scanOrphans: () => ({ supported: false }), killOrphans: async () => [] } } };
+	const props: DebugPaneProps = { services: { debug: { sections, daemonStatus: async () => ({ reachable: false }), scanOrphans: () => ({ supported: false }), killOrphans: async () => [], attachedClients: async () => ({ reachable: false }), mcpStatus: async () => [] } } };
 	return render(createElement(CaptureContext.Provider, { value: captured }, createElement(DebugPane, props)));
 }
 
@@ -53,7 +53,7 @@ test('a right-arrow keypress switches the active section without unmounting', as
 	stdin.write(RIGHT);
 	await settle();
 	const frame = lastFrame() ?? '';
-	assert.match(frame, /MCP diagnostics/);          // moved to mcp
+	assert.match(frame, /MCP clients/);              // moved to the live MCPSection (s4)
 	assert.doesNotMatch(frame, /stopped \/ unreachable/); // prior (daemon) section hidden
 	assert.match(frame, /Debug/);                     // pane still mounted (title present)
 	unmount();
@@ -102,7 +102,7 @@ test('an empty section list renders the pane frame without throwing', async () =
 // --- Story s2, t4: the Daemon section now mounts the live DaemonSection ---
 
 function renderWithDaemon(card: import('../../services/debug-types.js').DaemonCardModel): ReturnType<typeof render> {
-	const props: DebugPaneProps = { services: { debug: { sections: THREE, daemonStatus: async () => card, scanOrphans: () => ({ supported: false }), killOrphans: async () => [] } } };
+	const props: DebugPaneProps = { services: { debug: { sections: THREE, daemonStatus: async () => card, scanOrphans: () => ({ supported: false }), killOrphans: async () => [], attachedClients: async () => ({ reachable: false }), mcpStatus: async () => [] } } };
 	return render(createElement(CaptureContext.Provider, { value: false }, createElement(DebugPane, props)));
 }
 

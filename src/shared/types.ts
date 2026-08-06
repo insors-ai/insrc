@@ -751,6 +751,13 @@ export interface IpcRequest {
   method: string;
   params: unknown;
   stream?: boolean | undefined;
+  /** Optional self-reported caller identity (Story s4). Populated by the CLI
+   *  `rpc()` ('cli') and the insrc-mcp server ('mcp:<client>') so the daemon can
+   *  attribute a live socket connection to a labelled client + pid in its
+   *  attached-client registry. Purely additive — absent on every legacy caller,
+   *  in which case the connection is labelled 'unknown'. Never trusted blindly:
+   *  the server validates pid/label before recording. */
+  client?: { readonly label: string; readonly pid: number } | undefined;
 }
 
 export interface IpcResponse {
@@ -765,6 +772,23 @@ export interface IpcStreamMessage {
   id:     number;
   stream: IpcStreamKind;
   data:   unknown;
+}
+
+/**
+ * One live socket connection attached to the daemon, as tracked by the
+ * IpcServer connection registry and returned by the `daemon.debug-status` IPC
+ * (Story s4). `label`/`pid` are present only when the connection's client sent
+ * the {@link IpcRequest.client} identity envelope; otherwise `label` is
+ * 'unknown' and `pid` is omitted. `connectedAt` is epoch-ms; `lastMethod` is the
+ * most recent method that connection invoked. Observational only — nothing here
+ * can close or mutate a connection.
+ */
+export interface AttachedClient {
+  readonly id:          number;
+  readonly label:       string;
+  readonly pid?:        number;
+  readonly connectedAt: number;
+  readonly lastMethod?: string;
 }
 
 // ---------------------------------------------------------------------------

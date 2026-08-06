@@ -1,10 +1,34 @@
 import { createServer, type Server, type Socket } from 'node:net';
 import { rmSync } from 'node:fs';
-import type { IpcRequest, IpcResponse, IpcStreamMessage } from '../shared/types.js';
+import type { AttachedClient, IpcRequest, IpcResponse, IpcStreamMessage } from '../shared/types.js';
 import { PATHS } from '../shared/paths.js';
 import { getLogger } from '../shared/logger.js';
 
 const log = getLogger('ipc');
+
+/** Max accepted length for a self-reported client label (defence against a
+ *  misbehaving/hostile client injecting an oversized string into the registry). */
+const MAX_LABEL_LEN = 64;
+
+/** Per-connection registry entry (Story s4). Mutable in place as the connection
+ *  identifies itself; snapshotted into an AttachedClient by attachedClients(). */
+interface ConnInfo {
+  readonly id:          number;
+  readonly connectedAt: number;
+  label:                string;
+  pid?:                 number;
+  lastMethod?:          string;
+}
+
+/** Validate a self-reported IpcRequest.client envelope — untrusted wire input.
+ *  Returns the well-formed {label,pid} or undefined if either field is bad. */
+function validClient(client: IpcRequest['client']): { label: string; pid: number } | undefined {
+  if (client === undefined || client === null) return undefined;
+  const { label, pid } = client;
+  if (typeof label !== 'string' || label.length === 0 || label.length > MAX_LABEL_LEN) return undefined;
+  if (typeof pid !== 'number' || !Number.isInteger(pid) || pid <= 0) return undefined;
+  return { label, pid };
+}
 
 // ---------------------------------------------------------------------------
 // Handler types
@@ -41,9 +65,32 @@ export class IpcServer {
   private readonly streamHandlers: StreamHandlers;
   private server: Server | null = null;
 
-  constructor(handlers: RpcHandlers, streamHandlers: StreamHandlers = {}) {
+  /** In-memory registry of currently-attached socket connections (Story s4).
+   *  Keyed by the live Socket; rebuilt purely from connect/message/close events,
+   *  never persisted. Read out (read-only) by attachedClients() for the
+   *  `daemon.debug-status` IPC. */
+  private readonly conns = new Map<Socket, ConnInfo>();
+  private connSeq = 0;
+  private readonly now: () => number;
+
+  constructor(handlers: RpcHandlers, streamHandlers: StreamHandlers = {}, now: () => number = Date.now) {
     this.handlers = handlers;
     this.streamHandlers = streamHandlers;
+    this.now = now;
+  }
+
+  /** Snapshot of the attached-client registry, sorted by connectedAt (Story s4).
+   *  READ-ONLY observation — it never closes or mutates a connection (k5). */
+  attachedClients(): AttachedClient[] {
+    return [...this.conns.values()]
+      .sort((a, b) => a.connectedAt - b.connectedAt)
+      .map(c => ({
+        id: c.id,
+        label: c.label,
+        connectedAt: c.connectedAt,
+        ...(c.pid !== undefined ? { pid: c.pid } : {}),
+        ...(c.lastMethod !== undefined ? { lastMethod: c.lastMethod } : {}),
+      }));
   }
 
   async listen(): Promise<void> {
@@ -75,6 +122,10 @@ export class IpcServer {
   private handleConnection(socket: Socket): void {
     let buffer = '';
 
+    // Register the connection (Story s4) — 'unknown' until a message identifies it.
+    this.conns.set(socket, { id: ++this.connSeq, connectedAt: this.now(), label: 'unknown' });
+    socket.on('close', () => { this.conns.delete(socket); });
+
     socket.on('data', (chunk: Buffer) => {
       buffer += chunk.toString();
       const lines = buffer.split('\n');
@@ -97,6 +148,17 @@ export class IpcServer {
     } catch {
       this.send(socket, { id: -1, error: 'invalid JSON' });
       return;
+    }
+
+    // Update the connection registry from the (validated) client identity +
+    // the method just invoked (Story s4). Untrusted wire input is validated
+    // before it touches the registry; a bad envelope leaves the connection
+    // 'unknown'/pid undefined.
+    const conn = this.conns.get(socket);
+    if (conn !== undefined) {
+      if (typeof request.method === 'string') conn.lastMethod = request.method;
+      const id = validClient(request.client);
+      if (id !== undefined) { conn.label = id.label; conn.pid = id.pid; }
     }
 
     // Check for streaming request

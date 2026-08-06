@@ -116,6 +116,7 @@ export function runWorkflowStream(
 				id:     _nextId++,
 				method: 'workflow.run',
 				stream: true,
+				client: { label: 'mcp', pid: process.pid }, // self-identify to the daemon registry (Story s4)
 				params: {
 					workflow: params.workflow,
 					focus:    params.focus,
@@ -204,7 +205,7 @@ function unaryRpc<T>(method: string, params: unknown, deps: UnaryRpcDeps): Promi
 		let   buffer = '';
 
 		socket.on('connect', () => {
-			socket.write(JSON.stringify({ id: _nextId++, method, params }) + '\n');
+			socket.write(JSON.stringify({ id: _nextId++, method, params, client: { label: 'mcp', pid: process.pid } }) + '\n');
 		});
 		socket.on('data', (chunk: Buffer) => {
 			buffer += chunk.toString();

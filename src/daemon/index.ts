@@ -115,7 +115,7 @@ import {
 } from '../db/conversations.js';
 import { compactConversations, type CompactionOpts } from '../db/compaction.js';
 // Cleanup: plan-store + Plan / PlanStepStatus dropped with the legacy planner.
-import type { RegisteredRepo, DaemonStatus, Entity, ConfigScope, ConfigSearchOpts, TemplateQuery } from '../shared/types.js';
+import type { RegisteredRepo, DaemonStatus, Entity, ConfigScope, ConfigSearchOpts, TemplateQuery, AttachedClient } from '../shared/types.js';
 import { basename } from 'node:path';
 import { ConfigStore } from '../config/store.js';
 import { setConfigAtPath } from '../config/write-path.js';
@@ -865,6 +865,12 @@ async function main(): Promise<void> {
 			} catch { /* best-effort; status should never throw */ }
 			return status;
 		},
+
+		// Story s4: read-only diagnostic — the daemon's own list of currently-attached
+		// socket connections (label/pid/connected-at). The CLI Debug pane's MCP section
+		// reads this over IPC (k1); it has no side effects and never closes a connection
+		// (k5). `server` is captured from the outer const, assigned before any request fires.
+		'daemon.debug-status': async (): Promise<{ clients: AttachedClient[] }> => ({ clients: server.attachedClients() }),
 
 		'search.query': async (params) => {
 			const { text, limit, filter } = params as { text: string; limit?: number; filter?: string };

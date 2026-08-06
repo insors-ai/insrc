@@ -12,16 +12,17 @@
  * (status card, orphan scan/kill, debug-status clients, log tail).
  */
 
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import type { DebugSection, DaemonCardModel, OrphanScanResult, OrphanProcess, KillOutcome } from './debug-types.js';
-import type { DaemonStatus } from '../../shared/types.js';
+import type { DebugSection, DaemonCardModel, OrphanScanResult, OrphanProcess, KillOutcome, DebugStatusModel, McpClientStatus } from './debug-types.js';
+import type { AttachedClient, DaemonStatus } from '../../shared/types.js';
 import { getStatus, DAEMON_ENTRY } from './daemon.js';
 import { pidFromFile } from './lifecycle.js';
 import { DAEMON_ROOT } from './maintenance.js';
 import { PATHS } from '../../shared/paths.js';
+import { rpc } from '../client.js';
 
 /** The three Debug-pane sections, in `DebugSectionId` order. Single source of truth. */
 export const sections: readonly DebugSection[] = [
@@ -244,4 +245,101 @@ export function killOrphans(pids: readonly number[]): Promise<KillOutcome[]> {
 		platform: process.platform,
 		managedPid: pidFromFile(),
 	});
+}
+
+// --- Story s4: attached socket clients + per-client MCP registration ----------
+
+/** Injectable dep for the attached-client read (Story s4): fetches the raw
+ *  daemon.debug-status payload (real impl is the IPC rpc). */
+export interface AttachedClientsDeps {
+	readonly fetch: () => Promise<{ clients: readonly AttachedClient[] }>;
+}
+
+/** The known MCP clients (claude, codex) — one McpClientStatus is always returned per. */
+export const MCP_CLIENTS: readonly McpClientStatus['client'][] = ['claude', 'codex'];
+
+/** Result of a non-throwing `<cli> mcp list` run. `spawnError` is set when the
+ *  binary itself could not be launched (ENOENT — not on PATH). */
+export interface McpListRun {
+	readonly code: number;
+	readonly stdout: string;
+	readonly spawnError?: string;
+}
+
+/** Injectable dep for the MCP-status read (Story s4): runs `<cli> mcp list`. */
+export interface McpStatusDeps {
+	readonly runList: (bin: string) => Promise<McpListRun>;
+}
+
+/**
+ * Fold the daemon.debug-status read into a discriminated view-model (Story s4).
+ * A resolve yields { reachable:true; clients } sorted by connectedAt; any reject
+ * (daemon not running) yields { reachable:false } — never throws to the view.
+ */
+export async function attachedClientsWith(deps: AttachedClientsDeps): Promise<DebugStatusModel> {
+	try {
+		const { clients } = await deps.fetch();
+		const sorted = [...clients].sort((a, b) => a.connectedAt - b.connectedAt);
+		return { reachable: true, clients: sorted };
+	} catch {
+		return { reachable: false };
+	}
+}
+
+/** Parse one `<cli> mcp list` stdout: registered = an `insrc` server line is
+ *  present (anchored to line start, matching mcp-register.ts); connected = that
+ *  line reports a live connection (a positive token / ✓, and no failure token). */
+function parseMcpList(stdout: string): { registered: boolean; connected: boolean } {
+	const line = stdout.split('\n').find(l => /^\s*insrc\b/.test(l));
+	if (line === undefined) return { registered: false, connected: false };
+	const positive = /✓/.test(line) || (/\bconnected\b/i.test(line) && !/\b(?:not connected|disconnected|failed|failing|error)\b/i.test(line));
+	return { registered: true, connected: positive };
+}
+
+/**
+ * Per-client MCP registration/connection status (Story s4). Runs `<cli> mcp list`
+ * for each known client via the injected runner, parses registered + connected
+ * independently, and NEVER throws: a spawn failure / non-zero exit resolves that
+ * client to { available:false, ... } while the other client is still evaluated.
+ * Always returns exactly one entry per known client, in MCP_CLIENTS order.
+ */
+export async function mcpStatusWith(deps: McpStatusDeps): Promise<readonly McpClientStatus[]> {
+	const out: McpClientStatus[] = [];
+	for (const client of MCP_CLIENTS) {
+		try {
+			const r = await deps.runList(client);
+			if (r.spawnError !== undefined || r.code !== 0) {
+				out.push({ client, available: false, registered: false, connected: false });
+				continue;
+			}
+			const { registered, connected } = parseMcpList(r.stdout);
+			out.push({ client, available: true, registered, connected });
+		} catch {
+			out.push({ client, available: false, registered: false, connected: false });
+		}
+	}
+	return out;
+}
+
+/** Real `<cli> mcp list` runner (POSIX/win): captures code + stdout, NEVER throws
+ *  (mirrors mcp-register.ts:runCli). */
+function realRunList(bin: string): Promise<McpListRun> {
+	return new Promise(resolve => {
+		const child = spawn(bin, ['mcp', 'list'], { stdio: ['ignore', 'pipe', 'pipe'] });
+		let stdout = '';
+		child.stdout.on('data', c => { stdout += c.toString(); });
+		child.stderr.on('data', () => { /* ignored — registration state is on stdout */ });
+		child.on('error', err => resolve({ code: -1, stdout, spawnError: err.message }));
+		child.on('close', code => resolve({ code: code ?? 0, stdout }));
+	});
+}
+
+/** The Story-s4 `attachedClients()` facade method — bound onto the `debug` entry. */
+export function attachedClients(): Promise<DebugStatusModel> {
+	return attachedClientsWith({ fetch: () => rpc<{ clients: readonly AttachedClient[] }>('daemon.debug-status') });
+}
+
+/** The Story-s4 `mcpStatus()` facade method — bound onto the `debug` entry. */
+export function mcpStatus(): Promise<readonly McpClientStatus[]> {
+	return mcpStatusWith({ runList: realRunList });
 }

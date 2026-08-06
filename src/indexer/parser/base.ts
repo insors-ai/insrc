@@ -21,6 +21,27 @@ export function makeEntityId(
     .slice(0, 32);
 }
 
+/**
+ * Deterministic per-repo id for an external-service endpoint node (sc1 —
+ * E20260806914cbf5e:S001). Reuses `makeEntityId` (file='' , kind='externalEndpoint',
+ * name = `${protocol}:${target || rawExpression}`) so it shares the exact
+ * hex-32 hash + name_index/dedup contract of every other entity id.
+ *
+ * Because `repo` is part of the hash, endpoints dedup per-repo: two call-sites
+ * to the same target+protocol in one repo hash to one id (k2), while the same
+ * target in two repos yields two distinct ids. An unresolved endpoint
+ * (`target === ''`) derives its identity from `rawExpression`.
+ */
+export function makeExternalEndpointId(
+  repo: string,
+  protocol: string,
+  target: string,
+  rawExpression = '',
+): string {
+  const identity = target !== '' ? target : rawExpression;
+  return makeEntityId(repo, '', 'externalEndpoint', `${protocol}:${identity}`);
+}
+
 // ---------------------------------------------------------------------------
 // Parser output types
 // ---------------------------------------------------------------------------

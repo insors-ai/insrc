@@ -32,6 +32,12 @@ export const RELATION_KIND_BYTE = {
 	READS:          10,
 	WRITES:         11,
 	STEP_DEPENDS_ON: 12,
+	// External-service boundary edges (sc1 — E20260806914cbf5e:S001).
+	// Append-only: never reorder or reuse a slot. Bump SCHEMA_VERSION when adding.
+	CALLS_HTTP:      13,
+	PUBLISHES_TO:    14,
+	SUBSCRIBES_TO:   15,
+	CALLS_RPC:       16,
 } as const;
 
 export type RelationKind = keyof typeof RELATION_KIND_BYTE;
@@ -72,6 +78,9 @@ export const ENTITY_KIND_BYTE = {
 	document:  10,
 	section:   11,
 	config:    12,
+	// External-service dependency node (sc1 — E20260806914cbf5e:S001).
+	// Append-only: never reorder or reuse a slot. Bump SCHEMA_VERSION when adding.
+	externalEndpoint: 13,
 } as const;
 
 export type EntityKind = keyof typeof ENTITY_KIND_BYTE;

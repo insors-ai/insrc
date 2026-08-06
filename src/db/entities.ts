@@ -80,7 +80,7 @@ type DbClient = unknown;
 // ---------------------------------------------------------------------------
 
 function entityToRow(e: Entity, repoId: number, repoRoot: string): EntityRow {
-	return {
+	const row: EntityRow = {
 		repoId,
 		kind:           e.kind,
 		name:           e.name,
@@ -100,6 +100,15 @@ function entityToRow(e: Entity, repoId: number, repoRoot: string): EntityRow {
 		embeddingModel: e.embeddingModel ?? '',
 		indexedAt:      parseTimestamp(e.indexedAt),
 	};
+	// External-service endpoint fields (sc1): attach only for externalEndpoint
+	// entities so every other entity's row stays byte-identical to pre-S001.
+	if (e.kind === 'externalEndpoint') {
+		if (e.protocol !== undefined)      row.protocol = e.protocol;
+		if (e.resolved !== undefined)      row.resolved = e.resolved;
+		if (e.target !== undefined)        row.target = e.target;
+		if (e.rawExpression !== undefined) row.rawExpression = e.rawExpression;
+	}
+	return row;
 }
 
 function rowToDomainEntity(id: string, row: EntityRow, repoRoot: string): Entity {
@@ -126,6 +135,11 @@ function rowToDomainEntity(id: string, row: EntityRow, repoRoot: string): Entity
 	if (row.contentHash !== '') e.hash = row.contentHash;
 	if (row.rootPath !== '' && row.rootPath !== repoRoot) e.rootPath = row.rootPath;
 	if (row.artifact) e.artifact = true;
+	// External-service endpoint fields (sc1): surface only when present on the row.
+	if (row.protocol !== undefined)      e.protocol = row.protocol;
+	if (row.resolved !== undefined)      e.resolved = row.resolved;
+	if (row.target !== undefined)        e.target = row.target;
+	if (row.rawExpression !== undefined) e.rawExpression = row.rawExpression;
 	return e;
 }
 

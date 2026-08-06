@@ -412,11 +412,11 @@ test('the tab bar renders a 6th 6:Debug peer tab', async () => {
 test("pressing '6' opens the Debug pane and hides the previously active pane", async () => {
 	const { lastFrame, stdin, unmount } = render(createElement(App, { services: fakeServices(), pollMs: 0 }));
 	await settle();
-	assert.doesNotMatch(lastFrame() ?? '', /Daemon diagnostics/); // DebugPane not shown yet (index 0)
+	assert.doesNotMatch(lastFrame() ?? '', /←\/→ section/); // DebugPane not shown yet (index 0)
 	stdin.write('6');
 	await settle();
 	const frame = lastFrame() ?? '';
-	assert.match(frame, /Daemon diagnostics/);            // DebugPane's daemon-section placeholder
+	assert.match(frame, /stopped \/ unreachable/);        // DebugPane's live DaemonSection (fake → unreachable)
 	assert.match(frame, /←\/→ section/);                  // DebugPane's own key hint (unique to it)
 	// one-pane-at-a-time: DebugPane showing means index 0's DaemonPane body is unmounted
 	unmount();
@@ -429,6 +429,6 @@ test('Tab-cycling from the last pane wraps forward to Debug (TABS.length-driven)
 	await settle();
 	stdin.write('\t');           // Tab → Debug (index 5)
 	await settle();
-	assert.match(lastFrame() ?? '', /Daemon diagnostics/); // DebugPane is now shown
+	assert.match(lastFrame() ?? '', /←\/→ section/); // DebugPane is now shown (its unique hint)
 	unmount();
 });

@@ -41,8 +41,8 @@ test('initial render shows all three section tabs with daemon active', async () 
 	assert.match(frame, /Daemon/);
 	assert.match(frame, /MCP/);
 	assert.match(frame, /Logs/);
-	// default active section body is the daemon placeholder
-	assert.match(frame, /Daemon diagnostics/);
+	// default active section is the live DaemonSection (s2); the fake reports unreachable
+	assert.match(frame, /stopped \/ unreachable/);
 	assert.doesNotMatch(frame, /MCP diagnostics/);
 	unmount();
 });
@@ -54,7 +54,7 @@ test('a right-arrow keypress switches the active section without unmounting', as
 	await settle();
 	const frame = lastFrame() ?? '';
 	assert.match(frame, /MCP diagnostics/);          // moved to mcp
-	assert.doesNotMatch(frame, /Daemon diagnostics/); // prior section hidden
+	assert.doesNotMatch(frame, /stopped \/ unreachable/); // prior (daemon) section hidden
 	assert.match(frame, /Debug/);                     // pane still mounted (title present)
 	unmount();
 });
@@ -66,7 +66,7 @@ test('inner-section navigation is suppressed while captured', async () => {
 	await settle();
 	const frame = lastFrame() ?? '';
 	// still on daemon — the capture gate disabled the pane's useInput
-	assert.match(frame, /Daemon diagnostics/);
+	assert.match(frame, /stopped \/ unreachable/);
 	assert.doesNotMatch(frame, /MCP diagnostics/);
 	unmount();
 });
@@ -77,7 +77,7 @@ test('cycling on a single-section registry is an idempotent no-op', async () => 
 	stdin.write(RIGHT);
 	await settle();
 	const frame = lastFrame() ?? '';
-	assert.match(frame, /Daemon diagnostics/); // unchanged, no crash
+	assert.match(frame, /stopped \/ unreachable/); // unchanged daemon section, no crash
 	assert.match(frame, /Debug/);
 	unmount();
 });
@@ -96,5 +96,31 @@ test('an empty section list renders the pane frame without throwing', async () =
 	await settle();
 	const frame = lastFrame() ?? '';
 	assert.match(frame, /Debug/); // Panel title still renders
+	unmount();
+});
+
+// --- Story s2, t4: the Daemon section now mounts the live DaemonSection ---
+
+function renderWithDaemon(card: import('../../services/debug-types.js').DaemonCardModel): ReturnType<typeof render> {
+	const props: DebugPaneProps = { services: { debug: { sections: THREE, daemonStatus: async () => card } } };
+	return render(createElement(CaptureContext.Provider, { value: false }, createElement(DebugPane, props)));
+}
+
+test('selecting the Daemon section renders DaemonSection\'s running card from the debug facade', async () => {
+	const { lastFrame, unmount } = renderWithDaemon({
+		reachable: true, uptimeSec: 3661, repoCount: 1, repos: [{ name: 'repoA', status: 'ready' }], socket: '/s/daemon.sock',
+	});
+	await settle();
+	const frame = lastFrame() ?? '';
+	assert.match(frame, /running/);                    // DaemonSection card, not the s1 placeholder
+	assert.match(frame, /repoA .*— ready/);
+	assert.doesNotMatch(frame, /Daemon diagnostics/);  // s1 placeholder is gone
+	unmount();
+});
+
+test('with an unreachable daemonStatus() the Daemon section shows the stopped/unreachable line', async () => {
+	const { lastFrame, unmount } = renderWithDaemon({ reachable: false });
+	await settle();
+	assert.match(lastFrame() ?? '', /stopped \/ unreachable/);
 	unmount();
 });

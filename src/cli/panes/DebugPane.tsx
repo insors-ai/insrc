@@ -21,20 +21,23 @@ import type { ReactElement } from 'react';
 import type { DebugSectionId, DebugPaneProps } from '../services/debug-types.js';
 import { useCaptured } from '../ui/context.js';
 import { Panel, KeyHints } from '../ui/widgets.js';
-
-/** Placeholder section bodies keyed by id. Typed as a Partial string map so a
- *  section whose id has no view (a future/renamed id) falls through to the
- *  inline 'unknown section' guard rather than throwing. s2-s5 replace these. */
-const SECTION_VIEWS: Partial<Record<string, () => ReactElement>> = {
-	daemon: () => <Text dimColor>Daemon diagnostics — coming soon.</Text>,
-	mcp:    () => <Text dimColor>MCP diagnostics — coming soon.</Text>,
-	logs:   () => <Text dimColor>Log viewer — coming soon.</Text>,
-};
+import { DaemonSection } from './DaemonSection.js';
 
 export function DebugPane(props: DebugPaneProps): ReactElement {
 	const captured = useCaptured();
-	const sections = props.services.debug.sections ?? [];
+	const { debug } = props.services;
+	const sections = debug.sections ?? [];
 	const [active, setActive] = useState<DebugSectionId>(sections[0]?.id ?? 'daemon');
+
+	/** Section bodies keyed by id. Built per-render so the daemon view can close
+	 *  over the injected `debug` facade. Typed as a Partial string map so an
+	 *  unknown/renamed id falls through to the inline guard rather than throwing.
+	 *  Daemon is live (s2); mcp/logs remain placeholders until s4/s5. */
+	const SECTION_VIEWS: Partial<Record<string, () => ReactElement>> = {
+		daemon: () => <DaemonSection services={{ debug }} />,
+		mcp:    () => <Text dimColor>MCP diagnostics — coming soon.</Text>,
+		logs:   () => <Text dimColor>Log viewer — coming soon.</Text>,
+	};
 
 	useInput((_input, key) => {
 		if (sections.length === 0) return;

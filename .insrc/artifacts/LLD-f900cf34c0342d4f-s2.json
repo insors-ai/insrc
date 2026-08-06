@@ -1,0 +1,539 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1785934499823-xtpgmp",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-08-05T13:05:12.015Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 612155,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f900cf34c0342d4f",
+    "epicSlug": "seed-from-approved-specartifact-spec-bfa1f6c830c53982",
+    "storyId": "s2",
+    "hldBaseRunId": "wf-1785928117126-v61buv",
+    "hldEffectiveHash": "ddca67745f5ce27a72fd98622c88c10523b7fb157faee13556f302030c37eece",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "ref": "getStatus/c2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "getStatus() is defined in src/cli/services/daemon.ts around line 50 as `rpc<DaemonStatus>('daemon.status')` and rejects when the daemon socket is absent.",
+          "evidence": "read src/cli/services/daemon.ts:50 = \"return rpc<DaemonStatus>('daemon.status');\" and grep found `export function getStatus(): Promise<DaemonStatus>` at daemon.ts:49 — getStatus is exactly as cited.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl2",
+          "ref": "c2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "DaemonStatus (src/shared/types.ts:809) carries uptime/repos/queueDepth/embeddingsPending and does NOT include version, socket, or pid fields.",
+          "evidence": "read src/shared/types.ts:809 = \"export interface DaemonStatus {\" — the interface is at the cited line; its members (uptime/repos/queueDepth/embeddingsPending) omit version/socket/pid as the premise states.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl3",
+          "ref": "DaemonCardModel/c2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "RegisteredRepo carries a `status: 'pending'|'indexing'|'ready'|'error'` field, which DaemonCardModel.repos[].status reuses.",
+          "evidence": "grep matched src/shared/types.ts:639 `status: 'pending' | 'indexing' | 'ready' | 'error';` — RegisteredRepo['status'] is exactly this union, which DaemonCardModel.repos[].status reuses.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl4",
+          "ref": "c2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "PATHS provides sockFile (~/.insrc/daemon.sock) and pidFile (~/.insrc/daemon.pid) in src/shared/paths.ts (lines ~18-19), the client-known status-card fields.",
+          "evidence": "read src/shared/paths.ts:18 = \"pidFile: join(INSRC_DIR, 'daemon.pid'),\" and grep matched paths.ts:19 `sockFile: join(INSRC_DIR, 'daemon.sock')` — both client-known fields at the cited lines.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl5",
+          "ref": "c2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "useDaemonStatus (src/cli/hooks/useDaemonStatus.ts) sets running:false on a failed getStatus call — the reachable/unreachable inference the card mirrors.",
+          "evidence": "grep matched src/cli/hooks/useDaemonStatus.ts:35 setting `running: false` in the getStatus catch, and :24 the exported hook — the reachable/unreachable inference the card mirrors is real.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl6",
+          "ref": "c3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "formatUptime is exported from src/cli/ui/format.ts (the formatter the card uses for uptimeSec).",
+          "evidence": "grep matched src/cli/ui/format.ts:18 `export function formatUptime(seconds: number): string` — the formatter the card uses is exported as cited.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl7",
+          "ref": "sc1",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "The DebugService facade + DebugPane SECTION_VIEWS id->component map exist from s1 (the sc1 scaffold) for s2 to augment/modify.",
+          "evidence": "grep matched src/cli/services/debug-types.ts:33 `export interface DebugService {` and src/cli/panes/DebugPane.tsx:28 `const SECTION_VIEWS: Partial<Record<string, () => ReactElement>>` + :51 `SECTION_VIEWS[active]` — the s1 sc1 facade + id->component map exist for s2 to augment.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl8",
+          "ref": "daemonStatus",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "daemonStatus() resolves a discriminated DaemonCardModel and never rejects to the view (a getStatus reject is folded into { reachable:false }).",
+          "evidence": "No source probe (this is a design intention for the NEW daemonStatus method, not an existing-symbol citation). Internally consistent: the artifact's daemonStatus postconditions state 'Never throws; unreachable is the { reachable:false } variant', and DaemonCardModel is authored as a discriminated union — the build + code-review will verify the implementation.",
+          "action": "none — design intention, verified internally consistent; enforced at build/code-review",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl9",
+          "ref": "interactionWithShared",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "The HLD assigns sc1 ownership to s1; s2 depends on (consumes) sc1 and adds daemonStatus() via an additive sharedContract.methodAdd amendment, not by owning sc1.",
+          "evidence": "Corroborated by the cl7 grep: the HLD (HLD-...:40) + s1 LLD (`DebugService { readonly sections }`) define sc1's base owned by s1, and the s2 LLD (:22) adds daemonStatus() — s2 augments (consumes) rather than redefines sc1. The interactionWithShared role=consumes matches the HLD boundary.",
+          "action": "none — cross-artifact trace consistent",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 9
+      },
+      "reviewedAt": "2026-08-05T13:06:24.832Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-08-06T06:43:20.481Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "A new Debug pane (peer *Pane.tsx in app.tsx's switcher, k6) with pane-local inner sub-tab navigation over three sections — Daemon, MCP, Logs — backed by a new debug service added to makeServices. The chosen shape (a1) keeps the daemon surface minimal: the status card reuses the existing daemon.status IPC, and the ONE genuinely new daemon contract (a read-only debug-status IPC that returns the daemon's own list of currently-attached socket clients, backed by per-connection tracking in the socket server) is built and consumed entirely inside the MCP-section story. Everything else is client-side: the POSIX orphan scan/kill keys on the managed daemon entry and OS signals (k3), and the log viewer fs.watch-tails the two rotated files on disk (k4) — so the Daemon and Logs sections keep working when the daemon is unreachable. The only cross-STORY contract is the pane's section-hosting shape + the debug-service facade that every section plugs into; it is owned by the foundational scaffold story (S001) that every section story already depends on.",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "Debug pane section-hosting shape + DebugService facade",
+          "purpose": "The single client-side foundation every Debug section plugs into: how the DebugPane hosts and switches its inner sections (Daemon/MCP/Logs, one full-height at a time) and the DebugService facade (added to makeServices) that each section's data access extends. Owned by the scaffold story so the four section stories — which all depend on it — build against one stable shape.",
+          "interfaceSketch": "// src/cli — type-level only\nexport type DebugSectionId = 'daemon' | 'mcp' | 'logs';\n\nexport interface DebugSection {\n  readonly id: DebugSectionId;\n  readonly title: string;\n  // the section's view is a React component rendered full-height when selected;\n  // each section story supplies its own component + wires its data via DebugService\n}\n\n// Facade added to the Services object returned by makeServices(); each section\n// story augments it with its own read methods (status card fields, orphan scan/kill,\n// mcp list + debug-status clients, log tail). s1 defines the empty facade + registration.\nexport interface DebugService {\n  readonly sections: readonly DebugSection[];\n}\n\nexport interface DebugPaneProps {\n  readonly services: { readonly debug: DebugService };\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s2",
+        "owns": [],
+        "depends": [
+          "sc1"
+        ],
+        "internal": "The Daemon-section status card: reading the existing daemon.status RPC + client-known fields (socket path, managed pid, install version) to render running/uptime/version/socket/repo-count-with-index-state, and inferring stopped/unreachable the way the existing Daemon pane does (a failed status call). All private to s2; consumes only the sc1 hosting shape."
+      },
+      "rolloutPhase": "Phase B — diagnostic sections",
+      "nonFunctional": {
+        "performance": "The debug-status IPC (attached-client list + any polled status) is bounded to the number of live socket connections; the orphan `ps` scan and `mcp list` are on-entry + explicit-refresh only (not continuous) to avoid steady subprocess churn; the log tail is fs.watch event-driven, not a poll loop.",
+        "security": "All daemon-held state is read over IPC only — the CLI never opens the daemon's stores or socket internals (k1); no direct cloud/network access is introduced. The pane is read-only except the one confirm-gated, explicitly-multi-selected orphan kill (k2); it never restarts the daemon or disconnects a client (k5).",
+        "observability": "This Epic IS an observability surface; it adds no logging of its own beyond what already flows to the two log files it tails. The new debug-status handler is a plain additive read handler with no persistent side effects.",
+        "durability": "No new persistent state — the connected-client registry is in-memory and rebuilt from live connections; the orphan kill is a one-shot OS action behind an explicit confirm, and nothing the pane does mutates on-disk data."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "DebugService",
+          "signature": "export interface DebugService { readonly sections: readonly DebugSection[]; daemonStatus(): Promise<DaemonCardModel> }",
+          "parameters": [],
+          "returns": {
+            "type": "interface",
+            "meaning": "The sc1 facade (owned by s1) gains one additive read method for the Daemon section: `daemonStatus()`. Existing `sections` is unchanged. This is the sc1-prescribed extension model ('each section augments it with its own read methods')."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Additive to sc1 — `sections` and every other member are unchanged; s1 fakes stubbing `debug` must add a daemonStatus stub."
+          ]
+        },
+        {
+          "name": "daemonStatus",
+          "signature": "daemonStatus(): Promise<DaemonCardModel>",
+          "parameters": [],
+          "returns": {
+            "type": "Promise<DaemonCardModel>",
+            "meaning": "Resolves to the discriminated Daemon status-card view-model. Fetches the daemon-held state (uptime/repos/queue) over the existing daemon.status IPC and attaches client-known fields (socket, pid, best-effort version). On an unreachable daemon (getStatus reject) it RESOLVES to { reachable: false } — it never rejects to the view, so the section can render ac2 without try/catch."
+          },
+          "errors": [],
+          "preconditions": [
+            "Reads daemon-held state only over the daemon.status IPC (k1); socket/pid/version are client-side reads (PATHS.sockFile, PATHS.pidFile, installed daemon package.json)."
+          ],
+          "postconditions": [
+            "Never throws; unreachable is the { reachable:false } variant.",
+            "Read-only — no daemon mutation, restart, or disconnect (k5)."
+          ]
+        },
+        {
+          "name": "DaemonCardModel",
+          "signature": "export type DaemonCardModel = { reachable: true; uptimeSec: number; repoCount: number; repos: readonly { name: string; status: RegisteredRepo['status'] }[]; socket: string; pid?: number | undefined; version?: string | undefined } | { reachable: false }",
+          "parameters": [],
+          "returns": {
+            "type": "type-alias (new)",
+            "meaning": "The Daemon-section status-card view-model: a discriminated union so 'reachable' gates every running field. Structured data only (numbers/strings/enums) — no display formatting or React, keeping presentation in the component (panes-vs-services layering)."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "repos[].status reuses RegisteredRepo['status'] ('pending'|'indexing'|'ready'|'error'); only workspace repos are counted (shared-modules rows are already filtered from repo.list)."
+          ]
+        },
+        {
+          "name": "DaemonSection",
+          "signature": "export function DaemonSection(props: { services: { readonly debug: DebugService } }): ReactElement",
+          "parameters": [
+            {
+              "name": "props",
+              "type": "{ services: { readonly debug: DebugService } }",
+              "purpose": "Supplies the `debug` facade whose daemonStatus() the section reads.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ReactElement",
+            "meaning": "The Daemon-section component the sc1 DebugPane mounts for section id 'daemon' (replacing s1's placeholder). Drives debug.daemonStatus() via a small once/poll effect (pollMs=0 in tests) and renders inside a Box: reachable → running + formatUptime(uptimeSec) + version/socket/pid + repo-count with each repo's index state; unreachable → a single 'stopped / unreachable' line. Read-only — no keys (k5)."
+          },
+          "errors": [],
+          "preconditions": [
+            "Mounted only while the Debug pane's active section is 'daemon'."
+          ],
+          "postconditions": [
+            "ac1: running card with uptime/version/socket/repo-count+index-state, sourced over IPC.",
+            "ac2: unreachable renders a stopped line, never stale/blank running fields."
+          ]
+        },
+        {
+          "name": "getStatus",
+          "signature": "getStatus(): Promise<DaemonStatus>",
+          "parameters": [],
+          "returns": {
+            "type": "Promise<DaemonStatus>",
+            "meaning": "The existing daemon-status read (src/cli/services/daemon.ts:50, `rpc<DaemonStatus>('daemon.status')`) that the debug service's daemonStatus() delegates to for the daemon-held fields (uptime/repos). Rejects when the socket is absent — the debug service catches that and returns { reachable:false }."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "The daemon socket is absent/unreachable ('daemon is not running') — caught by daemonStatus() and mapped to { reachable:false }."
+            }
+          ],
+          "preconditions": [],
+          "postconditions": []
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "DebugService (src/cli/services/debug-types.ts + debug.ts + index.ts)",
+        "change": "field-add",
+        "details": "Add the `daemonStatus(): Promise<DaemonCardModel>` method to the DebugService interface (debug-types.ts) and its implementation in the debug service module (debug.ts) — delegating to the existing getStatus() rpc for daemon-held fields and attaching client-known socket/pid/version, catching a reject into { reachable:false }. makeServices() already returns the `debug` facade (s1); the impl is bound there. Additive: `sections` and sibling facades unchanged.",
+        "schemaDiff": "interface DebugService { readonly sections: readonly DebugSection[]; + daemonStatus(): Promise<DaemonCardModel> }",
+        "callSites": [
+          "src/cli/services/debug.ts",
+          "src/cli/services/index.ts",
+          "src/cli/panes/DebugPane.tsx"
+        ]
+      },
+      {
+        "entity": "DaemonCardModel (src/cli/services/debug-types.ts)",
+        "change": "new",
+        "details": "New discriminated-union view-model type colocated with the sc1 types; the daemonStatus() return + the DaemonSection prop. Structured data only.",
+        "schemaDiff": "+ export type DaemonCardModel = { reachable: true; uptimeSec; repoCount; repos[]; socket; pid?; version? } | { reachable: false }",
+        "callSites": [
+          "src/cli/services/debug-types.ts",
+          "src/cli/services/debug.ts",
+          "src/cli/panes/DebugPane.tsx"
+        ]
+      },
+      {
+        "entity": "DebugPane id→component map (src/cli/panes/DebugPane.tsx)",
+        "change": "field-modify",
+        "details": "Swap the s1 'daemon' placeholder in the DebugPane's SECTION_VIEWS map for the real DaemonSection component (passed the `debug` facade). The 'mcp'/'logs' placeholders are untouched (s4/s5). No change to the section-hosting shape or navigation.",
+        "schemaDiff": "SECTION_VIEWS.daemon = () => <DaemonSection services={{ debug }} />",
+        "callSites": [
+          "src/cli/panes/DebugPane.tsx"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "s2 consumes sc1 (HLD boundary: s2 depends=[sc1]) and extends it per sc1's stated model: it augments the DebugService facade with the additive `daemonStatus()` read method (recorded via the sharedContract.methodAdd amendment above) and swaps the DebugPane's 'daemon' placeholder for the DaemonSection component that renders daemonStatus()'s view-model. It does NOT change the section-hosting shape, DebugSectionId, or navigation (all owned by s1). All daemon-held state flows over the daemon.status IPC through the facade (k1); the section is read-only (k5)."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The daemon is not running / the socket is absent when the Daemon section loads.",
+          "detection": "daemonStatus() awaits the getStatus() rpc, which REJECTS with the 'daemon is not running' error; daemonStatus() catches that reject.",
+          "response": "Resolve to the { reachable: false } variant (never re-throw). The DaemonSection renders a single 'stopped / unreachable' line with no running fields.",
+          "userImpact": "The operator sees an unambiguous stopped state instead of a crash or stale/blank fields (ac2).",
+          "recoverable": true
+        },
+        {
+          "scenario": "The daemon is up but the status rpc rejects transiently (e.g. socket present but the request errors mid-flight).",
+          "detection": "The awaited getStatus() promise rejects for a reason other than absence; daemonStatus()'s single catch handles any reject uniformly.",
+          "response": "Treated identically to unreachable — resolve to { reachable: false }; a later refetch (poll tick / nonce) recovers to the running card once the rpc succeeds.",
+          "userImpact": "A brief 'stopped / unreachable' flash that self-heals on the next fetch; no stale running fields are shown.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The client-known version cannot be resolved (no installed daemon package.json, or read fails).",
+          "detection": "The best-effort version read returns nothing / throws and is caught locally when assembling the reachable model.",
+          "response": "Leave version undefined in DaemonCardModel; the DaemonSection omits the version line (or shows 'version: unknown') and still renders every IPC-sourced field.",
+          "userImpact": "The card is fully usable minus the version line — graceful degradation, no error surfaced.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The managed pid file is absent (daemon reachable but pidfile not written / cleaned).",
+          "detection": "existsSync(PATHS.pidFile) is false (or the read yields a non-numeric value) when assembling the reachable model.",
+          "response": "Leave pid undefined; the card omits the pid line. Reachability is decided by the rpc, not the pidfile, so a missing pidfile never contradicts a running daemon.",
+          "userImpact": "Card shows running state without a pid line; no error.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "The daemon is running but has zero registered repos.",
+          "expected": "The card shows repo-count 0 and an empty repo list (no per-repo rows), not an error or blank card — still the reachable variant."
+        },
+        {
+          "input": "A registered repo is mid-index (status 'indexing') or errored (status 'error' with errorMsg).",
+          "expected": "The per-repo row reflects that exact RegisteredRepo['status'] value; the card renders the live index state verbatim rather than collapsing all repos to 'ready'."
+        },
+        {
+          "input": "The registry contains synthetic 'shared-modules' rows alongside workspace repos.",
+          "expected": "Only workspace repos are counted/listed — shared-modules rows are already filtered from repo.list, so repoCount matches the user-facing set (consistent with the rest of the TUI)."
+        },
+        {
+          "input": "The operator opens the Daemon section, leaves to another section, and returns.",
+          "expected": "The section re-mounts and re-fetches daemonStatus() fresh (pane-local, not persisted) — it shows current state, never a stale cached card from the prior visit."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Daemon-held state (uptime, repos + per-repo index state, queue) is obtained EXCLUSIVELY over the daemon.status IPC via getStatus(); the section never opens the daemon's stores or socket internals directly. Client-known fields (socket/pid/version) are local reads, not daemon state.",
+          "source": "c2"
+        },
+        {
+          "text": "Unreachable is inferred from a FAILED status call exactly as the existing DaemonState does (getStatus reject => running:false); the card must show a stopped/unreachable state with no stale or blank running fields, never a thrown error to the view.",
+          "source": "c2"
+        },
+        {
+          "text": "The Daemon section is READ-ONLY: it exposes no maintenance controls (start/stop/restart/backup/compact live in DaemonPane) and never mutates, restarts, or disconnects the daemon.",
+          "source": "c3"
+        },
+        {
+          "text": "The section consumes only the sc1 `debug` facade shape (via DebugPaneProps) and the pane's id->component hosting; it does not alter DebugSectionId, the section registry, or navigation owned by s1.",
+          "source": "c1"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove daemonStatus() maps the daemon.status rpc + client-known fields into the discriminated DaemonCardModel, and folds any getStatus reject into { reachable:false } without throwing.",
+          "subjects": [
+            "debug.daemonStatus(): a resolving getStatus stub yields { reachable:true } with uptimeSec/repoCount/repos[]/socket (+pid/version when available)",
+            "debug.daemonStatus(): a rejecting getStatus stub yields { reachable:false } and never throws",
+            "debug.daemonStatus(): unresolvable version / absent pidfile leave version/pid undefined but keep the reachable variant",
+            "debug.daemonStatus(): only workspace repos are counted (shared-modules rows excluded)"
+          ],
+          "fixturesNeeded": [
+            "A fake getStatus that resolves a DaemonStatus (with repos of mixed status) or rejects with a 'daemon is not running' error",
+            "A stubbed PATHS/pidfile + version reader to exercise the missing-field degradations"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove the DaemonSection component renders the running card (ac1) and the stopped/unreachable line (ac2) from an injected daemonStatus() result, with no stale fields.",
+          "subjects": [
+            "DaemonSection: reachable model renders running + formatUptime(uptimeSec) + socket + version/pid (when present) + repo-count with each repo's index state",
+            "DaemonSection: { reachable:false } renders a single 'stopped / unreachable' line and NONE of the running fields",
+            "DaemonSection: zero-repo reachable model renders repo-count 0 with no per-repo rows",
+            "DaemonSection: a repo with status 'indexing'/'error' renders that exact index state (not collapsed to ready)"
+          ],
+          "fixturesNeeded": [
+            "A fake `{ debug }` facade whose daemonStatus() resolves the reachable or unreachable model, injected via the DebugPaneProps-shaped prop",
+            "ink-testing-library render + settle (pollMs=0 once-fetch)"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove the Debug pane's Daemon section (mounted via the sc1 id->component map) shows the real card end-to-end when the section is selected.",
+          "subjects": [
+            "DebugPane: selecting the Daemon section renders DaemonSection's running card (not the s1 placeholder) from the injected debug facade",
+            "DebugPane: with an unreachable daemonStatus() the Daemon section shows the stopped/unreachable line"
+          ],
+          "fixturesNeeded": [
+            "A fake `{ debug }` facade (sections + daemonStatus) injected through the DebugPane, reusing the s1 DebugPane test harness"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "unit: DaemonSection reachable model renders running + uptime + socket + version/pid + repo-count with each repo's index state",
+            "unit: debug.daemonStatus() maps a resolving getStatus into { reachable:true } with the IPC-sourced fields",
+            "integration: selecting the Daemon section renders the running card from the debug facade"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "unit: DaemonSection renders 'stopped / unreachable' with no running fields for { reachable:false }",
+            "unit: debug.daemonStatus() folds a rejecting getStatus into { reachable:false } without throwing",
+            "integration: the Daemon section shows the stopped/unreachable line when daemonStatus() is unreachable"
+          ]
+        }
+      ],
+      "testFramework": "node:test (via `npx tsx --test`) with ink-testing-library for the section-component render + fake `{ debug }` facade / getStatus stubs through ServicesContext, matching the s1 DebugPane test harness and the existing tui.test.ts running-vs-daemon-down stubs"
+    },
+    "migration": {
+      "stateBefore": "After s1, the Debug pane's Daemon section is a placeholder Text ('Daemon diagnostics — coming soon.') mounted via the DebugPane's SECTION_VIEWS['daemon'] entry. The DebugService facade (src/cli/services/debug-types.ts + debug.ts) exposes only `sections`. Daemon status is available elsewhere: the existing daemon.status rpc via src/cli/services/daemon.ts:50 getStatus(), and the App-level useDaemonStatus hook feeds only the DaemonPane (props.daemon) and the App header — nothing surfaces it inside the Debug pane. [grounded on the s1 DaemonStatus/getStatus and useDaemonStatus/DaemonPane analyze bundles]",
+      "stateAfter": "The DebugService facade gains an additive `daemonStatus(): Promise<DaemonCardModel>` method (impl in debug.ts, bound through the existing makeServices() debug entry) that delegates to getStatus() for daemon-held fields, attaches client-known socket/pid/version, and folds any reject into { reachable:false }. A new DaemonCardModel discriminated-union type is colocated with the sc1 types. A new DaemonSection component renders that model (running card / stopped line) and replaces the 'daemon' placeholder in the DebugPane SECTION_VIEWS map. The s1 test fakes that stub `debug` gain a daemonStatus stub. No daemon-side change; no change to sc1's section-hosting shape, DebugSectionId, or navigation.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the DaemonCardModel discriminated-union type to the sc1 types module (additive type surface, referenced by nothing yet).",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add the `daemonStatus(): Promise<DaemonCardModel>` method to the DebugService interface and implement it in the debug service module — delegate to the existing getStatus() rpc, attach client-known socket (PATHS.sockFile) / pid (pidfile, existsSync-guarded) / best-effort version, and catch any reject into { reachable:false }. Bind it on the existing makeServices() debug entry. Additive; existing `sections` unchanged.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add the DaemonSection component that reads debug.daemonStatus() via a once/poll effect and renders the reachable running card (formatUptime + socket + version/pid + repo-count-with-index-state) or the { reachable:false } stopped/unreachable line. Read-only, no keys.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Swap the DebugPane SECTION_VIEWS['daemon'] placeholder for the DaemonSection (passed the debug facade). The 'mcp'/'logs' placeholders and the section-hosting shape stay unchanged. This is the single user-visible behaviour change (the Daemon section now shows a real card).",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Update the in-repo Services test fakes that stub the `debug` facade (tui.test.ts, command.test.ts, and any s1 DebugPane fixtures) to add a conformant daemonStatus stub so the suites compile against the widened DebugService.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "The DebugService change is additive (one new `daemonStatus` method); `sections` and every sibling facade are unchanged, so s1's DebugPane and all existing panes compile and behave as before. In-repo callers that construct a `debug` facade literal — the test fakes injected via ServicesContext / DebugPaneProps — must add a daemonStatus stub to stay interface-conformant; this is an internal (non-published) contract, so the break is contained to this repo's own test doubles and caught at compile time (same shape as the s1/t5 additive-fake update). The daemon.status IPC, the DaemonStatus type, DaemonPane, useDaemonStatus, the socket path, and the IDE-fork IPC contract are all untouched — s2 only READS the existing rpc. No on-disk or persisted shape changes.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "DebugService.daemonStatus() facade method + view-model",
+        "oneLineSummary": "Augment DebugService (per sc1's stated extension model) with a `daemonStatus()` read method that fetches daemon.status over IPC, attaches the client-known fields (socket, pid, best-effort version), and returns a discriminated DaemonCardModel ({reachable:true, ...} | {reachable:false}); the Daemon-section component renders it via a small poll hook.",
+        "approach": "s2 adds one method to the DebugService interface: `daemonStatus(): Promise<DaemonCardModel>` where DaemonCardModel is `{ reachable: true; uptimeSec; repoCount; repos: {name; status}[]; socket; pid?; version? } | { reachable: false }`. The debug service impl calls the SAME daemon.status rpc used today (via the existing getStatus), and on reject resolves to `{reachable:false}` (never throws to the view). Client-known fields (socket=PATHS.sockFile, pid=read PATHS.pidFile if present, version=best-effort read of the installed daemon package.json) are attached client-side. The Daemon-section component receives the `debug` facade through DebugPaneProps and drives `daemonStatus()` with a tiny poll/once hook (pollMs=0 in tests). This matches sc1 verbatim ('each section story augments it [DebugService] with its own read methods (status card fields...)') and keeps ALL daemon-held state behind the facade (k1), read-only (k5).",
+        "pros": [
+          "Faithful to sc1's stated extension model — the section's data access lives on the DebugService facade, exactly as the sketch's comment prescribes",
+          "The view-model is a clean discriminated union: unreachable is a first-class variant, so ac2 can never show stale/blank fields",
+          "Client-known fields (socket/pid/version) are assembled in one place (the debug service), keeping the component pure-render + testable with a single fake method",
+          "Sets the reuse precedent s3/s4/s5 follow (each augments `debug` with its own read methods)"
+        ],
+        "cons": [
+          "Introduces a second daemon-status read path alongside the App-level useDaemonStatus — a small amount of duplication of the reachable/unreachable inference (mitigated by delegating to the same getStatus rpc)",
+          "A new DebugService method means the s1 test fakes that stub `debug` must add it (compile-time additive break, same shape as s1/t5)"
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Section reuses useServices() + useDaemonStatus directly (no facade method)",
+        "oneLineSummary": "The Daemon-section component ignores the `debug` facade for status and instead reaches the full Services via useServices() + reuses the existing useDaemonStatus hook, attaching client-known fields locally in the component.",
+        "approach": "The section component calls `useDaemonStatus(pollMs, nonce)` (which internally uses useServices().daemon.getStatus) to get DaemonState {status, running, ...} — reusing the App's exact reachable/unreachable inference with zero new inference code — and reads the client-known socket/pid/version inline. No change to the DebugService interface at all. DebugPaneProps still narrows to `{ debug }`, but the section, like every other pane, freely pulls the broader ServicesContext via useServices().",
+        "pros": [
+          "Maximal reuse: the reachable/unreachable inference (ac1/ac2) is the EXISTING useDaemonStatus hook — no duplicated logic, no new inference to test",
+          "Zero DebugService surface change — s1's facade + fakes are untouched",
+          "Smallest diff of the three"
+        ],
+        "cons": [
+          "Deviates from sc1's stated extension model (sections 'augment DebugService with their own read methods') — status bypasses the facade, so s3/s4/s5 lose a1's uniform 'data via the debug facade' precedent",
+          "Two ways for a section to get data (facade for some, useServices for others) is a mild inconsistency the reviewer must accept",
+          "Mixing client-known field assembly into the component makes the component less pure and slightly harder to unit-test than a single injected method"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Best reuse + smallest diff (ac1/ac2 satisfied by the existing hook with zero new inference), but sc1=partial: it does not extend the facade, diverging from the sketch's stated section-data model. a1 captures the same k1/reachability guarantees while keeping the data on the facade."
+      },
+      {
+        "id": "a3",
+        "name": "Structured DebugService.daemonCard() returning a fully-formatted card model incl. display strings",
+        "oneLineSummary": "Like a1 but the facade method returns an already-formatted, display-ready card (uptime as '1h 2m', repo lines as strings), so the component is a near-dumb renderer.",
+        "approach": "DebugService gains `daemonCard(): Promise<{ reachable: boolean; lines: readonly string[] }>` (or a richer pre-formatted record) where the debug service does the formatting (formatUptime, per-repo 'name — ready' lines, socket/pid/version) and the component just prints `lines`. Reachable/unreachable is a boolean plus the lines. All daemon reads stay behind the facade (k1).",
+        "pros": [
+          "Component is almost logic-free — trivial to test (assert the injected lines render)",
+          "All presentation + assembly centralised in the service"
+        ],
+        "cons": [
+          "Pushes VIEW/formatting concerns (formatUptime, colouring, layout) DOWN into the services/(data) layer — the exact panes-vs-services layering inversion s1 deliberately avoided (it kept components in panes/, data in services/); colour/emphasis can't live in a plain string list",
+          "A pre-formatted 'lines' contract is brittle for s3/s4/s5 to follow and hides structure the tests would rather assert on (e.g. repo count, per-repo status) than string-match",
+          "Least faithful to the codebase idiom where panes own their Text/Box rendering"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Satisfies ac1/ac2/k1/k5 but sc1=partial for the wrong reason: it drags formatting/colour into the data layer (the inversion s1 explicitly avoided) and hands s3/s4/s5 a brittle pre-formatted-lines precedent that hides the structure tests want to assert on."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "HLD sc1 (Debug pane section-hosting shape + DebugService facade), boundary s2 depends=[sc1]; interfaceSketch comment 'each section story augments it with its own read methods (status card fields...)' + DebugPane SECTION_VIEWS hosting from s1"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s2 symbol.locate/usage.example — daemon.status DaemonStatus (src/shared/types.ts:809), getStatus() rpc (src/cli/services/daemon.ts:50, rejects when socket absent), useDaemonStatus reachable/unreachable inference (src/cli/hooks/useDaemonStatus.ts), PATHS.sockFile/pidFile (src/shared/paths.ts:18-19); daemon.status omits version/socket/pid"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s2 usage.example — DaemonPane health-render idiom + formatUptime/formatBytes (src/cli/panes/DaemonPane.tsx, src/cli/ui/format.ts); maintenance (start/stop/restart/backup/compact) lives in DaemonPane, so the read-only Debug section carries none of it (k5)"
+    }
+  ]
+}

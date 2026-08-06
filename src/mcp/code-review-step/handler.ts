@@ -256,7 +256,13 @@ async function handleStart(
 			}
 			if (!f.isProcessing && f.staleFiles.length === 0) break;   // fresh → proceed to grounding
 			if (deps.now() >= deadline) {
-				return confirmWaitResult(f.staleFiles, f.isProcessing, step.state!);   // re-prompt (same token)
+				// Index never freshened before the deadline. Rather than re-prompt
+				// confirm_wait forever (a wedged index never resolves), auto-fall-back
+				// to the DIFF-ONLY (degraded) review — the same escape the decline
+				// branch takes. Release the confirm_wait token first (mirrors the
+				// fresh-break path below) so the diff review saves a fresh state.
+				releaseState(step.state!);
+				return await beginDiffOnlyReview(repo, epicHash, storyId, subject, deps);
 			}
 			await deps.sleep(POLL_INTERVAL_MS);
 		}
@@ -283,6 +289,14 @@ async function handleStart(
 	const g = await deps.fetchGrounding({ repo, epicHash, storyId });
 	if (!g.ok) {
 		return errorResult('grounding-unavailable', `insrc_code_review_step: grounding unavailable — ${g.reason}.`, true);
+	}
+	// Fresh-but-hollow: the index reports fresh but the graph grounding carries no
+	// changed-symbol summaries (the hollow-PASS). Emitting a full-mode review over
+	// an empty symbol set produces a meaningless verdict, so auto-fall-back to the
+	// DIFF-ONLY (degraded) review over the changed-file diff instead. Runs only on
+	// a successful fetch (g.ok), so it never masks a real grounding failure.
+	if (g.grounding.symbols.length === 0) {
+		return await beginDiffOnlyReview(repo, epicHash, storyId, subject, deps);
 	}
 	const grounding = g.grounding;
 

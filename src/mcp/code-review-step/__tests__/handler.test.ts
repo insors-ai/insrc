@@ -25,7 +25,20 @@ const subject = (): CodeReviewSubject => ({
 	buildRecord: null,
 });
 
-const grounding: CodeReviewGrounding = { symbols: [] };
+/** A real (non-hollow) fresh grounding: >=1 changed-symbol summary. The full
+ *  graph-review path runs only when the grounding actually carries symbols; an
+ *  empty symbols[] is the hollow-PASS the auto-diff-fallback story diverts to
+ *  the diff review (see `hollowGrounding` + the fresh-but-hollow tests below). */
+const grounding: CodeReviewGrounding = {
+	symbols: [{
+		entityId: 'sym:src/a.ts#f', file: 'src/a.ts', kind: 'function', name: 'f',
+		signature: 'f(): void', callers: [], callees: [], testsReaching: [],
+	}],
+};
+
+/** A fresh-but-hollow grounding: the graph reports fresh but has zero
+ *  changed-symbol summaries (grounding.symbols.length === 0). */
+const hollowGrounding: CodeReviewGrounding = { symbols: [] };
 
 /** A canned diff-only grounding: one per-file pseudo-symbol for a changed file
  *  recovered from the diff (kind:'file', hunks in signature). */
@@ -292,21 +305,77 @@ test('s9: proceed:true block-and-polls the freshness IPC (stale twice then fresh
 	assert.ok(sleeps >= 1, 'it slept between poll ticks (never reindexed)');
 });
 
-// ac3: timeout during the poll => confirm_wait again (re-prompt), not a unilateral decision.
-test('s9: proceed:true that never becomes fresh before the timeout re-prompts with confirm_wait (ac3)', async () => {
+// S001 ac1: timeout during the poll => auto-fall-back to the DIFF-ONLY review,
+// NOT an endless confirm_wait re-prompt (a wedged index never freshens). This
+// flips the pre-S001 behaviour where the timeout re-prompted confirm_wait.
+test('S001: proceed:true that never becomes fresh before the timeout auto-falls-back to the diff review (emit_judgements over diff), not a confirm_wait re-prompt', async () => {
 	reset();
 	let clock = 0;
+	let diffCalls = 0;
 	const { deps, writes } = makeDeps({
 		fetchFreshness: async () => ({ ok: true, isProcessing: false, staleFiles: ['src/a.ts'] }),
+		assembleDiffGrounding: async () => { diffCalls++; return { grounding: diffGrounding, changedFiles: DIFF_CHANGED }; },
 		now: () => clock,
 		sleep: async () => { clock += 1000; },   // advance the fake clock each poll
 		freshnessTimeoutMs: () => 2500,
 	});
 	const cw = parse(await handleCodeReviewStep({ phase: 'start', epicHash: EPIC, storyId: STORY, repo: '/repo' }, deps));
 	assert.ok(cw.next === 'confirm_wait');
-	const reprompt = parse(await handleCodeReviewStep({ phase: 'start', state: cw.state, proceed: true }, deps));
-	assert.ok(reprompt.next === 'confirm_wait', 'timeout re-prompts rather than deciding');
-	assert.equal(writes.length, 0, 'nothing written on a timeout re-prompt');
+	const out = parse(await handleCodeReviewStep({ phase: 'start', state: cw.state, proceed: true }, deps));
+	assert.ok(out.next === 'emit_judgements', 'timeout => diff-only emit_judgements, not confirm_wait');
+	assert.equal(diffCalls, 1, 'the diff grounding was assembled on timeout');
+	assert.deepEqual(out.grounding, diffGrounding, 'the emit_judgements frame carries the diff grounding (degraded)');
+	assert.equal(writes.length, 0, 'nothing written yet — the write happens on the judgements turn');
+});
+
+// S001 ac1 (token hygiene): the confirm_wait token is consumed before the diff
+// fallback runs, so a resend of it fails loadState (no leaked/double-usable token).
+test('S001: the timeout auto-diff releases the confirm_wait token before the diff review', async () => {
+	reset();
+	let clock = 0;
+	const { deps } = makeDeps({
+		fetchFreshness: async () => ({ ok: true, isProcessing: false, staleFiles: ['src/a.ts'] }),
+		now: () => clock,
+		sleep: async () => { clock += 1000; },
+		freshnessTimeoutMs: () => 2500,
+	});
+	const cw = parse(await handleCodeReviewStep({ phase: 'start', epicHash: EPIC, storyId: STORY, repo: '/repo' }, deps));
+	assert.ok(cw.next === 'confirm_wait');
+	const out = parse(await handleCodeReviewStep({ phase: 'start', state: cw.state, proceed: true }, deps));
+	assert.ok(out.next === 'emit_judgements');
+	// resending the now-consumed confirm_wait token fails loadState
+	const resend = parse(await handleCodeReviewStep({ phase: 'start', state: cw.state, proceed: true }, deps));
+	assert.ok(resend.next === 'error' && resend.error.code === 'state-not-found', 'the confirm_wait token was released');
+});
+
+// S001 ac2: a FRESH index whose grounding is hollow (symbols:[]) auto-falls-back
+// to the diff review instead of emitting a full-mode review over nothing.
+test('S001: a fresh-but-hollow grounding (symbols:[]) auto-falls-back to the diff review, NOT a hollow full emit', async () => {
+	reset();
+	let diffCalls = 0;
+	const { deps } = makeDeps({
+		fetchGrounding: async () => ({ ok: true, grounding: hollowGrounding }),   // fresh but empty
+		assembleDiffGrounding: async () => { diffCalls++; return { grounding: diffGrounding, changedFiles: DIFF_CHANGED }; },
+	});
+	const out = parse(await handleCodeReviewStep({ phase: 'start', epicHash: EPIC, storyId: STORY, repo: '/repo' }, deps));
+	assert.ok(out.next === 'emit_judgements', 'hollow grounding => diff-only emit_judgements');
+	assert.equal(diffCalls, 1, 'the diff grounding was assembled for the hollow case');
+	assert.deepEqual(out.grounding, diffGrounding, 'the frame carries the diff grounding, not the empty full grounding');
+});
+
+// S001 ac2 (regression): a FRESH index with real (non-empty) grounding still
+// uses the FULL graph path — the auto-diff fallback does NOT fire.
+test('S001: a fresh index with >=1 changed-symbol still uses the FULL graph review (auto-diff does not fire)', async () => {
+	reset();
+	let diffCalls = 0;
+	const { done, writes } = await runFullFlow({
+		assembleDiffGrounding: async () => { diffCalls++; return { grounding: diffGrounding, changedFiles: DIFF_CHANGED }; },
+	});   // makeDeps defaults to fresh + the non-empty `grounding`
+	assert.ok(done.next === 'done');
+	assert.equal(diffCalls, 0, 'assembleDiffGrounding was never called for a real fresh grounding');
+	const json = writes.find(w => w.path.endsWith('.json'))!;
+	const body = (JSON.parse(json.content) as { body: { groundingMode: string } }).body;
+	assert.equal(body.groundingMode, 'full', 'a real fresh grounding stamps full');
 });
 
 // error: freshness IPC failure => error frame, no confirm_wait, no write.

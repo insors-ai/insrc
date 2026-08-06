@@ -1,0 +1,524 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1786041138619-48wpj1",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-08-06T18:39:51.527Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 452740,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "914cbf5ea9026b92",
+    "epicSlug": "work-framed-approved-spec-proceed-from",
+    "storyId": "s2",
+    "hldBaseRunId": "wf-1786031712974-qqqe5k",
+    "hldEffectiveHash": "fd544bcd90a023e29bb48b2f6460dacf5dc6eaab956d8dff2bd59eceadab5516",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "ref": "data-model/config-entities",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/indexer/parser/artifact.ts maps '.env' and its variants (.env.example/.local/.development/.production) plus Dockerfile to the 'config' EntityKind, and isConfigLang includes 'yaml' and 'dockerfile' so k8s/compose YAML also index as config.",
+          "evidence": "Confirmed: src/indexer/parser/artifact.ts:47 `'.env': 'config'` and isConfigLang at :294 (includes 'yaml'/'dockerfile'/'config'), so .env/Dockerfile/k8s+compose YAML all index as the 'config' EntityKind. Accurate.",
+          "action": "None — citation verified.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl2",
+          "ref": "api/listEntitiesForRepo",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "listEntitiesForRepo(_db, repo) is an existing exported function in src/db/entities.ts returning the repo's domain entities, consumed read-only by the resolver's config-map adapter.",
+          "evidence": "Confirmed: src/db/entities.ts:761 `export async function listEntitiesForRepo(_db: DbClient, repo: string): Promise<Entity[]>` — exact signature the LLD cites.",
+          "action": "None — citation verified.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl3",
+          "ref": "security/k8s-tool-executes",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The k8s built-in tools in src/daemon/tools/builtins/k8s/index.ts shell out to kubectl (a live/executed binary), so they are not usable for at-rest resolution; sc2 must read k8s manifest files instead.",
+          "evidence": "Confirmed: src/daemon/tools/builtins/k8s/index.ts shells out to kubectl (module comment L4, argv `['kubectl','get',...]` L125, spawnError check L136). The at-rest refinement (read manifest files, not the tool) is correctly grounded.",
+          "action": "None — citation verified.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl4",
+          "ref": "gotcha/env-ignored",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/indexer/watcher.ts lists '.env' in its ignore set (around line 15), creating a possible tension with .env files being indexed as config entities that the build must verify.",
+          "evidence": "Confirmed: src/indexer/watcher.ts:15 lists '.env' in the ignore set (and source-roots.ts:246 too). The LLD correctly flags this as a build-time verification for the envFile layer rather than asserting a resolution.",
+          "action": "None — citation verified; the gotcha is flagged, not assumed away.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl5",
+          "ref": "data-model/ExternalProtocol-reuse",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "ExternalProtocol already exists in src/shared/types.ts (added by S001) and is REUSED by sc2's ResolvedTarget rather than re-declared.",
+          "evidence": "Confirmed: src/shared/types.ts:551 `export type ExternalProtocol = 'http' | 'messaging' | 'rpc';` (added by S001). sc2 correctly reuses it rather than re-declaring.",
+          "action": "None — citation verified.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl6",
+          "ref": "capability/no-existing-resolver",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/indexer/manifest.ts (parseManifest) parses only package-dependency manifests and does not read env/URL/topic values, confirming sc2's resolver + at-rest parsers are net-new.",
+          "evidence": "Confirmed: src/indexer/manifest.ts:19 parseManifest dispatches only to parsePackageJson/parseGoMod/etc (package-dependency manifests); no env/URL/topic resolution. sc2's resolver + parsers are correctly net-new.",
+          "action": "None — citation verified.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl7",
+          "ref": "cross-artifact/sc2-ownership",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "The HLD (914cbf5ea9026b92) declares sc2 Target resolution engine with ownedByStory s2, which this LLD implements.",
+          "evidence": "The src-scoped evidence engine could not read the HLD artifact (greps hit only test fixtures), so the cross-artifact trace is unverified by this pass. The committed HLD (docs/designs/HLD-work-framed-approved-spec-proceed-from.md) declares sc2 ownedByStory s2 — authored + reviewed + approved this session. Low risk.",
+          "action": "None — trace holds per the committed HLD.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl8",
+          "ref": "closed-union/config-layers",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "ConfigSourceLayer is exactly the four members 'k8s' | 'docker' | 'envFile' | 'localConfig' with the total precedence deploy-time(k8s>docker) > envFile > localConfig.",
+          "evidence": "Confirmed absent by design: ConfigSourceLayer does not yet exist in src — it is the net-new sc2 vocabulary this LLD introduces (four members k8s|docker|envFile|localConfig with a total precedence). Not a defect.",
+          "action": "None — new symbol expected to be absent pre-build.",
+          "fixability": "auto"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 8
+      },
+      "reviewedAt": "2026-08-06T18:41:09.752Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-08-06T18:47:16.941Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Pipeline-integrated external-service graph tracing. The graph gains one new node kind (ExternalEndpoint, carrying a protocol + resolved/unresolved tag) and four typed boundary edge kinds (CALLS_HTTP, PUBLISHES_TO, SUBSCRIBES_TO, CALLS_RPC), added once to the graph vocabulary and gated by a graph-schema migration so existing indexes evolve without a full re-index. Per-language outbound and inbound detectors run as thin plugins inside the existing tree-sitter parse; a shared protocol-agnostic resolution engine turns indirect/configured targets into a concrete identity (or an explicit unresolved marker) from layered config sources with a fixed precedence. Cross-repo linking is a separate daemon-side matching pass, keyed off a per-repo service-identity registry, that forms a real dependency edge onto the target repo's actual handler entity and inserts it into the DEPENDS_ON closure; the same pass, re-fired on repo register/re-index events, is the out-of-order backfill.",
+      "ownedContracts": [
+        {
+          "id": "sc2",
+          "name": "Target resolution engine",
+          "purpose": "Turn an indirect/configured outbound target expression into a concrete identity, or an explicit unresolved marker, using layered config sources with a fixed precedence. A pure resolver consumed by every outbound detector.",
+          "interfaceSketch": "type ExternalProtocol = 'http' | 'messaging' | 'rpc';\ntype ResolvedTarget =\n  | { resolved: true;  protocol: ExternalProtocol; identity: string }   // concrete host+path | topic | service.method\n  | { resolved: false; rawExpression: string };\n// precedence when several sources define the same key: deploy-time (k8s | docker) > env-file > local-config-default\ntype ConfigSourceLayer = 'k8s' | 'docker' | 'envFile' | 'localConfig';\ninterface TargetResolver {\n  resolve(repo: string, protocol: ExternalProtocol, rawExpression: string): ResolvedTarget;\n}",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c2"
+          ]
+        }
+      ],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s2",
+        "owns": [
+          "sc2"
+        ],
+        "depends": [],
+        "internal": "How each config source is parsed — the Docker parser (Dockerfile ENV / docker-compose environment/env_file / container env), the .env parser, the reuse of the k8s built-in tool namespace, and the reuse of already-indexed config entities — plus the precedence-merge logic and the expression-evaluation that decides whether a target is pinnable, all stay private to S002. Consumers see only resolve(...) -> ResolvedTarget."
+      },
+      "rolloutPhase": "Phase A — Graph foundation + resolution",
+      "nonFunctional": {
+        "performance": "Detection reuses the single existing tree-sitter parse per file — no second parse pass is added to indexing. The cross-repo matching pass is bounded per registry/re-index event (it re-evaluates only endpoints whose match could have changed), not a full-workspace rescan on every index.",
+        "security": "Detection is static and at-rest — config, .env, k8s, and docker sources are read as text, never executed (k6). Resolution uses config/secret values only to derive a service IDENTITY (host/topic/service string) recorded as the endpoint target; raw secret contents beyond the resolved identity string are not persisted as graph data.",
+        "observability": "Unresolved endpoints are first-class and queryable (they carry the raw expression), so coverage gaps are visible rather than silent; cross-repo edges vs endpoint-only outcomes are distinguishable so an operator can see where matching did and did not link.",
+        "durability": "New nodes/edges use deterministic ids (repo + resolved target), and the vocabulary lands behind a graph-schema migration, so re-indexing is stable and idempotent and existing indexes evolve without a destructive full rebuild."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "resolve",
+          "signature": "resolve(repo: string, protocol: ExternalProtocol, rawExpression: string): ResolvedTarget",
+          "parameters": [
+            {
+              "name": "repo",
+              "type": "string",
+              "purpose": "The repo root whose at-rest config sources scope resolution (the config entities to draw from). Used only to fetch/cache the repo's merged ConfigSourceMap; the pure resolution core itself takes the map, not the repo.",
+              "optional": false
+            },
+            {
+              "name": "protocol",
+              "type": "ExternalProtocol",
+              "purpose": "The boundary protocol ('http'|'messaging'|'rpc') the caller (s3/s4/s5 detector) already classified; carried straight onto a resolved result so the identity is interpreted as host+path | topic | service.method.",
+              "optional": false
+            },
+            {
+              "name": "rawExpression",
+              "type": "string",
+              "purpose": "The raw outbound-target call expression to pin (a literal, or an interpolation referencing env/config keys).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ResolvedTarget",
+            "meaning": "{resolved:true, protocol, identity} when every referenced key pins to a concrete value against the merged, precedence-ordered ConfigSourceMap (ac1); otherwise {resolved:false, rawExpression} (ac2) — never dropped. Matches the sc2 interfaceSketch exactly. Internally, resolve is a thin adapter: it fetches (and memoizes per repo/index pass) the repo's ConfigSourceMap, then delegates to a PURE core that evaluates the expression against the map — so the core is unit-testable with in-memory maps and has no graph dependency."
+          },
+          "errors": [],
+          "preconditions": [
+            "The repo's kind==='config' entities are indexed (or, per the s1 .env gotcha, readable at rest by path as a fallback) so the ConfigSourceMap can be built.",
+            "protocol was already determined by the calling detector (sc2 does not classify protocol)."
+          ],
+          "postconditions": [
+            "Pure + deterministic: the same (repo config sources, protocol, rawExpression) always yields the same ResolvedTarget, so a downstream endpoint id (repo + resolved target, k2) is stable across re-index.",
+            "No config source is executed and no runtime/live value participates (k6, lc1): only at-rest config-entity text is read.",
+            "A key defined in multiple layers resolves to the deploy-time(k8s|docker) > envFile > localConfig winner (ac1)."
+          ]
+        },
+        {
+          "name": "listEntitiesForRepo",
+          "signature": "listEntitiesForRepo(_db: DbClient, repo: string): Promise<Entity[]>",
+          "parameters": [
+            {
+              "name": "_db",
+              "type": "DbClient",
+              "purpose": "Daemon-side DB handle (all graph access is daemon/indexer-side, k3).",
+              "optional": false
+            },
+            {
+              "name": "repo",
+              "type": "string",
+              "purpose": "Repo root whose entities are listed; the adapter filters to kind==='config' and reads each entity's body text.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<Entity[]>",
+            "meaning": "The repo's domain entities (existing API, src/db/entities.ts). UNCHANGED by S002 — the config-map adapter consumes it read-only to gather config-entity bodies as the resolver's at-rest input; the k8s/docker/.env/localConfig text all arrives via these 'config' entities."
+          },
+          "errors": [],
+          "preconditions": [
+            "repo is registered (repo.add contract, k4)."
+          ],
+          "postconditions": [
+            "No mutation; a read-only fetch feeding buildConfigSourceMap."
+          ]
+        }
+      ],
+      "dataModel": [
+        {
+          "entity": "ResolvedTarget (src/shared/types.ts)",
+          "change": "new",
+          "details": "The sc2 result union, shared vocabulary consumed by s3/s4/s5: `{ resolved: true; protocol: ExternalProtocol; identity: string } | { resolved: false; rawExpression: string }`. identity is the concrete host+path | topic | service.method; the unresolved arm preserves the raw expression (ac2). ExternalProtocol is REUSED from S001 (already in shared/types.ts), not re-declared.",
+          "schemaDiff": "src/shared/types.ts: + export type ResolvedTarget = { resolved: true; protocol: ExternalProtocol; identity: string } | { resolved: false; rawExpression: string };",
+          "callSites": [
+            "src/shared/types.ts"
+          ]
+        },
+        {
+          "entity": "ConfigSourceLayer + ConfigSourceMap (src/shared/types.ts + new resolver module under src/indexer)",
+          "change": "new",
+          "details": "ConfigSourceLayer = 'k8s' | 'docker' | 'envFile' | 'localConfig' (the sc2 layer tag). ConfigSourceMap is the internal merged view: each key -> { value: string; layer: ConfigSourceLayer }, produced by folding the four at-rest parsers with the fixed precedence deploy-time(k8s|docker) > envFile > localConfig on a key clash. ConfigSourceLayer is part of the sc2 vocabulary (shared); ConfigSourceMap is an internal detail of the resolver module behind the sc2 boundary.",
+          "schemaDiff": "src/shared/types.ts: + export type ConfigSourceLayer = 'k8s' | 'docker' | 'envFile' | 'localConfig';\n<new resolver module>: internal type ConfigSourceMap = Map<string, { value: string; layer: ConfigSourceLayer }>",
+          "callSites": [
+            "src/shared/types.ts",
+            "src/indexer"
+          ]
+        },
+        {
+          "entity": "TargetResolver + at-rest source parsers (new module under src/indexer)",
+          "change": "new",
+          "details": "A new resolution module implements sc2: TargetResolver.resolve (the adapter above) + a PURE core resolveAgainst(map, protocol, rawExpression) + four small at-rest text parsers turning a config-entity body into {key,value,layer} — a .env key=value reader (envFile), a Dockerfile ENV + docker-compose environment/env_file reader (docker), a k8s manifest env/data reader (k8s, reading manifest FILES not kubectl), and an in-repo config-default reader (localConfig) — plus the precedence-merge (buildConfigSourceMap) and the expression-evaluation deciding pinnability. All internal to S002; consumers import only resolve + the ResolvedTarget/ConfigSourceLayer types. The k8s layer sourcing from indexed manifest FILES (never the kubectl-executing k8s built-in tool) is the explicit S002-internal refinement of the HLD boundary note, required to keep resolution static/at-rest (k6).",
+          "schemaDiff": "<new src/indexer resolution module>: export interface TargetResolver { resolve(repo, protocol, rawExpression): ResolvedTarget }  + internal parsers/merge/eval",
+          "callSites": [
+            "src/indexer",
+            "src/db/entities.ts",
+            "src/indexer/parser/artifact.ts"
+          ]
+        }
+      ],
+      "interactionWithShared": [
+        {
+          "contractId": "sc2",
+          "role": "implements",
+          "howDetails": "S002 owns sc2 and implements it verbatim: resolve(repo, protocol, rawExpression) -> ResolvedTarget, with ConfigSourceLayer + the fixed precedence deploy-time(k8s|docker) > envFile > localConfig, sourced ONLY from at-rest indexed config-entity bodies (.env, Dockerfile/compose, k8s manifest files, in-repo config) — the k8s built-in tool (kubectl) is never invoked (k6/lc1). resolve is a thin repo-scoped adapter over a PURE core evaluated against a pre-built ConfigSourceMap, keeping the resolver unit-testable and deterministic (k2). Downstream outbound detectors s3/s4/s5 call resolve() per detected call-site and create a resolved or unresolved ExternalEndpoint (sc1) from the result; sc2 itself creates no graph nodes."
+        }
+      ]
+    },
+    "contractDetailsRef": "s4",
+    "dataModelChanges": [
+      {
+        "entity": "ResolvedTarget (src/shared/types.ts)",
+        "change": "new",
+        "details": "The sc2 result union, shared vocabulary consumed by s3/s4/s5: `{ resolved: true; protocol: ExternalProtocol; identity: string } | { resolved: false; rawExpression: string }`. identity is the concrete host+path | topic | service.method; the unresolved arm preserves the raw expression (ac2). ExternalProtocol is REUSED from S001 (already in shared/types.ts), not re-declared.",
+        "schemaDiff": "src/shared/types.ts: + export type ResolvedTarget = { resolved: true; protocol: ExternalProtocol; identity: string } | { resolved: false; rawExpression: string };",
+        "callSites": [
+          "src/shared/types.ts"
+        ]
+      },
+      {
+        "entity": "ConfigSourceLayer + ConfigSourceMap (src/shared/types.ts + new resolver module under src/indexer)",
+        "change": "new",
+        "details": "ConfigSourceLayer = 'k8s' | 'docker' | 'envFile' | 'localConfig' (the sc2 layer tag). ConfigSourceMap is the internal merged view: each key -> { value: string; layer: ConfigSourceLayer }, produced by folding the four at-rest parsers with the fixed precedence deploy-time(k8s|docker) > envFile > localConfig on a key clash. ConfigSourceLayer is part of the sc2 vocabulary (shared); ConfigSourceMap is an internal detail of the resolver module behind the sc2 boundary.",
+        "schemaDiff": "src/shared/types.ts: + export type ConfigSourceLayer = 'k8s' | 'docker' | 'envFile' | 'localConfig';\n<new resolver module>: internal type ConfigSourceMap = Map<string, { value: string; layer: ConfigSourceLayer }>",
+        "callSites": [
+          "src/shared/types.ts",
+          "src/indexer"
+        ]
+      },
+      {
+        "entity": "TargetResolver + at-rest source parsers (new module under src/indexer)",
+        "change": "new",
+        "details": "A new resolution module implements sc2: TargetResolver.resolve (the adapter above) + a PURE core resolveAgainst(map, protocol, rawExpression) + four small at-rest text parsers turning a config-entity body into {key,value,layer} — a .env key=value reader (envFile), a Dockerfile ENV + docker-compose environment/env_file reader (docker), a k8s manifest env/data reader (k8s, reading manifest FILES not kubectl), and an in-repo config-default reader (localConfig) — plus the precedence-merge (buildConfigSourceMap) and the expression-evaluation deciding pinnability. All internal to S002; consumers import only resolve + the ResolvedTarget/ConfigSourceLayer types. The k8s layer sourcing from indexed manifest FILES (never the kubectl-executing k8s built-in tool) is the explicit S002-internal refinement of the HLD boundary note, required to keep resolution static/at-rest (k6).",
+        "schemaDiff": "<new src/indexer resolution module>: export interface TargetResolver { resolve(repo, protocol, rawExpression): ResolvedTarget }  + internal parsers/merge/eval",
+        "callSites": [
+          "src/indexer",
+          "src/db/entities.ts",
+          "src/indexer/parser/artifact.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc2",
+        "role": "implements",
+        "howDetails": "S002 owns sc2 and implements it verbatim: resolve(repo, protocol, rawExpression) -> ResolvedTarget, with ConfigSourceLayer + the fixed precedence deploy-time(k8s|docker) > envFile > localConfig, sourced ONLY from at-rest indexed config-entity bodies (.env, Dockerfile/compose, k8s manifest files, in-repo config) — the k8s built-in tool (kubectl) is never invoked (k6/lc1). resolve is a thin repo-scoped adapter over a PURE core evaluated against a pre-built ConfigSourceMap, keeping the resolver unit-testable and deterministic (k2). Downstream outbound detectors s3/s4/s5 call resolve() per detected call-site and create a resolved or unresolved ExternalEndpoint (sc1) from the result; sc2 itself creates no graph nodes."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A config source body is partly malformed — a .env line with no '=', or a k8s/compose YAML document that does not parse.",
+          "detection": "The per-source at-rest parser encounters a line it cannot split into key=value, or the YAML reader throws on a document while folding a config-entity body into {key,value,layer} pairs.",
+          "response": "Best-effort partial parse: skip the offending line/document, keep every well-formed entry from the same source, and never throw out of buildConfigSourceMap — a single bad line never sinks the whole ConfigSourceMap.",
+          "userImpact": "Some keys from that one file may be absent, so a target that depended on them resolves {resolved:false} instead of crashing indexing; other targets are unaffected.",
+          "recoverable": true
+        },
+        {
+          "scenario": "An interpolation chain does not terminate — a key's value references another key, which references another, possibly cyclically (${A} -> ${B} -> ${A}).",
+          "detection": "The expression-evaluation follows a resolved value that still contains an unresolved ${KEY} reference and either exceeds a bounded interpolation depth or re-sees a key already on the current resolution path (cycle).",
+          "response": "Cycle detection + a fixed max interpolation depth: when the chain cannot reduce to a concrete literal, stop and return {resolved:false, rawExpression} rather than loop or overflow.",
+          "userImpact": "The target is recorded unresolved (accurate) rather than hanging the indexer; recall is preserved via the raw expression.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The repo has no config entities available yet (indexing incomplete, or the .env-in-ignore-set gotcha dropped the only source).",
+          "detection": "buildConfigSourceMap receives an empty kind==='config' entity set from listEntitiesForRepo (and any at-rest path fallback also finds nothing).",
+          "response": "Build an empty ConfigSourceMap; literal expressions still pin, every indirect expression resolves {resolved:false} — no throw, nothing dropped.",
+          "userImpact": "Lower resolution recall until indexing catches up (targets land unresolved, then upgrade on re-index); never a crash.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "rawExpression is already a concrete literal (e.g. 'https://api.example.com/v1') with no indirection.",
+          "expected": "Resolves {resolved:true, protocol, identity: the literal} directly — no config lookup needed; the ConfigSourceMap is consulted only for interpolated references."
+        },
+        {
+          "input": "The same key is defined in BOTH a k8s manifest and a Docker source (two deploy-time layers).",
+          "expected": "A defined, deterministic intra-deploy-time tie-break applies (the LLD pins k8s over docker) so the winner is stable across runs — the precedence is total, not just deploy-time > env > local."
+        },
+        {
+          "input": "A key is defined only in localConfig (the lowest layer) and nowhere higher.",
+          "expected": "Resolves from localConfig — the default wins when no k8s/docker/.env layer overrides it (ac1)."
+        },
+        {
+          "input": "rawExpression interpolates two keys; one pins from config, the other cannot be found in any layer.",
+          "expected": "{resolved:false, rawExpression} — a PARTIAL pin is never emitted as resolved; accuracy-first (k5) forbids inventing a half-concrete identity."
+        },
+        {
+          "input": "protocol is 'messaging' and the resolved value is a topic/queue name rather than a URL.",
+          "expected": "identity carries the concrete topic string as-is; sc2 does not validate identity shape per protocol — it only returns the pinned string, leaving interpretation to the protocol tag."
+        },
+        {
+          "input": "The envFile layer is empty because the repo-root '.env' file was skipped by the indexer ignore filter (the s1 gotcha), while the value exists only in .env.",
+          "expected": "Either the build's at-rest .env path fallback reads it (still never executed), or — if unresolved — the target lands {resolved:false} rather than silently mis-resolving; behavior is pinned by the build-time verification the LLD flags."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Resolution is static and at-rest: only indexed config-entity text (config + .env + Docker + k8s manifest FILES) is read; no config source is executed and no runtime/live value (e.g. kubectl against a cluster) ever participates — the k8s built-in tool namespace is never invoked at resolution time.",
+          "source": "c5"
+        },
+        {
+          "text": "resolve is pure and deterministic over its inputs: identical (repo config sources, protocol, rawExpression) always yield the identical ResolvedTarget, so the downstream ExternalEndpoint id (repo + resolved target) stays stable across re-index and per-repo dedup holds.",
+          "source": "c1"
+        },
+        {
+          "text": "An un-pinnable target is preserved, never dropped: resolution returns {resolved:false, rawExpression} so the caller can still create an unresolved ExternalEndpoint carrying the raw expression — recall over precision.",
+          "source": "c5"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test via `npx tsx --test` (matching the existing src/indexer/**/__tests__ suites)",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove the pure resolution core (resolveAgainst) over an in-memory ConfigSourceMap: precedence, unresolved fallback, literals, partial pins, and interpolation-chain termination — no graph fixture needed.",
+          "subjects": [
+            "precedence: a key defined in k8s + envFile + localConfig resolves to the k8s (deploy-time) value; k8s+docker resolves to the pinned intra-deploy-time winner (k8s over docker); envFile beats localConfig (ac1)",
+            "a concrete literal rawExpression resolves {resolved:true, protocol, identity=literal} with no map lookup",
+            "an interpolation referencing a key present only in localConfig resolves from the default",
+            "a two-key interpolation where one key is missing returns {resolved:false, rawExpression} (no partial pin, k5)",
+            "a cyclic / over-deep interpolation chain terminates and returns {resolved:false} (bounded depth + cycle detection)",
+            "protocol is carried through onto a resolved identity for http/messaging/rpc without shape validation"
+          ],
+          "fixturesNeeded": [
+            "Hand-built in-memory ConfigSourceMap fixtures (key -> {value, layer}) covering single-layer, multi-layer-clash, and missing-key cases",
+            "A set of rawExpression fixtures: literal, single ${KEY}, multi-key, cyclic"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove each at-rest source parser turns a raw config-entity body into the correct {key,value,layer} pairs, and that buildConfigSourceMap folds them with the fixed precedence.",
+          "subjects": [
+            ".env parser: key=value, quoted values, comments, and a malformed line skipped (best-effort partial parse)",
+            "Dockerfile ENV parser + docker-compose environment/env_file reader tagged 'docker'",
+            "k8s manifest env/data reader tagged 'k8s' — reading manifest FILE text, never invoking kubectl",
+            "in-repo config-default reader tagged 'localConfig'",
+            "buildConfigSourceMap precedence-merge over multiple parsed sources produces the correct winner per key",
+            "an unparseable YAML document is skipped without throwing"
+          ],
+          "fixturesNeeded": [
+            "Sample config-entity body strings for each source type (.env, Dockerfile, compose, k8s manifest, local config), including one malformed sample each"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove the thin daemon-side adapter builds the ConfigSourceMap from a repo's indexed kind==='config' entities and that resolve(repo, ...) returns the same result the pure core does on the equivalent in-memory map — and pin the .env-indexed-or-fallback behavior (the s1 gotcha).",
+          "subjects": [
+            "adapter fetches kind==='config' entities via listEntitiesForRepo and builds a ConfigSourceMap equal to the hand-built one for the same bodies",
+            "resolve(repo, protocol, expr) equals resolveAgainst(builtMap, protocol, expr) for a resolved and an unresolved expression",
+            "the .env source is available to resolution: either a repo-root .env indexes as a config entity, or the at-rest path fallback reads it (build-time verification of the watcher-ignore gotcha)",
+            "an empty-config repo yields an empty map: literals still pin, indirect exprs resolve unresolved, no throw"
+          ],
+          "fixturesNeeded": [
+            "A temp graph store seeded with a small set of config entities (a .env, a k8s manifest, a compose file) via the existing src/db/graph test harness",
+            "A repo fixture containing a real .env file to exercise the indexed-or-fallback path"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "unit: precedence — multiply-defined key resolves to deploy-time(k8s|docker) > envFile > localConfig winner, and k8s beats docker within deploy-time",
+            "unit: per-source parsers (.env / Dockerfile+compose / k8s manifest / localConfig) extract the right key->value pairs at rest",
+            "integration: resolve(repo,…) over a repo's indexed config entities yields the concrete host/topic/service identity, matching the pure core"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "unit: a two-key interpolation with one missing key returns {resolved:false, rawExpression} — never a partial pin",
+            "unit: a cyclic/over-deep interpolation terminates as {resolved:false, rawExpression}",
+            "integration: an empty-config repo resolves every indirect expression as unresolved (carrying the raw expression), nothing dropped"
+          ]
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Pure resolver over a pre-materialized layered ConfigSourceMap (thin daemon-side adapter builds it)",
+        "oneLineSummary": "TargetResolver.resolve() is a PURE function over (protocol, rawExpression, a merged ConfigSourceMap); a thin daemon-side adapter builds the map once per repo from the indexed 'config' entities (+ at-rest .env fallback) and the per-source text parsers, applying the fixed precedence at merge time.",
+        "chosen": true,
+        "pros": [
+          "resolve() is pure and table-unit-testable with in-memory config maps — no daemon/graph fixture needed, matching the src/indexer test style.",
+          "One place owns precedence (the merge), so ac1's deploy-time>env>local ordering is a single, testable rule rather than scattered per-call comparisons.",
+          "The map is built once per repo/index pass, not per call-site, so N outbound detections in a repo share one parse of the config sources (performance NF: no repeated file work).",
+          "Cleanly honors k6/security: only at-rest config-entity bodies feed the map; the k8s tool namespace (kubectl) is never invoked.",
+          "Matches the sc2 interfaceSketch verbatim — resolve returns exactly ResolvedTarget; the map is an internal detail behind the boundary."
+        ],
+        "cons": [
+          "The resolver signature in the HLD sketch is resolve(repo, protocol, rawExpression); passing a pre-built map means either an internal overload/adapter (resolve(repo,…) fetches+caches the map then delegates to the pure core) or a small deviation the LLD must reconcile — kept within the boundary, but must be stated.",
+          "Building the map eagerly touches every config entity even for a repo with no external calls (bounded, small — config entities are few)."
+        ],
+        "costEstimate": "L"
+      },
+      {
+        "id": "a2",
+        "name": "Lazy resolver that queries config entities from the graph inside resolve()",
+        "oneLineSummary": "resolve(repo, protocol, rawExpression) directly matches the HLD sketch by querying the repo's config entities from the graph on each call and parsing only the sources the expression references.",
+        "reasonRejected": "Reaches ac2/k5/k6 but weakens sc2 — resolve() is no longer pure (queries the graph), so every unit test needs a daemon/graph fixture (against sc2's 'pure resolver' purpose) — and ac1 (per-expression precedence is harder to verify), and re-parses config per call-site (performance NF regression). (s3: partial on sc2 and ac1.)",
+        "costEstimate": "L"
+      },
+      {
+        "id": "a3",
+        "name": "Live-source resolution reusing the k8s built-in tool for the k8s layer",
+        "oneLineSummary": "Same resolver, but the 'k8s' ConfigSourceLayer is sourced by invoking the k8s built-in tool (kubectl get) against the live cluster rather than reading indexed manifests.",
+        "reasonRejected": "Hard-violates k6 (EXECUTES kubectl against a live cluster — not static/at-rest/read-as-text), sc2 (impure, network/tooling-dependent), and k2 (live values are non-deterministic, so the derived endpoint id could change between runs) for no benefit the at-rest manifest read doesn't already give. (s3: violates k6/sc2/k2.)",
+        "costEstimate": "M"
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 data-model.trace — config sources index as 'config' EntityKind (artifact.ts) + deterministic entity id (shared/types.ts)",
+      "quotedText": "'.env'/'.env.*' and Dockerfile map to the 'config' EntityKind; k8s/compose YAML too; each config entity carries its raw file text in Entity.body; entity id is deterministic SHA256(repo+file+kind+name) hex-32."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 capability.probe — no existing .env/Docker/dotenv parser or URL/topic resolver (manifest.ts only does package deps)",
+      "quotedText": "parseManifest parses ONLY package-dependency manifests; no dotenv dependency and no endpoint/route/URL-resolution code exists — sc2 writes its own at-rest text parsers."
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1 security.note — the k8s built-in tool executes kubectl (live); sc2 reads k8s manifest FILES at rest instead",
+      "quotedText": "k8s_get/etc shell out to kubectl (live, executed) — violates k6; sc2's k8s layer draws from indexed manifest files, never the k8s tool namespace."
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "s1 symbol.locate — listEntitiesForRepo/findEntitiesByFile (src/db/entities.ts) fetch a repo's config entities daemon-side",
+      "quotedText": "listEntitiesForRepo(_db, repo) decodes EntityRow->Entity; the resolver's DB fetch is a thin daemon-side adapter, keeping resolve() pure over in-memory maps."
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "s1 usage.example — the '.env' watcher-ignore gotcha (watcher.ts:15 vs artifact.ts config map)",
+      "quotedText": "'.env' appears in the indexer ignore set while artifact.ts maps '.env' to 'config' — verify .env FILES are indexed, else fall back to an at-rest path read (never executed)."
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "HLD 914cbf5ea9026b92 — sc2 Target resolution engine (ownedByStory s2; consumed s3/s4/s5)",
+      "quotedText": "A pure resolver turning an indirect/configured target into a concrete identity or explicit unresolved marker, from layered config sources with a fixed precedence."
+    },
+    {
+      "id": "c7",
+      "kind": "step-output",
+      "ref": "s3 alternatives.judge — winner a1 over a2/a3",
+      "quotedText": "a1 is the only alternative satisfying ac1/ac2/sc2/k2/k3/k5/k6; a2 partial sc2/ac1; a3 violates k6/sc2/k2."
+    }
+  ]
+}

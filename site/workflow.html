@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>workflow — insrc</title>
-<meta name="description" content="Drive a feature from define → design → plan → build: citation-grounded artifacts, human approval gates, open-question resolution, hierarchical Epic/Story/Task IDs, and a native GitHub sub-issue tracker.">
+<meta name="description" content="Drive a feature from brainstorm → define → design → plan → build → code-review: citation-grounded artifacts, an independent design review, human approval gates, a code-review-gated completion, hierarchical Epic/Story/Task IDs, and a native GitHub sub-issue tracker.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13' font-family='monospace' fill='%234ade80'>▌</text></svg>">
 <link rel="stylesheet" href="css/tui.css">
 </head>
@@ -29,30 +29,40 @@
 <div class="wrap"><main id="main">
 
   <h1>Workflow</h1>
-  <p class="lead">A citation-grounded, human-in-the-loop authoring pipeline. One natural-language ask flows through five stages — each produces exactly one approved artifact, and each stage hard-refuses to start until the upstream artifact is approved. The last stage writes code.</p>
+  <p class="lead">A citation-grounded, human-in-the-loop authoring pipeline. One natural-language ask is <em>sized and routed</em> by triage, optionally <em>shaped first</em> by brainstorm, then flows through the authoring stages — each produces exactly one approved artifact, and each stage hard-refuses to start until the upstream artifact is approved. Build writes code; an independent code review then gates the Story's completion.</p>
 
   <div class="flow">
+    <span class="stage new">brainstorm</span><span class="arr">→</span>
     <span class="stage">define</span><span class="arr">→</span>
     <span class="stage">design.epic</span><span class="arr">→</span>
     <span class="stage">design.story</span><span class="arr">→</span>
     <span class="stage">plan</span><span class="arr">→</span>
-    <span class="stage">build</span>
+    <span class="stage">build</span><span class="arr">→</span>
+    <span class="stage new">code-review</span>
   </div>
 
-  <p>Every stage follows the same shape — <code>context.assemble</code> (deterministic or a coarse handoff to <code>insrc_analyze_step</code>) → N sequential LLM steps → <code>checklist.verify</code> → synthesize — and every claim in every artifact is cited to a step output or an analyze bundle. Ungrounded citations refuse to synthesize. No step is ever skipped to save turns, and no LLM call runs in parallel: accuracy first, cost last.</p>
+  <p>Every authoring stage follows the same shape — <code>context.assemble</code> (deterministic or a coarse handoff to <code>insrc_analyze_step</code>) → N sequential LLM steps → <code>checklist.verify</code> → synthesize — and every claim in every artifact is cited to a step output or an analyze bundle. Ungrounded citations refuse to synthesize. No step is ever skipped to save turns, and no LLM call runs in parallel: accuracy first, cost last.</p>
+
+  <div class="tip"><strong>Triage routes first.</strong> <code>insrc_triage</code> sizes the request — grounded on its own <code>insrc_analyze_step</code> passes — and returns a pre-filled next call so nothing is hand-picked: an <strong>epic</strong> → <code>define</code>; a <strong>feature</strong> → a standalone <code>design.story</code> → plan → build; a <strong>small</strong> change → a standalone <code>design.story</code> → build; a <strong>trivial</strong> one → straight to <code>build</code>. The guarantee is that <em>every</em> feature, big or small, is tracked. The size→route table lives in <code>src/workflow/triage/classify.ts</code>.</div>
 
   <div class="tablewrap"><table>
     <thead><tr><th>Stage</th><th>Produces</th><th>What it is</th><th>openQuestions</th></tr></thead>
     <tbody>
+      <tr><td><code>brainstorm</code></td><td><strong>SPEC</strong> — spec artifact</td><td>Optional front stage for a rough idea: one paused <code>elicit</code> turn where you converge a fuzzy ask into a crisp, decision-recorded spec. Skipped when the ask is already scoped.</td><td><span class="badge ok">none</span></td></tr>
       <tr><td><code>define</code></td><td><strong>DEF</strong> — definition</td><td>Frames the Epic: problem statement, non-goals, assumptions, constraints, and 1–10 Stories.</td><td><span class="badge man">yes</span></td></tr>
       <tr><td><code>design.epic</code></td><td><strong>HLD</strong> — high-level design</td><td>One per Epic: chosen framework, shared contracts, Story boundaries, rollout phases, alternatives considered.</td><td><span class="badge man">yes</span></td></tr>
       <tr><td><code>design.story</code></td><td><strong>LLD</strong> — low-level design</td><td>One per Story: detailed contract (APIs + data model), error paths, test strategy, migration.</td><td><span class="badge man">yes</span></td></tr>
       <tr><td><code>plan</code></td><td><strong>PLAN</strong> — ordered Tasks</td><td>A sequenced list of implementable Tasks for a Story. Carries no open questions — the decisions were already made upstream.</td><td><span class="badge ok">none</span></td></tr>
       <tr><td><code>build</code></td><td>code + validation</td><td>The controller implements each Task and the daemon runs a read-only verdict.</td><td>—</td></tr>
+      <tr><td><code>code-review</code></td><td><strong>CR</strong> — review record</td><td>After the build, an independent review of the changed code across four dimensions. Approving the BUILD is the review-gated completion act for the Story.</td><td>—</td></tr>
     </tbody>
   </table></div>
 
-  <div class="note">DEF, HLD, and LLD each carry an <code>openQuestions</code> list on their body (see <code>src/workflow/artifacts/{define,hld,lld}.ts</code>). PLAN deliberately does not — by plan time every design decision is settled, so a plan is pure sequencing.</div>
+  <div class="note">DEF, HLD, and LLD each carry an <code>openQuestions</code> list on their body (see <code>src/workflow/artifacts/{define,hld,lld}.ts</code>). PLAN deliberately does not — by plan time every design decision is settled, so a plan is pure sequencing. SPEC and CR carry none either — a spec records decisions, and a review records findings.</div>
+
+  <h2 id="brainstorm">Brainstorm — shape a rough idea first</h2>
+  <p>When the ask is a vague idea rather than a crisp spec, the <code>brainstorm</code> stage runs before triage. It is a <strong>single paused <code>elicit</code> turn</strong>: you conduct the whole clarify → fold → show-back → confirm convergence in chat — folding each answer into a running statement, showing it back, re-asking only the open gaps, and at every fork recording the ruled-out choice as a non-goal — then resume <em>once</em> with <code>confirmed: true</code> and no open items. The result is a <strong>SpecArtifact</strong> you review and approve like any other artifact; it then seeds <code>define</code> (for an epic) or a standalone <code>design.story</code> (for a feature), so the elicited decisions flow straight into the tracked chain instead of being lost in chat.</p>
+  <div class="note">Brainstorm is deliberately un-automated on the model side — <em>you</em> run the convergence, so the human stays in the loop on every fork. Drive it with <code>insrc_workflow_step</code> / <code>insrc_workflow_run</code> at <code>workflow: 'brainstorm'</code>; skip it entirely when the request is already a clear scoped spec.</div>
 
   <h2 id="artifacts">Artifacts &amp; approval gates</h2>
   <p>Each artifact is written twice: a human-readable <code>.md</code> under <code>docs/</code> and the canonical JSON under <code>.insrc/artifacts/</code>. The JSON is the machine contract downstream stages read; the Markdown is what you review.</p>
@@ -60,10 +70,13 @@
   <div class="tablewrap"><table>
     <thead><tr><th>Artifact</th><th>Doc path</th><th>Canonical JSON</th></tr></thead>
     <tbody>
+      <tr><td><strong>SPEC</strong></td><td><code>docs/specs/SPEC-&lt;slug&gt;.md</code></td><td><code>.insrc/artifacts/SPEC-&lt;h16&gt;.json</code></td></tr>
       <tr><td><strong>DEF</strong></td><td><code>docs/defines/DEF-&lt;h16&gt;.md</code></td><td><code>.insrc/artifacts/DEF-&lt;h16&gt;.json</code></td></tr>
       <tr><td><strong>HLD</strong></td><td><code>docs/designs/HLD-&lt;h16&gt;.md</code></td><td><code>.insrc/artifacts/HLD-&lt;h16&gt;.json</code></td></tr>
       <tr><td><strong>LLD</strong></td><td><code>docs/designs/LLD-&lt;h16&gt;-&lt;storyId&gt;.md</code></td><td><code>.insrc/artifacts/LLD-&lt;h16&gt;-&lt;storyId&gt;.json</code></td></tr>
       <tr><td><strong>PLAN</strong></td><td><code>docs/plans/PLAN-&lt;epic-slug&gt;-&lt;story-id&gt;.md</code></td><td><code>.insrc/artifacts/PLAN-&lt;epic-hash&gt;-&lt;story-id&gt;.json</code></td></tr>
+      <tr><td><strong>BUILD</strong></td><td><code>docs/builds/BUILD-&lt;h16&gt;-&lt;storyId&gt;.md</code></td><td><code>.insrc/artifacts/BUILD-&lt;h16&gt;-&lt;storyId&gt;.json</code></td></tr>
+      <tr><td><strong>CR</strong></td><td><code>docs/reviews/CR-&lt;h16&gt;-&lt;storyId&gt;.md</code></td><td><code>.insrc/artifacts/CR-&lt;h16&gt;-&lt;storyId&gt;.json</code></td></tr>
     </tbody>
   </table></div>
 
@@ -74,6 +87,9 @@
   </div>
 
   <div class="tip">On approval the tracker can auto-push and commit. Approving an HLD auto-creates the Epic issue; approving an LLD auto-creates the Story issue; approving a PLAN can push the Task issues. The artifact docs are committed and linked back from each issue. Repeat approves are idempotent — an existing ref is detected and the push is skipped. Pass <code>--no-tracker</code> to opt out for one call.</div>
+
+  <h3 id="review">Independent review before approve</h3>
+  <p>Before you approve a <em>design</em> artifact, a second pair of eyes checks it. <code>insrc_review_step</code> extracts the artifact's load-bearing premises and re-verifies each against the real source tree with deterministic probes (ripgrep re-derivations, <code>file:line</code> confirmations), then returns findings graded <span class="badge man">HIGH</span> / <span class="badge">MED</span> / <span class="badge new">LOW</span> with a <code>block</code> / <code>warn</code> / <code>pass</code> verdict. It is a genuine independent pass — not the model grading its own work — so it routinely catches a stale citation or an under-specified change the author missed. Resolve any HIGH/MED before approving; a <code>block</code> verdict withholds approval unless you pass an explicit override.</p>
 
   <h2 id="questions">Open-question resolution</h2>
   <p>DEF, HLD, and LLD each surface the questions the stage could not settle. Resolving them is a two-beat contract:</p>
@@ -156,6 +172,20 @@
 <span class="fn">▚ verdict </span>  read-only session · <span class="p">PASS</span></code></pre>
     </div>
   </div>
+
+  <h2 id="code-review">Code review &amp; the completion gate</h2>
+  <p>Once a build has produced its changes, <code>insrc_code_review_step</code> reviews the <strong>changed code</strong> — distinct from the design review above, which reviews the <em>artifact</em>. It grounds on the Story's real changed files and judges four independent dimensions, each returning <code>block</code> / <code>warn</code> / <code>pass</code>:</p>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Dimension</th><th>Asks</th></tr></thead>
+    <tbody>
+      <tr><td><span class="badge new">adherence</span></td><td>Does the code implement its approved PLAN + LLD — no silent departures from an approved decision?</td></tr>
+      <tr><td><span class="badge new">conventions</span></td><td>Does it follow the repo's documented rules, naming, and idioms?</td></tr>
+      <tr><td><span class="badge new">coverage</span></td><td>Are the acceptance criteria actually exercised by tests?</td></tr>
+      <tr><td><span class="badge new">quality</span></td><td>Correctness, edge cases, and clarity of the changed code.</td></tr>
+    </tbody>
+  </table></div>
+  <p>The step runs <code>start</code> → <code>judgements</code> → <code>done</code> and writes a <strong>CR</strong> record. Crucially, <strong>approving the BUILD artifact is the code-review-gated completion act for the Story</strong>: under <code>codeReview.enforce</code> a <code>block</code> verdict — or no review having run at all — withholds completion unless you pass an explicit override. The gate defaults to advisory (off) and can be turned to enforcing in config.</p>
+  <div class="note">The review grounds on a fresh index of the changed code. If the index queue is still catching up, the step says so rather than emitting a hollow pass over an empty graph — you either wait for a fresh index or abort. An honest &ldquo;grounding was thin&rdquo; beats a fabricated &ldquo;looks good.&rdquo;</div>
 
   <h2 id="running">Two ways to run</h2>
   <p>The same five stages run either from your MCP client turn-by-turn, or entirely inside the daemon over the socket. The only visible difference in the output is what <code>meta.model</code> gets stamped with.</p>

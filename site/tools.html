@@ -72,6 +72,10 @@
   <p>A related <strong>docs</strong> family (<code>docs_retrieve</code>, <code>docs_project_context</code>, <code>docs_summary_get</code>) surfaces indexed documentation to the same callers.</p>
   <div class="note">Categories are gated on capability: cloud, k8s and similar CLI wrappers register only when their binary is detected on PATH, so the LLM's tool list stays uncluttered on machines that don't have them.</div>
 
+  <div class="panel"><span class="panel-title">beyond the wrappers — docs from the graph</span>
+    <p class="mt0">Alongside the ~110 low-level wrappers, the daemon exposes a higher-level generation capability: <strong><code>insrc_docgen</code></strong> renders self-contained HTML documents (with embedded Mermaid diagrams) straight from the indexed code graph, every claim grounded in the entities + relations it came from. It runs with full parity across three surfaces — the <code>insrc_docgen</code> MCP tool, the <code>docgen.generate</code> / <code>docgen.list</code> daemon IPC, and a built-in tool — over one implementation, with an oversized-document subprocess fallback and a boot-time asset validator. See <a href="architecture.html#docgen">architecture → docs from the graph</a>.</p>
+  </div>
+
   <h2 id="providers">LLM providers</h2>
   <p>All model interaction goes through one interface, <code>LLMProvider</code>, defined in <code>src/shared/types.ts</code>. Application code never imports an SDK directly — it holds an <code>LLMProvider</code> and calls its methods:</p>
   <ul>

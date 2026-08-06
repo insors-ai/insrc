@@ -132,6 +132,16 @@
   </section>
 
   <section>
+    <h2 id="docgen">Docs from the graph</h2>
+    <p>The <code>docgen</code> framework (<code>src/docgen/</code>) turns the indexed graph into <strong>self-contained HTML documents with embedded Mermaid diagrams</strong> — no external assets, no network. Generation is graph-grounded: every rendered claim carries provenance back to the entities and relations it came from, via a typed intermediate representation (<code>DocumentIR</code>) that the renderer walks.</p>
+    <ul>
+      <li><strong>Three-surface parity</strong> — the same generation runs as the <code>insrc_docgen</code> MCP tool, the <code>docgen.generate</code> / <code>docgen.list</code> daemon IPC, and a built-in tool, all over one implementation.</li>
+      <li><strong>Oversized fallback</strong> — a document too large for a single in-process render is handed to a subprocess so a big repo never blocks the daemon.</li>
+      <li><strong>Boot-time asset validator</strong> — on startup the daemon verifies the bundled runtime assets (Mermaid, svg-pan-zoom, the manifest) are present and intact (<code>validateDocgenAssets</code>, <code>src/daemon/index.ts</code>), so a broken install fails loudly rather than emitting half-rendered docs.</li>
+    </ul>
+  </section>
+
+  <section>
     <h2 id="layout">Directory layout</h2>
     <p>The <code>src/</code> tree, by responsibility:</p>
 <div class="ascii" aria-label="source tree">
@@ -149,8 +159,9 @@ src/
   <b>agent/</b>
     <i>providers/</i>     ollama.ts (local) · cli-provider.ts (claude + codex)
   <b>analyze/</b>         Analyze framework (recipes · decomposer · synthesizer)
-  <b>workflow/</b>        define · design.epic · design.story · tracker · gates
-  <b>mcp/</b>             MCP servers (insrc_analyze_step · insrc_workflow_step)
+  <b>workflow/</b>        brainstorm · define · design · plan · build · code-review · tracker
+  <b>docgen/</b>          HTML+Mermaid docs-from-graph (IR · render · asset-validator)
+  <b>mcp/</b>             MCP servers (insrc_analyze_step · insrc_workflow_step · insrc_docgen)
   <b>cli/</b>             insrc interactive TUI (ink): panes/ services/ hooks/ ui/
   <b>bin/</b>             Executable entrypoints
   <b>prompts/</b>         Shaper / analyze / workflow prompt templates

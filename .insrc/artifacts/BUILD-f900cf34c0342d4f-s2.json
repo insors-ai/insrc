@@ -1,0 +1,37 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": false,
+    "epicHash": "f900cf34c0342d4f",
+    "storyId": "s2",
+    "createdAt": "2026-08-06T07:10:00.000Z",
+    "updatedAt": "2026-08-06T07:10:00.000Z",
+    "approvedAt": "2026-08-06T07:08:07.398Z"
+  },
+  "body": {
+    "focus": "Daemon status card (sc1 consumer): DaemonCardModel + DebugService.daemonStatus + DaemonSection swapped into DebugPane",
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      }
+    ],
+    "commit": "b1abd9304466881ff97f77ccbbae2221210c8e36"
+  }
+}

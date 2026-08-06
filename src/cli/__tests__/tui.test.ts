@@ -96,6 +96,7 @@ function fakeServices(): Services {
 				{ id: 'mcp', title: 'MCP' },
 				{ id: 'logs', title: 'Logs' },
 			],
+			daemonStatus: async () => ({ reachable: false }),
 		},
 	};
 }

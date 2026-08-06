@@ -30,7 +30,7 @@ const settle = (): Promise<void> => new Promise(r => setTimeout(r, 25));
 const RIGHT = '[C';
 
 function renderPane(sections: readonly DebugSection[], captured = false): ReturnType<typeof render> {
-	const props: DebugPaneProps = { services: { debug: { sections } } };
+	const props: DebugPaneProps = { services: { debug: { sections, daemonStatus: async () => ({ reachable: false }) } } };
 	return render(createElement(CaptureContext.Provider, { value: captured }, createElement(DebugPane, props)));
 }
 

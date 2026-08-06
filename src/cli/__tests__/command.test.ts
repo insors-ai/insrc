@@ -73,6 +73,7 @@ function ctxWith(overrides: Partial<Services> = {}): { ctx: CommandCtx; spies: S
 				{ id: 'mcp', title: 'MCP' },
 				{ id: 'logs', title: 'Logs' },
 			],
+			daemonStatus: async () => ({ reachable: false }),
 		},
 		...overrides,
 	};

@@ -34,6 +34,9 @@ export interface DebugSection {
  */
 export interface DebugService {
 	readonly sections: readonly DebugSection[];
+	/** Daemon-section status card (Story s2): daemon.status over IPC + client-known
+	 *  fields, folded into a discriminated reachable/unreachable view-model. */
+	daemonStatus(): Promise<DaemonCardModel>;
 }
 
 /** The DebugPane's props: a narrowed view of `Services` exposing only `debug`. */

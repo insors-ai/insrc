@@ -134,7 +134,8 @@ export function makeServices(): Services {
 			reload: config.reloadConfig,
 		},
 		debug: {
-			sections: debug.sections,
+			sections:     debug.sections,
+			daemonStatus: debug.daemonStatus,
 		},
 	};
 }

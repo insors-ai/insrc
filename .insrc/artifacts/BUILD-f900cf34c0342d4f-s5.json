@@ -1,0 +1,33 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": false,
+    "epicHash": "f900cf34c0342d4f",
+    "storyId": "s5",
+    "createdAt": "2026-08-06T00:00:00.000Z",
+    "approvedAt": "2026-08-06T11:55:16.094Z"
+  },
+  "body": {
+    "focus": "Logs section — live, filterable, rotation-aware fs.watch tail of the daemon + agent logs in the Debug pane",
+    "producesLld": false,
+    "commit": "74acdc4",
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      }
+    ]
+  }
+}

@@ -1,0 +1,555 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1786006696239-lrppgj",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-08-06T09:05:37.860Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 441563,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f900cf34c0342d4f",
+    "epicSlug": "seed-from-approved-specartifact-spec-bfa1f6c830c53982",
+    "storyId": "s5",
+    "hldBaseRunId": "wf-1785928117126-v61buv",
+    "hldEffectiveHash": "ddca67745f5ce27a72fd98622c88c10523b7fb157faee13556f302030c37eece",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "PATHS.logDir + the two base log paths (daemonLog=daemon.log, agentLog=agent.log) are defined in src/shared/paths.ts around lines 103-105.",
+          "evidence": "src/shared/paths.ts:103 reads `logDir: LOG_DIR,` (with daemonLog/agentLog at :104-105) — the log-dir + base paths confirmed.",
+          "action": "None.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl2",
+          "kind": "external-contract",
+          "severity": "LOW",
+          "premise": "The shared logger writes via pino-roll (frequency daily, size 10m) so the log files on disk are rotated numbered segments, not the bare base name.",
+          "evidence": "src/shared/logger.ts:66 reads `target: 'pino-roll',` (file: PATHS.daemonLog, frequency daily, size 10m) — pino-roll rotation confirmed; the on-disk numbered-segment naming was verified live (agent.19.log/daemon.14.log).",
+          "action": "None.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The LogView render widget the LogsSection reuses exists at src/cli/ui/widgets.tsx around line 66 (bounded last-N tail).",
+          "evidence": "src/cli/ui/widgets.tsx:66 reads `export function LogView(props: { lines: readonly string[]; max?: number }): ReactElement` — the render widget the LogsSection reuses exists exactly as cited.",
+          "action": "None.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/cli/panes/DebugPane.tsx has a SECTION_VIEWS 'logs' placeholder ('Log viewer — coming soon.') that s5 swaps for <LogsSection/>, mirroring the daemon/mcp slots which are now live.",
+          "evidence": "src/cli/panes/DebugPane.tsx:36 comment reads 'Daemon (s2) + MCP (s4) are live; logs remains a placeholder until s5' — the SECTION_VIEWS logs placeholder swap target is confirmed (daemon/mcp already live).",
+          "action": "None.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl5",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/cli/services/debug-types.ts hosts the DebugService interface (with s2/s3/s4 members daemonStatus/scanOrphans/killOrphans/attachedClients/mcpStatus) that s5 widens with logCategories + tailLog.",
+          "evidence": "src/cli/services/debug-types.ts:35 reads `export interface DebugService {` (with the s2/s3/s4 members present) — the facade s5 widens exists as cited.",
+          "action": "None.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl6",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/cli/services/debug.ts holds the injectable-deps cores + realDeps + facade wrappers pattern (buildDaemonCard/scanOrphansWith/mcpStatusWith) that s5's tailLogWith + facade wrappers extend.",
+          "evidence": "src/cli/services/debug.ts hosts the injectable-deps cores (scanOrphansWith/mcpStatusWith/realDeps) that tailLogWith + facade wrappers extend — the pattern precedent is confirmed.",
+          "action": "None.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl7",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The shared logger uses pino via getLogger('module-name'), so file lines are pino JSON carrying numeric level + `name` (module) + msg — the shape the level/module filter reads.",
+          "evidence": "src/shared/logger.ts:1 reads `import pino from 'pino';` — pino is the logger, so file lines are pino JSON with numeric level + `name` + msg, the shape the level/module filter reads.",
+          "action": "None.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl8",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "There are exactly two tailable log categories (daemon, agent) because the pino transports write to exactly two base files (daemonLog, agentLog); cli + mcp both route to agentLog.",
+          "evidence": "src/shared/logger.ts transports write to exactly PATHS.daemonLog (:68) + PATHS.agentLog (:103 cli, :132 mcp) — exactly two base files, so the two-category (daemon, agent) inventory is grounded; cli+mcp both route to agentLog.",
+          "action": "None.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl9",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "The in-repo debug facade fakes needing logCategories/tailLog stubs live in the tui/command/DebugPane/DaemonSection/MCPSection test files (plus the new LogsSection test).",
+          "evidence": "grep for mcpStatus:/attachedClients: matches across the tui/command/DebugPane/DaemonSection/MCPSection fakes — the fake inventory to widen with logCategories/tailLog stubs is accurate (the new LogsSection test adds its own).",
+          "action": "None.",
+          "fixability": "auto"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 9
+      },
+      "reviewedAt": "2026-08-06T09:06:45.597Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-08-06T09:08:21.278Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "A new Debug pane (peer *Pane.tsx in app.tsx's switcher, k6) with pane-local inner sub-tab navigation over three sections — Daemon, MCP, Logs — backed by a new debug service added to makeServices. The chosen shape (a1) keeps the daemon surface minimal: the status card reuses the existing daemon.status IPC, and the ONE genuinely new daemon contract (a read-only debug-status IPC that returns the daemon's own list of currently-attached socket clients, backed by per-connection tracking in the socket server) is built and consumed entirely inside the MCP-section story. Everything else is client-side: the POSIX orphan scan/kill keys on the managed daemon entry and OS signals (k3), and the log viewer fs.watch-tails the two rotated files on disk (k4) — so the Daemon and Logs sections keep working when the daemon is unreachable. The only cross-STORY contract is the pane's section-hosting shape + the debug-service facade that every section plugs into; it is owned by the foundational scaffold story (S001) that every section story already depends on.",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "Debug pane section-hosting shape + DebugService facade",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s5",
+        "owns": [],
+        "depends": [
+          "sc1"
+        ],
+        "internal": "The fs.watch rotation-aware tailer over the two PATHS.logDir files (daemon.log, agent.log), the most-recent-segment resolution + follow-across-rotation, and the persistent level/module/free-text filter bar. Entirely client-side (k4); consumes only sc1."
+      },
+      "rolloutPhase": "Phase B — diagnostic sections"
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "DebugService",
+          "signature": "export interface DebugService { readonly sections: readonly DebugSection[]; daemonStatus(): Promise<DaemonCardModel>; scanOrphans(): OrphanScanResult; killOrphans(pids: readonly number[]): Promise<KillOutcome[]>; attachedClients(): Promise<DebugStatusModel>; mcpStatus(): Promise<readonly McpClientStatus[]>; logCategories(): readonly LogCategory[]; tailLog(categoryId: LogCategoryId, onLines: (lines: readonly LogLine[]) => void): () => void }",
+          "parameters": [],
+          "returns": {
+            "type": "interface",
+            "meaning": "The sc1 facade gains two additive members for the Logs section: logCategories() (the static daemon + agent categories, ac1) and tailLog(categoryId, onLines) (start a rotation-aware fs.watch tail of that category's active segment, returning a dispose(); ac2/lc2). Existing members unchanged. Same flat extension model as s2/s3/s4."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Additive to sc1 — existing members unchanged; s1-s4 fakes stubbing `debug` must add logCategories + tailLog stubs."
+          ]
+        },
+        {
+          "name": "logCategories",
+          "signature": "logCategories(): readonly LogCategory[]",
+          "parameters": [],
+          "returns": {
+            "type": "readonly LogCategory[]",
+            "meaning": "The fixed set of log categories the pane can tail: { id:'daemon'; title:'Daemon'; stem:'daemon' } and { id:'agent'; title:'Agent'; stem:'agent' } — derived from PATHS.logDir + the pino-roll stems (daemon.log → daemon.*.log, agent.log → agent.*.log). Synchronous, static — listing does NOT start any stream (ac1)."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Exactly two categories (daemon, agent); no stream is opened by calling this."
+          ]
+        },
+        {
+          "name": "tailLog",
+          "signature": "tailLog(categoryId: LogCategoryId, onLines: (lines: readonly LogLine[]) => void): () => void",
+          "parameters": [
+            {
+              "name": "categoryId",
+              "type": "LogCategoryId ('daemon' | 'agent')",
+              "purpose": "Which category to follow. Selecting a different category is done by disposing the prior subscription and calling tailLog again (only one active stream, ac2).",
+              "optional": false
+            },
+            {
+              "name": "onLines",
+              "type": "(lines: readonly LogLine[]) => void",
+              "purpose": "Sink for parsed lines: called once with the active segment's last-N lines on start, then again with each new batch of appended lines (and the new segment's lines after a rotation).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "() => void",
+            "meaning": "A dispose() that stops the fs.watch (+ any pending re-resolve) and guarantees onLines is never called again. Idempotent. The core is tailLogWith(deps) over an injectable fs seam so rotation/append/parse are unit-testable without a real watcher."
+          },
+          "errors": [
+            {
+              "type": "n/a (never throws to the view)",
+              "condition": "A missing log dir / no matching segment / a read or watch error resolves to an empty initial emit + a quiet retry on the next fs event; the tailer never throws to the caller (the section keeps working even with no logs yet, k4)."
+            }
+          ],
+          "preconditions": [
+            "Read-only — opens the rotated log files for reading only; never writes, never touches the daemon (k4/k2).",
+            "onLines is invoked only between start and dispose()."
+          ],
+          "postconditions": [
+            "On start, emits the active (highest-N / newest-mtime) segment's last-N lines; thereafter emits appended lines live and follows across a rotation to a newer segment (lc2).",
+            "After dispose(), no further onLines call and no lingering watcher."
+          ]
+        },
+        {
+          "name": "LogsSection",
+          "signature": "export function LogsSection(props: { services: { readonly debug: DebugService } }): ReactElement",
+          "parameters": [
+            {
+              "name": "props",
+              "type": "{ services: { readonly debug: DebugService } }",
+              "purpose": "Supplies the debug facade whose logCategories()/tailLog() the section drives.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ReactElement",
+            "meaning": "The Logs section component (replaces the s1 'Log viewer — coming soon.' placeholder in DebugPane's SECTION_VIEWS). Lists the categories (ac1); on select, subscribes via tailLog into a bounded ring buffer (disposing any prior subscription so only one streams, ac2) with the subscription torn down on unmount/section-change; renders (via the LogView widget) the buffer filtered by a persistent { level?; module?; text? } filter bar applied as a pure predicate (ac3). The free-text filter entry uses the capture gate; the section is strictly read-only (k2)."
+          },
+          "errors": [],
+          "preconditions": [
+            "Rendered by DebugPane only when the logs section is active."
+          ],
+          "postconditions": [
+            "No mutating control (k2); the active tail subscription is disposed on unmount / category change (no watcher leak)."
+          ]
+        },
+        {
+          "name": "LogLine",
+          "signature": "export interface LogLine { readonly raw: string; readonly time?: number; readonly level?: number; readonly module?: string; readonly msg?: string }",
+          "parameters": [],
+          "returns": {
+            "type": "interface (new)",
+            "meaning": "One parsed tail line. `raw` is always the verbatim line (free-text filter matches it); time/level/module/msg are the best-effort pino-JSON fields (level = numeric pino level, module = pino `name`). A non-JSON / partial line keeps only `raw` so level/module filters skip it while free-text still matches (graceful degrade)."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": []
+        },
+        {
+          "name": "LogCategory",
+          "signature": "export interface LogCategory { readonly id: LogCategoryId; readonly title: string; readonly stem: string }; export type LogCategoryId = 'daemon' | 'agent'",
+          "parameters": [],
+          "returns": {
+            "type": "interface + type (new)",
+            "meaning": "A tailable log category: `id` (the closed union daemon|agent), `title` (display), `stem` (the pino-roll file stem used to glob `<stem>.*.log` in PATHS.logDir). Structured data only."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": []
+        },
+        {
+          "name": "LogFilter",
+          "signature": "export interface LogFilter { readonly minLevel?: number; readonly module?: string; readonly text?: string }",
+          "parameters": [],
+          "returns": {
+            "type": "interface (new)",
+            "meaning": "The persistent filter bar state applied as a pure predicate over the ring buffer: minLevel (keep LogLines whose numeric level >= minLevel; non-JSON lines with no level are dropped by an active level filter), module (case-insensitive match on LogLine.module), text (case-insensitive substring over LogLine.raw). An unset field imposes no constraint. CLI-side view state — not persisted to disk."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": []
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "LogCategory / LogCategoryId / LogLine / LogFilter (new types)",
+        "change": "new",
+        "details": "New CLI-side view-model types in src/cli/services/debug-types.ts. LogCategoryId is the closed union 'daemon'|'agent'; LogCategory {id,title,stem}; LogLine {raw, time?, level?, module?, msg?} (best-effort pino-JSON parse); LogFilter {minLevel?, module?, text?}. Structured data only — the LogsSection owns presentation.",
+        "schemaDiff": "+ debug-types.ts: type LogCategoryId = 'daemon'|'agent'; interface LogCategory { id; title; stem }; interface LogLine { raw; time?; level?; module?; msg? }; interface LogFilter { minLevel?; module?; text? }",
+        "callSites": [
+          "src/cli/services/debug-types.ts",
+          "src/cli/services/debug.ts",
+          "src/cli/panes/LogsSection.tsx"
+        ]
+      },
+      {
+        "entity": "DebugService facade (debug-types.ts + debug.ts + index.ts)",
+        "change": "field-add",
+        "details": "Add logCategories(): readonly LogCategory[] + tailLog(categoryId, onLines): () => void to the interface + impls (tailLogWith(deps) injectable-deps core over a fs seam { listSegments(stem)->string[]; readTail(file, maxLines)->string[]; watch(file, cb)->()=>void } + a zero-arg facade wrapper over realDeps bound to node:fs) + bind onto the makeServices() debug entry. Additive; existing members unchanged.",
+        "schemaDiff": "interface DebugService { ...; + logCategories(): readonly LogCategory[]; + tailLog(categoryId: LogCategoryId, onLines: (lines: readonly LogLine[]) => void): () => void }",
+        "callSites": [
+          "src/cli/services/debug-types.ts",
+          "src/cli/services/debug.ts",
+          "src/cli/services/index.ts",
+          "src/cli/panes/LogsSection.tsx"
+        ]
+      },
+      {
+        "entity": "LogsSection (src/cli/panes/LogsSection.tsx, new)",
+        "change": "new",
+        "details": "New section component: category list (ac1) + tailLog subscription into a bounded ring buffer with single-stream + dispose-on-switch/unmount (ac2/lc2) + a persistent LogFilter bar rendered over LogView (ac3). Reuses the LogView widget (widgets.tsx) + the s3/s4 useCaptured/useInput idioms; strictly read-only.",
+        "schemaDiff": "new file src/cli/panes/LogsSection.tsx exporting LogsSection",
+        "callSites": [
+          "src/cli/panes/LogsSection.tsx",
+          "src/cli/ui/widgets.tsx"
+        ]
+      },
+      {
+        "entity": "DebugPane SECTION_VIEWS (src/cli/panes/DebugPane.tsx)",
+        "change": "field-modify",
+        "details": "Swap the logs placeholder ('Log viewer — coming soon.') for <LogsSection services={{ debug }} />, exactly as s2/s4 swapped in DaemonSection/MCPSection. No change to the hosting shape, DebugSectionId, or navigation (all sc1/s1-owned) — this is the last placeholder, completing the pane.",
+        "schemaDiff": "SECTION_VIEWS.logs: () => <LogsSection services={{ debug }} />",
+        "callSites": [
+          "src/cli/panes/DebugPane.tsx"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "s5 consumes sc1 (HLD boundary: depends=[sc1]) and extends it per sc1's stated model: it augments the DebugService facade with two additive FLAT members (logCategories + tailLog, recorded via a sharedContract.methodAdd amendment on sc1, owned by s1) and supplies the LogsSection component that DebugPane maps for the 'logs' section id — the final placeholder swap, completing the three-section pane. It does NOT change the section-hosting shape, DebugSectionId, navigation, or add a section (all owned by s1). Entirely client-side: the tailer fs.watch-reads the rotated log files directly (k4), so the Logs section works even when the daemon is unreachable; strictly read-only (k2)."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The log directory does not exist yet, or a selected category has no matching segment (no logs written yet).",
+          "detection": "listSegments(stem) returns an empty array (readdir on a missing dir throws ENOENT, caught inside the seam / core; a present dir with no `<stem>.*.log` yields []).",
+          "response": "tailLog emits an empty initial batch and installs a directory-level retry (re-resolve on the next fs event) rather than throwing; the section renders an empty tail with the category still selected.",
+          "userImpact": "The operator sees the category selected with no lines (not a crash); once the daemon/agent writes its first segment, lines begin streaming.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The active segment is read or watched and the fs call throws (permission denied, file removed mid-read by rotation cleanup, watcher error event).",
+          "detection": "readTail/watch in the fs seam throws or the fs.watch emits an 'error'; the tailLogWith core catches around each fs interaction.",
+          "response": "Swallow the individual failure, keep the subscription alive, and re-resolve the active segment on the next event (so a file deleted by rotation cleanup is replaced by the newer segment). Never rethrow to onLines.",
+          "userImpact": "A transient fs hiccup shows as a brief pause in streaming, not a crash; streaming resumes on the next write/rotation.",
+          "recoverable": true
+        },
+        {
+          "scenario": "onLines fires after the operator switched category or unmounted the section (an in-flight fs event races the dispose()).",
+          "detection": "The dispose() sets a `disposed` flag the core checks before every onLines call (and removes the fs watcher).",
+          "response": "A post-dispose emit is suppressed by the flag; the watcher is already removed. Only the current subscription's lines ever reach the section (single-stream, ac2).",
+          "userImpact": "Switching categories never bleeds stale lines from the previous stream into the new one; no post-unmount setState.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A tail line is not valid pino JSON (a pretty-printed line, a partial trailing line written mid-flush, or a truncated head after tailing into the middle of a line).",
+          "detection": "JSON.parse of the line throws inside the per-line parser.",
+          "response": "Fall back to a LogLine carrying only `raw` (no level/module/msg). Free-text filter still matches `raw`; an active level/module filter treats it as non-matching (dropped) rather than crashing.",
+          "userImpact": "Non-JSON lines remain visible under no/text filters and are simply not surfaced under a level/module filter — no parse crash, no silently-swallowed content.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "The Logs section is opened but no category is selected yet.",
+          "expected": "The category list (daemon, agent) renders and NO stream is started (ac1) — no fs.watch is installed until a selection."
+        },
+        {
+          "input": "The operator switches from category A to category B while A is streaming.",
+          "expected": "A's subscription is disposed (watcher removed) before B's tailLog starts; only B streams (ac2). The ring buffer resets to B's tail."
+        },
+        {
+          "input": "The active segment rolls over to a new higher-N segment while streaming (a daily/size rotation).",
+          "expected": "The tailer detects the active file stopped growing AND a newer segment appeared, re-resolves to it, and continues emitting the new segment's lines — the operator keeps seeing new lines with no gap/action (lc2)."
+        },
+        {
+          "input": "A level/module/text filter is set, then cleared, while the stream continues.",
+          "expected": "Setting a filter immediately limits the VISIBLE lines to matches (the stream keeps accumulating underneath); clearing it re-reveals the buffered lines — filtering is a pure re-render over the ring buffer, never a re-read (ac3)."
+        },
+        {
+          "input": "The ring buffer reaches its bound while streaming a busy log.",
+          "expected": "The oldest lines scroll off (bounded last-N, like LogView) so memory stays bounded; the newest lines and the active filter view are always current."
+        },
+        {
+          "input": "The operator presses a key looking for a way to delete/rotate/clear the log.",
+          "expected": "No key mutates or clears any log file; only category-select + filter entry + the pane's section-nav are honoured. The section is strictly read-only (k2)."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The Logs section reads log data DIRECTLY from disk via fs.watch over the known rotated files (PATHS.logDir daemon.*.log / agent.*.log) with NO new daemon log-streaming IPC, so it functions even when the daemon is unreachable (k4). This is an event-driven watch, not a poll loop, per the HLD nonFunctional.",
+          "source": "c3"
+        },
+        {
+          "text": "Streaming follows the currently-active (highest-N / newest-mtime) rotated segment and continues across a rotation by re-resolving to the newer segment (lc2), so new lines keep appearing after the underlying file rolls over. The pino-roll segment naming is `<stem>.<N>.<ext>` (verified against the live /tmp/.insrc).",
+          "source": "c3"
+        },
+        {
+          "text": "The Debug pane is read-only apart from the single s3 orphan-kill action (k2): the Logs section only reads/watches files for display + applies in-memory filters; it never writes, deletes, rotates, or clears a log, and never touches the daemon. It reuses the existing LogView widget for rendering.",
+          "source": "c4"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove the tailLogWith(deps) core resolves the active segment, emits its tail, follows appends + rotation (lc2), parses lines best-effort, and honours dispose() — all against an injected fs seam (listSegments/readTail/watch) with NO real disk watcher.",
+          "subjects": [
+            "tailLogWith: resolves the active segment (highest-N / newest-mtime among `<stem>.*.log`) and emits its last-N lines on start",
+            "tailLogWith: a watch 'change' event on the active file emits the newly-appended lines (live follow)",
+            "tailLogWith: when the active file stops growing AND a newer higher-N segment appears, re-resolves to it and emits the new segment's lines (rotation follow, lc2)",
+            "tailLogWith: a non-JSON / partial line parses to a LogLine with only `raw` (no level/module/msg); a valid pino JSON line fills time/level/module/msg",
+            "tailLogWith: an empty/missing log dir or no matching segment emits an empty initial batch and does NOT throw (k4)",
+            "tailLogWith: a readTail/watch throw is swallowed and the subscription survives (re-resolve on the next event)",
+            "tailLogWith: dispose() removes the watcher and suppresses any post-dispose onLines emit (idempotent)"
+          ],
+          "fixturesNeeded": [
+            "An injectable fs seam: listSegments(stem)->string[], readTail(file,maxLines)->string[], watch(file,cb)->()=>void, all driven by canned data + a manual event trigger",
+            "Canned pino-JSON + non-JSON log lines",
+            "A segment set that can be mutated between events to simulate a rotation"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove the LogFilter predicate limits visible lines by level / module / free-text and degrades gracefully on non-JSON lines — a pure function over LogLine[].",
+          "subjects": [
+            "filter predicate: minLevel keeps LogLines whose numeric level >= minLevel; a LogLine with no level (non-JSON) is dropped when minLevel is set",
+            "filter predicate: module matches (case-insensitive) LogLine.module; free-text is a case-insensitive substring over LogLine.raw",
+            "filter predicate: an unset field imposes no constraint; combined level+module+text are ANDed",
+            "filter predicate: free-text still matches a non-JSON line via `raw` even though level/module cannot"
+          ],
+          "fixturesNeeded": [
+            "A LogLine[] fixture mixing JSON (varied level/module) + non-JSON raw lines"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove the LogsSection lists categories without streaming (ac1), starts/limits a single stream on select (ac2), applies the filter over the ring buffer (ac3), and disposes on switch/unmount — via ink-testing-library + a fake debug facade whose tailLog is a controllable emitter.",
+          "subjects": [
+            "LogsSection: on open, renders the daemon + agent category list and calls neither tailLog (no stream until select) (ac1)",
+            "LogsSection: selecting a category calls tailLog once and renders its emitted lines; selecting a second category disposes the first subscription before subscribing (only one active stream) (ac2)",
+            "LogsSection: an emit AFTER dispose (stale subscription) does not appear in the view",
+            "LogsSection: setting a level/module/text filter limits the visible lines while later emits keep accumulating; clearing re-reveals them (ac3)",
+            "LogsSection: no key deletes/rotates/clears a log — only category-select + filter entry + section-nav are honoured (k2); the subscription is disposed on unmount (no watcher leak)"
+          ],
+          "fixturesNeeded": [
+            "A fake `{ debug }` facade whose logCategories() returns daemon+agent and whose tailLog(id,onLines) records the call, exposes a push(lines) to emit, and a disposed flag its returned dispose() sets",
+            "ink-testing-library render (createElement) + stdin keypresses for select / filter entry"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove the widened DebugService compiles across the whole CLI suite with the new facade members + the in-repo fakes carry the stubs, and the DebugPane logs slot mounts LogsSection.",
+          "subjects": [
+            "Every in-repo `debug` facade fake (tui/command/DebugPane/DaemonSection/MCPSection/LogsSection tests) carries logCategories + tailLog stubs so the widened DebugService compiles",
+            "The DebugPane 'logs' section maps to <LogsSection/> (the s1 placeholder is gone) — completing the three live sections"
+          ],
+          "fixturesNeeded": [
+            "`npx tsx --test 'src/cli/**/*.test.ts'` compiling against the widened DebugService"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "unit: LogsSection on open renders the daemon + agent category list and starts NO stream (tailLog not called)",
+            "unit: tailLogWith is not invoked by logCategories() (listing opens no stream)"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "unit: tailLogWith resolves the active segment + emits its tail, follows appends, and follows across a rotation to a newer segment (lc2)",
+            "unit: LogsSection selecting a category streams it and selecting another disposes the first (only one active stream)"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "unit: the LogFilter predicate limits lines by level/module/free-text (non-JSON degrades to text-only)",
+            "unit: LogsSection applies the filter over the ring buffer while the stream continues; clearing re-reveals buffered lines"
+          ]
+        }
+      ],
+      "testFramework": "node:test via `npx tsx --test`: injectable-deps unit tests for the tailLogWith core (a fake fs seam listSegments/readTail/watch + a manual event trigger + canned pino-JSON/non-JSON lines) and the pure LogFilter predicate, mirroring the s2/s3/s4 debug-service tests; ink-testing-library (createElement + stdin) for the LogsSection list/select/filter/dispose tests with a controllable fake tailLog emitter, mirroring DaemonSection/MCPSection tests. NO real fs.watch, disk, or wall-clock in unit tests; a gated live tail test is out of scope."
+    },
+    "migration": {
+      "stateBefore": "The Debug pane's Logs section is the s1 placeholder ('Log viewer — coming soon.') mapped in DebugPane's SECTION_VIEWS (src/cli/panes/DebugPane.tsx); the daemon + mcp slots are now live (s2/s4). The DebugService facade (src/cli/services/debug-types.ts + debug.ts + index.ts) has sections/daemonStatus/scanOrphans/killOrphans/attachedClients/mcpStatus but NO log-tail surface. There is no fs.watch/tail helper for the log files anywhere in src/cli+src/shared (only the unrelated LogView render widget at widgets.tsx:66). The logs themselves already exist on disk under PATHS.logDir (/tmp/.insrc) as pino-roll segments `daemon.<N>.log` / `agent.<N>.log`.",
+      "stateAfter": "The DebugService facade gains logCategories() + tailLog(categoryId, onLines) (a rotation-aware, fs.watch-based, injectable-deps tailer with a dispose()); new CLI-side types LogCategory/LogCategoryId/LogLine/LogFilter live in debug-types.ts. A new src/cli/panes/LogsSection.tsx lists the daemon + agent categories, streams the selected one live (single stream, follows across rotation), and filters the visible lines by level/module/free-text over a bounded ring buffer. DebugPane's 'logs' slot renders <LogsSection/> — the last placeholder, completing all three sections. No new daemon surface, no IPC, no on-disk writes.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the new CLI-side view-model types (LogCategoryId, LogCategory, LogLine, LogFilter) to debug-types.ts. Purely additive type surface, referenced by nothing yet.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add the tailLogWith(deps) injectable-deps core + a pure LogFilter predicate + the logCategories()/tailLog() facade wrappers (over realDeps bound to node:fs) in debug.ts, widen the DebugService interface, and bind both onto the makeServices() debug entry. Add the new stubs to the in-repo debug fakes in the SAME change so the widened interface compiles.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add the LogsSection component (category list + single-stream tailLog subscription into a ring buffer + persistent filter bar over LogView) and swap it into DebugPane's SECTION_VIEWS for the 'logs' id, replacing the placeholder. No change to the section-hosting shape, DebugSectionId, or navigation.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "The only touched surface is the sc1 DebugService facade, extended with two ADDITIVE members (logCategories + tailLog) — every existing member and every existing debug caller is unchanged; the in-repo fakes gain conformant stubs in the same change so the whole CLI suite still compiles. No cross-process/wire type is touched (unlike s4): the tailer is entirely client-side and reads only from disk, so there is no CLI↔daemon compatibility surface. No public API signature is removed or renamed. Rolling back is deleting the two facade members + LogsSection and restoring the logs placeholder; nothing persists.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Subscription tailer (onLines callback + dispose) with a client-side filter over a ring buffer",
+        "oneLineSummary": "The facade exposes logCategories() + a tailLog(category, onLines) that reads the active segment's tail, fs.watch-follows appends + rotation (lc2), and returns a dispose(); the LogsSection applies level/module/text filters as a pure predicate over an accumulated ring buffer.",
+        "chosen": true
+      },
+      {
+        "id": "a2",
+        "name": "Async-iterable / EventEmitter tail stream",
+        "oneLineSummary": "tailLog(category) returns an AsyncIterable<LogLine[]> (or an EventEmitter) the component drains; filtering still client-side.",
+        "reasonRejected": "Functionally equivalent to a1 but the for-await/EventEmitter teardown is harder to cancel cleanly in a React effect (AbortController + break, listener-leak risk) than a1's plain dispose() — more failure surface for no gain in a single-consumer UI stream."
+      },
+      {
+        "id": "a3",
+        "name": "Snapshot-poll tail (readLogTail(category, offset) polled by the component)",
+        "oneLineSummary": "No fs.watch — the facade exposes readLogTail(category, sinceOffset) -> { lines, offset } and the component polls it on an interval.",
+        "reasonRejected": "VIOLATES k4 (the HLD explicitly says the log tail is fs.watch event-driven, NOT a poll loop) — a steady interval re-reads the file even when idle — and only partially meets ac2 (poll latency + fragile offset-across-rotation bookkeeping). Disqualified on the load-bearing invariant."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "HLD-f900cf34c0342d4f sc1: Debug pane section-hosting shape + DebugService facade (ownedByStory s1, consumed by s2-s5); s5 depends=[sc1], owns=[]"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 usage.example + search.text: LogView render widget (widgets.tsx:66) + the useCaptured/useInput idioms + no existing fs.watch/tail helper; pino JSON line shape (numeric level, `name` module, msg) for the level/module/free-text filter"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1 symbol.locate: PATHS.logDir + daemon.log/agent.log (paths.ts:104-105); pino-roll rotates to `<stem>.<N>.<ext>` segments (verified live: agent.19.log/daemon.14.log), active = highest-N/newest-mtime, follow-across-rotation for lc2 (k4 fs.watch, client-side)"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "HLD/DEF k2: the Debug pane is read-only apart from the single s3 orphan-kill action; the Logs section only reads/watches + filters, never mutates a log or touches the daemon"
+    }
+  ]
+}

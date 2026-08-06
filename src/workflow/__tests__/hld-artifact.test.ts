@@ -20,6 +20,7 @@ import {
 	checkRolloutCoverage,
 	checkStoryCoverage,
 	isHldBody,
+	reconcileDependsFromConsumers,
 	renderHldMarkdown,
 	type HldArtifact,
 	type HldBody,
@@ -198,6 +199,80 @@ test('checkContractDependencyGraph flags depends drift from consumedByStories', 
 	};
 	const issues = checkContractDependencyGraph(body, EPIC_DAG);
 	assert.ok(issues.some(i => /cg3/.test(i)), issues.join(' | '));
+});
+
+// ---------------------------------------------------------------------------
+// reconcileDependsFromConsumers (S002) — depends is DERIVED from consumedByStories
+// ---------------------------------------------------------------------------
+
+// A drifted body: s1 phantom-depends on the contract it owns; s2 omits the sc1
+// it actually consumes. This is exactly the fixture cg3 rejects above.
+function driftedBody(): HldBody {
+	return {
+		...fixtureBody(),
+		storyBoundaries: [
+			{ storyId: 's1', owns: ['sc1'], depends: ['sc1'], internal: 'x' }, // phantom self-depend
+			{ storyId: 's2', owns: [], depends: [], internal: 'y' },            // missing edge
+		],
+	};
+}
+
+test('reconcileDependsFromConsumers repairs a drifted depends so cg3 passes (S002 ac2)', () => {
+	const before = checkContractDependencyGraph(driftedBody(), EPIC_DAG);
+	assert.ok(before.some(i => /cg3/.test(i)), 'the fixture drifts before reconcile');
+	const fixed = reconcileDependsFromConsumers(driftedBody());
+	assert.equal(checkContractDependencyGraph(fixed, EPIC_DAG).filter(i => /cg3/.test(i)).length, 0);
+	// derived exactly: s1 (owner, no consumption) -> []; s2 (consumes sc1) -> ['sc1']
+	assert.deepEqual(fixed.storyBoundaries.find(sb => sb.storyId === 's1')!.depends, []);
+	assert.deepEqual(fixed.storyBoundaries.find(sb => sb.storyId === 's2')!.depends, ['sc1']);
+});
+
+test('reconcileDependsFromConsumers is a pure inverse: dedup+sort, self-skip, other fields untouched (S002 ac2)', () => {
+	// sc2 consumed by s2 twice (dup) + owned by s1 also listed (self) — reconcile
+	// dedups, sorts, and skips the self edge.
+	const body: HldBody = {
+		...fixtureBody(),
+		sharedContracts: [
+			{ id: 'sc1', name: 'A', purpose: 'p', interfaceSketch: 'interface A { x(): void }', ownedByStory: 's1', consumedByStories: ['s2'], assumptions: [] },
+			{ id: 'sc2', name: 'B', purpose: 'p', interfaceSketch: 'interface B { y(): void }', ownedByStory: 's1', consumedByStories: ['s1', 's2', 's2'], assumptions: [] },
+		],
+		storyBoundaries: [
+			{ storyId: 's1', owns: ['sc1', 'sc2'], depends: ['sc2'], internal: 'x' },
+			{ storyId: 's2', owns: [], depends: [], internal: 'y' },
+		],
+	};
+	const fixed = reconcileDependsFromConsumers(body);
+	// s1 owns both, consumes neither (self-skip) -> []; s2 -> ['sc1','sc2'] sorted, deduped
+	assert.deepEqual(fixed.storyBoundaries.find(sb => sb.storyId === 's1')!.depends, []);
+	assert.deepEqual(fixed.storyBoundaries.find(sb => sb.storyId === 's2')!.depends, ['sc1', 'sc2']);
+	// consumedByStories + sharedContracts + ownedByStory are byte-identical
+	assert.deepEqual(fixed.sharedContracts, body.sharedContracts);
+	assert.equal(fixed.frameworkSummary, body.frameworkSummary);
+});
+
+test('reconcileDependsFromConsumers does NOT mask a genuine cg1 cycle (S002 ac3)', () => {
+	const cyclic: HldBody = {
+		...fixtureBody(),
+		sharedContracts: [
+			...fixtureBody().sharedContracts,
+			{ id: 'sc2', name: 'Rev', purpose: 'p', interfaceSketch: 'interface Rev { x(): void }', ownedByStory: 's2', consumedByStories: ['s1'], assumptions: [] },
+		],
+		storyBoundaries: [
+			{ storyId: 's1', owns: ['sc1'], depends: [], internal: '' },
+			{ storyId: 's2', owns: ['sc2'], depends: [], internal: '' },
+		],
+	};
+	// even after reconcile (which only touches depends), the cg1 cycle over
+	// consumedByStories still fires.
+	const issues = checkContractDependencyGraph(reconcileDependsFromConsumers(cyclic), EPIC_DAG);
+	assert.ok(issues.some(i => /cg1/.test(i)), issues.join(' | '));
+});
+
+test('reconcileDependsFromConsumers does NOT mask a genuine cg2 inversion (S002 ac3)', () => {
+	// s2 consumes s1's sc1 but does NOT depend on s1 in the Epic graph.
+	const noDep = [{ id: 's1', dependsOn: [] as string[] }, { id: 's2', dependsOn: [] as string[] }];
+	const issues = checkContractDependencyGraph(reconcileDependsFromConsumers(fixtureBody()), noDep);
+	assert.ok(issues.some(i => /cg2/.test(i)), issues.join(' | '));
 });
 
 test('checkStoryCoverage flags shared contract owned by unknown Story', () => {

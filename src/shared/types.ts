@@ -557,6 +557,23 @@ export type ExternalBoundaryRelation =
   | 'SUBSCRIBES_TO'
   | 'CALLS_RPC';
 
+/**
+ * The resolved identity of an outbound external-service target (sc2 —
+ * E20260806914cbf5e:S002). Either a concrete identity (host+path | topic |
+ * service.method) tagged with its protocol, or an explicit unresolved marker
+ * that preserves the raw call expression so a target is never dropped.
+ */
+export type ResolvedTarget =
+  | { resolved: true; protocol: ExternalProtocol; identity: string }
+  | { resolved: false; rawExpression: string };
+
+/**
+ * The layered at-rest config sources an indirect target is resolved from (sc2).
+ * Precedence on a key clash is total: deploy-time (`k8s` > `docker`) > `envFile`
+ * > `localConfig`.
+ */
+export type ConfigSourceLayer = 'k8s' | 'docker' | 'envFile' | 'localConfig';
+
 export interface Entity {
   /** Stable deterministic ID: SHA256(repo + file + kind + name), hex-32 */
   id:         string;

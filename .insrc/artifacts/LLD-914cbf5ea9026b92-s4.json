@@ -1,0 +1,587 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1786117300928-eg9qoc",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-08-07T15:50:31.332Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 530358,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "914cbf5ea9026b92",
+    "epicSlug": "work-framed-approved-spec-proceed-from",
+    "storyId": "s4",
+    "hldBaseRunId": "wf-1786031712974-qqqe5k",
+    "hldEffectiveHash": "fd544bcd90a023e29bb48b2f6460dacf5dc6eaab956d8dff2bd59eceadab5516",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "kind": "citation",
+          "severity": "MED",
+          "premise": "http-client-shapes.ts is the S003 template with HttpClientShape + matchHttpClient + emitCallsHttp + fileImportsHttpLibrary that S004 mirrors.",
+          "evidence": "http-client-shapes.ts exports matchHttpClient, emitCallsHttp, fileImportsHttpLibrary and interface HttpClientShape (4/4 matched) — the template S004 mirrors exists as described.",
+          "action": "",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl2",
+          "kind": "citation",
+          "severity": "MED",
+          "premise": "external-endpoints.ts resolveExternalEndpoints filters CALLS_HTTP and its gcOrphanEndpoints is protocol-BLIND (lists all externalEndpoint nodes, GCs by CALLS_HTTP in-edges only) — the latent cross-protocol hazard S004 fixes.",
+          "evidence": "external-endpoints.ts:77 resolveExternalEndpoints filters kind==='CALLS_HTTP'; :166 gcOrphanEndpoints(repo) lists ALL externalEndpoint nodes (:167 listEntitiesByKind(null,'externalEndpoint')) and gates on kindFilter:['CALLS_HTTP'] (:174) — protocol-blind, confirming the cross-protocol GC hazard S004 fixes.",
+          "action": "",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl3",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "promoteResolvedBatch preserves each unresolved row's ORIGINAL kind via RELATION_KIND_BYTE[unresolved.kind], so a PUBLISHES_TO/SUBSCRIBES_TO row promotes to a resolved edge of that same kind (not hardcoded to CALLS_HTTP).",
+          "evidence": "relations.ts:405 promoteResolvedBatch uses RELATION_KIND_BYTE[unresolved.kind] — the promoted edge kind is the row's own kind, so PUBLISHES_TO/SUBSCRIBES_TO survive promotion (not hardcoded to CALLS_HTTP).",
+          "action": "",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl4",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The sc1 vocabulary already carries PUBLISHES_TO=14 / SUBSCRIBES_TO=15 relation bytes + externalEndpoint entity byte, so S004 adds no new graph kinds.",
+          "evidence": "keys.ts: PUBLISHES_TO:14, SUBSCRIBES_TO:15, externalEndpoint:13 — sc1 vocabulary already carries the messaging kinds; S004 adds none.",
+          "action": "",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl5",
+          "kind": "external-contract",
+          "severity": "MED",
+          "premise": "sc2 resolve accepts protocol 'messaging' (ExternalProtocol = 'http'|'messaging'|'rpc'), and makeExternalEndpointId takes a generic protocol param, so a messaging pass reuses both unchanged.",
+          "evidence": "shared/types.ts:551 `type ExternalProtocol = 'http' | 'messaging' | 'rpc'`; base.ts:35 makeExternalEndpointId is generic over a protocol param — both reusable for 'messaging' unchanged.",
+          "action": "",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl6",
+          "kind": "citation",
+          "severity": "MED",
+          "premise": "The Java parser carries an import-gate flag (ctx.httpEnabled) computed from fileImportsHttpLibrary that S004's messagingEnabled mirrors.",
+          "evidence": "java.ts has 6 references to httpEnabled/fileImportsHttpLibrary — the import-gate flag S004's messagingEnabled mirrors exists.",
+          "action": "",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl7",
+          "kind": "citation",
+          "severity": "MED",
+          "premise": "The S003 test files S004 extends exist and use the parse()->relations harness under node:test.",
+          "evidence": "All three test files (http-client-shapes.test.ts, http-recognizer-py-go.test.ts, external-endpoints.test.ts) exist — the harness S004 extends is present.",
+          "action": "",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 7,
+        "low": 0
+      },
+      "reviewedAt": "2026-08-07T15:51:45.697Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-08-07T15:54:22.282Z",
+    "reviewOverride": {
+      "reason": "true",
+      "at": "2026-08-07T15:54:22.282Z"
+    }
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Pipeline-integrated external-service graph tracing. The graph gains one new node kind (ExternalEndpoint, carrying a protocol + resolved/unresolved tag) and four typed boundary edge kinds (CALLS_HTTP, PUBLISHES_TO, SUBSCRIBES_TO, CALLS_RPC), added once to the graph vocabulary and gated by a graph-schema migration so existing indexes evolve without a full re-index. Per-language outbound and inbound detectors run as thin plugins inside the existing tree-sitter parse; a shared protocol-agnostic resolution engine turns indirect/configured targets into a concrete identity (or an explicit unresolved marker) from layered config sources with a fixed precedence. Cross-repo linking is a separate daemon-side matching pass, keyed off a per-repo service-identity registry, that forms a real dependency edge onto the target repo's actual handler entity and inserts it into the DEPENDS_ON closure; the same pass, re-fired on repo register/re-index events, is the out-of-order backfill.",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "ExternalEndpoint graph vocabulary",
+          "ownedByStory": "s1"
+        },
+        {
+          "id": "sc2",
+          "name": "Target resolution engine",
+          "ownedByStory": "s2"
+        }
+      ],
+      "boundary": {
+        "storyId": "s4",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc2"
+        ],
+        "internal": "The per-language producer/consumer call-site recognition for messaging clients (which publish/subscribe APIs count, how the topic/queue argument is extracted, and how publish-vs-subscribe direction is decided) is private to S004."
+      },
+      "rolloutPhase": "Phase B — Detection: outbound classes + inbound handlers + service identity",
+      "nonFunctional": {
+        "performance": "Detection reuses the single existing tree-sitter parse per file — no second parse pass is added to indexing.",
+        "security": "Detection is static and at-rest; config/.env/k8s/docker read as text, never executed (k6).",
+        "observability": "Unresolved endpoints are first-class and queryable (they carry the raw expression), so coverage gaps are visible.",
+        "durability": "Deterministic ids (repo + resolved target) keep re-indexing stable and idempotent."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "matchMessagingClient",
+          "signature": "function matchMessagingClient(language: string, callee: string): { topicArg: number | { objectField: string }; direction: 'publish' | 'subscribe' } | null",
+          "parameters": [
+            {
+              "name": "language",
+              "type": "string",
+              "purpose": "parser language tag selecting the MESSAGING_CLIENT_SHAPES table (typescript/javascript/python/go/java/scala)",
+              "optional": false
+            },
+            {
+              "name": "callee",
+              "type": "string",
+              "purpose": "raw or normalized callee path of a call-site (e.g. `producer.send`, `sns.publish`, `channel.basicConsume`); normalized internally",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "{ topicArg: number | { objectField: string }; direction: 'publish' | 'subscribe' } | null",
+            "meaning": "on a shape match, how to extract the topic/queue arg (positional index OR a named field of the first object arg) + the coupling direction; null when the callee is not a recognized messaging client (mirrors matchHttpClient returning null)"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Exact-match shapes compare the full normalized callee; 'method'-match shapes compare only the last dotted segment (identical semantics to matchHttpClient)",
+            "A language absent from MESSAGING_CLIENT_SHAPES returns null (detects nothing — additive)"
+          ]
+        },
+        {
+          "name": "fileImportsMessagingLibrary",
+          "signature": "function fileImportsMessagingLibrary(language: string, importSpecifiers: Iterable<string>): boolean",
+          "parameters": [
+            {
+              "name": "language",
+              "type": "string",
+              "purpose": "parser language tag selecting the MESSAGING_LIBRARY_IMPORT_MARKERS table",
+              "optional": false
+            },
+            {
+              "name": "importSpecifiers",
+              "type": "Iterable<string>",
+              "purpose": "the file's raw import specifier strings",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "boolean",
+            "meaning": "true iff any import specifier references a known messaging library for the language (substring test)"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "UNLIKE fileImportsHttpLibrary (ungated for languages with no marker table), messaging is gated for ALL FIVE languages because messaging verbs (send/publish/subscribe/consume/emit/receive) collide with mainstream non-messaging APIs (RxJS .subscribe, EventEmitter .emit). A file importing no messaging library detects nothing."
+          ]
+        },
+        {
+          "name": "emitMessaging",
+          "signature": "function emitMessaging(relations: Relation[], args: { readonly from: string; readonly repo: string; readonly file: string; readonly rawTopicExpr: string; readonly direction: 'publish' | 'subscribe' }): boolean",
+          "parameters": [
+            {
+              "name": "relations",
+              "type": "Relation[]",
+              "purpose": "accumulator the recognizer pushes the boundary edge into",
+              "optional": false
+            },
+            {
+              "name": "args",
+              "type": "{ from: string; repo: string; file: string; rawTopicExpr: string; direction: 'publish' | 'subscribe' }",
+              "purpose": "caller entity id, relation meta, raw topic/queue expression, and coupling direction",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "boolean",
+            "meaning": "whether a relation was pushed; false when rawTopicExpr is empty/whitespace (unextractable-topic case, no empty-`to` node) — mirrors emitCallsHttp"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Pushes exactly ONE unresolved relation: 'PUBLISHES_TO' when direction==='publish', 'SUBSCRIBES_TO' when 'subscribe'; {from, to: rawTopicExpr.trim(), resolved:false, meta:{file,repo}}",
+            "Returns false and pushes nothing when rawTopicExpr.trim() === ''"
+          ]
+        },
+        {
+          "name": "resolveMessagingEndpoints",
+          "signature": "function resolveMessagingEndpoints(opts: { readonly db: DbClient; readonly repo: string; readonly resolve?: (repo: string, protocol: ExternalProtocol, rawExpression: string) => Promise<ResolvedTarget> }): Promise<{ endpoints: number; edges: number; skipped: number; gcDeleted: number }>",
+          "parameters": [
+            {
+              "name": "opts.db",
+              "type": "DbClient",
+              "purpose": "daemon graph client",
+              "optional": false
+            },
+            {
+              "name": "opts.repo",
+              "type": "string",
+              "purpose": "repo whose unresolved messaging edges are resolved",
+              "optional": false
+            },
+            {
+              "name": "opts.resolve",
+              "type": "(repo, protocol, rawExpression) => Promise<ResolvedTarget>",
+              "purpose": "injectable sc2 resolver (default = the real memoized sc2 resolve)",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<{ endpoints: number; edges: number; skipped: number; gcDeleted: number }>",
+            "meaning": "counts of distinct messaging endpoints minted, distinct (from,to) edges promoted, rows skipped, and orphan messaging endpoints GC'd — same result shape as resolveExternalEndpoints"
+          },
+          "errors": [],
+          "preconditions": [
+            "sc1 vocabulary + sc2 resolver present (both shipped)"
+          ],
+          "postconditions": [
+            "Reads listUnresolvedRelations(db,repo) filtered to kind IN ('PUBLISHES_TO','SUBSCRIBES_TO'); resolves each DISTINCT rawTo once via resolve(repo,'messaging',rawTo)",
+            "Mints ONE externalEndpoint per distinct topic identity: id=makeExternalEndpointId(repo,'messaging',target,rawTo), name `messaging:${identity}`, protocol:'messaging', language:'config', resolved, target, +rawExpression only when unresolved — pub+sub to one topic dedups to ONE node",
+            "promoteResolvedBatch preserves each row's ORIGINAL kind (publish->PUBLISHES_TO, subscribe->SUBSCRIBES_TO) onto the same node (direction on the edge)",
+            "An unresolvable topic still mints an endpoint (resolved:false) rather than dropping the row (k5)",
+            "Idempotent: promoting deletes the unresolved row; a second run is a no-op",
+            "Runs orphan GC scoped to protocol 'messaging' + kinds ['PUBLISHES_TO','SUBSCRIBES_TO'] after the edge writes; also on the rows===0 full-clear path"
+          ]
+        },
+        {
+          "name": "gcOrphanEndpoints",
+          "signature": "function gcOrphanEndpoints(repo: string, protocol: ExternalProtocol, kinds: readonly RelationKind[]): Promise<number>",
+          "parameters": [
+            {
+              "name": "repo",
+              "type": "string",
+              "purpose": "repo whose externalEndpoint nodes are swept",
+              "optional": false
+            },
+            {
+              "name": "protocol",
+              "type": "ExternalProtocol",
+              "purpose": "RESHAPED (was repo-only): restricts the sweep to endpoints of THIS protocol so the http and messaging passes never GC each other's nodes",
+              "optional": false
+            },
+            {
+              "name": "kinds",
+              "type": "readonly RelationKind[]",
+              "purpose": "boundary in-edge kinds that keep an endpoint alive (http: ['CALLS_HTTP']; messaging: ['PUBLISHES_TO','SUBSCRIBES_TO'])",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<number>",
+            "meaning": "count of orphan endpoints deleted (protocol-scoped)"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Lists externalEndpoint nodes for `repo` FILTERED to `protocol`, deletes those with zero inNeighbors(u64,{kindFilter: kinds}) via deleteEntitiesById",
+            "Exported from external-endpoints.ts so the messaging pass reuses it; resolveExternalEndpoints now calls it with ('http',['CALLS_HTTP']) — fixing the latent cross-protocol GC hazard"
+          ]
+        }
+      ],
+      "dataModel": [
+        {
+          "entity": "MessagingClientShape (interface + MESSAGING_CLIENT_SHAPES tables)",
+          "change": "new",
+          "details": "New interface `MessagingClientShape { callee: string; topicArg: number | { objectField: string }; direction: 'publish' | 'subscribe'; match?: 'exact' | 'method' }` + per-language MESSAGING_CLIENT_SHAPES tables (Kafka / AMQP-RabbitMQ / AWS SQS+SNS / GCP Pub-Sub / NATS / Redis pub-sub). `topicArg` positional covers `producer.send('topic',...)`; `{objectField}` covers `send({topic})` / SNS `publish({TopicArn})` / SQS `sendMessage({QueueUrl})`. Mirrors HttpClientShape.",
+          "callSites": [
+            "src/indexer/parser/messaging-client-shapes.ts (new module, mirrors http-client-shapes.ts)"
+          ]
+        },
+        {
+          "entity": "PUBLISHES_TO / SUBSCRIBES_TO boundary relations",
+          "change": "invariant-change",
+          "details": "The relation KINDS already exist in sc1 (RELATION_KIND_BYTE 14/15) but were never emitted. S004 begins emitting them: recognizers push UNRESOLVED PUBLISHES_TO (producers) / SUBSCRIBES_TO (consumers); resolveMessagingEndpoints promotes each to a RESOLVED edge of its own kind onto the topic endpoint. No Relation shape change; new emission behaviour only.",
+          "callSites": [
+            "src/indexer/parser/messaging-client-shapes.ts (emitMessaging)",
+            "src/indexer/parser/typescript.ts / python.ts / go.ts / java.ts / scala.ts (recognizer wiring)",
+            "src/indexer/messaging-endpoints.ts (resolveMessagingEndpoints -> promoteResolvedBatch)"
+          ]
+        },
+        {
+          "entity": "externalEndpoint node (protocol 'messaging')",
+          "change": "new",
+          "details": "New instances of the existing sc1 externalEndpoint kind carrying protocol:'messaging'. One node per distinct topic/queue identity per repo (makeExternalEndpointId(repo,'messaging',target,rawTo)); publish and subscribe couplings to the same topic share the node. Deterministic id => stable, idempotent re-index (k2). Unresolved topics still mint a resolved:false node with rawExpression (k5).",
+          "callSites": [
+            "src/indexer/messaging-endpoints.ts (resolveMessagingEndpoints)",
+            "src/indexer/external-endpoints.ts (gcOrphanEndpoints reshaped to protocol-scoped, shared by both passes)"
+          ]
+        }
+      ],
+      "interactionWithShared": [
+        {
+          "contractId": "sc1",
+          "role": "consumes",
+          "howDetails": "Emits the sc1 boundary kinds PUBLISHES_TO/SUBSCRIBES_TO and mints sc1 externalEndpoint nodes (protocol:'messaging') via makeExternalEndpointId; nodes/edges participate in the DEPENDS_ON closure per sc1. No new kinds, no sc1 amendment — the protocol-scoped gcOrphanEndpoints refactor is internal hardening."
+        },
+        {
+          "contractId": "sc2",
+          "role": "consumes",
+          "howDetails": "Calls sc2 resolve(repo, 'messaging', rawTopicExpr) to turn a config-built topic/queue expression into a concrete identity or an explicit unresolved marker (ac2/k5). Resolver injected for tests; signature consumed unchanged."
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "MessagingClientShape (interface + MESSAGING_CLIENT_SHAPES tables)",
+        "change": "new",
+        "details": "New MessagingClientShape interface + per-language MESSAGING_CLIENT_SHAPES tables; topicArg is a positional index OR an object-field selector; direction is publish|subscribe. Mirrors HttpClientShape.",
+        "callSites": [
+          "src/indexer/parser/messaging-client-shapes.ts"
+        ]
+      },
+      {
+        "entity": "PUBLISHES_TO / SUBSCRIBES_TO boundary relations",
+        "change": "invariant-change",
+        "details": "sc1 kinds (bytes 14/15) begin being emitted (unresolved) by the recognizers and promoted (resolved) by resolveMessagingEndpoints. No Relation-shape change.",
+        "callSites": [
+          "src/indexer/parser/messaging-client-shapes.ts (emitMessaging)",
+          "src/indexer/parser/typescript.ts / python.ts / go.ts / java.ts / scala.ts",
+          "src/indexer/messaging-endpoints.ts"
+        ]
+      },
+      {
+        "entity": "externalEndpoint node (protocol 'messaging')",
+        "change": "new",
+        "details": "New instances of the sc1 externalEndpoint kind with protocol:'messaging'; one node per topic; deterministic id; unresolved-not-dropped.",
+        "callSites": [
+          "src/indexer/messaging-endpoints.ts",
+          "src/indexer/external-endpoints.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Emits PUBLISHES_TO/SUBSCRIBES_TO + mints protocol:'messaging' externalEndpoint nodes via makeExternalEndpointId; participates in the DEPENDS_ON closure per sc1. No amendment."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "resolve(repo,'messaging',rawTopicExpr) for identity resolution / unresolved marking (ac2/k5). No amendment."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "An object-arg messaging call whose topic field is absent or non-literal (e.g. `producer.send({ partition: 0 })` with no topic field, or `send({ topic: dynamicVar })`)",
+          "detection": "The objectField lookup on the first argument's object node returns no matching property (or a non-string-literal value); the extracted rawTopicExpr is empty/whitespace",
+          "response": "emitMessaging returns false and pushes NOTHING for a truly-empty expr; a present-but-non-literal field yields the raw expression text and is emitted unresolved — never an empty-`to` node",
+          "userImpact": "A call whose topic cannot be located is silently not linked (no bogus node), or captured as an unresolved endpoint when an expression exists",
+          "recoverable": true
+        },
+        {
+          "scenario": "The calling entity for an unresolved messaging row no longer exists at resolution time",
+          "detection": "entityU64ForId(row.fromEntity) returns undefined in resolveMessagingEndpoints",
+          "response": "Skip that row (skipped++), never write a dangling edge — identical to resolveExternalEndpoints",
+          "userImpact": "The stale coupling is dropped; a subsequent clean index re-derives it",
+          "recoverable": true
+        },
+        {
+          "scenario": "resolveMessagingEndpoints is run for a repo not in the registry",
+          "detection": "lookupRepoId(repo) returns undefined",
+          "response": "Skip all rows and return { skipped: rows.length, endpoints:0, edges:0, gcDeleted:0 } (mirrors S003)",
+          "userImpact": "No endpoints minted for an unregistered repo; expected under the repo-registry contract (k4)",
+          "recoverable": true
+        },
+        {
+          "scenario": "The injected/real sc2 resolve rejects for a topic expression",
+          "detection": "The awaited resolve(...) call rejects inside the per-distinct-expr loop",
+          "response": "The rejection propagates to the indexer's pass-level error handling (mirrors resolveExternalEndpoints, no per-row catch); no partial dangling edge is written because promotion happens only after successful resolution",
+          "userImpact": "Messaging endpoints for that repo are not updated until the next successful pass; HTTP endpoints (a separate pass) unaffected",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A repo that BOTH publishes to and subscribes from the same topic `orders` (resolved)",
+          "expected": "Exactly ONE externalEndpoint node (messaging:orders) with TWO incident edges — a PUBLISHES_TO and a SUBSCRIBES_TO (direction on the edge, one node per topic)"
+        },
+        {
+          "input": "Kafka-JS `producer.send({ topic: 'orders' })` vs Kafka-Python `producer.send('orders', value)`",
+          "expected": "Both emit PUBLISHES_TO to `orders`; JS via {objectField:'topic'}, Python via topicArg index 0"
+        },
+        {
+          "input": "AWS `sns.publish({ TopicArn: arn })` and `sqs.sendMessage({ QueueUrl: url })`",
+          "expected": "PUBLISHES_TO whose raw topic expr is the TopicArn / QueueUrl field value, handed to sc2 resolve('messaging',...)"
+        },
+        {
+          "input": "AMQP `channel.consume('work-queue', cb)` and `channel.publish('exchange', 'routingKey', buf)`",
+          "expected": "consume -> SUBSCRIBES_TO to `work-queue` (arg 0); publish -> PUBLISHES_TO whose identity is the exchange arg (arg 0) — exchange-as-topic; routing-key granularity is a documented recall gap"
+        },
+        {
+          "input": "An RxJS `observable.subscribe(cb)` in a file that imports NO messaging library",
+          "expected": "NO SUBSCRIBES_TO emitted — fileImportsMessagingLibrary gates every language, so the generic `.subscribe` verb does not false-positive"
+        },
+        {
+          "input": "A file importing a messaging library that also calls a same-named non-messaging method",
+          "expected": "A residual false positive is accepted (precision-over-recall stance, mirroring S003's Java gating caveat) — rare; gating removes the common case"
+        },
+        {
+          "input": "A messaging topic built from config, unresolvable (`kafka.send(process.env.MISSING_TOPIC, ...)`)",
+          "expected": "Still minted as an externalEndpoint tagged resolved:false with rawExpression = the raw config expression (ac2/k5) — not dropped"
+        },
+        {
+          "input": "Re-index removes a producer whose topic endpoint now has zero incident messaging in-edges, while a co-located HTTP endpoint exists",
+          "expected": "The messaging-scoped GC deletes the orphaned messaging endpoint but leaves the HTTP endpoint untouched; symmetrically the HTTP GC never deletes a messaging endpoint"
+        },
+        {
+          "input": "The same distinct topic expression appears at many call-sites",
+          "expected": "sc2 resolve invoked ONCE per distinct expression (memoized); edges counts DISTINCT (from,to) pairs"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The shipped S003 HTTP recognizer and resolveExternalEndpoints continue to emit and resolve CALLS_HTTP exactly as before — the messaging additions are additive.",
+          "source": "c1"
+        },
+        {
+          "text": "gcOrphanEndpoints, reshaped to be protocol-scoped, preserves the HTTP GC behaviour identically for protocol 'http' endpoints (zero-CALLS_HTTP-in-edge still GC'd; live-edge kept) — it only stops considering other protocols' endpoints.",
+          "source": "c2"
+        },
+        {
+          "text": "makeExternalEndpointId determinism and per-repo dedup are unchanged; messaging endpoints key deterministically on (repo, 'messaging', identity) (k2).",
+          "source": "c3"
+        },
+        {
+          "text": "Non-endpoint Entity rows stay byte-identical — protocol/resolved/target/rawExpression attach only to externalEndpoint rows.",
+          "source": "c3"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove the messaging shape helper contract + per-language recognizers in isolation, mirroring http-client-shapes.test.ts: shape table present per language, matchMessagingClient exact/method + direction, topic extraction (positional + object-field), import-gating across all five languages, emitMessaging single-emit/empty-skip with correct kind per direction.",
+          "subjects": [
+            "matchMessagingClient(language, callee) -> {topicArg, direction}|null (exact vs method; publish vs subscribe)",
+            "fileImportsMessagingLibrary gating for all five languages (RxJS .subscribe / EventEmitter .emit with no messaging import -> no emission)",
+            "emitMessaging -> one PUBLISHES_TO for publish / one SUBSCRIBES_TO for subscribe; empty topic -> false/no push",
+            "the TS recognizer via typescriptParser.parse()->messaging relations (Kafka-JS object-field send, SNS/SQS object-field, ioredis publish/subscribe)"
+          ],
+          "fixturesNeeded": [
+            "Inline TS importing kafkajs/@aws-sdk/ioredis with producer.send({topic}), sns.publish({TopicArn}), sqs.sendMessage({QueueUrl}), redis.subscribe('ch')",
+            "Inline TS with an RxJS observable.subscribe(cb) and NO messaging import (negative / gating)",
+            "Callee-string fixtures for matchMessagingClient exact + method per language"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove the Python + Go focused messaging walks (mirroring http-recognizer-py-go.test.ts): positional topic extraction and direction, import-gated.",
+          "subjects": [
+            "pythonParser.parse -> PUBLISHES_TO/SUBSCRIBES_TO for kafka-python producer.send('t',...) / consumer, pika channel.basic_publish/basic_consume",
+            "goParser.parse -> messaging relations for a Go messaging client (segmentio/kafka-go / sarama), import-gated"
+          ],
+          "fixturesNeeded": [
+            "Inline Python importing kafka / pika with positional-topic publish + subscribe",
+            "Inline Go importing a kafka client with a producer write + a consumer read"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove the resolution pass end-to-end over a real graph, mirroring external-endpoints.test.ts: unresolved PUBLISHES_TO/SUBSCRIBES_TO -> resolved edges + one node per topic; unresolved-not-dropped; protocol-scoped GC including the cross-protocol regression.",
+          "subjects": [
+            "resolveMessagingEndpoints with an injected sc2 resolve: resolved topic mints one endpoint + promotes the edge of the row's own kind",
+            "publish+subscribe to the same topic -> ONE node, TWO edges",
+            "unresolvable topic -> endpoint resolved:false with rawExpression (not dropped)",
+            "protocol-scoped gcOrphanEndpoints: a messaging endpoint is NOT deleted by the http pass and vice-versa; an orphaned messaging endpoint IS deleted; rows===0 full-clear",
+            "idempotency + distinct-edge counting"
+          ],
+          "fixturesNeeded": [
+            "A registered temp repo graph seeded with unresolved PUBLISHES_TO/SUBSCRIBES_TO rows + a co-located HTTP endpoint (for the cross-protocol GC assertion)",
+            "An injectable fake sc2 resolve returning resolved for one expr and unresolved for another"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "TS/Python/Go recognizer tests: a producer call emits PUBLISHES_TO and a consumer call emits SUBSCRIBES_TO to the topic expression, in each language",
+            "integration: resolveMessagingEndpoints mints one per-repo externalEndpoint per distinct resolved topic and promotes the call-site edge with the correct direction; publish+subscribe to the same topic share ONE node with the two distinct edge kinds"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "integration: a config-built topic resolved via the injected sc2 becomes a resolved endpoint (target = resolved identity); an unresolvable topic still mints an endpoint tagged resolved:false with rawExpression preserved (not dropped)"
+          ]
+        }
+      ],
+      "testFramework": "node:test (node --test / tsx --test) with node:assert/strict, matching src/indexer/parser/__tests__/http-client-shapes.test.ts, http-recognizer-py-go.test.ts, and src/indexer/__tests__/external-endpoints.test.ts"
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Sibling mirror: messaging-client-shapes.ts + messaging-endpoints.ts, protocol-scoped GC",
+        "oneLineSummary": "A dedicated messaging shape module + a dedicated messaging resolution pass, each a direct mirror of its S003 counterpart, with the shared orphan-GC refactored to be protocol-scoped so the two protocols never GC each other's endpoints.",
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Generalize to a protocol-agnostic boundary layer",
+        "oneLineSummary": "Rename/extend http-client-shapes -> a generic boundary-client-shapes and generalize resolveExternalEndpoints to loop over all protocols.",
+        "costEstimate": "L",
+        "reasonRejected": "Rank 3: 'partial' on sc2 — invasively rewrites shipped, reviewed S003 code (rename + signature change) and pre-empts S005's own design turn; the DRY win is deferred to when S005 actually needs it."
+      },
+      {
+        "id": "a3",
+        "name": "Minimal in-file extension (fewest new files)",
+        "oneLineSummary": "Add messaging shape tables as a second export inside http-client-shapes.ts and a resolveMessagingEndpoints inside external-endpoints.ts.",
+        "costEstimate": "M",
+        "reasonRejected": "Rank 2: behaviourally equal to a1 but couples S004's private recognition into S003's `http`/`external`-named files, muddying module identity and the 'private to S004' boundary (scored 'partial' on sc2)."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 symbol.locate — http-client-shapes.ts (HttpClientShape/matchHttpClient/emitCallsHttp/import-gating), the S003 template S004 mirrors",
+      "quotedText": "S004 mirrors this exactly as messaging-client-shapes.ts, adding a `direction:'publish'|'subscribe'` field on the shape and topicArgIndex instead of urlArgIndex"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 symbol.locate — external-endpoints.ts resolveExternalEndpoints + gcOrphanEndpoints; the cross-protocol GC hazard",
+      "quotedText": "a messaging endpoint has zero CALLS_HTTP in-edges, so the EXISTING HTTP gc would wrongly delete S004's endpoints — gcOrphanEndpoints must become protocol-scoped"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1 data-model.trace — sc1 vocabulary (PUBLISHES_TO 14 / SUBSCRIBES_TO 15 / externalEndpoint 13) + ExternalProtocol 'messaging' + makeExternalEndpointId protocol param",
+      "quotedText": "S004 adds NO new graph kinds ... makeExternalEndpointId(repo, protocol:string, target, rawExpression='') already generic over protocol"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "s1 usage.example — per-parser HTTP recognizer wiring + the precision note that messaging verbs are generic (import-gate all five languages)",
+      "quotedText": "the messaging recognizer must be import-gated for ALL five languages (not just Java/Scala) and prefer module-rooted/object-arg shapes"
+    }
+  ]
+}

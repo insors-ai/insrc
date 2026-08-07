@@ -1,0 +1,31 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": false,
+    "sizeClass": "M",
+    "epicHash": "914cbf5ea9026b92",
+    "storyId": "s4",
+    "createdAt": "2026-08-07T16:21:49.770Z"
+  },
+  "body": {
+    "focus": "S004 outbound messaging detector (PUBLISHES_TO/SUBSCRIBES_TO): messaging-client-shapes.ts (shape tables + matchMessagingClient + emitMessaging + all-language import-gating), wired into 5 parsers; messaging-endpoints.ts resolveMessagingEndpoints + protocol-scoped gcOrphanEndpoints refactor (shared by both passes) + settle-pass/fullIndex wiring. 22 new tests; tsc clean; 192 indexer tests pass; S003 external-endpoints regression gate green.",
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      }
+    ]
+  }
+}

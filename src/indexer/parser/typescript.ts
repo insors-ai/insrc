@@ -29,6 +29,10 @@ import type { Entity, Relation, Language } from '../../shared/types.js';
 import { registerParser } from './registry.js';
 import { SHARED_MODULES_REPO_ID } from '../../shared/repo-namespaces.js';
 import { matchHttpClient, emitCallsHttp, isHttpVerb, normalizeCallee } from './http-client-shapes.js';
+import {
+  matchMessagingClient, emitMessaging, fileImportsMessagingLibrary,
+  type TopicArgSelector,
+} from './messaging-client-shapes.js';
 
 const MODULE_NAMESPACE = 'npm' as const;
 const MODULE_REPO_ID = SHARED_MODULES_REPO_ID[MODULE_NAMESPACE];
@@ -107,6 +111,9 @@ class TypeScriptParser implements CodeParser {
     const tree = (parser as { parse(s: string): { rootNode: SyntaxNode } }).parse(source);
     const lang: Language = isJS ? 'javascript' : 'typescript';
     currentClassHttpFields = new Set();  // S001 (t3): reset per file; set per class
+    // S004 (t2): messaging detection is import-gated for every language — a file
+    // is scanned for pub/sub call-sites only when it imports a messaging library.
+    messagingEnabled = fileImportsMessagingLibrary(lang, collectTsImportSpecifiers(source));
 
     const entities:  Entity[]   = [];
     const relations: Relation[] = [];
@@ -793,6 +800,47 @@ function isProvenAxios(recv: string, axiosScopes: AxiosScope[]): boolean {
   return false;
 }
 
+/** S004 (t2): true when the file being parsed imports a messaging library, so
+ *  the (generically-named) messaging recognizer runs only where it is safe. Set
+ *  per file in parse(); parse() is sync + non-reentrant, so the module var is
+ *  safe (same idiom as currentClassHttpFields). */
+let messagingEnabled = false;
+
+/** Collect the module specifiers a TS/JS file imports (import ... from 'x',
+ *  bare import 'x', require('x'), dynamic import('x')) for messaging import-
+ *  gating. A cheap source regex — gating only needs substring membership. */
+function collectTsImportSpecifiers(source: string): string[] {
+  const specs: string[] = [];
+  const re = /(?:from\s*|\brequire\s*\(\s*|\bimport\s*\(\s*|^\s*import\s+)['"]([^'"]+)['"]/gm;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(source)) !== null) { if (m[1]) specs.push(m[1]); }
+  return specs;
+}
+
+/** Extract the raw topic/queue expression text from a call, per the matched
+ *  shape's TopicArgSelector. Positional -> that arg's text. Object-field -> the
+ *  named string field of the first object-literal argument, with a lenient
+ *  fallback to the first arg's raw text when it is not an object literal (so a
+ *  positional `publish(channel)` is captured by the same object-field shape as
+ *  `publish({TopicArn})`). Returns '' when nothing extractable (emit skips it). */
+function extractTsTopicExpr(callNode: SyntaxNode, topicArg: TopicArgSelector): string {
+  const args = callNode.childForFieldName('arguments');
+  if (!args) return '';
+  if (typeof topicArg === 'number') return args.namedChild(topicArg)?.text ?? '';
+  const first = args.namedChild(0);
+  if (!first) return '';
+  if (first.type === 'object') {
+    for (const pair of first.namedChildren) {
+      if (pair.type !== 'pair') continue;
+      const key = pair.childForFieldName('key');
+      const keyName = key ? key.text.replace(/^['"]|['"]$/g, '') : '';
+      if (keyName === topicArg.objectField) return pair.childForFieldName('value')?.text ?? '';
+    }
+    return '';  // object literal without the topic field -> unextractable
+  }
+  return first.text;  // lenient: positional first arg (redis/nats publish(channel))
+}
+
 function walkForCalls(
   node:        SyntaxNode,
   callerId:    string,
@@ -839,6 +887,20 @@ function walkForCalls(
           const urlArg = node.childForFieldName('arguments')?.namedChild(0);
           emitCallsHttp(relations, {
             from: callerId, repo, file: filePath, rawUrlExpr: urlArg?.text ?? '',
+          });
+        }
+      }
+
+      // S004 (t2): messaging recognizer — a `<receiver>.<verb>(...)` producer or
+      // consumer call, only in files that import a messaging library. Restricted
+      // to member_expression so a bare `send()`/`publish()` local call cannot
+      // false-positive on the generic verb name.
+      if (messagingEnabled && funcNode.type === 'member_expression') {
+        const msg = matchMessagingClient('typescript', funcNode.text);
+        if (msg) {
+          emitMessaging(relations, {
+            from: callerId, repo, file: filePath, direction: msg.direction,
+            rawTopicExpr: extractTsTopicExpr(node, msg.topicArg),
           });
         }
       }

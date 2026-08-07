@@ -24,6 +24,7 @@ import type { Entity, Relation } from '../../shared/types.js';
 import { registerParser } from './registry.js';
 import { SHARED_MODULES_REPO_ID } from '../../shared/repo-namespaces.js';
 import { matchHttpClient, emitCallsHttp, isHttpVerb } from './http-client-shapes.js';
+import { matchMessagingClient, emitMessaging, fileImportsMessagingLibrary } from './messaging-client-shapes.js';
 
 const MODULE_NAMESPACE = 'python' as const;
 const MODULE_REPO_ID = SHARED_MODULES_REPO_ID[MODULE_NAMESPACE];
@@ -124,6 +125,8 @@ function walkPythonNode(
       // no general CALLS today, so this is a focused HTTP-only walk attributing
       // each recognized client call to the enclosing function/method entity.
       walkPythonForHttpCalls(node, id, repo, filePath, relations);
+      // S004 (t2): outbound messaging detection (import-gated per file).
+      if (pyMessagingEnabled) walkPythonForMessaging(node, id, repo, filePath, relations);
       break;
     }
 
@@ -371,6 +374,58 @@ function collectPyProvenHttpReceivers(root: SyntaxNode): Set<string> {
   return set;
 }
 
+/** S004 (t2): true when the file being parsed imports a messaging library. Set
+ *  per file in parse(); parse() is sync + non-reentrant, so the module var is
+ *  safe (same idiom as the TS parser's messagingEnabled). */
+let pyMessagingEnabled = false;
+
+/** Collect the module names a Python file imports (`import x`, `import x.y`,
+ *  `from x.y import z`) for messaging import-gating. A cheap source regex —
+ *  gating only needs substring membership against the marker table. */
+function collectPyImportSpecifiers(source: string): string[] {
+  const specs: string[] = [];
+  const re = /^\s*(?:from\s+([\w.]+)\s+import\b|import\s+([\w.,\s]+))/gm;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(source)) !== null) {
+    if (m[1]) specs.push(m[1]);
+    if (m[2]) for (const part of m[2].split(',')) specs.push(part.trim().split(/\s+as\s+/)[0]!.trim());
+  }
+  return specs;
+}
+
+/**
+ * S004 (t2): focused outbound-messaging walk over a function body — mirror of
+ * walkPythonForHttpCalls. A `<obj>.<verb>(...)` whose verb is a known messaging
+ * client method emits an unresolved PUBLISHES_TO / SUBSCRIBES_TO. Restricted to
+ * `attribute` callees (receiver.verb) so a bare `send()` cannot false-positive.
+ */
+function walkPythonForMessaging(
+  root:      SyntaxNode,
+  callerId:  string,
+  repo:      string,
+  filePath:  string,
+  relations: Relation[],
+): void {
+  const stack: SyntaxNode[] = [root];
+  while (stack.length > 0) {
+    const node = stack.pop()!;
+    if (node.type === 'call') {
+      const funcNode = node.childForFieldName('function');
+      if (funcNode?.type === 'attribute') {
+        const msg = matchMessagingClient('python', funcNode.text);
+        if (msg && typeof msg.topicArg === 'number') {
+          const arg = node.childForFieldName('arguments')?.namedChild(msg.topicArg);
+          emitMessaging(relations, {
+            from: callerId, repo, file: filePath, direction: msg.direction,
+            rawTopicExpr: arg?.text ?? '',
+          });
+        }
+      }
+    }
+    for (const child of node.namedChildren) stack.push(child);
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Parser class
 // ---------------------------------------------------------------------------
@@ -412,6 +467,11 @@ class PythonParser implements CodeParser {
     // Detect __all__ to know which top-level defs are exported
     const allNames = collectDunderAll(tree.rootNode);
     const hasAll   = allNames !== null;
+
+    // S004 (t2): messaging detection is import-gated — scan pub/sub call-sites
+    // only when the file imports a messaging library. Set per file (parse() is
+    // sync + non-reentrant, so the module var is safe).
+    pyMessagingEnabled = fileImportsMessagingLibrary('python', collectPyImportSpecifiers(source));
 
     for (const child of tree.rootNode.namedChildren) {
       walkPythonNode(

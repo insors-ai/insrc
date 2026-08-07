@@ -61,6 +61,7 @@ import type { Entity, Relation } from '../../shared/types.js';
 import { registerParser } from './registry.js';
 import { SHARED_MODULES_REPO_ID } from '../../shared/repo-namespaces.js';
 import { matchHttpClient, emitCallsHttp, fileImportsHttpLibrary } from './http-client-shapes.js';
+import { matchMessagingClient, emitMessaging, fileImportsMessagingLibrary } from './messaging-client-shapes.js';
 
 const MODULE_NAMESPACE = 'jvm' as const;
 const MODULE_REPO_ID = SHARED_MODULES_REPO_ID[MODULE_NAMESPACE];
@@ -223,6 +224,8 @@ interface WalkCtx {
 	readonly relations: Relation[];
 	/** Whether the file imports a known HTTP library — gates HTTP recognition. */
 	readonly httpEnabled: boolean;
+	/** Whether the file imports a known messaging library — gates messaging recognition. */
+	readonly messagingEnabled: boolean;
 	/** Class names seen at file scope; used to suffix companion-object
 	 *  signatures with `(companion of X)`. Populated as the walker
 	 *  visits class_definition nodes, then read by object_definition
@@ -756,6 +759,19 @@ function extractCalls(body: SyntaxNode, fromId: string, ctx: WalkCtx): void {
 						from: fromId, repo: ctx.repo, file: ctx.filePath, rawUrlExpr: urlArg?.text ?? '',
 					});
 				}
+				// S004 (t2): messaging recognizer — receiver.<verb>(dest, ...) producer
+				// call, gated on a messaging import. Requires a dotted callee (receiver
+				// present) so a bare send() cannot misfire.
+				const msgMatch = (ctx.messagingEnabled && fn.text.includes('.'))
+					? matchMessagingClient('scala', fn.text) : null;
+				if (msgMatch && typeof msgMatch.topicArg === 'number') {
+					const msgArgs = node.childForFieldName('arguments') ?? node.namedChildren[1];
+					const destArg = msgArgs?.namedChild(msgMatch.topicArg);
+					emitMessaging(ctx.relations, {
+						from: fromId, repo: ctx.repo, file: ctx.filePath,
+						direction: msgMatch.direction, rawTopicExpr: destArg?.text ?? '',
+					});
+				}
 				ctx.relations.push({
 					kind: 'CALLS', from: fromId, to: fn.text.replace(/\s+/g, ' '),
 					resolved: false,
@@ -826,10 +842,12 @@ class ScalaParser implements CodeParser {
 			}
 		}
 		const httpEnabled = fileImportsHttpLibrary('scala', importTexts);
+		// S004 (t2): gate the messaging recognizer the same way.
+		const messagingEnabled = fileImportsMessagingLibrary('scala', importTexts);
 
 		const ctx: WalkCtx = {
 			repo, repoId, filePath, fileId, now, entities, relations,
-			fileClassNames: new Set<string>(), httpEnabled,
+			fileClassNames: new Set<string>(), httpEnabled, messagingEnabled,
 		};
 		walkProgram(tree.rootNode, ctx);
 

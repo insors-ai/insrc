@@ -32,7 +32,7 @@
  */
 
 import type { DbClient } from '../db/client.js';
-import type { Entity, ExternalProtocol, ResolvedTarget } from '../shared/types.js';
+import type { Entity, ExternalProtocol, RelationKind, ResolvedTarget } from '../shared/types.js';
 import { getLogger } from '../shared/logger.js';
 import {
 	listUnresolvedRelations,
@@ -78,7 +78,7 @@ export async function resolveExternalEndpoints(
 	if (rows.length === 0) {
 		// No new HTTP calls — but endpoints may have been orphaned (all callers
 		// removed on re-index), so STILL run GC (the full-clear case).
-		const gcDeleted = await gcOrphanEndpoints(opts.repo);
+		const gcDeleted = await gcOrphanEndpoints(opts.repo, 'http', ['CALLS_HTTP']);
 		return { endpoints: 0, edges: 0, skipped: 0, gcDeleted };
 	}
 
@@ -151,7 +151,7 @@ export async function resolveExternalEndpoints(
 	// cascaded away on file re-index. Runs strictly AFTER promoteResolvedBatch so
 	// a still-called endpoint's just-written edge is visible (never a false orphan).
 	// No-op when nothing is orphaned, so re-index stays idempotent.
-	const gcDeleted = await gcOrphanEndpoints(opts.repo);
+	const gcDeleted = await gcOrphanEndpoints(opts.repo, 'http', ['CALLS_HTTP']);
 
 	const result = { endpoints: endpointsById.size, edges, skipped, gcDeleted };
 	log.info({ repo: opts.repo, ...result }, 'resolveExternalEndpoints pass complete');
@@ -159,19 +159,27 @@ export async function resolveExternalEndpoints(
 }
 
 /**
- * Delete externalEndpoint nodes in `repo` with no incident CALLS_HTTP in-edge.
- * Returns the count deleted. Separate so it can run after the edge writes and
- * be unit-tested directly.
+ * Delete externalEndpoint nodes in `repo` of protocol `protocol` with no
+ * incident boundary in-edge of any kind in `kinds`. Returns the count deleted.
+ * PROTOCOL-SCOPED (S004): the sweep only considers endpoints of this protocol,
+ * so the http and messaging resolution passes never GC each other's nodes — a
+ * messaging endpoint has zero CALLS_HTTP in-edges and MUST NOT be deleted by the
+ * http pass, and vice-versa. Exported so the messaging pass reuses it.
  */
-async function gcOrphanEndpoints(repo: string): Promise<number> {
-	const endpoints = (await listEntitiesByKind(null, 'externalEndpoint')).filter(e => e.repo === repo);
+export async function gcOrphanEndpoints(
+	repo: string,
+	protocol: ExternalProtocol,
+	kinds: readonly RelationKind[],
+): Promise<number> {
+	const endpoints = (await listEntitiesByKind(null, 'externalEndpoint'))
+		.filter(e => e.repo === repo && e.protocol === protocol);
 	if (endpoints.length === 0) return 0;
 
 	const orphanIds: string[] = [];
 	for (const ep of endpoints) {
 		const u64 = await entityU64ForId(ep.id);
 		if (u64 === undefined) continue;  // already gone
-		const callers = await inNeighbors(u64, { kindFilter: ['CALLS_HTTP'] });
+		const callers = await inNeighbors(u64, { kindFilter: kinds });
 		if (callers.length === 0) orphanIds.push(ep.id);
 	}
 	if (orphanIds.length > 0) await deleteEntitiesById(null, orphanIds);

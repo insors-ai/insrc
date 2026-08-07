@@ -211,3 +211,87 @@ def f():
 		assert.deepEqual(http(rels).map(h => h.to), [`'https://api.example.com/a'`], 'nested-def rebind does not regress the enclosing proof');
 	});
 });
+
+// ---------------------------------------------------------------------------
+// S004 — Python + Go messaging recognizers (import-gated)
+// ---------------------------------------------------------------------------
+
+function pub(rels: Relation[]): Relation[] {
+	return rels.filter(r => r.kind === 'PUBLISHES_TO');
+}
+function sub(rels: Relation[]): Relation[] {
+	return rels.filter(r => r.kind === 'SUBSCRIBES_TO');
+}
+
+describe('Python messaging recognizer (S004)', () => {
+	function parse(src: string): Relation[] {
+		return pythonParser.parse('/repo/app.py', src, REPO, REPO_ID).relations;
+	}
+
+	it('kafka-python producer.send / consumer.subscribe + pika basic_publish/basic_consume emit PUBLISHES_TO / SUBSCRIBES_TO', () => {
+		const rels = parse(`
+import kafka
+import pika
+
+def produce():
+    producer.send('orders', b'x')
+
+def consume():
+    consumer.subscribe(['events'])
+
+def rabbit_pub(channel):
+    channel.basic_publish('exchange', 'rk', b'body')
+
+def rabbit_sub(channel):
+    channel.basic_consume('work-queue', cb)
+`);
+		assert.deepEqual(pub(rels).map(r => r.to).sort(), [`'exchange'`, `'orders'`]);
+		assert.deepEqual(sub(rels).map(r => r.to).sort(), [`'work-queue'`, `['events']`]);
+	});
+
+	it('PRECISION: a bare .subscribe()/.send() in a file with NO messaging import emits nothing', () => {
+		const rels = parse(`
+def f(observable):
+    return observable.subscribe(cb)
+`);
+		assert.equal(pub(rels).length + sub(rels).length, 0);
+	});
+});
+
+describe('Go messaging recognizer (S004)', () => {
+	function parse(src: string): Relation[] {
+		return goParser.parse('/repo/app.go', src, REPO, REPO_ID).relations;
+	}
+
+	it('nats.go nc.Publish / nc.Subscribe emit PUBLISHES_TO / SUBSCRIBES_TO to the subject', () => {
+		const rels = parse(`
+package main
+
+import "github.com/nats-io/nats.go"
+
+func produce(nc *nats.Conn) {
+	nc.Publish("orders", []byte("x"))
+}
+
+func consume(nc *nats.Conn) {
+	nc.Subscribe("events", handler)
+}
+`);
+		assert.deepEqual(pub(rels).map(r => r.to), [`"orders"`]);
+		assert.deepEqual(sub(rels).map(r => r.to), [`"events"`]);
+	});
+
+	it('PRECISION: nc.Publish in a file that imports NO messaging library emits nothing', () => {
+		const rels = parse(`
+package main
+
+import "fmt"
+
+func f(nc Thing) {
+	nc.Publish("x", nil)
+	fmt.Println("hi")
+}
+`);
+		assert.equal(pub(rels).length + sub(rels).length, 0);
+	});
+});

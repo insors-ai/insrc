@@ -28,6 +28,7 @@ import type { Entity, Relation } from '../../shared/types.js';
 import { registerParser } from './registry.js';
 import { SHARED_MODULES_REPO_ID } from '../../shared/repo-namespaces.js';
 import { matchHttpClient, emitCallsHttp } from './http-client-shapes.js';
+import { matchMessagingClient, emitMessaging, fileImportsMessagingLibrary } from './messaging-client-shapes.js';
 
 const MODULE_NAMESPACE = 'go' as const;
 const MODULE_REPO_ID = SHARED_MODULES_REPO_ID[MODULE_NAMESPACE];
@@ -113,6 +114,8 @@ function extractFunction(
   // S003 (t4): outbound HTTP detection over this function body. Go emits no
   // general CALLS today, so this is a focused HTTP-only walk.
   walkGoForHttpCalls(node, id, repo, filePath, relations);
+  // S004 (t2): outbound messaging detection (import-gated per file).
+  if (goMessagingEnabled) walkGoForMessaging(node, id, repo, filePath, relations);
 }
 
 /**
@@ -136,6 +139,63 @@ function walkGoForHttpCalls(
       if (funcNode && match) {
         const urlArg = node.childForFieldName('arguments')?.namedChild(match.urlArgIndex);
         emitCallsHttp(relations, { from: callerId, repo, file: filePath, rawUrlExpr: urlArg?.text ?? '' });
+      }
+    }
+    for (let i = 0; i < node.namedChildCount; i++) {
+      const child = node.namedChild(i);
+      if (child !== null) stack.push(child);
+    }
+  }
+}
+
+/** S004 (t2): true when the Go file imports a messaging library. Set per file
+ *  in parse() (sync + non-reentrant, so the module var is safe). */
+let goMessagingEnabled = false;
+
+/** Collect the import paths a Go file declares (single `import "x"` + block
+ *  `import ( "x" ... )`) for messaging import-gating. */
+function collectGoImportSpecifiers(source: string): string[] {
+  const specs: string[] = [];
+  const block = /import\s*\(([\s\S]*?)\)/g;
+  let m: RegExpExecArray | null;
+  while ((m = block.exec(source)) !== null) {
+    const inner = m[1] ?? '';
+    const q = /"([^"]+)"/g;
+    let s: RegExpExecArray | null;
+    while ((s = q.exec(inner)) !== null) { if (s[1]) specs.push(s[1]); }
+  }
+  const single = /import\s+(?:[\w.]+\s+)?"([^"]+)"/g;
+  while ((m = single.exec(source)) !== null) { if (m[1]) specs.push(m[1]); }
+  return specs;
+}
+
+/**
+ * S004 (t2): focused outbound-messaging walk — mirror of walkGoForHttpCalls. A
+ * `<recv>.<Verb>(...)` selector call whose verb is a known messaging method emits
+ * an unresolved PUBLISHES_TO / SUBSCRIBES_TO. Restricted to selector_expression
+ * callees so a bare `Publish()` cannot false-positive.
+ */
+function walkGoForMessaging(
+  root:      SyntaxNode,
+  callerId:  string,
+  repo:      string,
+  filePath:  string,
+  relations: Relation[],
+): void {
+  const stack: SyntaxNode[] = [root];
+  while (stack.length > 0) {
+    const node = stack.pop()!;
+    if (node.type === 'call_expression') {
+      const funcNode = node.childForFieldName('function');
+      if (funcNode?.type === 'selector_expression') {
+        const msg = matchMessagingClient('go', funcNode.text);
+        if (msg && typeof msg.topicArg === 'number') {
+          const arg = node.childForFieldName('arguments')?.namedChild(msg.topicArg);
+          emitMessaging(relations, {
+            from: callerId, repo, file: filePath, direction: msg.direction,
+            rawTopicExpr: arg?.text ?? '',
+          });
+        }
       }
     }
     for (let i = 0; i < node.namedChildCount; i++) {
@@ -196,6 +256,8 @@ function extractMethod(
 
   // S003 (t4): outbound HTTP detection over this method body.
   walkGoForHttpCalls(node, id, repo, filePath, relations);
+  // S004 (t2): outbound messaging detection (import-gated per file).
+  if (goMessagingEnabled) walkGoForMessaging(node, id, repo, filePath, relations);
 }
 
 function extractTypeSpec(
@@ -411,6 +473,9 @@ class GoParser implements CodeParser {
       embedding: [],
       indexedAt: now,
     });
+
+    // S004 (t2): import-gate messaging detection for this file.
+    goMessagingEnabled = fileImportsMessagingLibrary('go', collectGoImportSpecifiers(source));
 
     // Walk top-level declarations
     for (const child of tree.rootNode.namedChildren) {

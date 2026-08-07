@@ -8,6 +8,7 @@ import { upsertEntities } from '../db/entities.js';
 import { upsertRelations, deleteRelationsForFile, deleteUnresolvedForFile } from '../db/relations.js';
 import { runCrossFileResolver } from './cross-file-resolver.js';
 import { resolveExternalEndpoints } from './external-endpoints.js';
+import { resolveMessagingEndpoints } from './messaging-endpoints.js';
 import { detectSourceRoots } from './source-roots.js';
 import { deleteEntitiesForFile, getEntity } from '../db/entities.js';
 import { updateRepoStatus, lookupRepoId, UnregisteredRepoError } from '../db/repos.js';
@@ -444,6 +445,8 @@ export class IndexerService {
       try {
         const ee = await resolveExternalEndpoints({ db: this.db, repo: repoPath });
         log.info({ repo: repoPath, ...ee }, 'external-endpoint pass after cross-file resolve');
+        const me = await resolveMessagingEndpoints({ db: this.db, repo: repoPath });
+        log.info({ repo: repoPath, ...me }, 'messaging-endpoint pass after cross-file resolve');
       } catch (err) {
         log.warn(
           { repo: repoPath, err: err instanceof Error ? err.message : String(err) },
@@ -586,6 +589,8 @@ export class IndexerService {
     try {
       const ee = await resolveExternalEndpoints({ db: this.db, repo: repoPath });
       log.info({ repo: repoPath, ...ee }, 'external-endpoint settle pass complete');
+      const me = await resolveMessagingEndpoints({ db: this.db, repo: repoPath });
+      log.info({ repo: repoPath, ...me }, 'messaging-endpoint settle pass complete');
     } catch (err) {
       log.warn(
         { repo: repoPath, err: err instanceof Error ? err.message : String(err) },

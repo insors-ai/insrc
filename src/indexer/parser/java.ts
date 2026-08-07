@@ -41,6 +41,7 @@ import type { Entity, Relation } from '../../shared/types.js';
 import { registerParser } from './registry.js';
 import { SHARED_MODULES_REPO_ID } from '../../shared/repo-namespaces.js';
 import { matchHttpClient, emitCallsHttp, fileImportsHttpLibrary } from './http-client-shapes.js';
+import { matchMessagingClient, emitMessaging, fileImportsMessagingLibrary } from './messaging-client-shapes.js';
 
 const MODULE_NAMESPACE = 'jvm' as const;
 const MODULE_REPO_ID = SHARED_MODULES_REPO_ID[MODULE_NAMESPACE];
@@ -135,6 +136,8 @@ interface WalkCtx {
 	readonly packageName: string;
 	/** Whether the file imports a known HTTP library — gates HTTP recognition. */
 	readonly httpEnabled: boolean;
+	/** Whether the file imports a known messaging library — gates messaging recognition. */
+	readonly messagingEnabled: boolean;
 }
 
 interface ContainerCtx {
@@ -637,6 +640,18 @@ function extractCalls(
 						from: fromId, repo: ctx.repo, file: ctx.filePath, rawUrlExpr: urlArg?.text ?? '',
 					});
 				}
+				// S004 (t2): messaging recognizer — receiver.<verb>(dest, ...) producer
+				// call (kafkaTemplate.send / *.convertAndSend), gated on a messaging
+				// import. Requires an object receiver so a bare send() cannot misfire.
+				const msgMatch = (ctx.messagingEnabled && objNode !== null)
+					? matchMessagingClient('java', methodName) : null;
+				if (msgMatch && typeof msgMatch.topicArg === 'number') {
+					const destArg = node.childForFieldName('arguments')?.namedChild(msgMatch.topicArg);
+					emitMessaging(ctx.relations, {
+						from: fromId, repo: ctx.repo, file: ctx.filePath,
+						direction: msgMatch.direction, rawTopicExpr: destArg?.text ?? '',
+					});
+				}
 				ctx.relations.push({
 					kind: 'CALLS', from: fromId, to: methodName, resolved: false,
 					meta: { file: ctx.filePath, repo: ctx.repo },
@@ -718,9 +733,11 @@ class JavaParser implements CodeParser {
 			.filter(c => c.type === 'import_declaration')
 			.map(c => c.text);
 		const httpEnabled = fileImportsHttpLibrary('java', importTexts);
+		// S004 (t2): gate the messaging recognizer the same way.
+		const messagingEnabled = fileImportsMessagingLibrary('java', importTexts);
 
 		const ctx: WalkCtx = {
-			repo, repoId, filePath, fileId, now, entities, relations, packageName, httpEnabled,
+			repo, repoId, filePath, fileId, now, entities, relations, packageName, httpEnabled, messagingEnabled,
 		};
 		walkProgram(tree.rootNode, ctx);
 

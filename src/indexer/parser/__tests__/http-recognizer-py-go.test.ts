@@ -198,4 +198,16 @@ def a():
 `);
 		assert.deepEqual(http(rels).map(h => h.to), [`'https://api.example.com/a'`], 'final binding is the factory, so s is proven');
 	});
+
+	it('PRECISION (rebind is function-scoped): a rebind inside a NESTED def does not drop the enclosing function proof', () => {
+		const rels = parse(`
+def f():
+    s = requests.Session()
+    def g():
+        s = {}
+    return s.get('https://api.example.com/a')
+`);
+		// last-binding-wins is scoped to f; g's `s = {}` must not delete f's proof.
+		assert.deepEqual(http(rels).map(h => h.to), [`'https://api.example.com/a'`], 'nested-def rebind does not regress the enclosing proof');
+	});
 });

@@ -255,6 +255,53 @@ function f(arr) {
 		assert.deepEqual(httpRels(r).map(h => h.to), [`'https://outer.example.com'`], 'only the outer axios call, not the nested Map read');
 	});
 
+	it('PRECISION (param shadow): a closure PARAMETER named like the outer axios var shadows the proof — no CALLS_HTTP', () => {
+		const r = parse(`
+import axios from 'axios';
+function f(arr) {
+  const client = axios.create({ baseURL: 'x' });
+  arr.forEach((client) => { return client.get('some-key'); });  // param, not the axios instance
+}
+`);
+		assert.equal(httpRels(r).length, 0, 'a param-shadowed receiver must not resolve to the outer axios proof');
+	});
+
+	it('PRECISION (nested-function param shadow): a nested function param shadows the outer axios var — no CALLS_HTTP', () => {
+		const r = parse(`
+import axios from 'axios';
+function outer() {
+  const client = axios.create({ baseURL: 'x' });
+  function inner(client) { return client.get('k'); }  // param
+  return inner;
+}
+`);
+		assert.equal(httpRels(r).length, 0);
+	});
+
+	it('PRECISION (catch shadow): a catch binding named like the outer axios var shadows the proof — no CALLS_HTTP', () => {
+		const r = parse(`
+import axios from 'axios';
+function f() {
+  const client = axios.create({ baseURL: 'x' });
+  try { doThing(); } catch (client) { return client.get('err-key'); }  // catch binding, not the axios instance
+}
+`);
+		assert.equal(httpRels(r).length, 0, 'a catch-bound receiver must not resolve to the outer axios proof');
+	});
+
+	it('PRECISION (catch shadow, outer still works): the outer axios call outside catch still emits, the catch-shadowed one does not', () => {
+		const r = parse(`
+import axios from 'axios';
+function f() {
+  const client = axios.create({ baseURL: 'x' });
+  const out = client.get('https://outer.example.com');
+  try { doThing(); } catch (client) { client.get('err-key'); }
+  return out;
+}
+`);
+		assert.deepEqual(httpRels(r).map(h => h.to), [`'https://outer.example.com'`], 'only the outer axios call, not the catch-shadowed read');
+	});
+
 	it('PRECISION (inner class in method): an inner class whose `http` field is a Map does NOT inherit the outer HttpClient proof; the outer call still emits', () => {
 		const r = parse(`
 import { HttpClient } from '@angular/common/http';

@@ -711,13 +711,33 @@ function collectClassHttpFields(classNode: SyntaxNode): Set<string> {
   return set;
 }
 
-/** Node types that open a new lexical scope for local `const`/`let`/`var`
- *  declarations. A receiver's axios-proof resolves to the NEAREST such scope
- *  that declares its name, so a nested shadow overrides an outer proof. */
+/** Node types that open a new lexical scope for local bindings (declarations,
+ *  parameters, or a `catch` binding). A receiver's axios-proof resolves to the
+ *  NEAREST such scope that declares its name, so a nested shadow — whether a
+ *  `const`, a parameter, or a catch binding — overrides an outer proof. */
 const SCOPE_NODE_TYPES = new Set([
   'function_declaration', 'function_expression', 'arrow_function',
   'method_definition', 'generator_function', 'generator_function_declaration',
+  'catch_clause',
 ]);
+
+/** Collect the identifier names bound by a parameter / catch / destructuring
+ *  pattern (never a default-value expression: `required_parameter`/
+ *  `optional_parameter` recurse only their `pattern`, so `(x = axios.create())`
+ *  binds `x` without treating `axios` as a binder). Names go to `declared` only,
+ *  never `axios`, so a param/catch binding SHADOWS an outer proof. */
+function collectPatternIdentifiers(node: SyntaxNode, out: Set<string>): void {
+  if (node.type === 'identifier' || node.type === 'shorthand_property_identifier_pattern') {
+    out.add(node.text);
+    return;
+  }
+  if (node.type === 'required_parameter' || node.type === 'optional_parameter') {
+    const pat = node.childForFieldName('pattern');
+    if (pat) collectPatternIdentifiers(pat, out);
+    return;
+  }
+  for (const c of node.namedChildren) collectPatternIdentifiers(c, out);
+}
 
 /** One lexical scope's local variable proofs:
  *  - `declared`: every `const/let/var` name declared DIRECTLY in this scope.
@@ -733,6 +753,14 @@ interface AxiosScope { declared: Set<string>; axios: Set<string>; }
 function collectScopeFrame(scope: SyntaxNode): AxiosScope {
   const declared = new Set<string>();
   const axios    = new Set<string>();
+  // This scope's own binders (function/arrow/method params, or a catch binding)
+  // shadow an outer proof — a param/catch var named like an outer axios instance
+  // is NOT that instance. `parameters` = a formal_parameters list; `parameter` =
+  // an unparenthesized single arrow param or the catch binding.
+  for (const field of ['parameters', 'parameter']) {
+    const bound = scope.childForFieldName(field);
+    if (bound) collectPatternIdentifiers(bound, declared);
+  }
   const stack: SyntaxNode[] = [];
   for (const c of scope.namedChildren) stack.push(c);
   while (stack.length > 0) {

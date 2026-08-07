@@ -331,19 +331,25 @@ function walkPythonForHttpCalls(
  * in the subtree is the factory. A proven name later reassigned with a non-factory
  * RHS (`s = requests.Session(); ...; s = {}`) drops out; a name whose final binding
  * is the factory stays proven even if an earlier binding was not. Assignments are
- * visited in source order so the last one wins. (Flow-insensitive: an approximation
- * that suffices for the same-function rebind case.)
+ * visited in source order so the last one wins, and the scan STOPS at nested
+ * function/lambda boundaries so last-binding-wins is scoped to THIS function — a
+ * rebind inside a nested def (handled by its own pass) never drops the enclosing
+ * proof. (Flow-insensitive: an approximation that suffices for the same-function
+ * rebind case; cross-scope receiver confusion in nested defs is a known residual.)
  */
 function collectPyProvenHttpReceivers(root: SyntaxNode): Set<string> {
   const set = new Set<string>();
   // Collect assignments in source order, then apply last-binding-wins per name.
+  // Stop at nested function/lambda boundaries so a rebind inside a nested def
+  // (handled by its OWN walkPythonForHttpCalls pass) cannot drop the enclosing
+  // function's proof — last-binding-wins is scoped to THIS function.
   const assigns: SyntaxNode[] = [];
-  const stack: SyntaxNode[] = [root];
+  const stack: SyntaxNode[] = [];
+  for (const c of root.namedChildren) stack.push(c);
   while (stack.length > 0) {
     const n = stack.pop()!;
+    if (n.type === 'function_definition' || n.type === 'lambda') continue;
     if (n.type === 'assignment') assigns.push(n);
-    // Push children reversed so the left-to-right / top-to-bottom source order
-    // is preserved when we sort by node position below.
     for (const c of n.namedChildren) stack.push(c);
   }
   assigns.sort((a, b) => a.startIndex - b.startIndex);

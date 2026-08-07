@@ -28,6 +28,7 @@ import { makeEntityId } from './base.js';
 import type { Entity, Relation, Language } from '../../shared/types.js';
 import { registerParser } from './registry.js';
 import { SHARED_MODULES_REPO_ID } from '../../shared/repo-namespaces.js';
+import { matchHttpClient, emitCallsHttp } from './http-client-shapes.js';
 
 const MODULE_NAMESPACE = 'npm' as const;
 const MODULE_REPO_ID = SHARED_MODULES_REPO_ID[MODULE_NAMESPACE];
@@ -667,6 +668,17 @@ function walkForCalls(
   if (node.type === 'call_expression') {
     const funcNode = node.childForFieldName('function');
     if (funcNode) {
+      // S003 (t3): HTTP-client recognizer — runs independently of the CALLS
+      // filters below (one CALLS_HTTP per call-site, keyed on the full member
+      // path, e.g. `axios.get` / `http.request`; a local `get()` won't match).
+      const httpMatch = matchHttpClient('typescript', funcNode.text);
+      if (httpMatch) {
+        const urlArg = node.childForFieldName('arguments')?.namedChild(httpMatch.urlArgIndex);
+        emitCallsHttp(relations, {
+          from: callerId, repo, file: filePath, rawUrlExpr: urlArg?.text ?? '',
+        });
+      }
+
       const calleeName = resolveCalleeName(funcNode);
       if (calleeName && !seen.has(calleeName) && !BUILTIN_OBJECTS.has(calleeName) && !BUILTIN_METHODS.has(calleeName)) {
         seen.add(calleeName);

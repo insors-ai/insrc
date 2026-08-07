@@ -60,7 +60,7 @@ import { makeEntityId } from './base.js';
 import type { Entity, Relation } from '../../shared/types.js';
 import { registerParser } from './registry.js';
 import { SHARED_MODULES_REPO_ID } from '../../shared/repo-namespaces.js';
-import { matchHttpClient, emitCallsHttp } from './http-client-shapes.js';
+import { matchHttpClient, emitCallsHttp, fileImportsHttpLibrary } from './http-client-shapes.js';
 
 const MODULE_NAMESPACE = 'jvm' as const;
 const MODULE_REPO_ID = SHARED_MODULES_REPO_ID[MODULE_NAMESPACE];
@@ -221,6 +221,8 @@ interface WalkCtx {
 	readonly now: string;
 	readonly entities: Entity[];
 	readonly relations: Relation[];
+	/** Whether the file imports a known HTTP library — gates HTTP recognition. */
+	readonly httpEnabled: boolean;
 	/** Class names seen at file scope; used to suffix companion-object
 	 *  signatures with `(companion of X)`. Populated as the walker
 	 *  visits class_definition nodes, then read by object_definition
@@ -743,8 +745,10 @@ function extractCalls(body: SyntaxNode, fromId: string, ctx: WalkCtx): void {
 			if (fn !== undefined) {
 				// S003 (t5): HTTP-client recognizer — Play WS `ws.url(u)` / builder
 				// `.uri(u)` carry the URL on that call; matched by the `url`/`uri`
-				// method name (last segment of the callee). Emitted alongside CALLS.
-				const httpMatch = matchHttpClient('scala', fn.text);
+				// method name (last segment of the callee). Gated on an HTTP-library
+				// import (ctx.httpEnabled) so a non-HTTP `.url`/`.uri` (Play reverse-
+				// routing, resource builders) doesn't misfire. Emitted alongside CALLS.
+				const httpMatch = ctx.httpEnabled ? matchHttpClient('scala', fn.text) : null;
 				if (httpMatch) {
 					const argsNode = node.childForFieldName('arguments') ?? node.namedChildren[1];
 					const urlArg = argsNode?.namedChild(httpMatch.urlArgIndex);
@@ -805,9 +809,27 @@ class ScalaParser implements CodeParser {
 			...(tree.rootNode.hasError ? { signature: 'parse-error' } : {}),
 		});
 
+		// S003 (t5 precision fix): gate HTTP recognition on an HTTP-library import
+		// so a bare `.url`/`.uri` on a non-HTTP receiver (Play reverse-routing,
+		// file/resource builders) doesn't misfire. Scala imports can be nested, so
+		// DFS-collect every import_declaration's text.
+		const importTexts: string[] = [];
+		{
+			const stack: SyntaxNode[] = [tree.rootNode];
+			while (stack.length > 0) {
+				const n = stack.pop()!;
+				if (n.type === 'import_declaration') importTexts.push(n.text);
+				for (let i = 0; i < n.namedChildCount; i++) {
+					const c = n.namedChild(i);
+					if (c !== null) stack.push(c);
+				}
+			}
+		}
+		const httpEnabled = fileImportsHttpLibrary('scala', importTexts);
+
 		const ctx: WalkCtx = {
 			repo, repoId, filePath, fileId, now, entities, relations,
-			fileClassNames: new Set<string>(),
+			fileClassNames: new Set<string>(), httpEnabled,
 		};
 		walkProgram(tree.rootNode, ctx);
 

@@ -5,10 +5,11 @@
 
 /**
  * S003 (t5) — Java + Scala outbound HTTP-client recognizers, hooked into each
- * parser's existing call walk. Java clients are invoked on instance vars, so
- * shapes match by HTTP-specific method name (getForObject / exchange / uri /
- * url). Scala Play-WS `ws.url(u)` / builder `.uri(u)` likewise. A known client
- * call yields one unresolved CALLS_HTTP with the raw URL; look-alikes none.
+ * parser's existing call walk. Java/Scala clients are invoked on instance vars,
+ * so shapes match by HTTP-specific method name (getForObject / exchange / uri /
+ * url) — and recognition is GATED on the file importing a known HTTP library,
+ * so a bare `.exchange`/`.url`/`.uri` on a non-HTTP receiver (RabbitMQ, JDBC,
+ * Play reverse-routing, fluent builders) does NOT misfire.
  *
  * Run: npx tsx --test src/indexer/parser/__tests__/http-recognizer-java-scala.test.ts
  */
@@ -31,14 +32,16 @@ function http(rels: Relation[]): Relation[] {
 // Java
 // ---------------------------------------------------------------------------
 
-describe('Java HTTP recognizer', () => {
+describe('Java HTTP recognizer (import-gated)', () => {
 	function parse(src: string): Relation[] {
 		return javaParser.parse('/repo/src/App.java', src, REPO, REPO_ID).relations;
 	}
 
-	it('RestTemplate.getForObject + WebClient .uri each emit one CALLS_HTTP with the URL arg', () => {
+	it('RestTemplate.getForObject + WebClient .uri each emit one CALLS_HTTP (file imports spring-web)', () => {
 		const rels = parse(`
 package com.example;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 public class App {
   void a() {
     restTemplate.getForObject("https://api.example.com/a", String.class);
@@ -56,13 +59,27 @@ public class App {
 		for (const h of http(rels)) assert.equal(h.resolved, false);
 	});
 
-	it('a non-HTTP method_invocation stays a plain CALLS edge (no CALLS_HTTP)', () => {
+	it('PRECISION: non-HTTP `.exchange`/`.url`/`.uri` in a file with NO HTTP import emit NO CALLS_HTTP', () => {
 		const rels = parse(`
 package com.example;
 public class App {
-  void run() {
-    service.process("not a url");
-  }
+  void rabbit()  { messageBroker.exchange("orders.topic", payload); }   // RabbitMQ
+  void jdbc()    { connectionBuilder.url("jdbc:postgresql://db/app"); } // JDBC
+  void builder() { fileBuilder.uri(localPath); }                        // fluent builder
+  void rest()    { restTemplate.getForObject("https://x/y", String.class); } // no spring import => not HTTP
+}
+`);
+		assert.equal(http(rels).length, 0, 'no HTTP-library import => no HTTP edges');
+		// the calls still exist as plain CALLS edges
+		assert.ok(rels.some(r => r.kind === 'CALLS' && r.to === 'messageBroker.exchange'));
+	});
+
+	it('a non-HTTP method_invocation stays a plain CALLS edge even in an HTTP-importing file', () => {
+		const rels = parse(`
+package com.example;
+import org.springframework.web.client.RestTemplate;
+public class App {
+  void run() { service.process("not a url"); }
 }
 `);
 		assert.equal(http(rels).length, 0);
@@ -84,13 +101,14 @@ public class App {
 // Scala
 // ---------------------------------------------------------------------------
 
-describe('Scala HTTP recognizer', () => {
+describe('Scala HTTP recognizer (import-gated)', () => {
 	function parse(src: string): Relation[] {
 		return scalaParser.parse('/repo/src/App.scala', src, REPO, REPO_ID).relations;
 	}
 
-	it('Play-WS ws.url(u) emits one CALLS_HTTP with the URL arg', () => {
+	it('Play-WS ws.url(u) emits one CALLS_HTTP (file imports play.api.libs.ws)', () => {
 		const rels = parse(`
+import play.api.libs.ws.WSClient
 class App(ws: WSClient) {
   def a(): Unit = {
     ws.url("https://api.example.com/a").get()
@@ -103,12 +121,21 @@ class App(ws: WSClient) {
 		for (const h of http(rels)) assert.equal(h.resolved, false);
 	});
 
-	it('a non-HTTP call stays no CALLS_HTTP', () => {
+	it('PRECISION: Play reverse-routing `.url` / resource `.uri` in a file with NO HTTP import emit NO CALLS_HTTP', () => {
 		const rels = parse(`
 class App {
-  def run(): Unit = {
-    service.process("not a url")
-  }
+  def route(): Unit = { reverseRouter.url(userId) }
+  def res(): Unit   = { fileResource.uri("classpath:data.json") }
+}
+`);
+		assert.equal(http(rels).length, 0, 'no HTTP-library import => no HTTP edges');
+	});
+
+	it('a non-HTTP call stays no CALLS_HTTP', () => {
+		const rels = parse(`
+import play.api.libs.ws.WSClient
+class App {
+  def run(): Unit = { service.process("not a url") }
 }
 `);
 		assert.equal(http(rels).length, 0);

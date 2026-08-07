@@ -577,6 +577,22 @@ export class IndexerService {
       totalAmbiguous += result.ambiguous;
       totalRewired   += result.importsRewired;
     }
+
+    // S003: resolve any CALLS_HTTP relations the just-edited files emitted into
+    // externalEndpoint nodes + edges — once per repo, after the per-file loop.
+    // Without this the external graph only refreshed on a full index; a live
+    // edit that adds an HTTP call would leave the CALLS_HTTP row unresolved
+    // indefinitely. Non-fatal (additive), matching the fullIndex wiring.
+    try {
+      const ee = await resolveExternalEndpoints({ db: this.db, repo: repoPath });
+      log.info({ repo: repoPath, ...ee }, 'external-endpoint settle pass complete');
+    } catch (err) {
+      log.warn(
+        { repo: repoPath, err: err instanceof Error ? err.message : String(err) },
+        'external-endpoint settle pass failed (non-fatal)',
+      );
+    }
+
     log.info(
       { repo: repoPath, files: scope.size, resolved: totalResolved, ambiguous: totalAmbiguous, importsRewired: totalRewired },
       'cross-file settle pass complete',

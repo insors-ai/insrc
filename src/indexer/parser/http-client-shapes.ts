@@ -143,6 +143,56 @@ export const HTTP_CLIENT_SHAPES: Readonly<Record<string, readonly HttpClientShap
 };
 
 // ---------------------------------------------------------------------------
+// Import-gating for instance-method clients (Java / Scala)
+// ---------------------------------------------------------------------------
+
+/**
+ * Per-language import-specifier substrings that indicate an HTTP-client library
+ * is in scope. Java/Scala clients are invoked on instance vars, so their shapes
+ * match by bare method name (`exchange`/`uri`/`url`/`getForObject`/...) — which
+ * without gating would false-positive on mainstream non-HTTP code that shares
+ * those names (RabbitMQ `channel.exchange`, JDBC `builder.url("jdbc:…")`, Play
+ * reverse-routing `.url()`, fluent `.uri(path)`). We therefore only run the
+ * Java/Scala HTTP recognizer when the file actually imports one of these
+ * libraries. (TS/JS/Python/Go match on the module receiver itself — `axios.get`,
+ * `http.Get`, `requests.get` — already unambiguous, so they are NOT gated.) A
+ * residual false positive remains only when a file imports an HTTP library AND
+ * separately calls a same-named non-HTTP method — rare, and the
+ * precision-over-recall stance accepts it.
+ */
+export const HTTP_LIBRARY_IMPORT_MARKERS: Readonly<Record<string, readonly string[]>> = {
+	java: [
+		'org.springframework.web',          // RestTemplate (spring-web) + WebClient (spring-webflux)
+		'okhttp3',                          // OkHttp
+		'java.net.http',                    // JDK 11+ HttpClient
+		'org.apache.http', 'org.apache.hc', // Apache HttpClient 4 / 5
+		'jakarta.ws.rs', 'javax.ws.rs',     // JAX-RS client
+		'retrofit2',                        // Retrofit
+		'feign',                            // OpenFeign
+	],
+	scala: [
+		'play.api.libs.ws',                   // Play WS
+		'sttp',                               // sttp
+		'akka.http', 'org.apache.pekko.http', // Akka / Pekko HTTP
+		'scalaj.http',                        // scalaj-http
+	],
+};
+
+/**
+ * True if any of the file's raw import specifiers references a known HTTP
+ * library for `language` (substring test against the marker table). A language
+ * with no marker table is treated as NOT gated (returns `true`).
+ */
+export function fileImportsHttpLibrary(language: string, importSpecifiers: Iterable<string>): boolean {
+	const markers = HTTP_LIBRARY_IMPORT_MARKERS[language];
+	if (markers === undefined) return true;  // ts/js/python/go — not gated
+	for (const spec of importSpecifiers) {
+		for (const m of markers) if (spec.includes(m)) return true;
+	}
+	return false;
+}
+
+// ---------------------------------------------------------------------------
 // Matching + emit — the stable contract each recognizer calls
 // ---------------------------------------------------------------------------
 

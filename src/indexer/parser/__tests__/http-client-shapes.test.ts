@@ -23,6 +23,7 @@ import {
 	matchHttpClient,
 	emitCallsHttp,
 	normalizeCallee,
+	fileImportsHttpLibrary,
 } from '../http-client-shapes.js';
 import { typescriptParser } from '../typescript.js';
 import type { Entity, Relation } from '../../../shared/types.js';
@@ -74,6 +75,18 @@ describe('http-client-shapes helper — stable contract for t4/t5', () => {
 	it('normalizeCallee collapses whitespace so spaced member chains match', () => {
 		assert.equal(normalizeCallee('axios . get'), 'axios.get');
 		assert.deepEqual(matchHttpClient('typescript', 'axios . get'), { urlArgIndex: 0 });
+	});
+
+	it('fileImportsHttpLibrary gates java/scala on an HTTP-library import; ts/js/python/go are ungated', () => {
+		// java/scala: only true when an HTTP library is imported
+		assert.equal(fileImportsHttpLibrary('java', ['import org.springframework.web.client.RestTemplate;']), true);
+		assert.equal(fileImportsHttpLibrary('java', ['import okhttp3.OkHttpClient;']), true);
+		assert.equal(fileImportsHttpLibrary('java', ['import com.rabbitmq.client.Channel;', 'import java.sql.DriverManager;']), false);
+		assert.equal(fileImportsHttpLibrary('scala', ['import play.api.libs.ws.WSClient']), true);
+		assert.equal(fileImportsHttpLibrary('scala', ['import java.nio.file.Paths']), false);
+		// languages without a marker table are not gated
+		assert.equal(fileImportsHttpLibrary('typescript', []), true);
+		assert.equal(fileImportsHttpLibrary('go', []), true);
 	});
 
 	it('emitCallsHttp pushes one unresolved CALLS_HTTP, and skips an empty URL (no empty-`to` node)', () => {

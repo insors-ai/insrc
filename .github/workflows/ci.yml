@@ -6,13 +6,24 @@ on:
   pull_request:
     branches: [main]
 
+# Supersede an in-flight run when a newer commit lands on the same ref, so
+# stuck/slow runs don't pile up and burn Actions minutes.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-and-test:
     runs-on: ${{ matrix.os }}
+    # Hard cap: the sweep normally finishes in a few minutes. Without this a
+    # single leaked native handle (LMDB / Lance / socket) that stops the test
+    # process from exiting used to run to GitHub's 6h ceiling.
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        # ubuntu only — macos-latest costs 10x minutes and queues for hours.
+        os: [ubuntu-latest]
     steps:
       - uses: actions/checkout@v4
 
@@ -29,6 +40,10 @@ jobs:
         run: npm run build
 
       - name: Run tests
-        run: npx tsx --test 'src/**/__tests__/*.test.ts'
+        # --test-force-exit: terminate the runner once tests complete even if a
+        # suite leaves a native handle open (LMDB/Lance envs, sockets), instead
+        # of hanging. Env-dependent e2e suites gate themselves behind
+        # INSRC_LIVE_TESTS and skip here.
+        run: npx tsx --test --test-force-exit 'src/**/__tests__/*.test.ts'
         env:
           NODE_OPTIONS: '--max-old-space-size=4096'

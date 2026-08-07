@@ -1,0 +1,37 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": false,
+    "epicHash": "914cbf5ea9026b92",
+    "storyId": "s3",
+    "createdAt": "2026-08-07T06:16:14.826Z",
+    "updatedAt": "2026-08-07T06:16:14.826Z"
+  },
+  "body": {
+    "focus": "S003 — outbound HTTP/REST detector: per-language recognizers (TS/JS, Python, Go, Java, Scala) emit unresolved CALLS_HTTP; resolveExternalEndpoints pass resolves via sc2 into externalEndpoint nodes + edges; code-symbol resolver excludes boundary kinds.",
+    "producesLld": false,
+    "commit": "68da252",
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      }
+    ]
+  }
+}

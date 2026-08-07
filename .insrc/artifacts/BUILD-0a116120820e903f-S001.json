@@ -1,0 +1,33 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": false,
+    "epicHash": "0a116120820e903f",
+    "storyId": "S001",
+    "createdAt": "2026-08-07T15:03:53.735Z",
+    "updatedAt": "2026-08-07T15:03:53.735Z"
+  },
+  "body": {
+    "focus": "S003 detector follow-ups: (t1) deleteEntitiesById storage primitive; (t2) edges-stat distinct-pair + orphan endpoint GC; (t3) TS proven-receiver dataflow recall (lexically scoped after review HIGH); (t4) Python proven-receiver dataflow recall. Precision preserved; 2 MED nested-scope residuals logged as fast-follow.",
+    "producesLld": false,
+    "commit": "79dacb2",
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      }
+    ]
+  }
+}

@@ -1,13 +1,15 @@
 name: CI
 
+# Automatic build/test on push/PR is DISABLED — it is irrelevant to the website
+# deploy (pages.yml) and its runs (esp. the old 6h-hung + macos-10x jobs) burned
+# the org's free Actions minutes, which stalled the Pages deploy. This workflow
+# is now manual-only: run it on demand with `gh workflow run ci.yml` (or the
+# Actions tab) when you actually want the CI sweep. Local dev still runs
+# `npx tsx --test 'src/**/__tests__/*.test.ts'` directly.
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
 
-# Supersede an in-flight run when a newer commit lands on the same ref, so
-# stuck/slow runs don't pile up and burn Actions minutes.
+# Supersede an in-flight run when a newer manual run starts, so nothing piles up.
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
@@ -15,9 +17,8 @@ concurrency:
 jobs:
   build-and-test:
     runs-on: ${{ matrix.os }}
-    # Hard cap: the sweep normally finishes in a few minutes. Without this a
-    # single leaked native handle (LMDB / Lance / socket) that stops the test
-    # process from exiting used to run to GitHub's 6h ceiling.
+    # Hard cap so a leaked native handle (LMDB / Lance / socket) that stops the
+    # test process from exiting can't run to GitHub's 6h ceiling again.
     timeout-minutes: 20
     strategy:
       fail-fast: false
@@ -41,9 +42,8 @@ jobs:
 
       - name: Run tests
         # --test-force-exit: terminate the runner once tests complete even if a
-        # suite leaves a native handle open (LMDB/Lance envs, sockets), instead
-        # of hanging. Env-dependent e2e suites gate themselves behind
-        # INSRC_LIVE_TESTS and skip here.
+        # suite leaves a native handle open, instead of hanging. Env-dependent
+        # e2e suites gate themselves behind INSRC_LIVE_TESTS and skip here.
         run: npx tsx --test --test-force-exit 'src/**/__tests__/*.test.ts'
         env:
           NODE_OPTIONS: '--max-old-space-size=4096'

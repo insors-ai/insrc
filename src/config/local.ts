@@ -31,11 +31,15 @@ const log = getLogger('config:local');
 
 
 export interface LocalProviderInfraConfig {
-	readonly host:           string;
-	readonly embeddingModel: string;
-	readonly embeddingDim:   number;
-	readonly coreModel:      string;
-	readonly charsPerToken:  number;
+	readonly host:               string;
+	readonly embeddingModel:     string;
+	readonly embeddingDim:       number;
+	readonly coreModel:          string;
+	readonly charsPerToken:      number;
+	/** Ollama keep_alive for the embedder model (e.g. '24h' / '-1' forever /
+	 *  '0' eager-unload) — keeps the hot-path embed model resident during index
+	 *  bursts instead of Ollama's ~5-min default eviction (S001). */
+	readonly embeddingKeepAlive: string;
 }
 
 
@@ -43,12 +47,21 @@ export interface LocalProviderInfraConfig {
 // qwen3-embedding:0.6b is the v1 default for the LMDB+Lance substrate;
 // users can override via the Model Providers pane (Local tab).
 const DEFAULTS: LocalProviderInfraConfig = {
-	host:           'http://localhost:11434',
-	embeddingModel: 'qwen3-embedding:0.6b',
-	embeddingDim:   1024,
-	coreModel:      'qwen3.6:27b',
-	charsPerToken:  3,
+	host:               'http://localhost:11434',
+	embeddingModel:     'qwen3-embedding:0.6b',
+	embeddingDim:       1024,
+	coreModel:          'qwen3.6:27b',
+	charsPerToken:      3,
+	embeddingKeepAlive: '24h',
 };
+
+
+/** Coalesce a raw embeddingKeepAlive config value to a usable Ollama keep_alive:
+ *  an empty/blank/non-string value falls back to the '24h' default, so the
+ *  embedder is never sent keep_alive:'' (S001). */
+export function resolveEmbeddingKeepAlive(raw: unknown): string {
+	return typeof raw === 'string' && raw.trim() !== '' ? raw.trim() : DEFAULTS.embeddingKeepAlive;
+}
 
 
 let cached: LocalProviderInfraConfig | undefined;
@@ -72,6 +85,7 @@ export function loadLocalProviderConfig(): LocalProviderInfraConfig {
 			embeddingDim:   typeof local['embeddingDim']   === 'number' ? local['embeddingDim']   as number : DEFAULTS.embeddingDim,
 			coreModel:      typeof local['coreModel']      === 'string' ? local['coreModel']      as string : DEFAULTS.coreModel,
 			charsPerToken:  typeof local['charsPerToken']  === 'number' ? local['charsPerToken']  as number : DEFAULTS.charsPerToken,
+			embeddingKeepAlive: resolveEmbeddingKeepAlive(local['embeddingKeepAlive']),
 		};
 		return cached;
 	} catch (err) {

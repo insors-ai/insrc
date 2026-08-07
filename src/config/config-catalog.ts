@@ -114,6 +114,7 @@ export const CONFIG_CATALOG: readonly ConfigOption[] = [
 	{ path: 'models.local.embeddingDim',   type: 'number', default: 1024,                       desc: 'embedder dimensions (768 for ONNX) — read by the embedder' },
 	{ path: 'models.local.coreModel',      type: 'string', default: 'qwen3.6:27b',              desc: 'local core / summariser model id used by the indexer embedder' },
 	{ path: 'models.local.charsPerToken',  type: 'number', default: 3,                          desc: 'chars→tokens heuristic (local provider)' },
+	{ path: 'models.local.embeddingKeepAlive', type: 'string', default: '24h',                  desc: "Ollama keep_alive for the embedder model ('24h' / '-1' forever / '0' eager-unload) — keeps the hot-path embed model resident during index bursts" },
 ];
 
 /**

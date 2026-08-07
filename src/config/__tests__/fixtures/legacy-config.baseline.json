@@ -52,7 +52,8 @@
       "coreModel": "qwen3-coder:latest",
       "embeddingModel": "qwen3-embedding:0.6b",
       "embeddingDim": 1024,
-      "charsPerToken": 3
+      "charsPerToken": 3,
+      "embeddingKeepAlive": "24h"
     }
   },
   "permissions": {

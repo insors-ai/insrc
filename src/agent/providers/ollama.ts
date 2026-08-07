@@ -162,6 +162,9 @@ export class OllamaProvider implements LLMProvider {
    */
   readonly numCtx: number;
   private readonly embeddingModel: string;
+  /** Ollama keep_alive for the embed model — keeps it resident during index
+   *  bursts instead of the ~5-min default eviction (S001). From config. */
+  private readonly embeddingKeepAlive: string;
   private readonly quirks: ModelQuirks;
 
   constructor(
@@ -177,6 +180,9 @@ export class OllamaProvider implements LLMProvider {
     // window. Callers passing `numCtx` win; otherwise default to 16k.
     this.numCtx = numCtx ?? 16_384;
     this.embeddingModel = d.embeddingModel;
+    // loadLocalProviderConfig already coalesces empty/blank to the '24h' default
+    // (resolveEmbeddingKeepAlive), so d.embeddingKeepAlive is a usable non-empty value.
+    this.embeddingKeepAlive = d.embeddingKeepAlive;
     this.quirks = modelQuirks(this.model);
     log.info({ model: this.model, family: this.quirks.family, noThinkOnTools: this.quirks.noThinkOnTools, formatWithTools: this.quirks.formatWithTools }, 'ollama provider configured');
     // Override undici's default headers timeout (300s) which is too short for
@@ -422,7 +428,7 @@ export class OllamaProvider implements LLMProvider {
 
   async embed(text: string): Promise<number[]> {
     try {
-      const result = await this.client.embed({ model: this.embeddingModel, input: text });
+      const result = await this.client.embed({ model: this.embeddingModel, input: text, keep_alive: this.embeddingKeepAlive });
       return result.embeddings[0] ?? [];
     } catch {
       return [];

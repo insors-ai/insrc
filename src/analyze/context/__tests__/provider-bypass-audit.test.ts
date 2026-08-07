@@ -22,13 +22,27 @@ import { join } from 'node:path';
 const SRC = fileURLToPath(new URL('../../../', import.meta.url)); // → src/
 
 /** The ONLY production files allowed to call buildShaperProvider directly:
- *  - shaper-provider.ts: the factory definition + the resolveRoleProvider seam fallback.
- *  - role-router.ts:      materialize (the sanctioned per-role construction primitive).
- *  - workflow-rpc.ts:     prepareWorkflowRun's driver-role scalar (S003 back-compat). */
+ *  - shaper-provider.ts:    the factory definition + the resolveRoleProvider seam fallback.
+ *  - role-router.ts:        materialize (the sanctioned per-role construction primitive).
+ *  - workflow-rpc.ts:       prepareWorkflowRun's driver-role scalar (S003 back-compat).
+ *  - code-review-rpc.ts:    daemon code-review RPC entry point — resolves the review
+ *                           provider with CLI opts (repoOverride / clientDefault /
+ *                           cliTimeoutMs), analogous to workflow-rpc.ts. Not an ambient
+ *                           analyze site; it builds the top-of-request provider directly.
+ *  - narrative-generator.ts: docgen's cached top-of-run provider (Ollama-local default,
+ *                           or claude/codex CLI) — a docgen entry point, not an analyze
+ *                           reasoning site inside a RoutingSeamContext.
+ *
+ *  NOTE: the stricter alternative is to route these through the sc6 seam so they pick up
+ *  per-role tiering + attribution (code-review would establish a RoutingSeamContext around
+ *  its drive like workflow-rpc, and pass a `review`-role provider). That is a behaviour
+ *  change tracked separately; for now they are sanctioned entry-point direct callers. */
 const ALLOWLIST = new Set([
 	'analyze/context/shaper-provider.ts',
 	'analyze/context/role-router.ts',
 	'daemon/workflow-rpc.ts',
+	'daemon/code-review-rpc.ts',
+	'docgen/extract/narrative-generator.ts',
 ]);
 
 function walk(dir: string, out: string[] = []): string[] {

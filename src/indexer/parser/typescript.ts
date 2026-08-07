@@ -705,7 +705,11 @@ function collectClassHttpFields(classNode: SyntaxNode): Set<string> {
   return set;
 }
 
-/** `const x = axios.create(...)` variable names declared within ONE body. */
+/** `const x = axios.create(...)` variable names declared within ONE body.
+ *  KNOWN residual (MED, fast-follow): a name shadowed in a NESTED closure inside
+ *  the body (e.g. `const client = new Map()` in a callback) isn't subtracted, and
+ *  a class DECLARED inside a method keeps the outer class's `this.<field>` proof.
+ *  Both need per-nested-scope shadow tracking; rare in real service code. */
 function collectLocalAxiosVars(body: SyntaxNode): Set<string> {
   const set = new Set<string>();
   const stack: SyntaxNode[] = [body];

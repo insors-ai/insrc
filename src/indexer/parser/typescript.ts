@@ -106,10 +106,7 @@ class TypeScriptParser implements CodeParser {
 
     const tree = (parser as { parse(s: string): { rootNode: SyntaxNode } }).parse(source);
     const lang: Language = isJS ? 'javascript' : 'typescript';
-
-    // S001 (t3): per-file proven-HTTP-client receivers, computed once before the
-    // walk (parse is sync + non-reentrant), read by walkForCalls.
-    tsProvenHttpReceivers = collectTsProvenHttpReceivers(tree.rootNode);
+    currentClassHttpFields = new Set();  // S001 (t3): reset per file; set per class
 
     const entities:  Entity[]   = [];
     const relations: Relation[] = [];
@@ -300,6 +297,12 @@ function extractClass(
     }
   }
 
+  // S001 (t3): scope `this.<field>` HTTP proof to THIS class while walking its
+  // methods (save/restore for nested classes) so a same-named non-HttpClient
+  // field in another class never matches.
+  const prevClassHttpFields = currentClassHttpFields;
+  currentClassHttpFields = collectClassHttpFields(node);
+
   // Walk class_body for method definitions
   const body = node.childForFieldName('body');
   if (body) {
@@ -309,6 +312,8 @@ function extractClass(
       }
     }
   }
+
+  currentClassHttpFields = prevClassHttpFields;
 }
 
 function extractClassHeritage(
@@ -624,7 +629,9 @@ function extractCalls(
   relations:  Relation[],
 ): void {
   const seen = new Set<string>();
-  walkForCalls(bodyNode, callerId, repo, filePath, relations, seen);
+  // S001 (t3): local `const x = axios.create()` receivers, scoped to THIS body.
+  const localHttp = collectLocalAxiosVars(bodyNode);
+  walkForCalls(bodyNode, callerId, repo, filePath, relations, seen, localHttp);
 }
 
 const BUILTIN_OBJECTS = new Set([
@@ -662,35 +669,48 @@ const BUILTIN_METHODS = new Set([
 ]);
 
 /**
- * Per-file set of receivers PROVEN to be HTTP clients (S001 t3): the receiver
- * text (`this.http`, `client`) for a call to be recognized as instance-client
- * HTTP. Populated once per parse() (parse is sync + non-reentrant); consumed by
- * walkForCalls. Only concrete proof nodes populate it, so precision holds.
+ * Proven-HTTP-client receivers scoped LEXICALLY (S001 t3), so a receiver name
+ * proven in one scope never leaks to another:
+ *  - `currentClassHttpFields`: the `this.<name>` for HttpClient-typed
+ *    fields/ctor-params of the CLASS currently being walked (set by extractClass,
+ *    save/restored for nested classes) — a second class with a same-named
+ *    non-HttpClient field never matches.
+ *  - local `const x = axios.create()` vars: collected PER function/method body
+ *    inside extractCalls (a `const client = someMap` in another body is not an
+ *    axios.create RHS, so it isn't proven).
+ * parse() is sync + non-reentrant, so the module var is safe.
  */
-let tsProvenHttpReceivers: Set<string> = new Set();
+let currentClassHttpFields: Set<string> = new Set();
 
-/**
- * Collect the file's proven-HTTP-client receivers: (a) a param/field with a
- * `HttpClient` type annotation => `this.<name>` (Angular DI); (b) a
- * `const x = axios.create(...)` => `x`. Nothing else is added — an unproven
- * receiver (bare `.get()`) never matches.
- */
-function collectTsProvenHttpReceivers(root: SyntaxNode): Set<string> {
+/** HttpClient-typed fields + constructor params of ONE class => `this.<name>`.
+ *  Descends the class body but stops at nested class boundaries so an inner
+ *  class's fields don't leak into the outer class. */
+function collectClassHttpFields(classNode: SyntaxNode): Set<string> {
   const set = new Set<string>();
-  const stack: SyntaxNode[] = [root];
+  const stack: SyntaxNode[] = [];
+  for (const c of classNode.namedChildren) stack.push(c);
   while (stack.length > 0) {
     const n = stack.pop()!;
-    // (a) HttpClient-typed constructor param / class field -> this.<name>
+    if (n.type === 'class_declaration' || n.type === 'class') continue;  // nested class: different scope
     if (n.type === 'required_parameter' || n.type === 'optional_parameter'
         || n.type === 'public_field_definition' || n.type === 'property_signature') {
       const typeNode = n.childForFieldName('type');
       if (typeNode && /:\s*HttpClient\b/.test(typeNode.text)) {
         const nameNode = n.childForFieldName('name') ?? n.childForFieldName('pattern');
-        const name = nameNode?.text;
-        if (name) set.add(`this.${name}`);
+        if (nameNode?.text) set.add(`this.${nameNode.text}`);
       }
     }
-    // (b) const x = axios.create(...) -> x
+    for (const c of n.namedChildren) stack.push(c);
+  }
+  return set;
+}
+
+/** `const x = axios.create(...)` variable names declared within ONE body. */
+function collectLocalAxiosVars(body: SyntaxNode): Set<string> {
+  const set = new Set<string>();
+  const stack: SyntaxNode[] = [body];
+  while (stack.length > 0) {
+    const n = stack.pop()!;
     if (n.type === 'variable_declarator') {
       const value = n.childForFieldName('value');
       if (value?.type === 'call_expression') {
@@ -713,6 +733,7 @@ function walkForCalls(
   filePath:   string,
   relations:  Relation[],
   seen:       Set<string>,
+  localHttp:  Set<string>,
 ): void {
   if (node.type === 'call_expression') {
     const funcNode = node.childForFieldName('function');
@@ -732,8 +753,9 @@ function walkForCalls(
         // and verb is an HTTP verb. Unproven receivers never match.
         const obj  = funcNode.childForFieldName('object');
         const prop = funcNode.childForFieldName('property');
+        const recv = obj ? normalizeCallee(obj.text) : '';
         if (obj && prop && isHttpVerb(prop.text)
-            && tsProvenHttpReceivers.has(normalizeCallee(obj.text))) {
+            && (currentClassHttpFields.has(recv) || localHttp.has(recv))) {
           const urlArg = node.childForFieldName('arguments')?.namedChild(0);
           emitCallsHttp(relations, {
             from: callerId, repo, file: filePath, rawUrlExpr: urlArg?.text ?? '',
@@ -756,7 +778,7 @@ function walkForCalls(
   }
 
   for (const child of node.namedChildren) {
-    walkForCalls(child, callerId, repo, filePath, relations, seen);
+    walkForCalls(child, callerId, repo, filePath, relations, seen, localHttp);
   }
 }
 

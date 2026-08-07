@@ -188,6 +188,26 @@ class Svc {
 		assert.equal(httpRels(r).length, 0);
 	});
 
+	it('PRECISION (lexical scope): `client` = axios.create in one method does NOT prove `client` in another method', () => {
+		const r = parse(`
+import axios from 'axios';
+class Svc {
+  makeApi() { const client = axios.create({ baseURL: 'x' }); return client.get('https://real.example.com'); }
+  lookup(m) { const client = m; return client.get('some-key'); }  // Map, NOT an axios instance
+}
+`);
+		assert.deepEqual(httpRels(r).map(h => h.to), [`'https://real.example.com'`], 'only the axios-instance call, not the Map read');
+	});
+
+	it('PRECISION (class scope): a same-named non-HttpClient field in a second class does NOT match', () => {
+		const r = parse(`
+import { HttpClient } from '@angular/common/http';
+class ApiSvc  { constructor(private http: HttpClient) {} a() { return this.http.get('https://api.example.com'); } }
+class CacheSvc { private http: MyCache; b() { return this.http.get('cache-key'); } }
+`);
+		assert.deepEqual(httpRels(r).map(h => h.to), [`'https://api.example.com'`], 'only ApiSvc.http (HttpClient), not CacheSvc.http (MyCache)');
+	});
+
 	it('the field-based HttpClient (public field, not a ctor param) is also proven', () => {
 		const r = parse(`
 class Svc {

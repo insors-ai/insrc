@@ -17,6 +17,10 @@ const _localDefaults = loadLocalProviderConfig();
 
 export const EMBEDDING_MODEL = _localDefaults.embeddingModel;
 export const EMBEDDING_DIM   = _localDefaults.embeddingDim;
+// keep_alive for every embed call on the indexer's Ollama client — keeps the
+// hot-path embed model resident during index bursts instead of Ollama's ~5-min
+// default eviction (S001). loadLocalProviderConfig coalesces empty->'24h'.
+const EMBEDDING_KEEP_ALIVE = _localDefaults.embeddingKeepAlive;
 
 const QUERY_PREFIX =
   'Instruct: Given a user question, retrieve relevant code snippets\nQuery: ';
@@ -149,7 +153,7 @@ export async function embedEntities(
 
       try {
         const result = await withTimeout(
-          ollama.embed({ model: EMBEDDING_MODEL, input: inputs }),
+          ollama.embed({ model: EMBEDDING_MODEL, input: inputs, keep_alive: EMBEDDING_KEEP_ALIVE }),
           OLLAMA_EMBED_BATCH_TIMEOUT_MS,
           `ollama.embed (batch=${inputs.length})`,
         );
@@ -211,6 +215,7 @@ export async function embedQuery(text: string): Promise<number[]> {
       ollama.embed({
         model: EMBEDDING_MODEL,
         input: formatQuery(text),
+        keep_alive: EMBEDDING_KEEP_ALIVE,
       }),
       OLLAMA_EMBED_SINGLE_TIMEOUT_MS,
       'ollama.embed (query)',
@@ -242,6 +247,7 @@ export async function embedText(text: string): Promise<number[]> {
       ollama.embed({
         model: EMBEDDING_MODEL,
         input,
+        keep_alive: EMBEDDING_KEEP_ALIVE,
       }),
       OLLAMA_EMBED_SINGLE_TIMEOUT_MS,
       'ollama.embed (text)',

@@ -1,0 +1,21 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": false,
+    "epicHash": "386a3d4a69d333df",
+    "storyId": "S001",
+    "createdAt": "2026-08-07T10:40:52.428Z",
+    "updatedAt": "2026-08-07T10:40:52.428Z"
+  },
+  "body": {
+    "focus": "Pin the Ollama embedding model keep-alive: models.local.embeddingKeepAlive config knob (default 24h) wired into BOTH the indexer embedder (embedEntities/embedQuery/embedText — the index-burst hot path) and OllamaProvider.embed() (delegation fallback), so the embed model stays resident instead of Ollama 5-min eviction.",
+    "producesLld": true,
+    "commit": "d113f45",
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      }
+    ]
+  }
+}

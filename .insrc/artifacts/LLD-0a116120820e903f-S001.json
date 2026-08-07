@@ -1,0 +1,461 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1786112956080-d29xve",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-08-07T14:35:19.818Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 363603,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "0a116120820e903f",
+    "epicSlug": "s003-outbound-http-detector-follow-ups",
+    "storyId": "S001",
+    "hldBaseRunId": "wf-1786112956080-d29xve",
+    "hldEffectiveHash": "0a116120820e903f29161565119c57c30f0e52409c4e4c87cf81381c94255ea4",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "feature",
+    "triageRationale": "Feature: >1 task across external-endpoints.ts + entity storage (new deleteEntitiesById) + the TS/Python recognizers; real design in GC orphan-detection + precision-guarded dataflow recall.",
+    "approvedAt": "2026-08-07T14:36:32.175Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "S001",
+        "owns": [],
+        "depends": [],
+        "internal": "S003 detector follow-ups: edges-stat, endpoint GC, dataflow recall"
+      },
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "deleteEntitiesById",
+          "signature": "deleteEntitiesById(_db: DbClient, ids: readonly string[]): Promise<void>",
+          "parameters": [
+            {
+              "name": "_db",
+              "type": "DbClient",
+              "purpose": "Daemon-side handle (unused; storage uses getGraphStore()).",
+              "optional": false
+            },
+            {
+              "name": "ids",
+              "type": "readonly string[]",
+              "purpose": "String entity ids to delete (the orphaned externalEndpoint ids).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "NEW storage primitive in src/db/entities.ts. For each id: look up its u64, delete the entity row, its name_index entry, the id<->u64 maps, and cascade its incident out/in edges — mirroring the deleteEntitiesForFile cascade but keyed by explicit id (needed because externalEndpoint entities share file='' so deleteEntitiesForFile is too coarse). Missing ids are skipped."
+          },
+          "errors": [],
+          "preconditions": [
+            "ids are current entity ids (stale ids are no-ops)."
+          ],
+          "postconditions": [
+            "Each named entity + its incident edges are gone; other entities untouched; idempotent (deleting an absent id is a no-op)."
+          ]
+        },
+        {
+          "name": "resolveExternalEndpoints",
+          "signature": "resolveExternalEndpoints(opts: { db: DbClient; repo: string } & ResolveExternalEndpointsDeps): Promise<ResolveExternalEndpointsResult>",
+          "parameters": [
+            {
+              "name": "opts",
+              "type": "{ db; repo; resolve? }",
+              "purpose": "Existing pass options (unchanged shape).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ResolveExternalEndpointsResult",
+            "meaning": "Existing pass (src/indexer/external-endpoints.ts) — TWO internal changes: (1) `edges` is now the count of DISTINCT (fromEntity,targetEntityId) pairs among promotes (was promotes.length, which double-counted a caller reaching one identity via two raw exprs); (2) after promoteResolvedBatch, a GC step lists this repo's externalEndpoint entities, keeps those with >=1 incident CALLS_HTTP in-edge (inNeighbors), and deletes the rest via deleteEntitiesById. Result shape may gain an optional `gcDeleted` count. ac1/ac2/idempotency invariants preserved."
+          },
+          "errors": [],
+          "preconditions": [
+            "Runs after promoteResolvedBatch has written the current edges."
+          ],
+          "postconditions": [
+            "edges reflects distinct edges; no externalEndpoint node in the repo has zero incident CALLS_HTTP edges after the pass; re-running on identical sources leaves the node/edge set unchanged (GC is a no-op when nothing orphaned)."
+          ]
+        },
+        {
+          "name": "parse",
+          "signature": "parse(filePath: string, source: string, repo: string, repoId: number): ParseResult",
+          "parameters": [
+            {
+              "name": "filePath",
+              "type": "string",
+              "purpose": "Unchanged.",
+              "optional": false
+            },
+            {
+              "name": "source",
+              "type": "string",
+              "purpose": "Unchanged.",
+              "optional": false
+            },
+            {
+              "name": "repo",
+              "type": "string",
+              "purpose": "Unchanged.",
+              "optional": false
+            },
+            {
+              "name": "repoId",
+              "type": "number",
+              "purpose": "Unchanged.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ParseResult",
+            "meaning": "TS + Python parsers — SIGNATURE UNCHANGED. Internal: each pre-scans the file for a per-file Set of receivers PROVEN to be HTTP clients (TS: a constructor/method param or class field with a `HttpClient` type annotation → `this.<name>`; a `const x = axios.create(...)` → `x`. Python: `x = requests.Session()` / `httpx.Client()` → `x`). A call `<receiver>.<verb>(url)` whose receiver is in the Set AND verb is an HTTP verb emits an unresolved CALLS_HTTP (via emitCallsHttp). Receivers NOT proven HTTP never match — no bare `.get()`. Additive: existing module-rooted matches (fetch/axios.get/requests.get) + all other emission unchanged."
+          },
+          "errors": [],
+          "preconditions": [
+            "The recognizer already runs inside the existing call walk (walkForCalls / walkPythonForHttpCalls)."
+          ],
+          "postconditions": [
+            "A proven-HTTP-receiver verb call yields one CALLS_HTTP with the raw URL; a same-named method on an unproven receiver yields no CALLS_HTTP; a no-HTTP file is byte-identical to before."
+          ]
+        }
+      ],
+      "dataModel": [
+        {
+          "entity": "deleteEntitiesById (new storage primitive)",
+          "change": "new",
+          "details": "New export in src/db/entities.ts: per-id entity delete with incident-edge cascade + name_index/id-map cleanup, mirroring deleteEntitiesForFile's cascade but keyed by id. Enables targeted GC of externalEndpoint nodes (which share file='' so the file-scoped delete can't isolate them).",
+          "schemaDiff": "db/entities.ts: + export async function deleteEntitiesById(_db, ids: readonly string[]): Promise<void>",
+          "callSites": [
+            "src/db/entities.ts",
+            "src/indexer/external-endpoints.ts"
+          ]
+        },
+        {
+          "entity": "resolveExternalEndpoints edges-stat + orphan GC",
+          "change": "invariant-change",
+          "details": "Two additive invariant tightenings: edges = distinct (fromEntity,targetEntityId) pair count (not promotes.length); and a post-pass GC that deletes externalEndpoint nodes in the repo with zero incident CALLS_HTTP in-edges. Idempotency preserved (GC no-ops when nothing orphaned; deterministic ids unchanged).",
+          "schemaDiff": "external-endpoints.ts: edges = new Set(promotes.map(p=>p.unresolved.fromEntity+\u0000+p.targetEntityId)).size; + GC via listEntitiesByKind('externalEndpoint') filtered to repo, inNeighbors(CALLS_HTTP), deleteEntitiesById(orphans)",
+          "callSites": [
+            "src/indexer/external-endpoints.ts",
+            "src/db/entities.ts",
+            "src/db/graph/edges.ts"
+          ]
+        },
+        {
+          "entity": "TS/Python HTTP recognizers — proven-receiver dataflow",
+          "change": "invariant-change",
+          "details": "The invariant 'HTTP recognition matches only module-rooted callees (fetch/axios.get/requests.get)' becomes 'ALSO matches <receiver>.<verb>(url) when the receiver is in the file's proven-HTTP-client set (HttpClient-typed param/field; axios.create() / requests.Session() / httpx.Client() instances)'. Precision guard: only statically-proven receivers are tracked — unproven receivers never match, so S003's zero-false-positive stance holds. Intra-file only (documented recall gap for cross-file clients).",
+          "schemaDiff": "typescript.ts + python.ts: per-file provenHttpReceivers: Set<string> built in a pre-scan; walkForCalls/walkPythonForHttpCalls emit CALLS_HTTP for receiver-in-set + HTTP-verb calls",
+          "callSites": [
+            "src/indexer/parser/typescript.ts",
+            "src/indexer/parser/python.ts",
+            "src/indexer/parser/http-client-shapes.ts"
+          ]
+        }
+      ],
+      "interactionWithShared": []
+    },
+    "dataModelChanges": [
+      {
+        "entity": "deleteEntitiesById (new storage primitive)",
+        "change": "new",
+        "details": "New export in src/db/entities.ts: per-id entity delete with incident-edge cascade + name_index/id-map cleanup, mirroring deleteEntitiesForFile's cascade but keyed by id. Enables targeted GC of externalEndpoint nodes (which share file='' so the file-scoped delete can't isolate them).",
+        "schemaDiff": "db/entities.ts: + export async function deleteEntitiesById(_db, ids: readonly string[]): Promise<void>",
+        "callSites": [
+          "src/db/entities.ts",
+          "src/indexer/external-endpoints.ts"
+        ]
+      },
+      {
+        "entity": "resolveExternalEndpoints edges-stat + orphan GC",
+        "change": "invariant-change",
+        "details": "Two additive invariant tightenings: edges = distinct (fromEntity,targetEntityId) pair count (not promotes.length); and a post-pass GC that deletes externalEndpoint nodes in the repo with zero incident CALLS_HTTP in-edges. Idempotency preserved (GC no-ops when nothing orphaned; deterministic ids unchanged).",
+        "schemaDiff": "external-endpoints.ts: edges = new Set(promotes.map(p=>p.unresolved.fromEntity+\u0000+p.targetEntityId)).size; + GC via listEntitiesByKind('externalEndpoint') filtered to repo, inNeighbors(CALLS_HTTP), deleteEntitiesById(orphans)",
+        "callSites": [
+          "src/indexer/external-endpoints.ts",
+          "src/db/entities.ts",
+          "src/db/graph/edges.ts"
+        ]
+      },
+      {
+        "entity": "TS/Python HTTP recognizers — proven-receiver dataflow",
+        "change": "invariant-change",
+        "details": "The invariant 'HTTP recognition matches only module-rooted callees (fetch/axios.get/requests.get)' becomes 'ALSO matches <receiver>.<verb>(url) when the receiver is in the file's proven-HTTP-client set (HttpClient-typed param/field; axios.create() / requests.Session() / httpx.Client() instances)'. Precision guard: only statically-proven receivers are tracked — unproven receivers never match, so S003's zero-false-positive stance holds. Intra-file only (documented recall gap for cross-file clients).",
+        "schemaDiff": "typescript.ts + python.ts: per-file provenHttpReceivers: Set<string> built in a pre-scan; walkForCalls/walkPythonForHttpCalls emit CALLS_HTTP for receiver-in-set + HTTP-verb calls",
+        "callSites": [
+          "src/indexer/parser/typescript.ts",
+          "src/indexer/parser/python.ts",
+          "src/indexer/parser/http-client-shapes.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The GC step would delete an endpoint that actually still has a live caller (a false-orphan), because the GC ran before the current pass wrote the edge.",
+          "detection": "GC reads inNeighbors(endpointU64, CALLS_HTTP) and sees zero in-edges for an endpoint that the current pass just minted.",
+          "response": "Order GC strictly AFTER promoteResolvedBatch(promotes) so all current edges are written before the incident-edge check; only then does zero-in-edges genuinely mean orphaned. GC never runs on the in-flight promote set.",
+          "userImpact": "None when ordered correctly; a mis-order would drop a live endpoint (recall loss) — prevented by the ordering + a test that a still-called endpoint survives GC.",
+          "recoverable": true
+        },
+        {
+          "scenario": "deleteEntitiesById is asked to delete an id that no longer exists (already gone / never existed).",
+          "detection": "The per-id u64 lookup returns undefined inside deleteEntitiesById.",
+          "response": "Skip that id (no-op) rather than throw — mirrors deleteEntitiesForFile's tolerance of already-cascaded rows; the batch continues.",
+          "userImpact": "None — GC is idempotent; a concurrent/duplicate delete is harmless.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The dataflow pre-scan mis-identifies a receiver as an HTTP client (e.g. a local var named `http` not actually HttpClient-typed, or `x = requests.Session` without a call).",
+          "detection": "The pre-scan only adds a receiver when it sees a concrete proof node: a `HttpClient` type annotation on a param/field, or an RHS that is a CALL to axios.create / requests.Session / httpx.Client (not a bare reference).",
+          "response": "Require the proof node exactly (type-annotation identifier === 'HttpClient'; RHS is a call_expression whose callee text is the exact factory). A same-named-but-unproven receiver is never added to the set — no CALLS_HTTP. A precision-negative test pins this.",
+          "userImpact": "None — precision-over-recall: an unusual client construction is a recall gap, never a false positive.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "One caller reaches ONE resolved identity via two distinct raw URL exprs (e.g. a literal and an interpolation both resolving to the same host).",
+          "expected": "endpoints=1, edges=1 (distinct (from,to) pair) — not 2. The single LMDB edge already collapses; the stat now matches."
+        },
+        {
+          "input": "An endpoint that still has >=1 live CALLS_HTTP caller after re-index.",
+          "expected": "GC keeps it (inNeighbors returns >=1); only zero-in-edge endpoints are deleted."
+        },
+        {
+          "input": "A repo re-indexed after ALL its HTTP calls were removed.",
+          "expected": "Every externalEndpoint node becomes zero-in-edge and is GC'd; the repo ends with no endpoint nodes (no orphan cruft)."
+        },
+        {
+          "input": "TS `this.http.get(url)` where `http` is a constructor param typed HttpClient; AND a local `foo.get()` where foo is unproven, in the same file.",
+          "expected": "One CALLS_HTTP for this.http.get; none for foo.get."
+        },
+        {
+          "input": "Python `s = requests.Session(); s.get(url)` AND an unrelated `d.get('key')` on a dict.",
+          "expected": "One CALLS_HTTP for s.get; none for d.get."
+        },
+        {
+          "input": "Re-running the endpoint pass on identical sources (nothing orphaned, no new edges).",
+          "expected": "GC deletes nothing; node/edge set byte-identical; edges stat identical — idempotency preserved."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Zero false positives (S003 precision): HTTP recognition never emits CALLS_HTTP for a call on a receiver not statically proven to be an HTTP client — the dataflow set is built ONLY from concrete proof nodes (HttpClient type annotation / axios.create / requests.Session / httpx.Client calls).",
+          "source": "c3"
+        },
+        {
+          "text": "Idempotent re-index (S003): re-running resolveExternalEndpoints on identical sources yields a byte-identical node/edge set — the GC only removes already-orphaned nodes (zero in-edges) and no-ops otherwise; deterministic ids for live endpoints are untouched.",
+          "source": "c1"
+        },
+        {
+          "text": "Per-repo endpoint dedup + one-node-per-target (S003 ac1/ac2) is unchanged — the edges-stat fix only corrects the returned count; GC only deletes orphans; the recall change only ADDS emissions for proven receivers.",
+          "source": "c1"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test via `npx tsx --test` (matching src/indexer/__tests__ + src/indexer/parser/__tests__ + src/db/**/__tests__)",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Item 1 (edges stat) + Item 2 (orphan GC) over the temp graph store, extending external-endpoints.test.ts.",
+          "subjects": [
+            "edges stat: one caller with two distinct raw exprs resolving to the SAME identity => endpoints=1, edges=1 (distinct (from,to) pairs), not 2",
+            "GC: seed an externalEndpoint node with NO incident CALLS_HTTP in-edge (orphan) + one WITH a live caller; after the pass the orphan is deleted (listEntitiesByKind no longer returns it) and the live one survives",
+            "GC no-op: a pass where every endpoint has a live caller deletes nothing",
+            "GC full-clear: after all CALLS_HTTP rows for a repo are gone, re-running leaves zero externalEndpoint nodes",
+            "idempotency: re-run on identical sources => identical node/edge set + identical edges stat (GC deletes nothing)"
+          ],
+          "fixturesNeeded": [
+            "temp graph store harness (addRepo + upsertEntities callers + upsertRelations CALLS_HTTP) as in external-endpoints.test.ts",
+            "a seeded orphan externalEndpoint entity with no in-edge + a live one"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "deleteEntitiesById storage primitive: per-id delete + incident-edge cascade + tolerance of missing ids.",
+          "subjects": [
+            "deleteEntitiesById([id]) removes the entity row (getEntity => null) and its incident CALLS_HTTP in/out edges (inNeighbors/outNeighbors empty)",
+            "other entities + their edges are untouched",
+            "deleting an absent/stale id is a no-op (no throw)"
+          ],
+          "fixturesNeeded": [
+            "temp graph store with a couple of entities + a CALLS_HTTP edge between them"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Item 3 dataflow recall (TS): proven-receiver matching + precision negatives, extending http-client-shapes.test.ts.",
+          "subjects": [
+            "Angular DI: `constructor(private http: HttpClient){} ... this.http.get(url)` => one CALLS_HTTP with the raw URL",
+            "axios instance: `const c = axios.create({...}); c.post(url, body)` => one CALLS_HTTP",
+            "PRECISION: `foo.get('key')` where foo is NOT a proven HTTP client (no HttpClient type, no axios.create) => zero CALLS_HTTP",
+            "PRECISION: a param named `http` WITHOUT the HttpClient type annotation => its `.get()` does NOT match",
+            "module-rooted matches (fetch/axios.get) still work unchanged; a no-HTTP file is byte-identical"
+          ],
+          "fixturesNeeded": [
+            "TS source snippets: Angular service, axios-instance module, and non-HTTP look-alikes"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Item 3 dataflow recall (Python): proven-receiver matching + precision negatives, extending http-recognizer-py-go.test.ts.",
+          "subjects": [
+            "`s = requests.Session(); s.get(url)` => one CALLS_HTTP with the raw URL",
+            "`c = httpx.Client(); c.post(url)` => one CALLS_HTTP",
+            "PRECISION: `d.get('key')` on a dict (no Session/Client proof) => zero CALLS_HTTP",
+            "module-rooted matches (requests.get) still work unchanged"
+          ],
+          "fixturesNeeded": [
+            "Python source snippets: requests.Session / httpx.Client usage + a dict.get look-alike"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "unit: edges stat counts distinct (from,to) pairs (two-raw-exprs-one-identity => edges=1)"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "unit: orphan externalEndpoint (zero in-edges) is GC'd while a live one survives; full-clear removes all; idempotent re-run deletes nothing",
+            "unit: deleteEntitiesById removes the entity + cascades its edges, tolerates missing ids"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "unit(TS): this.http.get (HttpClient DI) + axios.create instance emit CALLS_HTTP; unproven receiver .get() emits none",
+            "unit(Python): requests.Session/httpx.Client instance .get emits CALLS_HTTP; dict.get emits none"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "S003 shipped: resolveExternalEndpoints (external-endpoints.ts) returns edges=promotes.length (over-counts distinct-rawExpr-same-identity); externalEndpoint nodes (file='') are never GC'd on re-index (deleteEntitiesForFile can't isolate them); the TS/Python recognizers match only module-rooted callees (fetch/axios.get/requests.get), missing instance-client calls (this.http.get, axios.create instances, requests.Session). Storage has only file/repo-scoped deletes, no per-id delete.",
+      "stateAfter": "edges = distinct (from,to) pair count; a post-pass GC deletes externalEndpoint nodes with zero incident CALLS_HTTP in-edges (via a new deleteEntitiesById primitive); the TS/Python recognizers ALSO match verb calls on receivers proven HTTP by intra-file dataflow (HttpClient DI / axios.create / requests.Session / httpx.Client), with zero false positives preserved. All changes land on re-index; no data rewrite.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the new storage primitive deleteEntitiesById(db, ids) to db/entities.ts (additive export; no existing caller changes).",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "In resolveExternalEndpoints: compute edges as distinct (fromEntity,targetEntityId) pairs, and add the post-promote GC step (list repo externalEndpoint entities, keep those with >=1 CALLS_HTTP in-edge, deleteEntitiesById the rest). GC only removes already-orphaned nodes.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Extend the TS + Python recognizers with a per-file proven-HTTP-receiver pre-scan and receiver-in-set verb matching (additive emissions; module-rooted matching unchanged).",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "On the next repo re-index, orphaned endpoint nodes are swept and newly-recognized instance-client calls appear — no manual data migration; the graph converges on re-index.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No public signature changes: parse(), resolveExternalEndpoints(), and the LLMProvider surfaces are unchanged (deleteEntitiesById is purely additive; the endpoint pass may add an optional gcDeleted stat field). Existing graphs are compatible — the GC only removes nodes that are already orphaned; the recall change only ADDS edges/nodes for proven-HTTP calls; the edges-stat change affects a returned counter only, not stored data. Rolling back the code leaves any already-swept orphans gone (correct) and simply stops future GC/recall — no corruption.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Proven-receiver dataflow set + deleteEntitiesById orphan GC + distinct-pair edges",
+        "oneLineSummary": "Item3: per-file Set of receivers PROVEN to be HTTP clients (HttpClient-typed param/field, axios.create/requests.Session/httpx.Client instances) drives verb-call matching; Item2: new deleteEntitiesById() deletes endpoints with zero incident CALLS_HTTP after the pass; Item1: edges = distinct (from,to) pairs.",
+        "chosen": true,
+        "pros": [
+          "Precision preserved: only receivers statically proven to be HTTP clients match — keeps the S003 zero-false-positive stance (the crux).",
+          "GC is precise + minimal-churn: deletes exactly the orphaned endpoint ids, leaves live ones (and their deterministic ids/edges) untouched.",
+          "deleteEntitiesById is a reusable storage primitive (future kinds/GC can use it), filling a real gap (only file/repo-level deletes exist today).",
+          "edges stat becomes correct without touching the idempotent LMDB write."
+        ],
+        "cons": [
+          "Most code: per-language dataflow pre-scan + a new storage helper + GC logic + tests across parsers, storage, and the endpoint pass.",
+          "Dataflow is intra-file only — a client passed across files/functions is still a recall gap (documented; precision-first)."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Import-gated verb matching (no receiver proof) + same GC/edges",
+        "oneLineSummary": "Item3 instead matches any `<recv>.<verb>(url)` when the file imports an HTTP lib (axios/@angular/common/http/requests/httpx), like the Java/Scala import gate — cheaper but looser.",
+        "reasonRejected": "Cheapest but violates precision-preserved — disqualifying under the accuracy-first principle. Reintroduces exactly what S003's fix removed (bare-verb matching misfires on unrelated .get()/.post() in an HTTP-importing file).",
+        "pros": [
+          "Much less parser code — no per-file dataflow set; reuses the existing HTTP_LIBRARY_IMPORT_MARKERS gate pattern.",
+          "Catches more forms (any receiver) in HTTP-importing files."
+        ],
+        "cons": [
+          "Re-introduces exactly the false-positive class S003 just fixed: a non-HTTP `.get()`/`.post()` on an unrelated object in a file that happens to import axios/requests would misfire — directly against the accuracy-first principle.",
+          "TS/JS were deliberately left UNgated in S003 (module-rooted receivers are unambiguous); import-gating + bare-verb matching is a precision regression for the language with the most such calls."
+        ],
+        "costEstimate": "S"
+      },
+      {
+        "id": "a3",
+        "name": "Rebuild-from-scratch GC (delete all repo endpoints each pass) + a1 dataflow/edges",
+        "oneLineSummary": "Item2 instead deletes ALL of the repo's externalEndpoint nodes at the start of each pass and re-mints them, avoiding a new per-id helper; item3/1 as a1.",
+        "reasonRejected": "Violates idempotency (delete-all-then-remint churns ids/edges every index even when unchanged — breaks byte-identical re-index) + still needs a new bulk-delete primitive with worse churn and a mid-pass partial-delete failure window — strictly worse than a1's targeted GC.",
+        "pros": [
+          "No new storage helper; GC is implicit (stale nodes never survive a pass).",
+          "Simpler GC control flow."
+        ],
+        "cons": [
+          "Churns deterministic ids/edges on EVERY index even when nothing changed — breaks the S003 idempotency invariant (byte-identical re-index) and wastes writes.",
+          "No repo-scoped externalEndpoint bulk delete exists either, so it ALSO needs a new storage primitive — no real saving over deleteEntitiesById, with worse churn.",
+          "A mid-pass failure could leave the repo with endpoints deleted and not yet re-minted."
+        ],
+        "costEstimate": "M"
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 usage.example — external-endpoints.ts ln 87/130/136: promotes[] + edges=promotes.length + the S003 idempotency/dedup invariants; GC hooks after promoteResolvedBatch",
+      "quotedText": "returns `{ endpoints: endpointsById.size, edges: promotes.length, skipped }` (ln 136). edges=promotes.length double-counts distinct-rawExpr-same-identity from one caller"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 symbol.locate — db/entities.ts:686 listEntitiesByKind + edges.ts:104 inNeighbors + MISSING per-id delete (only deleteEntitiesForFile:522/deleteEntitiesForRepo:542 exist; endpoints share file='')",
+      "quotedText": "MISSING: a per-id delete — only deleteEntitiesForFile (entities.ts:522) and deleteEntitiesForRepo (:542) exist, and endpoints share file='' so per-file delete is too coarse"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1 usage.example — typescript.ts/python.ts recognizers match only module-rooted callees today; dataflow set is built from concrete proof nodes (HttpClient type / axios.create / requests.Session / httpx.Client) to keep zero false positives",
+      "quotedText": "Build a per-file Set of proven-HTTP receiver expressions ('this.http','c'); then a call `<receiver>.<verb>(url)` whose receiver is in the set + verb in the HTTP-verb list emits CALLS_HTTP. Only proven receivers match — no bare .get()."
+    }
+  ]
+}

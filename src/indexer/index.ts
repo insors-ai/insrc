@@ -7,6 +7,7 @@ import type { RegisteredRepo, IndexJob, ConfigScope } from '../shared/types.js';
 import { upsertEntities } from '../db/entities.js';
 import { upsertRelations, deleteRelationsForFile, deleteUnresolvedForFile } from '../db/relations.js';
 import { runCrossFileResolver } from './cross-file-resolver.js';
+import { resolveExternalEndpoints } from './external-endpoints.js';
 import { detectSourceRoots } from './source-roots.js';
 import { deleteEntitiesForFile, getEntity } from '../db/entities.js';
 import { updateRepoStatus, lookupRepoId, UnregisteredRepoError } from '../db/repos.js';
@@ -434,6 +435,21 @@ export class IndexerService {
       const sourceRoots = detectSourceRoots(repoPath);
       const cf = await runCrossFileResolver({ db: this.db, repoRoot: repoPath, sourceRoots });
       log.info({ repo: repoPath, ...cf }, 'cross-file pass after full index');
+
+      // External-endpoint pass (S003): resolve the unresolved CALLS_HTTP
+      // relations the outbound detectors emitted into externalEndpoint nodes +
+      // resolved boundary edges. Additive to the graph — a failure here is
+      // NON-fatal (unlike the load-bearing cross-file resolver above): it must
+      // not flip a good code index to `error`; the pass re-runs on re-index.
+      try {
+        const ee = await resolveExternalEndpoints({ db: this.db, repo: repoPath });
+        log.info({ repo: repoPath, ...ee }, 'external-endpoint pass after cross-file resolve');
+      } catch (err) {
+        log.warn(
+          { repo: repoPath, err: err instanceof Error ? err.message : String(err) },
+          'external-endpoint pass failed (non-fatal)',
+        );
+      }
 
       // Build the entity_vec HNSW index now that the bulk-insert
       // phase is done. No-op below the row-count threshold; lazy

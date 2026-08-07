@@ -539,6 +539,24 @@ async function deleteUnresolvedForFileCascade(filePath: string): Promise<void> {
 	await deleteUnresolvedForFile(null, filePath);
 }
 
+/**
+ * Delete specific entities BY ID, cascading their incident edges + name_index +
+ * id-maps + Lance vecs (via detachDeleteEntities) — the same core the file/repo
+ * deletes use, but keyed by explicit ids. Needed for targeted GC of entities
+ * that can't be isolated by file scope (e.g. externalEndpoint nodes all share
+ * file=''; S001). Missing/stale ids are skipped (no throw); idempotent.
+ */
+export async function deleteEntitiesById(_db: DbClient, ids: readonly string[]): Promise<void> {
+	if (ids.length === 0) return;
+	const store = await getGraphStore();
+	const u64s: bigint[] = [];
+	for (const id of ids) {
+		const u64 = await withReadTxn(store, () => lookupU64ByStringId(store, id));
+		if (u64 !== undefined) u64s.push(u64);
+	}
+	await detachDeleteEntities(store, u64s);
+}
+
 export async function deleteEntitiesForRepo(_db: DbClient, repo: string): Promise<void> {
 	const store = await getGraphStore();
 	const repoId = await withReadTxn(store, () => lookupRepoIdInTxn(store, repo));

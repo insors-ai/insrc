@@ -28,7 +28,7 @@ import { makeEntityId } from './base.js';
 import type { Entity, Relation, Language } from '../../shared/types.js';
 import { registerParser } from './registry.js';
 import { SHARED_MODULES_REPO_ID } from '../../shared/repo-namespaces.js';
-import { matchHttpClient, emitCallsHttp } from './http-client-shapes.js';
+import { matchHttpClient, emitCallsHttp, isHttpVerb, normalizeCallee } from './http-client-shapes.js';
 
 const MODULE_NAMESPACE = 'npm' as const;
 const MODULE_REPO_ID = SHARED_MODULES_REPO_ID[MODULE_NAMESPACE];
@@ -106,6 +106,10 @@ class TypeScriptParser implements CodeParser {
 
     const tree = (parser as { parse(s: string): { rootNode: SyntaxNode } }).parse(source);
     const lang: Language = isJS ? 'javascript' : 'typescript';
+
+    // S001 (t3): per-file proven-HTTP-client receivers, computed once before the
+    // walk (parse is sync + non-reentrant), read by walkForCalls.
+    tsProvenHttpReceivers = collectTsProvenHttpReceivers(tree.rootNode);
 
     const entities:  Entity[]   = [];
     const relations: Relation[] = [];
@@ -657,6 +661,51 @@ const BUILTIN_METHODS = new Set([
   'stringify', 'parse',
 ]);
 
+/**
+ * Per-file set of receivers PROVEN to be HTTP clients (S001 t3): the receiver
+ * text (`this.http`, `client`) for a call to be recognized as instance-client
+ * HTTP. Populated once per parse() (parse is sync + non-reentrant); consumed by
+ * walkForCalls. Only concrete proof nodes populate it, so precision holds.
+ */
+let tsProvenHttpReceivers: Set<string> = new Set();
+
+/**
+ * Collect the file's proven-HTTP-client receivers: (a) a param/field with a
+ * `HttpClient` type annotation => `this.<name>` (Angular DI); (b) a
+ * `const x = axios.create(...)` => `x`. Nothing else is added — an unproven
+ * receiver (bare `.get()`) never matches.
+ */
+function collectTsProvenHttpReceivers(root: SyntaxNode): Set<string> {
+  const set = new Set<string>();
+  const stack: SyntaxNode[] = [root];
+  while (stack.length > 0) {
+    const n = stack.pop()!;
+    // (a) HttpClient-typed constructor param / class field -> this.<name>
+    if (n.type === 'required_parameter' || n.type === 'optional_parameter'
+        || n.type === 'public_field_definition' || n.type === 'property_signature') {
+      const typeNode = n.childForFieldName('type');
+      if (typeNode && /:\s*HttpClient\b/.test(typeNode.text)) {
+        const nameNode = n.childForFieldName('name') ?? n.childForFieldName('pattern');
+        const name = nameNode?.text;
+        if (name) set.add(`this.${name}`);
+      }
+    }
+    // (b) const x = axios.create(...) -> x
+    if (n.type === 'variable_declarator') {
+      const value = n.childForFieldName('value');
+      if (value?.type === 'call_expression') {
+        const fn = value.childForFieldName('function');
+        if (fn && normalizeCallee(fn.text) === 'axios.create') {
+          const nameNode = n.childForFieldName('name');
+          if (nameNode?.type === 'identifier') set.add(nameNode.text);
+        }
+      }
+    }
+    for (const c of n.namedChildren) stack.push(c);
+  }
+  return set;
+}
+
 function walkForCalls(
   node:       SyntaxNode,
   callerId:   string,
@@ -677,6 +726,19 @@ function walkForCalls(
         emitCallsHttp(relations, {
           from: callerId, repo, file: filePath, rawUrlExpr: urlArg?.text ?? '',
         });
+      } else if (funcNode.type === 'member_expression') {
+        // S001 (t3): instance-client HTTP via dataflow — a `<receiver>.<verb>(url)`
+        // whose receiver is PROVEN an HTTP client (this.http / axios.create var)
+        // and verb is an HTTP verb. Unproven receivers never match.
+        const obj  = funcNode.childForFieldName('object');
+        const prop = funcNode.childForFieldName('property');
+        if (obj && prop && isHttpVerb(prop.text)
+            && tsProvenHttpReceivers.has(normalizeCallee(obj.text))) {
+          const urlArg = node.childForFieldName('arguments')?.namedChild(0);
+          emitCallsHttp(relations, {
+            from: callerId, repo, file: filePath, rawUrlExpr: urlArg?.text ?? '',
+          });
+        }
       }
 
       const calleeName = resolveCalleeName(funcNode);

@@ -23,7 +23,7 @@ import { makeEntityId } from './base.js';
 import type { Entity, Relation } from '../../shared/types.js';
 import { registerParser } from './registry.js';
 import { SHARED_MODULES_REPO_ID } from '../../shared/repo-namespaces.js';
-import { matchHttpClient, emitCallsHttp } from './http-client-shapes.js';
+import { matchHttpClient, emitCallsHttp, isHttpVerb } from './http-client-shapes.js';
 
 const MODULE_NAMESPACE = 'python' as const;
 const MODULE_REPO_ID = SHARED_MODULES_REPO_ID[MODULE_NAMESPACE];
@@ -293,6 +293,9 @@ function walkPythonForHttpCalls(
   filePath:  string,
   relations: Relation[],
 ): void {
+  // S001 (t4): per-scope set of receivers PROVEN to be HTTP clients from
+  // `x = requests.Session()` / `x = httpx.Client()` assignments in this subtree.
+  const proven = collectPyProvenHttpReceivers(root);
   const stack: SyntaxNode[] = [root];
   while (stack.length > 0) {
     const node = stack.pop()!;
@@ -302,10 +305,47 @@ function walkPythonForHttpCalls(
       if (funcNode && match) {
         const urlArg = node.childForFieldName('arguments')?.namedChild(match.urlArgIndex);
         emitCallsHttp(relations, { from: callerId, repo, file: filePath, rawUrlExpr: urlArg?.text ?? '' });
+      } else if (funcNode?.type === 'attribute') {
+        // Instance-client HTTP via dataflow: `<receiver>.<verb>(url)` where the
+        // receiver is a proven requests.Session()/httpx.Client() instance and the
+        // verb is an HTTP verb. Unproven receivers (dict.get) never match.
+        const obj  = funcNode.childForFieldName('object');
+        const attr = funcNode.childForFieldName('attribute');
+        if (obj && attr && isHttpVerb(attr.text) && proven.has(obj.text)) {
+          const urlArg = node.childForFieldName('arguments')?.namedChild(0);
+          emitCallsHttp(relations, { from: callerId, repo, file: filePath, rawUrlExpr: urlArg?.text ?? '' });
+        }
       }
     }
     for (const child of node.namedChildren) stack.push(child);
   }
+}
+
+/**
+ * Collect receiver names PROVEN to be HTTP clients within a subtree from
+ * `x = requests.Session()` / `x = httpx.Client()` assignments (RHS is a `call`
+ * whose function text is the exact factory). Only these concrete proofs are
+ * added, so an unproven `.get()` (e.g. dict.get) never matches.
+ */
+function collectPyProvenHttpReceivers(root: SyntaxNode): Set<string> {
+  const set = new Set<string>();
+  const stack: SyntaxNode[] = [root];
+  while (stack.length > 0) {
+    const n = stack.pop()!;
+    if (n.type === 'assignment') {
+      const left  = n.childForFieldName('left');
+      const right = n.childForFieldName('right');
+      if (left?.type === 'identifier' && right?.type === 'call') {
+        const fn = right.childForFieldName('function');
+        const callee = fn?.text.replace(/\s+/g, '');
+        if (callee === 'requests.Session' || callee === 'httpx.Client') {
+          set.add(left.text);
+        }
+      }
+    }
+    for (const c of n.namedChildren) stack.push(c);
+  }
+  return set;
 }
 
 // ---------------------------------------------------------------------------

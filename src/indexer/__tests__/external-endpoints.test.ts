@@ -272,7 +272,87 @@ test('t1 no-op: a repo with no CALLS_HTTP rows produces no endpoints and leaves 
 	const stub = stubResolver({});
 	const r = await resolveExternalEndpoints({ db: null, repo, resolve: stub.resolve });
 
-	assert.deepEqual(r, { endpoints: 0, edges: 0, skipped: 0 });
+	assert.deepEqual(r, { endpoints: 0, edges: 0, skipped: 0, gcDeleted: 0 });
 	assert.equal(stub.calls(), 0);
 	assert.equal((await listEntitiesByKind(null, 'externalEndpoint')).length, 0);
+});
+
+// --- S001 t2: edges-stat distinct-pair count + orphan GC ---------------------
+
+test('t2 edges-stat: one caller, two distinct raw exprs -> same identity => endpoints=1, edges=1 (not 2)', async () => {
+	const repo = await newRepo();
+	const a = fnEntity(repo, `${repo}/a.ts`, 'a');
+	await upsertEntities(null, [a]);
+	// same caller, two DISTINCT raw exprs that resolve to the SAME identity
+	await upsertRelations(null, [callsHttp(a, `'LITERAL'`), callsHttp(a, '`${API}`')]);
+
+	const stub = stubResolver({ "'LITERAL'": 'api.example.com', '`${API}`': 'api.example.com' });
+	const r = await resolveExternalEndpoints({ db: null, repo, resolve: stub.resolve });
+
+	assert.equal(r.endpoints, 1);
+	assert.equal(r.edges, 1, 'distinct (from,to) pair, not promotes.length (2)');
+});
+
+test('t2 GC: an orphan externalEndpoint (no in-edge) is deleted while a live one survives the pass', async () => {
+	const repo = await newRepo();
+	const a = fnEntity(repo, `${repo}/a.ts`, 'a');
+	await upsertEntities(null, [a]);
+	await upsertRelations(null, [callsHttp(a, `'LIVE'`)]);
+
+	// Seed an ORPHAN externalEndpoint node (no incident CALLS_HTTP edge) directly.
+	const orphanId = makeExternalEndpointId(repo, 'http', 'orphan.example.com', 'orphan.example.com');
+	await upsertEntities(null, [{
+		id: orphanId, kind: 'externalEndpoint', name: 'http:orphan.example.com', language: 'config',
+		repoId: 1, repo, file: '', startLine: 0, endLine: 0, body: '', embedding: [], indexedAt: NOW,
+		protocol: 'http', resolved: true, target: 'orphan.example.com',
+	}]);
+
+	const stub = stubResolver({ "'LIVE'": 'live.example.com' });
+	const r = await resolveExternalEndpoints({ db: null, repo, resolve: stub.resolve });
+
+	assert.equal(r.gcDeleted, 1, 'the orphan is GC’d');
+	const nodes = await listEntitiesByKind(null, 'externalEndpoint');
+	const ids = nodes.map(n => n.id);
+	assert.equal(await getEntity(null, orphanId), null, 'orphan deleted');
+	// the live endpoint (has an incident CALLS_HTTP from a) survives — seeded via the real promote path
+	const liveId = makeExternalEndpointId(repo, 'http', 'live.example.com', `'LIVE'`);
+	assert.ok(ids.includes(liveId), 'live endpoint survives');
+	assert.deepEqual(await httpTargets(a.id), [liveId]);
+});
+
+test('t2 GC full-clear: a repo whose HTTP calls were all removed ends with zero endpoint nodes', async () => {
+	const repo = await newRepo();
+	// only an orphan endpoint exists; NO CALLS_HTTP rows (simulates all calls removed on re-index)
+	const orphanId = makeExternalEndpointId(repo, 'http', 'gone.example.com', 'gone.example.com');
+	await upsertEntities(null, [{
+		id: orphanId, kind: 'externalEndpoint', name: 'http:gone.example.com', language: 'config',
+		repoId: 1, repo, file: '', startLine: 0, endLine: 0, body: '', embedding: [], indexedAt: NOW,
+		protocol: 'http', resolved: true, target: 'gone.example.com',
+	}]);
+
+	const r = await resolveExternalEndpoints({ db: null, repo, resolve: stubResolver({}).resolve });
+
+	assert.equal(r.gcDeleted, 1);
+	assert.equal((await listEntitiesByKind(null, 'externalEndpoint')).length, 0, 'no orphan cruft');
+});
+
+test('t2 idempotency: re-running on identical rows deletes nothing and yields the same node set', async () => {
+	const repo = await newRepo();
+	const a = fnEntity(repo, `${repo}/a.ts`, 'a');
+	await upsertEntities(null, [a]);
+	const seed = () => upsertRelations(null, [callsHttp(a, `'X'`)]);
+
+	await seed();
+	const r1 = await resolveExternalEndpoints({ db: null, repo, resolve: stubResolver({ "'X'": 'x.example.com' }).resolve });
+	assert.equal(r1.gcDeleted, 0);
+	const nodes1 = (await listEntitiesByKind(null, 'externalEndpoint')).map(n => n.id).sort();
+
+	await seed();  // re-parse re-creates the same deterministic row
+	const r2 = await resolveExternalEndpoints({ db: null, repo, resolve: stubResolver({ "'X'": 'x.example.com' }).resolve });
+	const nodes2 = (await listEntitiesByKind(null, 'externalEndpoint')).map(n => n.id).sort();
+
+	assert.equal(r2.gcDeleted, 0, 'nothing orphaned on identical re-run');
+	assert.deepEqual(nodes2, nodes1, 'identical node set');
+	assert.equal(r2.endpoints, 1);
+	assert.equal(r2.edges, 1);
 });

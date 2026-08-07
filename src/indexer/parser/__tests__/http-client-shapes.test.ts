@@ -155,3 +155,46 @@ function run() { return add(1, 2); }
 		assert.equal(httpRels(r).length, 0);
 	});
 });
+
+// ---------------------------------------------------------------------------
+// S001 (t3) — TS proven-receiver dataflow recall
+// ---------------------------------------------------------------------------
+
+describe('TypeScript proven-receiver dataflow recall (S001 t3)', () => {
+	it('Angular this.http.get (HttpClient DI) + axios.create instance each emit one CALLS_HTTP with the raw URL', () => {
+		const r = parse(`
+import { HttpClient } from '@angular/common/http';
+import axios from 'axios';
+class Svc {
+  constructor(private http: HttpClient) {}
+  a() { return this.http.get('https://api.example.com/a'); }
+  b() { const c = axios.create({ baseURL: 'x' }); return c.post('https://api.example.com/b', {}); }
+}
+`);
+		const tos = httpRels(r).map(h => h.to).sort();
+		assert.deepEqual(tos, [`'https://api.example.com/a'`, `'https://api.example.com/b'`]);
+		for (const h of httpRels(r)) assert.equal(h.resolved, false);
+	});
+
+	it('PRECISION: an unproven receiver .get(), and a param named http WITHOUT the HttpClient type, emit ZERO CALLS_HTTP', () => {
+		const r = parse(`
+class Svc {
+  constructor(private http: SomethingElse) {}         // NOT HttpClient
+  a() { return this.http.get('should-not-match'); }
+  b() { const foo = makeThing(); return foo.get('key'); }  // unproven receiver
+  c() { const cache = new Map(); return cache.get('k'); }  // dict-like
+}
+`);
+		assert.equal(httpRels(r).length, 0);
+	});
+
+	it('the field-based HttpClient (public field, not a ctor param) is also proven', () => {
+		const r = parse(`
+class Svc {
+  private http: HttpClient;
+  a() { return this.http.delete('https://api.example.com/x'); }
+}
+`);
+		assert.deepEqual(httpRels(r).map(h => h.to), [`'https://api.example.com/x'`]);
+	});
+});

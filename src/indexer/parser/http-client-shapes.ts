@@ -71,7 +71,15 @@ function lastSegment(callee: string): string {
 // Per-language client-shape tables
 // ---------------------------------------------------------------------------
 
-const HTTP_VERBS = ['get', 'post', 'put', 'delete', 'patch', 'head', 'options'] as const;
+/** HTTP verb method names. Shared by the module-rooted shape tables below AND
+ *  the per-language proven-receiver dataflow recognizers (S001 t3/t4), so the
+ *  TS and Python instance-client matching can't drift from one another. */
+export const HTTP_VERBS = ['get', 'post', 'put', 'delete', 'patch', 'head', 'options'] as const;
+
+/** True if `name` is an HTTP verb method (get/post/put/delete/patch/head/options). */
+export function isHttpVerb(name: string): boolean {
+	return (HTTP_VERBS as readonly string[]).includes(name);
+}
 
 /** TS/JS: fetch / axios / got are module-rooted (exact); node's http(s) too. */
 const TS_JS_SHAPES: readonly HttpClientShape[] = [

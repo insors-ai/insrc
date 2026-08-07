@@ -39,7 +39,8 @@ import {
 	promoteResolvedBatch,
 	type UnresolvedRelation,
 } from '../db/relations.js';
-import { upsertEntities, entityU64ForId } from '../db/entities.js';
+import { upsertEntities, entityU64ForId, listEntitiesByKind, deleteEntitiesById } from '../db/entities.js';
+import { inNeighbors } from '../db/graph/edges.js';
 import { lookupRepoId } from '../db/repos.js';
 import { makeExternalEndpointId } from './parser/base.js';
 import { resolve as sc2Resolve } from './target-resolution/index.js';
@@ -54,10 +55,12 @@ export interface ResolveExternalEndpointsDeps {
 export interface ResolveExternalEndpointsResult {
 	/** distinct externalEndpoint nodes upserted. */
 	readonly endpoints: number;
-	/** resolved CALLS_HTTP edges written (one per live call-site). */
+	/** distinct resolved CALLS_HTTP edges written (distinct (from,to) pairs). */
 	readonly edges: number;
 	/** rows skipped (dead `from` entity or empty identity). */
 	readonly skipped: number;
+	/** orphaned externalEndpoint nodes GC'd (zero incident CALLS_HTTP in-edges). */
+	readonly gcDeleted: number;
 }
 
 /**
@@ -72,13 +75,18 @@ export async function resolveExternalEndpoints(
 
 	const rows = (await listUnresolvedRelations(opts.db, opts.repo))
 		.filter(r => r.kind === 'CALLS_HTTP');
-	if (rows.length === 0) return { endpoints: 0, edges: 0, skipped: 0 };
+	if (rows.length === 0) {
+		// No new HTTP calls — but endpoints may have been orphaned (all callers
+		// removed on re-index), so STILL run GC (the full-clear case).
+		const gcDeleted = await gcOrphanEndpoints(opts.repo);
+		return { endpoints: 0, edges: 0, skipped: 0, gcDeleted };
+	}
 
 	const repoId = await lookupRepoId(opts.repo);
 	if (repoId === undefined) {
 		// Not registered — the strict-contract upsert would reject anyway.
 		log.debug({ repo: opts.repo, rows: rows.length }, 'resolveExternalEndpoints: repo not registered; skipping');
-		return { endpoints: 0, edges: 0, skipped: rows.length };
+		return { endpoints: 0, edges: 0, skipped: rows.length, gcDeleted: 0 };
 	}
 
 	const now = new Date().toISOString();
@@ -133,7 +141,39 @@ export async function resolveExternalEndpoints(
 	if (endpointsById.size > 0) await upsertEntities(opts.db, [...endpointsById.values()]);
 	if (promotes.length > 0) await promoteResolvedBatch(opts.db, promotes);
 
-	const result = { endpoints: endpointsById.size, edges: promotes.length, skipped };
+	// edges = DISTINCT (from,to) pairs (the LMDB edge write collapses duplicates:
+	// one caller reaching one identity via two raw exprs is a single edge).
+	const edges = new Set(promotes.map(p => `${p.unresolved.fromEntity}\x00${p.targetEntityId}`)).size;
+
+	// GC (item 2): after the current edges are written above, delete this repo's
+	// externalEndpoint nodes that now have ZERO incident CALLS_HTTP in-edges —
+	// orphans left when a source HTTP call was removed/changed and its edge
+	// cascaded away on file re-index. Runs strictly AFTER promoteResolvedBatch so
+	// a still-called endpoint's just-written edge is visible (never a false orphan).
+	// No-op when nothing is orphaned, so re-index stays idempotent.
+	const gcDeleted = await gcOrphanEndpoints(opts.repo);
+
+	const result = { endpoints: endpointsById.size, edges, skipped, gcDeleted };
 	log.info({ repo: opts.repo, ...result }, 'resolveExternalEndpoints pass complete');
 	return result;
+}
+
+/**
+ * Delete externalEndpoint nodes in `repo` with no incident CALLS_HTTP in-edge.
+ * Returns the count deleted. Separate so it can run after the edge writes and
+ * be unit-tested directly.
+ */
+async function gcOrphanEndpoints(repo: string): Promise<number> {
+	const endpoints = (await listEntitiesByKind(null, 'externalEndpoint')).filter(e => e.repo === repo);
+	if (endpoints.length === 0) return 0;
+
+	const orphanIds: string[] = [];
+	for (const ep of endpoints) {
+		const u64 = await entityU64ForId(ep.id);
+		if (u64 === undefined) continue;  // already gone
+		const callers = await inNeighbors(u64, { kindFilter: ['CALLS_HTTP'] });
+		if (callers.length === 0) orphanIds.push(ep.id);
+	}
+	if (orphanIds.length > 0) await deleteEntitiesById(null, orphanIds);
+	return orphanIds.length;
 }

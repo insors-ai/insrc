@@ -136,3 +136,43 @@ func add(a int, b int) int { return a + b }
 		assert.equal(http(rels).length, 0);
 	});
 });
+
+// ---------------------------------------------------------------------------
+// S001 (t4) — Python proven-receiver dataflow recall
+// ---------------------------------------------------------------------------
+
+describe('Python proven-receiver dataflow recall (S001 t4)', () => {
+	function parse(src: string): Relation[] {
+		return pythonParser.parse('/repo/app.py', src, REPO, REPO_ID).relations;
+	}
+
+	it('requests.Session / httpx.Client instance verb calls each emit one CALLS_HTTP with the raw URL', () => {
+		const rels = parse(`
+import requests, httpx
+
+def a():
+    s = requests.Session()
+    return s.get('https://api.example.com/a')
+
+def b():
+    c = httpx.Client()
+    return c.post('https://api.example.com/b')
+`);
+		const tos = http(rels).map(h => h.to).sort();
+		assert.deepEqual(tos, [`'https://api.example.com/a'`, `'https://api.example.com/b'`]);
+		for (const h of http(rels)) assert.equal(h.resolved, false);
+	});
+
+	it('PRECISION: dict d.get(key) (no Session/Client proof) emits ZERO CALLS_HTTP', () => {
+		const rels = parse(`
+def a():
+    d = {}
+    return d.get('key')
+
+def b():
+    other = make_thing()
+    return other.get('k')
+`);
+		assert.equal(http(rels).length, 0);
+	});
+});

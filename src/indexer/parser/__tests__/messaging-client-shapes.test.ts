@@ -54,12 +54,19 @@ describe('messaging-client-shapes helper — stable contract', () => {
 	});
 
 	it('matchMessagingClient resolves method shapes with direction + topicArg (positional and object-field)', () => {
-		assert.deepEqual(matchMessagingClient('python', 'producer.send'), { topicArg: 0, direction: 'publish' });
+		assert.deepEqual(matchMessagingClient('python', 'channel.basic_publish'), { topicArg: 0, direction: 'publish' });
 		assert.deepEqual(matchMessagingClient('python', 'channel.basic_consume'), { topicArg: 0, direction: 'subscribe' });
 		assert.deepEqual(matchMessagingClient('typescript', 'producer.send'), { topicArg: { objectField: 'topic' }, direction: 'publish' });
 		assert.deepEqual(matchMessagingClient('typescript', 'sns.publish'), { topicArg: { objectField: 'TopicArn' }, direction: 'publish' });
 		assert.deepEqual(matchMessagingClient('go', 'nc.Subscribe'), { topicArg: 0, direction: 'subscribe' });
-		assert.deepEqual(matchMessagingClient('java', 'kafkaTemplate.send'), { topicArg: 0, direction: 'publish' });
+		assert.deepEqual(matchMessagingClient('java', 'jmsTemplate.convertAndSend'), { topicArg: 0, direction: 'publish' });
+	});
+
+	it('matchMessagingClient DROPS the generic positional verbs that collide with non-messaging APIs', () => {
+		// send/publish/subscribe are precision-unsafe as bare positional verbs
+		assert.equal(matchMessagingClient('python', 'producer.send'), null);     // generator/socket .send
+		assert.equal(matchMessagingClient('python', 'redis.publish'), null);     // covered only via specific verbs
+		assert.equal(matchMessagingClient('java', 'kafkaTemplate.send'), null);  // any .send
 	});
 
 	it('matchMessagingClient rejects unknown callees / languages', () => {
@@ -125,7 +132,7 @@ function f() {
 		assert.deepEqual(sub(r).map(x => x.to), [`'https://sqs/q1'`]);
 	});
 
-	it('positional publish/subscribe (redis/nats-style) via the lenient object-field fallback', () => {
+	it('PRECISION: a positional redis/nats publish(channel) is a documented recall gap (no object literal => no emit)', () => {
 		const r = parse(`
 import IORedis from 'ioredis';
 function f() {
@@ -133,8 +140,7 @@ function f() {
   redis.subscribe('news');
 }
 `);
-		assert.deepEqual(pub(r).map(x => x.to), [`'news'`]);
-		assert.deepEqual(sub(r).map(x => x.to), [`'news'`]);
+		assert.equal(pub(r).length + sub(r).length, 0, 'no positional fallback: precision over recall');
 	});
 
 	it('PRECISION: an RxJS observable.subscribe() in a file with NO messaging import emits nothing', () => {
@@ -143,6 +149,31 @@ import { Observable } from 'rxjs';
 function f(obs) { return obs.subscribe(v => console.log(v)); }
 `);
 		assert.equal(pub(r).length + sub(r).length, 0);
+	});
+
+	it('PRECISION: RxJS obs.subscribe(cb) even in a MESSAGING-imported file emits nothing (no object literal)', () => {
+		const r = parse(`
+import { Kafka } from 'kafkajs';
+import { interval } from 'rxjs';
+function f() { return interval(1000).subscribe(v => console.log(v)); }
+`);
+		assert.equal(sub(r).length, 0, 'the arrow arg is not an object literal with a topic field');
+	});
+
+	it('PRECISION: Express res.send(string) in a redis-session file emits nothing', () => {
+		const r = parse(`
+import RedisStore from 'connect-redis';
+function handler(req, res) { return res.send('hello world'); }
+`);
+		assert.equal(pub(r).length, 0, 'a string arg is not an object literal => no PUBLISHES_TO');
+	});
+
+	it('PRECISION: AWS SDK v3 client.send(new PublishCommand({...})) emits nothing (command is not an object literal)', () => {
+		const r = parse(`
+import { SNSClient, PublishCommand } from '@aws-sdk/client-sns';
+async function f() { return snsClient.send(new PublishCommand({ TopicArn: 'arn:x', Message: 'hi' })); }
+`);
+		assert.equal(pub(r).length, 0, 'the new-expression arg is not an object literal => no false endpoint');
 	});
 
 	it('PRECISION: a bare send()/publish() local call (not a receiver.verb) emits nothing even in a messaging file', () => {

@@ -228,28 +228,45 @@ describe('Python messaging recognizer (S004)', () => {
 		return pythonParser.parse('/repo/app.py', src, REPO, REPO_ID).relations;
 	}
 
-	it('kafka-python producer.send / consumer.subscribe + pika basic_publish/basic_consume emit PUBLISHES_TO / SUBSCRIBES_TO', () => {
+	it('pika basic_publish / basic_consume + confluent produce emit PUBLISHES_TO / SUBSCRIBES_TO', () => {
 		const rels = parse(`
-import kafka
 import pika
-
-def produce():
-    producer.send('orders', b'x')
-
-def consume():
-    consumer.subscribe(['events'])
+import confluent_kafka
 
 def rabbit_pub(channel):
     channel.basic_publish('exchange', 'rk', b'body')
 
 def rabbit_sub(channel):
     channel.basic_consume('work-queue', cb)
+
+def produce(producer):
+    producer.produce('orders', b'x')
 `);
 		assert.deepEqual(pub(rels).map(r => r.to).sort(), [`'exchange'`, `'orders'`]);
-		assert.deepEqual(sub(rels).map(r => r.to).sort(), [`'work-queue'`, `['events']`]);
+		assert.deepEqual(sub(rels).map(r => r.to), [`'work-queue'`]);
 	});
 
-	it('PRECISION: a bare .subscribe()/.send() in a file with NO messaging import emits nothing', () => {
+	it('PRECISION: generic .send()/.subscribe()/.publish() are DROPPED (collide with generator/socket/redis) — no emit even in a messaging file', () => {
+		const rels = parse(`
+import kafka
+import redis
+
+def gen_send(gen):
+    gen.send(42)
+
+def sock_send(ws):
+    ws.send("hello")
+
+def redis_pub(r):
+    r.publish('channel', 'msg')
+
+def kafka_send(producer):
+    producer.send('orders', b'x')
+`);
+		assert.equal(pub(rels).length + sub(rels).length, 0, 'generic positional verbs are a documented recall gap');
+	});
+
+	it('PRECISION: a bare .subscribe() in a file with NO messaging import emits nothing', () => {
 		const rels = parse(`
 def f(observable):
     return observable.subscribe(cb)

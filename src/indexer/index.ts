@@ -445,12 +445,21 @@ export class IndexerService {
       try {
         const ee = await resolveExternalEndpoints({ db: this.db, repo: repoPath });
         log.info({ repo: repoPath, ...ee }, 'external-endpoint pass after cross-file resolve');
+      } catch (err) {
+        log.warn(
+          { repo: repoPath, err: err instanceof Error ? err.message : String(err) },
+          'external-endpoint pass failed (non-fatal)',
+        );
+      }
+      // Independent of the HTTP pass (its own try/catch): an HTTP-side failure
+      // must not suppress messaging resolution, and vice-versa.
+      try {
         const me = await resolveMessagingEndpoints({ db: this.db, repo: repoPath });
         log.info({ repo: repoPath, ...me }, 'messaging-endpoint pass after cross-file resolve');
       } catch (err) {
         log.warn(
           { repo: repoPath, err: err instanceof Error ? err.message : String(err) },
-          'external-endpoint pass failed (non-fatal)',
+          'messaging-endpoint pass failed (non-fatal)',
         );
       }
 
@@ -589,12 +598,20 @@ export class IndexerService {
     try {
       const ee = await resolveExternalEndpoints({ db: this.db, repo: repoPath });
       log.info({ repo: repoPath, ...ee }, 'external-endpoint settle pass complete');
+    } catch (err) {
+      log.warn(
+        { repo: repoPath, err: err instanceof Error ? err.message : String(err) },
+        'external-endpoint settle pass failed (non-fatal)',
+      );
+    }
+    // Independent of the HTTP settle pass (its own try/catch).
+    try {
       const me = await resolveMessagingEndpoints({ db: this.db, repo: repoPath });
       log.info({ repo: repoPath, ...me }, 'messaging-endpoint settle pass complete');
     } catch (err) {
       log.warn(
         { repo: repoPath, err: err instanceof Error ? err.message : String(err) },
-        'external-endpoint settle pass failed (non-fatal)',
+        'messaging-endpoint settle pass failed (non-fatal)',
       );
     }
 

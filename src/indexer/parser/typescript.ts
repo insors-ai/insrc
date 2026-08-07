@@ -819,26 +819,25 @@ function collectTsImportSpecifiers(source: string): string[] {
 
 /** Extract the raw topic/queue expression text from a call, per the matched
  *  shape's TopicArgSelector. Positional -> that arg's text. Object-field -> the
- *  named string field of the first object-literal argument, with a lenient
- *  fallback to the first arg's raw text when it is not an object literal (so a
- *  positional `publish(channel)` is captured by the same object-field shape as
- *  `publish({TopicArn})`). Returns '' when nothing extractable (emit skips it). */
+ *  named string field of the first OBJECT-LITERAL argument, and NOTHING otherwise
+ *  (no positional fallback): a `send`/`publish`/`subscribe` whose first arg is not
+ *  an object literal carrying the field extracts '' and so emits nothing — this
+ *  is what keeps the generic verbs from false-positiving on `res.send('x')`, RxJS
+ *  `obs.subscribe(cb)`, and AWS-v3 `client.send(new Command({...}))`. Returns ''
+ *  when nothing extractable (emit skips it). */
 function extractTsTopicExpr(callNode: SyntaxNode, topicArg: TopicArgSelector): string {
   const args = callNode.childForFieldName('arguments');
   if (!args) return '';
   if (typeof topicArg === 'number') return args.namedChild(topicArg)?.text ?? '';
   const first = args.namedChild(0);
-  if (!first) return '';
-  if (first.type === 'object') {
-    for (const pair of first.namedChildren) {
-      if (pair.type !== 'pair') continue;
-      const key = pair.childForFieldName('key');
-      const keyName = key ? key.text.replace(/^['"]|['"]$/g, '') : '';
-      if (keyName === topicArg.objectField) return pair.childForFieldName('value')?.text ?? '';
-    }
-    return '';  // object literal without the topic field -> unextractable
+  if (!first || first.type !== 'object') return '';  // object-literal required, no fallback
+  for (const pair of first.namedChildren) {
+    if (pair.type !== 'pair') continue;
+    const key = pair.childForFieldName('key');
+    const keyName = key ? key.text.replace(/^['"]|['"]$/g, '') : '';
+    if (keyName === topicArg.objectField) return pair.childForFieldName('value')?.text ?? '';
   }
-  return first.text;  // lenient: positional first arg (redis/nats publish(channel))
+  return '';  // object literal without the topic field -> unextractable
 }
 
 function walkForCalls(

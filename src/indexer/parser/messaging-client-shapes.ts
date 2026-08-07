@@ -32,24 +32,36 @@
  * a deliberate recall gap, not a false edge.
  *
  * Topic extraction (`topicArg`):
- *   - `number`         — the 0-based positional argument that carries the topic
- *                        (`kafka.send('orders', v)` -> 0; amqp
- *                        `channel.publish('exchange', 'rk', body)` -> 0, the
- *                        exchange; routing-key granularity is a recall gap).
- *   - `{ objectField }` — the topic is a string field of the first OBJECT
- *                        argument (`kafkajs producer.send({ topic })`,
- *                        SNS `publish({ TopicArn })`, SQS
- *                        `sendMessage({ QueueUrl })`). The recognizer reads that
- *                        field, and leniently falls back to the raw first-arg
- *                        text when the first arg is not an object literal (so a
- *                        positional call to the same verb — redis/nats
- *                        `publish(channel, msg)` — is still captured).
+ *   - `number`         — the 0-based positional argument that carries the topic.
+ *                        Reserved for shapes whose verb is SPECIFIC enough to be
+ *                        safe on any receiver (pika `basic_publish`/`basic_consume`,
+ *                        confluent `produce`, nats-go `Publish`/`Subscribe`,
+ *                        JMS/AMQP `convertAndSend`).
+ *   - `{ objectField }` — the topic is a string field of the first OBJECT-LITERAL
+ *                        argument (`kafkajs producer.send({ topic })`, SNS
+ *                        `publish({ TopicArn })`, SQS `sendMessage({ QueueUrl })`).
+ *                        There is NO positional fallback: a `send`/`publish`/
+ *                        `subscribe` whose first arg is not an object literal
+ *                        carrying the field emits nothing. This is what keeps the
+ *                        generic verbs safe — `res.send('x')`, RxJS
+ *                        `obs.subscribe(cb)`, and AWS-v3 `client.send(cmd)` do not
+ *                        false-positive.
+ *
+ * PRECISION > RECALL — documented recall gaps (deliberate, favouring zero false
+ * positives over coverage of ambiguous positional verbs on unknown receivers):
+ *   - kafka-python `producer.send('t', v)` and redis/nats `publish(channel)` in
+ *     TS/Python (bare positional `send`/`publish`/`subscribe` on an un-proven
+ *     receiver is indistinguishable from a generator/socket/EventEmitter call).
+ *   - AWS SDK v3 `client.send(new PublishCommand({ TopicArn }))` (topic is nested
+ *     in a command constructor). A proven-receiver dataflow (mirroring the S001
+ *     axios/http proven-receiver) that would recover these safely is a follow-up.
  */
 
 import type { Relation } from '../../shared/types.js';
 
-/** How to extract a call's topic/queue argument. A positional index, or a named
- *  field of the first object argument (with a lenient positional-0 fallback). */
+/** How to extract a call's topic/queue argument. A positional index (safe only
+ *  for specific verbs), or a named field of the first OBJECT-LITERAL argument
+ *  (no positional fallback — a non-object first arg extracts nothing). */
 export type TopicArgSelector = number | { readonly objectField: string };
 
 /** One recognized messaging-client call shape: a callee token + how to reach the
@@ -82,29 +94,27 @@ function lastSegment(callee: string): string {
 // Per-language client-shape tables
 // ---------------------------------------------------------------------------
 
-/** TS/JS: kafkajs (object-arg `{topic}`), AWS SNS/SQS (object-arg
- *  `{TopicArn}`/`{QueueUrl}`), amqplib (positional exchange/queue), redis/nats
- *  (positional channel/subject). Object-field shapes fall back leniently to the
- *  raw first-arg text, so redis/nats `publish(channel)` is captured by the same
- *  `publish` shape as SNS `publish({TopicArn})`. */
+/** TS/JS: OBJECT-LITERAL shapes only — kafkajs (`{topic}`) + AWS v2 SNS/SQS
+ *  (`{TopicArn}`/`{QueueUrl}`). The topic must be a field of a first-arg object
+ *  literal, so a generic `send`/`publish`/`subscribe` on a non-object arg
+ *  (`res.send('x')`, RxJS `obs.subscribe(cb)`, AWS-v3 `client.send(cmd)`) never
+ *  matches. Positional redis/nats/amqplib in TS is a documented recall gap. */
 const TS_JS_SHAPES: readonly MessagingClientShape[] = [
 	{ callee: 'send',           topicArg: { objectField: 'topic' },    direction: 'publish',   match: 'method' }, // kafkajs producer.send({topic})
-	{ callee: 'publish',        topicArg: { objectField: 'TopicArn' }, direction: 'publish',   match: 'method' }, // SNS publish({TopicArn}) + redis/nats publish(channel)
-	{ callee: 'sendMessage',    topicArg: { objectField: 'QueueUrl' }, direction: 'publish',   match: 'method' }, // SQS sendMessage({QueueUrl})
-	{ callee: 'sendToQueue',    topicArg: 0,                           direction: 'publish',   match: 'method' }, // amqplib channel.sendToQueue(queue, ...)
-	{ callee: 'subscribe',      topicArg: { objectField: 'topic' },    direction: 'subscribe', match: 'method' }, // kafkajs consumer.subscribe({topic}) + redis subscribe(channel)
-	{ callee: 'consume',        topicArg: 0,                           direction: 'subscribe', match: 'method' }, // amqplib channel.consume(queue, cb)
-	{ callee: 'receiveMessage', topicArg: { objectField: 'QueueUrl' }, direction: 'subscribe', match: 'method' }, // SQS receiveMessage({QueueUrl})
+	{ callee: 'publish',        topicArg: { objectField: 'TopicArn' }, direction: 'publish',   match: 'method' }, // AWS v2 SNS publish({TopicArn})
+	{ callee: 'sendMessage',    topicArg: { objectField: 'QueueUrl' }, direction: 'publish',   match: 'method' }, // AWS v2 SQS sendMessage({QueueUrl})
+	{ callee: 'subscribe',      topicArg: { objectField: 'topic' },    direction: 'subscribe', match: 'method' }, // kafkajs consumer.subscribe({topic})
+	{ callee: 'receiveMessage', topicArg: { objectField: 'QueueUrl' }, direction: 'subscribe', match: 'method' }, // AWS v2 SQS receiveMessage({QueueUrl})
 ];
 
-/** Python: kafka-python / confluent_kafka (positional topic), pika
- *  (positional exchange/queue), redis-py (positional channel). */
+/** Python: SPECIFIC-verb positional shapes only — pika (`basic_publish` /
+ *  `basic_consume`) + confluent (`produce`). The generic `send`/`publish`/
+ *  `subscribe` are DROPPED: they collide with the generator/coroutine `.send`,
+ *  socket `.send`, and redis-cache APIs (a documented kafka-python / redis-py
+ *  recall gap) rather than risk a false positive. */
 const PYTHON_SHAPES: readonly MessagingClientShape[] = [
-	{ callee: 'send',          topicArg: 0, direction: 'publish',   match: 'method' }, // kafka-python producer.send('t', v)
 	{ callee: 'produce',       topicArg: 0, direction: 'publish',   match: 'method' }, // confluent_kafka producer.produce('t', v)
 	{ callee: 'basic_publish', topicArg: 0, direction: 'publish',   match: 'method' }, // pika channel.basic_publish(exchange, rk, body)
-	{ callee: 'publish',       topicArg: 0, direction: 'publish',   match: 'method' }, // redis-py r.publish(channel, msg)
-	{ callee: 'subscribe',     topicArg: 0, direction: 'subscribe', match: 'method' }, // kafka-python consumer.subscribe(['t']) / redis pubsub.subscribe(ch)
 	{ callee: 'basic_consume', topicArg: 0, direction: 'subscribe', match: 'method' }, // pika channel.basic_consume(queue, cb)
 ];
 
@@ -116,18 +126,19 @@ const GO_SHAPES: readonly MessagingClientShape[] = [
 	{ callee: 'Subscribe', topicArg: 0, direction: 'subscribe', match: 'method' }, // nats.go nc.Subscribe(subj, cb)
 ];
 
-/** Java: Spring `KafkaTemplate.send(topic, data)`, JMS/AMQP
- *  `*.convertAndSend(destination, msg)` carry the destination at index 0. Method-
- *  matched, so import-gated. Consumers are annotation-driven (inbound, S006). */
+/** Java: JMS/AMQP `*.convertAndSend(destination, msg)` — a messaging-SPECIFIC
+ *  verb, so safe under import-gating even though Spring templates are injected
+ *  fields (no local factory to prove). The generic `KafkaTemplate.send(topic,..)`
+ *  is DROPPED (collides with any `.send`) — a documented recall gap. */
 const JAVA_SHAPES: readonly MessagingClientShape[] = [
-	{ callee: 'send',           topicArg: 0, direction: 'publish', match: 'method' }, // kafkaTemplate.send(topic, data)
 	{ callee: 'convertAndSend', topicArg: 0, direction: 'publish', match: 'method' }, // jms/rabbit template.convertAndSend(dest, msg)
 ];
 
-/** Scala: `producer.send(...)` (positional topic where present). Record-carried
- *  topics (fs2-kafka / akka-stream-kafka `ProducerRecord`) are a recall gap. */
+/** Scala: fs2-kafka / kafka `produce(...)` — a messaging-specific verb. The
+ *  generic `send` is DROPPED. Record-carried topics (`ProducerRecord`) remain a
+ *  recall gap. */
 const SCALA_SHAPES: readonly MessagingClientShape[] = [
-	{ callee: 'send', topicArg: 0, direction: 'publish', match: 'method' },
+	{ callee: 'produce', topicArg: 0, direction: 'publish', match: 'method' },
 ];
 
 /** Per-language tables, keyed on the parser `language` tag. A language absent

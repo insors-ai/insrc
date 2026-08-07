@@ -45,7 +45,7 @@ import { existsSync, statSync, readdirSync } from 'node:fs';
 import { join, sep } from 'node:path';
 import { getLogger } from '../shared/logger.js';
 import type { DbClient } from '../db/client.js';
-import type { Entity, EntityKind, Language } from '../shared/types.js';
+import type { Entity, EntityKind, Language, RelationKind } from '../shared/types.js';
 import {
   listEntitiesForRepo,
   listEntitiesByKind,
@@ -69,6 +69,20 @@ const log = getLogger('cross-file-resolver');
 const BATCH_SIZE = 500;
 
 const CALL_TARGET_KINDS: readonly EntityKind[] = ['function', 'method', 'class'];
+
+/**
+ * Typed external-boundary relation kinds (sc1 — S001). The code-symbol Pass 2
+ * resolver MUST NOT touch these: their `to`/`rawTo` is a raw URL / topic /
+ * service string, NOT a code-entity name, so trying to resolve them against the
+ * entity index would be meaningless. They are owned by the S003 external-
+ * endpoint pass (resolveExternalEndpoints), which reads them straight from the
+ * unresolved store. Excluded explicitly here — rather than relying on the
+ * `else` fall-through below — so a future `default` handler can never silently
+ * mis-resolve a boundary row to a code entity. See external-endpoints.ts.
+ */
+export const BOUNDARY_RELATION_KINDS: ReadonlySet<RelationKind> = new Set<RelationKind>([
+  'CALLS_HTTP', 'PUBLISHES_TO', 'SUBSCRIBES_TO', 'CALLS_RPC',
+]);
 
 // ---------------------------------------------------------------------------
 // Public surface (unchanged)
@@ -281,6 +295,13 @@ async function runPass2(
   let stillUnresolved = 0;
   let processed       = 0;
   for (const row of unresolved) {
+    // External-boundary rows (CALLS_HTTP / PUBLISHES_TO / ...) are owned by the
+    // S003 endpoint pass — leave them untouched in the unresolved store so a
+    // raw URL is never matched against a code-entity name.
+    if (BOUNDARY_RELATION_KINDS.has(row.kind)) {
+      processed++;
+      continue;
+    }
     let intent: ResolveIntent;
     if (row.kind === 'INHERITS' || row.kind === 'IMPLEMENTS') {
       intent = resolveInheritance(opts, row, index, importsByFile);

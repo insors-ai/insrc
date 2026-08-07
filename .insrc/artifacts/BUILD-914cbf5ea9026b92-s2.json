@@ -5,7 +5,8 @@
     "epicHash": "914cbf5ea9026b92",
     "storyId": "s2",
     "createdAt": "2026-08-06T19:29:02.797Z",
-    "updatedAt": "2026-08-06T19:29:02.797Z"
+    "updatedAt": "2026-08-06T19:29:02.797Z",
+    "approvedAt": "2026-08-07T05:05:10.977Z"
   },
   "body": {
     "focus": "S002 (sc2) — Target resolution engine: ResolvedTarget/ConfigSourceLayer shared types; four at-rest config parsers (.env/Dockerfile+compose/k8s-manifest/localConfig) + buildConfigSourceMap (precedence k8s>docker>envFile>localConfig); pure resolveAgainst core (cycle/depth-guarded interpolation, partial-pin=>unresolved); async daemon-side resolve adapter (config-entity discovery + .env at-rest scan, per-repo memoized). Static/at-rest only, never kubectl.",

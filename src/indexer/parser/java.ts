@@ -40,6 +40,7 @@ import { makeEntityId } from './base.js';
 import type { Entity, Relation } from '../../shared/types.js';
 import { registerParser } from './registry.js';
 import { SHARED_MODULES_REPO_ID } from '../../shared/repo-namespaces.js';
+import { matchHttpClient, emitCallsHttp } from './http-client-shapes.js';
 
 const MODULE_NAMESPACE = 'jvm' as const;
 const MODULE_REPO_ID = SHARED_MODULES_REPO_ID[MODULE_NAMESPACE];
@@ -622,6 +623,16 @@ function extractCalls(
 				const methodName = objNode !== null
 					? `${objNode.text}.${nameNode.text}`
 					: nameNode.text;
+				// S003 (t5): HTTP-client recognizer — Java clients are invoked on
+				// instance vars, so shapes match by HTTP-specific method name
+				// (getForObject / exchange / uri / url ...). Emitted alongside CALLS.
+				const httpMatch = matchHttpClient('java', methodName);
+				if (httpMatch) {
+					const urlArg = node.childForFieldName('arguments')?.namedChild(httpMatch.urlArgIndex);
+					emitCallsHttp(ctx.relations, {
+						from: fromId, repo: ctx.repo, file: ctx.filePath, rawUrlExpr: urlArg?.text ?? '',
+					});
+				}
 				ctx.relations.push({
 					kind: 'CALLS', from: fromId, to: methodName, resolved: false,
 					meta: { file: ctx.filePath, repo: ctx.repo },

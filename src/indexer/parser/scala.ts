@@ -60,6 +60,7 @@ import { makeEntityId } from './base.js';
 import type { Entity, Relation } from '../../shared/types.js';
 import { registerParser } from './registry.js';
 import { SHARED_MODULES_REPO_ID } from '../../shared/repo-namespaces.js';
+import { matchHttpClient, emitCallsHttp } from './http-client-shapes.js';
 
 const MODULE_NAMESPACE = 'jvm' as const;
 const MODULE_REPO_ID = SHARED_MODULES_REPO_ID[MODULE_NAMESPACE];
@@ -740,6 +741,17 @@ function extractCalls(body: SyntaxNode, fromId: string, ctx: WalkCtx): void {
 		if (node.type === 'call_expression') {
 			const fn = node.namedChildren[0];
 			if (fn !== undefined) {
+				// S003 (t5): HTTP-client recognizer — Play WS `ws.url(u)` / builder
+				// `.uri(u)` carry the URL on that call; matched by the `url`/`uri`
+				// method name (last segment of the callee). Emitted alongside CALLS.
+				const httpMatch = matchHttpClient('scala', fn.text);
+				if (httpMatch) {
+					const argsNode = node.childForFieldName('arguments') ?? node.namedChildren[1];
+					const urlArg = argsNode?.namedChild(httpMatch.urlArgIndex);
+					emitCallsHttp(ctx.relations, {
+						from: fromId, repo: ctx.repo, file: ctx.filePath, rawUrlExpr: urlArg?.text ?? '',
+					});
+				}
 				ctx.relations.push({
 					kind: 'CALLS', from: fromId, to: fn.text.replace(/\s+/g, ' '),
 					resolved: false,

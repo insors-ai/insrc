@@ -1,0 +1,483 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1786081062585-2v5f7r",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-08-07T05:45:55.544Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 492945,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "914cbf5ea9026b92",
+    "epicSlug": "work-framed-approved-spec-proceed-from",
+    "storyId": "s3",
+    "lldRunId": "wf-1786079806522-5x0kom",
+    "lldEffectiveHash": "fd544bcd90a023e29bb48b2f6460dacf5dc6eaab956d8dff2bd59eceadab5516",
+    "review": {
+      "artifact": "plan",
+      "stage": "plan",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "ref": "t1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "fullIndex calls runCrossFileResolver at src/indexer/index.ts around line 435 (the wiring point for resolveExternalEndpoints).",
+          "evidence": "CONFIRMED verbatim: src/indexer/index.ts:435 reads `const cf = await runCrossFileResolver({ db: this.db, repoRoot: repoPath, sourceRoots });` — the exact wiring point t1 targets.",
+          "action": "None — wiring point verified.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl2",
+          "ref": "t1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "listUnresolvedRelations exists in src/db/relations.ts and returns unresolved relations carrying a RelationKind + rawTo, so the pass can filter kind==='CALLS_HTTP'.",
+          "evidence": "Supported: listUnresolvedRelations is a real db/relations.ts export (plans/storage-migration-lmdb-lance.md records it landed alongside UnresolvedRelation + makeUnresolvedRelationId), and rawTo is the documented raw-`to` field on unresolved rows. The pass can filter kind==='CALLS_HTTP'.",
+          "action": "None — read API exists.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl3",
+          "ref": "t1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "makeExternalEndpointId(repo, protocol, target, rawExpression?) exists in src/indexer/parser/base.ts and mints the deterministic per-repo endpoint id.",
+          "evidence": "Supported: makeExternalEndpointId(repo,protocol,target,rawExpression?) was added to src/indexer/parser/base.ts by the shipped S001 (sc1) build; the LLD contract restates the exact signature. Symbol is real and in-tree.",
+          "action": "None — sc1 primitive in place.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl4",
+          "ref": "t1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "upsertEntities and upsertRelations exist in src/db/entities.ts and src/db/relations.ts respectively and are the write APIs the pass uses.",
+          "evidence": "CONFIRMED verbatim: src/db/entities.ts:196 `export async function upsertEntities(_db, entities)` and src/db/relations.ts:108 `export async function upsertRelations(_db, relations)` — the write APIs t1 uses.",
+          "action": "None — write APIs verified.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl5",
+          "ref": "t1",
+          "kind": "external-contract",
+          "severity": "LOW",
+          "premise": "sc2's async resolve(repo, protocol, rawExpression): Promise<ResolvedTarget> exists in src/indexer/target-resolution (index.ts/resolver.ts) and memoizes the per-repo ConfigSourceMap.",
+          "evidence": "Supported: src/indexer/target-resolution/resolver.ts exports the async resolve + invalidateRepoConfig (imported by __tests__/adapter.test.ts:27), the shipped S002 (sc2) engine with per-repo ConfigSourceMap memoization. Contract matches.",
+          "action": "None — sc2 resolve available.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl6",
+          "ref": "t1",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The Entity type carries the endpoint fields (kind 'externalEndpoint', protocol, resolved, target, rawExpression) so an externalEndpoint Entity can be constructed and upserted.",
+          "evidence": "Supported: the externalEndpoint Entity fields (kind, protocol, resolved, target, rawExpression) were added to src/shared/types.ts Entity by the shipped S001; HLD/LLD restate them. An externalEndpoint Entity is constructible without a schema change.",
+          "action": "None — Entity fields present.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl7",
+          "ref": "t2",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "RelationKind includes the four boundary kinds CALLS_HTTP / PUBLISHES_TO / SUBSCRIBES_TO / CALLS_RPC, byte-mapped in src/db/graph/keys.ts, so the resolver can exclude them.",
+          "evidence": "Supported: RelationKind's four boundary kinds (CALLS_HTTP/PUBLISHES_TO/SUBSCRIBES_TO/CALLS_RPC) were byte-mapped into src/db/graph/keys.ts by the shipped S001 (bytes 13-16). The DEF-era 'zero src hits' note predates S001; they now exist in-tree, so the exclusion in t2 is a real, targetable filter.",
+          "action": "None — boundary kinds in the vocabulary.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl8",
+          "ref": "t2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The code-symbol Pass-2 resolver lives in src/indexer/cross-file-resolver.ts + src/indexer/resolver.ts (runCrossFileResolver / resolveRelations) — the exclusion site.",
+          "evidence": "CONFIRMED: src/indexer/cross-file-resolver.ts:93 `export async function runCrossFileResolver(` and resolveRelations (src/indexer/resolver.ts) are the code-symbol Pass-2 — the exact exclusion site t2 edits.",
+          "action": "None — exclusion site verified.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl9",
+          "ref": "t3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/indexer/parser/typescript.ts has a call_expression visitor (walkForCalls) that emits CALLS relations — the hook point for the TS/JS HTTP recognizer.",
+          "evidence": "CONFIRMED verbatim: src/indexer/parser/typescript.ts:622 calls walkForCalls and :659 defines it — the call_expression visitor emitting CALLS, the exact hook for the t3 TS/JS recognizer.",
+          "action": "None — hook point verified.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl10",
+          "ref": "t3/t4/t5",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "All five parsers named by the plan exist as source files under src/indexer/parser/ (typescript, python, go, java, scala), each with a call-site visitor to extend.",
+          "evidence": "Supported: src/indexer/parser/go.ts:343 `class GoParser implements CodeParser` confirmed; typescript/python/java/scala parser files are established siblings under src/indexer/parser (java uses method_invocation, scala call_expression). All five call-site visitors t3/t4/t5 extend exist.",
+          "action": "None — five parsers present.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl11",
+          "ref": "t1",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A Relation carries kind + from + to + resolved:boolean (plus optional meta), so an unresolved CALLS_HTTP relation {kind:'CALLS_HTTP', from, to:rawUrlExpr, resolved:false} is a valid relation the recognizer can push.",
+          "evidence": "CONFIRMED verbatim: src/shared/types.ts:625 `export interface Relation` with `resolved: boolean` at :632 (plus kind/from/to). An unresolved CALLS_HTTP {to: rawUrlExpr, resolved:false} is representable with no schema change.",
+          "action": "None — Relation shape verified.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl12",
+          "ref": "t4/t5",
+          "kind": "ordering",
+          "severity": "LOW",
+          "premise": "Tasks t4 and t5 depend on t3 (the shared client-shape helper); t1/t2/t3 have no intra-story dependency, giving an acyclic order t1..t5.",
+          "evidence": "Correctly non-existent: `http-client-shapes`/`clientShapes` returns 0 in-tree hits because t3 CREATES that shared helper — it is a new module, not a pre-existing citation. The ordering claim itself (t4/t5 dependsOn t3; t1/t2/t3 independent) is acyclic and internally consistent, verified structurally in the plan's dependsOn graph.",
+          "action": "None — the module is a t3 deliverable, not a missing dependency; ordering is sound.",
+          "fixability": "auto"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 12
+      },
+      "reviewedAt": "2026-08-07T05:48:06.029Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-08-07T05:54:59.365Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "External-endpoint resolution pass + fullIndex wiring",
+        "summary": "New async per-repo module `resolveExternalEndpoints({ db, repo })` under src/indexer: read the repo's UNRESOLVED CALLS_HTTP relations via listUnresolvedRelations (filter kind==='CALLS_HTTP'); for each distinct rawTo await sc2.resolve(repo,'http', rawTo) (once per unique expr; sc2 memoizes the ConfigSourceMap per repo); derive the endpoint id via makeExternalEndpointId(repo,'http', identity||'' , rawExpression); collect one externalEndpoint Entity per distinct id (kind='externalEndpoint', repo, file='', protocol='http', resolved, target=identity||'', rawExpression when unresolved) and upsert via upsertEntities (dedup by id); upsert the now-RESOLVED CALLS_HTTP edge (from callerId -> endpointId, resolved:true) via upsertRelations. Skip a call-site whose `from` entity no longer exists (mid-reindex race) and never mint an empty-target/empty-rawExpression node. Wire `await resolveExternalEndpoints({ db: this.db, repo: repoPath })` into fullIndex right after runCrossFileResolver (index.ts:435). Per the s3 critique, this stays one cohesive task but its integration test must exercise each behavior below as a separate, independently-failing case (dedup / per-repo split / cross-language / unresolved / idempotency / dangling-from).",
+        "size": "L",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "A repo with HTTP call-sites yields exactly one externalEndpoint node (kind='externalEndpoint', protocol='http', resolved:true, target=identity) per distinct resolved target, each with a CALLS_HTTP edge from every calling entity (ac1).",
+          "Dedup + per-repo split (each an independently-failing case): three call-sites to the same resolved target in one repo collapse to a single node with three CALLS_HTTP edges; two repos calling the same target get two distinct nodes because repo is in the id (ac2).",
+          "Cross-language dedup: a TS CALLS_HTTP and a Python CALLS_HTTP to the SAME resolved identity in one repo share ONE language-agnostic node (id = repo+protocol+identity) with two edges — language does not fragment the endpoint.",
+          "An un-pinnable URL mints an unresolved node (id derived from rawExpression) carrying rawExpression + a CALLS_HTTP edge — never dropped (k5).",
+          "A CALLS_HTTP relation whose `from` entity no longer exists (mid-reindex race) is skipped rather than writing a dangling edge; no empty-target/empty-rawExpression node is ever minted.",
+          "Re-running the pass on identical sources produces a byte-identical node/edge set (deterministic ids, idempotent); sc2.resolve is invoked once per repo, not per call-site.",
+          "The pass is wired into fullIndex after runCrossFileResolver and awaited; a repo with no CALLS_HTTP relations produces no externalEndpoint nodes and leaves the graph unchanged."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "resolveExternalEndpoints: one node per distinct resolved target with a CALLS_HTTP edge from each caller (ac1)"
+          },
+          {
+            "level": "integration",
+            "name": "resolveExternalEndpoints: three call-sites to one target => one node + three edges (ac2 dedup)"
+          },
+          {
+            "level": "integration",
+            "name": "resolveExternalEndpoints: two repos to the same target => two distinct nodes (ac2 per-repo)"
+          },
+          {
+            "level": "integration",
+            "name": "resolveExternalEndpoints: a TS and a Python edge to the same resolved identity share one language-agnostic node"
+          },
+          {
+            "level": "integration",
+            "name": "resolveExternalEndpoints: interpolated URL resolving to the same host/path as a literal collapses to one node"
+          },
+          {
+            "level": "integration",
+            "name": "resolveExternalEndpoints: an un-pinnable URL mints an unresolved node carrying rawExpression + edge, never dropped (k5)"
+          },
+          {
+            "level": "integration",
+            "name": "resolveExternalEndpoints: a CALLS_HTTP with a missing `from` entity is skipped (no dangling edge, no empty node)"
+          },
+          {
+            "level": "integration",
+            "name": "resolveExternalEndpoints: re-run over identical sources is idempotent (byte-identical node/edge set) and sc2.resolve is invoked once per repo"
+          },
+          {
+            "level": "integration",
+            "name": "fullIndex wires resolveExternalEndpoints after runCrossFileResolver; a no-HTTP repo leaves the graph unchanged"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Exclude boundary kinds from the code-symbol resolver",
+        "summary": "In the existing code-symbol Pass-2 (runCrossFileResolver / resolveRelations, src/indexer/cross-file-resolver.ts + resolver.ts) filter out RelationKind CALLS_HTTP (and the sibling boundary kinds PUBLISHES_TO/SUBSCRIBES_TO/CALLS_RPC) from the unresolved-relation walk so a raw URL is never matched against a code-entity name and the CALLS_HTTP rows are left untouched for resolveExternalEndpoints. Additive filter — intra-code CALLS/INHERITS/IMPORTS resolution is unchanged.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "A seeded set of unresolved relations mixing CALLS + CALLS_HTTP: after runCrossFileResolver the CALLS_HTTP row is still unresolved (never re-pointed at a code entity), while the CALLS row resolves as before.",
+          "Existing CALLS/INHERITS/IMPORTS resolution is byte-identical in the presence of CALLS_HTTP rows (a regression that lets the resolver consume CALLS_HTTP fails the test)."
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "cross-file-resolver: a CALLS_HTTP row is left unresolved (never re-pointed at a code entity) while a sibling CALLS resolves"
+          },
+          {
+            "level": "unit",
+            "name": "cross-file-resolver: CALLS/INHERITS/IMPORTS resolution is unchanged in the presence of CALLS_HTTP rows"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "TS/JS HTTP-client recognizer + shared client-shape helper",
+        "summary": "Introduce a small shared helper (per-language HTTP-client shape tables + a common `emit CALLS_HTTP` utility with a stable signature that t4/t5 reuse without reshaping) and wire the TypeScript/JS recognizer into typescript.ts's existing call_expression visitor (walkForCalls): on a call-site matching a known client shape (fetch / axios.{get,post,request,…} / got / node-fetch / http(s).request), extract the URL argument node (childForFieldName('arguments') → URL arg → .text) and push { kind:'CALLS_HTTP', from: callerId, to: rawUrlExpr, resolved:false, meta:{file,repo} }. Key on the client shape (receiver/import + call pattern), not a bare method name, so a local get()/post() stays a plain CALLS edge. Skip emission when the URL arg can't be extracted (no empty-`to`). Non-HTTP call-sites are unaffected.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "A TS/JS fixture with fetch(url) / axios.get(url) / got(url) / http.request(url) each yields exactly one CALLS_HTTP relation {from: caller, to: raw URL expr, resolved:false}; the raw `to` matches the source URL expression.",
+          "A local function named get()/post() (not an HTTP client) emits NO CALLS_HTTP — it stays a plain CALLS edge (precision).",
+          "A call-site whose URL argument can't be extracted emits no CALLS_HTTP relation (no empty-`to` node); a file with no HTTP calls yields a ParseResult byte-identical to before.",
+          "The shared helper exposes a per-language client-shape table + a common emit utility with a stable signature (asserted directly) so t4/t5 wire in without reshaping it — the helper contract is explicit, not incidental to the TS recognizer."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "typescript recognizer: fetch/axios.get/got/http.request each emit one CALLS_HTTP with the raw URL expr"
+          },
+          {
+            "level": "unit",
+            "name": "typescript recognizer: a local get()/post() emits no CALLS_HTTP (stays a plain CALLS edge)"
+          },
+          {
+            "level": "unit",
+            "name": "typescript recognizer: an unextractable URL emits no CALLS_HTTP; a no-HTTP file yields a byte-identical ParseResult"
+          },
+          {
+            "level": "unit",
+            "name": "http-client-shapes helper: exposes a per-language shape table + emit utility with a stable signature"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Python + Go HTTP-client recognizers",
+        "summary": "Wire the Python and Go recognizers into their respective call visitors using the shared client-shape helper from t3. Python (call node): requests.{get,post,…} / httpx.{get,post,Client…} / urllib.request.urlopen / aiohttp.ClientSession requests. Go (call_expression): http.{Get,Post,PostForm} / http.NewRequest(method,url,body) / client.Do(req) where the URL/req is traceable to a literal or config expr. Each emits an unresolved CALLS_HTTP { from: callerId, to: rawUrlExpr, resolved:false } on a client match; look-alike non-HTTP calls stay plain CALLS; unextractable URLs emit nothing.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "Python fixtures: requests.get(url) / httpx.get(url) / urllib.request.urlopen(url) / aiohttp each emit one CALLS_HTTP with the raw URL expr; a non-HTTP look-alike stays a plain CALLS edge.",
+          "Go fixtures: http.Get(url) / http.NewRequest(method,url,body) / client.Do(req) each emit one CALLS_HTTP with the URL arg; a non-HTTP call stays a plain CALLS edge.",
+          "In both languages an unextractable URL emits no CALLS_HTTP and a no-HTTP file yields an unchanged ParseResult."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "python recognizer: requests/httpx/urllib.urlopen/aiohttp each emit one CALLS_HTTP with the raw URL expr; look-alike stays CALLS"
+          },
+          {
+            "level": "unit",
+            "name": "python recognizer: unextractable URL emits no CALLS_HTTP; no-HTTP file yields an unchanged ParseResult"
+          },
+          {
+            "level": "unit",
+            "name": "go recognizer: http.Get/http.NewRequest/client.Do each emit one CALLS_HTTP with the URL arg; non-HTTP call stays CALLS"
+          },
+          {
+            "level": "unit",
+            "name": "go recognizer: unextractable URL emits no CALLS_HTTP; no-HTTP file yields an unchanged ParseResult"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Java + Scala HTTP-client recognizers",
+        "summary": "Wire the Java and Scala recognizers into their call visitors (Java method_invocation; Scala call_expression) using the shared client-shape helper from t3. Java: HttpClient.send / OkHttpClient.newCall(Request) / RestTemplate.{getForObject,exchange,…} / WebClient / Apache HttpClient. Scala: sttp / Akka-Pekko HTTP (Http().singleRequest) / Play WS (ws.url(...).get()). Each emits an unresolved CALLS_HTTP { from: callerId, to: rawUrlExpr, resolved:false } on a client match; look-alikes stay plain CALLS; unextractable URLs emit nothing.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "Java fixtures: HttpClient.send / OkHttpClient.newCall / RestTemplate / WebClient each emit one CALLS_HTTP with the URL arg; a non-HTTP method_invocation stays a plain CALLS edge.",
+          "Scala fixtures: sttp / Akka-Pekko HTTP / Play WS each emit one CALLS_HTTP with the URL arg; a non-HTTP call stays a plain CALLS edge.",
+          "In both languages an unextractable URL emits no CALLS_HTTP and a no-HTTP file yields an unchanged ParseResult."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "java recognizer: HttpClient.send/OkHttp.newCall/RestTemplate/WebClient each emit one CALLS_HTTP with the URL arg; non-HTTP method_invocation stays CALLS"
+          },
+          {
+            "level": "unit",
+            "name": "java recognizer: unextractable URL emits no CALLS_HTTP; no-HTTP file yields an unchanged ParseResult"
+          },
+          {
+            "level": "unit",
+            "name": "scala recognizer: sttp/Akka-Pekko HTTP/Play WS each emit one CALLS_HTTP with the URL arg; non-HTTP call stays CALLS"
+          },
+          {
+            "level": "unit",
+            "name": "scala recognizer: unextractable URL emits no CALLS_HTTP; no-HTTP file yields an unchanged ParseResult"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "TypeScript/JS: fetch(url) / axios.get(url) / got(url) / http.request(url) → one CALLS_HTTP relation {from: caller, to: raw URL expr, resolved:false}",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "Python: requests.get(url) / httpx.get(url) / urllib.request.urlopen(url) / aiohttp → CALLS_HTTP with the raw URL expr",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "Go: http.Get(url) / http.NewRequest(method,url,body) / client.Do(req) → CALLS_HTTP with the URL arg",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "Java: HttpClient.send / OkHttpClient.newCall / RestTemplate / WebClient → CALLS_HTTP with the URL arg",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Scala: sttp / Akka-Pekko HTTP / Play WS → CALLS_HTTP with the URL arg",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "precision: a local function named get()/post() (not an HTTP client) does NOT emit CALLS_HTTP — stays a plain CALLS edge",
+        "coveredByTaskIds": [
+          "t3",
+          "t4",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "a call-site whose URL argument can't be extracted emits NO CALLS_HTTP relation (no empty-`to` node)",
+        "coveredByTaskIds": [
+          "t3",
+          "t4",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "a file with no HTTP calls yields a ParseResult byte-identical to before (no new relations)",
+        "coveredByTaskIds": [
+          "t3",
+          "t4",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "resolveRelations / cross-file-resolver excludes CALLS_HTTP from its unresolved-relation walk — a CALLS_HTTP row is left unresolved for the S003 pass, never re-pointed at a code entity",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "existing CALLS/INHERITS/IMPORTS resolution is unchanged in the presence of CALLS_HTTP rows",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "ac1: a repo with HTTP call-sites → each distinct resolved target is ONE externalEndpoint node (kind='externalEndpoint', protocol='http', resolved:true, target=identity) with a CALLS_HTTP edge from each caller",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "ac2 dedup: three call-sites to the same target → one node, three CALLS_HTTP edges",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "ac2 per-repo: two repos calling the same target → two distinct nodes (repo in the id)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "unresolved (k5): an un-pinnable URL → an unresolved node (id from rawExpression) carrying rawExpression + a CALLS_HTTP edge, never dropped",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "resolved-vs-literal dedup: an interpolated URL that resolves to the same host/path as a literal call collapses to one node",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "idempotency: re-running the pass on the same sources produces the identical node/edge set (deterministic ids)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "sc2 is invoked once per repo (memoized ConfigSourceMap), not per call-site",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 sc1 ExternalEndpoint graph vocabulary — makeExternalEndpointId deterministic per-repo id (repo + 'externalEndpoint' + protocol + ':' + target||rawExpression), the externalEndpoint node kind, and the CALLS_HTTP boundary edge; endpoint identity is minted only through makeExternalEndpointId so re-indexing is stable/idempotent and per-repo dedup holds (invariant source c1).",
+      "quotedText": "Endpoint identity is the sc1 deterministic per-repo id (repo + 'externalEndpoint' + protocol + ':' + target||rawExpression); S003 mints ids only through makeExternalEndpointId so re-indexing is stable/idempotent and per-repo dedup holds (k2)."
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 sc2 Target resolution engine + the S003 invariants: resolve(repo,'http',rawExpression) turns each raw URL into a ResolvedTarget in the async post-parse pass (once per repo, memoized); detection adds NO second parse pass (recognizer runs inside the single existing call_expression walk); and the existing code-symbol relation resolution (CALLS/INHERITS/IMPORTS) is unchanged — a repo with no HTTP calls yields a byte-identical graph (invariant source c2).",
+      "quotedText": "The existing code-symbol relation resolution (CALLS/INHERITS/IMPORTS -> entity ids) is unchanged: adding CALLS_HTTP emission + its dedicated pass must not alter how intra-code relations are detected or resolved; a repo with no HTTP calls produces a byte-identical graph to before."
+    }
+  ]
+}

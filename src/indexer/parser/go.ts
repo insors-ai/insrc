@@ -27,6 +27,7 @@ import { makeEntityId } from './base.js';
 import type { Entity, Relation } from '../../shared/types.js';
 import { registerParser } from './registry.js';
 import { SHARED_MODULES_REPO_ID } from '../../shared/repo-namespaces.js';
+import { matchHttpClient, emitCallsHttp } from './http-client-shapes.js';
 
 const MODULE_NAMESPACE = 'go' as const;
 const MODULE_REPO_ID = SHARED_MODULES_REPO_ID[MODULE_NAMESPACE];
@@ -108,6 +109,40 @@ function extractFunction(
   });
 
   relations.push({ kind: 'DEFINES', from: fileId, to: id, resolved: true });
+
+  // S003 (t4): outbound HTTP detection over this function body. Go emits no
+  // general CALLS today, so this is a focused HTTP-only walk.
+  walkGoForHttpCalls(node, id, repo, filePath, relations);
+}
+
+/**
+ * DFS a Go declaration subtree for `call_expression` nodes matching a known
+ * net/http client shape (`http.Get` / `http.NewRequest` / ...), emitting an
+ * unresolved CALLS_HTTP relation with the raw URL argument expression.
+ */
+function walkGoForHttpCalls(
+  root:      SyntaxNode,
+  callerId:  string,
+  repo:      string,
+  filePath:  string,
+  relations: Relation[],
+): void {
+  const stack: SyntaxNode[] = [root];
+  while (stack.length > 0) {
+    const node = stack.pop()!;
+    if (node.type === 'call_expression') {
+      const funcNode = node.childForFieldName('function');
+      const match = funcNode ? matchHttpClient('go', funcNode.text) : null;
+      if (funcNode && match) {
+        const urlArg = node.childForFieldName('arguments')?.namedChild(match.urlArgIndex);
+        emitCallsHttp(relations, { from: callerId, repo, file: filePath, rawUrlExpr: urlArg?.text ?? '' });
+      }
+    }
+    for (let i = 0; i < node.namedChildCount; i++) {
+      const child = node.namedChild(i);
+      if (child !== null) stack.push(child);
+    }
+  }
 }
 
 function extractMethod(
@@ -158,6 +193,9 @@ function extractMethod(
     const classId = makeEntityId(repo, filePath, 'class', typeName);
     relations.push({ kind: 'DEFINES', from: classId, to: id, resolved: true });
   }
+
+  // S003 (t4): outbound HTTP detection over this method body.
+  walkGoForHttpCalls(node, id, repo, filePath, relations);
 }
 
 function extractTypeSpec(

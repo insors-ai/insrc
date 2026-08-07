@@ -23,6 +23,7 @@ import { makeEntityId } from './base.js';
 import type { Entity, Relation } from '../../shared/types.js';
 import { registerParser } from './registry.js';
 import { SHARED_MODULES_REPO_ID } from '../../shared/repo-namespaces.js';
+import { matchHttpClient, emitCallsHttp } from './http-client-shapes.js';
 
 const MODULE_NAMESPACE = 'python' as const;
 const MODULE_REPO_ID = SHARED_MODULES_REPO_ID[MODULE_NAMESPACE];
@@ -118,6 +119,11 @@ function walkPythonNode(
       if (classId) {
         relations.push({ kind: 'DEFINES', from: classId, to: id, resolved: true });
       }
+
+      // S003 (t4): outbound HTTP detection over this function body. Python emits
+      // no general CALLS today, so this is a focused HTTP-only walk attributing
+      // each recognized client call to the enclosing function/method entity.
+      walkPythonForHttpCalls(node, id, repo, filePath, relations);
       break;
     }
 
@@ -270,6 +276,35 @@ function walkPythonNode(
         }
       }
       break;
+  }
+}
+
+/**
+ * DFS a Python function subtree for `call` nodes matching a known HTTP-client
+ * shape (`requests.get` / `httpx.post` / `urllib.request.urlopen` /
+ * `aiohttp.request` / ...), emitting an unresolved CALLS_HTTP relation with the
+ * raw URL argument expression. The callee path is the `function` child's text
+ * (e.g. `requests.get`); the URL is the positional argument at the shape's index.
+ */
+function walkPythonForHttpCalls(
+  root:      SyntaxNode,
+  callerId:  string,
+  repo:      string,
+  filePath:  string,
+  relations: Relation[],
+): void {
+  const stack: SyntaxNode[] = [root];
+  while (stack.length > 0) {
+    const node = stack.pop()!;
+    if (node.type === 'call') {
+      const funcNode = node.childForFieldName('function');
+      const match = funcNode ? matchHttpClient('python', funcNode.text) : null;
+      if (funcNode && match) {
+        const urlArg = node.childForFieldName('arguments')?.namedChild(match.urlArgIndex);
+        emitCallsHttp(relations, { from: callerId, repo, file: filePath, rawUrlExpr: urlArg?.text ?? '' });
+      }
+    }
+    for (const child of node.namedChildren) stack.push(child);
   }
 }
 

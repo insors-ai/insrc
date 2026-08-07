@@ -217,4 +217,55 @@ class Svc {
 `);
 		assert.deepEqual(httpRels(r).map(h => h.to), [`'https://api.example.com/x'`]);
 	});
+
+	// -- scope-hardening (S001 fast-follow): nested shadow + inner class + capture --
+
+	it('PRECISION (nested-closure shadow): a nested `const client = new Map()` shadows the outer axios proof — no CALLS_HTTP for the nested read', () => {
+		const r = parse(`
+import axios from 'axios';
+function f(arr) {
+  const client = axios.create({ baseURL: 'x' });
+  arr.forEach(() => { const client = new Map(); return client.get('some-key'); });
+}
+`);
+		assert.equal(httpRels(r).length, 0, 'the nested shadowed Map.get must not emit');
+	});
+
+	it('PRECISION (outer capture preserved): a closure that captures the un-redeclared outer axios var still emits one CALLS_HTTP', () => {
+		const r = parse(`
+import axios from 'axios';
+function f(arr) {
+  const client = axios.create({ baseURL: 'x' });
+  arr.forEach(() => { return client.get('https://real.example.com'); });
+}
+`);
+		assert.deepEqual(httpRels(r).map(h => h.to), [`'https://real.example.com'`], 'the captured outer axios instance still resolves');
+	});
+
+	it('PRECISION (capture + shadow in one body): outer axios call emits, nested shadow does not', () => {
+		const r = parse(`
+import axios from 'axios';
+function f(arr) {
+  const client = axios.create({ baseURL: 'x' });
+  const out = client.get('https://outer.example.com');
+  arr.forEach(() => { const client = new Map(); return client.get('k'); });
+  return out;
+}
+`);
+		assert.deepEqual(httpRels(r).map(h => h.to), [`'https://outer.example.com'`], 'only the outer axios call, not the nested Map read');
+	});
+
+	it('PRECISION (inner class in method): an inner class whose `http` field is a Map does NOT inherit the outer HttpClient proof; the outer call still emits', () => {
+		const r = parse(`
+import { HttpClient } from '@angular/common/http';
+class Outer {
+  constructor(private http: HttpClient) {}
+  m() {
+    class Inner { http = new Map(); go() { return this.http.get('cache-key'); } }
+    return this.http.get('https://api.example.com/x');
+  }
+}
+`);
+		assert.deepEqual(httpRels(r).map(h => h.to), [`'https://api.example.com/x'`], 'only Outer.m this.http (HttpClient), not Inner.go this.http (Map)');
+	});
 });

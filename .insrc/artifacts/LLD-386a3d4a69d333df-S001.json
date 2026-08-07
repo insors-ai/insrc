@@ -1,0 +1,412 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1786097688094-vyx5y1",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-08-07T10:19:45.573Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 297278,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "386a3d4a69d333df",
+    "epicSlug": "pin-ollama-embedding-model-so-stops",
+    "storyId": "S001",
+    "hldBaseRunId": "wf-1786097688094-vyx5y1",
+    "hldEffectiveHash": "386a3d4a69d333df68dc250c1e338e7c817f1c51e573b7b6fa4d40337125da95",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "small",
+    "triageRationale": "One cohesive provider change with a single obvious approach; core edit at ollama.ts:425 plus a small config knob touching the config catalog/reconcile. No new subsystem, no cross-cutting contract, no DB/graph schema change.",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "OllamaProvider.embed() calls this.client.embed({ model, input }) WITHOUT a keep_alive argument (the bug this Story fixes).",
+          "evidence": "CONFIRMED verbatim: src/agent/providers/ollama.ts:425 reads `const result = await this.client.embed({ model: this.embeddingModel, input: text });` — no keep_alive argument, exactly the bug the Story fixes.",
+          "action": "None — fix site verified.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The shaper path complete()/chat() pins keep_alive:'24h' (the pattern embed() will mirror).",
+          "evidence": "Supported: the shaper path complete()/chat() pins keep_alive:'24h' (ollama.ts:342 conditional keepAlive + ln 501 literal '24h'), verified by direct inspection this session — the pattern embed() mirrors.",
+          "action": "None.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The config catalog registers a models.local.* block (host/embeddingModel/embeddingDim/coreModel/charsPerToken) where an additive models.local.embeddingKeepAlive field is registered.",
+          "evidence": "Supported: config-catalog.ts registers the models.local.* block (models.local.host/embeddingModel/embeddingDim/coreModel/charsPerToken at ln 111-116), the additive registration site for models.local.embeddingKeepAlive.",
+          "action": "None.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "loadLocalProviderConfig (src/config/local.ts) is the local-provider config surface OllamaProvider reads via localDefaults(); it is where embeddingKeepAlive is surfaced.",
+          "evidence": "Supported: OllamaProvider memoizes localDefaults()=loadLocalProviderConfig() (ollama.ts:54-58); loadLocalProviderConfig lives in src/config/local.ts and is the models.local.* surface where embeddingKeepAlive is added.",
+          "action": "None.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl5",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The OllamaProvider constructor reads local defaults into private fields (e.g. this.embeddingModel = d.embeddingModel), the same pattern embeddingKeepAlive will follow.",
+          "evidence": "Supported: the constructor reads local defaults into private fields — `this.embeddingModel = d.embeddingModel` (ollama.ts:179) — the exact pattern embeddingKeepAlive follows.",
+          "action": "None.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl6",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The embed() delegators cli-provider and mcp-sampling-provider implement embed by delegating to embedDelegate.embed(text), so a keep_alive change inside OllamaProvider.embed() flows through them unchanged.",
+          "evidence": "Supported: cli-provider.ts:285-289 and mcp-sampling-provider.ts:258-266 implement embed() by delegating to embedDelegate.embed(text) (the LLMProvider.embed contract at shared/types.ts:181); the keep_alive change inside OllamaProvider.embed() flows through them unchanged.",
+          "action": "None — delegators unaffected.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl7",
+          "kind": "external-contract",
+          "severity": "LOW",
+          "premise": "Ollama's embeddings API accepts a keep_alive parameter governing model residency (string like '24h'/'-1'/'0'), so passing it in embed() keeps the embed model loaded without affecting the returned vector.",
+          "evidence": "External contract (Ollama): the embeddings API accepts keep_alive governing model residency (the shaper already uses '24h' successfully). keep_alive affects only residency, not the returned vector — an unrecognized value at worst reverts to default eviction (handled as a recoverable error case). Reasonable and low-risk.",
+          "action": "None — documented + guarded in error paths.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl8",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Adding a config-catalog field is carried forward by the schema-driven reconcile (fill/repair on boot/update) with no separate migration — an old config.json without the key keeps working.",
+          "evidence": "Supported: the config catalog + reconcile (config-catalog.ts CONFIG_CATALOG + reconcile.ts fill/repair) carry an additive field forward on boot/update — the established config-reconcile pattern; an old config.json without the key backfills to the catalog default.",
+          "action": "None.",
+          "fixability": "auto"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 8
+      },
+      "reviewedAt": "2026-08-07T10:21:02.282Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-08-07T10:24:32.451Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "S001",
+        "owns": [],
+        "depends": [],
+        "internal": "Pin the Ollama embedding model keep-alive"
+      },
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "embed",
+          "signature": "OllamaProvider.embed(text: string): Promise<number[]>",
+          "parameters": [
+            {
+              "name": "text",
+              "type": "string",
+              "purpose": "The input text to embed (unchanged).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<number[]>",
+            "meaning": "The embedding vector (unchanged). INTERNAL CHANGE ONLY: the underlying `this.client.embed({ model, input })` call (ollama.ts:425) now also passes `keep_alive: this.embeddingKeepAlive`, so Ollama keeps the embed model resident instead of applying its ~5-min default. No signature/return change; delegators (cli-provider, mcp-sampling-provider) are unaffected."
+          },
+          "errors": [],
+          "preconditions": [
+            "this.embeddingKeepAlive is set from config in the constructor (default '24h')."
+          ],
+          "postconditions": [
+            "The Ollama embeddings request carries a keep_alive; a '0' value opts back into eager unload; the returned vector is identical to before for the same input+model."
+          ]
+        },
+        {
+          "name": "loadLocalProviderConfig",
+          "signature": "loadLocalProviderConfig(): { host: string; coreModel: string; embeddingModel: string; embeddingDim: number; charsPerToken: number; embeddingKeepAlive: string }",
+          "parameters": [],
+          "returns": {
+            "type": "LocalProviderConfig",
+            "meaning": "The live models.local.* surface (src/config/local.ts) read by OllamaProvider. EXTENDED: gains `embeddingKeepAlive: string` read from `models.local.embeddingKeepAlive` (default '24h'), mirroring how `embeddingModel` is surfaced. Memoized via localDefaults()."
+          },
+          "errors": [],
+          "preconditions": [
+            "config.json loaded / reconciled (the catalog default backfills a missing key)."
+          ],
+          "postconditions": [
+            "embeddingKeepAlive is a non-empty string usable directly as Ollama's keep_alive param."
+          ]
+        }
+      ],
+      "dataModel": [
+        {
+          "entity": "models.local.embeddingKeepAlive (config-catalog field)",
+          "change": "field-add",
+          "details": "New additive config field registered in the models.local.* block of the config catalog: `{ path:'models.local.embeddingKeepAlive', type:'string', default:'24h', desc:'Ollama keep_alive for the embedder model (e.g. 24h / -1 forever / 0 eager-unload) — keeps the hot-path embed model resident during index bursts' }`. Carried forward by the schema-driven reconcile (fill on boot/update); no migration step, no RETIRED_PATHS/alias impact. Read by loadLocalProviderConfig, consumed by OllamaProvider.embed().",
+          "schemaDiff": "config-catalog.ts models.local.*: + { path:'models.local.embeddingKeepAlive', type:'string', default:'24h', desc:... }",
+          "callSites": [
+            "src/config/config-catalog.ts",
+            "src/config/local.ts",
+            "src/agent/providers/ollama.ts"
+          ]
+        },
+        {
+          "entity": "OllamaProvider (embed keep_alive wiring)",
+          "change": "invariant-change",
+          "details": "The invariant 'embed() issues an Ollama embeddings request WITHOUT keep_alive (5-min default leash)' becomes 'embed() passes keep_alive from config, keeping the embedder resident'. The constructor reads `d.embeddingKeepAlive` into a private readonly field (same pattern as `this.embeddingModel = d.embeddingModel`). Additive: complete()/chat() keep_alive is untouched.",
+          "schemaDiff": "ollama.ts: constructor `this.embeddingKeepAlive = d.embeddingKeepAlive`; embed() `this.client.embed({ model, input, keep_alive: this.embeddingKeepAlive })`",
+          "callSites": [
+            "src/agent/providers/ollama.ts"
+          ]
+        }
+      ],
+      "interactionWithShared": []
+    },
+    "dataModelChanges": [
+      {
+        "entity": "models.local.embeddingKeepAlive (config-catalog field)",
+        "change": "field-add",
+        "details": "New additive config field registered in the models.local.* block of the config catalog: `{ path:'models.local.embeddingKeepAlive', type:'string', default:'24h', desc:'Ollama keep_alive for the embedder model (e.g. 24h / -1 forever / 0 eager-unload) — keeps the hot-path embed model resident during index bursts' }`. Carried forward by the schema-driven reconcile (fill on boot/update); no migration step, no RETIRED_PATHS/alias impact. Read by loadLocalProviderConfig, consumed by OllamaProvider.embed().",
+        "schemaDiff": "config-catalog.ts models.local.*: + { path:'models.local.embeddingKeepAlive', type:'string', default:'24h', desc:... }",
+        "callSites": [
+          "src/config/config-catalog.ts",
+          "src/config/local.ts",
+          "src/agent/providers/ollama.ts"
+        ]
+      },
+      {
+        "entity": "OllamaProvider (embed keep_alive wiring)",
+        "change": "invariant-change",
+        "details": "The invariant 'embed() issues an Ollama embeddings request WITHOUT keep_alive (5-min default leash)' becomes 'embed() passes keep_alive from config, keeping the embedder resident'. The constructor reads `d.embeddingKeepAlive` into a private readonly field (same pattern as `this.embeddingModel = d.embeddingModel`). Additive: complete()/chat() keep_alive is untouched.",
+        "schemaDiff": "ollama.ts: constructor `this.embeddingKeepAlive = d.embeddingKeepAlive`; embed() `this.client.embed({ model, input, keep_alive: this.embeddingKeepAlive })`",
+        "callSites": [
+          "src/agent/providers/ollama.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "config.json has an empty/blank models.local.embeddingKeepAlive (e.g. a hand-edit set it to \"\").",
+          "detection": "The OllamaProvider constructor reads d.embeddingKeepAlive and finds an empty string (loadLocalProviderConfig returned '' rather than the catalog default).",
+          "response": "Guard in the constructor: coalesce an empty/whitespace value to the '24h' default before storing, so embed() never passes keep_alive:'' (which Ollama would treat as an unspecified/odd value).",
+          "userImpact": "None — the embedder still gets a sane keep_alive; the operator's blank is treated as 'use default'.",
+          "recoverable": true
+        },
+        {
+          "scenario": "An operator sets models.local.embeddingKeepAlive to a string Ollama does not recognize (e.g. 'foo').",
+          "detection": "Ollama's embeddings endpoint receives the unrecognized keep_alive; it either errors on the request or ignores it — surfaced by the existing embed() error handling / the returned embeddings.",
+          "response": "Do not add bespoke validation: keep_alive only governs model residency, not embedding correctness. An unrecognized value at worst reverts to Ollama's default eviction behaviour (the pre-fix status quo); the value is documented in the field desc (24h / -1 / 0). Existing embed() error handling is unchanged.",
+          "userImpact": "At worst the embedder reverts to being evicted early (the old slow behaviour) — never wrong embeddings, never a crash.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "models.local.embeddingKeepAlive = '-1'",
+          "expected": "Ollama keeps the embed model resident indefinitely (forever) — best for big-memory hosts."
+        },
+        {
+          "input": "models.local.embeddingKeepAlive = '0'",
+          "expected": "Eager unload after each request (explicit opt-out) — restores the pre-fix behaviour for a memory-tight host that prefers it; embeddings still correct, just cold."
+        },
+        {
+          "input": "An existing config.json written before this field existed (key absent).",
+          "expected": "The schema-driven reconcile backfills models.local.embeddingKeepAlive='24h' on daemon boot/update; embed() gets the default with no operator action."
+        },
+        {
+          "input": "The embedder runs through cli-provider / mcp-sampling-provider (delegated embed).",
+          "expected": "keep_alive is applied inside OllamaProvider.embed() regardless of the caller; the delegators pass through unchanged and are unaffected."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "embed() returns the identical embedding vector for the same (input, embeddingModel) as before — keep_alive governs only Ollama model residency, never the embedding output or the method signature/return type.",
+          "source": "c1"
+        },
+        {
+          "text": "The shaper's complete()/chat() keep_alive:'24h' behaviour is untouched — this Story adds a keep_alive to the embed path only, and does not alter the reasoning-model residency policy.",
+          "source": "c1"
+        },
+        {
+          "text": "Adding models.local.embeddingKeepAlive is additive and carried forward by the existing schema-driven reconcile (fill on boot/update) — an old config.json without the key keeps working; no migration step, no RETIRED_PATHS/alias change.",
+          "source": "c2"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test via `npx tsx --test` (matching src/agent/providers/__tests__ + src/config/__tests__); no live Ollama — the embed call is exercised against a fake client, gated live suites stay behind INSRC_LIVE_TESTS",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove OllamaProvider.embed() passes keep_alive (from config) to the Ollama client, and that an empty/blank config value coalesces to the default.",
+          "subjects": [
+            "embed() calls this.client.embed with a keep_alive property equal to the configured value (default '24h') — captured via a fake/stub `client.embed` that records its args",
+            "constructor guard: an empty/whitespace models.local.embeddingKeepAlive coalesces to '24h' (embed still passes a non-empty keep_alive)",
+            "a custom value ('-1' / '0' / '30m') is passed through verbatim to client.embed",
+            "embed()'s return value (embeddings[0]) is unchanged — keep_alive does not affect the returned vector"
+          ],
+          "fixturesNeeded": [
+            "A fake Ollama client whose embed() records the args object + returns a canned { embeddings: [[...]] }",
+            "An injectable/overridable localDefaults / config value so the test sets embeddingKeepAlive without a real config.json"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove the new config field is registered and carried forward by the schema-driven reconcile with its default.",
+          "subjects": [
+            "config-catalog contains models.local.embeddingKeepAlive with type 'string' and default '24h'",
+            "reconcile fills models.local.embeddingKeepAlive='24h' into a config.json that lacks the key (carry-forward on boot/update), and preserves an operator-set value",
+            "loadLocalProviderConfig surfaces embeddingKeepAlive on its returned object"
+          ],
+          "fixturesNeeded": [
+            "A config object without the key (to assert fill) and one with a custom value (to assert preserve) — reuse the existing config-reconcile test harness"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "unit: embed() passes keep_alive (configured value, default '24h') to client.embed — captured via the fake client",
+            "unit: empty/blank config value coalesces to '24h'; custom values pass through verbatim",
+            "unit: embed() return value unchanged (keep_alive affects only residency)"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "unit: config-catalog registers models.local.embeddingKeepAlive (type string, default '24h')",
+            "unit: reconcile backfills the default into a key-less config.json and preserves an operator override; loadLocalProviderConfig surfaces it"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "OllamaProvider.embed() (ollama.ts:423-425) issues `this.client.embed({ model, input })` with NO keep_alive, so Ollama applies its ~5-min default and evicts the embed model under memory pressure (cold ~2s reload vs ~0.1s warm). There is no models.local.embeddingKeepAlive config field; config.json files in the wild have no such key.",
+      "stateAfter": "config-catalog registers models.local.embeddingKeepAlive (string, default '24h'); loadLocalProviderConfig surfaces it; OllamaProvider.embed() passes `keep_alive` from it, keeping the embed model resident. Existing config.json files without the key are backfilled to '24h' by the schema-driven reconcile on the next daemon boot/update. Operators can override ('-1' forever, '0' eager-unload).",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the additive config-catalog entry { path:'models.local.embeddingKeepAlive', type:'string', default:'24h', desc:... } (a nullable/defaulted field — no value required from operators).",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Surface embeddingKeepAlive on loadLocalProviderConfig's returned object (read models.local.embeddingKeepAlive, fall back to the catalog default).",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "In OllamaProvider: read d.embeddingKeepAlive in the constructor (coalescing empty/blank to '24h') and pass it as keep_alive in embed()'s client.embed call.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "On the next daemon boot/update, the existing reconcile fill-step backfills models.local.embeddingKeepAlive='24h' into any config.json lacking it (no separate data rewrite; reuses the standard carry-forward).",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No public API changes: embed()/loadLocalProviderConfig signatures and return types are unchanged (loadLocalProviderConfig gains a field, an additive superset). embed() delegators (cli-provider, mcp-sampling-provider) pass through untouched. An old config.json without the key works (reconcile backfills the default); setting the field to '0' exactly restores the pre-fix eviction behaviour. Rolling back the code leaves an orphan config key that is simply ignored.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "models.local.embeddingKeepAlive config knob",
+        "oneLineSummary": "Add a `models.local.embeddingKeepAlive` string field to the config catalog (default '24h'), expose it on the local-provider defaults, and pass it as keep_alive in embed().",
+        "chosen": true,
+        "pros": [
+          "Tunable per host without a code change — memory-constrained boxes can lower it, big boxes can pin forever, matching the repo's config-first ethos.",
+          "Mirrors the existing models.local.* pattern (embeddingModel/host) exactly — no new plumbing shape; reconcile carry-forward is automatic.",
+          "A sensible default ('24h') fixes the flush out-of-the-box while staying overridable."
+        ],
+        "cons": [
+          "Touches two files (catalog + local.ts) plus the provider, and adds a config-catalog test for the carry-forward — slightly more than a one-liner."
+        ],
+        "costEstimate": "S"
+      },
+      {
+        "id": "a2",
+        "name": "Hardcoded keep_alive constant in embed()",
+        "oneLineSummary": "Pass a hardcoded `keep_alive: '24h'` (a named module constant) in embed(), no config surface.",
+        "reasonRejected": "Smallest change and fixes the default case, but bakes a policy that this session proved can be wrong on small-memory machines. Loses to a1 on host-tunable (violates vs satisfies).",
+        "pros": [
+          "Smallest possible change — one file, one line + a constant; trivially testable.",
+          "Consistent with how the shaper already hardcodes its 24h keep_alive today."
+        ],
+        "cons": [
+          "Not tunable — a memory-constrained host (exactly the failure mode that motivated this) can't dial it down without editing code + redeploying the daemon.",
+          "Bakes a policy decision ('24h') that this very session showed can be wrong on small-memory machines."
+        ],
+        "costEstimate": "XS"
+      },
+      {
+        "id": "a3",
+        "name": "Shared keep_alive constant for shaper + embedder",
+        "oneLineSummary": "Extract ONE shared keep_alive constant/config used by BOTH complete()/chat() and embed(), unifying the policy.",
+        "reasonRejected": "Conceptually DRY but conflates two very different residency footprints and disturbs the working shaper path. Loses to a1 on minimal-blast-radius (violates vs partial) and host-tunable (partial vs satisfies).",
+        "pros": [
+          "DRY — one keep_alive policy instead of an asymmetric shaper-24h / embed-default split.",
+          "Eliminates the asymmetry that caused the bug at its root."
+        ],
+        "cons": [
+          "Broader blast radius: edits the shaper's complete()/chat() call sites (currently working) to fix an embed-only problem — more risk than the acceptance requires.",
+          "Conflates two different residency needs: the 23GB shaper and the 0.6GB embedder have very different memory footprints and ideally want different keep_alive values on a tight box — a single knob can't express that."
+        ],
+        "costEstimate": "S"
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 usage.example — OllamaProvider.embed() at ollama.ts:423-425 issues client.embed({model,input}) with NO keep_alive; complete()/chat() pin keep_alive:'24h' at ollama.ts:342/501",
+      "quotedText": "src/agent/providers/ollama.ts:423-425: `async embed(text): Promise<number[]> { const result = await this.client.embed({ model: this.embeddingModel, input: text }); return result.embeddings[0] ?? []; }` — NO keep_alive is passed"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 data-model.ground — config-catalog.ts models.local.* block (ln 111-116); a new models.local.embeddingKeepAlive field is carried forward by the schema-driven reconcile",
+      "quotedText": "A new field `models.local.embeddingKeepAlive` (type 'string', default '24h') registered here is carried forward automatically by the schema-driven reconcile (CONFIG_CATALOG + reconcile fill/repair on daemon boot + update)"
+    }
+  ]
+}

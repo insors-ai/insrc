@@ -175,4 +175,27 @@ def b():
 `);
 		assert.equal(http(rels).length, 0);
 	});
+
+	it('PRECISION (same-function rebind): a name rebound away from the factory drops its proof — the post-rebind dict read emits ZERO', () => {
+		const rels = parse(`
+def a():
+    s = requests.Session()
+    first = s.get('https://api.example.com/a')
+    s = {}
+    return s.get('k')
+`);
+		// The final binding of `s` is a dict, so last-binding-wins drops the proof:
+		// neither the pre-rebind nor post-rebind read emits (flow-insensitive).
+		assert.equal(http(rels).length, 0, 'a rebound-away name is not proven under last-binding-wins');
+	});
+
+	it('PRECISION (rebind last-binding-wins): a name whose FINAL binding is the factory stays proven', () => {
+		const rels = parse(`
+def a():
+    s = {}
+    s = requests.Session()
+    return s.get('https://api.example.com/a')
+`);
+		assert.deepEqual(http(rels).map(h => h.to), [`'https://api.example.com/a'`], 'final binding is the factory, so s is proven');
+	});
 });

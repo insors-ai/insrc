@@ -326,24 +326,41 @@ function walkPythonForHttpCalls(
  * `x = requests.Session()` / `x = httpx.Client()` assignments (RHS is a `call`
  * whose function text is the exact factory). Only these concrete proofs are
  * added, so an unproven `.get()` (e.g. dict.get) never matches.
+ *
+ * Rebind handling (last-binding-wins): a name is proven iff its LAST assignment
+ * in the subtree is the factory. A proven name later reassigned with a non-factory
+ * RHS (`s = requests.Session(); ...; s = {}`) drops out; a name whose final binding
+ * is the factory stays proven even if an earlier binding was not. Assignments are
+ * visited in source order so the last one wins. (Flow-insensitive: an approximation
+ * that suffices for the same-function rebind case.)
  */
 function collectPyProvenHttpReceivers(root: SyntaxNode): Set<string> {
   const set = new Set<string>();
+  // Collect assignments in source order, then apply last-binding-wins per name.
+  const assigns: SyntaxNode[] = [];
   const stack: SyntaxNode[] = [root];
   while (stack.length > 0) {
     const n = stack.pop()!;
-    if (n.type === 'assignment') {
-      const left  = n.childForFieldName('left');
-      const right = n.childForFieldName('right');
-      if (left?.type === 'identifier' && right?.type === 'call') {
-        const fn = right.childForFieldName('function');
-        const callee = fn?.text.replace(/\s+/g, '');
-        if (callee === 'requests.Session' || callee === 'httpx.Client') {
-          set.add(left.text);
-        }
+    if (n.type === 'assignment') assigns.push(n);
+    // Push children reversed so the left-to-right / top-to-bottom source order
+    // is preserved when we sort by node position below.
+    for (const c of n.namedChildren) stack.push(c);
+  }
+  assigns.sort((a, b) => a.startIndex - b.startIndex);
+  for (const n of assigns) {
+    const left  = n.childForFieldName('left');
+    const right = n.childForFieldName('right');
+    if (left?.type !== 'identifier') continue;
+    if (right?.type === 'call') {
+      const fn = right.childForFieldName('function');
+      const callee = fn?.text.replace(/\s+/g, '');
+      if (callee === 'requests.Session' || callee === 'httpx.Client') {
+        set.add(left.text);
+        continue;
       }
     }
-    for (const c of n.namedChildren) stack.push(c);
+    // Any other RHS rebinds the name away from a factory proof.
+    set.delete(left.text);
   }
   return set;
 }

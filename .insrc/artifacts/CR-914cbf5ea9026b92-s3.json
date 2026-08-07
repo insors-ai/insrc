@@ -1,11 +1,11 @@
 {
   "meta": {
     "workflow": "code-review",
-    "runId": "cr-1786084132346-7jdeu8",
+    "runId": "cr-1786096323345-zhst8i",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-08-07T06:28:52.347Z",
+    "createdAt": "2026-08-07T09:52:03.355Z",
     "model": "client",
-    "elapsedMs": 10,
+    "elapsedMs": 1,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "914cbf5ea9026b92",
@@ -15,12 +15,9 @@
     "kind": "code-review",
     "epicHash": "914cbf5ea9026b92",
     "storyId": "s3",
-    "groundingMode": "degraded",
+    "groundingMode": "full",
     "subject": {
-      "changedFiles": [
-        ".insrc/artifacts/BUILD-914cbf5ea9026b92-s3.json",
-        "docs/builds/BUILD-914cbf5ea9026b92-s3.md"
-      ]
+      "changedFiles": []
     },
     "dimensions": [
       {
@@ -40,7 +37,7 @@
         "findings": []
       }
     ],
-    "verdict": "warn",
+    "verdict": "pass",
     "counts": {
       "high": 0,
       "med": 0,

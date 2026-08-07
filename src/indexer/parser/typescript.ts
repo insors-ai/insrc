@@ -629,9 +629,12 @@ function extractCalls(
   relations:  Relation[],
 ): void {
   const seen = new Set<string>();
-  // S001 (t3): local `const x = axios.create()` receivers, scoped to THIS body.
-  const localHttp = collectLocalAxiosVars(bodyNode);
-  walkForCalls(bodyNode, callerId, repo, filePath, relations, seen, localHttp);
+  // S001 (t3 + scope-hardening): local `const x = axios.create()` receivers,
+  // resolved to their NEAREST lexical scope. axiosScopes is a stack of per-scope
+  // frames (innermost last); it is seeded with THIS body's frame and grows/shrinks
+  // as walkForCalls descends into / leaves nested function/arrow/method scopes.
+  const axiosScopes: AxiosScope[] = [collectScopeFrame(bodyNode)];
+  walkForCalls(bodyNode, callerId, repo, filePath, relations, seen, axiosScopes);
 }
 
 const BUILTIN_OBJECTS = new Set([
@@ -675,9 +678,12 @@ const BUILTIN_METHODS = new Set([
  *    fields/ctor-params of the CLASS currently being walked (set by extractClass,
  *    save/restored for nested classes) — a second class with a same-named
  *    non-HttpClient field never matches.
- *  - local `const x = axios.create()` vars: collected PER function/method body
- *    inside extractCalls (a `const client = someMap` in another body is not an
- *    axios.create RHS, so it isn't proven).
+ *  - local `const x = axios.create()` vars: resolved via a per-scope frame stack
+ *    (AxiosScope) threaded through walkForCalls, so a receiver proves against its
+ *    NEAREST declaring scope — a nested shadow (`const client = new Map()` in a
+ *    callback) overrides an outer axios proof, while a plain outer-capture still
+ *    resolves. A class DECLARED inside a method body switches currentClassHttpFields
+ *    when walkForCalls enters it, so it no longer inherits the outer class's proof.
  * parse() is sync + non-reentrant, so the module var is safe.
  */
 let currentClassHttpFields: Set<string> = new Set();
@@ -705,40 +711,82 @@ function collectClassHttpFields(classNode: SyntaxNode): Set<string> {
   return set;
 }
 
-/** `const x = axios.create(...)` variable names declared within ONE body.
- *  KNOWN residual (MED, fast-follow): a name shadowed in a NESTED closure inside
- *  the body (e.g. `const client = new Map()` in a callback) isn't subtracted, and
- *  a class DECLARED inside a method keeps the outer class's `this.<field>` proof.
- *  Both need per-nested-scope shadow tracking; rare in real service code. */
-function collectLocalAxiosVars(body: SyntaxNode): Set<string> {
-  const set = new Set<string>();
-  const stack: SyntaxNode[] = [body];
+/** Node types that open a new lexical scope for local `const`/`let`/`var`
+ *  declarations. A receiver's axios-proof resolves to the NEAREST such scope
+ *  that declares its name, so a nested shadow overrides an outer proof. */
+const SCOPE_NODE_TYPES = new Set([
+  'function_declaration', 'function_expression', 'arrow_function',
+  'method_definition', 'generator_function', 'generator_function_declaration',
+]);
+
+/** One lexical scope's local variable proofs:
+ *  - `declared`: every `const/let/var` name declared DIRECTLY in this scope.
+ *  - `axios`: the subset whose initializer is `axios.create(...)`.
+ *  A receiver is proven-axios iff the nearest frame that `declared` it also has
+ *  it in `axios`; a nearer non-axios declaration shadows an outer proof. */
+interface AxiosScope { declared: Set<string>; axios: Set<string>; }
+
+/** Build the AxiosScope frame for ONE lexical scope: scan its direct
+ *  `variable_declarator`s, stopping at nested function/arrow/method boundaries
+ *  so each scope owns its own frame (mirrors collectClassHttpFields stopping at
+ *  nested class boundaries). */
+function collectScopeFrame(scope: SyntaxNode): AxiosScope {
+  const declared = new Set<string>();
+  const axios    = new Set<string>();
+  const stack: SyntaxNode[] = [];
+  for (const c of scope.namedChildren) stack.push(c);
   while (stack.length > 0) {
     const n = stack.pop()!;
+    if (SCOPE_NODE_TYPES.has(n.type)) continue;  // nested scope: its own frame
     if (n.type === 'variable_declarator') {
-      const value = n.childForFieldName('value');
-      if (value?.type === 'call_expression') {
-        const fn = value.childForFieldName('function');
-        if (fn && normalizeCallee(fn.text) === 'axios.create') {
-          const nameNode = n.childForFieldName('name');
-          if (nameNode?.type === 'identifier') set.add(nameNode.text);
+      const nameNode = n.childForFieldName('name');
+      if (nameNode?.type === 'identifier') {
+        declared.add(nameNode.text);
+        const value = n.childForFieldName('value');
+        if (value?.type === 'call_expression') {
+          const fn = value.childForFieldName('function');
+          if (fn && normalizeCallee(fn.text) === 'axios.create') axios.add(nameNode.text);
         }
       }
     }
     for (const c of n.namedChildren) stack.push(c);
   }
-  return set;
+  return { declared, axios };
+}
+
+/** Resolve a receiver name against the lexical scope stack: the nearest frame
+ *  that declares the name decides. Proven only if that frame declared it as an
+ *  axios.create var; a nearer non-axios declaration shadows an outer proof. */
+function isProvenAxios(recv: string, axiosScopes: AxiosScope[]): boolean {
+  for (let i = axiosScopes.length - 1; i >= 0; i--) {
+    const frame = axiosScopes[i]!;
+    if (frame.declared.has(recv)) return frame.axios.has(recv);
+  }
+  return false;
 }
 
 function walkForCalls(
-  node:       SyntaxNode,
-  callerId:   string,
-  repo:       string,
-  filePath:   string,
-  relations:  Relation[],
-  seen:       Set<string>,
-  localHttp:  Set<string>,
+  node:        SyntaxNode,
+  callerId:    string,
+  repo:        string,
+  filePath:    string,
+  relations:   Relation[],
+  seen:        Set<string>,
+  axiosScopes: AxiosScope[],
 ): void {
+  // Push a fresh axios frame when entering a nested lexical scope; switch the
+  // class `this.<field>` proof when entering ANY class node (including one
+  // declared inside a method body — the MED2 case extractClass never reaches).
+  let pushedScope = false;
+  let prevClassHttpFields: Set<string> | null = null;
+  if (SCOPE_NODE_TYPES.has(node.type)) {
+    axiosScopes.push(collectScopeFrame(node));
+    pushedScope = true;
+  } else if (node.type === 'class_declaration' || node.type === 'class') {
+    prevClassHttpFields = currentClassHttpFields;
+    currentClassHttpFields = collectClassHttpFields(node);
+  }
+
   if (node.type === 'call_expression') {
     const funcNode = node.childForFieldName('function');
     if (funcNode) {
@@ -759,7 +807,7 @@ function walkForCalls(
         const prop = funcNode.childForFieldName('property');
         const recv = obj ? normalizeCallee(obj.text) : '';
         if (obj && prop && isHttpVerb(prop.text)
-            && (currentClassHttpFields.has(recv) || localHttp.has(recv))) {
+            && (currentClassHttpFields.has(recv) || isProvenAxios(recv, axiosScopes))) {
           const urlArg = node.childForFieldName('arguments')?.namedChild(0);
           emitCallsHttp(relations, {
             from: callerId, repo, file: filePath, rawUrlExpr: urlArg?.text ?? '',
@@ -782,8 +830,12 @@ function walkForCalls(
   }
 
   for (const child of node.namedChildren) {
-    walkForCalls(child, callerId, repo, filePath, relations, seen, localHttp);
+    walkForCalls(child, callerId, repo, filePath, relations, seen, axiosScopes);
   }
+
+  // Leave the scope: pop the axios frame / restore the outer class proof.
+  if (pushedScope) axiosScopes.pop();
+  if (prevClassHttpFields !== null) currentClassHttpFields = prevClassHttpFields;
 }
 
 /**

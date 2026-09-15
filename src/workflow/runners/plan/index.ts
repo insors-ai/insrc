@@ -21,6 +21,7 @@
 
 import { registerRunner } from '../../executor.js';
 import { readPlanUpstream } from '../../gates.js';
+import { ANTI_OVERREACH_RULE } from '../scope-prompts.js';
 import { assertEpicHash } from '../../hash.js';
 import type { StepRunner, StepRunnerContext } from '../../types.js';
 import {
@@ -96,6 +97,9 @@ const contextAssemble = llmPauseRunner({
 				'What to do:',
 				'  1. Read the LLD handoff below (contractDetails / dataModelChanges / errorPaths / testStrategy / migration).',
 				'  2. Use `insrc_analyze_step` for any code grounding you need to SIZE the work (call sites, existing patterns). Do NOT invent module or symbol names.',
+				'',
+				'HARD RULES:',
+				ANTI_OVERREACH_RULE,
 				'',
 				'Emit a PlanContext JSON with one `analyzeBundles[]` entry per grounding pass.',
 			].join('\n'),

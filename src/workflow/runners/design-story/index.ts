@@ -27,6 +27,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { registerRunner } from '../../executor.js';
 import { requireApprovedEpic, requireApprovedHld } from '../../gates.js';
 import { extractHldContextSlice } from '../../artifacts/lld.js';
+import { ANTI_OVERREACH_RULE } from '../scope-prompts.js';
 import { isStandaloneParams, standaloneStoryContext, type StandaloneStoryContext } from './standalone.js';
 import { assertEpicHash } from '../../hash.js';
 import { scopeAnalyzeCachePath } from '../../storage.js';
@@ -142,6 +143,7 @@ const contextAssemble = llmPauseRunner({
 				'HARD RULES:',
 				'- Use `insrc_analyze_step` for every code claim. Do NOT invent module or symbol names.',
 				'- This step is READ-ONLY discovery. Do not propose a solution.',
+				ANTI_OVERREACH_RULE,
 				'',
 				'What to do (Story-scoped):',
 				'  1. Run `symbol.locate` on any API names in the HLD shared contracts this Story owns/consumes so you have current signatures.',
@@ -195,6 +197,7 @@ const alternativesEnumerate = llmPauseRunner({
 				'- Alternatives must fit within the HLD (do not propose a different framework — that is what back-flow / amendments are for).',
 				'- Every alternative respects the shared contracts this Story owns/consumes.',
 				'- No implementation, no task lists.',
+				ANTI_OVERREACH_RULE,
 			].join('\n'),
 			userTurn: [
 				's1 LldContext:',
@@ -285,6 +288,7 @@ const contractDetail = llmPauseRunner({
 				'- Every `interactionWithShared[].contractId` MUST be a real HLD sharedContract id.',
 				'- If role="implements", HLD must show this Story as the owner of that contract.',
 				'- `dataModel[].callSites` come from s1 analyze bundles.',
+				ANTI_OVERREACH_RULE,
 				'',
 				'HLD AMENDMENT PROPOSAL (optional):',
 				'  If designing this contract reveals a small, localised HLD change (a shared contract needs one more field, a method signature needs to add a parameter, ownership of one contract needs to move between Stories, etc.), you MAY emit `hld.amendmentProposal` with `{ amendment: <typed>, rationale: <string>, citations: [] }`. Do NOT propose an amendment for a fundamental HLD rework — those need a back-flow, not an amendment. Rough threshold: if >30% of shared contracts would need changing, do NOT amend.',
@@ -323,7 +327,7 @@ const contractDetail = llmPauseRunner({
 const errorPaths = llmPauseRunner({
 	id: 'error.paths',
 	buildPrompt: (ctx) => {
-		const { flavor, story } = readUpstream(ctx);
+		const { flavor, story, hldSlice } = readUpstream(ctx);
 		return {
 			prompt: [
 				'You are running the `error.paths` step of the `design.story` (LLD) workflow.',
@@ -334,6 +338,7 @@ const errorPaths = llmPauseRunner({
 				'- `errorCases[].detection` describes HOW the code notices; not "the caller passes bad data".',
 				'- `errorCases` are distinct from `edgeCases` (errors = something went wrong; edges = valid but unusual input).',
 				`- For flavor="${flavor}": ${flavor === 'enhancement' ? 'invariantsToPreserve must cite an analyze bundle from s1 showing the invariant.' : 'invariantsToPreserve may be empty; no legacy behaviour to preserve.'}`,
+				ANTI_OVERREACH_RULE,
 				'',
 				'HLD AMENDMENT PROPOSAL (optional):',
 				'  If an error path exposes a mismatch with HLD (e.g. HLD says a shared contract does not throw, but the Story genuinely needs to signal a specific failure), you MAY emit `hld.amendmentProposal` with `{ amendment: <typed>, rationale: <string>, citations: [] }`. Use `sharedContract.methodAdd` when you need to name a new error signal. Do NOT propose a wholesale rework; back-flow HLD instead.',
@@ -347,6 +352,11 @@ const errorPaths = llmPauseRunner({
 				's4 Contract detail:',
 				'```json',
 				JSON.stringify(ctx.stepOutputs['s4'], null, 2),
+				'```',
+				'',
+				'HLD context slice (incl. adjacentBoundaries — the sibling scope this Story must not design):',
+				'```json',
+				JSON.stringify(hldSlice, null, 2),
 				'```',
 				'',
 				'Story:',
@@ -477,7 +487,10 @@ const checklistVerify = llmPauseRunner({
 			prompt: [
 				'You are the AUDITOR for the `design.story` (LLD) workflow.',
 				'',
-				'`missed` on any `sbdry1|sbdry2|sbdry3|sbdry4` item forces a hard-fail.',
+				'`missed` on any `sbdry1|sbdry2|sbdry3|sbdry4|sbdry5` item forces a hard-fail.',
+				'',
+				'Scope standard the LLD must honour:',
+				ANTI_OVERREACH_RULE,
 				'',
 				'Checklist:',
 				'  cd1: Does every `api[].signature` reference an existing symbol (from s1) OR a shared contract from HLD?',
@@ -500,6 +513,7 @@ const checklistVerify = llmPauseRunner({
 				'  sbdry2: [HARD] No task enumeration.',
 				'  sbdry3: [HARD] No design decision that contradicts the HLD (back-flow HLD instead).',
 				'  sbdry4: [HARD] No invented references.',
+				'  sbdry5: [HARD] No scope belonging to an adjacent boundary (`hldContextSlice.adjacentBoundaries`) is designed or implemented here — a contract owned by another story must be CONSUMED, not re-designed. If the LLD needs an uncovered capability it must be raised as an `openQuestion` / HLD back-flow, not silently built into this story.',
 			].join('\n'),
 			userTurn: [
 				'Epic flavor:',

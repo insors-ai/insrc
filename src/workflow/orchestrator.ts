@@ -73,6 +73,7 @@ import {
 	checkSharedContractRefs,
 	computeHldEffectiveHash,
 	extractHldContextSlice,
+	findAdjacentScopeViolations,
 	isCitationArray as isLldCitationArray,
 	isLldBody,
 	LLD_SCHEMA_VERSION,
@@ -1391,7 +1392,7 @@ function designStorySynthesizer(
 			: '`body.migration` MUST be verbatim from s7.'}`,
 		'- `body.alternativesConsidered` MUST include every alternative from s2 with losers carrying `reasonRejected` pulled from s3.',
 		'- `body.chosenAlternative` MUST equal s3.winnerId.',
-		'- `body.openQuestions` collects `missed`/`ambiguous` verdicts from s8 (except sbdry1-4 which hard-fail).',
+		'- `body.openQuestions` collects `missed`/`ambiguous` verdicts from s8 (except sbdry1-5 which hard-fail).',
 		'- Citation ids `cN` reference `citations[]`; every claim in body cites at least one.',
 	].join('\n');
 	const userTurn = [
@@ -1473,10 +1474,13 @@ function finalizeDesignStory(
 		return { ok: false, failure: schemaFailure(`citations must be an array of { id, kind, ref }`) };
 	}
 
-	// s8 hard-fail scope-boundary items.
+	// s8 hard-fail scope-boundary items. sbdry5 = adjacent-scope over-reach
+	// (designing/implementing a sibling story's owned scope) — the LLM-judged
+	// half of the scope-awareness guard; the deterministic half runs below on
+	// the epic-parented path (findAdjacentScopeViolations).
 	const s8 = stepOutputs['s8'] as { results?: Array<{ itemId?: string; verdict?: string; evidence?: string; notes?: string }> } | undefined;
 	if (s8 !== undefined && Array.isArray(s8.results)) {
-		const boundaryIds = new Set(['sbdry1', 'sbdry2', 'sbdry3', 'sbdry4']);
+		const boundaryIds = new Set(['sbdry1', 'sbdry2', 'sbdry3', 'sbdry4', 'sbdry5']);
 		const failed = s8.results.filter(r =>
 			r.itemId !== undefined && boundaryIds.has(r.itemId) &&
 			(r.verdict === 'missed' || r.verdict === 'ambiguous'),
@@ -1503,6 +1507,16 @@ function finalizeDesignStory(
 	const story    = epic.body.stories.find(s => s.id === storyId);
 	if (story === undefined) {
 		return { ok: false, failure: schemaFailure(`Story '${storyId}' not found in Epic '${epicHash}'`) };
+	}
+
+	// Deterministic adjacent-scope ownership guard (sbdry5's certain half):
+	// refuse an LLD that `implements` a shared contract the HLD assigns to a
+	// sibling story. Routes through the same non-retryable boundary hard-fail as
+	// the s8 sbdry checklist items. No-op when the story has no siblings.
+	const adjacentViolations = findAdjacentScopeViolations(body, extractHldContextSlice(hld, storyId));
+	if (adjacentViolations.length > 0) {
+		const items = adjacentViolations.map(f => f.detail).join('; ');
+		return { ok: false, failure: boundaryHardFailure(`s8 adjacent-scope hard-fail: ${items}`, adjacentViolations) };
 	}
 
 	// Migration conditional consistency.

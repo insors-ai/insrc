@@ -21,12 +21,28 @@ import {
 	checkSharedContractRefs,
 	computeHldEffectiveHash,
 	extractHldContextSlice,
+	findAdjacentScopeViolations,
 	isLldBody,
 	renderLldMarkdown,
 	type LldArtifact,
 	type LldBody,
 } from '../artifacts/lld.js';
 import type { HldArtifact, HldBody } from '../artifacts/hld.js';
+
+/** Single-story HLD variant (no siblings) for the adjacentBoundaries no-op path. */
+function singleStoryHldFixture(): HldArtifact {
+	const hld = hldFixture();
+	const body: HldBody = {
+		...hld.body,
+		sharedContracts: [],
+		storyBoundaries: [{ storyId: 's1', owns: [], depends: [], internal: 'the whole feature' }],
+		rolloutOverview: {
+			...hld.body.rolloutOverview,
+			phases: [{ name: 'Phase A', includesStories: ['s1'], rationale: 'only story', backwardCompat: '', featureFlag: null }],
+		},
+	};
+	return { ...hld, body };
+}
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -175,6 +191,89 @@ test('extractHldContextSlice returns consumed contracts for consumer Story', () 
 test('extractHldContextSlice throws when Story not in HLD', () => {
 	const hld = hldFixture();
 	assert.throws(() => extractHldContextSlice(hld, 's99'));
+});
+
+// ---------------------------------------------------------------------------
+// extractHldContextSlice — adjacentBoundaries (S001 scope-awareness)
+// ---------------------------------------------------------------------------
+
+test('extractHldContextSlice.adjacentBoundaries = sibling boundaries, current story excluded', () => {
+	const hld = hldFixture();
+	const s1 = extractHldContextSlice(hld, 's1');
+	// s1's sibling is s2 only; s1's own boundary is NOT in adjacentBoundaries.
+	assert.equal(s1.adjacentBoundaries.length, 1);
+	assert.equal(s1.adjacentBoundaries[0]!.storyId, 's2');
+	assert.ok(!s1.adjacentBoundaries.some(b => b.storyId === 's1'));
+	// ...and the own boundary is still returned as `boundary`.
+	assert.equal(s1.boundary.storyId, 's1');
+
+	// Symmetric for s2.
+	const s2 = extractHldContextSlice(hld, 's2');
+	assert.equal(s2.adjacentBoundaries.length, 1);
+	assert.equal(s2.adjacentBoundaries[0]!.storyId, 's1');
+	assert.equal(s2.boundary.storyId, 's2');
+});
+
+test('extractHldContextSlice.adjacentBoundaries preserves storyBoundaries order (self removed)', () => {
+	const hld = hldFixture();
+	// current story = s2 -> the only sibling is s1, in original order.
+	const slice = extractHldContextSlice(hld, 's2');
+	assert.deepEqual(slice.adjacentBoundaries.map(b => b.storyId), ['s1']);
+});
+
+test('extractHldContextSlice.adjacentBoundaries === [] for a single-story HLD', () => {
+	const slice = extractHldContextSlice(singleStoryHldFixture(), 's1');
+	assert.deepEqual(slice.adjacentBoundaries, []);
+});
+
+// ---------------------------------------------------------------------------
+// findAdjacentScopeViolations — deterministic ownership-collision guard
+// ---------------------------------------------------------------------------
+
+test('findAdjacentScopeViolations flags implementing a sibling-owned contract', () => {
+	const hld = hldFixture();
+	// As if we were s2's LLD: adjacentBoundaries includes s1 which owns sc1.
+	const slice = extractHldContextSlice(hld, 's2');
+	const body: LldBody = {
+		...lldBodyFixture(),
+		interactionWithShared: [{ contractId: 'sc1', role: 'implements', howDetails: 'x' }],
+	};
+	const findings = findAdjacentScopeViolations(body, slice);
+	assert.equal(findings.length, 1);
+	assert.equal(findings[0]!.itemId, 'sbdry5');
+	assert.equal(findings[0]!.verdict, 'missed');
+	assert.match(findings[0]!.detail, /sc1/);
+	assert.match(findings[0]!.detail, /s1/); // names the owning sibling
+});
+
+test('findAdjacentScopeViolations ignores a consumes of a sibling-owned contract', () => {
+	const hld = hldFixture();
+	const slice = extractHldContextSlice(hld, 's2');
+	const body: LldBody = {
+		...lldBodyFixture(),
+		interactionWithShared: [{ contractId: 'sc1', role: 'consumes', howDetails: 'x' }],
+	};
+	assert.deepEqual(findAdjacentScopeViolations(body, slice), []);
+});
+
+test('findAdjacentScopeViolations does not flag implementing your OWN owned contract', () => {
+	const hld = hldFixture();
+	// s1 owns sc1; sc1 is not in any adjacent boundary's `owns`.
+	const slice = extractHldContextSlice(hld, 's1');
+	const body: LldBody = {
+		...lldBodyFixture(),
+		interactionWithShared: [{ contractId: 'sc1', role: 'implements', howDetails: 'x' }],
+	};
+	assert.deepEqual(findAdjacentScopeViolations(body, slice), []);
+});
+
+test('findAdjacentScopeViolations returns [] for a standalone/single-story slice (no siblings)', () => {
+	const slice = extractHldContextSlice(singleStoryHldFixture(), 's1');
+	const body: LldBody = {
+		...lldBodyFixture(),
+		interactionWithShared: [{ contractId: 'sc1', role: 'implements', howDetails: 'x' }],
+	};
+	assert.deepEqual(findAdjacentScopeViolations(body, slice), []);
 });
 
 // ---------------------------------------------------------------------------
@@ -336,6 +435,39 @@ test('renderLldMarkdown emits all sections', () => {
 	assert.ok(md.includes('| Criterion | Proving tests |'));
 	assert.ok(md.includes('## Alternatives considered'));
 	assert.ok(md.includes('**CHOSEN**'));
+});
+
+test('renderLldMarkdown emits the adjacent-scope subsection when adjacentBoundaries is non-empty', () => {
+	// lldBodyFixture() slices s1, whose sibling is s2.
+	const artifact: LldArtifact = {
+		meta: {
+			workflow: 'design.story', runId: 'x', repoPath: '/', createdAt: '', model: 'client', elapsedMs: 0, repoIndexedAt: null,
+			schemaVersion: 1, epicSlug: 'tag-filtering', storyId: 's1',
+			hldBaseRunId: 'hld-run-1', hldEffectiveHash: computeHldEffectiveHash('hld-run-1', []), hldAmendmentsApplied: [],
+		},
+		body: lldBodyFixture(),
+		citations: [{ id: 'c1', kind: 'analyze-bundle', ref: 'todos module' }],
+	};
+	const md = renderLldMarkdown(artifact);
+	assert.ok(md.includes('Adjacent scope (owned by other stories — do NOT implement here)'));
+	assert.ok(md.includes('`s2`')); // the sibling boundary is listed
+});
+
+test('renderLldMarkdown omits the adjacent-scope subsection for a single-story LLD (byte-compatible)', () => {
+	const body: LldBody = {
+		...lldBodyFixture(),
+		hldContextSlice: extractHldContextSlice(singleStoryHldFixture(), 's1'),
+	};
+	const artifact: LldArtifact = {
+		meta: {
+			workflow: 'design.story', runId: 'x', repoPath: '/', createdAt: '', model: 'client', elapsedMs: 0, repoIndexedAt: null,
+			schemaVersion: 1, epicSlug: 'x', storyId: 's1',
+			hldBaseRunId: 'x', hldEffectiveHash: 'x', hldAmendmentsApplied: [],
+		},
+		body,
+		citations: [{ id: 'c1', kind: 'analyze-bundle', ref: 'x' }],
+	};
+	assert.ok(!renderLldMarkdown(artifact).includes('Adjacent scope'));
 });
 
 test('renderLldMarkdown adds a Tracker link only when meta.tracker.storyRef is set', () => {

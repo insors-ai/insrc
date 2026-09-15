@@ -23,6 +23,7 @@ import { safeCanonical, storyWorkflowId } from '../id.js';
 import { trackerRefLine } from '../tracker/refs.js';
 import type { Alternative, HldArtifact, SharedContract, StoryBoundary } from './hld.js';
 import type { ArtifactMetaBase, Citation, WorkflowArtifact } from '../types.js';
+import type { BoundaryFinding } from '../synthesizer.js';
 
 // ---------------------------------------------------------------------------
 // Sub-shapes
@@ -33,6 +34,11 @@ export interface HldContextSlice {
 	readonly ownedContracts:   readonly SharedContract[];
 	readonly consumedContracts: readonly SharedContract[];
 	readonly boundary:         StoryBoundary;
+	// Every OTHER Story's boundary in this HLD — the sibling scope this Story
+	// must NOT design or implement. Surfaced so the authoring LLM knows the
+	// larger scope and stays inside its own boundary (consume adjacent
+	// contracts, never re-design them). Empty for a single-story / standalone HLD.
+	readonly adjacentBoundaries: readonly StoryBoundary[];
 	readonly rolloutPhase:     string;             // phase name this Story sits in
 	readonly nonFunctional:    {
 		readonly performance?:   string;
@@ -201,6 +207,10 @@ export function extractHldContextSlice(hld: HldArtifact, storyId: string): HldCo
 	}
 	const ownedContracts    = hld.body.sharedContracts.filter(sc => sc.ownedByStory === storyId);
 	const consumedContracts = hld.body.sharedContracts.filter(sc => sc.consumedByStories.includes(storyId));
+	// Sibling boundaries — every Story other than this one. This is the ONLY
+	// place the authoring LLM learns the larger scope: the work owned by the
+	// stories it must not step on. Order preserved; empty for a single-story HLD.
+	const adjacentBoundaries = hld.body.storyBoundaries.filter(sb => sb.storyId !== storyId);
 	const phase = hld.body.rolloutOverview.phases.find(p => p.includesStories.includes(storyId));
 	const rolloutPhase = phase === undefined ? '<not in any phase>' : phase.name;
 	return {
@@ -208,9 +218,61 @@ export function extractHldContextSlice(hld: HldArtifact, storyId: string): HldCo
 		ownedContracts,
 		consumedContracts,
 		boundary,
+		adjacentBoundaries,
 		rolloutPhase,
 		nonFunctional: hld.body.nonFunctional,
 	};
+}
+
+// ---------------------------------------------------------------------------
+// Adjacent-scope ownership guard (deterministic)
+// ---------------------------------------------------------------------------
+
+/** Deterministic scope-boundary check: flag any shared-contract interaction in
+ *  which THIS Story's LLD claims to `implements` a contract that the HLD assigns
+ *  to a DIFFERENT (adjacent) Story. Implementing a sibling-owned contract is a
+ *  literal cross-story ownership collision — the over-reach this feature guards
+ *  against. Complements the LLM-judged `sbdry5` checklist item (which covers the
+ *  semantic case); this catches the unambiguous, certainly-detectable one.
+ *
+ *  NARROW BY DESIGN:
+ *   - Only `role: 'implements'` is a collision. A `role: 'consumes'` of an
+ *     adjacent-owned contract is legitimate (that is exactly how a Story leans
+ *     on a sibling's contract) and is never flagged.
+ *   - No-op when `adjacentBoundaries` is empty/absent (a standalone or
+ *     single-story LLD has no siblings to collide with) — returns [].
+ *
+ *  Pure + deterministic (no LLM, no I/O). Returns the existing `BoundaryFinding`
+ *  shape so the orchestrator routes findings through the same
+ *  `boundaryHardFailure(retryable:false)` sink as the `sbdry` checklist items.
+ */
+export function findAdjacentScopeViolations(
+	body:  LldArtifact['body'],
+	slice: HldContextSlice,
+): BoundaryFinding[] {
+	const adjacent = slice.adjacentBoundaries ?? [];
+	if (adjacent.length === 0) return [];
+	// contractId -> owning sibling storyId, across every adjacent boundary.
+	const ownedByAdjacent = new Map<string, string>();
+	for (const sb of adjacent) {
+		for (const contractId of sb.owns) ownedByAdjacent.set(contractId, sb.storyId);
+	}
+	if (ownedByAdjacent.size === 0) return [];
+	const findings: BoundaryFinding[] = [];
+	for (const interaction of body.interactionWithShared) {
+		if (interaction.role !== 'implements') continue;
+		const owner = ownedByAdjacent.get(interaction.contractId);
+		if (owner === undefined) continue;
+		findings.push({
+			itemId: 'sbdry5',
+			verdict: 'missed',
+			detail:
+				`LLD implements shared contract \`${interaction.contractId}\`, which the HLD assigns to ` +
+				`adjacent Story '${owner}'. Consume that contract instead of re-implementing it, or raise ` +
+				`an HLD amendment to reassign ownership.`,
+		});
+	}
+	return findings;
 }
 
 // ---------------------------------------------------------------------------
@@ -251,6 +313,17 @@ export function renderLldMarkdown(artifact: LldArtifact): string {
 	}
 	if (body.hldContextSlice.consumedContracts.length > 0) {
 		lines.push(`**Consumes:** ${body.hldContextSlice.consumedContracts.map(c => `\`${c.id}\` (${c.name})`).join(', ')}`);
+	}
+	// Adjacent scope: the sibling boundaries owned by OTHER stories. Rendered
+	// only when non-empty so single-story / standalone LLDs stay byte-compatible.
+	const adjacent = body.hldContextSlice.adjacentBoundaries ?? [];
+	if (adjacent.length > 0) {
+		lines.push('');
+		lines.push('**Adjacent scope (owned by other stories — do NOT implement here):**');
+		for (const sb of adjacent) {
+			const owns = sb.owns.length > 0 ? ` — owns ${sb.owns.map(o => `\`${o}\``).join(', ')}` : '';
+			lines.push(`- \`${sb.storyId}\`: ${sb.internal}${owns}`);
+		}
 	}
 	lines.push('');
 

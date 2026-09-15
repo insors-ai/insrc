@@ -63,6 +63,8 @@ export function standaloneStoryContext(
 		ownedContracts:    [],
 		consumedContracts: [],
 		boundary:          { storyId, owns: [], depends: [], internal: title },
+		// Standalone feature has no sibling stories — no adjacent scope to respect.
+		adjacentBoundaries: [],
 		rolloutPhase:      'standalone',
 		nonFunctional:     {},
 	};

@@ -1,0 +1,58 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1789498385336-284oyq",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-15T18:53:05.336Z",
+    "model": "client",
+    "elapsedMs": 3,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "599a9b506f22b896",
+    "storyId": "s1"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "599a9b506f22b896",
+    "storyId": "s1",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "src/workflow/__tests__/id-resolve.test.ts",
+        "src/workflow/id.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/id.ts:126",
+            "message": "storyIdToOrdinal now accepts the uppercase 'S<n>' form but its throw message still reads \"(expected s<n>)\". This is intentional per the LLD (the message must stay byte-identical so no consumer's error-string matching regresses, and the S001 tests pin it), but the message is now slightly misleading about what is accepted. Noting for a future maintainer; no change made.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 1
+    }
+  }
+}

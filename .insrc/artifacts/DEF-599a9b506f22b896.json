@@ -1,0 +1,343 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "wf-1789490285852-48jcfj",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-15T16:42:33.441Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 267544,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "599a9b506f22b896",
+    "epicSlug": "restructure-docs-artifact-markdown-from-flat",
+    "review": {
+      "artifact": "define",
+      "stage": "define",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/workflow/id.ts defines the canonical WorkflowId with both-way converters toCanonical/toSlug/parseWorkflowId and an epic segment E<date><hash8>.",
+          "evidence": "src/workflow/id.ts exports toCanonical, toSlug, parseWorkflowId (3/3 present); epic segment E${date}${hash8}. Canonical WorkflowId spine confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/workflow/id.ts storyIdToOrdinal uses the lowercase-only regex /^s(\\d+)$/ so uppercase S001 fails to canonicalize (the gap S001 of this Epic closes).",
+          "evidence": "id.ts:101 storyIdToOrdinal; the lowercase-only /^s(\\d+)$/ was confirmed earlier at :102 — uppercase S001 fails to canonicalize. The gap S001 closes is real.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl3",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "src/workflow/storage.ts defines DOCS_ARTIFACT_DIRS as the six flat docs/ artifact folders and exposes the per-type *ArtifactPaths helpers.",
+          "evidence": "storage.ts defines DOCS_ARTIFACT_DIRS (the six flat dirs) and 9 *ArtifactPaths helpers (stub/define/spec/hld/lld/plan/build/codeReview/extend; the DEF says 8 core, stub aside). Inventory confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl4",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The persisted artifact markdown files carry identity as an in-file '<!-- insrc:artifact ... -->' marker (rendered by artifactIdMarker), not as YAML frontmatter.",
+          "evidence": "storage.ts:188 artifactIdMarker renders the '<!-- insrc:artifact ... -->' first line; the SPEC review already proved these md files have zero YAML frontmatter. The metadata-authoritative-not-frontmatter assumption (DEF assumption 2 / k5) is grounded.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl5",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "Roughly 200 artifact markdown files exist across the six flat docs/ artifact directories.",
+          "evidence": "191 files carry the insrc:artifact marker across the six flat dirs; 217 raw .md files total. The 'roughly 200' claim holds. The ~26 unmarked md files (e.g. the dated docs/reviews/2026-07-20-*.md audits) are exactly the legacy pre-ID-scheme oddballs that S003's fail-loud (k3) is designed to surface for manual mapping.",
+          "action": "none — verified sound; note the 191-vs-217 gap gives S003 a concrete count of legacy files to hand-map during migration.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl6",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "The *ArtifactPaths helpers + artifact-prefix finders/markers are consumed by many modules (~10 path-helper consumers, ~20 finder/marker modules) that must be re-pointed in the cutover.",
+          "evidence": "Confirmed earlier: the *ArtifactPaths helpers feed ~10 non-test modules and artifact-prefix finders/markers span ~20 modules (gates, orchestrator, code-review/runner, tracker/resolve, daemon/backup, mcp/build-step/validate, …); id converters feed 6. The blast-radius that makes this Epic-sized is real.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 6
+      },
+      "reviewedAt": "2026-09-15T16:43:44.319Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-15T16:52:14.360Z"
+  },
+  "body": {
+    "flavor": "enhancement",
+    "problem": "Every artifact the workflow produces for one piece of work — the brainstorm spec, the epic framing, the high- and low-level designs, the plan, the build record, and the code review — is filed into a folder chosen by the artifact's TYPE, and all artifacts of a type accumulate flat in that one folder. The complete record of a single epic or story is therefore scattered across six sibling directories, and within the largest of them roughly a hundred files of three different artifact types sit side by side with no grouping. The filenames that would let a reader correlate those scattered pieces are keyed inconsistently: some artifact types are named by a human-readable slug and others by an opaque hash, so the same work has no shared, eyeball-able key tying its design to its plan to its build to its review. A canonical hierarchical identifier for every work item already exists in the system, but it is applied unevenly — one whole class of story never canonicalizes at all — so it cannot serve as a reliable correlating spine. The cost lands on anyone reading the history of a change: locating everything about one epic or story, or even confirming which build belongs to which design, means cross-referencing folders and reconciling two naming schemes by hand, and that difficulty compounds with every new artifact the system writes.",
+    "nonGoals": [
+      {
+        "text": "Restructuring the .insrc/artifacts/ canonical JSON store (it stays hash-flat and untouched).",
+        "rationale": "The JSON store is a machine substrate that is never browsed by a human and is already keyed consistently by hash; reorganizing it would churn a stable store for no correlation benefit, since the problem is entirely about the human-facing markdown."
+      },
+      {
+        "text": "Changing the Pages site/ output structure.",
+        "rationale": "GitHub Pages serves from the separately-authored site/ tree, which is unrelated to the docs/ artifact store; the correlation problem does not touch it."
+      },
+      {
+        "text": "Introducing per-task artifact files.",
+        "rationale": "Tasks are already captured inside the PLAN and BUILD artifacts as T<nnn> references; minting separate per-task files would create artifacts the workflow does not produce today and is orthogonal to correlating the existing ones."
+      },
+      {
+        "text": "Any dual-path / backwards-compatibility transition window for the old and new layouts.",
+        "rationale": "The daemon is the sole consumer of these paths, so there is no external, mid-transition audience to protect; a shim would add temporary code that the repo's conventions explicitly discourage."
+      }
+    ],
+    "assumptions": [
+      {
+        "text": "The system already computes a canonical, both-way-convertible hierarchical work-item identifier (epic segment + story ordinal + task ordinal) that can serve as the structural spine for the new layout.",
+        "confidence": "high",
+        "source": "c2"
+      },
+      {
+        "text": "The persisted artifact markdown files carry their machine identity as an in-file `insrc:artifact` marker plus a companion canonical JSON record (which alone carries the creation date the epic segment needs) — NOT as YAML frontmatter, which these files do not have.",
+        "confidence": "high",
+        "source": "c6"
+      },
+      {
+        "text": "The daemon is the only process that reads or writes the docs/ artifact paths; no external tool depends on the current flat layout mid-transition.",
+        "confidence": "med",
+        "source": "c5"
+      },
+      {
+        "text": "Roughly 200 existing artifact files are spread across the six flat artifact directories and must be relocated as part of the change.",
+        "confidence": "high",
+        "source": "c3"
+      }
+    ],
+    "constraints": [
+      {
+        "id": "k1",
+        "text": "The switch-over is a single atomic change with no backwards-compatibility shim and no feature flag; the code moves to the new layout directly rather than supporting both.",
+        "type": "convention",
+        "source": "c4"
+      },
+      {
+        "id": "k2",
+        "text": "The canonical hierarchical work-item identifier is the identity spine: every artifact type and every path finder resolves a work item's location through it uniformly, including the story class that does not canonicalize today.",
+        "type": "contract",
+        "source": "c2"
+      },
+      {
+        "id": "k3",
+        "text": "A file that cannot be confidently mapped to a single work-item identifier halts the migration (fail-loud) rather than being placed heuristically or left in the old location.",
+        "type": "invariant",
+        "source": "c1"
+      },
+      {
+        "id": "k4",
+        "text": "Git history is preserved across every relocation, and cross-document links are rewritten and then validated to resolve against the new tree before the change is accepted.",
+        "type": "invariant",
+        "source": "c1"
+      },
+      {
+        "id": "k5",
+        "text": "A work item's identity is derived only from its own machine metadata (the in-file marker + companion JSON record), never inferred from its filename; the filename contributes only the human-readable slug.",
+        "type": "invariant",
+        "source": "c6"
+      }
+    ],
+    "stories": [
+      {
+        "id": "s1",
+        "title": "Every work item carries one consistent canonical identity",
+        "userValue": "Anyone reading the artifacts, or any tool built over them, can rely on a single uniform identity scheme for every epic and story — including triage-routed standalone stories, which today silently degrade to a bare, non-canonical identifier — so identity can serve as the reliable spine that ties a work item's records together.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a triage-routed standalone story whose id is emitted in the uppercase form",
+            "when": "the system derives that story's canonical identity",
+            "then": "it produces the same well-formed canonical identifier it produces for an epic-parented story, instead of falling back to a bare, non-canonical id",
+            "operationalizes": [
+              "k2"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "an epic-parented story whose id is emitted in the existing lowercase form",
+            "when": "the system derives its canonical identity after the change",
+            "then": "the identifier is identical to what it produced before, with no regression for stories that already canonicalize",
+            "operationalizes": [
+              "k2"
+            ]
+          }
+        ],
+        "localConstraints": [
+          {
+            "id": "lc1",
+            "text": "The identity derivation stays both-way — a canonical identifier can still be produced from a work item and parsed back to it — so it remains usable as a folder key and as a lookup key.",
+            "type": "contract",
+            "source": "c2"
+          }
+        ],
+        "dependsOn": [],
+        "sizeEstimate": "S",
+        "existingCapabilityRefs": [
+          "c2"
+        ]
+      },
+      {
+        "id": "s2",
+        "title": "Every artifact for a work item is stored and found together under one consistently-keyed folder",
+        "userValue": "A reader locating the full record of an epic or story opens a single folder holding its spec, framing, designs, plan, build, and review grouped by story — instead of cross-referencing six type-named folders and reconciling two different filename schemes — and every part of the system that writes or looks up an artifact uses that same grouped, identity-keyed location.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "any artifact the workflow produces for a work item",
+            "when": "it is written to disk",
+            "then": "it is placed inside that work item's own folder, grouped under its story, keyed by the work item's canonical identity with a human-readable label, rather than in a flat per-type folder",
+            "operationalizes": [
+              "k2",
+              "k5"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "any part of the system that looks up or lists a work item's artifacts",
+            "when": "it resolves their location after the change",
+            "then": "it reads them from the new grouped layout and no consumer still expects the old flat per-type folders",
+            "operationalizes": [
+              "k1"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "an epic-parented work item and a triage-routed standalone one",
+            "when": "their artifacts are stored",
+            "then": "the two kinds are distinguishable at the top level while following the same internal per-story grouping",
+            "operationalizes": [
+              "k2"
+            ]
+          }
+        ],
+        "localConstraints": [
+          {
+            "id": "lc1",
+            "text": "The identity that determines an artifact's folder is taken only from the artifact's own machine metadata (its in-file marker plus companion record), never inferred from its filename; the filename contributes only the human-readable label.",
+            "type": "invariant",
+            "source": "c6"
+          }
+        ],
+        "dependsOn": [
+          "s1"
+        ],
+        "sizeEstimate": "L",
+        "existingCapabilityRefs": [
+          "c3",
+          "c5"
+        ]
+      },
+      {
+        "id": "s3",
+        "title": "The artifacts that already exist are relocated into the new structure safely",
+        "userValue": "The roughly 200 artifacts already on disk become navigable under the new grouped scheme — moved with their history intact, none misfiled or dropped, and with their cross-document links still resolving — so the reorganization can be trusted instead of leaving a mix of old and new that is worse than either.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "the existing artifacts spread across the flat type-named folders",
+            "when": "they are relocated into the new layout",
+            "then": "each moves into its work item's grouped folder with its version history preserved",
+            "operationalizes": [
+              "k4"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "an artifact that cannot be confidently mapped to a single work item from its own metadata",
+            "when": "the relocation reaches it",
+            "then": "the relocation halts and reports that specific file rather than guessing a location or leaving it behind",
+            "operationalizes": [
+              "k3",
+              "k5"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "cross-document links between relocated artifacts",
+            "when": "the relocation completes",
+            "then": "every such link resolves to a real file in the new tree, and the relocation is rejected if any link does not resolve",
+            "operationalizes": [
+              "k4"
+            ]
+          }
+        ],
+        "localConstraints": [
+          {
+            "id": "lc1",
+            "text": "No artifact is left in an old flat location once the relocation is accepted — the end state is fully the new layout, never a partial mix.",
+            "type": "invariant",
+            "source": "c1"
+          }
+        ],
+        "dependsOn": [
+          "s1",
+          "s2"
+        ],
+        "sizeEstimate": "M",
+        "existingCapabilityRefs": [
+          "c3"
+        ]
+      }
+    ],
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "docs/specs/SPEC-restructure-docs-artifact-markdown-from-flat.md (approved SPEC-652f9e6637273e1e) — decisions: hard atomic-PR cutover, fail-loud on unmappable files, regex link rewrite + post-move validation, metadata-authoritative id source."
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/id.ts — canonical WorkflowId (E<YYYYMMDD><hash8>:S<nnn>:T<nnn>) with toCanonical/toSlug/parseWorkflowId; storyIdToOrdinal's /^s(\\d+)$/ rejects uppercase S001 (the uneven-canonicalization gap)."
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/storage.ts — DOCS_ARTIFACT_DIRS (the six flat dirs) + the 8 per-type *ArtifactPaths helpers keying markdown by slug or hash; ~200 files live under these dirs."
+    },
+    {
+      "id": "c4",
+      "kind": "convention",
+      "ref": "CLAUDE.md code conventions — 'Don't use feature flags or backwards-compatibility shims when you can just change the code.'"
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "Consumer/finder blast-radius bundle — the *ArtifactPaths helpers feed ~10 modules and artifact-prefix finders/markers span ~20 (gates, orchestrator, code-review/runner, tracker/resolve, daemon/backup, mcp/build-step/validate, …); the daemon is the sole consumer."
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/workflow/storage.ts artifactIdMarker + the rendered '<!-- insrc:artifact TYPE-epicHash-storyId -->' first line of every artifact md, plus its companion .insrc/artifacts/<ID>.json meta (epicHash/storyId/createdAt) — the machine identity source (these files have no YAML frontmatter)."
+    }
+  ]
+}

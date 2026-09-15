@@ -1,0 +1,159 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1789497854800-q8hpr4",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-15T18:46:39.535Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 144630,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "599a9b506f22b896",
+    "epicSlug": "restructure-docs-artifact-markdown-from-flat",
+    "storyId": "s1",
+    "lldRunId": "wf-1789494511550-fmc8pb",
+    "lldEffectiveHash": "196ad617cc5c57e05ae4510a97285972ebb19d3ed29b7e1b5e93a92b161bd920",
+    "approvedAt": "2026-09-15T18:46:50.307Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Widen storyIdToOrdinal + add the WorkItemIdentity/deriveWorkItemIdentity bundle",
+        "summary": "In src/workflow/id.ts: (1) widen storyIdToOrdinal's regex (:102) from /^s(\\d+)$/ to /^[sS](\\d+)$/ so 's1', 'S1' and 'S001' all parse to the same ordinal — leave the throw message and reject-set otherwise identical, and do NOT touch ordinalToStoryId (:107, its lowercase output is consumed by tracker/resolve.ts:260) or toCanonical. (2) Add a new readonly WorkItemIdentity interface { canonical; slug; epicSegment; story? } and a deriveWorkItemIdentity(epicHash, createdAtISO, storyId?) function that composes the existing epicWorkflowId/storyWorkflowId + toCanonical + toSlug + the E<date><hash8> epic segment — no new parsing logic, delegating story-id parsing to the widened storyIdToOrdinal.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "(widening, c1) storyIdToOrdinal('S001') === storyIdToOrdinal('S1') === storyIdToOrdinal('s1') === 1; a genuinely bad id (e.g. 'story-1', '') still throws the identical 'invalid storyId ... (expected s<n>)' Error",
+          "(widening, c1) storyWorkflowId(hash, createdAt, 'S001') then toCanonical yields E<date><hash8>:S001, identical to the lowercase 's1' sibling (ac1)",
+          "(no-regression, c3) ordinalToStoryId and toCanonical are unchanged — a lowercase 's10' produces byte-identical ordinal + canonical/slug before and after (ac2); tracker/resolve.ts:260 unaffected",
+          "(identity bundle, c2) deriveWorkItemIdentity returns { epicSegment, canonical, slug, story } composed from the existing converters; story-level equals for 's1' vs 'S001'; epic-level (storyId omitted) yields story:undefined and no :S segment",
+          "tsc clean; the change is one file (id.ts) and strictly additive"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "storyIdToOrdinal('S001')===('S1')===('s1')===1 and canonicalizes to E<date><hash8>:S001 (ac1); bad id still throws the identical Error"
+          },
+          {
+            "level": "unit",
+            "name": "deriveWorkItemIdentity composes canonical/slug/epicSegment/story; story-level 's1'==='S001'; epic-level (storyId omitted) yields story:undefined + no :S segment"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Extend id-resolve.test.ts with case-equivalence + no-regression + round-trip tests",
+        "summary": "Extend src/workflow/__tests__/id-resolve.test.ts (node:test + node:assert/strict) with: case-equivalence (s1/S1/S001 same ordinal + same canonical), no-regression (lowercase 's10' byte-stable ordinal/canonical/slug; ordinalToStoryId output unchanged; bad-id throw unchanged), the deriveWorkItemIdentity story-level equivalence + epic-level shape, and the both-way round-trip parseWorkflowId(toCanonical(storyWorkflowId(...,'S001'))) === ordinal 1. Reuse a fixed epicHash+createdAt fixture pair.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "new + existing id-resolve.test.ts tests pass under node:test",
+          "every LLD testStrategy subject is covered (case-equivalence, ac1 canonical-match, bad-id throw, ac2 no-regression, ordinalToStoryId unchanged, deriveWorkItemIdentity equivalence + epic-level, both-way round-trip)",
+          "the full workflow test sweep stays green (no regression to id-resolve.test.ts or id-converter consumers)"
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "no-regression: lowercase 's10' byte-identical ordinal/canonical/slug before+after; ordinalToStoryId output unchanged (ac2)"
+          },
+          {
+            "level": "unit",
+            "name": "both-way round-trip: parseWorkflowId(toCanonical(storyWorkflowId(...,'S001'))) yields story ordinal 1 (lc1)"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "storyIdToOrdinal('S001') === storyIdToOrdinal('s1') === storyIdToOrdinal('S1') === 1 (case + padding inert)",
+        "coveredByTaskIds": [
+          "t1",
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "storyWorkflowId(hash, createdAt, 'S001') toCanonical === storyWorkflowId(hash, createdAt, 's1') toCanonical === E<date><hash8>:S001 (ac1)",
+        "coveredByTaskIds": [
+          "t1",
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "storyIdToOrdinal still throws the unchanged 'invalid storyId' Error on a genuinely bad id (e.g. 'story-1', '')",
+        "coveredByTaskIds": [
+          "t1",
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "a lowercase 's10' produces byte-identical ordinal + canonical/slug before and after the change (ac2)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "ordinalToStoryId(n) still returns lowercase 's<n>' (unchanged) — tracker/resolve reconstruction unaffected",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "deriveWorkItemIdentity(hash, createdAt, 'S001') === deriveWorkItemIdentity(hash, createdAt, 's1') for canonical/slug/epicSegment/story, and the epic-level (storyId omitted) yields story:undefined + no :S segment",
+        "coveredByTaskIds": [
+          "t1",
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "both-way round-trip: parseWorkflowId(toCanonical(storyWorkflowId(...,'S001'))) yields story ordinal 1 (lc1)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails.api storyIdToOrdinal + dataModelChanges 'storyIdToOrdinal story-id pattern' invariant-change — widen /^s(\\d+)$/ to /^[sS](\\d+)$/ at the single minter funnel (id.ts:102); ac1 standalone-canonicalizes."
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails.api deriveWorkItemIdentity + dataModelChanges 'WorkItemIdentity (interface)' new — the thin both-way identity bundle composing epicWorkflowId/storyWorkflowId + toCanonical/toSlug + the epic segment."
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 errorPaths.invariantsToPreserve — ordinalToStoryId (id.ts:107) + toCanonical unchanged (tracker/resolve.ts:260 dependency); the widening is strictly additive with byte-stable lowercase behaviour (ac2)."
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 testStrategy — the unit test levels/subjects (case-equivalence, ac1 canonical-match, bad-id throw, ac2 no-regression, ordinalToStoryId unchanged, deriveWorkItemIdentity equivalence + epic-level, both-way round-trip) extending id-resolve.test.ts."
+    }
+  ]
+}

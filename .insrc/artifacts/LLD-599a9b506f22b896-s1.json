@@ -1,0 +1,414 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1789494511550-fmc8pb",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-15T17:54:46.190Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 374552,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "599a9b506f22b896",
+    "epicSlug": "restructure-docs-artifact-markdown-from-flat",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1789491140629-zj0bd2",
+    "hldEffectiveHash": "196ad617cc5c57e05ae4510a97285972ebb19d3ed29b7e1b5e93a92b161bd920",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/workflow/id.ts:101-105 storyIdToOrdinal uses /^s(\\d+)$/ (lowercase-only) and throws \"invalid storyId ... (expected s<n>)\" — the exact fix site S001 widens.",
+          "evidence": "id.ts:101 storyIdToOrdinal; :102 `const m = /^s(\\d+)$/.exec(storyId)`; :103 throws \"invalid storyId '${storyId}' (expected s<n>)\" — the exact fix site + message the LLD widens/preserves.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/workflow/id.ts's storyWorkflowId (:129) calls storyIdToOrdinal, so widening it makes the mint path case-total; toCanonical (:152) pads via padOrdinal (:93); parseWorkflowId (:177) reverses it.",
+          "evidence": "id.ts exports storyWorkflowId, toCanonical, parseWorkflowId (3/3); storyWorkflowId funnels through storyIdToOrdinal so the widening is case-total by construction.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/workflow/id.ts:107 ordinalToStoryId returns lowercase `s${ordinal}` and is consumed by tracker/resolve.ts to reconstruct a storyId — which is why S001 must NOT change its output.",
+          "evidence": "id.ts:107 ordinalToStoryId returns lowercase s${ordinal}; tracker/resolve.ts:260 `ordinalToStoryId(wfid.story)` reconstructs the storyId — confirming the LLD's decision to leave ordinalToStoryId unchanged (fix on the input side only).",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl4",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Neither WorkItemIdentity nor deriveWorkItemIdentity exists in src/ yet — S001 introduces them as new surface.",
+          "evidence": "grep for WorkItemIdentity / deriveWorkItemIdentity in id.ts returns 0 — both are genuinely new surface S001 introduces, as the contract states.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl5",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/workflow/__tests__/id-resolve.test.ts exists and exercises the id converters (the file S001's tests extend).",
+          "evidence": "src/workflow/__tests__/id-resolve.test.ts exists with 19 references to the id converters — the real file S001's case-equivalence/no-regression/round-trip assertions extend.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 5
+      },
+      "reviewedAt": "2026-09-15T17:55:43.837Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-15T18:44:11.462Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "A single work-item path-scheme module becomes the sole authority on where a work item's artifacts live. It is built on a uniform work-item identity — the existing canonical WorkflowId, fixed so every story-id form (lowercase s1 and uppercase S001) canonicalizes the same way — and maps that identity plus a human slug to a nested, work-item-first tree: docs/epics/<slug>-E<date><hash8>/ for epic-parented work and docs/standalone/<slug>-E<date><hash8>/ for triage-routed features, each holding item-root artifacts (SPEC/DEF/HLD) at its root and per-story S<nnn>/ subfolders (LLD/PLAN/BUILD/CR/EXT). Every per-type path helper delegates to this module and every directory-enumeration / filename-prefix finder is replaced by its listing functions, so the write side and the read side resolve the layout through one definition and can never disagree. The one-time migration reuses the very same resolver to compute each existing file's destination; the hash-flat .insrc/artifacts JSON store is left untouched.",
+      "ownedContracts": [
+        {
+          "id": "sc1",
+          "name": "Uniform work-item identity",
+          "purpose": "One canonical, both-way identity for every work item and story — epic-parented or standalone — so identity can serve as the folder key and lookup key the whole layout hangs on. Closes the gap where an uppercase-form story id fails to canonicalize and falls back to a bare id.",
+          "interfaceSketch": "// Total, both-way work-item identity built on the canonical WorkflowId.\n// storyId accepts BOTH 's1' and 'S001'; ordinalToStoryId <-> storyIdToOrdinal round-trips.\ninterface WorkItemIdentity {\n  readonly canonical: string;    // E<YYYYMMDD><hash8>:S<nnn>[:T<nnn>]\n  readonly slug:      string;    // E<YYYYMMDD><hash8>-S<nnn>[-T<nnn>]\n  readonly epicSegment: string;  // E<YYYYMMDD><hash8>\n  readonly story?:    number;    // 1-based ordinal (s1 and S001 both -> 1); absent at epic level\n}\n\n// Type-level declarations only (no bodies):\ndeclare function storyIdToOrdinal(storyId: string): number;               // accepts s\\d+ AND S\\d+\ndeclare function ordinalToStoryId(ordinal: number): string;               // canonical S<nnn>\ndeclare function deriveWorkItemIdentity(\n  epicHash: string, createdAtISO: string, storyId?: string,\n): WorkItemIdentity;",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3"
+          ],
+          "assumptions": [
+            "c2"
+          ]
+        }
+      ],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [
+          "sc1"
+        ],
+        "depends": [],
+        "internal": "The concrete minter change is private to S001: how storyIdToOrdinal's story-id pattern is widened to accept both the lowercase (s1) and uppercase (S001) forms, how the ordinal round-trip and the existing epic/task segment builders are kept byte-identical for already-canonicalizing inputs, and the regression tests that pin no-change for lowercase inputs. None of that internal shape is consumed by other Stories — they see only the sc1 identity contract."
+      },
+      "rolloutPhase": "Phase A — foundational identity contract",
+      "nonFunctional": {
+        "performance": "The resolver is pure path construction plus, for listing, a bounded walk of the nested tree — no measurable regression versus today's per-type readdir scans over a repo with ~200 artifacts.",
+        "security": "No new surface: the artifact store is filesystem-local and the change adds no external input or network path; identity is read from files the daemon already owns.",
+        "observability": "The migration fails loud — every unmappable file is reported by path + reason (k3), and the first cross-document link that does not resolve against the new tree aborts the run with that link named (k4).",
+        "durability": "git mv preserves each artifact's version history (k4); the hash-flat .insrc/artifacts JSON store — the canonical machine record — is untouched, so no machine-readable state is at risk in the move."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "storyIdToOrdinal",
+          "signature": "function storyIdToOrdinal(storyId: string): number",
+          "parameters": [
+            {
+              "name": "storyId",
+              "type": "string",
+              "purpose": "a structural story id in either the lowercase 's<n>' form (epic-parented) or the uppercase 'S<nnn>' / 'S<n>' form (triage-routed standalone)",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "number",
+            "meaning": "the 1-based story ordinal parsed from the numeric portion; 's1', 'S1' and 'S001' all yield 1"
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "storyId does not match /^[sS](\\d+)$/ (message unchanged: \"invalid storyId '<id>' (expected s<n>)\")"
+            }
+          ],
+          "preconditions": [
+            "storyId is a non-empty string whose numeric suffix (leading zeros allowed) is the ordinal"
+          ],
+          "postconditions": [
+            "The regex is widened from /^s(\\d+)$/ to accept both cases; the numeric group is parsed with Number(), so leading zeros ('S001') and no zeros ('s1') map to the same ordinal",
+            "Behaviour for every previously-valid lowercase input is byte-identical (same ordinal, same throw on the same bad inputs) — no regression (ac2)",
+            "Callers storyWorkflowId (id.ts:129) and by extension toCanonical/toSlug become case-total with no change of their own"
+          ]
+        },
+        {
+          "name": "deriveWorkItemIdentity",
+          "signature": "function deriveWorkItemIdentity(epicHash: string, createdAtISO: string, storyId?: string): WorkItemIdentity",
+          "parameters": [
+            {
+              "name": "epicHash",
+              "type": "string",
+              "purpose": "the 16-hex epic hash whose first 8 chars form the epic segment",
+              "optional": false
+            },
+            {
+              "name": "createdAtISO",
+              "type": "string",
+              "purpose": "the work item's creation timestamp; supplies the E<YYYYMMDD> date component",
+              "optional": false
+            },
+            {
+              "name": "storyId",
+              "type": "string",
+              "purpose": "the story id (either case); omitted for an epic-level identity",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "WorkItemIdentity",
+            "meaning": "the bundled identity: canonical (E<date><hash8>[:S<nnn>]), slug (same with ':' -> '-'), epicSegment (E<date><hash8>), and story ordinal (or undefined at epic level)"
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "storyId is provided but does not parse via storyIdToOrdinal (propagated verbatim)"
+            }
+          ],
+          "preconditions": [
+            "epicHash is a valid hex hash and createdAtISO is a parseable ISO date (the same inputs storyWorkflowId/epicWorkflowId already require)"
+          ],
+          "postconditions": [
+            "Pure composition of existing converters: story-level uses storyWorkflowId(epicHash, createdAtISO, storyId) then toCanonical/toSlug; epic-level uses epicWorkflowId",
+            "epicSegment === `E${date}${hash8}`; canonical === toCanonical(id); slug === toSlug(id); story === the ordinal or undefined",
+            "Adds no new parsing logic beyond the widened storyIdToOrdinal it delegates through"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "WorkItemIdentity (interface, src/workflow/id.ts)",
+        "change": "new",
+        "details": "New readonly interface { canonical: string; slug: string; epicSegment: string; story?: number } — the bundled both-way identity sc1 exposes. It is the surface S002's path-scheme resolver consumes (epicSegment + slug -> folder key; canonical -> lookup key). Purely a composition target; carries no behaviour.",
+        "callSites": [
+          "src/workflow/id.ts"
+        ]
+      },
+      {
+        "entity": "storyIdToOrdinal story-id pattern",
+        "change": "invariant-change",
+        "details": "Widen the accepted story-id form from /^s(\\d+)$/ to /^[sS](\\d+)$/ so an uppercase 'S001' parses to the same ordinal as 's1'. This is the single funnel every minter (storyWorkflowId at id.ts:129) passes through, so the whole canonicalization path becomes case-total. ordinalToStoryId (id.ts:107) is deliberately NOT changed — its lowercase 's<n>' output is depended on by tracker/resolve.ts:260 — and toCanonical continues to emit the uppercase padded S<nnn>.",
+        "callSites": [
+          "src/workflow/id.ts",
+          "src/workflow/tracker/resolve.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "implements",
+        "howDetails": "S001 owns sc1 (HLD ownedByStory s1). It realizes the contract by (1) widening storyIdToOrdinal so canonicalization is total over both story-id cases and (2) adding the WorkItemIdentity interface + deriveWorkItemIdentity composition. The both-way property (lc1) holds because parseWorkflowId already reverses toCanonical, and the widened storyIdToOrdinal <-> unchanged ordinalToStoryId ordinal round-trip is preserved."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A genuinely malformed story id (neither 's<n>' nor 'S<n>' — e.g. 'story-1', 'sx', '' ) reaches storyIdToOrdinal.",
+          "detection": "The widened /^[sS](\\d+)$/ .exec() returns null, exactly as the original /^s(\\d+)$/ did for the same inputs.",
+          "response": "Throw the same Error with the unchanged message \"invalid storyId '<id>' (expected s<n>)\"; the widening only ADDS the uppercase-accepting branch, it removes no rejection.",
+          "userImpact": "Identical to today for truly-bad ids — a mint attempt fails (or safeCanonical falls back), never silently mis-parses.",
+          "recoverable": true
+        },
+        {
+          "scenario": "deriveWorkItemIdentity is called with a storyId that cannot be parsed.",
+          "detection": "The delegated storyWorkflowId -> storyIdToOrdinal throws, and deriveWorkItemIdentity lets it propagate (no swallow).",
+          "response": "The exception propagates to the caller (S002 resolver / S003 migration), where under the Epic's fail-loud invariant (k3) it surfaces the offending work item rather than guessing.",
+          "userImpact": "A work item whose id is genuinely unparseable is reported loudly instead of being misfiled — the intended guardrail.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "'S1' (uppercase, unpadded) and 's1' and 'S001' for the same epic",
+          "expected": "All three parse to ordinal 1 and canonicalize to the identical E<date><hash8>:S001 — the padding/casing of the input does not affect identity."
+        },
+        {
+          "input": "'S010' vs 's10'",
+          "expected": "Both parse to ordinal 10 and canonicalize to E<date><hash8>:S010 (toCanonical's padOrdinal zero-pads); leading zeros in the input are inert."
+        },
+        {
+          "input": "deriveWorkItemIdentity called with storyId omitted (epic-level identity)",
+          "expected": "Returns { epicSegment: 'E<date><hash8>', canonical: 'E<date><hash8>', slug: 'E<date><hash8>', story: undefined } — no story segment, via epicWorkflowId."
+        },
+        {
+          "input": "An epic-parented story id 's10' after the change",
+          "expected": "Produces byte-identical output to before the change (ordinal 10, same canonical/slug), confirming no regression for the already-canonicalizing class."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "ordinalToStoryId (id.ts:107) continues to return the lowercase 's<n>' structural form; it is NOT changed, because tracker/resolve.ts:260 reconstructs a storyId from it and expects that form.",
+          "source": "c2"
+        },
+        {
+          "text": "toCanonical (id.ts:152) continues to emit the uppercase zero-padded canonical form S<nnn> via padOrdinal (id.ts:93); the canonical serialization is unchanged for every input.",
+          "source": "c2"
+        },
+        {
+          "text": "For every story id that was valid before (lowercase 's<n>'), storyIdToOrdinal returns the identical ordinal and throws on the identical set of bad inputs — the widening is strictly additive (ac2).",
+          "source": "c2"
+        },
+        {
+          "text": "The identity stays both-way: parseWorkflowId (id.ts:177) reverses toCanonical, and the widened storyIdToOrdinal composed with the unchanged ordinalToStoryId preserves the ordinal round-trip (lc1).",
+          "source": "c2"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove the widened storyIdToOrdinal + deriveWorkItemIdentity make canonicalization total over both story-id cases while leaving already-canonicalizing inputs byte-stable, extending the existing id-resolve.test.ts.",
+          "subjects": [
+            "storyIdToOrdinal('S001') === storyIdToOrdinal('s1') === storyIdToOrdinal('S1') === 1 (case + padding inert)",
+            "storyWorkflowId(hash, createdAt, 'S001') toCanonical === storyWorkflowId(hash, createdAt, 's1') toCanonical === E<date><hash8>:S001 (ac1)",
+            "storyIdToOrdinal still throws the unchanged 'invalid storyId' Error on a genuinely bad id (e.g. 'story-1', '')",
+            "a lowercase 's10' produces byte-identical ordinal + canonical/slug before and after the change (ac2)",
+            "ordinalToStoryId(n) still returns lowercase 's<n>' (unchanged) — tracker/resolve reconstruction unaffected",
+            "deriveWorkItemIdentity(hash, createdAt, 'S001') === deriveWorkItemIdentity(hash, createdAt, 's1') for canonical/slug/epicSegment/story, and the epic-level (storyId omitted) yields story:undefined + no :S segment",
+            "both-way round-trip: parseWorkflowId(toCanonical(storyWorkflowId(...,'S001'))) yields story ordinal 1 (lc1)"
+          ],
+          "fixturesNeeded": [
+            "A fixed epicHash + createdAtISO pair reused across the case-equivalence assertions (mirroring existing id-resolve.test.ts fixtures)"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "storyWorkflowId(...,'S001') toCanonical === E<date><hash8>:S001 (identical to the epic-parented lowercase sibling), instead of throwing/falling back to a bare id",
+            "deriveWorkItemIdentity(...,'S001').canonical === deriveWorkItemIdentity(...,'s1').canonical"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "a lowercase 's10' yields byte-identical ordinal + canonical/slug before and after the change",
+            "storyIdToOrdinal still throws the identical Error on the same set of bad inputs; ordinalToStoryId output unchanged"
+          ]
+        }
+      ],
+      "testFramework": "node:test (tsx --test) with node:assert/strict, matching src/workflow/__tests__/id-resolve.test.ts"
+    },
+    "migration": {
+      "stateBefore": "src/workflow/id.ts:101 storyIdToOrdinal matches only /^s(\\d+)$/ and throws on any other form, so a triage-routed standalone story emitted as uppercase 'S001' fails to canonicalize — storyWorkflowId throws and safeCanonical swallows it into the bare-id fallback (observed: an LLD title rendered '# LLD: S001' instead of the canonical E...:S001). ordinalToStoryId (:107) returns lowercase 's<n>' and is consumed by tracker/resolve.ts:260. Neither WorkItemIdentity nor deriveWorkItemIdentity exists in src/ (grep-confirmed). [cites s1 bundles: 'storyIdToOrdinal / ordinalToStoryId exact shape' and 'sc1 identity bundle does not exist yet']",
+      "stateAfter": "storyIdToOrdinal accepts both cases (/^[sS](\\d+)$/), so every minter that funnels through it — storyWorkflowId, and hence toCanonical/toSlug — is case-total and a standalone 'S001' canonicalizes to the same E...:S001 as its epic-parented sibling. ordinalToStoryId and toCanonical are unchanged (lowercase structural form / uppercase padded canonical form respectively). A new WorkItemIdentity interface + deriveWorkItemIdentity composition expose the bundled both-way identity for S002's resolver to consume.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Widen the storyIdToOrdinal accepted-form (add the uppercase branch to its story-id pattern) so 's1' and 'S001' parse to the same ordinal; leave its throw message and reject-set otherwise identical.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add the WorkItemIdentity interface and the deriveWorkItemIdentity function as a thin composition over the existing epicWorkflowId/storyWorkflowId + toCanonical/toSlug converters; introduce no new parsing.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Extend src/workflow/__tests__/id-resolve.test.ts with the case-equivalence, no-regression, epic-level, and both-way round-trip assertions; no production behaviour change.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "storyIdToOrdinal is an internal exported converter; the change is strictly additive (it accepts a superset of inputs and rejects the identical bad set with the identical message), so every existing lowercase caller is byte-stable. ordinalToStoryId's output and toCanonical's canonical serialization are deliberately untouched, so tracker/resolve.ts:260 and every other consumer are unaffected. No public/IPC surface changes.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Widen storyIdToOrdinal at the source + thin identity bundle",
+        "oneLineSummary": "Make storyIdToOrdinal accept both s<n> and S<n> at the single lowest point every minter funnels through, and add WorkItemIdentity + deriveWorkItemIdentity as a thin composition over the existing converters.",
+        "approach": "The story-id parse regex in storyIdToOrdinal is widened from /^s(\\d+)$/ to accept both cases (e.g. /^[sS](\\d+)$/), returning the same ordinal for 's1' and 'S001'. Because storyWorkflowId and taskWorkflowId both funnel through storyIdToOrdinal, every minter path — and therefore toCanonical/toSlug — becomes case-total for free. ordinalToStoryId stays returning the lowercase structural form (its tracker/resolve consumer depends on that), and toCanonical continues to emit the uppercase padded S<nnn>.\n\nThe sc1 surface is completed by adding a WorkItemIdentity interface {canonical, slug, epicSegment, story?} and deriveWorkItemIdentity(epicHash, createdAtISO, storyId?) that simply assembles epicWorkflowId/storyWorkflowId + toCanonical + toSlug + the epic segment into one value — no new parsing, so the whole Story adds one regex character-class and a thin composition function.",
+        "pros": [
+          "Fixes the gap at the single point every minter (storyWorkflowId, taskWorkflowId) already funnels through, so all callers become case-total uniformly (directly serves k2's 'resolves uniformly').",
+          "Zero change to ordinalToStoryId output and toCanonical, so no consumer (tracker/resolve.ts:260) regresses — ac2 holds by construction.",
+          "deriveWorkItemIdentity is pure composition of existing, already-tested converters, keeping the new surface tiny and the Story at XS/S."
+        ],
+        "cons": [
+          "The widened regex now silently accepts a mixed/unexpected case a caller might not intend (e.g. 'S1' vs 's1'); mitigated because the ordinal is what matters and both map identically."
+        ],
+        "costEstimate": "XS"
+      },
+      {
+        "id": "a2",
+        "name": "Case-tolerance only at the deriveWorkItemIdentity boundary",
+        "oneLineSummary": "Leave storyIdToOrdinal strict-lowercase; normalize the storyId to lowercase inside deriveWorkItemIdentity / the new sc1 surface before it reaches the converter.",
+        "approach": "storyIdToOrdinal keeps its /^s(\\d+)$/ regex unchanged. Instead, the new deriveWorkItemIdentity normalizes its storyId argument (lowercases the leading letter) before delegating to storyWorkflowId, so the sc1 entry point tolerates 'S001' while the low-level converter stays exactly as-is.\n\nThe WorkItemIdentity bundle is the same as a1; only the placement of the case-tolerance differs — it lives at the new boundary rather than in the shared converter.",
+        "pros": [
+          "storyIdToOrdinal is untouched, so any code reasoning about its strict contract is unaffected.",
+          "The case-normalization is visible exactly at the new sc1 entry point where the uppercase form originates."
+        ],
+        "cons": [
+          "Incomplete coverage: any OTHER caller of storyWorkflowId/storyIdToOrdinal with an uppercase id (not going through deriveWorkItemIdentity) still throws — the standalone-canonicalization gap is only half-closed, weakening k2's uniformity.",
+          "Splits the 'which case is accepted' rule across two places (the strict converter and the normalizing boundary), which is the kind of duplication the Epic is trying to remove."
+        ],
+        "costEstimate": "XS",
+        "reasonRejected": "Same XS cost and same ac2 safety as a1, but partial on ac1 and sc1 because the case-tolerance sits at a boundary rather than the shared converter, leaving other minter callers uncovered — the exact non-uniformity the contract exists to remove."
+      },
+      {
+        "id": "a3",
+        "name": "Parallel case-insensitive parser alongside the strict one",
+        "oneLineSummary": "Keep storyIdToOrdinal strict and add a second, case-insensitive story-id parser that the new sc1 surface uses.",
+        "approach": "Introduce a new converter (e.g. parseStoryOrdinalLoose) that accepts both cases, leaving storyIdToOrdinal exactly as it is. storyWorkflowId is pointed at the new loose parser, and deriveWorkItemIdentity uses it too.\n\nThe WorkItemIdentity bundle is unchanged from a1; the difference is two parsers coexist — a strict one and a loose one.",
+        "pros": [
+          "The original strict storyIdToOrdinal contract is preserved verbatim for any caller that wants exact-lowercase validation."
+        ],
+        "cons": [
+          "Introduces two functions that answer the same question ('what ordinal is this story id') with different tolerances — the exact drift/duplication surface this Epic exists to eliminate, and a future caller could pick the wrong one.",
+          "storyWorkflowId must be re-pointed to the loose parser anyway, so the strict one becomes effectively dead for the mint path while still callable — more surface, no clear owner."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Meets both acceptance criteria but scores partial on sc1: maintaining a strict AND a loose parser for the same question institutionalizes the drift the identity contract is meant to remove, at higher cost (S) than a1's one-character widening."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/id.ts — storyIdToOrdinal (:101, /^s(\\d+)$/ the fix site), ordinalToStoryId (:107, lowercase s<n>), storyWorkflowId (:129), toCanonical (:152), toSlug (:169), parseWorkflowId (:177), padOrdinal (:93)."
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/id.ts canonical WorkflowId bundle — the toCanonical/parseWorkflowId both-way converters + storyIdToOrdinal/ordinalToStoryId that the invariants (ordinalToStoryId unchanged, canonical serialization unchanged, additive widening, both-way round-trip) are grounded on."
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/tracker/resolve.ts:260 — the ordinalToStoryId consumer whose lowercase-storyId reconstruction constrains the fix to the input side only."
+    },
+    {
+      "id": "c4",
+      "kind": "test",
+      "ref": "src/workflow/__tests__/id-resolve.test.ts — the existing id-converter test file S001's case-equivalence / no-regression / round-trip assertions extend."
+    }
+  ]
+}

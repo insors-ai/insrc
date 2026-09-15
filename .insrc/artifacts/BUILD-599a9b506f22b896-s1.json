@@ -1,0 +1,25 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": false,
+    "epicHash": "599a9b506f22b896",
+    "storyId": "s1",
+    "createdAt": "2026-09-15T18:52:26.614Z",
+    "approvedAt": "2026-09-15T18:53:10.868Z"
+  },
+  "body": {
+    "focus": "S001 — uniform work-item identity (widen story-id minter + WorkItemIdentity/deriveWorkItemIdentity)",
+    "producesLld": false,
+    "commit": "91dee7f",
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      }
+    ]
+  }
+}

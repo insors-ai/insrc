@@ -54,6 +54,24 @@ export interface WorkflowId {
 	readonly task?: number | undefined;
 }
 
+/**
+ * The bundled, both-way work-item identity (sc1 — S001). A thin projection of
+ * {@link WorkflowId} that pre-computes the canonical + slug + epic-segment forms
+ * the work-item path scheme keys folders and lookups on. `story` is absent at
+ * the epic level. Purely a composition of the existing converters — it carries
+ * no parsing logic of its own.
+ */
+export interface WorkItemIdentity {
+	/** `E<YYYYMMDD><hash8>[:S<nnn>][:T<nnn>]` — the lookup key. */
+	readonly canonical:   string;
+	/** `E<YYYYMMDD><hash8>[-S<nnn>][-T<nnn>]` — the folder-safe form. */
+	readonly slug:        string;
+	/** `E<YYYYMMDD><hash8>` — the epic segment (top-level folder key). */
+	readonly epicSegment: string;
+	/** 1-based story ordinal (`s1` and `S001` both → 1); absent at epic level. */
+	readonly story?:      number | undefined;
+}
+
 // ---------------------------------------------------------------------------
 // Serialization regexes
 // ---------------------------------------------------------------------------
@@ -99,7 +117,10 @@ function padOrdinal(n: number): string {
 // ---------------------------------------------------------------------------
 
 export function storyIdToOrdinal(storyId: string): number {
-	const m = /^s(\d+)$/.exec(storyId);
+	// Accept BOTH the lowercase 's<n>' form (epic-parented) and the uppercase
+	// 'S<nnn>' form (triage-routed standalone) so every story canonicalizes
+	// uniformly. The ordinal is what matters — 's1', 'S1' and 'S001' all yield 1.
+	const m = /^[sS](\d+)$/.exec(storyId);
 	if (m === null) throw new Error(`invalid storyId '${storyId}' (expected s<n>)`);
 	return Number(m[1]);
 }
@@ -168,6 +189,30 @@ export function safeCanonical(mint: () => WorkflowId): string | undefined {
 /** Slug form — the canonical with every level separator `:` → `-`. */
 export function toSlug(id: WorkflowId): string {
 	return toCanonical(id).replaceAll(':', '-');
+}
+
+/**
+ * Derive the bundled {@link WorkItemIdentity} for a work item — the identity
+ * surface the work-item path scheme (S002) consumes. Pure composition of the
+ * existing minters + serializers: it delegates all story-id parsing to the
+ * (widened) `storyIdToOrdinal`, so it accepts both the lowercase 's<n>' and
+ * uppercase 'S<nnn>' forms and adds no parsing of its own. Omit `storyId` for
+ * an epic-level identity.
+ */
+export function deriveWorkItemIdentity(
+	epicHash:     string,
+	createdAtISO: string,
+	storyId?:     string,
+): WorkItemIdentity {
+	const wfid = storyId !== undefined
+		? storyWorkflowId(epicHash, createdAtISO, storyId)
+		: epicWorkflowId(epicHash, createdAtISO);
+	return {
+		canonical:   toCanonical(wfid),
+		slug:        toSlug(wfid),
+		epicSegment: `E${wfid.date}${wfid.hash8}`,
+		...(wfid.story !== undefined ? { story: wfid.story } : {}),
+	};
 }
 
 // ---------------------------------------------------------------------------

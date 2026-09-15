@@ -22,6 +22,7 @@ import {
 	toCanonical, toSlug, parseWorkflowId, isWorkflowIdString,
 	parentId, epicOf, isEpicId, isStoryId, isTaskId,
 	storyIdToOrdinal, ordinalToStoryId, taskIdToOrdinal, ordinalToTaskId,
+	deriveWorkItemIdentity,
 	type WorkflowId,
 } from '../id.js';
 import {
@@ -126,6 +127,76 @@ test('label ↔ ordinal bridges', () => {
 	assert.equal(storyWorkflowId(EPIC_HASH, CREATED, 's1').story, 1);
 	assert.throws(() => storyIdToOrdinal('x1'));
 	assert.throws(() => taskIdToOrdinal('s1'));
+});
+
+// ---------------------------------------------------------------------------
+// S001 — uniform work-item identity: storyIdToOrdinal accepts both cases +
+// the deriveWorkItemIdentity bundle. Standalone stories (uppercase 'S001')
+// must canonicalize identically to their epic-parented lowercase sibling,
+// with no regression for the already-canonicalizing lowercase class.
+// ---------------------------------------------------------------------------
+
+test('S001: storyIdToOrdinal accepts s<n> AND S<nnn> — case + padding inert', () => {
+	// 's1', 'S1' and 'S001' all denote ordinal 1.
+	assert.equal(storyIdToOrdinal('s1'), 1);
+	assert.equal(storyIdToOrdinal('S1'), 1);
+	assert.equal(storyIdToOrdinal('S001'), 1);
+	// leading zeros are inert at any ordinal
+	assert.equal(storyIdToOrdinal('S010'), 10);
+	assert.equal(storyIdToOrdinal('s10'), 10);
+	// a genuinely bad id still throws the identical Error (widening is additive)
+	assert.throws(() => storyIdToOrdinal('story-1'), /invalid storyId 'story-1' \(expected s<n>\)/);
+	assert.throws(() => storyIdToOrdinal(''), /expected s<n>/);
+	assert.throws(() => storyIdToOrdinal('x1'), /expected s<n>/);
+});
+
+test('S001/ac1: a standalone uppercase S001 canonicalizes to the same id as its lowercase sibling', () => {
+	const upper = toCanonical(storyWorkflowId(EPIC_HASH, CREATED, 'S001'));
+	const lower = toCanonical(storyWorkflowId(EPIC_HASH, CREATED, 's1'));
+	assert.equal(upper, 'E20260717185807ba:S001');
+	assert.equal(upper, lower);            // identical to the epic-parented sibling
+	assert.equal(toSlug(storyWorkflowId(EPIC_HASH, CREATED, 'S001')), 'E20260717185807ba-S001');
+});
+
+test('S001/ac2: lowercase story ids are byte-identical before/after; ordinalToStoryId unchanged', () => {
+	// no-regression: 's10' still ordinal 10, canonical S010, slug -S010
+	const s10 = storyWorkflowId(EPIC_HASH, CREATED, 's10');
+	assert.equal(s10.story, 10);
+	assert.equal(toCanonical(s10), 'E20260717185807ba:S010');
+	assert.equal(toSlug(s10), 'E20260717185807ba-S010');
+	// ordinalToStoryId is deliberately NOT changed — still lowercase 's<n>'
+	// (tracker/resolve.ts reconstruction depends on this form).
+	assert.equal(ordinalToStoryId(1), 's1');
+	assert.equal(ordinalToStoryId(10), 's10');
+});
+
+test('S001: deriveWorkItemIdentity composes the bundle; story-level s1===S001; epic-level has no story segment', () => {
+	const fromUpper = deriveWorkItemIdentity(EPIC_HASH, CREATED, 'S001');
+	const fromLower = deriveWorkItemIdentity(EPIC_HASH, CREATED, 's1');
+	assert.deepEqual(fromUpper, fromLower);   // case does not affect identity
+	assert.deepEqual(fromUpper, {
+		canonical:   'E20260717185807ba:S001',
+		slug:        'E20260717185807ba-S001',
+		epicSegment: 'E20260717185807ba',
+		story:       1,
+	});
+	// epic-level (storyId omitted): no :S segment, story undefined
+	const epic = deriveWorkItemIdentity(EPIC_HASH, CREATED);
+	assert.deepEqual(epic, {
+		canonical:   'E20260717185807ba',
+		slug:        'E20260717185807ba',
+		epicSegment: 'E20260717185807ba',
+	});
+	assert.equal(epic.story, undefined);
+	// a bad storyId propagates the storyIdToOrdinal throw (no swallow)
+	assert.throws(() => deriveWorkItemIdentity(EPIC_HASH, CREATED, 'bad'), /expected s<n>/);
+});
+
+test('S001/lc1: identity stays both-way — parse(toCanonical(mint(S001))) yields ordinal 1', () => {
+	const round = parseWorkflowId(toCanonical(storyWorkflowId(EPIC_HASH, CREATED, 'S001')));
+	assert.equal(round?.story, 1);
+	assert.equal(round?.level, 'story');
+	assert.deepEqual(round, storyWorkflowId(EPIC_HASH, CREATED, 's1'));
 });
 
 // ---------------------------------------------------------------------------

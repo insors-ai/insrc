@@ -209,6 +209,35 @@ test('applyMigration: a plan with a non-empty unmappable[] is REFUSED (throws, n
 	}
 });
 
+test('applyMigration: a commit failing on a LATER epic chunk rolls the WHOLE run back to the pre-run commit (no partial mix)', () => {
+	const repo = seedEpicRepo();
+	try {
+		// Add a SECOND epic so there are >=2 per-epic chunk commits.
+		const h2 = 'fedcba9876543210';
+		seedJson(repo, `DEF-${h2}`, { createdAt: DEF_CREATED, epicHash: h2, epicSlug: 'other' });
+		seedMd(repo, `docs/defines/DEF-other.md`, `DEF-${h2}`);
+		gitInit(repo);
+		const startSha = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repo, encoding: 'utf8' }).trim();
+		// A pre-commit hook that FAILS on the 2nd commit (passes the 1st).
+		const hookDir = join(repo, '.git', 'hooks');
+		mkdirSync(hookDir, { recursive: true });
+		const counter = join(repo, '.git', 'commit-count');
+		writeFileSync(join(hookDir, 'pre-commit'),
+			`#!/bin/sh\nn=$(cat "${counter}" 2>/dev/null || echo 0); n=$((n+1)); echo $n > "${counter}"; [ "$n" -ge 2 ] && exit 1; exit 0\n`);
+		execFileSync('chmod', ['+x', join(hookDir, 'pre-commit')]);
+
+		const plan = planMigration(repo);
+		assert.ok(new Set(plan.moves.map(m => m.groupHash)).size >= 2, 'two epic chunks');
+		assert.throws(() => applyMigration(repo, plan));
+		// HEAD is back at the pre-run commit — the 1st chunk's commit was undone too.
+		assert.equal(execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repo, encoding: 'utf8' }).trim(), startSha);
+		assert.equal(execFileSync('git', ['status', '--porcelain'], { cwd: repo, encoding: 'utf8' }).trim(), '', 'clean, fully restored');
+		assert.ok(existsSync(join(repo, 'docs', 'defines', `DEF-${SLUG}.md`)) && existsSync(join(repo, 'docs', 'defines', 'DEF-other.md')), 'both epics restored to flat');
+	} finally {
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
 test('applyMigration: a git-mv failure rolls the run back and leaves no partial mix', () => {
 	const repo = seedEpicRepo();
 	try {

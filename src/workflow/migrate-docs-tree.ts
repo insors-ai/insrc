@@ -150,19 +150,23 @@ interface Artifact {
 	readonly hash:     string;
 	readonly storyId:  string | undefined;
 	readonly createdAt: string | undefined;
+	/** The stamped work-item anchor (S002); when present it is THE folder key the
+	 *  live writer uses, so the migration prefers it over a reconstructed anchor. */
+	readonly epicCreatedAt: string | undefined;
 	readonly epicSlug: string | undefined;
 	readonly standalone: boolean;
 	readonly flatPath: string | undefined;
 }
 
 /** Read the (small) subset of companion-JSON meta the migration needs. */
-function readMeta(jsonPath: string): { createdAt?: string; epicSlug?: string; standalone?: boolean } {
+function readMeta(jsonPath: string): { createdAt?: string; epicCreatedAt?: string; epicSlug?: string; standalone?: boolean } {
 	try {
-		const parsed = JSON.parse(readFileSync(jsonPath, 'utf8')) as { meta?: { createdAt?: unknown; epicSlug?: unknown; standalone?: unknown } };
+		const parsed = JSON.parse(readFileSync(jsonPath, 'utf8')) as { meta?: { createdAt?: unknown; epicCreatedAt?: unknown; epicSlug?: unknown; standalone?: unknown } };
 		const meta = parsed.meta ?? {};
 		return {
-			...(typeof meta.createdAt === 'string' ? { createdAt: meta.createdAt } : {}),
-			...(typeof meta.epicSlug  === 'string' ? { epicSlug:  meta.epicSlug  } : {}),
+			...(typeof meta.createdAt     === 'string' ? { createdAt:     meta.createdAt }     : {}),
+			...(typeof meta.epicCreatedAt === 'string' ? { epicCreatedAt: meta.epicCreatedAt } : {}),
+			...(typeof meta.epicSlug      === 'string' ? { epicSlug:      meta.epicSlug }      : {}),
 			...(meta.standalone === true ? { standalone: true } : {}),
 		};
 	} catch {
@@ -209,6 +213,7 @@ export function planMigration(repoPath: string): MigrationPlan {
 			hash: parsed.hash,
 			storyId: parsed.storyId,
 			createdAt: meta.createdAt,
+			epicCreatedAt: meta.epicCreatedAt,
 			epicSlug: meta.epicSlug,
 			standalone: meta.standalone === true || parsed.kind === 'SPEC',
 			flatPath: flatIndex.get(id),
@@ -228,11 +233,16 @@ export function planMigration(repoPath: string): MigrationPlan {
 	for (const [hash, members] of [...groups.entries()].sort()) {
 		const workItemKind: WorkItemKind = members.some(m => m.standalone) ? 'standalone' : 'epic';
 
-		// Anchor createdAt: the DEF's, else a standalone item's own (the LLD's, or
-		// the earliest member) — shared by every member so the group stays in one folder.
+		// Anchor createdAt: prefer the STAMPED epicCreatedAt (S002) — that IS the
+		// folder key the live writer uses, so migrated + future-written members
+		// coincide. Fall back to the DEF's createdAt (its own anchor; what the stamp
+		// would have been), else a standalone item's own (the LLD's, or the earliest
+		// member). Shared by every member so the group stays in one folder.
 		const def = members.find(m => m.kind === 'DEF');
 		const lld = members.find(m => m.kind === 'LLD');
-		const anchor = def?.createdAt
+		const stamped = def?.epicCreatedAt ?? members.map(m => m.epicCreatedAt).find((c): c is string => typeof c === 'string');
+		const anchor = stamped
+			?? def?.createdAt
 			?? lld?.createdAt
 			?? members.map(m => m.createdAt).filter((c): c is string => typeof c === 'string').sort()[0];
 
@@ -348,6 +358,9 @@ export function applyMigration(repoPath: string, plan: MigrationPlan): void {
 	if (git(repoPath, 'status', '--porcelain').trim().length > 0) {
 		throw new Error('migrate-docs-tree: refusing to apply — the git working tree is not clean; commit or stash first');
 	}
+	// Pin the pre-run commit so a failure mid-way through the per-epic chunk
+	// commits rolls the WHOLE run back (not just to the last committed chunk).
+	const startSha = git(repoPath, 'rev-parse', 'HEAD').trim();
 
 	try {
 		for (const mv of plan.moves) {
@@ -374,8 +387,9 @@ export function applyMigration(repoPath: string, plan: MigrationPlan): void {
 		}
 		log.info({ moves: plan.moves.length, chunks: byGroup.size }, 'migrate-docs-tree: applied');
 	} catch (err) {
-		// Roll back the whole run — no partial mix (lc1).
-		try { git(repoPath, 'reset', '--hard', 'HEAD'); git(repoPath, 'clean', '-fd', 'docs'); } catch { /* best-effort */ }
+		// Roll back the WHOLE run to the pinned pre-run commit — including any
+		// per-epic chunk commits that already landed — so no partial mix survives (lc1).
+		try { git(repoPath, 'reset', '--hard', startSha); git(repoPath, 'clean', '-fd', 'docs'); } catch { /* best-effort */ }
 		throw err;
 	}
 }

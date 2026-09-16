@@ -24,7 +24,7 @@ Extends Epic `add-daemon-driven-code-review-stage` (761a43a6) — Story B of the
 
 ## Building on
 
-- `prior-artifact` docs/specs/SPEC-indexing-readiness-gate-insrc-code-review.md — Approved SpecArtifact SPEC-8b4be30d648eaeb8 decisions d5 (diff-only fallback on decline) + d6 (groundingMode:'degraded' + warn-cap) — the settled scope this story implements.
+- `prior-artifact` docs/standalone/indexing-readiness-gate-insrc-code-review-E202608048b4be30d/SPEC.md — Approved SpecArtifact SPEC-8b4be30d648eaeb8 decisions d5 (diff-only fallback on decline) + d6 (groundingMode:'degraded' + warn-cap) — the settled scope this story implements.
 - `prior-artifact` .insrc/artifacts/LLD-761a43a6fa645815-s9.json — s9 stamps groundingMode:'full' and fails closed on decline; the LLD explicitly notes Story B replaces that fail-closed exit + widens groundingMode to 'full' | 'degraded'.
 - `code` src/workflow/code-review/subject.ts — resolveCodeReviewSubject derives changedFiles from the working-tree git_diff — empty after commit (the dogfood finding s10 folds in).
 

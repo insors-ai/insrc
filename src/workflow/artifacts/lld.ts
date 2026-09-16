@@ -7,8 +7,8 @@
  * LldArtifact — Phase D.
  *
  * Shape mirrors `plans/workflow-design.md` §7.2. One artifact per
- * Story in the approved Epic. Renders to
- * `docs/designs/<epic-slug>/<story-id>.md`.
+ * Story in the approved Epic. Renders to the work item's nested `LLD.md`
+ * (sc2: `docs/{epics|standalone}/<slug>-E<date><hash8>/S<nnn>/LLD.md`).
  *
  * Anchors to a specific effective HLD state via `hldBaseRunId` +
  * `hldEffectiveHash`. Phase D always sees zero amendments so

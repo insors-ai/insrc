@@ -8,8 +8,9 @@
  *
  * One artifact per Story: the approved LLD in → N ordered, sized,
  * dependency-labelled Tasks out. The atomic unit `build` consumes one
- * Task at a time. Renders to `docs/plans/PLAN-<epic-slug>-<story-id>.md`;
- * canonical JSON at `.insrc/artifacts/PLAN-<epic-hash>-<story-id>.json`.
+ * Task at a time. Renders to the work item's nested `PLAN.md` (sc2:
+ * `docs/{epics|standalone}/<slug>-E<date><hash8>/S<nnn>/PLAN.md`); canonical JSON
+ * at `.insrc/artifacts/PLAN-<epic-hash>-<story-id>.json` (unchanged, hash-flat).
  *
  * Mirrors `artifacts/lld.ts` in shape. Combines three shared HLD
  * contracts:

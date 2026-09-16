@@ -279,8 +279,8 @@ export function stubArtifactPaths(repoPath: string, slug: string): {
 	};
 }
 
-/** Paths for a Define artifact: markdown (named by `epicSlug`) in
- *  `docs/defines/`, canonical JSON (named by `epicHash`) in
+/** Paths for a Define artifact: md at the Epic's nested item-root
+ *  `DEF.md` (sc2, via resolveArtifactMdPath), canonical JSON (named by `epicHash`) in
  *  `.insrc/artifacts/`. Omit `epicSlug` when only the JSON is needed —
  *  the markdown half then falls back to the hash. */
 export function defineArtifactPaths(
@@ -299,8 +299,8 @@ export function defineArtifactPaths(
 	};
 }
 
-/** Paths for a brainstorm SpecArtifact (S006/sc1): markdown (named by
- *  `slug`) in `docs/specs/`, canonical JSON (named by `specHash`) in
+/** Paths for a brainstorm SpecArtifact (S006/sc1): md at the standalone
+ *  item's nested `SPEC.md` (sc2), canonical JSON (named by `specHash`) in
  *  `.insrc/artifacts/`. A Spec precedes the Epic chain, so it is keyed by
  *  its own run-derived `specHash`, not an `epicHash`. Omit `slug` when only
  *  the JSON is needed — the markdown half then falls back to the hash. */
@@ -359,8 +359,8 @@ export function lldArtifactPaths(
 	};
 }
 
-/** Paths for a Plan (`plan`) artifact — one per Story. Slug-named
- *  markdown under `docs/plans/`, canonical hash-named JSON under
+/** Paths for a Plan (`plan`) artifact — one per Story. Nested
+ *  `S<nnn>/PLAN.md` (sc2), canonical hash-named JSON under
  *  `.insrc/artifacts/`. The direct peer of `lldArtifactPaths`; `epicSlug`
  *  is the trailing optional so `(repo, hash, storyId)` JSON-only callers
  *  keep working. */
@@ -381,8 +381,8 @@ export function planArtifactPaths(
 	};
 }
 
-/** Paths for a Build (`build`) artifact — one per Story. Slug-named
- *  markdown under `docs/builds/`, canonical hash-named JSON under
+/** Paths for a Build (`build`) artifact — one per Story. Nested
+ *  `S<nnn>/BUILD.md` (sc2), canonical hash-named JSON under
  *  `.insrc/artifacts/`. The direct peer of `planArtifactPaths`; `epicSlug`
  *  is the trailing optional so `(repo, hash, storyId)` JSON-only callers
  *  keep working. */
@@ -404,7 +404,7 @@ export function buildArtifactPaths(
 }
 
 /** Paths for a code-review record (code-review S006/sc4) — one per Story. The
- *  direct peer of `buildArtifactPaths`: slug-named markdown under `docs/reviews/`,
+ *  direct peer of `buildArtifactPaths`: nested `S<nnn>/CR.md` (sc2),
  *  canonical hash-named JSON under `.insrc/artifacts/` in the `CR-` namespace.
  *  `epicSlug` is the trailing optional so `(repo, hash, storyId)` JSON-only
  *  callers keep working. */
@@ -426,7 +426,7 @@ export function codeReviewArtifactPaths(
 }
 
 /** Canonical id + paths for an Extend artifact (`define` extend branch).
- *  One per (Epic, new Story). Markdown under `docs/designs/` (slug), JSON
+ *  One per (Epic, new Story). Md at the nested `S<nnn>/EXT.md` (sc2), JSON
  *  under `.insrc/artifacts/` (hash). */
 export function extendArtifactId(epicHash: string, storyId: string): string { return `EXT-${epicHash}-${storyId}`; }
 export function extendArtifactPaths(

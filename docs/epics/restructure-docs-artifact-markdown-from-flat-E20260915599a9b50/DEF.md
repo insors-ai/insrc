@@ -93,7 +93,7 @@ The roughly 200 artifacts already on disk become navigable under the new grouped
 
 ## Citations
 
-- **[[c1]]** `prior-artifact` `docs/specs/SPEC-restructure-docs-artifact-markdown-from-flat.md (approved SPEC-652f9e6637273e1e) — decisions: hard atomic-PR cutover, fail-loud on unmappable files, regex link rewrite + post-move validation, metadata-authoritative id source.`
+- **[[c1]]** `prior-artifact` `docs/standalone/restructure-docs-artifact-markdown-from-flat-E20260915652f9e66/SPEC.md (approved SPEC-652f9e6637273e1e) — decisions: hard atomic-PR cutover, fail-loud on unmappable files, regex link rewrite + post-move validation, metadata-authoritative id source.`
 - **[[c2]]** `code` `src/workflow/id.ts — canonical WorkflowId (E<YYYYMMDD><hash8>:S<nnn>:T<nnn>) with toCanonical/toSlug/parseWorkflowId; storyIdToOrdinal's /^s(\d+)$/ rejects uppercase S001 (the uneven-canonicalization gap).`
 - **[[c3]]** `code` `src/workflow/storage.ts — DOCS_ARTIFACT_DIRS (the six flat dirs) + the 8 per-type *ArtifactPaths helpers keying markdown by slug or hash; ~200 files live under these dirs.`
 - **[[c4]]** `convention` `CLAUDE.md code conventions — 'Don't use feature flags or backwards-compatibility shims when you can just change the code.'`

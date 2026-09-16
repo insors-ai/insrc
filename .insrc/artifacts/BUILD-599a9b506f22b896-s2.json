@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": false,
+    "epicHash": "599a9b506f22b896",
+    "storyId": "s2",
+    "createdAt": "2026-09-16T08:08:48.761Z",
+    "approvedAt": "2026-09-16T08:42:02.143Z"
+  },
+  "body": {
+    "focus": "S002 — central work-item path-scheme resolver (sc2) + atomic nested-docs cutover of the *ArtifactPaths/*MdRel md side + gates.ts md→json marker resolver; folder anchor via meta.epicCreatedAt.",
+    "producesLld": true,
+    "commit": "1c1d4e0",
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      }
+    ]
+  }
+}

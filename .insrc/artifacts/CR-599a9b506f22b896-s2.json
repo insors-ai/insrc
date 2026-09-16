@@ -1,0 +1,149 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1789546053210-mxkl2s",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-16T08:07:33.210Z",
+    "model": "client",
+    "elapsedMs": 2,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "599a9b506f22b896",
+    "storyId": "s2"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "599a9b506f22b896",
+    "storyId": "s2",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        ".insrc/artifacts/LLD-599a9b506f22b896-s2.json",
+        ".insrc/artifacts/PLAN-599a9b506f22b896-s2.json",
+        "docs/designs/LLD-restructure-docs-artifact-markdown-from-flat-s2.md",
+        "docs/plans/PLAN-restructure-docs-artifact-markdown-from-flat-s2.md",
+        "src/cli/services/workflow.ts",
+        "src/daemon/workflow-rpc.ts",
+        "src/mcp/build-step/__tests__/build-step.test.ts",
+        "src/mcp/build-step/phases/implement.ts",
+        "src/mcp/build-step/render.ts",
+        "src/mcp/code-review-step/__tests__/handler.test.ts",
+        "src/mcp/code-review-step/handler.ts",
+        "src/mcp/workflow-step/__tests__/amendments-e2e.test.ts",
+        "src/mcp/workflow-step/__tests__/define-e2e.test.ts",
+        "src/mcp/workflow-step/__tests__/define-extend-e2e.test.ts",
+        "src/mcp/workflow-step/__tests__/design-epic-e2e.test.ts",
+        "src/mcp/workflow-step/__tests__/design-story-e2e.test.ts",
+        "src/mcp/workflow-step/__tests__/plan-e2e.test.ts",
+        "src/mcp/workflow-step/__tests__/questions-gate-e2e.test.ts",
+        "src/mcp/workflow-step/__tests__/tracker-e2e.test.ts",
+        "src/mcp/workflow-step/__tests__/tracker-tasks-coarse.test.ts",
+        "src/mcp/workflow-step/phases/synthesize.ts",
+        "src/workflow/__tests__/adjacent-scope-gate.test.ts",
+        "src/workflow/__tests__/approve-build-completion.test.ts",
+        "src/workflow/__tests__/approve-codereview-gate.test.ts",
+        "src/workflow/__tests__/chain.test.ts",
+        "src/workflow/__tests__/gates.test.ts",
+        "src/workflow/__tests__/id-resolve.test.ts",
+        "src/workflow/__tests__/path-scheme.test.ts",
+        "src/workflow/__tests__/plan-artifact.test.ts",
+        "src/workflow/__tests__/plan-gate.test.ts",
+        "src/workflow/__tests__/questions.test.ts",
+        "src/workflow/__tests__/scope-extend.test.ts",
+        "src/workflow/__tests__/seed-focus.test.ts",
+        "src/workflow/__tests__/spec-artifact.test.ts",
+        "src/workflow/__tests__/spec-resolver.test.ts",
+        "src/workflow/__tests__/spec-review-approve.test.ts",
+        "src/workflow/__tests__/storage.test.ts",
+        "src/workflow/__tests__/tracker-auto.test.ts",
+        "src/workflow/__tests__/tracker-tasks.test.ts",
+        "src/workflow/amendments/__tests__/effective-and-staleness.test.ts",
+        "src/workflow/artifacts/lld-io.ts",
+        "src/workflow/chain.ts",
+        "src/workflow/code-review/__tests__/gate.test.ts",
+        "src/workflow/code-review/__tests__/runner.test.ts",
+        "src/workflow/code-review/gate.ts",
+        "src/workflow/code-review/runner.ts",
+        "src/workflow/code-review/subject-paths.ts",
+        "src/workflow/gates.ts",
+        "src/workflow/orchestrator.ts",
+        "src/workflow/path-scheme.ts",
+        "src/workflow/questions.ts",
+        "src/workflow/runners/build/__tests__/admit-build.test.ts",
+        "src/workflow/runners/build/__tests__/build-record.test.ts",
+        "src/workflow/runners/build/standalone-record.ts",
+        "src/workflow/runners/tracker/context.ts",
+        "src/workflow/storage.ts",
+        "src/workflow/tracker-auto.ts",
+        "src/workflow/tracker/__tests__/tracker.test.ts",
+        "src/workflow/tracker/conventions.ts",
+        "src/workflow/tracker/link.ts",
+        "src/workflow/tracker/sync.ts",
+        "src/workflow/types.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "src/workflow/gates.ts:775",
+            "message": "jsonPathForMd now throws (instead of the prior best-effort dir+ext swap) when a docs/ md carries no insrc:artifact marker. This is the intended lc1 behavior (identity from the marker, never the path) and every framework-rendered artifact embeds the marker, so normal approve flows are unaffected — a deliberate behavior change from the old fallback, noted for traceability.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "src/workflow/storage.ts:50",
+            "message": "The epic's own SPEC/DEF/HLD/LLD/PLAN artifacts remain committed under the OLD flat docs/ layout while S002 makes new artifacts nested. This is the LLD's explicit, accepted hand-off: existing flat artifacts are relocated by S003's one-time migration, not S002. Noted so the transitional dual-state is on the record.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/tracker/conventions.ts:120",
+            "message": "hldMdRel(define.meta.epicHash ?? epicSlug, ...) uses a slug as the epicHash fallback purely to satisfy the optional type; if epicHash were ever undefined a non-hex slug reaches deriveWorkItemIdentity -> hash8Of and throws rather than degrading. Unreachable in practice (a DEF always carries epicHash), but a latent throw not a graceful default. Same pattern in defineMdRel next line.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/path-scheme.ts:1",
+            "message": "listWorkItems/listArtifactMdPaths are part of the sc2 contract and unit-tested (path-scheme.test.ts) but have NO current production consumer — they exist for the contract surface + S003's migration. Intentional (the read-side finders the LLD expected to replace scan the hash-flat JSON store, out of scope), not a coverage gap, but they ship ahead of their consumer.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/workflow/runners/build/standalone-record.ts:152",
+            "message": "FIXED IN THIS CHANGE: persistBuildRecord originally keyed the nested folder on the INCOMING rec.meta.createdAt while mergeWithPrior preserves the ORIGINAL createdAt, so a Trivial-standalone re-run across a UTC-midnight boundary would orphan the day-1 BUILD.md under a fresh day-2 folder and split the CR from it. The folder is now derived from the MERGED (preserved) record; a regression test (build-record.test.ts 'S002 regression: Trivial-standalone re-run ...') locks it. Flagged so the fix + its narrow scenario are recorded.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 1,
+      "low": 4
+    }
+  }
+}

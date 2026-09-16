@@ -28,6 +28,7 @@ import { approveArtifactByJsonPath } from '../../../workflow/gates.js';
 import { defineArtifactPaths, planArtifactPaths } from '../../../workflow/storage.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
+const CREATED = '2026-07-18T00:00:00.000Z';   // anchors the nested docs-tree folder segment
 
 interface Envelope { readonly content: readonly { readonly type: 'text'; readonly text: string }[] }
 function payload(env: Envelope): Record<string, unknown> {
@@ -49,10 +50,10 @@ function stubGithubConfig(repoPath: string, pushTasks: boolean): { path: string;
 }
 
 function seed(repo: string, opts: { approvePlan: boolean }): void {
-	const dp = defineArtifactPaths(repo, HASH);
+	const dp = defineArtifactPaths(repo, HASH, CREATED, 'epic', 'tag-filtering');
 	mkdirSync(dirname(dp.json), { recursive: true });
 	writeFileSync(dp.json, JSON.stringify({
-		meta: { workflow: 'define', runId: 'def-1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering' },
+		meta: { workflow: 'define', runId: 'def-1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', createdAt: CREATED },
 		body: {
 			flavor: 'enhancement', problem: 'Users cannot filter todos by tag.',
 			nonGoals: [], assumptions: [], constraints: [],
@@ -63,10 +64,10 @@ function seed(repo: string, opts: { approvePlan: boolean }): void {
 	}, null, 2));
 	approveArtifactByJsonPath(dp.json);
 
-	const pp = planArtifactPaths(repo, HASH, 's1');
+	const pp = planArtifactPaths(repo, HASH, 's1', CREATED, 'epic', 'tag-filtering');
 	mkdirSync(dirname(pp.json), { recursive: true });
 	writeFileSync(pp.json, JSON.stringify({
-		meta: { workflow: 'plan', runId: 'p1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', storyId: 's1', lldRunId: 'l1', lldEffectiveHash: 'x' },
+		meta: { workflow: 'plan', runId: 'p1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', storyId: 's1', createdAt: CREATED, lldRunId: 'l1', lldEffectiveHash: 'x' },
 		body: {
 			tasks: [
 				{ id: 't1', title: 'Add filter input', summary: 'Wire it.', size: 'S', order: 1, dependsOn: [], acceptanceChecks: ['renders'], derivedFrom: ['c1'], tests: [{ level: 'unit', name: 'unit: input' }] },
@@ -162,7 +163,7 @@ test('coarse push synthesize persists LLM-returned taskRefs onto the plan meta.t
 		assert.equal(done['next'], 'done', JSON.stringify(done));
 
 		// The plan artifact's meta.tracker.taskRefs was written.
-		const planJson = planArtifactPaths(repo, HASH, 's1').json;
+		const planJson = planArtifactPaths(repo, HASH, 's1', CREATED, 'epic', 'tag-filtering').json;
 		const plan = JSON.parse(readFileSync(planJson, 'utf8')) as { meta: { tracker?: { taskRefs?: Record<string, string> } } };
 		assert.deepEqual(plan.meta.tracker?.taskRefs, { t1: 'myorg/myrepo#201', t2: 'myorg/myrepo#202' });
 	} finally { cfg.dispose(); rmSync(repo, { recursive: true, force: true }); }

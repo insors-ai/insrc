@@ -30,6 +30,7 @@ import { computeHldEffectiveHash } from '../../../workflow/artifacts/lld.js';
 import { defineArtifactPaths, hldArtifactPaths, lldArtifactPaths } from '../../../workflow/storage.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
+const CREATED = '2026-07-18T00:00:00.000Z';   // anchors the nested docs-tree folder segment
 const HLD_RUN = 'hld-run-1';
 const CURRENT_EFFECTIVE = computeHldEffectiveHash(HLD_RUN, []);
 
@@ -47,10 +48,10 @@ function payload(env: Envelope): Record<string, unknown> {
 interface SeedOpts { readonly lldApproved: boolean; readonly lldEffectiveHash?: string }
 
 function seed(repo: string, opts: SeedOpts): void {
-	const dp = defineArtifactPaths(repo, HASH);
+	const dp = defineArtifactPaths(repo, HASH, CREATED, 'epic', 'tag-filtering');
 	mkdirSync(dirname(dp.json), { recursive: true });
 	writeFileSync(dp.json, JSON.stringify({
-		meta: { workflow: 'define', runId: 'def-1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering' },
+		meta: { workflow: 'define', runId: 'def-1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', createdAt: CREATED },
 		body: {
 			flavor: 'enhancement', problem: 'x', nonGoals: [], assumptions: [], constraints: [],
 			stories: [{ id: 's1', title: 'Filter by tag', userValue: 'v', acceptanceCriteria: [{ id: 'ac1', given: 'a', when: 'b', then: 'c', operationalizes: [] }], dependsOn: [] }],
@@ -60,9 +61,9 @@ function seed(repo: string, opts: SeedOpts): void {
 	}, null, 2));
 	approveArtifactByJsonPath(dp.json);
 
-	const hp = hldArtifactPaths(repo, HASH);
+	const hp = hldArtifactPaths(repo, HASH, CREATED, 'epic', 'tag-filtering');
 	writeFileSync(hp.json, JSON.stringify({
-		meta: { workflow: 'design.epic', runId: HLD_RUN, schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering' },
+		meta: { workflow: 'design.epic', runId: HLD_RUN, schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', createdAt: CREATED },
 		body: {
 			frameworkSummary: 'x', architectureShape: 'x [[c1]]',
 			sharedContracts: [{ id: 'sc1', name: 'A', purpose: 'p', interfaceSketch: 'interface A {}', ownedByStory: 's1', consumedByStories: [], assumptions: [] }],
@@ -76,9 +77,9 @@ function seed(repo: string, opts: SeedOpts): void {
 	}, null, 2));
 	approveArtifactByJsonPath(hp.json);
 
-	const lp = lldArtifactPaths(repo, HASH, 's1');
+	const lp = lldArtifactPaths(repo, HASH, 's1', CREATED, 'epic', 'tag-filtering');
 	const meta: Record<string, unknown> = {
-		workflow: 'design.story', runId: 'lld-run-1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', storyId: 's1',
+		workflow: 'design.story', runId: 'lld-run-1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', storyId: 's1', createdAt: CREATED,
 		hldBaseRunId: HLD_RUN, hldEffectiveHash: opts.lldEffectiveHash ?? CURRENT_EFFECTIVE, hldAmendmentsApplied: [],
 	};
 	writeFileSync(lp.json, JSON.stringify({
@@ -161,7 +162,7 @@ const synthArtifact = {
 // Tests
 // ---------------------------------------------------------------------------
 
-test('plan happy path: writes a PlanArtifact under docs/plans/PLAN-<slug>-s1.md', async () => {
+test('plan happy path: writes a PlanArtifact under docs/epics/<slug>-E.../S<nnn>/PLAN.md', async () => {
 	_clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-plan-e2e-'));
@@ -171,7 +172,10 @@ test('plan happy path: writes a PlanArtifact under docs/plans/PLAN-<slug>-s1.md'
 		const done = payload(await handleWorkflowStep({ phase: 'synthesize', artifact: synthArtifact, state }));
 		assert.equal(done['next'], 'done', JSON.stringify(done));
 		const outPath = done['path'] as string;
-		assert.ok(outPath.endsWith('/docs/plans/PLAN-tag-filtering-s1.md'), outPath);
+		// Nested docs-tree (S002): the plan is a story-scoped artifact under the
+		// work-item folder's S<nnn>/ subfolder. Dynamic createdAt → assert tree + basename.
+		assert.ok(outPath.includes('/docs/epics/'), outPath);
+		assert.ok(/\/S001\/PLAN\.md$/.test(outPath), outPath);
 		assert.ok(existsSync(outPath));
 		const md = readFileSync(outPath, 'utf8');
 		// With a valid createdAt the title leads with the hierarchical story id.

@@ -170,10 +170,11 @@ test('ANTI_OVERREACH_RULE names adjacentBoundaries + consume-not-redesign + flag
 // ---------------------------------------------------------------------------
 
 const EPIC_HASH = 'a3f4b8c9d1e2f3a4';
+const CREATED   = '2026-07-17T07:42:28.275Z';   // stable anchor for the nested md-path resolver
 const HLD_RUN   = 'hld-run-adj';
 
 function seedTwoStoryEpic(repo: string): void {
-	const dp = defineArtifactPaths(repo, EPIC_HASH);
+	const dp = defineArtifactPaths(repo, EPIC_HASH, CREATED, 'epic');
 	mkdirSync(dirname(dp.json), { recursive: true });
 	writeFileSync(dp.json, JSON.stringify({
 		meta: { workflow: 'define', runId: 'def-adj', schemaVersion: 1, epicHash: EPIC_HASH, epicSlug: 'adj' },
@@ -189,7 +190,7 @@ function seedTwoStoryEpic(repo: string): void {
 	}, null, 2));
 	approveArtifactByJsonPath(dp.json);
 
-	const hp = hldArtifactPaths(repo, EPIC_HASH);
+	const hp = hldArtifactPaths(repo, EPIC_HASH, CREATED, 'epic');
 	writeFileSync(hp.json, JSON.stringify({
 		meta: { workflow: 'design.epic', runId: HLD_RUN, schemaVersion: 1, epicHash: EPIC_HASH, epicSlug: 'adj' },
 		body: {

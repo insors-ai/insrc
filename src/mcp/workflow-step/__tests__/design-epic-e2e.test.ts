@@ -26,6 +26,7 @@ import { defineArtifactPaths } from '../../../workflow/storage.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
 const MISSING_HASH = '0000000000000000';
+const CREATED = '2026-07-18T00:00:00.000Z';   // anchors the nested docs-tree folder segment
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -47,10 +48,10 @@ function payload(env: Envelope): Record<string, unknown> {
 // ---------------------------------------------------------------------------
 
 function seedApprovedDefine(repo: string, epicHash: string): void {
-	const paths = defineArtifactPaths(repo, epicHash);
+	const paths = defineArtifactPaths(repo, epicHash, CREATED, 'epic', 'tag-filtering');
 	mkdirSync(dirname(paths.json), { recursive: true });
 	writeFileSync(paths.json, JSON.stringify({
-		meta: { workflow: 'define', runId: 'define-1', schemaVersion: 1, epicHash, epicSlug: 'tag-filtering' },
+		meta: { workflow: 'define', runId: 'define-1', schemaVersion: 1, epicHash, epicSlug: 'tag-filtering', createdAt: CREATED },
 		body: {
 			flavor: 'enhancement',
 			problem: 'Users cannot filter todos by tag. This blocks triage.',
@@ -217,7 +218,7 @@ async function walkToSynthesize(
 // Tests
 // ---------------------------------------------------------------------------
 
-test('design.epic: happy path writes _hld.md under docs/designs/<slug>/', async () => {
+test('design.epic: happy path writes HLD.md under docs/epics/<slug>-E.../', async () => {
 	_clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-hld-e2e-'));
@@ -232,9 +233,11 @@ test('design.epic: happy path writes _hld.md under docs/designs/<slug>/', async 
 		}));
 		assert.equal(done['next'], 'done', JSON.stringify(done));
 		const outPath = done['path'] as string;
-		// Markdown is named by the epicSlug ('tag-filtering'); the
-		// canonical JSON stays hash-named.
-		assert.ok(outPath.endsWith(`/docs/designs/HLD-tag-filtering.md`), outPath);
+		// Nested docs-tree (S002): the HLD is an item-root singleton at the
+		// work-item folder (labelled by epicSlug 'tag-filtering'); the canonical
+		// JSON stays hash-named. Dynamic createdAt → assert tree + basename.
+		assert.ok(outPath.includes('/docs/epics/'), outPath);
+		assert.ok(outPath.endsWith('/HLD.md'), outPath);
 		assert.ok(existsSync(outPath));
 		const md = readFileSync(outPath, 'utf8');
 		assert.ok(md.includes('## Framework summary'));

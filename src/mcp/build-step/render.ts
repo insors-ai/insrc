@@ -105,9 +105,9 @@ function baseVars(repoPath: string, ref: ResolvedTask): Record<string, string> {
 		dependsOn,
 		acceptanceChecks,
 		tests,
-		lldPath:          lldMdRel(ref.epicSlug, ref.storyId),
-		hldPath:          hldMdRel(ref.epicSlug),
-		planPath:         planMdRel(ref.epicSlug, ref.storyId),
+		lldPath:          lldMdRel(ref.epicHash, ref.createdAt, 'epic', ref.epicSlug, ref.storyId),
+		hldPath:          hldMdRel(ref.epicHash, ref.createdAt, 'epic', ref.epicSlug),
+		planPath:         planMdRel(ref.epicHash, ref.createdAt, 'epic', ref.epicSlug, ref.storyId),
 		typecheckCmd:     TYPECHECK_CMD,
 		testCmd:          TEST_CMD,
 	};

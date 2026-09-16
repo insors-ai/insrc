@@ -29,6 +29,7 @@ import { planArtifactPaths } from '../storage.js';
 
 const HASH = 'a1b2c3d4e5f60718';
 const SLUG = 'demo-feature';
+const CREATED = '2026-07-17T07:42:28.275Z';
 
 // ---------------------------------------------------------------------------
 // Fake gh/git — handles `gh issue create` (URL) AND `gh api` issue-create
@@ -87,7 +88,7 @@ function setup(pushTasks: boolean): { repo: string; hldJson: string; lldJson: st
 
 	const defineJson = join(repo, '.insrc/artifacts', `DEF-${HASH}.json`);
 	writeJson(defineJson, {
-		meta: { workflow: 'define', runId: 'd1', repoPath: repo, epicHash: HASH, epicSlug: SLUG, createdAt: '', schemaVersion: 1 },
+		meta: { workflow: 'define', runId: 'd1', repoPath: repo, epicHash: HASH, epicSlug: SLUG, createdAt: CREATED, schemaVersion: 1 },
 		body: {
 			flavor: 'new-capability', problem: 'Users cannot filter. This blocks onboarding.',
 			nonGoals: [], assumptions: [], constraints: [],
@@ -101,7 +102,7 @@ function setup(pushTasks: boolean): { repo: string; hldJson: string; lldJson: st
 	const lldJson = join(repo, '.insrc/artifacts', `LLD-${HASH}-s1.json`);
 	writeJson(lldJson, { meta: { workflow: 'design.story', runId: 'l1', repoPath: repo, epicHash: HASH, epicSlug: SLUG, storyId: 's1', hldBaseRunId: 'h1', hldEffectiveHash: 'deadbeefcafe', hldAmendmentsApplied: [], schemaVersion: 1 }, body: {} });
 
-	const planJson = planArtifactPaths(repo, HASH, 's1').json;
+	const planJson = planArtifactPaths(repo, HASH, 's1', CREATED, 'epic', SLUG).json;
 	writeJson(planJson, {
 		meta: { workflow: 'plan', runId: 'p1', repoPath: repo, epicHash: HASH, epicSlug: SLUG, storyId: 's1', lldRunId: 'l1', lldEffectiveHash: 'deadbeefcafe', schemaVersion: 1 },
 		body: {

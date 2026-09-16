@@ -32,6 +32,7 @@ import { defineArtifactPaths } from '../../../workflow/storage.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
 const MISSING_HASH = '0000000000000000';
+const CREATED = '2026-07-18T00:00:00.000Z';   // anchors the nested docs-tree folder segment
 
 import { handleWorkflowStep } from '../handler.js';
 import { registerWorkflowRunners } from '../../../workflow/index.js';
@@ -74,11 +75,11 @@ function seedApprovedEpic(repo: string, epicHash: string, opts: { withGithubConf
 		// A global `default` may not target a repo (its owner/repo is ignored).
 		disposer = stubGithubConfig(repo, { repos: { [repo]: { type: 'github', owner: 'myorg', repo: 'myrepo' } } });
 	}
-	const paths = defineArtifactPaths(repo, epicHash);
+	const paths = defineArtifactPaths(repo, epicHash, CREATED, 'epic', 'tag-filtering');
 	mkdirSync(dirname(paths.json), { recursive: true });
 	const path = paths.json;
 	writeFileSync(path, JSON.stringify({
-		meta: { workflow: 'define', runId: 'def-1', schemaVersion: 1, epicHash, epicSlug: 'tag-filtering' },
+		meta: { workflow: 'define', runId: 'def-1', schemaVersion: 1, epicHash, epicSlug: 'tag-filtering', createdAt: CREATED },
 		body: {
 			flavor: 'enhancement',
 			problem: 'Users cannot filter todos by tag.',
@@ -216,7 +217,7 @@ test('tracker.push: happy path patches Epic meta.tracker with refs', async () =>
 		const { done } = await walk(repo, slug, 'tracker.push', PUSH_EXEC_OK, PUSH_VERIFY_OK);
 		assert.equal(done['next'], 'done', JSON.stringify(done));
 
-		const epic = JSON.parse(readFileSync(defineArtifactPaths(repo, slug).json, 'utf8'));
+		const epic = JSON.parse(readFileSync(defineArtifactPaths(repo, slug, CREATED, 'epic', 'tag-filtering').json, 'utf8'));
 		assert.equal(epic.meta.tracker.adapter, 'github');
 		assert.equal(epic.meta.tracker.epicRef, 'myorg/myrepo#100');
 		assert.deepEqual(epic.meta.tracker.storyRefs, { s1: 'myorg/myrepo#101', s2: 'myorg/myrepo#102' });
@@ -244,7 +245,7 @@ test('tracker.push: checklist failure refuses synthesize + leaves meta untouched
 		assert.equal(done['next'], 'error', JSON.stringify(done));
 		assert.match((done['error'] as { message: string }).message, /storyLabelled/);
 
-		const epic = JSON.parse(readFileSync(defineArtifactPaths(repo, slug).json, 'utf8'));
+		const epic = JSON.parse(readFileSync(defineArtifactPaths(repo, slug, CREATED, 'epic', 'tag-filtering').json, 'utf8'));
 		assert.equal(epic.meta.tracker, undefined);
 	} finally {
 		rmSync(repo, { recursive: true, force: true });
@@ -265,7 +266,7 @@ test('tracker.sync: happy path merges status + lastSyncedAt into meta.tracker', 
 		const { done } = await walk(repo, slug, 'tracker.sync', SYNC_EXEC_OK, SYNC_VERIFY_OK);
 		assert.equal(done['next'], 'done', JSON.stringify(done));
 
-		const epic = JSON.parse(readFileSync(defineArtifactPaths(repo, slug).json, 'utf8'));
+		const epic = JSON.parse(readFileSync(defineArtifactPaths(repo, slug, CREATED, 'epic', 'tag-filtering').json, 'utf8'));
 		assert.deepEqual(epic.meta.tracker.storyStatus, { s1: 'in-progress', s2: 'open' });
 		assert.equal(epic.meta.tracker.epicStatus, 'in-progress');
 		assert.equal(epic.meta.tracker.lastSyncedAt, '2026-07-12T02:00:00Z');
@@ -323,9 +324,9 @@ test('tracker.push: refuses when Epic is unapproved', async () => {
 	try {
 		// Seed but do NOT approve. The approval check fires before
 		// the github-config check, so we don't need to stub either.
-		const _def=defineArtifactPaths(repo, slug); mkdirSync(dirname(_def.json), { recursive: true });
+		const _def=defineArtifactPaths(repo, slug, CREATED, 'epic', 'tag-filtering'); mkdirSync(dirname(_def.json), { recursive: true });
 		writeFileSync(_def.json, JSON.stringify({
-			meta: { workflow: 'define', runId: 'def-1', schemaVersion: 1 },
+			meta: { workflow: 'define', runId: 'def-1', schemaVersion: 1, createdAt: CREATED },
 			body: {
 				flavor: 'enhancement', problem: 'x', nonGoals: [], assumptions: [], constraints: [],
 				stories: [{ id: 's1', title: 't', userValue: 'v', acceptanceCriteria: [] }],

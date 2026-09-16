@@ -58,7 +58,7 @@ function specArtifact(approved: boolean): SpecArtifact {
 }
 
 function writeSpec(repo: string, artifact: SpecArtifact): { md: string; json: string } {
-	const paths = specArtifactPaths(repo, artifact.meta.specHash!, artifact.meta.epicSlug);
+	const paths = specArtifactPaths(repo, artifact.meta.specHash!, artifact.meta.createdAt, 'standalone', artifact.meta.epicSlug);
 	writeAtomic(paths.json, JSON.stringify(artifact, null, 2) + '\n');
 	writeAtomic(paths.md, renderSpecMarkdown(artifact));
 	return paths;

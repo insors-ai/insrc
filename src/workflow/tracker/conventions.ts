@@ -117,8 +117,8 @@ export function renderEpicBody(define: DefineArtifact, epicSlug: string, repo?: 
 	}
 	lines.push('');
 	lines.push('## Design references', '');
-	lines.push(docRef('HLD', hldMdRel(epicSlug), repo));
-	lines.push(docRef('Define', defineMdRel(epicSlug), repo));
+	lines.push(docRef('HLD', hldMdRel(define.meta.epicHash ?? epicSlug, define.meta.createdAt, 'epic', epicSlug), repo));
+	lines.push(docRef('Define', defineMdRel(define.meta.epicHash ?? epicSlug, define.meta.createdAt, 'epic', epicSlug), repo));
 	lines.push('');
 	lines.push(`_epic slug: ${epicSlug}_`);
 	return lines.join('\n');
@@ -126,7 +126,7 @@ export function renderEpicBody(define: DefineArtifact, epicSlug: string, repo?: 
 
 /** Story issue body — Epic back-ref, user value, acceptance criteria,
  *  slug-based LLD link. */
-export function renderStoryBody(epicRef: string, story: DefineStory, epicSlug: string, repo?: RepoRef, workflowId?: string): string {
+export function renderStoryBody(epicRef: string, story: DefineStory, epicSlug: string, epicHash: string, createdAt: string, repo?: RepoRef, workflowId?: string): string {
 	const lines: string[] = [];
 	if (workflowId !== undefined && workflowId.length > 0) lines.push(idMarker(workflowId));
 	lines.push(`**Epic:** #${issueNumber(epicRef)}`, '');
@@ -139,7 +139,7 @@ export function renderStoryBody(epicRef: string, story: DefineStory, epicSlug: s
 		lines.push('');
 	}
 	lines.push('## Design references', '');
-	lines.push(docRef('LLD', lldMdRel(epicSlug, story.id), repo));
+	lines.push(docRef('LLD', lldMdRel(epicHash, createdAt, 'epic', epicSlug, story.id), repo));
 	if (story.sizeEstimate !== undefined) {
 		lines.push('', `Size: ${story.sizeEstimate}`);
 	}
@@ -171,7 +171,7 @@ export function updateEpicTaskList(currentBody: string, storyId: string, storyRe
 /** Task issue body — Story back-ref, size, summary, per-Task acceptance
  *  checks + named tests, and a slug-based link to the plan doc. Rendered
  *  for each PlanTask when `pushTasks` is enabled. */
-export function renderTaskBody(storyRef: string, storyId: string, task: PlanTask, epicSlug: string, repo?: RepoRef, workflowId?: string): string {
+export function renderTaskBody(storyRef: string, storyId: string, task: PlanTask, epicSlug: string, epicHash: string, createdAt: string, repo?: RepoRef, workflowId?: string): string {
 	const lines: string[] = [];
 	if (workflowId !== undefined && workflowId.length > 0) lines.push(idMarker(workflowId));
 	lines.push(`**Story:** #${issueNumber(storyRef)} (${storyId})`, '');
@@ -191,7 +191,7 @@ export function renderTaskBody(storyRef: string, storyId: string, task: PlanTask
 		lines.push('');
 	}
 	lines.push('## Design references', '');
-	lines.push(docRef('Plan', planMdRel(epicSlug, storyId), repo));
+	lines.push(docRef('Plan', planMdRel(epicHash, createdAt, 'epic', epicSlug, storyId), repo));
 	lines.push('', `_task: ${storyId}/${task.id}_`);
 	return lines.join('\n');
 }

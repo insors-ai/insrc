@@ -29,6 +29,8 @@ import {
 } from '../storage.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
+const CREATED = '2026-07-17T07:42:28.275Z';   // → E20260717a3f4b8c9
+const EPIC_SEGMENT = 'E20260717a3f4b8c9';      // E<YYYYMMDD><hash8>, hash8 = HASH.slice(0,8)
 
 test('writeAtomic creates parent dirs + writes content', () => {
 	const tmp = mkdtempSync(join(tmpdir(), 'insrc-storage-'));
@@ -67,41 +69,41 @@ test('stubArtifactPaths returns docs/stub layout', () => {
 	assert.equal(p.json, '/repo/docs/stub/my-slug.json');
 });
 
-test('defineArtifactPaths — md in docs/, json in .insrc/artifacts/', () => {
-	const p = defineArtifactPaths('/repo', HASH);
-	assert.equal(p.md,   `/repo/docs/defines/DEF-${HASH}.md`);
+test('defineArtifactPaths — nested md in docs/epics/, json in .insrc/artifacts/', () => {
+	const p = defineArtifactPaths('/repo', HASH, CREATED, 'epic');
+	assert.equal(p.md,   `/repo/docs/epics/${HASH}-${EPIC_SEGMENT}/DEF.md`);
 	assert.equal(p.json, `/repo/.insrc/artifacts/DEF-${HASH}.json`);
 });
 
-test('hldArtifactPaths — md in docs/, json in .insrc/artifacts/', () => {
-	const p = hldArtifactPaths('/repo', HASH);
-	assert.equal(p.md,   `/repo/docs/designs/HLD-${HASH}.md`);
+test('hldArtifactPaths — nested md in docs/epics/, json in .insrc/artifacts/', () => {
+	const p = hldArtifactPaths('/repo', HASH, CREATED, 'epic');
+	assert.equal(p.md,   `/repo/docs/epics/${HASH}-${EPIC_SEGMENT}/HLD.md`);
 	assert.equal(p.json, `/repo/.insrc/artifacts/HLD-${HASH}.json`);
 });
 
-test('lldArtifactPaths — md in docs/, json in .insrc/artifacts/', () => {
-	const p = lldArtifactPaths('/repo', HASH, 's3');
-	assert.equal(p.md,   `/repo/docs/designs/LLD-${HASH}-s3.md`);
+test('lldArtifactPaths — story-scoped nested md, json in .insrc/artifacts/', () => {
+	const p = lldArtifactPaths('/repo', HASH, 's3', CREATED, 'epic');
+	assert.equal(p.md,   `/repo/docs/epics/${HASH}-${EPIC_SEGMENT}/S003/LLD.md`);
 	assert.equal(p.json, `/repo/.insrc/artifacts/LLD-${HASH}-s3.json`);
 });
 
-test('markdown is named by slug; json stays named by hash', () => {
-	const d = defineArtifactPaths('/repo', HASH, 'add-tag-filter');
-	assert.equal(d.md,   `/repo/docs/defines/DEF-add-tag-filter.md`);
+test('md folder is labelled by slug; json stays named by hash', () => {
+	const d = defineArtifactPaths('/repo', HASH, CREATED, 'epic', 'add-tag-filter');
+	assert.equal(d.md,   `/repo/docs/epics/add-tag-filter-${EPIC_SEGMENT}/DEF.md`);
 	assert.equal(d.json, `/repo/.insrc/artifacts/DEF-${HASH}.json`);
 
-	const h = hldArtifactPaths('/repo', HASH, 'add-tag-filter');
-	assert.equal(h.md,   `/repo/docs/designs/HLD-add-tag-filter.md`);
+	const h = hldArtifactPaths('/repo', HASH, CREATED, 'epic', 'add-tag-filter');
+	assert.equal(h.md,   `/repo/docs/epics/add-tag-filter-${EPIC_SEGMENT}/HLD.md`);
 	assert.equal(h.json, `/repo/.insrc/artifacts/HLD-${HASH}.json`);
 
-	const l = lldArtifactPaths('/repo', HASH, 's3', 'add-tag-filter');
-	assert.equal(l.md,   `/repo/docs/designs/LLD-add-tag-filter-s3.md`);
+	const l = lldArtifactPaths('/repo', HASH, 's3', CREATED, 'epic', 'add-tag-filter');
+	assert.equal(l.md,   `/repo/docs/epics/add-tag-filter-${EPIC_SEGMENT}/S003/LLD.md`);
 	assert.equal(l.json, `/repo/.insrc/artifacts/LLD-${HASH}-s3.json`);
 });
 
-test('slug segment is sanitised against path separators', () => {
-	const p = defineArtifactPaths('/repo', HASH, 'a/b evil');
-	assert.equal(p.md, `/repo/docs/defines/DEF-a-b-evil.md`);
+test('slug label is sanitised against path separators', () => {
+	const p = defineArtifactPaths('/repo', HASH, CREATED, 'epic', 'a/b evil');
+	assert.equal(p.md, `/repo/docs/epics/a-b-evil-${EPIC_SEGMENT}/DEF.md`);
 });
 
 test('amendmentArtifactPath uses the AMD- prefix inside .insrc/artifacts/', () => {

@@ -28,12 +28,13 @@ import type { DefineArtifact, DefineStory } from '../artifacts/define.js';
 import type { HldBody } from '../artifacts/hld.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
+const CREATED = '2026-07-17T07:42:28.275Z';
 
 function seedDefine(repo: string, opts: { approved: boolean; slug?: string; stories?: DefineStory[] } = { approved: true }): string {
-	const paths = defineArtifactPaths(repo, HASH);
+	const paths = defineArtifactPaths(repo, HASH, CREATED, 'epic', opts.slug ?? 'tag-filtering');
 	mkdirSync(dirname(paths.json), { recursive: true });
 	const define: DefineArtifact = {
-		meta: { workflow: 'define', runId: 'r1', repoPath: repo, createdAt: 'x', model: 'client', elapsedMs: 0, repoIndexedAt: 'x', schemaVersion: 1, epicHash: HASH, epicSlug: opts.slug ?? 'tag-filtering' },
+		meta: { workflow: 'define', runId: 'r1', repoPath: repo, createdAt: CREATED, model: 'client', elapsedMs: 0, repoIndexedAt: 'x', schemaVersion: 1, epicHash: HASH, epicSlug: opts.slug ?? 'tag-filtering' },
 		body: {
 			flavor: 'enhancement',
 			problem: 'Users cannot filter todos by tag today; only status filtering exists.',
@@ -96,7 +97,7 @@ test('nextStoryId returns s<max+1>', () => {
 			{ id: 's1', title: 'a', userValue: 'v', acceptanceCriteria: [] },
 			{ id: 's3', title: 'b', userValue: 'v', acceptanceCriteria: [] },
 		] });
-		const define = JSON.parse(readFileSync(defineArtifactPaths(repo, HASH).json, 'utf8')) as DefineArtifact;
+		const define = JSON.parse(readFileSync(defineArtifactPaths(repo, HASH, CREATED, 'epic').json, 'utf8')) as DefineArtifact;
 		assert.equal(nextStoryId(define), 's4');
 	} finally {
 		rmSync(repo, { recursive: true, force: true });
@@ -118,7 +119,7 @@ test('appendStoryToDefine appends the Story, re-renders md, and retains approval
 		const onDisk = JSON.parse(readFileSync(jsonPath, 'utf8')) as DefineArtifact;
 		assert.equal(onDisk.body.stories.length, 2);
 		// md re-rendered with the new story title
-		const mdPath = defineArtifactPaths(repo, HASH, next.meta.epicSlug).md;
+		const mdPath = defineArtifactPaths(repo, HASH, next.meta.createdAt, 'epic', next.meta.epicSlug).md;
 		assert.ok(existsSync(mdPath));
 		assert.match(readFileSync(mdPath, 'utf8'), /Filter by multiple tags/);
 	} finally {

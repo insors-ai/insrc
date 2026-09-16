@@ -41,6 +41,7 @@ import type { LLMProvider } from '../../../shared/types.js';
 import type { QuestionResolution as QR } from '../../../workflow/types.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
+const CREATED = '2026-07-18T00:00:00.000Z';   // anchors the nested docs-tree folder segment
 
 interface Envelope { readonly content: readonly { readonly type: 'text'; readonly text: string }[]; readonly isError?: boolean }
 function payload(env: Envelope): Record<string, unknown> {
@@ -70,10 +71,10 @@ function stubProvider(): LLMProvider {
 // ---------------------------------------------------------------------------
 
 function seed(repo: string, hldOpenQuestions: readonly string[]): void {
-	const dp = defineArtifactPaths(repo, HASH);
+	const dp = defineArtifactPaths(repo, HASH, CREATED, 'epic', 'tag-filtering');
 	mkdirSync(dirname(dp.json), { recursive: true });
 	writeFileSync(dp.json, JSON.stringify({
-		meta: { workflow: 'define', runId: 'define-1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering' },
+		meta: { workflow: 'define', runId: 'define-1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', createdAt: CREATED },
 		body: {
 			flavor: 'enhancement', problem: 'Users cannot filter todos by tag.',
 			nonGoals: [], assumptions: [{ text: 'Todos have tags', confidence: 'high', source: 'c1' }],
@@ -88,9 +89,9 @@ function seed(repo: string, hldOpenQuestions: readonly string[]): void {
 	}, null, 2));
 	approveArtifactByJsonPath(dp.json);
 
-	const hp = hldArtifactPaths(repo, HASH);
+	const hp = hldArtifactPaths(repo, HASH, CREATED, 'epic', 'tag-filtering');
 	writeFileSync(hp.json, JSON.stringify({
-		meta: { workflow: 'design.epic', runId: 'hld-run-1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', tracker: { epicRef: 'acme/widgets#5' } },
+		meta: { workflow: 'design.epic', runId: 'hld-run-1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', createdAt: CREATED, tracker: { epicRef: 'acme/widgets#5' } },
 		body: {
 			frameworkSummary: 'Extract TagFilter service.',
 			architectureShape: 'TagFilter owns the tag index [[c1]]; sidebar consumes it.',
@@ -114,7 +115,7 @@ function seed(repo: string, hldOpenQuestions: readonly string[]): void {
 }
 
 function readHldResolutions(repo: string): Record<string, QR> {
-	const hld = JSON.parse(readFileSync(hldArtifactPaths(repo, HASH).json, 'utf8')) as { meta: { questionResolutions?: Record<string, QR> } };
+	const hld = JSON.parse(readFileSync(hldArtifactPaths(repo, HASH, CREATED, 'epic', 'tag-filtering').json, 'utf8')) as { meta: { questionResolutions?: Record<string, QR> } };
 	return hld.meta.questionResolutions ?? {};
 }
 

@@ -31,6 +31,7 @@ import { defineArtifactPaths, hldArtifactPaths } from '../../../workflow/storage
 
 const HASH = 'a3f4b8c9d1e2f3a4';
 const MISSING_HASH = '0000000000000000';
+const CREATED = '2026-07-18T00:00:00.000Z';   // anchors the nested docs-tree folder segment
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -55,11 +56,11 @@ interface SeedOpts { readonly flavor: 'enhancement' | 'new-capability' }
 
 function seed(repo: string, epicHash: string, opts: SeedOpts): void {
 	// Approved Define
-	const definePaths = defineArtifactPaths(repo, epicHash);
+	const definePaths = defineArtifactPaths(repo, epicHash, CREATED, 'epic', 'tag-filtering');
 	mkdirSync(dirname(definePaths.json), { recursive: true });
 	const definePath = definePaths.json;
 	writeFileSync(definePath, JSON.stringify({
-		meta: { workflow: 'define', runId: 'define-1', schemaVersion: 1, epicHash, epicSlug: 'tag-filtering' },
+		meta: { workflow: 'define', runId: 'define-1', schemaVersion: 1, epicHash, epicSlug: 'tag-filtering', createdAt: CREATED },
 		body: {
 			flavor: opts.flavor,
 			problem: 'Users cannot filter todos by tag.',
@@ -77,11 +78,11 @@ function seed(repo: string, epicHash: string, opts: SeedOpts): void {
 	approveArtifactByJsonPath(definePath);
 
 	// Approved HLD
-	const hldPaths = hldArtifactPaths(repo, epicHash);
+	const hldPaths = hldArtifactPaths(repo, epicHash, CREATED, 'epic', 'tag-filtering');
 	mkdirSync(dirname(hldPaths.json), { recursive: true });
 	const hldPath = hldPaths.json;
 	writeFileSync(hldPath, JSON.stringify({
-		meta: { workflow: 'design.epic', runId: 'hld-run-1', schemaVersion: 1, epicHash, epicSlug: 'tag-filtering' },
+		meta: { workflow: 'design.epic', runId: 'hld-run-1', schemaVersion: 1, epicHash, epicSlug: 'tag-filtering', createdAt: CREATED },
 		body: {
 			frameworkSummary: 'Extract TagFilter service.',
 			architectureShape: 'TagFilter owns the tag index [[c1]]; sidebar consumes it.',
@@ -313,7 +314,7 @@ async function walkToSynthesize(
 // Tests
 // ---------------------------------------------------------------------------
 
-test('design.story enhancement: happy path writes LLD under docs/designs/<slug>/<storyId>.md', async () => {
+test('design.story enhancement: happy path writes LLD under docs/epics/<slug>-E.../S<nnn>/LLD.md', async () => {
 	_clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-lld-e2e-'));
@@ -328,9 +329,11 @@ test('design.story enhancement: happy path writes LLD under docs/designs/<slug>/
 		}));
 		assert.equal(done['next'], 'done', JSON.stringify(done));
 		const outPath = done['path'] as string;
-		// Markdown is named by the epicSlug ('tag-filtering'); the
-		// canonical JSON stays hash-named.
-		assert.ok(outPath.endsWith(`/docs/designs/LLD-tag-filtering-s1.md`), outPath);
+		// Nested docs-tree (S002): the LLD is a story-scoped artifact under the
+		// work-item folder's S<nnn>/ subfolder (labelled by epicSlug); the
+		// canonical JSON stays hash-named. Dynamic createdAt → assert tree + basename.
+		assert.ok(outPath.includes('/docs/epics/'), outPath);
+		assert.ok(/\/S001\/LLD\.md$/.test(outPath), outPath);
 		assert.ok(existsSync(outPath));
 		const md = readFileSync(outPath, 'utf8');
 		// With a valid createdAt the LLD title leads with the hierarchical story id.

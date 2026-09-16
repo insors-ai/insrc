@@ -65,7 +65,7 @@ function seedHld(repo: string, openQs: readonly string[]): void {
 
 function seedLld(repo: string, storyId: string, openQs: readonly string[]): void {
 	writeFileSync(join(artifactsDir(repo), `${lldArtifactId(HASH, storyId)}.json`), JSON.stringify({
-		meta: { workflow: 'design.story', runId: `lld-${storyId}`, schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', storyId, hldBaseRunId: 'hld-run-1', hldEffectiveHash: 'basis', hldAmendmentsApplied: [] },
+		meta: { workflow: 'design.story', runId: `lld-${storyId}`, schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', createdAt: CREATED_AT, storyId, hldBaseRunId: 'hld-run-1', hldEffectiveHash: 'basis', hldAmendmentsApplied: [] },
 		body: {
 			hldContextSlice: { frameworkSummary: 'fw', rolloutPhase: 'p1', ownedContracts: [], consumedContracts: [], boundary: { storyId, owns: [], depends: [], internal: 'x' }, nonFunctional: {} },
 			contractDetails: { surfaceLevel: 'internal', api: [] },

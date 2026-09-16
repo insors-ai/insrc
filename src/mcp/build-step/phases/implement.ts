@@ -20,7 +20,7 @@
 
 import { getLogger } from '../../../shared/logger.js';
 import { readLldArtifact } from '../../../workflow/gates.js';
-import { lldMdRel } from '../../../workflow/storage.js';
+import { lldMdRel, workItemAnchorCreatedAt, workItemKindOf } from '../../../workflow/storage.js';
 import { renderResolvedDecisions } from '../../../workflow/questions.js';
 import { admitBuild, admitStandaloneBuild } from '../../../workflow/runners/build/admission.js';
 import {
@@ -126,7 +126,7 @@ function handleStandaloneImplement(
 	if (producesLld) {
 		const lld = readLldArtifact(repoPath, epicHash, storyId);
 		resolvedDecisions = renderResolvedDecisions(lld.meta.questionResolutions);
-		lldMdRelPath = lldMdRel(lld.meta.epicSlug ?? epicHash, storyId);
+		lldMdRelPath = lldMdRel(epicHash, workItemAnchorCreatedAt(lld.meta), workItemKindOf(lld.meta), lld.meta.epicSlug ?? epicHash, storyId);
 	} else {
 		// Trivial — no upstream artifact; persist the tracking record so the
 		// change is on the ledger.

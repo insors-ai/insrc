@@ -61,14 +61,18 @@ export async function handleSynthesize(
 	// The finalized artifact carries the definitive epicHash in its
 	// meta (Define mints it; downstream workflows echo it). Read it
 	// back to pick paths, so we never diverge from the artifact.
-	const finalizedMeta = (result.finalized.artifact as { meta?: { epicHash?: string; epicSlug?: string; specHash?: string; storyId?: string } }).meta ?? {};
+	const finalizedMeta = (result.finalized.artifact as { meta?: { epicHash?: string; epicSlug?: string; specHash?: string; storyId?: string; createdAt?: string; epicCreatedAt?: string; standalone?: boolean } }).meta ?? {};
 	const storyIdParam = typeof state.intent.params['storyId'] === 'string' ? state.intent.params['storyId'] as string : undefined;
 	const paths = pathsForWorkflow({
 		workflow: state.intent.workflow, repoPath: state.intent.repoPath,
 		epicKey: state.epicKey, runId: state.runId,
+		// The work-item folder anchor (sc2): meta.epicCreatedAt when stamped, else
+		// this artifact's own createdAt.
+		createdAtISO: finalizedMeta.epicCreatedAt ?? finalizedMeta.createdAt ?? new Date().toISOString(),
 		epicHash: finalizedMeta.epicHash, epicSlug: finalizedMeta.epicSlug,
 		specHash: finalizedMeta.specHash,
 		storyId: finalizedMeta.storyId, storyIdParam,
+		standalone: finalizedMeta.standalone,
 	});
 	writeAtomic(paths.md,   result.finalized.renderedMd);
 	writeAtomic(paths.json, result.finalized.renderedJson);

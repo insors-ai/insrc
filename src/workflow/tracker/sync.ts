@@ -11,7 +11,7 @@
  */
 
 import { GithubConfigError, resolveGithubConfig } from '../config/github.js';
-import { defineArtifactPaths } from '../storage.js';
+import { artifactJsonPath, defineArtifactId } from '../storage.js';
 import { ghAuthOk, ghGetIssueState } from './github.js';
 import { mapIssueStatus, type TrackerStatus } from './conventions.js';
 import { patchTrackerMeta, readTrackerMeta } from './refs.js';
@@ -22,8 +22,8 @@ export type SyncResult =
 	| { readonly status: 'failed';  readonly reason: string };
 
 export function syncTracker(repoPath: string, epicHash: string): SyncResult {
-	const definePaths = defineArtifactPaths(repoPath, epicHash);
-	const tracker = readTrackerMeta(definePaths.json);
+	const defineJson = artifactJsonPath(repoPath, defineArtifactId(epicHash));
+	const tracker = readTrackerMeta(defineJson);
 	const epicRef = tracker?.epicRef;
 	if (typeof epicRef !== 'string' || epicRef.length === 0) {
 		return { status: 'skipped', reason: 'Epic not pushed yet (no epicRef in meta.tracker)' };
@@ -53,7 +53,7 @@ export function syncTracker(repoPath: string, epicHash: string): SyncResult {
 			const s = ghGetIssueState(owner, repo, ref);
 			storyStatus[storyId] = mapIssueStatus(s.state, s.labels);
 		}
-		patchTrackerMeta(definePaths.json, { epicStatus, storyStatus, lastSyncedAt: new Date().toISOString() });
+		patchTrackerMeta(defineJson, { epicStatus, storyStatus, lastSyncedAt: new Date().toISOString() });
 		return { status: 'synced', epicStatus, storyStatus };
 	} catch (err) {
 		return { status: 'failed', reason: err instanceof Error ? err.message : String(err) };

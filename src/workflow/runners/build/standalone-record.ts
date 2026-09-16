@@ -22,7 +22,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 
 import { getLogger } from '../../../shared/logger.js';
-import { writeAtomic, buildArtifactPaths } from '../../storage.js';
+import { writeAtomic, artifactJsonPath, buildArtifactId, buildArtifactPaths, buildRecordFolderArgs } from '../../storage.js';
 
 const log = getLogger('workflow:build-record');
 
@@ -149,9 +149,17 @@ export function renderPlanBuildRecordMd(rec: BuildRecord): string {
  * byte-identical.
  */
 export function persistBuildRecord(repoPath: string, rec: BuildRecord): { md: string; json: string } {
-	const paths = buildArtifactPaths(repoPath, rec.meta.epicHash, rec.meta.storyId);
-	const merged = mergeWithPrior(paths.json, rec);
-	writeAtomic(paths.json, JSON.stringify(merged, null, 2) + '\n');
+	// The json path is hash-flat (identity-free), so resolve + merge FIRST, then
+	// key the nested md folder on the MERGED record. mergeWithPrior preserves the
+	// original createdAt across an upsert, and for a Trivial standalone (no LLD)
+	// the folder's E<date> anchor IS that createdAt — deriving it from the merged
+	// record keeps a re-run in the SAME folder as the first build (and as the CR,
+	// which reads the persisted createdAt) even across a UTC-midnight boundary.
+	const jsonPath = artifactJsonPath(repoPath, buildArtifactId(rec.meta.epicHash, rec.meta.storyId));
+	const merged = mergeWithPrior(jsonPath, rec);
+	writeAtomic(jsonPath, JSON.stringify(merged, null, 2) + '\n');
+	const fa = buildRecordFolderArgs(repoPath, merged.meta.epicHash, merged.meta.storyId, merged.meta.standalone, merged.meta.createdAt);
+	const paths = buildArtifactPaths(repoPath, merged.meta.epicHash, merged.meta.storyId, fa.createdAtISO, fa.workItemKind, fa.epicSlug);
 	const md = merged.meta.standalone
 		? renderStandaloneBuildRecordMd(merged as unknown as StandaloneBuildRecord)
 		: renderPlanBuildRecordMd(merged);

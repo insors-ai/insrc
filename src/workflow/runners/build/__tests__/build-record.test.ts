@@ -29,7 +29,7 @@ import {
 	type BuildRecord,
 	type StandaloneBuildRecord,
 } from '../standalone-record.js';
-import { buildArtifactPaths } from '../../../storage.js';
+import { artifactJsonPath, buildArtifactId } from '../../../storage.js';
 import { approveWorkflowTarget } from '../../../gates.js';
 
 const HASH = 'abc123def4567890';
@@ -56,7 +56,7 @@ const planRec = (tasks: { id: string; passed?: boolean }[], at: string): BuildRe
 test('persistBuildRecord writes a fresh standalone:false record at buildArtifactPaths when none exists', () => {
 	withRepo((repo) => {
 		const { json, md } = persistBuildRecord(repo, planRec([{ id: 't1', passed: true }], '2026-01-01T00:00:00.000Z'));
-		assert.equal(json, buildArtifactPaths(repo, HASH, 's1').json);
+		assert.equal(json, artifactJsonPath(repo, buildArtifactId(HASH, 's1')));
 		const rec = readJson(json);
 		assert.equal(rec.meta['standalone'], false);
 		assert.equal(rec.meta['workflow'], 'build');
@@ -116,7 +116,7 @@ test('an existing meta.approvedAt (+ reviewOverride) is PRESERVED across an upse
 
 test('a malformed prior record is treated as absent (fail-open fresh write), not a throw', () => {
 	withRepo((repo) => {
-		const { json } = buildArtifactPaths(repo, HASH, 's1');
+		const json = artifactJsonPath(repo, buildArtifactId(HASH, 's1'));
 		writeFileSync(json, '{ not valid json');
 		assert.doesNotThrow(() => persistBuildRecord(repo, planRec([{ id: 't1', passed: true }], '2026-01-01T00:00:00.000Z')));
 		const rec = readJson(json);
@@ -156,5 +156,28 @@ test('approveWorkflowTarget completes the persisted plan-driven BUILD record (ke
 		assert.deepEqual(out.approved.map(a => a.path), [json], 'the BUILD record is approved');
 		assert.equal(out.skipped.length, 0);
 		assert.equal(typeof readJson(json).meta['approvedAt'], 'string', 'meta.approvedAt stamped');
+	});
+});
+
+test('S002 regression: a Trivial-standalone re-run with a fresh createdAt keeps the SAME md folder (folder anchored on the PRESERVED createdAt, so BUILD + CR never split)', () => {
+	withRepo(repo => {
+		// First build — no upstream LLD (Trivial), so the folder E<date> anchor is
+		// the record's OWN createdAt.
+		const first: StandaloneBuildRecord = {
+			meta: { workflow: 'build', standalone: true, sizeClass: 'trivial', epicHash: HASH, storyId: 's1', createdAt: '2026-01-01T23:59:59.000Z' },
+			body: { focus: 'f', producesLld: false },
+		};
+		const p1 = persistStandaloneBuildRecord(repo, first);
+		// A re-run the next UTC day mints a FRESH createdAt (as implement.ts does).
+		const rerun: StandaloneBuildRecord = {
+			...first,
+			meta: { ...first.meta, createdAt: '2026-01-02T00:00:01.000Z' },
+		};
+		const p2 = persistStandaloneBuildRecord(repo, rerun);
+		// The merge preserves the original createdAt, and the folder is keyed on the
+		// merged record — so the md path is unchanged (no orphaned day-2 folder).
+		assert.equal(p2.md, p1.md, 'the re-run resolves to the same md folder as the first build');
+		assert.match(p1.md, /\/docs\/standalone\/[^/]*E20260101[^/]*\/S001\/BUILD\.md$/, 'folder E<date> is the ORIGINAL createdAt day (2026-01-01), not the re-run day');
+		assert.equal(readJson(p1.json).meta['createdAt'], '2026-01-01T23:59:59.000Z', 'persisted createdAt is preserved across the upsert');
 	});
 });

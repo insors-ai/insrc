@@ -11,17 +11,17 @@
 
 import { existsSync, readFileSync } from 'node:fs';
 
-import { lldArtifactPaths } from '../storage.js';
+import { artifactJsonPath, lldArtifactId } from '../storage.js';
 import { ArtifactMissingError } from '../gates.js';
 import type { LldArtifact } from './lld.js';
 
 export function readLldArtifact(repoPath: string, epicHash: string, storyId: string): LldArtifact {
-	const paths = lldArtifactPaths(repoPath, epicHash, storyId);
-	if (!existsSync(paths.json)) {
+	const jsonPath = artifactJsonPath(repoPath, lldArtifactId(epicHash, storyId));
+	if (!existsSync(jsonPath)) {
 		throw new ArtifactMissingError(
-			`LLD not found at ${paths.json}. Run design.story for '${storyId}' first.`,
+			`LLD not found at ${jsonPath}. Run design.story for '${storyId}' first.`,
 		);
 	}
-	const raw = readFileSync(paths.json, 'utf8');
+	const raw = readFileSync(jsonPath, 'utf8');
 	return JSON.parse(raw) as LldArtifact;
 }

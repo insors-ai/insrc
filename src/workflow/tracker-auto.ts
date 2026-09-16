@@ -34,7 +34,7 @@ import { renderDefineMarkdown, type DefineArtifact } from './artifacts/define.js
 import { renderHldMarkdown } from './artifacts/hld.js';
 import { renderLldMarkdown } from './artifacts/lld.js';
 import type { PlanArtifact, PlanTask } from './artifacts/plan.js';
-import { defineArtifactPaths, hldArtifactPaths, lldArtifactPaths, writeAtomic } from './storage.js';
+import { artifactJsonPath, defineArtifactId, defineArtifactPaths, hldArtifactPaths, lldArtifactId, lldArtifactPaths, readEpicCreatedAt, writeAtomic } from './storage.js';
 import { GithubConfigError, resolveGithubConfig, type ResolvedGithubConfig } from './config/github.js';
 import {
 	ghAttachMilestone, ghAuthOk, ghComment, ghCreateIssueTyped, ghCreateLabel,
@@ -143,11 +143,13 @@ export function autoPushEpicOnHld(hldJsonPath: string): AutoPushResult {
 	// Persist the ref (firm): on the HLD (its own doc link) and on the
 	// Define (the Epic-level aggregate the chain report + LLD flow read).
 	const now = new Date().toISOString();
+	// Epic docs — keyed on the Epic's define createdAt anchor (sc2), all 'epic'.
+	const anchor = readEpicCreatedAt(repoPath, epicHash) ?? now;
 	patchTrackerMeta(hldJsonPath, { epicRef, pushedAt: now, ...(created.length > 0 ? { labelsCreated: created } : {}) });
-	const definePaths = defineArtifactPaths(repoPath, epicHash, epicSlug);
+	const definePaths = defineArtifactPaths(repoPath, epicHash, anchor, 'epic', epicSlug);
 	patchTrackerMeta(definePaths.json, { epicRef, pushedAt: now });
 	// Re-render both docs so each shows the `**Tracker:** owner/repo#N` link.
-	relink(hldArtifactPaths(repoPath, epicHash, epicSlug).md, () => { const a = readHldArtifact(repoPath, epicHash); return withResolvedTail(a.meta, a.citations, renderHldMarkdown(a)); });
+	relink(hldArtifactPaths(repoPath, epicHash, anchor, 'epic', epicSlug).md, () => { const a = readHldArtifact(repoPath, epicHash); return withResolvedTail(a.meta, a.citations, renderHldMarkdown(a)); });
 	relink(definePaths.md, () => { const a = readDefineArtifact(repoPath, epicHash); return withResolvedTail(a.meta, a.citations, renderDefineMarkdown(a)); });
 
 	if (adopted === undefined) bestEffort('comment', () => ghComment(cfg.owner, cfg.repo, epicRef, renderTrackerHldSummary(readHldArtifact(repoPath, epicHash))));
@@ -201,7 +203,7 @@ export function autoPushStoryOnLld(lldJsonPath: string): AutoPushResult {
 			// ghCreateIssueTyped (REST) returns the DB id needed to link a
 			// native sub-issue; stories stay untyped (no issueType passed).
 			created = ghCreateIssueTyped(cfg.owner, cfg.repo, title,
-				renderStoryBody(epicRef, story, epicSlug, { owner: cfg.owner, repo: cfg.repo }, storyWid), [cfg.storyLabel, epicMembershipLabel(epicSlug)], cfg.storyIssueType);
+				renderStoryBody(epicRef, story, epicSlug, epicHash, define.meta.createdAt, { owner: cfg.owner, repo: cfg.repo }, storyWid), [cfg.storyLabel, epicMembershipLabel(epicSlug)], cfg.storyIssueType);
 		} catch (err) { return { status: 'failed', reason: `gh issue create failed: ${(err as Error).message}` }; }
 		storyRef = created.ref;
 		// Link the Story as a NATIVE sub-issue of its Epic — mirrors the
@@ -215,8 +217,9 @@ export function autoPushStoryOnLld(lldJsonPath: string): AutoPushResult {
 	// Persist: storyRef on the LLD (its doc link) + aggregate into the
 	// Define's storyRefs map. Re-render the LLD doc with the issue link.
 	patchTrackerMeta(lldJsonPath, { storyRef, pushedAt: new Date().toISOString() });
-	relink(lldArtifactPaths(repoPath, epicHash, storyId, epicSlug).md, () => { const a = readLldArtifact(repoPath, epicHash, storyId); return withResolvedTail(a.meta, a.citations, renderLldMarkdown(a)); });
-	patchTrackerMeta(defineArtifactPaths(repoPath, epicHash, epicSlug).json, { storyRefs: { ...(defineTracker?.storyRefs ?? {}), [storyId]: storyRef } });
+	const storyAnchor = readEpicCreatedAt(repoPath, epicHash) ?? new Date().toISOString();
+	relink(lldArtifactPaths(repoPath, epicHash, storyId, storyAnchor, 'epic', epicSlug).md, () => { const a = readLldArtifact(repoPath, epicHash, storyId); return withResolvedTail(a.meta, a.citations, renderLldMarkdown(a)); });
+	patchTrackerMeta(artifactJsonPath(repoPath, defineArtifactId(epicHash)), { storyRefs: { ...(defineTracker?.storyRefs ?? {}), [storyId]: storyRef } });
 
 	if (adopted === undefined) {
 		bestEffort('tasklist', () => {
@@ -262,7 +265,7 @@ export function autoPushTasksOnPlan(planJsonPath: string): AutoPushResult {
 	const defineTracker = (define.meta as { tracker?: TrackerMeta }).tracker;
 	let storyRef = defineTracker?.storyRefs?.[storyId];
 	if (typeof storyRef !== 'string' || storyRef.length === 0) {
-		storyRef = readTrackerMeta(lldArtifactPaths(repoPath, epicHash, storyId).json)?.storyRef;
+		storyRef = readTrackerMeta(artifactJsonPath(repoPath, lldArtifactId(epicHash, storyId)))?.storyRef;
 	}
 	if (typeof storyRef !== 'string' || storyRef.length === 0) {
 		return { status: 'skipped', reason: 'Story not pushed yet; approve the LLD (with tracker) first' };
@@ -298,7 +301,7 @@ export function autoPushTasksOnPlan(planJsonPath: string): AutoPushResult {
 			const taskTitle = taskWid !== undefined ? `${taskWid} — ${task.title}` : `${storyId}/${task.id}: ${task.title}`;
 			issue = ghCreateIssueTyped(
 				cfg.owner, cfg.repo, taskTitle,
-				renderTaskBody(parentStoryRef, storyId, task, epicSlug, { owner: cfg.owner, repo: cfg.repo }, taskWid),
+				renderTaskBody(parentStoryRef, storyId, task, epicSlug, epicHash, define.meta.createdAt, { owner: cfg.owner, repo: cfg.repo }, taskWid),
 				[cfg.taskLabel, membership], cfg.taskIssueType,
 			);
 		} catch (err) { return { status: 'failed', reason: `gh issue create (task ${task.id}) failed: ${(err as Error).message}` }; }

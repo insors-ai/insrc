@@ -22,7 +22,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
-import { hldArtifactPaths, lldArtifactPaths } from '../../storage.js';
+import { artifactJsonPath, hldArtifactId, lldArtifactId } from '../../storage.js';
 import type { HldArtifact, HldBody } from '../../artifacts/hld.js';
 import type { LldArtifact } from '../../artifacts/lld.js';
 import { computeHldEffectiveHash } from '../../artifacts/lld.js';
@@ -35,8 +35,8 @@ const HASH = 'a3f4b8c9d1e2f3a4';
 const AMD1 = `AMD-${HASH}-1`;
 
 function seedHld(repo: string, epicHash: string, runId: string, body: HldBody, approved: boolean): HldArtifact {
-	const paths = hldArtifactPaths(repo, epicHash);
-	mkdirSync(dirname(paths.json), { recursive: true });
+	const json = artifactJsonPath(repo, hldArtifactId(epicHash));
+	mkdirSync(dirname(json), { recursive: true });
 	const artifact: HldArtifact = {
 		meta: {
 			workflow: 'design.epic',
@@ -49,7 +49,7 @@ function seedHld(repo: string, epicHash: string, runId: string, body: HldBody, a
 		body,
 		citations: [{ id: 'c1', kind: 'analyze-bundle', ref: 'todos' }],
 	};
-	writeFileSync(paths.json, JSON.stringify(artifact, null, 2));
+	writeFileSync(json, JSON.stringify(artifact, null, 2));
 	return artifact;
 }
 
@@ -57,8 +57,8 @@ function seedLld(
 	repo: string, epicHash: string, storyId: string,
 	hldBaseRunId: string, hldEffectiveHash: string, hldAmendmentsApplied: string[],
 ): void {
-	const paths = lldArtifactPaths(repo, epicHash, storyId);
-	mkdirSync(dirname(paths.json), { recursive: true });
+	const json = artifactJsonPath(repo, lldArtifactId(epicHash, storyId));
+	mkdirSync(dirname(json), { recursive: true });
 	const artifact: LldArtifact = {
 		meta: {
 			workflow: 'design.story', runId: `lld-${storyId}`,
@@ -77,7 +77,7 @@ function seedLld(
 		},
 		citations: [],
 	};
-	writeFileSync(paths.json, JSON.stringify(artifact, null, 2));
+	writeFileSync(json, JSON.stringify(artifact, null, 2));
 }
 
 function baseBody(): HldBody {

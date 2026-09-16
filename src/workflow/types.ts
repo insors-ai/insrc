@@ -299,8 +299,17 @@ export interface ArtifactMetaBase {
 	readonly workflow:     WorkflowName;
 	readonly runId:        string;
 	readonly repoPath:     string;
-	/** ISO 8601 timestamp. */
+	/** ISO 8601 timestamp — when THIS artifact was created. */
 	readonly createdAt:    string;
+	/** ISO 8601 anchor timestamp for the WORK ITEM (epic or standalone feature),
+	 *  stable across every artifact it owns — the epic's `define` createdAt for
+	 *  epic-parented artifacts, or the work item's own first-artifact createdAt
+	 *  for a standalone. The nested docs layout's `E<date>` folder segment (sc2)
+	 *  is derived from THIS, not per-artifact `createdAt`, so all of a work
+	 *  item's artifacts resolve to one folder. Stamped at finalize; path
+	 *  resolution reads it (never re-derives from disk). Absent on legacy
+	 *  artifacts and pre-nested writes — callers fall back to `createdAt`. */
+	readonly epicCreatedAt?: string;
 	/**
 	 * @deprecated Superseded by {@link ArtifactMetaBase.attribution} (Epic
 	 * per-role-per-step, S004/sc5). New artifacts no longer write this scalar —

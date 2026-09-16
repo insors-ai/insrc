@@ -39,14 +39,20 @@ import type { ReviewResolution } from './types.js';
 import {
 	ARTIFACT_ID_MARKER_RE,
 	ARTIFACTS_DIR,
-	DOCS_ARTIFACT_DIRS,
 	STUB_DIR,
+	artifactJsonPath,
+	defineArtifactId,
 	defineArtifactPaths,
+	hldArtifactId,
 	hldArtifactPaths,
+	lldArtifactId,
 	lldArtifactPaths,
+	planArtifactId,
 	planArtifactPaths,
 	specArtifactId,
 	specArtifactPaths,
+	workItemAnchorCreatedAt,
+	workItemKindOf,
 	writeAtomic,
 } from './storage.js';
 
@@ -105,14 +111,14 @@ export class SpecNotApprovedError extends Error {
 
 /** Read the canonical Define JSON from disk. */
 export function readDefineArtifact(repoPath: string, epicHash: string): DefineArtifact {
-	const paths = defineArtifactPaths(repoPath, epicHash);
-	if (!existsSync(paths.json)) {
+	const jsonPath = artifactJsonPath(repoPath, defineArtifactId(epicHash));
+	if (!existsSync(jsonPath)) {
 		throw new ArtifactMissingError(
-			`Define artifact not found at ${paths.json}. Run \`insrc_workflow_step\` ` +
+			`Define artifact not found at ${jsonPath}. Run \`insrc_workflow_step\` ` +
 			`workflow='define' focus='...' first.`,
 		);
 	}
-	const raw = readFileSync(paths.json, 'utf8');
+	const raw = readFileSync(jsonPath, 'utf8');
 	return JSON.parse(raw) as DefineArtifact;
 }
 
@@ -161,15 +167,15 @@ export function nextStoryId(define: DefineArtifact): string {
  *  Writes the JSON + re-renders the markdown; PRESERVES `meta.approvedAt`
  *  (the extend is the sanctioned edit). Throws on a duplicate story id. */
 export function appendStoryToDefine(repoPath: string, epicHash: string, story: DefineStory): DefineArtifact {
-	const paths = defineArtifactPaths(repoPath, epicHash);
-	if (!existsSync(paths.json)) throw new ArtifactMissingError(`Define not found at ${paths.json}`);
-	const define = JSON.parse(readFileSync(paths.json, 'utf8')) as DefineArtifact;
+	const jsonPath = artifactJsonPath(repoPath, defineArtifactId(epicHash));
+	if (!existsSync(jsonPath)) throw new ArtifactMissingError(`Define not found at ${jsonPath}`);
+	const define = JSON.parse(readFileSync(jsonPath, 'utf8')) as DefineArtifact;
 	if (define.body.stories.some(s => s.id === story.id)) {
 		throw new Error(`Story '${story.id}' already exists in Epic '${epicHash}'`);
 	}
 	const next: DefineArtifact = { ...define, body: { ...define.body, stories: [...define.body.stories, story] } };
-	writeAtomic(paths.json, JSON.stringify(next, null, 2) + '\n');
-	writeAtomic(defineArtifactPaths(repoPath, epicHash, next.meta.epicSlug).md, renderDefineMarkdown(next));
+	writeAtomic(jsonPath, JSON.stringify(next, null, 2) + '\n');
+	writeAtomic(defineArtifactPaths(repoPath, epicHash, workItemAnchorCreatedAt(next.meta), workItemKindOf(next.meta), next.meta.epicSlug).md, renderDefineMarkdown(next));
 	return next;
 }
 
@@ -179,7 +185,7 @@ export function requireApprovedEpic(repoPath: string, epicHash: string): DefineA
 	const define = readDefineArtifact(repoPath, epicHash);
 	const label  = define.meta.epicSlug ?? epicHash;
 	if (define.meta.approvedAt === undefined || define.meta.approvedAt.length === 0) {
-		const path = defineArtifactPaths(repoPath, epicHash, define.meta.epicSlug).md;
+		const path = defineArtifactPaths(repoPath, epicHash, workItemAnchorCreatedAt(define.meta), workItemKindOf(define.meta), define.meta.epicSlug).md;
 		throw new ArtifactNotApprovedError(
 			`Epic '${label}' (${epicHash}) is not approved. ` +
 			`Run \`insrc workflow approve ${path}\` before starting design.epic.`,
@@ -196,13 +202,13 @@ export function requireApprovedEpic(repoPath: string, epicHash: string): DefineA
 
 /** Read the canonical HLD JSON from disk. */
 export function readHldArtifact(repoPath: string, epicHash: string): HldArtifact {
-	const paths = hldArtifactPaths(repoPath, epicHash);
-	if (!existsSync(paths.json)) {
+	const jsonPath = artifactJsonPath(repoPath, hldArtifactId(epicHash));
+	if (!existsSync(jsonPath)) {
 		throw new ArtifactMissingError(
-			`HLD not found at ${paths.json}. Run design.epic before design.story.`,
+			`HLD not found at ${jsonPath}. Run design.epic before design.story.`,
 		);
 	}
-	const raw = readFileSync(paths.json, 'utf8');
+	const raw = readFileSync(jsonPath, 'utf8');
 	return JSON.parse(raw) as HldArtifact;
 }
 
@@ -218,7 +224,7 @@ export function requireApprovedHld(repoPath: string, epicHash: string): HldArtif
 	const hld   = readHldArtifact(repoPath, epicHash);
 	const label = hld.meta.epicSlug ?? epicHash;
 	if (hld.meta.approvedAt === undefined || hld.meta.approvedAt.length === 0) {
-		const path = hldArtifactPaths(repoPath, epicHash, hld.meta.epicSlug).md;
+		const path = hldArtifactPaths(repoPath, epicHash, workItemAnchorCreatedAt(hld.meta), workItemKindOf(hld.meta), hld.meta.epicSlug).md;
 		throw new ArtifactNotApprovedError(
 			`HLD for Epic '${label}' (${epicHash}) is not approved. ` +
 			`Run \`insrc workflow approve ${path}\` before starting design.story.`,
@@ -241,13 +247,13 @@ export function readBaseHld(repoPath: string, epicHash: string): HldArtifact {
 
 /** Read the canonical LLD JSON for a Story from disk. */
 export function readLldArtifact(repoPath: string, epicHash: string, storyId: string): LldArtifact {
-	const paths = lldArtifactPaths(repoPath, epicHash, storyId);
-	if (!existsSync(paths.json)) {
+	const jsonPath = artifactJsonPath(repoPath, lldArtifactId(epicHash, storyId));
+	if (!existsSync(jsonPath)) {
 		throw new ArtifactMissingError(
-			`LLD not found at ${paths.json}. Run design.story for Story '${storyId}' before plan.`,
+			`LLD not found at ${jsonPath}. Run design.story for Story '${storyId}' before plan.`,
 		);
 	}
-	return JSON.parse(readFileSync(paths.json, 'utf8')) as LldArtifact;
+	return JSON.parse(readFileSync(jsonPath, 'utf8')) as LldArtifact;
 }
 
 /** Same as `readLldArtifact` but refuses when the LLD is unapproved,
@@ -260,7 +266,7 @@ export function requireApprovedLld(repoPath: string, epicHash: string, storyId: 
 	const lld   = readLldArtifact(repoPath, epicHash, storyId);
 	const label = lld.meta.epicSlug ?? epicHash;
 	if (lld.meta.approvedAt === undefined || lld.meta.approvedAt.length === 0) {
-		const path = lldArtifactPaths(repoPath, epicHash, storyId, lld.meta.epicSlug).md;
+		const path = lldArtifactPaths(repoPath, epicHash, storyId, workItemAnchorCreatedAt(lld.meta), workItemKindOf(lld.meta), lld.meta.epicSlug).md;
 		throw new ArtifactNotApprovedError(
 			`LLD for Story '${storyId}' of Epic '${label}' (${epicHash}) is not approved. ` +
 			`Run \`insrc workflow approve ${path}\` before starting plan.`,
@@ -286,7 +292,7 @@ export function requireApprovedLld(repoPath: string, epicHash: string, storyId: 
 		const currentEffective = computeHldEffectiveHash(baseHld.meta.runId, amendmentIds);
 		if (lld.meta.hldEffectiveHash !== currentEffective) {
 			const reason = lld.meta.hldBaseRunId !== baseHld.meta.runId ? 'hld-rerun' : 'hld-amended';
-			const path = lldArtifactPaths(repoPath, epicHash, storyId, lld.meta.epicSlug).md;
+			const path = lldArtifactPaths(repoPath, epicHash, storyId, workItemAnchorCreatedAt(lld.meta), workItemKindOf(lld.meta), lld.meta.epicSlug).md;
 			throw new ArtifactNotApprovedError(
 				`LLD for Story '${storyId}' of Epic '${label}' (${epicHash}) is stale (${reason}): ` +
 				`its HLD effective state changed after approval. Re-run design.story against the current HLD, ` +
@@ -337,13 +343,13 @@ export function readPlanUpstream(repoPath: string, epicHash: string, storyId: st
 
 /** Read the canonical Plan JSON for a Story from disk. */
 export function readPlanArtifact(repoPath: string, epicHash: string, storyId: string): PlanArtifact {
-	const paths = planArtifactPaths(repoPath, epicHash, storyId);
-	if (!existsSync(paths.json)) {
+	const jsonPath = artifactJsonPath(repoPath, planArtifactId(epicHash, storyId));
+	if (!existsSync(jsonPath)) {
 		throw new ArtifactMissingError(
-			`Plan not found at ${paths.json}. Run \`plan\` for Story '${storyId}' before build.`,
+			`Plan not found at ${jsonPath}. Run \`plan\` for Story '${storyId}' before build.`,
 		);
 	}
-	return JSON.parse(readFileSync(paths.json, 'utf8')) as PlanArtifact;
+	return JSON.parse(readFileSync(jsonPath, 'utf8')) as PlanArtifact;
 }
 
 /** Same as `readPlanArtifact` but refuses when the plan is unapproved or
@@ -359,7 +365,7 @@ export function requireApprovedPlan(repoPath: string, epicHash: string, storyId:
 	const plan  = readPlanArtifact(repoPath, epicHash, storyId);
 	const label = plan.meta.epicSlug ?? epicHash;
 	if (plan.meta.approvedAt === undefined || plan.meta.approvedAt.length === 0) {
-		const path = planArtifactPaths(repoPath, epicHash, storyId, plan.meta.epicSlug).md;
+		const path = planArtifactPaths(repoPath, epicHash, storyId, workItemAnchorCreatedAt(plan.meta), workItemKindOf(plan.meta), plan.meta.epicSlug).md;
 		throw new ArtifactNotApprovedError(
 			`Plan for Story '${storyId}' of Epic '${label}' (${epicHash}) is not approved. ` +
 			`Run \`insrc workflow approve ${path}\` before starting build.`,
@@ -381,17 +387,17 @@ export function requireApprovedPlan(repoPath: string, epicHash: string, storyId:
  *  `Error` when the JSON parses but its body fails the `isSpecBody` guard
  *  (corrupt / incompatible record). */
 export function readSpecArtifact(repoPath: string, specHash: string): SpecArtifact {
-	const paths = specArtifactPaths(repoPath, specHash);
-	if (!existsSync(paths.json)) {
+	const jsonPath = artifactJsonPath(repoPath, specArtifactId(specHash));
+	if (!existsSync(jsonPath)) {
 		throw new SpecArtifactNotFoundError(
-			`Spec ${specArtifactId(specHash)} not found at ${paths.json}. ` +
+			`Spec ${specArtifactId(specHash)} not found at ${jsonPath}. ` +
 			`Run the \`brainstorm\` stage to produce it before consuming it as a focus.`,
 		);
 	}
-	const artifact = JSON.parse(readFileSync(paths.json, 'utf8')) as SpecArtifact;
+	const artifact = JSON.parse(readFileSync(jsonPath, 'utf8')) as SpecArtifact;
 	if (!isSpecBody((artifact as { body?: unknown }).body)) {
 		throw new Error(
-			`Spec ${specArtifactId(specHash)} at ${paths.json} is malformed — its body ` +
+			`Spec ${specArtifactId(specHash)} at ${jsonPath} is malformed — its body ` +
 			`does not match the SpecArtifact shape. Re-run the \`brainstorm\` stage.`,
 		);
 	}
@@ -408,7 +414,7 @@ export function readSpecArtifact(repoPath: string, specHash: string): SpecArtifa
 export function requireApprovedSpec(repoPath: string, specHash: string): SpecArtifact {
 	const spec = readSpecArtifact(repoPath, specHash);
 	if (spec.meta.approvedAt === undefined || spec.meta.approvedAt.length === 0) {
-		const path = specArtifactPaths(repoPath, specHash, spec.meta.epicSlug).md;
+		const path = specArtifactPaths(repoPath, specHash, workItemAnchorCreatedAt(spec.meta), 'standalone', spec.meta.epicSlug).md;
 		throw new SpecNotApprovedError(
 			`Spec ${specArtifactId(specHash)} is not approved — its approval is still outstanding. ` +
 			`Review it and run \`insrc workflow approve ${path}\` before a stage consumes it.`,
@@ -758,14 +764,21 @@ export function jsonPathForMd(mdPath: string): string {
 	if (mdPath.includes('/docs/stub/')) {
 		return swapExt(mdPath);
 	}
-	// Designs / defines: slug-named md → hash-named json via the marker.
+	// Nested work-item md (docs/{epics|standalone}/<slug>-E.../[S.../]<KIND>.md):
+	// the bare <KIND>.md filename no longer encodes the hash id, so the ONLY
+	// mapping to the hash-flat json is via the embedded insrc:artifact marker
+	// (sc2/lc1 — identity from the marker, never the path). The companion JSON
+	// store stays hash-flat under ARTIFACTS_DIR (out of scope, unchanged).
 	const id = readArtifactIdMarker(mdPath);
 	const repoRoot = repoRootFromDocsPath(mdPath);
 	if (id !== undefined && repoRoot !== undefined) {
 		return join(repoRoot, ARTIFACTS_DIR, `${id}.json`);
 	}
-	// Fallback: legacy hash-named md — swap dir + extension.
-	return swapExt(swapDocsToArtifacts(mdPath));
+	throw new Error(
+		`jsonPathForMd: cannot resolve the canonical JSON for '${mdPath}' — a nested ` +
+		`work-item artifact md must carry an insrc:artifact marker (its path no longer ` +
+		`encodes the hash id). ${id === undefined ? 'No marker was found.' : 'Path is not under docs/epics|standalone/.'}`,
+	);
 }
 
 /** Reads the embedded `insrc:artifact` marker from a rendered md/html
@@ -780,13 +793,11 @@ function readArtifactIdMarker(mdPath: string): string | undefined {
 	}
 }
 
-/** `.../docs/defines/DEF-<slug>.md` → `.../` (the repo root). Returns
- *  undefined when the path has no recognised `docs/` segment. */
+/** `.../docs/epics/<slug>-E.../S001/LLD.md` → `.../` (the repo root). Returns
+ *  undefined when the path has no recognised docs root. The nested work-item
+ *  roots (docs/epics, docs/standalone — sc2) plus the side-by-side stub dir. */
 function repoRootFromDocsPath(p: string): string | undefined {
-	// Every docs artifact dir (defines/designs/plans/builds/specs/reviews) PLUS
-	// the side-by-side stub dir — derived from the storage.ts constants so the
-	// allow-list can't drift (S001).
-	for (const dir of [...DOCS_ARTIFACT_DIRS, STUB_DIR]) {
+	for (const dir of ['docs/epics', 'docs/standalone', STUB_DIR]) {
 		const seg = `/${dir}/`;
 		const i = p.indexOf(seg);
 		if (i >= 0) return p.slice(0, i);
@@ -797,23 +808,4 @@ function repoRootFromDocsPath(p: string): string | undefined {
 /** Swap a trailing `.md` / `.html` for `.json`. */
 function swapExt(p: string): string {
 	return p.replace(/\.(md|html)$/, '.json');
-}
-
-/** `.../docs/defines/DEF-<x>.md` → `.../.insrc/artifacts/DEF-<x>.md`.
- *  Only the first matching `docs/{defines,designs}/` segment gets
- *  swapped. If no such segment is present, the path is returned as-
- *  is (older layouts / non-standard callers). */
-function swapDocsToArtifacts(p: string): string {
-	// Every docs artifact dir maps into .insrc/artifacts (derived from the
-	// storage.ts constants, S001). STUB_DIR is excluded — its md + json sit
-	// side by side; no swap.
-	for (const dir of DOCS_ARTIFACT_DIRS) {
-		const seg = `/${dir}/`;
-		const i = p.indexOf(seg);
-		if (i >= 0) {
-			return p.slice(0, i) + '/' + ARTIFACTS_DIR + '/' + p.slice(i + seg.length);
-		}
-	}
-	// `docs/stub/*` files keep md + json side by side; no swap.
-	return p;
 }

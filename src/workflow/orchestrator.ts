@@ -105,7 +105,7 @@ import {
 	type TrackerPushRefs,
 	type TrackerSyncRefs,
 } from './artifacts/tracker.js';
-import { defineArtifactPaths, planArtifactPaths, scopeAnalyzeCachePath, writeAtomic } from './storage.js';
+import { artifactJsonPath, defineArtifactId, defineArtifactPaths, planArtifactId, planArtifactPaths, readEpicCreatedAt, scopeAnalyzeCachePath, workItemAnchorCreatedAt, workItemKindOf, writeAtomic } from './storage.js';
 import { linkDocsToIssues } from './tracker/link.js';
 import { patchTrackerMeta } from './tracker/refs.js';
 import { existsSync, readFileSync } from 'node:fs';
@@ -1024,6 +1024,9 @@ function finalizeDefineExtend(
 			runId,
 			repoPath:      intent.repoPath,
 			createdAt:     new Date().toISOString(),
+			// Work-item folder anchor (sc2): an extend Story belongs to the parent
+			// Epic, so its folder is keyed on the Epic's define createdAt.
+			epicCreatedAt: readEpicCreatedAt(intent.repoPath, epicHash) ?? new Date().toISOString(),
 			attribution:   attribution ?? singleModelAttribution(model),
 			elapsedMs,
 			repoIndexedAt: intent.repoIndexedAt,
@@ -1262,6 +1265,9 @@ function finalizeDesignEpic(
 			runId,
 			repoPath:      intent.repoPath,
 			createdAt:     new Date().toISOString(),
+			// Work-item folder anchor (sc2): keyed on the Epic's define createdAt so
+			// the HLD lands in the same folder as its DEF.
+			epicCreatedAt: readEpicCreatedAt(intent.repoPath, epicHash) ?? new Date().toISOString(),
 			attribution:   attribution ?? singleModelAttribution(model),
 			elapsedMs,
 			repoIndexedAt: intent.repoIndexedAt,
@@ -1563,6 +1569,9 @@ function finalizeDesignStory(
 			elapsedMs,
 			repoIndexedAt: intent.repoIndexedAt,
 			schemaVersion: LLD_SCHEMA_VERSION,
+			// Work-item folder anchor (sc2): an Epic Story's LLD is keyed on the
+			// Epic's define createdAt so it lands in the Story's folder.
+			epicCreatedAt:        readEpicCreatedAt(intent.repoPath, epicHash) ?? new Date().toISOString(),
 			epicHash,
 			epicSlug,
 			storyId,
@@ -1919,6 +1928,9 @@ function finalizePlan(
 			runId,
 			repoPath:      intent.repoPath,
 			createdAt:     new Date().toISOString(),
+			// Work-item folder anchor (sc2): a plan belongs to an Epic Story, keyed
+			// on the Epic's define createdAt so it lands in the Story's folder.
+			epicCreatedAt: readEpicCreatedAt(intent.repoPath, epicHash) ?? new Date().toISOString(),
 			attribution:   attribution ?? singleModelAttribution(model),
 			elapsedMs,
 			repoIndexedAt: intent.repoIndexedAt,
@@ -2141,8 +2153,8 @@ function mutateEpicTrackerMeta(
 	refs:       TrackerPushRefs | TrackerSyncRefs | TrackerPostRefs,
 ): void {
 	if (workflow === 'tracker.post') return;   // no-op for post
-	const paths = defineArtifactPaths(repoPath, epicHash);
-	const raw = readFileSync(paths.json, 'utf8');
+	const defineJson = artifactJsonPath(repoPath, defineArtifactId(epicHash));
+	const raw = readFileSync(defineJson, 'utf8');
 	const artifact = JSON.parse(raw) as { meta?: { epicSlug?: string; tracker?: Record<string, unknown> } };
 	if (artifact.meta === undefined) artifact.meta = {};
 	if (artifact.meta.tracker === undefined) artifact.meta.tracker = {};
@@ -2158,7 +2170,7 @@ function mutateEpicTrackerMeta(
 			labelsCreated: push.labelsCreated,
 			pushedAt:  new Date().toISOString(),
 		};
-		writeAtomic(paths.json, JSON.stringify(artifact, null, 2) + '\n');
+		writeAtomic(defineJson, JSON.stringify(artifact, null, 2) + '\n');
 		// Framework-owned doc↔issue linkage (same as the deterministic path):
 		// re-render each doc's markdown with a `**Tracker:**` link.
 		linkDocsToIssues(repoPath, epicHash, epicSlug, { epicRef: push.epicRef, storyRefs: push.storyRefs });
@@ -2166,7 +2178,7 @@ function mutateEpicTrackerMeta(
 		// re-push adopts them (and downstream `build` can find its issues).
 		if (push.taskRefs !== undefined) {
 			for (const [storyId, taskRefs] of Object.entries(push.taskRefs)) {
-				const planJson = planArtifactPaths(repoPath, epicHash, storyId).json;
+				const planJson = artifactJsonPath(repoPath, planArtifactId(epicHash, storyId));
 				if (!existsSync(planJson)) continue;
 				try { patchTrackerMeta(planJson, { taskRefs, pushedAt: new Date().toISOString() }); }
 				catch { /* plan meta patch is best-effort */ }
@@ -2182,7 +2194,7 @@ function mutateEpicTrackerMeta(
 			lastSyncedAt: sync.syncedAt,
 		};
 	}
-	writeAtomic(paths.json, JSON.stringify(artifact, null, 2) + '\n');
+	writeAtomic(defineJson, JSON.stringify(artifact, null, 2) + '\n');
 }
 
 // Kept as silences — referenced above for JSDoc navigation.

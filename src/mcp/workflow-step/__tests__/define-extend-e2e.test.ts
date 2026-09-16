@@ -43,13 +43,17 @@ function payload(env: Envelope): Record<string, unknown> {
 }
 
 const HASH = 'a3f4b8c9d1e2f3a4';
+// The seed DEF createdAt IS the work-item folder anchor the production EXT
+// writer reads back (readEpicCreatedAt), so the extend artifact lands in the
+// SAME date-segment folder this test recomputes via extendArtifactPaths below.
+const CREATED = '2026-07-18T00:00:00.000Z';
 
 /** Seed an approved Define + approved HLD for the extend target. */
 function seed(repo: string): void {
-	const definePaths = defineArtifactPaths(repo, HASH);
+	const definePaths = defineArtifactPaths(repo, HASH, CREATED, 'epic', 'tag-filtering');
 	mkdirSync(dirname(definePaths.json), { recursive: true });
 	writeFileSync(definePaths.json, JSON.stringify({
-		meta: { workflow: 'define', runId: 'define-1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering' },
+		meta: { workflow: 'define', runId: 'define-1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', createdAt: CREATED },
 		body: {
 			flavor: 'enhancement',
 			problem: 'Users cannot filter todos by tag today; only status filtering exists.',
@@ -65,10 +69,10 @@ function seed(repo: string): void {
 	}, null, 2));
 	approveArtifactByJsonPath(definePaths.json);
 
-	const hldPaths = hldArtifactPaths(repo, HASH);
+	const hldPaths = hldArtifactPaths(repo, HASH, CREATED, 'epic', 'tag-filtering');
 	mkdirSync(dirname(hldPaths.json), { recursive: true });
 	writeFileSync(hldPaths.json, JSON.stringify({
-		meta: { workflow: 'design.epic', runId: 'hld-run-1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering' },
+		meta: { workflow: 'design.epic', runId: 'hld-run-1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', createdAt: CREATED },
 		body: {
 			frameworkSummary: 'Extract TagFilter service.',
 			architectureShape: 'TagFilter owns the tag index [[c1]].',
@@ -166,7 +170,7 @@ test('define EXTEND: scope=extend → skip frame/compose → append Story + pend
 		assert.equal(done['next'], 'done', JSON.stringify(done));
 
 		// ExtendArtifact written under EXT-* (not DEF-*).
-		const extPaths = extendArtifactPaths(repo, HASH, 's2', 'tag-filtering');
+		const extPaths = extendArtifactPaths(repo, HASH, 's2', CREATED, 'epic', 'tag-filtering');
 		assert.ok(existsSync(extPaths.json), 'EXT json written');
 		assert.ok(existsSync(extPaths.md), 'EXT md written');
 		const md = readFileSync(extPaths.md, 'utf8');
@@ -174,7 +178,7 @@ test('define EXTEND: scope=extend → skip frame/compose → append Story + pend
 		assert.match(md, /Clear the active tag filter/);
 
 		// The Story was appended to the target Define (s2), approval retained.
-		const define = JSON.parse(readFileSync(defineArtifactPaths(repo, HASH).json, 'utf8')) as { meta: { approvedAt?: string }; body: { stories: { id: string }[] } };
+		const define = JSON.parse(readFileSync(defineArtifactPaths(repo, HASH, CREATED, 'epic', 'tag-filtering').json, 'utf8')) as { meta: { approvedAt?: string }; body: { stories: { id: string }[] } };
 		assert.deepEqual(define.body.stories.map(s => s.id), ['s1', 's2']);
 		assert.ok(define.meta.approvedAt, 'target Epic approval retained');
 
@@ -223,7 +227,7 @@ test('define EXTEND: s4 scope-boundary hard-fail refuses synthesize (no Story ap
 		assert.equal(done['next'], 'error', JSON.stringify(done));
 
 		// No side effects: the target Define was NOT mutated, no amendment filed.
-		const define = JSON.parse(readFileSync(defineArtifactPaths(repo, HASH).json, 'utf8')) as { body: { stories: { id: string }[] } };
+		const define = JSON.parse(readFileSync(defineArtifactPaths(repo, HASH, CREATED, 'epic', 'tag-filtering').json, 'utf8')) as { body: { stories: { id: string }[] } };
 		assert.deepEqual(define.body.stories.map(s => s.id), ['s1']);
 		const amdFiles = readdirSync(join(repo, ARTIFACTS_DIR)).filter(n => n.startsWith(`AMD-${HASH}-`));
 		assert.equal(amdFiles.length, 0);

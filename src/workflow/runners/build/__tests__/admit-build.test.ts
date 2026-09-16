@@ -30,9 +30,10 @@ import * as buildAdmission from '../admission.js';
 import { approvalVerdict, driftVerdict } from '../admission.js';
 import { approveArtifactByJsonPath } from '../../../gates.js';
 import type { PlanArtifact } from '../../../artifacts/plan.js';
-import { lldArtifactPaths, planArtifactId, planArtifactPaths } from '../../../storage.js';
+import { artifactJsonPath, lldArtifactId, planArtifactId } from '../../../storage.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
+const CREATED = '2026-07-17T07:42:28.275Z';
 
 // ---------------------------------------------------------------------------
 // Fixtures — plan + LLD artifacts written through the real storage writers.
@@ -48,7 +49,7 @@ function planObject(storyId: string, lldEffectiveHash: string): PlanArtifact {
 	return {
 		meta: {
 			workflow: 'plan', runId: 'plan-run-1', schemaVersion: 1,
-			epicHash: HASH, epicSlug: 'tag-filtering', storyId,
+			epicHash: HASH, epicSlug: 'tag-filtering', storyId, createdAt: CREATED,
 			lldRunId: 'lld-run-1', lldEffectiveHash,
 		},
 		body: {
@@ -64,27 +65,27 @@ function planObject(storyId: string, lldEffectiveHash: string): PlanArtifact {
 }
 
 function seedPlan(repo: string, opts: SeedPlanOpts): void {
-	const pp = planArtifactPaths(repo, HASH, opts.storyId);
-	mkdirSync(dirname(pp.json), { recursive: true });
-	writeFileSync(pp.json, JSON.stringify(planObject(opts.storyId, opts.lldEffectiveHash), null, 2));
-	if (opts.approved) approveArtifactByJsonPath(pp.json);
+	const json = artifactJsonPath(repo, planArtifactId(HASH, opts.storyId));
+	mkdirSync(dirname(json), { recursive: true });
+	writeFileSync(json, JSON.stringify(planObject(opts.storyId, opts.lldEffectiveHash), null, 2));
+	if (opts.approved) approveArtifactByJsonPath(json);
 }
 
 /** Seed a corrupt (undecodable) plan body at the plan's json path. */
 function seedCorruptPlan(repo: string, storyId: string): void {
-	const pp = planArtifactPaths(repo, HASH, storyId);
-	mkdirSync(dirname(pp.json), { recursive: true });
-	writeFileSync(pp.json, '{ this is not valid json');
+	const json = artifactJsonPath(repo, planArtifactId(HASH, storyId));
+	mkdirSync(dirname(json), { recursive: true });
+	writeFileSync(json, '{ this is not valid json');
 }
 
 /** Seed the current design.story (LLD) artifact; only meta is read. */
 function seedLld(repo: string, storyId: string, hldEffectiveHash: string): void {
-	const lp = lldArtifactPaths(repo, HASH, storyId);
-	mkdirSync(dirname(lp.json), { recursive: true });
-	writeFileSync(lp.json, JSON.stringify({
+	const json = artifactJsonPath(repo, lldArtifactId(HASH, storyId));
+	mkdirSync(dirname(json), { recursive: true });
+	writeFileSync(json, JSON.stringify({
 		meta: {
 			workflow: 'design.story', runId: 'lld-run-1', schemaVersion: 1,
-			epicHash: HASH, epicSlug: 'tag-filtering', storyId,
+			epicHash: HASH, epicSlug: 'tag-filtering', storyId, createdAt: CREATED,
 			hldBaseRunId: 'hld-run-1', hldEffectiveHash, hldAmendmentsApplied: [],
 			approvedAt: '2026-07-18T00:00:00.000Z',
 		},

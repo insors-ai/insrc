@@ -32,18 +32,19 @@ import { proposeAmendment } from '../amendments/store.js';
 import type { AmendmentRecord } from '../amendments/types.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
+const CREATED = '2026-07-17T07:42:28.275Z';   // stable anchor for the nested md-path resolver
 
 // ---------------------------------------------------------------------------
 // Fixtures
 // ---------------------------------------------------------------------------
 
 function writeDefine(repo: string, epicHash: string, opts: { stories: string[] } = { stories: ['s1', 's2'] }): string {
-	const paths = defineArtifactPaths(repo, epicHash);
+	const paths = defineArtifactPaths(repo, epicHash, CREATED, 'epic');
 	mkdirSync(dirname(paths.json), { recursive: true });
 	writeAtomic(paths.json, JSON.stringify({
 		meta: {
 			workflow: 'define', runId: 'def-1', schemaVersion: 1,
-			epicHash, epicSlug: 'test-epic',
+			epicHash, epicSlug: 'test-epic', createdAt: CREATED,
 		},
 		body: {
 			flavor: 'enhancement',
@@ -59,12 +60,12 @@ function writeDefine(repo: string, epicHash: string, opts: { stories: string[] }
 }
 
 function writeHld(repo: string, epicHash: string, runId: string): { path: string; runId: string } {
-	const paths = hldArtifactPaths(repo, epicHash);
+	const paths = hldArtifactPaths(repo, epicHash, CREATED, 'epic');
 	mkdirSync(dirname(paths.json), { recursive: true });
 	writeAtomic(paths.json, JSON.stringify({
 		meta: {
 			workflow: 'design.epic', runId, schemaVersion: 1,
-			epicHash, epicSlug: 'test-epic',
+			epicHash, epicSlug: 'test-epic', createdAt: CREATED,
 		},
 		body: {
 			frameworkSummary: 'x', architectureShape: 'x',
@@ -80,12 +81,12 @@ function writeHld(repo: string, epicHash: string, runId: string): { path: string
 }
 
 function writeLld(repo: string, epicHash: string, storyId: string, hldRunId: string, effectiveHash: string): string {
-	const paths = lldArtifactPaths(repo, epicHash, storyId);
+	const paths = lldArtifactPaths(repo, epicHash, storyId, CREATED, 'epic');
 	mkdirSync(dirname(paths.json), { recursive: true });
 	writeAtomic(paths.json, JSON.stringify({
 		meta: {
 			workflow: 'design.story', runId: `lld-${storyId}`, schemaVersion: 1,
-			epicHash, epicSlug: 'test-epic', storyId,
+			epicHash, epicSlug: 'test-epic', storyId, createdAt: CREATED,
 			hldBaseRunId: hldRunId, hldEffectiveHash: effectiveHash, hldAmendmentsApplied: [],
 		},
 		body: {

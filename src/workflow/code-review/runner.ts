@@ -32,6 +32,7 @@ import {
 	codeReviewArtifactPaths,
 	writeAtomic,
 } from '../storage.js';
+import { codeReviewSubjectPathArgs } from './subject-paths.js';
 import type {
 	CodeReviewArtifact,
 	CodeReviewBody,
@@ -177,7 +178,8 @@ export async function runCodeReview(
 		// 6. Finalize: write BOTH files (json load-bearing; md a deterministic
 		//    summary). Validation has already passed, so a write here is never partial.
 		emit({ phase: 'finalize' });
-		const paths = codeReviewArtifactPaths(subject.repoPath, subject.epicHash, subject.storyId);
+		const pa = codeReviewSubjectPathArgs(subject);
+		const paths = codeReviewArtifactPaths(subject.repoPath, subject.epicHash, subject.storyId, pa.createdAtISO, pa.workItemKind, pa.epicSlug);
 		deps.write(paths.json, JSON.stringify(artifact, null, 2) + '\n');
 		deps.write(paths.md,   renderCodeReviewMd(artifact));
 		log.info({ runId: opts.runId, storyId: subject.storyId, verdict, counts }, 'code-review record written');

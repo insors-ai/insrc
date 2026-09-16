@@ -14,13 +14,20 @@ import type { CodeReviewGrounding, CodeReviewSubject, DimensionResult, ReviewDim
 
 // ---- fixtures ----
 
-const EPIC = 'e1';
+// Under the S002 nested docs-tree, the CR record's md path is derived from the
+// work-item identity, which requires a >=8-char lowercase-hex epicHash (see
+// id.ts `hash8Of`). The hash-flat `CR-<epic>-<story>.json` id is unaffected.
+const EPIC = 'e1a2b3c4d5e6f7a8';
 const STORY = 's8';
 const CHANGED = ['src/a.ts', 'src/b.ts'];
+// The CR record's nested md path is anchored on the approved LLD's meta (S002
+// `codeReviewSubjectPathArgs`), so the fixture LLD carries a realistic meta
+// (valid createdAt + epicSlug) as a real LldArtifact always does.
+const CREATED = '2026-07-18T00:00:00.000Z';
 
 const subject = (): CodeReviewSubject => ({
 	repoPath: '/repo', epicHash: EPIC, storyId: STORY, changedFiles: CHANGED,
-	approvedLld:  { body: {} } as unknown as CodeReviewSubject['approvedLld'],
+	approvedLld:  { meta: { epicSlug: 'tag-filtering', createdAt: CREATED, epicCreatedAt: CREATED }, body: {} } as unknown as CodeReviewSubject['approvedLld'],
 	approvedPlan: { body: { tasks: [] } } as unknown as CodeReviewSubject['approvedPlan'],
 	buildRecord: null,
 });

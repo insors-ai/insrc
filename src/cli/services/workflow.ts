@@ -50,6 +50,7 @@ import { deriveSlug } from '../../workflow/slug.js';
 import {
 	ARTIFACTS_DIR,
 	defineArtifactPaths, hldArtifactPaths, lldArtifactPaths, planArtifactPaths,
+	workItemAnchorCreatedAt, workItemKindOf,
 } from '../../workflow/storage.js';
 import { commitAndPushArtifacts, type CommitArtifactsResult } from '../../workflow/tracker/github.js';
 import { runTrackerSetup, type TrackerSetupOptions, type TrackerSetupReport } from '../../workflow/tracker/setup.js';
@@ -87,7 +88,7 @@ export interface ApproveOutcome {
  *  reads). Gated on the github tracker being enabled with `commitArtifacts`
  *  (default true); best-effort — a git failure never breaks the approval. */
 function commitApprovedArtifacts(approval: ApprovalResult): CommitArtifactsResult | undefined {
-	let meta: { repoPath?: string; epicHash?: string; epicSlug?: string; storyId?: string };
+	let meta: { repoPath?: string; epicHash?: string; epicSlug?: string; storyId?: string; createdAt?: string; epicCreatedAt?: string; standalone?: boolean };
 	try { meta = ((JSON.parse(readFileSync(approval.path, 'utf8')) as { meta?: typeof meta }).meta) ?? {}; }
 	catch { return undefined; }
 	const { repoPath, epicHash, epicSlug, storyId } = meta;
@@ -96,14 +97,20 @@ function commitApprovedArtifacts(approval: ApprovalResult): CommitArtifactsResul
 	const cfg = resolveGithubConfig(repoPath);
 	if (cfg.type !== 'github' || cfg.commitArtifacts === false) return undefined;
 
+	// sc2 folder args from the approved artifact's own meta — its epicCreatedAt
+	// anchor is the Epic's define createdAt, so the Define (added alongside on
+	// epic/story approvals) resolves to the same work-item folder.
+	const anchor = workItemAnchorCreatedAt(meta.createdAt !== undefined ? { createdAt: meta.createdAt, epicCreatedAt: meta.epicCreatedAt } : { createdAt: new Date().toISOString(), epicCreatedAt: meta.epicCreatedAt });
+	const kind = workItemKindOf(meta);
+
 	// The files this approval touched: the approved artifact, plus the Define
 	// (which aggregates the epic/story tracker refs on epic/story approvals).
 	const files = new Set<string>();
 	const add = (p: { md: string; json: string }) => { files.add(p.md); files.add(p.json); };
-	if (approval.workflow === 'design.epic') { add(hldArtifactPaths(repoPath, epicHash, epicSlug)); add(defineArtifactPaths(repoPath, epicHash, epicSlug)); }
-	else if (approval.workflow === 'design.story' && typeof storyId === 'string') { add(lldArtifactPaths(repoPath, epicHash, storyId, epicSlug)); add(defineArtifactPaths(repoPath, epicHash, epicSlug)); }
-	else if (approval.workflow === 'plan' && typeof storyId === 'string') { add(planArtifactPaths(repoPath, epicHash, storyId, epicSlug)); }
-	else { add(defineArtifactPaths(repoPath, epicHash, epicSlug)); }
+	if (approval.workflow === 'design.epic') { add(hldArtifactPaths(repoPath, epicHash, anchor, kind, epicSlug)); add(defineArtifactPaths(repoPath, epicHash, anchor, kind, epicSlug)); }
+	else if (approval.workflow === 'design.story' && typeof storyId === 'string') { add(lldArtifactPaths(repoPath, epicHash, storyId, anchor, kind, epicSlug)); add(defineArtifactPaths(repoPath, epicHash, anchor, kind, epicSlug)); }
+	else if (approval.workflow === 'plan' && typeof storyId === 'string') { add(planArtifactPaths(repoPath, epicHash, storyId, anchor, kind, epicSlug)); }
+	else { add(defineArtifactPaths(repoPath, epicHash, anchor, kind, epicSlug)); }
 
 	const result = commitAndPushArtifacts(repoPath, [...files], `chore(workflow): ${approval.workflow} approved — check in artifacts + tracker refs`);
 	log.info({ workflow: approval.workflow, committed: result.committed, pushed: result.pushed, reason: result.reason }, 'approve: artifact check-in');

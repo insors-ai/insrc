@@ -22,6 +22,10 @@ import { renderEpicBody, renderStoryBody, updateEpicTaskList, mapIssueStatus } f
 import type { DefineArtifact, DefineStory } from '../../artifacts/define.js';
 
 const SLUG = 'demo-feature';
+const HASH = 'a1b2c3d4e5f60718';
+const CREATED = '2026-07-17T07:42:28.275Z';   // → E20260717a1b2c3d4
+const EPIC_SEGMENT = 'E20260717a1b2c3d4';
+const EPIC_FOLDER = `docs/epics/${SLUG}-${EPIC_SEGMENT}`;
 
 // ---------------------------------------------------------------------------
 // git remote parse — dotted repo names must survive (regression)
@@ -74,7 +78,7 @@ test('mapIssueStatus follows the convention (closed overrides)', () => {
 
 function makeDefine(): DefineArtifact {
 	return {
-		meta: { workflow: 'define', runId: 'r', repoPath: '/repo', focus: 'demo', epicHash: 'a1b2c3d4e5f60718', epicSlug: SLUG, createdAt: '', schemaVersion: 1 },
+		meta: { workflow: 'define', runId: 'r', repoPath: '/repo', focus: 'demo', epicHash: HASH, epicSlug: SLUG, createdAt: CREATED, schemaVersion: 1 },
 		body: {
 			flavor: 'new-capability',
 			problem: 'Users cannot filter results. This blocks onboarding.',
@@ -92,21 +96,21 @@ test('renderEpicBody links slug-based docs (not hash)', () => {
 	const body = renderEpicBody(makeDefine(), SLUG);
 	assert.match(body, /## Stories/);
 	assert.match(body, /- \[ \] s1: Add filter field \(S\)/);
-	assert.match(body, new RegExp(`docs/designs/HLD-${SLUG}\\.md`));
-	assert.match(body, new RegExp(`docs/defines/DEF-${SLUG}\\.md`));
-	assert.doesNotMatch(body, /HLD-a1b2c3d4e5f60718\.md/);   // never the hash path
+	assert.match(body, new RegExp(`${EPIC_FOLDER}/HLD\\.md`));
+	assert.match(body, new RegExp(`${EPIC_FOLDER}/DEF\\.md`));
+	assert.doesNotMatch(body, /HLD-a1b2c3d4e5f60718\.md/);   // never the flat hash path
 });
 
 test('render*Body emit clickable blob links with a repo ref, bare paths without', () => {
 	const repo = { owner: 'acme', repo: 'demo' };
 	const epic = renderEpicBody(makeDefine(), SLUG, repo);
-	assert.match(epic, new RegExp(`\\[\`docs/designs/HLD-${SLUG}\\.md\`\\]\\(https://github\\.com/acme/demo/blob/main/docs/designs/HLD-${SLUG}\\.md\\)`));
+	assert.match(epic, new RegExp(`\\[\`${EPIC_FOLDER}/HLD\\.md\`\\]\\(https://github\\.com/acme/demo/blob/main/${EPIC_FOLDER}/HLD\\.md\\)`));
 	const story: DefineStory = { id: 's2', title: 'T', userValue: 'v', acceptanceCriteria: [] };
-	assert.match(renderStoryBody('acme/demo#1', story, SLUG, repo), new RegExp(`blob/main/docs/designs/LLD-${SLUG}-s2\\.md`));
+	assert.match(renderStoryBody('acme/demo#1', story, SLUG, HASH, CREATED, repo), new RegExp(`blob/main/${EPIC_FOLDER}/S002/LLD\\.md`));
 	// custom branch honored
-	assert.match(renderEpicBody(makeDefine(), SLUG, { ...repo, branch: 'dev' }), /blob\/dev\/docs\/designs\//);
+	assert.match(renderEpicBody(makeDefine(), SLUG, { ...repo, branch: 'dev' }), new RegExp(`blob/dev/${EPIC_FOLDER}/`));
 	// no repo ref → bare backticked path, no link
-	assert.match(renderEpicBody(makeDefine(), SLUG), new RegExp(`- HLD: \`docs/designs/HLD-${SLUG}\\.md\``));
+	assert.match(renderEpicBody(makeDefine(), SLUG), new RegExp(`- HLD: \`${EPIC_FOLDER}/HLD\\.md\``));
 	assert.doesNotMatch(renderEpicBody(makeDefine(), SLUG), /github\.com/);
 });
 
@@ -180,10 +184,10 @@ test('commitAndPushArtifacts no-ops when no file is present', () => {
 
 test('renderStoryBody back-refs the Epic + links the slug LLD', () => {
 	const story: DefineStory = { id: 's3', title: 'Third', userValue: 'v3', acceptanceCriteria: [{ id: 'ac1', given: 'x', when: 'y', then: 'z', operationalizes: [] }], sizeEstimate: 'M' };
-	const body = renderStoryBody('acme/demo#42', story, SLUG);
+	const body = renderStoryBody('acme/demo#42', story, SLUG, HASH, CREATED);
 	assert.match(body, /^\*\*Epic:\*\* #42$/m);
 	assert.match(body, /- \*\*ac1:\*\* Given x, when y, then z\./);
-	assert.match(body, new RegExp(`docs/designs/LLD-${SLUG}-s3\\.md`));
+	assert.match(body, new RegExp(`${EPIC_FOLDER}/S003/LLD\\.md`));
 	assert.match(body, /Size: M/);
 });
 

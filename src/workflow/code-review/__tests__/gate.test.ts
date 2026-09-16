@@ -10,7 +10,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { enforceCodeReviewGate, type CodeReviewGateResult } from '../gate.js';
-import { codeReviewArtifactPaths } from '../../storage.js';
+import { artifactJsonPath, codeReviewArtifactId } from '../../storage.js';
 import { CONFIG_CATALOG } from '../../../config/config-catalog.js';
 
 const EPIC = 'e1';
@@ -20,7 +20,7 @@ const STORY = 's7';
 function withRepo(recordJson: string | undefined): { repoPath: string; cleanup: () => void } {
 	const repoPath = mkdtempSync(join(tmpdir(), 'cr-gate-'));
 	if (recordJson !== undefined) {
-		const jsonPath = codeReviewArtifactPaths(repoPath, EPIC, STORY).json;
+		const jsonPath = artifactJsonPath(repoPath, codeReviewArtifactId(EPIC, STORY));
 		mkdirSync(join(jsonPath, '..'), { recursive: true });
 		writeFileSync(jsonPath, recordJson, 'utf8');
 	}
@@ -80,7 +80,7 @@ test('verdict warn => { status:warn } (allowed, warnings surfaced) under enforce
 test('verdict pass => { status:pass }; the gate never approves and writes nothing (ac4/read-only)', () => {
 	const { repoPath, cleanup } = withRepo(crRecord('pass'));
 	try {
-		const jsonPath = codeReviewArtifactPaths(repoPath, EPIC, STORY).json;
+		const jsonPath = artifactJsonPath(repoPath, codeReviewArtifactId(EPIC, STORY));
 		const before = readFileSync(jsonPath, 'utf8');
 		const res = enforceCodeReviewGate(repoPath, EPIC, STORY, { enforce: true });
 		assert.equal(res.status, 'pass');

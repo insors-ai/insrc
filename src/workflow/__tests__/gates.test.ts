@@ -24,26 +24,54 @@ import {
 	rejectArtifactByJsonPath,
 	requireApprovedEpic,
 } from '../gates.js';
-import { defineArtifactPaths, DOCS_ARTIFACT_DIRS, STUB_DIR } from '../storage.js';
+import { defineArtifactPaths } from '../storage.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
+const CREATED = '2026-07-17T07:42:28.275Z';   // → E20260717a3f4b8c9
+const EPIC_SEGMENT = 'E20260717a3f4b8c9';
 
 // ---------------------------------------------------------------------------
-// jsonPathForMd
+// jsonPathForMd — the nested (sc2) scheme resolves the hash-flat json ONLY via
+// the embedded insrc:artifact marker; the bare <KIND>.md filename no longer
+// encodes the id. Stub stays the side-by-side exception; json is a passthrough.
 // ---------------------------------------------------------------------------
 
-test('jsonPathForMd swaps docs/defines md → .insrc/artifacts json', () => {
-	assert.equal(
-		jsonPathForMd(`/repo/docs/defines/DEF-${HASH}.md`),
-		`/repo/.insrc/artifacts/DEF-${HASH}.json`,
-	);
+/** Seed a nested work-item md carrying its insrc:artifact marker, return its abs path. */
+function seedNestedMd(repo: string, relFolder: string, kind: string, id: string): string {
+	const md = join(repo, relFolder, `${kind}.md`);
+	mkdirSync(dirname(md), { recursive: true });
+	writeFileSync(md, `<!-- insrc:artifact ${id} -->\n\n# ${kind}\n`);
+	return md;
+}
+
+test('jsonPathForMd resolves a nested epic DEF md → its hash-named json via the marker', () => {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-marker-'));
+	try {
+		const md = seedNestedMd(repo, `docs/epics/add-tag-filter-${EPIC_SEGMENT}`, 'DEF', `DEF-${HASH}`);
+		assert.equal(jsonPathForMd(md), join(repo, `.insrc/artifacts/DEF-${HASH}.json`));
+	} finally {
+		rmSync(repo, { recursive: true, force: true });
+	}
 });
 
-test('jsonPathForMd swaps docs/designs md → .insrc/artifacts json', () => {
-	assert.equal(
-		jsonPathForMd(`/repo/docs/designs/HLD-${HASH}.md`),
-		`/repo/.insrc/artifacts/HLD-${HASH}.json`,
-	);
+test('jsonPathForMd resolves a nested epic HLD md → its hash-named json via the marker', () => {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-marker-'));
+	try {
+		const md = seedNestedMd(repo, `docs/epics/x-${EPIC_SEGMENT}`, 'HLD', `HLD-${HASH}`);
+		assert.equal(jsonPathForMd(md), join(repo, `.insrc/artifacts/HLD-${HASH}.json`));
+	} finally {
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
+test('jsonPathForMd resolves a nested story-scoped LLD md → its hash-named json via the marker', () => {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-marker-'));
+	try {
+		const md = seedNestedMd(repo, `docs/epics/x-${EPIC_SEGMENT}/S003`, 'LLD', `LLD-${HASH}-s3`);
+		assert.equal(jsonPathForMd(md), join(repo, `.insrc/artifacts/LLD-${HASH}-s3.json`));
+	} finally {
+		rmSync(repo, { recursive: true, force: true });
+	}
 });
 
 test('jsonPathForMd leaves docs/stub layout untouched', () => {
@@ -54,60 +82,54 @@ test('jsonPathForMd returns json paths unchanged', () => {
 	assert.equal(jsonPathForMd('/a/b/c.json'), '/a/b/c.json');
 });
 
-// S001 — SpecArtifact (docs/specs) + docs/reviews now resolve; drift-proof list.
+// SpecArtifact + code-review records live under the SAME nested tree — a SPEC is
+// its own standalone work item, a CR is a story-scoped artifact — and resolve
+// via the marker like every other nested md.
 
-test('jsonPathForMd resolves a docs/specs SPEC md → its hash-named json via the insrc:artifact marker', () => {
+test('jsonPathForMd resolves a nested standalone SPEC md → its hash-named json via the marker', () => {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-gates-spec-'));
 	try {
 		const specHash = 'b77e3f38969bc8f4';
-		const md = join(repo, 'docs', 'specs', 'SPEC-redesign-brainstorm-elicit.md');
-		mkdirSync(dirname(md), { recursive: true });
-		writeFileSync(md, `<!-- insrc:artifact SPEC-${specHash} -->\n\n# Spec\n`);
+		const md = seedNestedMd(repo, `docs/standalone/redesign-brainstorm-E20260717b77e3f38`, 'SPEC', `SPEC-${specHash}`);
 		assert.equal(jsonPathForMd(md), join(repo, '.insrc/artifacts', `SPEC-${specHash}.json`));
 	} finally {
 		rmSync(repo, { recursive: true, force: true });
 	}
 });
 
-test('jsonPathForMd swaps a docs/reviews CR md → .insrc/artifacts json (fallback, previously unrecognized)', () => {
-	assert.equal(
-		jsonPathForMd(`/repo/docs/reviews/CR-${HASH}-s1.md`),
-		`/repo/.insrc/artifacts/CR-${HASH}-s1.json`,
-	);
+test('jsonPathForMd resolves a nested story-scoped CR md → its hash-named json via the marker', () => {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-gates-cr-'));
+	try {
+		const md = seedNestedMd(repo, `docs/epics/x-${EPIC_SEGMENT}/S001`, 'CR', `CR-${HASH}-s1`);
+		assert.equal(jsonPathForMd(md), join(repo, '.insrc/artifacts', `CR-${HASH}-s1.json`));
+	} finally {
+		rmSync(repo, { recursive: true, force: true });
+	}
 });
 
-test('DOCS_ARTIFACT_DIRS is the artifact-dir allow-list and EXCLUDES the side-by-side stub dir', () => {
-	const dirs: readonly string[] = DOCS_ARTIFACT_DIRS;
-	assert.ok(dirs.includes('docs/specs'), 'docs/specs is covered');
-	assert.ok(dirs.includes('docs/reviews'), 'docs/reviews is covered');
-	assert.ok(!dirs.includes(STUB_DIR), 'stub stays the side-by-side exception');
+test('jsonPathForMd recognises both docs/epics and docs/standalone top-levels, stub stays the side-by-side exception', () => {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-gates-tops-'));
+	try {
+		const epicMd = seedNestedMd(repo, `docs/epics/e-${EPIC_SEGMENT}`, 'DEF', `DEF-${HASH}`);
+		const saMd   = seedNestedMd(repo, `docs/standalone/s-${EPIC_SEGMENT}/S001`, 'LLD', `LLD-${HASH}-s1`);
+		assert.equal(jsonPathForMd(epicMd), join(repo, `.insrc/artifacts/DEF-${HASH}.json`));
+		assert.equal(jsonPathForMd(saMd),   join(repo, `.insrc/artifacts/LLD-${HASH}-s1.json`));
+		// Stub is NOT under the nested tree — it keeps the side-by-side md↔json swap.
+		assert.equal(jsonPathForMd('/repo/docs/stub/demo.md'), '/repo/docs/stub/demo.json');
+	} finally {
+		rmSync(repo, { recursive: true, force: true });
+	}
 });
 
 test('jsonPathForMd rejects unknown extensions', () => {
 	assert.throws(() => jsonPathForMd('/a/b/c.txt'));
 });
 
-test('jsonPathForMd resolves a slug-named md to its hash-named json via the marker', () => {
-	const repo = mkdtempSync(join(tmpdir(), 'insrc-marker-'));
-	try {
-		const mdPath = join(repo, 'docs/defines/DEF-add-tag-filter.md');
-		mkdirSync(dirname(mdPath), { recursive: true });
-		writeFileSync(mdPath, `<!-- insrc:artifact DEF-${HASH} -->\n\n# Epic: x\n`);
-		assert.equal(
-			jsonPathForMd(mdPath),
-			join(repo, `.insrc/artifacts/DEF-${HASH}.json`),
-		);
-	} finally {
-		rmSync(repo, { recursive: true, force: true });
-	}
-});
-
-test('jsonPathForMd falls back to dir+ext swap when no marker is present', () => {
-	// Legacy / hand-written md with no marker (file does not exist).
-	assert.equal(
-		jsonPathForMd(`/repo/docs/designs/LLD-${HASH}-s3.md`),
-		`/repo/.insrc/artifacts/LLD-${HASH}-s3.json`,
-	);
+test('jsonPathForMd throws for a nested md with no insrc:artifact marker (path no longer encodes the id)', () => {
+	// A nested work-item md's bare <KIND>.md filename carries no hash id, so with
+	// no marker there is nothing to resolve against — the resolver must refuse
+	// rather than guess (file does not exist → no marker).
+	assert.throws(() => jsonPathForMd(`/repo/docs/epics/x-${EPIC_SEGMENT}/S003/LLD.md`));
 });
 
 // ---------------------------------------------------------------------------
@@ -115,12 +137,12 @@ test('jsonPathForMd falls back to dir+ext swap when no marker is present', () =>
 // ---------------------------------------------------------------------------
 
 function writeFixture(repo: string): string {
-	const paths = defineArtifactPaths(repo, HASH);
+	const paths = defineArtifactPaths(repo, HASH, CREATED, 'epic');
 	mkdirSync(dirname(paths.json), { recursive: true });
 	writeFileSync(paths.json, JSON.stringify({
 		meta: {
 			workflow: 'define', runId: 'r1',
-			epicHash: HASH, epicSlug: 'x',
+			epicHash: HASH, epicSlug: 'x', createdAt: CREATED,
 		},
 		body: { flavor: 'new-capability', problem: 'x', nonGoals: [], assumptions: [], constraints: [], stories: [{ id: 's1', title: 't', userValue: 'v', acceptanceCriteria: [] }], openQuestions: [] },
 		citations: [],

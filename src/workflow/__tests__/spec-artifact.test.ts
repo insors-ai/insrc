@@ -31,12 +31,14 @@ import {
 	finalizeArtifact,
 } from '../orchestrator.js';
 import {
-	SPECS_DIR,
 	specArtifactId,
 	specArtifactPaths,
 	specMdRel,
 	writeAtomic,
 } from '../storage.js';
+
+const SPEC_CREATED = '2026-08-02T00:00:00.000Z';   // → E20260802abcd1234
+const SPEC_EPIC_SEGMENT = 'E20260802abcd1234';       // E<YYYYMMDD><specHash.slice(0,8)>
 import type { WorkflowIntent } from '../types.js';
 
 // ---------------------------------------------------------------------------
@@ -146,22 +148,25 @@ test('isSpecBody: accepts a well-formed body, rejects under-structured ones', ()
 // Storage paths
 // ---------------------------------------------------------------------------
 
-test('specArtifactId / specArtifactPaths: hash-named json, slug-named md under docs/specs', () => {
+test('specArtifactId / specArtifactPaths: hash-named json, nested slug-labelled md under docs/standalone', () => {
 	assert.equal(specArtifactId('abcd1234ef567890'), 'SPEC-abcd1234ef567890');
-	const paths = specArtifactPaths('/tmp/repo', 'abcd1234ef567890', 'brainstorm-stage');
+	const paths = specArtifactPaths('/tmp/repo', 'abcd1234ef567890', SPEC_CREATED, 'standalone', 'brainstorm-stage');
 	assert.equal(paths.json, '/tmp/repo/.insrc/artifacts/SPEC-abcd1234ef567890.json');
-	assert.equal(paths.md,   '/tmp/repo/docs/specs/SPEC-brainstorm-stage.md');
-	// No slug → md falls back to the hash.
-	const noSlug = specArtifactPaths('/tmp/repo', 'abcd1234ef567890');
-	assert.equal(noSlug.md, '/tmp/repo/docs/specs/SPEC-abcd1234ef567890.md');
-	assert.equal(specMdRel('brainstorm-stage'), `${SPECS_DIR}/SPEC-brainstorm-stage.md`);
+	assert.equal(paths.md,   `/tmp/repo/docs/standalone/brainstorm-stage-${SPEC_EPIC_SEGMENT}/SPEC.md`);
+	// No slug → folder label falls back to the hash.
+	const noSlug = specArtifactPaths('/tmp/repo', 'abcd1234ef567890', SPEC_CREATED, 'standalone');
+	assert.equal(noSlug.md, `/tmp/repo/docs/standalone/abcd1234ef567890-${SPEC_EPIC_SEGMENT}/SPEC.md`);
+	assert.equal(
+		specMdRel('abcd1234ef567890', SPEC_CREATED, 'standalone', 'brainstorm-stage'),
+		`docs/standalone/brainstorm-stage-${SPEC_EPIC_SEGMENT}/SPEC.md`,
+	);
 });
 
 test('writeAtomic round-trip: SpecArtifact json is deep-equal + idempotent', () => {
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-spec-'));
 	try {
 		const artifact = specArtifact();
-		const paths = specArtifactPaths(dir, artifact.meta.specHash!, artifact.meta.epicSlug);
+		const paths = specArtifactPaths(dir, artifact.meta.specHash!, artifact.meta.createdAt, 'standalone', artifact.meta.epicSlug);
 		const json = JSON.stringify(artifact, null, 2) + '\n';
 		writeAtomic(paths.json, json);
 		const first = JSON.parse(readFileSync(paths.json, 'utf8'));

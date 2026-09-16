@@ -25,7 +25,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { approveWorkflowTarget } from '../gates.js';
-import { codeReviewArtifactPaths } from '../storage.js';
+import { artifactJsonPath, codeReviewArtifactId } from '../storage.js';
 
 const HASH = 'abc123def4567890';
 
@@ -55,7 +55,7 @@ function writeArtifact(
 /** Write a CR-<epic>-<story>.json record with the given verdict, or a corrupt
  *  (unparseable) record. Skip entirely to model an absent record. */
 function writeCR(repo: string, storyId: string, verdict: 'pass' | 'warn' | 'block' | 'corrupt'): void {
-	const json = codeReviewArtifactPaths(repo, HASH, storyId).json;
+	const json = artifactJsonPath(repo, codeReviewArtifactId(HASH, storyId));
 	if (verdict === 'corrupt') { writeFileSync(json, '{ not valid json'); return; }
 	writeFileSync(json, JSON.stringify({ body: { verdict, counts: { high: verdict === 'block' ? 2 : 0, med: 1, low: 3 } } }, null, 2));
 }

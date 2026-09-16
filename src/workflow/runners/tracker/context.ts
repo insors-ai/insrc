@@ -25,7 +25,7 @@ import { readLldArtifact } from '../../artifacts/lld-io.js';
 import { renderEpicBody, renderTrackerHldSummary, renderTrackerLldSummary, renderTrackerAmendmentSummary } from '../../tracker/conventions.js';
 import type { PlanArtifact } from '../../artifacts/plan.js';
 import { resolveGithubConfig, type ResolvedGithubConfig } from '../../config/github.js';
-import { planArtifactPaths, planMdRel } from '../../storage.js';
+import { artifactJsonPath, planArtifactId, planMdRel } from '../../storage.js';
 import { assertEpicHash } from '../../hash.js';
 import type { StepRunnerContext } from '../../types.js';
 import type { PostContext, PushContext, PushTaskInfo, SyncContext } from './schemas.js';
@@ -68,14 +68,14 @@ export function assemblePushContext(ctx: StepRunnerContext): PushContext {
 	const plans: { storyId: string; planDocRel: string; tasks: PushTaskInfo[] }[] = [];
 	if (gh.pushTasks) {
 		for (const s of epic.body.stories) {
-			const planJson = planArtifactPaths(ctx.intent.repoPath, epicHash, s.id).json;
+			const planJson = artifactJsonPath(ctx.intent.repoPath, planArtifactId(epicHash, s.id));
 			if (!existsSync(planJson)) continue;
 			let plan: PlanArtifact & { meta: { approvedAt?: string; tracker?: { taskRefs?: Record<string, string> } } };
 			try { plan = JSON.parse(readFileSync(planJson, 'utf8')) as typeof plan; } catch { continue; }
 			if (typeof plan.meta?.approvedAt !== 'string' || plan.meta.approvedAt.length === 0) continue;   // unapproved plan → skip
 			plans.push({
 				storyId:    s.id,
-				planDocRel: planMdRel(epicSlug, s.id),
+				planDocRel: planMdRel(epicHash, epic.meta.createdAt, 'epic', epicSlug, s.id),
 				tasks: [...(plan.body?.tasks ?? [])].sort((a, b) => a.order - b.order).map(t => ({
 					id: t.id, title: t.title, size: t.size, summary: t.summary,
 					dependsOn: t.dependsOn, acceptanceChecks: t.acceptanceChecks,

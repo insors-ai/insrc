@@ -44,10 +44,16 @@ import { resolveGithubConfig } from './config/github.js';
 import { renderCitationBlock } from './synthesizer.js';
 import {
 	ARTIFACTS_DIR,
+	artifactJsonPath,
+	defineArtifactId,
 	defineArtifactPaths,
+	hldArtifactId,
 	hldArtifactPaths,
+	lldArtifactId,
 	lldArtifactPaths,
 	lldFilenamePrefix,
+	workItemAnchorCreatedAt,
+	workItemKindOf,
 	writeAtomic,
 } from './storage.js';
 import { commitAndPushArtifacts, ghComment } from './tracker/github.js';
@@ -293,18 +299,21 @@ function locateArtifact(
 		throw new Error(`workflow:questions: kind='lld' requires a storyId`);
 	}
 	const jsonPath = kind === 'define'
-		? defineArtifactPaths(repoPath, epicHash).json
+		? artifactJsonPath(repoPath, defineArtifactId(epicHash))
 		: kind === 'hld'
-			? hldArtifactPaths(repoPath, epicHash).json
-			: lldArtifactPaths(repoPath, epicHash, storyId!).json;
+			? artifactJsonPath(repoPath, hldArtifactId(epicHash))
+			: artifactJsonPath(repoPath, lldArtifactId(epicHash, storyId!));
 	const artifact = JSON.parse(readFileSync(jsonPath, 'utf8')) as QuestionArtifact;
 	const epicSlug = artifact.meta.epicSlug;
 	const tracker = artifact.meta.tracker;
+	// The QuestionArtifact meta type is narrowed to the question fields; the
+	// sc2 folder anchor + split fields live on the underlying artifact meta.
+	const folderMeta = artifact.meta as unknown as { readonly createdAt: string; readonly epicCreatedAt?: string; readonly standalone?: boolean };
 	if (kind === 'define') {
 		return {
 			artifact,
 			jsonPath,
-			mdPath:     defineArtifactPaths(repoPath, epicHash, epicSlug).md,
+			mdPath:     defineArtifactPaths(repoPath, epicHash, workItemAnchorCreatedAt(folderMeta), workItemKindOf(folderMeta), epicSlug).md,
 			trackerRef: tracker?.epicRef,
 			renderMd:   (a, res) => {
 				const art = a as unknown as DefineArtifact;
@@ -316,7 +325,7 @@ function locateArtifact(
 		return {
 			artifact,
 			jsonPath,
-			mdPath:     hldArtifactPaths(repoPath, epicHash, epicSlug).md,
+			mdPath:     hldArtifactPaths(repoPath, epicHash, workItemAnchorCreatedAt(folderMeta), workItemKindOf(folderMeta), epicSlug).md,
 			trackerRef: tracker?.epicRef,
 			renderMd:   (a, res) => {
 				const art = a as unknown as HldArtifact;
@@ -327,7 +336,7 @@ function locateArtifact(
 	return {
 		artifact,
 		jsonPath,
-		mdPath:     lldArtifactPaths(repoPath, epicHash, storyId!, epicSlug).md,
+		mdPath:     lldArtifactPaths(repoPath, epicHash, storyId!, workItemAnchorCreatedAt(folderMeta), workItemKindOf(folderMeta), epicSlug).md,
 		trackerRef: tracker?.storyRef,
 		renderMd:   (a, res) => {
 			const art = a as unknown as LldArtifact;

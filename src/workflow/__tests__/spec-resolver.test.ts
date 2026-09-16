@@ -62,7 +62,7 @@ function specArtifact(approved: boolean): SpecArtifact {
 
 /** Persist a SPEC artifact (json + md) at its hash-addressed path into `repo`. */
 function writeSpec(repo: string, artifact: SpecArtifact): { md: string; json: string } {
-	const paths = specArtifactPaths(repo, artifact.meta.specHash!, artifact.meta.epicSlug);
+	const paths = specArtifactPaths(repo, artifact.meta.specHash!, artifact.meta.createdAt, 'standalone', artifact.meta.epicSlug);
 	writeAtomic(paths.json, JSON.stringify(artifact, null, 2) + '\n');
 	writeAtomic(paths.md, renderSpecMarkdown(artifact));
 	return paths;
@@ -112,7 +112,7 @@ test('readSpecArtifact: throws a plain Error (not the typed ones) on a corrupt b
 	withRepo(repo => {
 		const bad = specArtifact(true) as unknown as { meta: SpecArtifact['meta']; body: unknown; citations: unknown };
 		bad.body = { intent: 'no scopeBoundary, wrong shape' };  // fails isSpecBody
-		const paths = specArtifactPaths(repo, SPEC_HASH, 'brainstorm-stage');
+		const paths = specArtifactPaths(repo, SPEC_HASH, '2026-08-02T00:00:00.000Z', 'standalone', 'brainstorm-stage');
 		writeAtomic(paths.json, JSON.stringify(bad, null, 2) + '\n');
 		assert.throws(
 			() => readSpecArtifact(repo, SPEC_HASH),

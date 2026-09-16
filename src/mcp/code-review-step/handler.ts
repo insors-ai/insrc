@@ -29,6 +29,7 @@ import { fetchCodeReviewGrounding, fetchCodeReviewFreshness } from '../daemon-st
 import { assembleDiffCodeReviewGrounding, DiffUnavailableError } from '../../workflow/code-review/grounding.js';
 import { runCodeReview, type CodeReviewRunnerDeps } from '../../workflow/code-review/runner.js';
 import { codeReviewArtifactPaths, writeAtomic } from '../../workflow/storage.js';
+import { codeReviewSubjectPathArgs } from '../../workflow/code-review/subject-paths.js';
 import { buildAdherencePrompt } from '../../workflow/code-review/dimensions/adherence.js';
 import { buildConventionsPrompt } from '../../workflow/code-review/dimensions/conventions.js';
 import { buildCoveragePrompt } from '../../workflow/code-review/dimensions/coverage.js';
@@ -471,7 +472,8 @@ async function driveRunner(
 		return errorResult('fold-failed', `insrc_code_review_step: ${outcome.error}`, true);
 	}
 	releaseState(token);   // consumed — a resend of this token fails loadState (no double-write)
-	const paths = codeReviewArtifactPaths(subject.repoPath, subject.epicHash, subject.storyId);
+	const cra = codeReviewSubjectPathArgs(subject);
+	const paths = codeReviewArtifactPaths(subject.repoPath, subject.epicHash, subject.storyId, cra.createdAtISO, cra.workItemKind, cra.epicSlug);
 	return {
 		next:     'done',
 		verdict:  outcome.artifact.body.verdict,

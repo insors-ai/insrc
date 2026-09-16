@@ -33,6 +33,8 @@ import { approveArtifactByJsonPath, jsonPathForMd } from '../gates.js';
 import { validateCitations } from '../synthesizer.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
+const CREATED = '2026-07-17T07:42:28.275Z';   // → E20260717a3f4b8c9
+const EPIC_SEGMENT = 'E20260717a3f4b8c9';       // E<YYYYMMDD><hash8>, hash8 = HASH.slice(0,8)
 const CITES: readonly Citation[] = [{ id: 'c1', kind: 'prior-artifact', ref: 'LLD s1 handoff' }];
 
 function task(over: Partial<PlanTask>): PlanTask {
@@ -200,18 +202,18 @@ test('renderPlanMarkdown output passes validateCitations (every citation grounde
 	assert.equal(validateCitations(md, CITES).ok, true);
 });
 
-test('planArtifactPaths: slug-md under docs/plans + hash-json under .insrc/artifacts; hash fallback', () => {
-	const p = planArtifactPaths('/repo', HASH, 's1', 'tag-filtering');
-	assert.ok(p.md.endsWith('/docs/plans/PLAN-tag-filtering-s1.md'), p.md);
+test('planArtifactPaths: nested story-scoped md under docs/epics + hash-json under .insrc/artifacts; hash fallback', () => {
+	const p = planArtifactPaths('/repo', HASH, 's1', CREATED, 'epic', 'tag-filtering');
+	assert.equal(p.md, `/repo/docs/epics/tag-filtering-${EPIC_SEGMENT}/S001/PLAN.md`);
 	assert.ok(p.json.endsWith(`/.insrc/artifacts/PLAN-${HASH}-s1.json`), p.json);
-	const noSlug = planArtifactPaths('/repo', HASH, 's1');
-	assert.ok(noSlug.md.endsWith(`/docs/plans/PLAN-${HASH}-s1.md`), noSlug.md);
+	const noSlug = planArtifactPaths('/repo', HASH, 's1', CREATED, 'epic');
+	assert.equal(noSlug.md, `/repo/docs/epics/${HASH}-${EPIC_SEGMENT}/S001/PLAN.md`);
 });
 
 test('jsonPathForMd resolves a rendered plan md back to its canonical json; approve sets approvedAt', () => {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-plan-art-'));
 	try {
-		const paths = planArtifactPaths(repo, HASH, 's1', 'tag-filtering');
+		const paths = planArtifactPaths(repo, HASH, 's1', CREATED, 'epic', 'tag-filtering');
 		writeAtomic(paths.md, renderPlanMarkdown(fixtureArtifact()));
 		writeAtomic(paths.json, JSON.stringify(fixtureArtifact(), null, 2) + '\n');
 		assert.equal(jsonPathForMd(paths.md), paths.json);

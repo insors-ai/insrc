@@ -330,10 +330,10 @@ test('resolver — unknown / malformed identifier → null', () => {
 // ---------------------------------------------------------------------------
 
 test('id marker embeds as the first body line and round-trips out', () => {
-	const body = renderTaskBody('acme/demo#5', 's1', TASK_T3, 'demo-feature', { owner: 'acme', repo: 'demo' }, CANON_TASK);
+	const body = renderTaskBody('acme/demo#5', 's1', TASK_T3, 'demo-feature', EPIC_HASH, CREATED, { owner: 'acme', repo: 'demo' }, CANON_TASK);
 	assert.equal(body.split('\n')[0], `<!-- insrc:id ${CANON_TASK} -->`);
 	assert.equal(parseIdMarker(body), CANON_TASK);
 	// Without a workflowId the marker is absent.
-	const bare = renderTaskBody('acme/demo#5', 's1', TASK_T3, 'demo-feature');
+	const bare = renderTaskBody('acme/demo#5', 's1', TASK_T3, 'demo-feature', EPIC_HASH, CREATED);
 	assert.equal(parseIdMarker(bare), null);
 });

@@ -1,0 +1,717 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1789535029092-mupr13",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-16T05:16:18.745Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 749621,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "599a9b506f22b896",
+    "epicSlug": "restructure-docs-artifact-markdown-from-flat",
+    "storyId": "s2",
+    "hldBaseRunId": "wf-1789491140629-zj0bd2",
+    "hldEffectiveHash": "196ad617cc5c57e05ae4510a97285972ebb19d3ed29b7e1b5e93a92b161bd920",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "storage.ts defines exactly 9 *ArtifactPaths helpers (stub/define/spec/hld/lld/plan/build/codeReview/extend), each returning { md, json }.",
+          "evidence": "grep over src/ (excl. tests) finds exactly 9 helper definitions in storage.ts:201-345 — stub/define/spec/hld/lld/plan/build/codeReview/extend — matching the LLD's inventory of 9 *ArtifactPaths.",
+          "action": "None — inventory is accurate.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl2",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "storage.ts declares the six flat per-type docs dirs (DEFINES_DIR/DESIGNS_DIR/PLANS_DIR/BUILDS_DIR/SPECS_DIR/REVIEWS_DIR) plus STUB_DIR and ARTIFACTS_DIR, and a DOCS_ARTIFACT_DIRS list.",
+          "evidence": "storage.ts:50-69 declares ARTIFACTS_DIR, the six flat docs dirs (DEFINES/DESIGNS/PLANS/BUILDS/REVIEWS/SPECS_DIR), STUB_DIR, and DOCS_ARTIFACT_DIRS = [DEFINES,DESIGNS,PLANS,BUILDS,SPECS,REVIEWS] — exactly as the LLD states.",
+          "action": "None — accurate.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl3",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "storage.ts defines the *MdRel builders (defineMdRel/hldMdRel/lldMdRel/planMdRel/buildMdRel/specMdRel) and plan/buildFilenamePrefix used by md-side finders.",
+          "evidence": "storage.ts:365-370 defines the six *MdRel builders (define/hld/lld/plan/build/spec); planFilenamePrefix:292 + buildFilenamePrefix:317 confirmed. (amendmentFilenamePrefix:389 + lldFilenamePrefix:394 also exist but serve the JSON store, correctly excluded from the md-side retirement.)",
+          "action": "None — accurate.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "gates.ts contains the docs-md finders cited: readdirSync scans (~:133 and ~:593), a basename.startsWith('BUILD-') match (~:650), and two DOCS_ARTIFACT_DIRS sweeps (~:789/:810).",
+          "evidence": "gates.ts confirmed verbatim: readdirSync at :133 and :593, basename(jsonPath).startsWith('BUILD-') at :650, [...DOCS_ARTIFACT_DIRS, STUB_DIR] sweep at :789, DOCS_ARTIFACT_DIRS sweep at :810. Every cited line resolves exactly.",
+          "action": "None — citations exact.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl5",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The JSON-store scanners that must NOT be re-pointed exist: amendments/store.ts + amendments/staleness.ts (amendmentFilenamePrefix over the .insrc/artifacts amendments root), questions.ts (~:523 lldFilenamePrefix over ARTIFACTS_DIR), tracker/resolve.ts (~:114 reads the .insrc/artifacts JSON dir).",
+          "evidence": "JSON-store scanners confirmed: amendmentFilenamePrefix used at amendments/store.ts:66/197; questions.ts:523 iterates readdirSync(artifactsDir); tracker/resolve.ts:114 returns readdirSync(dir) over the .insrc/artifacts dir. All are the out-of-scope hash-flat scanners the LLD says to leave untouched.",
+          "action": "None — accurate; correctly excluded.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl6",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "sc1 shipped in id.ts: deriveWorkItemIdentity(epicHash, createdAtISO, storyId?) is exported and storyIdToOrdinal accepts both s<n> and S<n> (regex /^[sS](\\d+)$/).",
+          "evidence": "id.ts:202 exports deriveWorkItemIdentity; storyIdToOrdinal:119 uses /^[sS](\\d+)$/ (read confirmed in id.ts). sc1 is available as consumed.",
+          "action": "None — accurate.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl7",
+          "kind": "citation",
+          "severity": "MED",
+          "premise": "The cli/daemon docs-md finder sites cited exist: cli/services/workflow.ts (~:122), cli/services/debug.ts (~:481), and daemon/backup.ts (~:103) recursive whole-tree walk.",
+          "evidence": "The LLD's 'docs-md finders (read side) in gates.ts + cli' entry (and migration step 4) lists cli/services/workflow.ts:122 and cli/services/debug.ts:481 as docs-md finders to replace with sc2.listWorkItems/listArtifactMdPaths. Direct verification refutes both: workflow.ts has exactly ONE readdirSync (:122) and it scans join(repoPath, ARTIFACTS_DIR) — the hash-flat .insrc/artifacts JSON store (listEpics over DEF_RE), which the LLD's OWN c2 invariant says must stay byte-unchanged; debug.ts has exactly ONE readdirSync (:481) and it lists rotated *.log segment files, unrelated to artifacts entirely. Only gates.ts is a genuine docs-md finder. Following the LLD literally would re-point an out-of-scope JSON-store scanner (a correctness regression contradicting its own invariant) and touch an unrelated log lister.",
+          "action": "Scope the read-side (listWorkItems/listArtifactMdPaths) cutover to gates.ts ONLY. Drop cli/services/workflow.ts:122 and cli/services/debug.ts:481 from the docs-md finder set; confirm workflow.ts:122 (listEpics over ARTIFACTS_DIR) stays in the untouched JSON-store scanner set, and remove debug.ts entirely from this story's read-side scope. (workflow.ts remains a legitimate WRITE-side *ArtifactPaths caller per cl8 — that classification is unaffected.)",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The two cli sites are misclassified: :122 is a JSON-store scanner (out of scope, must stay unchanged) and :481 is a log-segment lister (unrelated). Restrict the read-side finder cutover to gates.ts so the build does not touch the hash-flat store or an unrelated log path.",
+            "artifactEdits": [
+              {
+                "find": "gates.ts readdir loops (:133, :593), the basename.startsWith('BUILD-') match (:650), and the two DOCS_ARTIFACT_DIRS sweeps (:789, :810) are replaced by sc2.listWorkItems/listArtifactMdPaths; cli/services/workflow.ts:122 + cli/services/debug.ts:481 docs listings likewise.",
+                "replace": "gates.ts readdir loops (:133, :593), the basename.startsWith('BUILD-') match (:650), and the two DOCS_ARTIFACT_DIRS sweeps (:789, :810) are replaced by sc2.listWorkItems/listArtifactMdPaths. gates.ts is the ONLY genuine docs-md finder: cli/services/workflow.ts:122 scans ARTIFACTS_DIR (the hash-flat JSON store — an out-of-scope scanner that stays unchanged), and cli/services/debug.ts:481 lists rotated log segments (unrelated), so neither is re-pointed."
+              },
+              {
+                "find": "Replace the docs-md finders with the resolver's listing API: gates.ts readdir loops (:133/:593), the BUILD- prefix match (:650), and the two DOCS_ARTIFACT_DIRS sweeps (:789/:810) call listWorkItems/listArtifactMdPaths; cli/services/workflow.ts:122 + debug.ts:481 likewise.",
+                "replace": "Replace the docs-md finders with the resolver's listing API: gates.ts readdir loops (:133/:593), the BUILD- prefix match (:650), and the two DOCS_ARTIFACT_DIRS sweeps (:789/:810) call listWorkItems/listArtifactMdPaths. gates.ts is the only docs-md finder; cli/services/workflow.ts:122 (scans ARTIFACTS_DIR, the JSON store) and debug.ts:481 (log-segment lister) are NOT re-pointed."
+              }
+            ]
+          }
+        },
+        {
+          "claimId": "cl8",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "There are 14 non-test modules calling the *ArtifactPaths helpers (the write-side caller inventory to re-point): orchestrator, tracker/link, code-review/runner, code-review/gate, mcp/code-review-step/handler, runners/build/standalone-record, tracker-auto, chain, gates, artifacts/lld-io, tracker/sync, runners/tracker/context, questions, cli/services/workflow.",
+          "evidence": "grep for *ArtifactPaths( callers in src/ (excl. tests + storage.ts) returns exactly 14 distinct modules, matching the LLD's list one-for-one (orchestrator, tracker/link, code-review/runner, code-review/gate, mcp/code-review-step/handler, runners/build/standalone-record, tracker-auto, chain, gates, artifacts/lld-io, tracker/sync, runners/tracker/context, questions, cli/services/workflow).",
+          "action": "None — count and members exact.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl9",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The { json } side of the *ArtifactPaths helpers keys off ARTIFACTS_DIR by hash artifactId (join(repoPath, ARTIFACTS_DIR, `${...ArtifactId(...)}.json`)) — the hash-flat store that stays untouched.",
+          "evidence": "storage.ts helpers build the json side as join(repoPath, ARTIFACTS_DIR, `${...ArtifactId(...)}.json`) keyed by hash id; ARTIFACTS_DIR='.insrc/artifacts' (:50). The md/json split the LLD preserves is real.",
+          "action": "None — accurate.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl10",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "fileSeg is a real helper in storage.ts used to sanitize the slug/hash into the folder/filename segment.",
+          "evidence": "storage.ts:152 defines function fileSeg(s: string): string — the sanitizer the LLD's returns-clause references for the folder/filename segment.",
+          "action": "None — accurate.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl11",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "The story-scoped artifact kinds are exactly {LLD,PLAN,BUILD,CR,EXT} and the item-root kinds exactly {SPEC,DEF,HLD}; together these 8 are the complete ArtifactKind set the storage helpers cover.",
+          "evidence": "The 9 helpers map to the 8 ArtifactKinds {SPEC,DEF,HLD,LLD,PLAN,BUILD,CR,EXT} (define/spec/hld/lld/plan/build/codeReview/extend) plus stub; the story-scoped {LLD,PLAN,BUILD,CR,EXT} vs item-root {SPEC,DEF,HLD} partition is consistent with the per-story vs per-epic filename shapes in storage.ts (storyId param present on lld/plan/build/codeReview/extend, absent on define/hld/spec).",
+          "action": "None — the closed-union partition is consistent with the helper signatures.",
+          "fixability": "auto"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 1,
+        "low": 10
+      },
+      "reviewedAt": "2026-09-16T05:19:27.557Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-16T05:52:50.103Z",
+    "reviewOverride": {
+      "reason": "true",
+      "at": "2026-09-16T05:52:50.103Z"
+    }
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "A single work-item path-scheme module becomes the sole authority on where a work item's artifacts live. It is built on a uniform work-item identity — the existing canonical WorkflowId, fixed so every story-id form (lowercase s1 and uppercase S001) canonicalizes the same way — and maps that identity plus a human slug to a nested, work-item-first tree: docs/epics/<slug>-E<date><hash8>/ for epic-parented work and docs/standalone/<slug>-E<date><hash8>/ for triage-routed features, each holding item-root artifacts (SPEC/DEF/HLD) at its root and per-story S<nnn>/ subfolders (LLD/PLAN/BUILD/CR/EXT). Every per-type path helper delegates to this module and every directory-enumeration / filename-prefix finder is replaced by its listing functions, so the write side and the read side resolve the layout through one definition and can never disagree. The one-time migration reuses the very same resolver to compute each existing file's destination; the hash-flat .insrc/artifacts JSON store is left untouched.",
+      "ownedContracts": [
+        {
+          "id": "sc2",
+          "name": "Work-item artifact path scheme",
+          "purpose": "The single authority mapping a work item's identity + human slug to its place in the nested tree, and enumerating the tree. Every artifact writer and every finder routes through it, so the write side and read side share one layout definition; the filename supplies only the human label, never identity.",
+          "interfaceSketch": "type ArtifactKind = 'SPEC' | 'DEF' | 'HLD' | 'LLD' | 'PLAN' | 'BUILD' | 'CR' | 'EXT';\ntype WorkItemKind = 'epic' | 'standalone';\n\ninterface WorkItemLocation {\n  readonly kind:     WorkItemKind;\n  readonly root:     string;      // docs/<epics|standalone>/<slug>-E<date><hash8>/\n  readonly storySeg?: string;     // 'S<nnn>' when the artifact is story-scoped; absent for SPEC/DEF/HLD at the item root\n}\n\n// Type-level declarations only (no bodies):\n// md path for one artifact; the companion JSON path is unchanged (hash-flat store, out of scope).\ndeclare function resolveArtifactMdPath(\n  repoPath: string, identity: WorkItemIdentity, kind: ArtifactKind, workItemKind: WorkItemKind, slug: string,\n): string;\n// reverse: enumerate every work-item folder, and every artifact md within one — replaces readdir+prefix scans\ndeclare function listWorkItems(repoPath: string): readonly WorkItemLocation[];\ndeclare function listArtifactMdPaths(repoPath: string, location: WorkItemLocation): readonly string[];",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s3"
+          ],
+          "assumptions": [
+            "c3",
+            "c6"
+          ]
+        }
+      ],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "Uniform work-item identity",
+          "purpose": "One canonical, both-way identity for every work item and story — epic-parented or standalone — so identity can serve as the folder key and lookup key the whole layout hangs on. Closes the gap where an uppercase-form story id fails to canonicalize and falls back to a bare id.",
+          "interfaceSketch": "// Total, both-way work-item identity built on the canonical WorkflowId.\n// storyId accepts BOTH 's1' and 'S001'; ordinalToStoryId <-> storyIdToOrdinal round-trips.\ninterface WorkItemIdentity {\n  readonly canonical: string;    // E<YYYYMMDD><hash8>:S<nnn>[:T<nnn>]\n  readonly slug:      string;    // E<YYYYMMDD><hash8>-S<nnn>[-T<nnn>]\n  readonly epicSegment: string;  // E<YYYYMMDD><hash8>\n  readonly story?:    number;    // 1-based ordinal (s1 and S001 both -> 1); absent at epic level\n}\n\n// Type-level declarations only (no bodies):\ndeclare function storyIdToOrdinal(storyId: string): number;               // accepts s\\d+ AND S\\d+\ndeclare function ordinalToStoryId(ordinal: number): string;               // canonical S<nnn>\ndeclare function deriveWorkItemIdentity(\n  epicHash: string, createdAtISO: string, storyId?: string,\n): WorkItemIdentity;",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3"
+          ],
+          "assumptions": [
+            "c2"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s2",
+        "owns": [
+          "sc2"
+        ],
+        "depends": [
+          "sc1"
+        ],
+        "internal": "Private to S002: the exact nested tree grammar (docs/epics vs docs/standalone top-level split, the item-root vs S<nnn>/ subfolder placement per artifact kind, and the bare LLD.md/PLAN.md/BUILD.md/CR.md naming inside a story folder), the rewrite of each per-type *ArtifactPaths helper into a delegate over sc2, and the replacement of every readdir-over-DOCS_ARTIFACT_DIRS enumeration and startsWith('BUILD-')/planFilenamePrefix-style finder with sc2's listing functions. Consumers see only the sc2 resolver surface, not which call sites were re-pointed."
+      },
+      "rolloutPhase": "Phase B — path-scheme resolver + consumer cutover",
+      "nonFunctional": {
+        "performance": "The resolver is pure path construction plus, for listing, a bounded walk of the nested tree — no measurable regression versus today's per-type readdir scans over a repo with ~200 artifacts.",
+        "security": "No new surface: the artifact store is filesystem-local and the change adds no external input or network path; identity is read from files the daemon already owns.",
+        "observability": "The migration fails loud — every unmappable file is reported by path + reason (k3), and the first cross-document link that does not resolve against the new tree aborts the run with that link named (k4).",
+        "durability": "git mv preserves each artifact's version history (k4); the hash-flat .insrc/artifacts JSON store — the canonical machine record — is untouched, so no machine-readable state is at risk in the move."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "resolveArtifactMdPath",
+          "signature": "function resolveArtifactMdPath(repoPath: string, identity: WorkItemIdentity, kind: ArtifactKind, workItemKind: WorkItemKind, slug: string): string",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "repo root the docs/ tree lives under",
+              "optional": false
+            },
+            {
+              "name": "identity",
+              "type": "WorkItemIdentity",
+              "purpose": "the sc1 identity (epicSegment supplies the folder key; story ordinal supplies the S<nnn> subfolder)",
+              "optional": false
+            },
+            {
+              "name": "kind",
+              "type": "ArtifactKind",
+              "purpose": "'SPEC'|'DEF'|'HLD'|'LLD'|'PLAN'|'BUILD'|'CR'|'EXT' — selects the item-root vs story-subfolder placement and the bare <KIND>.md filename",
+              "optional": false
+            },
+            {
+              "name": "workItemKind",
+              "type": "WorkItemKind",
+              "purpose": "'epic' | 'standalone' — selects the docs/epics vs docs/standalone top-level",
+              "optional": false
+            },
+            {
+              "name": "slug",
+              "type": "string",
+              "purpose": "the human-readable label; contributes only the folder's slug portion, never identity",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "absolute md path: join(repoPath, 'docs', workItemKind==='epic'?'epics':'standalone', `${fileSeg(slug)}-${identity.epicSegment}`, storyScoped ? `S${pad(identity.story)}` : '', `${kind}.md`). SPEC/DEF/HLD sit at the item root (no story segment); LLD/PLAN/BUILD/CR/EXT sit under S<nnn>/."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "kind is story-scoped (LLD/PLAN/BUILD/CR/EXT) but identity.story is undefined (an epic-level identity cannot locate a story artifact)"
+            }
+          ],
+          "preconditions": [
+            "identity was produced by sc1's deriveWorkItemIdentity (so epicSegment is well-formed and story is the ordinal or undefined)"
+          ],
+          "postconditions": [
+            "Pure path construction — no filesystem read; the story segment is present iff kind is story-scoped",
+            "The companion JSON path is NOT produced here — the hash-flat .insrc/artifacts store is unchanged (out of scope)",
+            "Filename is the bare <KIND>.md; identity never comes from the filename (lc1)"
+          ]
+        },
+        {
+          "name": "listWorkItems",
+          "signature": "function listWorkItems(repoPath: string): readonly WorkItemLocation[]",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "repo root",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "readonly WorkItemLocation[]",
+            "meaning": "one entry per work-item folder found under docs/epics/ and docs/standalone/ (kind + root; storySeg omitted at this level) — replaces the readdir-over-DOCS_ARTIFACT_DIRS sweeps"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Bounded walk of docs/epics + docs/standalone (two levels); missing dirs yield an empty list, not a throw",
+            "Order is deterministic (sorted) to match the existing sorted readdir enumerations"
+          ]
+        },
+        {
+          "name": "listArtifactMdPaths",
+          "signature": "function listArtifactMdPaths(repoPath: string, location: WorkItemLocation): readonly string[]",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "repo root",
+              "optional": false
+            },
+            {
+              "name": "location",
+              "type": "WorkItemLocation",
+              "purpose": "a work-item folder from listWorkItems",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "readonly string[]",
+            "meaning": "every artifact .md path within that work item (item-root SPEC/DEF/HLD + each S<nnn>/ story artifact) — replaces the basename.startsWith('BUILD-')-style prefix scans"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Bounded walk of the one work-item folder; deterministic order"
+          ]
+        },
+        {
+          "name": "lldArtifactPaths",
+          "signature": "function lldArtifactPaths(repoPath: string, epicHash: string, storyId: string, createdAtISO: string, workItemKind: WorkItemKind, epicSlug?: string): { readonly md: string; readonly json: string }",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "repo root",
+              "optional": false
+            },
+            {
+              "name": "epicHash",
+              "type": "string",
+              "purpose": "epic hash (identity + json id)",
+              "optional": false
+            },
+            {
+              "name": "storyId",
+              "type": "string",
+              "purpose": "story id (either case, via sc1)",
+              "optional": false
+            },
+            {
+              "name": "createdAtISO",
+              "type": "string",
+              "purpose": "NEW — the artifact's meta.createdAt, supplies the E<date> folder segment",
+              "optional": false
+            },
+            {
+              "name": "workItemKind",
+              "type": "WorkItemKind",
+              "purpose": "NEW — 'epic' | 'standalone' for the top-level split",
+              "optional": false
+            },
+            {
+              "name": "epicSlug",
+              "type": "string",
+              "purpose": "human slug for the folder label; trailing-optional so JSON-only callers keep working",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "{ md: string; json: string }",
+            "meaning": "md now resolved via deriveWorkItemIdentity + resolveArtifactMdPath (nested tree); json unchanged (ARTIFACTS_DIR/<lldArtifactId>.json). Representative of the reshape applied uniformly to all 9 *ArtifactPaths helpers (define/spec/hld/lld/plan/build/codeReview/extend/stub) and the *MdRel builders."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "propagated from resolveArtifactMdPath/deriveWorkItemIdentity on a malformed id"
+            }
+          ],
+          "preconditions": [
+            "createdAtISO + workItemKind supplied by the caller from the artifact's meta (meta.createdAt + the standalone flag)"
+          ],
+          "postconditions": [
+            "md side delegates to sc2; json side byte-identical to before (hash-flat store untouched)",
+            "Every one of the 14 non-test *ArtifactPaths caller sites passes the new createdAtISO + workItemKind (tsc enforces completeness)"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "src/workflow/path-scheme.ts (new module — sc2)",
+        "change": "new",
+        "details": "New module owning the layout: ArtifactKind + WorkItemKind + WorkItemLocation types, resolveArtifactMdPath, listWorkItems, listArtifactMdPaths, and the internal STORY_SCOPED set ({LLD,PLAN,BUILD,CR,EXT} story-scoped; {SPEC,DEF,HLD} item-root). Built on sc1 (deriveWorkItemIdentity). Pure construction + bounded directory walks; no companion-JSON reads.",
+        "callSites": [
+          "src/workflow/storage.ts",
+          "src/workflow/gates.ts",
+          "src/cli/services/workflow.ts"
+        ]
+      },
+      {
+        "entity": "storage.ts *ArtifactPaths helpers (md side) + *MdRel builders",
+        "change": "invariant-change",
+        "details": "All 9 *ArtifactPaths helpers gain createdAtISO + workItemKind params and delegate their md side to resolveArtifactMdPath (json side unchanged). The *MdRel builders (defineMdRel/hldMdRel/lldMdRel/planMdRel/buildMdRel/specMdRel), used by tracker/link for issue-body links, delegate to the same resolver so links target the new md paths. The 6 flat DOCS_ARTIFACT_DIRS consts + planFilenamePrefix/buildFilenamePrefix (md-side prefix finders) are retired (atomic cutover, no shim); STUB_DIR + ARTIFACTS_DIR + the hash-flat json ids stay.",
+        "callSites": [
+          "src/workflow/storage.ts",
+          "src/workflow/orchestrator.ts",
+          "src/workflow/tracker/link.ts",
+          "src/workflow/code-review/runner.ts",
+          "src/mcp/code-review-step/handler.ts",
+          "src/workflow/runners/build/standalone-record.ts",
+          "src/workflow/tracker-auto.ts",
+          "src/workflow/chain.ts",
+          "src/workflow/code-review/gate.ts",
+          "src/workflow/artifacts/lld-io.ts",
+          "src/workflow/tracker/sync.ts",
+          "src/workflow/runners/tracker/context.ts",
+          "src/workflow/questions.ts",
+          "src/cli/services/workflow.ts"
+        ]
+      },
+      {
+        "entity": "docs-md finders (read side) in gates.ts",
+        "change": "invariant-change",
+        "details": "gates.ts readdir loops (:133, :593), the basename.startsWith('BUILD-') match (:650), and the two DOCS_ARTIFACT_DIRS sweeps (:789, :810) are replaced by sc2.listWorkItems/listArtifactMdPaths. gates.ts is the ONLY genuine docs-md finder: cli/services/workflow.ts:122 scans ARTIFACTS_DIR (the hash-flat JSON store — an out-of-scope scanner that stays unchanged), and cli/services/debug.ts:481 lists rotated log segments (unrelated), so neither is re-pointed. daemon/backup.ts:103 (recursive whole-tree walk) is layout-agnostic and keeps working. The JSON-store finders (amendments/store, amendments/staleness, questions.ts:523 over .insrc/artifacts, tracker/resolve.ts:114) are explicitly NOT touched.",
+        "callSites": [
+          "src/workflow/gates.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc2",
+        "role": "implements",
+        "howDetails": "S002 owns sc2 (HLD ownedByStory s2). It realizes the contract as a new path-scheme module (resolveArtifactMdPath + listWorkItems + listArtifactMdPaths) that every *ArtifactPaths writer md-side and every docs-md finder routes through, exactly matching the HLD interfaceSketch (identity-object typed, pure construction)."
+      },
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "S002 consumes sc1: resolveArtifactMdPath keys the folder on a WorkItemIdentity produced by deriveWorkItemIdentity(epicHash, meta.createdAt, storyId?), using identity.epicSegment for the top folder and identity.story for the S<nnn> subfolder. s2 transitively dependsOn s1 in the Epic graph."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A story-scoped artifact kind (LLD/PLAN/BUILD/CR/EXT) is resolved with an epic-level identity (identity.story === undefined).",
+          "detection": "resolveArtifactMdPath checks STORY_SCOPED.has(kind) && identity.story === undefined before building the path.",
+          "response": "Throw an Error naming the kind + that a story-scoped artifact needs a story identity; this is caller misuse (an epic-level id can't locate a story artifact), surfaced immediately rather than writing to a malformed path.",
+          "userImpact": "None in normal flow (writers always pass the matching identity); a wiring bug is caught loudly at the resolve call, not as a mis-placed file.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A consumer is left resolving the retired flat DOCS_ARTIFACT_DIRS after the atomic cutover.",
+          "detection": "The flat dir consts + planFilenamePrefix/buildFilenamePrefix are removed, so any remaining reference fails tsc at compile time (no dual-path, per k1).",
+          "response": "The build fails loud on the stale reference; the site must be re-pointed to sc2 before it compiles — exhaustiveness is compiler-enforced, not discipline.",
+          "userImpact": "None at runtime — the gap cannot ship; it is a compile error during the cutover.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A JSON-store scanner (amendments/store, staleness, questions:523, tracker/resolve:114) is wrongly re-pointed to sc2's docs listing.",
+          "detection": "Those scanners read the hash-flat .insrc/artifacts store; re-pointing them to docs/ would break the amendment/question/resolver test suites (they'd stop finding the hash-named JSON).",
+          "response": "Scope guard: S002 touches ONLY the md/docs side; the JSON-store scanners are left byte-unchanged. The existing suites act as the tripwire.",
+          "userImpact": "None when scoped correctly; the tests catch a mis-scoped edit before merge.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "An epic with multiple stories (S001, S002, ...)",
+          "expected": "One work-item root folder with SPEC/DEF/HLD at the root (singletons) and one S<nnn>/ subfolder per story, each holding its own LLD/PLAN/BUILD/CR — no collision, since the story segment disambiguates."
+        },
+        {
+          "input": "Two different work items whose human slug is identical",
+          "expected": "The `-E<date><hash8>` suffix on the folder name disambiguates them into distinct folders; the slug alone never determines the folder (lc1)."
+        },
+        {
+          "input": "A triage-routed standalone work item (workItemKind 'standalone')",
+          "expected": "Artifacts land under docs/standalone/<slug>-E<date><hash8>/... while epic-parented ones land under docs/epics/... — the two kinds are distinguishable at the top level (ac3), same internal S<nnn> grouping."
+        },
+        {
+          "input": "listWorkItems when docs/epics or docs/standalone does not exist yet (fresh repo)",
+          "expected": "Returns an empty list (the missing dir is treated as no work items), never throws — matching today's tolerant readdir-guarded enumerations."
+        },
+        {
+          "input": "A *ArtifactPaths helper called with epicSlug omitted (JSON-only / legacy caller)",
+          "expected": "The folder label falls back to fileSeg(epicHash) exactly as the flat helpers did with fileSeg(epicSlug ?? epicHash); the md path still resolves (hash-labeled folder) and the json path is unchanged."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The { json } side of every *ArtifactPaths helper stays ARTIFACTS_DIR/<hash artifactId>.json — the hash-flat .insrc/artifacts machine store is the epic non-goal and is byte-unchanged.",
+          "source": "c2"
+        },
+        {
+          "text": "The JSON-store scanners (amendments/store.ts, amendments/staleness.ts, questions.ts:523 over .insrc/artifacts, tracker/resolve.ts:114) are NOT re-pointed to sc2 — they scan the hash-flat store and must keep working unchanged.",
+          "source": "c2"
+        },
+        {
+          "text": "The cutover is atomic (k1): the six flat DOCS_ARTIFACT_DIRS consts + the md-side *FilenamePrefix finders are removed outright, not dual-supported behind a shim/flag; every consumer moves to sc2 in the same change.",
+          "source": "c1"
+        },
+        {
+          "text": "An artifact's folder identity is derived only from sc1's deriveWorkItemIdentity (epicSegment + story ordinal), never inferred from its filename; the filename supplies only the slug label (lc1/k5).",
+          "source": "c5"
+        },
+        {
+          "text": "daemon/backup.ts's recursive whole-tree walk is layout-agnostic and stays unchanged — it continues to back up whatever docs/ paths exist, now the nested ones.",
+          "source": "c3"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test + node:assert/strict (run via `npx tsx --test`), the convention every existing src/workflow/__tests__/*.test.ts uses.",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove the sc2 resolver builds the correct nested md path for every ArtifactKind and both WorkItemKinds, and that its placement rules (item-root vs S<nnn>/) and error path hold — the pure-construction core of ac1/ac3.",
+          "subjects": [
+            "resolveArtifactMdPath: SPEC/DEF/HLD land at the work-item root (docs/epics/<slug>-E<date><hash8>/<KIND>.md, no story segment)",
+            "resolveArtifactMdPath: LLD/PLAN/BUILD/CR/EXT land under S<nnn>/ (docs/epics/<slug>-E<date><hash8>/S001/<KIND>.md)",
+            "resolveArtifactMdPath: workItemKind 'standalone' routes to docs/standalone/... while 'epic' routes to docs/epics/... (top-level distinguishable, same internal S<nnn> grouping)",
+            "resolveArtifactMdPath: bare <KIND>.md filename; folder key = fileSeg(slug) + '-' + identity.epicSegment; identity (not filename) supplies the key",
+            "resolveArtifactMdPath: throws when a story-scoped kind is given an epic-level identity (identity.story === undefined)",
+            "path-scheme STORY_SCOPED set membership = {LLD,PLAN,BUILD,CR,EXT}; item-root = {SPEC,DEF,HLD}"
+          ],
+          "fixturesNeeded": [
+            "a WorkItemIdentity from deriveWorkItemIdentity (epic-level + story-level), reusing the real sc1 export — no hand-built identities"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove listWorkItems + listArtifactMdPaths enumerate a seeded nested tree correctly and tolerate absent dirs — the read-side of ac2 that replaces the flat readdir/prefix finders.",
+          "subjects": [
+            "listWorkItems over a seeded docs/epics + docs/standalone tree returns one entry per work-item folder, deterministic sorted order, kind-tagged",
+            "listWorkItems returns an empty list (no throw) when docs/epics or docs/standalone is absent (fresh repo)",
+            "listArtifactMdPaths returns every artifact md within one work item (item-root SPEC/DEF/HLD + each S<nnn>/ artifact)"
+          ],
+          "fixturesNeeded": [
+            "a tmp repo dir with a hand-seeded nested docs tree (epic with 2 stories + one standalone item), created via the *ArtifactPaths helpers so the seeding itself exercises the writer side"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove each *ArtifactPaths helper's md side now delegates to the nested resolver (with the new createdAtISO + workItemKind params) while its json side stays byte-identical to the hash-flat store — the md/json boundary invariant, and that the *MdRel builders track the same paths (links stay correct).",
+          "subjects": [
+            "lldArtifactPaths (representative) + spec/def/hld/plan/build/codeReview/extend/stub helpers: .md is the nested resolver path; .json is unchanged ARTIFACTS_DIR/<hashId>.json",
+            "epicSlug omitted → folder label falls back to fileSeg(epicHash), md still resolves, json unchanged",
+            "*MdRel builders (defineMdRel/hldMdRel/lldMdRel/planMdRel/buildMdRel/specMdRel) produce the nested relative md path matching the absolute helper"
+          ],
+          "fixturesNeeded": [
+            "known epicHash + createdAtISO + storyId so both the E<date> segment and the hash json id are assertable"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove no consumer still expects the old flat layout after the atomic cutover — the existing gate/tracker/code-review suites exercise the *ArtifactPaths + docs-md finders end-to-end and must pass against the nested tree (ac2). Also confirms the JSON-store scanners were left untouched (their suites still pass).",
+          "subjects": [
+            "gates.ts approval-by-md-path + artifact listing (the retired-DOCS_ARTIFACT_DIRS sweeps now via listWorkItems/listArtifactMdPaths): existing plan-gate.test.ts / gates.test.ts seeding through the helpers resolves against the nested tree",
+            "the BUILD-prefix finder (gates.ts:650) replaced by kind-typed listing still locates the BUILD artifact",
+            "amendments / questions / tracker-resolve JSON-store suites still pass unchanged (proves the hash-flat store + its scanners were not re-pointed)"
+          ],
+          "fixturesNeeded": [
+            "the existing on-disk-seed pattern from plan-gate.test.ts (writes artifacts via the helpers, then drives the gate) — extended for the createdAtISO + workItemKind params"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "resolveArtifactMdPath: SPEC/DEF/HLD at work-item root",
+            "resolveArtifactMdPath: LLD/PLAN/BUILD/CR/EXT under S<nnn>/",
+            "resolveArtifactMdPath: bare <KIND>.md, folder key = fileSeg(slug)+'-'+epicSegment, identity supplies the key",
+            "lldArtifactPaths (representative) + others: .md is the nested resolver path; .json unchanged"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "listWorkItems over a seeded tree returns one entry per work-item folder",
+            "listArtifactMdPaths returns every artifact md within one work item",
+            "gates.ts approval + listing resolves against the nested tree via the existing gate suites",
+            "amendments/questions/tracker-resolve JSON-store suites still pass unchanged (no consumer left on flat dirs; JSON store untouched)"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "resolveArtifactMdPath: workItemKind 'standalone' → docs/standalone/... vs 'epic' → docs/epics/..., same internal S<nnn> grouping",
+            "listWorkItems tags each work-item folder with its kind (epic vs standalone) across both top-levels"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "The md-path authority is flat and split across two schemes (s1 storage.ts bundle): the 9 *ArtifactPaths helpers build md = join(repoPath, <TYPE>_DIR, `<TYPE>-${fileSeg(epicSlug ?? epicHash)}[-${storyId}].md`) into six flat per-type folders (DEFINES_DIR/DESIGNS_DIR/PLANS_DIR/BUILDS_DIR/SPECS_DIR/REVIEWS_DIR) + STUB_DIR, keyed inconsistently by slug-or-hash; the *MdRel builders repeat those same flat relative paths for issue-body links; the docs-md finders enumerate the flat dirs (s1 gates.ts bundle: readdirSync :133/:593, basename.startsWith('BUILD-') :650, the two DOCS_ARTIFACT_DIRS sweeps :789/:810) plus cli/services/workflow.ts:122 + debug.ts:481. The { json } side already points at the hash-flat .insrc/artifacts store and the JSON-store scanners (amendments/store, staleness, questions.ts:523, tracker/resolve.ts:114) key off it (s1 md-vs-JSON boundary bundle). sc1 (deriveWorkItemIdentity) already shipped in id.ts (s1 sc1 bundle) but nothing consumes it yet for path resolution.",
+      "stateAfter": "A single central resolver (new src/workflow/path-scheme.ts — sc2) is the md-path authority: resolveArtifactMdPath places SPEC/DEF/HLD at a work-item root folder `docs/{epics|standalone}/<slug>-E<date><hash8>/` and LLD/PLAN/BUILD/CR/EXT under its `S<nnn>/` subfolder, keyed via sc1's identity with the slug as label only; listWorkItems/listArtifactMdPaths enumerate that nested tree. All 9 *ArtifactPaths helpers (md side) + the *MdRel builders delegate to the resolver (gaining createdAtISO + workItemKind params); the docs-md finders call listWorkItems/listArtifactMdPaths. The six flat DOCS_ARTIFACT_DIRS consts + plan/buildFilenamePrefix are removed. The { json } side and every JSON-store scanner are byte-unchanged (the hash-flat .insrc/artifacts store is untouched). NOTE: relocating the artifacts already written under the flat layout is S003's one-time migration — S002 changes only the code path new artifacts resolve through.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the new central resolver module src/workflow/path-scheme.ts (ArtifactKind/WorkItemKind/WorkItemLocation types, STORY_SCOPED set, resolveArtifactMdPath, listWorkItems, listArtifactMdPaths) built on sc1. Purely additive — nothing consumes it yet, so the tree still compiles and behaves as before.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Widen each of the 9 *ArtifactPaths helper signatures to take createdAtISO + workItemKind and switch their md side to delegate to resolveArtifactMdPath; switch the *MdRel builders to the same resolver. This changes an internal-shared signature, so tsc will now flag every caller — that compile error set is the exhaustiveness checklist for the next step.",
+          "rollbackable": true,
+          "prerequisiteFlags": []
+        },
+        {
+          "order": 3,
+          "action": "Update all 14 non-test *ArtifactPaths caller sites (orchestrator finalize writers, tracker/link, code-review/runner+gate, mcp/code-review-step/handler, runners/build/standalone-record, tracker-auto, chain, gates, artifacts/lld-io, tracker/sync, runners/tracker/context, questions, cli/services/workflow) to pass createdAtISO (from the artifact's meta.createdAt) + workItemKind (epic vs standalone, from the workflow/triage context). Driven to completion by the step-2 compile errors.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Replace the docs-md finders with the resolver's listing API: gates.ts readdir loops (:133/:593), the BUILD- prefix match (:650), and the two DOCS_ARTIFACT_DIRS sweeps (:789/:810) call listWorkItems/listArtifactMdPaths. gates.ts is the only docs-md finder; cli/services/workflow.ts:122 (scans ARTIFACTS_DIR, the JSON store) and debug.ts:481 (log-segment lister) are NOT re-pointed. Leave daemon/backup.ts:103 (layout-agnostic whole-tree walk) and every JSON-store scanner (amendments/store+staleness, questions.ts:523, tracker/resolve.ts:114) untouched.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Remove the now-unreferenced flat layout: delete the six DOCS_ARTIFACT_DIRS consts and plan/buildFilenamePrefix (the md-side prefix finders). Atomic cutover (k1) — any lingering reference is a compile error, so this deletion proves no consumer is left on the flat scheme; keep STUB_DIR + ARTIFACTS_DIR + the hash json ids.",
+          "rollbackable": true
+        },
+        {
+          "order": 6,
+          "action": "Add sc2 unit tests (resolveArtifactMdPath per kind + epic/standalone, story-scoped-with-epic-identity throw, listWorkItems/listArtifactMdPaths over a seeded tree, empty-dir tolerance) and run the full workflow+mcp sweep so the existing gate/tracker/code-review suites confirm no consumer expects the flat dirs and the JSON-store suites confirm that side is unchanged.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "The *ArtifactPaths helpers + *MdRel builders are an internal-shared surface (used only within this repo; no IDE/IPC contract touches docs md paths). Their signatures change additively (new createdAtISO + workItemKind params, epicSlug stays trailing-optional), and every in-repo caller is updated in the same atomic change (k1, no shim/flag) — tsc enforces that no caller is left on the old shape. The { json } side of every helper and the ARTIFACTS_DIR hash ids are byte-unchanged, so the machine store, its scanners, and the .insrc/artifacts consumers keep working with zero change. The one compatibility gap is intentional and out of scope for S002: artifacts already on disk under the flat layout are not readable through the new resolver until S003's one-time migration relocates them — called out here as the explicit hand-off, not silently left.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Identity-object resolver; thread createdAt + kind through the helpers",
+        "oneLineSummary": "sc2 takes a pre-derived WorkItemIdentity + workItemKind + slug (the HLD sketch shape); each *ArtifactPaths helper gains a createdAtISO + workItemKind arg, derives the identity via sc1, and delegates.",
+        "approach": "A new module (e.g. src/workflow/path-scheme.ts) owns the layout: resolveArtifactMdPath(repoPath, identity: WorkItemIdentity, kind: ArtifactKind, workItemKind: 'epic'|'standalone', slug) builds docs/<epics|standalone>/<slug>-<epicSegment>/[S<nnn>/]<KIND>.md, plus listWorkItems + listArtifactMdPaths that walk that tree. Each existing *ArtifactPaths helper keeps returning { md, json } but its md side now calls deriveWorkItemIdentity(epicHash, createdAtISO, storyId?) then resolveArtifactMdPath; to do so the helper signatures gain a createdAtISO parameter and a workItemKind (derived by the caller from the artifact's standalone flag). The json side is unchanged. The gates/cli docs-md finders switch to listWorkItems/listArtifactMdPaths. tracker/link's *MdRel builders delegate to the same resolver.\n\nThe identity object is the currency: sc1 mints it, sc2 consumes it, and S003's migration reuses resolveArtifactMdPath with an identity derived from each file's companion JSON meta — so writer and migration compute identical destinations.",
+        "pros": [
+          "Matches the HLD sc2 sketch verbatim (resolveArtifactMdPath over a WorkItemIdentity), so no back-flow and S003 reuses the exact surface.",
+          "Pure path construction — no disk read during resolution, honouring the nonFunctional performance target; the WorkItemIdentity is computed once and reused for canonical/slug/epicSegment.",
+          "createdAt is threaded from the caller's own meta.createdAt (already in hand at every finalize/write site), so the E<date> segment is always available without a lookup.",
+          "The identity object is exactly what S003 needs, so the two stories share one code path (k2 uniformity)."
+        ],
+        "cons": [
+          "Every *ArtifactPaths helper signature gains createdAtISO + workItemKind, so all 14 caller sites must pass them — the widest edit of the story (though mechanical, and tsc pins every missed site).",
+          "Callers must supply workItemKind; deriving 'epic' vs 'standalone' correctly at each site is a real per-call decision."
+        ],
+        "costEstimate": "L"
+      },
+      {
+        "id": "a2",
+        "name": "Raw-params resolver (sc2 derives the identity internally)",
+        "oneLineSummary": "sc2.resolveArtifactMdPath(repoPath, epicHash, createdAtISO, storyId?, kind, workItemKind, slug) derives the WorkItemIdentity itself; helpers pass raw params through.",
+        "approach": "Same nested-tree layout and same listWorkItems/listArtifactMdPaths, but resolveArtifactMdPath takes the raw (epicHash, createdAtISO, storyId?) instead of a pre-built WorkItemIdentity and calls deriveWorkItemIdentity internally. The *ArtifactPaths helpers still gain createdAtISO + workItemKind and forward them, but never construct an identity object themselves.\n\nCallers deal only in the primitives they already hold; the identity object stays an internal detail of the resolver.",
+        "pros": [
+          "Call sites never build a WorkItemIdentity — marginally less ceremony at each of the 14 helpers.",
+          "Same pure-construction, no-disk-read property as a1."
+        ],
+        "cons": [
+          "Diverges from the HLD sc2 sketch (which is explicitly typed over WorkItemIdentity), so it either needs an HLD amendment or leaves the sketch aspirational — avoidable friction.",
+          "S003's migration derives an identity from companion-JSON meta anyway; hiding the identity form means the migration re-derives raw params instead of reusing the identity object, weakening the shared-code-path benefit.",
+          "Still requires the same createdAt + workItemKind threading as a1, so it does not actually reduce the signature churn."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Functionally equivalent on all three ACs and cost L, but partial on sc2 because it does not honour the contract's WorkItemIdentity-typed sketch, and it does not actually reduce the createdAt/kind threading a1 requires — a divergence with no offsetting saving."
+      },
+      {
+        "id": "a3",
+        "name": "Keep helper signatures unchanged; resolve createdAt + kind from companion JSON meta",
+        "oneLineSummary": "Leave the *ArtifactPaths (repoPath, epicHash, storyId?, epicSlug?) signatures as-is; sc2 reads the companion .insrc/artifacts JSON meta to get createdAt + kind when building the md path.",
+        "approach": "resolveArtifactMdPath looks up the artifact's companion JSON (by hash id under ARTIFACTS_DIR) to read meta.createdAt + the standalone flag, deriving the identity from that, so no *ArtifactPaths signature changes and the 14 callers are untouched except where they enumerate.\n\nThe read side (finders) still moves to listWorkItems/listArtifactMdPaths.",
+        "pros": [
+          "No *ArtifactPaths signature churn — the write-side callers keep their current arguments.",
+          "createdAt/kind come from the single machine record, so there is one source for them."
+        ],
+        "cons": [
+          "Path resolution now does a disk read (and JSON parse) on every write — violates the nonFunctional 'pure path construction, no measurable regression' target.",
+          "Chicken-and-egg on a NEW artifact: the md path is needed to WRITE the artifact, but the companion JSON may not exist yet (or is written in the same finalize) — resolution would fail or depend on write-order, a fragile coupling.",
+          "Hides identity behind a disk lookup, so it cannot be unit-tested as pure construction and S003 cannot reuse it without the JSON already on disk."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Avoids signature churn but at real cost: partial on ac1 (write-order fragility), sc2 and sc1 (disk-lookup resolution breaks pure construction and the clean sc1 composition). The signature churn a1 accepts is mechanical and tsc-checked; a3 trades it for a correctness/perf hazard."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "step-output",
+      "ref": "s1 LldContext analyzeBundles — storage.ts + gates.ts docs-md finders (atomic cutover surface)",
+      "quotedText": "The six flat DOCS_ARTIFACT_DIRS + plan/buildFilenamePrefix md-side finders; gates.ts readdir :133/:593, startsWith('BUILD-') :650, DOCS_ARTIFACT_DIRS sweeps :789/:810."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 CRITICAL boundary bundle — md side (docs/, in scope) vs JSON side (.insrc/artifacts hash-flat, out of scope) + JSON-store scanners left alone",
+      "quotedText": "Only the { md } side moves; the { json } side keys off ARTIFACTS_DIR by hash id and is untouched; amendments/store+staleness, questions.ts:523, tracker/resolve.ts:114 scan the JSON store and must be LEFT ALONE."
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/daemon/backup.ts:103 — recursive whole-tree walk, layout-agnostic",
+      "quotedText": "daemon/backup.ts:103 is a recursive whole-tree walk — keeps working, just backs up the new nested paths."
+    },
+    {
+      "id": "c4",
+      "kind": "step-output",
+      "ref": "s5 error.paths — story-scoped-kind-with-epic-identity throw + stale-flat-dir compile failure + mis-scoped JSON-store scanner",
+      "quotedText": "resolveArtifactMdPath checks STORY_SCOPED.has(kind) && identity.story === undefined before building the path."
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/id.ts (sc1) — deriveWorkItemIdentity/storyIdToOrdinal shipped in S001 (commit 91dee7f); identity from metadata, not filename (lc1/k5)",
+      "quotedText": "deriveWorkItemIdentity(epicHash, createdAtISO, storyId?): WorkItemIdentity ({canonical, slug, epicSegment, story?}); storyIdToOrdinal accepts s<n> and S<n>."
+    },
+    {
+      "id": "c6",
+      "kind": "step-output",
+      "ref": "s3 judge — winnerId a1, the only alternative satisfying ac1/ac2/ac3 + sc1/sc2",
+      "quotedText": "a1 is the only alternative satisfying every acceptance criterion and both shared contracts; a2 partial on sc2, a3 partial on ac1/sc1/sc2."
+    }
+  ]
+}

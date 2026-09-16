@@ -19,14 +19,18 @@ import type { LLMProvider } from '../../../shared/types.js';
 // ---- fixtures ----
 
 const CHANGED = ['src/a.ts', 'src/b.ts'] as const;
+const CREATED = '2026-07-17T07:42:28.275Z';
 
 const subject = (
 	changedFiles: readonly string[] = CHANGED,
-	epicHash = 'e1',
+	epicHash = 'e1a2b3c4d5e6f708',
 	storyId  = 's6',
 ): CodeReviewSubject => ({
 	repoPath: '/repo', epicHash, storyId, changedFiles,
-	approvedLld:  { body: {} } as unknown as CodeReviewSubject['approvedLld'],
+	// The sc2 CR path anchors on the story's LLD meta (createdAt + slug), so the
+	// fixture LLD must carry a valid meta — an unmeta'd artifact never occurs in
+	// production and would trip the nested path resolver.
+	approvedLld:  { meta: { epicHash, storyId, epicSlug: 'tag-filtering', createdAt: CREATED }, body: {} } as unknown as CodeReviewSubject['approvedLld'],
 	approvedPlan: { body: { tasks: [] } } as unknown as CodeReviewSubject['approvedPlan'],
 	buildRecord: null,
 });
@@ -158,13 +162,13 @@ test('runCodeReview: verdict fold matches the ReviewVerdict vocabulary (any-HIGH
 test('runCodeReview: the record is written at CR-<epic>-<story> and carries kind:code-review (ac3)', async () => {
 	const { deps, provider, writes } = makeDeps();
 	const { opts } = runOpts();
-	const out = await runCodeReview(subject(CHANGED, 'epicX', 'sZ'), provider, opts, deps);
+	const out = await runCodeReview(subject(CHANGED, 'fedcba9876543210', 's9'), provider, opts, deps);
 	assert.ok(out.ok);
 	assert.equal(out.artifact.body.kind, 'code-review');
 	const json = writes.find(w => w.path.endsWith('.json'));
 	assert.ok(json, 'a .json file was written');
 	const base = json!.path.split('/').pop()!;
-	assert.equal(base, 'CR-epicX-sZ.json');
+	assert.equal(base, 'CR-fedcba9876543210-s9.json');
 	assert.ok(base.startsWith('CR-'), 'the id is in the CR- namespace, distinct from BUILD-/LLD-/PLAN-');
 });
 

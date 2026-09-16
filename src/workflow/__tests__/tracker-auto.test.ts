@@ -26,6 +26,9 @@ import { _setTrackerExecForTests, type TrackerExec } from '../tracker/github.js'
 
 const HASH = 'a1b2c3d4e5f60718';
 const SLUG = 'demo-feature';
+const CREATED = '2026-07-17T07:42:28.275Z';   // → E20260717a1b2c3d4
+const EPIC_SEGMENT = 'E20260717a1b2c3d4';
+const EPIC_FOLDER = `docs/epics/${SLUG}-${EPIC_SEGMENT}`;
 
 // ---------------------------------------------------------------------------
 // Fake gh/git
@@ -91,7 +94,7 @@ function setup(): { repo: string; hldJson: string; lldJson: string; defineJson: 
 
 	const defineJson = join(repo, '.insrc/artifacts', `DEF-${HASH}.json`);
 	writeJson(defineJson, {
-		meta: { workflow: 'define', runId: 'd1', repoPath: repo, focus: 'demo', epicHash: HASH, epicSlug: SLUG, createdAt: '', schemaVersion: 1 },
+		meta: { workflow: 'define', runId: 'd1', repoPath: repo, focus: 'demo', epicHash: HASH, epicSlug: SLUG, createdAt: CREATED, schemaVersion: 1 },
 		body: {
 			flavor: 'new-capability',
 			problem: 'Users cannot filter results. This blocks onboarding.',
@@ -132,12 +135,12 @@ test('HLD approve creates the Epic issue, links docs, and writes nested meta.tra
 		assert.equal(trackerOf(s.defineJson)['epicRef'], 'acme/demo#1');
 
 		// doc → issue: the Define markdown gained a Tracker link.
-		const defineMd = readFileSync(join(s.repo, 'docs/defines', `DEF-${SLUG}.md`), 'utf8');
+		const defineMd = readFileSync(join(s.repo, EPIC_FOLDER, 'DEF.md'), 'utf8');
 		assert.match(defineMd, /\*\*Tracker:\*\* \[acme\/demo#1\]/);
 
-		// issue body carries slug-based doc links (not hash).
+		// issue body carries nested slug-based doc links (not the flat hash path).
 		const epicBody = gh.bodies.get('1') ?? '';
-		assert.match(epicBody, new RegExp(`docs/designs/HLD-${SLUG}\\.md`));
+		assert.match(epicBody, new RegExp(`${EPIC_FOLDER}/HLD\\.md`));
 		assert.doesNotMatch(epicBody, /HLD-a1b2c3d4e5f60718\.md/);
 	} finally { s.cleanup(); }
 });

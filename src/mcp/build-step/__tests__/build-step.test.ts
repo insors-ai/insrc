@@ -45,7 +45,7 @@ function seedLld(repo: string, openQuestions: readonly string[] = []): void {
 	writeFileSync(join(artifactsDir(repo), `${lldArtifactId(HASH, 's1')}.json`), JSON.stringify({
 		meta: {
 			workflow: 'design.story', runId: 'lld-run-1', schemaVersion: 1,
-			epicHash: HASH, epicSlug: 'tag-filtering', storyId: 's1',
+			epicHash: HASH, epicSlug: 'tag-filtering', storyId: 's1', createdAt: CREATED_AT,
 			hldBaseRunId: 'hld-run-1', hldEffectiveHash: 'basis-hash-xyz', hldAmendmentsApplied: [],
 			approvedAt: CREATED_AT,
 			tracker: { storyRef: 'acme/widgets#10' },
@@ -59,7 +59,7 @@ function seedPlan(repo: string, approved: boolean): string {
 	writeFileSync(json, JSON.stringify({
 		meta: {
 			workflow: 'plan', runId: 'plan-run-1', schemaVersion: 1,
-			epicHash: HASH, epicSlug: 'tag-filtering', storyId: 's1',
+			epicHash: HASH, epicSlug: 'tag-filtering', storyId: 's1', createdAt: CREATED_AT,
 			lldRunId: 'lld-run-1', lldEffectiveHash: 'basis-hash-xyz',
 			tracker: { taskRefs: { t1: 'acme/widgets#42' } },
 		},
@@ -244,7 +244,7 @@ test('validate: persists a plan-driven BUILD ledger record (standalone:false) re
 		assert.equal(out['next'], 'done');
 		assert.equal(out['passed'], true);
 
-		const { json } = buildArtifactPaths(repo, HASH, 's1');
+		const { json } = buildArtifactPaths(repo, HASH, 's1', CREATED_AT, 'epic', 'tag-filtering');
 		assert.ok(existsSync(json), 'a BUILD-<epicHash>-<storyId>.json record was persisted');
 		const rec = JSON.parse(readFileSync(json, 'utf8')) as { meta: Record<string, unknown>; body: Record<string, unknown> };
 		assert.equal(rec.meta['standalone'], false);
@@ -263,7 +263,7 @@ test('validate: a BUILD-record persist failure is swallowed — the verdict is s
 	try {
 		seedDef(repo); seedLld(repo); seedPlan(repo, true);
 		// Force writeAtomic to throw by making the record json path a DIRECTORY.
-		const { json } = buildArtifactPaths(repo, HASH, 's1');
+		const { json } = buildArtifactPaths(repo, HASH, 's1', CREATED_AT, 'epic', 'tag-filtering');
 		mkdirSync(json, { recursive: true });
 		_setBuildValidateProviderForTests({
 			async runEditSession() { return { text: '```json\n' + JSON.stringify({ taskId: 't1', passed: true }) + '\n```' }; },

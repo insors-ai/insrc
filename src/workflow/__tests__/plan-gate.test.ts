@@ -29,14 +29,15 @@ import {
 import { defineArtifactPaths, hldArtifactPaths, lldArtifactPaths } from '../storage.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
+const CREATED = '2026-07-17T07:42:28.275Z';   // stable anchor for the nested md-path resolver
 const HLD_RUN = 'hld-run-1';
 const CURRENT_EFFECTIVE = computeHldEffectiveHash(HLD_RUN, []);
 
 function seedDefineAndHld(repo: string): void {
-	const dp = defineArtifactPaths(repo, HASH);
+	const dp = defineArtifactPaths(repo, HASH, CREATED, 'epic');
 	mkdirSync(dirname(dp.json), { recursive: true });
 	writeFileSync(dp.json, JSON.stringify({
-		meta: { workflow: 'define', runId: 'def-1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering' },
+		meta: { workflow: 'define', runId: 'def-1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', createdAt: CREATED },
 		body: {
 			flavor: 'enhancement', problem: 'x', nonGoals: [], assumptions: [], constraints: [],
 			stories: [{ id: 's1', title: 'Filter by tag', userValue: 'v', acceptanceCriteria: [{ id: 'ac1', given: 'a', when: 'b', then: 'c', operationalizes: [] }], dependsOn: [] }],
@@ -46,9 +47,9 @@ function seedDefineAndHld(repo: string): void {
 	}, null, 2));
 	approveArtifactByJsonPath(dp.json);
 
-	const hp = hldArtifactPaths(repo, HASH);
+	const hp = hldArtifactPaths(repo, HASH, CREATED, 'epic');
 	writeFileSync(hp.json, JSON.stringify({
-		meta: { workflow: 'design.epic', runId: HLD_RUN, schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering' },
+		meta: { workflow: 'design.epic', runId: HLD_RUN, schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', createdAt: CREATED },
 		body: {
 			frameworkSummary: 'x', architectureShape: 'x [[c1]]',
 			sharedContracts: [{ id: 'sc1', name: 'A', purpose: 'p', interfaceSketch: 'interface A {}', ownedByStory: 's1', consumedByStories: [], assumptions: [] }],
@@ -72,10 +73,10 @@ interface LldMetaOpts {
 }
 
 function seedLld(repo: string, storyId: string, opts: LldMetaOpts): string {
-	const lp = lldArtifactPaths(repo, HASH, storyId);
+	const lp = lldArtifactPaths(repo, HASH, storyId, CREATED, opts.standalone ? 'standalone' : 'epic');
 	mkdirSync(dirname(lp.json), { recursive: true });
 	const meta: Record<string, unknown> = {
-		workflow: 'design.story', runId: 'lld-run-1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', storyId,
+		workflow: 'design.story', runId: 'lld-run-1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', storyId, createdAt: CREATED,
 		hldBaseRunId: HLD_RUN, hldEffectiveHash: opts.effectiveHash ?? CURRENT_EFFECTIVE, hldAmendmentsApplied: [],
 	};
 	if (opts.approved) meta['approvedAt'] = '2026-01-01T00:00:00Z';

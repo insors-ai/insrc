@@ -20,7 +20,7 @@ import { readLldArtifact } from '../artifacts/lld-io.js';
 import { renderDefineMarkdown } from '../artifacts/define.js';
 import { renderHldMarkdown } from '../artifacts/hld.js';
 import { renderLldMarkdown } from '../artifacts/lld.js';
-import { defineArtifactPaths, hldArtifactPaths, lldArtifactPaths, writeAtomic } from '../storage.js';
+import { defineArtifactPaths, hldArtifactPaths, lldArtifactPaths, readEpicCreatedAt, writeAtomic } from '../storage.js';
 import { patchTrackerMeta } from './refs.js';
 
 const log = getLogger('workflow:tracker-link');
@@ -33,14 +33,16 @@ export interface EpicRefs {
 /** Link the Epic's docs to their issues: HLD.md + Define.md → epicRef,
  *  each LLD.md → its storyRef. Patches `meta.tracker` then re-renders. */
 export function linkDocsToIssues(repoPath: string, epicHash: string, epicSlug: string, refs: EpicRefs): void {
+	// Epic docs — keyed on the Epic's define createdAt anchor (sc2), all 'epic'.
+	const anchor = readEpicCreatedAt(repoPath, epicHash) ?? new Date().toISOString();
 	if (typeof refs.epicRef === 'string' && refs.epicRef.length > 0) {
 		const epicRef = refs.epicRef;
-		relinkDoc(hldArtifactPaths(repoPath, epicHash, epicSlug), { epicRef }, () => renderHldMarkdown(readHldArtifact(repoPath, epicHash)));
-		relinkDoc(defineArtifactPaths(repoPath, epicHash, epicSlug), { epicRef }, () => renderDefineMarkdown(readDefineArtifact(repoPath, epicHash)));
+		relinkDoc(hldArtifactPaths(repoPath, epicHash, anchor, 'epic', epicSlug), { epicRef }, () => renderHldMarkdown(readHldArtifact(repoPath, epicHash)));
+		relinkDoc(defineArtifactPaths(repoPath, epicHash, anchor, 'epic', epicSlug), { epicRef }, () => renderDefineMarkdown(readDefineArtifact(repoPath, epicHash)));
 	}
 	for (const [storyId, storyRef] of Object.entries(refs.storyRefs ?? {})) {
 		if (typeof storyRef !== 'string' || storyRef.length === 0) continue;
-		relinkDoc(lldArtifactPaths(repoPath, epicHash, storyId, epicSlug), { storyRef }, () => renderLldMarkdown(readLldArtifact(repoPath, epicHash, storyId)));
+		relinkDoc(lldArtifactPaths(repoPath, epicHash, storyId, anchor, 'epic', epicSlug), { storyRef }, () => renderLldMarkdown(readLldArtifact(repoPath, epicHash, storyId)));
 	}
 }
 

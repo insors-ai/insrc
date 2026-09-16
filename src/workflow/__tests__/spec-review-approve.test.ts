@@ -86,7 +86,7 @@ function blockReview(): ReviewReport {
 }
 
 function writeSpec(repo: string, artifact: SpecArtifact): { md: string; json: string } {
-	const paths = specArtifactPaths(repo, artifact.meta.specHash!, artifact.meta.epicSlug);
+	const paths = specArtifactPaths(repo, artifact.meta.specHash!, artifact.meta.createdAt, 'standalone', artifact.meta.epicSlug);
 	writeAtomic(paths.json, JSON.stringify(artifact, null, 2) + '\n');
 	writeAtomic(paths.md, renderSpecMarkdown(artifact));
 	return paths;
@@ -165,7 +165,7 @@ test('ac4: resolveApprovedSpec maps unapproved → not-approved, missing → not
 		assert.ok('error' in missing && missing.code === 'not-found');
 
 		// Approve, then it resolves to { spec }.
-		const paths = specArtifactPaths(repo, SPEC_HASH, 'brainstorm-stage');
+		const paths = specArtifactPaths(repo, SPEC_HASH, '2026-08-02T00:00:00.000Z', 'standalone', 'brainstorm-stage');
 		approveArtifactByJsonPath(paths.json);
 		const ok = resolveApprovedSpec(repo, SPEC_HASH);
 		assert.ok('spec' in ok && ok.spec.meta.specHash === SPEC_HASH);

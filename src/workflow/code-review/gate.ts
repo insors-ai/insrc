@@ -28,7 +28,7 @@ import { existsSync, readFileSync } from 'node:fs';
 
 import { getLogger } from '../../shared/logger.js';
 import { PATHS } from '../../shared/paths.js';
-import { codeReviewArtifactPaths } from '../storage.js';
+import { artifactJsonPath, codeReviewArtifactId } from '../storage.js';
 import type { ReviewVerdict } from '../review/types.js';
 
 const log = getLogger('code-review:gate');
@@ -69,7 +69,7 @@ export function enforceCodeReviewGate(
 	storyId:  string,
 	opts?:    CodeReviewGateOpts,
 ): CodeReviewGateResult {
-	const jsonPath = codeReviewArtifactPaths(repoPath, epicHash, storyId).json;
+	const jsonPath = artifactJsonPath(repoPath, codeReviewArtifactId(epicHash, storyId));
 
 	// Absent record ⇒ no-review (strictly additive; completion unchanged).
 	if (!existsSync(jsonPath)) return { status: 'no-review' };

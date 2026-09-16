@@ -185,7 +185,7 @@ async function walkToSynthesize(repo: string, s4: Record<string, unknown>): Prom
 // Tests
 // ---------------------------------------------------------------------------
 
-test('define workflow: happy path writes artifact to docs/defines/<slug>.md', async () => {
+test('define workflow: happy path writes artifact to docs/epics/<slug>-E.../DEF.md', async () => {
 	_clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-def-e2e-'));
@@ -199,7 +199,10 @@ test('define workflow: happy path writes artifact to docs/defines/<slug>.md', as
 		assert.equal(done['next'], 'done', JSON.stringify(done));
 		const outPath = done['path'] as string;
 		assert.ok(existsSync(outPath), outPath);
-		assert.ok(outPath.includes('/docs/defines/'), outPath);
+		// Nested docs-tree (S002): epic-parented DEF lands at the work-item root as
+		// the bare DEF.md (dynamic createdAt → assert the tree + basename, not date).
+		assert.ok(outPath.includes('/docs/epics/'), outPath);
+		assert.ok(outPath.endsWith('/DEF.md'), outPath);
 		const md = readFileSync(outPath, 'utf8');
 		assert.ok(md.includes('# Epic:'));
 		assert.ok(md.includes('**Flavor:** enhancement'));

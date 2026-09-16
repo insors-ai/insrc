@@ -126,7 +126,7 @@ As an operator, I can pick a log category and watch it stream live with level/mo
 - **[[c1]]** `analyze-bundle` `s1 module.profile — src/cli TUI pane architecture: app.tsx pane host/switcher, panes/*Pane.tsx, services/ (Services + makeServices); src/cli/app.tsx, src/cli/panes, src/cli/services/index.ts`
 - **[[c2]]** `analyze-bundle` `s1 symbol.locate — daemon.status handler (src/daemon/index.ts:849) consumed via src/cli/services/daemon.ts:50; daemon owns the Unix socket (src/daemon/server.ts); DAEMON_ENTRY = .../daemon/index.js (src/cli/services/daemon.ts:24); no connected-client enumeration exists today`
 - **[[c3]]** `analyze-bundle` `s1 symbol.locate — mcp-register/`mcp list` (src/daemon/mcp-register.ts); PATHS.logDir daemon.log + agent.log (src/shared/paths.ts:104-105) written by the pino-roll logger with cli+mcp sharing agent.log (src/shared/logger.ts)`
-- **[[c4]]** `prior-artifact` `Approved SPEC-bfa1f6c830c53982 (docs/specs/SPEC-add-debug-pane-tab-insrc-tui.md) — 10 recorded decisions incl. multi-select confirm-gated orphan kill, read-only MCP section, POSIX-only scan, no restart/disconnect, two-category disk-tailed logs`
+- **[[c4]]** `prior-artifact` `Approved SPEC-bfa1f6c830c53982 (docs/standalone/add-debug-pane-tab-insrc-tui-E20260805bfa1f6c8/SPEC.md) — 10 recorded decisions incl. multi-select confirm-gated orphan kill, read-only MCP section, POSIX-only scan, no restart/disconnect, two-category disk-tailed logs`
 
 <!-- insrc:review -->
 

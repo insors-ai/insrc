@@ -1,0 +1,282 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1789670519360-227zz2",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-17T18:50:01.214Z",
+    "epicCreatedAt": "2026-09-17T18:50:01.215Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 481829,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6efc97c8dc73e0aa",
+    "epicSlug": "add-kotlin-supported-source-language-indexer",
+    "storyId": "S001",
+    "lldRunId": "wf-1789669122761-famqd0",
+    "lldEffectiveHash": "6efc97c8dc73e0aa60700030fd9477871e1947d95b0d18f07c26344e439ae4f4",
+    "approvedAt": "2026-09-17T19:25:43.948Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add tree-sitter-kotlin dependency + install handling + smoke-verify",
+        "summary": "Add tree-sitter-kotlin@0.3.8 to package.json dependencies next to the other tree-sitter grammars. Because its peer-dep is tree-sitter ^0.21 while the repo pins ^0.25, make the install succeed deterministically — prefer a package.json `overrides` (or `.npmrc legacy-peer-deps=true`) so a plain `npm install` resolves; document the choice. Run install and a smoke check: `_require('tree-sitter-kotlin')` + `new Parser().setLanguage(grammar)` + parse a trivial Kotlin string, asserting a source_file root with real named children (the spike proved this works against tree-sitter 0.25.1). If the native binding fails to load for the daemon's Node ABI, fall to the a3 vendored/built-grammar path before proceeding.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "package.json lists tree-sitter-kotlin@0.3.8 alongside the other tree-sitter grammars, and a fresh `npm install` resolves without an ERESOLVE failure (via overrides / legacy-peer-deps).",
+          "A smoke `_require('tree-sitter-kotlin')` + setLanguage + parse('package a\\nclass A') returns a source_file root with named children (grammar loads + parses under the installed tree-sitter).",
+          "If the grammar cannot load for the target Node ABI, the a3 vendored-build fallback is used instead (documented)."
+        ],
+        "derivedFrom": [
+          "c3",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "install-time: _require('tree-sitter-kotlin') + setLanguage + parse('package a\\nclass A') yields a source_file root"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "KotlinParser (src/indexer/parser/kotlin.ts)",
+        "summary": "Add src/indexer/parser/kotlin.ts mirroring scala.ts, implemented in 3 layers on a compiling base (t4 unit tests gate each): LAYER 1 — _require('tree-sitter') + _require('tree-sitter-kotlin') GUARDED in try/catch (on load failure, log a warning + skip registration so index.ts's side-effect import can't crash the other 5 parsers), MODULE_NAMESPACE='jvm' + MODULE_REPO_ID=SHARED_MODULES_REPO_ID['jvm'], imports (makeEntityId from base.js, registerParser from registry.js, the http/messaging-client-shape helpers), class skeleton `class KotlinParser implements CodeParser { extensions=['.kt','.kts']; language='kotlin' as const; parse(filePath,source,repo,repoId) }` + `export const kotlinParser = new KotlinParser(); registerParser(kotlinParser)` inside the guard. LAYER 2 — entity extraction over the REAL tree-sitter-kotlin node kinds: package_header→Module; class_declaration→Class (interface class_modifier→Interface; data/sealed/abstract markers in signature); companion_object→Class '(companion of X)'; object_declaration→Class 'object'; function_declaration→Function (top-level)/Method (in class_body), leading user_type receiver→extension Method; property_declaration/class_parameter→Variable; DEFINES file→top-level + container→member; makeEntityId unchanged. LAYER 3 — relations + robustness: import_list→import_header(+import_alias→meta.alias)→IMPORTS to jvm Module stubs; delegation_specifier: constructor_invocation→INHERITS, user_type→IMPLEMENTS; CALLS/REFERENCES via the shared helpers; parse-error contract (rootNode.hasError → still emit package + clean top-level entities, mark file parse-error, never throw); unmapped node kinds skipped.",
+        "size": "L",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "kotlin.ts exports KotlinParser with extensions ['.kt','.kts'], language 'kotlin', and self-registers inside a guarded grammar load (load failure logs + skips registration, never throws).",
+          "parse() emits the correct Entity kind + signature marker for class/interface/object/companion object/data class, top-level/member/extension fun, val/var property, and package — mapping the real tree-sitter-kotlin node kinds.",
+          "parse() emits DEFINES (file→top-level, container→member), IMPORTS (jvm Module stubs, alias in meta.alias), INHERITS (superclass constructor_invocation), IMPLEMENTS (remaining supertypes), and CALLS/REFERENCES via the shared helpers.",
+          "makeEntityId is called unchanged (stable hex-32 ids); a parse-error file still emits its package + clean entities and marks the file, never throwing; unmapped node kinds are skipped."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c4",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "KotlinParser.parse emits the expected entity + relation kinds over inline Kotlin (entity/relation extraction, in kotlin.test.ts)"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Additive wiring (Language union, namespace map, VALID_LANGUAGES x2, side-effect import)",
+        "summary": "Wire the additive edits so kotlin is a first-class language: add 'kotlin' to the Language union (shared/types.ts:510, after 'scala'); add kotlin:'jvm' to the lang→namespace map (shared/repo-namespaces.ts:69-70, after java/scala); add `import './parser/kotlin.js';` to the side-effect imports in src/indexer/index.ts (so registration fires); add 'kotlin' to both VALID_LANGUAGES sets (config/frontmatter.ts:47 and daemon/tools/builtins/code/class-locate.ts:47). All additive — no existing value changed.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "'kotlin' is in the Language union and in both VALID_LANGUAGES sets; kotlin:'jvm' is in the namespace map (so Kotlin imports share the jvm shared-modules repo id).",
+          "src/indexer/index.ts imports './parser/kotlin.js' among the side-effect parser imports so KotlinParser self-registers at startup.",
+          "tsc typechecks clean after the edits (the widened union type-checks everywhere)."
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "after importing the indexer, getParser('X.kt'/'X.kts') returns KotlinParser + supportedExtensions() includes them (registration wiring)"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "kotlin.test.ts (unit + registry integration + smoke regression)",
+        "summary": "Add src/indexer/parser/__tests__/kotlin.test.ts (node:test, mirroring scala.test.ts): unit tests feeding inline Kotlin source to `new KotlinParser().parse(...)` asserting the entity kinds + relation kinds (class/interface/object/companion/data class; top-level/member/extension fun; val/var property; package/import incl. alias; supertype INHERITS+IMPLEMENTS; a recognised HTTP/messaging client emits CALLS; a parse-error file emits clean entities + marks the file; makeEntityId stable). A registry integration test: after importing the indexer, getParser('X.kt'/'X.kts') returns the KotlinParser and supportedExtensions() includes .kt/.kts; a real Kotlin fixture yields a non-empty entities array. A smoke regression test: _require('tree-sitter-kotlin') + setLanguage + parse succeeds (guards a future dep bump that breaks loading).",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "kotlin.test.ts unit tests cover every entity kind + relation kind + the parse-error contract + makeEntityId stability, over inline Kotlin source.",
+          "An integration test proves getParser routes .kt/.kts to KotlinParser (language 'kotlin'), supportedExtensions() includes them, and a real Kotlin fixture yields non-empty entities.",
+          "A smoke regression test asserts the grammar loads + parses (turns red on a broken dep)."
+        ],
+        "derivedFrom": [
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "kotlin.test.ts: class/interface/object/companion/data class/funcs/extension/property/package → correct Entity kinds + signature markers + DEFINES"
+          },
+          {
+            "level": "unit",
+            "name": "kotlin.test.ts: supertype INHERITS+IMPLEMENTS, imports (alias in meta.alias) → IMPORTS, a recognised client → CALLS/REFERENCES"
+          },
+          {
+            "level": "unit",
+            "name": "kotlin.test.ts: parse-error file emits package + clean top-level entities + marks file (never throws); unmapped node skipped; makeEntityId stable hex-32"
+          },
+          {
+            "level": "integration",
+            "name": "kotlin.test.ts: getParser routes .kt/.kts to KotlinParser + a real Kotlin fixture yields non-empty entities; kotlin/java/scala jvm import dedup"
+          },
+          {
+            "level": "smoke",
+            "name": "kotlin.test.ts: committed regression — the tree-sitter-kotlin grammar loads + parses (red on a broken dep bump)"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Build + full test sweep",
+        "summary": "Run `npm run build` (tsc + copy-assets.mjs) and the full test sweep `npx tsx --test 'src/**/__tests__/*.test.ts'`; confirm kotlin.test.ts passes and the existing suites (incl. the other parsers + repo-strict-contract) are unaffected. Fix any typecheck/test fallout from the additive edits.",
+        "size": "S",
+        "order": 5,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "`npm run build` (tsc --noEmit clean + copy-assets) succeeds with kotlin.ts + the edits.",
+          "The full `npx tsx --test 'src/**/__tests__/*.test.ts'` sweep is green, including kotlin.test.ts and the pre-existing suites (no regressions)."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "full build (tsc + copy-assets) + `npx tsx --test 'src/**/__tests__/*.test.ts'` sweep green incl. kotlin.test.ts, no regressions"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "A class with a supertype list `class A : Base(), Iface1, Iface2` -> Class entity for A; INHERITS to Base; IMPLEMENTS to Iface1 and Iface2; DEFINES file->A",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "An interface -> Interface entity; a class implementing it -> IMPLEMENTS",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "`object Singleton` -> Class with an `object` signature marker; a `companion object` inside a class -> Class with a `(companion of <ClassName>)` signature suffix",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "A `data class` -> Class with a `data` signature marker + DEFINES to its properties (val/var -> Variable)",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "A top-level `fun` -> Function; a member `fun` -> Method; an extension `fun Foo.bar()` -> Method with an `extension` marker recording receiver Foo",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "`package a.b` -> Module; `import a.b.Foo` -> IMPORTS to a jvm Module stub; `import a.b.Foo as Bar` -> IMPORTS with meta.alias='Bar'",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "A file whose class calls a recognised HTTP/messaging client -> CALLS/REFERENCES via the shared http/messaging-client-shapes helpers",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "A Kotlin file with a syntax error still emits its package + cleanly-parsed top-level entities and marks the file parse-error (never throws)",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "makeEntityId output for a given (repo,file,kind,name) is the stable hex-32 hash — re-parsing the same source yields identical ids",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "After `import '../index.js'` (or importing kotlin.js), getParser('X.kt') and getParser('X.kts') both return the KotlinParser (language='kotlin'); supportedExtensions() includes '.kt' and '.kts'",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "Parsing a small real .kt file (e.g. a jetbrains-plugin/ source or an inline fixture) through the registry-selected parser yields a non-empty entities array (proves the hollow-Kotlin gap is closed)",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "A repo mixing Kotlin + Java/Scala: their import-stub Modules for a shared JVM dependency share one repo id (SHARED_MODULES_REPO_ID.jvm) — kotlin/java/scala dedup",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails — KotlinParser/parse + consumed CodeParser/makeEntityId/registerParser (stable hex-32 ids, extension-matched registry)"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 capability-discovery — scala.ts template shape (src/indexer/parser/scala.ts:56,66,794-795,862-863): _require grammar load, MODULE_NAMESPACE='jvm', self-registration"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1 boundary-scope — additive edit sites: Language union (types.ts:510), namespace map (repo-namespaces.ts:69), index.ts:26 side-effect import, VALID_LANGUAGES x2 (frontmatter.ts:47, class-locate.ts:47)"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "s1 capability-discovery — the REAL tree-sitter-kotlin@0.3.8 node kinds from the spike (package_header/import_list/class_declaration/delegation_specifier/companion_object/object_declaration/function_declaration/property_declaration)"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "package.json:74-80 tree-sitter grammar deps + the tree-sitter-kotlin@0.3.8 peer-dep ^0.21 vs repo ^0.25 (spiked: works via --legacy-peer-deps)"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 errorPaths + jvm-dedup invariant — guarded grammar load, parse-error contract, MODULE_REPO_ID jvm shared-modules dedup, client-shape CALLS helpers"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 testStrategy — node:test unit + registry integration + smoke regression in src/indexer/parser/__tests__/"
+    }
+  ]
+}

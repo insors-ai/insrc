@@ -148,6 +148,12 @@ export const HTTP_CLIENT_SHAPES: Readonly<Record<string, readonly HttpClientShap
 	go:         GO_SHAPES,
 	java:       JAVA_SHAPES,
 	scala:      SCALA_SHAPES,
+	// Kotlin runs on the JVM and uses the same instance-method HTTP clients as
+	// Java (OkHttp `Request.Builder().url(...)`, java.net.http `.uri(...)`,
+	// Spring `RestTemplate`/`WebClient`, Retrofit). Same builder-method shapes,
+	// same import-gating. Ktor's verb-named `client.get(url)` is a documented
+	// recall gap (bare `get`/`post` would collide with `List.get`/`Map.get`).
+	kotlin:     JAVA_SHAPES,
 };
 
 // ---------------------------------------------------------------------------
@@ -183,6 +189,16 @@ export const HTTP_LIBRARY_IMPORT_MARKERS: Readonly<Record<string, readonly strin
 		'sttp',                               // sttp
 		'akka.http', 'org.apache.pekko.http', // Akka / Pekko HTTP
 		'scalaj.http',                        // scalaj-http
+	],
+	kotlin: [
+		'org.springframework.web',          // RestTemplate (spring-web) + WebClient (spring-webflux)
+		'okhttp3',                          // OkHttp
+		'java.net.http',                    // JDK 11+ HttpClient
+		'org.apache.http', 'org.apache.hc', // Apache HttpClient 4 / 5
+		'jakarta.ws.rs', 'javax.ws.rs',     // JAX-RS client
+		'retrofit2',                        // Retrofit
+		'feign',                            // OpenFeign
+		'io.ktor.client',                   // Ktor client (verb calls remain a recall gap)
 	],
 };
 

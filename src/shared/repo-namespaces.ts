@@ -68,6 +68,7 @@ export const WORKSPACE_REPO_ID_MAX = 0xFFFFFFF0;
 export const SHARED_MODULES_NAMESPACE_BY_LANG: Readonly<Partial<Record<Language, SharedModulesNamespace>>> = {
 	java:       'jvm',
 	scala:      'jvm',
+	kotlin:     'jvm',
 	typescript: 'npm',
 	javascript: 'npm',
 	python:     'python',

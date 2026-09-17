@@ -150,6 +150,10 @@ export const MESSAGING_CLIENT_SHAPES: Readonly<Record<string, readonly Messaging
 	go:         GO_SHAPES,
 	java:       JAVA_SHAPES,
 	scala:      SCALA_SHAPES,
+	// Kotlin on the JVM uses the same Spring JMS/AMQP `convertAndSend(dest, msg)`
+	// messaging-specific verb as Java. The generic `KafkaTemplate.send(topic,..)`
+	// stays a recall gap for the same reason it is in Java.
+	kotlin:     JAVA_SHAPES,
 };
 
 // ---------------------------------------------------------------------------
@@ -208,6 +212,14 @@ export const MESSAGING_LIBRARY_IMPORT_MARKERS: Readonly<Record<string, readonly 
 		'fs2.kafka',
 		'org.apache.kafka',
 		'com.sksamuel.pulsar4s',
+	],
+	kotlin: [
+		'org.springframework.kafka',
+		'org.springframework.jms',
+		'org.springframework.amqp',
+		'javax.jms', 'jakarta.jms',
+		'com.rabbitmq',
+		'org.apache.kafka',
 	],
 };
 

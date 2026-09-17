@@ -45,7 +45,7 @@ const log = getLogger('code-class-locate');
 const CLASS_LIKE_KINDS: readonly EntityKind[] = ['class', 'interface', 'type'];
 
 const VALID_LANGUAGES = new Set<Language>([
-	'typescript', 'javascript', 'python', 'go', 'java', 'scala',
+	'typescript', 'javascript', 'python', 'go', 'java', 'scala', 'kotlin',
 ] as Language[]);
 
 const NEAREST_LIMIT      = 3;

@@ -6,6 +6,7 @@ import ai.insors.insrc.jetbrains.PluginStateEvent
 import ai.insors.insrc.jetbrains.UninstallPolicy
 import ai.insors.insrc.jetbrains.host.McpWiringLifecycle
 import ai.insors.insrc.jetbrains.lifecycle.DaemonLifecycleService
+import ai.insors.insrc.jetbrains.onboarding.OnboardingLifecycle
 import ai.insors.insrc.jetbrains.steering.SteeringInjectionLifecycle
 import com.intellij.ide.AppLifecycleListener
 import com.intellij.ide.plugins.IdeaPluginDescriptor
@@ -44,7 +45,9 @@ internal class InsrcPluginStateListener : PluginStateListener {
  * - [DaemonLifecycleService] (Story S003 / t7) subscribes so it keeps the backing
  *   daemon present/current on every project open;
  * - [SteeringInjectionLifecycle] (Story S004 / t4) subscribes so it injects the
- *   tracked-workflow steering into each detected host's rules file on every project open.
+ *   tracked-workflow steering into each detected host's rules file on every project open;
+ * - [OnboardingLifecycle] (Story S005 / t3) subscribes so it offers one-click project
+ *   registration on project open and reverses every insrc host-file write on true uninstall.
  */
 internal class InsrcAppLifecycle : AppLifecycleListener {
     override fun appStarted() {
@@ -52,5 +55,6 @@ internal class InsrcAppLifecycle : AppLifecycleListener {
         LifecycleBroadcaster.register(McpWiringLifecycle())
         LifecycleBroadcaster.register(DaemonLifecycleService.production())
         LifecycleBroadcaster.register(SteeringInjectionLifecycle())
+        LifecycleBroadcaster.register(OnboardingLifecycle.production())
     }
 }

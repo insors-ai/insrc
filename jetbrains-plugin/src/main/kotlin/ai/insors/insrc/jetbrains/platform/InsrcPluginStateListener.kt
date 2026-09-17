@@ -4,6 +4,7 @@ import ai.insors.insrc.jetbrains.InsrcPlugin
 import ai.insors.insrc.jetbrains.LifecycleBroadcaster
 import ai.insors.insrc.jetbrains.PluginStateEvent
 import ai.insors.insrc.jetbrains.UninstallPolicy
+import ai.insors.insrc.jetbrains.host.McpWiringLifecycle
 import com.intellij.ide.AppLifecycleListener
 import com.intellij.ide.plugins.IdeaPluginDescriptor
 import com.intellij.ide.plugins.PluginInstaller
@@ -32,11 +33,16 @@ internal class InsrcPluginStateListener : PluginStateListener {
 }
 
 /**
- * Registers [InsrcPluginStateListener] once the application has started. Wired
- * via `applicationListeners` in `plugin.xml`.
+ * Registers the application-scoped sc1 consumers once the application has
+ * started. Wired via `applicationListeners` in `plugin.xml`.
+ *
+ * - [InsrcPluginStateListener] routes true uninstalls to `onPluginUninstalled`;
+ * - [McpWiringLifecycle] (Story S002 / t5) subscribes to the broadcaster so it
+ *   wires insrc-mcp into each detected host on every project open.
  */
 internal class InsrcAppLifecycle : AppLifecycleListener {
     override fun appStarted() {
         PluginInstaller.addStateListener(InsrcPluginStateListener())
+        LifecycleBroadcaster.register(McpWiringLifecycle())
     }
 }

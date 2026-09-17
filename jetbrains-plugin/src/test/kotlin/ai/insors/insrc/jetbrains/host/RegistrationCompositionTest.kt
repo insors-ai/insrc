@@ -49,10 +49,10 @@ class RegistrationCompositionTest {
         assertEquals("/home/dev/project-b", b.get("cwd").asString)
 
         // scoping is NOT a baked INSRC_REPO env default (the rejected a2 shape)
-        assertFalse("must not bake a shared INSRC_REPO env default", a.has("env"))
+        assertFalse(a.has("env"), "must not bake a shared INSRC_REPO env default")
         // and NOT an inert --repo argv (insrc-mcp does not parse process args)
         val args = a.getAsJsonArray("args").map { it.asString }
-        assertFalse("must not rely on a non-existent --repo flag", args.contains("--repo"))
+        assertFalse(args.contains("--repo"), "must not rely on a non-existent --repo flag")
     }
 
     @Test

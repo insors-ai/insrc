@@ -74,8 +74,8 @@ class JsonMcpConfigWriterTest {
         val io = FakeIo(content = """{"mcpServers":{"insrc":{"command":"node"},"other":{"command":"foo"}}}""")
         JsonMcpConfigWriter(io).removeInsrcServer("/host/mcp.json")
         val servers = JsonParser.parseString(io.content!!).asJsonObject.getAsJsonObject("mcpServers")
-        assertFalse("insrc entry removed", servers.has("insrc"))
-        assertTrue("other server preserved", servers.has("other"))
+        assertFalse(servers.has("insrc"), "insrc entry removed")
+        assertTrue(servers.has("other"), "other server preserved")
 
         // no-op when insrc absent / file absent
         val noInsrc = FakeIo(content = """{"mcpServers":{"other":{"command":"foo"}}}""")

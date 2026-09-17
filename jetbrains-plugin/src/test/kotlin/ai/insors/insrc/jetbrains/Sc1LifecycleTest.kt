@@ -33,7 +33,7 @@ class Sc1LifecycleTest {
     }
 
     @Test
-    fun `ProjectContext carries the opened project's absolute root; a rootless window is skipped`() {
+    fun `ProjectContext carries the opened project's absolute root and a rootless window is skipped`() {
         val ctx = ProjectContexts.of("/home/dev/proj", "GO")
         assertEquals("/home/dev/proj", ctx?.projectRootPath)
         assertEquals(IdeKind.GOLAND, ctx?.ide)

@@ -1,0 +1,312 @@
+{
+  "meta": {
+    "workflow": "design.epic",
+    "runId": "wf-1789642152969-snttef",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-17T10:58:37.319Z",
+    "epicCreatedAt": "2026-09-17T10:47:35.743Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 564337,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "61d8c73edb68041a",
+    "epicSlug": "integrate-insrc-framework-into-jetbrains-ide",
+    "review": {
+      "artifact": "design.epic",
+      "stage": "design.epic",
+      "verdict": "pass",
+      "findings": [],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 0
+      },
+      "reviewedAt": "2026-09-17T10:59:29.873Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-17T11:00:02.937Z"
+  },
+  "body": {
+    "frameworkSummary": "A single new IntelliJ-Platform plugin (one codebase, all four target IDEs) that owns NO reasoning: it is a thin orchestrator that binds the IDE's lifecycle moments to already-built insrc backend surfaces. On project open it detects any present AI host, ensures the backend daemon is present/current, offers explicit project registration, wires the insrc-mcp server plus the tracked-workflow steering into each detected host's own config, and on uninstall reverses those writes. All grounded reasoning continues to run through the insrc-mcp server the host assistant invokes (k1), so the plugin never opens a cloud path and gains capability parity for free. The design rests on three shared contracts: a plugin runtime + project-context surface (the active project's path is the explicit per-call repo scope, k3), a daemon gateway that fronts the backend (health probe + registration via the strict repo.add contract, k2), and an AI-host adapter that abstracts each host's config/rules file locations behind a marker-delimited, replace-only writer (k4).",
+    "architectureShape": "Three layers. (1) A foundation module owns the plugin scaffold, the per-IDE activation, and two cross-cutting seams every other Story binds to: ProjectContext (active project path + IDE identity, fired on project-open/uninstall lifecycle events) and DaemonGateway (a connection/health probe to the backend daemon plus the project-registration entry). (2) A wiring module (S002) detects present AI hosts and registers the insrc-mcp server into each, always configuring capability calls to carry the active project's path explicitly; it owns the AiHostAdapter that abstracts the two hosts' config/rules file formats behind a marker-delimited replace-only write/remove primitive. (3) Policy modules layer on top without new shared contracts: daemon lifecycle (S003) implements the staleness/consent/tiered-Node policy by delegating to the existing installer through the gateway; steering (S004) writes the tracked-workflow guidance into each host's rules file through the adapter; onboarding/removal (S005) drives the one-click registration UX, the no-host no-op, and uninstall cleanup through the gateway and adapter. Nothing in the plugin duplicates daemon, installer, analyze, or workflow logic (k5, k6).",
+    "sharedContracts": [
+      {
+        "id": "sc1",
+        "name": "PluginRuntime & ProjectContext",
+        "purpose": "The foundational plugin surface: single-plugin activation across all four IDEs, the project lifecycle events every Story hooks (project opened, plugin uninstalled), and the active project's root path + IDE identity that is the explicit per-call repo scope (k3). Owned at the foundation Story because every other Story is transitively downstream of it.",
+        "interfaceSketch": "type IdeKind = 'idea' | 'pycharm' | 'goland' | 'webstorm';\ninterface ProjectContext {\n  readonly projectRootPath: string; // absolute active-project root; the explicit repo argument (k3)\n  readonly ide: IdeKind;\n}\ninterface PluginLifecycle {\n  onProjectOpened(ctx: ProjectContext): void; // fired once per opened project window\n  onPluginUninstalled(): void;                // distinct from a mere disable\n}",
+        "ownedByStory": "s1",
+        "consumedByStories": [
+          "s2",
+          "s3",
+          "s4",
+          "s5"
+        ],
+        "assumptions": [
+          "c4"
+        ]
+      },
+      {
+        "id": "sc2",
+        "name": "DaemonGateway",
+        "purpose": "A thin handle to the backend daemon shared across dependency branches: a read-only health/staleness probe (used by the daemon-lifecycle policy) and the project-registration entry that routes through the strict, non-auto-allocating repo.add contract (k2). Owned at the foundation Story as the nearest common ancestor of its cross-branch consumers (S002 wiring, S003 lifecycle, S005 onboarding).",
+        "interfaceSketch": "type DaemonState = 'absent' | 'stale' | 'current';\ninterface RegistrationResult { readonly registered: boolean; readonly reason?: string; }\ninterface DaemonGateway {\n  probe(): DaemonState;                                    // read-only presence/staleness\n  isProjectRegistered(projectRootPath: string): boolean;   // never auto-allocates (k2)\n  registerProject(projectRootPath: string): RegistrationResult; // explicit repo.add only\n}",
+        "ownedByStory": "s1",
+        "consumedByStories": [
+          "s2",
+          "s3",
+          "s5"
+        ],
+        "assumptions": [
+          "c3"
+        ]
+      },
+      {
+        "id": "sc3",
+        "name": "AiHostAdapter",
+        "purpose": "Abstraction over a detected JetBrains AI host (AI Assistant / Junie): presence detection, the location of each host's MCP-registration config and its rules/guidance file, and a marker-delimited, replace-only write/remove primitive over those host-owned files (k4). Owned by the wiring Story that introduces host detection; consumed by the steering and removal Stories, both transitively downstream of it.",
+        "interfaceSketch": "type AiHostKind = 'ai-assistant' | 'junie';\ntype HostFile = 'mcp' | 'rules';\ninterface AiHost {\n  readonly kind: AiHostKind;\n  readonly mcpConfigPath: string;   // host-owned MCP registration file\n  readonly rulesFilePath: string;   // host-owned guidance/rules file\n}\ninterface MarkerDelimitedBlock { readonly beginMarker: string; readonly endMarker: string; readonly body: string; }\ninterface AiHostAdapter {\n  detectPresent(): readonly AiHost[];                              // empty => no-op case\n  writeBlock(host: AiHost, file: HostFile, block: MarkerDelimitedBlock): void; // replace-only (k4)\n  removeBlock(host: AiHost, file: HostFile): void;                 // uninstall cleanup, restores prior content\n}",
+        "ownedByStory": "s2",
+        "consumedByStories": [
+          "s4",
+          "s5"
+        ],
+        "assumptions": [
+          "c5",
+          "c8"
+        ]
+      }
+    ],
+    "storyBoundaries": [
+      {
+        "storyId": "s1",
+        "owns": [
+          "sc1",
+          "sc2"
+        ],
+        "depends": [],
+        "internal": "The Marketplace-published single-plugin packaging, the per-IDE activation manifest that brings the plugin up identically in IntelliJ IDEA, PyCharm, GoLand, and WebStorm, and the plugin-update delivery path are private to this Story. It exposes only the ProjectContext/lifecycle seam (sc1) and the DaemonGateway handle (sc2); how activation and packaging are realised is not consumed by any other Story."
+      },
+      {
+        "storyId": "s2",
+        "owns": [
+          "sc3"
+        ],
+        "depends": [
+          "sc1",
+          "sc2"
+        ],
+        "internal": "How the insrc-mcp server registration is composed and written into each detected host, and how each capability call is configured to carry the active project's path as its explicit repo argument, are private to this Story. It publishes the AiHostAdapter (sc3) as the shared seam; the MCP-registration content and the per-call repo-scoping wiring behind it are internal."
+      },
+      {
+        "storyId": "s3",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc2"
+        ],
+        "internal": "The daemon staleness/consent policy (one-click consent on first provisioning, silent updates thereafter), the tiered Node runtime decision (use system Node when adequate, else provision a private runtime under the insrc home), and the delegation to the existing installer script are entirely private to this Story. It consumes the lifecycle seam (sc1) to run on project open and the gateway probe (sc2) to decide when to act, but owns no shared contract."
+      },
+      {
+        "storyId": "s4",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc3"
+        ],
+        "internal": "The tracked-workflow steering content/template (the guidance that makes the host assistant route build/change requests through the tracked stages) and the decision of which host rules file receives it are private to this Story. It writes through the adapter's marker-delimited replace-only primitive (sc3) so surrounding user content is preserved; the steering body itself is internal and consumed by no other Story."
+      },
+      {
+        "storyId": "s5",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3"
+        ],
+        "internal": "The one-click 'Enable insrc for this project' onboarding UX, the silent no-op-and-re-check behaviour when no AI host is present, and the uninstall-cleanup orchestration are private to this Story. It composes existing seams — registration via the gateway (sc2), host-write removal via the adapter (sc3), lifecycle triggers via sc1 — without introducing a new shared contract."
+      }
+    ],
+    "nonFunctional": {
+      "performance": "All project-open work (host detection, daemon probe, registration check) runs off the UI thread and is bounded so opening a project is never blocked; the daemon health probe is a lightweight local check, not a full capability call.",
+      "security": "No cloud path is introduced (k1) — all reasoning routes through the host assistant's existing CLI-OAuth sessions; the plugin stores no credentials. Writes into host-owned config/rules files are strictly marker-delimited and replace-only (k4), preserving surrounding user content and fully reversible on uninstall. Project registration happens only through the explicit repo.add contract (k2); nothing is auto-allocated.",
+      "observability": "Detection, daemon-lifecycle, registration, and host-wiring decisions are logged, and their user-visible outcomes (setup offered/applied, project enabled, nothing-to-do) surface as standard IDE notifications so the developer can see what the plugin did and why.",
+      "durability": "Config/rules writes are idempotent (re-running replaces the same delimited block) and reversible (removed on uninstall, left intact on mere disable); registration state persists in the backend registry, so it survives IDE restarts without re-prompting."
+    },
+    "rolloutOverview": {
+      "phases": [
+        {
+          "name": "Phase A — Foundation & backend seams",
+          "includesStories": [
+            "s1"
+          ],
+          "rationale": "S001 stands up the single cross-IDE plugin, its project lifecycle events, and the two foundational shared contracts every later Story binds to (sc1 ProjectContext, sc2 DaemonGateway). Nothing else can land until the plugin activates and these seams exist.",
+          "backwardCompat": "",
+          "featureFlag": null
+        },
+        {
+          "name": "Phase B — Capability wiring & daemon lifecycle",
+          "includesStories": [
+            "s2",
+            "s3"
+          ],
+          "rationale": "Both depend only on S001's seams and are independent of each other. S002 wires the insrc-mcp server into detected AI hosts (owning sc3 AiHostAdapter) with per-project repo scoping; S003 implements the daemon staleness/consent/tiered-Node policy over the sc2 gateway. Landing them together delivers the core in-IDE capability plus a working backing service.",
+          "backwardCompat": "Writes into host MCP-registration config must be additive and marker-scoped so any pre-existing developer MCP entries in those files are preserved.",
+          "featureFlag": null
+        },
+        {
+          "name": "Phase C — Tracked-workflow discipline",
+          "includesStories": [
+            "s4"
+          ],
+          "rationale": "S004 depends on S002's AiHostAdapter (sc3) to write the tracked-workflow steering into each detected host's rules file, so it must follow Phase B.",
+          "backwardCompat": "The steering block is written marker-delimited and replace-only so a developer's existing custom rules in the same host file are never disturbed.",
+          "featureFlag": null
+        },
+        {
+          "name": "Phase D — Onboarding & clean removal",
+          "includesStories": [
+            "s5"
+          ],
+          "rationale": "S005 depends transitively on S002 (sc2, sc3) and S004, composing the gateway and adapter into the one-click registration UX, the no-host silent no-op, and full uninstall cleanup. It lands last because it removes exactly the host writes that Phases B and C create.",
+          "backwardCompat": "Uninstall cleanup must remove only insrc's own delimited blocks and restore host files to their prior content; a mere disable must leave all writes intact.",
+          "featureFlag": null
+        }
+      ],
+      "orderingRationale": "Phases follow the Epic dependency graph and shared-contract ownership: S001 owns sc1+sc2 and has no dependencies, so it is Phase A; S002 (owns sc3) and S003 both depend only on S001, so they form Phase B; S004 consumes sc3 (owned by S002) so it is Phase C; S005 depends on S002 and S004 and consumes sc2+sc3, so it is Phase D. Every owner Story lands before its consumers, and no phase contains a Story whose dependencies are unlanded.",
+      "riskyBits": [
+        {
+          "area": "AI-host config/rules format drift (AI Assistant / Junie)",
+          "why": "The two hosts' MCP-registration config and rules-file locations/formats are an external, out-of-process contract (a med-confidence assumption); a host changing its format could break wiring or, worse, corrupt a config file.",
+          "mitigation": "Isolate every host-specific fact behind the single sc3 AiHostAdapter (one small adapter per host); detect the host's format defensively and fail safe to a no-op that logs and notifies, rather than writing to a file whose shape is unrecognised."
+        },
+        {
+          "area": "Writing into host-owned files insrc does not own",
+          "why": "Both MCP registration (S002) and steering (S004) write into files that carry the developer's own content; a naive write could clobber user rules or MCP entries.",
+          "mitigation": "Route all such writes through the proven marker-delimited, replace-only steering-refresh mechanism; make writes idempotent (re-run replaces the same block), verify block boundaries before writing, and remove only the delimited block on uninstall so the file returns to its prior state."
+        },
+        {
+          "area": "Daemon provisioning on machines without a suitable Node runtime",
+          "why": "The installer hard-requires Node >= a minimum major; IntelliJ/PyCharm/GoLand users often lack it, so setup could fail on exactly the population the Epic targets.",
+          "mitigation": "Keep lifecycle policy behind sc2 and delegate to the existing installer (never reimplement it, k5); tier the runtime — use system Node when adequate, else provision a private runtime under the insrc home — and surface first-install consent + any failure as a clear IDE notification instead of a silent stall."
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Thin config-orchestrator plugin over the existing MCP server, installer, and steering-refresh",
+        "oneLineSummary": "A lightweight IntelliJ-Platform plugin that owns no reasoning and only orchestrates existing backend surfaces into the IDE's own AI assistant.",
+        "approach": "The plugin is a single new IntelliJ-Platform codebase whose entire job is orchestration at IDE lifecycle moments (project open, install, uninstall). It carries no analyze/workflow logic of its own: all capability comes from the already-built insrc-mcp server, which the IDE's agentic assistant invokes once the plugin has registered it. On project open the plugin detects which AI host(s) are present, writes the MCP-server registration plus the tracked-workflow steering block into each host's native config using the existing marker-delimited replace-only steering-refresh mechanism, ensures the backing daemon is present/current by delegating to the existing installer (provisioning a private Node only when the system runtime is missing), and offers a one-click registration of the project against the strict repo.add contract. Every capability call carries the active project's path explicitly, so multiple open windows never cross-scope; removal is a clean inverse of the writes.",
+        "pros": [
+          "Smallest new surface: only detection + config-writing + lifecycle-bridging code, zero duplication of analyze/workflow/daemon/installer logic (k5, k6).",
+          "Capability parity is automatic: the assistant invokes the existing insrc-mcp server, so any current/future tool is available with no plugin change.",
+          "Directly satisfies k1: reasoning runs through the assistant/CLI path, so the plugin never opens a cloud connection.",
+          "Ships the earliest usable outcome inside the developer's existing assistant with no new UI to learn."
+        ],
+        "cons": [
+          "No insrc-native UI: experience is only as good as the host assistant's chat surface (Phase 2 deferred).",
+          "Depends on the two AI hosts' config/instruction formats staying stable.",
+          "Steering is advisory guidance the host agent is asked to follow, not mechanically enforced."
+        ],
+        "costEstimate": "L"
+      },
+      {
+        "id": "a2",
+        "name": "Native RPC-client plugin with its own insrc tool-window UI",
+        "oneLineSummary": "A plugin that talks the daemon's JSON-RPC socket directly and renders analyze/workflow/docgen in native IDE panes.",
+        "approach": "Instead of routing through the IDE's assistant, the plugin connects straight to the running daemon over its JSON-RPC socket and builds first-class IntelliJ tool windows for analyze, workflow, docgen, daemon status, repos, and setup — the parity path toward the existing VSCode fork. The plugin becomes a full RPC client mirroring the daemon's IPC contract in Kotlin, owning its own request/response types, progress rendering, and UI state. This makes insrc self-contained regardless of assistant presence, but it is exactly the deferred Phase 2 taken as the whole solution: substantially larger, must track the daemon IPC contract in lock-step as a second consumer, and reproduces interaction the assistant already provides.",
+        "pros": [
+          "Works with no agentic assistant installed — reachable in every target IDE regardless of AI-host presence.",
+          "Full control over presentation: native panes can show progress/status/results better than a generic chat surface.",
+          "No dependency on either AI host's config/rules format."
+        ],
+        "cons": [
+          "Largest scope by far: a Kotlin RPC client mirroring the daemon IPC contract plus several tool-window UIs, well beyond a Phase-1 cut.",
+          "Duplicates interaction the IDE assistant already provides and does not by itself carry the tracked-workflow discipline into an agent.",
+          "Couples release cadence to the daemon IPC contract as a second lock-step consumer."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Scores clean on the constraints but IS the Epic's first declared non-goal (native tool-window panes / Phase 2) taken as the whole solution: far larger scope, a second lock-step consumer of the daemon IPC contract, and it does not naturally host the tracked-workflow discipline the assistant path gives a1 for free. Wrong altitude for Phase 1."
+      },
+      {
+        "id": "a3",
+        "name": "Generic external-tool / LSP-style bridge",
+        "oneLineSummary": "Expose insrc through a generic IDE extension point (external tool, run configuration, or a language-server-like adapter) rather than the assistant or a native client.",
+        "approach": "The plugin registers insrc as a generic external process the IDE can invoke — an external-tool/run-configuration entry, or an adapter speaking a standard protocol the IDE already understands — and surfaces analyze/workflow output through whatever generic viewer that extension point provides. It minimises IDE-specific code but delivers the lowest-fidelity experience: generic extension points cannot carry the conversational, tool-driven tracked-workflow loop, and the developer interacts through command output rather than an assistant that understands the workflow discipline.",
+        "pros": [
+          "Minimal IDE-specific surface: relies on standardised extension points shared across the JetBrains family.",
+          "Independent of AI-host presence and of each host's config format."
+        ],
+        "cons": [
+          "Lowest fidelity: generic surfaces cannot host the conversational tracked-workflow loop, so k4's discipline has nowhere natural to live.",
+          "Delivers command-style output rather than the grounded, assistant-driven interaction the Epic problem targets.",
+          "Still needs the daemon lifecycle and registration work, so it does not shrink the hard parts."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Lowest fidelity: partial on k3 (per-project scoping) and k4 (no home for the workflow discipline), delivering command-style output rather than the grounded, assistant-driven interaction the Epic problem is about — missing most of the intended value while still requiring the hard daemon/registration work."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "capability-discovery: JetBrains/IDE-plugin subsystem + reuse surfaces (HLD s1)",
+      "quotedText": "Greenfield: 0 clear-match plugin code; reuse surfaces located — src/mcp/server.ts (buildInsrcMcpServer) + src/bin/insrc-mcp.ts, src/mcp/resolve-repo.ts (ResolveRepoDeps) + INSRC_REPO/repo-arg, repo.add/UnregisteredRepoError (CLAUDE.md:140), steering-refresh (refreshSteering), scripts/insrc-daemon-install.sh."
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/mcp/server.ts (buildInsrcMcpServer), src/bin/insrc-mcp.ts",
+      "quotedText": "The insrc-mcp tool server the plugin registers into each detected AI host (sc3 / S002)."
+    },
+    {
+      "id": "c3",
+      "kind": "doc",
+      "ref": "CLAUDE.md:140",
+      "quotedText": "Repo registry is the contract via repo.add; unregistered repo fails the upsert with UnregisteredRepoError — the strict registration behind DaemonGateway (sc2, k2)."
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/mcp/resolve-repo.ts (ResolveRepoDeps); README.md:204",
+      "quotedText": "INSRC_REPO default with explicit per-call repo override — the per-project scoping ProjectContext supplies (sc1, k3)."
+    },
+    {
+      "id": "c5",
+      "kind": "doc",
+      "ref": "docs/standalone/daemon-update-automatically-refresh-insrc-steering-E20260801ea1b1162/S001/LLD.md",
+      "quotedText": "refreshSteering — marker-delimited, replace-only writer reused by AiHostAdapter.writeBlock/removeBlock (sc3, k4)."
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "scripts/insrc-daemon-install.sh",
+      "quotedText": "Existing daemon installer with a Node>=NODE_MIN_MAJOR prerequisite — the lifecycle the DaemonGateway delegates to (S003, k5)."
+    },
+    {
+      "id": "c7",
+      "kind": "doc",
+      "ref": "CLAUDE.md (Project principles)",
+      "quotedText": "No direct cloud REST calls; cloud LLM access goes through the claude/codex CLI OAuth sessions (k1)."
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "SPEC-607ec3f1d0604b86",
+      "quotedText": "JetBrains ships two distinct agentic surfaces (AI Assistant and Junie) with different MCP/config formats; wire whichever is installed (sc3 assumption)."
+    }
+  ]
+}

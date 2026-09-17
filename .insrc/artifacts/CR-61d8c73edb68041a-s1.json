@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1789645868519-khn7ab",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-17T11:51:08.521Z",
+    "model": "client",
+    "elapsedMs": 2,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "61d8c73edb68041a",
+    "storyId": "s1"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "61d8c73edb68041a",
+    "storyId": "s1",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/BuildContractTest.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/Sc1ActivationIntegrationTest.kt"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/Sc1ActivationIntegrationTest.kt:64",
+            "message": "The k3 'multi-window per-project scoping' acceptance names a fixture-based two-window test, but this test proxies it with a stateless-gateway assertion over a fake DaemonRpc (no second Project/window). It genuinely proves the gateway holds no per-root state (interleaved reads+writes across two roots), which is the mechanism that MAKES k3 safe, but it does not open a second fixture project. Accepted by the user as-is with CI as the execution gate; a true two-project fixture test is a reasonable follow-up.",
+            "expectationRef": "PLAN s1/t4 ac: multi-window per-project scoping (k3)",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/BuildContractTest.kt:72",
+            "message": "This third test's common-platform-only descriptor assertion overlaps PluginDescriptorSmokeTest (t1). It is intentional here so the t4 contract test covers BOTH halves of its named acceptance (single artifact AND ac3 compatibility), but the duplication is a minor convention smell; the two could share a helper. Note: the repo's CLAUDE.md conventions (getLogger, .js ESM imports, node:test) are TS-specific and correctly do NOT apply to this new Kotlin module (k6, a deliberately separate toolchain), which follows IntelliJ-Platform/JUnit idioms instead.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/Sc1ActivationIntegrationTest.kt:33",
+            "message": "The named tests exist and their assertions mirror-verify against the real files, but the Kotlin/JUnit + IntelliJ Platform fixture suite has NOT been executed in this environment (no Gradle/IntelliJ SDK on PATH; commits unpushed so the jetbrains-plugin CI lane has not run). Coverage of the acceptance criteria therefore exists in code but is UNVERIFIED locally; execution is deferred to the CI lane (.github/workflows/jetbrains-plugin.yml). This is the honest coverage caveat for the whole S001 build, accepted by the user with CI as the real gate.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/Sc1ActivationIntegrationTest.kt:66",
+            "message": "The `repoLists` capture is effectively dead: repo.list carries no `path` param, so it only ever records null and nothing asserts against it. It documents that reads are root-argument driven, but as written it adds no verification and could be dropped or replaced with an assertion that reads take no retained per-window state. Minor.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 2,
+      "low": 2
+    }
+  }
+}

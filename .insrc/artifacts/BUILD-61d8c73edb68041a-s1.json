@@ -1,0 +1,19 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": false,
+    "epicHash": "61d8c73edb68041a",
+    "storyId": "s1",
+    "createdAt": "2026-09-17T11:32:04.604Z",
+    "updatedAt": "2026-09-17T11:41:42.168Z",
+    "approvedAt": "2026-09-17T11:51:31.805Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t4",
+        "passed": false
+      }
+    ]
+  }
+}

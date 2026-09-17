@@ -1,0 +1,460 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "wf-1789641597911-oq3ocn",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-17T10:47:35.743Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 457821,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "61d8c73edb68041a",
+    "epicSlug": "integrate-insrc-framework-into-jetbrains-ide",
+    "review": {
+      "artifact": "define",
+      "stage": "define",
+      "verdict": "pass",
+      "findings": [],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 0
+      },
+      "reviewedAt": "2026-09-17T10:48:41.394Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-17T10:49:08.016Z"
+  },
+  "body": {
+    "flavor": "new-capability",
+    "problem": "insrc's two core capabilities — grounded, citation-backed answers about a codebase, and the tracked, gated feature-build workflow that turns a request into designed, reviewed, approved work — are reachable today only from the terminal, the interactive CLI, and a single editor integration. Developers whose daily environment is the JetBrains IDE family — writing Java, Python, Go, or JavaScript in IntelliJ IDEA, PyCharm, GoLand, or WebStorm — have no way to reach either capability from inside the tools they actually work in. To ask insrc a grounded question about the code in front of them, or to route a change through the tracked workflow, they must leave the IDE and drive insrc from an external surface, breaking their flow and, in practice, meaning the capability goes unused by that whole population. This is most costly precisely where insrc is strongest: the languages these IDEs specialize in are the same ones the system already indexes, so the grounded context and the workflow discipline already exist and are accurate, yet remain out of reach for the developers best positioned to benefit. There is likewise no in-IDE moment that connects an open project to insrc's grounded index, nor one that carries insrc's tracked-workflow discipline into the agentic assistants these IDEs now ship, so even a developer who already runs insrc receives none of it where they write code.",
+    "nonGoals": [
+      {
+        "text": "Native in-IDE panes that render insrc's analyze/workflow/docgen surfaces directly from the daemon (the deferred Phase 2).",
+        "rationale": "The epic ships value first by surfacing insrc through the IDE's own agentic assistants; building a parallel native UI up front would multiply scope and delay any shippable outcome. Phase 2 is scoped separately once the integration altitude is proven."
+      },
+      {
+        "text": "Deep IDE-native code intelligence (language-server hooks, native refactorings, code inspections, gutter annotations).",
+        "rationale": "The value is bringing insrc's existing grounded-context and tracked-workflow capabilities into the IDE, not authoring new IDE-native analysis; those features would be a different, much larger product surface with no dependency on insrc's differentiators."
+      },
+      {
+        "text": "Extending language coverage beyond Java, Python, Go, and JavaScript/TypeScript (e.g. Scala).",
+        "rationale": "Scope is bounded to the languages the indexer already covers well and that the four target IDEs specialize in; adding languages is an indexer concern, orthogonal to this integration."
+      },
+      {
+        "text": "Re-implementing daemon installation, lifecycle, or the steering-write logic in the plugin's own language.",
+        "rationale": "Those mechanisms already exist and are maintained on the backend side; duplicating them risks divergence and double-maintenance. The epic reuses them rather than reproducing them."
+      },
+      {
+        "text": "Any direct cloud LLM/REST access initiated from the IDE integration.",
+        "rationale": "It would violate the project's standing principle that all cloud access flows through the user's claude/codex CLI OAuth sessions; the integration must not introduce a new cloud path."
+      },
+      {
+        "text": "Housing the integration in a separate sibling repository.",
+        "rationale": "The converged spec deliberately scaffolds the integration in this repository for one-place cohesion; a sibling repo was explicitly ruled out during brainstorming."
+      }
+    ],
+    "assumptions": [
+      {
+        "text": "The system already indexes Java, Python, Go, and JavaScript/TypeScript, so grounded context for the four target IDEs' languages is available without new indexer work.",
+        "confidence": "high",
+        "source": "c1"
+      },
+      {
+        "text": "A reusable server component already exposes insrc's Analyze and Workflow capabilities as tools that resolve their target repository from an environment default or an explicit per-call repository argument.",
+        "confidence": "high",
+        "source": "c2"
+      },
+      {
+        "text": "A project's grounded context is unavailable until that project is registered with the system; registration is the sole gate and nothing auto-allocates it.",
+        "confidence": "high",
+        "source": "c3"
+      },
+      {
+        "text": "Repository context can be scoped per call by supplying the active project's path explicitly, so multiple projects open at once each resolve to their own registered repository.",
+        "confidence": "high",
+        "source": "c4"
+      },
+      {
+        "text": "A reusable mechanism already writes insrc's guidance as a marker-delimited, replace-only block into a target configuration file without disturbing surrounding user content.",
+        "confidence": "high",
+        "source": "c5"
+      },
+      {
+        "text": "An existing installer script provisions and updates the backend daemon and requires a sufficiently recent Node.js runtime to do so.",
+        "confidence": "high",
+        "source": "c6"
+      },
+      {
+        "text": "The JetBrains IDE family ships two distinct agentic assistant surfaces, each with its own configuration for registering external tool servers and its own guidance/rules file, and either, both, or neither may be present in a given install.",
+        "confidence": "med",
+        "source": "c8"
+      }
+    ],
+    "constraints": [
+      {
+        "id": "k1",
+        "text": "All cloud LLM access must continue to flow through the user's claude/codex CLI OAuth sessions; the integration must introduce no direct cloud REST path.",
+        "type": "invariant",
+        "source": "c7"
+      },
+      {
+        "id": "k2",
+        "text": "The repository registry is strict and non-auto-allocating: a project becomes usable only through the explicit registration contract, and the integration must never silently allocate registry membership.",
+        "type": "contract",
+        "source": "c3"
+      },
+      {
+        "id": "k3",
+        "text": "Repository context must be scoped to the active project on every capability call, because separate IDE windows each carry their own project and a single shared default cannot disambiguate them.",
+        "type": "invariant",
+        "source": "c4"
+      },
+      {
+        "id": "k4",
+        "text": "Any write into a host-owned configuration or guidance file must be marker-delimited and replace-only, preserving all surrounding user-authored content and reversible on removal.",
+        "type": "invariant",
+        "source": "c5"
+      },
+      {
+        "id": "k5",
+        "text": "Daemon installation, update, and lifecycle must reuse the existing installer rather than reproducing its logic, and must respect its runtime prerequisites.",
+        "type": "contract",
+        "source": "c6"
+      },
+      {
+        "id": "k6",
+        "text": "The integration is a new codebase distinct from the existing TypeScript backend and must not entangle the two build systems or their toolchains.",
+        "type": "convention",
+        "source": "c1"
+      }
+    ],
+    "stories": [
+      {
+        "id": "s1",
+        "title": "Install insrc into a JetBrains IDE and have it activate across the four target IDEs",
+        "userValue": "A developer working in IntelliJ IDEA, PyCharm, GoLand, or WebStorm can obtain insrc through the IDE's normal plugin channel and have it come up ready, without hand-assembling anything.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a supported JetBrains IDE with insrc not yet installed",
+            "when": "the developer installs insrc through the IDE's standard plugin marketplace and restarts the IDE",
+            "then": "insrc activates and is available in that IDE",
+            "operationalizes": [
+              "k6"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "insrc is already installed and a newer version has been published",
+            "when": "the developer checks for or receives plugin updates through the IDE's normal update mechanism",
+            "then": "the new version is delivered without a manual re-download or reinstall",
+            "operationalizes": [
+              "k6"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "any of the four target IDEs — IntelliJ IDEA, PyCharm, GoLand, or WebStorm",
+            "when": "insrc is installed in that IDE",
+            "then": "it activates there without IDE-specific manual configuration",
+            "operationalizes": [
+              "k6"
+            ]
+          }
+        ],
+        "localConstraints": [
+          {
+            "id": "lc1",
+            "text": "A single integration must install and activate across all four target IDEs rather than requiring a separate build per IDE.",
+            "type": "convention",
+            "source": "c1"
+          }
+        ],
+        "dependsOn": [],
+        "sizeEstimate": "M"
+      },
+      {
+        "id": "s2",
+        "title": "Reach insrc's grounded answers and tracked workflow from inside the IDE's AI assistant",
+        "userValue": "A developer can ask insrc grounded questions about — and route changes through the tracked workflow for — the project in front of them, using the agentic assistant already built into their IDE, with no manual tool-server setup.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a supported IDE whose agentic assistant is installed and enabled",
+            "when": "the developer opens a project",
+            "then": "insrc's grounded-analyze and tracked-workflow capabilities become available as tools inside that assistant without the developer configuring anything by hand",
+            "operationalizes": [
+              "k3"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "several projects are open at once in separate IDE windows",
+            "when": "the developer invokes an insrc capability from one window",
+            "then": "the request resolves against that window's own project and never against another open project",
+            "operationalizes": [
+              "k3"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "both of the IDE's agentic assistant surfaces are installed and enabled",
+            "when": "the developer opens a project",
+            "then": "insrc is made available inside each of them",
+            "operationalizes": [
+              "k3"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "the assistant has insrc available and reaches a capability that needs cloud reasoning",
+            "when": "that capability runs on the developer's behalf",
+            "then": "it uses the developer's existing command-line sign-in and introduces no new direct cloud path",
+            "operationalizes": [
+              "k1"
+            ]
+          }
+        ],
+        "localConstraints": [
+          {
+            "id": "lc1",
+            "text": "The active project's identity must accompany every capability invocation so a shared default can never mis-scope a call.",
+            "type": "invariant",
+            "source": "c4"
+          }
+        ],
+        "dependsOn": [
+          "s1"
+        ],
+        "sizeEstimate": "L",
+        "existingCapabilityRefs": [
+          "c2"
+        ]
+      },
+      {
+        "id": "s3",
+        "title": "Have insrc's backing service set up and kept current without leaving the IDE",
+        "userValue": "A developer gets a working insrc without a separate terminal install: if the backing service is missing or out of date the IDE offers a one-click setup the first time and keeps it current afterward, even on machines that lack the runtime it needs.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a developer opens a project and insrc's backing service is absent or out of date",
+            "when": "the project finishes opening",
+            "then": "the IDE detects this and offers a single one-click action to set it up or bring it current",
+            "operationalizes": [
+              "k5"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "the developer accepted the one-click setup once already",
+            "when": "the backing service later falls out of date",
+            "then": "it is brought current automatically without prompting the developer again",
+            "operationalizes": [
+              "k5"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "the machine lacks a suitable runtime for the backing service",
+            "when": "setup runs",
+            "then": "insrc provides the runtime the service needs and setup completes rather than failing",
+            "operationalizes": [
+              "k5"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "a suitable runtime is already present on the machine",
+            "when": "setup runs",
+            "then": "the existing runtime is used instead of provisioning another",
+            "operationalizes": [
+              "k5"
+            ]
+          }
+        ],
+        "localConstraints": [
+          {
+            "id": "lc1",
+            "text": "Setup and update must reuse the existing backend installer and honour its runtime prerequisites rather than reproducing its logic.",
+            "type": "contract",
+            "source": "c6"
+          }
+        ],
+        "dependsOn": [
+          "s1"
+        ],
+        "sizeEstimate": "L"
+      },
+      {
+        "id": "s4",
+        "title": "Have the IDE's AI assistant follow insrc's tracked-workflow discipline",
+        "userValue": "When a developer asks the assistant to build or change something, it drives the request through insrc's tracked stages — sizing, design, review-before-approve, present-and-ask, build — rather than merely having loose access to the tools.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "insrc has been made available inside a detected assistant for a project",
+            "when": "insrc activates for that project",
+            "then": "the assistant is given insrc's tracked-workflow guidance so it routes build and change requests through the tracked stages",
+            "operationalizes": [
+              "k4"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "the assistant's own guidance file already contains the developer's custom content",
+            "when": "insrc writes its guidance into that file",
+            "then": "only insrc's own delimited section is added or replaced and all surrounding developer content is preserved",
+            "operationalizes": [
+              "k4"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "both assistant surfaces are present",
+            "when": "insrc activates for a project",
+            "then": "each surface receives the guidance in its own native location and format",
+            "operationalizes": [
+              "k4"
+            ]
+          }
+        ],
+        "localConstraints": [
+          {
+            "id": "lc1",
+            "text": "Guidance writes into a host-owned file must be marker-delimited and replace-only, never overwriting the whole file.",
+            "type": "invariant",
+            "source": "c5"
+          }
+        ],
+        "dependsOn": [
+          "s2"
+        ],
+        "sizeEstimate": "M"
+      },
+      {
+        "id": "s5",
+        "title": "Connect a project to insrc by explicit choice, stay silent when there is nothing to do, and remove cleanly",
+        "userValue": "A developer's open project is connected to insrc's grounded index only by an explicit one-click choice; when no assistant is present the plugin stays quiet; and removing insrc leaves no trace in the developer's own configuration.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a project that is not yet registered with insrc is opened",
+            "when": "the project finishes opening",
+            "then": "the developer is offered a one-click action to enable insrc for that project, and nothing is registered until the developer chooses it",
+            "operationalizes": [
+              "k2"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "the developer has not enabled insrc for a project",
+            "when": "that project is open",
+            "then": "insrc neither registers nor indexes it on the developer's behalf",
+            "operationalizes": [
+              "k2"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "no agentic assistant is installed or enabled in the IDE",
+            "when": "a project is opened",
+            "then": "insrc takes no visible action and simply re-checks on later project opens",
+            "operationalizes": [
+              "k2"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "insrc previously wrote configuration or guidance into an assistant's files",
+            "when": "the developer uninstalls insrc",
+            "then": "insrc's delimited additions are removed and the files are restored to their prior content, whereas a mere disable leaves them in place",
+            "operationalizes": [
+              "k4"
+            ]
+          }
+        ],
+        "localConstraints": [
+          {
+            "id": "lc1",
+            "text": "Project registration happens only through the explicit registration contract and is never auto-allocated on the developer's behalf.",
+            "type": "contract",
+            "source": "c3"
+          },
+          {
+            "id": "lc2",
+            "text": "Removal must restore any host-owned files insrc wrote into back to their pre-insrc state.",
+            "type": "invariant",
+            "source": "c5"
+          }
+        ],
+        "dependsOn": [
+          "s2",
+          "s4"
+        ],
+        "sizeEstimate": "M"
+      }
+    ],
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "capability-discovery: JetBrains/IDE-plugin subsystem + reuse surfaces",
+      "quotedText": "0 clear-match / 1 partial-match (src/mcp) / 4 unrelated; no plugin code found; every Kotlin/Gradle hit is the indexer's JVM-manifest parser on other projects. Greenfield new-capability; the plugin is a net-new codebase distinct from the TS backend."
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/mcp/server.ts (buildInsrcMcpServer), src/bin/insrc-mcp.ts",
+      "quotedText": "Assembles the server registered as insrc-mcp exposing Analyze + Workflow tools."
+    },
+    {
+      "id": "c3",
+      "kind": "doc",
+      "ref": "CLAUDE.md:140",
+      "quotedText": "Repo registry is the contract — established exclusively via the repo.add IPC; the storage layer never auto-allocates registry rows; an Entity whose repo path isn't registered fails the upsert with UnregisteredRepoError."
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/mcp/resolve-repo.ts (ResolveRepoDeps); README.md:204",
+      "quotedText": "INSRC_REPO is optional — callers may pass repo on each tool call instead."
+    },
+    {
+      "id": "c5",
+      "kind": "doc",
+      "ref": "docs/standalone/daemon-update-automatically-refresh-insrc-steering-E20260801ea1b1162/S001/LLD.md",
+      "quotedText": "refreshSteering — replace-only, marker-delimited steering block written into a target config, leaving surrounding content untouched."
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "scripts/insrc-daemon-install.sh:150-158",
+      "quotedText": "Requires Node.js >= NODE_MIN_MAJOR: dies 'node not found ... install Node.js first' when absent and 'node too old' when below the minimum; also requires npm."
+    },
+    {
+      "id": "c7",
+      "kind": "doc",
+      "ref": "CLAUDE.md (Project principles)",
+      "quotedText": "No direct cloud REST calls from our process. Cloud LLM access happens through the locally-installed claude and codex CLI binaries. Auth + quota stay with the user's CLI OAuth sessions."
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "SPEC-607ec3f1d0604b86",
+      "quotedText": "JetBrains ships two distinct agentic surfaces (AI Assistant and Junie) with different MCP/config formats; Phase 1 wires whichever is installed/enabled, requiring neither specifically."
+    }
+  ]
+}

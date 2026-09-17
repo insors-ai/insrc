@@ -1,0 +1,253 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1789643464423-8r0rqo",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-17T11:14:59.275Z",
+    "epicCreatedAt": "2026-09-17T10:47:35.743Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 234841,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "61d8c73edb68041a",
+    "epicSlug": "integrate-insrc-framework-into-jetbrains-ide",
+    "storyId": "s1",
+    "lldRunId": "wf-1789642862990-sub8fm",
+    "lldEffectiveHash": "7ebd2fd85012b97ccc463655776546b87125f337e9056f4e2efc76048eb635fd",
+    "approvedAt": "2026-09-17T11:17:36.797Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Scaffold the single Gradle/Kotlin IntelliJ-Platform plugin module + descriptor + CI lane",
+        "summary": "Create the new in-repo Gradle/Kotlin subproject (distinct from the ESM/TS backend, k6) with an IntelliJ-Platform plugin descriptor that depends only on the common platform module so one artifact activates in IntelliJ IDEA, PyCharm, GoLand, and WebStorm (lc1). Wire the Gradle IntelliJ-plugin build to emit a single versioned artifact with valid since-build/until-build, and add a dedicated CI lane that builds + runs the plugin's tests.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "The Gradle build compiles the new Kotlin module and emits exactly one plugin distribution artifact (no per-IDE variant) with a version + since-build/until-build.",
+          "The plugin descriptor declares a dependency only on the common platform module, not an IDE-specific module.",
+          "A CI lane builds the module and runs its test task, separate from the TS backend's test sweep."
+        ],
+        "derivedFrom": [
+          "c6",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "Smoke: the plugin module Gradle build succeeds and produces one loadable plugin distribution artifact"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Implement sc1: IdeKind/ProjectContext types + project-open & uninstall lifecycle",
+        "summary": "Add the IdeKind closed union and immutable ProjectContext, resolve IdeKind from the running product identity for each of the four IDEs, and hook the platform lifecycle: a project-open listener that constructs a ProjectContext (absolute root + IdeKind) and broadcasts onProjectOpened once per opened project (skipping rootless windows), plus a teardown hook that fires onPluginUninstalled only on true uninstall, not on disable. The hooks are non-throwing and run off the UI thread. Ships with its own unit tests for the product-to-IdeKind mapping and the disable-vs-uninstall distinction.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "ProjectContext is constructed with the opened project's absolute basePath and the IdeKind resolved for each of idea/pycharm/goland/webstorm, verified by unit tests.",
+          "onProjectOpened fires exactly once per opened project window and is skipped (no bogus ProjectContext) for a rootless/light project.",
+          "onPluginUninstalled fires only on uninstall and not on a mere disable, verified by a unit test."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Unit: product-identity-to-IdeKind resolves each of idea/pycharm/goland/webstorm"
+          },
+          {
+            "level": "unit",
+            "name": "Unit: ProjectContext carries the opened project's absolute root; a rootless window is skipped (no bogus ProjectContext)"
+          },
+          {
+            "level": "unit",
+            "name": "Unit: onPluginUninstalled fires on uninstall but not on a mere disable"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Implement sc2: application-scoped DaemonGateway over the daemon socket",
+        "summary": "Add DaemonState and RegistrationResult, and implement DaemonGateway as one application-scoped service holding a single JSON-RPC client to ~/.insrc/daemon.sock. probe() returns absent/stale/current (absent when the socket is unreachable, conservative when freshness is unknown, never throwing). isProjectRegistered(projectRootPath) and registerProject(projectRootPath) front the strict repo.add registry: read-only paths never allocate, registerProject is idempotent and returns a reason on rejection, and a DaemonUnavailable error is surfaced (not swallowed) when the socket is down. Every method takes projectRootPath explicitly (k3); the socket wire format stays private to S001. Ships with its own unit tests driving a fake daemon socket.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "probe() returns 'absent' when no socket file is present and never throws; a reachable daemon yields current/stale, verified by unit tests against a fake socket.",
+          "isProjectRegistered() is read-only and surfaces DaemonUnavailable when the daemon is unreachable, never auto-allocating (k2, c3).",
+          "registerProject() routes repo.add for exactly that one project, is idempotent for an already-registered project, returns RegistrationResult{registered:false,reason} on backend rejection, and opens only the local socket — no cloud path (c7)."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Unit: probe() maps reachable/unreachable/unknown-freshness to current/stale/absent and never throws"
+          },
+          {
+            "level": "unit",
+            "name": "Unit: isProjectRegistered() is read-only, surfaces DaemonUnavailable, and never auto-allocates"
+          },
+          {
+            "level": "unit",
+            "name": "Unit: registerProject() routes repo.add, is idempotent, returns reason on rejection, and never auto-allocates other repos"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Acceptance tests: integration (plugin activation) + contract (single-artifact / common-platform)",
+        "summary": "With sc1 and sc2 assembled, add the acceptance-level suites that require the whole plugin: an integration test that activates the plugin in the IntelliJ Platform test fixture and asserts onProjectOpened fires for an opened project (including multi-window per-project scoping, k3); and a contract test over the built descriptor/artifact asserting a single versioned artifact that depends only on the common platform module. Per-task unit tests for the gateway and IdeKind mapping live with t2/t3, not here.",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "An integration test activates the plugin in the platform fixture and asserts onProjectOpened fires for an opened project with its absolute root (ac1), including multi-window per-project scoping (k3).",
+          "A contract test asserts the build emits one versioned artifact depending only on the common platform module (ac2/ac3, lc1)."
+        ],
+        "derivedFrom": [
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Integration: plugin activates in the platform fixture and fires onProjectOpened for an opened project, with multi-window per-project scoping (k3)"
+          },
+          {
+            "level": "smoke",
+            "name": "Contract: the build emits one versioned artifact depending only on the common platform module (no IDE-specific module)"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "DaemonGateway.probe (maps reachable/unreachable/unknown-freshness to current/absent, never throws for absent)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "DaemonGateway.isProjectRegistered (read-only, surfaces DaemonUnavailable, never allocates)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "DaemonGateway.registerProject (routes repo.add, idempotent, returns RegistrationResult with reason on rejection, never auto-allocates others)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "ProjectContext construction + the product-identity-to-IdeKind mapping for all four IDEs",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "PluginLifecycle: onPluginUninstalled fires only on uninstall, not disable",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "Plugin activation on project open (onProjectOpened fires once per opened project with the project's absolute basePath as projectRootPath)",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "Rootless/light project window is skipped without firing a bogus ProjectContext",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "Multiple open projects each resolve their own ProjectContext, and the shared gateway scopes each call by its explicit projectRootPath (k3)",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "The plugin descriptor depends only on the common platform module (not an IDE-specific module), so one artifact is compatible with IDEA/PyCharm/GoLand/WebStorm",
+        "coveredByTaskIds": [
+          "t1",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "The Gradle build emits exactly one versioned plugin artifact (no per-IDE variant) with valid since-build/until-build + version metadata",
+        "coveredByTaskIds": [
+          "t1",
+          "t4"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails sc1 (PluginLifecycle / ProjectContext / IdeKind)",
+      "quotedText": "onProjectOpened(ctx: ProjectContext) fires once per opened project window; onPluginUninstalled fires only on true uninstall, not disable."
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails sc2 (DaemonGateway)",
+      "quotedText": "probe(): DaemonState; isProjectRegistered(projectRootPath): Boolean (never auto-allocates); registerProject(projectRootPath): RegistrationResult (explicit repo.add only)."
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 dataModelChanges (IdeKind, ProjectContext, DaemonState, RegistrationResult)",
+      "quotedText": "New closed unions and value types: IdeKind (four products), ProjectContext {projectRootPath, ide}, DaemonState (absent/stale/current), RegistrationResult {registered, reason?}."
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 errorPaths (DaemonUnavailable, repo.add rejection, unknown freshness; invariants c3/c7)",
+      "quotedText": "Surface DaemonUnavailable rather than fabricate; registerProject returns reason on rejection with no partial allocation; conservative freshness reading; registry non-auto-allocating; no cloud path."
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 testStrategy (unit gateway/mapping, integration activation, contract single-artifact) + acceptanceMapping ac1/ac2/ac3",
+      "quotedText": "JUnit + IntelliJ Platform Test Framework; unit against a fake socket, integration activation via the platform fixture, contract single-versioned-artifact / common-platform-only dependency."
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 hldContextSlice.boundary (single-plugin packaging + per-IDE activation, k6/lc1)",
+      "quotedText": "The Marketplace-published single-plugin packaging and per-IDE activation manifest bring the plugin up identically across all four IDEs; a new codebase distinct from the TS backend."
+    }
+  ]
+}

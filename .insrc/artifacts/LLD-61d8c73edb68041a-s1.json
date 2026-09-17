@@ -1,0 +1,517 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1789642862990-sub8fm",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-17T11:07:48.934Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 405872,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-09-17T10:47:35.743Z",
+    "epicHash": "61d8c73edb68041a",
+    "epicSlug": "integrate-insrc-framework-into-jetbrains-ide",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1789642152969-snttef",
+    "hldEffectiveHash": "7ebd2fd85012b97ccc463655776546b87125f337e9056f4e2efc76048eb635fd",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 0
+      },
+      "reviewedAt": "2026-09-17T11:08:35.798Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-17T11:10:59.669Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "A single new IntelliJ-Platform plugin (one codebase, all four target IDEs) that owns NO reasoning: it is a thin orchestrator that binds the IDE's lifecycle moments to already-built insrc backend surfaces. On project open it detects any present AI host, ensures the backend daemon is present/current, offers explicit project registration, wires the insrc-mcp server plus the tracked-workflow steering into each detected host's own config, and on uninstall reverses those writes. All grounded reasoning continues to run through the insrc-mcp server the host assistant invokes (k1), so the plugin never opens a cloud path and gains capability parity for free. The design rests on three shared contracts: a plugin runtime + project-context surface (the active project's path is the explicit per-call repo scope, k3), a daemon gateway that fronts the backend (health probe + registration via the strict repo.add contract, k2), and an AI-host adapter that abstracts each host's config/rules file locations behind a marker-delimited, replace-only writer (k4).",
+      "ownedContracts": [
+        {
+          "id": "sc1",
+          "name": "PluginRuntime & ProjectContext",
+          "purpose": "The foundational plugin surface: single-plugin activation across all four IDEs, the project lifecycle events every Story hooks (project opened, plugin uninstalled), and the active project's root path + IDE identity that is the explicit per-call repo scope (k3). Owned at the foundation Story because every other Story is transitively downstream of it.",
+          "interfaceSketch": "type IdeKind = 'idea' | 'pycharm' | 'goland' | 'webstorm';\ninterface ProjectContext {\n  readonly projectRootPath: string; // absolute active-project root; the explicit repo argument (k3)\n  readonly ide: IdeKind;\n}\ninterface PluginLifecycle {\n  onProjectOpened(ctx: ProjectContext): void; // fired once per opened project window\n  onPluginUninstalled(): void;                // distinct from a mere disable\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c4"
+          ]
+        },
+        {
+          "id": "sc2",
+          "name": "DaemonGateway",
+          "purpose": "A thin handle to the backend daemon shared across dependency branches: a read-only health/staleness probe (used by the daemon-lifecycle policy) and the project-registration entry that routes through the strict, non-auto-allocating repo.add contract (k2). Owned at the foundation Story as the nearest common ancestor of its cross-branch consumers (S002 wiring, S003 lifecycle, S005 onboarding).",
+          "interfaceSketch": "type DaemonState = 'absent' | 'stale' | 'current';\ninterface RegistrationResult { readonly registered: boolean; readonly reason?: string; }\ninterface DaemonGateway {\n  probe(): DaemonState;                                    // read-only presence/staleness\n  isProjectRegistered(projectRootPath: string): boolean;   // never auto-allocates (k2)\n  registerProject(projectRootPath: string): RegistrationResult; // explicit repo.add only\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s5"
+          ],
+          "assumptions": [
+            "c3"
+          ]
+        }
+      ],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [
+          "sc1",
+          "sc2"
+        ],
+        "depends": [],
+        "internal": "The Marketplace-published single-plugin packaging, the per-IDE activation manifest that brings the plugin up identically in IntelliJ IDEA, PyCharm, GoLand, and WebStorm, and the plugin-update delivery path are private to this Story. It exposes only the ProjectContext/lifecycle seam (sc1) and the DaemonGateway handle (sc2); how activation and packaging are realised is not consumed by any other Story."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc3"
+          ],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "How the insrc-mcp server registration is composed and written into each detected host, and how each capability call is configured to carry the active project's path as its explicit repo argument, are private to this Story. It publishes the AiHostAdapter (sc3) as the shared seam; the MCP-registration content and the per-call repo-scoping wiring behind it are internal."
+        },
+        {
+          "storyId": "s3",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "The daemon staleness/consent policy (one-click consent on first provisioning, silent updates thereafter), the tiered Node runtime decision (use system Node when adequate, else provision a private runtime under the insrc home), and the delegation to the existing installer script are entirely private to this Story. It consumes the lifecycle seam (sc1) to run on project open and the gateway probe (sc2) to decide when to act, but owns no shared contract."
+        },
+        {
+          "storyId": "s4",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc3"
+          ],
+          "internal": "The tracked-workflow steering content/template (the guidance that makes the host assistant route build/change requests through the tracked stages) and the decision of which host rules file receives it are private to this Story. It writes through the adapter's marker-delimited replace-only primitive (sc3) so surrounding user content is preserved; the steering body itself is internal and consumed by no other Story."
+        },
+        {
+          "storyId": "s5",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "The one-click 'Enable insrc for this project' onboarding UX, the silent no-op-and-re-check behaviour when no AI host is present, and the uninstall-cleanup orchestration are private to this Story. It composes existing seams — registration via the gateway (sc2), host-write removal via the adapter (sc3), lifecycle triggers via sc1 — without introducing a new shared contract."
+        }
+      ],
+      "rolloutPhase": "Phase A — Foundation & backend seams",
+      "nonFunctional": {
+        "performance": "All project-open work (host detection, daemon probe, registration check) runs off the UI thread and is bounded so opening a project is never blocked; the daemon health probe is a lightweight local check, not a full capability call.",
+        "security": "No cloud path is introduced (k1) — all reasoning routes through the host assistant's existing CLI-OAuth sessions; the plugin stores no credentials. Writes into host-owned config/rules files are strictly marker-delimited and replace-only (k4), preserving surrounding user content and fully reversible on uninstall. Project registration happens only through the explicit repo.add contract (k2); nothing is auto-allocated.",
+        "observability": "Detection, daemon-lifecycle, registration, and host-wiring decisions are logged, and their user-visible outcomes (setup offered/applied, project enabled, nothing-to-do) surface as standard IDE notifications so the developer can see what the plugin did and why.",
+        "durability": "Config/rules writes are idempotent (re-running replaces the same delimited block) and reversible (removed on uninstall, left intact on mere disable); registration state persists in the backend registry, so it survives IDE restarts without re-prompting."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "PluginLifecycle.onProjectOpened",
+          "signature": "fun onProjectOpened(ctx: ProjectContext): Unit",
+          "parameters": [
+            {
+              "name": "ctx",
+              "type": "ProjectContext",
+              "purpose": "The just-opened project's context (absolute root path + resolved IdeKind) that downstream stories key their per-project work on.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Unit",
+            "meaning": "Fire-and-return; the hook only broadcasts the lifecycle event to registered downstream consumers off the UI thread."
+          },
+          "errors": [
+            {
+              "type": "(none surfaced)",
+              "condition": "The hook never throws to the platform; any downstream consumer failure is isolated and logged so opening a project is never blocked."
+            }
+          ],
+          "preconditions": [
+            "ctx.projectRootPath is the absolute root of a project the platform has finished opening."
+          ],
+          "postconditions": [
+            "Fires exactly once per opened project window.",
+            "Does not itself register, index, or wire anything — it only delivers the event (registration is S005, wiring is S002, daemon policy is S003)."
+          ]
+        },
+        {
+          "name": "PluginLifecycle.onPluginUninstalled",
+          "signature": "fun onPluginUninstalled(): Unit",
+          "parameters": [],
+          "returns": {
+            "type": "Unit",
+            "meaning": "Fire-and-return; signals a true uninstall so consumers can reverse their host-file writes."
+          },
+          "errors": [
+            {
+              "type": "(none surfaced)",
+              "condition": "Never throws to the platform."
+            }
+          ],
+          "preconditions": [
+            "The plugin is being uninstalled, not merely disabled."
+          ],
+          "postconditions": [
+            "Fires only on uninstall, never on a mere disable (the distinction is the contract's whole point)."
+          ]
+        },
+        {
+          "name": "DaemonGateway.probe",
+          "signature": "fun probe(): DaemonState",
+          "parameters": [],
+          "returns": {
+            "type": "DaemonState",
+            "meaning": "Raw backend presence: 'absent' (no daemon reachable), 'stale' (reachable but behind), or 'current'. The POLICY that acts on 'stale' belongs to S003, not here."
+          },
+          "errors": [
+            {
+              "type": "(none surfaced)",
+              "condition": "An unreachable/unconnectable daemon socket is reported as 'absent' rather than thrown, so the probe is always answerable."
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "Read-only: never mutates daemon or registry state.",
+            "Bounded, lightweight local check over the Unix socket — not a full capability call."
+          ]
+        },
+        {
+          "name": "DaemonGateway.isProjectRegistered",
+          "signature": "fun isProjectRegistered(projectRootPath: String): Boolean",
+          "parameters": [
+            {
+              "name": "projectRootPath",
+              "type": "String",
+              "purpose": "Absolute active-project root to query registry membership for (the explicit repo scope, k3).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Boolean",
+            "meaning": "true iff the given project is already a registered insrc repo."
+          },
+          "errors": [
+            {
+              "type": "DaemonUnavailable",
+              "condition": "The daemon is not reachable to answer the query (surfaced to the caller, not swallowed)."
+            }
+          ],
+          "preconditions": [
+            "projectRootPath is an absolute path."
+          ],
+          "postconditions": [
+            "Read-only: never auto-allocates registry membership (k2)."
+          ]
+        },
+        {
+          "name": "DaemonGateway.registerProject",
+          "signature": "fun registerProject(projectRootPath: String): RegistrationResult",
+          "parameters": [
+            {
+              "name": "projectRootPath",
+              "type": "String",
+              "purpose": "Absolute active-project root to register via the strict repo.add contract.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "RegistrationResult",
+            "meaning": "{ registered: Boolean, reason?: String } — whether the project is now registered, with a reason when not."
+          },
+          "errors": [
+            {
+              "type": "DaemonUnavailable",
+              "condition": "The daemon is not reachable to perform repo.add (surfaced, not swallowed)."
+            }
+          ],
+          "preconditions": [
+            "Called only in response to an explicit developer action upstream (S005's one-click enable) — the gateway itself performs no unsolicited registration.",
+            "projectRootPath is an absolute path."
+          ],
+          "postconditions": [
+            "Routes exactly the repo.add IPC for that one project; never auto-allocates any other repo (k2).",
+            "Idempotent: registering an already-registered project succeeds without duplicate allocation."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "IdeKind",
+        "change": "new",
+        "details": "A closed union of the four supported product identities: 'idea' | 'pycharm' | 'goland' | 'webstorm'. Resolved once at project-open from the running IDE's product identity; the product-to-IdeKind mapping is private to S001.",
+        "callSites": []
+      },
+      {
+        "entity": "ProjectContext",
+        "change": "new",
+        "details": "{ projectRootPath: String (absolute active-project root, the explicit repo argument for k3), ide: IdeKind }. Constructed by the project-open listener and handed to consumers; immutable.",
+        "callSites": []
+      },
+      {
+        "entity": "DaemonState",
+        "change": "new",
+        "details": "A closed union 'absent' | 'stale' | 'current' returned by probe(). S001 emits it as raw state; interpreting 'stale' into an install decision is S003's internal policy.",
+        "callSites": []
+      },
+      {
+        "entity": "RegistrationResult",
+        "change": "new",
+        "details": "{ registered: Boolean, reason?: String }. Returned by registerProject(); reason is populated only when registration did not occur.",
+        "callSites": []
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "implements",
+        "howDetails": "S001 owns and implements sc1: the plugin scaffold activates once across all four IDEs (single artifact against the shared platform), a project-open listener constructs ProjectContext (root + product-derived IdeKind) and fires onProjectOpened, and a plugin teardown hook fires onPluginUninstalled only on true uninstall. Downstream stories (s2/s3/s4/s5) consume these as plain interfaces via platform service lookup; the product mapping and packaging stay internal to S001."
+      },
+      {
+        "contractId": "sc2",
+        "role": "implements",
+        "howDetails": "S001 owns and implements sc2 as a single application-scoped service holding one client connection to the daemon's Unix socket (~/.insrc/daemon.sock). probe() reads raw daemon presence; isProjectRegistered()/registerProject() front the strict repo.add registry (never auto-allocating, k2). Every method takes projectRootPath explicitly so one shared service scopes per active project (k3). The socket wire format is private to S001; S003 (lifecycle policy) and S005 (registration UX) only consume these methods."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The backend daemon socket is unreachable while isProjectRegistered() or registerProject() is called (no socket file, connection refused, or the daemon is down).",
+          "detection": "The gateway's socket connect / JSON-RPC request over ~/.insrc/daemon.sock fails or times out at the transport layer.",
+          "response": "Surface a DaemonUnavailable error to the caller rather than swallowing it or fabricating a registered/unregistered answer; the gateway performs no retry policy of its own (that judgement belongs to the S003 lifecycle consumer).",
+          "userImpact": "The consuming story (S003 setup / S005 onboarding) learns the daemon is down and can offer install/setup; the developer sees a clear notification instead of a silently wrong registration result.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The repo.add registration is rejected by the backend registry (e.g. the path is not a valid indexable repo).",
+          "detection": "The repo.add IPC returns an error/negative result rather than a success acknowledgement.",
+          "response": "registerProject() returns RegistrationResult{ registered: false, reason: <backend reason> } with no partial or fallback allocation; probe/registry state is left exactly as it was.",
+          "userImpact": "The developer is told the project was not enabled and why, and can act on the reason; nothing is half-registered.",
+          "recoverable": true
+        },
+        {
+          "scenario": "probe() cannot classify daemon freshness because the daemon answers but the version/staleness signal is unavailable.",
+          "detection": "The daemon connects and responds, but the field the probe reads to distinguish 'stale' from 'current' is missing or unparseable.",
+          "response": "Return the conservative reachable state 'current' only when freshness is affirmatively known; otherwise report the weaker known state ('absent' if unreachable) rather than guessing 'current' — S001 never invents a freshness verdict, leaving any stale-handling policy to S003.",
+          "userImpact": "None directly; the S003 consumer decides what to do, and a conservative reading avoids skipping a needed update.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A project window opens with no resolvable absolute root (a light/default or rootless project).",
+          "expected": "onProjectOpened is not fired with a bogus root; ProjectContext requires an absolute projectRootPath, so a rootless window is skipped (no registration/probe attempted) and logged."
+        },
+        {
+          "input": "Several project windows are open at once, each a different project.",
+          "expected": "Each window fires its own onProjectOpened with its own ProjectContext; the single application-scoped DaemonGateway serves each call using the explicit projectRootPath, so no window's request is scoped to another's project (k3)."
+        },
+        {
+          "input": "The plugin is disabled (not uninstalled).",
+          "expected": "onPluginUninstalled does NOT fire; the lifecycle distinguishes disable from uninstall, so downstream cleanup (S005) is not triggered and injected state is left intact."
+        },
+        {
+          "input": "registerProject() is called for a project that is already a registered insrc repo.",
+          "expected": "Idempotent success — RegistrationResult{ registered: true }, with no duplicate registry allocation."
+        },
+        {
+          "input": "probe() runs when no daemon has ever been installed (no socket file present).",
+          "expected": "Returns 'absent' (the missing socket is a definite not-present reading), never an exception."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The repository registry stays strict and non-auto-allocating: S001's gateway registers a repo ONLY via an explicit registerProject() call driven by a developer action, and read paths (probe/isProjectRegistered) never allocate.",
+          "source": "c3"
+        },
+        {
+          "text": "No cloud path is introduced by S001: the gateway opens only the local daemon Unix socket and never any cloud/REST connection.",
+          "source": "c7"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Verify sc2 DaemonGateway logic against a fake in-test daemon socket and sc1 ProjectContext/IdeKind resolution, with no real daemon or IDE.",
+          "subjects": [
+            "DaemonGateway.probe (maps reachable/unreachable/unknown-freshness to current/absent, never throws for absent)",
+            "DaemonGateway.isProjectRegistered (read-only, surfaces DaemonUnavailable, never allocates)",
+            "DaemonGateway.registerProject (routes repo.add, idempotent, returns RegistrationResult with reason on rejection, never auto-allocates others)",
+            "ProjectContext construction + the product-identity-to-IdeKind mapping for all four IDEs",
+            "PluginLifecycle: onPluginUninstalled fires only on uninstall, not disable"
+          ],
+          "fixturesNeeded": [
+            "A fake daemon socket server that can be present/absent/stale and can accept or reject repo.add",
+            "A stub product-identity source for each of the four IDEs (idea/pycharm/goland/webstorm)"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Verify the plugin actually activates and fires its lifecycle events inside the IntelliJ Platform test fixture.",
+          "subjects": [
+            "Plugin activation on project open (onProjectOpened fires once per opened project with the project's absolute basePath as projectRootPath)",
+            "Rootless/light project window is skipped without firing a bogus ProjectContext",
+            "Multiple open projects each resolve their own ProjectContext, and the shared gateway scopes each call by its explicit projectRootPath (k3)"
+          ],
+          "fixturesNeeded": [
+            "IntelliJ Platform test fixture (BasePlatformTestCase / lightweight project fixture) with a temp project root",
+            "The fake daemon socket from the unit level, injected into the application-scoped gateway service"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "Verify the single plugin artifact is built once and declares compatibility with the shared platform so it loads in all four IDEs, and carries the version metadata the IDE update mechanism needs.",
+          "subjects": [
+            "The plugin descriptor depends only on the common platform module (not an IDE-specific module), so one artifact is compatible with IDEA/PyCharm/GoLand/WebStorm",
+            "The Gradle build emits exactly one versioned plugin artifact (no per-IDE variant) with valid since-build/until-build + version metadata"
+          ],
+          "fixturesNeeded": [
+            "The built plugin descriptor + distribution artifact from the Gradle build"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "Integration: installing/loading the plugin in the platform test fixture activates it and fires onProjectOpened for an opened project (proves it comes up ready with no hand-assembly)"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "Contract: the Gradle build emits a single versioned plugin artifact with valid since-build/until-build + an incremented version, the metadata the IDE's normal update mechanism consumes to deliver a new version without manual reinstall"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "Contract: the plugin descriptor declares only the common platform-module dependency (no IDE-specific module), proving one artifact activates across IDEA/PyCharm/GoLand/WebStorm with no IDE-specific manual configuration (lc1)",
+            "Unit: the product-identity-to-IdeKind mapping resolves each of the four product identities to its IdeKind, proving per-IDE activation is handled by one codebase"
+          ]
+        }
+      ],
+      "testFramework": "JUnit (Kotlin) with the IntelliJ Platform Test Framework (BasePlatformTestCase / test fixtures) — the standard for IntelliJ-Platform plugins; this is a new Kotlin module, distinct from the TS backend's node:test suites (k6)."
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Single unified plugin; DaemonGateway as an application-level service, ProjectContext derived per open project",
+        "oneLineSummary": "One plugin module compatible with the shared IntelliJ Platform; sc1 via platform lifecycle listeners, sc2 as a single application-scoped daemon-client service with repo passed per call.",
+        "approach": "The plugin is one build artifact declaring compatibility with the common IntelliJ-Platform module, so the same binary loads and activates in IntelliJ IDEA, PyCharm, GoLand, and WebStorm (lc1, k6). sc1 is realised through the platform's own lifecycle surface: a project-open listener constructs a ProjectContext (root + product-derived IdeKind) and a plugin-level teardown hook distinguishes uninstall from a mere disable. sc2 is a single application-scoped service holding one client connection to the daemon's Unix socket; because the registry and MCP tools already scope by an explicit repo argument (k3), the gateway takes projectRootPath per call rather than holding project state, so one shared service safely serves every open window. Downstream stories consume sc1/sc2 as plain interfaces via platform service lookup; the socket wire format and product-to-IdeKind mapping stay private to S001.",
+        "pros": [
+          "One artifact for all four IDEs directly satisfies lc1/k6 with the smallest build and release surface.",
+          "Application-scoped gateway with per-call repo (k3) means no per-window gateway state to synchronise and one socket connection to manage.",
+          "Downstream stories consume sc1/sc2 as plain interfaces via platform service lookup, keeping the socket/product-mapping details private to S001."
+        ],
+        "cons": [
+          "A single shared gateway must be concurrency-safe across simultaneously-open project windows.",
+          "Deriving IdeKind from the running product identity depends on a stable product-code mapping across the four IDEs."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Single unified plugin; DaemonGateway as a project-level service bound to its project",
+        "oneLineSummary": "Same single-artifact plugin, but sc2 is instantiated once per open project and captures that project's root at construction.",
+        "approach": "Identical packaging and sc1 realisation to a1, but sc2 is a project-scoped service: each open project window gets its own DaemonGateway instance that captures its projectRootPath at construction, so callers need not pass the root on every call. This trades one shared connection for one gateway per window and makes k3's per-project scoping a property of object lifetime, but multiplies live socket clients with the number of open windows and complicates single-point daemon-connection management.",
+        "pros": [
+          "Per-project scoping is structural (each gateway is bound to one project), making accidental cross-window mis-scoping harder by construction.",
+          "No shared-service concurrency concern — each window's gateway is independent."
+        ],
+        "cons": [
+          "Multiplies live daemon socket connections by the number of open windows, versus one shared connection in a1.",
+          "Diverges from the HLD's stated DaemonGateway shape, whose methods already take projectRootPath explicitly — per-project binding makes that parameter redundant.",
+          "Daemon-connection lifecycle (reconnect, teardown) must be managed per instance rather than once."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Ties a1 on the acceptance criteria and sc1 but is only partial on sc2: binding a gateway per project makes the HLD interface's explicit projectRootPath argument redundant and multiplies socket connections — a needless divergence from the owned contract's shape."
+      },
+      {
+        "id": "a3",
+        "name": "Core module plus per-IDE distribution modules",
+        "oneLineSummary": "Shared sc1/sc2 in a core module, with a separate thin build/artifact per target IDE.",
+        "approach": "sc1 and sc2 live in a shared core module, and each of the four IDEs gets its own thin wrapper module and build artifact that depends on core and declares that IDE's specific compatibility. This maximises per-IDE control but directly cuts against lc1's 'single integration rather than a separate build per IDE': it produces four build/publish pipelines and four Marketplace listings to keep in lock-step, for a plugin whose behaviour is identical across the four.",
+        "pros": [
+          "Each IDE artifact can carry IDE-specific compatibility metadata independently.",
+          "Shared core keeps the actual sc1/sc2 logic in one place."
+        ],
+        "cons": [
+          "Directly violates lc1 (a single integration across all four IDEs) by producing four artifacts, builds, and Marketplace listings.",
+          "Four release pipelines to keep in lock-step for identical behaviour — higher maintenance with no behavioural benefit.",
+          "More packaging surface than a1/a2 for no capability gain."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Preserves the contracts but violates lc1 (partial on ac3) with four artifacts/builds/listings and is partial on ac2 (four update pipelines in lock-step) for identical behaviour — more surface, no gain."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "capability-discovery: greenfield + reuse surfaces (S001 s1)",
+      "quotedText": "No JetBrains/IntelliJ/Kotlin/Gradle plugin code exists; sc1/sc2 are net-new Kotlin. Backend seams located: daemon Unix socket ~/.insrc/daemon.sock, repo.add/UnregisteredRepoError, $INSRC_REPO/repo-arg."
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/mcp/server.ts (buildInsrcMcpServer), src/bin/insrc-mcp.ts",
+      "quotedText": "The insrc-mcp tool server the assistant invokes; S001 does not touch it, only stands up the scaffold that later stories wire it from."
+    },
+    {
+      "id": "c3",
+      "kind": "doc",
+      "ref": "CLAUDE.md:140",
+      "quotedText": "Repo registry is the contract via repo.add; the storage layer never auto-allocates; unregistered repo fails the upsert with UnregisteredRepoError — the strict registry sc2 fronts (k2)."
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/mcp/resolve-repo.ts (ResolveRepoDeps); README.md:204",
+      "quotedText": "INSRC_REPO default with explicit per-call repo override — the per-project scoping ProjectContext.projectRootPath feeds (k3)."
+    },
+    {
+      "id": "c7",
+      "kind": "doc",
+      "ref": "CLAUDE.md (Project principles)",
+      "quotedText": "No direct cloud REST from our process; cloud LLM access goes through the claude/codex CLI OAuth sessions (k1) — S001 opens only the local daemon socket."
+    }
+  ]
+}

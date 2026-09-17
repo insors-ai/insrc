@@ -1,0 +1,5 @@
+# Gradle / IntelliJ-plugin build outputs
+.gradle/
+build/
+# Locally-generated Gradle wrapper (see README)
+gradle/wrapper/gradle-wrapper.jar

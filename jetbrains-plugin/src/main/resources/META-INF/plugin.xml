@@ -1,0 +1,29 @@
+<idea-plugin>
+    <id>ai.insors.insrc</id>
+    <name>insrc</name>
+    <vendor url="https://github.com/insors-ai/insrc">insors-ai</vendor>
+
+    <description><![CDATA[
+        Brings the insrc code-knowledge system into the JetBrains IDE family
+        (IntelliJ IDEA, PyCharm, GoLand, WebStorm). A thin orchestrator that wires
+        insrc's grounded-analyze and tracked-workflow capabilities into the IDE's
+        own AI assistant and manages the backing daemon — it owns no reasoning of
+        its own.
+    ]]></description>
+
+    <!--
+      Depend ONLY on the common platform module (Story S001 / lc1, ac3): this is
+      what makes the SINGLE artifact load and activate in IntelliJ IDEA, PyCharm,
+      GoLand, and WebStorm alike. Do NOT add an IDE-specific module dependency
+      (e.g. com.intellij.modules.java / .python / .go) — that would restrict the
+      artifact to one IDE and break the single-integration guarantee.
+    -->
+    <depends>com.intellij.modules.platform</depends>
+
+    <!--
+      sc1 (project-open / uninstall lifecycle listeners) and sc2 (DaemonGateway
+      application service) register their extensions/services here in tasks t2/t3.
+      t1 stands up the descriptor only.
+    -->
+    <extensions defaultExtensionNs="com.intellij"/>
+</idea-plugin>

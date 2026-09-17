@@ -1,0 +1,43 @@
+# Dedicated CI lane for the insrc JetBrains plugin (Story S001 / t1), separate
+# from the TS backend's test sweep in ci.yml. It only runs when the plugin
+# subproject (or this workflow) changes, so the two toolchains stay decoupled (k6).
+name: jetbrains-plugin
+
+on:
+  push:
+    paths:
+      - 'jetbrains-plugin/**'
+      - '.github/workflows/jetbrains-plugin.yml'
+  pull_request:
+    paths:
+      - 'jetbrains-plugin/**'
+      - '.github/workflows/jetbrains-plugin.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: jetbrains-plugin
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10'
+
+      # `build` compiles the module, runs the tests, and produces the single
+      # plugin distribution artifact (S001 / ac1, ac2, ac3). verifyPlugin runs
+      # the IntelliJ Platform plugin-verifier checks over that artifact.
+      - name: Build + test the plugin
+        run: gradle --no-daemon build verifyPlugin

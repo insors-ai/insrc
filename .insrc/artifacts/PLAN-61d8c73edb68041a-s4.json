@@ -1,0 +1,288 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1789660671702-w39pkb",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-17T16:02:05.231Z",
+    "epicCreatedAt": "2026-09-17T10:47:35.743Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 253519,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "61d8c73edb68041a",
+    "epicSlug": "integrate-insrc-framework-into-jetbrains-ide",
+    "storyId": "s4",
+    "lldRunId": "wf-1789659446150-8ut1pb",
+    "lldEffectiveHash": "7ebd2fd85012b97ccc463655776546b87125f337e9056f4e2efc76048eb635fd",
+    "approvedAt": "2026-09-17T16:03:07.061Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Bundle the canonical steering block into plugin resources (Gradle)",
+        "summary": "Add a `bundleSteeringBlock` Copy task in jetbrains-plugin/build.gradle.kts mirroring `bundleInstallerScript`: from(rootProject.file(\"../src/prompts/steering-block.md\")) into(layout.buildDirectory.dir(\"generated-resources/insrc\")), and make processResources dependsOn(bundleSteeringBlock). The generated-resources dir is already a main resources srcDir, so the asset ships at classpath /insrc/steering-block.md.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "A `bundleSteeringBlock` Copy task exists and processResources dependsOn it (alongside bundleInstallerScript).",
+          "After `gradle processResources`, build/resources/main/insrc/steering-block.md exists and is byte-identical to src/prompts/steering-block.md.",
+          "The jar packages the asset at /insrc/steering-block.md (getResourceAsStream resolvable)."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "processResources bundles steering-block.md to build/resources/main/insrc/ byte-identical to src (gradle task wiring)"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "SteeringContent provider (bundled-resource read + empty/missing guard)",
+        "summary": "Add SteeringContent with steeringBody(): String that reads the bundled /insrc/steering-block.md via getResourceAsStream, trims it, and throws IllegalStateException when the resource is null or trims to empty. The resource stream accessor is injectable so it is unit-testable with present/missing/empty fakes. Read-only, independent of daemon install state.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "steeringBody() returns the non-empty trimmed canonical steering body from the bundled resource.",
+          "A null or empty/whitespace-only resource -> IllegalStateException.",
+          "The resource accessor is injectable (constructor/param seam) for unit tests."
+        ],
+        "derivedFrom": [
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "SteeringContentTest.steeringBody_returnsNonEmptyBundledBody"
+          },
+          {
+            "level": "unit",
+            "name": "SteeringContentTest.steeringBody_missingOrEmptyResource_throwsIllegalStateException"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "SteeringInjectionLifecycle sc1-consumer",
+        "summary": "Add SteeringInjectionLifecycle : PluginLifecycle mirroring McpWiringLifecycle, with an injectable AiHostAdapter (default AiHostAdapterImpl()) and an injectable SteeringContent. onProjectOpened: resolve steeringBody() ONCE up front (catch IllegalStateException -> log + write nothing); call adapter.detectPresent(), return early if empty; for each host compose MarkerDelimitedBlock(AiHostAdapterImpl.RULES_BEGIN, RULES_END, steeringBody) and write via `runCatching { adapter.writeRulesBlock(host, block) }.onFailure { log.warn(...) }`. onPluginUninstalled is a no-op. Never writes the mcp file, never calls removeRulesBlock.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "onProjectOpened composes MarkerDelimitedBlock with the sc3 RULES markers + steeringBody and calls writeRulesBlock once per detected host.",
+          "Empty detectPresent() -> no writeRulesBlock call (no-op).",
+          "A missing/empty steering resource (steeringBody throws) -> no writeRulesBlock call on any host.",
+          "A HostFileAccessException from one host is caught (per-host runCatching) and the other present host is still written.",
+          "onPluginUninstalled is a no-op; no mcp write and no removeRulesBlock invocation anywhere."
+        ],
+        "derivedFrom": [
+          "c5",
+          "c6",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "SteeringInjectionLifecycleTest.composesRulesBlockAndWritesOncePerDetectedHost"
+          },
+          {
+            "level": "unit",
+            "name": "SteeringInjectionLifecycleTest.emptyDetectPresent_noWrite"
+          },
+          {
+            "level": "unit",
+            "name": "SteeringInjectionLifecycleTest.steeringBodyThrows_noWriteOnAnyHost"
+          },
+          {
+            "level": "unit",
+            "name": "SteeringInjectionLifecycleTest.perHostHostFileAccessException_isolated_otherHostStillWritten"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Register SteeringInjectionLifecycle in InsrcAppLifecycle.appStarted",
+        "summary": "Add LifecycleBroadcaster.register(SteeringInjectionLifecycle()) (or a .production() factory mirroring DaemonLifecycleService) in InsrcAppLifecycle.appStarted, alongside the existing McpWiringLifecycle and DaemonLifecycleService registrations, so steering injection runs off-EDT on every project open.",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "InsrcAppLifecycle.appStarted registers SteeringInjectionLifecycle via LifecycleBroadcaster.register alongside the two existing consumers.",
+          "Its onProjectOpened work runs off the EDT (delivered via the broadcaster's off-EDT project-open path)."
+        ],
+        "derivedFrom": [
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "ProjectOpenSteeringWiringTest.projectOpen_broadcasterDrivesSteeringInjection_offEdt"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Unit + integration tests (JUnit + IntelliJ Platform Test Framework)",
+        "summary": "Add tests in two waves within this task. Wave A (pure fakes, no fixture): unit tests for SteeringContent (present/missing/empty) and SteeringInjectionLifecycle (compose-and-write per host; empty-detect no-op; steeringBody-throws no-write; per-host HostFileAccessException isolation) using a recording fake AiHostAdapter (mirroring ProjectOpenWiringTest) + a fake steering-resource loader. Wave B (IntelliJ Platform fixture): an integration test over the real AiHostAdapterImpl rules writer on temp files proving ac2 (developer content byte-preserved, only the insrc RULES section added/replaced) and ac3 (both hosts each in their own rulesFilePath). Implement Wave A first so a fixture problem doesn't block the unit coverage. Verify locally with JDK21 + Gradle 8.10 + IntelliJ 2024.2 SDK; no GitHub CI.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "Wave A unit tests cover: steeringBody present/missing/empty; compose-and-write once per host; empty-detect no-op; steeringBody-throws -> no write; per-host exception isolation.",
+          "Wave B integration test proves ac2 (surrounding developer content byte-preserved, only insrc section changed) via the real AiHostAdapterImpl rules writer over a temp file, and ac3 (both hosts written to their own rulesFilePath).",
+          "The full jetbrains-plugin suite compiles and passes locally (JDK21 + Gradle 8.10)."
+        ],
+        "derivedFrom": [
+          "c9",
+          "c10"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "SteeringInjectionIntegrationTest.projectOpen_writesRulesDelimitedSteeringIntoHostRulesFilePath_ac1"
+          },
+          {
+            "level": "integration",
+            "name": "SteeringInjectionIntegrationTest.preExistingDeveloperContent_preservedByteForByte_onlyInsrcSectionChanged_ac2"
+          },
+          {
+            "level": "integration",
+            "name": "SteeringInjectionIntegrationTest.bothHostsPresent_eachGetsSteeringInOwnRulesFilePath_ac3"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "SteeringContent.steeringBody: returns the bundled canonical steering body (non-empty); a missing or empty bundled resource -> IllegalStateException",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "SteeringInjectionLifecycle composes MarkerDelimitedBlock(RULES_BEGIN, RULES_END, steeringBody) and calls adapter.writeRulesBlock(host, block) once per detected host (block markers == the sc3 RULES markers, body == steeringBody)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "empty detectPresent() -> no writeRulesBlock call (no-op)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "a HostFileAccessException from writeRulesBlock on one host is caught (per-host runCatching) and the other present host is still written",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "a missing/empty steering resource (steeringBody throws) -> NO writeRulesBlock call on any host (never writes an empty block)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "On project open with one host present, the steering section (RULES-delimited) is written into that host's rulesFilePath (ac1)",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Writing into a rules file that already has developer content adds/replaces ONLY the insrc section; the surrounding content is preserved verbatim (ac2) — exercised through the real AiHostAdapterImpl rules writer over a temp file",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "With both hosts present, each host's rulesFilePath receives the steering (ac3)",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "The SteeringInjectionLifecycle is registered as a sc1 LifecycleBroadcaster consumer and its work runs off the EDT",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 dataModelChanges — SteeringContent bundles src/prompts/steering-block.md into plugin resources (Gradle copy)"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 capability-discovery — S003 bundleInstallerScript Copy task pattern in build.gradle.kts:94-104 (generated-resources srcDir + processResources dependsOn)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 contractDetails — SteeringContent.steeringBody(): String returns the plugin-bundled canonical steering body"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 errorPaths — missing/empty bundled steering resource -> IllegalStateException (never write an empty block)"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 contractDetails + interactionWithShared — SteeringInjectionLifecycle.onProjectOpened composes MarkerDelimitedBlock(RULES markers, steeringBody) and calls sc3 writeRulesBlock per host"
+    },
+    {
+      "id": "c6",
+      "kind": "analyze-bundle",
+      "ref": "s1 capability-discovery — S002 McpWiringLifecycle sc1-consumer shape (McpWiringLifecycle.kt:22,29-40): detectPresent, empty no-op, per-host runCatching"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 errorPaths/invariants — per-host runCatching isolates HostFileAccessException; never mcp write, never removeRulesBlock (k4/lc1, k1 no cloud)"
+    },
+    {
+      "id": "c8",
+      "kind": "analyze-bundle",
+      "ref": "s1 capability-discovery — registration point InsrcAppLifecycle.appStarted (InsrcPluginStateListener.kt:47-50) registers McpWiringLifecycle + DaemonLifecycleService via LifecycleBroadcaster"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 testStrategy unit level — SteeringContent + SteeringInjectionLifecycle against injected fakes (recording AiHostAdapter + fake steering-resource loader)"
+    },
+    {
+      "id": "c10",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 testStrategy integration level — real AiHostAdapterImpl rules writer over temp files proving ac1/ac2/ac3"
+    }
+  ]
+}

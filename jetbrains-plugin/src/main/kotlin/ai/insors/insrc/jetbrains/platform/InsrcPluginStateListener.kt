@@ -6,6 +6,7 @@ import ai.insors.insrc.jetbrains.PluginStateEvent
 import ai.insors.insrc.jetbrains.UninstallPolicy
 import ai.insors.insrc.jetbrains.host.McpWiringLifecycle
 import ai.insors.insrc.jetbrains.lifecycle.DaemonLifecycleService
+import ai.insors.insrc.jetbrains.steering.SteeringInjectionLifecycle
 import com.intellij.ide.AppLifecycleListener
 import com.intellij.ide.plugins.IdeaPluginDescriptor
 import com.intellij.ide.plugins.PluginInstaller
@@ -41,12 +42,15 @@ internal class InsrcPluginStateListener : PluginStateListener {
  * - [McpWiringLifecycle] (Story S002 / t5) subscribes to the broadcaster so it
  *   wires insrc-mcp into each detected host on every project open;
  * - [DaemonLifecycleService] (Story S003 / t7) subscribes so it keeps the backing
- *   daemon present/current on every project open.
+ *   daemon present/current on every project open;
+ * - [SteeringInjectionLifecycle] (Story S004 / t4) subscribes so it injects the
+ *   tracked-workflow steering into each detected host's rules file on every project open.
  */
 internal class InsrcAppLifecycle : AppLifecycleListener {
     override fun appStarted() {
         PluginInstaller.addStateListener(InsrcPluginStateListener())
         LifecycleBroadcaster.register(McpWiringLifecycle())
         LifecycleBroadcaster.register(DaemonLifecycleService.production())
+        LifecycleBroadcaster.register(SteeringInjectionLifecycle())
     }
 }

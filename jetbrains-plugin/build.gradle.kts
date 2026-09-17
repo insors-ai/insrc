@@ -96,10 +96,22 @@ val bundleInstallerScript by tasks.registering(Copy::class) {
     into(layout.buildDirectory.dir("generated-resources/insrc"))
 }
 
+// Story S004 / t1: bundle the backend's canonical tracked-workflow steering block
+// into the plugin so the SAME src/prompts/steering-block.md the daemon steering-refresh
+// writes is injected into each detected AI host's rules file on project open (single
+// source of truth, self-contained — no re-authored guidance). Mirrors the installer
+// bundling above: a single Markdown asset copied from the sibling backend repo, it does
+// NOT wire the two build systems or toolchains together (k6). Ships at /insrc/steering-block.md.
+val bundleSteeringBlock by tasks.registering(Copy::class) {
+    from(rootProject.file("../src/prompts/steering-block.md"))
+    into(layout.buildDirectory.dir("generated-resources/insrc"))
+}
+
 sourceSets.named("main") {
     resources.srcDir(layout.buildDirectory.dir("generated-resources"))
 }
 
 tasks.named("processResources") {
     dependsOn(bundleInstallerScript)
+    dependsOn(bundleSteeringBlock)
 }

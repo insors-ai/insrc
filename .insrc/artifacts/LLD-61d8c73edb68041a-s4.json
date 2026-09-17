@@ -1,0 +1,480 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1789659446150-8ut1pb",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-17T15:51:01.449Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 815255,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-09-17T10:47:35.743Z",
+    "epicHash": "61d8c73edb68041a",
+    "epicSlug": "integrate-insrc-framework-into-jetbrains-ide",
+    "storyId": "s4",
+    "hldBaseRunId": "wf-1789642152969-snttef",
+    "hldEffectiveHash": "7ebd2fd85012b97ccc463655776546b87125f337e9056f4e2efc76048eb635fd",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 0
+      },
+      "reviewedAt": "2026-09-17T15:52:47.905Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-17T15:57:40.771Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "A single new IntelliJ-Platform plugin (one codebase, all four target IDEs) that owns NO reasoning: it is a thin orchestrator that binds the IDE's lifecycle moments to already-built insrc backend surfaces. On project open it detects any present AI host, ensures the backend daemon is present/current, offers explicit project registration, wires the insrc-mcp server plus the tracked-workflow steering into each detected host's own config, and on uninstall reverses those writes. All grounded reasoning continues to run through the insrc-mcp server the host assistant invokes (k1), so the plugin never opens a cloud path and gains capability parity for free. The design rests on three shared contracts: a plugin runtime + project-context surface (the active project's path is the explicit per-call repo scope, k3), a daemon gateway that fronts the backend (health probe + registration via the strict repo.add contract, k2), and an AI-host adapter that abstracts each host's config/rules file locations behind a marker-delimited, replace-only writer (k4).",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "PluginRuntime & ProjectContext",
+          "purpose": "The foundational plugin surface: single-plugin activation across all four IDEs, the project lifecycle events every Story hooks (project opened, plugin uninstalled), and the active project's root path + IDE identity that is the explicit per-call repo scope (k3). Owned at the foundation Story because every other Story is transitively downstream of it.",
+          "interfaceSketch": "type IdeKind = 'idea' | 'pycharm' | 'goland' | 'webstorm';\ninterface ProjectContext {\n  readonly projectRootPath: string; // absolute active-project root; the explicit repo argument (k3)\n  readonly ide: IdeKind;\n}\ninterface PluginLifecycle {\n  onProjectOpened(ctx: ProjectContext): void; // fired once per opened project window\n  onPluginUninstalled(): void;                // distinct from a mere disable\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c4"
+          ]
+        },
+        {
+          "id": "sc3",
+          "name": "AiHostAdapter",
+          "purpose": "Abstraction over a detected JetBrains AI host (AI Assistant / Junie): presence detection, the location of each host's MCP-registration config and its rules/guidance file, and a marker-delimited, replace-only write/remove primitive over those host-owned files (k4). Owned by the wiring Story that introduces host detection; consumed by the steering and removal Stories, both transitively downstream of it.",
+          "interfaceSketch": "type AiHostKind = 'ai-assistant' | 'junie';\ntype HostFile = 'mcp' | 'rules';\ninterface AiHost {\n  readonly kind: AiHostKind;\n  readonly mcpConfigPath: string;   // host-owned MCP registration file\n  readonly rulesFilePath: string;   // host-owned guidance/rules file\n}\ninterface MarkerDelimitedBlock { readonly beginMarker: string; readonly endMarker: string; readonly body: string; }\ninterface AiHostAdapter {\n  detectPresent(): readonly AiHost[];                              // empty => no-op case\n  writeBlock(host: AiHost, file: HostFile, block: MarkerDelimitedBlock): void; // replace-only (k4)\n  removeBlock(host: AiHost, file: HostFile): void;                 // uninstall cleanup, restores prior content\n}",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c5",
+            "c8"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s4",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc3"
+        ],
+        "internal": "The tracked-workflow steering content/template (the guidance that makes the host assistant route build/change requests through the tracked stages) and the decision of which host rules file receives it are private to this Story. It writes through the adapter's marker-delimited replace-only primitive (sc3) so surrounding user content is preserved; the steering body itself is internal and consumed by no other Story."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1",
+            "sc2"
+          ],
+          "depends": [],
+          "internal": "The Marketplace-published single-plugin packaging, the per-IDE activation manifest that brings the plugin up identically in IntelliJ IDEA, PyCharm, GoLand, and WebStorm, and the plugin-update delivery path are private to this Story. It exposes only the ProjectContext/lifecycle seam (sc1) and the DaemonGateway handle (sc2); how activation and packaging are realised is not consumed by any other Story."
+        },
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc3"
+          ],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "How the insrc-mcp server registration is composed and written into each detected host, and how each capability call is configured to carry the active project's path as its explicit repo argument, are private to this Story. It publishes the AiHostAdapter (sc3) as the shared seam; the MCP-registration content and the per-call repo-scoping wiring behind it are internal."
+        },
+        {
+          "storyId": "s3",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "The daemon staleness/consent policy (one-click consent on first provisioning, silent updates thereafter), the tiered Node runtime decision (use system Node when adequate, else provision a private runtime under the insrc home), and the delegation to the existing installer script are entirely private to this Story. It consumes the lifecycle seam (sc1) to run on project open and the gateway probe (sc2) to decide when to act, but owns no shared contract."
+        },
+        {
+          "storyId": "s5",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "The one-click 'Enable insrc for this project' onboarding UX, the silent no-op-and-re-check behaviour when no AI host is present, and the uninstall-cleanup orchestration are private to this Story. It composes existing seams — registration via the gateway (sc2), host-write removal via the adapter (sc3), lifecycle triggers via sc1 — without introducing a new shared contract."
+        }
+      ],
+      "rolloutPhase": "Phase C — Tracked-workflow discipline",
+      "nonFunctional": {
+        "performance": "All project-open work (host detection, daemon probe, registration check) runs off the UI thread and is bounded so opening a project is never blocked; the daemon health probe is a lightweight local check, not a full capability call.",
+        "security": "No cloud path is introduced (k1) — all reasoning routes through the host assistant's existing CLI-OAuth sessions; the plugin stores no credentials. Writes into host-owned config/rules files are strictly marker-delimited and replace-only (k4), preserving surrounding user content and fully reversible on uninstall. Project registration happens only through the explicit repo.add contract (k2); nothing is auto-allocated.",
+        "observability": "Detection, daemon-lifecycle, registration, and host-wiring decisions are logged, and their user-visible outcomes (setup offered/applied, project enabled, nothing-to-do) surface as standard IDE notifications so the developer can see what the plugin did and why.",
+        "durability": "Config/rules writes are idempotent (re-running replaces the same delimited block) and reversible (removed on uninstall, left intact on mere disable); registration state persists in the backend registry, so it survives IDE restarts without re-prompting."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "SteeringInjectionLifecycle.onProjectOpened",
+          "signature": "fun onProjectOpened(ctx: ProjectContext): Unit",
+          "parameters": [
+            {
+              "name": "ctx",
+              "type": "ProjectContext",
+              "purpose": "The opened project's context (sc1). The trigger to inject steering; the steering body is project-independent, so ctx is used only as the run trigger (per-host rules files are host-owned, not per-project).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Unit",
+            "meaning": "Fire-and-return. Detection + per-host rules writes run off the EDT; project opening is never blocked."
+          },
+          "errors": [
+            {
+              "type": "(none surfaced)",
+              "condition": "Per-host writes are guarded (runCatching); a HostFileAccessException on one host is logged and does not throw into the lifecycle broadcaster or block the other host."
+            }
+          ],
+          "preconditions": [
+            "Registered as a PluginLifecycle consumer of sc1's LifecycleBroadcaster."
+          ],
+          "postconditions": [
+            "Calls adapter.detectPresent(); empty -> no-op. For each present host, composes the steering rules block and calls adapter.writeRulesBlock(host, block).",
+            "Owns no shared contract; writes ONLY the rules file; never touches the mcp registration (S002) and never invokes removeRulesBlock (S005)."
+          ]
+        },
+        {
+          "name": "SteeringContent.steeringBody",
+          "signature": "fun steeringBody(): String",
+          "parameters": [],
+          "returns": {
+            "type": "String",
+            "meaning": "The canonical tracked-workflow steering guidance — the plugin-bundled copy of src/prompts/steering-block.md (single source of truth with the daemon steering-refresh)."
+          },
+          "errors": [
+            {
+              "type": "IllegalStateException",
+              "condition": "The bundled steering resource is missing or empty (a packaging error); surfaced so the caller skips writing an empty block rather than clobbering the marker region with nothing."
+            }
+          ],
+          "preconditions": [
+            "The steering block asset is bundled into the plugin resources (Gradle bundleSteeringBlock, mirroring S003's installer bundling)."
+          ],
+          "postconditions": [
+            "Read-only; returns the trimmed canonical steering body. Independent of daemon install state (self-contained)."
+          ]
+        },
+        {
+          "name": "AiHostAdapter.detectPresent",
+          "signature": "fun detectPresent(): List<AiHost>",
+          "parameters": [],
+          "returns": {
+            "type": "List<AiHost>",
+            "meaning": "The installed+enabled AI hosts (sc3, from S002), each with its resolved rulesFilePath. Empty when neither is present (the no-op case)."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Consumed unchanged from sc3; S004 never re-implements detection."
+          ]
+        },
+        {
+          "name": "AiHostAdapter.writeRulesBlock",
+          "signature": "fun writeRulesBlock(host: AiHost, block: MarkerDelimitedBlock): Unit",
+          "parameters": [
+            {
+              "name": "host",
+              "type": "AiHost",
+              "purpose": "A host from detectPresent() whose rules file receives the steering (its own native rulesFilePath, ac3).",
+              "optional": false
+            },
+            {
+              "name": "block",
+              "type": "MarkerDelimitedBlock",
+              "purpose": "MarkerDelimitedBlock(AiHostAdapterImpl.RULES_BEGIN, AiHostAdapterImpl.RULES_END, steeringBody) — the insrc rules section.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Unit",
+            "meaning": "The host's rules file now contains exactly one insrc steering section bounded by the RULES markers; surrounding developer content is preserved verbatim (ac2)."
+          },
+          "errors": [
+            {
+              "type": "HostFileAccessException",
+              "condition": "sc3 surfaces this when the rules file cannot be read/written (permissions); S004 catches per host and logs, not swallowed globally."
+            }
+          ],
+          "preconditions": [
+            "host was returned by detectPresent(); block uses the sc3 RULES markers."
+          ],
+          "postconditions": [
+            "Consumed unchanged from sc3 (the S002 MarkerFileWriter path): marker-delimited replace-only (k4/lc1), idempotent, surrounding content preserved. S004 does NOT re-implement this writer."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "SteeringContent",
+        "change": "new",
+        "details": "S004-internal provider of the tracked-workflow steering body: reads the plugin-bundled canonical steering block (a Gradle copy of src/prompts/steering-block.md into plugin resources, e.g. /insrc/steering-block.md, exactly as S003 bundles the installer). One source of truth shared with the daemon steering-refresh; no re-authored guidance.",
+        "callSites": [
+          "src/prompts/steering-block.md",
+          "src/daemon/steering-inject.ts"
+        ]
+      },
+      {
+        "entity": "SteeringRulesBlock",
+        "change": "new",
+        "details": "S004-INTERNAL composed value: MarkerDelimitedBlock(AiHostAdapterImpl.RULES_BEGIN='<!-- insrc:rules:start -->', AiHostAdapterImpl.RULES_END='<!-- insrc:rules:end -->', body=SteeringContent.steeringBody()). Reuses sc3's MarkerDelimitedBlock type + RULES markers so writeRulesBlock and S005's removeRulesBlock match; not a new shared type.",
+        "callSites": [
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/host/AiHostAdapterImpl.kt:41-42"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "S004 registers a SteeringInjectionLifecycle as a PluginLifecycle consumer of sc1's LifecycleBroadcaster (InsrcAppLifecycle.appStarted, alongside McpWiringLifecycle/DaemonLifecycleService); onProjectOpened (off-EDT) is the trigger. S004 does not re-implement sc1 or the lifecycle; the steering body is project-independent so ProjectContext is only the run trigger."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "S004 consumes the REAL S002 sc3 surface: adapter.detectPresent() to find AI Assistant/Junie and adapter.writeRulesBlock(host, block) to write the marker-delimited steering into each host's own rulesFilePath (ac3), replace-only preserving user content (ac2, k4/lc1). It never re-implements the marker writer (S002's MarkerFileWriter), never writes the mcp file (S002's writeMcpRegistration), and never calls removeRulesBlock (S005). NOTE: the HLD sc3 sketch shows a generic writeBlock(host,'rules',block); the shipped surface S004 consumes is writeRulesBlock(host, block) — the same k4 primitive, reshaped by S002 at build time; no amendment needed since S004 only consumes it."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The bundled steering block is missing or empty in the plugin resources (a packaging error — the Gradle bundle step didn't run or the asset was renamed).",
+          "detection": "SteeringContent.steeringBody() finds getResourceAsStream(the bundled steering path) returns null, or the read content trims to empty.",
+          "response": "Throw IllegalStateException from steeringBody(); the SteeringInjectionLifecycle catches it BEFORE composing/writing, logs, and writes nothing — it never hands writeRulesBlock an empty body that would replace the insrc section with nothing. No host rules file is touched.",
+          "userImpact": "Steering is simply not injected this session (a build/packaging bug, caught in CI/tests); the developer's rules files are untouched and the assistant still has the tools, just without the tracked-workflow guidance until the plugin is fixed.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A detected host's rules file cannot be written (permissions, read-only location, missing parent dir).",
+          "detection": "adapter.writeRulesBlock(host, block) surfaces HostFileAccessException from the sc3 MarkerFileWriter's read-modify-write.",
+          "response": "The per-host runCatching in the lifecycle catches it, logs which host failed and why, and continues to the other host — not swallowed globally, not thrown into the broadcaster. The failed host's rules file is left exactly as it was (sc3 guarantees no partial write).",
+          "userImpact": "The developer is (via logs/notification) informed steering couldn't be written to that host; the other host (if present) still gets it, and a later project-open re-attempts after the permission is fixed.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Neither AI Assistant nor Junie is present when the project opens.",
+          "expected": "detectPresent() returns empty and S004 writes nothing (no-op)."
+        },
+        {
+          "input": "Both AI Assistant and Junie are present.",
+          "expected": "Each receives the steering in its OWN native rules file via writeRulesBlock(host,...) with host.rulesFilePath (ac3); one write per host, independent."
+        },
+        {
+          "input": "A host's rules file already contains developer-authored content but no insrc section.",
+          "expected": "The insrc steering section is APPENDED marker-delimited; all surrounding developer content is preserved verbatim (ac2, k4/lc1) — the sc3 writer's create/append path."
+        },
+        {
+          "input": "A host's rules file already carries the insrc steering section from a prior open.",
+          "expected": "writeRulesBlock replaces the same-marker section in place (replace-only) — byte-identical on an unchanged steering body, no duplicate insrc section (idempotent)."
+        },
+        {
+          "input": "The same project is re-opened, or opened in a second window.",
+          "expected": "Idempotent: each host's rules file ends with exactly one insrc steering section regardless of how many times activation fires (replace-only)."
+        },
+        {
+          "input": "The steering body changed between plugin versions and a host already has the older section.",
+          "expected": "writeRulesBlock replaces the old delimited section with the new body in place (replace-only), preserving surrounding content — the block is brought current without touching the developer's text."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Every write into a host-owned rules file stays marker-delimited and replace-only (sc3 RULES markers), preserving all surrounding developer-authored content and reversible on removal (k4/lc1); S004 never re-implements the writer and never overwrites the whole file.",
+          "source": "c5"
+        },
+        {
+          "text": "No new cloud path: S004 only writes a plugin-bundled steering string into a local host rules file (the guidance references the insrc-mcp tools S002 registered), so no direct cloud/REST endpoint is opened (k1).",
+          "source": "c7"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Verify the steering content provider + the injection lifecycle logic against injected fakes — no IDE fixture, no real host file.",
+          "subjects": [
+            "SteeringContent.steeringBody: returns the bundled canonical steering body (non-empty); a missing or empty bundled resource -> IllegalStateException",
+            "SteeringInjectionLifecycle composes MarkerDelimitedBlock(RULES_BEGIN, RULES_END, steeringBody) and calls adapter.writeRulesBlock(host, block) once per detected host (block markers == the sc3 RULES markers, body == steeringBody)",
+            "empty detectPresent() -> no writeRulesBlock call (no-op)",
+            "a HostFileAccessException from writeRulesBlock on one host is caught (per-host runCatching) and the other present host is still written",
+            "a missing/empty steering resource (steeringBody throws) -> NO writeRulesBlock call on any host (never writes an empty block)"
+          ],
+          "fixturesNeeded": [
+            "A fake AiHostAdapter: stub detectPresent() (present/absent/both) + a recording writeRulesBlock capturing (host, block) and optionally throwing HostFileAccessException",
+            "A fake/overridable steering-resource loader (present body / missing / empty)"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Verify, inside the IntelliJ Platform fixture, that on project open the lifecycle drives sc3 to write the steering into each present host's rules file, preserving surrounding developer content, and is reached via the sc1 broadcaster.",
+          "subjects": [
+            "On project open with one host present, the steering section (RULES-delimited) is written into that host's rulesFilePath (ac1)",
+            "Writing into a rules file that already has developer content adds/replaces ONLY the insrc section; the surrounding content is preserved verbatim (ac2) — exercised through the real AiHostAdapterImpl rules writer over a temp file",
+            "With both hosts present, each host's rulesFilePath receives the steering (ac3)",
+            "The SteeringInjectionLifecycle is registered as a sc1 LifecycleBroadcaster consumer and its work runs off the EDT"
+          ],
+          "fixturesNeeded": [
+            "IntelliJ Platform test fixture with a temp project (basePath) from S001's sc1",
+            "Temp files standing in for each host's rules file, some pre-populated with developer content (to assert preservation), injected via stub AiHost rulesFilePath",
+            "The real AiHostAdapterImpl rules-writer path (or its MarkerFileWriter) to prove end-to-end replace-only preservation"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "Integration: on project open with a host present, the RULES-delimited steering section appears in that host's rulesFilePath",
+            "Unit: SteeringInjectionLifecycle calls writeRulesBlock(host, block) with block.body == the canonical steering body for each present host"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "Integration: writing steering into a rules file pre-populated with developer content leaves all surrounding content byte-preserved and only the insrc RULES section added/replaced (via the real sc3 replace-only writer)",
+            "Unit: the composed block uses the sc3 RULES markers (so the write is replace-only, never whole-file overwrite)"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "Integration/Unit: with both AI Assistant and Junie present, writeRulesBlock is invoked once per host against each host's own rulesFilePath"
+          ]
+        }
+      ],
+      "testFramework": "JUnit (Kotlin) with the IntelliJ Platform Test Framework (BasePlatformTestCase / test fixtures) — the jetbrains-plugin module's established suite from S001/S002/S003; distinct from the TS backend's node:test (k6)."
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Bundle the canonical steering block into the plugin; inject it via sc3.writeRulesBlock",
+        "oneLineSummary": "A Gradle task bundles src/prompts/steering-block.md into the plugin resources; on project open, for each detected host, S004 composes MarkerDelimitedBlock(RULES markers, bundled steering body) and calls adapter.writeRulesBlock(host, block).",
+        "approach": "S004 introduces a SteeringInjectionLifecycle (a PluginLifecycle/sc1 consumer, off-EDT, mirroring S002's McpWiringLifecycle) and a small SteeringContent provider that reads the plugin-bundled canonical steering block (the same src/prompts/steering-block.md the daemon steering-refresh uses, copied into plugin resources by a Gradle task exactly as S003 bundles insrc-daemon-install.sh). On onProjectOpened it calls adapter.detectPresent() (empty -> no-op), and for each present host composes MarkerDelimitedBlock(AiHostAdapterImpl.RULES_BEGIN, AiHostAdapterImpl.RULES_END, <bundled steering body>) and writes it via adapter.writeRulesBlock(host, block) (sc3, marker-delimited replace-only, k4/lc1), with a per-host runCatching so one host's HostFileAccessException doesn't block the other. Both hosts get the guidance in their own rules file (ac3); surrounding user content is preserved and the insrc section is add-or-replace only (ac2). Removal is S005's removeRulesBlock; S004 only writes.",
+        "pros": [
+          "Single source of truth: the plugin injects the SAME canonical tracked-workflow steering the daemon uses — no divergent copy to keep in sync.",
+          "Self-contained: the steering body ships with the plugin, so it works regardless of whether the daemon is installed yet (the guidance text is independent of daemon state).",
+          "Reuses sc3.writeRulesBlock (k4/lc1) and the proven S002 lifecycle-consumer shape — minimal new surface, no marker-writer re-implementation.",
+          "Satisfies ac1 (guidance given on activation), ac2 (delimited add/replace preserving user content), ac3 (each host in its own rules file)."
+        ],
+        "cons": [
+          "Adds a Gradle bundling step + a plugin-resource read (small, but a build asset to keep copied).",
+          "The bundled block is pinned at plugin build time; a steering-content change requires a plugin release (mitigated: the block is stable, and the daemon's own refresh keeps daemon-side repos current)."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Plugin-local authored steering body (Kotlin constant / plugin-only resource)",
+        "oneLineSummary": "Hand-author a JetBrains-specific steering body inside the plugin and inject it via sc3.writeRulesBlock, without reusing the canonical block.",
+        "approach": "Same SteeringInjectionLifecycle + sc3.writeRulesBlock wiring, but the steering body is a plugin-local string/resource written specifically for the JetBrains hosts rather than the shared src/prompts/steering-block.md. On project open it composes the block from that local body and writes it per host.",
+        "pros": [
+          "Fully self-contained; no dependency on the backend's prompts asset.",
+          "Freedom to tailor wording to AI Assistant/Junie specifically."
+        ],
+        "cons": [
+          "Divergence risk: a SECOND copy of the tracked-workflow guidance that drifts from the canonical daemon steering (src/prompts/steering-block.md) over time — two sources of truth for the same discipline.",
+          "Re-authoring workflow guidance is exactly the reasoning the plugin is supposed to own NONE of; it just wires existing surfaces.",
+          "Higher maintenance for no functional gain — the same insrc-mcp tools back both, so the canonical block already applies."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Functionally satisfies ac1-ac3 via the same sc3/sc1 wiring, but hand-authoring a plugin-local steering body forks the tracked-workflow guidance into a second source of truth that drifts from the canonical daemon steering — against the plugin's owns-no-reasoning intent, and pure maintenance cost for no functional gain."
+      },
+      {
+        "id": "a3",
+        "name": "Read the steering block from the installed daemon home at runtime",
+        "oneLineSummary": "On project open, read the steering block from the installed daemon (~/.insrc/daemon/.../prompts/steering-block.md) and inject it via sc3.writeRulesBlock.",
+        "approach": "Same lifecycle + sc3 wiring, but the steering body is read at runtime from the daemon installation's shipped prompts asset rather than bundled into the plugin. The steering always matches the exact installed daemon version.",
+        "pros": [
+          "Steering content always matches the running daemon version — zero plugin/daemon drift.",
+          "No plugin-side bundling asset."
+        ],
+        "cons": [
+          "Chicken-and-egg: if the daemon is not yet installed (S003 hasn't run / ABSENT), there is no steering body to read, so ac1 can't be satisfied on first activation — the guidance would be missing until the daemon exists.",
+          "Couples S004 to S003's install layout / daemon-home path (an adjacent boundary's internal), a fragile cross-story dependency.",
+          "Adds a runtime filesystem dependency + failure surface (asset moved/renamed across daemon versions)."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Zero drift, but PARTIAL on ac1: with the daemon absent (S003 not yet run) there is no steering asset on disk to read, so activation would not deliver the guidance; it also couples S004 to S003's daemon-home layout (an adjacent boundary's internal)."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "boundary-scope: real sc3 rules-write surface (AiHostAdapter.kt:109,117; AiHostAdapterImpl.kt:31-42) — writeRulesBlock(host, MarkerDelimitedBlock)/removeRulesBlock(host), RULES markers"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "capability-discovery: canonical tracked-workflow steering body already shipped as src/prompts/steering-block.md (same block daemon steering-inject.ts writes)"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "capability-discovery: S002 McpWiringLifecycle sc1-consumer pattern S004 mirrors (McpWiringLifecycle.kt:29-40; InsrcPluginStateListener.kt)"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "boundary-scope: S004 owns no shared contract; consumes sc1 (onProjectOpened) + sc3 (writeRulesBlock); writes only the rules file"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/host/AiHostAdapterImpl.kt:41-42 — RULES_BEGIN/RULES_END markers; MarkerFileWriter replace-only (k4/lc1)"
+    },
+    {
+      "id": "c6",
+      "kind": "convention",
+      "ref": "jetbrains-plugin test suite: JUnit (Kotlin) + IntelliJ Platform Test Framework (BasePlatformTestCase), established S001/S002/S003 — distinct from TS backend node:test"
+    },
+    {
+      "id": "c7",
+      "kind": "doc",
+      "ref": "CLAUDE.md k1 — No direct cloud REST calls from our process; reasoning routes through the host assistant's insrc-mcp / CLI-OAuth sessions"
+    },
+    {
+      "id": "c8",
+      "kind": "step-output",
+      "ref": "s1 backFlowNotes — HLD sc3 interfaceSketch (generic writeBlock/removeBlock) is stale vs shipped writeRulesBlock/removeRulesBlock; S004 consumes the real primitive, no amendment"
+    }
+  ]
+}

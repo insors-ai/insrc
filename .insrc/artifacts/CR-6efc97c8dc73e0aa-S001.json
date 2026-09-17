@@ -1,0 +1,75 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1789674920943-0itjg2",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-17T19:55:20.943Z",
+    "model": "client",
+    "elapsedMs": 3,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6efc97c8dc73e0aa",
+    "storyId": "S001"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "6efc97c8dc73e0aa",
+    "storyId": "S001",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        ".insrc/artifacts/PLAN-6efc97c8dc73e0aa-S001.json",
+        "docs/epics/add-kotlin-supported-source-language-indexer-E202609176efc97c8/S001/PLAN.md",
+        "package-lock.json",
+        "package.json",
+        "src/config/frontmatter.ts",
+        "src/daemon/tools/builtins/code/class-locate.ts",
+        "src/indexer/index.ts",
+        "src/indexer/parser/__tests__/kotlin.test.ts",
+        "src/indexer/parser/http-client-shapes.ts",
+        "src/indexer/parser/kotlin.ts",
+        "src/indexer/parser/messaging-client-shapes.ts",
+        "src/shared/repo-namespaces.ts",
+        "src/shared/types.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/indexer/parser/kotlin.ts:55",
+            "message": "Two documented recall gaps — `fun interface` (grammar emits an ERROR node) and Ktor verb-named `client.get(url)` HTTP calls (excluded to avoid List.get/Map.get collisions) — have no test assertions. Acceptable: both are grammar-level / precision-driven limitations that cannot be exercised as passing behavior, and they are explicitly documented in the parser KDoc as known gaps rather than silently dropped. No fix needed."
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/indexer/parser/kotlin.ts:595",
+            "message": "tree-sitter-kotlin@0.3.8 sets rootNode.hasError=true on an otherwise fully-formed tree for compact single-line class bodies with no newline before the closing brace (e.g. `class G { val x = 1 }`), so such files get a spurious `signature:'parse-error'` marker. Impact is bounded: realistic multi-line Kotlin parses clean, entities still emit correctly under the marker, and no downstream code consumes it as a gate. It mirrors the Scala parser's identical behavior and is documented in the KDoc; suppressing it would risk masking genuinely broken files. Noted, not blocking."
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 2
+    }
+  }
+}

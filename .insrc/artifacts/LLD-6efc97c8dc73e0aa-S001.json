@@ -1,0 +1,531 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1789669122761-famqd0",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-17T18:27:16.414Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 513648,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6efc97c8dc73e0aa",
+    "epicSlug": "add-kotlin-supported-source-language-indexer",
+    "storyId": "S001",
+    "hldBaseRunId": "wf-1789669122761-famqd0",
+    "hldEffectiveHash": "6efc97c8dc73e0aa60700030fd9477871e1947d95b0d18f07c26344e439ae4f4",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "feature",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 0
+      },
+      "reviewedAt": "2026-09-17T18:28:43.333Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-17T18:38:25.486Z",
+    "questionResolutions": {
+      "qefb5ae57": {
+        "question": "Does a published tree-sitter-kotlin have Node bindings ABI-compatible with the pinned tree-sitter ^0.25? Verify at build via install + a smoke _require + trivial parse; if incompatible, use the a3 vendored/built-grammar fallback.",
+        "status": "resolved",
+        "choice": "Spike now, pin one path — a1 CONFIRMED",
+        "rationale": "Spiked empirically: tree-sitter@0.25.1 + tree-sitter-kotlin@0.3.8 install (with --legacy-peer-deps, since its peer-dep is tree-sitter ^0.21) and interoperate — setLanguage + parse work, real Kotlin AST produced (source_file/package_header/import_list/class_declaration/object_declaration/function_declaration). So a1 (native npm grammar) is the pinned path. The plan encodes a1 with tree-sitter-kotlin@0.3.8 + a legacy-peer-deps install note; the smoke require+parse stays as a permanent regression unit test (not a runtime branch); a3 (vendored build) is documented as fallback only.",
+        "resolvedAt": "2026-09-17T18:41:43.373Z"
+      }
+    }
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "S001",
+        "owns": [],
+        "depends": [],
+        "internal": "Add Kotlin source-language support to the indexer"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "KotlinParser",
+          "signature": "class KotlinParser implements CodeParser { readonly extensions: string[]; readonly language: Language; parse(filePath: string, source: string, repo: string, repoId: number): ParseResult }",
+          "parameters": [],
+          "returns": {
+            "type": "CodeParser",
+            "meaning": "A new parser (mirroring ScalaParser) that handles .kt/.kts, tags entities language='kotlin', and self-registers via registerParser at module load. extensions=['.kt','.kts']; language='kotlin' as const."
+          },
+          "errors": [
+            {
+              "type": "(none surfaced from parse)",
+              "condition": "parse() never throws on malformed Kotlin: a tree-sitter parse error still emits the package Module + cleanly-parsed top-level entities, with the file entity marked parse-error (same contract as ScalaParser)."
+            }
+          ],
+          "preconditions": [
+            "The tree-sitter-kotlin grammar is loadable via _require and ABI-compatible with the pinned tree-sitter (^0.25); verified at build (openQuestion), a3 vendored-build is the fallback."
+          ],
+          "postconditions": [
+            "Registered in the parser registry so getParser('*.kt'/'*.kts') resolves to it.",
+            "Emits typed Entity + Relation records: class/object/companion object/data class → Class (companion carries a '(companion of X)' signature suffix), interface → Interface, top-level fun → Function, member fun → Method, extension fun → Method (extension signature marker), val/var property → Variable, package → Module; DEFINES (file→top-level, container→member), IMPORTS (file→jvm Module stub), INHERITS (from the superclass constructor call in the supertype list), IMPLEMENTS (remaining supertypes), and CALLS/REFERENCES to HTTP/messaging endpoints via the shared client-shape helpers."
+          ]
+        },
+        {
+          "name": "parse",
+          "signature": "parse(filePath: string, source: string, repo: string, repoId: number): ParseResult",
+          "parameters": [
+            {
+              "name": "filePath",
+              "type": "string",
+              "purpose": "Absolute path to the .kt/.kts file.",
+              "optional": false
+            },
+            {
+              "name": "source",
+              "type": "string",
+              "purpose": "Full Kotlin source text to parse.",
+              "optional": false
+            },
+            {
+              "name": "repo",
+              "type": "string",
+              "purpose": "Repo root path, hashed into makeEntityId (stable hex-32 ids).",
+              "optional": false
+            },
+            {
+              "name": "repoId",
+              "type": "number",
+              "purpose": "u32 repo-registry id stamped onto every emitted Entity (strict-contract handle).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ParseResult",
+            "meaning": "{ entities: Entity[]; relations: Relation[] } — the same shape every parser returns; relations may be unresolved (to = raw name/import) for the Resolver to close."
+          },
+          "errors": [],
+          "preconditions": [
+            "Consumed unchanged from the CodeParser contract (base.ts); KotlinParser implements it, does not redefine it."
+          ],
+          "postconditions": [
+            "Kotlin import-stub Modules use MODULE_REPO_ID = SHARED_MODULES_REPO_ID['jvm'] so they dedup with Java/Scala imports (kotlin:'jvm' in the namespace map)."
+          ]
+        },
+        {
+          "name": "makeEntityId",
+          "signature": "makeEntityId(repo: string, file: string, kind: string, name: string): string",
+          "parameters": [
+            {
+              "name": "repo",
+              "type": "string",
+              "purpose": "Repo root (part of the hash).",
+              "optional": false
+            },
+            {
+              "name": "file",
+              "type": "string",
+              "purpose": "File path (part of the hash).",
+              "optional": false
+            },
+            {
+              "name": "kind",
+              "type": "string",
+              "purpose": "Entity kind (part of the hash).",
+              "optional": false
+            },
+            {
+              "name": "name",
+              "type": "string",
+              "purpose": "Entity name (part of the hash).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "Deterministic 32-char hex id = SHA256(repo\\x00file\\x00kind\\x00name).slice(0,32). Consumed unchanged — KotlinParser calls it exactly like every other parser; no id-scheme change."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Consumed unchanged from base.ts; the Kotlin story introduces no new id construction."
+          ]
+        },
+        {
+          "name": "registerParser",
+          "signature": "registerParser(parser: CodeParser): void",
+          "parameters": [
+            {
+              "name": "parser",
+              "type": "CodeParser",
+              "purpose": "The KotlinParser instance to add to the extension-matched registry.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "Adds the parser so getParser(filePath) matches it by extname. Consumed unchanged from registry.ts."
+          },
+          "errors": [],
+          "preconditions": [
+            "The kotlin.ts module must be imported for registration to fire (side-effect import in index.ts)."
+          ],
+          "postconditions": [
+            "Consumed unchanged; kotlin.ts calls registerParser(kotlinParser) at module bottom exactly like scala.ts."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "KotlinParser (src/indexer/parser/kotlin.ts)",
+        "change": "new",
+        "details": "New CodeParser subclass mirroring ScalaParser: loads tree-sitter-kotlin via _require + setLanguage, MODULE_NAMESPACE='jvm', extensions=['.kt','.kts'], language='kotlin', walks the Kotlin AST emitting entities + relations, and self-registers. Reuses the shared http-client-shapes + messaging-client-shapes helpers for CALLS-to-endpoint detection.",
+        "callSites": [
+          "src/indexer/parser/scala.ts",
+          "src/indexer/parser/base.ts",
+          "src/indexer/parser/registry.ts",
+          "src/indexer/parser/http-client-shapes.ts",
+          "src/indexer/parser/messaging-client-shapes.ts"
+        ]
+      },
+      {
+        "entity": "Language union (shared/types.ts)",
+        "change": "field-add",
+        "details": "Add the literal 'kotlin' to the Language string-union type. Additive — every existing Language value is unchanged; a new accepted tag.",
+        "schemaDiff": "export type Language = 'python' | 'go' | ... | 'java' | 'scala' | 'kotlin' | 'markdown' | ...",
+        "callSites": [
+          "src/shared/types.ts:510"
+        ]
+      },
+      {
+        "entity": "lang→namespace map (shared/repo-namespaces.ts)",
+        "change": "field-add",
+        "details": "Add kotlin:'jvm' alongside java:'jvm', scala:'jvm' so Kotlin import-stub Modules dedup into the shared jvm modules repo id (SHARED_MODULES_REPO_ID.jvm). Additive.",
+        "schemaDiff": "{ java:'jvm', scala:'jvm', kotlin:'jvm', ... }",
+        "callSites": [
+          "src/shared/repo-namespaces.ts:69"
+        ]
+      },
+      {
+        "entity": "VALID_LANGUAGES (config/frontmatter.ts)",
+        "change": "field-add",
+        "details": "Add 'kotlin' to the frontmatter VALID_LANGUAGES set so kotlin is an accepted language tag. Additive.",
+        "callSites": [
+          "src/config/frontmatter.ts:47"
+        ]
+      },
+      {
+        "entity": "VALID_LANGUAGES (daemon/tools/builtins/code/class-locate.ts)",
+        "change": "field-add",
+        "details": "Add 'kotlin' to the class-locate tool's VALID_LANGUAGES set so the code_class_locate tool accepts kotlin. Additive.",
+        "callSites": [
+          "src/daemon/tools/builtins/code/class-locate.ts:47"
+        ]
+      },
+      {
+        "entity": "parser registration import (src/indexer/index.ts)",
+        "change": "field-add",
+        "details": "Add the side-effect import `import './parser/kotlin.js';` alongside the other parser imports so KotlinParser self-registers at indexer startup. Additive.",
+        "callSites": [
+          "src/indexer/index.ts:26"
+        ]
+      },
+      {
+        "entity": "tree-sitter-kotlin dependency (package.json)",
+        "change": "field-add",
+        "details": "Add tree-sitter-kotlin at an ABI-compatible version (verified against tree-sitter ^0.25 at build) to dependencies, next to the other tree-sitter grammars. Additive.",
+        "callSites": [
+          "package.json:74"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The tree-sitter-kotlin native grammar fails to load at module init (ABI mismatch with the pinned tree-sitter, missing prebuild, or broken install).",
+          "detection": "The `_require('tree-sitter-kotlin')` / `setLanguage(KotlinGrammar)` call throws when kotlin.ts is imported (a native binding load error).",
+          "response": "Guard the grammar load + registration in kotlin.ts: on a load error, log a warning and SKIP registering KotlinParser (do not rethrow), so the side-effect import in index.ts can't take down the other 5 parsers. This is a deliberate divergence from the first-party grammars' unguarded load because tree-sitter-kotlin is a less-maintained community grammar. Degrades to today's behaviour (Kotlin unindexed) instead of crashing the indexer.",
+          "userImpact": "If the grammar can't load, Kotlin files are simply not indexed (as today) and every other language keeps working; the warning tells the operator to fix the install. Recoverable by reinstalling an ABI-compatible grammar (or the a3 vendored build).",
+          "recoverable": true
+        },
+        {
+          "scenario": "A Kotlin source file has syntax errors or uses grammar-unsupported bleeding-edge syntax, so tree-sitter produces ERROR nodes / a partial tree.",
+          "detection": "The parsed tree's rootNode reports an error (hasError) / ERROR nodes appear during the walk.",
+          "response": "Mirror ScalaParser's parse-error contract: still emit the package Module + every cleanly-parsed top-level entity, and mark the file entity with a parse-error marker; never throw out of parse().",
+          "userImpact": "Partially-parseable Kotlin files still contribute their clean top-level symbols to the graph; only the unparseable regions are missed. The file is flagged parse-error for transparency.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The walk encounters a Kotlin AST node kind that has no entry in the node-kind→EntityKind mapping (an unusual or newer Kotlin construct).",
+          "detection": "The recursive tree walk reaches a named node whose type is not in KotlinParser's kind map.",
+          "response": "Skip the unmapped node (emit no entity/relation for it) and continue walking its children; never throw. New mappings can be added later without breaking existing extraction.",
+          "userImpact": "A rare/unusual construct is simply not surfaced as an entity; the rest of the file indexes normally. No crash, no data loss for mapped kinds.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A .kts script file (top-level statements, no package clause).",
+          "expected": "Parses; top-level declarations (funcs, properties, classes) are still emitted with file→DEFINES; no package Module is emitted when there is no package clause (like a Scala file with no package)."
+        },
+        {
+          "input": "A companion object inside a class.",
+          "expected": "Emitted as a Class entity whose signature carries a '(companion of <ClassName>)' suffix, matching the ScalaParser companion-object convention (no separate edge)."
+        },
+        {
+          "input": "A data class.",
+          "expected": "Emitted as a Class with a `data` marker folded into its signature prefix (like Scala's case class), plus DEFINES to its properties."
+        },
+        {
+          "input": "An extension function `fun Foo.bar()`.",
+          "expected": "Emitted as a Method with an `extension` signature marker; the receiver type (Foo) is recorded in the signature so analyzer queries can grep it (mirrors Scala's `extension method`)."
+        },
+        {
+          "input": "A top-level `object Singleton` (Kotlin singleton).",
+          "expected": "Emitted as a Class with an `object` signature marker (mirrors Scala object_definition→Class)."
+        },
+        {
+          "input": "A class supertype list `class A : Base(), Iface1, Iface2`.",
+          "expected": "INHERITS to Base (the supertype with a constructor call), IMPLEMENTS to Iface1 and Iface2 (the remaining supertypes) — the Kotlin analogue of Scala's `extends A with B with C`."
+        },
+        {
+          "input": "An aliased import `import a.b.Foo as Bar`.",
+          "expected": "IMPORTS edge to the jvm Module stub for a.b.Foo with the alias recorded in meta.alias (mirrors Scala's renamed selector)."
+        },
+        {
+          "input": "A repo mixing Kotlin, Java and Scala files.",
+          "expected": "All three index; their import-stub Modules dedup into the single shared jvm modules repo id (kotlin/java/scala all map to 'jvm'), so a shared JVM dependency is one node."
+        },
+        {
+          "input": "A file whose extension is .kt but whose content is not valid Kotlin.",
+          "expected": "getParser routes it to KotlinParser by extension; parse() applies the parse-error contract (emits what it can, marks the file) rather than failing."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Entity ids remain the deterministic hex-32 makeEntityId(repo, file, kind, name) = SHA256(repo\\x00file\\x00kind\\x00name).slice(0,32). KotlinParser calls makeEntityId unchanged — it introduces no new id construction, so ids stay stable across re-index and consistent with every other language.",
+          "source": "c1"
+        },
+        {
+          "text": "Adding Kotlin is purely additive to the parser registry: registry.ts matches by extension and .kt/.kts collide with no existing parser's extensions, so the 5 existing parsers' behaviour is unchanged. The only shared-type change (Language union, VALID_LANGUAGES sets, namespace map) is an added literal, breaking no existing value.",
+          "source": "c1"
+        },
+        {
+          "text": "Kotlin import-stub Modules use MODULE_REPO_ID = SHARED_MODULES_REPO_ID['jvm'] (kotlin→'jvm' in the namespace map), so a JVM dependency referenced from Kotlin, Java or Scala dedups to one shared-module node — preserving the cross-language JVM linking the Scala/Java parsers already rely on.",
+          "source": "c2"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Verify KotlinParser.parse over representative Kotlin source strings emits the right Entity kinds + Relation kinds, mirroring scala.test.ts — no daemon, no real repo, just the parser + grammar.",
+          "subjects": [
+            "A class with a supertype list `class A : Base(), Iface1, Iface2` -> Class entity for A; INHERITS to Base; IMPLEMENTS to Iface1 and Iface2; DEFINES file->A",
+            "An interface -> Interface entity; a class implementing it -> IMPLEMENTS",
+            "`object Singleton` -> Class with an `object` signature marker; a `companion object` inside a class -> Class with a `(companion of <ClassName>)` signature suffix",
+            "A `data class` -> Class with a `data` signature marker + DEFINES to its properties (val/var -> Variable)",
+            "A top-level `fun` -> Function; a member `fun` -> Method; an extension `fun Foo.bar()` -> Method with an `extension` marker recording receiver Foo",
+            "`package a.b` -> Module; `import a.b.Foo` -> IMPORTS to a jvm Module stub; `import a.b.Foo as Bar` -> IMPORTS with meta.alias='Bar'",
+            "A file whose class calls a recognised HTTP/messaging client -> CALLS/REFERENCES via the shared http/messaging-client-shapes helpers",
+            "A Kotlin file with a syntax error still emits its package + cleanly-parsed top-level entities and marks the file parse-error (never throws)",
+            "makeEntityId output for a given (repo,file,kind,name) is the stable hex-32 hash — re-parsing the same source yields identical ids"
+          ],
+          "fixturesNeeded": [
+            "The tree-sitter-kotlin grammar loadable in the test process (same _require path as production)",
+            "Representative inline Kotlin source strings (class/interface/object/companion/data class/funcs/extension/properties/imports/package/parse-error) — the scala.test.ts fixture shape adapted to Kotlin syntax"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Verify the registration wiring end-to-end: after importing the indexer, the registry routes .kt/.kts to KotlinParser and a real Kotlin file yields non-zero entities.",
+          "subjects": [
+            "After `import '../index.js'` (or importing kotlin.js), getParser('X.kt') and getParser('X.kts') both return the KotlinParser (language='kotlin'); supportedExtensions() includes '.kt' and '.kts'",
+            "Parsing a small real .kt file (e.g. a jetbrains-plugin/ source or an inline fixture) through the registry-selected parser yields a non-empty entities array (proves the hollow-Kotlin gap is closed)",
+            "A repo mixing Kotlin + Java/Scala: their import-stub Modules for a shared JVM dependency share one repo id (SHARED_MODULES_REPO_ID.jvm) — kotlin/java/scala dedup"
+          ],
+          "fixturesNeeded": [
+            "The built indexer module (side-effect imports registered)",
+            "A small Kotlin fixture file / inline source"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "Integration: getParser('X.kt') and getParser('X.kts') return KotlinParser (language='kotlin') after import; supportedExtensions() includes .kt/.kts",
+            "Unit: `new KotlinParser().extensions` == ['.kt','.kts'] and `.language` == 'kotlin'"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "Unit: class/interface/object/companion object/data class/top-level fun/member fun/extension fun/val-var property/package each map to the expected Entity kind + signature marker",
+            "Unit: DEFINES edges from file->top-level and container->member entities"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "Unit: a supertype list emits INHERITS (superclass constructor call) + IMPLEMENTS (remaining supertypes); imports emit IMPORTS to jvm Module stubs (alias in meta.alias); a recognised client emits CALLS/REFERENCES",
+            "Integration: Kotlin/Java/Scala import stubs for a shared JVM dependency dedup into the single jvm shared-modules repo id"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "Unit: a parse-error Kotlin file still emits its package + clean top-level entities and marks the file parse-error, never throwing",
+            "Unit: makeEntityId ids are the stable hex-32 SHA256 and identical on re-parse; an unmapped node kind is skipped without throwing",
+            "Integration: parsing a real Kotlin file yields a non-empty entities array (the hollow-Kotlin gap is closed)"
+          ]
+        }
+      ],
+      "testFramework": "node:test via `npx tsx --test 'src/**/__tests__/*.test.ts'` (Node's built-in test runner + node:assert), co-located in src/indexer/parser/__tests__/ — the established per-parser convention (kotlin.test.ts mirrors scala.test.ts / java.test.ts)."
+    },
+    "migration": {
+      "stateBefore": "The indexer supports 5 source languages (typescript/javascript, python, go, java, scala) plus doc/config formats; registry.ts matches parsers by extension and there is no parser whose extensions include .kt/.kts, so getParser('X.kt') returns null and Kotlin files produce zero entities (s1: base.ts CodeParser + registry.ts; the 5 parser files under src/indexer/parser). The Language union (shared/types.ts:510) and both VALID_LANGUAGES sets (config/frontmatter.ts:47, daemon/tools/builtins/code/class-locate.ts:47) do not include 'kotlin'. Consequence: the jetbrains-plugin/ Kotlin and any Kotlin repo are invisible to the graph, so insrc_analyze / insrc_code_review_step ground hollow on Kotlin.",
+      "stateAfter": "A KotlinParser (src/indexer/parser/kotlin.ts) is registered for .kt/.kts and emits typed Entity + Relation records; 'kotlin' is an accepted Language value (union + both VALID_LANGUAGES sets), maps to the jvm shared-modules namespace, and tree-sitter-kotlin is a declared dependency. After a re-index, Kotlin repos yield real symbols and Kotlin-targeted analyze/code-review ground on actual entities instead of hollow file stubs. The 5 existing languages are unchanged.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the tree-sitter-kotlin dependency to package.json (ABI-compatible with tree-sitter ^0.25) and run install; verify the native binding loads with a smoke `_require('tree-sitter-kotlin')` + trivial parse. If it is ABI-incompatible, switch to the a3 vendored/built-grammar path before proceeding.",
+          "rollbackable": true,
+          "prerequisiteFlags": []
+        },
+        {
+          "order": 2,
+          "action": "Add src/indexer/parser/kotlin.ts (KotlinParser) with a guarded grammar load that skips registration + logs on load failure, and wire the additive edits: 'kotlin' into the Language union, kotlin:'jvm' into the namespace map, 'kotlin' into both VALID_LANGUAGES sets, and the side-effect `import './parser/kotlin.js'` in index.ts. Add kotlin.test.ts.",
+          "rollbackable": true,
+          "prerequisiteFlags": []
+        },
+        {
+          "order": 3,
+          "action": "Build (tsc + copy-assets) and run the test sweep; confirm the KotlinParser unit + registry integration tests pass and the existing suites are unaffected.",
+          "rollbackable": true,
+          "prerequisiteFlags": []
+        },
+        {
+          "order": 4,
+          "action": "Deploy the updated daemon and trigger a re-index of any registered Kotlin-containing repo so its .kt/.kts files (previously skipped) are parsed into entities/relations. New Kotlin entities are additive; existing non-Kotlin entities and their ids are untouched.",
+          "rollbackable": true,
+          "prerequisiteFlags": []
+        }
+      ],
+      "backwardCompat": "Fully backward-compatible and additive. The Language union only WIDENS ('kotlin' added; no existing literal changed or removed), so every existing consumer keeps type-checking and every existing entity's language tag is unchanged. Entity ids stay the exact makeEntityId hex-32 scheme, so existing (non-Kotlin) entity ids do not move. The parser registry is extension-matched and .kt/.kts collide with no existing parser, so the 5 existing parsers behave identically. Rollback is clean: reverting the files + removing the dep returns to stateBefore (Kotlin files simply stop being parsed on the next index); the guarded grammar load means even a broken Kotlin grammar degrades to the pre-feature behaviour rather than breaking the other languages.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": true
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Native tree-sitter-kotlin npm package + KotlinParser mirroring scala.ts",
+        "oneLineSummary": "Add the published tree-sitter-kotlin native grammar as an npm dep (pinned to an ABI-compatible version) and a kotlin.ts KotlinParser that loads it via `_require` + `setLanguage`, exactly like every existing parser.",
+        "approach": "Add `tree-sitter-kotlin` to package.json at a version whose native Node bindings are ABI-compatible with the pinned `tree-sitter` (^0.25). Introduce src/indexer/parser/kotlin.ts as a `class KotlinParser implements CodeParser` with `extensions = ['.kt','.kts']`, `language = 'kotlin' as const`, `MODULE_NAMESPACE = 'jvm'` (shares the jvm shared-modules repo id with Java/Scala), loading the grammar via `const KotlinGrammar = _require('tree-sitter-kotlin')` + `setLanguage(KotlinGrammar)` and walking the tree to emit typed Entity + Relation records for the Kotlin node kinds (class/object/companion object/data class → Class/Interface, top-level + member fun → Function/Method, extension fun → Method with an `extension` signature marker, val/var property → Variable, package → Module; DEFINES/IMPORTS, INHERITS from the superclass call, IMPLEMENTS from remaining supertypes, CALLS/REFERENCES via the shared http/messaging-client-shapes helpers). Ends with `export const kotlinParser = new KotlinParser(); registerParser(kotlinParser)` and a side-effect `import './parser/kotlin.js'` in index.ts. Wire the enum ('kotlin' in Language + kotlin:'jvm' in the namespace map) and both VALID_LANGUAGES sets. Deterministic ids via makeEntityId unchanged.",
+        "pros": [
+          "Zero architectural divergence: identical native-`_require`-synchronous shape to all 5 existing grammars, so the whole surrounding pipeline (resolver, storage, analyze) works with no changes.",
+          "JVM-namespace reuse (kotlin:'jvm') means Kotlin import stubs dedup with Java/Scala for free — correct cross-language linking.",
+          "scala.ts is a near-1:1 template, so the parse()/relation mapping is low-risk and the test surface mirrors scala.test.ts.",
+          "Fits the existing native-build toolchain (.npmrc / Node headers) the repo already uses for tree-sitter-scala/java."
+        ],
+        "cons": [
+          "Depends on a published tree-sitter-kotlin whose prebuilt/gyp-built bindings are ABI-compatible with tree-sitter ^0.25 — a real feasibility gate (community grammar, less maintained than the first-party ones). Resolve at build: install + a smoke parse; fall to a3 only if incompatible.",
+          "Kotlin AST node names differ from Scala's (e.g. class_declaration vs class_definition, no `trait`), so the node-kind mapping is a careful adaptation of scala.ts, not a copy."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "WASM grammar via web-tree-sitter",
+        "oneLineSummary": "Load a tree-sitter-kotlin.wasm through web-tree-sitter instead of native bindings, sidestepping the native ABI question.",
+        "approach": "Bundle a prebuilt tree-sitter-kotlin.wasm and initialize it through web-tree-sitter's async Parser.init() + Language.load(), then extract entities/relations the same way. Because WASM init is asynchronous and the CodeParser.parse() contract is synchronous (all existing parsers construct + setLanguage at module load, synchronously), this requires either an async pre-init step gating the parser registry or a blocking init shim.",
+        "pros": [
+          "No native node-gyp/ABI build — the .wasm is platform-independent, so it dodges the Node-22-headers concern entirely.",
+          "Grammar version is decoupled from the native tree-sitter bindings version."
+        ],
+        "cons": [
+          "Breaks the synchronous CodeParser contract: registry.getParser()/parse() are sync and parsers self-register at import; web-tree-sitter needs `await Parser.init()` before any parse, forcing an async-init seam into the indexer that no other parser needs — a real architectural divergence for one language.",
+          "Introduces a second, different tree-sitter runtime (web-tree-sitter) alongside the native `tree-sitter` all 5 parsers use — two grammars runtimes to maintain.",
+          "The shared http/messaging-client-shapes helpers assume native tree-sitter SyntaxNode shapes; a WASM node API may differ, risking helper incompatibility."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Dodges the native ABI question but breaks the synchronous CodeParser contract (async WASM init), adds a second tree-sitter runtime, and risks the shared http/messaging helpers — a large divergence for one language."
+      },
+      {
+        "id": "a3",
+        "name": "Vendored grammar built at install (git dependency / submodule + node-gyp)",
+        "oneLineSummary": "Pull the tree-sitter-kotlin grammar source (git dep or vendored) and build the native binding locally in a postinstall step, then the same KotlinParser as a1.",
+        "approach": "If no npm-published tree-sitter-kotlin has ABI-compatible bindings, depend on the grammar via a git URL (or vendor its sources) and compile the native addon during install (node-gyp, against the repo's Node headers), producing the same `_require`-loadable native module a1 consumes. The kotlin.ts parser + all wiring are identical to a1; only the dependency-acquisition mechanism differs.",
+        "pros": [
+          "Works even when no compatible prebuilt npm package exists — builds directly against the repo's own tree-sitter + Node ABI.",
+          "Keeps the native, synchronous parser shape of a1 (no pipeline divergence).",
+          "Pins an exact grammar commit, insulating from upstream churn."
+        ],
+        "cons": [
+          "Adds a from-source native build to `npm install` (node-gyp toolchain on every dev/daemon machine), a heavier install + a new failure surface the repo's other grammars avoid by shipping prebuilds.",
+          "Vendoring/tracking a grammar submodule is ongoing maintenance the first-party grammars don't need.",
+          "Only worth it as a fallback — pure overhead if a1's published package turns out ABI-compatible."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Same parser + wiring as a1 (parity + jvm-linking satisfied), but acquires the grammar via a from-source node-gyp build — heavier install + ongoing vendoring. The right FALLBACK when a1's published bindings are ABI-incompatible, not the default."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "Does a published tree-sitter-kotlin have Node bindings ABI-compatible with the pinned tree-sitter ^0.25? Verify at build via install + a smoke _require + trivial parse; if incompatible, use the a3 vendored/built-grammar fallback."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "symbol.locate: CodeParser contract + registry + makeEntityId (src/indexer/parser/base.ts, registry.ts) — extension-matched registration, deterministic hex-32 ids"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "capability-discovery: scala.ts JVM template (src/indexer/parser/scala.ts:794-795,862-863) — _require grammar load, MODULE_NAMESPACE='jvm' shared-modules dedup, entity/relation extraction, self-registration; http/messaging-client-shapes"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "boundary-scope: the additive edit sites — Language union (shared/types.ts:510), lang→namespace map (shared/repo-namespaces.ts:69), side-effect import (src/indexer/index.ts:26), VALID_LANGUAGES x2 (config/frontmatter.ts:47, daemon/tools/builtins/code/class-locate.ts:47), tree-sitter deps (package.json:74)"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "test.locate: per-parser tests in src/indexer/parser/__tests__/ (scala.test.ts, java.test.ts); node:test via `npx tsx --test`"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "package.json:74-80 — the pinned tree-sitter ^0.25 + grammar versions (go/js/py/ts ^0.25, java 0.23.5, scala 0.24.0) the tree-sitter-kotlin binding must be ABI-compatible with"
+    },
+    {
+      "id": "c6",
+      "kind": "doc",
+      "ref": "CLAUDE.md — native modules built against Node 22 headers (.npmrc); no direct cloud path; tree-sitter parsing stack (TS/Python/Go/Java/Scala) the Kotlin addition extends"
+    }
+  ]
+}

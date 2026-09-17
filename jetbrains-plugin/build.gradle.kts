@@ -39,6 +39,11 @@ dependencies {
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.3")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    // The IntelliJ Platform fixture base classes (BasePlatformTestCase) are
+    // JUnit4; the vintage engine runs them under the JUnit Platform launcher
+    // alongside the JUnit5 unit suites.
+    testImplementation("junit:junit:4.13.2")
+    testRuntimeOnly("org.junit.vintage:junit-vintage-engine:5.11.3")
 }
 
 kotlin {

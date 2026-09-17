@@ -1,6 +1,8 @@
 # Gradle / IntelliJ-plugin build outputs
 .gradle/
 build/
+# Kotlin Gradle plugin local state (incremental-compile caches, session files)
+.kotlin/
 # IntelliJ Platform Gradle plugin local cache (coordinates, downloaded IDE, etc.)
 .intellijPlatform/
 # Locally-generated Gradle wrapper (see README)

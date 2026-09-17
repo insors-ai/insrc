@@ -85,24 +85,19 @@ tasks.test {
     useJUnitPlatform()
 }
 
-// Story S003 / t6-t7: bundle the backend's bootstrap installer into the plugin so
-// a FRESH machine (daemon not yet cloned) can still run the one-click setup —
-// insrc-daemon-install.sh is the script that clones ~/.insrc/daemon, so it must
-// travel with the plugin rather than being read from the (absent) daemon dir.
-// This copies a single shell asset from the sibling backend repo; it does NOT
-// wire the two build systems or toolchains together (k6).
-val bundleInstallerScript by tasks.registering(Copy::class) {
+// Bundle the sibling backend assets the plugin must ship with, so both travel INSIDE
+// the plugin jar rather than being read from an (absent-on-a-fresh-machine) daemon dir:
+//   - insrc-daemon-install.sh (Story S003 / t6-t7): the bootstrap installer that clones
+//     ~/.insrc/daemon, needed for the one-click setup on a machine with no daemon yet;
+//   - steering-block.md (Story S004 / t1): the canonical tracked-workflow steering block —
+//     the SAME src/prompts/steering-block.md the daemon steering-refresh writes — injected
+//     into each detected AI host's rules file on project open (single source of truth).
+// One Copy task into one output dir keeps Gradle's up-to-date/incremental checks intact
+// (no overlapping-task-output warning). Copies individual files from the sibling backend
+// repo; it does NOT wire the two build systems or toolchains together (k6). Both ship
+// under classpath /insrc/ (/insrc/insrc-daemon-install.sh, /insrc/steering-block.md).
+val bundleBackendAssets by tasks.registering(Copy::class) {
     from(rootProject.file("../scripts/insrc-daemon-install.sh"))
-    into(layout.buildDirectory.dir("generated-resources/insrc"))
-}
-
-// Story S004 / t1: bundle the backend's canonical tracked-workflow steering block
-// into the plugin so the SAME src/prompts/steering-block.md the daemon steering-refresh
-// writes is injected into each detected AI host's rules file on project open (single
-// source of truth, self-contained — no re-authored guidance). Mirrors the installer
-// bundling above: a single Markdown asset copied from the sibling backend repo, it does
-// NOT wire the two build systems or toolchains together (k6). Ships at /insrc/steering-block.md.
-val bundleSteeringBlock by tasks.registering(Copy::class) {
     from(rootProject.file("../src/prompts/steering-block.md"))
     into(layout.buildDirectory.dir("generated-resources/insrc"))
 }
@@ -112,6 +107,5 @@ sourceSets.named("main") {
 }
 
 tasks.named("processResources") {
-    dependsOn(bundleInstallerScript)
-    dependsOn(bundleSteeringBlock)
+    dependsOn(bundleBackendAssets)
 }

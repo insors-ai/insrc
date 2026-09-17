@@ -186,7 +186,7 @@ object RealSystemNodeProbe : SystemNodeProbe {
  * Locates the backend scripts to delegate to (Story S003 / t6-t7).
  *
  *  - INSTALL: the bootstrap installer (`insrc-daemon-install.sh`) is BUNDLED with
- *    the plugin (Gradle `bundleInstallerScript`), because on a fresh machine the
+ *    the plugin (Gradle `bundleBackendAssets`), because on a fresh machine the
  *    daemon is not yet cloned — so it is extracted from the plugin resources to a
  *    temp file and run from there. This is what makes first-install work off a
  *    fresh machine.

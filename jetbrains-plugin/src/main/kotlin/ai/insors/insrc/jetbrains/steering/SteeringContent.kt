@@ -6,7 +6,7 @@ import java.io.InputStream
  * S004-internal provider of the tracked-workflow steering body (Story S004 / t2).
  *
  * Returns the plugin-bundled copy of the backend's canonical `src/prompts/steering-block.md`
- * (bundled at classpath `/insrc/steering-block.md` by the Gradle `bundleSteeringBlock`
+ * (bundled at classpath `/insrc/steering-block.md` by the Gradle `bundleBackendAssets`
  * task — see build.gradle.kts). This is the SAME block the daemon steering-refresh
  * (`src/daemon/steering-inject.ts`) writes, so there is one source of truth for the
  * tracked-workflow guidance and no re-authored reasoning. Read-only and independent

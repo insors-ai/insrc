@@ -14,10 +14,9 @@ import java.util.Properties
  *    metadata the IDE's normal update path consumes, ac2);
  *  - the build is a single Gradle module (no subprojects, no per-IDE variant) that
  *    applies the IntelliJ Platform plugin once, so `buildPlugin` yields one
- *    distribution rather than a per-IDE artifact.
- *
- * The common-platform-only *descriptor* dependency (ac3) is owned by
- * [PluginDescriptorSmokeTest]; this test does not duplicate it.
+ *    distribution rather than a per-IDE artifact;
+ *  - that one distribution's descriptor depends only on the common platform
+ *    module, so it loads across all four IDEs (ac3, lc1).
  */
 class BuildContractTest {
 
@@ -66,6 +65,25 @@ class BuildContractTest {
                 !build.contains("goland") &&
                 !build.contains("webStorm"),
             "build must not configure per-IDE product variants (single artifact, lc1)",
+        )
+    }
+
+    @Test
+    fun `the one artifact's descriptor depends only on the common platform module`() {
+        // The single-artifact half above only matters if that artifact loads in
+        // all four IDEs — which requires a common-platform-only descriptor (ac3).
+        val xml = javaClass.getResourceAsStream("/META-INF/plugin.xml")!!
+            .bufferedReader().use { it.readText() }
+        assertTrue(
+            xml.contains("<depends>com.intellij.modules.platform</depends>"),
+            "the single artifact must depend on the common platform module (ac3, lc1)",
+        )
+        val ideSpecificDepends = Regex(
+            """<depends>com\.intellij\.modules\.(java|python|go|lang|ruby|php)\b[^<]*</depends>""",
+        )
+        assertTrue(
+            !ideSpecificDepends.containsMatchIn(xml),
+            "no IDE-specific <depends> — that would restrict the single artifact to one IDE",
         )
     }
 }

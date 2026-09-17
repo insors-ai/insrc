@@ -13,7 +13,7 @@ import java.nio.file.Files
  * config files, proving: on project open the marker-delimited insrc-mcp
  * registration is written into each present host's mcp file (ac1/ac3); no host
  * present is a no-op; and a write failure on one host does not block the other
- * (and S002 writes only the 'mcp' file — never 'rules', never removeBlock).
+ * (and S002 issues only 'mcp' writes — never 'rules', never removeBlock).
  *
  * JUnit4-style (BasePlatformTestCase); run under the vintage engine.
  */
@@ -33,7 +33,22 @@ class ProjectOpenWiringTest : BasePlatformTestCase() {
         )
     }
 
-    fun testProjectOpenWritesRegistrationIntoTheSinglePresentHostMcpConfig() {
+    /** Records every (host,file) write and any removeBlock call, then delegates. */
+    private class RecordingAdapter(private val delegate: AiHostAdapter) : AiHostAdapter {
+        val writes = mutableListOf<Pair<AiHost, HostFile>>()
+        var removeCalls = 0
+        override fun detectPresent(): List<AiHost> = delegate.detectPresent()
+        override fun writeBlock(host: AiHost, file: HostFile, block: MarkerDelimitedBlock) {
+            writes += host to file
+            delegate.writeBlock(host, file, block)
+        }
+        override fun removeBlock(host: AiHost, file: HostFile) {
+            removeCalls++
+            delegate.removeBlock(host, file)
+        }
+    }
+
+    fun testOneHostPresent_writesRegistrationIntoItsMcpConfig() {
         val host = tempHost(AiHostKind.AI_ASSISTANT)
         val adapter = AiHostAdapterImpl(HostDetector(listOf(present(host))), MarkerFileWriter())
         val wiring = McpWiringLifecycle(adapter) { LAUNCH }
@@ -48,7 +63,7 @@ class ProjectOpenWiringTest : BasePlatformTestCase() {
         assertFalse("S002 must not create the rules file", Files.exists(java.nio.file.Path.of(host.rulesFilePath)))
     }
 
-    fun testBothHostsPresentEachMcpConfigReceivesTheRegistration() {
+    fun testBothHostsPresent_eachConfigReceivesRegistration() {
         val a = tempHost(AiHostKind.AI_ASSISTANT)
         val b = tempHost(AiHostKind.JUNIE)
         val adapter = AiHostAdapterImpl(HostDetector(listOf(present(a), present(b))), MarkerFileWriter())
@@ -63,22 +78,26 @@ class ProjectOpenWiringTest : BasePlatformTestCase() {
         }
     }
 
-    fun testNoHostPresentWritesNothing() {
-        // detection empty -> no-op: a writer that must never be called
-        val neverWriter = MarkerFileWriter(object : HostFileIo {
-            override fun read(path: String): String? =
-                throw AssertionError("read must not be called when no host is present")
-            override fun write(path: String, content: String): Unit =
-                throw AssertionError("write must not be called when no host is present")
-        })
-        val adapter = AiHostAdapterImpl(HostDetector(listOf(HostProbe { HostResolution.Absent })), neverWriter)
+    fun testNoHostPresent_nothingWritten_noop() {
+        // detection empty -> no-op. Assert the writer's IO is never touched by
+        // COUNTING calls (not by throwing — a throw inside writeBlock would be
+        // swallowed by the lifecycle's per-host runCatching and prove nothing).
+        var reads = 0
+        var writes = 0
+        val countingIo = object : HostFileIo {
+            override fun read(path: String): String? { reads++; return null }
+            override fun write(path: String, content: String) { writes++ }
+        }
+        val adapter = AiHostAdapterImpl(HostDetector(listOf(HostProbe { HostResolution.Absent })), MarkerFileWriter(countingIo))
         val wiring = McpWiringLifecycle(adapter) { LAUNCH }
 
-        // must simply return without touching the writer
         wiring.onProjectOpened(ProjectContext(project.basePath!!, IdeKind.IDEA))
+
+        assertEquals("no host present -> writer never read", 0, reads)
+        assertEquals("no host present -> writer never wrote", 0, writes)
     }
 
-    fun testOneHostWriteFailsOtherStillWiredAndOnlyMcpFileWritten() {
+    fun testOneHostWriteFails_otherHostStillWired_onlyMcpFileWritten() {
         val a = tempHost(AiHostKind.AI_ASSISTANT) // this host's write will fail
         val b = tempHost(AiHostKind.JUNIE)        // this host must still be wired
         val store = HashMap<String, String?>()
@@ -91,15 +110,18 @@ class ProjectOpenWiringTest : BasePlatformTestCase() {
                 written += path
             }
         }
-        val adapter = AiHostAdapterImpl(HostDetector(listOf(present(a), present(b))), MarkerFileWriter(io))
+        val adapter = RecordingAdapter(AiHostAdapterImpl(HostDetector(listOf(present(a), present(b))), MarkerFileWriter(io)))
         val wiring = McpWiringLifecycle(adapter) { LAUNCH }
 
         // host a's failure is caught+logged; host b is still wired
         wiring.onProjectOpened(ProjectContext(project.basePath!!, IdeKind.IDEA))
 
+        // isolation: only host b's mcp file actually got written (a failed)
         assertEquals("only host b's mcp file is written (a failed, isolated)", listOf(b.mcpConfigPath), written)
-        // S002 writes ONLY the 'mcp' file — no 'rules' file, no removeBlock, for either host
-        assertFalse(written.contains(a.rulesFilePath))
-        assertFalse(written.contains(b.rulesFilePath))
+        // non-tautological proof that S002 issues ONLY 'mcp' writes and NO removeBlock:
+        // inspect what the lifecycle actually asked the adapter to do.
+        assertEquals("both present hosts were asked to be wired", 2, adapter.writes.size)
+        assertTrue("every write the lifecycle issued targets the mcp file only", adapter.writes.all { it.second == HostFile.MCP })
+        assertEquals("S002 never invokes removeBlock (that is S005)", 0, adapter.removeCalls)
     }
 }

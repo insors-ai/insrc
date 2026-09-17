@@ -65,9 +65,18 @@ class OnboardingLifecycle(
         if (registered) return // already enabled -> nothing to offer (ac2)
 
         // Nothing is registered until the developer clicks Enable (ac1/ac2/lc1); the accept-callback
-        // runs the strict repo.add off the EDT.
+        // runs the strict repo.add off the EDT. A catch-all guards the executor runnable (mirroring
+        // DaemonLifecycleService) so an unexpected throw can't escape into the app pool and leave the
+        // click silently doing nothing.
         offer.offerEnable(ctx.projectRootPath) {
-            execute { register(ctx.projectRootPath) }
+            execute {
+                try {
+                    register(ctx.projectRootPath)
+                } catch (t: Throwable) {
+                    log.warn("insrc: enabling project ${ctx.projectRootPath} failed", t)
+                    runCatching { notify("insrc could not enable this project.") }
+                }
+            }
         }
     }
 
@@ -88,15 +97,16 @@ class OnboardingLifecycle(
     }
 
     override fun onPluginUninstalled() {
-        // True uninstall only (sc1 routing). Reverse both insrc writes per detected host, per-host
-        // isolated so one host's HostFileAccessException does not block the other (ac4/lc2).
+        // True uninstall only (sc1 routing). Reverse both insrc writes per detected host. The mcp
+        // config and the rules file are INDEPENDENT files, so each removal is its own runCatching:
+        // a failure removing one host's mcp entry must not skip that same host's (writable) rules
+        // block, and one host's failure must not block the other (ac4/lc2 — restore as much as
+        // possible to the pre-insrc state).
         for (host in adapter.detectPresent()) {
-            runCatching {
-                adapter.removeMcpRegistration(host)
-                adapter.removeRulesBlock(host)
-            }.onFailure { e ->
-                log.warn("insrc: failed to clean up host ${host.kind}", e)
-            }
+            runCatching { adapter.removeMcpRegistration(host) }
+                .onFailure { e -> log.warn("insrc: failed to remove mcp registration for host ${host.kind}", e) }
+            runCatching { adapter.removeRulesBlock(host) }
+                .onFailure { e -> log.warn("insrc: failed to remove rules block for host ${host.kind}", e) }
         }
     }
 

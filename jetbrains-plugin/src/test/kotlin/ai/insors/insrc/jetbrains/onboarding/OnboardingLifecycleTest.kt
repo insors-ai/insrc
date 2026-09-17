@@ -204,10 +204,11 @@ class OnboardingLifecycleTest {
         val adapter = RecordingAdapter(listOf(a, b), removeFailFor = AiHostKind.AI_ASSISTANT)
         lifecycle(FakeGateway(), adapter, RecordingOffer(), RecordingNotify().sink()).onPluginUninstalled()
 
-        // host a's mcp removal threw (so its rules removal was skipped in the same runCatching),
-        // but host b is fully cleaned.
-        assertEquals(listOf(b), adapter.mcpRemovals)
-        assertEquals(listOf(b), adapter.rulesRemovals)
+        // host a's mcp removal threw, but its rules removal is independent (own runCatching) and still
+        // runs; host b is fully cleaned. So the (writable) rules file is restored even when the mcp
+        // removal fails, and neither host blocks the other.
+        assertEquals(listOf(b), adapter.mcpRemovals, "host a's mcp removal threw; host b's succeeded")
+        assertEquals(listOf(a, b), adapter.rulesRemovals, "host a's rules removal still ran (independent of its mcp removal)")
         assertNull(adapter.mcpRemovals.firstOrNull { it.kind == AiHostKind.AI_ASSISTANT })
     }
 }

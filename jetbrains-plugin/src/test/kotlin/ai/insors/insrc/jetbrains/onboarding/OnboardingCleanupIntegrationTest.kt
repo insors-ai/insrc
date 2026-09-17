@@ -32,6 +32,13 @@ import java.nio.file.Path
  */
 class OnboardingCleanupIntegrationTest : BasePlatformTestCase() {
 
+    override fun setUp() {
+        super.setUp()
+        // Isolate from any consumer a dispatched appStarted() may have registered, so firePluginUninstalled
+        // fans out only to this test's instance (never real cleanup against the machine's host files).
+        LifecycleBroadcaster.clear()
+    }
+
     private val RULES_BEGIN = AiHostAdapterImpl.RULES_BEGIN
     private val RULES_END = AiHostAdapterImpl.RULES_END
 

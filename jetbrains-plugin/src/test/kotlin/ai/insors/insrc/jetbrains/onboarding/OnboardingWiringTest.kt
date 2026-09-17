@@ -22,6 +22,13 @@ import com.intellij.testFramework.fixtures.BasePlatformTestCase
  */
 class OnboardingWiringTest : BasePlatformTestCase() {
 
+    override fun setUp() {
+        super.setUp()
+        // Isolate from any consumer a dispatched appStarted() may have registered, so firePluginUninstalled
+        // fans out only to this test's instance (never real cleanup against the machine's host files).
+        LifecycleBroadcaster.clear()
+    }
+
     private class RecordingAdapter(private val hosts: List<AiHost>) : AiHostAdapter {
         val mcpRemovals = mutableListOf<AiHost>()
         override fun detectPresent(): List<AiHost> = hosts

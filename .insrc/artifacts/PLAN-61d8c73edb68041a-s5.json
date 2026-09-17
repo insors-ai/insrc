@@ -1,0 +1,298 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1789665906023-2byrh7",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-17T17:29:54.173Z",
+    "epicCreatedAt": "2026-09-17T10:47:35.743Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 288103,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "61d8c73edb68041a",
+    "epicSlug": "integrate-insrc-framework-into-jetbrains-ide",
+    "storyId": "s5",
+    "lldRunId": "wf-1789662272635-nyd1tu",
+    "lldEffectiveHash": "7ebd2fd85012b97ccc463655776546b87125f337e9056f4e2efc76048eb635fd",
+    "approvedAt": "2026-09-17T17:30:51.940Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "OnboardingOffer seam + production notification impl",
+        "summary": "Add the OnboardingOffer fun-interface (fun offerEnable(projectRootPath: String, onAccept: () -> Unit)) in a new ai.insors.insrc.jetbrains.onboarding package, plus a production impl mirroring DaemonLifecycleService.showOfferSetupNotification: the 'insrc' BALLOON NotificationGroup + a NotificationAction 'Enable' whose click runs onAccept (title e.g. 'insrc: enable for this project?'). Injectable so the onboarding orchestration is unit-testable with a fake.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "OnboardingOffer is a fun-interface with offerEnable(projectRootPath, onAccept).",
+          "The production impl uses the existing 'insrc' NotificationGroup + NotificationAction whose click invokes onAccept (mirrors showOfferSetupNotification).",
+          "No cloud path introduced (k1); the offer allocates nothing by itself."
+        ],
+        "derivedFrom": [
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "OnboardingOfferTest.offerEnable_isAFunInterface_capturesRootAndOnAccept"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "OnboardingLifecycle (both hooks) + production() factory",
+        "summary": "Add OnboardingLifecycle : PluginLifecycle with injected (gateway: DaemonGateway, adapter: AiHostAdapter, offer: OnboardingOffer, notify: (String)->Unit, execute: (Runnable)->Unit) and a companion production() binding service<DaemonGatewayService>() + AiHostAdapterImpl() + the real OnboardingOffer + IDE notify + AppExecutorUtil (mirroring DaemonLifecycleService.production). Implement in the order production()/constructor wiring -> onPluginUninstalled (simplest, mirrors the S002/S004 per-host loop) -> onProjectOpened offer+accept-callback last, so the trickiest path lands on a compiling base. onProjectOpened(ctx): off-EDT; runCatching gateway.isProjectRegistered; adapter.detectPresent() empty -> no-op; else if !registered call offer.offerEnable(ctx.projectRootPath) { off-EDT runCatching gateway.registerProject(root); on DaemonUnavailableException notify a failure; on RegistrationResult(false,reason) notify reason; on true notify enabled }. onPluginUninstalled(): for each detectPresent() host, per-host runCatching { removeMcpRegistration(host); removeRulesBlock(host) }. Never writes host files; never re-implements detection/repo.add/removers.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "onProjectOpened: detectPresent() empty -> no offer, nothing registered (ac3); host present + isProjectRegistered==false -> offerEnable called once; isProjectRegistered==true -> no offer (ac2).",
+          "registerProject is called ONLY from the offer accept-callback, never during onProjectOpened (ac1/ac2/lc1).",
+          "DaemonUnavailableException from isProjectRegistered (open) and from registerProject (accept) are both caught -> no crash, no offer / failure notification respectively; RegistrationResult(false,reason) surfaces the reason.",
+          "onPluginUninstalled: per detected host calls removeMcpRegistration+removeRulesBlock with per-host runCatching isolation; 0 writeMcp/0 writeRules calls; empty detectPresent -> no-op (ac4).",
+          "production() wires the real @Service gateway + AiHostAdapterImpl + notifications; work runs off the EDT."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "OnboardingLifecycleTest.hostPresentUnregistered_offersOnce_registersNothingUntilAccept"
+          },
+          {
+            "level": "unit",
+            "name": "OnboardingLifecycleTest.acceptCallback_registersOnce_reportsResult"
+          },
+          {
+            "level": "unit",
+            "name": "OnboardingLifecycleTest.emptyDetectPresent_noOffer_noop"
+          },
+          {
+            "level": "unit",
+            "name": "OnboardingLifecycleTest.alreadyRegistered_noOffer"
+          },
+          {
+            "level": "unit",
+            "name": "OnboardingLifecycleTest.isProjectRegisteredThrows_caught_noOffer"
+          },
+          {
+            "level": "unit",
+            "name": "OnboardingLifecycleTest.registerProjectThrows_caught_failureNotification_noCrash"
+          },
+          {
+            "level": "unit",
+            "name": "OnboardingLifecycleTest.registrationRejected_surfacesReason"
+          },
+          {
+            "level": "unit",
+            "name": "OnboardingLifecycleTest.onPluginUninstalled_removesMcpAndRulesPerHost_zeroWrites"
+          },
+          {
+            "level": "unit",
+            "name": "OnboardingLifecycleTest.onPluginUninstalled_emptyDetect_noop"
+          },
+          {
+            "level": "unit",
+            "name": "OnboardingLifecycleTest.perHostRemovalException_isolated_otherHostStillCleaned"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Register OnboardingLifecycle in InsrcAppLifecycle.appStarted",
+        "summary": "Add LifecycleBroadcaster.register(OnboardingLifecycle.production()) in InsrcAppLifecycle.appStarted, alongside the existing McpWiringLifecycle/DaemonLifecycleService/SteeringInjectionLifecycle registrations, so the onboarding offer runs on project open and the cleanup runs on true uninstall.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "InsrcAppLifecycle.appStarted registers OnboardingLifecycle via LifecycleBroadcaster.register alongside the three existing consumers.",
+          "onProjectOpened work runs off the EDT; onPluginUninstalled is reached via firePluginUninstalled on a true uninstall (not a disable)."
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "OnboardingWiringTest.onboardingLifecycle_registeredOnBroadcaster_offEdt_and_reachedByUninstall"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Unit + integration tests (JUnit + IntelliJ Platform Test Framework)",
+        "summary": "Wave A (pure fakes, no fixture): unit tests over OnboardingLifecycle with a fake DaemonGateway (isProjectRegistered true/false/throws; registerProject true/false/throws), a recording fake AiHostAdapter (detectPresent present/absent/both; recording removeMcp/removeRules + write* asserted never called; optional HostFileAccessException), a fake OnboardingOffer capturing (root,onAccept), a recording notify + synchronous executor — covering ac1/ac2/ac3 offer gating, accept-callback registerProject + error/reason handling, and ac4 per-host cleanup + isolation. Wave B (IntelliJ Platform fixture): an integration test over the real AiHostAdapterImpl proving onPluginUninstalled restores a host's mcp.json + rules.md to their pre-insrc bytes (seeded via the real writeMcpRegistration/writeRulesBlock), and that OnboardingLifecycle is a registered sc1 broadcaster consumer running off the EDT. Implement Wave A first. Verify locally JDK21+Gradle8.10; no GitHub CI.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "Wave A unit tests cover: offer gating (host+unregistered->offer, empty-detect no-op, already-registered no-op), registerProject only-on-accept + DaemonUnavailableException/RegistrationResult(false) handling, and per-host removeMcp+removeRules with isolation and 0 writes.",
+          "Wave B integration test proves uninstall restores mcp.json + rules.md to pre-insrc bytes via the real AiHostAdapterImpl, and the disable-vs-uninstall distinction (no uninstall event on disable).",
+          "The full jetbrains-plugin suite compiles and passes locally (JDK21 + Gradle 8.10)."
+        ],
+        "derivedFrom": [
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "OnboardingCleanupIntegrationTest.uninstall_restoresMcpAndRulesToPreInsrcBytes_realAdapter"
+          },
+          {
+            "level": "integration",
+            "name": "OnboardingCleanupIntegrationTest.hostWithNoInsrcSection_leftByteUnchanged"
+          },
+          {
+            "level": "integration",
+            "name": "OnboardingCleanupIntegrationTest.disable_deliversNoUninstallEvent_filesLeftInPlace"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "onProjectOpened with a host present + isProjectRegistered==false -> OnboardingOffer.offerEnable is called once with ctx.projectRootPath and NOTHING is registered until the injected onAccept runs (ac1/ac2)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "the offer's accept-callback calls gateway.registerProject(projectRootPath) exactly once and reports the RegistrationResult (registered / reason)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "onProjectOpened with detectPresent() empty -> no offerEnable call, no gateway query beyond nothing visible (ac3 no-op)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "onProjectOpened with isProjectRegistered==true -> no offerEnable call (already registered, ac2)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "a DaemonUnavailableException from isProjectRegistered is caught -> no offer shown, no throw into the caller",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "a DaemonUnavailableException from registerProject in the accept-callback is caught -> a failure notification, no crash",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "registerProject returning RegistrationResult(false, reason) -> the reason is surfaced via notify and nothing further registered",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "onPluginUninstalled iterates detectPresent() and calls removeMcpRegistration(host)+removeRulesBlock(host) once per host (ac4), with 0 writeMcp/0 writeRules calls (S005 never writes)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "onPluginUninstalled with empty detectPresent() -> no removal calls (clean no-op)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "a HostFileAccessException from one host's removal is caught (per-host runCatching) and the other host is still fully cleaned",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "onPluginUninstalled over a real AiHostAdapterImpl with a host whose mcp.json + rules.md carry insrc content restores BOTH files to their exact pre-insrc bytes (ac4/lc2) — the insrc mcpServers.insrc key and the RULES-delimited section are gone, surrounding developer content preserved",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "a host whose files have developer content but NO insrc section is left byte-unchanged by the removals (no-op removal)",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "OnboardingLifecycle is registered as a sc1 LifecycleBroadcaster consumer and its onProjectOpened work runs off the EDT",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "firePluginUninstalled (the true-uninstall path) reaches OnboardingLifecycle.onPluginUninstalled, whereas no such event is delivered on a mere disable (ac4 uninstall-vs-disable)",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 contractDetails/interactionWithShared — sc2 DaemonGateway.isProjectRegistered + registerProject (strict repo.add), consumed unchanged"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 contractDetails/interactionWithShared — sc3 AiHostAdapter.detectPresent + removeMcpRegistration + removeRulesBlock (inverses of S002/S004 writes), consumed unchanged"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 errorPaths — DaemonUnavailableException on open/accept, RegistrationResult(false,reason) rejection, per-host HostFileAccessException isolation"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "s1 usage.example — InsrcAppLifecycle.appStarted registration point + InsrcPluginStateListener.uninstall->firePluginUninstalled routing (true-uninstall only) + sibling onPluginUninstalled no-ops S005 fills"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 contractDetails + dataModel — OnboardingLifecycle.onProjectOpened (offer gating + accept-callback) and onPluginUninstalled (per-host cleanup); OnboardingLifecycle new entity"
+    },
+    {
+      "id": "c6",
+      "kind": "analyze-bundle",
+      "ref": "s1 capability-discovery — DaemonLifecycleService one-click offer + production() factory pattern (showOfferSetupNotification, NotificationGroup 'insrc' + NotificationAction) the OnboardingOffer seam mirrors"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 testStrategy — unit (fake gateway/adapter/offer) + integration (real AiHostAdapterImpl restore, uninstall-vs-disable)"
+    }
+  ]
+}

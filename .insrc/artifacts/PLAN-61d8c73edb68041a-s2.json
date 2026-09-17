@@ -1,0 +1,334 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1789647235140-21izcb",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-17T12:17:40.477Z",
+    "epicCreatedAt": "2026-09-17T10:47:35.743Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 225316,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "61d8c73edb68041a",
+    "epicSlug": "integrate-insrc-framework-into-jetbrains-ide",
+    "storyId": "s2",
+    "lldRunId": "wf-1789646017020-g70hn8",
+    "lldEffectiveHash": "7ebd2fd85012b97ccc463655776546b87125f337e9056f4e2efc76048eb635fd",
+    "review": {
+      "artifact": "plan",
+      "stage": "plan",
+      "verdict": "pass",
+      "findings": [],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 0
+      },
+      "reviewedAt": "2026-09-17T12:18:26.424Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-17T12:57:23.424Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "sc3 data model + AiHostAdapter interface",
+        "summary": "Introduce the sc3 shared-contract types in the jetbrains-plugin module: AiHostKind ('ai-assistant'|'junie'), HostFile ('mcp'|'rules'), AiHost (kind + absolute mcpConfigPath + rulesFilePath), MarkerDelimitedBlock (beginMarker/endMarker/body), the HostFileAccessException, and the AiHostAdapter interface (detectPresent/writeBlock/removeBlock). Types only — the public seam S004/S005 consume; no behaviour yet.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "AiHostKind and HostFile are closed Kotlin enums/sealed types with exactly their two members each",
+          "AiHost is immutable and carries absolute mcpConfigPath + rulesFilePath; MarkerDelimitedBlock carries beginMarker/endMarker/body",
+          "AiHostAdapter declares detectPresent(): List<AiHost>, writeBlock(host,file,block), removeBlock(host,file) matching the LLD signatures",
+          "Lives under package ai.insors.insrc.jetbrains and compiles against the existing S001 module"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Sc3TypesTest: AiHostKind and HostFile expose exactly their two closed members; AiHost/MarkerDelimitedBlock are immutable with the declared fields"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Format-agnostic marker-delimited replace-only writer (writeBlock/removeBlock core)",
+        "summary": "Implement the k4 primitive as a STRICTLY format-agnostic read-modify-write over an already-located host file: writeBlock inserts the delimited block once and replaces an existing same-marker block in place, preserving all surrounding content byte-for-byte and idempotent on re-run; removeBlock strips only the delimited block and restores prior content, no-op when absent. Port the proven steering-inject marker mechanic (src/daemon/steering-inject.ts) into Kotlin. Surface HostFileAccessException on IO failure with no partial write. Host-format recognition is NOT here — it lives in t3; this keeps the primitive reusable by S004 for the 'rules' file.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "writeBlock into a file with surrounding user content inserts exactly one block and leaves all other bytes unchanged; second identical write is byte-identical (idempotent)",
+          "writeBlock over an existing same-marker block replaces it in place (no duplicate)",
+          "removeBlock deletes only the delimited block and restores pre-insrc content; no-op when no block present",
+          "an IO failure surfaces HostFileAccessException and leaves the target file exactly as it was (no partial write)",
+          "the writer contains no host-format/shape recognition logic (format-agnostic; recognition belongs to t3) — it operates purely on markers over a given file"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "MarkerWriterTest#writeBlock_insertsOnce_preservesSurrounding_idempotentOnRerun (temp file with surrounding user content)"
+          },
+          {
+            "level": "unit",
+            "name": "MarkerWriterTest#writeBlock_replacesExistingSameMarkerBlockInPlace_noDuplicate"
+          },
+          {
+            "level": "unit",
+            "name": "MarkerWriterTest#removeBlock_stripsOnlyTheBlock_restoresPriorContent_noopWhenAbsent"
+          },
+          {
+            "level": "unit",
+            "name": "MarkerWriterTest#ioFailure_surfacesHostFileAccessException_noPartialWrite"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Host detection + format-safe path resolution (detectPresent)",
+        "summary": "Implement detectPresent(): probe the running IDE for AI Assistant and Junie, returning only installed+enabled hosts with resolved absolute mcpConfigPath + rulesFilePath; exclude disabled/absent hosts; return empty when neither present. This task OWNS host-format recognition (the c8 external dimension isolated behind a small per-host resolver): a host whose config shape/version cannot be safely recognised is logged and omitted (fail-safe skip), so the format-agnostic writer (t2) is only ever handed a recognised, anchored file. Detection never throws.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "detectPresent returns entries only for installed+enabled hosts, each with absolute mcpConfigPath and rulesFilePath",
+          "a disabled or absent host is excluded from the result",
+          "neither host present -> empty list (no throw)",
+          "a host whose config format/shape is unrecognised is omitted + logged (fail-safe skip) so no unrecognised file ever reaches the writer, never surfaced as a partial/broken host"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c6",
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "DetectPresentTest#includesInstalledEnabledHostsWithResolvedPaths_excludesDisabledAndAbsent (stub host-presence inputs)"
+          },
+          {
+            "level": "unit",
+            "name": "DetectPresentTest#unrecognisedHostFormat_failSafeSkip_omittedAndLogged_neverReachesWriter"
+          },
+          {
+            "level": "unit",
+            "name": "DetectPresentTest#neitherHostPresent_returnsEmpty_noThrow"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "InsrcMcpRegistration launcher composition (per-call repo scoping, no cloud path)",
+        "summary": "Compose the S002-internal 'mcp' block body: an MCP-server registration whose launch command is a thin plugin-provided launcher that spawns ONLY the existing stdio insrc-mcp (out/bin/insrc-mcp.js via buildInsrcMcpServer) and attaches the active project's root (sc1 ProjectContext.projectRootPath) as the explicit repo argument per call — reusing the resolve-repo explicit-over-INSRC_REPO contract. No cloud/REST endpoint. Skip composing when the insrc-mcp launch target cannot be resolved.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "the composed registration's launch command references only the existing insrc-mcp stdio server — no cloud/REST endpoint (k1, ac4)",
+          "the registration attaches the active project's root as the explicit repo argument; composing for two distinct roots yields two registrations each scoped to its own root (k3, ac2)",
+          "when the insrc-mcp launch target is absent, composition is skipped (no registration pointing at a missing server) and the condition is logged",
+          "the launcher resolves repo per call (not a fixed shared INSRC_REPO default), so a shared MCP process across windows stays correctly scoped"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "RegistrationCompositionTest#launchCommandReferencesOnlyStdioInsrcMcp_noCloudEndpoint (ac4/k1)"
+          },
+          {
+            "level": "unit",
+            "name": "RegistrationCompositionTest#attachesActiveProjectRootAsExplicitRepoArg_twoRootsScopeIndependently (ac2/k3)"
+          },
+          {
+            "level": "unit",
+            "name": "RegistrationCompositionTest#missingLaunchTarget_skipsComposition_logged"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Project-open wiring: write the insrc-mcp registration into each detected host",
+        "summary": "Wire the sc1 onProjectOpened lifecycle (S001 seam) to the adapter: on project open, for each host from detectPresent(), compose the InsrcMcpRegistration (t4) and writeBlock(host,'mcp',block) (t2); empty detection = silent no-op. Each host wired independently so one host's HostFileAccessException does not block the other. Runs off the UI/EDT thread and is bounded so project opening is never blocked. Only the 'mcp' file is written — 'rules' is left to S004, removeBlock invocation to S005.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t2",
+          "t3",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "on project open with one host present, a marker-delimited insrc-mcp registration is written into that host's mcp config (ac1)",
+          "with both hosts present, each host's mcp config independently receives the registration (ac3)",
+          "with no host present, nothing is written (no-op)",
+          "a write failure on one host is surfaced/logged but the other present host is still wired; S002 writes only the 'mcp' file (no 'rules' write, no removeBlock call)",
+          "the on-project-open wiring runs off the UI/EDT thread and does not block project opening (HLD performance invariant)"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "ProjectOpenWiringTest#oneHostPresent_writesRegistrationIntoItsMcpConfig (IntelliJ Platform fixture, ac1)"
+          },
+          {
+            "level": "integration",
+            "name": "ProjectOpenWiringTest#bothHostsPresent_eachConfigReceivesRegistration (ac3)"
+          },
+          {
+            "level": "integration",
+            "name": "ProjectOpenWiringTest#noHostPresent_nothingWritten_noop"
+          },
+          {
+            "level": "integration",
+            "name": "ProjectOpenWiringTest#oneHostWriteFails_otherHostStillWired_onlyMcpFileWritten"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "writeBlock: replace-only + marker-delimited (inserts once, replaces an existing block in place, preserves all surrounding content, byte-identical on re-run)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "removeBlock: removes only the delimited block and restores prior content; no-op when absent",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "unrecognised host-file format -> fail-safe skip (no write, no corruption) and HostFileAccessException surfaced on IO failure",
+        "coveredByTaskIds": [
+          "t3",
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "InsrcMcpRegistration composition: the block body launches the existing insrc-mcp (no cloud endpoint) and attaches the active project's root as the explicit repo argument (k3, ac4)",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "detectPresent: includes installed+enabled hosts with resolved config/rules paths; excludes disabled/absent hosts",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "On project open with one host present, a marker-delimited insrc-mcp registration appears in that host's MCP config file (ac1)",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "With both hosts present, each host's config receives the registration (ac3)",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "With no host present, nothing is written (empty detectPresent, no-op)",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "The composed registration's launch command references only the existing insrc-mcp stdio server — no cloud/REST endpoint (ac4, k1)",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "The registration wires the repo argument to the active project's root, not a fixed shared default (ac2, k3)",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 contractDetails: AiHostAdapter (sc3) surface — detectPresent/writeBlock/removeBlock",
+      "quotedText": "sc3 AiHostAdapter: detectPresent(): List<AiHost>; writeBlock(host,file,block); removeBlock(host,file). The internal-shared seam S004/S005 consume."
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 dataModelChanges: InsrcMcpRegistration + interactionWithShared sc3/sc1 (the launcher that spawns the existing insrc-mcp)",
+      "quotedText": "InsrcMcpRegistration: an MCP-server entry whose launch command spawns the existing stdio insrc-mcp (buildInsrcMcpServer, src/mcp/server.ts:120 / src/bin/insrc-mcp.ts) and attaches the active project's root as the explicit repo argument per call."
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 hldContextSlice.boundary + nonFunctional: S002 wires on sc1 onProjectOpened, writes only the 'mcp' file, off-thread/bounded",
+      "quotedText": "S002 consumes sc1 (ProjectContext/onProjectOpened) to write the insrc-mcp registration into each detected host on project open; 'rules' left to S004, removal to S005; project-open work runs off the UI thread and is bounded."
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 dataModelChanges: MarkerDelimitedBlock + contractDetails writeBlock/removeBlock postconditions (k4)",
+      "quotedText": "MarkerDelimitedBlock {beginMarker,endMarker,body}; writeBlock is replace-only + marker-delimited, idempotent, preserves surrounding content; removeBlock reverses it (k4)."
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 invariantsToPreserve c5 -> steering-refresh marker writer (src/daemon/steering-inject.ts, src/cli/services/maintenance.ts refreshSteering)",
+      "quotedText": "Reuse the proven marker-delimited replace-only writer (refreshSteering / steering-inject marker upsert) so every host-file write preserves surrounding user content and is fully reversible (k4)."
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 dataModelChanges: AiHostKind closed union {'ai-assistant','junie'} — the two JetBrains agentic hosts detectPresent covers",
+      "quotedText": "AiHostKind: closed union of the two JetBrains agentic hosts 'ai-assistant' | 'junie'; detectPresent realises detection for both."
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 invariantsToPreserve c7 -> no new cloud path (k1); CLAUDE.md 'No direct cloud REST'",
+      "quotedText": "No new cloud path: the MCP registration only spawns the existing stdio insrc-mcp server, so cloud reasoning stays on the host assistant's CLI-OAuth sessions (k1, ac4)."
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 errorPaths + contractDetails assumptions c8: the external two-host config-format dimension isolated behind a per-host resolver",
+      "quotedText": "The two AI hosts have different MCP/config formats (external c8 dimension); a host whose config shape is unrecognised is skipped fail-safe rather than written into — recognition isolated behind a small per-host adapter."
+    }
+  ]
+}

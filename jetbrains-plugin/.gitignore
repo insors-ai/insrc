@@ -1,5 +1,7 @@
 # Gradle / IntelliJ-plugin build outputs
 .gradle/
 build/
+# IntelliJ Platform Gradle plugin local cache (coordinates, downloaded IDE, etc.)
+.intellijPlatform/
 # Locally-generated Gradle wrapper (see README)
 gradle/wrapper/gradle-wrapper.jar

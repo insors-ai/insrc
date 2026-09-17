@@ -1,0 +1,58 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1789651463000-0qjsau",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-17T13:24:23.000Z",
+    "model": "client",
+    "elapsedMs": 2,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "61d8c73edb68041a",
+    "storyId": "s2"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "61d8c73edb68041a",
+    "storyId": "s2",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/host/ProjectOpenWiringTest.kt"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/host/ProjectOpenWiringTest.kt:57",
+            "message": "No test parses the written mcp.json as JSON — assertions are substring (contains MCP_BEGIN / LAUNCH). A JSON-parse assertion on the written file would have immediately caught the quality HIGH (invalid JSON). The write-failure isolation, no-op counting, and detection tests are otherwise genuinely toothed.",
+            "expectationRef": "ac1/ac3 — host-consumable config",
+            "confidence": "breach"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 1,
+      "low": 0
+    }
+  }
+}

@@ -21,9 +21,22 @@
     <depends>com.intellij.modules.platform</depends>
 
     <!--
-      sc1 (project-open / uninstall lifecycle listeners) and sc2 (DaemonGateway
-      application service) register their extensions/services here in tasks t2/t3.
-      t1 stands up the descriptor only.
+      sc1 project-open lifecycle (Story S001 / t2): a ProjectActivity that fires
+      onProjectOpened once per opened project, off the UI thread.
     -->
-    <extensions defaultExtensionNs="com.intellij"/>
+    <extensions defaultExtensionNs="com.intellij">
+        <postStartupActivity
+            implementation="ai.insors.insrc.jetbrains.platform.InsrcProjectOpenActivity"/>
+    </extensions>
+
+    <!--
+      sc1 uninstall lifecycle (Story S001 / t2): register the plugin-state
+      listener at app start so onPluginUninstalled fires on a true uninstall
+      (never on a mere disable).
+    -->
+    <applicationListeners>
+        <listener
+            class="ai.insors.insrc.jetbrains.platform.InsrcAppLifecycle"
+            topic="com.intellij.ide.AppLifecycleListener"/>
+    </applicationListeners>
 </idea-plugin>

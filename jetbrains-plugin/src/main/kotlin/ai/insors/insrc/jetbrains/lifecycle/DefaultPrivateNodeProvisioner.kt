@@ -79,6 +79,12 @@ fun interface NodeArchiveExtractor {
  * The network and extraction steps are injected ([NodeArchiveDownloader] /
  * [NodeArchiveExtractor]) so the provisioning logic is unit-testable with no real
  * network fetch.
+ *
+ * FOLLOW-UP (deferred): the download is verified only by the presence of the
+ * expected executable after extraction. A SHA-256 check against Node's published
+ * `SHASUMS256.txt` would harden this against a corrupted/tampered archive; the
+ * injectable [NodeArchiveDownloader] seam leaves room to add it without reshaping
+ * this class. The fetch is HTTPS from the official Node CDN in the meantime.
  */
 class DefaultPrivateNodeProvisioner(
     private val homeDir: Path = Path.of(System.getProperty("user.home")),

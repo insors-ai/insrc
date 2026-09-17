@@ -84,3 +84,22 @@ tasks.test {
     // classpath the IntelliJ Platform Gradle plugin wires in.
     useJUnitPlatform()
 }
+
+// Story S003 / t6-t7: bundle the backend's bootstrap installer into the plugin so
+// a FRESH machine (daemon not yet cloned) can still run the one-click setup —
+// insrc-daemon-install.sh is the script that clones ~/.insrc/daemon, so it must
+// travel with the plugin rather than being read from the (absent) daemon dir.
+// This copies a single shell asset from the sibling backend repo; it does NOT
+// wire the two build systems or toolchains together (k6).
+val bundleInstallerScript by tasks.registering(Copy::class) {
+    from(rootProject.file("../scripts/insrc-daemon-install.sh"))
+    into(layout.buildDirectory.dir("generated-resources/insrc"))
+}
+
+sourceSets.named("main") {
+    resources.srcDir(layout.buildDirectory.dir("generated-resources"))
+}
+
+tasks.named("processResources") {
+    dependsOn(bundleInstallerScript)
+}

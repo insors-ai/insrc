@@ -116,11 +116,9 @@ class DaemonLifecycleService(
          * Node / a provisioned private Node, the script-delegating provisioner, and
          * IDE notifications for the one-click offer / failure reports.
          *
-         * NOTE (external): [DefaultDaemonScriptLocator] resolves the backend scripts
-         * under `~/.insrc/daemon/scripts`; when the daemon is entirely absent the
-         * install script is not yet on disk, so a first install surfaces the
-         * "tooling unavailable" outcome until the scripts are provisioned. Shipping
-         * the install script to a fresh machine is a follow-up on this seam.
+         * First-install works off a fresh machine: [DefaultDaemonScriptLocator]
+         * extracts the plugin-bundled `insrc-daemon-install.sh` for INSTALL, and
+         * resolves `daemon-ctl.sh` under `~/.insrc/daemon/scripts` for UPDATE.
          */
         fun production(): DaemonLifecycleService {
             val gateway = com.intellij.openapi.components.service<ai.insors.insrc.jetbrains.daemon.DaemonGatewayService>()
@@ -177,21 +175,47 @@ object RealSystemNodeProbe : SystemNodeProbe {
 }
 
 /**
- * Locates the backend scripts under `~/.insrc/daemon/scripts` (Story S003):
- * INSTALL -> insrc-daemon-install.sh, UPDATE -> daemon-ctl.sh; `null` when absent
- * so the provisioner fail-safes rather than reproducing their logic (lc1/k5).
+ * Locates the backend scripts to delegate to (Story S003 / t6-t7).
+ *
+ *  - INSTALL: the bootstrap installer (`insrc-daemon-install.sh`) is BUNDLED with
+ *    the plugin (Gradle `bundleInstallerScript`), because on a fresh machine the
+ *    daemon is not yet cloned — so it is extracted from the plugin resources to a
+ *    temp file and run from there. This is what makes first-install work off a
+ *    fresh machine.
+ *  - UPDATE: `daemon-ctl.sh` lives under `~/.insrc/daemon/scripts` once the daemon
+ *    is installed; resolved there, or `null` (fail-safe) if absent.
+ *
+ * The bundled-resource stream is injectable so the extraction is unit-testable.
  */
 class DefaultDaemonScriptLocator(
-    homeDir: java.nio.file.Path = java.nio.file.Path.of(System.getProperty("user.home")),
+    private val homeDir: java.nio.file.Path = java.nio.file.Path.of(System.getProperty("user.home")),
+    private val bundledInstaller: () -> java.io.InputStream? =
+        { DefaultDaemonScriptLocator::class.java.getResourceAsStream(BUNDLED_INSTALLER_RESOURCE) },
 ) : DaemonScriptLocator {
-    private val scriptsDir = homeDir.resolve(".insrc").resolve("daemon").resolve("scripts")
 
-    override fun scriptFor(kind: ProvisionKind): java.nio.file.Path? {
-        val name = when (kind) {
-            ProvisionKind.INSTALL -> "insrc-daemon-install.sh"
-            ProvisionKind.UPDATE -> "daemon-ctl.sh"
+    override fun scriptFor(kind: ProvisionKind): java.nio.file.Path? =
+        when (kind) {
+            ProvisionKind.INSTALL -> extractBundledInstaller()
+            ProvisionKind.UPDATE -> daemonHomeScript("daemon-ctl.sh")
         }
-        val path = scriptsDir.resolve(name)
+
+    /** Extract the bundled bootstrap installer to a temp file to run, or `null` when it is not bundled. */
+    private fun extractBundledInstaller(): java.nio.file.Path? {
+        val stream = bundledInstaller() ?: return null
+        return stream.use { input ->
+            val tmp = java.nio.file.Files.createTempFile("insrc-daemon-install", ".sh")
+            java.nio.file.Files.copy(input, tmp, java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+            tmp
+        }
+    }
+
+    private fun daemonHomeScript(name: String): java.nio.file.Path? {
+        val path = homeDir.resolve(".insrc").resolve("daemon").resolve("scripts").resolve(name)
         return if (java.nio.file.Files.exists(path)) path else null
+    }
+
+    companion object {
+        /** Classpath location of the bundled bootstrap installer (see build.gradle.kts). */
+        const val BUNDLED_INSTALLER_RESOURCE: String = "/insrc/insrc-daemon-install.sh"
     }
 }

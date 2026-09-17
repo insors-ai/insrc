@@ -1,17 +1,16 @@
-# Dedicated CI lane for the insrc JetBrains plugin (Story S001 / t1), separate
-# from the TS backend's test sweep in ci.yml. It only runs when the plugin
-# subproject (or this workflow) changes, so the two toolchains stay decoupled (k6).
+# Dedicated build lane for the insrc JetBrains plugin, separate from the TS
+# backend's test sweep in ci.yml (the two toolchains stay decoupled, k6).
+#
+# MANUAL-ONLY (workflow_dispatch): the Kotlin suite is NOT run automatically on
+# push/PR — GitHub Actions minutes are expensive and the suite runs locally as
+# the real gate (JDK 21 + Gradle 8.10 + the IntelliJ Platform 2024.2 SDK:
+#   JAVA_HOME=<jdk21> gradle -p jetbrains-plugin \
+#     -Dorg.gradle.java.installations.paths=<jdk21> --no-daemon build verifyPlugin
+# ). Trigger this workflow by hand from the Actions tab only when needed.
 name: jetbrains-plugin
 
 on:
-  push:
-    paths:
-      - 'jetbrains-plugin/**'
-      - '.github/workflows/jetbrains-plugin.yml'
-  pull_request:
-    paths:
-      - 'jetbrains-plugin/**'
-      - '.github/workflows/jetbrains-plugin.yml'
+  workflow_dispatch: {}
 
 permissions:
   contents: read

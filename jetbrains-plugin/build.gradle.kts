@@ -35,6 +35,10 @@ dependencies {
         )
         instrumentationTools()
         testFramework(org.jetbrains.intellij.platform.gradle.TestFrameworkType.Platform)
+        // The IntelliJ Plugin Verifier CLI, so the `verifyPlugin` task (run in CI)
+        // has an executable to invoke — without this the task fails with
+        // "No IntelliJ Plugin Verifier executable found".
+        pluginVerifier()
     }
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.3")
@@ -56,6 +60,20 @@ intellijPlatform {
         ideaVersion {
             sinceBuild = providers.gradleProperty("pluginSinceBuild")
             untilBuild = providers.gradleProperty("pluginUntilBuild")
+        }
+    }
+
+    // `verifyPlugin` (run in CI) checks the built artifact's API usage against a
+    // real IDE. Verify against the compile target (IntelliJ IDEA Community, the
+    // platformVersion) — the one artifact loads across all four IDEs off the
+    // common-platform descriptor, so the common-platform IDE is the meaningful
+    // target and keeps the verifier download bounded.
+    pluginVerification {
+        ides {
+            ide(
+                IntelliJPlatformType.IntellijIdeaCommunity,
+                providers.gradleProperty("platformVersion").get(),
+            )
         }
     }
 }

@@ -5,10 +5,10 @@ import org.junit.jupiter.api.Test
 
 /**
  * sc3 type-surface unit tests (Story S002 / t1) — platform-free. They pin the
- * closed unions ([AiHostKind], [HostFile]) to exactly their declared members and
- * assert the value types ([AiHost], [MarkerDelimitedBlock]) are immutable data
- * carriers with the fields the LLD names. No behaviour is exercised here — the
- * writer, detection, and wiring land in t2..t5.
+ * closed union [AiHostKind] to exactly its declared members and assert the value
+ * types ([AiHost], [MarkerDelimitedBlock]) are immutable data carriers with the
+ * fields the LLD names. No behaviour is exercised here — the writers, detection,
+ * and wiring land in t2..t5.
  */
 class Sc3TypesTest {
 
@@ -17,14 +17,6 @@ class Sc3TypesTest {
         assertEquals(
             listOf(AiHostKind.AI_ASSISTANT, AiHostKind.JUNIE),
             AiHostKind.entries.toList(),
-        )
-    }
-
-    @Test
-    fun `HostFile is the closed union of exactly mcp and rules`() {
-        assertEquals(
-            listOf(HostFile.MCP, HostFile.RULES),
-            HostFile.entries.toList(),
         )
     }
 
@@ -48,16 +40,16 @@ class Sc3TypesTest {
     @Test
     fun `MarkerDelimitedBlock carries beginMarker endMarker and body`() {
         val block = MarkerDelimitedBlock(
-            beginMarker = "<!-- insrc:mcp:start -->",
-            endMarker = "<!-- insrc:mcp:end -->",
-            body = "{ }",
+            beginMarker = "<!-- insrc:rules:start -->",
+            endMarker = "<!-- insrc:rules:end -->",
+            body = "steering",
         )
-        assertEquals("<!-- insrc:mcp:start -->", block.beginMarker)
-        assertEquals("<!-- insrc:mcp:end -->", block.endMarker)
-        assertEquals("{ }", block.body)
+        assertEquals("<!-- insrc:rules:start -->", block.beginMarker)
+        assertEquals("<!-- insrc:rules:end -->", block.endMarker)
+        assertEquals("steering", block.body)
         assertEquals(
             block,
-            MarkerDelimitedBlock("<!-- insrc:mcp:start -->", "<!-- insrc:mcp:end -->", "{ }"),
+            MarkerDelimitedBlock("<!-- insrc:rules:start -->", "<!-- insrc:rules:end -->", "steering"),
         )
     }
 }

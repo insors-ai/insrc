@@ -11,12 +11,13 @@ import com.intellij.openapi.diagnostic.logger
  * which runs off the UI/EDT thread, so opening a project is never blocked (HLD
  * performance invariant).
  *
- * For each host from [AiHostAdapter.detectPresent] it composes the
- * [InsrcMcpRegistration] with the active project's root and writes it into that
- * host's [HostFile.MCP] file. Empty detection is a silent no-op. Each host is
- * wired independently: a [HostFileAccessException] on one host is logged and does
- * not block the other. S002 writes ONLY the 'mcp' file — the 'rules' write is
- * S004 and uninstall cleanup (removeBlock) is S005.
+ * It composes the [InsrcMcpRegistration] server entry with the active project's
+ * root once, then for each host from [AiHostAdapter.detectPresent] writes it into
+ * that host's mcp config via [AiHostAdapter.writeMcpRegistration] (a JSON
+ * key-merge). Empty detection — or an unresolved insrc-mcp launch target — is a
+ * silent no-op. Each host is wired independently: a [HostFileAccessException] on
+ * one host is logged and does not block the other. S002 writes ONLY the mcp
+ * registration — the 'rules' write is S004 and uninstall cleanup is S005.
  */
 class McpWiringLifecycle(
     private val adapter: AiHostAdapter = AiHostAdapterImpl(),
@@ -30,9 +31,9 @@ class McpWiringLifecycle(
         if (hosts.isEmpty()) return // no AI host present -> no-op (re-check on later opens is S005)
 
         val launchTarget = launchTargetProvider()
+        val entry = InsrcMcpRegistration.composeServerEntry(ctx.projectRootPath, launchTarget) ?: return
         for (host in hosts) {
-            val block = InsrcMcpRegistration.compose(ctx.projectRootPath, launchTarget) ?: continue
-            runCatching { adapter.writeBlock(host, HostFile.MCP, block) }
+            runCatching { adapter.writeMcpRegistration(host, entry) }
                 .onFailure { e ->
                     log.warn("insrc: failed to wire mcp registration for ${host.kind} at ${host.mcpConfigPath}", e)
                 }

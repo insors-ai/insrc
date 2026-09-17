@@ -80,13 +80,18 @@ object MarkerSection {
 
     /**
      * Compute the text after removing the insrc marked section bounded by
-     * [beginMarker]/[endMarker] — the byte-exact inverse of [upsert]'s create /
-     * append paths, restoring the file to its pre-insrc content.
+     * [beginMarker]/[endMarker], restoring the file to its pre-insrc content.
      *
      *  - absent file / no markers -> nothing to remove (`content:null`, no-op);
      *  - malformed / duplicate markers -> left untouched (`content:null`, note);
      *  - otherwise strip the marked region and the single separator/newline the
      *    writer added, preserving all surrounding user content.
+     *
+     * Restore is byte-exact for the common case where the file ends in a newline
+     * (as `CLAUDE.md`/rules files do). For a file with NO trailing newline the
+     * [upsert] append path is lossy (both `"x"` and `"x\n"` map to the same
+     * composed text), so removal may leave one trailing newline — a benign
+     * difference for a text config.
      */
     fun removal(existing: String?, beginMarker: String, endMarker: String): Computation {
         if (existing == null) return Computation(null, Action.UNCHANGED)

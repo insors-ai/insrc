@@ -15,25 +15,13 @@ enum class AiHostKind {
 }
 
 /**
- * Which host-owned file an [AiHostAdapter] write/remove targets (Story S002 / sc3).
- *
- * Closed union: `MCP` is the host's MCP-server registration file (written by
- * S002), `RULES` is the host's guidance/rules file (written by S004). S002 only
- * ever writes [MCP]; it publishes the [RULES] capability for S004 to use.
- */
-enum class HostFile {
-    MCP,
-    RULES,
-}
-
-/**
  * A detected AI host (Story S002 / sc3) with its resolved host-owned file
  * locations. Immutable; produced only by [AiHostAdapter.detectPresent], so both
  * paths are always absolute and belong to an installed+enabled host.
  *
  * @property kind           which agentic host this is
- * @property mcpConfigPath  absolute path to the host's MCP-registration file
- * @property rulesFilePath  absolute path to the host's guidance/rules file
+ * @property mcpConfigPath  absolute path to the host's MCP-registration file (JSON)
+ * @property rulesFilePath  absolute path to the host's guidance/rules file (Markdown)
  */
 data class AiHost(
     val kind: AiHostKind,
@@ -42,14 +30,15 @@ data class AiHost(
 )
 
 /**
- * The replace-only unit written into a host-owned file (Story S002 / sc3, k4).
+ * The replace-only unit written into a host-owned MARKDOWN file (Story S002 /
+ * sc3, k4) — used for the 'rules' file (S004 steering).
  *
  * A marker-delimited block: [beginMarker] / [endMarker] bound the insrc region,
- * [body] is the content between them. The writer ([AiHostAdapter.writeBlock])
- * only ever creates, replaces, or removes the region between these markers —
- * surrounding user content is preserved verbatim. S002 composes the [HostFile.MCP]
- * block (the insrc-mcp registration); S004 composes the [HostFile.RULES] block
- * (steering).
+ * [body] is the content between them. The rules writer only ever creates,
+ * replaces, or removes the region between these markers — surrounding user
+ * content is preserved verbatim. (The JSON 'mcp' file is NOT written this way:
+ * HTML-comment markers are invalid in JSON, so the mcp registration is a JSON
+ * key-merge under `mcpServers.insrc` instead — see [AiHostAdapter.writeMcpRegistration].)
  */
 data class MarkerDelimitedBlock(
     val beginMarker: String,
@@ -73,12 +62,14 @@ class HostFileAccessException(
 /**
  * sc3 (Story S002): an abstraction over a detected JetBrains AI host.
  *
- * Presence detection plus a marker-delimited, replace-only write/remove
- * primitive over the host's own config/rules files (k4). S002 owns and
- * implements this; S004 (steering) and S005 (uninstall cleanup) consume it. The
- * primitive is host-file-agnostic — the per-host format recognition that
- * resolves each file lives in detection, so writes only ever touch a recognised,
- * anchored file.
+ * Presence detection plus replace-only, format-appropriate write/remove
+ * primitives over the host's own files (k4): a JSON KEY-MERGE for the JSON mcp
+ * config (`mcpServers.insrc`) and a MARKER-DELIMITED block for the Markdown
+ * rules file. Both preserve surrounding user content and are fully reversible.
+ * S002 owns and implements this; S004 (steering) writes the rules block and S005
+ * (uninstall cleanup) removes both. The per-host format recognition that resolves
+ * each file lives in detection, so writes only ever touch a recognised, anchored
+ * file.
  */
 interface AiHostAdapter {
     /**
@@ -91,23 +82,37 @@ interface AiHostAdapter {
     fun detectPresent(): List<AiHost>
 
     /**
-     * Write [block] into [host]'s [file], marker-delimited and replace-only (k4):
-     * if a block with the same markers already exists it is replaced in place,
-     * otherwise it is appended; all content outside the markers is preserved
-     * verbatim, and re-writing the same block leaves the file byte-identical.
+     * Install or replace the insrc entry under `mcpServers.insrc` in [host]'s
+     * JSON mcp config, preserving every other key/server verbatim and idempotent
+     * on re-run (k4). [serverEntryJson] is the JSON object value for the `insrc`
+     * key (composed by [InsrcMcpRegistration]).
      *
-     * @param host  a host returned by [detectPresent]
      * @throws HostFileAccessException if the file cannot be read or written
      *   (surfaced, not swallowed; no partial write is left behind)
      */
-    fun writeBlock(host: AiHost, file: HostFile, block: MarkerDelimitedBlock)
+    fun writeMcpRegistration(host: AiHost, serverEntryJson: String)
 
     /**
-     * Remove the insrc marker-delimited block from [host]'s [file], restoring the
-     * file to its pre-insrc content (the reverse of [writeBlock]); a no-op when
-     * no such block is present. Surrounding user content is preserved.
+     * Remove the insrc entry from [host]'s mcp config, restoring it to its
+     * pre-insrc content; a no-op when absent. Used by S005 (uninstall cleanup).
      *
      * @throws HostFileAccessException if the file cannot be read or written
      */
-    fun removeBlock(host: AiHost, file: HostFile)
+    fun removeMcpRegistration(host: AiHost)
+
+    /**
+     * Write [block] into [host]'s Markdown rules file, marker-delimited and
+     * replace-only (k4). Published for S004 (steering); S002 does not call it.
+     *
+     * @throws HostFileAccessException if the file cannot be read or written
+     */
+    fun writeRulesBlock(host: AiHost, block: MarkerDelimitedBlock)
+
+    /**
+     * Remove the insrc marker-delimited block from [host]'s rules file; a no-op
+     * when absent. Published for S005 (uninstall cleanup).
+     *
+     * @throws HostFileAccessException if the file cannot be read or written
+     */
+    fun removeRulesBlock(host: AiHost)
 }

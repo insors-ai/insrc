@@ -13,10 +13,11 @@ import java.io.IOException
  * cannot be a text marker block (HTML comments are invalid JSON). Instead the
  * replace anchor is the `mcpServers.insrc` KEY: [writeInsrcServer] parses the
  * existing config (or starts from `{}`), sets `mcpServers.insrc` to the composed
- * entry, and re-serialises — every OTHER key and server is preserved verbatim,
- * and re-writing the same entry is an idempotent no-op. [removeInsrcServer]
- * deletes only that key. The full content is composed in memory and written in
- * one call, so a failure surfaces [HostFileAccessException] with no partial write.
+ * entry, and re-serialises — every OTHER key and server is preserved (values,
+ * keys and order; the serializer normalizes whitespace to pretty JSON), and
+ * re-writing the same entry is an idempotent no-op. [removeInsrcServer] deletes
+ * only that key. The full content is composed in memory and written in one call,
+ * so a failure surfaces [HostFileAccessException] with no partial write.
  *
  * IO is injected ([HostFileIo]) so the failure path is unit-testable.
  */
@@ -34,7 +35,7 @@ class JsonMcpConfigWriter(private val io: HostFileIo = NioHostFileIo()) {
     fun writeInsrcServer(path: String, serverEntryJson: String) {
         val existing = readOrThrow(path)
         val root = if (existing.isNullOrBlank()) JsonObject() else parseObjectOrThrow(existing, path)
-        val servers = root.getAsJsonObject("mcpServers") ?: JsonObject().also { root.add("mcpServers", it) }
+        val servers = mcpServersOrThrow(root, path) ?: JsonObject().also { root.add("mcpServers", it) }
         servers.add(InsrcMcpRegistration.SERVER_KEY, JsonParser.parseString(serverEntryJson))
         val next = gson.toJson(root)
         // idempotent: skip the write if the serialised content is unchanged
@@ -43,18 +44,33 @@ class JsonMcpConfigWriter(private val io: HostFileIo = NioHostFileIo()) {
     }
 
     /**
-     * Remove the `mcpServers.insrc` entry, restoring the config to its pre-insrc
-     * content; a no-op when the entry (or the file) is absent.
+     * Remove the `mcpServers.insrc` entry, leaving every other key/server intact;
+     * a no-op when the entry (or the file) is absent. (If insrc had created the
+     * config, an empty `mcpServers` object may remain — valid and harmless.)
      *
      * @throws HostFileAccessException if the file cannot be read or written.
      */
     fun removeInsrcServer(path: String) {
         val existing = readOrThrow(path) ?: return // absent file -> nothing to remove
         val root = parseObjectOrThrow(existing, path)
-        val servers = root.getAsJsonObject("mcpServers") ?: return // no servers -> nothing to remove
+        val servers = mcpServersOrThrow(root, path) ?: return // no servers -> nothing to remove
         if (!servers.has(InsrcMcpRegistration.SERVER_KEY)) return // not present -> no-op
         servers.remove(InsrcMcpRegistration.SERVER_KEY)
         writeOrThrow(path, gson.toJson(root))
+    }
+
+    /**
+     * The `mcpServers` object, or `null` when the key is absent. A present-but-
+     * non-object `mcpServers` (string / array / number / null) is a malformed
+     * config: refuse it as [HostFileAccessException] rather than let Gson's
+     * `getAsJsonObject` leak a raw ClassCastException — and never clobber it.
+     */
+    private fun mcpServersOrThrow(root: JsonObject, path: String): JsonObject? {
+        val el = root.get("mcpServers") ?: return null
+        if (!el.isJsonObject) {
+            throw HostFileAccessException("insrc: host mcp config 'mcpServers' is not an object: $path")
+        }
+        return el.asJsonObject
     }
 
     private fun parseObjectOrThrow(text: String, path: String): JsonObject =

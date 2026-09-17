@@ -105,4 +105,18 @@ class JsonMcpConfigWriterTest {
         }
         assertEquals("this is not json {{{", io.content, "malformed config left untouched")
     }
+
+    @Test
+    fun nonObjectMcpServers_isRefusedAsHostFileAccessException_notClobbered() {
+        // 'mcpServers' present but not an object -> clean fail-safe refusal (not a
+        // leaked ClassCastException), and the file is left untouched.
+        for (malformed in listOf("""{"mcpServers":"x"}""", """{"mcpServers":[1,2]}""", """{"mcpServers":5}""", """{"mcpServers":null}""")) {
+            val io = FakeIo(content = malformed)
+            assertThrows(HostFileAccessException::class.java) {
+                JsonMcpConfigWriter(io).writeInsrcServer("/host/mcp.json", ENTRY)
+            }
+            assertEquals(malformed, io.content, "malformed mcpServers left untouched")
+            assertEquals(0, io.writes)
+        }
+    }
 }

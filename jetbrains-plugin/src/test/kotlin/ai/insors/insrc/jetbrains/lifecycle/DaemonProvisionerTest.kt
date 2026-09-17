@@ -77,6 +77,17 @@ class DaemonProvisionerTest {
         val four = outcomeForExit(4)
         assertFalse(four.ok); assertTrue(four.reason!!.contains("build"))
 
+        // UPDATE (daemon-ctl.sh) uses DIFFERENT exit-code semantics than the installer
+        val update = tempScript("daemon-ctl.sh")
+        fun updateOutcomeForExit(code: Int) =
+            ScriptDaemonProvisioner(RecordingRunner { code }, locatorFor(install = null, update = update)).run(ProvisionKind.UPDATE, node)
+        // exit 3 for update = git unclean/diverged, NOT "daemon source could not be found"
+        val updateThree = updateOutcomeForExit(3)
+        assertFalse(updateThree.ok)
+        assertTrue(updateThree.reason!!.contains("diverged") || updateThree.reason!!.contains("uncommitted"))
+        // exit 2 for update = daemon dir missing / not a git checkout
+        assertTrue(updateOutcomeForExit(2).reason!!.contains("git checkout"))
+
         // spawn failure -> captured, not thrown
         val spawnFail = ScriptDaemonProvisioner(SubprocessRunner { throw IOException("no bash") }, locatorFor(install, null))
             .run(ProvisionKind.INSTALL, node)

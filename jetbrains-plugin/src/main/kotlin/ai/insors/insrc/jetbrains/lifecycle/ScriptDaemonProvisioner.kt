@@ -69,7 +69,7 @@ class ScriptDaemonProvisioner(
         return try {
             val exit = runner.run(Subprocess(command = command, env = env))
             if (exit == 0) ProvisionOutcome(ok = true, exitCode = 0)
-            else ProvisionOutcome(ok = false, exitCode = exit, reason = mapReason(exit))
+            else ProvisionOutcome(ok = false, exitCode = exit, reason = mapReason(kind, exit))
         } catch (e: IOException) {
             log.warn("insrc: failed to spawn daemon setup for $kind", e)
             ProvisionOutcome(ok = false, reason = "insrc setup could not start: ${e.message}")
@@ -84,13 +84,27 @@ class ScriptDaemonProvisioner(
         return baseEnv + ("PATH" to newPath)
     }
 
-    /** Map the installer's documented exit codes to a user-facing reason. */
-    private fun mapReason(exitCode: Int): String =
-        when (exitCode) {
-            2 -> "a prerequisite is missing (node / git / npm)"
-            3 -> "the daemon source could not be found"
-            4 -> "the git / npm / build step failed"
-            else -> "setup failed (exit $exitCode)"
+    /**
+     * Map a script's documented exit codes to a user-facing reason. INSTALL runs
+     * insrc-daemon-install.sh (2 prereq / 3 daemon-source-missing / 4 git-npm-build);
+     * UPDATE runs daemon-ctl.sh, whose codes differ (2 daemon-dir-missing / not a
+     * git checkout, 3 git in an unclean/diverged state, 4 npm/build/start). Each
+     * kind is mapped with its own script's semantics so the message is accurate.
+     */
+    private fun mapReason(kind: ProvisionKind, exitCode: Int): String =
+        when (kind) {
+            ProvisionKind.INSTALL -> when (exitCode) {
+                2 -> "a prerequisite is missing (node / git / npm)"
+                3 -> "the daemon source could not be found"
+                4 -> "the git / npm / build step failed"
+                else -> "install failed (exit $exitCode)"
+            }
+            ProvisionKind.UPDATE -> when (exitCode) {
+                2 -> "the daemon install is missing or not a git checkout"
+                3 -> "the daemon repo has uncommitted or diverged changes — resolve it manually"
+                4 -> "the git / npm / build step failed"
+                else -> "update failed (exit $exitCode)"
+            }
         }
 
     /** The real runner: spawn via [ProcessBuilder], inheriting IO, returning the exit code. */

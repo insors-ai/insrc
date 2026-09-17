@@ -40,16 +40,16 @@ class DaemonLifecycleService(
     private val inFlight = AtomicBoolean(false)
 
     override fun onProjectOpened(ctx: ProjectContext) {
-        // Single-flight: a second (near-)concurrent project-open does not launch a
-        // second install/update against the shared app-scoped daemon.
-        if (!inFlight.compareAndSet(false, true)) return
+        // Probe + decide runs off the EDT (project opening is never blocked). The
+        // single-flight guard is NOT taken here — it protects the actual setup
+        // ([startSetup]), so a passive OfferSetup offer never holds it, and the
+        // RunSilently and the (later, on-EDT) OfferSetup-accept paths are BOTH
+        // guarded + dispatched off-EDT.
         execute {
             try {
                 evaluate()
             } catch (t: Throwable) {
                 log.warn("insrc: daemon-lifecycle evaluation failed", t)
-            } finally {
-                inFlight.set(false)
             }
         }
     }
@@ -63,11 +63,32 @@ class DaemonLifecycleService(
         val state = gateway.probe() // never throws: unreachable -> ABSENT
         when (val action = policy.decide(state, consent.isConsented())) {
             DaemonSetupAction.NoOp -> Unit
+            // Surface the passive one-click offer; the ACCEPT (which may fire later
+            // on the EDT) re-enters the guarded, off-EDT setup path.
             is DaemonSetupAction.OfferSetup -> offerSetup(action.kind) {
-                consent.recordConsent()
-                performSetup(action.kind)
+                startSetup(action.kind, recordConsent = true)
             }
-            is DaemonSetupAction.RunSilently -> performSetup(action.kind)
+            is DaemonSetupAction.RunSilently -> startSetup(action.kind, recordConsent = false)
+        }
+    }
+
+    /**
+     * Single-flight + off-EDT dispatch for the actual install/update. A second
+     * (near-)concurrent trigger — whether a silent re-check or a second window's
+     * accepted offer — observes the in-flight run and no-ops, so the app-scoped
+     * daemon is never double-installed; the work always runs off the EDT.
+     */
+    private fun startSetup(kind: ProvisionKind, recordConsent: Boolean) {
+        if (!inFlight.compareAndSet(false, true)) return
+        execute {
+            try {
+                if (recordConsent) consent.recordConsent()
+                performSetup(kind)
+            } catch (t: Throwable) {
+                log.warn("insrc: daemon $kind failed", t)
+            } finally {
+                inFlight.set(false)
+            }
         }
     }
 

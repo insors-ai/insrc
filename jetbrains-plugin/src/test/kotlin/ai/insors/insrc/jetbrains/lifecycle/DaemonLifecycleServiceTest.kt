@@ -152,25 +152,34 @@ class DaemonLifecycleServiceTest : BasePlatformTestCase() {
     }
 
     fun testSingleFlightGuard_secondConcurrentTrigger_doesNotLaunchSecondInstaller() {
-        val provisioner = RecordingProvisioner()
-        // a DEFERRING executor: captures runnables instead of running them, so the
-        // first trigger holds the single-flight guard while the second arrives.
-        val deferred = mutableListOf<Runnable>()
-        val service = DaemonLifecycleService(
+        // A provisioner that, WHILE it is installing (guard held), fires a second
+        // project-open — simulating a concurrent trigger mid-install. The guard must
+        // make that second trigger a no-op, so only one install ever runs.
+        lateinit var service: DaemonLifecycleService
+        val runs = mutableListOf<ProvisionKind>()
+        val reentrantProvisioner = object : DaemonProvisioner {
+            override fun run(kind: ProvisionKind, node: NodeRuntime): ProvisionOutcome {
+                runs += kind
+                service.onProjectOpened(ctx) // concurrent trigger arrives while in-flight
+                return ProvisionOutcome(ok = true, exitCode = 0)
+            }
+        }
+        service = DaemonLifecycleService(
             gateway = FakeGateway(DaemonState.ABSENT),
-            consent = FakeConsent(initial = true),
+            consent = FakeConsent(initial = true), // RunSilently -> setup runs directly
             resolver = { systemNode },
-            provisioner = provisioner,
-            offerSetup = { _, onAccept -> onAccept() },
+            provisioner = reentrantProvisioner,
+            offerSetup = { _, _ -> },
             notify = {},
-            execute = { deferred += it },
+            execute = syncExecute,
         )
 
-        service.onProjectOpened(ctx) // acquires the guard, defers r1
-        service.onProjectOpened(ctx) // guard held -> must NOT defer a second runnable
+        service.onProjectOpened(ctx)
 
-        assertEquals("a second concurrent trigger does not enqueue a second run", 1, deferred.size)
-        deferred.forEach { it.run() } // run r1 -> exactly one install
-        assertEquals(listOf(ProvisionKind.INSTALL), provisioner.runs)
+        assertEquals(
+            "a concurrent trigger during an in-flight install does not launch a second (single-flight)",
+            listOf(ProvisionKind.INSTALL),
+            runs,
+        )
     }
 }

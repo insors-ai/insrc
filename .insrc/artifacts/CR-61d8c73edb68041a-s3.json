@@ -1,0 +1,58 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1789658498530-ej5pgs",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-17T15:21:38.531Z",
+    "model": "client",
+    "elapsedMs": 8,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "61d8c73edb68041a",
+    "storyId": "s3"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "61d8c73edb68041a",
+    "storyId": "s3",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleService.kt"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleService.kt:96",
+            "message": "Accepted narrow race (self-healing, left by design): if a user accepts an OfferSetup while another window's setup is already in-flight, startSetup's compareAndSet loses and the accept silently no-ops (the balloon is already expired, consent not recorded). No broken state results — the daemon stays ABSENT/STALE and the offer re-appears on the next project open, so it self-heals. Noted for transparency; not worth adding cross-window accept coordination.",
+            "expectationRef": "single-flight (LLD concurrent-window error case)",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 1
+    }
+  }
+}

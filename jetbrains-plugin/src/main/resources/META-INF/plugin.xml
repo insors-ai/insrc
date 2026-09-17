@@ -27,6 +27,11 @@
     <extensions defaultExtensionNs="com.intellij">
         <postStartupActivity
             implementation="ai.insors.insrc.jetbrains.platform.InsrcProjectOpenActivity"/>
+        <!--
+          Notification group for insrc's user-visible outcomes (Story S003 / t7):
+          the one-click daemon setup offer and setup/update failure reports.
+        -->
+        <notificationGroup id="insrc" displayType="BALLOON"/>
     </extensions>
 
     <!--

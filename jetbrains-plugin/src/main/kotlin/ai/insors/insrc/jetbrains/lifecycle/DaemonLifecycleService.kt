@@ -80,15 +80,23 @@ class DaemonLifecycleService(
      */
     private fun startSetup(kind: ProvisionKind, recordConsent: Boolean) {
         if (!inFlight.compareAndSet(false, true)) return
-        execute {
-            try {
-                if (recordConsent) consent.recordConsent()
-                performSetup(kind)
-            } catch (t: Throwable) {
-                log.warn("insrc: daemon $kind failed", t)
-            } finally {
-                inFlight.set(false)
+        try {
+            execute {
+                try {
+                    if (recordConsent) consent.recordConsent()
+                    performSetup(kind)
+                } catch (t: Throwable) {
+                    log.warn("insrc: daemon $kind failed", t)
+                } finally {
+                    inFlight.set(false)
+                }
             }
+        } catch (t: Throwable) {
+            // Dispatch itself failed (e.g. app pool shut down): release the guard here
+            // so it is not left stuck holding the single-flight — the release in the
+            // runnable's finally would never run.
+            inFlight.set(false)
+            log.warn("insrc: could not dispatch daemon $kind", t)
         }
     }
 
@@ -204,6 +212,7 @@ class DefaultDaemonScriptLocator(
         val stream = bundledInstaller() ?: return null
         return stream.use { input ->
             val tmp = java.nio.file.Files.createTempFile("insrc-daemon-install", ".sh")
+            tmp.toFile().deleteOnExit() // don't accumulate extracted installers across sessions
             java.nio.file.Files.copy(input, tmp, java.nio.file.StandardCopyOption.REPLACE_EXISTING)
             tmp
         }

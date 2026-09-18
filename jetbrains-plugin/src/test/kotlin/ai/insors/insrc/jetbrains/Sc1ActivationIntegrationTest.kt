@@ -3,6 +3,7 @@ package ai.insors.insrc.jetbrains
 import ai.insors.insrc.jetbrains.daemon.DaemonGatewayImpl
 import ai.insors.insrc.jetbrains.daemon.DaemonResult
 import ai.insors.insrc.jetbrains.daemon.DaemonRpc
+import ai.insors.insrc.jetbrains.platform.AppScopedConsumers
 import ai.insors.insrc.jetbrains.platform.InsrcProjectOpenActivity
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import kotlinx.coroutines.runBlocking
@@ -18,6 +19,25 @@ import kotlinx.coroutines.runBlocking
  * JUnit4-style (BasePlatformTestCase); run under the vintage engine.
  */
 class Sc1ActivationIntegrationTest : BasePlatformTestCase() {
+
+    override fun setUp() {
+        super.setUp()
+        // execute() now registers the app-scoped production consumers on its first
+        // call. Claim the guard (no-op) so this fixture test stays hermetic — the
+        // real McpWiring/Steering/Daemon/Onboarding consumers are never registered
+        // (no writes to a developer's real host files) — and isolate the broadcaster.
+        AppScopedConsumers.claimForTest()
+        LifecycleBroadcaster.clear()
+    }
+
+    override fun tearDown() {
+        try {
+            LifecycleBroadcaster.clear()
+            AppScopedConsumers.resetForTest()
+        } finally {
+            super.tearDown()
+        }
+    }
 
     fun testProjectOpenActivityBroadcastsContextForOpenedProject() {
         val received = mutableListOf<ProjectContext>()

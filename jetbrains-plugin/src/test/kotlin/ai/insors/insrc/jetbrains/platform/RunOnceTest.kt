@@ -58,6 +58,38 @@ class RunOnceTest {
     }
 
     @Test
+    fun `a losing caller blocks until the winning action completes`() {
+        val guard = RunOnce()
+        val order = java.util.concurrent.CopyOnWriteArrayList<String>()
+        val winnerInside = CountDownLatch(1)
+        val release = CountDownLatch(1)
+
+        val winner = Thread {
+            guard.run {
+                winnerInside.countDown()
+                release.await()          // hold the winner mid-action
+                order += "winner-done"
+            }
+        }
+        winner.start()
+        assertTrue(winnerInside.await(2, TimeUnit.SECONDS), "the winner claimed the flag and entered its action")
+
+        val loser = Thread { guard.run { }; order += "loser-returned" }
+        loser.start()
+        Thread.sleep(80)                 // give the loser a chance to (wrongly) return early
+        assertTrue(order.isEmpty(), "the loser must not return while the winner's action is still running")
+
+        release.countDown()              // let the winner finish
+        winner.join(2000)
+        loser.join(2000)
+        assertEquals(
+            listOf("winner-done", "loser-returned"),
+            order.toList(),
+            "the loser returns only AFTER the winner's action completes",
+        )
+    }
+
+    @Test
     fun `a throwing action is caught, the flag stays claimed, and there is no retry`() {
         val guard = RunOnce()
         val count = AtomicInteger(0)

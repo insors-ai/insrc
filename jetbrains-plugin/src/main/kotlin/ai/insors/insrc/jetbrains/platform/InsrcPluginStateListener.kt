@@ -12,6 +12,8 @@ import com.intellij.ide.plugins.IdeaPluginDescriptor
 import com.intellij.ide.plugins.PluginInstaller
 import com.intellij.ide.plugins.PluginStateListener
 import com.intellij.openapi.diagnostic.logger
+import org.jetbrains.annotations.TestOnly
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -45,14 +47,26 @@ internal class InsrcPluginStateListener : PluginStateListener {
  */
 internal class RunOnce {
     private val done = AtomicBoolean(false)
+    private val complete = CountDownLatch(1)
 
-    /** Runs [action] iff this is the first call; returns whether it ran now. */
+    /**
+     * Runs [action] iff this is the first call; returns whether it ran now. A
+     * concurrent LOSER blocks until the winner's action has fully completed, so
+     * no caller ever proceeds while the winner is mid-run (e.g. observing a
+     * half-registered consumer list). The `finally` guarantees the latch drops
+     * even if the action throws, so losers never hang.
+     */
     fun run(action: () -> Unit): Boolean {
-        if (!done.compareAndSet(false, true)) return false
+        if (!done.compareAndSet(false, true)) {
+            complete.await()
+            return false
+        }
         try {
             action()
         } catch (t: Throwable) {
             log.warn("insrc: app-scoped consumer registration failed", t)
+        } finally {
+            complete.countDown()
         }
         return true
     }
@@ -79,7 +93,7 @@ internal class RunOnce {
  * guard).
  */
 internal object AppScopedConsumers {
-    private val guard = RunOnce()
+    @Volatile private var guard = RunOnce()
 
     /** Idempotent: registers the five consumers on the first call, no-ops after. */
     fun ensureRegistered() = guard.run {
@@ -89,4 +103,16 @@ internal object AppScopedConsumers {
         LifecycleBroadcaster.register(SteeringInjectionLifecycle())
         LifecycleBroadcaster.register(OnboardingLifecycle.production())
     }
+
+    /**
+     * Test seam: claim the guard with a no-op so a fixture test that drives
+     * [InsrcProjectOpenActivity].execute stays hermetic — the real production
+     * consumers are never registered (no writes to a developer's real host files).
+     */
+    @TestOnly
+    fun claimForTest() = guard.run { }
+
+    /** Test seam: re-arm the guard for the next test. */
+    @TestOnly
+    fun resetForTest() { guard = RunOnce() }
 }

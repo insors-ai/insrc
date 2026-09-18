@@ -4,12 +4,72 @@
     <vendor url="https://github.com/insors-ai/insrc">insors-ai</vendor>
 
     <description><![CDATA[
-        Brings the insrc code-knowledge system into the JetBrains IDE family
-        (IntelliJ IDEA, PyCharm, GoLand, WebStorm). A thin orchestrator that wires
-        insrc's grounded-analyze and tracked-workflow capabilities into the IDE's
-        own AI assistant and manages the backing daemon — it owns no reasoning of
-        its own.
+        <p><b>insrc</b> brings the insrc code-knowledge system into the JetBrains
+        IDE family &mdash; IntelliJ IDEA, PyCharm, GoLand, and WebStorm &mdash; from
+        a single install. It is a <b>thin orchestrator that owns no reasoning of its
+        own</b>: it wires insrc's grounded-analyze and tracked-workflow capabilities
+        into the IDE's own AI assistant and manages the backing daemon, so your
+        assistant answers from a citation-grounded model of <i>your</i> codebase
+        rather than guessing.</p>
+
+        <h3>What it does</h3>
+        <ul>
+            <li><b>One integration, four IDEs.</b> A single artifact activates
+                identically in IntelliJ IDEA, PyCharm, GoLand, and WebStorm.</li>
+            <li><b>Wires your AI host automatically.</b> On project open it detects
+                your agentic assistant (JetBrains AI Assistant or Junie) and
+                registers the insrc MCP server plus the tracked-workflow steering
+                into that host's own configuration.</li>
+            <li><b>One-click project enablement.</b> An "Enable insrc for this
+                project" prompt registers the open project with the insrc daemon;
+                every capability call is scoped to that project's path.</li>
+            <li><b>Manages the backing daemon.</b> Ensures the daemon is present and
+                current, provisioning a private Node runtime when the system one is
+                missing &mdash; first-time setup is a single explicit consent, updates
+                are silent.</li>
+            <li><b>Grounded analyze + tracked workflow.</b> Your assistant explores
+                the code through a citation-grounded graph, and features route through
+                insrc's tracked design &rarr; review &rarr; plan &rarr; build workflow.</li>
+            <li><b>Clean and reversible.</b> All writes into host config/rules files
+                are marker-delimited and preserve your own content; uninstalling the
+                plugin removes exactly those blocks, while a mere disable leaves them
+                intact.</li>
+        </ul>
+
+        <h3>Privacy</h3>
+        <p>The plugin opens no cloud path and stores no credentials &mdash; all
+        reasoning runs through your assistant's existing CLI/OAuth sessions.</p>
+
+        <h3>Requirements</h3>
+        <ul>
+            <li>A JetBrains AI host (AI Assistant or Junie) &mdash; without one the
+                plugin stays dormant and re-checks on later project opens.</li>
+            <li>Node (used by the daemon); the plugin provisions a private runtime
+                automatically if the system Node is unsuitable.</li>
+            <li>The insrc daemon, which the plugin installs on first use.</li>
+        </ul>
     ]]></description>
+
+    <change-notes><![CDATA[
+        <h3>0.1.1</h3>
+        <ul>
+            <li><b>Compatibility:</b> removed the upper IDE-build bound &mdash; the
+                plugin now loads on current and future IDE releases (2024.2 and
+                later), since it depends only on the stable platform module.</li>
+        </ul>
+        <h3>0.1.0</h3>
+        <ul>
+            <li>Initial release.</li>
+            <li>Single-artifact activation across IntelliJ IDEA, PyCharm, GoLand, and
+                WebStorm.</li>
+            <li>AI-host detection (AI Assistant / Junie) with automatic MCP-server and
+                tracked-workflow steering registration.</li>
+            <li>One-click project registration against the insrc daemon.</li>
+            <li>Daemon lifecycle management: presence/staleness check, consented
+                first-time setup, tiered Node runtime.</li>
+            <li>Clean, reversible uninstall of all host-file writes.</li>
+        </ul>
+    ]]></change-notes>
 
     <!--
       Depend ONLY on the common platform module (Story S001 / lc1, ac3): this is

@@ -59,7 +59,13 @@ intellijPlatform {
         version = providers.gradleProperty("pluginVersion")
         ideaVersion {
             sinceBuild = providers.gradleProperty("pluginSinceBuild")
-            untilBuild = providers.gradleProperty("pluginUntilBuild")
+            // Open-ended upper bound: the plugin depends only on the stable
+            // com.intellij.modules.platform, so it is forward-compatible across
+            // IDE releases. Explicitly unset untilBuild (a provider yielding null)
+            // rather than omitting it — omitting makes the Gradle plugin derive an
+            // upper bound from the compile platform (242.*), which is the opposite
+            // of what we want.
+            untilBuild = provider { null }
         }
     }
 

@@ -387,14 +387,26 @@ function recordRefToDisk(repoPath: string, issueHash: string, ref: string): void
 	patchTrackerMeta(json, { issueRef: ref });
 }
 
-/** Map a WorkItemRef to the parent's GH issue ref, trying the most specific
- *  identifier form first (slug → storyId label → epicHash). */
+/** The identifier forms a WorkItemRef can resolve through, most specific first.
+ *  `slug` is the sc3 locator's primary output — a full hierarchical slug (e.g.
+ *  `E<date><hash>-S001`) that round-trips through `parseWorkflowId`; `storyId`
+ *  is the single-epic structural-label fallback (`s\d+`, resolvable only when the
+ *  artifacts dir holds exactly one epic). A bare `epicHash` (hex-16) is NOT a form
+ *  `resolveWorkflowRef` accepts — it needs the full `E<date><hash>` id, not the
+ *  raw hash — so it is deliberately NOT a candidate: a WorkItemRef pinned ONLY by
+ *  epicHash cannot resolve a parent GH issue, and the create degrades to unlinked
+ *  (never an error). sc3 always sets `slug`, so the primary candidate resolves. */
+export function parentRefIdentifiers(parentRef: WorkItemRef): string[] {
+	const ids: string[] = [];
+	if (parentRef.slug)    ids.push(parentRef.slug);
+	if (parentRef.storyId) ids.push(parentRef.storyId);
+	return ids;
+}
+
+/** Map a WorkItemRef to the parent's GH issue ref via the resolvable identifier
+ *  forms (see `parentRefIdentifiers`). Returns null when none resolves. */
 function defaultResolveParentIssueRef(repoPath: string, parentRef: WorkItemRef): string | null {
-	const candidates: string[] = [];
-	if (parentRef.slug)     candidates.push(parentRef.slug);
-	if (parentRef.storyId)  candidates.push(parentRef.storyId);
-	if (parentRef.epicHash) candidates.push(parentRef.epicHash);
-	for (const id of candidates) {
+	for (const id of parentRefIdentifiers(parentRef)) {
 		const ref = issueForWorkflowId(repoPath, id);
 		if (ref !== null && ref.length > 0) return ref;
 	}
@@ -422,7 +434,12 @@ export function defaultTrackerCreateDeps(
 	};
 }
 
-/** Real close-side deps. */
+/** Real close-side deps. NOTE on the labels coupling: the close-side
+ *  `relink-by-label` recovery searches by `deps.labels`, so it can only re-find
+ *  an issue that was CREATED with a matching non-empty label set. The default
+ *  `labels: []` (matching `defaultTrackerCreateDeps`) means the recovery cleanly
+ *  reports "no labels" rather than misbehaving — to enable it, a caller must
+ *  inject the SAME non-empty `labels` on both the create and close deps. */
 export function defaultTrackerCloseDeps(
 	opts?: { readonly labels?: readonly string[]; readonly promptOnLostRef?: PromptOnLostRef },
 ): TrackerCloseDeps {

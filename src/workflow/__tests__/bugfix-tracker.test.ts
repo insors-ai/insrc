@@ -29,6 +29,7 @@ import {
 	closeBugfixTrackerIssue,
 	defaultTrackerCreateDeps,
 	defaultTrackerCloseDeps,
+	parentRefIdentifiers,
 	type TrackerCreateDeps,
 	type TrackerCloseDeps,
 	type PromptOnLostRef,
@@ -308,16 +309,33 @@ test("prompt-on-lost-ref (close): 'relink-by-label' with no labels -> skipped (a
 	assert.equal(spy.closeCalls.length, 0);
 });
 
-test('prompt-on-lost-ref default: no prompter injected -> ghFindIssueByLabels NOT called on any normal create path', async () => {
-	// The default deps carry defaultPromptOnLostRef (skip). A normal create never
-	// touches the label query — proven by a create with a findByLabels spy that
-	// must never fire (create deps have no findByLabels; assert via close default).
+test('close default (no prompter): skip never re-discovers by label', async () => {
+	// The default promptOnLostRef = skip. A configured close with no recorded ref
+	// must NOT fire the label query — it just reports skipped.
 	let findCalled = false;
 	const spy: CloseSpy = { closeCalls: [], recorded: [] };
 	const deps = makeCloseDeps({ spy, readRecordedRef: () => null, findByLabels: () => { findCalled = true; return 'x'; } });
 	const r = await closeBugfixTrackerIssue(IN, deps);   // default promptOnLostRef = skip
 	assert.equal(r.status, 'skipped');
-	assert.equal(findCalled, false, 'default skip never re-discovers by label (a1 no-per-create-round-trip)');
+	assert.equal(findCalled, false, 'default skip never re-discovers by label');
+});
+
+test('normal create path: promptOnLostRef is never consulted (a1 no-per-create-round-trip)', async () => {
+	// A successful create (recordRef ok) touches neither the prompt nor any label
+	// query — TrackerCreateDeps structurally has no findByLabels member at all.
+	let promptCalled = false;
+	const deps = makeCreateDeps({ promptOnLostRef: () => { promptCalled = true; return { action: 'skip' }; } });
+	const r = await createBugfixTrackerIssue(IN, deps);
+	assert.equal(r.status, 'created');
+	assert.equal(promptCalled, false, 'a successful create never prompts');
+});
+
+test('parentRefIdentifiers: slug first, then storyId; a bare epicHash is not a resolvable candidate (MED-1)', () => {
+	assert.deepEqual(parentRefIdentifiers({ slug: 'E202609181703991c-S005', storyId: 's5' }), ['E202609181703991c-S005', 's5']);
+	assert.deepEqual(parentRefIdentifiers({ storyId: 's5' }), ['s5']);
+	assert.deepEqual(parentRefIdentifiers({ slug: 'E202609181703991c-S005' }), ['E202609181703991c-S005']);
+	assert.deepEqual(parentRefIdentifiers({ epicHash: '1703991c69967193' }), [], 'epicHash alone is not a resolvable id form');
+	assert.deepEqual(parentRefIdentifiers({}), []);
 });
 
 // --- integration: create -> record -> close round-trip over a fake gh ------

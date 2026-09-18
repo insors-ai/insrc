@@ -20,6 +20,7 @@ export {
 	defaultTrackerCreateDeps,
 	defaultTrackerCloseDeps,
 	defaultPromptOnLostRef,
+	parentRefIdentifiers,
 	type TrackerCreateDeps,
 	type TrackerCloseDeps,
 	type TrackerIssueResult,

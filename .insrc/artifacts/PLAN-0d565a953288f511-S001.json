@@ -1,0 +1,231 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1789714623139-hj9faa",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-18T07:00:44.529Z",
+    "epicCreatedAt": "2026-09-18T07:00:44.539Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 221365,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "0d565a953288f511",
+    "epicSlug": "resolve-jetbrains-marketplace-plugin-verifier-s",
+    "storyId": "S001",
+    "lldRunId": "wf-1789713946904-tv18xw",
+    "lldEffectiveHash": "0d565a953288f51120834c0e94b5876368e120a342c4866ca80c87d2c2e2f936",
+    "approvedAt": "2026-09-18T08:50:20.644Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Host-probe: swap to public PluginManager.findEnabledPlugin",
+        "summary": "In JetBrainsHostProbes.isInstalledAndEnabled, replace `PluginManagerCore.getPlugin(PluginId.getId(id))` + `descriptor != null && descriptor.isEnabled` with `PluginManager.getInstance().findEnabledPlugin(PluginId.getId(id)) != null`. Drop the `com.intellij.ide.plugins.PluginManagerCore` import; keep public `PluginManager` + `PluginId`. Semantics unchanged (installed AND enabled; a disabled/absent host stays 'not present'). Independent of the app-init migration.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "isInstalledAndEnabled resolves each id via PluginManager.getInstance().findEnabledPlugin(PluginId.getId(id)) != null; no PluginManagerCore.getPlugin or PluginDescriptor.isEnabled remains in the file.",
+          "The PluginManagerCore import is removed; the file compiles (./gradlew compileKotlin) with only public PluginManager + PluginId imports.",
+          "A disabled or absent host plugin still yields not-present (return value semantics identical to before)."
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "JetBrainsHostProbes host detection: a present+enabled host resolves, an absent/disabled host is omitted (via the public findEnabledPlugin path)"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "App-init migration: run-once registration + delete InsrcAppLifecycle",
+        "summary": "Move the five app-scoped consumer registrations off the internal AppLifecycleListener.appStarted() to a run-once path (LLD a2). Extract the registration body (PluginInstaller.addStateListener(InsrcPluginStateListener()) + the four LifecycleBroadcaster.register calls for McpWiringLifecycle/DaemonLifecycleService.production/SteeringInjectionLifecycle/OnboardingLifecycle.production) into a once-only helper guarded by a process-wide AtomicBoolean compareAndSet, wrapped in try/catch that logs a factory throwable (getLogger().warn) without aborting. Invoke that helper at the TOP of InsrcProjectOpenActivity.execute, before the existing project-open broadcast. Delete the InsrcAppLifecycle class and its <applicationListeners> <listener topic=AppLifecycleListener> entry in plugin.xml. InsrcPluginStateListener itself is unchanged. Structure the helper so it is unit-testable off-platform (a registrar seam). This is one atomic change — splitting the helper/invoke/delete risks a double- or zero-registration window.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "The five consumers are registered exactly once per process via an AtomicBoolean.compareAndSet-guarded helper; a second/concurrent invocation registers nothing further.",
+          "InsrcProjectOpenActivity.execute invokes the once-only registration BEFORE broadcasting the project-open, so the first opened project is wired.",
+          "InsrcAppLifecycle is deleted and its <applicationListeners> entry is removed from plugin.xml; no override of AppLifecycleListener.appStarted() remains; no other Kotlin references InsrcAppLifecycle.",
+          "A throwable from a consumer factory is caught + logged and does not abort the project-open broadcast."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "the run-once registration helper: repeated invocation registers the app-scoped consumers exactly once (a counting/fake registrar sees N registrations on the first call and 0 on subsequent calls)"
+          },
+          {
+            "level": "unit",
+            "name": "concurrent invocation: only one caller's CAS wins; total registrations == the consumer count"
+          },
+          {
+            "level": "integration",
+            "name": "InsrcProjectOpenActivity: opening a project runs the once-only registration then broadcasts the project-open (consumers wired)"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Tests: run-once idempotency unit + extended fixture integration",
+        "summary": "Add a JUnit5 unit test (condition-first asserts) exercising the run-once registration helper against a fake/counting registrar seam: repeated invocation registers the five consumers exactly once; concurrent invocation has exactly one CAS winner (total registrations == consumer count). Keep/extend the fixture integration tests (junit-vintage BasePlatformTestCase, LifecycleBroadcaster.clear() in setUp): OnboardingCleanupIntegrationTest still proves a true firePluginUninstalled restores host mcp.json + rules.md and a disable does not; and host detection still treats an installed+enabled host as present and a disabled/absent one as not-present via the findEnabledPlugin path. Assert UninstallPolicy.shouldSignalUninstall is unchanged (UNINSTALL signals, disable does not).",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "A unit test proves the run-once helper registers the five consumers exactly once under repeated and concurrent invocation.",
+          "OnboardingCleanupIntegrationTest (and the host-detection tests) stay green and continue to prove uninstall-restores-vs-disable-leaves and installed-AND-enabled detection.",
+          "UninstallPolicy.shouldSignalUninstall behavior (UNINSTALL=true, disable=false) is covered and unchanged."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "UninstallPolicy.shouldSignalUninstall unchanged (UNINSTALL signals, disable does not)"
+          },
+          {
+            "level": "integration",
+            "name": "OnboardingCleanupIntegrationTest (extended): a true firePluginUninstalled still restores host mcp.json + rules.md to pre-insrc bytes; a mere disable leaves them"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Local build + verifyPlugin sweep (0 internal + 0 deprecated)",
+        "summary": "Run ./gradlew test and ./gradlew verifyPlugin locally (JDK21 + the committed 8.10.2 wrapper). Confirm the full JUnit suite is green and the IntelliJ Plugin Verifier reports ZERO internal-API and ZERO deprecated-API usages for the three migrated sites (AppLifecycleListener.appStarted, PluginManagerCore.getPlugin, PluginDescriptor.isEnabled) while retaining the Compatible verdict (since-build 242, open-ended). No GitHub CI. Fix any fallout.",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "./gradlew test is green (all JUnit5 + BasePlatformTestCase suites, incl. the new run-once test).",
+          "./gradlew verifyPlugin reports Compatible with 0 internal-API and 0 deprecated-API usages for appStarted / PluginManagerCore.getPlugin / PluginDescriptor.isEnabled."
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "./gradlew verifyPlugin: 0 internal + 0 deprecated for appStarted / PluginManagerCore.getPlugin / PluginDescriptor.isEnabled, Compatible retained"
+          },
+          {
+            "level": "integration",
+            "name": "./gradlew test: full JUnit5 + BasePlatformTestCase suite green including the new run-once test"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "./gradlew verifyPlugin verdict: no 'AppLifecycleListener.appStarted() is overridden' internal usage",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "no 'PluginManagerCore.getPlugin' internal usage",
+        "coveredByTaskIds": [
+          "t1",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "no 'PluginDescriptor.isEnabled()' deprecated usage",
+        "coveredByTaskIds": [
+          "t1",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "Compatible verdict retained (since-build 242, open-ended)",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "the run-once registration helper: repeated invocation registers the app-scoped consumers exactly once (a counting/fake registrar sees N registrations on the first call and 0 on subsequent calls)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "concurrent invocation: only one caller's CAS wins; total registrations == the consumer count",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "UninstallPolicy.shouldSignalUninstall unchanged (UNINSTALL signals, disable does not)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "InsrcProjectOpenActivity: opening a project runs the once-only registration then broadcasts the project-open (consumers wired)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "OnboardingCleanupIntegrationTest (extended): a true firePluginUninstalled still restores host mcp.json + rules.md to pre-insrc bytes; a mere disable leaves them",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "JetBrainsHostProbes host detection: a present+enabled host resolves, an absent/disabled host is omitted (via the public findEnabledPlugin path)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails/dataModel + invariants — the five app-scoped consumers (InsrcPluginStateListener uninstall routing + McpWiringLifecycle + DaemonLifecycleService.production + SteeringInjectionLifecycle + OnboardingLifecycle.production) registered exactly-once, migrating off the internal AppLifecycleListener.appStarted()"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails.api JetBrainsHostProbes.isInstalledAndEnabled — replace internal PluginManagerCore.getPlugin + deprecated PluginDescriptor.isEnabled with public PluginManager.getInstance().findEnabledPlugin(PluginId), preserving installed-AND-enabled"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 invariants/migration — blast radius contained to InsrcProjectOpenActivity + InsrcPluginStateListener.kt + plugin.xml; InsrcAppLifecycle + its <applicationListeners> entry deleted with no other Kotlin caller"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 testStrategy — run-once idempotency unit + fixture integration (OnboardingCleanupIntegrationTest) + ./gradlew verifyPlugin contract check (0 internal + 0 deprecated, Compatible retained)"
+    }
+  ]
+}

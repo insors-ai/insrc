@@ -19,6 +19,11 @@ import com.intellij.openapi.startup.ProjectActivity
  */
 internal class InsrcProjectOpenActivity : ProjectActivity {
     override suspend fun execute(project: Project) {
+        // Register the app-scoped sc1 consumers exactly once, before the first
+        // project-open broadcast (replaces the former AppLifecycleListener.appStarted
+        // internal hook). Idempotent across every subsequent project open.
+        AppScopedConsumers.ensureRegistered()
+
         val productCode = ApplicationInfo.getInstance().build.productCode
         val ctx = ProjectContexts.of(project.basePath, productCode) ?: return
         LifecycleBroadcaster.fireProjectOpened(ctx)

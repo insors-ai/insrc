@@ -24,7 +24,7 @@ class OnboardingWiringTest : BasePlatformTestCase() {
 
     override fun setUp() {
         super.setUp()
-        // Isolate from any consumer a dispatched appStarted() may have registered, so firePluginUninstalled
+        // Isolate from any consumer a dispatched project-open registration may have added, so firePluginUninstalled
         // fans out only to this test's instance (never real cleanup against the machine's host files).
         LifecycleBroadcaster.clear()
     }

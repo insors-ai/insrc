@@ -1,0 +1,177 @@
+<!-- insrc:artifact LLD-0d565a953288f511-S001 -->
+
+# LLD: E202609180d565a95:S001
+
+**Epic:** `resolve-jetbrains-marketplace-plugin-verifier-s`
+**HLD base run:** `wf-1789713946904-tv18xw`
+**HLD effective hash:** `0d565a953288...`
+
+## HLD context
+
+**Framework:** Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.
+**Rollout phase:** standalone
+
+## Contract details
+
+**Surface level:** internal
+
+### `InsrcProjectOpenActivity.execute`
+
+```typescript
+suspend fun execute(project: Project): Unit  // com.intellij.openapi.startup.ProjectActivity
+```
+
+**Parameters:**
+- `project: Project` — The just-opened project whose open event drives the per-project lifecycle broadcast.
+
+**Returns:** `Unit` — Side-effecting: on the FIRST invocation across the app process it registers the app-scoped sc1 consumers exactly once, then (every invocation) broadcasts the project-open to the LifecycleBroadcaster.
+
+**Preconditions:**
+- Registered via <postStartupActivity> in plugin.xml (unchanged).
+
+**Postconditions:**
+- After the first call: PluginInstaller.addStateListener(InsrcPluginStateListener()) and LifecycleBroadcaster.register(...) for McpWiringLifecycle, DaemonLifecycleService.production(), SteeringInjectionLifecycle, OnboardingLifecycle.production() have each run exactly once, guarded by a process-wide AtomicBoolean compareAndSet (idempotent under concurrent opens).
+- The project-open is broadcast AFTER the once-only registration, so the first opened project is wired.
+- InsrcAppLifecycle and its <applicationListeners> registration are removed; no override of the @ApiStatus.Internal AppLifecycleListener.appStarted() remains.
+
+### `JetBrainsHostProbes.isInstalledAndEnabled`
+
+```typescript
+private fun isInstalledAndEnabled(pluginIds: List<String>): Boolean
+```
+
+**Parameters:**
+- `pluginIds: List<String>` — Candidate host plugin ids (AI Assistant / Junie) to test for installed-AND-enabled.
+
+**Returns:** `Boolean` — true iff at least one candidate id resolves to an installed AND enabled plugin descriptor — identical semantics to today.
+
+**Preconditions:**
+- Called only from JetBrainsHostProbes' own host-resolution path (private).
+
+**Postconditions:**
+- Implementation uses the public com.intellij.ide.plugins.PluginManager.getInstance().findEnabledPlugin(PluginId.getId(id)) != null instead of the internal PluginManagerCore.getPlugin(...) + deprecated PluginDescriptor.isEnabled; findEnabledPlugin returns non-null only for an installed AND enabled plugin, so a disabled or absent host stays 'not present'.
+- The PluginManagerCore import is dropped; only public PluginManager + PluginId imports remain.
+
+## Data model changes
+
+### `app-scoped consumer registration (exactly-once invariant)` — invariant-change
+
+Registration of the five app-scoped consumers moves from a guaranteed-once app-start callback (AppLifecycleListener.appStarted) to a run-once-guarded first-project-open path. The exactly-once invariant is preserved by a process-wide AtomicBoolean compareAndSet; the timing shifts from app-init to first-project-open (benign: the consumers only act on project-open/uninstall, and no host writes occur before a project opens).
+
+**Call sites:**
+- `jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/platform/InsrcProjectOpenActivity.kt`
+- `jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/platform/InsrcPluginStateListener.kt`
+
+## Error paths
+
+### Error cases
+
+- **Two projects open near-simultaneously and both reach the once-only registration block.** (recoverable)
+  - Detection: The process-wide AtomicBoolean.compareAndSet(false, true) returns true for exactly one caller and false for every other concurrent caller.
+  - Response: Only the CAS winner runs the registration body (addStateListener + the four LifecycleBroadcaster.register calls); every loser skips registration and proceeds straight to broadcasting its own project-open.
+  - User impact: None — the consumers are registered exactly once regardless of concurrency; no duplicate MCP/steering/daemon/onboarding handlers.
+- **A consumer factory throws while the once-only registration body runs (e.g. DaemonLifecycleService.production() or OnboardingLifecycle.production() raises during construction).** (terminal)
+  - Detection: The exception propagates out of the registration body inside InsrcProjectOpenActivity.execute.
+  - Response: The registration body is wrapped so the throwable is caught and logged (getLogger().warn) and does NOT abort the subsequent project-open broadcast; the once-flag is claimed via CAS so the app does not spin retrying on every later project open. This matches today's behavior (the old appStarted() had no retry) while keeping project-open resilient.
+  - User impact: Degraded: if a factory truly fails, that consumer isn't wired — but the failure is logged and the IDE/project-open is unaffected, same blast radius as the pre-change app-start path.
+
+### Edge cases
+
+| Input | Expected |
+| :--- | :--- |
+| The plugin is installed, but NO project is ever opened, and then the plugin is uninstalled. | The once-only registration never ran, so InsrcPluginStateListener was never added and uninstall-cleanup does not fire — which is correct: no host-file writes happen before a project opens, so there is nothing to reverse. Semantics preserved in effect. |
+| Several projects are opened in sequence (or multiple windows). | The app-scoped consumers are registered exactly once (on the first open); every subsequent open skips registration and only broadcasts its own project-open to the already-registered consumers. |
+| A candidate host plugin (AI Assistant / Junie) is installed but DISABLED. | PluginManager.getInstance().findEnabledPlugin(id) returns null, so isInstalledAndEnabled treats it as not present — identical to the previous descriptor.isEnabled == false behavior; the host is omitted from detection. |
+| The IDE starts on the welcome screen with no project open. | No consumer registration yet; it is deferred to the first project open. The uninstall listener and lifecycle consumers become active exactly when the first project opens (before any host writes could occur). |
+
+### Invariants to preserve
+
+- Only a TRUE uninstall signals cleanup: InsrcPluginStateListener.uninstall(descriptor) (gated by UninstallPolicy.shouldSignalUninstall) fires LifecycleBroadcaster.firePluginUninstalled(); a mere disable raises no such event. This routing is unchanged by the fix. [[c1]]
+- The five app-scoped consumers (InsrcPluginStateListener + McpWiringLifecycle + DaemonLifecycleService + SteeringInjectionLifecycle + OnboardingLifecycle) are registered EXACTLY ONCE per app process — no duplicate handlers. [[c1]]
+- Host detection treats a plugin as present only when it is installed AND enabled; a disabled or absent AI-host plugin is 'not present'. [[c2]]
+- The registration change is contained to InsrcProjectOpenActivity + InsrcPluginStateListener.kt + plugin.xml; no other Kotlin references InsrcAppLifecycle, so removing it has no external caller impact. [[c3]]
+- The existing plugin JUnit suite (uninstall-vs-disable routing incl. OnboardingCleanupIntegrationTest, and host detection/probes) stays green. [[c4]]
+
+## Test strategy
+
+**Test framework:** `JUnit5 (org.junit.jupiter, condition-first asserts) for platform-free unit/smoke suites + junit-vintage BasePlatformTestCase for IntelliJ-fixture integration tests; ./gradlew verifyPlugin (IntelliJ Plugin Verifier) as the API-surface contract check. Run locally via ./gradlew test + ./gradlew verifyPlugin (no GitHub CI).`
+
+### Test levels
+
+- **contract** — The core acceptance for the API-migration goal: the IntelliJ Plugin Verifier reports NO internal-API and NO deprecated-API usage for the three migrated sites, and the plugin stays Compatible across the target IDE range.
+  - Subjects: `./gradlew verifyPlugin verdict: no 'AppLifecycleListener.appStarted() is overridden' internal usage`, `no 'PluginManagerCore.getPlugin' internal usage`, `no 'PluginDescriptor.isEnabled()' deprecated usage`, `Compatible verdict retained (since-build 242, open-ended)`
+  - Fixtures: `The IntelliJ Plugin Verifier (already wired via pluginVerifier() in build.gradle.kts), run against the compile-target IDE`
+- **unit** — Prove the once-only registration guard is idempotent, and that the uninstall-vs-disable routing (UninstallPolicy) is unchanged, without the IDE fixture.
+  - Subjects: `the run-once registration helper: repeated invocation registers the app-scoped consumers exactly once (a counting/fake registrar sees N registrations on the first call and 0 on subsequent calls)`, `concurrent invocation: only one caller's CAS wins; total registrations == the consumer count`, `UninstallPolicy.shouldSignalUninstall unchanged (UNINSTALL signals, disable does not)`
+  - Fixtures: `A fake/counting LifecycleBroadcaster or registrar seam so the once-guard is exercised off-platform (JUnit5, condition-first asserts)`
+- **integration** — Prove the end-to-end lifecycle still works via the IntelliJ Platform fixture: project-open registers the consumers once and broadcasts; a true uninstall still reverses host writes; the host probe treats installed-AND-enabled correctly.
+  - Subjects: `InsrcProjectOpenActivity: opening a project runs the once-only registration then broadcasts the project-open (consumers wired)`, `OnboardingCleanupIntegrationTest (extended): a true firePluginUninstalled still restores host mcp.json + rules.md to pre-insrc bytes; a mere disable leaves them`, `JetBrainsHostProbes host detection: a present+enabled host resolves, an absent/disabled host is omitted (via the public findEnabledPlugin path)`
+  - Fixtures: `BasePlatformTestCase (junit-vintage) with LifecycleBroadcaster.clear() in setUp for isolation, as the existing onboarding integration tests already do`
+
+### Acceptance mapping
+
+| Criterion | Proving tests |
+| :--- | :--- |
+| `ac1` | `contract: ./gradlew verifyPlugin reports zero internal + zero deprecated API usages for appStarted / PluginManagerCore.getPlugin / PluginDescriptor.isEnabled, Compatible retained` |
+| `ac2` | `unit: repeated + concurrent invocation of the run-once registration registers the five app-scoped consumers exactly once`, `integration: opening a (or a second) project through the fixture yields exactly one registration of each consumer` |
+| `ac3` | `unit: UninstallPolicy.shouldSignalUninstall UNINSTALL=true / disable=false unchanged`, `integration: OnboardingCleanupIntegrationTest — firePluginUninstalled restores host files, a disable does not` |
+| `ac4` | `integration: JetBrainsHostProbes detects an installed+enabled host and omits an absent/disabled one via PluginManager.findEnabledPlugin`, `the existing host-detection JUnit suite stays green` |
+
+## Migration
+
+**State before:** Per s1: InsrcAppLifecycle (in InsrcPluginStateListener.kt) implements com.intellij.ide.AppLifecycleListener and overrides the @ApiStatus.Internal appStarted() — registered via <applicationListeners> in plugin.xml — to register the five app-scoped consumers at application start. JetBrainsHostProbes.isInstalledAndEnabled (lines 78-79) resolves each host plugin id via the internal PluginManagerCore.getPlugin(PluginId) and checks the deprecated PluginDescriptor.isEnabled. The IntelliJ Plugin Verifier flags all three (1 internal appStarted, 1 internal getPlugin, 1 deprecated isEnabled) while still reporting Compatible.
+
+**State after:** The five app-scoped consumers are registered exactly once via a run-once-guarded block at the start of the existing public InsrcProjectOpenActivity.execute (before it broadcasts the project-open); InsrcAppLifecycle and its <applicationListeners> entry are deleted. JetBrainsHostProbes.isInstalledAndEnabled resolves via the public PluginManager.getInstance().findEnabledPlugin(PluginId) (non-null == installed AND enabled), and the PluginManagerCore import is gone. ./gradlew verifyPlugin reports zero internal + zero deprecated usages for these sites and retains Compatible.
+
+**Zero downtime:** yes — **Data rewrite:** no
+
+### Steps
+
+1. Swap JetBrainsHostProbes.isInstalledAndEnabled to use PluginManager.getInstance().findEnabledPlugin(PluginId.getId(id)) != null; drop the com.intellij.ide.plugins.PluginManagerCore import (keep PluginManager + PluginId). Behavior identical (installed AND enabled). — ↩ rollbackable
+2. Add a run-once registration path: a process-wide AtomicBoolean guard whose compareAndSet(false,true) gates a single execution of the existing registration body (PluginInstaller.addStateListener(InsrcPluginStateListener()) + the four LifecycleBroadcaster.register calls), wrapped so a factory throwable is caught + logged and does not abort project-open. — ↩ rollbackable
+3. Invoke that run-once registration at the top of InsrcProjectOpenActivity.execute, before the existing project-open broadcast, so the first opened project is fully wired. — ↩ rollbackable
+4. Delete the InsrcAppLifecycle class and remove its <applicationListeners> <listener ... topic=AppLifecycleListener> entry from plugin.xml. (InsrcPluginStateListener itself is unchanged — it is now instantiated from the run-once block instead of appStarted.) — ↩ rollbackable
+5. Add/extend tests: a unit test for the run-once guard idempotency (repeated + concurrent), and extend the fixture integration tests (project-open registers once + broadcasts; OnboardingCleanupIntegrationTest uninstall still restores host files). Then run ./gradlew test and ./gradlew verifyPlugin locally and confirm both green (verifier: 0 internal + 0 deprecated for the migrated sites). — ↩ rollbackable
+
+**Backward compat:** Internal plugin refactor only — no public/exported API and no persisted data or on-disk format changes; the whole change is contained to plugin Kotlin + plugin.xml. The one observable behavior change is registration TIMING (app-start → first-project-open), which is backward-compatible in effect: the consumers act only on project-open/uninstall and no host-file writes occur before a project opens, so the uninstall-vs-disable and host-detection contracts are preserved. Each plugin version installs atomically (an IDE loads one plugin build), so there is no mixed-version window to reconcile.
+
+## Alternatives considered
+
+### a1: ApplicationInitializedListener extension point
+
+Move the app-scoped consumer registration into a public ApplicationInitializedListener registered via the <applicationInitializedListener> EP.
+
+Replace the InsrcAppLifecycle : AppLifecycleListener (registered via <applicationListeners>) with a class implementing the public com.intellij.ide.ApplicationInitializedListener, registered via the <applicationInitializedListener> extension point in plugin.xml. The registration body (PluginInstaller.addStateListener + the four LifecycleBroadcaster.register calls) moves verbatim into its callback. Common to every alternative: the JetBrainsHostProbes.isInstalledAndEnabled internal+deprecated lookup is replaced with the public PluginManager.getInstance().findEnabledPlugin(PluginId) (installed-AND-enabled in one call).
+
+**Rejected because:** Rank 2: preserves app-init timing but its non-deprecated overload is a coroutine-suspend execute(...) coupling to platform coroutines (c1 partial, c4 partial) — more cross-version fragility than the fix warrants.
+
+### a2: Guarded once-only registration on first project-open (existing ProjectActivity) — **CHOSEN**
+
+Register the consumers exactly once, lazily, from the existing public InsrcProjectOpenActivity, guarded by an app-level run-once flag.
+
+Drop InsrcAppLifecycle and its <applicationListeners> entry. In the existing public InsrcProjectOpenActivity (a ProjectActivity, already registered via <postStartupActivity>), before broadcasting the project-open, run a once-only registration guarded by a process-wide AtomicBoolean (or an app-level @Service holding the flag): compareAndSet ensures the PluginInstaller.addStateListener + the four LifecycleBroadcaster.register calls happen exactly once across all project opens. Uses only the stable public ProjectActivity API. Common element: the same findEnabledPlugin host-probe migration.
+
+### a3: App-level @Service with a project-open trigger
+
+Hold the registration in an application @Service whose getInstance() is triggered once from the project activity.
+
+Introduce an application-level @Service(Service.Level.APP) whose init block performs the one-time consumer registration; the existing InsrcProjectOpenActivity calls project.application.service<TheService>() (or ApplicationManager.getApplication().getService(...)) once to force instantiation. The service's single construction guarantees exactly-once registration without an explicit flag. Same findEnabledPlugin host-probe migration.
+
+**Rejected because:** Rank 3: matches a2's robustness but adds a service indirection and a side-effect-in-constructor smell (c4 partial); a2's explicit guard is clearer for the same result.
+
+## Citations
+
+- **[[c1]]** `analyze-bundle` `s1 symbol.locate — InsrcPluginStateListener.kt: InsrcAppLifecycle overrides @ApiStatus.Internal AppLifecycleListener.appStarted() to register the five app-scoped consumers; InsrcPluginStateListener routes true uninstall via UninstallPolicy → LifecycleBroadcaster.firePluginUninstalled()`
+- **[[c2]]** `analyze-bundle` `s1 symbol.locate — JetBrainsHostProbes.isInstalledAndEnabled (lines 78-79) uses internal PluginManagerCore.getPlugin + deprecated PluginDescriptor.isEnabled; public PluginManager.findEnabledPlugin(PluginId) preserves installed-AND-enabled`
+- **[[c3]]** `analyze-bundle` `s1 usage.example — InsrcAppLifecycle referenced only from plugin.xml <applicationListeners>; InsrcProjectOpenActivity (public ProjectActivity via <postStartupActivity>) already broadcasts to the same LifecycleBroadcaster; isInstalledAndEnabled is private`
+- **[[c4]]** `analyze-bundle` `s1 test.locate — the plugin JUnit suite (via ./gradlew test) covers uninstall-vs-disable routing (OnboardingCleanupIntegrationTest) + host detection; verifyPlugin checks cross-version API compatibility`
+
+<!-- insrc:review -->
+
+## Review
+
+### ✅ Review `PASS` — design.story (design.story)
+
+**0 HIGH · 0 MED · 0 LOW** · model `client` · reviewed 2026-09-18T06:56:10.187Z
+
+_No load-bearing premises were extracted._

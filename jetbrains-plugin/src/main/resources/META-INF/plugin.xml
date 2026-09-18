@@ -94,14 +94,4 @@
         <notificationGroup id="insrc" displayType="BALLOON"/>
     </extensions>
 
-    <!--
-      sc1 uninstall lifecycle (Story S001 / t2): register the plugin-state
-      listener at app start so onPluginUninstalled fires on a true uninstall
-      (never on a mere disable).
-    -->
-    <applicationListeners>
-        <listener
-            class="ai.insors.insrc.jetbrains.platform.InsrcAppLifecycle"
-            topic="com.intellij.ide.AppLifecycleListener"/>
-    </applicationListeners>
 </idea-plugin>

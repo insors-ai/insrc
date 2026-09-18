@@ -1,6 +1,6 @@
 package ai.insors.insrc.jetbrains.host
 
-import com.intellij.ide.plugins.PluginManagerCore
+import com.intellij.ide.plugins.PluginManager
 import com.intellij.openapi.extensions.PluginId
 import java.nio.file.Files
 import java.nio.file.Path
@@ -75,8 +75,10 @@ object JetBrainsHostProbes {
     /** Installed AND enabled — a disabled or absent plugin is treated as not present. */
     private fun isInstalledAndEnabled(pluginIds: List<String>): Boolean =
         pluginIds.any { id ->
-            val descriptor = PluginManagerCore.getPlugin(PluginId.getId(id))
-            descriptor != null && descriptor.isEnabled
+            // Public API: findEnabledPlugin returns non-null ONLY for an installed
+            // AND enabled plugin — same semantics as the former internal
+            // PluginManagerCore.getPlugin + deprecated descriptor.isEnabled.
+            PluginManager.getInstance().findEnabledPlugin(PluginId.getId(id)) != null
         }
 
     /**

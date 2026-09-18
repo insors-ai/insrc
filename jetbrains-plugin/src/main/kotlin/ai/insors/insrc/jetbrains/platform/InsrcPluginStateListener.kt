@@ -8,10 +8,11 @@ import ai.insors.insrc.jetbrains.host.McpWiringLifecycle
 import ai.insors.insrc.jetbrains.lifecycle.DaemonLifecycleService
 import ai.insors.insrc.jetbrains.onboarding.OnboardingLifecycle
 import ai.insors.insrc.jetbrains.steering.SteeringInjectionLifecycle
-import com.intellij.ide.AppLifecycleListener
 import com.intellij.ide.plugins.IdeaPluginDescriptor
 import com.intellij.ide.plugins.PluginInstaller
 import com.intellij.ide.plugins.PluginStateListener
+import com.intellij.openapi.diagnostic.logger
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * sc1 uninstall adapter (Story S001 / t2).
@@ -36,21 +37,52 @@ internal class InsrcPluginStateListener : PluginStateListener {
 }
 
 /**
- * Registers the application-scoped sc1 consumers once the application has
- * started. Wired via `applicationListeners` in `plugin.xml`.
+ * A one-shot guard: [run] executes its action AT MOST ONCE across the process,
+ * even under concurrent callers — the first `compareAndSet` winner runs it. A
+ * throwable from the action is caught + logged; the flag stays claimed so the
+ * app never spin-retries on later calls. Extracted as an instantiable class so
+ * the exactly-once behaviour is unit-testable off-platform (Story S001).
+ */
+internal class RunOnce {
+    private val done = AtomicBoolean(false)
+
+    /** Runs [action] iff this is the first call; returns whether it ran now. */
+    fun run(action: () -> Unit): Boolean {
+        if (!done.compareAndSet(false, true)) return false
+        try {
+            action()
+        } catch (t: Throwable) {
+            log.warn("insrc: app-scoped consumer registration failed", t)
+        }
+        return true
+    }
+
+    private companion object {
+        private val log = logger<RunOnce>()
+    }
+}
+
+/**
+ * Registers the application-scoped sc1 consumers EXACTLY ONCE per process,
+ * lazily on the first project open (invoked from [InsrcProjectOpenActivity]):
  *
  * - [InsrcPluginStateListener] routes true uninstalls to `onPluginUninstalled`;
- * - [McpWiringLifecycle] (Story S002 / t5) subscribes to the broadcaster so it
- *   wires insrc-mcp into each detected host on every project open;
- * - [DaemonLifecycleService] (Story S003 / t7) subscribes so it keeps the backing
- *   daemon present/current on every project open;
- * - [SteeringInjectionLifecycle] (Story S004 / t4) subscribes so it injects the
- *   tracked-workflow steering into each detected host's rules file on every project open;
- * - [OnboardingLifecycle] (Story S005 / t3) subscribes so it offers one-click project
- *   registration on project open and reverses every insrc host-file write on true uninstall.
+ * - [McpWiringLifecycle] (Story S002 / t5) wires insrc-mcp into each detected host;
+ * - [DaemonLifecycleService] (Story S003 / t7) keeps the backing daemon present/current;
+ * - [SteeringInjectionLifecycle] (Story S004 / t4) injects the tracked-workflow steering;
+ * - [OnboardingLifecycle] (Story S005 / t3) offers one-click registration + uninstall cleanup.
+ *
+ * This replaces the former `InsrcAppLifecycle : AppLifecycleListener.appStarted()`
+ * (an `@ApiStatus.Internal` hook flagged by the Plugin Verifier). The consumers act
+ * only on project-open / uninstall, so first-project-open registration is equivalent
+ * in effect while using only stable public platform APIs (ProjectActivity + a run-once
+ * guard).
  */
-internal class InsrcAppLifecycle : AppLifecycleListener {
-    override fun appStarted() {
+internal object AppScopedConsumers {
+    private val guard = RunOnce()
+
+    /** Idempotent: registers the five consumers on the first call, no-ops after. */
+    fun ensureRegistered() = guard.run {
         PluginInstaller.addStateListener(InsrcPluginStateListener())
         LifecycleBroadcaster.register(McpWiringLifecycle())
         LifecycleBroadcaster.register(DaemonLifecycleService.production())

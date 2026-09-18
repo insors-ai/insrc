@@ -31,13 +31,16 @@ class BuildContractTest {
     }
 
     @Test
-    fun `gradle properties pin a version and a since-until build range`() {
+    fun `gradle properties pin a version and an open-ended since-build range`() {
         val props = Properties().apply {
             File(moduleRoot(), "gradle.properties").inputStream().use { load(it) }
         }
         assertTrue(props.getProperty("pluginVersion").orEmpty().isNotBlank(), "pluginVersion must be set (ac2)")
         assertTrue(props.getProperty("pluginSinceBuild").orEmpty().isNotBlank(), "pluginSinceBuild must be set (ac2)")
-        assertTrue(props.getProperty("pluginUntilBuild").orEmpty().isNotBlank(), "pluginUntilBuild must be set (ac2)")
+        // The upper bound is DELIBERATELY open-ended (untilBuild unset in build.gradle.kts,
+        // pluginUntilBuild removed from gradle.properties) so the plugin stays forward-compatible
+        // across IDE releases — it depends only on the stable com.intellij.modules.platform.
+        assertTrue(props.getProperty("pluginUntilBuild").orEmpty().isBlank(), "pluginUntilBuild is intentionally open-ended (unset)")
     }
 
     @Test

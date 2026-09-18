@@ -243,6 +243,11 @@ Add the create/link/close into src/workflow/tracker/sync.ts, reusing syncTracker
 
 - Lost-recorded-ref recovery (the a2 label-dedup): a1's idempotency + close both key on the meta.tracker ref, so if recordRef fails exactly after create (rare), the GH issue is unclosable/duplicable. A future enhancement could add ghFindIssueByLabels-based dedup (a unique per-bugfix label) as a recovery when the local ref is missing. Deferred — not built in s5; the normal path is correct and cheaper without the per-create GitHub query.
 
+## Resolved questions
+
+- `q12a87841` — Lost-recorded-ref recovery (the a2 label-dedup): a1's idempotency + close both key on the meta.tracker ref, so if recordRef fails exactly after create (rare), the GH issue is unclosable/duplicable. A future enhancement could add ghFindIssueByLabels-based dedup (a unique per-bugfix label) as a recovery when the local ref is missing. Deferred — not built in s5; the normal path is correct and cheaper without the per-create GitHub query.
+  - **resolved**: Prompt the user with next-step options when a recorded ref is lost/missing _(2026-09-18T15:27:56.554Z)_
+
 ## Citations
 
 - **[[c1]]** `prior-artifact` `LLD s5 interactionWithShared.sc2 + s1 test.locate bundle — renderIssueMarkdown(issue) is the k4 single-source GH body (issue-artifact.test.ts); title = issue.body.title`
@@ -251,15 +256,3 @@ Add the create/link/close into src/workflow/tracker/sync.ts, reusing syncTracker
 - **[[c4]]** `prior-artifact` `LLD s5 capability-gap bundle — NO close wrapper exists (sync.ts read-only); s5 adds the ONE thin ghCloseIssue verb on the same execFileSync/_exec gh transport (github.ts), k5/k6`
 - **[[c5]]** `prior-artifact` `S002 renderIssueMarkdown + S003/S004 meta.parentRef stamp — the approved IssueArtifact body + located parent s5 consumes; patchTrackerMeta/readTrackerMeta (refs.ts) record/read the created ref on meta.tracker`
 - **[[c6]]** `convention` `CLAUDE.md k5/k6 + github.ts header — the gh CLI via execFileSync argv is the ONE tracker shell-out (no direct REST); tests drive a fake _exec via _setTrackerExecForTests`
-
-<!-- insrc:review -->
-
-## Review
-
-### ✅ Review `PASS` — design.story (design.story)
-
-**0 HIGH · 0 MED · 1 LOW** · model `client` · reviewed 2026-09-18T15:22:32.696Z
-
-| Ref | Kind | Severity | Fixability | Premise | Evidence | Action |
-| --- | --- | --- | --- | --- | --- | --- |
-| c4 | semantic | LOW | manual | There is NO close-issue wrapper (ghCloseIssue / gh issue close) anywhere in src/workflow/tracker/ today — s5 must add the one thin ghCloseIssue verb. | Probe confirms NO close-issue wrapper exists in src/workflow/tracker/ (the only 'issue close' hit is plans/tools.md:230 `gh:issue:close`, a BUILT-IN tool-registry capability, not a tracker gh-wrapper). So the LLD's premise 'no close wrapper exists; sync.ts is read-only' holds for the tracker module. Observation, not a defect: a built-in gh:issue:close tool DOES exist in the tool registry — but the tracker's github.ts deliberately uses its own injectable execFileSync `_exec` wrappers (for determinism + fake-gh testability, github.ts:9/30), NOT the tool registry, so adding a native ghCloseIssue sibling (mirroring ghEditIssueBody) is the correct, consistent choice for s5. The design is sound; recorded only for transparency that an alternative close surface exists. | None required — the tracker-native ghCloseIssue is the right choice (the tool-registry surface is not injectable/used by github.ts). Optionally note in the implementation comment that gh:issue:close exists as a built-in but the tracker uses its own wrapper family. |

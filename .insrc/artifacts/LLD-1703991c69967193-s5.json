@@ -51,7 +51,15 @@
       "reviewedAt": "2026-09-18T15:22:32.696Z",
       "model": "client"
     },
-    "approvedAt": "2026-09-18T15:22:58.537Z"
+    "approvedAt": "2026-09-18T15:22:58.537Z",
+    "questionResolutions": {
+      "q12a87841": {
+        "question": "Lost-recorded-ref recovery (the a2 label-dedup): a1's idempotency + close both key on the meta.tracker ref, so if recordRef fails exactly after create (rare), the GH issue is unclosable/duplicable. A future enhancement could add ghFindIssueByLabels-based dedup (a unique per-bugfix label) as a recovery when the local ref is missing. Deferred — not built in s5; the normal path is correct and cheaper without the per-create GitHub query.",
+        "status": "resolved",
+        "choice": "Prompt the user with next-step options when a recorded ref is lost/missing",
+        "resolvedAt": "2026-09-18T15:27:56.554Z"
+      }
+    }
   },
   "body": {
     "hldContextSlice": {

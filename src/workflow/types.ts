@@ -78,6 +78,7 @@ export const WORKFLOW_NAMES = [
 	'design.story',   // Phase D
 	'plan',            // Phase G — Story LLD → N ordered/sized/dependency-labelled Tasks
 	'build',           // Phase H — implement an approved Story plan's Tasks into code
+	'issue',           // Bugfix flow — the defect 'issue' record (single source for the chain + GitHub issue body). NAME only here; the issue-stage machinery lands with its owning story.
 	'tracker.push',    // Phase F
 	'tracker.sync',    // Phase F
 	'tracker.post',    // Phase F

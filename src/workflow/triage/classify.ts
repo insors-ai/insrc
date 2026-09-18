@@ -19,14 +19,21 @@
  */
 
 import type { StructuredSchema } from '../../shared/types.js';
-import { SIZE_CLASSES, type SizeClass, type TriageRoute } from './types.js';
+import { SIZE_CLASSES, type BugfixMagnitude, type SizeClass, type TriageRoute } from './types.js';
 
 // ---------------------------------------------------------------------------
 // The routing table — pure, the single source of truth for the taxonomy.
 // ---------------------------------------------------------------------------
 
-/** Map a size tier to its workflow entry. See `plans/feature-triage-router.md`. */
-export function routeForSizeClass(sizeClass: SizeClass): TriageRoute {
+/**
+ * Map a size tier to its workflow entry. See `plans/feature-triage-router.md`.
+ *
+ * `magnitude` is consulted ONLY for the `bugfix` tier (the single scope-gated
+ * category): it selects issue→build (`small`) vs issue→design→plan→build
+ * (`sized`). For the four fixed tiers the param is ignored, so existing
+ * single-argument callers are unaffected.
+ */
+export function routeForSizeClass(sizeClass: SizeClass, magnitude?: BugfixMagnitude): TriageRoute {
 	switch (sizeClass) {
 		case 'epic':
 			// Full framing: a new subsystem / many stories. Enters the chain head.
@@ -40,6 +47,24 @@ export function routeForSizeClass(sizeClass: SizeClass): TriageRoute {
 		case 'trivial':
 			// Mechanical, ~1 file, no design choices: straight to build, no LLD.
 			return { startStage: 'build', standalone: true, needsPlan: false, producesLld: false };
+		case 'bugfix': {
+			// Defect fix — first stage is always the `issue` record. The magnitude
+			// gates whether design ceremony follows: a `small` fix goes issue→build;
+			// an M/L (`sized`) fix takes issue→design→plan→build. A bugfix without a
+			// magnitude can never route (authoritative runtime guard — the schema
+			// conditional is a best-effort earlier check).
+			if (magnitude === undefined) {
+				throw new Error("routeForSizeClass: a 'bugfix' requires a magnitude ('small' | 'sized')");
+			}
+			const design = magnitude === 'sized';
+			return { startStage: 'issue', standalone: true, needsPlan: design, producesLld: design };
+		}
+		default: {
+			// Exhaustiveness backstop: adding a SizeClass member without a case here
+			// is a compile error, keeping routeForSizeClass the single source of truth.
+			const _exhaustive: never = sizeClass;
+			throw new Error(`routeForSizeClass: unhandled sizeClass ${String(_exhaustive)}`);
+		}
 	}
 }
 
@@ -53,8 +78,18 @@ export const CLASSIFY_SCHEMA: StructuredSchema = {
 	type: 'object',
 	additionalProperties: false,
 	required: ['sizeClass', 'rationale', 'signals', 'storyTitle'],
+	// A `bugfix` classification MUST carry a magnitude; the four fixed tiers
+	// never do. ajv (draft 2020-12) honours this if/then natively; the
+	// routeForSizeClass runtime guard is the authoritative backstop regardless.
+	allOf: [
+		{
+			if: { properties: { sizeClass: { const: 'bugfix' } }, required: ['sizeClass'] },
+			then: { required: ['magnitude'] },
+		},
+	],
 	properties: {
 		sizeClass: { type: 'string', enum: [...SIZE_CLASSES] },
+		magnitude: { type: 'string', enum: ['small', 'sized'] },
 		rationale: { type: 'string', minLength: 1 },
 		storyTitle: { type: 'string', minLength: 1 },
 		signals: {
@@ -87,6 +122,11 @@ export interface ClassifyPromptInput {
 	/** A prose summary of the analyze grounding bundle (modules, entities,
 	 *  callers) the classifier must size against. Empty string when ungrounded. */
 	readonly grounding: string;
+	/** True when the user has DECLARED the request a defect fix. The category is
+	 *  user-declared, not sizing-derived: when set, the classifier returns
+	 *  `sizeClass: 'bugfix'` and sizes only the `magnitude` ('small' | 'sized').
+	 *  Default false/absent leaves the four-tier behaviour unchanged. */
+	readonly declaredBugfix?: boolean;
 }
 
 const SYSTEM = [
@@ -124,6 +164,21 @@ const SYSTEM = [
 	'Emit a TriageResult JSON matching the schema.',
 ].join('\n');
 
+// Appended to the SYSTEM prompt ONLY when the request is a declared defect
+// fix. The category is fixed (`bugfix`); the turn's job narrows to sizing the
+// magnitude, so the four feature tiers are off the table.
+const BUGFIX_GUIDANCE = [
+	'',
+	'This request has been DECLARED a defect fix. Classify it as `sizeClass: "bugfix"`',
+	'(do NOT pick epic/feature/small/trivial). Your only sizing judgment is the',
+	'`magnitude`:',
+	'  small  — a localized correction with a clear fix; skips design (issue → build).',
+	'  sized  — an M/L correction touching many callers / a storage or schema boundary /',
+	'           needing real design; takes the full path (issue → design → plan → build).',
+	'Emit `magnitude` alongside `sizeClass`. Size the magnitude against the REAL grounding,',
+	'the same materiality rule as the tiers — do not inflate a one-file fix to `sized`.',
+].join('\n');
+
 /** Build the `{ system, user }` prompt pair for the classification turn. */
 export function buildClassifyPrompt(input: ClassifyPromptInput): { readonly system: string; readonly user: string } {
 	const grounding = input.grounding.trim().length > 0
@@ -138,5 +193,8 @@ export function buildClassifyPrompt(input: ClassifyPromptInput): { readonly syst
 		'--- Analyze grounding (size against THIS; cite only paths/entities that appear here) ---',
 		grounding,
 	].join('\n');
-	return { system: SYSTEM, user };
+	// A declared bugfix narrows the classification to bugfix + magnitude; an
+	// undeclared request keeps the byte-for-byte four-tier prompt.
+	const system = input.declaredBugfix ? SYSTEM + '\n' + BUGFIX_GUIDANCE : SYSTEM;
+	return { system, user };
 }

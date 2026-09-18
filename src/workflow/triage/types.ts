@@ -12,10 +12,16 @@
 
 import type { WorkflowName } from '../types.js';
 
-/** The four size tiers. Locked with the user. */
-export type SizeClass = 'epic' | 'feature' | 'small' | 'trivial';
+/** The size tiers. The first four are locked with the user; `bugfix` is the
+ *  scope-gated defect-fix category (its route branches on `BugfixMagnitude`). */
+export type SizeClass = 'epic' | 'feature' | 'small' | 'trivial' | 'bugfix';
 
-export const SIZE_CLASSES: readonly SizeClass[] = ['epic', 'feature', 'small', 'trivial'];
+export const SIZE_CLASSES: readonly SizeClass[] = ['epic', 'feature', 'small', 'trivial', 'bugfix'];
+
+/** The bugfix sub-magnitude — the ONLY category whose route depends on a
+ *  second axis. `small` skips design (issue → build); `sized` (M/L) takes the
+ *  full design path (issue → design → plan → build). */
+export type BugfixMagnitude = 'small' | 'sized';
 
 /** Where a classified request enters the chain, and how much ceremony it carries. */
 export interface TriageRoute {
@@ -52,4 +58,7 @@ export interface TriageResult {
 	/** A short imperative title for the standalone story, when routed below
 	 *  Epic (used as `params.storyTitle` for a standalone `design.story`). */
 	readonly storyTitle: string;
+	/** Present iff `sizeClass === 'bugfix'` — the sub-magnitude that drives the
+	 *  bugfix route (`small` → issue→build; `sized` → issue→design→plan→build). */
+	readonly magnitude?: BugfixMagnitude;
 }

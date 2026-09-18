@@ -118,6 +118,37 @@ section { margin: 0 0 48px; }
 :root[data-theme="light"] .nav-links a.active::before,
 :root[data-theme="light"] .nav-links a.active::after { color: #f6f2e7; }
 
+/* Overflow dropdown — progressive enhancement. js/tui.js adds `.nav-enhanced`
+   and moves the links that don't fit onto one line into a "⋯ more" dropdown.
+   Without JS the nav simply wraps (the default rules above), so it stays
+   readable. */
+.nav-enhanced .nav-inner { flex-wrap: nowrap; }
+.nav-enhanced .nav-links { flex-wrap: nowrap; }
+.nav-more { position: relative; display: inline-flex; }
+.nav-more[hidden] { display: none; }
+.nav-more-btn {
+  font: inherit; cursor: pointer; color: var(--muted);
+  background: transparent; border: none; padding: 3px 9px; border-radius: 5px;
+  white-space: nowrap;
+}
+.nav-more-btn::before { content: "["; color: var(--dim); }
+.nav-more-btn::after  { content: "]"; color: var(--dim); }
+.nav-more-btn:hover { color: var(--fg-strong); }
+.nav-more-btn.active { background: var(--accent); color: #05070b; font-weight: 700; }
+.nav-more-btn.active::before, .nav-more-btn.active::after { color: #05070b; }
+:root[data-theme="light"] .nav-more-btn.active { color: #f6f2e7; }
+:root[data-theme="light"] .nav-more-btn.active::before,
+:root[data-theme="light"] .nav-more-btn.active::after { color: #f6f2e7; }
+.nav-menu {
+  position: absolute; top: calc(100% + 8px); right: 0; z-index: 60;
+  display: flex; flex-direction: column; gap: 2px; min-width: 168px;
+  padding: 6px; background: var(--bg);
+  border: 1px solid var(--border); border-radius: 6px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+}
+.nav-menu[hidden] { display: none; }
+.nav-menu a { display: block; margin-left: 0; }
+
 .theme-btn {
   font: inherit; cursor: pointer; color: var(--muted);
   background: transparent; border: 1px solid var(--border);
@@ -347,7 +378,9 @@ hr { border: none; border-top: 1px dashed var(--border-lit); margin: 32px 0; }
 /* --- responsive ----------------------------------------------------------- */
 @media (max-width: 640px) {
   body { font-size: 14px; }
-  .nav-links { width: 100%; margin-left: 0; }
+  /* Only the no-JS fallback wraps to full width; the enhanced nav stays on one
+     line and collapses into the "⋯ more" dropdown instead. */
+  .nav:not(.nav-enhanced) .nav-links { width: 100%; margin-left: 0; }
   .term-body { padding: 16px; }
   main { padding: 26px 0 60px; }
 }

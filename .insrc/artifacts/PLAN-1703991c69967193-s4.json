@@ -1,0 +1,378 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1789742466089-9u89tr",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-18T14:45:05.286Z",
+    "epicCreatedAt": "2026-09-18T10:07:09.320Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 239191,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1703991c69967193",
+    "epicSlug": "add-bugfix-triage-category-insrc-framework",
+    "storyId": "s4",
+    "lldRunId": "wf-1789741345654-adobe9",
+    "lldEffectiveHash": "e08e0c0d9f7b0edafe2979944fb169368ad12f61bc842d0ebec3a3ec979632fa",
+    "approvedAt": "2026-09-18T14:46:15.858Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add the bugfix-orchestration module types",
+        "summary": "Create the s4 orchestration module (src/workflow/bugfix/ or similar) and declare its internal helper types: BugfixNextCall = { tool: 'insrc_workflow_run' | 'insrc_build_step'; params: Record<string, unknown> } (mirroring the buildNextCall descriptor shape, without importing triage-step internals) and StampDeps = { readIssue; locateParent; writeParentRef } (the injectable-deps bundle). Import IssueArtifact (S002), WorkItemRef (types.ts), ParentLocation + locateParent (S003 src/workflow/locate/), BugfixMagnitude (triage/types.ts). No new shared type; s4 owns none.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "BugfixNextCall + StampDeps compile under strict mode; BugfixNextCall.tool is the two-member union; no import of triage-step internals.",
+          "No change to any sc-level shared type; tsc clean."
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "BugfixNextCall/StampDeps compile + shape check (tsc-level, exercised via the t2/t3/t4 tests)"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Implement nextAfterIssue (the pure magnitude advance-route)",
+        "summary": "Implement nextAfterIssue(issue: IssueArtifact, repo: string): BugfixNextCall. Read issue.meta.magnitude, re-derive the route via the consumed routeForSizeClass('bugfix', magnitude) (triage/classify.ts:36), and emit: small => a standalone insrc_build_step nextCall (issue->build, mirroring buildNextCall's trivial branch's standalone param); sized => a standalone insrc_workflow_run design.story nextCall (issue->design->plan->build). Throw invalid-magnitude when magnitude is neither 'small' nor 'sized'. Pure: reads meta only, no IO.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "magnitude='small' -> insrc_build_step standalone nextCall (no design.story/plan); magnitude='sized' -> insrc_workflow_run design.story standalone nextCall.",
+          "The emitted route matches routeForSizeClass('bugfix', magnitude) (producesLld/needsPlan consistency).",
+          "magnitude absent/invalid -> throws invalid-magnitude (no silent default). tsc clean."
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "nextAfterIssue: magnitude='small' -> a standalone insrc_build_step nextCall (issue->build), no design.story/plan tool"
+          },
+          {
+            "level": "unit",
+            "name": "nextAfterIssue: magnitude='sized' -> a standalone insrc_workflow_run design.story nextCall (issue->design->plan->build)"
+          },
+          {
+            "level": "unit",
+            "name": "nextAfterIssue: the emitted route matches routeForSizeClass('bugfix', magnitude) (producesLld/needsPlan consistency)"
+          },
+          {
+            "level": "unit",
+            "name": "nextAfterIssue: the small build nextCall carries the standalone param (mirrors buildNextCall's trivial branch)"
+          },
+          {
+            "level": "unit",
+            "name": "nextAfterIssue: magnitude absent/invalid -> throws invalid-magnitude (no silent default route)"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Implement admitBugfixAdvance (the pure advance gate)",
+        "summary": "Implement admitBugfixAdvance(issue: IssueArtifact): { admitted: boolean; reason?: string } as a pure predicate over meta (mirroring the admitBuild admission pattern, no IO). admitted=true only when meta.approvedAt is set AND meta.parentRef has been RESOLVED (present, including explicit null for standalone); admitted=false with a descriptive reason otherwise (not approved, or parentRef absent/unresolved).",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "approved + parentRef WorkItemRef -> admitted; approved + parentRef===null -> admitted (null is resolved); approved + parentRef absent -> not admitted; not approved -> not admitted.",
+          "Pure predicate, no IO; reason string names the failing condition. tsc clean."
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "admitBugfixAdvance: approved + parentRef resolved (WorkItemRef) -> admitted"
+          },
+          {
+            "level": "unit",
+            "name": "admitBugfixAdvance: approved + parentRef===null (standalone) -> admitted (null is resolved, not absent)"
+          },
+          {
+            "level": "unit",
+            "name": "admitBugfixAdvance: approved + parentRef ABSENT -> not admitted, reason names the missing parent resolution"
+          },
+          {
+            "level": "unit",
+            "name": "admitBugfixAdvance: not approved (no meta.approvedAt) -> not admitted, reason names approval"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Implement locateAndStampParent (locate + meta-only parentRef patch)",
+        "summary": "Implement locateAndStampParent(input: { repoPath; issueHash }, deps: StampDeps): Promise<ParentLocation>. Via injected deps: readIssue (throw issue-not-found on null; throw not-approved when no meta.approvedAt), derive defectDescription from the issue body (title+reproduction+rootCause+fixIntent) with empty touchedPaths, call deps.locateParent (the consumed sc3 entry point; let an infra rejection propagate WITHOUT writing), then deps.writeParentRef(repoPath, issueHash, location.parentRef) as a single-field meta patch. Return the ParentLocation. Never rewrites the body (k4). Provide a default StampDeps wiring readIssue/writeParentRef to the existing storage round-trip (read ISSUE-<hash>.json -> set meta.parentRef -> writeAtomic) and locateParent to src/workflow/locate.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "locateParent returns a WorkItemRef -> writeParentRef called with it; returns null -> writeParentRef(null); both leave the issue body byte-unchanged (k4).",
+          "readIssue null -> throws issue-not-found (no write); no approvedAt -> throws not-approved (no write); locateParent rejects -> propagates, no write.",
+          "The default StampDeps round-trips via the existing storage helpers (single-field meta patch, not a re-finalize). tsc clean."
+        ],
+        "derivedFrom": [
+          "c3",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "locateAndStampParent: locateParent returns a WorkItemRef -> writeParentRef called with that ref; returns the ParentLocation"
+          },
+          {
+            "level": "unit",
+            "name": "locateAndStampParent: locateParent returns standalone (null) -> writeParentRef called with null"
+          },
+          {
+            "level": "unit",
+            "name": "locateAndStampParent: readIssue null -> throws issue-not-found, writeParentRef NOT called"
+          },
+          {
+            "level": "unit",
+            "name": "locateAndStampParent: issue present but no approvedAt -> throws not-approved, writeParentRef NOT called"
+          },
+          {
+            "level": "unit",
+            "name": "locateAndStampParent: locateParent rejects (infra failure) -> propagates, writeParentRef NOT called (no partial stamp)"
+          },
+          {
+            "level": "unit",
+            "name": "locateAndStampParent: defectDescription passed to locateParent is derived from reproduction+rootCause+fixIntent; touchedPaths empty at issue-approval"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Wire the advance + stamp into the issue-approval flow",
+        "summary": "Wire the orchestration into the controller/MCP path so that, after an IssueArtifact is approved, the flow: (1) invokes locateAndStampParent, (2) gates on admitBugfixAdvance, (3) emits nextAfterIssue's nextCall. FIRST locate the concrete issue-approval hook (where approveWorkflowTarget stamps an ISSUE artifact's approvedAt) and gate the new wiring behind the bugfixCategory flag AND a meta.workflow==='issue' check so a non-bugfix approval path is provably byte-unchanged. Additive only. Completion continues to use approveWorkflowTarget verbatim (no new completion path). Keep this wiring thin — it composes t2/t3/t4 and reuses the existing approve gate.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t2",
+          "t3",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "After issue approval under the bugfixCategory flag + meta.workflow==='issue': parentRef is stamped, admitBugfixAdvance gates, and the routed nextCall is surfaced; a non-bugfix approval is byte-unchanged.",
+          "Completion of the resulting bugfix build reuses approveWorkflowTarget unchanged (no new completion path). tsc clean."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "issue-approval wiring: under bugfixCategory + meta.workflow==='issue', approval stamps parentRef, gates via admitBugfixAdvance, and surfaces the routed nextCall; a non-bugfix approval is byte-unchanged"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Unit + integration tests for the orchestration",
+        "summary": "Unit-test nextAfterIssue (small/sized/invalid-magnitude, route-consistency, standalone param) and admitBugfixAdvance (approved+resolved / null / absent / not-approved) with fabricated IssueArtifacts; unit-test locateAndStampParent with an injected fake StampDeps (WorkItemRef / null / readIssue-null / not-approved / locateParent-rejects, asserting writeParentRef call/no-call). Add an integration test reusing the approve-build-completion harness proving a bugfix BUILD completes under codeReview.enforce with a CR pass and is withheld on absent/block CR (ac3). node:test via tsx; no live services.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t2",
+          "t3",
+          "t4",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "Every nextAfterIssue/admitBugfixAdvance/locateAndStampParent subject from the LLD test strategy has a passing test (ac1/ac2 route + gate + stamp).",
+          "The completion integration test covers ac3 (CR pass completes; absent/block CR withholds) via the existing approve-build harness.",
+          "The relevant workflow/mcp subsets are green locally via npx tsx --test."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "A bugfix BUILD under codeReview.enforce with a CR pass -> completes (approvedAt set), codeReview[] pass"
+          },
+          {
+            "level": "integration",
+            "name": "A bugfix BUILD under codeReview.enforce with an absent/block CR -> withheld into skipped[], no approvedAt (unless overrideReview)"
+          },
+          {
+            "level": "integration",
+            "name": "A bugfix standalone-build path with enforce OFF -> completes byte-identical (no new completion path)"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "nextAfterIssue: magnitude='small' -> a standalone insrc_build_step nextCall (issue->build), no design.story/plan tool",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "nextAfterIssue: magnitude='sized' -> a standalone insrc_workflow_run design.story nextCall (issue->design->plan->build)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "nextAfterIssue: the emitted route matches routeForSizeClass('bugfix', magnitude) (producesLld/needsPlan consistency)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "nextAfterIssue: the small build nextCall carries the standalone param (mirrors buildNextCall's trivial branch)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "nextAfterIssue: magnitude absent/invalid -> throws invalid-magnitude (no silent default route)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "admitBugfixAdvance: approved + parentRef resolved (WorkItemRef) -> admitted",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "admitBugfixAdvance: approved + parentRef===null (standalone) -> admitted (null is resolved, not absent)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "admitBugfixAdvance: approved + parentRef ABSENT -> not admitted, reason names the missing parent resolution",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "admitBugfixAdvance: not approved (no meta.approvedAt) -> not admitted, reason names approval",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "locateAndStampParent: locateParent returns a WorkItemRef -> writeParentRef called with that ref; returns the ParentLocation",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "locateAndStampParent: locateParent returns standalone (null) -> writeParentRef called with null",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "locateAndStampParent: readIssue null -> throws issue-not-found, writeParentRef NOT called",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "locateAndStampParent: issue present but no approvedAt -> throws not-approved, writeParentRef NOT called",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "locateAndStampParent: locateParent rejects (infra failure) -> propagates, writeParentRef NOT called (no partial stamp)",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "locateAndStampParent: defectDescription passed to locateParent is derived from reproduction+rootCause+fixIntent; touchedPaths empty at issue-approval",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "A bugfix BUILD under codeReview.enforce with a CR pass -> completes (approvedAt set), codeReview[] pass",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "A bugfix BUILD under codeReview.enforce with an absent/block CR -> withheld into skipped[], no approvedAt (unless overrideReview)",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "A bugfix standalone-build path with enforce OFF -> completes byte-identical (no new completion path)",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 contractDetails.nextAfterIssue + invariant 'scope gate is sc1's route table' — routeForSizeClass('bugfix', magnitude) (src/workflow/triage/classify.ts:36); small->build, sized->design->plan->build"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 invariant 'completion reuses approveWorkflowTarget unchanged' (src/workflow/gates.ts:617) + ac3 — the post-build code-review completion gate reused verbatim"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 contractDetails.locateAndStampParent + dataModelChanges.ArtifactMetaBase.parentRef (types.ts:412) — the meta-only parentRef stamp via the storage round-trip (k4 body untouched)"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 contractDetails (BugfixNextCall/StampDeps types + admitBugfixAdvance gate) + HLD boundary — s4 owns no new shared type; admitBugfixAdvance mirrors admitBuild (runners/build/admission.ts)"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "S003 src/workflow/locate/ — locateParent + ParentLocation, the sc3 entry point locateAndStampParent invokes (degrades to semantic/prompt/standalone with empty touchedPaths)"
+    },
+    {
+      "id": "c6",
+      "kind": "convention",
+      "ref": "insrc framework has no auto sequencer — buildNextCall (mcp/triage-step/phases/classify.ts:41) emits only stage-1; advance is per-stage nextCall + admission/approve gates; the issue-approval wiring is additive + bugfixCategory-gated"
+    }
+  ]
+}

@@ -101,17 +101,17 @@ test('stale explicitRef (resolveRef null) → falls through to inference tiers',
 
 // --- tier 2: graph-ownership ----------------------------------------------
 
-test('graph candidate ≥ threshold → graph-ownership, semantic pass skipped (short-circuit)', async () => {
-	let semanticAsked = false;
+test('graph candidate ≥ threshold → graph-ownership wins even when semantic scores higher (short-circuit)', async () => {
+	// Semantic carries a strictly higher score, yet the fixed tier order returns
+	// at graph-ownership — proving graph short-circuits the semantic tier.
 	const inferred: InferredCandidates = {
 		graph:    [cand({ score: 4, parentRef: { slug: 'g' } })],
-		get semantic() { semanticAsked = true; return [cand({ score: 1, parentRef: { slug: 's' } })]; },
+		semantic: [cand({ score: 0.99, parentRef: { slug: 's' } })],
 	};
 	const res = await locateParent(input(), makeDeps({ inferCandidates: async () => inferred }));
 	assert.equal(res.tier, 'graph-ownership');
 	assert.equal(res.confidence, 4);
-	// The policy inspects graph first and returns before touching semantic.
-	assert.equal(semanticAsked, false, 'semantic must not be consulted after a graph short-circuit');
+	assert.deepEqual(res.parentRef, { slug: 'g' });
 });
 
 // --- tier 3: semantic ------------------------------------------------------
@@ -159,6 +159,19 @@ test('inferCandidates rejects/times out → degrades to prompt then standalone, 
 	let prompted = false;
 	const res = await locateParent(input(), makeDeps({
 		inferCandidates: async () => { throw new Error('daemon down'); },
+		promptForRef: async () => { prompted = true; return null; },
+	}));
+	assert.equal(prompted, true);
+	assert.equal(res.tier, 'standalone');
+	assert.equal(res.parentRef, null);
+});
+
+test('inferCandidates returns a resolved {error}-shaped object → degrades to standalone, never throws', async () => {
+	// The daemon signals a bad request by RESOLVING `{ error }`, not rejecting.
+	// The policy must normalize the absent graph/semantic lists, not crash.
+	let prompted = false;
+	const res = await locateParent(input(), makeDeps({
+		inferCandidates: (async () => ({ error: 'locate.inferParents: `repoPath` is required' })) as unknown as LocateParentDeps['inferCandidates'],
 		promptForRef: async () => { prompted = true; return null; },
 	}));
 	assert.equal(prompted, true);

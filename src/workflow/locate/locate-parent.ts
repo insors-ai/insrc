@@ -97,11 +97,19 @@ export async function locateParent(
 	// it never throws and never auto-attaches (lc1 under an absent inference).
 	let inferred: InferredCandidates;
 	try {
-		inferred = await deps.inferCandidates({
+		const raw = await deps.inferCandidates({
 			repoPath:          deps.repoPath,
 			touchedPaths:      input.touchedPaths,
 			defectDescription: input.defectDescription,
 		});
+		// Normalize defensively: a daemon that signals failure by RETURNING a
+		// resolved `{ error }` object (this codebase's convention) — or any port
+		// that returns a malformed shape — must still degrade to prompt/standalone,
+		// never crash the locate. Missing lists become empty.
+		inferred = {
+			graph:    Array.isArray(raw?.graph)    ? raw.graph    : [],
+			semantic: Array.isArray(raw?.semantic) ? raw.semantic : [],
+		};
 	} catch {
 		inferred = { graph: [], semantic: [] };
 	}

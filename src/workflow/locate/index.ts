@@ -43,7 +43,14 @@ export function daemonInferCandidates(
 	call: (method: string, params: unknown) => Promise<unknown>,
 ): (req: InferParentsRequest) => Promise<InferredCandidates> {
 	return async (req: InferParentsRequest): Promise<InferredCandidates> => {
-		const res = await call(LOCATE_INFER_PARENTS_METHOD, req);
-		return res as InferredCandidates;
+		const res = await call(LOCATE_INFER_PARENTS_METHOD, req) as Partial<InferredCandidates> | null;
+		// The daemon handler returns a resolved `{ error }` object on a bad
+		// request (this codebase's convention), not a rejection — coerce any
+		// non-conforming reply to empty candidates so the controller policy
+		// degrades cleanly instead of dereferencing an absent list.
+		return {
+			graph:    Array.isArray(res?.graph)    ? res.graph    : [],
+			semantic: Array.isArray(res?.semantic) ? res.semantic : [],
+		};
 	};
 }

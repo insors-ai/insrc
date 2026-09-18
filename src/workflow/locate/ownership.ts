@@ -150,15 +150,17 @@ export function matchGraphCandidates(
 	return out;
 }
 
-/** Owners of a single path — exact key, else a suffix match either direction. */
+/** Owners of a single path — exact key, else a path-BOUNDARY-guarded suffix
+ *  match. This fallback is the PRIMARY matcher for graph-expanded neighbours,
+ *  whose `Entity.file` is always ABSOLUTE while the ownership keys are
+ *  repo-relative citation paths — so the two never match exactly. */
 function lookupOwners(path: string, index: OwnershipIndex): readonly WorkItemRef[] {
 	const exact = index.byPath.get(path);
 	if (exact !== undefined) return exact;
-	// Fall back to endsWith matching so absolute vs repo-relative spellings align.
 	const hits: WorkItemRef[] = [];
 	const seen = new Set<string>();
 	for (const [key, refs] of index.byPath) {
-		if (key.endsWith(path) || path.endsWith(key)) {
+		if (pathMatches(path, key)) {
 			for (const ref of refs) {
 				const k = workItemKey(ref);
 				if (!seen.has(k)) { seen.add(k); hits.push(ref); }
@@ -166,4 +168,18 @@ function lookupOwners(path: string, index: OwnershipIndex): readonly WorkItemRef
 		}
 	}
 	return hits;
+}
+
+/**
+ * Whether two paths name the same file modulo absolute-vs-repo-relative
+ * spelling. The shorter is a suffix of the longer ONLY at a path-segment
+ * boundary — so `src/config.ts` matches `/repo/src/config.ts` but NOT
+ * `/repo/notsrc/config.ts`, and a bare `a.ts` never matches `data.ts`.
+ * Boundary-guarding is load-bearing: an unguarded `endsWith` would fabricate
+ * cross-story ownership and could auto-attach a bugfix to the wrong parent (lc1).
+ */
+function pathMatches(a: string, b: string): boolean {
+	if (a === b) return true;
+	const [long, short] = a.length >= b.length ? [a, b] : [b, a];
+	return long.endsWith(`/${short}`);
 }

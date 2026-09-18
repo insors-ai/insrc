@@ -19,8 +19,7 @@
 import type { DbClient } from '../../db/client.js';
 import type { Entity } from '../../shared/types.js';
 import { findEntitiesByFile } from '../../db/entities.js';
-import { listRepos } from '../../db/repos.js';
-import { findCallees, findCallers, searchEntities } from '../../db/search.js';
+import { findCallees, findCallers, resolveClosure, searchEntities } from '../../db/search.js';
 import { embedQuery } from '../../indexer/embedder.js';
 import { getLogger } from '../../shared/logger.js';
 import { refFromDocPath, type InferencePorts } from './infer.js';
@@ -60,9 +59,12 @@ export function daemonInferencePorts(db: DbClient, repoPath: string): InferenceP
 		async semanticCandidates(defectDescription, k) {
 			const queryVec = await embedQuery(defectDescription);
 			if (queryVec.length === 0) return [];
-			const repos = (await listRepos(db)).map(r => r.path);
-			const closure = repos.length > 0 ? repos : [repoPath];
-			const hits = await searchEntities(db, queryVec, closure, k, 'artifact');
+			// Scope to the active repo's dependency closure (rule 3), not every
+			// registered repo — a bugfix in repo A must not attach to a story in
+			// an unrelated repo B (refFromDocPath carries no repo qualifier).
+			const closure = await resolveClosure(db, repoPath);
+			const repos = closure.length > 0 ? closure : [repoPath];
+			const hits = await searchEntities(db, queryVec, repos, k, 'artifact');
 			return mapSemanticHits(hits);
 		},
 	};

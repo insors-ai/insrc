@@ -106,6 +106,24 @@ test('matchGraphCandidates: unmatched paths contribute nothing (no throw)', () =
 	assert.deepEqual(ranked, []);
 });
 
+test('matchGraphCandidates: an ABSOLUTE graph-neighbour path matches its repo-relative owner key', () => {
+	// Entity.file is always absolute; ownership keys are repo-relative citations.
+	const idx = { byPath: new Map([['src/config.ts', [{ slug: 'owner', storyId: 's1' }]]]) };
+	const ranked = matchGraphCandidates(['/home/me/repo/src/config.ts'], idx);
+	assert.equal(ranked.length, 1);
+	assert.deepEqual(ranked[0]!.parentRef, { slug: 'owner', storyId: 's1' });
+});
+
+test('matchGraphCandidates: suffix match is path-boundary-guarded (no cross-story false attach, lc1)', () => {
+	const idx = { byPath: new Map([['src/config.ts', [{ slug: 'owner' }]]]) };
+	// `.../notsrc/config.ts` shares the char-run "src/config.ts" but NOT at a
+	// path boundary — an unguarded endsWith would fabricate ownership.
+	assert.deepEqual(matchGraphCandidates(['/repo/notsrc/config.ts'], idx), []);
+	// A bare-name citation must not swallow a longer unrelated file either.
+	const idx2 = { byPath: new Map([['a.ts', [{ slug: 'owner' }]]]) };
+	assert.deepEqual(matchGraphCandidates(['/repo/src/data.ts'], idx2), []);
+});
+
 // --- inferParentCandidates (composition over stub ports) -------------------
 
 test('inferParentCandidates: touched path owned by a story yields a graph candidate + evidence', async () => {

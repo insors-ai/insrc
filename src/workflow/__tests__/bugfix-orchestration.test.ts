@@ -79,11 +79,26 @@ test("nextAfterIssue: magnitude='sized' -> standalone insrc_workflow_run design.
 	assert.equal(nc.params['workflow'], 'design.story');
 });
 
-test('nextAfterIssue: the small build nextCall carries a standalone param', () => {
+test('nextAfterIssue: the small build routes through the build-step NO-LLD path (sizeClass=trivial, consumable)', () => {
+	// handleStandaloneImplement derives producesLld = sizeClass !== 'trivial' and
+	// ignores an explicit producesLld — so a small bugfix (no LLD) MUST route as
+	// 'trivial' or the reused build-step refuses with no-identity/plan-missing.
 	const nc = nextAfterIssue(issue({ magnitude: 'small', approvedAt: APPROVED }), '/repo');
-	const st = nc.params['standalone'] as { standalone?: boolean; sizeClass?: string };
+	const st = nc.params['standalone'] as { standalone?: boolean; sizeClass?: string; focus?: string };
 	assert.equal(st.standalone, true);
-	assert.equal(st.sizeClass, 'bugfix');
+	assert.equal(st.sizeClass, 'trivial', 'small bugfix uses the build-step no-LLD path');
+	// the full defect scope rides in focus, not just the title
+	assert.match(st.focus ?? '', /Fix the boom/);
+	assert.match(st.focus ?? '', /do X/);
+});
+
+test('nextAfterIssue: the sized design.story spec carries the full defect body, not just the title', () => {
+	const nc = nextAfterIssue(issue({ magnitude: 'sized', approvedAt: APPROVED }), '/repo');
+	const p = nc.params['params'] as { storySpec?: string; storyTitle?: string };
+	assert.equal(p.storyTitle, 'Fix the boom');
+	assert.match(p.storySpec ?? '', /do X/);   // reproduction
+	assert.match(p.storySpec ?? '', /Y/);       // rootCause
+	assert.match(p.storySpec ?? '', /Z/);       // fixIntent
 });
 
 test('nextAfterIssue: emitted stage matches routeForSizeClass (small->build has no design.story)', () => {

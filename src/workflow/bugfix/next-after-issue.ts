@@ -36,34 +36,50 @@ export function nextAfterIssue(issue: IssueArtifact, repo: string): BugfixNextCa
 	// post-issue path: small (false) → build, sized (true) → design.story.
 	const route = routeForSizeClass('bugfix', magnitude);
 	const title = issue.body.title;
+	// The full defect scope — the same text the locator grounds on — carried
+	// forward so neither downstream stage loses the reproduction/root-cause/
+	// fix-intent captured in the approved issue.
+	const scope = [
+		issue.body.title,
+		issue.body.reproduction,
+		issue.body.rootCause,
+		issue.body.fixIntent,
+	].join('\n\n');
 
 	if (!route.producesLld) {
-		// small → straight to build, standalone (the build-step resolver cannot
-		// target a hierarchical task without a tracker — mirror buildNextCall's
-		// trivial branch's standalone param).
+		// small → straight to build, standalone. A small bugfix is a NO-LLD,
+		// scope-statement-driven build — behaviourally the build-step's `trivial`
+		// path. handleStandaloneImplement derives `producesLld = sizeClass !==
+		// 'trivial'` (it does NOT honour an explicit producesLld), so the routing
+		// sizeClass MUST be 'trivial' for the no-LLD admit; passing 'bugfix' would
+		// demand an approved LLD the small path never produces. The defect scope
+		// rides in `focus`, and the tracked record stays the approved IssueArtifact
+		// (which carries meta.parentRef). [Follow-up: a build-step that honours an
+		// explicit no-LLD signal would let this carry sizeClass:'bugfix' verbatim.]
 		return {
 			tool:   'insrc_build_step',
 			params: {
 				phase:  'implement',
 				repo,
 				target: '(standalone-bugfix)',
-				standalone: { standalone: true, sizeClass: 'bugfix', focus: title },
+				standalone: { standalone: true, sizeClass: 'trivial', focus: scope },
 			},
 		};
 	}
 
 	// sized → a standalone design.story (LLD), then the existing design→plan→build
-	// upstream gates carry it to build.
+	// upstream gates carry it to build. The full defect body is the spec so the
+	// LLD author has the reproduction/root-cause/fix-intent, not just the title.
 	return {
 		tool:   'insrc_workflow_run',
 		params: {
 			repo,
 			workflow: 'design.story',
-			focus:    title,
+			focus:    scope,
 			params: {
 				standalone: true,
 				storyTitle: title,
-				storySpec:  title,
+				storySpec:  scope,
 				sizeClass:  'bugfix',
 			},
 		},

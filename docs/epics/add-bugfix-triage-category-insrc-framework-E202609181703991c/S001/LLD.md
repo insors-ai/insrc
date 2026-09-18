@@ -264,18 +264,13 @@ types.ts: same as a1 (SizeClass+SIZE_CLASSES gain 'bugfix', add BugfixMagnitude,
 
 - HLD amendment (pending approval): s1's bugfix route must return startStage:'issue', but the 'issue' WorkflowName literal is bundled into sc2 (owned by s2, Phase B) while s1 lands alone in Phase A. Proposed fix: move ONLY the bare 'issue' union-member literal into s1/Phase A (storyBoundary.reassignOwnership, additive/non-breaking); sc2 keeps all issue-stage machinery. Alternative: rollout.reorder so s2's union addition precedes s1. Decision needed before build.
 
+## Resolved questions
+
+- `q9399e594` — HLD amendment (pending approval): s1's bugfix route must return startStage:'issue', but the 'issue' WorkflowName literal is bundled into sc2 (owned by s2, Phase B) while s1 lands alone in Phase A. Proposed fix: move ONLY the bare 'issue' union-member literal into s1/Phase A (storyBoundary.reassignOwnership, additive/non-breaking); sc2 keeps all issue-stage machinery. Alternative: rollout.reorder so s2's union addition precedes s1. Decision needed before build.
+  - **resolved**: Move the bare 'issue' literal into s1 (Phase A) — User-approved (in-chat): apply the pending HLD amendment (storyBoundary.reassignOwnership) so s1/Phase A gains only the bare 'issue' WorkflowName literal (additive, non-breaking); sc2/s2 keeps all issue-stage machinery. Keeps Phase A self-contained. _(2026-09-18T11:56:27.736Z)_
+
 ## Citations
 
 - **[[c1]]** `analyze-bundle` `s1 structural-map — src/workflow/triage/types.ts:16/18/21-32/46-55, classify.ts:29-44/57` — "SizeClass = 'epic'|'feature'|'small'|'trivial' (types.ts:16); SIZE_CLASSES matching array (types.ts:18); routeForSizeClass is a pure exhaustive switch with no default; CLASSIFY_SCHEMA.sizeClass.enum ="
 - **[[c2]]** `analyze-bundle` `s1 regression-surface — src/workflow/seed-focus.ts:79-81, src/workflow/triage/__tests__/classify.test.ts` — "routeForSizeClass has exactly ONE non-test caller: specScopeFitsStandalone (reads route.standalone); classify.test.ts asserts per-size routes plus two SIZE_CLASSES loop invariants."
 - **[[c3]]** `code` `src/workflow/types.ts:86 (WorkflowName union) and src/workflow/triage/types.ts:13 (import type WorkflowName)` — "WorkflowName is imported into triage/types.ts and typed on TriageRoute.startStage; 'issue' is not yet a member."
-
-<!-- insrc:review -->
-
-## Review
-
-### ✅ Review `PASS` — design.story (design.story)
-
-**0 HIGH · 0 MED · 0 LOW** · model `client` · reviewed 2026-09-18T11:54:46.216Z
-
-_No load-bearing premises were extracted._

@@ -37,7 +37,16 @@
       "reviewedAt": "2026-09-18T11:54:46.216Z",
       "model": "client"
     },
-    "approvedAt": "2026-09-18T11:55:47.294Z"
+    "approvedAt": "2026-09-18T11:55:47.294Z",
+    "questionResolutions": {
+      "q9399e594": {
+        "question": "HLD amendment (pending approval): s1's bugfix route must return startStage:'issue', but the 'issue' WorkflowName literal is bundled into sc2 (owned by s2, Phase B) while s1 lands alone in Phase A. Proposed fix: move ONLY the bare 'issue' union-member literal into s1/Phase A (storyBoundary.reassignOwnership, additive/non-breaking); sc2 keeps all issue-stage machinery. Alternative: rollout.reorder so s2's union addition precedes s1. Decision needed before build.",
+        "status": "resolved",
+        "choice": "Move the bare 'issue' literal into s1 (Phase A)",
+        "rationale": "User-approved (in-chat): apply the pending HLD amendment (storyBoundary.reassignOwnership) so s1/Phase A gains only the bare 'issue' WorkflowName literal (additive, non-breaking); sc2/s2 keeps all issue-stage machinery. Keeps Phase A self-contained.",
+        "resolvedAt": "2026-09-18T11:56:27.736Z"
+      }
+    }
   },
   "body": {
     "hldContextSlice": {

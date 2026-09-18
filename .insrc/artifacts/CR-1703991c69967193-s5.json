@@ -1,0 +1,67 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1789746918726-tfgif3",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-18T15:55:18.726Z",
+    "model": "client",
+    "elapsedMs": 3,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1703991c69967193",
+    "storyId": "s5"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "1703991c69967193",
+    "storyId": "s5",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "src/workflow/__tests__/bugfix-tracker.test.ts",
+        "src/workflow/bugfix/index.ts",
+        "src/workflow/bugfix/tracker.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/bugfix/tracker.ts:399",
+            "message": "defaultResolveParentIssueRef's issueForWorkflowId lookup is not exercised end-to-end (no on-disk DEF/LLD artifact fixture). The load-bearing candidate derivation IS covered by the new parentRefIdentifiers unit test, and issueForWorkflowId/resolveWorkflowRef have their own resolve.ts tests, so the gap is narrow — the wiring between the two is untested. An integration test over a temp artifacts dir would close it.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/bugfix/index.ts:14",
+            "message": "S005 ships as an exported seam (createBugfixTrackerIssue/closeBugfixTrackerIssue/completeBugfixTracker + the advance tracker opt) with no production caller yet — nothing in daemon/ or mcp/ mounts it on the approve/completion path. This is the known, intentional framework gap that has applied since S004 (the build-step resolver can't target epic-story tasks without a GH tracker), not a defect introduced here; a follow-up must wire the seam onto the daemon completion gate. Flagged so the seam isn't mistaken for live behaviour.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 2
+    }
+  }
+}

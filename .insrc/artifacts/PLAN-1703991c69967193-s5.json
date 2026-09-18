@@ -1,0 +1,436 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1789745283426-xsrby3",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-18T15:34:57.451Z",
+    "epicCreatedAt": "2026-09-18T10:07:09.320Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 414014,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1703991c69967193",
+    "epicSlug": "add-bugfix-triage-category-insrc-framework",
+    "storyId": "s5",
+    "lldRunId": "wf-1789743927605-ixbwc3",
+    "lldEffectiveHash": "e08e0c0d9f7b0edafe2979944fb169368ad12f61bc842d0ebec3a3ec979632fa",
+    "review": {
+      "artifact": "plan",
+      "stage": "plan",
+      "verdict": "pass",
+      "findings": [],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 0
+      },
+      "reviewedAt": "2026-09-18T15:36:29.415Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-18T15:36:57.104Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add the s5 GitHub-integration module types",
+        "summary": "Create the s5 module (src/workflow/bugfix/tracker.ts) and declare the internal helper types: TrackerCreateDeps, TrackerCloseDeps, TrackerIssueResult { status:'created'|'reused'|'skipped'; ref?; linked?; reason? }, TrackerCloseResult { status:'closed'|'skipped'; ref?; reason? }, and a LostRefAction union for the resolved prompt path ('retry-record'|'record-manual'|'relink-by-label'|'skip'). Import/consume CreatedIssue + ResolvedGithubConfig + IssueArtifact + WorkItemRef (existing). No new shared type.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "All helper types compile under strict mode; TrackerIssueResult/TrackerCloseResult status unions are exact; no sc-level shared type is added.",
+          "CreatedIssue/ResolvedGithubConfig are consumed (imported), not redefined; tsc clean."
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "types: a TrackerIssueResult/TrackerCloseResult sample object type-checks against the exact status unions (compile-time; covered transitively by t3/t4/t5 result assertions)"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Add the thin ghCloseIssue gh-verb wrapper",
+        "summary": "Add ghCloseIssue(owner: string, repo: string, ref: string): void to src/workflow/tracker/github.ts, mirroring ghEditIssueBody/ghComment: parseIssueRef(ref).number then silent('gh', ['issue','close', <N>, '--repo', `${owner}/${repo}`]) through the injectable _exec (k5: gh CLI argv, no shell, no REST). Additive sibling in the gh-wrapper family; touches no existing wrapper.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "ghCloseIssue shells `gh issue close <N> --repo owner/repo` via the injectable _exec; number parsed via parseIssueRef.",
+          "No existing wrapper's signature/behavior changes; tsc + existing tracker test subset green."
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "ghCloseIssue: via _setTrackerExecForTests a fake _exec records argv === ['issue','close', '<N>', '--repo', 'owner/repo'] (number parsed from owner/repo#N)"
+          },
+          {
+            "level": "unit",
+            "name": "ghCloseIssue: uses `gh` (not a shell) — the fake exec asserts the command is 'gh' and args are an argv array"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Implement createBugfixTrackerIssue (config-gated create + link + record)",
+        "summary": "Implement createBugfixTrackerIssue(input, deps): resolveConfig (skip {status:'skipped'} on type:'none'/GithubConfigError, ac2) + authOk (skip if not ok); if meta.tracker already carries the ref -> {status:'reused'} (idempotent); else render body = renderIssueMarkdown(issue) VERBATIM (k4), title = issue.body.title, createIssue = ghCreateIssueTyped (get {ref,id}); resolveParentIssueRef(meta.parentRef) -> parent owner/repo#N (via resolveWorkflowRef/issueForWorkflowId); ghLinkSubIssue best-effort (skip when parentRef null/standalone or ref null; a link throw -> {created, linked:false}); recordRef the created ref on meta.tracker (patchTrackerMeta). Provide default deps wiring the real consumed functions.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "Configured+parent-pushed -> createIssue(body===renderIssueMarkdown, title===issue.body.title); linkSubIssue(parent, createdId); ref recorded; {status:'created', linked:true}.",
+          "type:'none'/GithubConfigError/authOk-false -> {status:'skipped'}, no createIssue call (ac2). Already-recorded ref -> {status:'reused'}.",
+          "Standalone (parentRef null)/unpushed parent/link-throw -> {status:'created', linked:false}, no error. tsc clean."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "createBugfixTrackerIssue: configured + parent resolves -> createIssue called with body===renderIssueMarkdown(issue) and title===issue.body.title (k4); linkSubIssue called with the parent ref + created REST id; ref recorded; { status:'created', linked:true }"
+          },
+          {
+            "level": "unit",
+            "name": "createBugfixTrackerIssue: configured + standalone (parentRef null) -> created UNLINKED (linkSubIssue NOT called), { status:'created', linked:false }"
+          },
+          {
+            "level": "unit",
+            "name": "createBugfixTrackerIssue: configured + parentRef present but resolveParentIssueRef null -> created unlinked (no link attempt)"
+          },
+          {
+            "level": "unit",
+            "name": "createBugfixTrackerIssue: resolveConfig type:'none' -> { status:'skipped' }, NO createIssue call (ac2)"
+          },
+          {
+            "level": "unit",
+            "name": "createBugfixTrackerIssue: resolveConfig throws GithubConfigError -> { status:'skipped' }, NO createIssue call (ac2)"
+          },
+          {
+            "level": "unit",
+            "name": "createBugfixTrackerIssue: authOk() false -> { status:'skipped' }, NO createIssue call"
+          },
+          {
+            "level": "unit",
+            "name": "createBugfixTrackerIssue: meta.tracker already carries the ref -> { status:'reused' }, NO createIssue call (idempotent)"
+          },
+          {
+            "level": "unit",
+            "name": "createBugfixTrackerIssue: linkSubIssue throws (sub-issues disabled) -> issue still created + recorded, { status:'created', linked:false }"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Implement closeBugfixTrackerIssue (close on completion)",
+        "summary": "Implement closeBugfixTrackerIssue(input, deps): resolveConfig/authOk gate; readRecordedRef from meta.tracker; if no ref -> {status:'skipped'} (nothing created); else closeIssue = ghCloseIssue(owner, repo, ref) -> {status:'closed', ref}. A gh close failure against a real ref propagates (an already-closed issue is a no-op). Provide default deps wiring the real consumed functions + ghCloseIssue.",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "Recorded ref + configured -> closeIssue called, {status:'closed', ref}.",
+          "No recorded ref, or type:'none'/GithubConfigError -> {status:'skipped'}, closeIssue NOT called (ac2 symmetry).",
+          "closeIssue throws (deleted issue) -> propagates. tsc clean."
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "closeBugfixTrackerIssue: recorded ref present + configured -> closeIssue(owner, repo, ref) called, { status:'closed', ref }"
+          },
+          {
+            "level": "unit",
+            "name": "closeBugfixTrackerIssue: no recorded ref -> { status:'skipped' }, closeIssue NOT called (ac2 symmetry)"
+          },
+          {
+            "level": "unit",
+            "name": "closeBugfixTrackerIssue: resolveConfig 'none'/GithubConfigError -> { status:'skipped' }, closeIssue NOT called"
+          },
+          {
+            "level": "unit",
+            "name": "closeBugfixTrackerIssue: closeIssue throws (deleted issue) -> propagates"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Add the prompt-on-lost-ref path (resolved open-question)",
+        "summary": "Per the resolved open-question: when a recorded GH issue ref is lost/unexpectedly missing where one should exist, PROMPT THE USER with next-step options rather than silently degrading. Add an injectable promptOnLostRef dep (returns a LostRefAction) to TrackerCreateDeps/TrackerCloseDeps and branch on it: (create) if recordRef throws AFTER a successful create -> promptOnLostRef with the created ref in hand (retry-record / record-manual / skip); (close) if a configured repo has no recorded ref but a create likely happened -> promptOnLostRef (relink-by-label / record-manual / skip). SCOPING (per s3 critique): ghFindIssueByLabels is invoked ONLY inside the user-chosen 'relink-by-label' branch of the interactive prompt — NEVER on the normal create path — so a1's no-per-create-round-trip invariant holds and only the a2 lost-ref RECOVERY is added, not the deferred always-on a2 dedup. Default promptOnLostRef is a no-op returning 'skip' (preserves the pure-defer behavior when no prompter is injected, e.g. non-interactive). Still gh CLI only; no new external path.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t3",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "create: recordRef throws post-create -> promptOnLostRef invoked with the created ref; 'retry-record' re-writes it, 'skip' returns {status:'created', reason:'ref-unrecorded'} without throwing.",
+          "close: configured + no recorded ref (but likely created) -> promptOnLostRef invoked; 'relink-by-label' uses ghFindIssueByLabels (ONLY here, not on create) to re-discover + re-record + close, 'skip' -> {status:'skipped'}.",
+          "Default (no promptOnLostRef injected) -> returns 'skip' (byte-compatible with the LLD's defer behavior); no ghFindIssueByLabels call on any normal create path. tsc clean."
+        ],
+        "derivedFrom": [
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "prompt-on-lost-ref (create): recordRef throws post-create -> promptOnLostRef invoked with the created ref; 'retry-record' re-writes it; 'skip' -> { status:'created', reason:'ref-unrecorded' } without throwing"
+          },
+          {
+            "level": "unit",
+            "name": "prompt-on-lost-ref (close): configured + no recorded ref -> promptOnLostRef invoked; 'relink-by-label' uses ghFindIssueByLabels to re-discover + re-record + close; 'skip' -> { status:'skipped' }"
+          },
+          {
+            "level": "unit",
+            "name": "prompt-on-lost-ref default: no promptOnLostRef injected -> returns 'skip'; assert ghFindIssueByLabels NOT called on any normal create path (a1 no-per-create-round-trip invariant)"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Wire create into issue-approval and close into completion",
+        "summary": "Wire createBugfixTrackerIssue into the bugfix flow after the IssueArtifact is approved (the s4 advance / issue-approval point), and closeBugfixTrackerIssue into the completion path (after the build/completion gate). Additive + bugfixCategory-flag-gated + meta.workflow==='issue' scoped; the non-bugfix tracker/sync path is untouched. Completion continues to use the existing gates unchanged.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t3",
+          "t4",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "After a bugfix issue is approved under the flag: createBugfixTrackerIssue runs (create/link/record or skip); at completion closeBugfixTrackerIssue runs.",
+          "createBugfixTrackerIssue is invoked ONLY after the IssueArtifact's approval is stamped (post insrc_workflow_approve / the s4 advance point), never on an unapproved issue; closeBugfixTrackerIssue only after the completion gate (LLD precondition).",
+          "A non-bugfix approval/completion path is byte-unchanged; the read-only syncTracker epic path is untouched. tsc clean."
+        ],
+        "derivedFrom": [
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "End-to-end: configured repo + parent pushed -> the fake gh sees `issue create` then the sub_issues link POST then (on completion) `issue close`; meta.tracker carries the ref between create and close"
+          },
+          {
+            "level": "integration",
+            "name": "End-to-end: unconfigured repo -> the fake gh sees NO create/close commands; the local IssueArtifact is unchanged (ac2)"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Unit + integration tests for the tracker create/close + prompt path",
+        "summary": "Unit-test createBugfixTrackerIssue (create+link+k4 body, standalone unlinked, unpushed-parent unlinked, none/GithubConfigError/authOk skip, reused idempotent, link-throw best-effort), closeBugfixTrackerIssue (close/skip/deleted-propagates), ghCloseIssue argv (via _setTrackerExecForTests), and the prompt-on-lost-ref branches (recordRef-throw -> promptOnLostRef; close no-ref -> relink-by-label). Add an integration test over the fake-gh harness: create->record->close round-trip (configured); unconfigured no-op. These exercise the pure injectable-deps functions (t3/t4/t5) directly, so this task depends on [t3,t4,t5] not the t6 wiring (per s3 critique). Reuse the fabricated approved IssueArtifact + fake deps + stubGithubConfig pattern. node:test via tsx; no live services.",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t3",
+          "t4",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "Every create/close/ghCloseIssue subject from the LLD test strategy has a passing test (ac1/ac2/ac3).",
+          "The prompt-on-lost-ref branches have passing tests (create recordRef-throw -> prompt; close no-ref -> relink-by-label / skip); the default no-prompter path asserts no ghFindIssueByLabels call.",
+          "The relevant workflow/tracker subsets are green locally via npx tsx --test."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "End-to-end: configured repo + parent pushed -> the fake gh sees `issue create` then the sub_issues link POST then (on completion) `issue close`; meta.tracker carries the ref between create and close"
+          },
+          {
+            "level": "integration",
+            "name": "End-to-end: unconfigured repo -> the fake gh sees NO create/close commands; the local IssueArtifact is unchanged (ac2)"
+          },
+          {
+            "level": "unit",
+            "name": "Aggregate: the create/close/ghCloseIssue/prompt-on-lost-ref subjects run green as one bugfix-tracker.test.ts suite via npx tsx --test"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "createBugfixTrackerIssue: configured + parent resolves -> createIssue called with body===renderIssueMarkdown(issue) and title===issue.body.title (k4); linkSubIssue called with the parent ref + created REST id; ref recorded; { status:'created', linked:true }",
+        "coveredByTaskIds": [
+          "t3",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "createBugfixTrackerIssue: configured + standalone (parentRef null) -> created UNLINKED (linkSubIssue NOT called), { status:'created', linked:false }",
+        "coveredByTaskIds": [
+          "t3",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "createBugfixTrackerIssue: configured + parentRef present but resolveParentIssueRef null -> created unlinked (no link attempt)",
+        "coveredByTaskIds": [
+          "t3",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "createBugfixTrackerIssue: resolveConfig type:'none' -> { status:'skipped' }, NO createIssue call (ac2)",
+        "coveredByTaskIds": [
+          "t3",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "createBugfixTrackerIssue: resolveConfig throws GithubConfigError -> { status:'skipped' }, NO createIssue call (ac2)",
+        "coveredByTaskIds": [
+          "t3",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "createBugfixTrackerIssue: authOk() false -> { status:'skipped' }, NO createIssue call",
+        "coveredByTaskIds": [
+          "t3",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "createBugfixTrackerIssue: meta.tracker already carries the ref -> { status:'reused' }, NO createIssue call (idempotent)",
+        "coveredByTaskIds": [
+          "t3",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "createBugfixTrackerIssue: linkSubIssue throws (sub-issues disabled) -> issue still created + recorded, { status:'created', linked:false }",
+        "coveredByTaskIds": [
+          "t3",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "closeBugfixTrackerIssue: recorded ref present + configured -> closeIssue(owner, repo, ref) called, { status:'closed', ref }",
+        "coveredByTaskIds": [
+          "t4",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "closeBugfixTrackerIssue: no recorded ref -> { status:'skipped' }, closeIssue NOT called (ac2 symmetry)",
+        "coveredByTaskIds": [
+          "t4",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "closeBugfixTrackerIssue: resolveConfig 'none'/GithubConfigError -> { status:'skipped' }, closeIssue NOT called",
+        "coveredByTaskIds": [
+          "t4",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "closeBugfixTrackerIssue: closeIssue throws (deleted issue) -> propagates",
+        "coveredByTaskIds": [
+          "t4",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "ghCloseIssue: via _setTrackerExecForTests a fake _exec records argv === ['issue','close', '<N>', '--repo', 'owner/repo'] (number parsed from owner/repo#N)",
+        "coveredByTaskIds": [
+          "t2",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "ghCloseIssue: uses `gh` (not a shell) — the fake exec asserts the command is 'gh' and args are an argv array",
+        "coveredByTaskIds": [
+          "t2",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "End-to-end: configured repo + parent pushed -> the fake gh sees `issue create` then the sub_issues link POST then (on completion) `issue close`; meta.tracker carries the ref between create and close",
+        "coveredByTaskIds": [
+          "t6",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "End-to-end: unconfigured repo -> the fake gh sees NO create/close commands; the local IssueArtifact is unchanged (ac2)",
+        "coveredByTaskIds": [
+          "t6",
+          "t7"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 invariantsToPreserve[0] / contractDetails.api createBugfixTrackerIssue",
+      "quotedText": "The GitHub issue body is renderIssueMarkdown(issue) VERBATIM — the SAME content as the internal chain record — so the issue doc stays the single source of truth for both, with no divergent second copy (k4)."
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 invariantsToPreserve[2] / edgeCases 'no tracker configured'",
+      "quotedText": "No tracker configured => NO external attempt: resolveGithubConfig type:'none' or a GithubConfigError yields a skipped result and the local record stands with no error (ac2), mirroring the established sync.ts skip pattern."
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 interactionWithShared sc3 / contractDetails.api createBugfixTrackerIssue link path",
+      "quotedText": "s5 consumes the sc3 decision via meta.parentRef (a WorkItemRef): maps it to the parent's GH issue ref through resolveWorkflowRef/issueForWorkflowId and links via ghLinkSubIssue. parentRef null (standalone) or an unpushed parent => no link, no error."
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 invariantsToPreserve[1] / contractDetails.api ghCloseIssue",
+      "quotedText": "All GitHub access stays on the existing `gh` CLI through the injectable execFileSync `_exec` — NO direct cloud REST (k5) — and s5 reuses the existing create/link/config/resolve surface, adding ONLY the thin ghCloseIssue verb forced by the absence of any close wrapper (k6)."
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 openQuestions / resolved open-question q12a87841 (commit eacbb1a)",
+      "quotedText": "Resolved: when a recorded ref is lost/missing, PROMPT THE USER with next-step options (retry-record / record-manual / relink-by-label via ghFindIssueByLabels / skip) rather than silently deferring; ghFindIssueByLabels only inside the user-chosen relink-by-label branch."
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 migration migrationSteps[4] / boundary.internal (bugfixCategory-gated wiring)",
+      "quotedText": "Wire the tracker create into the bugfix flow after the issue is approved, and the tracker close into the completion path. Additive + bugfixCategory-gated; the non-bugfix tracker/sync path is untouched."
+    }
+  ]
+}

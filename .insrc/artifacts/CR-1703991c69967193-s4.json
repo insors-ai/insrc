@@ -1,0 +1,58 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1789743797513-o861wc",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-18T15:03:17.513Z",
+    "model": "client",
+    "elapsedMs": 2,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1703991c69967193",
+    "storyId": "s4"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "1703991c69967193",
+    "storyId": "s4",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "src/workflow/__tests__/bugfix-orchestration.test.ts",
+        "src/workflow/bugfix/next-after-issue.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/bugfix/next-after-issue.ts:45",
+            "message": "The small-bugfix build is routed as standalone sizeClass:'trivial' because the reused build-step derives producesLld = sizeClass !== 'trivial' and only 'trivial' is its no-LLD path (a forced, correct choice for consumability). The side effect is that the standalone BUILD tracking record renders '# Build (standalone trivial)' / 'Size class: trivial', losing the 'this was a bugfix' provenance in the build ledger. Cosmetic/traceability only — no behavioural effect, and the approved IssueArtifact retains the bugfix identity via meta.parentRef/meta.issueHash, so the chain record is intact. Fixing it properly requires the build-step (another story's scope) to honour an explicit no-LLD signal so the call can carry sizeClass:'bugfix' verbatim; an inline follow-up note marks this. Tracked follow-up, non-blocking.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 1
+    }
+  }
+}

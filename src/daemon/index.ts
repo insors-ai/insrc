@@ -107,6 +107,10 @@ import { writePid, clearPid, isAlreadyRunning, bootstrapEmbeddingModel, getModel
 import { resolveClosure, searchEntities, findCallers, findCallees, closureEntities, unreachableEntities } from '../db/search.js';
 import { embedQuery } from '../indexer/embedder.js';
 import { getArtifactById, queryArtifactVec } from '../db/lance/artifact-vec.js';
+import { inferParentCandidates } from '../workflow/locate/infer.js';
+import { buildOwnershipIndex } from '../workflow/locate/ownership.js';
+import { daemonInferencePorts } from '../workflow/locate/infer-daemon.js';
+import type { InferParentsRequest } from '../workflow/locate/types.js';
 import { readFile as fsReadFile } from 'node:fs/promises';
 import {
 	saveTurn, closeSession, saveSession, seedFromPrior, deleteSessionsForRepo, deleteTurnsForRepo, pruneConversations,
@@ -897,6 +901,27 @@ async function main(): Promise<void> {
 		'search.callees': async (params) => {
 			const { entityId } = params as { entityId: string };
 			return findCallees(db, entityId) as Promise<Entity[]>;
+		},
+
+		// ----- locate.* IPC (S003 / sc3 — the tiered parent-locator) -----
+		// Daemon-side inference for the bugfix parent-locator: it composes the
+		// graph code-ownership and semantic (ANN) tiers over the DB (rule 1) and
+		// returns RAW ranked candidates. The controller-side `locateParent` policy
+		// applies the tier order + auto-attach thresholds + prompt/standalone
+		// fallback. No attach decision is made here.
+		'locate.inferParents': async (params) => {
+			const { repoPath, touchedPaths, defectDescription } = params as Partial<InferParentsRequest>;
+			if (typeof repoPath !== 'string' || repoPath.length === 0) {
+				return { error: 'locate.inferParents: `repoPath` is required' };
+			}
+			const req: InferParentsRequest = {
+				repoPath,
+				touchedPaths:      Array.isArray(touchedPaths) ? touchedPaths.filter((p): p is string => typeof p === 'string') : [],
+				defectDescription: typeof defectDescription === 'string' ? defectDescription : '',
+			};
+			const ownership = buildOwnershipIndex(repoPath);
+			const ports = daemonInferencePorts(db, repoPath);
+			return inferParentCandidates(ports, ownership, req);
 		},
 
 		// ----- entity.* IPCs (added for the MCP server's `insrc_entity_*` tools) -----

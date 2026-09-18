@@ -1,0 +1,288 @@
+{
+  "meta": {
+    "workflow": "design.epic",
+    "runId": "wf-1789726188697-irhvw2",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-18T10:20:04.655Z",
+    "epicCreatedAt": "2026-09-18T10:07:09.320Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 615935,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1703991c69967193",
+    "epicSlug": "add-bugfix-triage-category-insrc-framework",
+    "review": {
+      "artifact": "design.epic",
+      "stage": "design.epic",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl10",
+          "ref": "rollout",
+          "kind": "ordering",
+          "severity": "LOW",
+          "premise": "The Epic story dependency graph is s1 (no deps) → s2,s3 (each depends only on s1) → s4 (depends s2,s3), s5 (depends s2,s3); rollout phase order and shared-contract owner-before-consumer follow this graph.",
+          "evidence": "The probe's read anchor `docs/epics/add-bugfix-triage-category-insrc-framework-E202609181703991c/EPIC.md:1` was not found (the approved epic doc is not named EPIC.md at that path), so the story-dependency ordering could not be re-derived from the source tree by this probe. The ordering claim itself (s1 -> {s2,s3} -> {s4,s5}) is internally consistent across the HLD's storyBoundaries, rollout phases, and shared-contract owner->consumer edges, and was already validated by the design.epic checklist (ro2 passed).",
+          "action": "No artifact change needed — the missing anchor is a probe artifact (wrong doc filename), not a defect in the HLD. Ordering is corroborated internally; no source contradiction was found.",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 1
+      },
+      "reviewedAt": "2026-09-18T10:21:55.823Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-18T11:41:26.298Z"
+  },
+  "body": {
+    "frameworkSummary": "Bugfix becomes a first-class, scope-gated category that reuses the existing stage/artifact/approve/tracker machinery end-to-end. Triage gains a new `bugfix` SizeClass carrying a magnitude (a small fix vs an M/L fix) and a route that is NOT a single fixed startStage but branches on that magnitude. The flow's first stage is a new first-class `issue` workflow whose synthesized IssueArtifact — reproduction + root cause + fix intent — is the single source of truth serving both the internal chain record and, later, the GitHub issue body. A tiered parent-locator (deterministic ref-resolver → graph code-ownership → semantic match → user prompt → standalone) attaches the fix to the epic/story whose behaviour it corrects, recording which tier decided and at what confidence, with auto-attach only above a high threshold. A scope-gated orchestrator then routes a small fix issue→build and an M/L fix issue→design→plan→build, with the existing post-build code-review gating completion; where a tracker is configured a GitHub issue is created from the same issue content, linked to the located parent, and closed on completion. All five constraints k1–k6 are satisfied by conforming to the framework's own conventions rather than inventing a parallel mechanism.",
+    "architectureShape": "Three seams extend, one seam orchestrates, one seam integrates — mapped 1:1 to the Stories. (1) triage/ (types.ts SizeClass union + SIZE_CLASSES, classify.ts routeForSizeClass) grows the `bugfix` category + magnitude + scope-gated TriageRoute — owned by s1 as `sc1 BugfixTriageResult`. (2) workflow/ gains a new `issue` member of the closed WORKFLOW_NAMES union plus a runner (decomposer plan + runners + synthesizer) and storage/path-scheme/gates wiring, producing the approvable IssueArtifact — owned by s2 as `sc2 IssueArtifact`. (3) a new tiered parent-locator module (reusing tracker/resolve.ts ref-resolution, the graph ownership queries, and semantic embedding match) emits the located-parent decision — owned by s3 as `sc3 ParentLocation`. (4) the chain/orchestrator/gates sequence the bugfix stages by magnitude and gate completion on the existing code-review — s4, consuming sc1+sc2+sc3, owns no new shared type (it wires existing ones). (5) the tracker create/link/close path renders a GitHub issue from the IssueArtifact and links it to the ParentLocation, no-op when no tracker is configured — s5, consuming sc2+sc3. All backend TypeScript in triage/workflow/tracker; no jetbrains-plugin change and no direct cloud REST (k5); GitHub access stays on the existing CLI/OAuth-gated tracker surface (k6).",
+    "sharedContracts": [
+      {
+        "id": "sc1",
+        "name": "BugfixTriageResult",
+        "purpose": "Adds `bugfix` as a first-class sized category and exposes its scope-gated route, so every downstream stage knows a request is a bugfix and whether design is required. Satisfies k1 (tracked from classification) and k2 (still sized; magnitude drives the route).",
+        "interfaceSketch": "// src/workflow/triage/types.ts — union extended, not replaced\ntype SizeClass = 'epic' | 'feature' | 'small' | 'trivial' | 'bugfix';\n\n// bugfix is the only category whose route depends on a sub-magnitude\ntype BugfixMagnitude = 'small' | 'sized'; // 'small' -> skip design; 'sized' -> M/L design path\n\ninterface BugfixTriageResult {\n  sizeClass: 'bugfix';\n  magnitude: BugfixMagnitude;\n}\n\ninterface TriageRoute {\n  startStage: WorkflowName;   // 'issue' for bugfix\n  standalone: boolean;\n  needsPlan: boolean;         // sized -> true, small -> false\n  producesLld: boolean;       // sized -> true, small -> false\n}\n\n// classify.ts — pure mapping, bugfix branch reads magnitude\ndeclare function routeForSizeClass(\n  sizeClass: SizeClass,\n  magnitude?: BugfixMagnitude,\n): TriageRoute;",
+        "ownedByStory": "s1",
+        "consumedByStories": [
+          "s2",
+          "s3",
+          "s4"
+        ],
+        "assumptions": []
+      },
+      {
+        "id": "sc2",
+        "name": "IssueArtifact",
+        "purpose": "The new first-class `issue` stage doc — the single reviewable/approvable record of the defect AND the exact content the GitHub issue body is rendered from, with no divergent second copy. Satisfies k1 (cited/approvable artifact) and k4 (single source of truth).",
+        "interfaceSketch": "// src/workflow/types.ts — closed union gains one member\ntype WorkflowName =\n  | 'brainstorm' | 'define' | 'design.epic' | 'design.story'\n  | 'plan' | 'build' | 'issue';\n\n// the synthesized artifact persisted under the docs/ work-item tree\ninterface IssueArtifact {\n  workflow: 'issue';\n  title: string;\n  reproduction: string;   // steps / observed vs expected\n  rootCause: string;      // the diagnosed cause\n  fixIntent: string;      // what the correction will do\n  magnitude: BugfixMagnitude;   // carried from sc1 for the router\n  parentRef?: WorkItemRef | null;  // stamped from sc3 when located; null = standalone\n  approvedAt?: string | null;      // standard approve stamp\n}\n\n// WorkItemRef is the existing tracker ref shape (reused, not redefined here)\ntype WorkItemRef = { epicHash?: string; storyId?: string; slug?: string };",
+        "ownedByStory": "s2",
+        "consumedByStories": [
+          "s4",
+          "s5"
+        ],
+        "assumptions": []
+      },
+      {
+        "id": "sc3",
+        "name": "ParentLocation",
+        "purpose": "The tiered parent-locator's decision — which epic/story the fix corrects, by which tier and at what confidence, or standalone — so the fix is never orphaned and the GitHub issue can link to its owner. Satisfies k3 (fixed ownership→semantic→prompt→standalone order + auto-attach threshold).",
+        "interfaceSketch": "type LocateTier = 'deterministic' | 'graph-ownership' | 'semantic' | 'prompt' | 'standalone';\n\ninterface ParentLocation {\n  tier: LocateTier;            // which tier decided\n  parentRef: WorkItemRef | null;   // null iff tier === 'standalone'\n  confidence: number;          // 0..1; auto-attach only above the high threshold\n  evidence: string[];          // cited files/entities/artifacts that grounded the match\n}\n\n// entry point (implementation reuses tracker/resolve.ts + graph + embeddings)\ndeclare function locateParent(input: {\n  touchedPaths: string[];\n  defectDescription: string;\n}): Promise<ParentLocation>;",
+        "ownedByStory": "s3",
+        "consumedByStories": [
+          "s4",
+          "s5"
+        ],
+        "assumptions": []
+      }
+    ],
+    "storyBoundaries": [
+      {
+        "storyId": "s1",
+        "owns": [
+          "sc1"
+        ],
+        "depends": [],
+        "internal": "The classifier heuristics/prompt that recognise a user-declared defect fix as `bugfix` and size it into small vs sized magnitude — the sizing rubric, the analyze grounding it runs, and the pure route table branch — stay private to s1. No other story reaches into how the size decision is made; they consume only the resulting BugfixTriageResult/TriageRoute values."
+      },
+      {
+        "storyId": "s2",
+        "owns": [
+          "sc2"
+        ],
+        "depends": [
+          "sc1"
+        ],
+        "internal": "The `issue` stage's multi-turn step machinery — its decomposer plan, per-step runners, synthesizer, prompt templates, and the storage/path-scheme/gates wiring plus the review/approve gate for the IssueArtifact — is private to s2. Downstream stories see only the finished, approvable IssueArtifact shape, never how its reproduction/root-cause/fix-intent fields are elicited and synthesized."
+      },
+      {
+        "storyId": "s3",
+        "owns": [
+          "sc3"
+        ],
+        "depends": [
+          "sc1"
+        ],
+        "internal": "The tiered resolver internals stay private to s3: the deterministic ref-resolver reuse, the graph code-ownership scoring over candidate stories, the semantic embedding match against epic/story artifacts, the per-tier high-confidence auto-attach thresholds, and the user-prompt interaction and its standalone fallback. Consumers see only the ParentLocation decision (tier + parentRef + confidence + evidence), not the scoring that produced it."
+      },
+      {
+        "storyId": "s4",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3"
+        ],
+        "internal": "The scope-gated orchestration is private to s4: how the chain/orchestrator sequences the bugfix stages (small: issue→build; sized: issue→design→plan→build), how gates.ts enforces an approved+fresh IssueArtifact and a resolved ParentLocation before proceeding, and how the existing post-build code-review is wired as the completion gate. s4 introduces no new shared type — it composes sc1's route, sc2's approved issue, and sc3's parent into the run sequence and reuses the existing build + code-review stages verbatim."
+      },
+      {
+        "storyId": "s5",
+        "owns": [],
+        "depends": [
+          "sc2",
+          "sc3"
+        ],
+        "internal": "The GitHub integration path is private to s5: rendering the issue body from the IssueArtifact content via the existing tracker create/link surface, linking the created issue to the ParentLocation (or leaving it standalone), closing it on completion, and the tracker-not-configured no-op branch. s5 reuses tracker/github.ts, refs.ts, link.ts, sync.ts, and setup.ts rather than adding any new external path (k5/k6) and defines no new shared type."
+      }
+    ],
+    "nonFunctional": {
+      "performance": "The parent-locator must short-circuit: a confident deterministic/graph-ownership hit skips the semantic embedding pass, so the common attached-fix case stays within the latency of a single ref-resolve. The `issue` stage reuses the standard step loop; no new hot path.",
+      "security": "No new external surface. GitHub access stays entirely on the existing CLI/OAuth-gated tracker (k5/k6) — no direct cloud REST, no new credential handling. The issue content is user/defect text rendered to an existing tracker create path.",
+      "observability": "Each parent-attach records its deciding tier, confidence, and cited evidence on the IssueArtifact/chain record, so an attach is auditable and the medium-confidence ownership-feasibility assumption is retired with real data rather than by assertion. The issue stage and tracker step log through the standard workflow logging.",
+      "durability": "The IssueArtifact is persisted as a cited artifact under the docs/ work-item tree keyed by the canonical id (same storage/path-scheme as every other stage), so the defect record survives independently of the GitHub issue and a repo with no tracker keeps a purely local, durable record (k4/ac2)."
+    },
+    "rolloutOverview": {
+      "phases": [
+        {
+          "name": "Phase A — bugfix category + scope-gated route",
+          "includesStories": [
+            "s1"
+          ],
+          "rationale": "s1 has no dependencies and owns sc1 (BugfixTriageResult / the extended SizeClass union + magnitude + routeForSizeClass), which every other story consumes. It must land first so the `bugfix` category and its magnitude-driven route exist before any stage reads them. Classification alone is inert (it only names+sizes; nothing downstream routes yet), so it ships safely ahead of the flow.",
+          "backwardCompat": "The SizeClass union and route table are EXTENDED, not changed: epic/feature/small/trivial must classify and route byte-for-byte as before (ac1). The new `bugfix` branch is additive; existing callers that switch over SizeClass keep a default/unreached path.",
+          "featureFlag": "bugfixCategory"
+        },
+        {
+          "name": "Phase B — issue record + parent attachment",
+          "includesStories": [
+            "s2",
+            "s3"
+          ],
+          "rationale": "s2 (owns sc2 IssueArtifact) and s3 (owns sc3 ParentLocation) both depend only on s1 and on nothing of each other, so they proceed in parallel once Phase A lands. They own the two artifacts the orchestrator and tracker in Phase C consume, so both must complete before Phase C. s2 adds the `issue` stage + approve gate; s3 adds the tiered locate-parent resolver.",
+          "backwardCompat": "Adding `issue` to the closed WORKFLOW_NAMES union must not disturb the existing stages' runner registration, storage keys, or gates. The parent-locator reuses tracker/resolve.ts read-only — it must not alter existing ref-resolution behaviour for non-bugfix flows.",
+          "featureFlag": "bugfixCategory"
+        },
+        {
+          "name": "Phase C — scope-gated orchestration + GitHub surface",
+          "includesStories": [
+            "s4",
+            "s5"
+          ],
+          "rationale": "s4 (consumes sc1+sc2+sc3) sequences the bugfix stages by magnitude and gates completion on the existing code-review; s5 (consumes sc2+sc3) renders the GitHub issue from the IssueArtifact and links/closes it. Both depend on s2 and s3, so they land last. They wire the end-to-end flow; only when Phase C completes is it safe to flip the category live for users.",
+          "backwardCompat": "The orchestrator must reuse the existing build + code-review stages verbatim (no fork of their behaviour). s5 must be a strict no-op when no tracker is configured (ac2) and must not change existing tracker create/link/close behaviour for non-bugfix work items.",
+          "featureFlag": "bugfixCategory"
+        }
+      ],
+      "orderingRationale": "Phase order follows the Epic dependency edges and shared-contract ownership exactly: s1 (owner of sc1, no deps) → {s2 owner of sc2, s3 owner of sc3} (each depends only on s1, independent of each other) → {s4, s5} (each depends on s2 AND s3, consuming sc2+sc3). Every owner Story lands before its consumers: sc1 before s2/s3/s4, sc2 and sc3 before s4/s5. A single `bugfixCategory` flag spans all three phases so partial progress never routes a real request into a half-built flow — the flag flips live only when Phase C completes the end-to-end issue→(design→plan)→build→review→tracker path.",
+      "riskyBits": [
+        {
+          "area": "Extending the closed WORKFLOW_NAMES / SizeClass unions",
+          "why": "Both are closed unions with exhaustive switches (runner registration, route table, gates). Adding `issue`/`bugfix` can silently break an exhaustiveness assumption or a `never` default elsewhere, mis-registering a runner or mis-routing an existing category.",
+          "mitigation": "Add the members in Phase A/B with a compile-time exhaustiveness check (assertNever) at every switch, plus a regression test that the four existing SizeClasses route identically to before (ac1). Keep the additions behind the flag until Phase C wires the runner."
+        },
+        {
+          "area": "Tiered parent-locator auto-attach correctness (k3 + lc1)",
+          "why": "An over-confident auto-attach parents a fix to the wrong epic/story silently, violating the deterministic-first, never-silently-wrong rule; an under-confident one always prompts and defeats the auto-locate value.",
+          "mitigation": "Enforce the fixed tier order deterministic→graph→semantic→prompt→standalone with a deliberately HIGH per-tier confidence threshold; below threshold defer to the prompt, never guess. Record tier+confidence+evidence on every attach so decisions are auditable, and cover each tier + the standalone fallback (ac1–ac3) with tests."
+        },
+        {
+          "area": "IssueArtifact as single source for both record and GitHub body (k4)",
+          "why": "If s5 re-renders or edits issue content on the way to GitHub, a second divergent copy appears, breaking the single-source-of-truth contract and letting the internal record and external issue drift.",
+          "mitigation": "s5 renders the GitHub body directly from the persisted IssueArtifact fields with no transformation of substance, and the no-tracker path leaves the local artifact untouched (ac2). A test asserts the created-issue body is derived from — not a copy diverging from — the approved IssueArtifact."
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "First-class bugfix category + dedicated `issue` stage, scope-gated orchestration",
+        "oneLineSummary": "Add `bugfix` to the size union and a new `issue` workflow stage that produces the issue artifact, then a scope-gated orchestrator dispatches small->build and M/L->design->plan->build.",
+        "approach": "Bugfix becomes a first-class member of the triage size union (SizeClass gains `bugfix`) whose TriageRoute carries a sub-magnitude, and a brand-new `issue` workflow stage is added to WORKFLOW_NAMES with its own decomposer/runner/synthesizer that emits a single persisted, cited, approvable `issue` artifact (reproduction, root cause, fix intent) exactly like every other stage produces its artifact. Parent-location is a new resolver module (consumed by the issue stage) that layers the tiered code-ownership -> graph -> semantic -> prompt -> standalone logic on top of the existing tracker ref-resolver + graph; the located parent is stamped on the issue artifact. After the issue is approved, a small scope-gated orchestrator branch reads the bugfix's magnitude and routes: a small fix goes straight to the existing build stage, an M/L fix is handed to the existing design.story (or design.epic) -> plan -> build chain unchanged, and both terminate in the existing code-review completion gate. The tracker GH-issue create/link/close is invoked from the issue stage (create) and the completion path (close), reusing github.ts/sync.ts and gated on a configured tracker. Every piece mirrors an existing idiom, so the chain gains one new stage + one new resolver and otherwise composes what already exists.",
+        "pros": [
+          "The `issue` artifact is a genuine first-class, cited, approvable stage artifact — fully satisfies k1 (tracked/reviewable/approvable) and k4 (single source doubling as the GH issue body).",
+          "Every downstream path reuses the existing design.story/design.epic/plan/build/code-review stages verbatim (k6) — the scope-gated branch is a route decision, not new design/build machinery.",
+          "Mirrors the framework's own conventions (a workflow + artifact + approve gate + review), so it is consistent with the other stages and unit-testable the same way (k1)."
+        ],
+        "cons": [
+          "Largest new surface of the three: a new SizeClass member, a new WORKFLOW_NAMES entry + runner/synthesizer, a new resolver, and route/orchestrator wiring — touches the most closed unions.",
+          "Extending the closed SizeClass + WORKFLOW_NAMES unions ripples into every exhaustive switch over them (route table, storage/path-scheme, gates), each of which must handle the new members."
+        ],
+        "costEstimate": "L",
+        "chosen": true,
+        "reasonChosen": "The only alternative that SATISFIES all six constraints and uniquely satisfies k1 (issue = first-class tracked/approvable record) and k4 (issue = single source = GH issue body); the extra L surface is the cost of a genuine first-class approvable artifact, which the accuracy-first principle favours over the smaller but contract-violating a3."
+      },
+      {
+        "id": "a2",
+        "name": "Model the issue as a specialized brainstorm/spec artifact",
+        "oneLineSummary": "Reuse the existing brainstorm/spec elicitation machinery to emit an 'issue'-flavored spec that seeds build (small) or design (M/L).",
+        "approach": "Rather than add a new stage, bugfix reuses the existing pre-workflow brainstorm/spec elicitation: a bugfix triage result seeds a brainstorm-style run whose converged artifact is an issue-flavored spec (repro/root-cause/fix intent), reviewed and approved through the spec's existing approve gate. Parent-location and GH-issue creation bolt onto the spec's seed step, and the approved issue-spec then seeds either the build stage (small) or the design.story/epic chain (M/L), the way an approved spec already seeds define / standalone design today. This leans on the fact that the brainstorm epic already built a durable, approvable spec artifact and the seams that seed downstream stages from it, so the issue record is a specialization of that artifact rather than a new doc-type. The scope-gating is expressed as which downstream stage the approved issue-spec seeds.",
+        "pros": [
+          "Smaller new surface than a1: no new WORKFLOW_NAMES stage — it specializes the existing brainstorm/spec artifact + its seed seams (partial k6 reuse beyond the tracker).",
+          "The spec's existing review/approve gate + seed-downstream seams are reused directly, so the issue inherits a proven approvable-artifact path (k1)."
+        ],
+        "cons": [
+          "Semantic mismatch: brainstorm is a convergence/elicitation loop for VAGUE new ideas, whereas a defect record is a mostly-known repro/root-cause capture — shoehorning it distorts both the spec's meaning and the 'issue' doc's clarity (weakens k4's single-clean-source intent).",
+          "The issue would not be a distinct doc-type but a flavored spec, so the GH-issue body and the artifact tree carry a spec, not an issue — muddying k4's single-source-of-truth and the external record's legibility.",
+          "Scope-gating via 'which stage the spec seeds' overloads the seed mechanism with bugfix-specific branching it was not designed for."
+        ],
+        "costEstimate": "M",
+        "chosen": false,
+        "reasonRejected": "No hard violations, but PARTIAL on k1/k2/k4/k6: it bends the elicitation-oriented brainstorm/spec machinery to carry a defect record it doesn't semantically fit — the issue becomes a flavored spec rather than a clean doc-type, blurring k4's single-source-of-truth and overloading the seed mechanism (k2/k6)."
+      },
+      {
+        "id": "a3",
+        "name": "Triage-route variant over existing stages, issue as an attached record",
+        "oneLineSummary": "Add the `bugfix` size but route it through the existing stages unchanged, capturing the issue as a section on an existing artifact rather than a new doc-type.",
+        "approach": "Bugfix is added to the size union and routed entirely through existing stages: a small fix routes to the existing build stage with the issue captured as a section/field on the BUILD record, and an M/L fix routes to design.story -> plan -> build with the issue captured on the design artifact. Parent-location runs at triage/route time and stamps the located parent onto whichever artifact carries the issue. The GH issue is created from that embedded section when a tracker is configured. This is the minimal-surface shape: no new WORKFLOW_NAMES stage and no new doc-type — only a new size value, the route branching, a parent-location resolver, and an issue section embedded into existing artifacts, plus a tracker create/close hook.",
+        "pros": [
+          "Smallest new surface: reuses existing stages/artifacts wholesale, adding only a size value, route branching, the resolver, and a tracker hook (strong k6).",
+          "Fastest path to a working small-bugfix flow because it piggybacks on the existing build stage with no new stage to stand up."
+        ],
+        "cons": [
+          "The issue is NOT a first-class approvable artifact — it rides as a section on a build/design doc, so it cannot be reviewed/approved on its own before build, weakening k1 and the s2 acceptance that the issue is approved before anything consumes it.",
+          "k4 (issue = single source of truth = GH issue body) is compromised: the issue content is embedded in a larger artifact, so the GH-issue body is a derived slice rather than the whole record, risking divergence.",
+          "A small fix has no artifact at all until BUILD runs, so there is a window where a declared, located bugfix exists with no persisted record — contrary to the 'tracked from the outset' value in s1/s2."
+        ],
+        "costEstimate": "M",
+        "chosen": false,
+        "reasonRejected": "Cheapest surface but VIOLATES k1 and k4 — the two contract constraints at the heart of the Epic: the issue rides as a section on a build/design doc (not first-class approvable), a small fix has no persisted record until build runs, and the GH-issue body becomes a derived slice that can diverge from the record."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 structural-map — src/workflow/triage/types.ts:16 (SizeClass union) + SIZE_CLASSES; src/workflow/triage/classify.ts:29 routeForSizeClass(sizeClass): TriageRoute",
+      "quotedText": "Triage sizing is a closed union `SizeClass = 'epic' | 'feature' | 'small' | 'trivial'` ... `routeForSizeClass(sizeClass): TriageRoute` is a pure switch mapping each size to `{ startStage, standalone, needsPlan, producesLld }`."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 structural-map — src/workflow/types.ts:75-80 WORKFLOW_NAMES closed union; types.ts:48 artifact.workflow; types.ts:442 runner registration",
+      "quotedText": "The workflow set is a closed union `WORKFLOW_NAMES` (brainstorm/define/design.epic/design.story/plan/build) and every artifact carries `workflow: WorkflowName`; runners register under `${WorkflowName}/${string}` keys."
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1 convention.detect — src/workflow/storage.ts, path-scheme.ts, gates.ts, synthesizer.ts, chain.ts, tracker-auto.ts",
+      "quotedText": "Every existing stage is a workflow with a fixed multi-turn step sequence (a decomposer plan + runners + a synthesizer) producing one persisted, cited, approvable artifact under the docs/ artifact tree, gated by insrc_workflow_approve and reviewed by insrc_review_step; storage + path-scheme key artifacts by the canonical work-item id, and gates.ts enforces approved+fresh upstream before a downstream stage runs."
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "s1 boundary-scope — src/workflow/tracker/resolve.ts, github.ts, refs.ts, link.ts, sync.ts, setup.ts",
+      "quotedText": "The tracker resolves work-item refs over the docs/ artifact tree (resolve.ts) and creates/links/syncs GitHub issues (github.ts, refs.ts, link.ts, sync.ts, setup.ts) gated on a configured tracker; the bugfix parent-location + issue-from-doc create path reuse these (k6)."
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "s1 capability-discovery — src/workflow/triage/classify.ts, triage/types.ts, workflow/types.ts",
+      "quotedText": "Triage sizes epic/feature/small/trivial only — no 'bugfix'; the workflow framework has no 'issue' doc-type and no scope-gated bugfix workflow; all three are net-new atop existing scaffolding."
+    }
+  ]
+}

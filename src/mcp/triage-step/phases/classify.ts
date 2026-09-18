@@ -25,7 +25,10 @@ export function handleClassify(input: TriageInputClassify): TriageDone {
 		throw new Error(`insrc_triage[classify]: result failed schema — ${validated.errors.join('; ')}`);
 	}
 	const emitted = validated.value;
-	const route = routeForSizeClass(emitted.sizeClass);
+	// A bugfix carries a magnitude (schema-required + guaranteed by the
+	// classify guard) that gates its route; forward it so the bugfix arm can
+	// resolve. For the four fixed tiers magnitude is undefined and ignored.
+	const route = routeForSizeClass(emitted.sizeClass, emitted.magnitude);
 	const result: TriageResult = { ...emitted, route };
 
 	const nextCall = buildNextCall(result, state.focus, state.repo);
@@ -36,10 +39,30 @@ export function handleClassify(input: TriageInputClassify): TriageDone {
 
 /** Pre-fill the recommended next tool call for the routed entry. */
 function buildNextCall(result: TriageResult, focus: string, repo: string): TriageDone['nextCall'] {
-	const { route, sizeClass, rationale, storyTitle } = result;
+	const { route, sizeClass, magnitude, rationale, storyTitle } = result;
 	// Epic → the full chain head, no standalone params.
 	if (route.startStage === 'define') {
 		return { tool: 'insrc_workflow_run', params: { repo, workflow: 'define', focus } };
+	}
+	// Bugfix → the `issue` record first (single source for the chain + the GitHub
+	// issue body). The magnitude carried here lets the downstream flow decide
+	// whether design ceremony follows (small: issue→build; sized: issue→design→
+	// plan→build). Standalone, like every non-epic entry.
+	if (route.startStage === 'issue') {
+		return {
+			tool: 'insrc_workflow_run',
+			params: {
+				repo, workflow: 'issue', focus,
+				params: {
+					standalone: true,
+					storyTitle,
+					storySpec: focus,
+					sizeClass,
+					magnitude,
+					triageRationale: rationale,
+				},
+			},
+		};
 	}
 	// Trivial → straight to build (no LLD), standalone.
 	if (route.startStage === 'build') {
@@ -71,13 +94,16 @@ function buildNextCall(result: TriageResult, focus: string, repo: string): Triag
 }
 
 function renderSummary(result: TriageResult): string {
-	const { sizeClass, route } = result;
+	const { sizeClass, magnitude, route } = result;
 	const chain = route.startStage === 'define'
 		? 'define → epic → story → plan → build'
-		: route.startStage === 'build'
-			? 'build (no LLD)'
-			: route.needsPlan
-				? 'standalone LLD → plan → build'
-				: 'standalone LLD → build';
-	return `Triage: **${sizeClass}** — enter at \`${route.startStage}\` (${chain}).`;
+		: route.startStage === 'issue'
+			? (route.needsPlan ? 'issue → design → plan → build' : 'issue → build')
+			: route.startStage === 'build'
+				? 'build (no LLD)'
+				: route.needsPlan
+					? 'standalone LLD → plan → build'
+					: 'standalone LLD → build';
+	const label = sizeClass === 'bugfix' && magnitude ? `${sizeClass} (${magnitude})` : sizeClass;
+	return `Triage: **${label}** — enter at \`${route.startStage}\` (${chain}).`;
 }

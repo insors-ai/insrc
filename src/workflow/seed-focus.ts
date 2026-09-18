@@ -71,12 +71,17 @@ export function composeSpecFocus(spec: SpecArtifact): string {
 
 /** ac3 scope guard (S009): does a spec sized `sizeClass` by the triage classifier
  *  belong on the STANDALONE `design.story` route? True for `feature`/`small`
- *  (they route to `design.story`); false for `epic` (routes to `define`) and
- *  `trivial` (routes to `build`). A pure, total comparison over `SizeClass` that
- *  reuses the framework's ONE sizing authority (`routeForSizeClass`), so a
- *  standalone feature design seeded from a too-large spec is SURFACED, never
- *  silently narrowed (k13). */
+ *  (they route to `design.story`); false for `epic` (routes to `define`),
+ *  `trivial` (routes to `build`) and `bugfix` (routes to `issue`). A pure, total
+ *  comparison over `SizeClass` that reuses the framework's ONE sizing authority
+ *  (`routeForSizeClass`), so a standalone feature design seeded from a too-large
+ *  spec is SURFACED, never silently narrowed (k13). */
 export function specScopeFitsStandalone(sizeClass: SizeClass): boolean {
+	// `bugfix` routes to `issue`, never `design.story`; short-circuit so the
+	// comparison stays total (routeForSizeClass requires a magnitude for bugfix).
+	if (sizeClass === 'bugfix') {
+		return false;
+	}
 	return routeForSizeClass(sizeClass).startStage === 'design.story';
 }
 

@@ -87,6 +87,40 @@ test('epic → define, full chain, no standalone params', async () => {
 	assert.equal(done.nextCall.params['params'], undefined, 'no standalone params for an Epic');
 });
 
+test('bugfix (small) → issue → build; nextCall enters the issue workflow with the magnitude', async () => {
+	const s = await start('The pager drops the last row on the final page');
+	const done = await classify(s.state, { ...wellFormed('bugfix'), magnitude: 'small' });
+	assert.equal(done.next, 'done');
+	assert.equal(done.route.startStage, 'issue');
+	assert.equal(done.route.standalone, true);
+	assert.equal(done.route.needsPlan, false);
+	assert.equal(done.route.producesLld, false);
+	assert.equal(done.nextCall.tool, 'insrc_workflow_run');
+	assert.equal((done.nextCall.params as { workflow?: string }).workflow, 'issue');
+	const p = done.nextCall.params['params'] as Record<string, unknown>;
+	assert.equal(p['magnitude'], 'small');
+	assert.equal(p['sizeClass'], 'bugfix');
+	assert.match(done.summary, /issue → build/);
+});
+
+test('bugfix (sized) → issue → design → plan → build', async () => {
+	const s = await start('A cross-module contract drift needing real design to correct');
+	const done = await classify(s.state, { ...wellFormed('bugfix'), magnitude: 'sized' });
+	assert.equal(done.route.startStage, 'issue');
+	assert.equal(done.route.needsPlan, true);
+	assert.equal(done.route.producesLld, true);
+	assert.match(done.summary, /issue → design → plan → build/);
+});
+
+test('classify: rejects a bugfix emitted WITHOUT a magnitude (no unhandled throw)', async () => {
+	// Regression: S001 opened the schema enum to bugfix; a magnitude-less bugfix
+	// must fail schema validation cleanly (isError), never throw deeper in
+	// routeForSizeClass.
+	const s = await start('some defect');
+	const env = await handleTriageStep({ phase: 'classify', result: wellFormed('bugfix'), state: s.state });
+	assert.equal(env.isError, true);
+});
+
 test('classify: rejects an unknown sizeClass emitted by the controller', async () => {
 	const s = await start('x');
 	const env = await handleTriageStep({ phase: 'classify', result: wellFormed('medium'), state: s.state });

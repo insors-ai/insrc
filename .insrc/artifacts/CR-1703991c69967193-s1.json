@@ -1,0 +1,60 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1789734015721-0qcqqr",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-18T12:20:15.722Z",
+    "model": "client",
+    "elapsedMs": 3,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1703991c69967193",
+    "storyId": "s1"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "1703991c69967193",
+    "storyId": "s1",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "src/mcp/triage-step/__tests__/handler.test.ts",
+        "src/mcp/triage-step/phases/classify.ts",
+        "src/workflow/seed-focus.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "src/mcp/triage-step/phases/classify.ts:48",
+            "message": "The bugfix nextCall recommends `insrc_workflow_run` with `workflow:'issue'`, but the `issue` runner does not exist until S002. This is the intended enabling half of the epic (the 'issue' WorkflowName literal is NAME-only in S001, gated behind the bugfixCategory rollout flag; declaredBugfix is not yet wired into triage `start`, so a bugfix does not reach this path in normal Phase-A operation). A controller that ran the recommendation pre-S002 gets a graceful surfaced 'no runner' error, not a crash. Acceptable as designed; flagged so S002 wires the runner (or a clearer not-yet-available note).",
+            "expectationRef": "HLD rollout Phase A / sc1",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 1
+    }
+  }
+}

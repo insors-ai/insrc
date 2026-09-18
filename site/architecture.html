@@ -22,6 +22,7 @@
     <a href="analyze.html">analyze</a>
     <a href="tools.html">tools</a>
     <a href="cli.html">cli</a>
+    <a href="plugin.html">plugin</a>
   </div>
   <button class="theme-btn" type="button" aria-label="toggle theme">◐ light</button>
 </div></nav>
@@ -29,7 +30,7 @@
 <div class="wrap"><main id="main">
 
   <h1>Architecture</h1>
-  <p class="lead">insrc is one daemon that owns everything. It parses your repos with tree-sitter into a typed entity/relation graph, stores that graph in LMDB alongside Lance vectors, and answers every query with structured, citation-grounded context. Clients — the <code>claude</code> / <code>codex</code> CLIs, the interactive TUI, and the VSCode fork — never touch a database directly; they speak JSON-RPC over a Unix socket.</p>
+  <p class="lead">insrc is one daemon that owns everything. It parses your repos with tree-sitter into a typed entity/relation graph, stores that graph in LMDB alongside Lance vectors, and answers every query with structured, citation-grounded context. Clients — the <code>claude</code> / <code>codex</code> CLIs, the interactive TUI, the VSCode fork, and the <a href="plugin.html">JetBrains plugin</a> — never touch a database directly; they speak JSON-RPC over a Unix socket.</p>
 
   <section>
     <h2 id="overview">The shape of the system</h2>
@@ -116,7 +117,7 @@
 
   <section>
     <h2 id="indexer">The indexer</h2>
-    <p>The indexer turns source into the graph. It parses with tree-sitter across five languages, resolves build manifests, and generates embeddings — all locally.</p>
+    <p>The indexer turns source into the graph. It parses with tree-sitter across six languages, resolves build manifests, and generates embeddings — all locally.</p>
     <div class="flow">
       <span class="stage">tree-sitter parse</span><span class="arr">→</span>
       <span class="stage">entities + relations</span><span class="arr">→</span>
@@ -124,7 +125,7 @@
       <span class="stage">embeddings</span>
     </div>
     <ul>
-      <li><strong>Languages</strong> — TypeScript, Python, Go, Java, Scala.</li>
+      <li><strong>Languages</strong> — TypeScript, Python, Go, Java, Scala, Kotlin.</li>
       <li><strong>Output</strong> — a typed entity/relation graph, written to the LMDB graph layer.</li>
       <li><strong>Embeddings</strong> — computed locally (Ollama), stored in Lance for ANN search.</li>
     </ul>

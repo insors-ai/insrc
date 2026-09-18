@@ -29,6 +29,7 @@ site/
   analyze.html          the exploration recipes · 7-layer context bundle · step loop
   tools.html            ~110 built-in tools by category · providers · structured output
   cli.html              the ink TUI panes (Daemon / Repos / Workflows / Setup)
+  plugin.html           the JetBrains IDE plugin — install · setup · usage · build from source
   css/tui.css           the whole theme (design tokens + components)
   js/tui.js             progressive enhancement: theme toggle · active-nav · copy · type-in
 ```

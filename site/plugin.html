@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>jetbrains plugin — insrc</title>
+<meta name="description" content="The insrc JetBrains IDE plugin: one artifact for IntelliJ IDEA, PyCharm, GoLand and WebStorm. Install, first-run setup, how it wires your AI assistant and manages the daemon, clean removal, and building from source.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13' font-family='monospace' fill='%234ade80'>▌</text></svg>">
+<link rel="stylesheet" href="css/tui.css">
+</head>
+<body>
+<a class="skip" href="#main">skip to content</a>
+
+<nav class="nav"><div class="nav-inner">
+  <span class="brand">insrc<span class="sig">.daemon</span></span>
+  <div class="nav-links">
+    <a href="index.html">home</a>
+    <a href="getting-started.html">getting started</a>
+    <a href="architecture.html">architecture</a>
+    <a href="workflow.html">workflow</a>
+    <a href="tracker.html">tracker</a>
+    <a href="analyze.html">analyze</a>
+    <a href="tools.html">tools</a>
+    <a href="cli.html">cli</a>
+    <a href="plugin.html">plugin</a>
+  </div>
+  <button class="theme-btn" type="button" aria-label="toggle theme">◐ light</button>
+</div></nav>
+
+<div class="wrap"><main id="main">
+
+  <h1>JetBrains plugin</h1>
+  <p class="lead">One plugin that brings insrc into the JetBrains IDE family — IntelliJ IDEA, PyCharm, GoLand and WebStorm — from a single install. It is a <strong>thin orchestrator that owns no reasoning</strong>: it wires insrc's grounded-analyze and tracked-workflow capabilities into the IDE's own AI assistant and manages the backing daemon, so your assistant answers from a citation-grounded model of <em>your</em> codebase.</p>
+
+  <h2 id="overview">What it is</h2>
+  <p>All the reasoning still runs through the insrc MCP server that your IDE's assistant invokes — the plugin opens no cloud path of its own. Its whole job is orchestration at IDE lifecycle moments (project open, install, uninstall):</p>
+  <ul>
+    <li><strong>One integration, four IDEs.</strong> The plugin descriptor depends only on the common platform module (<code>com.intellij.modules.platform</code>), so a single artifact activates identically in IntelliJ IDEA, PyCharm, GoLand and WebStorm.</li>
+    <li><strong>Wires your AI host automatically.</strong> On project open it detects your agentic assistant — JetBrains <strong>AI Assistant</strong> or <strong>Junie</strong> — and registers the insrc MCP server plus the tracked-workflow steering into that host's own configuration.</li>
+    <li><strong>Manages the daemon.</strong> It ensures the <a href="architecture.html">insrc daemon</a> is present and current, delegating to the same installer the CLI uses — provisioning a private Node runtime when the system one is unsuitable.</li>
+    <li><strong>Scopes every call to the open project.</strong> The active project's path is passed as the explicit repo scope, so multiple open windows never cross-scope.</li>
+  </ul>
+  <div class="tip"><strong>Privacy.</strong> The plugin stores no credentials and opens no cloud path — all reasoning routes through your assistant's existing CLI / OAuth sessions. Every write into a host-owned config or rules file is marker-delimited and replace-only, so it preserves your surrounding content and is fully reversed on uninstall.</div>
+
+  <h2 id="requirements">Requirements</h2>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Requirement</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td><strong>A JetBrains IDE, 2024.2+</strong></td><td>IntelliJ IDEA, PyCharm, GoLand or WebStorm. The plugin declares an open-ended upper bound, so it loads on current and future releases.</td></tr>
+      <tr><td><strong>A JetBrains AI host</strong></td><td>AI Assistant or Junie — the agentic assistant that invokes the insrc MCP server. Without one the plugin stays dormant and re-checks on later project opens.</td></tr>
+      <tr><td><strong>The insrc daemon</strong></td><td>The backend the plugin talks to. It is installed on first use (see setup below); no manual step needed.</td></tr>
+      <tr><td><strong>Node + git</strong></td><td>Used by the daemon and its installer. The plugin provisions a private Node runtime automatically when the system Node is unsuitable.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="install">Install</h2>
+
+  <h3>A · JetBrains Marketplace <span class="c">(recommended)</span></h3>
+  <p>In your IDE, open <strong>Settings → Plugins → Marketplace</strong>, search for <strong>insrc</strong>, and click <strong>Install</strong>. Updates are delivered through the Marketplace like any other plugin.</p>
+
+  <h3>B · Install from disk <span class="c">(pre-release / internal)</span></h3>
+  <p>Build the distribution artifact (see <a href="#build">building from source</a>) — a single zip in <code>jetbrains-plugin/build/distributions/</code> — then install it directly:</p>
+  <p><strong>Settings → Plugins → ⚙ → Install Plugin from Disk…</strong> and select the built <code>insrc-jetbrains-&lt;version&gt;.zip</code>.</p>
+
+  <h2 id="setup">First-run setup</h2>
+  <p>Installing the plugin does <em>not</em> touch the daemon by itself — setup happens the first time you open a project with the plugin active. On project open the plugin:</p>
+  <ol>
+    <li><strong>Probes for the daemon</strong> (a health + staleness check over the daemon socket).</li>
+    <li><strong>Offers a one-click setup</strong> if the daemon is absent — a notification you accept explicitly. Accepting runs the bootstrap installer bundled inside the plugin, which clones and builds the daemon into <code>~/.insrc/daemon</code>. If the daemon is already present it is silently kept current instead.</li>
+    <li><strong>Offers "Enable insrc for this project"</strong> — a one-click prompt that registers the open project with the daemon through the strict <code>repo.add</code> contract.</li>
+    <li><strong>Wires your AI host</strong> — writes the insrc MCP-server registration plus the tracked-workflow steering block into the detected host's config and rules files.</li>
+  </ol>
+  <div class="note">The first daemon provisioning is a deliberate one-click consent surfaced as an IDE notification — not something that happens the instant you install the plugin. After that, daemon updates are silent. If no AI host is present, the plugin does nothing and re-checks on a later project open.</div>
+
+  <h2 id="usage">How it works</h2>
+  <p>Once a project is enabled, you keep using your IDE's assistant exactly as before — the plugin just makes it far more grounded:</p>
+  <ul>
+    <li><strong>Grounded answers.</strong> Because the insrc MCP server is registered with your host, your assistant explores the code through insrc's citation-grounded <a href="analyze.html">analyze</a> tools — file paths come from the real index, not guesses.</li>
+    <li><strong>Tracked workflow.</strong> The steering block guides the assistant to route feature work through insrc's <a href="workflow.html">define → design → plan → build</a> workflow, with an independent review before approval.</li>
+    <li><strong>Per-project scope.</strong> Every capability call carries the open project's path, so each window is scoped to its own repo — no cross-talk between projects.</li>
+  </ul>
+
+  <h2 id="removal">Clean removal</h2>
+  <p>All of the plugin's writes into host-owned files are reversible:</p>
+  <ul>
+    <li><strong>Uninstall</strong> removes exactly the insrc marker-delimited blocks it added (the MCP registration and the steering section), restoring each file to its prior content — your own rules and other MCP servers are untouched.</li>
+    <li><strong>A mere disable</strong> leaves those writes intact, so re-enabling needs no re-prompting.</li>
+  </ul>
+
+  <h2 id="build">Build from source</h2>
+  <p>The plugin lives in-repo under <code>jetbrains-plugin/</code> as a separate Gradle / Kotlin build (deliberately independent of the TypeScript backend). It requires <strong>JDK 21</strong>; the committed Gradle wrapper pins Gradle 8.10.2, so you do not need Gradle on your <code>PATH</code>.</p>
+  <div class="code">
+    <div class="code-head"><span class="name">bash</span><button class="copy" type="button">copy</button></div>
+<pre><code><span class="p">$</span> cd jetbrains-plugin
+<span class="p">$</span> ./gradlew build          <span class="c"># compile + run tests + produce the distribution zip</span>
+<span class="p">$</span> ./gradlew buildPlugin     <span class="c"># just the installable zip → build/distributions/</span>
+<span class="p">$</span> ./gradlew runIde          <span class="c"># launch a sandbox IDE with the plugin loaded</span>
+<span class="p">$</span> ./gradlew verifyPlugin     <span class="c"># run the IntelliJ Platform plugin verifier</span></code></pre>
+  </div>
+  <div class="tip">Use <code>./gradlew</code>, not a system <code>gradle</code>. The wrapper pins Gradle 8.10.2 because the IntelliJ Platform Gradle plugin is incompatible with Gradle 9.x — a bare <code>gradle</code> from a recent install will fail to configure. The first build downloads the IntelliJ IDEA 2024.2 SDK (~1.5&nbsp;GB), then caches it.</div>
+  <p><code>runIde</code> is the fastest way to exercise the integration end-to-end: it boots a throwaway IDE with the plugin loaded against your real <code>~/.insrc/daemon</code>, where you can watch the onboarding offer, the MCP + steering wiring, and the daemon lifecycle in action.</p>
+
+  <h2 id="next">Where next</h2>
+  <div class="grid">
+    <a class="card" href="getting-started.html"><div class="glyph">▶</div><h4>Getting started</h4><p>Install and run the daemon, index a repo, and ask your first grounded question.</p><span class="more">read</span></a>
+    <a class="card" href="architecture.html"><div class="glyph">⬡</div><h4>Architecture</h4><p>The daemon, the IPC contract, and how every client — including this plugin — attaches to it.</p><span class="more">read</span></a>
+    <a class="card" href="workflow.html"><div class="glyph">⟿</div><h4>Workflow</h4><p>The define → design → plan → build flow your assistant routes features through.</p><span class="more">read</span></a>
+  </div>
+
+</main></div>
+
+<footer class="foot"><div class="foot-inner">
+  <span class="seg"><span class="accent">insrc</span> · code-knowledge daemon</span>
+  <span class="seg">TypeScript · ESM · Node 20+</span>
+  <span class="seg">LMDB + Lance + DuckDB</span>
+  <span class="seg"><a href="https://github.com/insors-ai/insrc">github</a></span>
+  <span class="seg" style="margin-left:auto">local-first · no keys · no REST</span>
+</div></footer>
+
+<script src="js/tui.js"></script>
+</body>
+</html>

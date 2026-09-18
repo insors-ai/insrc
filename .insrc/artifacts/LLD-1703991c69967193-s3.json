@@ -1,0 +1,554 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1789737573900-72sf3a",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-18T13:33:10.659Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 816721,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-09-18T10:07:09.320Z",
+    "epicHash": "1703991c69967193",
+    "epicSlug": "add-bugfix-triage-category-insrc-framework",
+    "storyId": "s3",
+    "hldBaseRunId": "wf-1789726188697-irhvw2",
+    "hldEffectiveHash": "e08e0c0d9f7b0edafe2979944fb169368ad12f61bc842d0ebec3a3ec979632fa",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl10",
+          "ref": "c4",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "ArtifactMetaBase already carries an optional meta.parentRef?: WorkItemRef | null (added in S002) which nothing currently populates; s3 does not populate it (s4 does).",
+          "evidence": "Probe confirms the optional field `readonly parentRef?: WorkItemRef | null;` exists at src/workflow/types.ts:412 (not 417-421). The Migration section attributes meta.parentRef to `src/workflow/types.ts:417-421`, but 417-421 is the WorkItemRef INTERFACE (confirmed by cl9). The parentRef field itself sits at line 412. A cosmetic line-reference imprecision in the LLD prose; the underlying fact (parentRef is an existing optional field added in S002, reused unchanged) is correct and confirmed.",
+          "action": "Optionally correct the Migration citation to read `src/workflow/types.ts:412 (parentRef field), :417-421 (WorkItemRef interface)`. Non-blocking; does not affect any contract or the design.",
+          "fixability": "auto",
+          "proposedFix": {
+            "rationale": "Distinguish the parentRef field line (412) from the WorkItemRef interface lines (417-421) in the migration citation.",
+            "artifactEdits": [
+              {
+                "find": "meta.parentRef?: WorkItemRef | null (added in S002, src/workflow/types.ts:417-421)",
+                "replace": "meta.parentRef?: WorkItemRef | null (added in S002, src/workflow/types.ts:412; WorkItemRef interface at :417-421)"
+              }
+            ]
+          }
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 1
+      },
+      "reviewedAt": "2026-09-18T13:35:13.207Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-18T13:36:26.041Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Bugfix becomes a first-class, scope-gated category that reuses the existing stage/artifact/approve/tracker machinery end-to-end. Triage gains a new `bugfix` SizeClass carrying a magnitude (a small fix vs an M/L fix) and a route that is NOT a single fixed startStage but branches on that magnitude. The flow's first stage is a new first-class `issue` workflow whose synthesized IssueArtifact — reproduction + root cause + fix intent — is the single source of truth serving both the internal chain record and, later, the GitHub issue body. A tiered parent-locator (deterministic ref-resolver → graph code-ownership → semantic match → user prompt → standalone) attaches the fix to the epic/story whose behaviour it corrects, recording which tier decided and at what confidence, with auto-attach only above a high threshold. A scope-gated orchestrator then routes a small fix issue→build and an M/L fix issue→design→plan→build, with the existing post-build code-review gating completion; where a tracker is configured a GitHub issue is created from the same issue content, linked to the located parent, and closed on completion. All five constraints k1–k6 are satisfied by conforming to the framework's own conventions rather than inventing a parallel mechanism.",
+      "ownedContracts": [
+        {
+          "id": "sc3",
+          "name": "ParentLocation",
+          "purpose": "The tiered parent-locator's decision — which epic/story the fix corrects, by which tier and at what confidence, or standalone — so the fix is never orphaned and the GitHub issue can link to its owner. Satisfies k3 (fixed ownership→semantic→prompt→standalone order + auto-attach threshold).",
+          "interfaceSketch": "type LocateTier = 'deterministic' | 'graph-ownership' | 'semantic' | 'prompt' | 'standalone';\n\ninterface ParentLocation {\n  tier: LocateTier;            // which tier decided\n  parentRef: WorkItemRef | null;   // null iff tier === 'standalone'\n  confidence: number;          // 0..1; auto-attach only above the high threshold\n  evidence: string[];          // cited files/entities/artifacts that grounded the match\n}\n\n// entry point (implementation reuses tracker/resolve.ts + graph + embeddings)\ndeclare function locateParent(input: {\n  touchedPaths: string[];\n  defectDescription: string;\n}): Promise<ParentLocation>;",
+          "ownedByStory": "s3",
+          "consumedByStories": [
+            "s4",
+            "s5"
+          ],
+          "assumptions": []
+        }
+      ],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "BugfixTriageResult",
+          "purpose": "Adds `bugfix` as a first-class sized category and exposes its scope-gated route, so every downstream stage knows a request is a bugfix and whether design is required. Satisfies k1 (tracked from classification) and k2 (still sized; magnitude drives the route).",
+          "interfaceSketch": "// src/workflow/triage/types.ts — union extended, not replaced\ntype SizeClass = 'epic' | 'feature' | 'small' | 'trivial' | 'bugfix';\n\n// bugfix is the only category whose route depends on a sub-magnitude\ntype BugfixMagnitude = 'small' | 'sized'; // 'small' -> skip design; 'sized' -> M/L design path\n\ninterface BugfixTriageResult {\n  sizeClass: 'bugfix';\n  magnitude: BugfixMagnitude;\n}\n\ninterface TriageRoute {\n  startStage: WorkflowName;   // 'issue' for bugfix\n  standalone: boolean;\n  needsPlan: boolean;         // sized -> true, small -> false\n  producesLld: boolean;       // sized -> true, small -> false\n}\n\n// classify.ts — pure mapping, bugfix branch reads magnitude\ndeclare function routeForSizeClass(\n  sizeClass: SizeClass,\n  magnitude?: BugfixMagnitude,\n): TriageRoute;",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4"
+          ],
+          "assumptions": []
+        }
+      ],
+      "boundary": {
+        "storyId": "s3",
+        "owns": [
+          "sc3"
+        ],
+        "depends": [
+          "sc1"
+        ],
+        "internal": "The tiered resolver internals stay private to s3: the deterministic ref-resolver reuse, the graph code-ownership scoring over candidate stories, the semantic embedding match against epic/story artifacts, the per-tier high-confidence auto-attach thresholds, and the user-prompt interaction and its standalone fallback. Consumers see only the ParentLocation decision (tier + parentRef + confidence + evidence), not the scoring that produced it."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1"
+          ],
+          "depends": [],
+          "internal": "The classifier heuristics/prompt that recognise a user-declared defect fix as `bugfix` and size it into small vs sized magnitude — the sizing rubric, the analyze grounding it runs, and the pure route table branch — stay private to s1. No other story reaches into how the size decision is made; they consume only the resulting BugfixTriageResult/TriageRoute values."
+        },
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc2"
+          ],
+          "depends": [
+            "sc1"
+          ],
+          "internal": "The `issue` stage's multi-turn step machinery — its decomposer plan, per-step runners, synthesizer, prompt templates, and the storage/path-scheme/gates wiring plus the review/approve gate for the IssueArtifact — is private to s2. Downstream stories see only the finished, approvable IssueArtifact shape, never how its reproduction/root-cause/fix-intent fields are elicited and synthesized."
+        },
+        {
+          "storyId": "s4",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "The scope-gated orchestration is private to s4: how the chain/orchestrator sequences the bugfix stages (small: issue→build; sized: issue→design→plan→build), how gates.ts enforces an approved+fresh IssueArtifact and a resolved ParentLocation before proceeding, and how the existing post-build code-review is wired as the completion gate. s4 introduces no new shared type — it composes sc1's route, sc2's approved issue, and sc3's parent into the run sequence and reuses the existing build + code-review stages verbatim."
+        },
+        {
+          "storyId": "s5",
+          "owns": [],
+          "depends": [
+            "sc2",
+            "sc3"
+          ],
+          "internal": "The GitHub integration path is private to s5: rendering the issue body from the IssueArtifact content via the existing tracker create/link surface, linking the created issue to the ParentLocation (or leaving it standalone), closing it on completion, and the tracker-not-configured no-op branch. s5 reuses tracker/github.ts, refs.ts, link.ts, sync.ts, and setup.ts rather than adding any new external path (k5/k6) and defines no new shared type."
+        }
+      ],
+      "rolloutPhase": "Phase B — issue record + parent attachment",
+      "nonFunctional": {
+        "performance": "The parent-locator must short-circuit: a confident deterministic/graph-ownership hit skips the semantic embedding pass, so the common attached-fix case stays within the latency of a single ref-resolve. The `issue` stage reuses the standard step loop; no new hot path.",
+        "security": "No new external surface. GitHub access stays entirely on the existing CLI/OAuth-gated tracker (k5/k6) — no direct cloud REST, no new credential handling. The issue content is user/defect text rendered to an existing tracker create path.",
+        "observability": "Each parent-attach records its deciding tier, confidence, and cited evidence on the IssueArtifact/chain record, so an attach is auditable and the medium-confidence ownership-feasibility assumption is retired with real data rather than by assertion. The issue stage and tracker step log through the standard workflow logging.",
+        "durability": "The IssueArtifact is persisted as a cited artifact under the docs/ work-item tree keyed by the canonical id (same storage/path-scheme as every other stage), so the defect record survives independently of the GitHub issue and a repo with no tracker keeps a purely local, durable record (k4/ac2)."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "locateParent",
+          "signature": "declare function locateParent(input: LocateParentInput, deps: LocateParentDeps): Promise<ParentLocation>",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "LocateParentInput",
+              "purpose": "The locate request: { touchedPaths: string[]; defectDescription: string; explicitRef?: string | undefined }. touchedPaths + defectDescription are the inference inputs; explicitRef is the optional ref a bugfix spec already carries (tier-1).",
+              "optional": false
+            },
+            {
+              "name": "deps",
+              "type": "LocateParentDeps",
+              "purpose": "Injected collaborators so the pure policy is unit-testable without a DB: { repoPath: string; resolveRef: (repoPath, id) => ResolvedRef | null; inferCandidates: (req) => Promise<InferredCandidates>; promptForRef: () => Promise<string | null>; thresholds: LocateThresholds }. Mirrors the injectable-deps pattern used elsewhere so tests fabricate candidate lists.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<ParentLocation>",
+            "meaning": "The tier that decided (deterministic|graph-ownership|semantic|prompt|standalone), the resolved parentRef (null iff tier==='standalone'), a 0..1 confidence, and the cited evidence that grounded the match. This is the sc3 contract value s4/s5 consume."
+          },
+          "errors": [
+            {
+              "type": "never-throws-on-not-found",
+              "condition": "No owner found is NOT an error: it resolves to a 'prompt' then 'standalone' ParentLocation. A thrown error is reserved for a malformed input (empty touchedPaths AND empty defectDescription AND no explicitRef)."
+            }
+          ],
+          "preconditions": [
+            "deps.inferCandidates reaches the daemon (which alone holds DB access, rule 1); on a tier-1 explicit-ref hit locateParent short-circuits and never calls it.",
+            "input paths are repo-relative and belong to the registered repo."
+          ],
+          "postconditions": [
+            "The fixed tier order is honored: explicit-ref deterministic -> graph-ownership -> semantic -> prompt -> standalone; a threshold-clearing earlier tier short-circuits later tiers (nonFunctional perf).",
+            "parentRef is non-null for every tier except 'standalone'; confidence is >= the tier's auto-attach threshold whenever an attach was made (lc1).",
+            "The returned ParentLocation is pure data; locateParent does NOT itself persist meta.parentRef (s4/s5 stamp it)."
+          ]
+        },
+        {
+          "name": "inferParentCandidates",
+          "signature": "declare function inferParentCandidates(db: DbClient, req: { touchedPaths: string[]; defectDescription: string; repoPath: string }): Promise<InferredCandidates>",
+          "parameters": [
+            {
+              "name": "db",
+              "type": "DbClient",
+              "purpose": "The live daemon DB handle (LMDB graph + Lance). This function runs ONLY daemon-side behind an IPC method; the controller never receives a DbClient (rule 1).",
+              "optional": false
+            },
+            {
+              "name": "req",
+              "type": "{ touchedPaths: string[]; defectDescription: string; repoPath: string }",
+              "purpose": "The two DB-bound inference inputs plus the repo path used to enumerate candidate work items.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<InferredCandidates>",
+            "meaning": "{ graph: RankedCandidate[]; semantic: RankedCandidate[] } — each RankedCandidate = { parentRef: WorkItemRef; score: number; evidence: string[] }, graph ranked by code-ownership over the touched entities, semantic ranked by ANN over epic/story artifact vectors. Raw scores; the controller applies the thresholds and tier order."
+          },
+          "errors": [
+            {
+              "type": "empty-result-not-error",
+              "condition": "No graph or semantic candidate is an empty array, not an error. An UnregisteredRepoError propagates if repoPath is not in the registry (rule 6)."
+            }
+          ],
+          "preconditions": [
+            "Runs behind a new daemon IPC method (mirrored to the IDE fork per the IPC lock-step rule); reuses findCallers/inNeighbors (src/db/search.ts, src/db/graph/edges.ts), searchEntityVecs + artifact-vec ANN (src/db/lance/*), embed (provider), and listWorkItems/listArtifactMdPaths/readArtifactCore (path-scheme/storage) verbatim (k6).",
+            "Any batch of embeds is serial (for...of), never Promise.all (convention)."
+          ],
+          "postconditions": [
+            "Returns only inference; makes NO attach decision and applies NO threshold — that policy is the controller's (locateParent).",
+            "Graph candidates are derived by mapping touched entities to owning entities then to work items via the artifact tree; semantic candidates by embed(defectDescription) -> ANN over epic/story artifact vecs."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "ParentLocation",
+        "change": "new",
+        "details": "The sc3 decision record. { tier: LocateTier; parentRef: WorkItemRef | null; confidence: number; evidence: string[] }. parentRef is null iff tier==='standalone'. confidence is 0..1. evidence holds cited files/entities/artifact ids that grounded the match. New type in the workflow layer (co-located with the locator).",
+        "schemaDiff": "+type LocateTier = 'deterministic' | 'graph-ownership' | 'semantic' | 'prompt' | 'standalone';\n+interface ParentLocation { readonly tier: LocateTier; readonly parentRef: WorkItemRef | null; readonly confidence: number; readonly evidence: readonly string[]; }",
+        "callSites": [
+          "src/workflow/types.ts (WorkItemRef reused, 417-421)"
+        ]
+      },
+      {
+        "entity": "RankedCandidate / InferredCandidates",
+        "change": "new",
+        "details": "The daemon inference return shape carried across the new IPC. RankedCandidate = { parentRef: WorkItemRef; score: number; evidence: string[] }; InferredCandidates = { graph: RankedCandidate[]; semantic: RankedCandidate[] }. Internal to s3's boundary (not an sc-level shared contract), but mirrored to the IDE fork as the IPC payload type.",
+        "schemaDiff": "+interface RankedCandidate { readonly parentRef: WorkItemRef; readonly score: number; readonly evidence: readonly string[]; }\n+interface InferredCandidates { readonly graph: readonly RankedCandidate[]; readonly semantic: readonly RankedCandidate[]; }",
+        "callSites": [
+          "src/db/search.ts:186-197 (findCallers/findCallees)",
+          "src/db/graph/edges.ts:87-118 (outNeighbors/inNeighbors)",
+          "src/db/lance/entity-vec.ts (searchEntityVecs)",
+          "src/db/lance/artifact-vec.ts:188 (artifact ANN)"
+        ]
+      },
+      {
+        "entity": "WorkItemRef",
+        "change": "field-modify",
+        "details": "No shape change — reused verbatim as ParentLocation.parentRef and RankedCandidate.parentRef. Listed to record that s3 CONSUMES it unchanged (added in S002 as meta.parentRef's type); s3 does not alter it.",
+        "schemaDiff": "// unchanged: interface WorkItemRef { readonly epicHash?: string; readonly storyId?: string; readonly slug?: string; }",
+        "callSites": [
+          "src/workflow/types.ts:417-421"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc3",
+        "role": "implements",
+        "howDetails": "s3 owns sc3. locateParent is the sc3 entry point returning ParentLocation; the HLD boundary.internal explicitly keeps the graph/semantic scoring + thresholds + prompt private to s3, so inferParentCandidates and the LocateThresholds live inside this boundary and are not exposed to s4/s5. Consumers see only ParentLocation. Deviation from the sc3 interfaceSketch: locateParent takes an added injectable `deps` param (deterministic resolver + daemon inference + prompt + thresholds) so the tier policy unit-tests without a DB — an additive signature refinement, not a contract-shape change (ParentLocation is exactly as sketched)."
+      },
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "s3 consumes sc1's BugfixTriageResult/route only as upstream context: the bugfix magnitude/route decided in s1 is what causes the orchestrator (s4) to invoke locateParent at all. locateParent itself does not read sc1's types; it takes touchedPaths/defectDescription/explicitRef. No reshaping of sc1."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The daemon inference IPC (inferParentCandidates) is unreachable or times out mid-locate (daemon restarting, socket dropped).",
+          "detection": "deps.inferCandidates rejects or exceeds its timeout; locateParent catches the rejection at the call site rather than letting it bubble.",
+          "response": "Treat graph+semantic as having produced zero candidates and fall through to the prompt tier (then standalone). NEVER auto-attach and NEVER crash the bugfix flow — an absent inference degrades to 'ask the user', preserving lc1.",
+          "userImpact": "The fix is not auto-attached; the user is prompted for a ref and can still proceed standalone. No lost work.",
+          "recoverable": true
+        },
+        {
+          "scenario": "An explicit ref carried by the bugfix spec is stale or malformed (points at a deleted/renamed work item).",
+          "detection": "Tier-1 resolveWorkflowRef(repoPath, explicitRef) returns null.",
+          "response": "Do not throw and do not attach to a guessed item; fall through to the inference tiers (graph -> semantic -> prompt -> standalone) exactly as if no explicitRef had been supplied.",
+          "userImpact": "A wrong/stale ref never silently mis-attaches the fix; the framework re-derives the parent from evidence.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A touched path maps to no indexed graph entity (a brand-new file, or a path outside the indexed set).",
+          "detection": "The daemon's per-path entity lookup returns empty for that path; findCallers/inNeighbors have no seed entity to expand.",
+          "response": "That path contributes no graph candidate; the remaining touched paths and the semantic tier still run. If ALL paths are unindexed, graph yields [] and the flow proceeds to semantic then prompt.",
+          "userImpact": "A fix that only touches new files still gets a semantic attempt and, failing that, a prompt — never an error.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A ranked candidate's parentRef resolves to a work item whose on-disk artifacts are gone (partial delete / manual edit of the docs tree).",
+          "detection": "readArtifactCore(repoPath, candidateArtifactId) returns undefined when the controller tries to cite evidence for that candidate.",
+          "response": "Drop the candidate from consideration (it cannot be grounded with evidence, and sc3 requires cited evidence); continue with the remaining candidates or fall to the next tier.",
+          "userImpact": "The fix is never attached to a phantom parent with no artifacts; attach only survives on grounded candidates.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Two or more graph candidates tie at or above the auto-attach threshold (a touched entity is owned by multiple stories' artifacts).",
+          "expected": "Ambiguity defers to the user prompt rather than picking one arbitrarily (lc1). The evidence for the tied candidates is surfaced to the prompt so the user can choose."
+        },
+        {
+          "input": "An explicitRef is present AND the touched paths point at a different work item.",
+          "expected": "Tier-1 deterministic wins and short-circuits: the explicit ref is authoritative (deterministic-first), inference is not run, tier='deterministic'."
+        },
+        {
+          "input": "defectDescription is empty/whitespace but touchedPaths are present.",
+          "expected": "The graph tier runs normally; the semantic tier is skipped (nothing to embed) rather than embedding an empty string. Order preserved: graph -> (skip semantic) -> prompt -> standalone."
+        },
+        {
+          "input": "The best semantic candidate scores just below the auto-attach threshold.",
+          "expected": "No auto-attach; defer to the prompt tier with that near-miss candidate surfaced as a suggestion (lc1: a low-confidence match must not silently attach)."
+        },
+        {
+          "input": "At the prompt tier the user supplies a ref that resolveWorkflowRef cannot resolve (or supplies nothing).",
+          "expected": "Resolve to standalone (tier='standalone', parentRef=null). The fix proceeds unattached rather than looping or erroring."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Location is deterministic-first and never silently attaches to a wrong parent: code-ownership is attempted before the fuzzy semantic step, and any low-confidence, ambiguous, or below-threshold match defers to the user prompt. The fixed order deterministic -> graph-ownership -> semantic -> prompt -> standalone and the standalone fallback are load-bearing (grounded by the s1 tracker/resolve.ts + graph + lance bundles showing each tier's reuse surface).",
+          "source": "c5"
+        },
+        {
+          "text": "The parent-locator reuses the existing tracker ref-resolver (resolveWorkflowRef), the LMDB graph query API (findCallers/inNeighbors), the LanceDB ANN surface, and the path-scheme candidate enumerators verbatim — it adds a locate-parent resolver on top rather than re-implementing any of them, and introduces no direct cloud REST path (grounded by the s1 symbol.locate bundles on resolve.ts, db/search.ts, db/graph/edges.ts, db/lance/*).",
+          "source": "c7"
+        },
+        {
+          "text": "All DB access (graph + Lance + embeddings) stays daemon-side behind IPC; the controller-side policy never opens LMDB/LanceDB directly and never receives a DbClient (architectural rule 1), grounded by the s1 bundle noting findCallers/searchEntityVecs/embed all require a live DbClient the daemon alone holds.",
+          "source": "c2"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove the locateParent tier POLICY in isolation — fixed order, thresholds, short-circuit, prompt/standalone fallback — by injecting fabricated deps (resolveRef, inferCandidates, promptForRef, thresholds). No DB, no daemon; this is where the correctness-critical lc1 guarantees are pinned.",
+          "subjects": [
+            "locateParent: tier-1 explicit-ref hit -> tier='deterministic', short-circuits (inferCandidates never called)",
+            "locateParent: graph candidate >= threshold -> tier='graph-ownership', semantic pass skipped (short-circuit)",
+            "locateParent: graph empty/below-threshold, semantic >= threshold -> tier='semantic'",
+            "locateParent: nothing clears threshold -> promptForRef called; a resolvable ref -> attached, an unresolvable/empty ref -> tier='standalone', parentRef=null",
+            "locateParent: tied graph candidates at/above threshold -> defers to prompt (no arbitrary pick)",
+            "locateParent: inferCandidates rejects/times out -> degrades to prompt then standalone, never throws, never auto-attaches",
+            "locateParent: empty defectDescription -> semantic tier skipped, graph+prompt order preserved",
+            "locateParent: stale explicitRef (resolveRef returns null) -> falls through to inference tiers",
+            "ParentLocation shape invariant: parentRef non-null iff tier!=='standalone'; confidence >= threshold whenever attached"
+          ],
+          "fixturesNeeded": [
+            "A fake LocateParentDeps: stub resolveRef returning a canned ResolvedRef|null, stub inferCandidates returning fabricated InferredCandidates (graph/semantic RankedCandidate[] with chosen scores), stub promptForRef returning a canned ref|null, and a fixed LocateThresholds object",
+            "Hand-built WorkItemRef + RankedCandidate literals (no DB)"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove the daemon-side inferParentCandidates mapping logic (touched entity -> owning work item; embed+ANN -> ranked semantic candidates) over an in-memory/fixture graph+lance, asserting it RANKS but makes NO attach decision and applies NO threshold.",
+          "subjects": [
+            "inferParentCandidates: a touched path whose entity is owned by a story's artifacts yields a graph RankedCandidate with that WorkItemRef + cited evidence",
+            "inferParentCandidates: unindexed path contributes no graph candidate; other paths still resolve",
+            "inferParentCandidates: returns raw scores only; no filtering/threshold applied (policy stays in the controller)",
+            "inferParentCandidates: embeds are issued serially (for...of), not Promise.all"
+          ],
+          "fixturesNeeded": [
+            "A small seeded LMDB graph + Lance artifact-vec fixture (reuse existing db test-harness helpers) OR injected db stubs for findCallers/inNeighbors/searchEntityVecs",
+            "A fake embed() returning a deterministic vector"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove the controller policy composed with a real (fixture-backed) daemon inference path end-to-end: a locate request over a seeded work-item tree returns the expected ParentLocation, exercising the code-ownership and semantic tiers against real graph/lance data.",
+          "subjects": [
+            "End-to-end locate: touched paths under an existing story's artifacts -> graph attach with grounded evidence",
+            "End-to-end locate: unrelated touched paths + a defect description matching a story's artifact prose -> semantic attach",
+            "End-to-end locate: neither matches -> prompt -> standalone"
+          ],
+          "fixturesNeeded": [
+            "A seeded repo work-item tree (epic + a couple of stories with approved artifacts) indexed into the fixture graph + artifact-vec table",
+            "Reuse of the existing workflow/db integration test harness"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "locateParent: graph candidate >= threshold -> tier='graph-ownership', semantic pass skipped",
+            "inferParentCandidates: a touched path whose entity is owned by a story's artifacts yields a graph RankedCandidate + evidence",
+            "End-to-end locate: touched paths under an existing story's artifacts -> graph attach with grounded evidence"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "locateParent: graph empty/below-threshold, semantic >= threshold -> tier='semantic'",
+            "End-to-end locate: unrelated touched paths + defect description matching a story's artifact prose -> semantic attach",
+            "locateParent: semantic candidate just below threshold -> defers to prompt (no silent attach)"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "locateParent: nothing clears threshold -> promptForRef called; resolvable ref attaches, empty/unresolvable ref -> tier='standalone', parentRef=null",
+            "locateParent: inferCandidates rejects/times out -> degrades to prompt then standalone",
+            "End-to-end locate: neither tier matches -> prompt -> standalone"
+          ]
+        }
+      ],
+      "testFramework": "node:test via tsx (npx tsx --test 'src/**/__tests__/*.test.ts'), matching the existing workflow/mcp test layout; unit policy tests need no live services and run in the fast workflow subset."
+    },
+    "migration": {
+      "stateBefore": "No parent-locator exists. Bugfix category (sc1) and the IssueArtifact stage (sc2) exist, and ArtifactMetaBase already carries an OPTIONAL meta.parentRef?: WorkItemRef | null (added in S002, src/workflow/types.ts:412; WorkItemRef interface at :417-421) that nothing currently populates. The deterministic ref-resolver resolveWorkflowRef (src/workflow/tracker/resolve.ts:292) resolves EXPLICIT identifiers only; the graph query API (findCallers/inNeighbors, src/db/search.ts:186-197, src/db/graph/edges.ts:87-118) and the LanceDB ANN surface (src/db/lance/*) exist but no code composes them to infer a parent from touched paths. The daemon IPC registry (src/daemon/index.ts) has no locate/infer method. Every DB touch is daemon-only (rule 1).",
+      "stateAfter": "A new controller-side locateParent policy + a new daemon-side inferParentCandidates function behind a new additive daemon IPC method compose the five tiers. New types LocateTier/ParentLocation/RankedCandidate/InferredCandidates/LocateParentInput/LocateParentDeps/LocateThresholds exist in the workflow layer (ParentLocation reusing the already-present WorkItemRef). meta.parentRef stays optional and is still populated by a later story (s4), not by s3 — s3 only produces the ParentLocation value. All behind the existing `bugfixCategory` feature flag.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the new value types (LocateTier, ParentLocation, RankedCandidate, InferredCandidates, LocateParentInput, LocateParentDeps, LocateThresholds) to the workflow layer. Purely additive type declarations; no existing type changes shape.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add the daemon-side inferParentCandidates function that composes the existing findCallers/inNeighbors + searchEntityVecs/artifact-vec ANN + embed + listWorkItems/readArtifactCore surfaces into ranked graph+semantic candidates. New code path only; touches no existing function.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Register a new additive daemon IPC method exposing inferParentCandidates, and mirror its payload type to the IDE fork per the IPC lock-step rule. Additive to the method registry — no existing method signature changes.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "bugfixCategory"
+          ]
+        },
+        {
+          "order": 4,
+          "action": "Add the controller-side locateParent policy that injects the deterministic resolver (resolveWorkflowRef), the new inferCandidates IPC client, a promptForRef callback, and the LocateThresholds, applying the fixed tier order + auto-attach thresholds + prompt/standalone fallback. New function; consumed by s4 later, so nothing calls it yet at s3's completion.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "bugfixCategory"
+          ]
+        },
+        {
+          "order": 5,
+          "action": "Add unit + integration tests (fabricated deps for the policy; seeded graph/lance fixtures for the inferrer). Test-only; no production behavior change.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Fully backward compatible: every change is additive. No existing public API changes signature or shape — locateParent and inferParentCandidates are new symbols, the daemon IPC method is a new registry entry, and the only reused type (WorkItemRef / meta.parentRef) already exists as an optional field from S002 and is left untouched (still unpopulated by s3). The new surface is reachable only under the `bugfixCategory` feature flag and is not yet wired into any live orchestration (s4's job), so an existing non-bugfix workflow run is entirely unaffected.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Split locator: daemon infers candidates, controller decides",
+        "oneLineSummary": "One focused daemon IPC does only the DB-bound inference (graph-ownership + semantic ANN) returning ranked candidates + evidence; the controller owns the deterministic ref-resolve, the fixed tier order, the confidence/auto-attach policy, the user prompt, and the standalone fallback.",
+        "approach": "sc3 splits along the rule-1 DB boundary. A new daemon-side function/IPC `inferParentCandidates({ touchedPaths, defectDescription }): Promise<{ graph: RankedCandidate[]; semantic: RankedCandidate[] }>` runs ONLY the two DB-bound tiers server-side: graph code-ownership (findCallers/inNeighbors over the touched entities → owning story via the artifact tree) and semantic (embed(defectDescription) → LanceDB ANN over epic/story artifact vecs), each returning WorkItemRef candidates with a raw score + cited evidence. The controller-side `locateParent` is a pure orchestration function that: (tier-1) tries `resolveWorkflowRef` on any explicit ref in the input (pure fs, no DB); (tier-2/3) calls the one daemon IPC and reads its ranked candidates; applies the FIXED order and per-tier high-confidence auto-attach thresholds (lc1); (tier-4) if nothing clears threshold, returns a 'prompt' ParentLocation the orchestrator surfaces to the user; (tier-5) if the user supplies nothing, returns standalone (parentRef:null). ParentLocation is assembled controller-side so the tier/confidence/evidence policy is unit-testable without a live DB.",
+        "pros": [
+          "Respects rule 1 cleanly: every DB touch (graph + ANN + embed) is daemon-side; no client opens LMDB/Lance.",
+          "The decision POLICY (fixed tier order, thresholds, auto-attach, prompt-vs-standalone) is pure controller code — unit-testable with fabricated candidate lists, no DB fixture, matching how the triage route table is tested.",
+          "The prompt tier lives where user interaction belongs (controller/MCP turn); the daemon function stays a pure query with no interactive wrinkle.",
+          "Short-circuit is natural: a tier-1 explicit-ref hit or a threshold-clearing graph hit skips the semantic pass (nonFunctional perf), and the controller decides that without a round trip when tier-1 fires.",
+          "Minimal new surface: one narrow daemon query IPC; reuses resolveWorkflowRef, findCallers/inNeighbors, searchEntityVecs, embed, listWorkItems verbatim (k6)."
+        ],
+        "cons": [
+          "ParentLocation assembly spans two files (daemon inferrer + controller policy) — the reviewer must read both to see the whole decision.",
+          "Adds one new daemon IPC method + its mirrored type (small contract-surface growth)."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "All-in-daemon locateParent",
+        "oneLineSummary": "A single daemon-side `locateParent` runs every inference tier server-side and returns the finished ParentLocation, with the prompt tier degraded to a 'needs-user-ref' signal the controller must interpret.",
+        "approach": "sc3's `locateParent({ touchedPaths, defectDescription }): Promise<ParentLocation>` is implemented entirely daemon-side as one IPC. It runs deterministic ref-resolve, graph ownership, and semantic ANN in the fixed order, applies the thresholds, and returns a ParentLocation. Because a daemon function cannot interact with the user, the 'prompt' tier is expressed as a ParentLocation whose tier='prompt' and parentRef=null — a signal the controller/orchestrator must then turn into an actual user prompt and, on a supplied ref, call resolveWorkflowRef again (or a second IPC) to finalize. Standalone is the same shape with tier='standalone'.",
+        "pros": [
+          "The whole tier pipeline and its scoring live in one place with direct DbClient access — no candidate list crosses the IPC boundary half-decided.",
+          "Matches the sc3 interfaceSketch signature (`locateParent(...)`) literally, so the HLD contract name maps 1:1 to a single function.",
+          "Deterministic + graph + semantic all share one grounding pass server-side."
+        ],
+        "cons": [
+          "The prompt tier is fundamentally interactive; a pure daemon function can't own it, so tier-4 leaks back to the controller anyway as a 'needs-user-ref' round trip — the clean single-entry-point is illusory and the interaction logic ends up split regardless.",
+          "The decision policy (thresholds, auto-attach) becomes daemon code that needs a live LMDB/Lance fixture to unit-test — heavier and slower than testing pure policy over fabricated candidates.",
+          "resolveWorkflowRef is pure-fs; forcing tier-1 through the daemon IPC adds a round trip for the cheapest, most common attached case (an explicit ref)."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Correct on ac1/ac2 but only PARTIAL on ac3 and sc3: the prompt tier is inherently interactive and cannot be owned by a pure daemon function, so the interaction logic splits back to the controller regardless — giving up a1's clean separation while additionally forcing the threshold policy into DB-fixture-bound tests and adding a round trip for the cheap explicit-ref case. Ranked 2nd."
+      },
+      {
+        "id": "a3",
+        "name": "Reuse insrc_analyze_step for inference",
+        "oneLineSummary": "No new daemon surface: the controller drives the graph/semantic tiers by calling the existing insrc_analyze_step IPC and parses its 7-layer bundle into a ParentLocation.",
+        "approach": "locateParent is a pure controller routine that reuses the existing analyze pipeline for its inference tiers: for tier-2/3 it issues an insrc_analyze_step run focused on the touched paths + defect description, then interprets the returned symbol.locate / structural bundle to derive candidate owning stories, and maps them to a ParentLocation. Deterministic (resolveWorkflowRef), prompt, and standalone tiers stay controller-side as in a1.",
+        "pros": [
+          "Zero new daemon IPC — maximal reuse of an existing, already-mirrored surface (k6).",
+          "The controller already knows how to call analyze; no new mirrored type across the IDE fork."
+        ],
+        "cons": [
+          "insrc_analyze_step is a heavyweight 7-layer context-synthesis tool aimed at prose bundles, not a precise ranked parent-candidate query — its output has no confidence score or WorkItemRef ranking, so the thresholds (lc1) would rest on ad-hoc prose parsing, which is lossy and brittle exactly where 'never silently attach to a wrong parent' matters most.",
+          "A full analyze run per bugfix is far more LLM/latency cost than a targeted graph+ANN query, for a worse-grounded answer — the wrong accuracy/cost trade for a correctness-critical decision.",
+          "Semantic ANN against epic/story ARTIFACT vectors (artifact-vec) is not what analyze's entity-focused bundle returns, so the semantic tier would be under-served."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "VIOLATES sc3: deriving ParentLocation.confidence + the auto-attach threshold from analyze's prose bundle is lossy exactly where the load-bearing lc1 'never silently attach to a wrong parent' guarantee lives, and trades accuracy for reuse — the wrong trade under the project's accuracy-first principle for a correctness-critical decision. Ranked 3rd."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/tracker/resolve.ts:292 — resolveWorkflowRef(repoPath, identifier): ResolvedRef | null (deterministic tier-1)",
+      "quotedText": "resolveWorkflowRef resolves an explicit ref a bugfix spec ALREADY carries — it does NOT infer a parent from touched code paths."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "src/db/search.ts:186-197 (findCallers/findCallees) + src/db/graph/edges.ts:87-118 (outNeighbors/inNeighbors) — graph code-ownership tier; all require a live DbClient (daemon-only, rule 1)"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "src/db/lance/entity-vec.ts (searchEntityVecs) + src/db/lance/artifact-vec.ts:188 (artifact ANN) + embed(text):Promise<number[]> — semantic tier"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/path-scheme.ts:158-195 (listWorkItems/listArtifactMdPaths) + src/workflow/storage.ts:213-224 (readArtifactCore) + src/workflow/types.ts:417-421 (WorkItemRef) — candidate enumeration + parentRef shape"
+    },
+    {
+      "id": "c5",
+      "kind": "step-output",
+      "ref": "s3 alternatives.judge — winnerId a1; lc1 deterministic-first / no-silent-wrong-attach is load-bearing"
+    },
+    {
+      "id": "c6",
+      "kind": "convention",
+      "ref": "node:test via tsx (npx tsx --test); embeds serial (for...of) never Promise.all; daemon owns all DB access (CLAUDE.md rules 1/4)"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "HLD sc3 ParentLocation (ownedByStory s3) + Epic k3/k6 — tiered locate order + reuse existing tracker resolver/graph/lance"
+    }
+  ]
+}

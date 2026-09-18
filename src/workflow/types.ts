@@ -5,7 +5,7 @@
 
 import type { LLMProvider } from '../shared/types.js';
 import type { ReviewReport } from './review/types.js';
-import type { SizeClass } from './triage/types.js';
+import type { BugfixMagnitude, SizeClass } from './triage/types.js';
 
 /**
  * Workflow framework type surface.
@@ -396,6 +396,28 @@ export interface ArtifactMetaBase {
 	readonly sizeClass?:   SizeClass;
 	/** The classifier's one-paragraph justification for the size class. */
 	readonly triageRationale?: string;
+	/** Canonical 16-char identity for a bugfix IssueArtifact (sc2 / S002). Like
+	 *  a `specHash`, the issue precedes/heads the bugfix flow and carries its own
+	 *  run-derived hash. Files are named `ISSUE-<issueHash>`. Absent on every
+	 *  non-issue artifact. */
+	readonly issueHash?:   string;
+	/** The bugfix sub-magnitude carried from sc1 onto the IssueArtifact meta so
+	 *  the downstream router (s4) can size the route without re-classifying.
+	 *  Present only on a bugfix `issue` artifact. */
+	readonly magnitude?:   BugfixMagnitude;
+	/** The work item this bugfix corrects, stamped by the tiered parent-locator
+	 *  (sc3 / S003) once located; `null` = standalone (no located parent). The
+	 *  `issue` stage (s2) leaves it absent; s3 fills it. A meta-side stamp so it
+	 *  never rewrites the reviewed issue body (k4). */
+	readonly parentRef?:   WorkItemRef | null;
+}
+
+/** A reference to an existing work item a bugfix attaches to (sc2/sc3). The
+ *  minimal shape the tracker resolves against — any of the three may pin it. */
+export interface WorkItemRef {
+	readonly epicHash?: string;
+	readonly storyId?:  string;
+	readonly slug?:     string;
 }
 
 /** One interactive resolution of a review finding (R3). */

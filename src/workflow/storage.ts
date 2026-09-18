@@ -163,6 +163,10 @@ export function buildArtifactId(epicHash: string, storyId: string): string {
 /** Canonical `.json` basename ID for a brainstorm SpecArtifact (S006/sc1) —
  *  hash-based identity, independent of the display slug. Not Epic-scoped. */
 export function specArtifactId(specHash: string): string { return `SPEC-${specHash}`; }
+/** Canonical `.json` basename ID for a bugfix IssueArtifact (sc2 / S002) —
+ *  hash-based identity, independent of the display slug. Like a SPEC, the issue
+ *  is its own first-stage work item, keyed by its own run-derived `issueHash`. */
+export function issueArtifactId(issueHash: string): string { return `ISSUE-${issueHash}`; }
 /** Canonical `.json` basename ID for a code-review record (code-review S006 /
  *  sc4) — one per Story, in its OWN `CR-` namespace so it never collides with
  *  or overwrites the design-artifact review or the `BUILD-` record. */
@@ -317,6 +321,27 @@ export function specArtifactPaths(
 	return {
 		md:   resolveArtifactMdPath(repoPath, deriveWorkItemIdentity(specHash, createdAtISO), 'SPEC', workItemKind, slug ?? specHash),
 		json: join(repoPath, ARTIFACTS_DIR, `${specArtifactId(specHash)}.json`),
+	};
+}
+
+/** Paths for a bugfix IssueArtifact (sc2 / S002): md at the item's nested
+ *  `ISSUE.md` (sc2, item-root singleton), canonical JSON (named by `issueHash`)
+ *  in `.insrc/artifacts/`. Like a SPEC, the issue is its own first-stage work
+ *  item, keyed by its own run-derived `issueHash`. Omit `slug` when only the
+ *  JSON is needed — the markdown half then falls back to the hash. */
+export function issueArtifactPaths(
+	repoPath:     string,
+	issueHash:    string,
+	createdAtISO: string,
+	workItemKind: WorkItemKind,
+	slug?:        string,
+): {
+	readonly md:   string;
+	readonly json: string;
+} {
+	return {
+		md:   resolveArtifactMdPath(repoPath, deriveWorkItemIdentity(issueHash, createdAtISO), 'ISSUE', workItemKind, slug ?? issueHash),
+		json: join(repoPath, ARTIFACTS_DIR, `${issueArtifactId(issueHash)}.json`),
 	};
 }
 
@@ -523,11 +548,12 @@ export function pathsForWorkflow(args: {
 	readonly epicHash?:     string | undefined;
 	readonly epicSlug?:     string | undefined;
 	readonly specHash?:     string | undefined;   // from finalized meta (brainstorm)
+	readonly issueHash?:    string | undefined;   // from finalized meta (bugfix issue)
 	readonly storyId?:      string | undefined;   // from finalized meta
 	readonly storyIdParam?: string | undefined;   // from intent.params
 	readonly standalone?:   boolean | undefined;  // from finalized meta — triage-routed feature (no Epic parent)
 }): { readonly md: string; readonly json: string } {
-	const { workflow, repoPath, epicKey, runId, createdAtISO, epicHash, epicSlug, specHash, storyId, storyIdParam, standalone } = args;
+	const { workflow, repoPath, epicKey, runId, createdAtISO, epicHash, epicSlug, specHash, issueHash, storyId, storyIdParam, standalone } = args;
 	// Epic-parented vs triage-routed standalone selects the docs/epics vs
 	// docs/standalone top-level (sc2). A brainstorm spec precedes the Epic chain,
 	// so it is always a standalone work item.
@@ -540,6 +566,15 @@ export function pathsForWorkflow(args: {
 			throw new Error(`pathsForWorkflow: workflow 'brainstorm' finalized without meta.specHash`);
 		}
 		return specArtifactPaths(repoPath, specHash, createdAtISO, 'standalone', epicSlug);
+	}
+	// A bugfix IssueArtifact (sc2 / S002) is keyed by its own run-derived
+	// issueHash — like a SPEC it heads the flow and is its own work item.
+	// Routed before the epicHash guard.
+	if (workflow === 'issue') {
+		if (issueHash === undefined) {
+			throw new Error(`pathsForWorkflow: workflow 'issue' finalized without meta.issueHash`);
+		}
+		return issueArtifactPaths(repoPath, issueHash, createdAtISO, workItemKind, epicSlug);
 	}
 	if (epicHash === undefined) {
 		throw new Error(`pathsForWorkflow: workflow '${workflow}' finalized without meta.epicHash`);

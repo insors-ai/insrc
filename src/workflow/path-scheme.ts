@@ -40,9 +40,10 @@ import { deriveWorkItemIdentity, type WorkItemIdentity } from './id.js';
 // Types
 // ---------------------------------------------------------------------------
 
-/** The eight artifact kinds that live in the docs tree. Each maps to a bare
- *  `<KIND>.md` filename. */
-export type ArtifactKind = 'SPEC' | 'DEF' | 'HLD' | 'LLD' | 'PLAN' | 'BUILD' | 'CR' | 'EXT';
+/** The artifact kinds that live in the docs tree. Each maps to a bare
+ *  `<KIND>.md` filename. `ISSUE` is the bugfix flow's first-stage record — an
+ *  item-root singleton like SPEC/DEF/HLD (NOT story-scoped). */
+export type ArtifactKind = 'SPEC' | 'DEF' | 'HLD' | 'LLD' | 'PLAN' | 'BUILD' | 'CR' | 'EXT' | 'ISSUE';
 
 /** Whether a work item is epic-parented or a triage-routed standalone feature —
  *  selects the `docs/epics` vs `docs/standalone` top-level split. */

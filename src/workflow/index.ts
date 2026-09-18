@@ -13,6 +13,7 @@ import { registerBrainstormRunners }  from './runners/brainstorm/index.js';
 import { registerDefineRunners }      from './runners/define/index.js';
 import { registerDesignEpicRunners }  from './runners/design-epic/index.js';
 import { registerDesignStoryRunners } from './runners/design-story/index.js';
+import { registerIssueRunners }       from './runners/issue/index.js';
 import { registerPlanRunners }        from './runners/plan/index.js';
 import { registerStubRunners }        from './runners/stub/index.js';
 import { registerTrackerRunners }     from './runners/tracker/index.js';
@@ -29,6 +30,7 @@ export function registerWorkflowRunners(): void {
 	registerDesignEpicRunners();
 	registerDesignStoryRunners();
 	registerPlanRunners();
+	registerIssueRunners();
 	registerTrackerRunners();
 	registered = true;
 }

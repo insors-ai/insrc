@@ -54,6 +54,13 @@ import {
 	type SpecArtifact,
 } from './artifacts/spec.js';
 import {
+	isCitationArray as isIssueCitationArray,
+	isIssueBody,
+	ISSUE_SCHEMA_VERSION,
+	renderIssueMarkdown,
+	type IssueArtifact,
+} from './artifacts/issue.js';
+import {
 	checkContractDependencyGraph,
 	checkInterfaceSketchTypeLevel,
 	checkOwnershipConsistency,
@@ -144,6 +151,7 @@ export function prepareDecompose(intent: WorkflowIntent): DecomposerPrompt {
 	switch (intent.workflow) {
 		case 'stub':         return stubDecomposer(intent);
 		case 'brainstorm':   return brainstormDecomposer(intent);
+		case 'issue':        return issueDecomposer(intent);
 		case 'define':       return defineDecomposer(intent);
 		case 'design.epic':  return designEpicDecomposer(intent);
 		case 'design.story': return designStoryDecomposer(intent);
@@ -261,6 +269,7 @@ export function prepareSynthesize(
 	switch (intent.workflow) {
 		case 'stub':         return stubSynthesizer(intent, stepOutputs);
 		case 'brainstorm':   return brainstormSynthesizer(intent, stepOutputs);
+		case 'issue':        return issueSynthesizer(intent, stepOutputs);
 		case 'define':       return defineSynthesizer(intent, stepOutputs);
 		case 'design.epic':  return designEpicSynthesizer(intent, stepOutputs);
 		case 'design.story': return designStorySynthesizer(intent, stepOutputs);
@@ -373,6 +382,7 @@ export function finalizeArtifact(
 		switch (intent.workflow) {
 			case 'stub':         return finalizeStub(intent, stepOutputs, runId, elapsedMs, llmResponse, model, attribution);
 			case 'brainstorm':   return finalizeBrainstorm(intent, stepOutputs, runId, elapsedMs, llmResponse, model, attribution);
+			case 'issue':        return finalizeIssue(intent, stepOutputs, runId, elapsedMs, llmResponse, model, attribution);
 			case 'define':       return finalizeDefine(intent, stepOutputs, runId, elapsedMs, llmResponse, model, attribution);
 			case 'design.epic':  return finalizeDesignEpic(intent, stepOutputs, runId, elapsedMs, llmResponse, model, attribution);
 			case 'design.story': return finalizeDesignStory(intent, stepOutputs, runId, elapsedMs, llmResponse, model, attribution);
@@ -684,6 +694,181 @@ function finalizeBrainstorm(
 		ok: true,
 		finalized: {
 			workflow:   'brainstorm',
+			renderedMd,
+			renderedJson,
+			artifact,
+		},
+	};
+}
+
+// ---------------------------------------------------------------------------
+// issue — the first stage of the bugfix flow: capture the defect record into a
+// durable IssueArtifact (single source for the chain + the GitHub issue body).
+// (Epic add-bugfix-triage-category-insrc-framework, S002 / sc2.)
+// ---------------------------------------------------------------------------
+
+/** Decomposer for the `issue` stage. A fixed two-step plan: capture then audit
+ *  (mirrors the define/design multi-step-ending-in-checklist.verify idiom). */
+function issueDecomposer(intent: WorkflowIntent): DecomposerPrompt {
+	const systemPrompt = [
+		'You are the workflow decomposer for the `issue` stage (the first stage of a bugfix).',
+		'',
+		'Emit a plan with EXACTLY two steps IN ORDER:',
+		'  s1 runner `issue.capture`    — capture the defect (reproduction, root cause, fix intent).',
+		'  s2 runner `checklist.verify` — audit the captured record.',
+		'',
+		'The plan must satisfy the schema below. Do not add or reorder steps.',
+	].join('\n');
+	const userTurn = `Defect (the bugfix focus): ${intent.focus}\nRepo: ${intent.repoPath}\nEmit the plan JSON now.`;
+	const schema = {
+		type: 'object',
+		required: ['workflow', 'steps'],
+		properties: {
+			workflow:  { const: 'issue' },
+			rationale: { type: 'string' },
+			steps: {
+				type:     'array',
+				minItems: 2,
+				maxItems: 2,
+				items: {
+					type: 'object',
+					required: ['id', 'runner', 'params'],
+					properties: {
+						id:     { type: 'string', pattern: '^s[1-2]$' },
+						runner: { enum: ['issue.capture', 'checklist.verify'] },
+						params: { type: 'object' },
+						note:   { type: 'string' },
+					},
+					additionalProperties: false,
+				},
+			},
+		},
+		additionalProperties: false,
+	} as const;
+	return { systemPrompt, userTurn, schema: schema as unknown as Record<string, unknown> };
+}
+
+/** Synthesizer for the `issue` stage: turn the s1 capture (+ s2 audit) into a
+ *  durable IssueArtifact body — the defect prose ONLY (k4). */
+function issueSynthesizer(
+	intent:      WorkflowIntent,
+	stepOutputs: Readonly<Record<string, unknown>>,
+): SynthesizerPrompt {
+	const systemPrompt = [
+		'You are the synthesizer for the `issue` stage. The s1 `issue.capture` step already assembled the',
+		'defect record and s2 `checklist.verify` audited it. Turn the s1 capture into a durable IssueArtifact',
+		'JSON matching the schema below.',
+		'',
+		'HARD RULES:',
+		'- `body` carries ONLY the defect prose: `title`, `reproduction`, `rootCause`, `fixIntent` — the exact',
+		'  content that becomes the GitHub issue body. Preserve the s1 wording; do NOT add routing/linking',
+		'  metadata (magnitude, parent) to the body.',
+		'- `fixIntent` stays INTENT-only (what the correction does), never the implementation/diff.',
+		'- Do NOT invent facts absent from s1. `citations[]` preserves the s1 citations (at least one); ids are `cN`.',
+	].join('\n');
+	const userTurn = [
+		`Defect (the bugfix focus): ${intent.focus}`,
+		'',
+		'Step outputs:',
+		'```json',
+		JSON.stringify(stepOutputs, null, 2),
+		'```',
+		'',
+		'Emit the IssueArtifact JSON now.',
+	].join('\n');
+	const schema = {
+		type: 'object',
+		required: ['body', 'citations'],
+		properties: {
+			body: {
+				type: 'object',
+				required: ['title', 'reproduction', 'rootCause', 'fixIntent'],
+				properties: {
+					title:        { type: 'string', minLength: 1 },
+					reproduction: { type: 'string', minLength: 1 },
+					rootCause:    { type: 'string', minLength: 1 },
+					fixIntent:    { type: 'string', minLength: 1 },
+				},
+				additionalProperties: false,
+			},
+			citations: {
+				type: 'array',
+				minItems: 1,
+				items: {
+					type: 'object',
+					required: ['id', 'kind', 'ref'],
+					properties: {
+						id:         { type: 'string', pattern: '^c\\d+$' },
+						kind:       { enum: ['step-output', 'analyze-bundle', 'doc', 'code', 'stakeholder', 'convention', 'prior-artifact'] },
+						ref:        { type: 'string', minLength: 1 },
+						quotedText: { type: 'string' },
+					},
+					additionalProperties: false,
+				},
+			},
+		},
+		additionalProperties: false,
+	} as const;
+	return { systemPrompt, userTurn, schema: schema as unknown as Record<string, unknown> };
+}
+
+function finalizeIssue(
+	intent:      WorkflowIntent,
+	_stepOutputs: Readonly<Record<string, unknown>>,
+	runId:       string,
+	elapsedMs:   number,
+	llmResponse: Record<string, unknown>,
+	model:       string,
+	attribution?: ArtifactModelAttribution,
+): FinalizeResult {
+	if (typeof llmResponse !== 'object' || llmResponse === null) {
+		return { ok: false, failure: schemaFailure(`synthesizer response is not an object`) };
+	}
+	const body      = (llmResponse as { body?: unknown }).body;
+	const citations = (llmResponse as { citations?: unknown }).citations;
+	if (!isIssueBody(body)) {
+		return { ok: false, failure: schemaFailure(`body does not match IssueArtifactBody shape (needs non-empty title/reproduction/rootCause/fixIntent)`) };
+	}
+	if (!isIssueCitationArray(citations)) {
+		return { ok: false, failure: schemaFailure(`citations must be an array of { id, kind, ref }`) };
+	}
+	// An IssueArtifact heads the bugfix flow — it mints its OWN run-derived
+	// identity (like a SpecArtifact), and is a standalone work item until the
+	// s3 locator stamps meta.parentRef.
+	const issueHash = computeEpicHash(runId);
+	const slug      = safeDeriveSlug(intent.focus);
+	const magnitude = intent.params['magnitude'];
+	const artifact: IssueArtifact = {
+		meta: {
+			workflow:      'issue',
+			runId,
+			repoPath:      intent.repoPath,
+			createdAt:     new Date().toISOString(),
+			attribution:   attribution ?? singleModelAttribution(model),
+			elapsedMs,
+			repoIndexedAt: intent.repoIndexedAt,
+			schemaVersion: ISSUE_SCHEMA_VERSION,
+			issueHash,
+			epicSlug:      slug,
+			standalone:    true,
+			...(magnitude === 'small' || magnitude === 'sized' ? { magnitude } : {}),
+		},
+		body,
+		citations,
+	};
+	const renderedBody = renderIssueMarkdown(artifact);
+	const check = validateBodyAndCitations(artifact, renderedBody);
+	if (!check.ok) return { ok: false, failure: check };
+	const renderedMd = renderedBody + renderCitationBlock(citations);
+	const renderedJson = JSON.stringify(artifact, null, 2) + '\n';
+	log.info(
+		{ workflow: 'issue', runId, size: renderedMd.length, citations: citations.length },
+		'finalizeIssue: IssueArtifact ready',
+	);
+	return {
+		ok: true,
+		finalized: {
+			workflow:   'issue',
 			renderedMd,
 			renderedJson,
 			artifact,

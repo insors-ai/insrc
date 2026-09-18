@@ -314,13 +314,14 @@ export async function runWorkflowServerSide(
 	if (finalized === undefined) throw new Error('workflow.run: synthesize produced no artifact');
 
 	// 4. Persist (paths from the finalized meta, shared router).
-	const meta = (finalized.artifact as { meta?: { epicHash?: string; epicSlug?: string; storyId?: string; specHash?: string; createdAt?: string; epicCreatedAt?: string; standalone?: boolean } }).meta ?? {};
+	const meta = (finalized.artifact as { meta?: { epicHash?: string; epicSlug?: string; storyId?: string; specHash?: string; issueHash?: string; createdAt?: string; epicCreatedAt?: string; standalone?: boolean } }).meta ?? {};
 	const storyIdParam = typeof intent.params['storyId'] === 'string' ? intent.params['storyId'] as string : undefined;
 	const paths = pathsForWorkflow({
 		workflow: intent.workflow, repoPath: intent.repoPath, epicKey, runId,
 		// Work-item folder anchor (sc2): meta.epicCreatedAt when stamped, else own.
 		createdAtISO: meta.epicCreatedAt ?? meta.createdAt ?? new Date().toISOString(),
 		epicHash: meta.epicHash, epicSlug: meta.epicSlug, specHash: meta.specHash,
+		issueHash: meta.issueHash,
 		storyId: meta.storyId, storyIdParam, standalone: meta.standalone,
 	});
 	writeAtomic(paths.md,   finalized.renderedMd);

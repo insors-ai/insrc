@@ -61,7 +61,7 @@ export async function handleSynthesize(
 	// The finalized artifact carries the definitive epicHash in its
 	// meta (Define mints it; downstream workflows echo it). Read it
 	// back to pick paths, so we never diverge from the artifact.
-	const finalizedMeta = (result.finalized.artifact as { meta?: { epicHash?: string; epicSlug?: string; specHash?: string; storyId?: string; createdAt?: string; epicCreatedAt?: string; standalone?: boolean } }).meta ?? {};
+	const finalizedMeta = (result.finalized.artifact as { meta?: { epicHash?: string; epicSlug?: string; specHash?: string; issueHash?: string; storyId?: string; createdAt?: string; epicCreatedAt?: string; standalone?: boolean } }).meta ?? {};
 	const storyIdParam = typeof state.intent.params['storyId'] === 'string' ? state.intent.params['storyId'] as string : undefined;
 	const paths = pathsForWorkflow({
 		workflow: state.intent.workflow, repoPath: state.intent.repoPath,
@@ -71,6 +71,7 @@ export async function handleSynthesize(
 		createdAtISO: finalizedMeta.epicCreatedAt ?? finalizedMeta.createdAt ?? new Date().toISOString(),
 		epicHash: finalizedMeta.epicHash, epicSlug: finalizedMeta.epicSlug,
 		specHash: finalizedMeta.specHash,
+		issueHash: finalizedMeta.issueHash,
 		storyId: finalizedMeta.storyId, storyIdParam,
 		standalone: finalizedMeta.standalone,
 	});

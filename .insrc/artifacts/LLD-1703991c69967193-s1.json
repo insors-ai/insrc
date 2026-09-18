@@ -1,0 +1,537 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1789731733575-1sfn9q",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-18T11:53:45.659Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 692066,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-09-18T10:07:09.320Z",
+    "epicHash": "1703991c69967193",
+    "epicSlug": "add-bugfix-triage-category-insrc-framework",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1789726188697-irhvw2",
+    "hldEffectiveHash": "e08e0c0d9f7b0edafe2979944fb169368ad12f61bc842d0ebec3a3ec979632fa",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 0
+      },
+      "reviewedAt": "2026-09-18T11:54:46.216Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-18T11:55:47.294Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Bugfix becomes a first-class, scope-gated category that reuses the existing stage/artifact/approve/tracker machinery end-to-end. Triage gains a new `bugfix` SizeClass carrying a magnitude (a small fix vs an M/L fix) and a route that is NOT a single fixed startStage but branches on that magnitude. The flow's first stage is a new first-class `issue` workflow whose synthesized IssueArtifact — reproduction + root cause + fix intent — is the single source of truth serving both the internal chain record and, later, the GitHub issue body. A tiered parent-locator (deterministic ref-resolver → graph code-ownership → semantic match → user prompt → standalone) attaches the fix to the epic/story whose behaviour it corrects, recording which tier decided and at what confidence, with auto-attach only above a high threshold. A scope-gated orchestrator then routes a small fix issue→build and an M/L fix issue→design→plan→build, with the existing post-build code-review gating completion; where a tracker is configured a GitHub issue is created from the same issue content, linked to the located parent, and closed on completion. All five constraints k1–k6 are satisfied by conforming to the framework's own conventions rather than inventing a parallel mechanism.",
+      "ownedContracts": [
+        {
+          "id": "sc1",
+          "name": "BugfixTriageResult",
+          "purpose": "Adds `bugfix` as a first-class sized category and exposes its scope-gated route, so every downstream stage knows a request is a bugfix and whether design is required. Satisfies k1 (tracked from classification) and k2 (still sized; magnitude drives the route).",
+          "interfaceSketch": "// src/workflow/triage/types.ts — union extended, not replaced\ntype SizeClass = 'epic' | 'feature' | 'small' | 'trivial' | 'bugfix';\n\n// bugfix is the only category whose route depends on a sub-magnitude\ntype BugfixMagnitude = 'small' | 'sized'; // 'small' -> skip design; 'sized' -> M/L design path\n\ninterface BugfixTriageResult {\n  sizeClass: 'bugfix';\n  magnitude: BugfixMagnitude;\n}\n\ninterface TriageRoute {\n  startStage: WorkflowName;   // 'issue' for bugfix\n  standalone: boolean;\n  needsPlan: boolean;         // sized -> true, small -> false\n  producesLld: boolean;       // sized -> true, small -> false\n}\n\n// classify.ts — pure mapping, bugfix branch reads magnitude\ndeclare function routeForSizeClass(\n  sizeClass: SizeClass,\n  magnitude?: BugfixMagnitude,\n): TriageRoute;",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4"
+          ],
+          "assumptions": []
+        }
+      ],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [
+          "sc1"
+        ],
+        "depends": [],
+        "internal": "The classifier heuristics/prompt that recognise a user-declared defect fix as `bugfix` and size it into small vs sized magnitude — the sizing rubric, the analyze grounding it runs, and the pure route table branch — stay private to s1. No other story reaches into how the size decision is made; they consume only the resulting BugfixTriageResult/TriageRoute values."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc2"
+          ],
+          "depends": [
+            "sc1"
+          ],
+          "internal": "The `issue` stage's multi-turn step machinery — its decomposer plan, per-step runners, synthesizer, prompt templates, and the storage/path-scheme/gates wiring plus the review/approve gate for the IssueArtifact — is private to s2. Downstream stories see only the finished, approvable IssueArtifact shape, never how its reproduction/root-cause/fix-intent fields are elicited and synthesized."
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc3"
+          ],
+          "depends": [
+            "sc1"
+          ],
+          "internal": "The tiered resolver internals stay private to s3: the deterministic ref-resolver reuse, the graph code-ownership scoring over candidate stories, the semantic embedding match against epic/story artifacts, the per-tier high-confidence auto-attach thresholds, and the user-prompt interaction and its standalone fallback. Consumers see only the ParentLocation decision (tier + parentRef + confidence + evidence), not the scoring that produced it."
+        },
+        {
+          "storyId": "s4",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "The scope-gated orchestration is private to s4: how the chain/orchestrator sequences the bugfix stages (small: issue→build; sized: issue→design→plan→build), how gates.ts enforces an approved+fresh IssueArtifact and a resolved ParentLocation before proceeding, and how the existing post-build code-review is wired as the completion gate. s4 introduces no new shared type — it composes sc1's route, sc2's approved issue, and sc3's parent into the run sequence and reuses the existing build + code-review stages verbatim."
+        },
+        {
+          "storyId": "s5",
+          "owns": [],
+          "depends": [
+            "sc2",
+            "sc3"
+          ],
+          "internal": "The GitHub integration path is private to s5: rendering the issue body from the IssueArtifact content via the existing tracker create/link surface, linking the created issue to the ParentLocation (or leaving it standalone), closing it on completion, and the tracker-not-configured no-op branch. s5 reuses tracker/github.ts, refs.ts, link.ts, sync.ts, and setup.ts rather than adding any new external path (k5/k6) and defines no new shared type."
+        }
+      ],
+      "rolloutPhase": "Phase A — bugfix category + scope-gated route",
+      "nonFunctional": {
+        "performance": "The parent-locator must short-circuit: a confident deterministic/graph-ownership hit skips the semantic embedding pass, so the common attached-fix case stays within the latency of a single ref-resolve. The `issue` stage reuses the standard step loop; no new hot path.",
+        "security": "No new external surface. GitHub access stays entirely on the existing CLI/OAuth-gated tracker (k5/k6) — no direct cloud REST, no new credential handling. The issue content is user/defect text rendered to an existing tracker create path.",
+        "observability": "Each parent-attach records its deciding tier, confidence, and cited evidence on the IssueArtifact/chain record, so an attach is auditable and the medium-confidence ownership-feasibility assumption is retired with real data rather than by assertion. The issue stage and tracker step log through the standard workflow logging.",
+        "durability": "The IssueArtifact is persisted as a cited artifact under the docs/ work-item tree keyed by the canonical id (same storage/path-scheme as every other stage), so the defect record survives independently of the GitHub issue and a repo with no tracker keeps a purely local, durable record (k4/ac2)."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "hld": {
+        "amendmentProposal": {
+          "amendment": {
+            "type": "storyBoundary.reassignOwnership",
+            "contractId": "sc2",
+            "subCapability": "The one-line type-level addition of the 'issue' string literal to the WORKFLOW_NAMES / WorkflowName closed union (a NAME only — NOT the runner, synthesizer, storage, gates, or IssueArtifact shape).",
+            "from": "s2",
+            "to": "s1",
+            "phaseMove": "Phase B -> Phase A",
+            "breaking": false
+          },
+          "rationale": "s1's route table (sc1, owned by s1) must return `startStage: 'issue'` for the bugfix branch, and TriageRoute.startStage is typed WorkflowName. 'issue' as a WorkflowName member is bundled into sc2 (owned by s2), but the Epic graph gives s1 dependsOn [] and lands it alone in Phase A BEFORE s2 — so s1 cannot typecheck the literal 'issue' until s2 exists. The minimal, non-overreaching fix is to move ONLY the bare union-member literal into s1/Phase A as the route table's natural enabling change; sc2 retains all issue-stage machinery + the IssueArtifact shape. Additive (a union grows), non-breaking. Alternative the reviewer may prefer: rollout.reorder so s2's union addition precedes s1 — which changes only the phase note, not this s1 contract. Flagged as openQuestion pending approval.",
+          "citations": [
+            {
+              "id": "c1",
+              "kind": "code",
+              "ref": "src/workflow/triage/types.ts:23 (TriageRoute.startStage: WorkflowName)"
+            },
+            {
+              "id": "c2",
+              "kind": "code",
+              "ref": "src/workflow/types.ts:86 (WorkflowName union; 'issue' not yet a member)"
+            }
+          ]
+        }
+      },
+      "api": [
+        {
+          "name": "routeForSizeClass",
+          "signature": "export function routeForSizeClass(sizeClass: SizeClass, magnitude?: BugfixMagnitude): TriageRoute",
+          "parameters": [
+            {
+              "name": "sizeClass",
+              "type": "SizeClass",
+              "purpose": "The classified size tier. Extended union now includes 'bugfix'.",
+              "optional": false
+            },
+            {
+              "name": "magnitude",
+              "type": "BugfixMagnitude",
+              "purpose": "The bugfix sub-magnitude ('small' | 'sized'). Required when sizeClass === 'bugfix'; ignored (and normally omitted) for the four existing tiers.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "TriageRoute",
+            "meaning": "The workflow entry for the tier. For 'bugfix': { startStage: 'issue', standalone: true, needsPlan: magnitude === 'sized', producesLld: magnitude === 'sized' }. The four existing tiers return their current literals unchanged."
+          },
+          "errors": [
+            {
+              "type": "Error (invariant guard)",
+              "condition": "sizeClass === 'bugfix' && magnitude === undefined — a bugfix route requires a magnitude; the function throws rather than silently defaulting, so a magnitude-less bugfix can never route."
+            }
+          ],
+          "preconditions": [
+            "When sizeClass === 'bugfix', magnitude MUST be provided.",
+            "For sizeClass in {epic,feature,small,trivial}, magnitude is not consulted."
+          ],
+          "postconditions": [
+            "epic/feature/small/trivial return byte-for-byte identical TriageRoute literals to the pre-change function (ac1).",
+            "The switch stays exhaustive over the extended SizeClass union (a compile-time assertNever on the default arm keeps a future member from silently falling through).",
+            "bugfix small -> issue->build (needsPlan:false, producesLld:false); bugfix sized -> issue->design->plan->build (needsPlan:true, producesLld:true) (ac2, k2)."
+          ]
+        },
+        {
+          "name": "buildClassifyPrompt",
+          "signature": "export function buildClassifyPrompt(input: ClassifyPromptInput): { readonly system: string; readonly user: string }",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "ClassifyPromptInput",
+              "purpose": "Focus + grounding, extended with a declaredBugfix signal so the classifier knows the request is a user-declared defect fix and must size the magnitude rather than pick from the four feature tiers.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "{ readonly system: string; readonly user: string }",
+            "meaning": "The classification turn's prompt pair. When declaredBugfix is set, the SYSTEM text instructs the turn to return sizeClass 'bugfix' + a magnitude ('small' vs 'sized'); otherwise it is unchanged from today."
+          },
+          "errors": [],
+          "preconditions": [
+            "input.focus is the request text; input.grounding may be empty."
+          ],
+          "postconditions": [
+            "When input.declaredBugfix is false/absent, the emitted prompt is unchanged from the current four-tier behaviour (ac1).",
+            "When true, the prompt guides the turn to bugfix + magnitude sizing (ac2)."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "SizeClass",
+        "change": "field-add",
+        "details": "Add the 'bugfix' member to the closed union: 'epic' | 'feature' | 'small' | 'trivial' | 'bugfix'. Additive — existing members unchanged.",
+        "schemaDiff": "-export type SizeClass = 'epic' | 'feature' | 'small' | 'trivial';\n+export type SizeClass = 'epic' | 'feature' | 'small' | 'trivial' | 'bugfix';",
+        "callSites": [
+          "src/workflow/triage/classify.ts:29 (routeForSizeClass switch)",
+          "src/workflow/seed-focus.ts:79 (specScopeFitsStandalone(sizeClass: SizeClass))",
+          "src/workflow/triage/__tests__/classify.test.ts (per-size + loop assertions)"
+        ]
+      },
+      {
+        "entity": "SIZE_CLASSES",
+        "change": "field-add",
+        "details": "Append 'bugfix' to the readonly array so it stays in lockstep with the SizeClass union. CLASSIFY_SCHEMA.properties.sizeClass.enum derives from [...SIZE_CLASSES], so the classification schema enum auto-gains 'bugfix'.",
+        "schemaDiff": "-export const SIZE_CLASSES: readonly SizeClass[] = ['epic', 'feature', 'small', 'trivial'];\n+export const SIZE_CLASSES: readonly SizeClass[] = ['epic', 'feature', 'small', 'trivial', 'bugfix'];",
+        "callSites": [
+          "src/workflow/triage/classify.ts:57 (CLASSIFY_SCHEMA sizeClass enum)",
+          "src/workflow/triage/__tests__/classify.test.ts (loop over SIZE_CLASSES)"
+        ]
+      },
+      {
+        "entity": "BugfixMagnitude",
+        "change": "new",
+        "details": "New type alias `export type BugfixMagnitude = 'small' | 'sized'` in triage/types.ts. 'small' -> skip design (issue->build); 'sized' -> M/L design path (issue->design->plan->build). The single sub-axis that gates the bugfix route.",
+        "schemaDiff": "+export type BugfixMagnitude = 'small' | 'sized';",
+        "callSites": [
+          "src/workflow/triage/classify.ts (routeForSizeClass bugfix arm; CLASSIFY_SCHEMA magnitude prop)",
+          "consumed by s2/s3/s4 via sc1"
+        ]
+      },
+      {
+        "entity": "TriageResult",
+        "change": "field-add",
+        "details": "Add `readonly magnitude?: BugfixMagnitude` — present iff sizeClass === 'bugfix'. Optional so the four existing tiers keep emitting today's shape. This realizes sc1's BugfixTriageResult ({ sizeClass:'bugfix', magnitude }) as a discriminated extension of TriageResult rather than a separate type.",
+        "schemaDiff": " export interface TriageResult {\n   readonly sizeClass: SizeClass;\n   readonly route: TriageRoute;\n   readonly rationale: string;\n   readonly signals: readonly TriageSignal[];\n   readonly storyTitle: string;\n+  /** Present iff sizeClass === 'bugfix'; the sub-magnitude that drives the route. */\n+  readonly magnitude?: BugfixMagnitude;\n }",
+        "callSites": [
+          "consumed by s2/s3/s4 via sc1 (they read sizeClass === 'bugfix' then magnitude)"
+        ]
+      },
+      {
+        "entity": "ClassifyPromptInput",
+        "change": "field-add",
+        "details": "Add `readonly declaredBugfix?: boolean` so the classify turn is told the request is a user-declared defect fix (ac1 'a change the user has declared to be a defect fix'). When set, buildClassifyPrompt emits bugfix+magnitude guidance; the caller (insrc_triage) supplies the flag. Default false keeps existing behaviour.",
+        "schemaDiff": " export interface ClassifyPromptInput {\n   readonly focus: string;\n   readonly grounding: string;\n+  /** True when the user has declared the request a defect fix; routes classification to bugfix+magnitude. */\n+  readonly declaredBugfix?: boolean;\n }",
+        "callSites": [
+          "src/workflow/triage/classify.ts (buildClassifyPrompt / SYSTEM)"
+        ]
+      },
+      {
+        "entity": "CLASSIFY_SCHEMA",
+        "change": "invariant-change",
+        "details": "sizeClass enum auto-extends via [...SIZE_CLASSES]. Add an optional `magnitude` property (enum ['small','sized']) and a validation rule that magnitude is REQUIRED when sizeClass === 'bugfix' (and absent otherwise), so a bugfix classification without a magnitude fails schema validation before it can reach routeForSizeClass.",
+        "schemaDiff": " properties: {\n   sizeClass: { type: 'string', enum: [...SIZE_CLASSES] },\n+  magnitude: { type: 'string', enum: ['small', 'sized'] },\n   ...\n }\n+ // + conditional: required ['magnitude'] when sizeClass === 'bugfix'",
+        "callSites": [
+          "src/workflow/triage/classify.ts:52 (CLASSIFY_SCHEMA)",
+          "insrc_triage tool hands this schema to the outer classification turn"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "implements",
+        "howDetails": "s1 owns sc1 (BugfixTriageResult). This contract realizes it exactly as the HLD sketch: SizeClass gains 'bugfix', a separate BugfixMagnitude axis is carried as TriageResult.magnitude (present iff bugfix), and routeForSizeClass(sizeClass, magnitude?) returns the scope-gated route (startStage 'issue'; needsPlan/producesLld = magnitude==='sized'). s2/s3/s4 consume this by discriminating on sizeClass === 'bugfix' then reading magnitude/route — no re-design on their side."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A bugfix classification arrives with no magnitude (sizeClass === 'bugfix', magnitude undefined).",
+          "detection": "ajv validation of the classification turn against CLASSIFY_SCHEMA fails: the conditional rule 'required [magnitude] when sizeClass === bugfix' rejects the payload before any route is derived. As a defense-in-depth backstop, routeForSizeClass's bugfix arm also checks magnitude and throws rather than defaulting.",
+          "response": "Reject the classification result; the structured-output retry loop re-prompts the turn (existing ajv+retry path). routeForSizeClass never produces a route from an under-specified bugfix.",
+          "userImpact": "The classifier re-runs; the user never sees a bugfix routed without a size. No silent mis-route.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The classification turn emits an out-of-enum magnitude (e.g. 'medium') or an out-of-enum sizeClass.",
+          "detection": "ajv enum validation on CLASSIFY_SCHEMA.properties.magnitude (enum ['small','sized']) and .sizeClass (enum [...SIZE_CLASSES]) rejects the value.",
+          "response": "Same structured-output retry path rejects and re-prompts; the value never reaches the typed SizeClass/BugfixMagnitude union at runtime.",
+          "userImpact": "Transparent retry; no invalid tier or magnitude propagates downstream.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A future SizeClass member is added to the union but no case is added to routeForSizeClass.",
+          "detection": "Compile-time: the switch is exhaustive with no fall-through return, so an unhandled member leaves a code path with no return value (and an `assertNever(sizeClass)` default arm makes it a type error).",
+          "response": "The build fails at tsc rather than shipping a route that returns undefined at runtime.",
+          "userImpact": "None at runtime — caught before ship; protects the taxonomy's single-source-of-truth guarantee.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "routeForSizeClass called with a magnitude for a non-bugfix size, e.g. routeForSizeClass('small', 'sized').",
+          "expected": "magnitude is ignored; returns the current 'small' literal { startStage:'design.story', standalone:true, needsPlan:false, producesLld:true } unchanged. The param is only consulted in the bugfix arm (ac1 preserved for existing tiers)."
+        },
+        {
+          "input": "A request the user did NOT declare a defect fix (declaredBugfix false/absent).",
+          "expected": "buildClassifyPrompt emits today's four-tier prompt unchanged; the classifier cannot pick 'bugfix' as an ordinary sizing outcome, so behaviour is byte-for-byte the current behaviour (ac1)."
+        },
+        {
+          "input": "A declared bugfix that the analyze grounding shows is genuinely large (many callers / a schema boundary).",
+          "expected": "Still sizeClass 'bugfix' (category is user-declared, not sizing-derived) with magnitude 'sized' — routes issue->design->plan->build so the large correction still gets design (ac2, k2). Magnitude, not sizeClass, absorbs the M/L judgment."
+        },
+        {
+          "input": "The sole non-test caller specScopeFitsStandalone is invoked with sizeClass 'bugfix'.",
+          "expected": "It reads route.standalone which is true for bugfix, so it reports the bugfix as fitting standalone — semantically correct (a bugfix runs outside an Epic DEF/HLD). Its result for the four existing sizes is unchanged."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The four existing tiers must return byte-for-byte identical TriageRoute literals: epic->{define,false,true,true}, feature->{design.story,true,true,true}, small->{design.story,true,false,true}, trivial->{build,true,false,false}. Adding the bugfix arm and the optional magnitude param must not touch these four returns (ac1).",
+          "source": "c1"
+        },
+        {
+          "text": "SIZE_CLASSES must stay in lockstep with the SizeClass union (both gain 'bugfix'), because CLASSIFY_SCHEMA.properties.sizeClass.enum derives from [...SIZE_CLASSES]; drift would let the schema and the type disagree.",
+          "source": "c1"
+        },
+        {
+          "text": "routeForSizeClass stays a pure, exhaustive, no-default switch — the single source of truth for the taxonomy; the bugfix arm must be added as an explicit case, not a default fallthrough.",
+          "source": "c1"
+        },
+        {
+          "text": "The only non-test caller, specScopeFitsStandalone at src/workflow/seed-focus.ts:79-81, reads route.standalone; its behaviour for epic/feature/small/trivial must be unchanged, and the classify.test.ts loop invariants (`standalone === sc!=='epic'`, `producesLld === sc!=='trivial'`) must be re-expressed to accommodate bugfix without weakening the four-tier assertions.",
+          "source": "c2"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove routeForSizeClass maps every tier correctly — the four existing tiers byte-for-byte unchanged, and the new bugfix arm gated by magnitude — as a pure table, no LLM.",
+          "subjects": [
+            "routeForSizeClass('epic'|'feature'|'small'|'trivial') returns the exact current literals (regression)",
+            "routeForSizeClass('bugfix','small') -> { startStage:'issue', standalone:true, needsPlan:false, producesLld:false }",
+            "routeForSizeClass('bugfix','sized') -> { startStage:'issue', standalone:true, needsPlan:true, producesLld:true }",
+            "routeForSizeClass('bugfix') with no magnitude throws (invariant guard)",
+            "routeForSizeClass('small','sized') ignores magnitude and returns the small literal (param only read on bugfix arm)",
+            "the classify.test.ts SIZE_CLASSES loop invariants re-expressed so 'bugfix' is covered without weakening `standalone===sc!=='epic'` / `producesLld===sc!=='trivial'` for the four existing tiers"
+          ],
+          "fixturesNeeded": []
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove the classification-schema + prompt changes: bugfix is a valid classification with a required magnitude, and the four-tier behaviour is untouched when the fix is not declared a bugfix.",
+          "subjects": [
+            "CLASSIFY_SCHEMA validates a { sizeClass:'bugfix', magnitude:'small'|'sized', ... } payload",
+            "CLASSIFY_SCHEMA REJECTS { sizeClass:'bugfix' } with no magnitude (conditional required)",
+            "CLASSIFY_SCHEMA rejects an out-of-enum magnitude (e.g. 'medium')",
+            "CLASSIFY_SCHEMA.sizeClass.enum includes 'bugfix' (auto-derived from SIZE_CLASSES)",
+            "buildClassifyPrompt({..., declaredBugfix:true}) emits bugfix+magnitude guidance in SYSTEM; buildClassifyPrompt without declaredBugfix emits the current four-tier prompt unchanged"
+          ],
+          "fixturesNeeded": [
+            "a minimal ClassifyPromptInput literal",
+            "a valid + an invalid classification payload for ajv validation"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "Prove the sc1 shape other stories consume: TriageResult carries magnitude iff sizeClass==='bugfix', and the route matches the magnitude — the discrimination s2/s3/s4 rely on.",
+          "subjects": [
+            "A TriageResult with sizeClass 'bugfix' has a magnitude and route.startStage 'issue'",
+            "A TriageResult with any of the four existing sizes has no magnitude field and its current route",
+            "BugfixMagnitude type admits exactly 'small' | 'sized'"
+          ],
+          "fixturesNeeded": []
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "routeForSizeClass('epic'|'feature'|'small'|'trivial') returns the exact current literals (regression)",
+            "CLASSIFY_SCHEMA.sizeClass.enum includes 'bugfix' as a distinct member alongside the existing four",
+            "buildClassifyPrompt without declaredBugfix emits the current four-tier prompt unchanged",
+            "specScopeFitsStandalone behaviour for the four existing sizes is unchanged (route.standalone regression via the routeForSizeClass literals)"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "routeForSizeClass('bugfix','small') -> issue/standalone/needsPlan:false/producesLld:false (small skips design)",
+            "routeForSizeClass('bugfix','sized') -> issue/standalone/needsPlan:true/producesLld:true (M/L gets design->plan)",
+            "CLASSIFY_SCHEMA validates a bugfix payload with a required magnitude and rejects one without",
+            "A TriageResult with sizeClass 'bugfix' carries magnitude and a matching route (contract test)"
+          ]
+        }
+      ],
+      "testFramework": "node:test (tsx --test) with node:assert — matches src/workflow/triage/__tests__/classify.test.ts"
+    },
+    "migration": {
+      "stateBefore": "Per s1 structural-map: SizeClass is the four-member closed union 'epic'|'feature'|'small'|'trivial' (types.ts:16) with SIZE_CLASSES the matching array (types.ts:18); routeForSizeClass(sizeClass) (classify.ts:29-44) is a pure exhaustive switch with no default and no magnitude concept; TriageResult (types.ts:46-55) has no magnitude field; CLASSIFY_SCHEMA.sizeClass.enum derives from [...SIZE_CLASSES] and has no magnitude property; buildClassifyPrompt/ClassifyPromptInput carry only focus+grounding and the SYSTEM prompt describes only the four tiers. Per s1 regression-surface: the sole non-test caller is specScopeFitsStandalone (seed-focus.ts:79-81, reads route.standalone) and classify.test.ts asserts per-size routes plus two SIZE_CLASSES loop invariants.",
+      "stateAfter": "SizeClass + SIZE_CLASSES gain 'bugfix'; a new BugfixMagnitude ('small'|'sized') type exists; routeForSizeClass(sizeClass, magnitude?) has a bugfix arm returning { startStage:'issue', standalone:true, needsPlan/producesLld = magnitude==='sized' } and an assertNever default; TriageResult gains optional magnitude (present iff bugfix); CLASSIFY_SCHEMA gains an optional magnitude enum + a conditional-required rule when sizeClass==='bugfix'; ClassifyPromptInput gains optional declaredBugfix and the SYSTEM prompt gains bugfix+magnitude guidance emitted only when declaredBugfix. The four existing tiers are byte-for-byte unchanged; the 'issue' WorkflowName literal is present (per the pending Phase-A enabling amendment).",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the 'issue' string literal to the WORKFLOW_NAMES/WorkflowName closed union (name only) so TriageRoute.startStage can reference it. Gated by the pending HLD amendment (s1 Phase-A enabling change).",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "bugfixCategory"
+          ]
+        },
+        {
+          "order": 2,
+          "action": "Add 'bugfix' to the SizeClass union and to the SIZE_CLASSES array (kept in lockstep). This auto-extends CLASSIFY_SCHEMA.sizeClass.enum. Additive union growth.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "bugfixCategory"
+          ]
+        },
+        {
+          "order": 3,
+          "action": "Add the BugfixMagnitude type alias and the optional TriageResult.magnitude field.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "bugfixCategory"
+          ]
+        },
+        {
+          "order": 4,
+          "action": "Widen routeForSizeClass to accept an optional magnitude and add the explicit 'bugfix' case (issue; standalone; needsPlan/producesLld = magnitude==='sized') plus a magnitude-required guard and an assertNever default. Leave the four existing case bodies untouched.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "bugfixCategory"
+          ]
+        },
+        {
+          "order": 5,
+          "action": "Add the optional magnitude property + conditional-required rule to CLASSIFY_SCHEMA; add declaredBugfix to ClassifyPromptInput; extend the SYSTEM prompt with bugfix+magnitude guidance emitted only when declaredBugfix is set.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "bugfixCategory"
+          ]
+        },
+        {
+          "order": 6,
+          "action": "Update classify.test.ts: re-express the two SIZE_CLASSES loop invariants so 'bugfix' is covered without weakening the four existing tiers, and add the new bugfix route/schema/prompt assertions.",
+          "rollbackable": true,
+          "prerequisiteFlags": []
+        }
+      ],
+      "backwardCompat": "routeForSizeClass and buildClassifyPrompt are existing exported (module-internal) APIs. Both changes are additive and backward-compatible: routeForSizeClass gains an OPTIONAL second param consulted only on the new bugfix arm, so every existing call `routeForSizeClass(sizeClass)` for the four tiers returns byte-for-byte identical results and the sole caller specScopeFitsStandalone is unaffected. buildClassifyPrompt gains an optional declaredBugfix field defaulting to off, so existing callers get the unchanged four-tier prompt. TriageResult.magnitude and CLASSIFY_SCHEMA.magnitude are optional/absent for non-bugfix results. No existing consumer must change. The only non-additive touch is the test file, which is updated in lockstep.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Magnitude as a companion field + optional route param (the sc1 sketch shape)",
+        "oneLineSummary": "Extend SizeClass/SIZE_CLASSES with 'bugfix', add a separate BugfixMagnitude axis carried as an optional field on TriageResult, and widen routeForSizeClass to (sizeClass, magnitude?).",
+        "approach": "types.ts: SizeClass gains 'bugfix' and SIZE_CLASSES gains 'bugfix'; add `type BugfixMagnitude = 'small' | 'sized'`; TriageResult gains `readonly magnitude?: BugfixMagnitude` (present only when sizeClass === 'bugfix'). classify.ts: routeForSizeClass becomes `routeForSizeClass(sizeClass: SizeClass, magnitude?: BugfixMagnitude): TriageRoute` — the four existing cases return exactly their current literals (magnitude ignored), and a new `case 'bugfix':` reads magnitude to return { startStage: 'issue', standalone: true, needsPlan: magnitude === 'sized', producesLld: magnitude === 'sized' }. The classify LLM turn is told (out of band, by the insrc_triage caller) that the request is a declared defect fix and sizes ONLY the magnitude; sizeClass 'bugfix' + magnitude are validated by CLASSIFY_SCHEMA. Keeps sizeClass a single flat concept exactly as HLD sc1 sketched. Requires the enabling 'issue' WORKFLOW_NAMES member per the backFlowNote.",
+        "pros": [
+          "Matches the HLD sc1 interfaceSketch verbatim (sizeClass:'bugfix' + separate magnitude; routeForSizeClass(sizeClass, magnitude?)) — zero amendment to the owned contract's surface.",
+          "The four existing cases keep returning byte-for-byte identical literals with magnitude defaulted/ignored — ac1 is trivially provable and the single non-test caller (specScopeFitsStandalone) is unaffected (it never passes magnitude).",
+          "Magnitude stays orthogonal to sizeClass, so downstream `sizeClass === 'bugfix'` discrimination (s2/s3/s4) is a simple equality and the magnitude is a clearly-typed extra field."
+        ],
+        "cons": [
+          "routeForSizeClass gains an optional second param that is meaningful for exactly one sizeClass — a mild API asymmetry (mitigated by a guard: magnitude ignored for non-bugfix, required for bugfix).",
+          "TriageResult.magnitude is conditionally-present, so consumers must narrow on sizeClass before reading it (expressible with a discriminated shape or a runtime invariant)."
+        ],
+        "costEstimate": "S",
+        "chosen": true
+      },
+      {
+        "id": "a2",
+        "name": "Encode magnitude into the SizeClass union as two members",
+        "oneLineSummary": "Drop the separate axis: SizeClass gains 'bugfix-small' and 'bugfix-sized' as two members, keeping routeForSizeClass single-arg.",
+        "approach": "types.ts: SizeClass gains 'bugfix-small' | 'bugfix-sized' (two members) and SIZE_CLASSES gains both; no BugfixMagnitude type, no new TriageResult field. classify.ts: routeForSizeClass keeps its single `(sizeClass)` signature and adds two cases returning { startStage:'issue', standalone:true, needsPlan:false, producesLld:false } for 'bugfix-small' and { ...needsPlan:true, producesLld:true } for 'bugfix-sized'. The classify LLM picks one of the two bugfix members directly.",
+        "pros": [
+          "No change to the routeForSizeClass signature or to TriageResult — the switch stays a pure single-arg table and the CLASSIFY_SCHEMA enum still auto-derives from SIZE_CLASSES.",
+          "Magnitude is impossible to mismatch: there is no 'bugfix without a magnitude' state to guard against."
+        ],
+        "cons": [
+          "DEVIATES from HLD sc1, which explicitly models `sizeClass: 'bugfix'` + a separate `magnitude` — downstream sc1 consumers (s2/s3/s4) expect `sizeClass === 'bugfix'` and a magnitude field; two union members would break that discrimination and force an HLD amendment.",
+          "Overloads SizeClass with two concepts (category + magnitude), and any code doing `sizeClass === 'bugfix'` (the natural check across s2/s3/s4/s5) would silently miss both members.",
+          "Multiplies the union combinatorially if bugfix ever needs a third magnitude, and muddies SIZE_CLASSES semantics."
+        ],
+        "costEstimate": "S",
+        "chosen": false,
+        "reasonRejected": "Cheap and ac1/ac2-clean, but VIOLATES the owned contract sc1: downstream consumers expect sizeClass==='bugfix' + a magnitude field, which two union members ('bugfix-small'/'bugfix-sized') do not provide — the discrimination s2/s3/s4 consume breaks and it would force an HLD amendment for a cosmetic simplification."
+      },
+      {
+        "id": "a3",
+        "name": "Companion field + a dedicated routeForBugfix function",
+        "oneLineSummary": "Carry magnitude on TriageResult like a1, but leave routeForSizeClass untouched and add a separate routeForBugfix(magnitude) the caller dispatches to.",
+        "approach": "types.ts: same as a1 (SizeClass+SIZE_CLASSES gain 'bugfix', add BugfixMagnitude, TriageResult gains optional magnitude). classify.ts: routeForSizeClass keeps its exact current `(sizeClass)` signature and its four cases UNCHANGED; a new `export function routeForBugfix(magnitude: BugfixMagnitude): TriageRoute` returns the issue->build vs issue->design->plan->build routes. The triage orchestration calls routeForBugfix when sizeClass==='bugfix', else routeForSizeClass.",
+        "pros": [
+          "routeForSizeClass is literally unchanged — the strongest possible ac1 guarantee for the four existing tiers (no diff to the existing function body at all).",
+          "Each function has a single clean responsibility; no optional param."
+        ],
+        "cons": [
+          "Introduces a SECOND route entry point, so every caller of routeForSizeClass (and downstream sc1 consumers) must now know to branch to routeForBugfix — splitting the 'single source of truth for the taxonomy' the module comment claims for routeForSizeClass.",
+          "Diverges from HLD sc1's `routeForSizeClass(sizeClass, magnitude?)` single-entry sketch — a contract-surface deviation needing an amendment.",
+          "The dispatch decision (which route fn to call) leaks into the caller rather than staying inside the pure table."
+        ],
+        "costEstimate": "S",
+        "chosen": false,
+        "reasonRejected": "Matches sc1's data model and gives the strongest ac1 guarantee, but is only PARTIAL on sc1: adding a second routeForBugfix entry deviates from the single routeForSizeClass(sizeClass, magnitude?) surface the contract sketches and leaks the dispatch decision into callers, splitting the taxonomy's single source of truth."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "HLD amendment (pending approval): s1's bugfix route must return startStage:'issue', but the 'issue' WorkflowName literal is bundled into sc2 (owned by s2, Phase B) while s1 lands alone in Phase A. Proposed fix: move ONLY the bare 'issue' union-member literal into s1/Phase A (storyBoundary.reassignOwnership, additive/non-breaking); sc2 keeps all issue-stage machinery. Alternative: rollout.reorder so s2's union addition precedes s1. Decision needed before build."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 structural-map — src/workflow/triage/types.ts:16/18/21-32/46-55, classify.ts:29-44/57",
+      "quotedText": "SizeClass = 'epic'|'feature'|'small'|'trivial' (types.ts:16); SIZE_CLASSES matching array (types.ts:18); routeForSizeClass is a pure exhaustive switch with no default; CLASSIFY_SCHEMA.sizeClass.enum = [...SIZE_CLASSES]."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 regression-surface — src/workflow/seed-focus.ts:79-81, src/workflow/triage/__tests__/classify.test.ts",
+      "quotedText": "routeForSizeClass has exactly ONE non-test caller: specScopeFitsStandalone (reads route.standalone); classify.test.ts asserts per-size routes plus two SIZE_CLASSES loop invariants."
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/types.ts:86 (WorkflowName union) and src/workflow/triage/types.ts:13 (import type WorkflowName)",
+      "quotedText": "WorkflowName is imported into triage/types.ts and typed on TriageRoute.startStage; 'issue' is not yet a member."
+    }
+  ]
+}

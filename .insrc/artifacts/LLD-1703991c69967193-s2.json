@@ -1,0 +1,613 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1789734372058-nb1m37",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-18T12:39:13.919Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 781847,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-09-18T10:07:09.320Z",
+    "epicHash": "1703991c69967193",
+    "epicSlug": "add-bugfix-triage-category-insrc-framework",
+    "storyId": "s2",
+    "hldBaseRunId": "wf-1789726188697-irhvw2",
+    "hldEffectiveHash": "e08e0c0d9f7b0edafe2979944fb169368ad12f61bc842d0ebec3a3ec979632fa",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 0
+      },
+      "reviewedAt": "2026-09-18T12:40:20.011Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-18T12:56:19.498Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Bugfix becomes a first-class, scope-gated category that reuses the existing stage/artifact/approve/tracker machinery end-to-end. Triage gains a new `bugfix` SizeClass carrying a magnitude (a small fix vs an M/L fix) and a route that is NOT a single fixed startStage but branches on that magnitude. The flow's first stage is a new first-class `issue` workflow whose synthesized IssueArtifact — reproduction + root cause + fix intent — is the single source of truth serving both the internal chain record and, later, the GitHub issue body. A tiered parent-locator (deterministic ref-resolver → graph code-ownership → semantic match → user prompt → standalone) attaches the fix to the epic/story whose behaviour it corrects, recording which tier decided and at what confidence, with auto-attach only above a high threshold. A scope-gated orchestrator then routes a small fix issue→build and an M/L fix issue→design→plan→build, with the existing post-build code-review gating completion; where a tracker is configured a GitHub issue is created from the same issue content, linked to the located parent, and closed on completion. All five constraints k1–k6 are satisfied by conforming to the framework's own conventions rather than inventing a parallel mechanism.",
+      "ownedContracts": [
+        {
+          "id": "sc2",
+          "name": "IssueArtifact",
+          "purpose": "The new first-class `issue` stage doc — the single reviewable/approvable record of the defect AND the exact content the GitHub issue body is rendered from, with no divergent second copy. Satisfies k1 (cited/approvable artifact) and k4 (single source of truth).",
+          "interfaceSketch": "// src/workflow/types.ts — closed union gains one member\ntype WorkflowName =\n  | 'brainstorm' | 'define' | 'design.epic' | 'design.story'\n  | 'plan' | 'build' | 'issue';\n\n// the synthesized artifact persisted under the docs/ work-item tree\ninterface IssueArtifact {\n  workflow: 'issue';\n  title: string;\n  reproduction: string;   // steps / observed vs expected\n  rootCause: string;      // the diagnosed cause\n  fixIntent: string;      // what the correction will do\n  magnitude: BugfixMagnitude;   // carried from sc1 for the router\n  parentRef?: WorkItemRef | null;  // stamped from sc3 when located; null = standalone\n  approvedAt?: string | null;      // standard approve stamp\n}\n\n// WorkItemRef is the existing tracker ref shape (reused, not redefined here)\ntype WorkItemRef = { epicHash?: string; storyId?: string; slug?: string };",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s4",
+            "s5"
+          ],
+          "assumptions": []
+        }
+      ],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "BugfixTriageResult",
+          "purpose": "Adds `bugfix` as a first-class sized category and exposes its scope-gated route, so every downstream stage knows a request is a bugfix and whether design is required. Satisfies k1 (tracked from classification) and k2 (still sized; magnitude drives the route).",
+          "interfaceSketch": "// src/workflow/triage/types.ts — union extended, not replaced\ntype SizeClass = 'epic' | 'feature' | 'small' | 'trivial' | 'bugfix';\n\n// bugfix is the only category whose route depends on a sub-magnitude\ntype BugfixMagnitude = 'small' | 'sized'; // 'small' -> skip design; 'sized' -> M/L design path\n\ninterface BugfixTriageResult {\n  sizeClass: 'bugfix';\n  magnitude: BugfixMagnitude;\n}\n\ninterface TriageRoute {\n  startStage: WorkflowName;   // 'issue' for bugfix\n  standalone: boolean;\n  needsPlan: boolean;         // sized -> true, small -> false\n  producesLld: boolean;       // sized -> true, small -> false\n}\n\n// classify.ts — pure mapping, bugfix branch reads magnitude\ndeclare function routeForSizeClass(\n  sizeClass: SizeClass,\n  magnitude?: BugfixMagnitude,\n): TriageRoute;",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4"
+          ],
+          "assumptions": []
+        }
+      ],
+      "boundary": {
+        "storyId": "s2",
+        "owns": [
+          "sc2"
+        ],
+        "depends": [
+          "sc1"
+        ],
+        "internal": "The `issue` stage's multi-turn step machinery — its decomposer plan, per-step runners, synthesizer, prompt templates, and the storage/path-scheme/gates wiring plus the review/approve gate for the IssueArtifact — is private to s2. Downstream stories see only the finished, approvable IssueArtifact shape, never how its reproduction/root-cause/fix-intent fields are elicited and synthesized."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1"
+          ],
+          "depends": [],
+          "internal": "The classifier heuristics/prompt that recognise a user-declared defect fix as `bugfix` and size it into small vs sized magnitude — the sizing rubric, the analyze grounding it runs, and the pure route table branch — stay private to s1. No other story reaches into how the size decision is made; they consume only the resulting BugfixTriageResult/TriageRoute values."
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc3"
+          ],
+          "depends": [
+            "sc1"
+          ],
+          "internal": "The tiered resolver internals stay private to s3: the deterministic ref-resolver reuse, the graph code-ownership scoring over candidate stories, the semantic embedding match against epic/story artifacts, the per-tier high-confidence auto-attach thresholds, and the user-prompt interaction and its standalone fallback. Consumers see only the ParentLocation decision (tier + parentRef + confidence + evidence), not the scoring that produced it."
+        },
+        {
+          "storyId": "s4",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "The scope-gated orchestration is private to s4: how the chain/orchestrator sequences the bugfix stages (small: issue→build; sized: issue→design→plan→build), how gates.ts enforces an approved+fresh IssueArtifact and a resolved ParentLocation before proceeding, and how the existing post-build code-review is wired as the completion gate. s4 introduces no new shared type — it composes sc1's route, sc2's approved issue, and sc3's parent into the run sequence and reuses the existing build + code-review stages verbatim."
+        },
+        {
+          "storyId": "s5",
+          "owns": [],
+          "depends": [
+            "sc2",
+            "sc3"
+          ],
+          "internal": "The GitHub integration path is private to s5: rendering the issue body from the IssueArtifact content via the existing tracker create/link surface, linking the created issue to the ParentLocation (or leaving it standalone), closing it on completion, and the tracker-not-configured no-op branch. s5 reuses tracker/github.ts, refs.ts, link.ts, sync.ts, and setup.ts rather than adding any new external path (k5/k6) and defines no new shared type."
+        }
+      ],
+      "rolloutPhase": "Phase B — issue record + parent attachment",
+      "nonFunctional": {
+        "performance": "The parent-locator must short-circuit: a confident deterministic/graph-ownership hit skips the semantic embedding pass, so the common attached-fix case stays within the latency of a single ref-resolve. The `issue` stage reuses the standard step loop; no new hot path.",
+        "security": "No new external surface. GitHub access stays entirely on the existing CLI/OAuth-gated tracker (k5/k6) — no direct cloud REST, no new credential handling. The issue content is user/defect text rendered to an existing tracker create path.",
+        "observability": "Each parent-attach records its deciding tier, confidence, and cited evidence on the IssueArtifact/chain record, so an attach is auditable and the medium-confidence ownership-feasibility assumption is retired with real data rather than by assertion. The issue stage and tracker step log through the standard workflow logging.",
+        "durability": "The IssueArtifact is persisted as a cited artifact under the docs/ work-item tree keyed by the canonical id (same storage/path-scheme as every other stage), so the defect record survives independently of the GitHub issue and a repo with no tracker keeps a purely local, durable record (k4/ac2)."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "renderIssueMarkdown",
+          "signature": "export function renderIssueMarkdown(artifact: IssueArtifact): string",
+          "parameters": [
+            {
+              "name": "artifact",
+              "type": "IssueArtifact",
+              "purpose": "The synthesized issue record (meta + body + citations).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "The GH-body-ready markdown: an artifact-id marker header (via artifactIdMarker(issueArtifactId(meta.issueHash))) then one section per BODY field only (## Reproduction / ## Root cause / ## Fix intent under a `# <title>` heading). Walks the body ONLY — magnitude/parentRef live on meta and are NOT rendered into the issue body (k4)."
+          },
+          "errors": [],
+          "preconditions": [
+            "artifact.body passes isIssueBody; meta.issueHash is set."
+          ],
+          "postconditions": [
+            "Output contains no routing/linking metadata (magnitude, parentRef) — pure defect prose (k4).",
+            "Mirrors renderSpecMarkdown's structure (id-marker header + one ## section per body field)."
+          ]
+        },
+        {
+          "name": "isIssueBody",
+          "signature": "export function isIssueBody(v: unknown): v is IssueArtifactBody",
+          "parameters": [
+            {
+              "name": "v",
+              "type": "unknown",
+              "purpose": "Candidate body from a synthesize turn or a read-back JSON.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "v is IssueArtifactBody",
+            "meaning": "Runtime type guard: true iff v has non-empty string title/reproduction/rootCause/fixIntent (mirrors isSpecBody)."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Rejects a body missing any of the four required prose fields."
+          ]
+        },
+        {
+          "name": "issueArtifactId",
+          "signature": "export function issueArtifactId(issueHash: string): string",
+          "parameters": [
+            {
+              "name": "issueHash",
+              "type": "string",
+              "purpose": "The issue work-item hash (mirrors specHash).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "`ISSUE-${issueHash}` — the canonical artifact id used in the id-marker + the .json filename (mirrors specArtifactId)."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Format matches the existing id-helper family (SPEC-/DEF-/HLD-...)."
+          ]
+        },
+        {
+          "name": "registerIssueRunners",
+          "signature": "export function registerIssueRunners(): void",
+          "parameters": [],
+          "returns": {
+            "type": "void",
+            "meaning": "Idempotent: registers the issue stage's StepRunners (issue.capture, checklist.verify) via registerRunner. Added to registerWorkflowRunners in index.ts, mirroring registerBrainstormRunners/registerDefineRunners."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "After the call, executor.ts can look up the issue stage's runners by their ids; a second call is a no-op (the `registered` guard)."
+          ]
+        },
+        {
+          "name": "finalizeIssue",
+          "signature": "finalizeIssue(intent: WorkflowIntent, stepOutputs: Record<string, unknown>, runId: string, elapsedMs: number, llmResponse: unknown, model: string, attribution?: unknown): FinalizeResult",
+          "parameters": [
+            {
+              "name": "intent",
+              "type": "WorkflowIntent",
+              "purpose": "The workflow intent (workflow:'issue', focus, repoPath, seed params incl. magnitude).",
+              "optional": false
+            },
+            {
+              "name": "stepOutputs",
+              "type": "Record<string, unknown>",
+              "purpose": "The issue.capture + checklist.verify step outputs.",
+              "optional": false
+            },
+            {
+              "name": "llmResponse",
+              "type": "unknown",
+              "purpose": "The synthesize turn's emitted { body, citations }.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "FinalizeResult",
+            "meaning": "Builds the IssueArtifact ({ workflow:'issue', ...meta incl. magnitude + issueHash, body, citations }), renders via renderIssueMarkdown, and writes md+json through storage — mirroring finalizeBrainstorm. The third `case 'issue'` arm of orchestrator.finalizeArtifact."
+          },
+          "errors": [
+            {
+              "type": "schemaFailure",
+              "condition": "the synthesize response is not an object / body fails isIssueBody — same failure path as finalizeBrainstorm."
+            }
+          ],
+          "preconditions": [
+            "issue.capture produced repro/root-cause/fix-intent; the bugfix magnitude is available on the intent/seed."
+          ],
+          "postconditions": [
+            "Exactly one IssueArtifact persisted under the docs/ work-item tree; meta.workflow==='issue' so insrc_review_step/insrc_workflow_approve gate it like every other stage."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "IssueArtifactBody",
+        "change": "new",
+        "details": "New interface in src/workflow/artifacts/issue.ts holding ONLY the human-readable, GH-body-ready defect prose. Mirrors SpecArtifactBody.",
+        "schemaDiff": "export interface IssueArtifactBody {\n  readonly title:        string;\n  readonly reproduction: string;\n  readonly rootCause:    string;\n  readonly fixIntent:    string;\n}",
+        "callSites": [
+          "src/workflow/artifacts/issue.ts (new; mirrors src/workflow/artifacts/spec.ts SpecArtifactBody)",
+          "consumed by s5 via sc2 (renders the GH issue body from these fields)"
+        ]
+      },
+      {
+        "entity": "IssueArtifact",
+        "change": "new",
+        "details": "`export type IssueArtifact = WorkflowArtifact<IssueArtifactBody>` (shared generic base = { meta, body, citations }, types.ts:429). magnitude (from sc1) + parentRef (stamped by s3) ride on meta (like specHash/approvedAt), NOT the reviewed body. meta also carries issueHash.",
+        "schemaDiff": "export type IssueArtifact = WorkflowArtifact<IssueArtifactBody>;\n// meta additionally carries: issueHash, magnitude, parentRef?|null, approvedAt?|null",
+        "callSites": [
+          "src/workflow/artifacts/issue.ts (new)",
+          "src/workflow/orchestrator.ts finalizeIssue (builds it)",
+          "consumed by s4 (meta.magnitude) + s5 (meta.parentRef + body) via sc2"
+        ]
+      },
+      {
+        "entity": "ISSUE_SCHEMA_VERSION",
+        "change": "new",
+        "details": "`export const ISSUE_SCHEMA_VERSION = 1` in artifacts/issue.ts, mirroring SPEC_SCHEMA_VERSION.",
+        "schemaDiff": "export const ISSUE_SCHEMA_VERSION = 1;",
+        "callSites": [
+          "src/workflow/artifacts/issue.ts (new)"
+        ]
+      },
+      {
+        "entity": "ArtifactKind",
+        "change": "field-add",
+        "details": "Add 'ISSUE' to the closed union in path-scheme.ts:45. ISSUE is item-root (like SPEC/DEF/HLD) — NOT added to STORY_SCOPED (line 67). allArtifactMdPaths (~173) must include ISSUE alongside SPEC/DEF/HLD.",
+        "schemaDiff": "-export type ArtifactKind = 'SPEC' | 'DEF' | 'HLD' | 'LLD' | 'PLAN' | 'BUILD' | 'CR' | 'EXT';\n+export type ArtifactKind = 'SPEC' | 'DEF' | 'HLD' | 'LLD' | 'PLAN' | 'BUILD' | 'CR' | 'EXT' | 'ISSUE';",
+        "callSites": [
+          "src/workflow/path-scheme.ts:45",
+          "src/workflow/path-scheme.ts:67 (STORY_SCOPED — ISSUE NOT added)",
+          "src/workflow/path-scheme.ts:~173 (allArtifactMdPaths)"
+        ]
+      },
+      {
+        "entity": "issueArtifactId + issue path helper",
+        "change": "new",
+        "details": "Add issueArtifactId(issueHash)='ISSUE-${issueHash}' (mirrors specArtifactId, storage.ts:165) + a per-artifact path function returning { md, json } (mirrors the spec path helper ~319).",
+        "schemaDiff": "export function issueArtifactId(issueHash: string): string { return `ISSUE-${issueHash}`; }",
+        "callSites": [
+          "src/workflow/storage.ts (new; mirrors specArtifactId:165 + spec path helper ~319)"
+        ]
+      },
+      {
+        "entity": "registerWorkflowRunners",
+        "change": "invariant-change",
+        "details": "Add the registerIssueRunners import + call inside registerWorkflowRunners (index.ts:24). Additive — existing registrations unchanged.",
+        "schemaDiff": " export function registerWorkflowRunners(): void {\n   ... registerPlanRunners();\n+  registerIssueRunners();\n   registerTrackerRunners(); }",
+        "callSites": [
+          "src/workflow/index.ts:24"
+        ]
+      },
+      {
+        "entity": "orchestrator per-workflow switches",
+        "change": "invariant-change",
+        "details": "Add a `case 'issue'` arm to each of the three switches (buildDecomposerPrompt ~146 -> issueDecomposer; buildSynthesizerPrompt ~263 -> issueSynthesizer; finalizeArtifact ~375 -> finalizeIssue). The four existing arms are untouched.",
+        "schemaDiff": "+  case 'issue': return issueDecomposer(intent);\n+  case 'issue': return issueSynthesizer(intent, stepOutputs);\n+  case 'issue': return finalizeIssue(intent, stepOutputs, runId, elapsedMs, llmResponse, model, attribution);",
+        "callSites": [
+          "src/workflow/orchestrator.ts:~146",
+          "src/workflow/orchestrator.ts:~263",
+          "src/workflow/orchestrator.ts:~375"
+        ]
+      },
+      {
+        "entity": "issue stage runners",
+        "change": "new",
+        "details": "New src/workflow/runners/issue/index.ts (+ schemas.ts): issue.capture (assemble repro/root-cause/fix-intent, grounded via insrc_analyze_step, seeded from focus+magnitude) + checklist.verify (audit) StepRunners + registerIssueRunners. Mirrors runners/define/index.ts.",
+        "schemaDiff": "const issueCapture: StepRunner = { id:'issue.capture', workflow:'issue', run, finalize };\nconst checklistVerify: StepRunner = { id:'checklist.verify', workflow:'issue', run, finalize };\nexport function registerIssueRunners(): void { /* registerRunner(...) */ }",
+        "callSites": [
+          "src/workflow/runners/issue/index.ts (new; mirrors runners/define/index.ts)",
+          "src/workflow/executor.ts:87 registerRunner"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc2",
+        "role": "implements",
+        "howDetails": "s2 owns sc2 (IssueArtifact). Realized as IssueArtifact = WorkflowArtifact<IssueArtifactBody> in a new artifacts/issue.ts mirroring spec.ts: defect prose (title/reproduction/rootCause/fixIntent) in the body; routing/linking fields (magnitude from sc1, parentRef stamped by s3, approvedAt, issueHash) on meta. renderIssueMarkdown emits the body verbatim as the single-source GH issue body (k4). The stage runs via a new registered `issue` runner + the three orchestrator arms, reusing storage/path-scheme/gates/synthesizer + insrc_review_step/insrc_workflow_approve (k1/k6)."
+      },
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "The issue stage is seeded from the bugfix classification: the sc1 magnitude is carried onto the IssueArtifact meta (read later by s4's router). s2 does NOT re-run classification or routeForSizeClass — it consumes the already-decided magnitude as seed context."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The issue.capture / synthesize turn emits a body missing (or empty) one of title/reproduction/rootCause/fixIntent.",
+          "detection": "finalizeIssue runs isIssueBody(body) before building the artifact; it returns false when any of the four prose fields is absent or a non-empty-string check fails, and finalizeIssue returns a schemaFailure (the same guard-then-schemaFailure path finalizeBrainstorm uses via isSpecBody).",
+          "response": "The synthesize turn is rejected with a schemaFailure and re-emitted (the standard synthesize retry); no partial IssueArtifact is persisted.",
+          "userImpact": "The stage re-runs the synthesize turn; the user never gets a half-formed issue record. No silent write.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A synthesized citation array is malformed (not an array of {id,kind,ref}).",
+          "detection": "isCitationArray(citations) (reused from the shared artifact-guard family) returns false in finalizeIssue.",
+          "response": "schemaFailure -> re-emit; the artifact is not written.",
+          "userImpact": "Transparent retry; the persisted issue always carries a well-formed citations block.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A future ArtifactKind member is added but a switch/consumer that enumerates kinds is not updated for 'ISSUE' (or vice-versa).",
+          "detection": "Compile-time: ArtifactKind is a closed union; exhaustive consumers (STORY_SCOPED membership check, allArtifactMdPaths enumeration, artifact-kind parsing) that switch/map over it are type-checked, so an unhandled 'ISSUE' surfaces at tsc (mirrors S001's SizeClass exhaustiveness).",
+          "response": "The build fails at tsc rather than silently skipping ISSUE in a tree scan or mis-classifying it as story-scoped.",
+          "userImpact": "None at runtime — caught before ship; protects the docs/ tree round-trip.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A bugfix issue with NO located parent yet (parentRef absent/null on meta) — the standalone case before s3 runs.",
+          "expected": "The IssueArtifact persists and reviews/approves normally; renderIssueMarkdown emits the same GH-ready body regardless of parentRef (parentRef is meta-only and never rendered into the body). null parentRef = standalone (k3's load-bearing fallback, filled by s3 later)."
+        },
+        {
+          "input": "renderIssueMarkdown called on an IssueArtifact whose meta carries magnitude + parentRef.",
+          "expected": "The output contains ONLY the # title + ## Reproduction / ## Root cause / ## Fix intent sections (+ the id marker) — magnitude and parentRef never appear in the rendered body, so the bytes are the exact GitHub issue body s5 will post (k4)."
+        },
+        {
+          "input": "An M/L (sized) bugfix issue is produced (magnitude='sized' on meta).",
+          "expected": "The issue stage produces the SAME IssueArtifact shape as a small bugfix; magnitude on meta is untouched by rendering. The sized-vs-small routing (issue->build vs issue->design->plan->build) is s4's concern, not the issue stage's — s2 only records the magnitude, it does not branch on it."
+        },
+        {
+          "input": "insrc_review_step / insrc_workflow_approve run over the ISSUE artifact.",
+          "expected": "Because meta.workflow==='issue', the review stage is keyed 'issue' and the approve stamps meta.approvedAt — identical to how brainstorm's 'brainstorm'-keyed SpecArtifact is reviewed/approved. No issue-specific gate code is added (k6)."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The IssueArtifact BODY holds only the defect prose (title/reproduction/rootCause/fixIntent); routing/linking fields (magnitude, parentRef, approvedAt, issueHash) live on meta — exactly as the spec.ts analog keeps post-synthesis stamps (specHash/approvedAt) on meta and the body pure content. This is what makes renderIssueMarkdown's output the single-source GH issue body (k4) and lets s3 stamp parentRef without rewriting the reviewed body.",
+          "source": "c2"
+        },
+        {
+          "text": "A workflow stage adds NO per-stage persistence: the ISSUE artifact writes through the shared storage/path-scheme/gates/synthesizer, keyed by its canonical id via the id marker (identity never comes from the filename). The stage is authored purely as a runner + record family + the three orchestrator arms + one registration line.",
+          "source": "c1"
+        },
+        {
+          "text": "ArtifactKind is a CLOSED union; adding 'ISSUE' must keep the four existing item-root/story-scoped classifications byte-for-byte unchanged (SPEC/DEF/HLD stay item-root; LLD/PLAN/BUILD/CR/EXT stay story-scoped) and ISSUE joins the item-root singletons — the existing kinds' persistence paths must not shift.",
+          "source": "c3"
+        },
+        {
+          "text": "The review/approve gate keys off meta.workflow: an ISSUE artifact (meta.workflow==='issue') must be reviewable by insrc_review_step and approvable by insrc_workflow_approve with NO issue-specific gate code — the same path brainstorm's 'brainstorm'-keyed SpecArtifact uses (k1/k6).",
+          "source": "c4"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove the IssueArtifact record family: the body-only guard, the GH-body-ready renderer, the id helper — mirroring spec-artifact.test.ts.",
+          "subjects": [
+            "isIssueBody accepts { title, reproduction, rootCause, fixIntent } (all non-empty) and rejects a body missing/emptying any of the four fields",
+            "renderIssueMarkdown emits the id-marker header + `# <title>` + `## Reproduction`/`## Root cause`/`## Fix intent` sections in order",
+            "renderIssueMarkdown output contains NONE of magnitude/parentRef/issueHash (meta-only fields never leak into the GH body) — k4",
+            "issueArtifactId(hash) === `ISSUE-${hash}` and the id-marker round-trips (extractable back to the id)",
+            "ISSUE_SCHEMA_VERSION === 1"
+          ],
+          "fixturesNeeded": [
+            "a minimal IssueArtifact fixture (meta with issueHash+magnitude+optional parentRef, body, citations)"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove the closed-union extension is additive: 'ISSUE' is item-root (not story-scoped) and the four existing kinds are unchanged.",
+          "subjects": [
+            "ArtifactKind includes 'ISSUE'; STORY_SCOPED does NOT include 'ISSUE' (item-root like SPEC/DEF/HLD)",
+            "the existing kinds keep their classification: SPEC/DEF/HLD item-root, LLD/PLAN/BUILD/CR/EXT story-scoped (byte-for-byte unchanged)",
+            "an ISSUE artifact path resolves to an item-root `ISSUE.md` (+ its .json), and allArtifactMdPaths enumerates it alongside SPEC/DEF/HLD"
+          ],
+          "fixturesNeeded": []
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove the issue stage runs end-to-end: register -> decompose -> capture+verify -> synthesize -> one persisted IssueArtifact, reviewable/approvable like the other stages (mirrors spec-artifact.test.ts + spec-review-approve.test.ts).",
+          "subjects": [
+            "registerIssueRunners registers issue.capture + checklist.verify (idempotent; second call no-ops) and executor can look them up",
+            "buildDecomposerPrompt('issue') / buildSynthesizerPrompt('issue') return the issue stage prompts (the three orchestrator `case 'issue'` arms are wired)",
+            "finalizeIssue turns a converged capture+synthesize output into exactly ONE persisted IssueArtifact (meta.workflow==='issue', magnitude carried from the seed) written md+json under the docs/ tree",
+            "finalizeIssue rejects a body failing isIssueBody / malformed citations with a schemaFailure (no partial write)",
+            "insrc_review_step over the ISSUE md keys stage='issue' and insrc_workflow_approve stamps meta.approvedAt — no issue-specific gate code (reuses the brainstorm/DEF path)",
+            "the four existing workflows' decomposer/synthesizer/finalize arms are unaffected by the new `case 'issue'`"
+          ],
+          "fixturesNeeded": [
+            "a temp repo dir + a WorkflowIntent{workflow:'issue', focus, magnitude}",
+            "a converged issue.capture step output + a synthesize { body, citations }"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "finalizeIssue turns a converged capture+synthesize output into exactly ONE persisted IssueArtifact (meta.workflow==='issue', magnitude carried) written md+json under the docs/ tree",
+            "isIssueBody requires title/reproduction/rootCause/fixIntent (the single record captures reproduction + root cause + fix intent)",
+            "renderIssueMarkdown output is the pure defect prose (k4 single-source) with an id marker mapping md->json",
+            "an ISSUE artifact path resolves to an item-root ISSUE.md (+ .json) and is enumerated by allArtifactMdPaths (persisted, cited artifact on the chain)"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "insrc_review_step over the ISSUE md keys stage='issue' and insrc_workflow_approve stamps meta.approvedAt — reviewed + explicitly approved before consumption, no issue-specific gate code (same manner as the other stage artifacts)",
+            "finalizeIssue rejects a body failing isIssueBody with a schemaFailure so only a well-formed issue reaches the approve gate"
+          ]
+        }
+      ],
+      "testFramework": "node:test (tsx --test) with node:assert — matches src/workflow/__tests__/spec-artifact.test.ts + spec-review-approve.test.ts"
+    },
+    "migration": {
+      "stateBefore": "Per s1 structural-map + persistence-map: the workflow framework has seven stages (brainstorm/define/design.epic/design.story/plan/stub/tracker) each authored as a runners/<stage>/ step set + an artifacts/<stage>.ts record family, registered via registerWorkflowRunners (index.ts:24) and dispatched by the THREE per-workflow orchestrator switches (buildDecomposerPrompt ~146, buildSynthesizerPrompt ~263, finalizeArtifact ~375). There is NO 'issue' stage runner, NO artifacts/issue.ts, and NO 'issue' arm in any switch. path-scheme.ts's ArtifactKind (line 45) is the closed union SPEC/DEF/HLD/LLD/PLAN/BUILD/CR/EXT with SPEC/DEF/HLD item-root and LLD/PLAN/BUILD/CR/EXT story-scoped (STORY_SCOPED, line 67); there is no 'ISSUE' kind and no issueArtifactId. The 'issue' WorkflowName literal already exists (added in S001). The brainstorm SpecArtifact (artifacts/spec.ts) is the closest single-artifact analog.",
+      "stateAfter": "A new `issue` stage exists end-to-end: artifacts/issue.ts (IssueArtifactBody prose + IssueArtifact = WorkflowArtifact<IssueArtifactBody> + ISSUE_SCHEMA_VERSION + renderIssueMarkdown + isIssueBody); path-scheme.ts's ArtifactKind gains item-root 'ISSUE' (allArtifactMdPaths enumerates it); storage.ts gains issueArtifactId + an issue path helper; runners/issue/ (issue.capture + checklist.verify) + registerIssueRunners; index.ts calls registerIssueRunners; and the three orchestrator switches gain a `case 'issue'` arm. Running the `issue` workflow now produces exactly one persisted, cited, reviewable, approvable IssueArtifact under the docs/ tree, keyed on issueHash, magnitude carried on meta. All seven existing stages + the eight existing ArtifactKinds are byte-for-byte unchanged.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the artifacts/issue.ts record family (IssueArtifactBody, IssueArtifact, ISSUE_SCHEMA_VERSION, renderIssueMarkdown, isIssueBody) mirroring artifacts/spec.ts. Pure addition.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "bugfixCategory"
+          ]
+        },
+        {
+          "order": 2,
+          "action": "Add 'ISSUE' to ArtifactKind (item-root, NOT STORY_SCOPED) + include it in the item-root md-path enumeration; add issueArtifactId + the issue path helper to storage.ts.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "bugfixCategory"
+          ]
+        },
+        {
+          "order": 3,
+          "action": "Add runners/issue/ (index.ts + schemas.ts) with issue.capture + checklist.verify + registerIssueRunners. New module; registers nothing until called.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "bugfixCategory"
+          ]
+        },
+        {
+          "order": 4,
+          "action": "Wire the three orchestrator `case 'issue'` arms (issueDecomposer/issueSynthesizer/finalizeIssue) mirroring the brainstorm arms; existing arms untouched.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "bugfixCategory"
+          ]
+        },
+        {
+          "order": 5,
+          "action": "Add the registerIssueRunners() call + import to registerWorkflowRunners (index.ts) — the single line that makes the stage live.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "bugfixCategory"
+          ]
+        },
+        {
+          "order": 6,
+          "action": "Add the issue-stage tests (record-family round-trip, ArtifactKind additive-invariant, end-to-end register->run->persist->review->approve) mirroring spec-artifact.test.ts + spec-review-approve.test.ts; run `npx tsx --test 'src/workflow/**/*.test.ts'` to confirm green locally.",
+          "rollbackable": true,
+          "prerequisiteFlags": []
+        }
+      ],
+      "backwardCompat": "Every change is additive. registerWorkflowRunners gains one more registration call (existing seven unchanged, still idempotent). The three orchestrator switches gain a new `case 'issue'` arm only — the existing arms return byte-for-byte identical prompts/artifacts. ArtifactKind GROWS by one member; the eight existing kinds keep their exact item-root vs story-scoped classification and their md/json paths, so already-written SPEC/DEF/HLD/LLD/PLAN/BUILD/CR/EXT artifacts resolve unchanged. No existing public API signature changes; no persisted artifact is rewritten. The only non-additive files are the new tests.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Mirror the SpecArtifact analog: body = GH-ready defect prose, magnitude/parentRef on meta, capture+verify runner",
+        "oneLineSummary": "A new artifacts/issue.ts (IssueArtifactBody = title/reproduction/rootCause/fixIntent) + a new 'ISSUE' ArtifactKind, a 2-step runner (issue.capture -> checklist.verify), and three `case 'issue'` orchestrator arms — mirroring the brainstorm SpecArtifact stage exactly.",
+        "approach": "artifacts/issue.ts defines IssueArtifactBody (defect prose ONLY), IssueArtifact = WorkflowArtifact<IssueArtifactBody>, ISSUE_SCHEMA_VERSION, renderIssueMarkdown (GH-body-ready), isIssueBody. magnitude (from sc1) + parentRef (stamped by s3) live on meta, NOT the reviewed body. ArtifactKind gains item-root 'ISSUE'; storage gains issueArtifactId. The runner has two steps (issue.capture -> checklist.verify) mirroring the define/design idiom; registerIssueRunners + three orchestrator arms wire it; review/approve reuse the meta.workflow='issue' path.",
+        "pros": [
+          "Exact convention parity with the brainstorm SpecArtifact stage + the multi-step-ending-in-checklist.verify idiom; fully reuses storage/path-scheme/gates/synthesizer (k6).",
+          "Body = ONLY the defect prose, so renderIssueMarkdown output IS the GitHub issue body verbatim (k4) and s3 stamping parentRef on meta never touches the reviewed body.",
+          "First-class cited/approvable stage artifact reviewed exactly like the others (k1); ac1+ac2 fall out of the reused gate."
+        ],
+        "cons": [
+          "Largest surface: a new ArtifactKind member + a new artifacts module + a new runner dir + three orchestrator arms + a storage id helper.",
+          "magnitude/parentRef on meta is a faithful-but-not-literal realization of the HLD sketch's flat IssueArtifact shape (documented)."
+        ],
+        "costEstimate": "M",
+        "chosen": true,
+        "reasonChosen": "Only alternative scoring `satisfies` on all constraints (ac1/ac2/sc2/sc1/k1/k4/k6). The meta-vs-body split keeps k4 clean (body IS the GH body) and keeps parentRef stampable by s3 post-approval — the two hazards a3 hits."
+      },
+      {
+        "id": "a2",
+        "name": "Single-step issue stage (mirror brainstorm's lone elicit step), no in-stage checklist",
+        "oneLineSummary": "Same artifacts/issue.ts + ArtifactKind, but a ONE-step runner (issue.capture -> synthesize) mirroring brainstorm's single elicit step, relying solely on the post-stage insrc_review_step for audit.",
+        "approach": "Identical record family + persistence to a1, but the runner is a SINGLE issue.capture step (no in-stage checklist.verify), mirroring the brainstorm stage's lone elicit step; issueDecomposer emits a 1-step plan.",
+        "pros": [
+          "Smallest runner surface — one step, matching brainstorm exactly.",
+          "Still a first-class approvable artifact (k1) and single-source body (k4)."
+        ],
+        "cons": [
+          "Breaks the define/design.story/plan idiom where every design/plan stage ends in an in-stage checklist.verify self-audit.",
+          "Pushes ALL quality-gating onto the single post-stage insrc_review_step — weaker adherence to the two-pass convention."
+        ],
+        "costEstimate": "S",
+        "chosen": false,
+        "reasonRejected": "PARTIAL on ac2's 'same manner as the other stage artifacts' — it omits the in-stage checklist.verify self-audit the define/design/plan stages all carry, leaning entirely on the post-stage review. Sound but a weaker adherence match than a1."
+      },
+      {
+        "id": "a3",
+        "name": "Fold magnitude + parentRef into the IssueArtifactBody (literal HLD sketch shape)",
+        "oneLineSummary": "Same stage + runner as a1, but IssueArtifactBody carries magnitude + parentRef as body fields (matching the HLD sketch's flat IssueArtifact literally).",
+        "approach": "Record family as a1 EXCEPT IssueArtifactBody = { title, reproduction, rootCause, fixIntent, magnitude, parentRef? }; renderIssueMarkdown must special-case magnitude/parentRef out of the GH body, and s3 stamps parentRef by rewriting the already-approved body.",
+        "pros": [
+          "Maps the HLD sketch's IssueArtifact shape one-to-one.",
+          "A single body object fully describes the issue for consumers."
+        ],
+        "cons": [
+          "Mixes GH-body prose with routing/linking metadata in the same body the renderer walks — risks leaking routing fields into the GH body (muddies k4).",
+          "parentRef is stamped by s3 AFTER the body is reviewed/approved; putting it in the immutable reviewed body forces rewriting an approved artifact (freshness/approval hazard).",
+          "Diverges from the spec.ts analog where post-synthesis stamps live on meta."
+        ],
+        "costEstimate": "M",
+        "chosen": false,
+        "reasonRejected": "PARTIAL on ac2 + sc2 + k4: folding the s3-stamped parentRef and the routing magnitude into the REVIEWED body forces s3 to rewrite an approved artifact and forces the renderer to special-case routing fields out of the single-source GH body — the exact hazards a1 avoids by putting magnitude/parentRef on meta."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 structural-map — src/workflow/index.ts, executor.ts:87, runners/define/index.ts, orchestrator.ts (three per-workflow switches ~146/263/375)",
+      "quotedText": "A workflow STAGE is authored across five seams, all keyed by WorkflowName: registerWorkflowRunners; runners/<stage>/ StepRunners via registerRunner; the three orchestrator switches; artifacts/<stage>.ts; shared storage/path-scheme/gates/synthesizer (no per-stage persistence)."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 closest-analog — src/workflow/artifacts/spec.ts, types.ts:429, orchestrator.ts finalizeBrainstorm",
+      "quotedText": "spec.ts is the analog: SpecArtifactBody + SpecArtifact = WorkflowArtifact<SpecArtifactBody> + SPEC_SCHEMA_VERSION + renderSpecMarkdown + isSpecBody; post-synthesis stamps (specHash/approvedAt) live on meta, the body is pure content."
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1 persistence-map — src/workflow/path-scheme.ts:45/67/173, storage.ts:165/259/319",
+      "quotedText": "ArtifactKind is the closed union SPEC/DEF/HLD/LLD/PLAN/BUILD/CR/EXT; SPEC/DEF/HLD item-root, LLD/PLAN/BUILD/CR/EXT story-scoped; identity comes from the id marker, never the filename; specArtifactId + per-artifact path helpers."
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "s1 boundary-scope — src/workflow/gates.ts, orchestrator.ts",
+      "quotedText": "The review/approve gate keys off meta.workflow (brainstorm's 'brainstorm'-keyed SpecArtifact); s2 consumes sc1 magnitude as seed, leaves parentRef to s3 (meta field), routing to s4, GH render to s5."
+    }
+  ]
+}

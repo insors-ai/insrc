@@ -14,6 +14,7 @@
 import type { IssueArtifact } from '../artifacts/issue.js';
 import type { ParentLocation } from '../locate/index.js';
 import type { WorkItemRef } from '../types.js';
+import type { TrackerCreateDeps, TrackerIssueResult } from './tracker.js';
 
 /** The routed next-stage descriptor — the SAME shape `buildNextCall` emits
  *  (src/mcp/triage-step/phases/classify.ts), re-declared locally so s4 does not
@@ -39,7 +40,7 @@ export interface AdmitResult {
 	readonly reason?:  string;
 }
 
-/** The composed post-issue advance outcome (the t5 orchestration entrypoint). */
+/** The composed post-issue advance outcome (the orchestration entrypoint). */
 export interface AdvanceResult {
 	/** Set when the input is not an eligible bugfix issue (non-issue artifact,
 	 *  or the bugfixCategory flag is off) — nothing was stamped or routed. */
@@ -50,4 +51,17 @@ export interface AdvanceResult {
 	readonly admission?: AdmitResult;
 	/** The routed next-stage call, present only when admitted. */
 	readonly nextCall?:  BugfixNextCall;
+	/** The GH-issue create outcome (S005), present only when tracker create deps
+	 *  were injected and the advance reached the create point (post-stamp). */
+	readonly trackerIssue?: TrackerIssueResult;
+}
+
+/** Extra collaborators for the advance's optional S005 GH-issue create step.
+ *  When absent, advance behaves exactly as S004 (no tracker surface). */
+export interface AdvanceTrackerDeps {
+	readonly createTrackerIssue: (
+		input: { repoPath: string; issueHash: string },
+		deps: TrackerCreateDeps,
+	) => Promise<TrackerIssueResult>;
+	readonly createDeps: TrackerCreateDeps;
 }

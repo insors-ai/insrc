@@ -13,4 +13,19 @@ export * from './types.js';
 export { nextAfterIssue } from './next-after-issue.js';
 export { admitBugfixAdvance } from './admit.js';
 export { locateAndStampParent, defaultStampDeps } from './stamp.js';
-export { advanceBugfixAfterIssue } from './advance.js';
+export { advanceBugfixAfterIssue, completeBugfixTracker } from './advance.js';
+export {
+	createBugfixTrackerIssue,
+	closeBugfixTrackerIssue,
+	defaultTrackerCreateDeps,
+	defaultTrackerCloseDeps,
+	defaultPromptOnLostRef,
+	type TrackerCreateDeps,
+	type TrackerCloseDeps,
+	type TrackerIssueResult,
+	type TrackerCloseResult,
+	type LostRefAction,
+	type LostRefContext,
+	type LostRefResolution,
+	type PromptOnLostRef,
+} from './tracker.js';

@@ -15,7 +15,9 @@
 import { admitBugfixAdvance } from './admit.js';
 import { nextAfterIssue } from './next-after-issue.js';
 import { locateAndStampParent } from './stamp.js';
-import type { AdvanceResult, StampDeps } from './types.js';
+import { closeBugfixTrackerIssue } from './tracker.js';
+import type { AdvanceResult, AdvanceTrackerDeps, StampDeps } from './types.js';
+import type { TrackerCloseDeps, TrackerCloseResult } from './tracker.js';
 
 /**
  * Advance a bugfix past its approved issue. `skipped` is returned (nothing
@@ -26,7 +28,7 @@ import type { AdvanceResult, StampDeps } from './types.js';
 export async function advanceBugfixAfterIssue(
 	input: { repoPath: string; issueHash: string; repo: string },
 	deps: StampDeps,
-	opts?: { readonly bugfixCategory?: boolean },
+	opts?: { readonly bugfixCategory?: boolean; readonly tracker?: AdvanceTrackerDeps },
 ): Promise<AdvanceResult> {
 	if (opts?.bugfixCategory === false) {
 		return { skipped: 'bugfixCategory flag is disabled' };
@@ -53,6 +55,34 @@ export async function advanceBugfixAfterIssue(
 		return { location, admission };
 	}
 
+	// S005: surface the approved issue to GitHub (create + link + record). Runs
+	// ONLY at this post-approval, post-stamp point and ONLY when tracker create
+	// deps are injected; a repo with no tracker configured is a no-op (skipped).
+	// Additive — a caller that injects no tracker behaves exactly as S004.
 	const nextCall = nextAfterIssue(stamped, input.repo);
-	return { location, admission, nextCall };
+	if (opts?.tracker === undefined) {
+		return { location, admission, nextCall };
+	}
+	const trackerIssue = await opts.tracker.createTrackerIssue(
+		{ repoPath: input.repoPath, issueHash: input.issueHash },
+		opts.tracker.createDeps,
+	);
+	return { location, admission, nextCall, trackerIssue };
+}
+
+/**
+ * S005 — the completion-path seam. The completion gate (BUILD approval of a
+ * bugfix) calls this to close the GH issue created for the fix. A no-op when no
+ * tracker is configured or nothing was created (ac2 symmetry); bugfixCategory-
+ * gated so a non-bugfix completion is untouched.
+ */
+export async function completeBugfixTracker(
+	input: { repoPath: string; issueHash: string },
+	deps: TrackerCloseDeps,
+	opts?: { readonly bugfixCategory?: boolean },
+): Promise<TrackerCloseResult> {
+	if (opts?.bugfixCategory === false) {
+		return { status: 'skipped', reason: 'bugfixCategory flag is disabled' };
+	}
+	return closeBugfixTrackerIssue(input, deps);
 }

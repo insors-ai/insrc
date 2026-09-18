@@ -191,6 +191,15 @@ export function ghComment(owner: string, repo: string, ref: string, body: string
 	silent('gh', ['issue', 'comment', parseIssueRef(ref).number, '--repo', `${owner}/${repo}`, '--body', body]);
 }
 
+/** Close an issue (`gh issue close`). The thin sibling of ghEditIssueBody /
+ *  ghComment — added by S005 because no close wrapper existed and sync.ts is
+ *  read-only. Runs through the same injectable `_exec` seam (k5: gh CLI argv,
+ *  no shell, no REST). Closing an already-closed issue is a no-op success; a
+ *  missing/deleted issue exits non-zero and the error propagates. */
+export function ghCloseIssue(owner: string, repo: string, ref: string): void {
+	silent('gh', ['issue', 'close', parseIssueRef(ref).number, '--repo', `${owner}/${repo}`]);
+}
+
 /** Current issue state + status labels — for sync. */
 export function ghGetIssueState(owner: string, repo: string, ref: string): { state: string; labels: string[] } {
 	const raw = out('gh', ['issue', 'view', parseIssueRef(ref).number, '--repo', `${owner}/${repo}`, '--json', 'state,labels']);

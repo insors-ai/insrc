@@ -1,0 +1,65 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1789722751232-ndn50r",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-18T09:12:31.233Z",
+    "model": "client",
+    "elapsedMs": 5,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "0d565a953288f511",
+    "storyId": "S001"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "0d565a953288f511",
+    "storyId": "S001",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/platform/InsrcPluginStateListener.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/Sc1ActivationIntegrationTest.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/platform/RunOnceTest.kt"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/platform/RunOnceTest.kt:1",
+            "message": "The concurrent register-then-fire INTERACTION (a losing project-open observing the full consumer list before it broadcasts) is proven at the RunOnce mechanism level (the new `a losing caller blocks until the winning action completes` test + the exactly-once concurrent test), not via a multi-window fixture integration test. Acceptable: BasePlatformTestCase hosts a single project so a true two-window race can't be staged in-fixture, and the CountDownLatch makes the ordering correct-by-construction (happens-before from the winner's registers to the loser's await return). No fix needed."
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/platform/InsrcPluginStateListener.kt:61",
+            "message": "RunOnce.run's `complete.await()` is a thread-blocking call executed inside the suspend InsrcProjectOpenActivity.execute coroutine. It is bounded by the winner's fast, non-I/O registration action (five list-adds + two production() service lookups), so the block is brief and benign; the only edge (coroutine cancellation interrupting a loser's await) affects a project-open that is being cancelled anyway. A timeout-bounded await would be fully coroutine-clean but is not warranted here. Noted, not blocking."
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 2
+    }
+  }
+}

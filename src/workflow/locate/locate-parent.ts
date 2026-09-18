@@ -41,10 +41,19 @@ function refFromResolved(r: ResolvedRef): WorkItemRef {
 	};
 }
 
+/** Keep only well-formed candidates: an object carrying a finite numeric score.
+ *  Guards against a malformed port return (e.g. `graph: [null]`) reaching the
+ *  ranking logic and dereferencing a bad element outside the caller's try. */
+function wellFormed(cands: readonly RankedCandidate[]): RankedCandidate[] {
+	return cands.filter((c): c is RankedCandidate =>
+		c !== null && typeof c === 'object' && typeof c.score === 'number' && Number.isFinite(c.score));
+}
+
 /** The unambiguous top candidate: the single highest-scoring one, or `null`
  *  when the list is empty OR the top score is tied (ambiguous). A tie is
  *  load-bearing — lc1 forbids picking one arbitrarily. */
-function unambiguousTop(cands: readonly RankedCandidate[]): RankedCandidate | null {
+function unambiguousTop(input: readonly RankedCandidate[]): RankedCandidate | null {
+	const cands = wellFormed(input);
 	if (cands.length === 0) return null;
 	let best = cands[0]!;
 	for (const c of cands) if (c.score > best.score) best = c;

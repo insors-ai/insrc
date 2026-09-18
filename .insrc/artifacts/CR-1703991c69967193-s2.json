@@ -1,0 +1,68 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1789737491822-ox7ovl",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-18T13:18:11.823Z",
+    "model": "client",
+    "elapsedMs": 5,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1703991c69967193",
+    "storyId": "s2"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "1703991c69967193",
+    "storyId": "s2",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "src/daemon/workflow-rpc.ts",
+        "src/mcp/workflow-step/phases/synthesize.ts",
+        "src/workflow/__tests__/issue-artifact.test.ts",
+        "src/workflow/artifacts/issue.ts",
+        "src/workflow/index.ts",
+        "src/workflow/orchestrator.ts",
+        "src/workflow/path-scheme.ts",
+        "src/workflow/runners/issue/index.ts",
+        "src/workflow/runners/issue/schemas.ts",
+        "src/workflow/storage.ts",
+        "src/workflow/types.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/storage.ts:573",
+            "message": "The new pathsForWorkflow 'issue' branch derives workItemKind from the `standalone` arg, whereas the sibling 'brainstorm' branch hard-codes 'standalone'. Both resolve to 'standalone' today (finalizeIssue always sets meta.standalone=true and it is threaded through synthesize.ts + workflow-rpc.ts), so behaviour is identical; the issue branch is simply slightly more flexible than brainstorm's hard-code. A cosmetic consistency nit, not a defect — the derive-from-standalone form is arguably preferable (it would route correctly if a future story epic-parents an issue).",
+            "expectationRef": "brainstorm analog (pathsForWorkflow)",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 1
+    }
+  }
+}

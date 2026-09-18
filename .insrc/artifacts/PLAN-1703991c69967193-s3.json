@@ -1,0 +1,370 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1789738604637-cslxc2",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-18T13:40:47.031Z",
+    "epicCreatedAt": "2026-09-18T10:07:09.320Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 242382,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1703991c69967193",
+    "epicSlug": "add-bugfix-triage-category-insrc-framework",
+    "storyId": "s3",
+    "lldRunId": "wf-1789737573900-72sf3a",
+    "lldEffectiveHash": "e08e0c0d9f7b0edafe2979944fb169368ad12f61bc842d0ebec3a3ec979632fa",
+    "approvedAt": "2026-09-18T13:56:37.250Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add the parent-locator value types",
+        "summary": "Declare the additive types in the workflow layer (co-located with the locator module): LocateTier ('deterministic'|'graph-ownership'|'semantic'|'prompt'|'standalone'), ParentLocation { tier; parentRef: WorkItemRef|null; confidence; evidence: readonly string[] }, RankedCandidate { parentRef: WorkItemRef; score; evidence }, InferredCandidates { graph: readonly RankedCandidate[]; semantic: readonly RankedCandidate[] }, LocateParentInput { touchedPaths; defectDescription; explicitRef? }, LocateParentDeps { repoPath; resolveRef; inferCandidates; promptForRef; thresholds: LocateThresholds }, and LocateThresholds { graph: number; semantic: number }. Reuse the existing WorkItemRef (types.ts:417-421) verbatim; do NOT touch meta.parentRef.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "All seven types compile under strict mode with readonly fields; LocateTier is a 5-member union in the fixed order; ParentLocation.parentRef is WorkItemRef | null.",
+          "No change to WorkItemRef or ArtifactMetaBase.parentRef; tsc clean."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "ParentLocation shape invariant: parentRef non-null iff tier!=='standalone'; confidence >= threshold whenever attached"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Add the daemon-side inferParentCandidates function",
+        "summary": "Implement inferParentCandidates(db: DbClient, req: { touchedPaths; defectDescription; repoPath }): Promise<InferredCandidates> daemon-side. FIRST resolve readArtifactCore's visibility: it is currently module-private in storage.ts (line 213) — export it or add a sibling accessor before composing it. Graph tier: map each touched path to its indexed entity, expand via findCallers/inNeighbors (src/db/search.ts, src/db/graph/edges.ts), map owning entities back to a work item through the artifact tree (listWorkItems/listArtifactMdPaths + readArtifactCore), producing RankedCandidate[] with raw score + cited evidence. Semantic tier: embed(defectDescription) (serial, never Promise.all) then artifact-vec ANN (src/db/lance/artifact-vec.ts) over epic/story artifact vectors. Returns raw scores ONLY — no threshold, no attach decision. Empty candidates is a valid empty array, not an error.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Returns { graph, semantic } RankedCandidate arrays; a touched path owned by a story's artifacts yields a graph candidate carrying that WorkItemRef + evidence.",
+          "An unindexed touched path contributes no graph candidate but does not throw; all-unindexed yields graph:[].",
+          "No threshold/filter is applied inside the function; embeds are issued serially (for...of).",
+          "readArtifactCore is reachable from the daemon inference (exported or via a sibling accessor); tsc + existing db test subset green."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "inferParentCandidates: a touched path whose entity is owned by a story's artifacts yields a graph RankedCandidate with that WorkItemRef + cited evidence"
+          },
+          {
+            "level": "unit",
+            "name": "inferParentCandidates: unindexed path contributes no graph candidate; other paths still resolve"
+          },
+          {
+            "level": "unit",
+            "name": "inferParentCandidates: returns raw scores only; no filtering/threshold applied (policy stays in the controller)"
+          },
+          {
+            "level": "unit",
+            "name": "inferParentCandidates: embeds are issued serially (for...of), not Promise.all"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Register the inferParentCandidates daemon IPC method + mirror its type",
+        "summary": "Add a new additive daemon IPC method that exposes inferParentCandidates, wiring it into the daemon handler registry (src/daemon/index.ts). Mirror the request/response payload types to the IDE fork per the IPC lock-step rule. Additive only — no existing method signature changes. Guard the method behind the existing bugfixCategory feature flag where the registry supports flag-gating.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "The new IPC method is registered and dispatches to inferParentCandidates; no existing IPC method signature changes.",
+          "An UnregisteredRepoError propagates when repoPath is not in the registry (rule 6).",
+          "tsc clean; the mirrored payload type matches the daemon-side InferredCandidates shape."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "IPC method dispatches to inferParentCandidates and returns InferredCandidates; UnregisteredRepoError on an unregistered repoPath"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Add the controller-side locateParent tier policy",
+        "summary": "Implement locateParent(input: LocateParentInput, deps: LocateParentDeps): Promise<ParentLocation> as a pure injectable-deps policy. Enforce the fixed order: tier-1 deterministic (deps.resolveRef on input.explicitRef; on hit short-circuit, never call inferCandidates); else tier-2 graph-ownership and tier-3 semantic over deps.inferCandidates results, applying deps.thresholds with short-circuit on a threshold-clearing earlier tier; tier-4 prompt (deps.promptForRef) when nothing clears / ties / near-miss; tier-5 standalone (parentRef:null). Handle all error/edge paths from the LLD: inferCandidates rejection -> degrade to prompt/standalone (never throw, never auto-attach); stale explicitRef (resolveRef null) -> fall through; empty defectDescription -> skip semantic; candidate with missing artifacts -> drop. Returns pure data; does NOT persist meta.parentRef. Add the IPC-client shim satisfying deps.inferCandidates.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "Fixed tier order honored; a tier-1 explicit-ref hit or a threshold-clearing graph hit short-circuits later tiers (inferCandidates not called on the tier-1 hit).",
+          "parentRef is non-null for every tier except 'standalone'; confidence >= the tier threshold whenever an attach is made (lc1).",
+          "inferCandidates rejection/timeout degrades to prompt then standalone without throwing; malformed input (no paths, no description, no ref) is the only thrown case.",
+          "tsc clean."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c5",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "locateParent: tier-1 explicit-ref hit -> tier='deterministic', short-circuits (inferCandidates never called)"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Unit-test the locateParent policy with fabricated deps",
+        "summary": "Add unit tests (node:test via tsx) that inject a fake LocateParentDeps (stub resolveRef, stub inferCandidates returning hand-built InferredCandidates, stub promptForRef, fixed LocateThresholds) to pin every tier-policy branch and the lc1 guarantees without a DB: tier-1 short-circuit, graph>=threshold, semantic>=threshold, tied-graph->prompt, below-threshold->prompt, nothing->prompt->standalone, inferCandidates-rejection degrade, empty-defectDescription skip-semantic, stale-explicitRef fall-through, and the ParentLocation shape invariant (parentRef null iff standalone).",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "Every locateParent subject from the LLD test strategy has a passing test; ac1/ac2/ac3 policy branches covered.",
+          "Tests use fabricated deps only (no DB, no daemon) and run in the fast workflow subset.",
+          "npx tsx --test on the new file is green."
+        ],
+        "derivedFrom": [
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "locateParent: graph candidate >= threshold -> tier='graph-ownership', semantic pass skipped (short-circuit)"
+          },
+          {
+            "level": "unit",
+            "name": "locateParent: graph empty/below-threshold, semantic >= threshold -> tier='semantic'"
+          },
+          {
+            "level": "unit",
+            "name": "locateParent: nothing clears threshold -> promptForRef called; a resolvable ref -> attached, an unresolvable/empty ref -> tier='standalone', parentRef=null"
+          },
+          {
+            "level": "unit",
+            "name": "locateParent: tied graph candidates at/above threshold -> defers to prompt (no arbitrary pick)"
+          },
+          {
+            "level": "unit",
+            "name": "locateParent: inferCandidates rejects/times out -> degrades to prompt then standalone, never throws, never auto-attaches"
+          },
+          {
+            "level": "unit",
+            "name": "locateParent: empty defectDescription -> semantic tier skipped, graph+prompt order preserved"
+          },
+          {
+            "level": "unit",
+            "name": "locateParent: stale explicitRef (resolveRef returns null) -> falls through to inference tiers"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Test inferParentCandidates + end-to-end locate",
+        "summary": "Add tests for the daemon inference (t2) over injected db stubs or a small seeded LMDB graph + Lance artifact-vec fixture: a touched path owned by a story yields a graph RankedCandidate + evidence; unindexed path contributes none; raw-scores-only (no threshold); embeds serial. Add an integration test composing the controller policy with the fixture-backed inference end-to-end: graph attach, semantic attach, and neither->prompt->standalone. Reuse the existing workflow/db test harness; keep live services out (fake embed returns a deterministic vector).",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t2",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "inferParentCandidates tests assert ranking + evidence + no-threshold + serial embeds.",
+          "End-to-end tests cover ac1 (graph attach), ac2 (semantic attach), ac3 (prompt->standalone).",
+          "The relevant db + workflow test subsets are green locally via npx tsx --test."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "End-to-end locate: touched paths under an existing story's artifacts -> graph attach with grounded evidence"
+          },
+          {
+            "level": "integration",
+            "name": "End-to-end locate: unrelated touched paths + a defect description matching a story's artifact prose -> semantic attach"
+          },
+          {
+            "level": "integration",
+            "name": "End-to-end locate: neither matches -> prompt -> standalone"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "locateParent: tier-1 explicit-ref hit -> tier='deterministic', short-circuits (inferCandidates never called)",
+        "coveredByTaskIds": [
+          "t4",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "locateParent: graph candidate >= threshold -> tier='graph-ownership', semantic pass skipped (short-circuit)",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "locateParent: graph empty/below-threshold, semantic >= threshold -> tier='semantic'",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "locateParent: nothing clears threshold -> promptForRef called; a resolvable ref -> attached, an unresolvable/empty ref -> tier='standalone', parentRef=null",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "locateParent: tied graph candidates at/above threshold -> defers to prompt (no arbitrary pick)",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "locateParent: inferCandidates rejects/times out -> degrades to prompt then standalone, never throws, never auto-attaches",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "locateParent: empty defectDescription -> semantic tier skipped, graph+prompt order preserved",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "locateParent: stale explicitRef (resolveRef returns null) -> falls through to inference tiers",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "ParentLocation shape invariant: parentRef non-null iff tier!=='standalone'; confidence >= threshold whenever attached",
+        "coveredByTaskIds": [
+          "t1",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "inferParentCandidates: a touched path whose entity is owned by a story's artifacts yields a graph RankedCandidate with that WorkItemRef + cited evidence",
+        "coveredByTaskIds": [
+          "t2",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "inferParentCandidates: unindexed path contributes no graph candidate; other paths still resolve",
+        "coveredByTaskIds": [
+          "t2",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "inferParentCandidates: returns raw scores only; no filtering/threshold applied (policy stays in the controller)",
+        "coveredByTaskIds": [
+          "t2",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "inferParentCandidates: embeds are issued serially (for...of), not Promise.all",
+        "coveredByTaskIds": [
+          "t2",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "End-to-end locate: touched paths under an existing story's artifacts -> graph attach with grounded evidence",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "End-to-end locate: unrelated touched paths + a defect description matching a story's artifact prose -> semantic attach",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "End-to-end locate: neither matches -> prompt -> standalone",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 contractDetails.locateParent + dataModelChanges.ParentLocation/LocateTier — the sc3 entry point + new value types (resolveWorkflowRef tier-1 at tracker/resolve.ts:292)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 contractDetails.inferParentCandidates + dataModelChanges.RankedCandidate/InferredCandidates — daemon graph tier (findCallers/inNeighbors, src/db/search.ts:186-197, src/db/graph/edges.ts:87-118); DB-only per rule 1"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 — semantic tier reuse surface: searchEntityVecs (src/db/lance/entity-vec.ts) + artifact-vec ANN (src/db/lance/artifact-vec.ts:188) + embed(text):Promise<number[]> (providers), serial embeds"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 — candidate enumeration + parentRef shape: listWorkItems/listArtifactMdPaths (path-scheme.ts:158-195), readArtifactCore (storage.ts:213, module-private), WorkItemRef (types.ts:417-421)"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 chosenAlternative a1 + errorPaths + testStrategy — the fixed-order tier policy, lc1 deterministic-first/no-silent-wrong-attach, and every locateParent/inferParentCandidates test subject"
+    },
+    {
+      "id": "c6",
+      "kind": "convention",
+      "ref": "CLAUDE.md rules 1/4 + IPC lock-step — daemon owns all DB access; a new daemon IPC method is additive and mirrored to the IDE fork; UnregisteredRepoError on unregistered repo (rule 6)"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 interactionWithShared + HLD sc3 (ownedByStory s3) + Epic k3/k6 — s3 implements sc3, consumes sc1, reuses existing resolver/graph/lance, does NOT stamp meta.parentRef (s4)"
+    }
+  ]
+}

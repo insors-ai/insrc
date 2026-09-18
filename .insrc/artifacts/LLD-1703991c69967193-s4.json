@@ -37,7 +37,15 @@
       "reviewedAt": "2026-09-18T14:34:48.899Z",
       "model": "client"
     },
-    "approvedAt": "2026-09-18T14:39:46.853Z"
+    "approvedAt": "2026-09-18T14:39:46.853Z",
+    "questionResolutions": {
+      "qde8da9d2": {
+        "question": "Post-build parent re-confirm (the a2 accuracy edge): the issue-approval locate has empty touchedPaths so it cannot use sc3's graph code-ownership tier; a future enhancement could re-run locateParent after the build with the real touched paths to upgrade a standalone/low-confidence early attach. Deferred (not built in s4); the fix still resolves a parent before proceeding per the HLD gate.",
+        "status": "resolved",
+        "choice": "Defer as-is (tracked follow-up)",
+        "resolvedAt": "2026-09-18T14:40:57.408Z"
+      }
+    }
   },
   "body": {
     "hldContextSlice": {

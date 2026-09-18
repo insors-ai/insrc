@@ -236,6 +236,11 @@ The post-issue advance and the parent stamp are folded into the `issue` stage's 
 
 - Post-build parent re-confirm (the a2 accuracy edge): the issue-approval locate has empty touchedPaths so it cannot use sc3's graph code-ownership tier; a future enhancement could re-run locateParent after the build with the real touched paths to upgrade a standalone/low-confidence early attach. Deferred (not built in s4); the fix still resolves a parent before proceeding per the HLD gate.
 
+## Resolved questions
+
+- `qde8da9d2` — Post-build parent re-confirm (the a2 accuracy edge): the issue-approval locate has empty touchedPaths so it cannot use sc3's graph code-ownership tier; a future enhancement could re-run locateParent after the build with the real touched paths to upgrade a standalone/low-confidence early attach. Deferred (not built in s4); the fix still resolves a parent before proceeding per the HLD gate.
+  - **resolved**: Defer as-is (tracked follow-up) _(2026-09-18T14:40:57.408Z)_
+
 ## Citations
 
 - **[[c1]]** `prior-artifact` `LLD s4 s1 symbol.locate bundle — routeForSizeClass(sizeClass, magnitude?): TriageRoute (src/workflow/triage/classify.ts:36-69), the bugfix scope-gate route table nextAfterIssue consumes (small→build, sized→design→plan→build)`
@@ -244,13 +249,3 @@ The post-issue advance and the parent stamp are folded into the `issue` stage's 
 - **[[c4]]** `prior-artifact` `HLD sc1/sc2/sc3 (consumed) + Epic k1/k2/k4/k6 — s4 composes the route, the approved IssueArtifact, and the ParentLocation; owns no new shared type; reuses build + code-review`
 - **[[c5]]** `prior-artifact` `S003 src/workflow/locate/ — locateParent + ParentLocation, the sc3 entry point locateAndStampParent invokes (degrades to semantic/prompt/standalone when touchedPaths are empty)`
 - **[[c6]]** `convention` `insrc framework has no automatic stage sequencer — buildNextCall (mcp/triage-step/phases/classify.ts:41-94) emits only stage-1; the flow advances via per-stage nextCall + admission (runners/build/admission.ts admitBuild) + approve gates`
-
-<!-- insrc:review -->
-
-## Review
-
-### ✅ Review `PASS` — design.story (design.story)
-
-**0 HIGH · 0 MED · 0 LOW** · model `client` · reviewed 2026-09-18T14:34:48.899Z
-
-_No load-bearing premises were extracted._

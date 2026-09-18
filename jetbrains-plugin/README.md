@@ -26,17 +26,18 @@ Story **S001** (foundation) is in progress:
 
 ## Build & test
 
-Requires **JDK 21** and **Gradle 8.10+**. From this directory:
+Requires **JDK 21**. Use the committed Gradle wrapper (`./gradlew`) — it pins
+Gradle **8.10.2**, so you do NOT need Gradle on your PATH. From this directory:
 
 ```bash
-gradle build          # compile + run tests + produce the plugin distribution
-gradle runIde         # launch a sandbox IDE with the plugin for manual testing
-gradle verifyPlugin   # run the IntelliJ Platform plugin verifier
+./gradlew build          # compile + run tests + produce the plugin distribution
+./gradlew runIde         # launch a sandbox IDE with the plugin for manual testing
+./gradlew verifyPlugin   # run the IntelliJ Platform plugin verifier
 ```
 
-> A committed Gradle wrapper (`gradlew`) is intentionally omitted for now; run
-> `gradle wrapper --gradle-version 8.10` once to generate it locally. CI uses
-> `gradle/actions/setup-gradle` so it does not need the wrapper jar.
+> Use `./gradlew`, not a system `gradle`. The wrapper pins Gradle 8.10.2 because
+> the IntelliJ Platform Gradle plugin (2.1.0) is incompatible with Gradle 9.x —
+> a bare `gradle` from a recent Homebrew/SDKMAN install will fail to configure.
 
 The single distribution artifact is written to `build/distributions/` and is what
 gets published to the JetBrains Marketplace.

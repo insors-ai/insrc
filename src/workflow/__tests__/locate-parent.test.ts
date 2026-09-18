@@ -179,6 +179,18 @@ test('inferCandidates returns a resolved {error}-shaped object → degrades to s
 	assert.equal(res.parentRef, null);
 });
 
+test('inferCandidates returns a well-typed array carrying a malformed element → filtered, degrades, no throw', async () => {
+	// wellFormed() must drop a `[null]` / bad-score element before ranking.
+	let prompted = false;
+	const res = await locateParent(input(), makeDeps({
+		inferCandidates: (async () => ({ graph: [null], semantic: [{ parentRef: { slug: 'x' } }] })) as unknown as LocateParentDeps['inferCandidates'],
+		promptForRef: async () => { prompted = true; return null; },
+	}));
+	assert.equal(prompted, true);
+	assert.equal(res.tier, 'standalone');
+	assert.equal(res.parentRef, null);
+});
+
 test('empty defectDescription → semantic tier skipped, graph+prompt order preserved', async () => {
 	// Inference returns no semantic (the daemon skips it); with a below-threshold
 	// graph the policy still proceeds graph → prompt → standalone.

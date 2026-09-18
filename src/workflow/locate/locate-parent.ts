@@ -146,9 +146,12 @@ export async function locateParent(
 	}
 
 	// ----- tier 4: prompt (interactive; the near-miss candidates are surfaced) -----
-	const nearMiss = [...inferred.graph, ...inferred.semantic]
+	// Draw from the well-formed candidates only — a malformed element must not
+	// deref here any more than in the ranking above.
+	const nearMiss = [...wellFormed(inferred.graph), ...wellFormed(inferred.semantic)]
 		.slice(0, 3)
-		.flatMap(c => c.evidence);
+		.flatMap(c => (Array.isArray(c.evidence) ? c.evidence : []))
+		.filter((e): e is string => typeof e === 'string');
 	const userRef = await deps.promptForRef();
 	if (present(userRef ?? undefined)) {
 		const id = userRef!.trim();

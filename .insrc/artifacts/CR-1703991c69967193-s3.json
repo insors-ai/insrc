@@ -1,0 +1,57 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1789741084358-zmju8u",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-18T14:18:04.358Z",
+    "model": "client",
+    "elapsedMs": 1,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1703991c69967193",
+    "storyId": "s3"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "1703991c69967193",
+    "storyId": "s3",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "src/workflow/locate/locate-parent.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/locate/locate-parent.ts:47",
+            "message": "The new `wellFormed` guard filters malformed inference candidates (e.g. a `[null]` or non-numeric-score element) before ranking, but no test directly exercises that array-of-garbage path — the existing malformed-input tests cover a resolved `{error}` object (absent lists), not a well-typed array carrying a bad element. Defensive-only (the daemon convention never emits such a shape), so LOW; a one-line test passing `{ graph: [null] }` would pin it.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 1
+    }
+  }
+}

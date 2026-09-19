@@ -133,6 +133,26 @@ sealed interface ResolveCommentResult {
 }
 
 /**
+ * The result of approving one artifact from the IDE (Story S005). Three-state,
+ * mirroring S002's ArtifactContentResult and S004's ResolveCommentResult, and
+ * classified from the daemon's workflow.approve reply: the block-verdict gate is
+ * NON-LOSSY and NOT an error, so a review-blocked artifact (in the reply's
+ * skipped[]) becomes [Withheld], DISTINCT from an approval ([Approved]) and from
+ * a failure ([Unavailable]). The plugin NEVER treats a withheld/errored reply as
+ * approved (k1/k3).
+ */
+sealed interface ApproveResult {
+    /** The artifact was approved (its approvedAt stamped daemon-side). */
+    data object Approved : ApproveResult
+
+    /** The review block-verdict gate withheld approval; [reason] is the gate reason. */
+    data class Withheld(val reason: String) : ApproveResult
+
+    /** The daemon was unreachable or the approve could not be applied; [reason] explains why. */
+    data class Unavailable(val reason: String) : ApproveResult
+}
+
+/**
  * Thrown when the daemon socket cannot be reached to answer a query or perform
  * registration. Surfaced to the caller (never swallowed) so the S003 lifecycle
  * / S005 onboarding consumers can offer setup — the gateway itself has no retry
@@ -203,6 +223,25 @@ interface DaemonGateway {
         artifactId: String,
         comments: List<ReviewCommentDto>,
     ): ResolveCommentResult
+
+    /**
+     * Approve the artifact at [mdPath] through the EXISTING workflow.approve path
+     * (Story S005 / k3). [mdPath] is the sc1 descriptor's path, which is ABSOLUTE
+     * (workflow.pending emits an absolute path) — it is forwarded as the absolute
+     * artifactPath unchanged (a relative one is joined onto [projectRootPath]);
+     * [overrideReason] is sent as overrideReview when non-null. A
+     * thin forward + classification of the reply — NO client approval reasoning
+     * (k1). Like the other read/write paths it does NOT throw: it returns
+     * [ApproveResult.Approved] (approved[] non-empty), [ApproveResult.Withheld]
+     * (skipped[] — the block gate, ok=true), or [ApproveResult.Unavailable] (a
+     * non-ok reply / DaemonUnavailable / a malformed or empty reply). A withheld
+     * or errored reply is NEVER read as approved (the k3 gate fidelity).
+     */
+    fun approve(
+        projectRootPath: String,
+        mdPath: String,
+        overrideReason: String? = null,
+    ): ApproveResult
 }
 
 /**
@@ -327,6 +366,40 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
             ResolveCommentResult.Unavailable(e.message ?: "unexpected daemon fault")
         }
 
+    override fun approve(
+        projectRootPath: String,
+        mdPath: String,
+        overrideReason: String?,
+    ): ApproveResult =
+        try {
+            // workflow.pending emits an ABSOLUTE mdPath (resolveArtifactMdPath ->
+            // join(repoPath, 'docs', ...)), and workflow.approve treats artifactPath
+            // as an absolute, repo-independent path. So pass an absolute mdPath
+            // THROUGH — prefixing projectRootPath would double the repo prefix and
+            // the artifact would never be found. Only a (defensive) relative mdPath
+            // is joined onto the repo root.
+            val artifactPath = if (java.io.File(mdPath).isAbsolute) mdPath else "$projectRootPath/$mdPath"
+            val params = buildMap<String, Any?> {
+                put(PARAM_REPO, projectRootPath)
+                put(PARAM_ARTIFACT_PATH, artifactPath)
+                overrideReason?.let { put(PARAM_OVERRIDE_REVIEW, it) }
+            }
+            val r = rpc.call(METHOD_WORKFLOW_APPROVE, params)
+            if (!r.ok || r.error != null) {
+                // A non-ok reply (missing artifact / {error}) is Unavailable
+                // (k1, k3, S001 framing) — never a silent Approved.
+                ApproveResult.Unavailable(r.error ?: "workflow.approve returned an error")
+            } else {
+                classifyApprove(r.data)
+            }
+        } catch (e: DaemonUnavailableException) {
+            ApproveResult.Unavailable(e.message ?: "daemon unavailable")
+        } catch (e: RuntimeException) {
+            // Defense-in-depth: any unexpected transport fault surfaces as
+            // Unavailable rather than crashing the Approve action.
+            ApproveResult.Unavailable(e.message ?: "unexpected daemon fault")
+        }
+
     companion object {
         const val METHOD_STATUS = "daemon.status"
         const val METHOD_REPO_LIST = "repo.list"
@@ -334,6 +407,7 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
         const val METHOD_WORKFLOW_PENDING = "workflow.pending"
         const val METHOD_WORKFLOW_ARTIFACT_CONTENT = "workflow.artifactContent"
         const val METHOD_WORKFLOW_RESOLVE_COMMENT = "workflow.resolveComment"
+        const val METHOD_WORKFLOW_APPROVE = "workflow.approve"
         const val FIELD_STALE = "stale"
         const val FIELD_REPOS = "repos"
         const val FIELD_ARTIFACTS = "artifacts"
@@ -342,6 +416,28 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
         const val PARAM_MD_PATH = "mdPath"
         const val PARAM_ARTIFACT_ID = "artifactId"
         const val PARAM_COMMENTS = "comments"
+        const val PARAM_ARTIFACT_PATH = "artifactPath"
+        const val PARAM_OVERRIDE_REVIEW = "overrideReview"
+
+        /**
+         * Classify a successful workflow.approve reply (Story S005). approved[]
+         * non-empty -> Approved (a single approve, so at most one entry;
+         * idempotent re-approve also lands here); else skipped[] non-empty ->
+         * Withheld(reason) — the block gate (NOT a success); else a defensive
+         * Unavailable so an unexpected shape is never read as Approved.
+         */
+        private fun classifyApprove(data: Map<String, Any?>): ApproveResult {
+            val approved = data["approved"] as? List<*> ?: emptyList<Any?>()
+            if (approved.isNotEmpty()) return ApproveResult.Approved
+            val skipped = data["skipped"] as? List<*> ?: emptyList<Any?>()
+            val first = skipped.firstOrNull() as? Map<*, *>
+            if (first != null) {
+                val reason = (first["reason"] as? String)?.takeIf { it.isNotEmpty() }
+                    ?: "approval withheld by the review gate"
+                return ApproveResult.Withheld(reason)
+            }
+            return ApproveResult.Unavailable("no artifact approved or withheld")
+        }
 
         /** Serialize one comment to the wire map, omitting null anchor fields
          *  (the daemon treats an absent field the same as a null one). */

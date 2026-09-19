@@ -1,9 +1,13 @@
 package ai.insors.insrc.jetbrains.review
 
+import ai.insors.insrc.jetbrains.daemon.ApproveResult
+import ai.insors.insrc.jetbrains.daemon.ArtifactReviewViewDto
 import ai.insors.insrc.jetbrains.daemon.DaemonGateway
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBScrollPane
@@ -13,6 +17,8 @@ import com.intellij.ui.jcef.JBCefBrowser
 import com.intellij.util.ui.JBUI
 import java.awt.BorderLayout
 import java.awt.CardLayout
+import java.awt.FlowLayout
+import javax.swing.JButton
 import javax.swing.JComponent
 import javax.swing.JPanel
 import javax.swing.SwingConstants
@@ -32,9 +38,41 @@ internal class ArtifactContentPane(
     private val project: Project,
     private val gateway: DaemonGateway,
     private val parentDisposable: Disposable,
+    // S005: invoked on the EDT after a successful Approve so the pending list
+    // drops the just-approved artifact (ReviewPanel wires it to refreshNow()).
+    private val onApproved: () -> Unit = {},
 ) {
     private val cards = CardLayout()
-    private val root = JPanel(cards)
+    // The card container (status / native / jcef). Wrapped by [root] below so an
+    // Approve action bar can sit above it (S005).
+    private val content = JPanel(cards)
+    private val root = JPanel(BorderLayout())
+
+    // S005 Approve action bar (above the content, visible in every card).
+    private val approveButton = JButton("Approve").apply { addActionListener { doApprove(null) } }
+    private val overrideButton = JButton("Approve anyway…").apply { addActionListener { promptOverrideAndApprove() } }
+    private val blockLabel = JBLabel("").apply {
+        border = JBUI.Borders.emptyLeft(8)
+        foreground = JBUI.CurrentTheme.ContextHelp.FOREGROUND
+    }
+    private val actionBar = JPanel(FlowLayout(FlowLayout.LEFT, 6, 4)).apply {
+        add(approveButton)
+        add(overrideButton)
+        add(blockLabel)
+        isVisible = false   // shown only once an artifact view is loaded
+    }
+
+    // The artifact currently shown, so Approve knows its target + gate state (S005).
+    private var currentView: ArtifactReviewViewDto? = null
+    private var currentMdPath: String? = null
+
+    // Blocks a double-click from starting a second concurrent approve (EDT-only).
+    private var approving = false
+
+    // Set once the currently-shown artifact has been approved from here, so the
+    // Approve controls disable (a re-approve is idempotent daemon-side but the
+    // stale button is confusing) until a different artifact is loaded.
+    private var approvedTarget = false
 
     private val statusLabel = JBLabel("", SwingConstants.CENTER).apply { border = JBUI.Borders.empty(16) }
 
@@ -71,12 +109,14 @@ internal class ArtifactContentPane(
     val component: JComponent get() = root
 
     init {
-        root.add(statusLabel, CARD_STATUS)
+        root.add(actionBar, BorderLayout.NORTH)
+        root.add(content, BorderLayout.CENTER)
+        content.add(statusLabel, CARD_STATUS)
         val nativeCard = JPanel(BorderLayout()).apply {
             add(nativeNotice, BorderLayout.NORTH)
             add(JBScrollPane(nativeArea), BorderLayout.CENTER)
         }
-        root.add(nativeCard, CARD_NATIVE)
+        content.add(nativeCard, CARD_NATIVE)
         if (jcefSupported) {
             val b = try {
                 JBCefBrowser().also { Disposer.register(parentDisposable, it) }
@@ -86,7 +126,7 @@ internal class ArtifactContentPane(
             }
             browser = b
             if (b != null) {
-                root.add(b.component, CARD_JCEF)
+                content.add(b.component, CARD_JCEF)
                 commentLayer = try {
                     ArtifactCommentLayer(
                         browser = b,
@@ -103,24 +143,30 @@ internal class ArtifactContentPane(
         }
         Disposer.register(parentDisposable) { disposed = true }
         statusLabel.text = "Select an artifact above to review it."
-        cards.show(root, CARD_STATUS)
+        cards.show(content, CARD_STATUS)
     }
 
-    /** Show a plain status message (loading / no-path / hint). */
+    /** Show a plain status message (loading / no-path / hint). Hides the Approve
+     *  action bar — there is no loaded artifact to approve. */
     fun showMessage(text: String) {
+        clearApproveTarget()
         statusLabel.text = text
-        cards.show(root, CARD_STATUS)
+        cards.show(content, CARD_STATUS)
     }
 
-    /** Render a content-view state. Unavailable is DISTINCT from empty (ac2). */
-    fun render(view: ArtifactContentView) {
+    /** Render a content-view state. Unavailable is DISTINCT from empty (ac2).
+     *  [mdPath] is the selected artifact's rendered path (S005): the Approve
+     *  action composes the absolute artifactPath from it. */
+    fun render(view: ArtifactContentView, mdPath: String) {
         if (disposed) return
         when (view) {
             is ArtifactContentView.Unavailable -> {
+                clearApproveTarget()
                 statusLabel.text = "insrc content unavailable — ${view.reason}"
-                cards.show(root, CARD_STATUS)
+                cards.show(content, CARD_STATUS)
             }
             is ArtifactContentView.Rendered -> {
+                setApproveTarget(view.view, mdPath)
                 val md = view.view.renderedMarkdown
                 // renderModeFor keeps the gate->surface decision testable; the
                 // actual browser may still be null (creation failed) -> native.
@@ -133,7 +179,7 @@ internal class ArtifactContentPane(
                         // fetch was in flight) must not throw on a dead browser.
                         try {
                             b.loadHTML(html)
-                            cards.show(root, CARD_JCEF)
+                            cards.show(content, CARD_JCEF)
                             return
                         } catch (t: Throwable) {
                             log.warn("insrc: JCEF loadHTML failed; using the native fallback", t)
@@ -145,9 +191,104 @@ internal class ArtifactContentPane(
                 }
                 nativeArea.text = md
                 nativeArea.caretPosition = 0
-                cards.show(root, CARD_NATIVE)
+                cards.show(content, CARD_NATIVE)
             }
         }
+    }
+
+    // ---- S005 Approve action ------------------------------------------------
+
+    /** Remember the loaded artifact + show/gate the Approve controls (EDT). */
+    private fun setApproveTarget(view: ArtifactReviewViewDto, mdPath: String) {
+        // A re-render for a DIFFERENT artifact clears the approved-latch; a
+        // re-render of the same just-approved artifact keeps the buttons disabled.
+        if (mdPath != currentMdPath) approvedTarget = false
+        currentView = view
+        currentMdPath = mdPath
+        actionBar.isVisible = true
+        updateApproveControls()
+    }
+
+    /** Hide the Approve controls — no artifact is loaded. */
+    private fun clearApproveTarget() {
+        currentView = null
+        currentMdPath = null
+        approvedTarget = false
+        actionBar.isVisible = false
+    }
+
+    /** Enable normal Approve only for an approvable artifact with a resolvable
+     *  path; show the blockReason when a review verdict withholds it. The
+     *  override ('Approve anyway') stays available as the explicit power path. */
+    private fun updateApproveControls() {
+        val view = currentView
+        val hasTarget = view != null && !currentMdPath.isNullOrEmpty() && !project.basePath.isNullOrEmpty()
+        val actionable = hasTarget && !approving && !approvedTarget
+        approveButton.isEnabled = actionable && ApproveDecision.enabled(view!!)
+        overrideButton.isEnabled = actionable
+        blockLabel.text = when {
+            approvedTarget -> "Approved ✓"
+            view != null && !view.approvable -> view.blockReason ?: "Approval is blocked by the review verdict."
+            else -> ""
+        }
+    }
+
+    private fun promptOverrideAndApprove() {
+        val view = currentView ?: return
+        val reason = Messages.showInputDialog(
+            project,
+            "Reason to approve past the review block (leave empty for a normal approve):",
+            "Approve Anyway",
+            Messages.getWarningIcon(),
+            view.blockReason ?: "",
+            null,
+        )
+        if (reason == null) return   // dialog cancelled
+        // A blank reason normalizes to no override -> a normal approve (the block
+        // gate still applies), matching the daemon's overrideReview semantics.
+        doApprove(ApproveDecision.normalizeOverride(reason))
+    }
+
+    private fun doApprove(overrideReason: String?) {
+        if (disposed || approving) return
+        val view = currentView ?: return
+        val md = currentMdPath
+        val repo = project.basePath
+        if (md.isNullOrEmpty() || repo.isNullOrEmpty()) {
+            notifyUser("Cannot approve: the artifact has no resolvable path.", true)
+            return
+        }
+        // A normal Approve (no override) is only offered for an approvable
+        // artifact; the override path may proceed regardless (daemon-gated).
+        if (overrideReason == null && !ApproveDecision.enabled(view)) return
+        approving = true
+        updateApproveControls()
+        ApplicationManager.getApplication().executeOnPooledThread {
+            val result = try {
+                gateway.approve(repo, md, overrideReason)
+            } catch (t: Throwable) {
+                ApproveResult.Unavailable(t.message ?: "approve failed")
+            }
+            ApplicationManager.getApplication().invokeLater({ applyApprove(result, md) }, { disposed })
+        }
+    }
+
+    private fun applyApprove(result: ApproveResult, approvedMdPath: String) {
+        approving = false
+        if (disposed) return
+        when (result) {
+            is ApproveResult.Approved -> {
+                // Latch the "Approved" state ONLY when the artifact just approved is
+                // still the one shown — a reply that lands after the reviewer moved
+                // to a different pending artifact must not disable/label THAT one.
+                if (ApproveDecision.latchApproved(approvedMdPath, currentMdPath)) approvedTarget = true
+                notifyUser("Approved.", false)
+                if (ApproveDecision.shouldRefresh(result)) onApproved()   // drop it off the pending list (ac3)
+            }
+            is ApproveResult.Withheld -> notifyUser("Approval withheld: ${result.reason}", true)
+            is ApproveResult.Unavailable -> notifyUser("Approve failed: ${result.reason}", true)
+        }
+        updateApproveControls()
     }
 
     /**

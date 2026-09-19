@@ -4,6 +4,7 @@ import ai.insors.insrc.jetbrains.IdeKind
 import ai.insors.insrc.jetbrains.LifecycleBroadcaster
 import ai.insors.insrc.jetbrains.ProjectContext
 import ai.insors.insrc.jetbrains.daemon.DaemonGateway
+import ai.insors.insrc.jetbrains.daemon.ApproveResult
 import ai.insors.insrc.jetbrains.daemon.ArtifactContentResult
 import ai.insors.insrc.jetbrains.daemon.ResolveCommentResult
 import ai.insors.insrc.jetbrains.daemon.ReviewCommentDto
@@ -37,6 +38,9 @@ class DaemonLifecycleServiceTest : BasePlatformTestCase() {
 
         override fun resolveComment(projectRootPath: String, artifactId: String, comments: List<ReviewCommentDto>): ResolveCommentResult =
             throw AssertionError("S003 must never call resolveComment (that is the review panel)")
+
+        override fun approve(projectRootPath: String, mdPath: String, overrideReason: String?): ApproveResult =
+            throw AssertionError("S003 must never call approve (that is the review panel)")
     }
 
     private class FakeConsent(initial: Boolean) : SetupConsentStore {

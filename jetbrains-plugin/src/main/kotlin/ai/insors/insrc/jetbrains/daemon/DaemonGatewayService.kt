@@ -36,4 +36,11 @@ class DaemonGatewayService : DaemonGateway {
         comments: List<ReviewCommentDto>,
     ): ResolveCommentResult =
         delegate.resolveComment(projectRootPath, artifactId, comments)
+
+    override fun approve(
+        projectRootPath: String,
+        mdPath: String,
+        overrideReason: String?,
+    ): ApproveResult =
+        delegate.approve(projectRootPath, mdPath, overrideReason)
 }

@@ -1,0 +1,72 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1789827812730-9ngjdq",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-19T14:23:32.730Z",
+    "model": "client",
+    "elapsedMs": 7,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "238917216d8fd532",
+    "storyId": "s5"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "238917216d8fd532",
+    "storyId": "s5",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGateway.kt",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGatewayService.kt",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/review/ArtifactContentPane.kt",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/review/ReviewToolWindow.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleServiceTest.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/onboarding/OnboardingCleanupIntegrationTest.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/onboarding/OnboardingLifecycleTest.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/onboarding/OnboardingWiringTest.kt"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/review/ArtifactContentPane.kt:246",
+            "message": "The Swing/JCEF Approve wiring (the action bar, the Messages.showInputDialog override prompt, doApprove's off-EDT gateway.approve + EDT applyApprove marshaling, the approving/approvedTarget state) has no automated test — it needs a live IDE/JCEF surface. This is a disclosed residual: the load-bearing decisions were extracted into the pure ApproveDecision (enabled / normalizeOverride / shouldRefresh / latchApproved) + the gateway classification incl. the real UnixSocketDaemonRpc.parse framing boundary, all covered by ApproveTest (10 tests). The button/dialog/EDT wiring is the manual/backstopped surface.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGateway.kt:381",
+            "message": "Independent cold review (opposite-actor) found + this build FIXED a HIGH real-state failure: approve() composed the artifactPath as \"$projectRootPath/$mdPath\", but workflow.pending emits an ABSOLUTE mdPath (resolveArtifactMdPath), so the repo prefix was DOUBLED and every real Approve failed — hidden by a relative-path test fixture. Fixed by passing an absolute mdPath through unchanged (java.io.File(mdPath).isAbsolute) + an absolute-path regression test. Plus a LOW (stale post-approve pane -> an approvedTarget latch) and a self-introduced MED the re-review caught (the latch leaked 'Approved ✓' onto a DIFFERENT artifact on a mid-flight switch -> guarded by the pure ApproveDecision.latchApproved(approvedMdPath, currentMdPath) identity check + a headless test). Re-review CLEAN. Recorded here as the resolved risk. The k3 gate fidelity (skipped[]->Withheld never Approved; ok=true alone never success) was independently verified correct.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 2
+    }
+  }
+}

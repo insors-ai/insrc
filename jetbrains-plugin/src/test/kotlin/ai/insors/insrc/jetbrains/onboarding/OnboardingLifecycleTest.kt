@@ -3,6 +3,7 @@ package ai.insors.insrc.jetbrains.onboarding
 import ai.insors.insrc.jetbrains.IdeKind
 import ai.insors.insrc.jetbrains.ProjectContext
 import ai.insors.insrc.jetbrains.daemon.DaemonGateway
+import ai.insors.insrc.jetbrains.daemon.ApproveResult
 import ai.insors.insrc.jetbrains.daemon.ArtifactContentResult
 import ai.insors.insrc.jetbrains.daemon.ResolveCommentResult
 import ai.insors.insrc.jetbrains.daemon.ReviewCommentDto
@@ -60,6 +61,9 @@ class OnboardingLifecycleTest {
 
         override fun resolveComment(projectRootPath: String, artifactId: String, comments: List<ReviewCommentDto>): ResolveCommentResult =
             ResolveCommentResult.Unavailable("not used in this test")
+
+        override fun approve(projectRootPath: String, mdPath: String, overrideReason: String?): ApproveResult =
+            ApproveResult.Unavailable("not used in this test")
     }
 
     /** Recording sc3 adapter: scripts detectPresent; records removals; asserts writes never happen. */

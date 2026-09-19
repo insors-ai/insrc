@@ -84,8 +84,10 @@ internal class ReviewPanel(
     }
     private val statusLabel = JBLabel("", SwingConstants.CENTER).apply { border = JBUI.Borders.empty(16) }
 
-    // S002 content view (below the list in a vertical splitter).
-    private val contentPane = ArtifactContentPane(project, gateway, parentDisposable)
+    // S002 content view (below the list in a vertical splitter). S005: on a
+    // successful Approve the pane calls onApproved -> refreshNow() so the
+    // just-approved artifact drops off the pending list (ac3/k7).
+    private val contentPane = ArtifactContentPane(project, gateway, parentDisposable, onApproved = { refreshNow() })
 
     val component: JComponent get() = root
 
@@ -192,10 +194,11 @@ internal class ReviewPanel(
             return
         }
         contentPane.showMessage("Loading ${dto.kind}…")
+        val mdPath = dto.mdPath
         ApplicationManager.getApplication().executeOnPooledThread {
-            val result = gateway.artifactReviewView(repo, dto.mdPath)
+            val result = gateway.artifactReviewView(repo, mdPath)
             val view = ArtifactContentViews.of(result)
-            ApplicationManager.getApplication().invokeLater({ contentPane.render(view) }, project.disposed)
+            ApplicationManager.getApplication().invokeLater({ contentPane.render(view, mdPath) }, project.disposed)
         }
     }
 

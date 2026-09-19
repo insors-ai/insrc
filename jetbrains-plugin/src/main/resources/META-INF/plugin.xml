@@ -12,45 +12,94 @@
         assistant answers from a citation-grounded model of <i>your</i> codebase
         rather than guessing.</p>
 
-        <h3>What it does</h3>
+        <h3>What is insrc?</h3>
+        <p>insrc is a <b>local-first code-knowledge daemon</b>. It parses your repos
+        with tree-sitter into a typed entity/relation <b>graph</b> (backed by LMDB)
+        and a <b>vector store</b> (LanceDB) for semantic search, then serves two
+        things to your AI assistant over a private MCP server:</p>
+        <ul>
+            <li><b>Grounded analyze</b> &mdash; every answer about your code is built
+                from real graph queries and embedded search, and each claim is
+                <i>cited to a specific file and symbol</i>. No raw file dumps, no
+                hallucinated paths &mdash; the assistant reasons over a verified,
+                dependency-scoped model of the codebase.</li>
+            <li><b>A tracked workflow</b> &mdash; a human-in-the-loop authoring
+                pipeline that takes one request from
+                <code>triage &rarr; design &rarr; review &rarr; plan &rarr; build &rarr; code-review</code>,
+                producing an approved, cited artifact at every stage and refusing to
+                advance until you approve the one before it. Every change, large or
+                small, is tracked; a defect fix routes through a first-class
+                <i>bugfix</i> path that captures reproduction and root cause and can
+                open, link, and close a GitHub issue for you.</li>
+        </ul>
+        <p>All of this runs on your machine and reasons through your assistant's
+        existing <code>claude</code> / <code>codex</code> CLI sessions &mdash; there
+        are no API keys and no direct cloud calls from insrc itself.</p>
+
+        <h3>What the plugin does</h3>
         <ul>
             <li><b>One integration, four IDEs.</b> A single artifact activates
-                identically in IntelliJ IDEA, PyCharm, GoLand, and WebStorm.</li>
+                identically in IntelliJ IDEA, PyCharm, GoLand, and WebStorm &mdash; it
+                depends only on the shared platform module, so there is nothing
+                IDE-specific to install or configure per product.</li>
             <li><b>Wires your AI host automatically.</b> On project open it detects
-                your agentic assistant (JetBrains AI Assistant or Junie) and
-                registers the insrc MCP server plus the tracked-workflow steering
-                into that host's own configuration.</li>
+                your agentic assistant (JetBrains AI Assistant or Junie) and registers
+                the insrc MCP server into that host's own configuration, plus the
+                tracked-workflow steering into its rules file &mdash; so the assistant
+                immediately knows to ground its answers and route features through
+                insrc.</li>
             <li><b>One-click project enablement.</b> An "Enable insrc for this
                 project" prompt registers the open project with the insrc daemon;
-                every capability call is scoped to that project's path.</li>
-            <li><b>Manages the backing daemon.</b> Ensures the daemon is present and
-                current, provisioning a private Node runtime when the system one is
-                missing &mdash; first-time setup is a single explicit consent, updates
-                are silent.</li>
-            <li><b>Grounded analyze + tracked workflow.</b> Your assistant explores
-                the code through a citation-grounded graph, and features route through
-                insrc's tracked design &rarr; review &rarr; plan &rarr; build workflow.</li>
-            <li><b>Clean and reversible.</b> All writes into host config/rules files
-                are marker-delimited and preserve your own content; uninstalling the
-                plugin removes exactly those blocks, while a mere disable leaves them
-                intact.</li>
+                every capability call is scoped to that project's own path, so a
+                multi-project window keeps each repo's knowledge separate.</li>
+            <li><b>Manages the backing daemon for you.</b> It ensures the daemon is
+                present and up to date, and provisions a private, pinned Node runtime
+                when the system one is missing or unsuitable &mdash; first-time setup
+                is a single explicit consent, and later updates are silent and
+                automatic.</li>
+            <li><b>Grounded analyze + tracked workflow, in your assistant.</b> Once
+                wired, your existing IDE assistant explores the code through the
+                citation-grounded graph and can drive the full tracked design &rarr;
+                review &rarr; plan &rarr; build workflow without leaving the IDE.</li>
+            <li><b>Clean and reversible.</b> Every write into a host config or rules
+                file is marker-delimited and preserves your own surrounding content.
+                Uninstalling the plugin removes exactly those blocks and nothing else;
+                a mere disable leaves them intact so re-enabling is instant.</li>
         </ul>
 
+        <h3>How it works</h3>
+        <p>The plugin holds no model logic of its own. It is a configuration
+        orchestrator: it detects the host, writes the MCP + steering registration,
+        registers the project with the daemon, and keeps the daemon healthy. All
+        reasoning happens in your assistant, grounded by the daemon &mdash; the plugin
+        simply makes the connection and stays out of the way.</p>
+
         <h3>Privacy</h3>
-        <p>The plugin opens no cloud path and stores no credentials &mdash; all
-        reasoning runs through your assistant's existing CLI/OAuth sessions.</p>
+        <p>The plugin opens no cloud path and stores no credentials. The graph and
+        vectors live on your disk; embeddings are computed locally; and all LLM
+        access goes through your assistant's existing CLI/OAuth sessions. Nothing
+        about your code leaves your machine because of this plugin.</p>
 
         <h3>Requirements</h3>
         <ul>
             <li>A JetBrains AI host (AI Assistant or Junie) &mdash; without one the
-                plugin stays dormant and re-checks on later project opens.</li>
+                plugin stays dormant and re-checks on later project opens, so it is
+                safe to install ahead of time.</li>
             <li>Node (used by the daemon); the plugin provisions a private runtime
-                automatically if the system Node is unsuitable.</li>
-            <li>The insrc daemon, which the plugin installs on first use.</li>
+                automatically if the system Node is missing or unsuitable.</li>
+            <li>The insrc daemon, which the plugin installs and keeps current on first
+                use, with your consent.</li>
         </ul>
     ]]></description>
 
     <change-notes><![CDATA[
+        <h3>0.1.2</h3>
+        <ul>
+            <li>Expanded the Marketplace listing with a fuller description of what
+                insrc is (local-first code-knowledge daemon: grounded analyze + tracked
+                workflow) and how the plugin wires it into your IDE assistant. No
+                functional changes.</li>
+        </ul>
         <h3>0.1.1</h3>
         <ul>
             <li><b>Compatibility:</b> removed the upper IDE-build bound &mdash; the

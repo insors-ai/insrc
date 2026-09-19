@@ -1,0 +1,437 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1789813111023-npe0r6",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-19T10:23:05.561Z",
+    "epicCreatedAt": "2026-09-19T06:30:32.186Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 274519,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "238917216d8fd532",
+    "epicSlug": "ide-artifact-review-panel-jetbrains-plugin",
+    "storyId": "s2",
+    "lldRunId": "wf-1789811176946-8zjp4x",
+    "lldEffectiveHash": "c93cb4358ff4bac8cafea32cce98dffe14aa21172b7d14ee226c0ebaebfb947a",
+    "review": {
+      "artifact": "plan",
+      "stage": "plan",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "pl1",
+          "ref": "plan/ordering",
+          "kind": "ordering",
+          "severity": "LOW",
+          "premise": "The task dependsOn graph is acyclic with a valid topological order 1..6: t1,t4 roots; t2->t1; t3->t1; t5->{t3,t4}; t6->{t1,t2,t3,t5} — every dependency precedes its dependents.",
+          "evidence": "From the plan's own task table: roots t1,t4 (no deps); t2->t1; t3->t1; t5->{t3,t4}; t6->{t1,t2,t3,t5}. Order 1..6 places every dependency before its dependents — acyclic, valid topological order.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "pl2",
+          "ref": "t1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "t1 mirrors S001's handleWorkflowPending + PendingArtifact in src/workflow/pending.ts (the { error } convention it reuses).",
+          "evidence": "handleWorkflowPending confirmed at src/workflow/pending.ts:67 and interface PendingArtifact at src/workflow/pending.ts:42 — the S001 seam t1 mirrors.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "pl3",
+          "ref": "t1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "t1's sibling-.json read reuses the existing jsonPathForMd helper in src/workflow/gates.ts.",
+          "evidence": "jsonPathForMd confirmed at src/workflow/gates.ts:758 (read FOUND: 'export function jsonPathForMd(mdPath: string): string {').",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "pl4",
+          "ref": "t2",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "'workflow.artifactContent' is net-new — no handler by that name exists under src/ today; t2 registers it beside the existing 'workflow.pending'.",
+          "evidence": "'workflow.artifactContent' appears ONLY in this Epic's S002 LLD/PLAN docs — zero matches under src/ — while the sibling 'workflow.pending' is live at src/daemon/index.ts:579. Confirms t2's handler is net-new, registered beside an existing sibling.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "pl5",
+          "ref": "t3/t5",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "t3/t5 extend the shipped S001 plugin seams (DaemonGateway.call + PendingQueryResult + ReviewToolWindow/ReviewListViews) rather than re-implementing them.",
+          "evidence": "DaemonGateway.call at jetbrains-plugin/.../daemon/DaemonGateway.kt:111, sealed interface PendingQueryResult at :47, and ReviewToolWindowFactory at .../review/ReviewToolWindow.kt:41 all confirmed — the shipped S001 plugin seams t3/t5 extend.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "pl6",
+          "ref": "plan/coverage",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "Every LLD s2 test-strategy subject appears in the plan's test-strategy-coverage table mapped to >=1 task, and citations c1..c6 each map to an LLD s2 handoff section.",
+          "evidence": "Verifiable from the artifact under review: its test-strategy-coverage table lists all 15 LLD s2 subjects, each mapped to >=1 task (t1/t2/t3/t5 + the t6 aggregate), and citations c1..c6 are each referenced by >=1 task's derivedFrom. (The external LLD.md read probe used a bare path with no line anchor, hence 'not found'; it does not contradict the claim.)",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 6
+      },
+      "reviewedAt": "2026-09-19T10:24:21.301Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-19T10:27:20.683Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Daemon: ArtifactReviewView/OpenQuestionRef types + pure handleArtifactContent scan",
+        "summary": "Add the internal-shared types ArtifactReviewView + OpenQuestionRef and a pure handleArtifactContent(params, repoEnv) that resolves+validates repo/mdPath (docs/ path-traversal containment guard), reads the .md verbatim into renderedMarkdown, resolves the sibling .json via jsonPathForMd and reads openQuestions + the review block-verdict into approvable/blockReason, and maps every failure (repo/mdPath unresolved, path-escape, unreadable .md, missing/malformed .json) to a structured { error }. Mirrors S001's src/workflow/pending.ts (handleWorkflowPending + the { error } convention). Read-only.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "handleArtifactContent happy path returns ArtifactReviewView with renderedMarkdown byte-equal to the .md read verbatim, kind/artifactId from the identity, openQuestions from the .json, approvable=true when no block.",
+          "A standing review block-verdict -> approvable=false + blockReason; openQuestions absent -> empty list.",
+          "mdPath escaping docs/ (traversal/absolute/outside) -> { error } with no read; missing .md, missing/malformed .json, repo-unresolved, empty mdPath each -> { error }.",
+          "Read-only: no file created or mutated. tsc clean."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "handleArtifactContent: happy path assembles ArtifactReviewView (renderedMarkdown byte-equal to the .md; kind/artifactId/openQuestions/approvable=true)"
+          },
+          {
+            "level": "unit",
+            "name": "handleArtifactContent: standing block-verdict -> approvable=false + blockReason; openQuestions absent -> empty list"
+          },
+          {
+            "level": "unit",
+            "name": "handleArtifactContent: mdPath escaping docs/ / missing .md / missing-malformed .json / repo-unresolved / empty mdPath each -> { error }, no read on the escape case"
+          },
+          {
+            "level": "unit",
+            "name": "handleArtifactContent: read-only — no file created or mutated over the fixture"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Daemon: register the 'workflow.artifactContent' IPC handler",
+        "summary": "Register 'workflow.artifactContent' in the src/daemon/index.ts handler map (beside 'workflow.pending'), delegating to handleArtifactContent with process.env.INSRC_REPO as the fallback. Net-new method key; no existing handler changed.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Handler returns the ArtifactReviewView for a fixture repo + real pending .md (repo from params.repo || INSRC_REPO).",
+          "repo-unresolved / path-invalid -> an { error } result, never a partial view.",
+          "No existing handler (workflow.pending/workflow.approve/artifact.get) is changed. tsc clean; daemon subset green."
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "workflow.artifactContent handler: fixture repo + real pending .md -> ArtifactReviewView (delegates to handleArtifactContent with INSRC_REPO fallback)"
+          },
+          {
+            "level": "integration",
+            "name": "workflow.artifactContent handler: repo-unresolved / path-invalid -> { error } result, never a partial view"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Plugin: ArtifactReviewView/OpenQuestionRef/ArtifactContentResult + DaemonGateway.artifactReviewView wrapper",
+        "summary": "Add the Kotlin mirror types (ArtifactReviewView, OpenQuestionRef data classes; ArtifactContentResult sealed = Loaded(view)|Unavailable(reason)) and a DaemonGateway.artifactReviewView(projectRootPath, mdPath) wrapper over the existing call('workflow.artifactContent', {repo, mdPath}) transport, mapping ok->Loaded(view forwarded verbatim), ok=false/DaemonUnavailableException/RuntimeException->Unavailable(reason); wire it through DaemonGatewayService. Mirrors S001's DaemonGateway.pendingArtifacts + PendingQueryResult + parseArtifacts. Unit-tested against a fake/canned-reply DaemonRpc, so it does not require t2's live handler.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "artifactReviewView maps a fake DaemonRpc ok=true(view) -> Loaded with fields forwarded verbatim (no client classification).",
+          "ok=false / DaemonUnavailableException / malformed reply -> Unavailable(reason), never Loaded-blank.",
+          "Reaches the daemon only over DaemonGateway.call (no file/DB/cloud access). Compiles under JDK21/Gradle 8.10."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "artifactReviewView: fake DaemonRpc ok=true(view) -> Loaded with fields forwarded verbatim (k1)"
+          },
+          {
+            "level": "unit",
+            "name": "artifactReviewView: ok=false / DaemonUnavailableException / malformed -> Unavailable(reason), never Loaded-blank"
+          },
+          {
+            "level": "unit",
+            "name": "UnixSocketDaemonRpc.parse (real): {result:{view}} -> Loaded end-to-end; {result:{error}} -> Unavailable (framing boundary)"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Plugin: bundle the vendored markdown->HTML JS renderer as a local resource",
+        "summary": "Vendor a markdown->HTML renderer (e.g. marked/markdown-it, minified) under the plugin's resources and ensure it ships in the plugin jar (Gradle processResources / the existing bundleBackendAssets-style task), loadable into the JCEF page from a local URL — NO CDN / no network fetch, rendered read-only. This is the renderer the content view (t5) loads.",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "The vendored renderer file is present as a plugin resource and included in the built jar (verified via the Gradle resources output).",
+          "It is referenced only by a local/classpath URL — no http(s)/CDN reference anywhere in the loaded page.",
+          "License/version of the vendored bundle is recorded alongside it."
+        ],
+        "derivedFrom": [
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "bundled renderer: the vendored JS resource is present on the classpath / in the built resources and referenced by a local URL only (no http(s)/CDN string)"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Plugin: artifact content view in the ReviewToolWindow (JCEF render + native fallback)",
+        "summary": "Add the content view to the existing ReviewToolWindow. LAND THE PURE MAPPERS FIRST — ArtifactContentViews.of(ArtifactContentResult) -> a content-view state and renderModeFor(jcefSupported) -> JCEF_HTML|NATIVE_FALLBACK (mirroring S001's ReviewListViews so the testable core exists before any JCEF/EDT wiring) — then wire the panel: a pending-list selection triggers a bounded on-demand fetch via DaemonGateway.artifactReviewView; when JBCefApp.isSupported() render renderedMarkdown->HTML inside a JBCefBrowser using the t4 bundled JS renderer (passing the raw renderedMarkdown across the Kotlin->JS bridge, read-only), else degrade to a read-only native-editor fallback showing the same renderedMarkdown with the same review actions; show a distinct 'content unavailable' state on Unavailable. Off-EDT fetch, EDT render. In scope: render + fallback selection only — no inline-comment bridge (s3), no submit (s4), no approve wiring (s5); approvable/blockReason are carried as read-only data.",
+        "size": "L",
+        "order": 5,
+        "dependsOn": [
+          "t3",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "The pure ArtifactContentViews.of + renderModeFor mappers are extracted first and are unit-testable headlessly (no JCEF/EDT).",
+          "Selecting a pending artifact opens its content rendered legibly (JCEF HTML via the bundled JS renderer) within the tool window (ac1).",
+          "renderModeFor(false) -> the read-only native-editor fallback carrying the same review actions; Unavailable shows 'content unavailable', never a blank/empty pane (ac2).",
+          "The view shows exactly renderedMarkdown (the artifact's own content) with no second copy authored (ac3); the fetch is a single on-open request/reply, off the EDT with EDT render.",
+          "No s3/s4/s5 scope is implemented. Loads across the four IDEs off the shared platform module."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "ArtifactContentViews.of(Loaded) -> Rendered(renderedMarkdown); of(Unavailable) -> 'content unavailable' (distinct from a blank/empty view)"
+          },
+          {
+            "level": "unit",
+            "name": "renderModeFor(jcefSupported): JCEF_HTML when true, NATIVE_FALLBACK when false"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Tests: daemon (handleArtifactContent + handler) and plugin (gateway, real parse framing, view mappers)",
+        "summary": "Add daemon node:test units for handleArtifactContent (happy path byte-equal, block-verdict, empty openQuestions, path-escape, missing .md, missing/malformed .json, repo/mdPath unresolved, read-only) + an integration test for the workflow.artifactContent handler over a temp docs/ + .insrc/artifacts fixture; plugin JUnit for artifactReviewView (Loaded/Unavailable mapping via fake DaemonRpc), the REAL UnixSocketDaemonRpc.parse framing ({result:{view}}->Loaded, {result:{error}}->Unavailable), and the pure ArtifactContentViews/renderModeFor mappers. Verify locally (npx tsx --test; ./gradlew test JDK21) — no live socket, no GitHub CI.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "Every LLD test-strategy subject for ac1/ac2/ac3 has a passing test across the daemon + plugin layers.",
+          "Daemon subset green via npx tsx --test; plugin tests green via ./gradlew test on JDK21.",
+          "A real-parse test crosses the framing boundary (the S001 hollow-test lesson); no test hits a live socket or GitHub Actions."
+        ],
+        "derivedFrom": [
+          "c5",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Aggregate: the daemon handleArtifactContent + plugin gateway/mapper unit subjects run green (npx tsx --test; ./gradlew test JDK21)"
+          },
+          {
+            "level": "integration",
+            "name": "Aggregate: the workflow.artifactContent handler integration subjects run green over the temp docs/ + .insrc/artifacts fixture"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "happy path: renderedMarkdown EQUALS the .md read verbatim (byte-for-byte), kind/artifactId from identity, openQuestions from .json, approvable=true when no block (ac1/ac3)",
+        "coveredByTaskIds": [
+          "t1",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "standing block-verdict -> approvable=false + blockReason",
+        "coveredByTaskIds": [
+          "t1",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "openQuestions absent -> empty list, not an error",
+        "coveredByTaskIds": [
+          "t1",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "mdPath escaping docs/ -> { error }, no read (path-traversal guard)",
+        "coveredByTaskIds": [
+          "t1",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "missing/unreadable .md -> { error }",
+        "coveredByTaskIds": [
+          "t1",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "missing/malformed sibling .json -> { error }",
+        "coveredByTaskIds": [
+          "t1",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "repo unresolved / empty mdPath -> { error }",
+        "coveredByTaskIds": [
+          "t1",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "read-only: no file created or mutated",
+        "coveredByTaskIds": [
+          "t1",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "ok=true view payload -> Loaded(view), fields verbatim (k1)",
+        "coveredByTaskIds": [
+          "t3",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "ok=false / DaemonUnavailableException / malformed -> Unavailable(reason), never Loaded-blank",
+        "coveredByTaskIds": [
+          "t3",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "real parse: {result:{view}} -> Loaded end-to-end; {result:{error}} -> Unavailable (framing boundary, the S001 lesson)",
+        "coveredByTaskIds": [
+          "t3",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "ArtifactContentViews.of(Loaded) -> Rendered(renderedMarkdown); of(Unavailable) -> 'content unavailable'",
+        "coveredByTaskIds": [
+          "t5",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "renderModeFor(jcefSupported): JCEF_HTML when true, NATIVE_FALLBACK when false (ac2/lc2)",
+        "coveredByTaskIds": [
+          "t5",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "fixture repo + real pending .md -> ArtifactReviewView (delegates to handleArtifactContent with INSRC_REPO fallback)",
+        "coveredByTaskIds": [
+          "t2",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "repo-unresolved / path-invalid -> { error } result, never a partial view",
+        "coveredByTaskIds": [
+          "t2",
+          "t6"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 contractDetails.api workflow.artifactContent + handleArtifactContent + jsonPathForMd",
+      "quotedText": "'workflow.artifactContent': (params: { repo?: string; mdPath: string }) => Promise<ArtifactReviewView | { error: string }>"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 dataModelChanges ArtifactReviewView / OpenQuestionRef / ArtifactContentResult",
+      "quotedText": "+ interface ArtifactReviewView { artifactId; kind; renderedMarkdown; openQuestions; approvable; blockReason? }"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 errorPaths (path-traversal guard, missing .md/.json, repo/mdPath unresolved, socket-down -> { error }/Unavailable) + invariants",
+      "quotedText": "renderedMarkdown is the .md read verbatim — no transformation, no divergent second copy (k5/lc1/ac3)"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 interactionWithShared sc2 (implements) / sc1 (consumes) + DaemonGateway.artifactReviewView",
+      "quotedText": "Forwards the daemon's view verbatim (no client-side classification — k1)"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 testStrategy (daemon node:test + plugin JUnit incl. the real-parse framing test)",
+      "quotedText": "Daemon: node:test via npx tsx --test ... Plugin: JUnit5 + BasePlatformTestCase ... via ./gradlew test on JDK21"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 migration + resolved open question qe66729e4 (bundled JS renderer inside JCEF, vendored/local/no-CDN, read-only)",
+      "quotedText": "render renderedMarkdown->HTML in JBCefBrowser when JBCefApp.isSupported(), else the native-editor fallback"
+    }
+  ]
+}

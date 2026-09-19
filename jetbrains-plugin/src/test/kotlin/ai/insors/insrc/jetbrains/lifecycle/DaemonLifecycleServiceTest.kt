@@ -4,6 +4,7 @@ import ai.insors.insrc.jetbrains.IdeKind
 import ai.insors.insrc.jetbrains.LifecycleBroadcaster
 import ai.insors.insrc.jetbrains.ProjectContext
 import ai.insors.insrc.jetbrains.daemon.DaemonGateway
+import ai.insors.insrc.jetbrains.daemon.ArtifactContentResult
 import ai.insors.insrc.jetbrains.daemon.DaemonState
 import ai.insors.insrc.jetbrains.daemon.PendingQueryResult
 import ai.insors.insrc.jetbrains.daemon.RegistrationResult
@@ -29,6 +30,8 @@ class DaemonLifecycleServiceTest : BasePlatformTestCase() {
             throw AssertionError("S003 must never call registerProject (that is S005)")
         override fun pendingArtifacts(projectRootPath: String): PendingQueryResult =
             throw AssertionError("S003 must never call pendingArtifacts (that is the review panel)")
+        override fun artifactReviewView(projectRootPath: String, mdPath: String): ArtifactContentResult =
+            throw AssertionError("S003 must never call artifactReviewView (that is the review panel)")
     }
 
     private class FakeConsent(initial: Boolean) : SetupConsentStore {

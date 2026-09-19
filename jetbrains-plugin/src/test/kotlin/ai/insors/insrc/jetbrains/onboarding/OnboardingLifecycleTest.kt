@@ -3,6 +3,7 @@ package ai.insors.insrc.jetbrains.onboarding
 import ai.insors.insrc.jetbrains.IdeKind
 import ai.insors.insrc.jetbrains.ProjectContext
 import ai.insors.insrc.jetbrains.daemon.DaemonGateway
+import ai.insors.insrc.jetbrains.daemon.ArtifactContentResult
 import ai.insors.insrc.jetbrains.daemon.DaemonState
 import ai.insors.insrc.jetbrains.daemon.PendingQueryResult
 import ai.insors.insrc.jetbrains.daemon.DaemonUnavailableException
@@ -52,6 +53,8 @@ class OnboardingLifecycleTest {
         }
         override fun pendingArtifacts(projectRootPath: String): PendingQueryResult =
             PendingQueryResult.Available(emptyList())
+        override fun artifactReviewView(projectRootPath: String, mdPath: String): ArtifactContentResult =
+            ArtifactContentResult.Unavailable("not used in this test")
     }
 
     /** Recording sc3 adapter: scripts detectPresent; records removals; asserts writes never happen. */

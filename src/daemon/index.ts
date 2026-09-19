@@ -581,6 +581,21 @@ async function main(): Promise<void> {
 			return handleWorkflowPending(params as { repo?: string } | undefined, process.env['INSRC_REPO']);
 		},
 
+		// sc2 (ide-artifact-review-panel S002): the review view for one pending
+		// artifact — its own rendered .md content (verbatim, k5/lc1), open
+		// questions, and whether a review block-verdict withholds approval. A
+		// pure read (handleArtifactContent) path-guarded under docs/; a failure
+		// maps to a structured { error } the plugin renders as 'content
+		// unavailable', never a blank pane. Read-only; delegates like
+		// workflow.pending.
+		'workflow.artifactContent': async (params) => {
+			const { handleArtifactContent } = await import('../workflow/artifact-content.js');
+			return handleArtifactContent(
+				params as { repo?: string; mdPath?: string } | undefined,
+				process.env['INSRC_REPO'],
+			);
+		},
+
 		// Read-side of sc4 (S007): resolve a brainstorm SpecArtifact by its
 		// specHash, refusing an unapproved one. `define` / standalone
 		// `design.story` reach an approved spec ONLY through this IPC — never by

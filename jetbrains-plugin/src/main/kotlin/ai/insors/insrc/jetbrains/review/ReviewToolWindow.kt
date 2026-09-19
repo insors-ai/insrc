@@ -8,35 +8,39 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.openapi.wm.ex.ToolWindowManagerListener
 import com.intellij.ui.ColoredListCellRenderer
+import com.intellij.ui.OnePixelSplitter
 import com.intellij.ui.SimpleTextAttributes
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBScrollPane
+import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.content.ContentFactory
 import com.intellij.util.Alarm
 import com.intellij.util.ui.JBUI
-import java.awt.BorderLayout
 import java.awt.CardLayout
 import java.util.concurrent.atomic.AtomicInteger
 import javax.swing.DefaultListModel
 import javax.swing.JComponent
 import javax.swing.JList
 import javax.swing.JPanel
+import javax.swing.ListSelectionModel
 import javax.swing.SwingConstants
 
 /**
- * The review tool window (Story S001 / sc1, t4). Registered off the shared
- * platform module only (plugin.xml `toolWindow` extension), so the ONE plugin
- * artifact hosts it identically in IntelliJ IDEA, PyCharm, GoLand and WebStorm.
+ * The review tool window (Story S001 / sc1 list; Story S002 / sc2 content view).
+ * Registered off the shared platform module only (plugin.xml `toolWindow`
+ * extension), so the ONE plugin artifact hosts it identically in IntelliJ IDEA,
+ * PyCharm, GoLand and WebStorm.
  *
- * S001 owns the pending-LIST host only: it renders the pending set, "nothing
- * awaiting review", and "backing service unavailable". Selecting an artifact to
- * view its rendered content (and annotate/approve it) is s2+'s scope, consumed
- * later against the same [PendingArtifactDto] list this window shows.
+ * S001 owns the pending LIST; S002 adds the CONTENT VIEW that opens from a list
+ * selection and renders the selected artifact's own content (JCEF HTML via the
+ * bundled markdown renderer, or a read-only native fallback). Annotating (s3),
+ * submitting (s4), and approving (s5) remain later scope.
  */
 internal class ReviewToolWindowFactory : ToolWindowFactory, DumbAware {
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
@@ -48,11 +52,11 @@ internal class ReviewToolWindowFactory : ToolWindowFactory, DumbAware {
 }
 
 /**
- * The pending-list surface + its bounded poll driver. Discovery is bounded by
- * design (k7): an initial poll on creation, a refresh when the window becomes
- * visible (IDE focus), and a coarse self-rescheduling timer — never a hot loop
- * and never a held-open subscription. The one-shot [DaemonGateway] call runs on
- * a pooled thread; rendering is marshalled back to the EDT.
+ * The pending-list surface + its bounded poll driver (S001), plus the S002
+ * content view opened from a list selection. Discovery is bounded (k7): an
+ * initial poll, a refresh on window visibility (IDE focus), and a coarse
+ * self-rescheduling timer — never a hot loop. The one-shot [DaemonGateway] calls
+ * run on a pooled thread; rendering is marshalled to the EDT.
  */
 internal class ReviewPanel(
     private val project: Project,
@@ -69,28 +73,42 @@ internal class ReviewPanel(
     // running (k7: bounded discovery, never a growing poll loop).
     private val generation = AtomicInteger(0)
 
-    // CardLayout keeps the three states strictly distinct — showing one card
-    // never leaves a stale list behind (ac2: unavailable never shows as empty).
+    // CardLayout keeps the three list states strictly distinct — showing one
+    // card never leaves a stale list behind (ac2: unavailable never shows empty).
     private val cards = CardLayout()
     private val root = JPanel(cards)
     private val listModel = DefaultListModel<PendingArtifactDto>()
-    private val list = JBList(listModel).apply { cellRenderer = PendingArtifactRenderer() }
+    private val list = JBList(listModel).apply {
+        cellRenderer = PendingArtifactRenderer()
+        selectionMode = ListSelectionModel.SINGLE_SELECTION
+    }
     private val statusLabel = JBLabel("", SwingConstants.CENTER).apply { border = JBUI.Borders.empty(16) }
+
+    // S002 content view (below the list in a vertical splitter).
+    private val contentPane = ArtifactContentPane(project, gateway, parentDisposable)
 
     val component: JComponent get() = root
 
     init {
-        root.add(JBScrollPane(list), CARD_LIST)
+        val split = OnePixelSplitter(true, 0.5f).apply {
+            firstComponent = JBScrollPane(list)
+            secondComponent = contentPane.component
+        }
+        root.add(split, CARD_LIST)
         root.add(statusLabel, CARD_STATUS)
         // Neutral initial card so the empty JBList is never mistaken for
-        // "nothing pending" before the first poll lands (#4b).
+        // "nothing pending" before the first poll lands.
         statusLabel.text = "Checking for artifacts awaiting review…"
         cards.show(root, CARD_STATUS)
+
+        // S002: open the selected artifact's content view (on a stable selection).
+        list.addListSelectionListener { e ->
+            if (!e.valueIsAdjusting) openSelected()
+        }
     }
 
     /** Wire the bounded triggers (visibility + coarse timer) and poll once now. */
     fun start() {
-        // IDE-focus trigger: refresh when our tool window is (re)shown.
         project.messageBus.connect(parentDisposable).subscribe(
             ToolWindowManagerListener.TOPIC,
             object : ToolWindowManagerListener {
@@ -109,7 +127,7 @@ internal class ReviewPanel(
         schedule(g, 0)
     }
 
-    /** Queue one poll for generation [gen], tolerating a dispose race (#4a). */
+    /** Queue one poll for generation [gen], tolerating a dispose race. */
     private fun schedule(gen: Int, delayMs: Int) {
         if (alarm.isDisposed) return
         try {
@@ -121,10 +139,9 @@ internal class ReviewPanel(
 
     /**
      * One bounded poll cycle for generation [gen] (on the Alarm's pooled
-     * thread): a superseded generation (a newer refreshNow ran) no-ops so only
-     * the latest chain survives. Otherwise query the daemon, render on the EDT,
-     * then reschedule the SAME generation a coarse interval out. A rootless/light
-     * project has nothing to review — NothingPending, not a false "unavailable".
+     * thread): a superseded generation no-ops so only the latest chain survives.
+     * Otherwise query the daemon, render on the EDT, then reschedule the SAME
+     * generation a coarse interval out.
      */
     private fun poll(gen: Int) {
         if (gen != generation.get()) return   // superseded by a newer refresh
@@ -144,8 +161,14 @@ internal class ReviewPanel(
     private fun render(view: ReviewListView) {
         when (view) {
             is ReviewListView.Pending -> {
+                // Preserve the selection across a refresh where possible.
+                val prev = list.selectedValue?.artifactId
                 listModel.clear()
                 view.artifacts.forEach(listModel::addElement)
+                if (prev != null) {
+                    val idx = view.artifacts.indexOfFirst { it.artifactId == prev }
+                    if (idx >= 0) list.selectedIndex = idx
+                }
                 cards.show(root, CARD_LIST)
             }
             ReviewListView.NothingPending -> {
@@ -153,10 +176,26 @@ internal class ReviewPanel(
                 cards.show(root, CARD_STATUS)
             }
             is ReviewListView.Unavailable -> {
-                // Distinct from empty — never blanks to an empty list (ac2).
                 statusLabel.text = "insrc backing service unavailable — ${view.reason}"
                 cards.show(root, CARD_STATUS)
             }
+        }
+    }
+
+    /** Fetch + render the selected artifact's content (off-EDT call, EDT render). */
+    private fun openSelected() {
+        val dto = list.selectedValue ?: return
+        val repo = project.basePath
+        if (repo.isNullOrEmpty()) return
+        if (dto.mdPath.isEmpty()) {
+            contentPane.showMessage("This artifact has no rendered path to open.")
+            return
+        }
+        contentPane.showMessage("Loading ${dto.kind}…")
+        ApplicationManager.getApplication().executeOnPooledThread {
+            val result = gateway.artifactReviewView(repo, dto.mdPath)
+            val view = ArtifactContentViews.of(result)
+            ApplicationManager.getApplication().invokeLater({ contentPane.render(view) }, project.disposed)
         }
     }
 

@@ -26,4 +26,7 @@ class DaemonGatewayService : DaemonGateway {
 
     override fun pendingArtifacts(projectRootPath: String): PendingQueryResult =
         delegate.pendingArtifacts(projectRootPath)
+
+    override fun artifactReviewView(projectRootPath: String, mdPath: String): ArtifactContentResult =
+        delegate.artifactReviewView(projectRootPath, mdPath)
 }

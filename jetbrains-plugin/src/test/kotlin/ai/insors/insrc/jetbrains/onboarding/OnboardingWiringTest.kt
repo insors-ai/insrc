@@ -4,6 +4,7 @@ import ai.insors.insrc.jetbrains.IdeKind
 import ai.insors.insrc.jetbrains.LifecycleBroadcaster
 import ai.insors.insrc.jetbrains.ProjectContext
 import ai.insors.insrc.jetbrains.daemon.DaemonGateway
+import ai.insors.insrc.jetbrains.daemon.ArtifactContentResult
 import ai.insors.insrc.jetbrains.daemon.DaemonState
 import ai.insors.insrc.jetbrains.daemon.PendingQueryResult
 import ai.insors.insrc.jetbrains.daemon.RegistrationResult
@@ -44,6 +45,7 @@ class OnboardingWiringTest : BasePlatformTestCase() {
         override fun isProjectRegistered(projectRootPath: String): Boolean = true // no offer needed
         override fun registerProject(projectRootPath: String): RegistrationResult = RegistrationResult(true)
         override fun pendingArtifacts(projectRootPath: String): PendingQueryResult = PendingQueryResult.Available(emptyList())
+        override fun artifactReviewView(projectRootPath: String, mdPath: String): ArtifactContentResult = ArtifactContentResult.Unavailable("not used in this test")
     }
 
     fun testOnboardingLifecycle_registeredOnBroadcaster_offEdt_and_reachedByUninstall() {

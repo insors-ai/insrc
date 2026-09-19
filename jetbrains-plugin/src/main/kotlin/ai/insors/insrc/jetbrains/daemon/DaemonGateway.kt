@@ -53,6 +53,47 @@ sealed interface PendingQueryResult {
 }
 
 /**
+ * One open question projected from an artifact's body + resolutions (Story S002
+ * / sc2), forwarded VERBATIM from the daemon's `workflow.artifactContent` reply.
+ * `status` is one of open / resolved / ignored / deferred.
+ */
+data class OpenQuestionDto(
+    val id: String,
+    val text: String,
+    val status: String,
+)
+
+/**
+ * The read-only review view of one artifact (Story S002 / sc2), forwarded
+ * VERBATIM from the daemon (k1 — the plugin renders + transports, it does not
+ * classify approval). [renderedMarkdown] is the artifact's OWN .md content
+ * (no divergent second copy, k5); [approvable] is false when a review
+ * block-verdict stands, with [blockReason] explaining it (surfaced by s5).
+ */
+data class ArtifactReviewViewDto(
+    val artifactId: String,
+    val kind: String,
+    val renderedMarkdown: String,
+    val openQuestions: List<OpenQuestionDto>,
+    val approvable: Boolean,
+    val blockReason: String?,
+)
+
+/**
+ * The result of an artifact-content fetch (Story S002 / sc2). Two-state like
+ * [PendingQueryResult]: a [Loaded] view is DISTINCT from [Unavailable] (the
+ * daemon could not be reached / errored) — the content pane must never blank an
+ * unreachable/errored fetch to empty content (k1, ac2).
+ */
+sealed interface ArtifactContentResult {
+    /** The daemon answered; [view] is the artifact's review view. */
+    data class Loaded(val view: ArtifactReviewViewDto) : ArtifactContentResult
+
+    /** The daemon was unreachable or returned an error; [reason] explains why. */
+    data class Unavailable(val reason: String) : ArtifactContentResult
+}
+
+/**
  * Thrown when the daemon socket cannot be reached to answer a query or perform
  * registration. Surfaced to the caller (never swallowed) so the S003 lifecycle
  * / S005 onboarding consumers can offer setup — the gateway itself has no retry
@@ -98,6 +139,16 @@ interface DaemonGateway {
      * state (never a blank/empty list, ac2).
      */
     fun pendingArtifacts(projectRootPath: String): PendingQueryResult
+
+    /**
+     * The review view of one pending artifact identified by its [mdPath] (Story
+     * S002 / sc2). A thin forward of the daemon's `workflow.artifactContent`
+     * reply — NO client-side rendering of approval state (k1). Like
+     * [pendingArtifacts] it does NOT throw: an unreachable or error-returning
+     * daemon maps to [ArtifactContentResult.Unavailable] so the content pane
+     * shows a distinct 'content unavailable' state, never a blank (ac2).
+     */
+    fun artifactReviewView(projectRootPath: String, mdPath: String): ArtifactContentResult
 }
 
 /**
@@ -171,16 +222,36 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
             PendingQueryResult.Unavailable(e.message ?: "unexpected daemon fault")
         }
 
+    override fun artifactReviewView(projectRootPath: String, mdPath: String): ArtifactContentResult =
+        try {
+            val r = rpc.call(METHOD_WORKFLOW_ARTIFACT_CONTENT, mapOf(PARAM_REPO to projectRootPath, PARAM_MD_PATH to mdPath))
+            if (!r.ok || r.error != null) {
+                // An error reply (repo/path-invalid / unreadable) is Unavailable,
+                // never a blank Loaded view (k1, ac2).
+                ArtifactContentResult.Unavailable(r.error ?: "workflow.artifactContent returned an error")
+            } else {
+                ArtifactContentResult.Loaded(parseView(r.data))
+            }
+        } catch (e: DaemonUnavailableException) {
+            ArtifactContentResult.Unavailable(e.message ?: "daemon unavailable")
+        } catch (e: RuntimeException) {
+            // Defense-in-depth: any unexpected transport fault surfaces as
+            // Unavailable rather than crashing the content-view open (ac2).
+            ArtifactContentResult.Unavailable(e.message ?: "unexpected daemon fault")
+        }
+
     companion object {
         const val METHOD_STATUS = "daemon.status"
         const val METHOD_REPO_LIST = "repo.list"
         const val METHOD_REPO_ADD = "repo.add"
         const val METHOD_WORKFLOW_PENDING = "workflow.pending"
+        const val METHOD_WORKFLOW_ARTIFACT_CONTENT = "workflow.artifactContent"
         const val FIELD_STALE = "stale"
         const val FIELD_REPOS = "repos"
         const val FIELD_ARTIFACTS = "artifacts"
         const val PARAM_PATH = "path"
         const val PARAM_REPO = "repo"
+        const val PARAM_MD_PATH = "mdPath"
 
         /**
          * Map the daemon's raw `artifacts` payload to DTOs, forwarding every
@@ -205,5 +276,27 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
         }
 
         private fun str(v: Any?): String = (v as? String) ?: ""
+
+        /**
+         * Map the daemon's `workflow.artifactContent` reply to the review-view
+         * DTO, forwarding every field verbatim (k1). openQuestions is a list of
+         * { id, text, status } maps; blockReason is nullable; approvable is a
+         * boolean (defaults false — the safe side: not approvable unless the
+         * daemon says so).
+         */
+        private fun parseView(data: Map<String, Any?>): ArtifactReviewViewDto {
+            val questions = (data["openQuestions"] as? List<*>)?.mapNotNull { item ->
+                val m = item as? Map<*, *> ?: return@mapNotNull null
+                OpenQuestionDto(id = str(m["id"]), text = str(m["text"]), status = str(m["status"]))
+            } ?: emptyList()
+            return ArtifactReviewViewDto(
+                artifactId = str(data["artifactId"]),
+                kind = str(data["kind"]),
+                renderedMarkdown = str(data["renderedMarkdown"]),
+                openQuestions = questions,
+                approvable = data["approvable"] as? Boolean ?: false,
+                blockReason = (data["blockReason"] as? String)?.takeIf { it.isNotEmpty() },
+            )
+        }
     }
 }

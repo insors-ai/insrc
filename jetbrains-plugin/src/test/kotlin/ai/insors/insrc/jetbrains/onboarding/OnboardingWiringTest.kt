@@ -5,6 +5,7 @@ import ai.insors.insrc.jetbrains.LifecycleBroadcaster
 import ai.insors.insrc.jetbrains.ProjectContext
 import ai.insors.insrc.jetbrains.daemon.DaemonGateway
 import ai.insors.insrc.jetbrains.daemon.DaemonState
+import ai.insors.insrc.jetbrains.daemon.PendingQueryResult
 import ai.insors.insrc.jetbrains.daemon.RegistrationResult
 import ai.insors.insrc.jetbrains.host.AiHost
 import ai.insors.insrc.jetbrains.host.AiHostAdapter
@@ -42,6 +43,7 @@ class OnboardingWiringTest : BasePlatformTestCase() {
         override fun probe(): DaemonState = DaemonState.CURRENT
         override fun isProjectRegistered(projectRootPath: String): Boolean = true // no offer needed
         override fun registerProject(projectRootPath: String): RegistrationResult = RegistrationResult(true)
+        override fun pendingArtifacts(projectRootPath: String): PendingQueryResult = PendingQueryResult.Available(emptyList())
     }
 
     fun testOnboardingLifecycle_registeredOnBroadcaster_offEdt_and_reachedByUninstall() {

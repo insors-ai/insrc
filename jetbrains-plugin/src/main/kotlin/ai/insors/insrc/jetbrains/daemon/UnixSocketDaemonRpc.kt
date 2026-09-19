@@ -82,19 +82,55 @@ class UnixSocketDaemonRpc(
         return sb.toString()
     }
 
-    private fun parse(reply: String): DaemonResult {
+    /**
+     * Map a raw JSON-RPC reply to a [DaemonResult]. `internal` + testable
+     * without a socket: it touches no I/O, so the wire→result contract can be
+     * driven directly by a unit test (the fake-[DaemonRpc] gateway tests never
+     * cross this boundary, so the two framings below MUST be tested here).
+     *
+     * Two failure framings collapse to `ok=false`:
+     *  1. A TOP-LEVEL `error` — what the server emits when a handler THROWS or
+     *     the method is unknown (server.ts). It is a STRING there (not an
+     *     object), so we read it as a primitive first — reading it as an object
+     *     (the old code) threw ClassCastException on every real daemon error,
+     *     e.g. a version-skew "unknown method".
+     *  2. A STRUCTURED `result.error` — the daemon-wide failure convention: a
+     *     handler that RETURNS `{ error: '...' }` (workflow.pending, repo.*,
+     *     …). The server frames a returned value as `result`, so this never
+     *     reaches the top-level `error` field; without surfacing it here, a
+     *     structured error would read as an empty success and (for
+     *     workflow.pending) render as "nothing awaiting review" — the exact
+     *     silent-empty-list the feature forbids (S001 / ac2).
+     */
+    internal fun parse(reply: String): DaemonResult {
         if (reply.isBlank()) {
             log.warn("insrc: empty daemon reply")
             return DaemonResult(ok = false, error = "empty daemon reply")
         }
         val obj = JsonParser.parseString(reply).asJsonObject
-        obj.getAsJsonObject("error")?.let { err ->
-            val message = err.get("message")?.asString ?: "daemon error"
-            return DaemonResult(ok = false, error = message)
+
+        obj.get("error")?.takeUnless { it.isJsonNull }?.let { err ->
+            return DaemonResult(ok = false, error = topLevelErrorMessage(err))
         }
+
         val result = obj.getAsJsonObject("result") ?: JsonObject()
+
+        // Structured failure convention: a non-empty string `result.error`.
+        val structuredError = result.get("error")
+            ?.takeIf { it.isJsonPrimitive }?.asString?.takeIf { it.isNotEmpty() }
+        if (structuredError != null) {
+            return DaemonResult(ok = false, error = structuredError)
+        }
+
         @Suppress("UNCHECKED_CAST")
         val data = gson.fromJson(result, Map::class.java) as? Map<String, Any?> ?: emptyMap()
         return DaemonResult(ok = true, data = data)
+    }
+
+    /** A top-level `error` is a string (server.ts); tolerate an object `{message}` too. */
+    private fun topLevelErrorMessage(err: com.google.gson.JsonElement): String = when {
+        err.isJsonPrimitive -> err.asString
+        err.isJsonObject -> err.asJsonObject.get("message")?.asString ?: "daemon error"
+        else -> "daemon error"
     }
 }

@@ -95,10 +95,15 @@
     <change-notes><![CDATA[
         <h3>0.1.2</h3>
         <ul>
+            <li><b>New: an "insrc Review" tool window</b> that lists the workflow
+                artifacts awaiting your approval, so pending design / plan / review
+                work is visible without leaving the IDE. This is the foundation of
+                the in-IDE review panel &mdash; viewing an artifact's rendered
+                content, annotating it, and approving it in place arrive in later
+                updates.</li>
             <li>Expanded the Marketplace listing with a fuller description of what
                 insrc is (local-first code-knowledge daemon: grounded analyze + tracked
-                workflow) and how the plugin wires it into your IDE assistant. No
-                functional changes.</li>
+                workflow) and how the plugin wires it into your IDE assistant.</li>
         </ul>
         <h3>0.1.1</h3>
         <ul>
@@ -141,6 +146,18 @@
           the one-click daemon setup offer and setup/update failure reports.
         -->
         <notificationGroup id="insrc" displayType="BALLOON"/>
+
+        <!--
+          Review tool window (Epic ide-artifact-review-panel / Story S001 / t4):
+          the pending-approval artifact list. Registered on the shared platform
+          module only, so the single artifact hosts it in all four IDEs. anchor
+          right keeps it out of the way of the project/structure views.
+        -->
+        <toolWindow
+            id="insrc Review"
+            anchor="right"
+            secondary="true"
+            factoryClass="ai.insors.insrc.jetbrains.review.ReviewToolWindowFactory"/>
     </extensions>
 
 </idea-plugin>

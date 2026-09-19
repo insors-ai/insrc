@@ -4,6 +4,7 @@ import ai.insors.insrc.jetbrains.IdeKind
 import ai.insors.insrc.jetbrains.ProjectContext
 import ai.insors.insrc.jetbrains.daemon.DaemonGateway
 import ai.insors.insrc.jetbrains.daemon.DaemonState
+import ai.insors.insrc.jetbrains.daemon.PendingQueryResult
 import ai.insors.insrc.jetbrains.daemon.DaemonUnavailableException
 import ai.insors.insrc.jetbrains.daemon.RegistrationResult
 import ai.insors.insrc.jetbrains.host.AiHost
@@ -49,6 +50,8 @@ class OnboardingLifecycleTest {
             if (registerThrows) throw DaemonUnavailableException("insrc-test: daemon down at accept")
             return registerResult
         }
+        override fun pendingArtifacts(projectRootPath: String): PendingQueryResult =
+            PendingQueryResult.Available(emptyList())
     }
 
     /** Recording sc3 adapter: scripts detectPresent; records removals; asserts writes never happen. */

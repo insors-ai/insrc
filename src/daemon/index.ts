@@ -569,6 +569,18 @@ async function main(): Promise<void> {
 			});
 		},
 
+		// sc1 (ide-artifact-review-panel S001): the pending-approval artifact
+		// list the JetBrains review panel polls. A pure scan of the canonical
+		// `.insrc/artifacts` store (approvedAt absent AND rejectedAt absent) —
+		// the single source of truth, so the panel can never disagree with real
+		// approval state (k1/k5). Read-only; one bounded readdir per call, no
+		// push stream (k7). A store the scanner cannot READ maps to a structured
+		// `{ error }` the plugin relays — never a silent empty list.
+		'workflow.pending': async (params) => {
+			const { handleWorkflowPending } = await import('../workflow/pending.js');
+			return handleWorkflowPending(params as { repo?: string } | undefined, process.env['INSRC_REPO']);
+		},
+
 		// Read-side of sc4 (S007): resolve a brainstorm SpecArtifact by its
 		// specHash, refusing an unapproved one. `define` / standalone
 		// `design.story` reach an approved spec ONLY through this IPC — never by

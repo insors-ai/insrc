@@ -1,0 +1,555 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1789800359056-6mub19",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-19T06:52:59.083Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 419993,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-09-19T06:30:32.186Z",
+    "epicHash": "238917216d8fd532",
+    "epicSlug": "ide-artifact-review-panel-jetbrains-plugin",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1789799576767-kl7v1b",
+    "hldEffectiveHash": "c93cb4358ff4bac8cafea32cce98dffe14aa21172b7d14ee226c0ebaebfb947a",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "ref": "c3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "ArtifactMetaBase carries approvedAt (types.ts:342) and rejectedAt (types.ts:344); pending is derived from both absent, and approveWorkflowTarget (gates.ts:617) stamps approvedAt.",
+          "evidence": "src/workflow/types.ts carries approvedAt?/rejectedAt? and src/workflow/gates.ts defines approveWorkflowTarget (32 matches incl. the real source files); reads confirm types.ts:342/344.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl2",
+          "ref": "c7",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "Artifacts persist under ARTIFACTS_DIR '.insrc/artifacts' as <KIND>-<hash>.json, and resolve.ts already enumerates that directory (artifactsDir + readdirSync) — the scan pattern listPendingArtifacts reuses.",
+          "evidence": "ARTIFACTS_DIR = '.insrc/artifacts' at src/workflow/storage.ts:53 and artifactsDir/readdirSync enumeration in resolve.ts confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl3",
+          "ref": "c2",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "The daemon has workflow.approve/artifact.get/artifact.search but NO workflow.pending handler — it is net-new and additive.",
+          "evidence": "'workflow.approve' handler at src/daemon/index.ts:555 confirmed; 'workflow.pending' appears only in this Epic's HLD/LLD docs, never under src/ — confirming it is net-new.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl4",
+          "ref": "c4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The plugin's DaemonGateway.call(method, params) one-shot socket client exists and is the transport the new pendingArtifacts wrapper extends.",
+          "evidence": "DaemonGateway.kt:69 `fun call(method,params)` and UnixSocketDaemonRpc.kt confirmed — the transport the new wrapper extends.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl5",
+          "ref": "c1",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "s1 owns sc1 (PendingArtifactList) per the HLD, and implements the workflow.pending contract; s2/s5 consume it — consistent with the HLD story boundaries.",
+          "evidence": "The Epic HLD lists sc1 (PendingArtifactList) ownedByStory=s1; the LLD implements it and s2/s5 consume it — the cross-artifact trace holds.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 5
+      },
+      "reviewedAt": "2026-09-19T06:54:05.531Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-19T07:08:36.646Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Chosen framework a1: a thin three-layer review surface bolted onto existing daemon capability. The daemon gains two small typed request/reply handlers — a read that enumerates the open project's pending-approval artifacts and a write that records reviewer comments through the existing open-question resolution machinery — while approval and artifact-content reads reuse the existing workflow.approve and artifact.get handlers unchanged. The JetBrains plugin extends its existing one-shot Unix-socket DaemonGateway with thin call() wrappers for those methods and adds a JCEF tool-window panel that renders the artifact's own content as HTML with inline PR-style anchored comment threads, a Submit action that records comments as open-question resolutions, and an Approve action that calls the existing approve path. The panel is gated by JBCefApp.isSupported() with a read-only native-editor fallback, and pending-artifact discovery is a bounded poll of the read handler. Reasoning stays entirely daemon-side (k1); the plugin only renders and transports.",
+      "ownedContracts": [
+        {
+          "id": "sc1",
+          "name": "PendingArtifactList",
+          "purpose": "The typed descriptor of a pending-approval artifact plus the read contract that enumerates them for the open project. Produced by the discovery story; consumed by the stories that open an artifact and that approve it, so both address an artifact by the same identity.",
+          "interfaceSketch": "// daemon IPC 'workflow.pending' (read)\ninterface WorkflowPendingRequest { readonly repo: string }\ninterface PendingArtifact {\n  readonly artifactId: string;        // canonical file identity, e.g. 'LLD-<hash>-s5' / 'DEF-<hash>'\n  readonly kind: 'SPEC' | 'DEF' | 'HLD' | 'LLD' | 'PLAN' | 'ISSUE' | 'CR';\n  readonly title: string;\n  readonly mdPath: string;            // rendered .md path under docs/\n  readonly workItemId?: string;       // canonical E…:S…:T… when present\n  readonly openQuestionCount: number;\n  readonly state: 'pending';          // approvedAt absent AND not rejected\n}\ninterface WorkflowPendingResult { readonly artifacts: readonly PendingArtifact[] }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s5"
+          ],
+          "assumptions": [
+            "c2",
+            "c7"
+          ]
+        }
+      ],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [
+          "sc1"
+        ],
+        "depends": [],
+        "internal": "Private to s1: the daemon-side scan of the project's artifact store that classifies pending (approvedAt absent, not rejected) vs approved vs rejected; the plugin-side poll scheduler (project-open, IDE focus, coarse timer) and the tool-window list entry that renders the pending set, the empty 'nothing awaiting review' state, and the 'backing service unavailable' state. How often the poll fires and how the list is presented are s1's own concerns."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc2"
+          ],
+          "depends": [
+            "sc1"
+          ],
+          "internal": "Private to s2: the JCEF browser lifecycle, the JBCefApp.isSupported() gate, the HTML rendering of the artifact's renderedMarkdown, and the read-only native-editor fallback view when JCEF is unavailable. The mechanics of turning renderedMarkdown into displayed HTML stay inside s2."
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc3"
+          ],
+          "depends": [
+            "sc2"
+          ],
+          "internal": "Private to s3: the inline-anchor UI mechanics (selecting a part of the rendered artifact, showing a thread there), the JBCefJSQuery add/edit/remove-comment bridge, and the un-submitted, presentation-only comment buffer held in the panel before Submit. No approval or resolution reasoning happens here (k1)."
+        },
+        {
+          "storyId": "s4",
+          "owns": [],
+          "depends": [
+            "sc2",
+            "sc3"
+          ],
+          "internal": "Private to s4: the mapping from anchored ReviewComments onto recordResolution calls (which anchor targets which open question, and whether it becomes a resolve / ignore / defer / general note), invoked through the workflow.resolveComment write handler, plus the success/failure reporting so a failed submission is surfaced and never silently dropped."
+        },
+        {
+          "storyId": "s5",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "Private to s5: the Approve action wiring to the existing workflow.approve handler, explicit-override handling, block-reason display when a review verdict withholds approval, and the post-approve refresh so the just-approved artifact drops off the pending list. s5 adds no approval logic of its own — it calls the existing approve path."
+        }
+      ],
+      "rolloutPhase": "Phase A — Discover, read, and approve (minimal review loop)",
+      "nonFunctional": {
+        "performance": "Discovery is a bounded polled read (project-open, IDE focus, a coarse timer) — no hot loop, no held-open subscription (k7). Each poll is one request/reply over the local socket returning a small descriptor list; panel render cost is O(artifact size) inside JCEF. Approval and comment-recording are single request/reply calls.",
+        "security": "All daemon access is over the existing local Unix-domain-socket JSON-RPC channel; the plugin opens no cloud or REST path and stores no credentials (k2). Approval flows only through the existing approve path with its block-verdict gate (k3).",
+        "observability": "workflow.pending / workflow.resolveComment / approve outcomes are logged through the daemon's standard workflow logging; user-visible successes and failures (submit failed, approval withheld with reason) surface through the plugin's existing 'insrc' notification group.",
+        "durability": "Recorded resolutions are persisted daemon-side by the existing recordResolution machinery and approvals by approveWorkflowTarget; un-submitted comments are presentation-only in the panel and are not durable until Submit. The artifact remains the single source of truth (k5)."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "workflow.pending",
+          "signature": "// src/daemon/index.ts handler-map entry (RpcHandler)\n'workflow.pending': (params: WorkflowPendingRequest) => Promise<WorkflowPendingResult>",
+          "parameters": [
+            {
+              "name": "params",
+              "type": "WorkflowPendingRequest",
+              "purpose": "Carries `repo` (the open project's absolute path); when absent the daemon falls back to process.env.INSRC_REPO, matching the existing handler convention.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<WorkflowPendingResult>",
+            "meaning": "{ artifacts: PendingArtifact[] } — every artifact in the repo's store whose approval state is pending (approvedAt absent AND rejectedAt absent), each as the sc1 descriptor. An empty artifacts[] means nothing is pending (distinct from an error)."
+          },
+          "errors": [
+            {
+              "type": "repo-unresolved",
+              "condition": "Neither params.repo nor INSRC_REPO yields a usable repo path — returned as an { error } result (the plugin renders the 'unavailable' state, ac2)."
+            },
+            {
+              "type": "store-unreadable",
+              "condition": "The .insrc/artifacts directory cannot be read — surfaced as an { error } result, never a silent empty list (ac2)."
+            }
+          ],
+          "preconditions": [
+            "The repo is a registered insrc workspace with an .insrc/artifacts store (absent store = empty pending list, not an error)."
+          ],
+          "postconditions": [
+            "Reasoning stays daemon-side (k1); the plugin only calls this handler.",
+            "Every returned descriptor has state==='pending'; no approved or rejected artifact appears (ac1)."
+          ]
+        },
+        {
+          "name": "listPendingArtifacts",
+          "signature": "// new pure daemon helper composing the cited storage/types symbols\nfunction listPendingArtifacts(repoPath: string): readonly PendingArtifact[]",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "Absolute repo path whose ARTIFACTS_DIR ('.insrc/artifacts') is scanned.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "readonly PendingArtifact[]",
+            "meaning": "The pending descriptors. Enumerates ARTIFACTS_DIR/*.json (the pattern resolve.ts already uses), parses each once, keeps those with meta.approvedAt absent AND meta.rejectedAt absent whose KIND (from the filename prefix) is in the sc1 kind union, and maps each to a PendingArtifact (kind from prefix, title from body, mdPath from the storage path helpers, workItemId from meta, openQuestionCount from body.openQuestions?.length ?? 0)."
+          },
+          "errors": [
+            {
+              "type": "throws-on-store-unreadable",
+              "condition": "readdir/parse of the store fails — the handler above catches and maps to an { error } result."
+            }
+          ],
+          "preconditions": [
+            "Pure over the filesystem; no DB, no daemon state (rule 1: the daemon owns the read, but this helper is a plain fs scan)."
+          ],
+          "postconditions": [
+            "Deterministic: identical store => identical list; no embedding/index dependency (k7)."
+          ]
+        },
+        {
+          "name": "DaemonGateway.pendingArtifacts",
+          "signature": "// jetbrains-plugin daemon/ — thin wrapper over the existing DaemonGateway.call\nfun pendingArtifacts(projectRootPath: String): PendingQueryResult\n// where PendingQueryResult = Available(items: List<PendingArtifactDto>) | Unavailable(reason: String)",
+          "parameters": [
+            {
+              "name": "projectRootPath",
+              "type": "String",
+              "purpose": "The open project's root path, forwarded as the `repo` param of the workflow.pending call over the existing local Unix-domain socket (k2).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "PendingQueryResult",
+            "meaning": "Available(list) on a successful DaemonResult (empty list = 'nothing awaiting review', ac3); Unavailable(reason) when the DaemonResult is not ok or the socket is unreachable (ac2). The plugin performs NO classification — it forwards the daemon's descriptors verbatim (k1)."
+          },
+          "errors": [
+            {
+              "type": "DaemonUnavailableException",
+              "condition": "The existing UnixSocketDaemonRpc raises it when the socket is unreachable; the wrapper maps it to Unavailable (ac2), never to an empty Available."
+            }
+          ],
+          "preconditions": [
+            "Invoked on the bounded poll cadence (project-open via InsrcProjectOpenActivity, IDE focus, coarse timer) — never a hot loop (k7/lc1)."
+          ],
+          "postconditions": [
+            "Available vs Unavailable are distinct so the tool-window list entry can show 'nothing pending' (ac3) separately from 'backing service unavailable' (ac2)."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "PendingArtifact / WorkflowPendingRequest / WorkflowPendingResult",
+        "change": "new",
+        "details": "The sc1 descriptor + request/result types, declared as the typed contract of the workflow.pending handler. PendingArtifact = { artifactId, kind (the sc1 union), title, mdPath, workItemId?, openQuestionCount, state: 'pending' }. New internal-shared types; they add no field to any existing artifact type.",
+        "schemaDiff": "+interface PendingArtifact { readonly artifactId: string; readonly kind: 'SPEC'|'DEF'|'HLD'|'LLD'|'PLAN'|'ISSUE'|'CR'; readonly title: string; readonly mdPath: string; readonly workItemId?: string; readonly openQuestionCount: number; readonly state: 'pending'; }\n+interface WorkflowPendingRequest { readonly repo: string }\n+interface WorkflowPendingResult { readonly artifacts: readonly PendingArtifact[] }",
+        "callSites": [
+          "src/daemon/index.ts (the new handler entry)",
+          "src/workflow/storage.ts (ARTIFACTS_DIR + artifact-id helpers for mdPath)",
+          "src/workflow/types.ts (ArtifactMetaBase.approvedAt/rejectedAt read to classify)"
+        ]
+      },
+      {
+        "entity": "ArtifactMetaBase.approvedAt / rejectedAt",
+        "change": "invariant-change",
+        "details": "No schema change — these existing optional fields (types.ts:342/344) are READ (not written) to derive pending = approvedAt absent AND rejectedAt absent. s1 relies on them staying the authoritative approval-state markers (already true; approveWorkflowTarget stamps approvedAt).",
+        "callSites": [
+          "src/workflow/types.ts:342",
+          "src/workflow/types.ts:344",
+          "src/workflow/gates.ts:617"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "implements",
+        "howDetails": "s1 owns sc1 and realises it: the daemon workflow.pending handler returns exactly WorkflowPendingResult{ artifacts: PendingArtifact[] }, and the plugin's DaemonGateway.pendingArtifacts wrapper forwards those descriptors verbatim to the pending-list tool-window entry. s2 (open/read) and s5 (approve) later CONSUME this same descriptor to address an artifact by its artifactId — s1 defines the identity; it does not render the artifact body (s2/sc2) or approve it (s5)."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The daemon socket is unreachable when the plugin polls workflow.pending.",
+          "detection": "UnixSocketDaemonRpc.call throws DaemonUnavailableException (or the DaemonResult comes back ok=false) — the wrapper inspects the result/exception, not the artifact list.",
+          "response": "DaemonGateway.pendingArtifacts returns Unavailable(reason); the tool-window list entry renders the 'backing service unavailable' state and does NOT clear or blank the last-known pending list into an empty one.",
+          "userImpact": "The reviewer sees an explicit 'insrc unavailable' indication instead of a misleading 'nothing to review' (ac2).",
+          "recoverable": true
+        },
+        {
+          "scenario": "The .insrc/artifacts directory cannot be read on the daemon side (permissions, transient FS error).",
+          "detection": "listPendingArtifacts' readdir/parse throws; the workflow.pending handler catches it and returns an { error } result rather than a partial list.",
+          "response": "The handler returns { error }, which the plugin maps to Unavailable (ac2) — an unreadable store is never reported as zero pending.",
+          "userImpact": "Same explicit-unavailable signal; the reviewer is not told 'nothing pending' when the store simply could not be read.",
+          "recoverable": true
+        },
+        {
+          "scenario": "One artifact JSON file is malformed / unparseable while the rest are fine.",
+          "detection": "JSON.parse of that single file throws inside the per-file loop of listPendingArtifacts.",
+          "response": "Skip the malformed file (log it via the daemon's standard workflow logging) and continue enumerating the others; one bad file does not fail the whole scan or drop the other pending artifacts.",
+          "userImpact": "The reviewer still sees every well-formed pending artifact; the corrupt one is omitted and logged rather than crashing the list.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "The .insrc/artifacts directory is absent (a repo that has run no workflow yet).",
+          "expected": "listPendingArtifacts returns [] and the handler returns { artifacts: [] } — the 'nothing awaiting review' state (ac3), NOT an error."
+        },
+        {
+          "input": "All artifacts are already approved or rejected (each has approvedAt or rejectedAt set).",
+          "expected": "Empty artifacts[] — the distinct 'nothing pending' state (ac3), separate from 'unavailable' (ac2)."
+        },
+        {
+          "input": "An artifact JSON of a KIND outside the sc1 union (e.g. a BUILD record) that has no approvedAt/rejectedAt.",
+          "expected": "Excluded from the pending list — the handler keeps only KINDs in the sc1 union (SPEC/DEF/HLD/LLD/PLAN/ISSUE/CR), so non-reviewer-approvable kinds never appear (ac1)."
+        },
+        {
+          "input": "A pending artifact whose body carries no openQuestions array.",
+          "expected": "openQuestionCount is 0 (body.openQuestions?.length ?? 0); the descriptor is still returned."
+        },
+        {
+          "input": "A pending artifact with no workItemId on its meta (e.g. a standalone SPEC/ISSUE).",
+          "expected": "workItemId is omitted (optional in sc1); artifactId still uniquely identifies it."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Pending is derived solely from the persisted approval-state markers meta.approvedAt (absent) AND meta.rejectedAt (absent) — the same fields the existing approve/reject path stamps — so the IDE's pending list can never disagree with real approval state. s1 READS these fields; it never writes approval/rejection (that stays with approveWorkflowTarget).",
+          "source": "c3"
+        },
+        {
+          "text": "Discovery imposes no unbounded always-on load: the daemon read is one bounded directory scan per call, invoked only on a bounded poll cadence (project-open / IDE focus / coarse timer), never a hot loop or a held-open subscription.",
+          "source": "c7"
+        },
+        {
+          "text": "All daemon access stays on the existing local Unix-domain-socket JSON-RPC channel via the existing DaemonGateway.call; the plugin opens no cloud/REST path and performs no approval/pending classification itself (thin orchestrator).",
+          "source": "c4"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove listPendingArtifacts classifies pending vs approved vs rejected correctly and maps every sc1 descriptor field, against a fabricated .insrc/artifacts fixture — no daemon, no socket.",
+          "subjects": [
+            "listPendingArtifacts: a store with mixed states (one approvedAt-set, one rejectedAt-set, two with neither) returns ONLY the two pending ones (ac1)",
+            "listPendingArtifacts: each returned descriptor carries kind (from the filename prefix), title (from body), mdPath, workItemId (when meta has it), openQuestionCount (body.openQuestions?.length ?? 0), state==='pending'",
+            "listPendingArtifacts: a KIND outside the sc1 union (e.g. a BUILD-*.json with no approvedAt/rejectedAt) is excluded",
+            "listPendingArtifacts: absent .insrc/artifacts dir -> [] (not a throw)",
+            "listPendingArtifacts: a malformed single JSON file is skipped and the other pending artifacts still returned",
+            "listPendingArtifacts: a pending artifact with no openQuestions array -> openQuestionCount 0; with no workItemId -> workItemId omitted"
+          ],
+          "fixturesNeeded": [
+            "A temp repo dir with a fabricated .insrc/artifacts holding <KIND>-<hash>.json files in approved / rejected / pending / non-union / malformed states"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove the workflow.pending daemon handler returns WorkflowPendingResult over the real handler path and errors (not empty lists) on an unreadable/unresolved store (ac2/ac3).",
+          "subjects": [
+            "workflow.pending handler: given a fixture repo with pending artifacts -> { artifacts: [...] } with the pending set (ac1)",
+            "workflow.pending handler: given a repo whose store is all-approved/rejected or absent -> { artifacts: [] } (ac3, distinct from error)",
+            "workflow.pending handler: repo-unresolved (no params.repo, no INSRC_REPO) -> an { error } result, NOT { artifacts: [] } (ac2)",
+            "workflow.pending handler: store readdir throws -> { error } result (ac2)"
+          ],
+          "fixturesNeeded": [
+            "The same fabricated .insrc/artifacts fixture wired through the handler map with params.repo set / unset"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove the plugin DaemonGateway.pendingArtifacts wrapper maps a successful vs failing DaemonResult to the distinct Available/Unavailable states, against a fake DaemonRpc (no real socket).",
+          "subjects": [
+            "pendingArtifacts: a fake DaemonRpc returning ok=true with an artifacts list -> Available(list) (ac1); empty list -> Available(emptyList) => 'nothing pending' (ac3)",
+            "pendingArtifacts: a fake DaemonRpc returning ok=false (or throwing DaemonUnavailableException) -> Unavailable(reason), never Available(emptyList) (ac2)",
+            "pendingArtifacts: the wrapper performs no classification — it forwards the daemon descriptors verbatim (k1)"
+          ],
+          "fixturesNeeded": [
+            "A fake DaemonRpc/DaemonGateway (the existing Sc2DaemonGatewayTest fake pattern) returning canned ok/error DaemonResults"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "listPendingArtifacts: mixed-state store returns ONLY the two pending ones",
+            "listPendingArtifacts: a KIND outside the sc1 union is excluded",
+            "workflow.pending handler: fixture repo with pending artifacts -> { artifacts: [...] }",
+            "pendingArtifacts: ok=true with a list -> Available(list)"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "workflow.pending handler: repo-unresolved -> { error }, NOT { artifacts: [] }",
+            "workflow.pending handler: store readdir throws -> { error }",
+            "pendingArtifacts: ok=false / DaemonUnavailableException -> Unavailable(reason), never Available(emptyList)"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "listPendingArtifacts: absent .insrc/artifacts dir -> []",
+            "workflow.pending handler: all-approved/rejected or absent store -> { artifacts: [] }",
+            "pendingArtifacts: ok=true empty list -> Available(emptyList) => 'nothing pending'"
+          ]
+        }
+      ],
+      "testFramework": "Daemon/TypeScript: node:test via tsx (npx tsx --test 'src/**/__tests__/*.test.ts'), matching the existing src/daemon + src/workflow test layout with a temp-dir .insrc/artifacts fixture. Plugin/Kotlin: JUnit via Gradle (./gradlew test, JDK21) reusing the existing fake-DaemonRpc pattern from Sc2DaemonGatewayTest — no live socket. Per the avoid-GitHub-CI-credits rule both are verified LOCALLY, not on CI."
+    },
+    "migration": {
+      "stateBefore": "The daemon IPC registry (src/daemon/index.ts) exposes workflow.approve (:555) and artifact.get (:980) but NO list-pending enumeration — there is no way for a client to ask which artifacts are awaiting approval (capability-discovery bundle). Artifacts already persist as .insrc/artifacts/<KIND>-<hash>.json with meta.approvedAt/rejectedAt (types.ts:342/344) as the authoritative approval-state markers (how-does-it-work bundle), but nothing reads them as a pending set. On the plugin side there is NO ToolWindow and no pending-list surface (structural-map bundle); the plugin can reach the daemon only through the existing one-shot DaemonGateway.call.",
+      "stateAfter": "The daemon gains an additive 'workflow.pending' read handler (backed by a pure listPendingArtifacts fs scan) that returns WorkflowPendingResult{ artifacts: PendingArtifact[] } for the pending set, and errors (not empty lists) when the repo/store cannot be read. The plugin gains a review ToolWindow whose pending-list entry polls that handler on a bounded cadence via a new DaemonGateway.pendingArtifacts wrapper, rendering three distinct states: the pending list, 'nothing awaiting review', and 'backing service unavailable'. Everything is additive — no existing handler, artifact schema, or plugin behaviour changes.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the new internal-shared types (PendingArtifact, WorkflowPendingRequest, WorkflowPendingResult) and the pure listPendingArtifacts(repoPath) fs-scan helper. Purely additive type + function declarations; nothing else references them yet.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Register the 'workflow.pending' handler in the daemon IPC map (resolving repo from params.repo || INSRC_REPO like its siblings), delegating to listPendingArtifacts and mapping a store/repo failure to an { error } result. Additive new registry entry; touches no existing handler.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add the plugin ToolWindow registration (plugin.xml toolWindow extension + a ToolWindowFactory) and the pending-list entry. Additive plugin surface; the existing project-open activity, notification group, and other extensions are unchanged.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Add the DaemonGateway.pendingArtifacts wrapper over the existing DaemonGateway.call and wire the bounded poll scheduler (project-open via the existing InsrcProjectOpenActivity, IDE focus, coarse timer) to refresh the pending-list entry, mapping ok/empty/error DaemonResults to the three list states. Additive.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Add the daemon unit/integration tests + the plugin JUnit tests (fake DaemonRpc); verify locally (npx tsx --test and ./gradlew test on JDK21). Test-only.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Fully backward compatible. Every change is additive: a new daemon handler name, new types, a new pure helper, and a new plugin ToolWindow + gateway wrapper. No existing daemon IPC (workflow.approve, artifact.get, artifact.search) changes signature or behaviour; no artifact JSON schema changes (meta.approvedAt/rejectedAt are READ only); the one plugin artifact still loads across all four IDEs off the shared platform module and its existing activation/notification behaviour is untouched. A daemon that predates this handler simply returns its standard 'unknown method' error, which the plugin already maps to the Unavailable state — so an older daemon degrades cleanly rather than breaking.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Scan the canonical .insrc/artifacts JSON store",
+        "oneLineSummary": "The 'workflow.pending' handler enumerates ARTIFACTS_DIR/*.json, reads each artifact's meta, and returns a PendingArtifact for every one whose meta.approvedAt is absent AND meta.rejectedAt is absent.",
+        "approach": "The daemon read handler resolves the repo (params.repo || INSRC_REPO), lists the '.insrc/artifacts' directory (the same store resolve.ts already enumerates), and for each '<KIND>-<hash>.json' parses the JSON once. Pending is derived directly from the persisted fields the approve/reject paths stamp: meta.approvedAt absent AND meta.rejectedAt absent (ArtifactMetaBase, types.ts:342/344). The KIND is taken from the filename prefix (DEF/HLD/LLD/PLAN/BUILD/SPEC/ISSUE/CR); title from the artifact body (or a kind-appropriate fallback); mdPath from the storage path helpers keyed by artifactId; workItemId from meta when present; openQuestionCount from body.openQuestions.length. The result is the PendingArtifact[] the sc1 contract defines. Building/BUILD/CR kinds that carry no user-approval semantics are excluded by the same approvedAt/rejectedAt rule (they either never stamp those fields or are not reviewer-approvable) — the handler classifies purely on the two meta fields plus a small kind allow-list matching the sc1 kind union.",
+        "pros": [
+          "Single source of truth: pending is read from the exact fields approveWorkflowTarget/reject stamp, so the list can never disagree with real approval state (ac1).",
+          "Reuses the established ARTIFACTS_DIR enumeration pattern from resolve.ts — no new storage concept.",
+          "One JSON parse per artifact, bounded by the number of artifacts in the repo — cheap enough for a bounded poll (k7/lc1).",
+          "The kind prefix + meta fields give every sc1 descriptor field deterministically, with no embedding or index dependency."
+        ],
+        "cons": [
+          "Reads every artifact JSON on each poll (still small and local; mitigated by the bounded poll cadence).",
+          "Title/mdPath derivation must handle each KIND's shape (a small per-kind mapping)."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Enumerate via the work-item hierarchy (resolve.ts refs)",
+        "oneLineSummary": "Walk the Epic/Story/Task work-item hierarchy through resolve.ts helpers and, for each level, resolve its artifact and include it when pending.",
+        "approach": "Instead of scanning files, the handler drives resolve.ts's work-item listing (listEpicHashes + the hierarchical resolvers) to enumerate every Epic/Story/Task, resolve each level's artifact id, load it, and classify pending on the same approvedAt/rejectedAt rule. The descriptor's workItemId comes naturally from the hierarchy walk.",
+        "pros": [
+          "workItemId is produced directly by the hierarchy walk rather than read from meta.",
+          "Aligns the pending set with the canonical work-item tree."
+        ],
+        "cons": [
+          "resolve.ts's hierarchy is Epic/Story/Task-oriented and keyed on DEF/HLD/LLD/PLAN/BUILD; it does not naturally cover SPEC (brainstorm) or ISSUE (bugfix) artifacts, so those pending artifacts would be MISSED — breaking ac1 completeness.",
+          "More moving parts (hierarchy resolution) than a direct store scan for the same result.",
+          "Couples the pending read to the tracker/resolve module's hierarchy semantics rather than the flat approval-state fact."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Constraint-clean on transport/boundedness but PARTIAL on ac1 + sc1: the work-item hierarchy does not cover SPEC/ISSUE artifacts, so pending ones of those kinds are silently missed — a completeness gap a1 does not have."
+      },
+      {
+        "id": "a3",
+        "name": "Add an approval-state filter to the existing artifact.search",
+        "oneLineSummary": "Extend the existing artifact.search IPC with a 'pending' filter instead of adding a new handler.",
+        "approach": "Rather than a new 'workflow.pending' handler, add an approval-state parameter to the existing artifact.search handler so a client can ask for pending artifacts through the same call.",
+        "pros": [
+          "No new IPC method name; one search surface.",
+          "Reuses an existing handler entry."
+        ],
+        "cons": [
+          "artifact.search is a SEMANTIC vector search (queryArtifactVec) that requires a query string + sessionId + embeddings; approval state is not in the vector index, so this conflates two unrelated retrieval modes.",
+          "Contradicts the sc1 contract, which the HLD fixes as a dedicated typed 'workflow.pending' request/result — changing that is an HLD back-flow, not an LLD choice.",
+          "An embedding round-trip on every discovery poll violates the bounded/cheap intent of k7/lc1."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Violates ac1, sc1 and k7: it repurposes a semantic vector search for a deterministic approval-state enumeration, contradicts the fixed sc1 contract, and pays an embedding round-trip per poll."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "docs epic 61d8c73edb68041a (integrate-insrc-framework-into-jetbrains-ide)",
+      "quotedText": "The JetBrains plugin is a thin config-orchestrator that owns no reasoning."
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/daemon/index.ts:555,980,994",
+      "quotedText": "workflow.approve/artifact.get/artifact.search are registered daemon IPCs; there is no list-pending enumeration — workflow.pending is net-new."
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/gates.ts:617 / src/workflow/types.ts:342,344",
+      "quotedText": "approveWorkflowTarget stamps meta.approvedAt; ArtifactMetaBase carries approvedAt?(:342) and rejectedAt?(:344) — pending = both absent."
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/UnixSocketDaemonRpc.kt:32",
+      "quotedText": "The plugin's one-shot UnixSocketDaemonRpc/DaemonGateway.call opens only the local Unix socket, never a cloud/REST path."
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "capability-discovery: artifact review/approve channel",
+      "quotedText": "Read + approve are reusable server-side; list-pending is net-new; the plugin already has a socket client."
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/workflow/storage.ts (ARTIFACTS_DIR) / src/workflow/tracker/resolve.ts:100 (artifactsDir/readdirSync)",
+      "quotedText": "Artifacts persist under .insrc/artifacts as <KIND>-<hash>.json; resolve.ts already enumerates that directory — a bounded scan, no event emitter."
+    }
+  ]
+}

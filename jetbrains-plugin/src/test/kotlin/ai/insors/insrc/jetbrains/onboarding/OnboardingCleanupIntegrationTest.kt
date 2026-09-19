@@ -3,6 +3,7 @@ package ai.insors.insrc.jetbrains.onboarding
 import ai.insors.insrc.jetbrains.LifecycleBroadcaster
 import ai.insors.insrc.jetbrains.daemon.DaemonGateway
 import ai.insors.insrc.jetbrains.daemon.DaemonState
+import ai.insors.insrc.jetbrains.daemon.PendingQueryResult
 import ai.insors.insrc.jetbrains.daemon.RegistrationResult
 import ai.insors.insrc.jetbrains.host.AiHost
 import ai.insors.insrc.jetbrains.host.AiHostAdapterImpl
@@ -46,6 +47,7 @@ class OnboardingCleanupIntegrationTest : BasePlatformTestCase() {
         override fun probe(): DaemonState = DaemonState.CURRENT
         override fun isProjectRegistered(projectRootPath: String): Boolean = true
         override fun registerProject(projectRootPath: String): RegistrationResult = RegistrationResult(true)
+        override fun pendingArtifacts(projectRootPath: String): PendingQueryResult = PendingQueryResult.Available(emptyList())
     }
 
     private fun present(host: AiHost) = HostProbe { HostResolution.Present(host) }

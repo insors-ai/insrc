@@ -23,4 +23,7 @@ class DaemonGatewayService : DaemonGateway {
 
     override fun registerProject(projectRootPath: String): RegistrationResult =
         delegate.registerProject(projectRootPath)
+
+    override fun pendingArtifacts(projectRootPath: String): PendingQueryResult =
+        delegate.pendingArtifacts(projectRootPath)
 }

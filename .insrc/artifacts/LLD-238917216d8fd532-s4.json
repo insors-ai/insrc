@@ -1,0 +1,629 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1789818615081-okvb4w",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-19T12:03:43.541Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 808294,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-09-19T06:30:32.186Z",
+    "epicHash": "238917216d8fd532",
+    "epicSlug": "ide-artifact-review-panel-jetbrains-plugin",
+    "storyId": "s4",
+    "hldBaseRunId": "wf-1789799576767-kl7v1b",
+    "hldEffectiveHash": "c93cb4358ff4bac8cafea32cce98dffe14aa21172b7d14ee226c0ebaebfb947a",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 0
+      },
+      "reviewedAt": "2026-09-19T12:05:25.571Z",
+      "model": "client"
+    },
+    "questionResolutions": {
+      "q24c46fa1": {
+        "question": "General-comment mapping (load-bearing): how should a section/quote/general comment (no anchor.openQuestionId) be recorded through the existing open-question machinery? Recommended a1 = append a new body.openQuestions entry then resolve it (all comments recorded, no types.ts change, but mutates the artifact's authored body.openQuestions). Alternatives: a2 = a meta-only 'note' resolution keyed by a synthesized qId (needs a cross-cutting QuestionResolutionStatus enum change) or a3 = restrict submission to open-question-anchored comments only (drops general comments, violating ac1). Confirm a1 or choose a2/a3 before build.",
+        "status": "resolved",
+        "choice": "a1 — append the comment as a new body.openQuestions entry then resolve it via recordResolution",
+        "rationale": "User's explicit in-chat choice. a1 records EVERY comment kind through the existing recordResolution + open-question machinery with the existing status enum (no types.ts change, staying within s4's boundary), honoring ac1 for section/quote/general comments. The cost — appending reviewer-authored entries to the artifact's own body.openQuestions — is accepted as the single new write shape.",
+        "resolvedAt": "2026-09-19T12:12:15.339Z"
+      }
+    }
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Chosen framework a1: a thin three-layer review surface bolted onto existing daemon capability. The daemon gains two small typed request/reply handlers — a read that enumerates the open project's pending-approval artifacts and a write that records reviewer comments through the existing open-question resolution machinery — while approval and artifact-content reads reuse the existing workflow.approve and artifact.get handlers unchanged. The JetBrains plugin extends its existing one-shot Unix-socket DaemonGateway with thin call() wrappers for those methods and adds a JCEF tool-window panel that renders the artifact's own content as HTML with inline PR-style anchored comment threads, a Submit action that records comments as open-question resolutions, and an Approve action that calls the existing approve path. The panel is gated by JBCefApp.isSupported() with a read-only native-editor fallback, and pending-artifact discovery is a bounded poll of the read handler. Reasoning stays entirely daemon-side (k1); the plugin only renders and transports.",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "id": "sc2",
+          "name": "ArtifactReviewView",
+          "purpose": "The read-only view a reviewer sees: the artifact's own rendered content, its open questions, and whether it is currently approvable. Produced by the open/read story; consumed by annotate, submit and approve.",
+          "interfaceSketch": "interface OpenQuestionRef {\n  readonly id: string;\n  readonly text: string;\n  readonly status: 'open' | 'resolved' | 'ignored' | 'deferred';\n}\ninterface ArtifactReviewView {\n  readonly artifactId: string;\n  readonly kind: string;\n  readonly renderedMarkdown: string;   // artifact.get's own rendered content (k5) — never a second copy\n  readonly openQuestions: readonly OpenQuestionRef[];\n  readonly approvable: boolean;        // false when a review block-verdict stands\n  readonly blockReason?: string | null;\n}",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c3",
+            "c5"
+          ]
+        },
+        {
+          "id": "sc3",
+          "name": "ReviewComment",
+          "purpose": "The inline-anchored comment model a reviewer builds while reading, plus the write contract that records those comments as open-question resolutions. Defined by the annotate story; consumed by the submit story.",
+          "interfaceSketch": "interface CommentAnchor {\n  readonly sectionPath?: string;       // heading path into the rendered artifact, e.g. 'Contract > api'\n  readonly quote?: string;             // anchoring text snippet within that section\n  readonly openQuestionId?: string;    // set when the comment targets a specific open question\n}\ninterface ReviewComment {\n  readonly id: string;                 // client-generated until submitted\n  readonly anchor: CommentAnchor;\n  readonly body: string;\n}\n// daemon IPC 'workflow.resolveComment' (write) — records via the existing recordResolution machinery (k4)\ninterface ResolveCommentRequest {\n  readonly repo: string;\n  readonly artifactId: string;\n  readonly comments: readonly ReviewComment[];\n}\ninterface ResolveCommentResult {\n  readonly recorded: number;\n  readonly resolutions: ReadonlyArray<{ readonly openQuestionId?: string; readonly status: 'resolved' | 'ignored' | 'deferred' | 'note' }>;\n}",
+          "ownedByStory": "s3",
+          "consumedByStories": [
+            "s4"
+          ],
+          "assumptions": [
+            "c5"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s4",
+        "owns": [],
+        "depends": [
+          "sc2",
+          "sc3"
+        ],
+        "internal": "Private to s4: the mapping from anchored ReviewComments onto recordResolution calls (which anchor targets which open question, and whether it becomes a resolve / ignore / defer / general note), invoked through the workflow.resolveComment write handler, plus the success/failure reporting so a failed submission is surfaced and never silently dropped."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1"
+          ],
+          "depends": [],
+          "internal": "Private to s1: the daemon-side scan of the project's artifact store that classifies pending (approvedAt absent, not rejected) vs approved vs rejected; the plugin-side poll scheduler (project-open, IDE focus, coarse timer) and the tool-window list entry that renders the pending set, the empty 'nothing awaiting review' state, and the 'backing service unavailable' state. How often the poll fires and how the list is presented are s1's own concerns."
+        },
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc2"
+          ],
+          "depends": [
+            "sc1"
+          ],
+          "internal": "Private to s2: the JCEF browser lifecycle, the JBCefApp.isSupported() gate, the HTML rendering of the artifact's renderedMarkdown, and the read-only native-editor fallback view when JCEF is unavailable. The mechanics of turning renderedMarkdown into displayed HTML stay inside s2."
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc3"
+          ],
+          "depends": [
+            "sc2"
+          ],
+          "internal": "Private to s3: the inline-anchor UI mechanics (selecting a part of the rendered artifact, showing a thread there), the JBCefJSQuery add/edit/remove-comment bridge, and the un-submitted, presentation-only comment buffer held in the panel before Submit. No approval or resolution reasoning happens here (k1)."
+        },
+        {
+          "storyId": "s5",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "Private to s5: the Approve action wiring to the existing workflow.approve handler, explicit-override handling, block-reason display when a review verdict withholds approval, and the post-approve refresh so the just-approved artifact drops off the pending list. s5 adds no approval logic of its own — it calls the existing approve path."
+        }
+      ],
+      "rolloutPhase": "Phase B — Inline annotation + submit as open-question resolutions",
+      "nonFunctional": {
+        "performance": "Discovery is a bounded polled read (project-open, IDE focus, a coarse timer) — no hot loop, no held-open subscription (k7). Each poll is one request/reply over the local socket returning a small descriptor list; panel render cost is O(artifact size) inside JCEF. Approval and comment-recording are single request/reply calls.",
+        "security": "All daemon access is over the existing local Unix-domain-socket JSON-RPC channel; the plugin opens no cloud or REST path and stores no credentials (k2). Approval flows only through the existing approve path with its block-verdict gate (k3).",
+        "observability": "workflow.pending / workflow.resolveComment / approve outcomes are logged through the daemon's standard workflow logging; user-visible successes and failures (submit failed, approval withheld with reason) surface through the plugin's existing 'insrc' notification group.",
+        "durability": "Recorded resolutions are persisted daemon-side by the existing recordResolution machinery and approvals by approveWorkflowTarget; un-submitted comments are presentation-only in the panel and are not durable until Submit. The artifact remains the single source of truth (k5)."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "workflow.resolveComment",
+          "signature": "handleResolveComment(params: { repo?: string; artifactId: string; comments: ReviewComment[] }, repoEnv?: string): ResolveCommentResult | { error: string }",
+          "parameters": [
+            {
+              "name": "params.repo",
+              "type": "string | undefined",
+              "purpose": "Absolute repo path; falls back to repoEnv/INSRC_REPO and is resolved the same way S002's handleArtifactContent resolves it.",
+              "optional": true
+            },
+            {
+              "name": "params.artifactId",
+              "type": "string",
+              "purpose": "The artifact whose comments are being submitted, e.g. 'LLD-238917216d8fd532-s4'. Parsed to (kind, epicHash, storyId) — the locator recordResolution needs. No docs/ mdPath is accepted, so no untrusted filesystem path enters this handler.",
+              "optional": false
+            },
+            {
+              "name": "params.comments",
+              "type": "ReviewComment[]",
+              "purpose": "The submitted un-submitted-buffer snapshot (sc3): each has an id, an anchor {sectionPath?, quote?, openQuestionId?}, and a non-empty body.",
+              "optional": false
+            },
+            {
+              "name": "repoEnv",
+              "type": "string | undefined",
+              "purpose": "The daemon's INSRC_REPO fallback, passed by the IPC dispatcher exactly as for handleArtifactContent.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "ResolveCommentResult | { error: string }",
+            "meaning": "On success ResolveCommentResult { recorded, resolutions[] } (sc3). On any failure a RETURNED { error } (framed by server.ts as result:{error}; the transport surfaces the non-empty result.error as ok=false) — never a partial/silent success."
+          },
+          "errors": [
+            {
+              "type": "{ error: string }",
+              "condition": "artifactId missing/malformed (does not parse to kind+epicHash+storyId), repo unresolved, the artifact json not found, or any recordResolution write failure — returned, never thrown."
+            },
+            {
+              "type": "{ error: string }",
+              "condition": "comments is empty or any comment has a blank body (nothing to record) — returned so the plugin surfaces it and keeps the buffer."
+            }
+          ],
+          "preconditions": [
+            "The artifactId names a persisted artifact under .insrc/artifacts (located by parsed identity; the handler never reads an arbitrary caller path)",
+            "Each comment.body is non-empty (already enforced by S003's applyCommentOp before it entered the buffer)"
+          ],
+          "postconditions": [
+            "Each openQuestionId-anchored comment is recorded via recordResolution against that existing question (status='resolved', choice=anchor summary, rationale=body)",
+            "Each section/quote/general comment appends a new entry to the artifact's own body.openQuestions and is immediately recorded via recordResolution against that new qId (a1) — all through the existing open-question machinery, no parallel store (lc1)",
+            "recorded === the count of comments successfully written; resolutions[] reports each {openQuestionId?, status}"
+          ]
+        },
+        {
+          "name": "recordResolution",
+          "signature": "recordResolution(repoPath: string, kind: QuestionArtifactKind, epicHash: string, storyId: string | undefined, qId: string, status: QuestionResolutionStatus, choice?: string, rationale?: string): RecordResolutionResult",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "Resolved repo path.",
+              "optional": false
+            },
+            {
+              "name": "kind",
+              "type": "QuestionArtifactKind",
+              "purpose": "Parsed from artifactId (e.g. LLD).",
+              "optional": false
+            },
+            {
+              "name": "epicHash",
+              "type": "string",
+              "purpose": "Parsed from artifactId.",
+              "optional": false
+            },
+            {
+              "name": "storyId",
+              "type": "string | undefined",
+              "purpose": "Parsed from artifactId (e.g. s4).",
+              "optional": true
+            },
+            {
+              "name": "qId",
+              "type": "string",
+              "purpose": "The open-question id: the comment's anchor.openQuestionId, or a freshly-minted id for an appended general-comment question.",
+              "optional": false
+            },
+            {
+              "name": "status",
+              "type": "QuestionResolutionStatus",
+              "purpose": "'resolved' under a1 for recorded comments (the existing enum; no 'note' value is introduced).",
+              "optional": false
+            },
+            {
+              "name": "choice",
+              "type": "string | undefined",
+              "purpose": "Short anchor summary (sectionPath/quote) for provenance.",
+              "optional": true
+            },
+            {
+              "name": "rationale",
+              "type": "string | undefined",
+              "purpose": "The reviewer's comment body.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "RecordResolutionResult",
+            "meaning": "The existing result of merging one resolution into meta.questionResolutions (questions.ts:383-431). Consumed per comment; S004 adds no new behaviour to it."
+          },
+          "errors": [
+            {
+              "type": "thrown/failed RecordResolutionResult",
+              "condition": "The artifact cannot be located or written — caught by handleResolveComment and mapped to a returned { error }."
+            }
+          ],
+          "preconditions": [
+            "The (kind, epicHash, storyId) locate a persisted artifact"
+          ],
+          "postconditions": [
+            "meta.questionResolutions gains/updates the entry for qId (existing behaviour, reused unchanged)"
+          ]
+        },
+        {
+          "name": "DaemonGateway.resolveComment",
+          "signature": "fun resolveComment(repo: String, artifactId: String, comments: List<ReviewCommentDto>): ResolveCommentResult",
+          "parameters": [
+            {
+              "name": "repo",
+              "type": "String",
+              "purpose": "The project base path.",
+              "optional": false
+            },
+            {
+              "name": "artifactId",
+              "type": "String",
+              "purpose": "The selected artifact's id (already held by the panel from the S002 view).",
+              "optional": false
+            },
+            {
+              "name": "comments",
+              "type": "List<ReviewCommentDto>",
+              "purpose": "CommentBuffer.snapshot() (S003) mapped to the wire DTO.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ResolveCommentResult (Recorded | Unavailable)",
+            "meaning": "A two-state result mirroring S002's ArtifactContentResult: Recorded(recorded, resolutions) on ok, Unavailable(reason) when the daemon is unreachable OR returns result.error (the S001 framing invariant) — the plugin never treats an {error} as success."
+          },
+          "errors": [
+            {
+              "type": "ResolveCommentResult.Unavailable",
+              "condition": "DaemonUnavailable, a non-ok reply, a non-empty result.error, or a malformed reply — classified verbatim, no client reasoning (k1)."
+            }
+          ],
+          "preconditions": [
+            "The one-shot UnixSocketDaemonRpc channel is used (k2); no cloud/REST path"
+          ],
+          "postconditions": [
+            "On Recorded the panel clears the submitted comments from the CommentBuffer and re-pushes; on Unavailable the buffer is kept and the failure is surfaced (ac3)"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "ResolveCommentRequest",
+        "change": "new",
+        "details": "The sc3 write request { repo, artifactId, comments: ReviewComment[] }, consumed as-is. artifactId (not an mdPath) is the locator: it parses to (kind, epicHash, storyId), so no untrusted docs/ path enters the handler and no path-guard/realpathSync is needed here (unlike S002's content read).",
+        "callSites": [
+          "src/daemon/index.ts (new workflow.resolveComment dispatch)",
+          "jetbrains-plugin DaemonGateway.resolveComment"
+        ]
+      },
+      {
+        "entity": "ResolveCommentResult",
+        "change": "new",
+        "details": "The sc3 result { recorded, resolutions[] }. Under a1 the emitted status is 'resolved' (the existing enum); the sketch's optional 'note' status is NOT emitted — a documented sketch deviation, not a machinery change. resolutions[] carries {openQuestionId?, status} per recorded comment.",
+        "callSites": [
+          "src/workflow/resolve-comment.ts (new pure handler)",
+          "jetbrains-plugin ResolveCommentResult DTO"
+        ]
+      },
+      {
+        "entity": "body.openQuestions (artifact body)",
+        "change": "field-modify",
+        "details": "a1 APPENDS a new open-question entry (derived from a section/quote/general comment's anchor + body) to the artifact's own body.openQuestions before resolving it, so the comment lives inside the existing open-question machinery. This is the one new write shape a1 introduces and the subject of the LLD open question. openQuestionId-anchored comments do NOT modify body.openQuestions (they resolve an existing question).",
+        "callSites": [
+          "src/workflow/questions.ts (openQuestions projection reads body.openQuestions)",
+          "src/workflow/artifact-content.ts (S002 view reflects the appended question)"
+        ]
+      },
+      {
+        "entity": "meta.questionResolutions (artifact meta)",
+        "change": "field-add",
+        "details": "Each recorded comment adds/updates an entry keyed by qId via the existing recordResolution merge (questions.ts:409-415). No schema change to QuestionResolution.",
+        "callSites": [
+          "src/workflow/questions.ts (recordResolution)",
+          "src/workflow/artifact-content.ts (openQuestions status reflects the resolution)"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "S004 consumes the ReviewComment model + the workflow.resolveComment write contract that S003 owns: the handler folds each ReviewComment into recordResolution and returns ResolveCommentResult. It does not redesign sc3; the only deviation is that a1 emits status='resolved' rather than the sketch's optional 'note' (documented, no type change)."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "After a successful submit the panel refreshes the ArtifactReviewView (S002) so the just-recorded resolutions show up as resolved open questions and the un-submitted buffer is cleared — consuming the read view unchanged."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The daemon is unreachable when the reviewer clicks Submit.",
+          "detection": "UnixSocketDaemonRpc.call() throws DaemonUnavailableException (socket connect/write fails); DaemonGateway.resolveComment catches it.",
+          "response": "Return ResolveCommentResult.Unavailable(reason); the panel surfaces a failure notification via the 'insrc' group and KEEPS the CommentBuffer intact (no clear, no re-push loss).",
+          "userImpact": "The reviewer sees 'submit failed — daemon unavailable' and their comments are still in the panel to retry.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The handler cannot record (artifact json not found, or a recordResolution write fails).",
+          "detection": "handleResolveComment catches the failure and RETURNS { error }; server.ts frames it as result:{error}; UnixSocketDaemonRpc.parse surfaces the non-empty result.error as ok=false (the S001 framing invariant).",
+          "response": "DaemonGateway maps the ok=false reply to ResolveCommentResult.Unavailable(reason); the panel surfaces it and keeps the buffer.",
+          "userImpact": "The reviewer sees the specific failure reason and no comment is silently dropped (ac3).",
+          "recoverable": true
+        },
+        {
+          "scenario": "artifactId is missing or malformed (does not parse to kind + epicHash + storyId).",
+          "detection": "The artifactId parser returns null before any write; handleResolveComment returns { error: 'unrecognized artifactId' }.",
+          "response": "No write is attempted; the returned {error} becomes Unavailable client-side.",
+          "userImpact": "The reviewer sees a clear 'cannot identify the artifact' message; buffer kept.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A batch partially records: some comments are written, then a later recordResolution fails.",
+          "detection": "handleResolveComment records sequentially and traps the failing call; it returns { error } carrying the recorded-so-far count.",
+          "response": "The plugin treats a non-full result as failure: it KEEPS the entire buffer (clears only on recorded === submitted) and surfaces the partial-failure reason. openQuestionId-anchored resolutions are idempotent on re-submit (keyed by qId); appended general-comment questions may duplicate on re-submit (a documented residual).",
+          "userImpact": "No feedback is lost, but a retry after a partial failure can create duplicate appended questions for the general comments already written — surfaced, not silent.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Submit is invoked with an empty buffer (or every comment somehow blank).",
+          "detection": "handleResolveComment sees comments.length === 0 (or all-blank bodies, though S003 already blocks blanks) and returns { error: 'nothing to record' }; the plugin also disables Submit when the buffer is empty.",
+          "response": "No write; a benign 'no comments to submit' notice.",
+          "userImpact": "The reviewer is told there is nothing to submit.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A comment anchored to an openQuestionId that no longer exists on the artifact (the question was already resolved/removed since the view loaded).",
+          "expected": "recordResolution merges by qId WITHOUT validating against the current open-questions list (questions.ts:409-415), so the resolution is still written; the openQuestions() projection (reused by S002) tolerates a resolution whose qId has no matching body text. Recorded, not rejected."
+        },
+        {
+          "input": "The reviewer re-submits after a partial failure.",
+          "expected": "openQuestionId-anchored comments overwrite the same qId entry (idempotent); general/section/quote comments append a NEW question each time (new minted qId) — a known duplication cost, mitigated by clearing the buffer only on full success."
+        },
+        {
+          "input": "The artifact was approved or rejected between load and Submit.",
+          "expected": "The write still succeeds (recordResolution does not gate on approvedAt); recording feedback on an already-decided artifact is harmless. No special-casing in S004."
+        },
+        {
+          "input": "The panel is in the native (non-JCEF) fallback.",
+          "expected": "S003 made annotation JCEF-only, so the buffer is empty in native mode and Submit is unavailable/no-op — consistent with the read-only native notice."
+        },
+        {
+          "input": "A very large comment body or a body containing markdown/quotes.",
+          "expected": "Stored verbatim as the resolution rationale; no truncation or re-rendering (k5 single source of truth). JSON transport escapes it."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Reviewer feedback is recorded ONLY through the existing recordResolution + open-question machinery (meta.questionResolutions, and body.openQuestions for appended general comments) — never a parallel comment store (lc1).",
+          "source": "c5"
+        },
+        {
+          "text": "A daemon handler that RETURNS { error } is framed by server.ts as result:{error} (a top-level error appears only on THROW); the transport must surface a non-empty result.error as ok=false so a failed submit is never read as success — the S001 latent-bug invariant.",
+          "source": "c4"
+        },
+        {
+          "text": "The single artifact remains the single source of truth; the submit writes into that one artifact's own body/meta and creates no divergent second copy of its content.",
+          "source": "c5"
+        },
+        {
+          "text": "The plugin owns no resolution reasoning: it transports the submit and classifies the reply as Recorded/Unavailable verbatim; all mapping of comments onto resolutions happens daemon-side.",
+          "source": "c1"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove the pure daemon handler folds each comment kind into recordResolution correctly and maps every failure to a returned {error} — over a temp .insrc/artifacts fixture, no socket (mirrors artifact-content.test.ts).",
+          "subjects": [
+            "handleResolveComment: openQuestionId-anchored comment -> recordResolution(qId=openQuestionId, status='resolved', rationale=body); the artifact json's meta.questionResolutions gains the entry",
+            "handleResolveComment: section/quote/general comment -> a new body.openQuestions entry appended AND a resolution recorded against its minted qId (a1)",
+            "handleResolveComment: recorded count === comments written; resolutions[] shape",
+            "handleResolveComment: malformed/missing artifactId -> {error}, no write; empty comments -> {error}",
+            "handleResolveComment: unreadable/absent artifact json -> {error}; a mid-batch recordResolution failure -> {error} with recorded-so-far and no silent drop",
+            "artifactId parser: 'LLD-238917216d8fd532-s4' -> {kind:'LLD', epicHash, storyId:'s4'}; junk -> null",
+            "read-only-except-target: no file outside the target artifact json is created/mutated"
+          ],
+          "fixturesNeeded": [
+            "a temp repo with .insrc/artifacts/<artifactId>.json carrying body.openQuestions + meta (like artifact-content.test.ts)",
+            "an artifact json with a pre-existing open question to resolve by openQuestionId",
+            "an artifact json with NO open questions (to exercise the general-comment append path)"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove the plugin gateway maps the daemon reply to Recorded/Unavailable verbatim, INCLUDING across the real transport framing boundary (the S001 lesson) — mirrors ArtifactContentTest.",
+          "subjects": [
+            "DaemonGatewayImpl.resolveComment over a fake DaemonRpc: ok(result) -> Recorded(recorded, resolutions); ok=false -> Unavailable; DaemonUnavailable -> Unavailable; malformed -> Unavailable (never a blank Recorded)",
+            "the REAL UnixSocketDaemonRpc.parse across the boundary: {result:{recorded,resolutions}} -> ok=true -> Recorded; {result:{error}} -> ok=false -> Unavailable (a RETURNED handler error, not a throw)",
+            "the comment -> ReviewCommentDto wire mapping (anchor fields + body preserved)",
+            "the pure submit-outcome decision: clear the buffer ONLY when recorded === submitted; otherwise keep the whole buffer (ac3)"
+          ],
+          "fixturesNeeded": [
+            "a FakeDaemonRpc returning canned DaemonResult values",
+            "a raw {result:{...}} / {result:{error}} JSON string to drive UnixSocketDaemonRpc.parse"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove the daemon dispatches the new workflow.resolveComment method end-to-end and persists into the artifact store.",
+          "subjects": [
+            "the daemon index.ts dispatch routes 'workflow.resolveComment' to handleResolveComment",
+            "after a successful call, re-reading the artifact json shows the resolutions/appended questions (durable, backing-service-side — ac2)"
+          ],
+          "fixturesNeeded": [
+            "a temp registered repo + artifact json"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "handleResolveComment: openQuestionId-anchored comment recorded as a resolution (unit)",
+            "handleResolveComment: section/quote/general comment appended + recorded (unit)",
+            "handleResolveComment: recorded count === comments written (unit)",
+            "integration: re-reading the artifact shows the recorded resolutions so the next stage's start-gate consumes them"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "handleResolveComment writes ONLY into the target artifact json's meta.questionResolutions/body.openQuestions (unit; read-only-except-target)",
+            "integration: the resolution is durable in the artifact store, not an IDE-local file",
+            "the plugin holds no local resolution store — gateway only transports (unit: mapping test)"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "DaemonGatewayImpl.resolveComment: ok=false / {result:{error}} / DaemonUnavailable / malformed -> Unavailable (unit, incl. the real parse boundary)",
+            "the submit-outcome decision keeps the whole buffer on any non-full/failed result (unit)",
+            "handleResolveComment: write failure / malformed artifactId / empty comments -> returned {error} (unit)"
+          ]
+        }
+      ],
+      "testFramework": "node:test via `npx tsx --test` (daemon TS) + JUnit5/Kotlin via `./gradlew test` on JDK21 (plugin)"
+    },
+    "migration": {
+      "stateBefore": "The daemon exposes workflow.approve, artifact.get, and the S002 workflow.artifactContent read handler; the plugin's DaemonGateway wraps pendingArtifacts (S001) + artifactReviewView (S002); S003 holds un-submitted comments in an in-memory CommentBuffer (presentation-only) with NO way to submit them — they are lost when the panel closes. recordResolution (questions.ts:383-431) already writes resolutions into an artifact's meta.questionResolutions but is only reached via the resolve_question workflow phase; there is no comment-submission IPC.",
+      "stateAfter": "A net-new daemon workflow.resolveComment handler folds each submitted ReviewComment into the existing recordResolution machinery (openQuestionId-anchored -> resolve that question; section/quote/general -> append a new body.openQuestions entry then resolve it), returning ResolveCommentResult. The plugin gains DaemonGateway.resolveComment + a Submit action that reads CommentBuffer.snapshot(), calls it, and on full success clears the buffer + re-pushes (on failure keeps the buffer and surfaces it). Existing artifacts, existing IPCs, and the resolve_question phase are all unchanged.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the pure daemon handler (src/workflow/resolve-comment.ts) + the ResolveCommentRequest/ResolveCommentResult types and register 'workflow.resolveComment' in the daemon dispatch. Purely additive — no existing method changes.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add the plugin DaemonGateway.resolveComment wrapper + DTOs + the two-state Recorded|Unavailable result (mirroring S002's ArtifactContentResult), and add the override to the gateway test doubles.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Wire the Submit action into the S003 comment panel: read CommentBuffer.snapshot(), call resolveComment off-EDT, marshal the result to the EDT, clear+re-push on full success or keep+notify on failure.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Verify locally (npx tsc --noEmit + npx tsx --test for the daemon; ./gradlew test JDK21 for the plugin) — no production data touched.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Fully backward compatible: workflow.resolveComment is a new method, so older callers are unaffected; the plugin change only ADDS a method to the DaemonGateway interface (existing wrappers unchanged). Older artifacts without any comment resolutions are unaffected — the handler only writes when comments are submitted. An older plugin talking to a newer daemon simply never calls the new method; a newer plugin talking to an older daemon that lacks the method receives an unknown-method error, which the gateway classifies as Unavailable (surfaced, not a crash). No existing public API signature changes.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Append-question-then-resolve (all comments land as resolved open questions)",
+        "oneLineSummary": "Every submitted comment becomes an open-question resolution: openQuestionId-anchored ones resolve their existing question; section/quote/general ones append a new open question (the comment text) to the artifact and immediately resolve it — all via recordResolution, no enum change.",
+        "approach": "The workflow.resolveComment handler derives (kind, epicHash, storyId) from the submitted artifact identity, then for each ReviewComment: if anchor.openQuestionId is set, call recordResolution(qId=openQuestionId, status='resolved', choice=anchor summary, rationale=body); otherwise FIRST append the comment (its anchor description + body) as a new entry in the artifact's body.openQuestions, mint a stable qId for it, then recordResolution(that qId, status='resolved', rationale=body). Because openQuestions() reads body.openQuestions + meta.questionResolutions together, the next stage sees each general comment as a resolved question carrying the reviewer's note — strictly the existing open-question mechanism (lc1), no 'note' status needed. Returns ResolveCommentResult {recorded, resolutions[]}.",
+        "pros": [
+          "Honors ac1 for EVERY comment (open-question-anchored AND section/quote/general) without dropping any",
+          "Uses ONLY the existing recordResolution + openQuestions machinery + the existing status enum (lc1 clean, no types.ts contract change)",
+          "The next stage consumes general comments uniformly as resolved open questions — no new consumer surface"
+        ],
+        "cons": [
+          "Mutates body.openQuestions on an already-built artifact (appends reviewer-authored questions), which is a new write shape for that array",
+          "A general comment recorded as a 'resolved' question is slightly semantically loose (it is feedback, not a Q the author posed)",
+          "Two writes per general comment (append + resolve) unless folded into one recordResolution-like call"
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Synthesized-qId note resolutions (no body mutation, extend status with 'note')",
+        "oneLineSummary": "Record every comment as a questionResolutions entry keyed by a synthesized stable id (open-question-anchored ones key by their qId), carrying body as rationale and a new 'note' status for un-anchored comments — body.openQuestions is never mutated.",
+        "approach": "Extend QuestionResolutionStatus (types.ts) with a 'note' member (matching the sc3 sketch), then the handler records each comment straight into meta.questionResolutions: openQuestionId-anchored -> recordResolution(qId=openQuestionId, status='resolved'|'deferred', rationale=body); section/quote/general -> recordResolution(qId=`cmt-<stableHash(anchor+body)>`, status='note', question=anchor description, rationale=body). No append to body.openQuestions. openQuestions()/renderers must tolerate a resolution whose qId has no matching open-question text (render as a standalone note). ResolveCommentResult mirrors sc3 verbatim.",
+        "pros": [
+          "Never mutates the artifact's authored body.openQuestions — only meta.questionResolutions (a purely additive meta write)",
+          "Matches the sc3 interface sketch exactly (includes the 'note' status)",
+          "One write per comment; stable synthesized qId makes re-submit idempotent"
+        ],
+        "cons": [
+          "Requires a shared-contract change to QuestionResolutionStatus (types.ts) + every renderer/projection that switches on status — wider blast radius, touches code beyond s4's boundary",
+          "A questionResolutions entry with a qId absent from body.openQuestions is a new invariant the existing openQuestions()/render paths must be audited for",
+          "'note' resolutions are not really 'resolutions' — overloads the map's meaning"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Satisfies ac1 too but forces a cross-cutting QuestionResolutionStatus edit in types.ts + an audit of every openQuestions()/renderer that switches on status — a change beyond s4's owns:[] boundary (k4 scored partial). Reserved as the alternative the open question offers."
+      },
+      {
+        "id": "a3",
+        "name": "Open-question-anchored comments only (minimal contract fit)",
+        "oneLineSummary": "S004 submits only comments whose anchor targets an existing open question (resolve/ignore/defer it with the body as rationale); section/quote/general comments are held with a message telling the reviewer to anchor to an open question.",
+        "approach": "The handler accepts only ReviewComments with anchor.openQuestionId set, calling recordResolution(qId=openQuestionId, status derived from a per-comment choice or defaulting to 'resolved', choice=anchor summary, rationale=body). Comments without an openQuestionId are reported back in ResolveCommentResult as skipped (not recorded), and the plugin surfaces 'N comments need an open-question anchor to submit'. No body mutation, no enum change.",
+        "pros": [
+          "Smallest, cleanest fit to the existing machinery — recordResolution used exactly as the resolve_question phase uses it, zero new invariants",
+          "No shared-contract change and no write to body.openQuestions (lc1 trivially clean)",
+          "Least code, least risk"
+        ],
+        "cons": [
+          "Violates the spirit of ac1 for section/quote/general comments — they cannot be submitted at all, so captured feedback IS lost (the exact failure the story exists to prevent)",
+          "Pushes a UX burden onto the reviewer (must anchor every comment to a question) that S003's anchor model does not require",
+          "Leaves the sc3 ResolveCommentResult 'note' status unused/dead"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "VIOLATES ac1 for the majority of S003's anchor model (section/quote/general comments), losing exactly the feedback the story must preserve. Only acceptable as an explicit scoped-down fallback if the user chooses to defer general-comment recording."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "General-comment mapping (load-bearing): how should a section/quote/general comment (no anchor.openQuestionId) be recorded through the existing open-question machinery? Recommended a1 = append a new body.openQuestions entry then resolve it (all comments recorded, no types.ts change, but mutates the artifact's authored body.openQuestions). Alternatives: a2 = a meta-only 'note' resolution keyed by a synthesized qId (needs a cross-cutting QuestionResolutionStatus enum change) or a3 = restrict submission to open-question-anchored comments only (drops general comments, violating ac1). Confirm a1 or choose a2/a3 before build."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 how-does-it-work bundle: recordResolution/openQuestions/jsonPathForMd machinery (src/workflow/questions.ts:383-431, :103; src/workflow/gates.ts:758)"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 capability-discovery bundle: existing daemon read/approve IPC + plugin one-shot DaemonGateway + S002 handleArtifactContent reuse; the {error}->result:{error} framing invariant"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "HLD shared contract sc2 ArtifactReviewView (owned by s2, consumed by s4)"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "HLD shared contract sc3 ReviewComment + workflow.resolveComment write contract (owned by s3, consumed by s4)"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/questions.ts:402-415 (recordResolution builds {question,status,choice,rationale,resolvedAt} and merges into meta.questionResolutions) + src/workflow/types.ts:373 (QuestionResolution/QuestionResolutionStatus)"
+    }
+  ]
+}

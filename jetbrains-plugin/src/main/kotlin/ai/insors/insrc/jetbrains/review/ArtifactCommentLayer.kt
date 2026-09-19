@@ -1,5 +1,9 @@
 package ai.insors.insrc.jetbrains.review
 
+import ai.insors.insrc.jetbrains.daemon.CommentAnchorDto
+import ai.insors.insrc.jetbrains.daemon.DaemonGateway
+import ai.insors.insrc.jetbrains.daemon.ResolveCommentResult
+import ai.insors.insrc.jetbrains.daemon.ReviewCommentDto
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
@@ -31,6 +35,9 @@ import com.intellij.ui.jcef.JBCefJSQuery
 internal class ArtifactCommentLayer(
     private val browser: JBCefBrowser,
     parentDisposable: Disposable,
+    private val gateway: DaemonGateway,
+    private val repoSupplier: () -> String?,
+    private val notify: (message: String, error: Boolean) -> Unit,
 ) {
     private val gson = Gson() // htmlSafe by default: escapes < > & ' and U+2028/2029 -> safe to embed in JS
 
@@ -40,9 +47,19 @@ internal class ArtifactCommentLayer(
     private val store = CommentBufferStore()
     private var currentArtifactId: String? = null
 
+    // Artifact ids with an in-flight submit (EDT-only) — blocks a double-click
+    // from starting a second concurrent recording of the same buffer.
+    private val inFlight = mutableSetOf<String>()
+
     @Volatile private var disposed = false
 
     private val query: JBCefJSQuery = JBCefJSQuery.create(browser as com.intellij.ui.jcef.JBCefBrowserBase).also {
+        Disposer.register(parentDisposable, it)
+    }
+
+    // A second bridge for the Submit action: the comment JS calls it with the
+    // artifact id whose buffer should be submitted (S004).
+    private val submitQuery: JBCefJSQuery = JBCefJSQuery.create(browser as com.intellij.ui.jcef.JBCefBrowserBase).also {
         Disposer.register(parentDisposable, it)
     }
 
@@ -57,6 +74,13 @@ internal class ArtifactCommentLayer(
             // The bridge needs no synchronous response.
             if (!disposed) {
                 ApplicationManager.getApplication().invokeLater({ handlePayload(payload) }, { disposed })
+            }
+            null
+        }
+        submitQuery.addHandler { artifactId ->
+            // Same EDT-marshaling contract as the comment bridge above.
+            if (!disposed && artifactId.isNotEmpty()) {
+                ApplicationManager.getApplication().invokeLater({ submit(artifactId) }, { disposed })
             }
             null
         }
@@ -79,6 +103,66 @@ internal class ArtifactCommentLayer(
             append("window.__insrcInitialComments=").append(snapshot).append(';')
             // The Kotlin bridge: comment-layer.js calls window.__insrcPostComment(payloadJson).
             append("window.__insrcPostComment=function(p){").append(query.inject("p")).append("};")
+            // The Submit bridge: comment-layer.js calls window.__insrcSubmitComments().
+            append("window.__insrcSubmitComments=function(){")
+                .append(submitQuery.inject("window.__insrcArtifactId||''"))
+                .append("};")
+        }
+    }
+
+    /**
+     * Submit the current buffer for [artifactId] to the daemon (EDT). On a full
+     * success (Recorded == submitted) the buffer is cleared + re-pushed; any
+     * failure or partial result keeps the WHOLE buffer and surfaces the reason
+     * (ac3). All buffer access stays on the EDT.
+     */
+    private fun submit(artifactId: String) {
+        if (disposed) return
+        if (!store.has(artifactId)) return
+        if (artifactId in inFlight) {
+            notify("A submit is already in progress for this artifact.", false)
+            return
+        }
+        val repo = repoSupplier()
+        if (repo.isNullOrEmpty()) {
+            notify("Cannot submit comments: no project repo.", true)
+            return
+        }
+        val comments = bufferFor(artifactId).snapshot()
+        if (comments.isEmpty()) {
+            notify("No comments to submit.", false)
+            return
+        }
+        // Snapshot the EXACT ids being submitted: on success only these are
+        // removed, so a comment the reviewer ADDS during the in-flight call is
+        // never silently dropped (ac3) — never clear() the whole buffer.
+        val submittedIds = comments.map { it.id }
+        val dtos = comments.map { it.toDto() }
+        inFlight.add(artifactId)
+        ApplicationManager.getApplication().executeOnPooledThread {
+            val result = try {
+                gateway.resolveComment(repo, artifactId, dtos)
+            } catch (t: Throwable) {
+                ResolveCommentResult.Unavailable(t.message ?: "submit failed")
+            }
+            ApplicationManager.getApplication().invokeLater({ applyResult(artifactId, result, submittedIds) }, { disposed })
+        }
+    }
+
+    private fun applyResult(artifactId: String, result: ResolveCommentResult, submittedIds: List<String>) {
+        inFlight.remove(artifactId)
+        if (disposed) return
+        if (SubmitDecision.shouldClear(result, submittedIds.size)) {
+            // Remove ONLY the submitted ids — comments added mid-flight survive.
+            val buffer = bufferFor(artifactId)
+            submittedIds.forEach { buffer.remove(it) }
+            pushSnapshot(artifactId)
+            val n = (result as ResolveCommentResult.Recorded).recorded
+            notify("Recorded $n review comment${if (n == 1) "" else "s"} on the artifact.", false)
+        } else {
+            val reason = (result as? ResolveCommentResult.Unavailable)?.reason
+                ?: "the daemon did not record all comments"
+            notify("Submit failed: $reason", true)
         }
     }
 
@@ -125,3 +209,15 @@ internal class ArtifactCommentLayer(
         private val log = logger<ArtifactCommentLayer>()
     }
 }
+
+/** Map an un-submitted [ReviewComment] to the sc3 wire DTO (S004). */
+private fun ReviewComment.toDto(): ReviewCommentDto =
+    ReviewCommentDto(
+        id = id,
+        anchor = CommentAnchorDto(
+            sectionPath = anchor.sectionPath?.takeIf { it.isNotEmpty() },
+            quote = anchor.quote?.takeIf { it.isNotEmpty() },
+            openQuestionId = anchor.openQuestionId?.takeIf { it.isNotEmpty() },
+        ),
+        body = body,
+    )

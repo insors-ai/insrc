@@ -1,0 +1,76 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1789824186267-yrj02j",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-19T13:23:06.268Z",
+    "model": "client",
+    "elapsedMs": 7,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "238917216d8fd532",
+    "storyId": "s4"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "238917216d8fd532",
+    "storyId": "s4",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        ".insrc/artifacts/LLD-238917216d8fd532-s4.json",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGateway.kt",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGatewayService.kt",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/review/ArtifactCommentLayer.kt",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/review/ArtifactContentPane.kt",
+        "jetbrains-plugin/src/main/resources/insrc-review/comment-layer.js",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleServiceTest.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/onboarding/OnboardingCleanupIntegrationTest.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/onboarding/OnboardingLifecycleTest.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/onboarding/OnboardingWiringTest.kt",
+        "src/daemon/index.ts",
+        "src/workflow/questions.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/review/ArtifactCommentLayer.kt:115",
+            "message": "The JCEF/EDT Submit orchestration (submit()/applyResult(), the submitQuery bridge, comment-layer.js Submit button) has no automated test — it needs a live JBR/JCEF browser. This is a disclosed residual: the load-bearing decisions were extracted into pure Kotlin — SubmitDecision.shouldClear (tested: clears only on recorded===submitted) + the comment->ReviewCommentDto mapping + the gateway Recorded/Unavailable classification incl. the real UnixSocketDaemonRpc.parse framing boundary (ResolveCommentTest, 8 tests). The remove-only-submittedIds (HIGH fix) and the inFlight guard (MED fix) live in applyResult/submit and are the manual/backstopped surface.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/review/ArtifactCommentLayer.kt:155",
+            "message": "Independent cold review (opposite-actor) found and this build FIXED a HIGH silent-data-loss race (submit cleared the WHOLE buffer, dropping comments the reviewer added mid-flight) — fixed by removing ONLY the snapshotted submittedIds; plus 3 MED (double-submit re-entrancy -> an EDT-only inFlight guard; N synchronous git commit+push per submit blocking the daemon event loop -> an additive recordResolution opts.commit=false + one batched commit; a non-idempotent append duplicating on partial-failure re-submit -> resolveTargetQuestion reuses an identical already-appended question). Re-review CLEAN. Recorded here as the resolved risk. Narrow residual: editing an ALREADY-submitted comment during the in-flight window drops the un-submitted edit delta (the pre-edit body was what got recorded) — a much narrower corner than the fixed HIGH.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 2
+    }
+  }
+}

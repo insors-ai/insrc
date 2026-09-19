@@ -45,7 +45,8 @@
         "rationale": "User's explicit in-chat choice. a1 records EVERY comment kind through the existing recordResolution + open-question machinery with the existing status enum (no types.ts change, staying within s4's boundary), honoring ac1 for section/quote/general comments. The cost — appending reviewer-authored entries to the artifact's own body.openQuestions — is accepted as the single new write shape.",
         "resolvedAt": "2026-09-19T12:12:15.339Z"
       }
-    }
+    },
+    "approvedAt": "2026-09-19T12:13:05.412Z"
   },
   "body": {
     "hldContextSlice": {

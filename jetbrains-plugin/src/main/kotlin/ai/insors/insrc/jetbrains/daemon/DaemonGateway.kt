@@ -94,6 +94,45 @@ sealed interface ArtifactContentResult {
 }
 
 /**
+ * One inline comment sent to the daemon for recording (Story S004 / sc3). The
+ * wire shape of an un-submitted [CommentBuffer][ai.insors.insrc.jetbrains.review.CommentBuffer]
+ * comment: an id, an anchor, and a non-empty body. Forwarded VERBATIM; the
+ * daemon owns the mapping onto open-question resolutions (k1).
+ */
+data class CommentAnchorDto(
+    val sectionPath: String? = null,
+    val quote: String? = null,
+    val openQuestionId: String? = null,
+)
+
+data class ReviewCommentDto(
+    val id: String,
+    val anchor: CommentAnchorDto,
+    val body: String,
+)
+
+/** One recorded resolution reported back per comment (Story S004 / sc3). */
+data class ResolvedCommentDto(
+    val openQuestionId: String?,
+    val status: String,
+)
+
+/**
+ * The result of submitting comments for recording (Story S004 / sc3). Two-state
+ * like [ArtifactContentResult]: [Recorded] is DISTINCT from [Unavailable] (the
+ * daemon was unreachable OR returned an error). The plugin NEVER treats an
+ * error reply as success (the S001 framing invariant): only a [Recorded] with
+ * `recorded == submitted` lets the panel clear the buffer (ac3).
+ */
+sealed interface ResolveCommentResult {
+    /** The daemon recorded [recorded] comments; [resolutions] reports each. */
+    data class Recorded(val recorded: Int, val resolutions: List<ResolvedCommentDto>) : ResolveCommentResult
+
+    /** The daemon was unreachable or returned an error; [reason] explains why. */
+    data class Unavailable(val reason: String) : ResolveCommentResult
+}
+
+/**
  * Thrown when the daemon socket cannot be reached to answer a query or perform
  * registration. Surfaced to the caller (never swallowed) so the S003 lifecycle
  * / S005 onboarding consumers can offer setup — the gateway itself has no retry
@@ -149,6 +188,21 @@ interface DaemonGateway {
      * shows a distinct 'content unavailable' state, never a blank (ac2).
      */
     fun artifactReviewView(projectRootPath: String, mdPath: String): ArtifactContentResult
+
+    /**
+     * Submit [comments] to be recorded against the artifact named by [artifactId]
+     * as open-question resolutions (Story S004 / sc3). A thin forward of the
+     * daemon's `workflow.resolveComment` reply — NO client-side resolution
+     * reasoning (k1). Like the read paths it does NOT throw: an unreachable or
+     * error-returning daemon maps to [ResolveCommentResult.Unavailable] so the
+     * panel keeps the un-submitted buffer and surfaces the failure (ac3), never
+     * treating an error as a silent success (the S001 framing invariant).
+     */
+    fun resolveComment(
+        projectRootPath: String,
+        artifactId: String,
+        comments: List<ReviewCommentDto>,
+    ): ResolveCommentResult
 }
 
 /**
@@ -240,18 +294,77 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
             ArtifactContentResult.Unavailable(e.message ?: "unexpected daemon fault")
         }
 
+    override fun resolveComment(
+        projectRootPath: String,
+        artifactId: String,
+        comments: List<ReviewCommentDto>,
+    ): ResolveCommentResult =
+        try {
+            val r = rpc.call(
+                METHOD_WORKFLOW_RESOLVE_COMMENT,
+                mapOf(
+                    PARAM_REPO to projectRootPath,
+                    PARAM_ARTIFACT_ID to artifactId,
+                    PARAM_COMMENTS to comments.map(::commentToMap),
+                ),
+            )
+            if (!r.ok || r.error != null) {
+                // An error reply (unsupported/malformed artifactId, unreadable
+                // artifact, a mid-batch write failure) is Unavailable, never a
+                // silent success — the panel keeps the buffer (k1, ac3, S001 framing).
+                ResolveCommentResult.Unavailable(r.error ?: "workflow.resolveComment returned an error")
+            } else {
+                ResolveCommentResult.Recorded(
+                    recorded = (r.data["recorded"] as? Number)?.toInt() ?: 0,
+                    resolutions = parseResolutions(r.data["resolutions"]),
+                )
+            }
+        } catch (e: DaemonUnavailableException) {
+            ResolveCommentResult.Unavailable(e.message ?: "daemon unavailable")
+        } catch (e: RuntimeException) {
+            // Defense-in-depth: any unexpected transport fault surfaces as
+            // Unavailable rather than crashing Submit (ac3).
+            ResolveCommentResult.Unavailable(e.message ?: "unexpected daemon fault")
+        }
+
     companion object {
         const val METHOD_STATUS = "daemon.status"
         const val METHOD_REPO_LIST = "repo.list"
         const val METHOD_REPO_ADD = "repo.add"
         const val METHOD_WORKFLOW_PENDING = "workflow.pending"
         const val METHOD_WORKFLOW_ARTIFACT_CONTENT = "workflow.artifactContent"
+        const val METHOD_WORKFLOW_RESOLVE_COMMENT = "workflow.resolveComment"
         const val FIELD_STALE = "stale"
         const val FIELD_REPOS = "repos"
         const val FIELD_ARTIFACTS = "artifacts"
         const val PARAM_PATH = "path"
         const val PARAM_REPO = "repo"
         const val PARAM_MD_PATH = "mdPath"
+        const val PARAM_ARTIFACT_ID = "artifactId"
+        const val PARAM_COMMENTS = "comments"
+
+        /** Serialize one comment to the wire map, omitting null anchor fields
+         *  (the daemon treats an absent field the same as a null one). */
+        private fun commentToMap(c: ReviewCommentDto): Map<String, Any?> {
+            val anchor = buildMap<String, Any?> {
+                c.anchor.sectionPath?.let { put("sectionPath", it) }
+                c.anchor.quote?.let { put("quote", it) }
+                c.anchor.openQuestionId?.let { put("openQuestionId", it) }
+            }
+            return mapOf("id" to c.id, "anchor" to anchor, "body" to c.body)
+        }
+
+        /** Map the daemon's `resolutions` payload to DTOs (verbatim, k1). */
+        private fun parseResolutions(raw: Any?): List<ResolvedCommentDto> {
+            val list = raw as? List<*> ?: return emptyList()
+            return list.mapNotNull { item ->
+                val m = item as? Map<*, *> ?: return@mapNotNull null
+                ResolvedCommentDto(
+                    openQuestionId = (m["openQuestionId"] as? String)?.takeIf { it.isNotEmpty() },
+                    status = str(m["status"]),
+                )
+            }
+        }
 
         /**
          * Map the daemon's raw `artifacts` payload to DTOs, forwarding every

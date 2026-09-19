@@ -29,8 +29,8 @@ import javax.swing.SwingConstants
  * All methods run on the EDT.
  */
 internal class ArtifactContentPane(
-    @Suppress("unused") private val project: Project,
-    @Suppress("unused") private val gateway: DaemonGateway,
+    private val project: Project,
+    private val gateway: DaemonGateway,
     private val parentDisposable: Disposable,
 ) {
     private val cards = CardLayout()
@@ -88,7 +88,13 @@ internal class ArtifactContentPane(
             if (b != null) {
                 root.add(b.component, CARD_JCEF)
                 commentLayer = try {
-                    ArtifactCommentLayer(b, parentDisposable)
+                    ArtifactCommentLayer(
+                        browser = b,
+                        parentDisposable = parentDisposable,
+                        gateway = gateway,
+                        repoSupplier = { project.basePath },
+                        notify = ::notifyUser,
+                    )
                 } catch (t: Throwable) {
                     log.warn("insrc: could not create the comment layer; the content view stays read-only", t)
                     null
@@ -213,6 +219,22 @@ internal class ArtifactContentPane(
             $commentScript
             </body></html>
         """.trimIndent()
+    }
+
+    /** Surface a submit success/failure via the shared 'insrc' notification group. */
+    private fun notifyUser(message: String, error: Boolean) {
+        try {
+            com.intellij.notification.NotificationGroupManager.getInstance()
+                .getNotificationGroup("insrc")
+                .createNotification(
+                    message,
+                    if (error) com.intellij.notification.NotificationType.ERROR
+                    else com.intellij.notification.NotificationType.INFORMATION,
+                )
+                .notify(project)
+        } catch (t: Throwable) {
+            log.warn("insrc: failed to post a submit notification: $message", t)
+        }
     }
 
     private fun readBundled(resource: String): String? =

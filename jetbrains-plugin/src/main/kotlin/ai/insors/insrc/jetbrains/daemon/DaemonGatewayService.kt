@@ -29,4 +29,11 @@ class DaemonGatewayService : DaemonGateway {
 
     override fun artifactReviewView(projectRootPath: String, mdPath: String): ArtifactContentResult =
         delegate.artifactReviewView(projectRootPath, mdPath)
+
+    override fun resolveComment(
+        projectRootPath: String,
+        artifactId: String,
+        comments: List<ReviewCommentDto>,
+    ): ResolveCommentResult =
+        delegate.resolveComment(projectRootPath, artifactId, comments)
 }

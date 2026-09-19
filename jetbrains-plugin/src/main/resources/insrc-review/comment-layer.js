@@ -120,6 +120,12 @@
     post('add', { anchor: anchor, body: body });
   }
 
+  function onSubmitClick() {
+    var submit = global.__insrcSubmitComments;
+    if (typeof submit !== 'function') { flashHint('Submitting requires a JCEF-capable JBR.'); return; }
+    try { submit(); } catch (e) { /* never throw out of an event handler */ }
+  }
+
   function onThreadsClick(ev) {
     var t = ev.target;
     if (!t || !t.getAttribute) return;
@@ -160,10 +166,18 @@
     btn.type = 'button';
     btn.textContent = 'Add comment';
     btn.addEventListener('click', onAddClick);
+    // Submit posts the un-submitted buffer to Kotlin, which records it via the
+    // daemon (S004). Kotlin owns the outcome (clear on full success, else keep);
+    // a missing bridge (native fallback) makes this a no-op.
+    var submitBtn = document.createElement('button');
+    submitBtn.type = 'button';
+    submitBtn.textContent = 'Submit';
+    submitBtn.addEventListener('click', onSubmitClick);
     hintEl = document.createElement('span');
     hintEl.className = 'insrc-hint';
     hintEl.style.visibility = 'hidden';
     bar.appendChild(btn);
+    bar.appendChild(submitBtn);
     bar.appendChild(hintEl);
 
     threadsEl = document.createElement('div');

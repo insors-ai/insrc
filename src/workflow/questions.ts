@@ -389,6 +389,7 @@ export function recordResolution(
 	status:     QuestionResolutionStatus,
 	choice?:    string,
 	rationale?: string,
+	opts?:      { readonly commit?: boolean },
 ): RecordResolutionResult {
 	const loc = locateArtifact(repoPath, kind, epicHash, storyId);
 	const texts = loc.artifact.body.openQuestions ?? [];
@@ -417,8 +418,13 @@ export function recordResolution(
 	writeAtomic(loc.jsonPath, JSON.stringify(next, null, 2) + '\n');
 	writeAtomic(loc.mdPath, loc.renderMd(next, nextResolutions));
 
-	const summary = resolutionSummary(kind, epicHash, storyId, qId, resolution);
-	commitAndComment(repoPath, loc.jsonPath, loc.mdPath, loc.trackerRef, summary);
+	// A batched caller (e.g. workflow.resolveComment recording N comments at once)
+	// passes commit:false to skip the per-call git commit+push and commit ONCE at
+	// the end — the default stays commit-per-resolution for existing callers.
+	if (opts?.commit !== false) {
+		const summary = resolutionSummary(kind, epicHash, storyId, qId, resolution);
+		commitAndComment(repoPath, loc.jsonPath, loc.mdPath, loc.trackerRef, summary);
+	}
 
 	log.info({ kind, epicHash, storyId, questionId: qId, status }, 'workflow:questions: resolution recorded');
 

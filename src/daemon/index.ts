@@ -596,6 +596,20 @@ async function main(): Promise<void> {
 			);
 		},
 
+		// sc3 (ide-artifact-review-panel S004): record the submitted review
+		// comments against their artifact as open-question resolutions, through
+		// the EXISTING recordResolution machinery (k4/lc1 — no parallel store).
+		// The artifactId (DEF/HLD/LLD) is the locator; every failure maps to a
+		// structured { error } the plugin renders as Unavailable (keeping the
+		// un-submitted buffer, ac3). Write-side; delegates like the read above.
+		'workflow.resolveComment': async (params) => {
+			const { handleResolveComment } = await import('../workflow/resolve-comment.js');
+			return handleResolveComment(
+				params as Parameters<typeof handleResolveComment>[0],
+				process.env['INSRC_REPO'],
+			);
+		},
+
 		// Read-side of sc4 (S007): resolve a brainstorm SpecArtifact by its
 		// specHash, refusing an unapproved one. `define` / standalone
 		// `design.story` reach an approved spec ONLY through this IPC — never by

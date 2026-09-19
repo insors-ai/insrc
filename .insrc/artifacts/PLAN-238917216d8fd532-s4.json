@@ -1,0 +1,378 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1789819992844-z9oygb",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-19T12:17:37.366Z",
+    "epicCreatedAt": "2026-09-19T06:30:32.186Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 264469,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "238917216d8fd532",
+    "epicSlug": "ide-artifact-review-panel-jetbrains-plugin",
+    "storyId": "s4",
+    "lldRunId": "wf-1789818615081-okvb4w",
+    "lldEffectiveHash": "c93cb4358ff4bac8cafea32cce98dffe14aa21172b7d14ee226c0ebaebfb947a",
+    "review": {
+      "artifact": "plan",
+      "stage": "plan",
+      "verdict": "pass",
+      "findings": [],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 0
+      },
+      "reviewedAt": "2026-09-19T12:18:18.172Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-19T12:56:43.239Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Daemon types + artifactId parser (pure)",
+        "summary": "Add ResolveCommentRequest/ResolveCommentResult + the ReviewComment/CommentAnchor request types (sc3) in src/workflow/resolve-comment.ts, and a pure parseArtifactId(id): { kind, epicHash, storyId } | null that decodes 'LLD-<epicHash>-<storyId>' (returns null on junk). No I/O.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "parseArtifactId('LLD-238917216d8fd532-s4') -> {kind:'LLD', epicHash:'238917216d8fd532', storyId:'s4'}",
+          "parseArtifactId of a malformed id returns null (no throw)",
+          "The types match the sc3 ResolveCommentRequest/ResolveCommentResult shapes (recorded, resolutions[])"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "parseArtifactId decodes 'LLD-<hash>-s4' to {kind,epicHash,storyId} and returns null on junk"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Pure daemon handler handleResolveComment (a1 mapping)",
+        "summary": "In src/workflow/resolve-comment.ts implement handleResolveComment(params, repoEnv): parse artifactId, resolve repo, then per comment fold into recordResolution — openQuestionId-anchored -> resolve that question (status='resolved', choice=anchor summary, rationale=body); section/quote/general -> append a new body.openQuestions entry (read-modify-write the artifact json) then resolve its minted qId (a1). Return {recorded, resolutions[]} or a RETURNED {error} on every failure (malformed id, repo unresolved, artifact not found, empty/blank comments, a mid-batch recordResolution failure with recorded-so-far).",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "An openQuestionId-anchored comment writes a resolution into meta.questionResolutions for that qId",
+          "A general/section/quote comment appends a body.openQuestions entry AND records a resolution against its minted qId",
+          "recorded === comments successfully written; resolutions[] reports {openQuestionId?, status}",
+          "Every failure path RETURNS {error} (never throws); nothing outside the target artifact json is written"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "handleResolveComment: openQuestionId-anchored comment -> resolution in meta.questionResolutions"
+          },
+          {
+            "level": "unit",
+            "name": "handleResolveComment: general/section/quote comment -> body.openQuestions appended + resolution recorded (a1)"
+          },
+          {
+            "level": "unit",
+            "name": "handleResolveComment: recorded === comments written; resolutions[] shape"
+          },
+          {
+            "level": "unit",
+            "name": "handleResolveComment: every failure path returns {error}, never throws"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Register workflow.resolveComment in the daemon dispatch",
+        "summary": "Register the 'workflow.resolveComment' method in src/daemon/index.ts delegating to handleResolveComment(params, repoEnv), mirroring the S002 workflow.artifactContent registration. Purely additive.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "The daemon routes method 'workflow.resolveComment' to handleResolveComment",
+          "No existing dispatch entry is changed"
+        ],
+        "derivedFrom": [
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "the daemon dispatch routes 'workflow.resolveComment' to handleResolveComment"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Daemon tests (handler + parser + dispatch/persistence)",
+        "summary": "Add src/workflow/__tests__/resolve-comment.test.ts mirroring artifact-content.test.ts (temp .insrc/artifacts fixture, no socket): each comment kind recorded; recorded count; every {error} path; read-only-except-target; parseArtifactId happy/junk. PLUS a lightweight dispatch/persistence assertion (call the handler over a temp registered-repo fixture and re-read the artifact json to confirm the resolutions/appended questions are durable — ac2). Verify via npx tsx --test + tsc --noEmit.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "Tests cover openQuestionId-anchored + general-append + recorded-count + malformed-id + empty-comments + absent-artifact + read-only-except-target",
+          "A persistence assertion re-reads the artifact json after a call and finds the recorded resolutions/appended questions (ac2)",
+          "npx tsc --noEmit clean; the new tests pass under npx tsx --test"
+        ],
+        "derivedFrom": [
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "handleResolveComment: malformed/missing artifactId + empty comments + absent/unreadable artifact -> {error}"
+          },
+          {
+            "level": "unit",
+            "name": "read-only-except-target: no file outside the target artifact json is created/mutated"
+          },
+          {
+            "level": "integration",
+            "name": "persistence: re-reading the artifact json after a call finds the recorded resolutions/appended questions (ac2)"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Plugin gateway wrapper + DTOs + Recorded|Unavailable result",
+        "summary": "Add DaemonGateway.resolveComment(repo, artifactId, comments): ResolveCommentResult (Recorded|Unavailable) + ReviewCommentDto + the result DTOs in DaemonGateway.kt, mirroring S002's artifactReviewView/ArtifactContentResult; classify the reply verbatim (ok->Recorded; ok=false/DaemonUnavailable/result.error/malformed->Unavailable). Add the new interface-method override to EVERY gateway test double (FakeGateway/NoopGateway/AlreadyRegisteredGateway across all test files) + imports in the SAME task so the suite compiles.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "DaemonGatewayImpl.resolveComment maps ok(result)->Recorded and ok=false/DaemonUnavailable/result.error/malformed->Unavailable",
+          "All existing gateway test doubles compile with the new override (no broken test files)",
+          "The comment->ReviewCommentDto wire mapping preserves anchor fields + body"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "DaemonGatewayImpl.resolveComment over a fake DaemonRpc: ok->Recorded; ok=false/DaemonUnavailable/malformed->Unavailable"
+          },
+          {
+            "level": "unit",
+            "name": "comment -> ReviewCommentDto wire mapping preserves anchor fields + body"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Submit action wired into the S003 comment panel",
+        "summary": "Wire Submit end-to-end: extract the pure submit-outcome DECISION (recorded===submitted -> clear the buffer, else keep it) into a testable Kotlin function; the ArtifactContentPane/ArtifactCommentLayer Submit path reads CommentBuffer.snapshot(), maps to DTOs, calls gateway.resolveComment off-EDT, marshals the result to the EDT, applies the decision (clear+re-push+refresh the S002 view on full success, else keep+notify via the 'insrc' group). The comment-layer.js Submit button + JBCefJSQuery bridge call is the manual/backstopped residual (recorded honestly in the CR).",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "The pure submit-outcome decision is a standalone testable function (recorded===submitted -> clear, else keep)",
+          "Submit reads CommentBuffer.snapshot(), calls resolveComment off-EDT, and marshals the result to the EDT",
+          "On Recorded with recorded===submitted the buffer is cleared + re-pushed; otherwise the whole buffer is kept and the failure surfaced (ac3)",
+          "Submit is unavailable/no-op with an empty buffer or in the native (non-JCEF) fallback"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c5",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "submit-outcome decision: recorded===submitted -> clear the buffer; else keep the whole buffer"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Plugin tests (gateway boundary + submit-outcome)",
+        "summary": "Add plugin JUnit tests mirroring ArtifactContentTest: DaemonGatewayImpl.resolveComment over a fake DaemonRpc (ok->Recorded; ok=false/DaemonUnavailable/malformed->Unavailable) AND the real UnixSocketDaemonRpc.parse across the framing boundary ({result:{...}}->Recorded; {result:{error}}->Unavailable); the pure submit-outcome decision (clear only on recorded===submitted); the comment->DTO mapping. Verify via ./gradlew test JDK21.",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t5",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "Gateway tests cross the real parse framing boundary ({result:{error}}->Unavailable)",
+          "The submit-outcome decision keeps the whole buffer on any non-full/failed result and clears only on full success",
+          "./gradlew test green on JDK21"
+        ],
+        "derivedFrom": [
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "real UnixSocketDaemonRpc.parse across the boundary: {result:{recorded,resolutions}}->Recorded; {result:{error}}->Unavailable"
+          },
+          {
+            "level": "unit",
+            "name": "submit-outcome decision keeps the whole buffer on any non-full/failed result"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "handleResolveComment: openQuestionId-anchored comment -> recordResolution(qId=openQuestionId, status='resolved', rationale=body); the artifact json's meta.questionResolutions gains the entry",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "handleResolveComment: section/quote/general comment -> a new body.openQuestions entry appended AND a resolution recorded against its minted qId (a1)",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "handleResolveComment: recorded count === comments written; resolutions[] shape",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "handleResolveComment: malformed/missing artifactId -> {error}, no write; empty comments -> {error}",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "handleResolveComment: unreadable/absent artifact json -> {error}; a mid-batch recordResolution failure -> {error} with recorded-so-far and no silent drop",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "artifactId parser: 'LLD-238917216d8fd532-s4' -> {kind:'LLD', epicHash, storyId:'s4'}; junk -> null",
+        "coveredByTaskIds": [
+          "t1",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "read-only-except-target: no file outside the target artifact json is created/mutated",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "DaemonGatewayImpl.resolveComment over a fake DaemonRpc: ok(result) -> Recorded(recorded, resolutions); ok=false -> Unavailable; DaemonUnavailable -> Unavailable; malformed -> Unavailable (never a blank Recorded)",
+        "coveredByTaskIds": [
+          "t5",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "the REAL UnixSocketDaemonRpc.parse across the boundary: {result:{recorded,resolutions}} -> ok=true -> Recorded; {result:{error}} -> ok=false -> Unavailable (a RETURNED handler error, not a throw)",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "the comment -> ReviewCommentDto wire mapping (anchor fields + body preserved)",
+        "coveredByTaskIds": [
+          "t5",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "the pure submit-outcome decision: clear the buffer ONLY when recorded === submitted; otherwise keep the whole buffer (ac3)",
+        "coveredByTaskIds": [
+          "t6",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "the daemon index.ts dispatch routes 'workflow.resolveComment' to handleResolveComment",
+        "coveredByTaskIds": [
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "after a successful call, re-reading the artifact json shows the resolutions/appended questions (durable, backing-service-side — ac2)",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 contractDetails.api workflow.resolveComment (handleResolveComment signature + pre/postconditions)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 contractDetails.api recordResolution (the reused write path, questions.ts:383)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 contractDetails.api DaemonGateway.resolveComment (Recorded|Unavailable result, S001 framing invariant)"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 dataModelChanges (ResolveCommentRequest/ResolveCommentResult + body.openQuestions/meta.questionResolutions)"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 errorPaths (returned {error} on every failure; buffer-kept on failure; invariants)"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 testStrategy (daemon unit + real parse boundary + persistence; frameworks)"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 migration (additive dispatch registration + plugin gateway + Submit wiring; backward compat)"
+    }
+  ]
+}

@@ -1,0 +1,355 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1789816754563-9dver0",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-19T11:23:09.187Z",
+    "epicCreatedAt": "2026-09-19T06:30:32.186Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 234604,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "238917216d8fd532",
+    "epicSlug": "ide-artifact-review-panel-jetbrains-plugin",
+    "storyId": "s3",
+    "lldRunId": "wf-1789815661984-ov4xx0",
+    "lldEffectiveHash": "c93cb4358ff4bac8cafea32cce98dffe14aa21172b7d14ee226c0ebaebfb947a",
+    "review": {
+      "artifact": "plan",
+      "stage": "plan",
+      "verdict": "pass",
+      "findings": [],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 0
+      },
+      "reviewedAt": "2026-09-19T11:24:09.901Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-19T11:26:47.963Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Plugin: sc3 model (ReviewComment/CommentAnchor) + pure CommentBuffer",
+        "summary": "Add the sc3 Kotlin data classes ReviewComment(id, anchor, body) + CommentAnchor(sectionPath?, quote?, openQuestionId?) and the pure Kotlin-owned CommentBuffer (add mints a client id + appends and returns the ReviewComment; edit(id,body)->Boolean; remove(id)->Boolean; snapshot()->immutable List in insertion order; clear()). Source of truth, headlessly testable. Presentation-only (lc1/k1) — in-memory only, no persistence, no daemon call.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "ReviewComment/CommentAnchor compile with all anchor fields optional; add mints a client id, appends, returns the ReviewComment carrying anchor+body.",
+          "edit(known)->true + reflected in snapshot; edit(unknown)->false, no change; remove(known) drops it; remove(unknown)->false.",
+          "snapshot() is an immutable copy in insertion order; clear() empties it; two adds to the same sectionPath get distinct ids.",
+          "No file/daemon access; compiles under JDK21/Gradle 8.10."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "CommentBuffer.add mints a client id, appends, and returns the ReviewComment carrying the anchor+body (ac1)"
+          },
+          {
+            "level": "unit",
+            "name": "CommentBuffer.edit(known id) updates the body and is reflected in snapshot; edit(unknown id) returns false and changes nothing (ac3)"
+          },
+          {
+            "level": "unit",
+            "name": "CommentBuffer.remove(known id) drops it from snapshot; remove(unknown id) returns false (ac3)"
+          },
+          {
+            "level": "unit",
+            "name": "snapshot() returns an immutable copy in insertion order; clear() empties it"
+          },
+          {
+            "level": "unit",
+            "name": "two adds to the same sectionPath get DISTINCT ids and each retains its own quote (ac2)"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Plugin: pure comment-op applier (JSON op -> CommentBuffer mutation)",
+        "summary": "Add the pure applyCommentOp(buffer, payloadJson) that the JBCefJSQuery handler will delegate to: parse a { op: add|edit|remove, comment } JSON payload and fold it into the CommentBuffer, rejecting malformed JSON / unknown op / missing fields (no-op, no throw) and an add with an all-null anchor OR a blank body. Headlessly testable; the JS<->Kotlin boundary logic lives here in Kotlin, not JS.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "applyCommentOp(add) with a valid anchor+body -> the buffer gains the anchored comment; (edit/remove) by id -> reflected in snapshot.",
+          "malformed JSON / unknown op / missing fields -> no-op (buffer unchanged), never throws.",
+          "an add with an all-null anchor OR a blank body -> rejected (no comment added).",
+          "an add whose anchor carries openQuestionId -> the comment is distinctly associated."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "applyCommentOp(add) with a valid anchor+body -> buffer gains the anchored comment (ac1)"
+          },
+          {
+            "level": "unit",
+            "name": "applyCommentOp(edit/remove) by id -> reflected in snapshot (ac3)"
+          },
+          {
+            "level": "unit",
+            "name": "malformed JSON / unknown op / missing fields -> no-op (buffer unchanged), no throw"
+          },
+          {
+            "level": "unit",
+            "name": "an add with an all-null anchor OR a blank body -> rejected"
+          },
+          {
+            "level": "unit",
+            "name": "an add whose anchor carries openQuestionId -> distinctly associated (ac2)"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Plugin: additive heading-id hook in the bundled markdown-renderer.js",
+        "summary": "Additively extend the S002 bundled markdown-renderer.js so ATX headings emit a stable id (slug + ordinal) and expose the heading path, enabling CommentAnchor.sectionPath. Purely additive to the render output; the HTML-escaping, link-scheme filter, and CSP (no CDN, read-only) rules are unchanged.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Headings render with a stable, unique id (slug + ordinal for duplicates); a heading-path helper is available to the comment JS.",
+          "No change to escaping / link-scheme / CSP behavior; still a local resource (no CDN).",
+          "The renderer still ships in the plugin jar; S002 rendering is unaffected."
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "renderer resource: the bundled markdown-renderer.js still ships in the built resources / jar and carries no http(s)/CDN reference after the heading-id addition"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Plugin: the comment JS layer (bundled resource)",
+        "summary": "Add the comment JS layer as a bundled local resource loaded into the JCEF page alongside the renderer: a selection / open-question-marker 'add comment' affordance, anchor capture (sectionPath from the t3 heading ids, quote from window.getSelection, openQuestionId on a marker click), thread rendering from a pushed comment set, and the injected JBCefJSQuery call posting { op, comment } for add/edit/remove. Pre-checks a non-empty selection/target before posting. No network; read-only over the rendered content. The load-bearing op validation lives in the pure t2 applier (Kotlin); this JS only captures + posts + renders.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "The JS resource is bundled locally (no CDN/http reference) and loaded into the JCEF page by composeHtml.",
+          "Selection / open-question-marker -> an 'add comment' affordance that captures the anchor and posts { op:add, comment } via the injected query; edit/remove post their ops.",
+          "Threads render from a pushed comment set (Kotlin is the source of truth); an empty selection/body is pre-checked and not posted."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "comment JS resource: present on the classpath / in the built resources and referenced by a local URL only (no http(s)/CDN string)"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Plugin: wire ArtifactCommentLayer into ArtifactContentPane (JBCefJSQuery bridge + native-fallback notice)",
+        "summary": "Add ArtifactCommentLayer(buffer, browser, parentDisposable) hosted in the S002 ArtifactContentPane: create the JBCefJSQuery(ies) at page-build time (guarded by the S002 @Volatile disposed flag + browser.isDisposed — the proven S002 pattern), addHandler delegating to the pure t2 applyCommentOp, inject the query into the page (composeHtml), and on each content (re-)load re-attach + re-push the buffer so un-submitted comments survive a re-render; per-artifact buffer scoping. A malformed payload is ignored (logged), never throwing into the EDT. On the native-editor fallback the layer is inert and the pane shows a one-line 'annotation requires a JCEF-capable JBR' notice (JCEF-only, resolved). No content re-fetch (s2), no daemon write (s4), no approve wiring (s5). Only the JBCefJSQuery+inject+re-render slice is manual-verified; validation + mutation are the tested t2 core.",
+        "size": "L",
+        "order": 5,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "Selecting a part / an open-question marker in the JCEF view adds an anchored comment thread (ac1); several comments are each distinctly associated (ac2).",
+          "Edit/remove of an un-submitted comment is reflected before any submit; a page re-render (poll refresh/re-open) preserves the comments from the Kotlin buffer (ac3).",
+          "JBCefJSQuery create/inject/re-render are guarded by disposed/isDisposed + try/catch (no AlreadyDisposedException); handlers disposed with parentDisposable.",
+          "On the native fallback annotation is inert with a one-line notice; no daemon write / approve wiring is added; S001 list + S002 fetch/render are untouched."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "per-artifact scoping: the buffer/layer is keyed to the open artifactId so switching artifacts shows only that artifact's comments (the Kotlin-side scoping check; JBCefJSQuery wiring itself is manual-verified)"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Plugin tests: CommentBuffer + comment-op applier + anchor model",
+        "summary": "Add plugin JUnit tests (mirroring ArtifactContentTest) for CommentBuffer (add/edit/remove/snapshot/clear, distinct same-section ids), the comment-op applier (add/edit/remove reflected; malformed/unknown/missing -> no-op; empty anchor/blank body rejected; openQuestionId association), and the anchor model + per-artifact scoping. Verify locally (./gradlew test JDK21). The JS layer (t3/t4) + the JCEF wiring (t5) have no JVM harness — manual + backstopped by the pure cores (the known JS-untested residual, recorded honestly in the CR as in S002).",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "Every LLD test-strategy subject for ac1/ac2/ac3 has a passing test over the pure Kotlin cores.",
+          "Plugin tests green via ./gradlew test on JDK21; no live socket, no GitHub CI.",
+          "The JS/JCEF residual is recorded honestly (not asserted as covered)."
+        ],
+        "derivedFrom": [
+          "c5",
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Aggregate: CommentBuffer + comment-op applier + anchor model + per-artifact scoping subjects run green via ./gradlew test JDK21"
+          },
+          {
+            "level": "unit",
+            "name": "CommentAnchor supports section-only, quote-only, openQuestion-only, and combined anchors (all optional)"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "CommentBuffer.add mints a client id, appends, and returns the ReviewComment carrying the anchor+body (ac1)",
+        "coveredByTaskIds": [
+          "t1",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "CommentBuffer.edit(known id) updates the body and is reflected in snapshot; edit(unknown id) returns false and changes nothing (ac3)",
+        "coveredByTaskIds": [
+          "t1",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "CommentBuffer.remove(known id) drops it from snapshot; remove(unknown id) returns false (ac3)",
+        "coveredByTaskIds": [
+          "t1",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "snapshot() returns an immutable copy in insertion order; clear() empties it",
+        "coveredByTaskIds": [
+          "t1",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "two adds to the same sectionPath get DISTINCT ids and each retains its own quote (ac2)",
+        "coveredByTaskIds": [
+          "t1",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "applyCommentOp(add) with a valid anchor+body -> buffer gains the anchored comment (ac1)",
+        "coveredByTaskIds": [
+          "t2",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "applyCommentOp(edit/remove) by id -> reflected in snapshot (ac3)",
+        "coveredByTaskIds": [
+          "t2",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "malformed JSON / unknown op / missing fields -> no-op (buffer unchanged), no throw",
+        "coveredByTaskIds": [
+          "t2",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "an add with an all-null anchor OR a blank body -> rejected",
+        "coveredByTaskIds": [
+          "t2",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "an add whose anchor carries openQuestionId -> distinctly associated (ac2)",
+        "coveredByTaskIds": [
+          "t2",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "CommentAnchor supports section-only, quote-only, openQuestion-only, and combined anchors (all optional)",
+        "coveredByTaskIds": [
+          "t1",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "the buffer is scoped per artifactId so switching artifacts shows only that artifact's comments",
+        "coveredByTaskIds": [
+          "t5",
+          "t6"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 contractDetails.api CommentBuffer + ArtifactCommentLayer + interactionWithShared sc3 (presentation-only, lc1/k1)",
+      "quotedText": "The pure Kotlin-owned un-submitted buffer (source of truth) ... Presentation-only — no persistence, no resolution reasoning (lc1/k1)."
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 dataModelChanges ReviewComment / CommentAnchor / CommentBuffer",
+      "quotedText": "+ data class ReviewComment(id: String, anchor: CommentAnchor, body: String)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 errorPaths (malformed payload no-op, unknown-id no-op, dispose-race guard, empty anchor/blank body rejected)",
+      "quotedText": "malformed JSON / unknown op / missing fields -> no-op (buffer unchanged), never throws"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 contractDetails.api markdown-renderer.js (additive heading ids) + the comment JS layer + migration (JCEF-only)",
+      "quotedText": "ATX headings now emit a stable id (slug + ordinal) and expose the heading path so the comment JS can compute CommentAnchor.sectionPath"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 testStrategy (plugin JUnit; JS/JCEF is the manual/backstopped residual)",
+      "quotedText": "Plugin: JUnit5 (pure Kotlin units — CommentBuffer + the comment-op applier + the anchor model) via ./gradlew test on JDK21"
+    }
+  ]
+}

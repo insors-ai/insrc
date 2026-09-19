@@ -44,6 +44,19 @@
     return out;
   }
 
+  // Stable slug for a heading id (Story S003 / t3): lowercase, strip inline
+  // markdown markers + any tags, non-alnum -> single hyphen, trimmed. Purely
+  // additive — it feeds the id/section-path attributes below and changes no
+  // existing output.
+  function slugify(text) {
+    return String(text == null ? '' : text)
+      .toLowerCase()
+      .replace(/[`*_~]/g, '')
+      .replace(/<[^>]*>/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  }
+
   function renderMarkdown(md) {
     var src = String(md == null ? '' : md).replace(/\r\n?/g, '\n');
     var lines = src.split('\n');
@@ -51,6 +64,26 @@
     var i = 0;
     var listType = null; // 'ul' | 'ol' | null
     var para = [];
+
+    // Heading anchoring state (Story S003 / t3), reset per render call:
+    // a stack of open headings gives each heading its breadcrumb section path,
+    // and a per-slug counter makes duplicate headings get a stable ordinal id.
+    var headingStack = []; // [{ level, title }]
+    var slugCounts = {};   // baseSlug -> times seen
+
+    function headingId(title) {
+      var base = slugify(title) || 'section';
+      var n = slugCounts[base] || 0;
+      slugCounts[base] = n + 1;
+      return n === 0 ? base : base + '-' + n;
+    }
+    function sectionPathFor(level, title) {
+      while (headingStack.length && headingStack[headingStack.length - 1].level >= level) {
+        headingStack.pop();
+      }
+      headingStack.push({ level: level, title: title });
+      return headingStack.map(function (e) { return e.title; }).join(' > ');
+    }
 
     function flushPara() {
       if (para.length) {
@@ -90,7 +123,13 @@
       if (h) {
         flushPara(); closeList();
         var level = h[1].length;
-        html.push('<h' + level + '>' + renderInline(escapeHtml(h[2].trim())) + '</h' + level + '>');
+        var title = h[2].trim();
+        var id = headingId(title);
+        var path = sectionPathFor(level, title);
+        html.push(
+          '<h' + level + ' id="' + id + '" data-section-path="' + escapeHtml(path) + '">' +
+          renderInline(escapeHtml(title)) + '</h' + level + '>'
+        );
         i++; continue;
       }
 

@@ -11,6 +11,7 @@ import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.jcef.JBCefApp
 import com.intellij.ui.jcef.JBCefBrowser
 import com.intellij.util.ui.JBUI
+import java.awt.BorderLayout
 import java.awt.CardLayout
 import javax.swing.JComponent
 import javax.swing.JPanel
@@ -45,9 +46,20 @@ internal class ArtifactContentPane(
         border = JBUI.Borders.empty(8)
     }
 
+    // One-line notice shown above the native fallback: annotation is JCEF-only
+    // (S003 open question q0faa8535 — the native fallback stays read-only).
+    private val nativeNotice = JBLabel("Annotation requires a JCEF-capable JBR — this view is read-only.").apply {
+        border = JBUI.Borders.empty(6, 8)
+        foreground = JBUI.CurrentTheme.ContextHelp.FOREGROUND
+    }
+
     // JCEF browser is created lazily ONLY when supported, and disposed with the panel.
     private val jcefSupported: Boolean = try { JBCefApp.isSupported() } catch (_: Throwable) { false }
     private var browser: JBCefBrowser? = null
+
+    // The S003 inline-comment layer — only when a JCEF browser exists (annotation
+    // is JCEF-only; the native fallback carries the read-only notice above).
+    private var commentLayer: ArtifactCommentLayer? = null
 
     // Set when the tool-window disposable is disposed. A content fetch that was
     // dispatched off-EDT may still marshal a render back AFTER disposal (the
@@ -60,7 +72,11 @@ internal class ArtifactContentPane(
 
     init {
         root.add(statusLabel, CARD_STATUS)
-        root.add(JBScrollPane(nativeArea), CARD_NATIVE)
+        val nativeCard = JPanel(BorderLayout()).apply {
+            add(nativeNotice, BorderLayout.NORTH)
+            add(JBScrollPane(nativeArea), BorderLayout.CENTER)
+        }
+        root.add(nativeCard, CARD_NATIVE)
         if (jcefSupported) {
             val b = try {
                 JBCefBrowser().also { Disposer.register(parentDisposable, it) }
@@ -69,7 +85,15 @@ internal class ArtifactContentPane(
                 null
             }
             browser = b
-            if (b != null) root.add(b.component, CARD_JCEF)
+            if (b != null) {
+                root.add(b.component, CARD_JCEF)
+                commentLayer = try {
+                    ArtifactCommentLayer(b, parentDisposable)
+                } catch (t: Throwable) {
+                    log.warn("insrc: could not create the comment layer; the content view stays read-only", t)
+                    null
+                }
+            }
         }
         Disposer.register(parentDisposable) { disposed = true }
         statusLabel.text = "Select an artifact above to review it."
@@ -96,7 +120,7 @@ internal class ArtifactContentPane(
                 // actual browser may still be null (creation failed) -> native.
                 val mode = renderModeFor(jcefSupported && browser != null)
                 if (mode == RenderMode.JCEF_HTML) {
-                    val html = composeHtml(md)
+                    val html = composeHtml(md, view.view.artifactId)
                     val b = browser
                     if (html != null && b != null && !b.isDisposed) {
                         // Guarded: a dispose race (tool window unloaded while the
@@ -123,14 +147,26 @@ internal class ArtifactContentPane(
     /**
      * Compose the JCEF page: the bundled renderer.js inlined from the classpath
      * + the daemon-provided markdown embedded as a JS string literal, rendered
-     * read-only into a container. Returns null when the bundled renderer
-     * resource is absent (caller falls back to native).
+     * read-only into a container. When a comment layer exists (S003), the bundled
+     * comment-layer.js + the per-artifact bootstrap (the Kotlin post bridge + the
+     * current buffer snapshot) are inlined too, so un-submitted comments survive
+     * a re-load. Returns null when the bundled renderer resource is absent
+     * (caller falls back to native).
      */
-    private fun composeHtml(markdown: String): String? {
-        val renderer = readBundledRenderer() ?: return null
+    private fun composeHtml(markdown: String, artifactId: String): String? {
+        val renderer = readBundled(RENDERER_RESOURCE) ?: return null
+        // The comment layer is optional: no JCEF-capable browser, a failed layer,
+        // or a missing comment-layer.js resource -> a read-only rendered page.
+        val layer = commentLayer
+        val commentScript = layer?.let { l ->
+            readBundled(COMMENT_RESOURCE)?.let { js ->
+                // bootstrap (artifact id + snapshot + bridge) BEFORE the layer script.
+                "<script>${l.pageBootstrap(artifactId)}</script>\n<script>$js</script>"
+            }
+        } ?: ""
         // Restrictive CSP (defense-in-depth on top of the escaping): no remote
-        // fetches of any kind; only the inlined renderer script + inline styles.
-        // The page is read-only; it loads nothing from the network.
+        // fetches of any kind; only the inlined scripts + inline styles. The page
+        // loads nothing from the network (the comment bridge is same-page JS).
         return """
             <!doctype html>
             <html><head><meta charset="utf-8">
@@ -143,6 +179,17 @@ internal class ArtifactContentPane(
               blockquote { border-left: 3px solid rgba(127,127,127,0.4); margin: 0; padding-left: 10px; color: #888; }
               table { border-collapse: collapse; }
               h1,h2,h3,h4,h5,h6 { margin: 0.6em 0 0.3em; }
+              .insrc-comment-bar { position: sticky; bottom: 0; background: rgba(127,127,127,0.10);
+                padding: 6px 8px; margin-top: 16px; border-top: 1px solid rgba(127,127,127,0.3); }
+              .insrc-comment-bar button { cursor: pointer; }
+              .insrc-hint { margin-left: 10px; color: #c47; font-style: italic; }
+              .insrc-threads { margin-top: 10px; }
+              .insrc-threads-title { font-weight: bold; margin-bottom: 6px; }
+              .insrc-empty { color: #888; font-style: italic; }
+              .insrc-thread { border: 1px solid rgba(127,127,127,0.3); border-radius: 4px; padding: 6px 8px; margin-bottom: 8px; }
+              .insrc-thread-where { font-size: 0.85em; color: #888; }
+              .insrc-thread-quote { border-left: 3px solid rgba(127,127,127,0.4); margin: 4px 0; padding-left: 8px; color: #888; }
+              .insrc-thread-actions { font-size: 0.85em; margin-top: 4px; }
             </style></head>
             <body><div id="insrc-content"></div>
             <script>$renderer</script>
@@ -163,15 +210,16 @@ internal class ArtifactContentPane(
                 }
               })();
             </script>
+            $commentScript
             </body></html>
         """.trimIndent()
     }
 
-    private fun readBundledRenderer(): String? =
+    private fun readBundled(resource: String): String? =
         try {
-            javaClass.getResourceAsStream(RENDERER_RESOURCE)?.readBytes()?.toString(Charsets.UTF_8)
+            javaClass.getResourceAsStream(resource)?.readBytes()?.toString(Charsets.UTF_8)
         } catch (t: Throwable) {
-            log.warn("insrc: failed to read the bundled markdown renderer", t)
+            log.warn("insrc: failed to read a bundled review resource: $resource", t)
             null
         }
 
@@ -180,6 +228,7 @@ internal class ArtifactContentPane(
         const val CARD_NATIVE = "native"
         const val CARD_JCEF = "jcef"
         const val RENDERER_RESOURCE = "/insrc-review/markdown-renderer.js"
+        const val COMMENT_RESOURCE = "/insrc-review/comment-layer.js"
         private val log = logger<ArtifactContentPane>()
     }
 }

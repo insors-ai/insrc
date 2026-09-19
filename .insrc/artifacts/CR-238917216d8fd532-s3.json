@@ -1,0 +1,58 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1789818454563-tjdyaf",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-19T11:47:34.563Z",
+    "model": "client",
+    "elapsedMs": 3,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "238917216d8fd532",
+    "storyId": "s3"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "238917216d8fd532",
+    "storyId": "s3",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/review/ArtifactContentPane.kt",
+        "jetbrains-plugin/src/main/resources/insrc-review/markdown-renderer.js"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "jetbrains-plugin/src/main/resources/insrc-review/markdown-renderer.js:130",
+            "message": "The t3 additive heading-id + data-section-path emission is JS with no automated test (the renderer is JS-only). Behaviour is exercised manually via the JCEF page; the change is additive and does not alter the S002 escaping/link/CSP handling.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 1
+    }
+  }
+}

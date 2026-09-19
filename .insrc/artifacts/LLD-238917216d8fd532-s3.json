@@ -1,0 +1,583 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1789815661984-ov4xx0",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-19T11:10:02.560Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 540421,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-09-19T06:30:32.186Z",
+    "epicHash": "238917216d8fd532",
+    "epicSlug": "ide-artifact-review-panel-jetbrains-plugin",
+    "storyId": "s3",
+    "hldBaseRunId": "wf-1789799576767-kl7v1b",
+    "hldEffectiveHash": "c93cb4358ff4bac8cafea32cce98dffe14aa21172b7d14ee226c0ebaebfb947a",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 0
+      },
+      "reviewedAt": "2026-09-19T11:11:24.448Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-19T11:18:05.394Z",
+    "questionResolutions": {
+      "q0faa8535": {
+        "question": "Inline annotation is a JCEF-only affordance: on a JBR-without-JCEF the S002 native-editor fallback stays readable but cannot anchor comments. Whether the native fallback should offer a coarser whole-artifact (un-anchored) comment affordance, or annotation stays JCEF-only, is deferred — either keeps lc1/k6; flagged for the plan/build.",
+        "status": "resolved",
+        "choice": "JCEF-only annotation, native fallback read-only",
+        "rationale": "User's decision (took the recommended default). Inline comments ship only in the JCEF view; the S002 native-editor fallback stays read-only and shows a one-line notice that annotation needs a JCEF-capable JBR. Smallest s3 surface (one authoring path, one anchor model). The sc3 CommentAnchor already has all fields optional, so a future coarse un-anchored native affordance remains a purely additive follow-up with no contract change.",
+        "resolvedAt": "2026-09-19T11:19:00.184Z"
+      }
+    }
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Thin three-layer review surface over existing daemon capability; reasoning stays daemon-side (k1), the plugin only renders and transports. Phase B adds inline PR-style anchored comment threads.",
+      "boundary": {
+        "storyId": "s3",
+        "owns": [
+          "sc3"
+        ],
+        "depends": [
+          "sc2"
+        ],
+        "internal": "Private to s3: the inline-anchor UI mechanics, the JBCefJSQuery add/edit/remove-comment bridge, and the un-submitted, presentation-only comment buffer. No approval or resolution reasoning (k1)."
+      },
+      "ownedContracts": [
+        {
+          "id": "sc3",
+          "name": "ReviewComment",
+          "purpose": "The inline-anchored comment model a reviewer builds while reading, plus the write contract that records those comments as open-question resolutions.",
+          "interfaceSketch": "interface CommentAnchor { readonly sectionPath?: string; readonly quote?: string; readonly openQuestionId?: string; }\ninterface ReviewComment { readonly id: string; readonly anchor: CommentAnchor; readonly body: string; }",
+          "ownedByStory": "s3",
+          "consumedByStories": [
+            "s4"
+          ],
+          "assumptions": [
+            "c5"
+          ]
+        }
+      ],
+      "consumedContracts": [
+        {
+          "id": "sc2",
+          "name": "ArtifactReviewView",
+          "purpose": "The read-only view a reviewer sees; S003 overlays comments on its rendered content and reads openQuestions[].id.",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c3",
+            "c5"
+          ]
+        }
+      ],
+      "rolloutPhase": "Phase B — Inline annotation + submit as open-question resolutions"
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "CommentBuffer",
+          "signature": "class CommentBuffer { fun add(anchor: CommentAnchor, body: String): ReviewComment; fun edit(id: String, body: String): Boolean; fun remove(id: String): Boolean; fun snapshot(): List<ReviewComment>; fun clear() }",
+          "parameters": [
+            {
+              "name": "anchor",
+              "type": "CommentAnchor",
+              "purpose": "The captured target of a new comment (sectionPath/quote/openQuestionId) from the JS layer.",
+              "optional": false
+            },
+            {
+              "name": "body",
+              "type": "String",
+              "purpose": "The reviewer's comment text (add) or replacement text (edit).",
+              "optional": false
+            },
+            {
+              "name": "id",
+              "type": "String",
+              "purpose": "The client-generated ReviewComment id addressed by edit/remove.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ReviewComment | Boolean | List<ReviewComment>",
+            "meaning": "The pure Kotlin-owned un-submitted buffer (source of truth). add mints a client id + appends; edit/remove return whether the id was found; snapshot returns an immutable copy s4 reads at submit. Presentation-only — no persistence, no resolution reasoning (lc1/k1)."
+          },
+          "errors": [
+            {
+              "type": "(none — total)",
+              "condition": "edit/remove of an unknown id return false (not an exception); the buffer never throws on normal ops."
+            }
+          ],
+          "preconditions": [
+            "Holds only un-submitted comments; cleared or handed to s4 at submit."
+          ],
+          "postconditions": [
+            "Mutation is in-memory only; the artifact and its .md/.json are never touched (k5)."
+          ]
+        },
+        {
+          "name": "ArtifactCommentLayer",
+          "signature": "class ArtifactCommentLayer(buffer: CommentBuffer, browser: JBCefBrowser, parentDisposable: Disposable) { fun install(); fun onContentLoaded(view: ArtifactReviewViewDto); fun renderThreads() }",
+          "parameters": [
+            {
+              "name": "buffer",
+              "type": "CommentBuffer",
+              "purpose": "The Kotlin source-of-truth buffer this layer mutates from JS events and re-renders from.",
+              "optional": false
+            },
+            {
+              "name": "browser",
+              "type": "JBCefBrowser",
+              "purpose": "The S002 content-view browser whose page hosts the comment overlay (reused, not created).",
+              "optional": false
+            },
+            {
+              "name": "parentDisposable",
+              "type": "Disposable",
+              "purpose": "The tool-window disposable; the JBCefJSQuery objects register against it.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Unit",
+            "meaning": "The s3-owned comment layer hosted inside the S002 ArtifactContentPane: installs the JBCefJSQuery bridge + injects the comment JS, folds JS add/edit/remove events into the buffer, and re-pushes the current comment set to render anchored threads. Re-attaches on each content (re-)load so un-submitted comments survive a re-render."
+          },
+          "errors": [
+            {
+              "type": "(none escaping)",
+              "condition": "a malformed JS payload is ignored (logged); the bridge never throws into the EDT."
+            }
+          ],
+          "preconditions": [
+            "The JCEF surface is active (JBCefApp.isSupported()); in the native fallback the comment layer is inert (annotation is a JCEF-only affordance)."
+          ],
+          "postconditions": [
+            "JBCefJSQuery handlers are disposed with parentDisposable; no state persists past the panel."
+          ]
+        },
+        {
+          "name": "JBCefJSQuery",
+          "signature": "JBCefJSQuery.create(browser: JBCefBrowserBase): JBCefJSQuery; fun addHandler(h: (String) -> JBCefJSQuery.Response?); fun inject(jsResultCallback: String): String",
+          "parameters": [
+            {
+              "name": "browser",
+              "type": "JBCefBrowserBase",
+              "purpose": "The S002 content browser the query is bound to.",
+              "optional": false
+            },
+            {
+              "name": "h",
+              "type": "(String) -> JBCefJSQuery.Response?",
+              "purpose": "The Kotlin handler receiving the JSON comment-op payload from JS.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "JBCefJSQuery",
+            "meaning": "The external IntelliJ-Platform JS<->Kotlin bridge (consumed): JS calls the injected function with a serialized comment op; the Kotlin handler folds it into the CommentBuffer. In-process only (no socket/cloud)."
+          },
+          "errors": [
+            {
+              "type": "(platform)",
+              "condition": "create throws if the browser is disposed — guarded by the S002 disposed/isDisposed checks."
+            }
+          ],
+          "preconditions": [
+            "Created at page-build time, before loadHTML injects the comment JS."
+          ],
+          "postconditions": [
+            "Disposed with the browser/parentDisposable."
+          ]
+        },
+        {
+          "name": "ArtifactContentPane",
+          "signature": "internal class ArtifactContentPane(project, gateway, parentDisposable) { /* S002 + s3: hosts ArtifactCommentLayer, installs the bridge in composeHtml/render */ }",
+          "parameters": [
+            {
+              "name": "view",
+              "type": "ArtifactReviewViewDto",
+              "purpose": "The sc2 view already rendered by S002; s3 reads its openQuestions[].id for open-question-targeted anchors and overlays the comment layer.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Unit",
+            "meaning": "The S002 pane (extended, not re-designed): composeHtml additionally injects the comment JS + the JBCefJSQuery inject() expression; render() wires the ArtifactCommentLayer to the freshly loaded page. The content fetch (s2) and pending list (s1) are untouched."
+          },
+          "errors": [],
+          "preconditions": [
+            "Reuses the S002 JCEF/native surface + bundled renderer; annotation is active only on the JCEF card."
+          ],
+          "postconditions": [
+            "No change to the sc2 fetch/render contract; the comment overlay is additive."
+          ]
+        },
+        {
+          "name": "markdown-renderer.js",
+          "signature": "// bundled renderer (S002) extended: heading render emits stable ids + records a heading path for sectionPath anchoring",
+          "parameters": [],
+          "returns": {
+            "type": "(HTML)",
+            "meaning": "The S002 bundled renderer, extended additively: ATX headings now emit a stable id (slug + ordinal) and expose the heading path so the comment JS can compute CommentAnchor.sectionPath. Additive; escaping/link/CSP rules unchanged (no CDN, read-only)."
+          },
+          "errors": [],
+          "preconditions": [
+            "Runs inside the JCEF page as today."
+          ],
+          "postconditions": [
+            "renderedMarkdown remains the source of truth; ids are presentation hooks, not a second copy (k5)."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "CommentAnchor",
+        "change": "new",
+        "details": "sc3 anchor model as a Kotlin data class: { sectionPath: String?; quote: String?; openQuestionId: String? }. sectionPath = heading path (from the renderer ids); quote = selected text; openQuestionId = the sc2 openQuestions[].id when targeting a question. All optional.",
+        "schemaDiff": "+ data class CommentAnchor(sectionPath: String?, quote: String?, openQuestionId: String?)",
+        "callSites": [
+          "jetbrains-plugin/.../review/ (ArtifactCommentLayer + CommentBuffer)",
+          "consumed by s4 at submit"
+        ]
+      },
+      {
+        "entity": "ReviewComment",
+        "change": "new",
+        "details": "sc3 comment model as a Kotlin data class: { id: String (client-generated until submitted); anchor: CommentAnchor; body: String }.",
+        "schemaDiff": "+ data class ReviewComment(id: String, anchor: CommentAnchor, body: String)",
+        "callSites": [
+          "jetbrains-plugin/.../review/ (CommentBuffer.snapshot)",
+          "consumed by s4"
+        ]
+      },
+      {
+        "entity": "CommentBuffer",
+        "change": "new",
+        "details": "The pure Kotlin-owned un-submitted buffer keyed by id, with add/edit/remove/snapshot/clear. Source of truth; survives a page re-render (the JS overlay re-renders FROM it). Presentation-only (lc1).",
+        "schemaDiff": "+ class CommentBuffer { add; edit; remove; snapshot; clear }",
+        "callSites": [
+          "jetbrains-plugin/.../review/ArtifactCommentLayer",
+          "read by s4's submit"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc3",
+        "role": "implements",
+        "howDetails": "S003 owns sc3 and realizes its comment MODEL: ReviewComment + CommentAnchor as Kotlin data classes, plus the pure CommentBuffer and the ArtifactCommentLayer that captures anchors via the JBCefJSQuery bridge and renders threads. The sc3 sketch's daemon WRITE portion (ResolveCommentRequest/ResolveCommentResult + the 'workflow.resolveComment' handler) is built by S004 (which consumes sc3); S003 defines the comment objects s4 submits and performs NO resolution reasoning (lc1/k1)."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "The comment layer overlays the sc2 content already rendered by S002: it anchors into that DOM and reads view.openQuestions[].id to set CommentAnchor.openQuestionId. It does NOT re-fetch (s2) or alter the sc2 contract; the small heading-id renderer hook is additive, not a re-design."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A malformed comment-op payload arrives over the JBCefJSQuery bridge (bad JSON, missing op/anchor/body).",
+          "detection": "The Kotlin JBCefJSQuery handler JSON-parses the payload and validates op ∈ {add,edit,remove} + required fields; a parse failure or missing field is caught.",
+          "response": "Ignore the op (log at warn) and return a no-op Response; the buffer is unchanged and the current set is re-pushed to JS to re-sync.",
+          "userImpact": "The stray event does nothing; existing comments intact. No crash into the EDT.",
+          "recoverable": true
+        },
+        {
+          "scenario": "An edit/remove references a comment id not in the buffer (stale JS after a re-render, or a double-remove).",
+          "detection": "CommentBuffer.edit/remove returns false (id not found).",
+          "response": "Treat as a no-op and re-push the authoritative buffer to JS so the overlay re-syncs.",
+          "userImpact": "The overlay converges on the real state; no phantom edit/remove.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The JBCefBrowser is disposed while a comment op / thread re-render is in flight (tool-window unload race, as in S002).",
+          "detection": "The S002 disposed flag + browser.isDisposed guard is checked before JBCefJSQuery.create / executeJavaScript.",
+          "response": "Skip installing the bridge / skip the re-render (try/catch); no exception escapes.",
+          "userImpact": "The panel tears down cleanly; no AlreadyDisposedException.",
+          "recoverable": true
+        },
+        {
+          "scenario": "An 'add' arrives with an empty anchor (no sectionPath, no quote, no openQuestionId) and/or an empty body.",
+          "detection": "The JS pre-checks a non-empty selection/target before posting; the Kotlin handler also rejects an all-null anchor or blank body.",
+          "response": "Do not add a ReviewComment; surface a subtle in-page hint; buffer unchanged.",
+          "userImpact": "No un-anchorable/empty comment is created (keeps ac1/ac2 meaningful).",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "JCEF is unavailable so the S002 native-editor fallback is showing.",
+          "expected": "Content still readable (s2 fallback), but inline annotation is inert — anchoring into a plain read-only text area is unsupported; the affordance is JCEF-only. No crash (documented limitation, consistent with k6)."
+        },
+        {
+          "input": "A comment targets a rendered open-question marker.",
+          "expected": "CommentAnchor.openQuestionId is set (from sc2 openQuestions[].id); the thread is anchored to that question and distinctly associated (ac2), ready for s4."
+        },
+        {
+          "input": "Several comments are added to the same section.",
+          "expected": "Each is a distinct ReviewComment (distinct client id + its own quote) as its own thread — distinct association holds (ac2)."
+        },
+        {
+          "input": "The page re-renders (poll refresh / re-open) while un-submitted comments exist.",
+          "expected": "The Kotlin CommentBuffer survives; onContentLoaded re-pushes them and the overlay re-anchors by sectionPath/quote (ac3). An anchor that no longer resolves shows as 'unanchored', never silently dropped."
+        },
+        {
+          "input": "The reviewer switches to a DIFFERENT pending artifact.",
+          "expected": "Comments are per-artifact; the buffer is scoped to the open artifactId (no cross-artifact bleed)."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Un-submitted annotation state is presentation-only: the CommentBuffer holds comments in memory, performs NO approval/resolution reasoning, and nothing is persisted until s4's submit (lc1/k1).",
+          "source": "c1"
+        },
+        {
+          "text": "A single artifact remains the single source of truth: comments are a SEPARATE annotation layer over the rendered content; the additive heading-id hook is a presentation aid — no divergent second copy (k5).",
+          "source": "c5"
+        },
+        {
+          "text": "The one plugin artifact keeps loading across all four IDEs off the shared platform module; the annotation surface degrades gracefully where the embedded browser is unavailable (JCEF-only affordance; native fallback stays readable) (k6).",
+          "source": "c6"
+        },
+        {
+          "text": "No cloud/REST path and no daemon write is opened by S003: the JS<->Kotlin bridge is entirely in-process, and the buffer is not submitted here (the daemon write is s4) (k2).",
+          "source": "c4"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Plugin: the pure CommentBuffer — add/edit/remove/snapshot/clear, headless (no JCEF).",
+          "subjects": [
+            "CommentBuffer.add mints a client id, appends, and returns the ReviewComment carrying the anchor+body (ac1)",
+            "CommentBuffer.edit(known id) updates the body and is reflected in snapshot; edit(unknown id) returns false and changes nothing (ac3)",
+            "CommentBuffer.remove(known id) drops it from snapshot; remove(unknown id) returns false (ac3)",
+            "snapshot() returns an immutable copy in insertion order; clear() empties it",
+            "two adds to the same sectionPath get DISTINCT ids and each retains its own quote (ac2)"
+          ],
+          "fixturesNeeded": []
+        },
+        {
+          "level": "unit",
+          "purpose": "Plugin: the pure comment-op applier (the JBCefJSQuery handler's core), headless.",
+          "subjects": [
+            "applyCommentOp(add) with a valid anchor+body -> buffer gains the anchored comment (ac1)",
+            "applyCommentOp(edit/remove) by id -> reflected in snapshot (ac3)",
+            "malformed JSON / unknown op / missing fields -> no-op (buffer unchanged), no throw",
+            "an add with an all-null anchor OR a blank body -> rejected",
+            "an add whose anchor carries openQuestionId -> distinctly associated (ac2)"
+          ],
+          "fixturesNeeded": [
+            "canned JSON comment-op payloads (add/edit/remove/malformed/empty)"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Plugin: the ReviewComment/CommentAnchor model + per-artifact scoping.",
+          "subjects": [
+            "CommentAnchor supports section-only, quote-only, openQuestion-only, and combined anchors (all optional)",
+            "the buffer is scoped per artifactId so switching artifacts shows only that artifact's comments"
+          ],
+          "fixturesNeeded": []
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "CommentBuffer.add returns a ReviewComment carrying the anchor+body",
+            "applyCommentOp(add) with a valid anchor -> buffer gains the anchored comment"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "two adds to the same sectionPath get distinct ids + own quotes",
+            "an openQuestionId-anchored add is distinctly associated in snapshot"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "CommentBuffer.edit(known) reflected in snapshot; edit(unknown) -> false, no change",
+            "CommentBuffer.remove(known) drops it; applyCommentOp(edit/remove) reflected before any submit"
+          ]
+        }
+      ],
+      "testFramework": "Plugin: JUnit5 (pure Kotlin units — CommentBuffer + the comment-op applier + the anchor model) via ./gradlew test on JDK21, mirroring S001/S002. No daemon test (S003 is plugin-only). The JS layer (heading-id hook, window.getSelection capture, JBCefJSQuery wiring, thread rendering) has no JVM harness — exercised manually + backstopped by the pure Kotlin core that owns all mutation; recorded as the known JS-untested residual (as in S002). No live socket, no GitHub CI."
+    },
+    "migration": {
+      "stateBefore": "S002 (main 505a95f) ships the JCEF content view: ArtifactContentPane creates a JBCefBrowser and composeHtml inlines the bundled markdown-renderer.js + a bootstrap and loadHTML()s the rendered artifact into CARD_JCEF, with a read-only native fallback. The renderer emits headings WITHOUT ids. No comment/annotation code, no JBCefJSQuery use, no daemon comment IPC. renderedMarkdown is the single source of truth; the sc2 view carries openQuestions[].id.",
+      "stateAfter": "The plugin adds the sc3 comment MODEL + a pure CommentBuffer + an ArtifactCommentLayer hosted in ArtifactContentPane that installs a JBCefJSQuery bridge, injects a comment JS layer, folds add/edit/remove into the buffer, and re-renders anchored threads from the buffer. The bundled renderer is additively extended to emit heading ids. No daemon change; the buffer is presentation-only (submit is s4). All S002 behaviour unchanged.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the sc3 model (ReviewComment, CommentAnchor) + the pure CommentBuffer (add/edit/remove/snapshot/clear). Net-new.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add the pure comment-op applier (parse {op, comment} JSON -> a CommentBuffer mutation, rejecting malformed/empty). Net-new; the JBCefJSQuery handler delegates to it.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Additively extend markdown-renderer.js: headings emit a stable id (slug + ordinal) + expose the heading path. Additive; escaping/link/CSP unchanged.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Add the comment JS layer (bundled resource): selection/marker 'add comment' affordance, anchor capture, thread rendering from the pushed set, and the injected JBCefJSQuery call for add/edit/remove.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Wire ArtifactCommentLayer into ArtifactContentPane: create the JBCefJSQuery(ies) at page-build time (guarded by disposed/isDisposed), install on the JCEF card only, and re-attach + re-push the buffer on each content (re-)load. Native fallback untouched.",
+          "rollbackable": true
+        },
+        {
+          "order": 6,
+          "action": "Add the plugin JUnit tests (CommentBuffer, the comment-op applier, the anchor model + per-artifact scoping). Verify locally via ./gradlew test JDK21.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Fully backward compatible and purely additive: no existing public API changes. ArtifactContentPane's sc2 fetch/render contract is unchanged (the comment layer overlays it); the renderer change is additive (heading ids only) with escaping/link/CSP intact; no daemon IPC is added or altered (the submit write is s4). S001 + S002 behave exactly as before; a reviewer on a JBR-without-JCEF still reads via the native fallback (annotation inert). No cross-repo/IPC contract touched.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Kotlin-owned buffer; JS captures anchors + renders threads via JBCefJSQuery; small additive renderer hook for stable section anchors",
+        "oneLineSummary": "The authoritative un-submitted ReviewComment buffer lives Kotlin-side (testable, s4-readable, survives re-render); the JCEF JS layer captures the anchor and posts add/edit/remove ReviewComment JSON through JBCefJSQuery; Kotlin updates the buffer and re-pushes state to render threads.",
+        "approach": "S003 defines the sc3 model as Kotlin types + a pure CommentBuffer (source of truth). ArtifactContentPane creates JBCefJSQuery handler(s) on the JBCefBrowser (disposed with it); composeHtml injects a comment JS layer that captures the anchor (sectionPath via a small additive renderer hook giving heading ids; quote = selected text; openQuestionId on a marker click) and posts a JSON op through the injected query. Kotlin folds it into the CommentBuffer and re-pushes the set to JS. Presentation-only (lc1/k1); s4 reads snapshot() at submit.",
+        "pros": [
+          "Kotlin-side buffer: unit-testable without JCEF, s4-readable, and SURVIVES a page re-render (poll refresh won't drop un-submitted comments — ac3).",
+          "sc3 realized as first-class Kotlin types that s4 consumes directly.",
+          "Stable anchors (sectionPath heading id + quote) give distinct, re-locatable association (ac1/ac2); openQuestionId ties a comment to a question.",
+          "JBCefJSQuery is the standard, disposed-with-browser bridge."
+        ],
+        "cons": [
+          "Two-way sync (Kotlin buffer <-> JS DOM) must stay consistent.",
+          "Needs a small additive hook in the s2-owned bundled renderer (heading ids) — back-flow-noted layering, not a re-design."
+        ],
+        "costEstimate": "L"
+      },
+      {
+        "id": "a2",
+        "name": "JS owns the entire buffer; Kotlin pulls the ReviewComment[] at submit",
+        "oneLineSummary": "The comment model + un-submitted buffer live entirely in the JCEF page's JS; Kotlin only executeJavaScript-pulls the ReviewComment[] at submit.",
+        "approach": "All add/edit/remove + anchoring + the buffer live in the page's JS; Kotlin holds no comment state; at submit s4 serializes the buffer out. sc3 exists only as a JSON shape.",
+        "pros": [
+          "Simplest anchoring — the JS has the live DOM/selection.",
+          "No renderer change strictly required."
+        ],
+        "cons": [
+          "Un-submitted state lives ONLY in the browser: a re-render (poll refresh/re-open) DROPS all un-submitted comments — breaks ac3.",
+          "Un-unit-testable headlessly (JS with no harness) — the recurring least-covered/highest-risk trap.",
+          "s4 must reach into JS to read state (async executeJavaScript) — race-prone.",
+          "Buffer-as-truth in JS blurs lc1."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Loses decisively on ac3 (violates — un-submitted state is lost on any re-render) and is weak on sc3/k1 (JS-only model, untestable headlessly). Simpler anchoring does not offset losing the durability + testability of a Kotlin-owned buffer."
+      },
+      {
+        "id": "a3",
+        "name": "Kotlin-owned buffer; anchors are quote+offset only, ZERO change to the s2 renderer",
+        "oneLineSummary": "Same Kotlin-owned buffer as a1, but anchors are captured purely from the existing DOM (selected text + a computed section index) with NO additive hook in the renderer.",
+        "approach": "Kotlin holds the CommentBuffer (as a1). The JS derives CommentAnchor at capture time by walking the existing DOM (nearest preceding heading text -> sectionPath; selected text -> quote) without renderer ids. openQuestionId on a marker click. No touch to markdown-renderer.js.",
+        "pros": [
+          "Zero change to the s2-owned renderer — cleanest boundary.",
+          "Kotlin-owned buffer keeps the a1 testability + re-render survival + s4-readability."
+        ],
+        "cons": [
+          "Anchors are more fragile: without stable ids, sectionPath is recomputed from heading TEXT — duplicate/absent headings degrade to quote-only, weakening distinct association (ac2).",
+          "More anchor-derivation logic in untested JS.",
+          "Duplicate/absent headings make two same-section comments harder to tell apart (ac2)."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Matches a1 except ac2 (partial): avoiding the renderer hook makes anchors heuristic (heading-text based), so multiple comments in the same/duplicate section are harder to tell apart and re-locate. The saved s2-touch is not worth the weaker distinct-association guarantee; the a1 hook is tiny and additive."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "Inline annotation is a JCEF-only affordance: on a JBR-without-JCEF the S002 native-editor fallback stays readable but cannot anchor comments. Whether the native fallback should offer a coarser whole-artifact (un-anchored) comment affordance, or annotation stays JCEF-only, is deferred — either keeps lc1/k6; flagged for the plan/build."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "HLD k1 / s3 lc1 (thin orchestrator; un-submitted annotation is presentation-only, no approval/resolution reasoning)",
+      "quoteText": "No approval or resolution reasoning happens here (k1)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "HLD sc2 assumption / S002 openQuestions[].id feeding CommentAnchor.openQuestionId",
+      "quoteText": "openQuestions: readonly OpenQuestionRef[]"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "HLD k3 (approve path) — sc2 approvable assumption (consumed context, not built here)",
+      "quoteText": "approvable: false when a review block-verdict stands"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "HLD k2 (all daemon access over the local Unix socket; the plugin opens no cloud/REST) — s3 opens no daemon write",
+      "quoteText": "the plugin opens no cloud or REST path"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "HLD k5 (single source of truth; render the artifact's content, never a divergent second copy) — comments are a separate annotation layer",
+      "quoteText": "never creates a divergent second copy of it"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "HLD k6 (one artifact loads across four IDEs; degrade where the embedded browser is unavailable) — annotation is a JCEF-only affordance",
+      "quoteText": "degrade gracefully wherever the embedded-browser capability is unavailable"
+    },
+    {
+      "id": "c7",
+      "kind": "analyze-bundle",
+      "ref": "external-platform-contract (s1): JBCefJSQuery is the bundled IntelliJ JS<->Kotlin bridge (create/addHandler/inject), net-new in the plugin",
+      "quoteText": "JBCefJSQuery is NOT yet used anywhere in the plugin"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "S002 (main 505a95f): ArtifactContentPane/JBCefBrowser/composeHtml/loadHTML + the bundled markdown-renderer.js (headings emit no ids) + ArtifactReviewViewDto — the surface s3 extends",
+      "quoteText": "composeHtml (line 129) inlines the bundled renderer + a bootstrap and loadHTML()s it into CARD_JCEF"
+    }
+  ]
+}

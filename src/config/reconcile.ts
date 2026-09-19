@@ -97,7 +97,7 @@ function isPlainObject(v: unknown): v is Record<string, unknown> {
  * discriminant member without a matching arm is a COMPILE error (the
  * `never` assignment), not a silent pass-through. 'enum' rows carry no
  * allowed-values field, so their predicate degenerates to a string check
- * (7 of the 41 rows are enums).
+ * (6 of the 31 rows are enums).
  */
 function matchesType(value: unknown, type: ConfigOption['type']): boolean {
 	switch (type) {

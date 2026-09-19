@@ -32,6 +32,12 @@ export interface ConfigOption {
 	readonly type:    'string' | 'number' | 'boolean' | 'enum';
 	readonly default: unknown;
 	readonly desc:    string;
+	// STRUCTURED enrichment (S001, sc1): the settings UI renders from these
+	// instead of parsing the desc prose. `group` buckets the option into a
+	// human section (required on every row); `enumValues` is the fixed set of
+	// allowed values, present ON EVERY `type:'enum'` row and omitted otherwise.
+	readonly enumValues?: readonly string[];
+	readonly group:   string;
 }
 
 /**
@@ -70,51 +76,51 @@ export interface ConfigMigration {
 
 export const CONFIG_CATALOG: readonly ConfigOption[] = [
 	// ── main config (src/daemon/index.ts first-boot default + Config type) ──
-	{ path: 'logLevel',              type: 'enum',   default: 'info',                    desc: "daemon log level: 'error' | 'warn' | 'info' | 'debug'" },
-	{ path: 'ollama.host',           type: 'string', default: 'http://localhost:11434',  desc: 'Ollama server URL (daemon-wide)' },
+	{ path: 'logLevel',              type: 'enum',   default: 'info',                    desc: "daemon log level: 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace' (matches shared/logger VALID_LEVELS)", enumValues: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'], group: 'General' },
+	{ path: 'ollama.host',           type: 'string', default: 'http://localhost:11434',  desc: 'Ollama server URL (daemon-wide)', group: 'General' },
 	// NOTE: the model config is a single flat models.* surface. The former
 	// models.analyze.* / models.providers.local nesting is MIGRATED to models.*
 	// (see CONFIG_MIGRATIONS) and its residue (incl. the derived shaperProvider/
 	// shaperModel/summariser* keys) is stripped via RETIRED_PATHS on boot/update.
-	{ path: 'permissions.mode',      type: 'enum',    default: 'validate',      desc: "tool permission mode: 'validate' | 'auto-accept'" },
-	{ path: 'routing.mode',          type: 'string',  default: 'static',        desc: 'agent routing mode' },
-	{ path: 'analyzer.useLocal',     type: 'boolean', default: false,           desc: 'force code/data analyzers to local Ollama instead of cloud' },
-	{ path: 'classifier.confirmIntent', type: 'boolean', default: false,        desc: 'prompt to confirm the classified intent each turn' },
-	{ path: 'memory.implicitCapture.enabled', type: 'boolean', default: false,  desc: 'implicit memory capture during retrieval (backstop)' },
-	{ path: 'codeReview.enforce',    type: 'boolean', default: false,           desc: 'enforce a blocking code-review verdict at Story completion (off ⇒ advisory)' },
-	{ path: 'codeReview.freshnessTimeoutMs', type: 'number', default: 120000,   desc: 'max ms the code-review freshness gate block-and-polls for a fresh index before re-prompting' },
+	{ path: 'permissions.mode',      type: 'enum',    default: 'validate',      desc: "tool permission mode: 'validate' | 'auto-accept'", enumValues: ['validate', 'auto-accept'], group: 'Workflow & review' },
+	{ path: 'routing.mode',          type: 'string',  default: 'static',        desc: 'agent routing mode', group: 'Workflow & review' },
+	{ path: 'analyzer.useLocal',     type: 'boolean', default: false,           desc: 'force code/data analyzers to local Ollama instead of cloud', group: 'Analysis & memory' },
+	{ path: 'classifier.confirmIntent', type: 'boolean', default: false,        desc: 'prompt to confirm the classified intent each turn', group: 'Workflow & review' },
+	{ path: 'memory.implicitCapture.enabled', type: 'boolean', default: false,  desc: 'implicit memory capture during retrieval (backstop)', group: 'Analysis & memory' },
+	{ path: 'codeReview.enforce',    type: 'boolean', default: false,           desc: 'enforce a blocking code-review verdict at Story completion (off ⇒ advisory)', group: 'Workflow & review' },
+	{ path: 'codeReview.freshnessTimeoutMs', type: 'number', default: 120000,   desc: 'max ms the code-review freshness gate block-and-polls for a fresh index before re-prompting', group: 'Workflow & review' },
 
 	// ── model tiers — THE single model-spec surface (src/config/analyze.ts → models.tiers) ──
 	// A (runner, model) pair is named ONLY here. The shaper + summariser providers
 	// are DERIVED, never stored: shaper ⟸ tiers.core, summariser ⟸ tiers.cheap.
-	{ path: 'models.tiers.core.runner',  type: 'enum',   default: 'cli-claude',     desc: "core-tier backend: 'ollama' | 'cli-claude' | 'cli-codex'" },
-	{ path: 'models.tiers.core.model',   type: 'string', default: '',               desc: 'core-tier model id (empty ⇒ CLI default, e.g. opus)' },
-	{ path: 'models.tiers.mid.runner',   type: 'enum',   default: 'cli-claude',     desc: 'mid-tier backend' },
-	{ path: 'models.tiers.mid.model',    type: 'string', default: 'sonnet',         desc: 'mid-tier model id (e.g. sonnet)' },
-	{ path: 'models.tiers.cheap.runner', type: 'enum',   default: 'ollama',         desc: 'cheap-tier backend (local by default)' },
-	{ path: 'models.tiers.cheap.model',  type: 'string', default: 'qwen3.6:27b', desc: 'cheap-tier model id (Ollama local by default)' },
-	{ path: 'models.coreFloor',          type: 'enum',   default: 'mid',            desc: "min tier for critical tasks: 'core' | 'mid' | 'cheap'" },
+	{ path: 'models.tiers.core.runner',  type: 'enum',   default: 'cli-claude',     desc: "core-tier backend: 'ollama' | 'cli-claude' | 'cli-codex'", enumValues: ['ollama', 'cli-claude', 'cli-codex'], group: 'Models — tiers' },
+	{ path: 'models.tiers.core.model',   type: 'string', default: '',               desc: 'core-tier model id (empty ⇒ CLI default, e.g. opus)', group: 'Models — tiers' },
+	{ path: 'models.tiers.mid.runner',   type: 'enum',   default: 'cli-claude',     desc: "mid-tier backend: 'ollama' | 'cli-claude' | 'cli-codex'", enumValues: ['ollama', 'cli-claude', 'cli-codex'], group: 'Models — tiers' },
+	{ path: 'models.tiers.mid.model',    type: 'string', default: 'sonnet',         desc: 'mid-tier model id (e.g. sonnet)', group: 'Models — tiers' },
+	{ path: 'models.tiers.cheap.runner', type: 'enum',   default: 'ollama',         desc: "cheap-tier backend (local by default): 'ollama' | 'cli-claude' | 'cli-codex'", enumValues: ['ollama', 'cli-claude', 'cli-codex'], group: 'Models — tiers' },
+	{ path: 'models.tiers.cheap.model',  type: 'string', default: 'qwen3.6:27b', desc: 'cheap-tier model id (Ollama local by default)', group: 'Models — tiers' },
+	{ path: 'models.coreFloor',          type: 'enum',   default: 'mid',            desc: "min tier for critical tasks: 'core' | 'mid' | 'cheap'", enumValues: ['core', 'mid', 'cheap'], group: 'Models — tiers' },
 	// models.tasks.<roleId> and models.byRepo.<repoPath>.{tiers,tasks,coreFloor} are dynamic-key
 	// overrides — set them directly in ~/.insrc/config.json (see docs/daemon.md).
 
 	// ── shaper runtime knobs (NOT model specs) — models.shaper.* ──
-	{ path: 'models.shaper.maxToolTurns',            type: 'number', default: 40,    desc: 'max tool-loop turns for the shaper' },
-	{ path: 'models.shaper.structuredOutputRetries', type: 'number', default: 3,     desc: 'structured-output retry count' },
-	{ path: 'models.shaper.ollamaNumCtx',            type: 'number', default: 32768,  desc: 'shaper Ollama context window' },
-	{ path: 'models.shaper.ollamaNumPredict',        type: 'number', default: 20480,  desc: 'shaper Ollama max output tokens' },
-	{ path: 'models.maxPlanDepth.XS', type: 'number', default: 2, desc: 'max plan-tree depth — XS-scope roots' },
-	{ path: 'models.maxPlanDepth.S',  type: 'number', default: 3, desc: 'max plan-tree depth — S-scope roots' },
-	{ path: 'models.maxPlanDepth.M',  type: 'number', default: 4, desc: 'max plan-tree depth — M-scope roots' },
-	{ path: 'models.maxPlanDepth.L',  type: 'number', default: 5, desc: 'max plan-tree depth — L-scope roots' },
-	{ path: 'models.maxPlanDepth.XL', type: 'number', default: 6, desc: 'max plan-tree depth — XL-scope roots' },
+	{ path: 'models.shaper.maxToolTurns',            type: 'number', default: 40,    desc: 'max tool-loop turns for the shaper', group: 'Models — shaper' },
+	{ path: 'models.shaper.structuredOutputRetries', type: 'number', default: 3,     desc: 'structured-output retry count', group: 'Models — shaper' },
+	{ path: 'models.shaper.ollamaNumCtx',            type: 'number', default: 32768,  desc: 'shaper Ollama context window', group: 'Models — shaper' },
+	{ path: 'models.shaper.ollamaNumPredict',        type: 'number', default: 20480,  desc: 'shaper Ollama max output tokens', group: 'Models — shaper' },
+	{ path: 'models.maxPlanDepth.XS', type: 'number', default: 2, desc: 'max plan-tree depth — XS-scope roots', group: 'Models — plan depth' },
+	{ path: 'models.maxPlanDepth.S',  type: 'number', default: 3, desc: 'max plan-tree depth — S-scope roots', group: 'Models — plan depth' },
+	{ path: 'models.maxPlanDepth.M',  type: 'number', default: 4, desc: 'max plan-tree depth — M-scope roots', group: 'Models — plan depth' },
+	{ path: 'models.maxPlanDepth.L',  type: 'number', default: 5, desc: 'max plan-tree depth — L-scope roots', group: 'Models — plan depth' },
+	{ path: 'models.maxPlanDepth.XL', type: 'number', default: 6, desc: 'max plan-tree depth — XL-scope roots', group: 'Models — plan depth' },
 
 	// ── local provider / embedder (src/config/local.ts → models.local.*) ──
-	{ path: 'models.local.host',           type: 'string', default: 'http://localhost:11434', desc: 'Ollama host for the embedder/local provider' },
-	{ path: 'models.local.embeddingModel', type: 'string', default: 'qwen3-embedding:0.6b',    desc: "embedder model id ('nomic-ai/nomic-embed-text-v1.5' for ONNX) — read by the embedder" },
-	{ path: 'models.local.embeddingDim',   type: 'number', default: 1024,                       desc: 'embedder dimensions (768 for ONNX) — read by the embedder' },
-	{ path: 'models.local.coreModel',      type: 'string', default: 'qwen3.6:27b',              desc: 'local core / summariser model id used by the indexer embedder' },
-	{ path: 'models.local.charsPerToken',  type: 'number', default: 3,                          desc: 'chars→tokens heuristic (local provider)' },
-	{ path: 'models.local.embeddingKeepAlive', type: 'string', default: '24h',                  desc: "Ollama keep_alive for the embedder model ('24h' / '-1' forever / '0' eager-unload) — keeps the hot-path embed model resident during index bursts" },
+	{ path: 'models.local.host',           type: 'string', default: 'http://localhost:11434', desc: 'Ollama host for the embedder/local provider', group: 'Local & embeddings' },
+	{ path: 'models.local.embeddingModel', type: 'string', default: 'qwen3-embedding:0.6b',    desc: "embedder model id ('nomic-ai/nomic-embed-text-v1.5' for ONNX) — read by the embedder", group: 'Local & embeddings' },
+	{ path: 'models.local.embeddingDim',   type: 'number', default: 1024,                       desc: 'embedder dimensions (768 for ONNX) — read by the embedder', group: 'Local & embeddings' },
+	{ path: 'models.local.coreModel',      type: 'string', default: 'qwen3.6:27b',              desc: 'local core / summariser model id used by the indexer embedder', group: 'Local & embeddings' },
+	{ path: 'models.local.charsPerToken',  type: 'number', default: 3,                          desc: 'chars→tokens heuristic (local provider)', group: 'Local & embeddings' },
+	{ path: 'models.local.embeddingKeepAlive', type: 'string', default: '24h',                  desc: "Ollama keep_alive for the embedder model ('24h' / '-1' forever / '0' eager-unload) — keeps the hot-path embed model resident during index bursts", group: 'Local & embeddings' },
 ];
 
 /**

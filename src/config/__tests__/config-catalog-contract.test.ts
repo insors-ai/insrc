@@ -147,7 +147,37 @@ test('ConfigCatalogError is the class thrown for catalog-integrity failures (not
 	// Sanity anchor for the self-consistency guarantee above: the real catalog
 	// never produces this, but a broken row does — and it is this exact class.
 	assert.throws(
-		() => reconcileConfig({}, [{ path: 'x', type: 'nope' as never, default: '', desc: '' }]),
+		() => reconcileConfig({}, [{ path: 'x', type: 'nope' as never, default: '', desc: '', group: 'X' }]),
 		ConfigCatalogError,
 	);
+});
+
+test('enrichment (S001): every catalog row has a non-empty group', () => {
+	for (const row of FROM_CONFIG) {
+		assert.ok(
+			typeof row.group === 'string' && row.group.length > 0,
+			`row ${row.path} is missing a non-empty group`,
+		);
+	}
+});
+
+test('enrichment (S001): every enum row carries a non-empty enumValues; every non-enum row omits it', () => {
+	for (const row of FROM_CONFIG) {
+		if (row.type === 'enum') {
+			assert.ok(
+				Array.isArray(row.enumValues) && row.enumValues.length > 0,
+				`enum row ${row.path} is missing a non-empty enumValues`,
+			);
+			// every declared enum default must be one of the allowed values
+			assert.ok(
+				row.enumValues!.includes(row.default as string),
+				`enum row ${row.path} default ${JSON.stringify(row.default)} not in enumValues`,
+			);
+		} else {
+			assert.equal(
+				row.enumValues, undefined,
+				`non-enum row ${row.path} must omit enumValues`,
+			);
+		}
+	}
 });

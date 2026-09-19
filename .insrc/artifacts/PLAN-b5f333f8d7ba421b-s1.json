@@ -1,0 +1,264 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1789844989680-o75bnr",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-19T19:12:32.230Z",
+    "epicCreatedAt": "2026-09-19T14:57:29.012Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 162539,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b5f333f8d7ba421b",
+    "epicSlug": "expose-all-daemon-config-settings-via",
+    "storyId": "s1",
+    "lldRunId": "wf-1789842962496-uyzreb",
+    "lldEffectiveHash": "ee39a9f5fd11df006188d3b2038117bb0cd01aa61eaff9cccc9ea69fbfb78612",
+    "review": {
+      "artifact": "plan",
+      "stage": "plan",
+      "verdict": "pass",
+      "findings": [],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 0
+      },
+      "reviewedAt": "2026-09-19T19:13:13.519Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-19T19:18:15.641Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Enrich ConfigOption + backfill all 31 catalog rows",
+        "summary": "In src/config/config-catalog.ts add `readonly enumValues?: readonly string[]` and `readonly group: string` to the ConfigOption interface, then backfill every one of the 31 CONFIG_CATALOG rows: assign each a human group label and give each type:'enum' row its allowed-values array (lifted from the values already documented in that row's desc). Additive only — no field renamed/removed, no row added/removed, no path changed; RETIRED_PATHS/CONFIG_MIGRATIONS untouched.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "ConfigOption declares group:string (required) and enumValues?:readonly string[] (optional); the four original fields are unchanged.",
+          "All 31 rows carry a non-empty group; every type:'enum' row carries a non-empty enumValues; non-enum rows omit enumValues.",
+          "CONFIG_CATALOG.length is still 31 and no path string changed; tsc --noEmit passes."
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "config-catalog-contract: every one of the 31 rows carries a non-empty group and every enum row a non-empty enumValues (the backfilled data)"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Extend the catalog contract test with the enrichment-completeness guards",
+        "summary": "In src/config/__tests__/config-catalog-contract.test.ts add assertions that every CONFIG_CATALOG row has a non-empty string group and every type:'enum' row has a non-empty enumValues (and non-enum rows omit it), leaving the existing length===31, single-definition-site, FROM_CLI===FROM_CONFIG, and RETIRED_PATHS-disjointness assertions intact.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "The contract suite passes and now fails if any row lacks a group or any enum row lacks enumValues.",
+          "The pre-existing assertions (length 31, single site, re-export identity, RETIRED_PATHS 6 disjoint) remain and still pass."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "config-catalog-contract: the new group + enumValues completeness assertions"
+          },
+          {
+            "level": "unit",
+            "name": "config-catalog-contract: pre-existing invariants (length 31, single site, FROM_CLI===FROM_CONFIG, RETIRED_PATHS 6 disjoint) still pass"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Add src/config/settings-catalog.ts: SettingsCatalogPayload + pure buildSettingsCatalog",
+        "summary": "Create the new module exporting the SettingsCatalogPayload type and the pure buildSettingsCatalog(rawConfig): map CONFIG_CATALOG to options, derive groups as the distinct group labels in first-seen order, derive roles + tierNames from reasoningRoleTaxonomy() (roles as {id,defaultTier}; tierNames as the rankOf keys), and build values by resolving each catalog path from rawConfig (reusing an existing dotted-path getter if one exists near write-path.ts, else a small local walk), omitting paths that are absent. Pure and total — no IO, never throws; only catalog paths appear in values.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "buildSettingsCatalog({}) returns options (31), groups (distinct, first-seen), roles, tierNames (cheap/mid/core) and values === {}.",
+          "Given a rawConfig with set catalog paths, an unset path, an absent intermediate, and a non-catalog key: values contains only the set catalog paths (absent/intermediate omitted; non-catalog keys excluded); no throw.",
+          "roles/tierNames are taken from reasoningRoleTaxonomy(), not hardcoded."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "settings-catalog: buildSettingsCatalog({}) returns 31 options + distinct first-seen groups + roles + tierNames(cheap/mid/core) with values={}"
+          },
+          {
+            "level": "unit",
+            "name": "settings-catalog: values resolution from a fixture — set paths present; unset path + absent intermediate omitted; non-catalog keys excluded; no throw"
+          },
+          {
+            "level": "unit",
+            "name": "settings-catalog: roles + tierNames are derived from reasoningRoleTaxonomy(), and groups from the catalog (not hardcoded)"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Register the read-only config.catalog IPC handler",
+        "summary": "In src/daemon/index.ts add a 'config.catalog' entry to the string-keyed dispatch object beside config.show: read PATHS.config (readFileSync + JSON.parse in try/catch, default to {} on failure), call buildSettingsCatalog, and return the payload. Read-only — it must not write config.json and must not call reloadChatConfig.",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "A config.catalog call returns a SettingsCatalogPayload (options 31, groups/roles/tierNames present) over the dispatch.",
+          "With config.json missing/unparseable the handler returns the full schema with values={} and raises no top-level error.",
+          "Calling config.catalog leaves config.json byte-unchanged and does not trigger a session reload."
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "config.catalog: returns a SettingsCatalogPayload (options 31, groups/roles/tierNames present) over the dispatch"
+          },
+          {
+            "level": "integration",
+            "name": "config.catalog: missing/invalid config.json → full schema with values={}, no top-level error"
+          },
+          {
+            "level": "integration",
+            "name": "config.catalog: config.json byte-unchanged and no reload after the call (read-only)"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "CONFIG_CATALOG.length===31 still holds",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "single definition site + FROM_CLI===FROM_CONFIG + no src/cli import",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "RETIRED_PATHS = 6 declared entries, disjoint",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "NEW: every row has a non-empty group",
+        "coveredByTaskIds": [
+          "t1",
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "NEW: every enum row has a non-empty enumValues; non-enum rows omit it",
+        "coveredByTaskIds": [
+          "t1",
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "buildSettingsCatalog({}) returns 31 options + groups + roles + tierNames with values={}",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "current values resolved from a fixture; unset path / absent intermediate omitted",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "tierNames === rankOf keys; roles map each reasoningRoleTaxonomy() role to {id,defaultTier}",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "non-catalog keys never appear in values",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "groups = distinct option.group derived from the catalog (not hardcoded)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "handler returns a SettingsCatalogPayload (options 31, groups/roles/tierNames present)",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "missing/invalid config.json ⇒ full schema with values={}, no top-level error",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "call does not modify config.json and does not trigger reloadChatConfig",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 dataModelChanges.ConfigOption (field-add enumValues+group; src/config/config-catalog.ts)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails.api config.catalog (read-only IPC handler; src/daemon/index.ts)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails.api buildSettingsCatalog + role taxonomy (src/config/settings-catalog.ts, reasoningRoleTaxonomy)"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 testStrategy contract level + invariantsToPreserve (src/config/__tests__/config-catalog-contract.test.ts)"
+    }
+  ]
+}

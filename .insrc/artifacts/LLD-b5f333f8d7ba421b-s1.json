@@ -1,0 +1,477 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1789842962496-uyzreb",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-19T18:46:42.803Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 640206,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-09-19T14:57:29.012Z",
+    "epicHash": "b5f333f8d7ba421b",
+    "epicSlug": "expose-all-daemon-config-settings-via",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1789841045868-kib3gd",
+    "hldEffectiveHash": "ee39a9f5fd11df006188d3b2038117bb0cd01aa61eaff9cccc9ea69fbfb78612",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 0
+      },
+      "reviewedAt": "2026-09-19T18:47:32.827Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-19T19:09:43.144Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "A daemon-owned, self-describing settings contract feeds a native JetBrains Settings page that renders whatever the daemon reports. The daemon's single-definition catalog is enriched with two structured fields (allowed fixed values and a group label) and, together with the recognized role taxonomy and tier names, is exposed over ONE new read-only IPC. The plugin adds config gateway methods behind the established sealed three-state result pattern and a native applicationConfigurable that builds a grouped, collapsible Swing form purely from the daemon's description — hardcoding no setting, group, role, or tier. Reads use the new catalog IPC plus the existing value read; writes reuse the existing segment-aware write. The plugin owns no settings semantics; the daemon stays the single source of truth.",
+      "ownedContracts": [
+        {
+          "id": "sc1",
+          "name": "Self-describing settings catalog (enriched ConfigOption + role taxonomy) over config.catalog, and its plugin read surface",
+          "purpose": "The single daemon-owned description the whole IDE surface renders from: every recognized setting with type/default/allowed-values/group/description, the recognized roles and their default tiers, the allowed tier names, and the current values — delivered over one read IPC and mirrored as plugin DTOs behind a sealed read result. Satisfies k1/k2/k3 and is the foundation every downstream Story renders from.",
+          "interfaceSketch": "// daemon (src/config/config-catalog.ts) — ConfigOption gains two structured fields:\ninterface ConfigOption { readonly path: string; readonly type: 'string'|'number'|'boolean'|'enum'; readonly default: unknown; readonly desc: string; readonly enumValues?: readonly string[]; readonly group: string }\n// daemon config.catalog IPC payload:\ninterface SettingsCatalogPayload { readonly options: readonly ConfigOption[]; readonly groups: readonly string[]; readonly roles: readonly { readonly id: string; readonly defaultTier: 'cheap'|'mid'|'core' }[]; readonly tierNames: readonly ('cheap'|'mid'|'core')[]; readonly values: Readonly<Record<string, unknown>> }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c1",
+            "c2"
+          ]
+        }
+      ],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [
+          "sc1"
+        ],
+        "depends": [],
+        "internal": "The daemon-side enrichment mechanics stay private to s1: exactly how each of the 31 existing catalog entries is assigned its group and (for enum settings) its allowed-values list; how config.catalog assembles the payload (reading CONFIG_CATALOG, the role taxonomy, and current values); and how the contract test and boot reconcile are extended so the two new fields do not disturb defaults-on-boot or retired-path disjointness. None of these internals are consumed by other Stories — they consume only the payload shape (sc1)."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc3"
+          ],
+          "depends": [
+            "sc1"
+          ],
+          "internal": "Private to s2: read-only rendering, collapsible groups, daemon-unavailable state."
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc2"
+          ],
+          "depends": [
+            "sc1",
+            "sc3"
+          ],
+          "internal": "Private to s3: per-type edit controls, validation, dirty/apply/reset, write-rejected surfacing."
+        },
+        {
+          "storyId": "s4",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "Private to s4: per-role overrides sub-section (models.tasks.<roleId>)."
+        },
+        {
+          "storyId": "s5",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "Private to s5: per-repo overrides sub-section (models.byRepo.<repoPath>.*)."
+        }
+      ],
+      "rolloutPhase": "Phase A — Daemon settings contract (schema + catalog IPC)",
+      "nonFunctional": {
+        "performance": "The settings page loads from a single config.catalog round-trip plus the existing value read; no polling.",
+        "security": "No new surface beyond the existing local Unix-socket transport; secrets/keys out of scope; config.catalog is read-only.",
+        "observability": "config.catalog is a pure read; config.write already logs each write.",
+        "durability": "Persistence unchanged — the daemon's config.json write + reconcile own durability; config.catalog never writes."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "ConfigOption",
+          "signature": "interface ConfigOption { readonly path: string; readonly type: 'string'|'number'|'boolean'|'enum'; readonly default: unknown; readonly desc: string; readonly enumValues?: readonly string[]; readonly group: string }",
+          "parameters": [],
+          "returns": {
+            "type": "interface",
+            "meaning": "The enriched single-definition-site catalog row: existing path/type/default/desc plus a required group label and, for enum settings, the fixed allowed-values list. Non-enum rows omit enumValues."
+          },
+          "errors": [],
+          "preconditions": [
+            "Defined only in src/config/config-catalog.ts (single definition site); src/cli/config-catalog.ts continues to only re-export it."
+          ],
+          "postconditions": [
+            "Every one of the 31 CONFIG_CATALOG rows carries a non-empty group; every row with type:'enum' carries a non-empty enumValues; row count stays 31; RETIRED_PATHS unchanged (6, disjoint)."
+          ]
+        },
+        {
+          "name": "buildSettingsCatalog",
+          "signature": "function buildSettingsCatalog(rawConfig: Record<string, unknown>): SettingsCatalogPayload",
+          "parameters": [
+            {
+              "name": "rawConfig",
+              "type": "Record<string, unknown>",
+              "purpose": "The parsed config.json object (or {} when absent/unreadable) from which each catalog path's current value is resolved.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "SettingsCatalogPayload",
+            "meaning": "options = CONFIG_CATALOG verbatim; groups = distinct group labels in catalog order; roles/tierNames from reasoningRoleTaxonomy(); values = per-catalog-path current value resolved from rawConfig (absent path omitted ⇒ unset/using-default)."
+          },
+          "errors": [
+            {
+              "type": "(none — total function)",
+              "condition": "Never throws; an empty rawConfig yields a complete schema with an empty values map."
+            }
+          ],
+          "preconditions": [
+            "Pure: reads only its argument + the static CONFIG_CATALOG and reasoningRoleTaxonomy(); performs no IO and no write."
+          ],
+          "postconditions": [
+            "options.length === 31; groups first-seen order; tierNames === rankOf keys; values has an entry only for paths present in rawConfig."
+          ]
+        },
+        {
+          "name": "config.catalog",
+          "signature": "'config.catalog': async () => SettingsCatalogPayload",
+          "parameters": [],
+          "returns": {
+            "type": "SettingsCatalogPayload",
+            "meaning": "New read-only IPC handler beside config.show: reads PATHS.config (parse-or-{}), calls buildSettingsCatalog, returns the payload. Read-only — never writes config.json, never reloads."
+          },
+          "errors": [
+            {
+              "type": "framed-empty-values result",
+              "condition": "config.json missing/unparseable ⇒ returns the full schema with values={} (mirrors config.show returning {})."
+            }
+          ],
+          "preconditions": [
+            "Registered in the same dispatch object as config.show/config.write; over the existing Unix-socket transport (k3)."
+          ],
+          "postconditions": [
+            "Returns the SettingsCatalogPayload; config.json unmodified; no reload."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "ConfigOption",
+        "change": "field-add",
+        "details": "Add `readonly group: string` (required) and `readonly enumValues?: readonly string[]` (optional; present iff type==='enum'). Backfill all 31 rows with a group label and enum rows with their allowed-values (lifted from desc). Additive — no existing field changes, no row added/removed.",
+        "callSites": [
+          "src/config/config-catalog.ts",
+          "src/config/reconcile.ts",
+          "src/config/__tests__/config-catalog-contract.test.ts"
+        ]
+      },
+      {
+        "entity": "SettingsCatalogPayload",
+        "change": "new",
+        "details": "New exported payload type in src/config/settings-catalog.ts: { options: readonly ConfigOption[]; groups: readonly string[]; roles: readonly {id:string; defaultTier:string}[]; tierNames: readonly string[]; values: Readonly<Record<string,unknown>> } — the sc1 wire shape config.catalog returns.",
+        "callSites": [
+          "src/config/settings-catalog.ts",
+          "src/daemon/index.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "implements",
+        "howDetails": "S001 implements sc1's daemon side: enriched ConfigOption, SettingsCatalogPayload, the pure buildSettingsCatalog assembler, and the read-only config.catalog IPC. The plugin-side DTO/gateway mirror is the consumers' surface (first built by S002). All derived from the single catalog + reasoningRoleTaxonomy(), never duplicated (lc1/k1)."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "config.json is missing or contains invalid JSON when config.catalog reads it.",
+          "detection": "readFileSync/JSON.parse wrapped in try/catch (mirroring config.show); throw caught, rawConfig defaults to {}.",
+          "response": "buildSettingsCatalog({}) returns the complete schema with values={}; no top-level RPC error.",
+          "userImpact": "IDE still gets the full description; everything shows unset/using-default. No failure surfaced.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A catalog row backfilled with a missing/empty group (authoring error).",
+          "detection": "The extended contract test asserts every row has a non-empty group; a miss fails at test time.",
+          "response": "Test fails before ship; the row must be given a group.",
+          "userImpact": "Caught pre-release; otherwise the setting lands in an empty-named group.",
+          "recoverable": true
+        },
+        {
+          "scenario": "An enum row backfilled without enumValues, or enumValues on a non-enum row.",
+          "detection": "The extended contract test asserts every type:'enum' row has a non-empty enumValues (and non-enum rows omit it).",
+          "response": "Test fails before ship; the enum row must carry its allowed-values.",
+          "userImpact": "Caught pre-release; otherwise a fixed-choice setting has no choices for S003's chooser.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A catalog path unset in config.json (or an absent intermediate like models.tiers).",
+          "expected": "Omitted from values (unset/using-default); no crash on the absent intermediate."
+        },
+        {
+          "input": "config.json contains non-catalog keys (models.tasks.<roleId>, models.byRepo.<repoPath>.*, stale keys).",
+          "expected": "values is keyed only by catalog paths; non-catalog keys are not included (dynamic overrides are S004/S005's concern)."
+        },
+        {
+          "input": "A catalog path whose current value equals its default.",
+          "expected": "Still reported in values with its actual value; equals-default is not elided — the consumer decides how to show it."
+        },
+        {
+          "input": "A non-enum row (string/number/boolean).",
+          "expected": "enumValues omitted (optional); only group present."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "config-catalog.ts remains the SINGLE definition site of CONFIG_CATALOG and ConfigOption; the CLI re-export stays reference-identical (FROM_CLI===FROM_CONFIG). Adding fields introduces no second definition.",
+          "source": "c1"
+        },
+        {
+          "text": "CONFIG_CATALOG stays exactly 31 rows (contract test assert.equal(length,31)); the enrichment adds fields, never rows.",
+          "source": "c6"
+        },
+        {
+          "text": "RETIRED_PATHS stays the 6 declared entries, disjoint from every live path; no path changes.",
+          "source": "c6"
+        },
+        {
+          "text": "The boot reconcile still fills every default and prunes retired paths unchanged; the additive fields do not participate in fill/prune.",
+          "source": "c7"
+        },
+        {
+          "text": "config.catalog is READ-ONLY: reads PATHS.config, never writes config.json or reloads.",
+          "source": "c2"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "contract",
+          "purpose": "Preserve every existing catalog invariant and add the enrichment-completeness guards.",
+          "subjects": [
+            "CONFIG_CATALOG.length===31 still holds",
+            "single definition site + FROM_CLI===FROM_CONFIG + no src/cli import",
+            "RETIRED_PATHS = 6 declared entries, disjoint",
+            "NEW: every row has a non-empty group",
+            "NEW: every enum row has a non-empty enumValues; non-enum rows omit it"
+          ],
+          "fixturesNeeded": [
+            "The real CONFIG_CATALOG + RETIRED_PATHS (imported)"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove the pure buildSettingsCatalog off a fixed fixture without a daemon.",
+          "subjects": [
+            "buildSettingsCatalog({}) returns 31 options + groups + roles + tierNames with values={}",
+            "current values resolved from a fixture; unset path / absent intermediate omitted",
+            "tierNames === rankOf keys; roles map each reasoningRoleTaxonomy() role to {id,defaultTier}",
+            "non-catalog keys never appear in values",
+            "groups = distinct option.group derived from the catalog (not hardcoded)"
+          ],
+          "fixturesNeeded": [
+            "An in-memory rawConfig with set paths, an unset path, an absent intermediate, and a non-catalog key"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove config.catalog returns the payload over the real dispatch and is read-only.",
+          "subjects": [
+            "handler returns a SettingsCatalogPayload (options 31, groups/roles/tierNames present)",
+            "missing/invalid config.json ⇒ full schema with values={}, no top-level error",
+            "call does not modify config.json and does not trigger reloadChatConfig"
+          ],
+          "fixturesNeeded": [
+            "A temp PATHS.config: (a) valid config.json, (b) missing/blank"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "unit: buildSettingsCatalog({}) returns all 31 options with path/type/default/desc/group + enum enumValues, plus groups/roles/tierNames",
+            "contract: every row has a group; every enum row has enumValues",
+            "integration: config.catalog returns the full options payload"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "unit: values resolved from a fixture; set paths present, unset/absent omitted",
+            "integration: config.catalog over a real config returns those values; over a missing config returns values={}"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "contract: length===31, RETIRED_PATHS 6 disjoint, single-site + FROM_CLI===FROM_CONFIG hold",
+            "existing config-reconcile tests still pass (defaults fill, retired pruned)"
+          ]
+        }
+      ],
+      "testFramework": "node:test + node:assert/strict, run via `npx tsx --test` (the src/config/__tests__ convention)"
+    },
+    "migration": {
+      "stateBefore": "ConfigOption has four fields (path/type/default/desc); 31-row CONFIG_CATALOG; enum allowed-values only in prose desc; no group. Daemon has config.show + config.write but NO config.catalog. Contract test asserts length===31, single-site, FROM_CLI===FROM_CONFIG, RETIRED_PATHS 6 disjoint.",
+      "stateAfter": "ConfigOption has group (required) + enumValues (optional, enum rows), all 31 rows backfilled, row count + invariants unchanged. New pure buildSettingsCatalog + read-only config.catalog IPC. config.show/config.write/reconcile unchanged.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the two additive fields to ConfigOption: required group:string and optional enumValues?:readonly string[].",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Backfill all 31 rows with a group label and enum rows with allowed-values from desc. No rows added/removed; paths unchanged.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Extend the contract test with the group + enumValues completeness assertions alongside the untouched existing invariants.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Add src/config/settings-catalog.ts exporting SettingsCatalogPayload + buildSettingsCatalog(rawConfig).",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Register the read-only config.catalog handler in src/daemon/index.ts beside config.show (read parse-or-{}, assemble, return; no write, no reload).",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "The four existing ConfigOption fields are unchanged; the two new fields are additive (group populated everywhere, enumValues optional). All existing consumers (reconcile, CLI re-export, contract test) keep working; config.show/config.write untouched; config.json neither read-migrated nor rewritten. Only config.catalog is added — no method removed or renamed.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Inline enumValues+group on ConfigOption + a pure catalog assembler",
+        "oneLineSummary": "Add readonly enumValues?/group directly to ConfigOption, backfill the 31 rows inline, and add one pure buildSettingsCatalog() that config.catalog wraps.",
+        "approach": "ConfigOption gains enumValues?/group; all 31 rows backfilled in place so the single catalog literal stays the one definition site. A pure buildSettingsCatalog(rawConfig) assembles options/groups/roles/tierNames/values; the config.catalog handler is a thin reader beside config.show that never throws. The contract test gains group + enumValues completeness assertions.",
+        "pros": [
+          "Keeps the single definition site (lc1/k1) — metadata lives on the row.",
+          "Pure assembler is unit-testable off a fixture.",
+          "config.catalog stays a trivial read-only reader; honours k3.",
+          "Additive to the type — reconcile/defaults untouched; length=31 stays green."
+        ],
+        "cons": [
+          "Touches all 31 rows to backfill (mechanical).",
+          "enumValues must be authored to match the desc (a mismatch is a data error, caught by the presence test but not for semantic correctness)."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Sidecar metadata table keyed by path",
+        "oneLineSummary": "Leave ConfigOption as-is and add a second const mapping each path to its {group, enumValues}, merged in when config.catalog assembles the payload.",
+        "approach": "A new SETTINGS_METADATA: Record<string,{group,enumValues?}> is joined with CONFIG_CATALOG by path in buildSettingsCatalog; ConfigOption is unchanged.",
+        "pros": [
+          "ConfigOption's shape is untouched.",
+          "Enrichment metadata visually separated."
+        ],
+        "cons": [
+          "Re-introduces a SECOND path-keyed definition that must track CONFIG_CATALOG — the drift k1/lc1 forbid.",
+          "Needs its own completeness guard; a path typo is a silent mismatch, not a compile error."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Functionally equivalent payload but forks the schema into a path-keyed sidecar (violates k1/lc1), trading the whole point of the enrichment for leaving the type shape untouched."
+      },
+      {
+        "id": "a3",
+        "name": "Derive enumValues + group at read time from the desc/path",
+        "oneLineSummary": "Add no stored fields; parse allowed values from each enum's desc and infer group from the path prefix in buildSettingsCatalog.",
+        "approach": "buildSettingsCatalog regex-extracts quoted tokens from an enum's desc for enumValues and infers group from the path's leading segment(s). No change to ConfigOption or the rows.",
+        "pros": [
+          "Zero change to the rows or the type.",
+          "No new stored data to sync."
+        ],
+        "cons": [
+          "Allowed values become a brittle parse of prose — a reworded desc silently changes/empties them (fails ac1's structured requirement).",
+          "Path-prefix grouping is a heuristic, not the intended human grouping.",
+          "Re-creates the derive-from-prose/hardcode-and-drift failure the Epic removes."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Cheapest but re-creates the derive-from-prose brittleness the Epic exists to remove; fails ac1's structured-allowed-values requirement and cannot express intended grouping."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/config/config-catalog.ts",
+      "quotedText": "interface ConfigOption { path/type/default/desc } + const CONFIG_CATALOG (31 rows), single definition site; enum allowed-values only in desc; no group/enumValues; RETIRED_PATHS = 6."
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/daemon/index.ts",
+      "quotedText": "config.show reads PATHS.config parse-or-{}; config.write segment-aware + reloadChatConfig; no config.catalog handler."
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/config/role-taxonomy.ts",
+      "quotedText": "reasoningRoleTaxonomy(): RoleTaxonomy { roles: RoleDescriptor{id,criticality,defaultTier}[]; rankOf }; tier names = rankOf keys cheap|mid|core."
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/config/__tests__/config-catalog-contract.test.ts",
+      "quotedText": "asserts CONFIG_CATALOG.length===31, single definition site, FROM_CLI===FROM_CONFIG, RETIRED_PATHS 6 disjoint entries."
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/config/reconcile.ts",
+      "quotedText": "boot reconcile reads the catalog to fill defaults + prune retired paths."
+    }
+  ]
+}

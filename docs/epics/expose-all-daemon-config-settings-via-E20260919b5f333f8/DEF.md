@@ -1,0 +1,163 @@
+<!-- insrc:artifact DEF-b5f333f8d7ba421b -->
+
+# Epic: A developer working inside a JetBrains IDE has no way to see or change the insrc daemon's settings from where they work.
+
+**Flavor:** enhancement
+
+## Problem
+
+A developer working inside a JetBrains IDE has no way to see or change the insrc daemon's settings from where they work. Those settings — the daemon's log level and Ollama host, its permission mode, the reasoning model tiers and per-scope plan depth, the local embedder configuration, the code-review gate, and the analyzer/memory toggles, together with the per-role and per-repo overrides that refine them — govern how the whole system behaves, yet the only ways to inspect or edit them are to hand-edit a JSON file in a hidden home directory or to drive a separate command-line surface, both outside the IDE. Worse, none of what a person would need to edit those settings safely is reachable from the IDE either: which settings exist at all, what type each one is, what value is allowed for the ones that accept only a fixed set, what the default is, and which settings belong together — all of that knowledge lives inside the daemon and is invisible to the developer, so editing by hand is done blind, against a schema they cannot see, with a real risk of writing a malformed value, a wrong key, or a mis-nested dotted key. The dynamic, open-ended overrides — the ones keyed by role and by repository — are the most opaque of all, because even their existence and shape are undiscoverable without reading the daemon's source. The cost lands on exactly the JetBrains developer population the IDE integration exists to serve: the settings that determine accuracy, cost, and behaviour are the least reachable and the most error-prone to change precisely from the environment those developers spend their day in.
+
+## Non-goals
+
+- **Adding, removing, or changing the meaning, type, or default of any daemon setting.** — This Epic surfaces the settings that already exist for viewing and editing; the catalog of settings and their semantics are owned by the daemon and changed through their own code paths, not by this UI.
+- **Editing arbitrary config.json keys that are neither in the recognized catalog nor in the two declared dynamic namespaces.** — The catalog is the contract for what the daemon recognizes; a free-form raw-JSON editor for unknown keys would invite drift and let a user write keys the daemon strips or ignores, defeating the point of a schema-driven surface.
+- **Exposing these settings on any surface other than the JetBrains plugin (the CLI, the VSCode fork, or other editors).** — The ask is scoped to the JetBrains developer experience; other surfaces have their own config affordances and are out of this Epic's boundary.
+- **Managing secrets or API keys through this settings surface.** — Credentials flow through a separate keystore path with its own handling; conflating them into a plain settings form would weaken their protection and is deliberately excluded.
+- **Introducing a new persistence location or scoping model for settings beyond the daemon's existing global config.json and its per-repo override namespace.** — The daemon already defines where settings live and how per-repo refinement works; this Epic reads and writes that existing store rather than inventing a parallel one.
+
+## Assumptions
+
+- `high` The daemon already exposes the current setting VALUES for reading and accepts writes that take effect on active sessions, so the values half of the plumbing is reusable and only the schema exposure is missing. [[c2]]
+- `high` The recognized settings are defined once, centrally, as a typed catalog that the daemon itself depends on, so a settings surface can and should derive the list, types, and defaults from that same source rather than restating them. [[c1]]
+- `high` The catalog today records a setting's allowed fixed values and its grouping only informally (in prose description text), not as structured data a UI could consume directly, so presenting fixed-choice settings as proper choosers and settings in meaningful groups needs the catalog to carry that structure explicitly. [[c1]]
+- `high` The plugin has no settings surface of any kind today and reaches the daemon only through its existing socket transport, so the settings page and every config read/write call it makes are net-new additions on top of that transport. [[c3]]
+- `high` Dotted, open-ended keys must be written as explicit path segments rather than a single dotted string to avoid mis-nesting, and the write path already supports that form. [[c5]]
+
+## Constraints
+
+| ID | Type | Text | Source |
+| :--- | :--- | :--- | :--- |
+| `k1` | invariant | The recognized-settings catalog is a single definition site that the daemon-boot reconcile reads to fill defaults and prune retired keys, and it is guarded by a contract test; any settings surface must derive its schema from that catalog and must not duplicate or fork it. | [[c1]] |
+| `k2` | invariant | The catalog and its consumers must stay mutually consistent: enriching a setting's declared shape (its allowed fixed values, its grouping) must keep every existing catalog invariant the contract test enforces, including disjointness from retired paths. | [[c6]] |
+| `k3` | contract | The plugin communicates with the daemon only over the existing Unix-socket JSON-RPC transport, whose result framing distinguishes success from a returned error inside the result envelope; a new catalog read and the existing value read/write must go through that same transport and honour that framing. | [[c4]] |
+| `k4` | contract | A setting write must land at the exact key the daemon recognizes, including dotted dynamic keys, and must be applied so active sessions pick it up — the surface must use the write path that writes literal segments and reloads, not a naive dotted-string write. | [[c5]] |
+| `k5` | convention | Changing which values are stored is the daemon's job; the plugin remains a thin surface that reads the daemon's schema and current values and writes user edits back, owning no settings semantics or defaults of its own. | [[c7]] |
+
+## Stories
+
+### E20260919b5f333f8:S001 — Obtain the full self-describing set of settings and their current values from inside the IDE
+
+**User value:** `size: M`
+
+So that the IDE can present settings accurately without hardcoding what settings exist, it can ask the daemon for the complete, current picture: every recognized setting with enough description to render and edit it safely, plus what each is set to now.
+
+**Extends:** [[c1]] [[c2]]
+
+**Acceptance criteria:**
+
+- **ac1:** Given the daemon is running with its recognized-settings catalog, when the IDE requests the settings description, then it receives every recognized setting with its identifying key, its value type, its default, the fixed set of allowed values for settings that only accept one of a fixed set, a human-readable description, and the group it belongs to — all derived from the daemon's single catalog rather than restated anywhere else. _(operationalizes `k1`, `k3`)_
+- **ac2:** Given the daemon holds current setting values that may differ from defaults, when the IDE requests the settings description together with current values, then each setting reports its current effective value (or that it is unset and using the default), so the IDE never has to guess a current value. _(operationalizes `k3`)_
+- **ac3:** Given the settings catalog is enriched so allowed values and grouping are carried as structured data, when the daemon starts and the catalog's existing consistency checks run, then all pre-existing catalog invariants still hold (recognized keys stay disjoint from retired keys, defaults still fill on boot), so exposing the richer description changes nothing about how settings are stored or reconciled. _(operationalizes `k1`, `k2`)_
+
+**Local constraints:**
+
+- `lc1` (invariant) The description the IDE receives is derived from the daemon's single settings catalog; the settings list, types, defaults, allowed values, and groups are never duplicated in a second definition. [[c1]]
+
+### E20260919b5f333f8:S002 — Open a grouped, collapsible settings page in the IDE and read current values
+
+**User value:** `size: M`
+
+So that a developer can find and understand the daemon's settings without leaving the IDE, a native settings page presents them organized into meaningful, collapsible groups showing each setting's current value, its default, and what it does.
+
+**Depends on:** `s1`
+
+**Extends:** [[c2]] [[c4]]
+
+**Acceptance criteria:**
+
+- **ac1:** Given the daemon is reachable and has described its settings, when the developer opens the insrc settings page in the IDE's settings area, then the settings appear organized into collapsible groups, each setting showing its current value, its default, and its description. _(operationalizes `k3`, `k5`)_
+- **ac2:** Given a setting is currently unset and therefore using its default, when the developer views that setting, then the page makes clear it is at the default value rather than showing an empty or misleading field. _(operationalizes `k5`)_
+- **ac3:** Given the daemon is not reachable, when the developer opens the settings page, then the page shows a clear unavailable state instead of a blank or broken form, and recovers when the daemon becomes reachable again. _(operationalizes `k3`)_
+
+**Local constraints:**
+
+- `lc1` (invariant) The page never assumes a fixed, compiled-in list of settings or groups; it renders whatever the daemon described, so a change to the catalog surfaces without a plugin change. [[c1]]
+
+### E20260919b5f333f8:S003 — Edit a setting with a type-appropriate control and save it
+
+**User value:** `size: M`
+
+So that a developer can safely change a setting from the IDE, each setting offers a control suited to its type, edits are validated before they are saved, and saving takes effect on the running daemon — with the ability to reset an edit or restore a setting to its default.
+
+**Depends on:** `s2`
+
+**Extends:** [[c2]] [[c5]]
+
+**Acceptance criteria:**
+
+- **ac1:** Given the settings page is showing a setting, when the developer edits it, then the control matches the setting's type — a chooser for fixed-choice settings, a toggle for on/off settings, a number entry for numeric settings, and a text field for free-text settings. _(operationalizes `k5`)_
+- **ac2:** Given the developer has changed one or more settings, when they apply the changes, then each changed setting is written to the exact key the daemon recognizes and takes effect on the running daemon, and unchanged settings are left untouched. _(operationalizes `k4`)_
+- **ac3:** Given the developer has changed a setting but not yet applied it, when they choose to revert, then the field returns to the last saved value; and a separate reset-to-default affordance restores the setting to its catalog default. _(operationalizes `k5`)_
+- **ac4:** Given a write is rejected by the daemon (for example an invalid value or key), when the developer applies it, then the page surfaces a clear failure and preserves the developer's pending edit rather than silently dropping it or falsely reporting success. _(operationalizes `k3`, `k4`)_
+
+**Local constraints:**
+
+- `lc1` (contract) A save writes each edited key using the daemon's segment-aware write so a dotted key is never mis-nested, and relies on the daemon to apply it to active sessions. [[c5]]
+
+### E20260919b5f333f8:S004 — View, add, edit, and remove per-role model overrides
+
+**User value:** `size: M`
+
+So that a developer can tune which model tier handles which reasoning role without editing hidden JSON, the settings page lets them see the current per-role overrides, add an override for a role, change it, and remove it.
+
+**Depends on:** `s3`
+
+**Extends:** [[c5]]
+
+**Acceptance criteria:**
+
+- **ac1:** Given the daemon has zero or more per-role overrides configured, when the developer opens the per-role overrides section, then each existing override is listed by its role together with its current overriding value, and roles with no override are shown as using the default routing. _(operationalizes `k5`)_
+- **ac2:** Given a role has no override, when the developer adds one and applies it, then the override is written under that role's exact dotted key and takes effect, without disturbing other roles' overrides. _(operationalizes `k4`)_
+- **ac3:** Given an existing per-role override, when the developer removes it and applies, then that role's override key is cleared so the role falls back to default routing, and no other override is affected. _(operationalizes `k4`)_
+
+**Local constraints:**
+
+- `lc1` (invariant) The set of roles a developer can override is taken from the daemon rather than hardcoded in the plugin, so the override editor stays consistent with the roles the daemon actually recognizes. [[c1]]
+
+### E20260919b5f333f8:S005 — View, add, edit, and remove per-repository setting overrides
+
+**User value:** `size: M`
+
+So that a developer can refine settings for one repository without affecting the global defaults, the settings page lets them see the current per-repo overrides, add one for a repository, edit the settings it overrides, and remove it.
+
+**Depends on:** `s4`
+
+**Extends:** [[c5]]
+
+**Acceptance criteria:**
+
+- **ac1:** Given the daemon has zero or more per-repo overrides configured, when the developer opens the per-repo overrides section, then each existing override is listed by its repository together with the settings it overrides, and the developer can see which repositories have no override. _(operationalizes `k5`)_
+- **ac2:** Given a repository has no override, when the developer adds one, sets the settings it should override, and applies, then the override is written under that repository's exact nested keys and takes effect, leaving the global values and other repositories' overrides untouched. _(operationalizes `k4`)_
+- **ac3:** Given an existing per-repo override, when the developer edits or removes part of it and applies, then only that repository's overridden settings change, and removing the whole override returns that repository to the global values. _(operationalizes `k4`, `k5`)_
+
+**Local constraints:**
+
+- `lc1` (invariant) A per-repo override edits only the nested keys under that one repository; a global setting of the same name is never changed as a side effect of editing a repo override. [[c5]]
+
+## Citations
+
+- **[[c1]]** `code` `src/config/config-catalog.ts` — "CONFIG_CATALOG: readonly ConfigOption[] — SINGLE DEFINITION SITE of 31 typed options {path,type,default,desc}; enum allowed values appear only in desc prose; no group field; models.tasks.<roleId> and "
+- **[[c2]]** `code` `src/daemon/index.ts` — "config.show returns the raw config.json; config.write({path: string|string[], value}) sets the value, writes config.json, and reloads active sessions; there is no config.catalog method exposing the sc"
+- **[[c3]]** `code` `jetbrains-plugin/src/main/resources/META-INF/plugin.xml` — "<extensions defaultExtensionNs="com.intellij"> registers a toolWindow but no applicationConfigurable/projectConfigurable; zero Configurable classes exist in the plugin"
+- **[[c4]]** `code` `jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGateway.kt` — "DaemonGateway reaches the daemon over UnixSocketDaemonRpc with DaemonResult ok/error framing but exposes no config read/write methods"
+- **[[c5]]** `code` `src/config/write-path.ts` — "setConfigAtPath accepts a literal segment array so dotted keys (models.tasks.<roleId>, models.byRepo.<repoPath>) are written without mis-nesting"
+- **[[c6]]** `code` `src/config/__tests__/config-catalog-contract.test.ts` — "the catalog is guarded by a contract test enforcing invariants such as disjointness between live catalog paths and retired paths"
+- **[[c7]]** `code` `src/config/reconcile.ts` — "the daemon-boot reconcile reads the catalog to migrate legacy nesting, fill every catalog default, then prune retired paths — the daemon owns settings semantics"
+
+<!-- insrc:review -->
+
+## Review
+
+### ✅ Review `PASS` — define (define)
+
+**0 HIGH · 0 MED · 1 LOW** · model `client` · reviewed 2026-09-19T14:59:47.562Z
+
+| Ref | Kind | Severity | Fixability | Premise | Evidence | Action |
+| --- | --- | --- | --- | --- | --- | --- |
+| c1 | inventory | LOW | auto | CONFIG_CATALOG contains 28 static typed option entries. | Counting the entries inside the CONFIG_CATALOG array in src/config/config-catalog.ts (between `export const CONFIG_CATALOG` and its closing `];`) yields 31 `{ path: ... }` ConfigOption entries, not 28. The other `{ path:` occurrences in the file belong to RETIRED_PATHS (6) and are correctly excluded. So the DEF's citation c1 quote 'SINGLE DEFINITION SITE of 28 typed options' undercounts by 3. | Correct the count from 28 to 31 in citation c1's quotedText (and treat the DEF's implied '28 static settings' framing as 31). This is non-load-bearing: k1 and every Story's lc1 require the settings list to be derived dynamically from the catalog and never hardcoded, so no design, story, or acceptance criterion depends on the literal number — only the citation text is inaccurate. |
+
+#### Proposed fixes
+
+- **c1** (auto) — The catalog currently holds 31 ConfigOption entries; the '28' was carried in from the initial scoping estimate. Correcting the citation keeps the DEF factually accurate without affecting any Story or constraint, which are all count-agnostic by design.
+  - edit: `SINGLE DEFINITION SITE of 28 typed options` → `SINGLE DEFINITION SITE of 31 typed options`

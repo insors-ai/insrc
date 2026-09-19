@@ -123,6 +123,7 @@ import type { RegisteredRepo, DaemonStatus, Entity, ConfigScope, ConfigSearchOpt
 import { basename } from 'node:path';
 import { ConfigStore } from '../config/store.js';
 import { setConfigAtPath } from '../config/write-path.js';
+import { buildSettingsCatalog } from '../config/settings-catalog.js';
 import { reconcileConfigFile } from '../config/reconcile-io.js';
 import { searchConfig, resolveTemplate } from '../config/search.js';
 import * as todosRpc from './todos-rpc.js';
@@ -1299,6 +1300,18 @@ async function main(): Promise<void> {
 			} catch {
 				return {};
 			}
+		},
+
+		// The self-describing settings catalog (Story S001 / sc1): the enriched
+		// CONFIG_CATALOG + role taxonomy + tier names + current values, assembled
+		// by the pure buildSettingsCatalog. READ-ONLY — mirrors config.show's
+		// parse-or-{} read; never writes config.json and never reloads sessions.
+		'config.catalog': async () => {
+			let rawConfig: Record<string, unknown> = {};
+			try {
+				rawConfig = JSON.parse(readFileSync(PATHS.config, 'utf-8')) as Record<string, unknown>;
+			} catch { /* missing/invalid config → full schema with empty values */ }
+			return buildSettingsCatalog(rawConfig) as unknown as Record<string, unknown>;
 		},
 
 		// docgen: generate a self-contained HTML document from the code graph

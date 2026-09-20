@@ -93,6 +93,16 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h3>0.2.4</h3>
+        <ul>
+            <li><b>Fixed: per-repository overrides failed to load</b> ("class
+                com.google.gson.JsonArray cannot be cast to&hellip;JsonObject"). The
+                daemon's <code>repo.list</code> returns a bare JSON array; the transport
+                now reads an array result correctly instead of crashing, so the
+                per-repo override editor and its add-repository picker populate again.</li>
+            <li>This also clears a brief scrollbar flicker that the long error message
+                caused on the Settings page.</li>
+        </ul>
         <h3>0.2.3</h3>
         <ul>
             <li><b>Settings page is now collapsible sections.</b>

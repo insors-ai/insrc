@@ -444,9 +444,9 @@ interface DaemonGateway {
     fun perRepoOverrides(): PerRepoOverridesResult
 
     /**
-     * Read the daemon's registered repos (Story S005) — the `repo.list` `repos`
-     * paths — over the EXISTING `repo.list` IPC, to populate the per-repo
-     * add-override picker. Returns [RegisteredReposResult.Loaded] (possibly empty)
+     * Read the daemon's registered repos (Story S005) — the `path` of each entry
+     * in the `repo.list` result array — over the EXISTING `repo.list` IPC, to
+     * populate the per-repo add-override picker. Returns [RegisteredReposResult.Loaded] (possibly empty)
      * or [RegisteredReposResult.Unavailable] on an unreachable/errored daemon;
      * never throws.
      */
@@ -464,11 +464,19 @@ interface DaemonRpc {
     fun call(method: String, params: Map<String, Any?>): DaemonResult
 }
 
-/** A daemon reply: `ok` = success, `data` = result fields, `error` = reason when not ok. */
+/**
+ * A daemon reply: `ok` = success, `error` = reason when not ok. The result payload
+ * is EITHER a JSON object (exposed as [data]) OR a bare JSON array (exposed as
+ * [list]) — some handlers frame their result as an array (e.g. `repo.list` returns
+ * `[{path,…}]` directly, not `{repos:[…]}`), so a caller of such a method reads
+ * [list], not [data]. For an object result [list] is null; for an array result
+ * [data] is empty.
+ */
 data class DaemonResult(
     val ok: Boolean,
     val data: Map<String, Any?> = emptyMap(),
     val error: String? = null,
+    val list: List<Any?>? = null,
 )
 
 /**
@@ -491,8 +499,26 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
     override fun isProjectRegistered(projectRootPath: String): Boolean {
         // repo.list is read-only; membership is checked by path. Never calls repo.add.
         val r = rpc.call(METHOD_REPO_LIST, emptyMap())
-        val repos = (r.data[FIELD_REPOS] as? Collection<*>)?.map { it.toString() } ?: emptyList()
-        return projectRootPath in repos
+        return projectRootPath in registeredRepoPaths(r)
+    }
+
+    /**
+     * The registered repo paths from a `repo.list` reply. The daemon frames the
+     * result as a BARE ARRAY of repo objects (`[{path,…}]`) — exposed as
+     * [DaemonResult.list] — so read `path` off each element. Tolerates a plain
+     * array of path strings and, defensively, a legacy `{ repos:[…] }` object shape.
+     */
+    private fun registeredRepoPaths(r: DaemonResult): List<String> {
+        r.list?.let { arr ->
+            return arr.mapNotNull { el ->
+                when (el) {
+                    is Map<*, *> -> el["path"] as? String
+                    is String -> el
+                    else -> null
+                }
+            }
+        }
+        return (r.data[FIELD_REPOS] as? Collection<*>)?.mapNotNull { it as? String } ?: emptyList()
     }
 
     override fun registerProject(projectRootPath: String): RegistrationResult {
@@ -734,16 +760,15 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
 
     override fun registeredRepos(): RegisteredReposResult =
         try {
-            // repo.list returns the registered repo paths under `repos` (the same
-            // read isProjectRegistered uses). A framed error / unreachable daemon
-            // is Unavailable; a legitimately-empty list stays Loaded(emptyList).
+            // repo.list returns a BARE ARRAY of repo objects (`[{path,…}]`), read via
+            // registeredRepoPaths (the same read isProjectRegistered uses). A framed
+            // error / unreachable daemon is Unavailable; a legitimately-empty list
+            // stays Loaded(emptyList).
             val r = rpc.call(METHOD_REPO_LIST, emptyMap())
             if (!r.ok || r.error != null) {
                 RegisteredReposResult.Unavailable(r.error ?: "repo.list returned an error")
             } else {
-                val repos = (r.data[FIELD_REPOS] as? Collection<*>)
-                    ?.mapNotNull { it as? String } ?: emptyList()
-                RegisteredReposResult.Loaded(repos)
+                RegisteredReposResult.Loaded(registeredRepoPaths(r))
             }
         } catch (e: DaemonUnavailableException) {
             RegisteredReposResult.Unavailable(e.message ?: "daemon unavailable")

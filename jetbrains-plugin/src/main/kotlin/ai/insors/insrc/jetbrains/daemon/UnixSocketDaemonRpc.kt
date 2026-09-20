@@ -113,7 +113,19 @@ class UnixSocketDaemonRpc(
             return DaemonResult(ok = false, error = topLevelErrorMessage(err))
         }
 
-        val result = obj.getAsJsonObject("result") ?: JsonObject()
+        // The result payload may be a JSON OBJECT or a bare JSON ARRAY. Some
+        // handlers frame their result as an array (e.g. `repo.list` returns
+        // `[{path,…}]` directly), so `getAsJsonObject("result")` — which force-casts
+        // — threw ClassCastException (JsonArray cannot be cast to JsonObject) on
+        // every such call. Read the element by kind instead: an array becomes
+        // [DaemonResult.list], an object (or absent/other) the usual [data].
+        val resultEl = obj.get("result")
+        if (resultEl != null && resultEl.isJsonArray) {
+            @Suppress("UNCHECKED_CAST")
+            val list = gson.fromJson(resultEl, List::class.java) as? List<Any?> ?: emptyList()
+            return DaemonResult(ok = true, list = list)
+        }
+        val result = resultEl?.takeIf { it.isJsonObject }?.asJsonObject ?: JsonObject()
 
         // Structured failure convention: a non-empty string `result.error`.
         val structuredError = result.get("error")

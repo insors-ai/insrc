@@ -61,6 +61,17 @@ class UnixSocketDaemonRpcParseTest {
         assertTrue(r.ok, "an empty error string is not a failure signal")
     }
 
+    @Test
+    fun `a BARE ARRAY result parses to ok=true with list, NOT a ClassCastException (repo_list shape)`() {
+        // repo.list frames its result as a bare array of repo objects. The old
+        // getAsJsonObject("result") force-cast crashed here (JsonArray -> JsonObject).
+        val r = rpc.parse("""{"id":1,"result":[{"path":"/home/dev/a","name":"a"},{"path":"/home/dev/b"}]}""")
+        assertTrue(r.ok)
+        assertEquals(2, r.list?.size)
+        assertTrue(r.data.isEmpty(), "an array result leaves data empty; the payload is in list")
+        assertEquals("/home/dev/a", (r.list?.get(0) as Map<*, *>)["path"])
+    }
+
     // ---- end-to-end: real parse -> gateway -> view (the hollow-test gap) -----
 
     /** A [DaemonRpc] that runs the REAL [UnixSocketDaemonRpc.parse] over a canned reply. */
@@ -85,5 +96,30 @@ class UnixSocketDaemonRpcParseTest {
         assertEquals(1, available.artifacts.size)
         assertEquals("LLD", available.artifacts[0].kind)
         assertEquals(2, available.artifacts[0].openQuestionCount)
+    }
+
+    @Test
+    fun `over the real parse, repo_list's bare array maps to registeredRepos Loaded with the paths`() {
+        // The daemon returns repo.list as [{path,…}] — the array framing that crashed
+        // perRepoOverrides' registeredRepos read with a JsonArray->JsonObject cast.
+        val reply = """{"id":1,"result":[{"path":"/home/dev/a","name":"a","status":"ready"},{"path":"/home/dev/b","name":"b"}]}"""
+        val result = DaemonGatewayImpl(WireRpc(reply)).registeredRepos()
+        val loaded = assertInstanceOf(RegisteredReposResult.Loaded::class.java, result)
+        assertEquals(listOf("/home/dev/a", "/home/dev/b"), loaded.repos)
+    }
+
+    @Test
+    fun `over the real parse, isProjectRegistered reads the bare-array repo paths`() {
+        val reply = """{"id":1,"result":[{"path":"/home/dev/a"},{"path":"/home/dev/b"}]}"""
+        val gateway = DaemonGatewayImpl(WireRpc(reply))
+        assertTrue(gateway.isProjectRegistered("/home/dev/b"))
+        assertFalse(gateway.isProjectRegistered("/home/dev/zzz"))
+    }
+
+    @Test
+    fun `over the real parse, an empty repo_list array is Loaded(emptyList), NOT Unavailable`() {
+        val result = DaemonGatewayImpl(WireRpc("""{"id":1,"result":[]}""")).registeredRepos()
+        val loaded = assertInstanceOf(RegisteredReposResult.Loaded::class.java, result)
+        assertTrue(loaded.repos.isEmpty())
     }
 }

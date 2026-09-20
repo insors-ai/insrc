@@ -20,6 +20,33 @@ data class SettingsGroupModel(
 )
 
 /**
+ * One node of the settings page's category tree (Story S001 rework): either a
+ * setting CATEGORY (a group + its options, rendered as an editable table) or an
+ * override SECTION (a host [SettingsSection] title, rendered as its component()).
+ * Pure data — no Swing.
+ */
+sealed interface SettingsTreeNode {
+    val label: String
+
+    /** A setting category: [group] label + its [options] (the table's rows). */
+    data class Category(val group: String, val options: List<ConfigOptionDto>) : SettingsTreeNode {
+        override val label: String get() = group
+    }
+
+    /** An override sub-section, addressed by its [SettingsSection.title]. */
+    data class Section(val title: String) : SettingsTreeNode {
+        override val label: String get() = title
+    }
+}
+
+/**
+ * The ordered tree nodes + which one is selected/expanded on first render
+ * (Story S001). [defaultIndex] indexes into [nodes]; it is -1 only when [nodes]
+ * is empty.
+ */
+data class SettingsTree(val nodes: List<SettingsTreeNode>, val defaultIndex: Int)
+
+/**
  * The extension seam where downstream stories plug their own sub-sections into
  * the settings page: the per-role overrides (S004) and per-repo overrides
  * (S005). S002 declares it but registers no override section.
@@ -61,6 +88,30 @@ object SettingsView {
             if (g !in emitted) out.add(SettingsGroupModel(g, opts))
         }
         return out
+    }
+
+    /** The category-node label the tree selects/expands by default when present. */
+    const val GENERAL_GROUP: String = "General"
+
+    /**
+     * Build the settings page's tree (Story S001 rework): the [catalog]'s
+     * categories (via [groupsOf], so declared-group order first, out-of-groups
+     * trailing, every option in exactly one node) as [SettingsTreeNode.Category]s,
+     * followed by one [SettingsTreeNode.Section] per entry in [sectionTitles] (the
+     * host override sections, in the order given). The default-selected node is the
+     * 'General' category when present, else the first category, else the first node
+     * (or -1 when there are no nodes at all).
+     */
+    fun settingsTree(catalog: SettingsCatalogDto, sectionTitles: List<String>): SettingsTree {
+        val categories = groupsOf(catalog).map { SettingsTreeNode.Category(it.group, it.options) }
+        val sections = sectionTitles.map { SettingsTreeNode.Section(it) }
+        val nodes: List<SettingsTreeNode> = categories + sections
+        val defaultIndex = when {
+            nodes.isEmpty() -> -1
+            else -> categories.indexOfFirst { it.group == GENERAL_GROUP }
+                .let { if (it >= 0) it else 0 } // General, else the first node (first category when any)
+        }
+        return SettingsTree(nodes, defaultIndex)
     }
 
     /**

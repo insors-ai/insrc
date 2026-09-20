@@ -93,6 +93,36 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h3>0.2.2</h3>
+        <ul>
+            <li><b>Reworked Settings page.</b> <b>Settings &rsaquo; Tools &rsaquo; insrc</b>
+                is now an expandable category <b>tree</b> on the left with a
+                <b>key / value / default</b> table on the right &mdash; every setting's
+                current value and default are shown at a glance, and the page scrolls
+                properly when there is a lot of content.</li>
+            <li>Edit a value inline in the table (chooser / toggle / text by type) with
+                a per-row reset-to-default; the <b>General</b> category is open by
+                default.</li>
+            <li>The per-role and per-repository override editors are now their own
+                nodes in the same tree.</li>
+        </ul>
+        <h3>0.2.1</h3>
+        <ul>
+            <li><b>New: a native insrc Settings page.</b> Under
+                <b>Settings &rsaquo; Tools &rsaquo; insrc</b> you can now see and edit
+                every daemon setting from the IDE &mdash; grouped into collapsible
+                sections and rendered entirely from the daemon's own description, so
+                the plugin never forks or hardcodes the schema.</li>
+            <li><b>Edit global settings</b> with type-appropriate controls (choosers,
+                toggles, number and text fields), reset any setting to its default, and
+                Apply &mdash; writes go straight to the daemon's config.</li>
+            <li><b>Per-role overrides:</b> pick the model tier for each reasoning role,
+                or fall back to the default routing.</li>
+            <li><b>Per-repository overrides:</b> add an override for a registered
+                repository and tune its full per-repo tiering &mdash; the accuracy
+                floor, per-role tiers, and per-tier runner/model &mdash; without
+                touching the global defaults; remove it to return the repo to global.</li>
+        </ul>
         <h3>0.2.0</h3>
         <ul>
             <li><b>New: the in-IDE artifact review panel.</b> An "insrc Review" tool

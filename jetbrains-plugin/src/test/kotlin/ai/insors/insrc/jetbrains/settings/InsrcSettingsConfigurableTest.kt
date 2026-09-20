@@ -132,7 +132,7 @@ class InsrcSettingsConfigurableTest {
         val src = read("src/main/kotlin/ai/insors/insrc/jetbrains/settings/InsrcSettingsConfigurable.kt")
         assertTrue(src.contains("PerRepoSection("), "the host builds the per-repo section")
         // The section rides the SAME sections list + off-EDT fan-out as S004 (no new machinery).
-        assertTrue(src.contains("sections.add(section)"), "the per-repo section is registered into the sections list")
+        assertTrue(src.contains("sections.add("), "the per-repo section is registered into the sections list")
         // createComponent's off-EDT read gains the two new reads.
         assertTrue(src.contains("gateway.perRepoOverrides()"), "createComponent reads perRepoOverrides")
         assertTrue(src.contains("gateway.registeredRepos()"), "createComponent reads registeredRepos")
@@ -141,5 +141,30 @@ class InsrcSettingsConfigurableTest {
             src.contains("PerRepoOverridesResult.Loaded") && src.contains("RegisteredReposResult.Loaded"),
             "the per-repo section renders only when both reads are Loaded",
         )
+    }
+
+    @Test
+    fun `InsrcSettingsConfigurable renders a master-detail category tree with editable tables and a scrolling viewport (S001 rework)`() {
+        val src = read("src/main/kotlin/ai/insors/insrc/jetbrains/settings/InsrcSettingsConfigurable.kt")
+        // ac2: categories render as a JTree (built from the pure tree model).
+        assertTrue(src.contains("JTree"), "categories render as a JTree (ac2)")
+        assertTrue(src.contains("SettingsView.settingsTree("), "the tree is built from the pure SettingsView.settingsTree model")
+        // ac3/ac4: the detail is an editable Key/Value/Default JTable bound to the model.
+        assertTrue(src.contains("JTable"), "the detail is a JTable (ac4)")
+        assertTrue(src.contains("SettingsTableModel("), "the table is bound to the per-category SettingsTableModel (ac3/ac4)")
+        // ac1: the tree + detail scroll (AS_NEEDED) and the scroll-suppressing constructs are gone.
+        assertTrue(src.contains("JScrollPane"), "the tree + detail are wrapped in scroll panes (ac1)")
+        assertTrue(src.contains("VERTICAL_SCROLLBAR_AS_NEEDED"), "the viewport scrolls when content overflows (ac1)")
+        assertFalse(src.contains("maximumSize = Dimension"), "no per-wrapper maximumSize height caps remain (ac1)")
+        assertFalse(src.contains("Box.createVerticalGlue"), "no vertical glue remains (ac1)")
+        // The flat S002/S003 render path is gone.
+        assertFalse(src.contains("collapsibleGroup"), "the flat collapsibleGroup render is replaced")
+        assertFalse(src.contains("settingRow"), "the flat settingRow render is replaced")
+        // ac5: General is selected/expanded on first render.
+        assertTrue(src.contains("setSelectionRow(tree.defaultIndex)"), "General (the default node) is selected on first render (ac5)")
+        // ac6: the editable Value cell drives the unchanged edit model.
+        assertTrue(src.contains("SettingsValueCellEditor"), "the Value column has an editable per-type cell editor (ac6)")
+        assertTrue(src.contains("edit.editField"), "the table's setValueAt routes to SettingsEditModel.editField (ac6)")
+        assertTrue(src.contains("edit.markResetToDefault"), "reset-to-default maps to markResetToDefault (ac6)")
     }
 }

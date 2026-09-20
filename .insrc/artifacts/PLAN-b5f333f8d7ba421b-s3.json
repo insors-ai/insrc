@@ -1,0 +1,270 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1789883413750-05sues",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-20T05:54:00.518Z",
+    "epicCreatedAt": "2026-09-19T14:57:29.012Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 226702,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b5f333f8d7ba421b",
+    "epicSlug": "expose-all-daemon-config-settings-via",
+    "storyId": "s3",
+    "lldRunId": "wf-1789882506964-6msmw0",
+    "lldEffectiveHash": "ee39a9f5fd11df006188d3b2038117bb0cd01aa61eaff9cccc9ea69fbfb78612",
+    "review": {
+      "artifact": "plan",
+      "stage": "plan",
+      "verdict": "pass",
+      "findings": [],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 0
+      },
+      "reviewedAt": "2026-09-20T05:54:51.521Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-20T05:56:20.527Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add the sc2 write surface to the gateway (SaveResult + writeSetting/clearSetting)",
+        "summary": "In DaemonGateway.kt add a sealed SaveResult { Saved | Rejected(reason) | Unavailable(reason) }, add writeSetting(pathSegments: List<String>, value: Any?): SaveResult and clearSetting(pathSegments: List<String>): SaveResult to the interface, implement both in DaemonGatewayImpl over rpc.call(METHOD_CONFIG_WRITE='config.write') (writeSetting sends {path: segments, value}; clearSetting sends {path: segments} with value OMITTED; ok=true→Saved, ok=false (no throw)→Rejected, DaemonUnavailableException/RuntimeException→Unavailable), add the DaemonGatewayService delegate overrides, and add writeSetting/clearSetting stubs to the 4 test doubles (DaemonLifecycleServiceTest throws AssertionError like its settingsCatalog stub; the 3 Onboarding tests return Unavailable('not used')). Additive to the interface — must compile all consumers in one change. Land the gateway-classification tests (writeSetting/clearSetting Fake + WireRpc) with this task so its ./gradlew test proves the sc2 slice.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "DaemonGateway declares writeSetting(pathSegments, value) and clearSetting(pathSegments) returning SaveResult; SaveResult is a sealed interface with Saved/Rejected/Unavailable.",
+          "DaemonGatewayImpl.writeSetting calls config.write with {path: segments, value}; clearSetting calls config.write with {path: segments} and NO value key.",
+          "ok=true→Saved, ok=false→Rejected, DaemonUnavailable/RuntimeException→Unavailable (never throws).",
+          "DaemonGatewayService delegates both; all 4 test doubles compile with the new stubs; ./gradlew test still green."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "writeSetting: ok=true→Saved, ok=false→Rejected, DaemonUnavailable→Unavailable; sends {path: segments, value}"
+          },
+          {
+            "level": "unit",
+            "name": "clearSetting omits the value key (FakeDaemonRpc param assertion); ok=true→Saved"
+          },
+          {
+            "level": "unit",
+            "name": "WireRpc real UnixSocketDaemonRpc.parse: {result:{ok:true}}→Saved, {result:{error}}→Unavailable"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Add the pure SettingsEditModel (validation, dirty, reset, segment mapping)",
+        "summary": "In the settings package add PendingWrite(segments: List<String>, op: WriteOp) + sealed WriteOp { Set(value: Any?) | Clear } and the pure class SettingsEditModel(catalog: SettingsCatalogDto) with a private FieldState per option. Implement editField (parse+validate per type: number parse tolerating Gson Double, enum-membership, boolean, empty-string-valid), validationError, isModified, revertField, markResetToDefault (set→Clear, unset→no-op), onSaved (advance/clear last-saved), and collectDirty()→only dirty, validation-clean fields as PendingWrite with path→segments mapping. Integral-Double equality so a re-typed same number is not dirty. No Swing, no existing-symbol changes. Land the SettingsEditModel unit tests with this task.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "SettingsEditModel + PendingWrite + WriteOp exist in settings/ and are pure (no Swing/IDE imports).",
+          "editField parses+validates per type; validationError non-null for a bad number/enum; empty string is valid for string.",
+          "isModified true only on a real change or reset-of-a-set field; a re-typed integral-Double value is not dirty.",
+          "collectDirty emits only dirty validation-clean fields as PendingWrite(Set|Clear) with correct segments; markResetToDefault set→Clear, unset→no-op; onSaved advances last-saved."
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "control-kind per type (enum/boolean/number/string)"
+          },
+          {
+            "level": "unit",
+            "name": "per-type parse/validate: number parse + integral-Double equality, enum-membership, empty-string-valid"
+          },
+          {
+            "level": "unit",
+            "name": "isModified/collectDirty emits only changed fields; a validationError field is excluded"
+          },
+          {
+            "level": "unit",
+            "name": "revertField restores last-saved; markResetToDefault set→Clear, unset→no-op; onSaved advances last-saved"
+          },
+          {
+            "level": "unit",
+            "name": "path→segments mapping verbatim (lc1)"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Make InsrcSettingsConfigurable editable (edit controls + apply/isModified/reset via the model)",
+        "summary": "Replace readOnlyControl with edit-capable controls per type (enum→JComboBox over enumValues, boolean→enabled JCheckBox, number→number/text field, string→JTextField) bound to a SettingsEditModel built from the Loaded catalog. Wire isModified()→model.isModified(), reset()→revert all fields to last-saved, and apply()→for each collectDirty() PendingWrite call gateway.writeSetting/clearSetting, onSaved on Saved, and throw ConfigurationException (preserving the edit) on any not-Saved result or a validationError. An Unavailable page installs no editors (unchanged). Wire a reset-to-default affordance per row to markResetToDefault. Depends on t1 (gateway) + t2 (model).",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "Each Loaded row renders a type-appropriate EDIT control (not the read-only JLabel/disabled checkbox).",
+          "isModified/reset delegate to the model; apply writes only dirty keys via writeSetting/clearSetting and calls onSaved on Saved.",
+          "apply throws ConfigurationException on a not-Saved result or a validationError, preserving the pending edit; a partial batch advances only the Saved fields.",
+          "The Unavailable placeholder path installs no editors; no SettingsSection is registered."
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "source-scan: edit-capable controls installed per type (not the read-only JLabel/disabled checkbox)"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Configurable source-scan tests + final green sweep",
+        "summary": "Extend InsrcSettingsConfigurableTest source-scan: edit-capable controls per type (not the read-only JLabel/disabled checkbox), apply throws ConfigurationException on not-Saved/validation, and apply uses gateway.writeSetting/clearSetting (not a raw config.write string). Confirm the gateway-classification tests (from t1) and SettingsEditModel tests (from t2) are present, then run the full JDK21 ./gradlew test green sweep. (Per the s3 critique, the pure-model and gateway tests land with t2/t1; t4 adds the shell source-scan and the consolidated final sweep.)",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "InsrcSettingsConfigurable source-scan asserts edit controls + apply-throws-on-not-Saved/validation + gateway (not raw config.write) usage.",
+          "The SettingsEditModel tests (t2) and gateway sc2 classification + WireRpc tests (t1) are present and passing.",
+          "./gradlew test passes on JDK21 with all new tests (full sweep green)."
+        ],
+        "derivedFrom": [
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "source-scan: apply calls gateway.writeSetting/clearSetting (not raw config.write), delegates isModified/reset, throws ConfigurationException on not-Saved/validation"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "SettingsEditModel control-kind per type",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "number parse + integral-Double equality, enum-membership, empty-string-valid",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "isModified/collectDirty emits only changed fields; validationError excluded",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "revertField / markResetToDefault (set→Clear, unset→no-op) / onSaved",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "path→segments verbatim (lc1)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "writeSetting ok=true→Saved / ok=false→Rejected / DaemonUnavailable→Unavailable; sends {path,value}",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "clearSetting OMITS the value key; ok=true→Saved",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "WireRpc over real UnixSocketDaemonRpc.parse: {result:{ok:true}}→Saved, {result:{error}}→Unavailable",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "apply calls gateway.writeSetting/clearSetting (not a raw config.write string), delegates isModified/reset to the model, throws ConfigurationException on not-Saved/validation",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "edit-capable controls installed per type (not the S002 read-only JLabel/disabled checkbox)",
+        "coveredByTaskIds": [
+          "t3",
+          "t4"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 contractDetails DaemonGateway.writeSetting (sc2)",
+      "quotedText": "fun writeSetting(pathSegments: List<String>, value: Any?): SaveResult -> config.write({path: segments, value}); ok=true→Saved, ok=false→Rejected, DaemonUnavailable/RuntimeException→Unavailable."
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 contractDetails DaemonGateway.clearSetting (sc2)",
+      "quotedText": "fun clearSetting(pathSegments: List<String>): SaveResult -> config.write({path: segments}) with value OMITTED so the daemon drops the leaf; reset-to-default of a global setting."
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 contractDetails SettingsEditModel + dataModelChanges PendingWrite/WriteOp/FieldState",
+      "quotedText": "Pure headless SettingsEditModel: per-type parse/validate, dirty-vs-last-saved, revert/markResetToDefault/onSaved, collectDirty()→PendingWrite(segments, Set|Clear)."
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 contractDetails InsrcSettingsConfigurable.apply",
+      "quotedText": "Edit-capable controls per type + native isModified/apply/reset backed by the model; apply per dirty PendingWrite calls writeSetting/clearSetting, onSaved on Saved, ConfigurationException on not-Saved/validation."
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 testStrategy (test levels + acceptance mapping)",
+      "quotedText": "Unit: SettingsEditModel logic, gateway sc2 classification + WireRpc real-parse, Configurable source-scan; all four ACs mapped."
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 testStrategy.testFramework",
+      "quotedText": "JUnit5 (org.junit.jupiter) on JDK21 via ./gradlew test; source-scan tests read the Kotlin source; no BasePlatformTestCase, no daemon/TS test."
+    }
+  ]
+}

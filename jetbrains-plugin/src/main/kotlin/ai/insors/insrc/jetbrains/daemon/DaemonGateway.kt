@@ -221,6 +221,25 @@ sealed interface SettingsCatalogResult {
 }
 
 /**
+ * The result of a settings write/clear (Story S003 / sc2). THREE-state by design:
+ * a persisted [Saved] is distinct from a [Rejected] (the daemon refused the
+ * path/value — config.write replied ok=false) and from [Unavailable] (the daemon
+ * was unreachable / errored / a transport fault). This lets the settings page
+ * preserve the pending edit and surface the failure rather than reporting a
+ * false success (k3, ac4, the S001 result.error framing).
+ */
+sealed interface SaveResult {
+    /** config.write persisted the change and reloaded active sessions. */
+    data object Saved : SaveResult
+
+    /** The daemon refused the write (ok=false — e.g. an invalid/empty path). */
+    data class Rejected(val reason: String) : SaveResult
+
+    /** The daemon was unreachable / errored / a transport fault; [reason] explains. */
+    data class Unavailable(val reason: String) : SaveResult
+}
+
+/**
  * sc2 (Story S001): a thin handle to the backend daemon, shared across the
  * S002 wiring / S003 lifecycle / S005 onboarding branches. Read paths never
  * allocate registry membership (k2); every method takes the active project's
@@ -307,6 +326,30 @@ interface DaemonGateway {
      * [SettingsCatalogResult.Unavailable], never a blank [SettingsCatalogResult.Loaded].
      */
     fun settingsCatalog(): SettingsCatalogResult
+
+    /**
+     * Persist an edited setting (Story S003 / sc2) via the segment-aware
+     * `config.write` IPC. [pathSegments] are LITERAL key segments (never a dotted
+     * string) so a dotted dynamic key is never mis-nested (k4); [value] is the
+     * already-parsed, type-correct value (Boolean/number/String). Returns a
+     * [SaveResult] — never throws: ok=true is [SaveResult.Saved], ok=false is
+     * [SaveResult.Rejected], and an unreachable/errored daemon is
+     * [SaveResult.Unavailable] (k3, ac4).
+     *
+     * NOTE: passing a null [value] is equivalent to [clearSetting] — the wire
+     * serialization omits an absent/null value so the daemon drops the leaf rather
+     * than storing JSON null. Callers that need to persist an actual null must not
+     * use this method (no S003 path does; the edit model never yields Set(null)).
+     */
+    fun writeSetting(pathSegments: List<String>, value: Any?): SaveResult
+
+    /**
+     * Remove a setting key (Story S003 / sc2) via `config.write` with the `value`
+     * field OMITTED — the daemon then drops the leaf, so the setting reverts to
+     * the daemon default (reset-to-default for a global setting; override removal
+     * for s4/s5). Same [SaveResult] classification as [writeSetting].
+     */
+    fun clearSetting(pathSegments: List<String>): SaveResult
 }
 
 /**
@@ -483,6 +526,52 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
             SettingsCatalogResult.Unavailable(e.message ?: "unexpected daemon fault")
         }
 
+    override fun writeSetting(pathSegments: List<String>, value: Any?): SaveResult =
+        // A SET carries the value; the segments go through verbatim as config.write's
+        // literal `path` array so a dotted dynamic key is never mis-nested (k4).
+        configWrite(mapOf(PARAM_PATH to pathSegments, PARAM_VALUE to value))
+
+    override fun clearSetting(pathSegments: List<String>): SaveResult =
+        // A CLEAR OMITS `value` entirely — the daemon assigns undefined and
+        // JSON.stringify drops the leaf, removing the key (reset-to-default). k4.
+        configWrite(mapOf(PARAM_PATH to pathSegments))
+
+    /**
+     * The shared sc2 write path: one config.write round-trip classified into the
+     * three-state [SaveResult]. config.write's handler returns its own business
+     * flag INSIDE the result envelope — {ok:true} on success, a BARE {ok:false}
+     * on a refused path (NOT a framed result.error). So the transport-level
+     * [DaemonResult.ok] is true for both; the daemon's verdict is the `ok` field
+     * in [DaemonResult.data]. Classification:
+     *   - a thrown/socket fault (DaemonUnavailableException / RuntimeException) -> Unavailable;
+     *   - a transport/framed error (r.ok=false or r.error != null — an unexpected
+     *     handler throw) -> Rejected;
+     *   - data.ok == true -> Saved; otherwise (a returned {ok:false}) -> Rejected.
+     * Never throws, never a false Saved (ac4).
+     */
+    private fun configWrite(params: Map<String, Any?>): SaveResult =
+        try {
+            val r = rpc.call(METHOD_CONFIG_WRITE, params)
+            when {
+                !r.ok || r.error != null ->
+                    // An unexpected handler throw framed as an error reply.
+                    SaveResult.Rejected(r.error ?: "the daemon rejected the write")
+                r.data["ok"] == true -> SaveResult.Saved
+                else ->
+                    // config.write returned a bare {ok:false} (refused path/value);
+                    // it carries no error string, so fall back to a generic reason —
+                    // never a silent/false success.
+                    SaveResult.Rejected((r.data["error"] as? String)?.takeIf { it.isNotEmpty() }
+                        ?: "the daemon rejected the write")
+            }
+        } catch (e: DaemonUnavailableException) {
+            SaveResult.Unavailable(e.message ?: "daemon unavailable")
+        } catch (e: RuntimeException) {
+            // Defense-in-depth: any unexpected transport fault surfaces as
+            // Unavailable rather than crashing Apply (ac4).
+            SaveResult.Unavailable(e.message ?: "unexpected daemon fault")
+        }
+
     companion object {
         const val METHOD_STATUS = "daemon.status"
         const val METHOD_REPO_LIST = "repo.list"
@@ -492,10 +581,12 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
         const val METHOD_WORKFLOW_RESOLVE_COMMENT = "workflow.resolveComment"
         const val METHOD_WORKFLOW_APPROVE = "workflow.approve"
         const val METHOD_CONFIG_CATALOG = "config.catalog"
+        const val METHOD_CONFIG_WRITE = "config.write"
         const val FIELD_STALE = "stale"
         const val FIELD_REPOS = "repos"
         const val FIELD_ARTIFACTS = "artifacts"
         const val PARAM_PATH = "path"
+        const val PARAM_VALUE = "value"
         const val PARAM_REPO = "repo"
         const val PARAM_MD_PATH = "mdPath"
         const val PARAM_ARTIFACT_ID = "artifactId"

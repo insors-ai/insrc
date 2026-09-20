@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1789885456798-7glh6w",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-20T06:24:16.799Z",
+    "model": "client",
+    "elapsedMs": 9,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b5f333f8d7ba421b",
+    "storyId": "s3"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "b5f333f8d7ba421b",
+    "storyId": "s3",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGateway.kt",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGatewayService.kt",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/InsrcSettingsConfigurable.kt",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/SettingsView.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleServiceTest.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/onboarding/OnboardingCleanupIntegrationTest.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/onboarding/OnboardingLifecycleTest.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/onboarding/OnboardingWiringTest.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/InsrcSettingsConfigurableTest.kt"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/SettingsView.kt:1",
+            "message": "Daemon grounding for this Story is hollow on Kotlin: only 9 file-level nodes (no symbol-level entries; the new SettingsWriteGatewayTest.kt and SettingsEditModelTest.kt are not even listed), so the graph-based testsReaching edges the COVERAGE dimension relies on are unavailable. Coverage was verified LOCALLY: the load-bearing edit logic is directly unit-tested (SettingsEditModelTest — control-kind per type, per-type parse/validate incl. Gson-Double numeric equality + empty-string, dirty/collectDirty, revert/markResetToDefault/onSaved, set-but-null-shows-default, unset-default-not-dirty, dotted path→segments), the sc2 gateway classification is tested against the real UnixSocketDaemonRpc.parse boundary (SettingsWriteGatewayTest — daemon ok=true→Saved, bare ok=false→Rejected, DaemonUnavailable→Unavailable, clearSetting omits the value key), and the Swing shell is source-scanned (InsrcSettingsConfigurableTest — edit controls per type, apply via gateway not raw config.write, throws ConfigurationException on failure). Full JDK21 gate = 184 tests, 0 failures. Recorded as a grounding-quality observation, not a code defect.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGateway.kt:1",
+            "message": "Residual nit (from the opposite-actor cold review): against an OLD daemon lacking config.write, a top-level 'unknown method' error classifies as SaveResult.Rejected ('the daemon rejected the write: unknown method') rather than Unavailable. Functionally identical (both preserve the pending edit and throw ConfigurationException so no edit is lost); only the surfaced message is slightly misleading on version skew. Accepted as cosmetic.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 2
+    }
+  }
+}

@@ -5,6 +5,7 @@ import ai.insors.insrc.jetbrains.LifecycleBroadcaster
 import ai.insors.insrc.jetbrains.ProjectContext
 import ai.insors.insrc.jetbrains.daemon.DaemonGateway
 import ai.insors.insrc.jetbrains.daemon.ApproveResult
+import ai.insors.insrc.jetbrains.daemon.SaveResult
 import ai.insors.insrc.jetbrains.daemon.SettingsCatalogResult
 import ai.insors.insrc.jetbrains.daemon.ArtifactContentResult
 import ai.insors.insrc.jetbrains.daemon.ResolveCommentResult
@@ -44,6 +45,10 @@ class DaemonLifecycleServiceTest : BasePlatformTestCase() {
             throw AssertionError("S003 must never call approve (that is the review panel)")
         override fun settingsCatalog(): SettingsCatalogResult =
             throw AssertionError("S003 must never call settingsCatalog (that is the settings page)")
+        override fun writeSetting(pathSegments: List<String>, value: Any?): SaveResult =
+            throw AssertionError("S003 must never call writeSetting (that is the settings page)")
+        override fun clearSetting(pathSegments: List<String>): SaveResult =
+            throw AssertionError("S003 must never call clearSetting (that is the settings page)")
     }
 
     private class FakeConsent(initial: Boolean) : SetupConsentStore {

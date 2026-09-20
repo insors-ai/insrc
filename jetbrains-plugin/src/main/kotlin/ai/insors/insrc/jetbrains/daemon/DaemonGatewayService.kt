@@ -45,4 +45,10 @@ class DaemonGatewayService : DaemonGateway {
         delegate.approve(projectRootPath, mdPath, overrideReason)
 
     override fun settingsCatalog(): SettingsCatalogResult = delegate.settingsCatalog()
+
+    override fun writeSetting(pathSegments: List<String>, value: Any?): SaveResult =
+        delegate.writeSetting(pathSegments, value)
+
+    override fun clearSetting(pathSegments: List<String>): SaveResult =
+        delegate.clearSetting(pathSegments)
 }

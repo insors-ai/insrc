@@ -6,12 +6,15 @@ import org.junit.jupiter.api.Test
 import java.io.File
 
 /**
- * S002 source-scan guards for the settings page (the Configurable/Swing shell is
- * not headlessly bootable, so — like config-catalog-contract's source scan — we
+ * Source-scan guards for the settings page (the Configurable/Swing shell is not
+ * headlessly bootable, so — like config-catalog-contract's source scan — we
  * assert the load-bearing invariants against the source text):
  *   - plugin.xml registers an <applicationConfigurable> pointing at InsrcSettingsConfigurable;
- *   - the Configurable is READ-ONLY: isModified() returns false, apply()/reset()
- *     do not write, and the class never calls a config write / reload.
+ *   - S003: the page is EDITABLE — isModified delegates to the model, apply writes
+ *     via the sc2 gateway (writeSetting/clearSetting), never a raw config.write
+ *     string, and throws ConfigurationException on a not-Saved/validation failure;
+ *     the edit controls are type-appropriate (JComboBox/JCheckBox/JTextField), not
+ *     the S002 read-only JLabel/disabled checkbox.
  */
 class InsrcSettingsConfigurableTest {
 
@@ -32,16 +35,37 @@ class InsrcSettingsConfigurableTest {
     }
 
     @Test
-    fun `InsrcSettingsConfigurable is read-only - isModified false, no config write or reload`() {
+    fun `InsrcSettingsConfigurable is editable via the sc2 gateway, not a raw config write`() {
         val src = read("src/main/kotlin/ai/insors/insrc/jetbrains/settings/InsrcSettingsConfigurable.kt")
-        // isModified() returns false (read-only page)
+        // isModified delegates to the pure model (no longer a hardcoded false).
         assertTrue(
-            Regex("""override fun isModified\(\)\s*:\s*Boolean\s*=\s*false""").containsMatchIn(src),
-            "isModified() must return false (read-only)",
+            src.contains("model?.isModified()"),
+            "isModified() must delegate to the SettingsEditModel",
         )
-        // the page must never write config or reload sessions
-        assertFalse(src.contains("config.write"), "settings page must not call config.write")
-        assertFalse(src.contains("writeSetting"), "settings page must not call a write (S002 is read-only)")
-        assertFalse(src.contains("config.reload"), "settings page must not reload sessions")
+        // apply persists through the sc2 gateway, never a raw config.write string.
+        assertTrue(src.contains("gateway.writeSetting"), "apply must call gateway.writeSetting")
+        assertTrue(src.contains("gateway.clearSetting"), "apply must call gateway.clearSetting")
+        assertFalse(
+            src.contains("\"config.write\""),
+            "the page must go through the gateway, never a raw config.write method string",
+        )
+        // A rejected/unavailable write or a validation error blocks the save (ac4).
+        assertTrue(
+            src.contains("throw ConfigurationException"),
+            "apply must throw ConfigurationException on a not-Saved/validation failure (ac4)",
+        )
+    }
+
+    @Test
+    fun `InsrcSettingsConfigurable installs type-appropriate edit controls`() {
+        val src = read("src/main/kotlin/ai/insors/insrc/jetbrains/settings/InsrcSettingsConfigurable.kt")
+        assertTrue(src.contains("JComboBox"), "enum settings need a chooser (JComboBox) (ac1)")
+        assertTrue(src.contains("JTextField"), "string/number settings need a text/number field (ac1)")
+        assertTrue(src.contains("JCheckBox"), "boolean settings need a toggle (JCheckBox) (ac1)")
+        // controls are enabled editors, not the S002 disabled read-only checkbox.
+        assertFalse(
+            src.contains("isEnabled = false"),
+            "S003 controls must be editable (no disabled read-only control)",
+        )
     }
 }

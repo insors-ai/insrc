@@ -1,0 +1,600 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1789882506964-6msmw0",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-20T05:45:08.572Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 601556,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-09-19T14:57:29.012Z",
+    "epicHash": "b5f333f8d7ba421b",
+    "epicSlug": "expose-all-daemon-config-settings-via",
+    "storyId": "s3",
+    "hldBaseRunId": "wf-1789841045868-kib3gd",
+    "hldEffectiveHash": "ee39a9f5fd11df006188d3b2038117bb0cd01aa61eaff9cccc9ea69fbfb78612",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 0
+      },
+      "reviewedAt": "2026-09-20T05:46:55.715Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-20T05:49:59.110Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "A daemon-owned, self-describing settings contract feeds a native JetBrains Settings page that renders whatever the daemon reports. The plugin adds config gateway methods behind the established sealed three-state result pattern and a native applicationConfigurable built purely from the daemon's description. Reads use the catalog IPC plus the existing value read; writes reuse the existing segment-aware write. The plugin owns no settings semantics; the daemon stays the single source of truth.",
+      "ownedContracts": [
+        {
+          "id": "sc2",
+          "name": "Settings write surface (segment-aware write + clear) behind a sealed SaveResult",
+          "purpose": "The one way the IDE persists an edit: a plugin gateway write that maps an edited key to config.write's literal segment array and a clear that removes a key, each returning a sealed result distinguishing a persisted save from a daemon rejection or unavailability. Satisfies k4; first needed at s3, reused by both override editors.",
+          "ownedByStory": "s3",
+          "consumedByStories": [
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c5"
+          ]
+        }
+      ],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "Self-describing settings catalog (enriched ConfigOption + role taxonomy) over config.catalog, and its plugin read surface",
+          "purpose": "The single daemon-owned description the whole IDE surface renders from, delivered over one read IPC and mirrored as plugin DTOs behind a sealed read result.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c1",
+            "c2"
+          ]
+        },
+        {
+          "id": "sc3",
+          "name": "Settings page framework (Configurable host + grouped collapsible rendering + type→control mapping)",
+          "purpose": "The native applicationConfigurable and its rendering scaffold: collapsible group panels, type→control mapping, default/current display, and the extension points where editing and dynamic-key sub-sections plug in.",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c3"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s3",
+        "owns": [
+          "sc2"
+        ],
+        "depends": [
+          "sc1",
+          "sc3"
+        ],
+        "internal": "Private to s3: the per-type edit controls (chooser/toggle/number/text), field-level validation before save, dirty tracking against the last-saved value, the reset-to-default affordance, and the write-rejected surfacing that preserves the pending edit. s3 exposes only the write surface (sc2) for the override editors to reuse."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1"
+          ],
+          "depends": [],
+          "internal": "Daemon-side catalog enrichment + config.catalog assembly + contract-test/reconcile extensions stay private to s1; other stories consume only the payload shape (sc1)."
+        },
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc3"
+          ],
+          "depends": [
+            "sc1"
+          ],
+          "internal": "Read-only rendering, collapsible layout + expand/collapse state, and the daemon-unavailable placeholder stay private to s2; the edit-capable row variant and dirty/apply logic are s3's."
+        },
+        {
+          "storyId": "s4",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "The per-role overrides sub-section (models.tasks.<roleId>) is wholly private to s4; it plugs into sc3's section seam and reuses sc2."
+        },
+        {
+          "storyId": "s5",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "The per-repo overrides sub-section (models.byRepo.<repoPath>.*) is wholly private to s5; it plugs into sc3's section seam and reuses sc2."
+        }
+      ],
+      "rolloutPhase": "Phase C — Editing + write-back",
+      "nonFunctional": {
+        "performance": "One config.catalog round-trip on open plus the existing value read; rendering + editing 31 settings is trivial Swing work. No polling; the page reads on open and after Apply.",
+        "security": "No new surface beyond the existing local Unix-socket transport; secrets/keys stay out of scope. Writes go only to the daemon's existing config.json via config.write.",
+        "observability": "config.write already logs each write; the plugin surfaces daemon-unavailable and write-rejected states rather than failing silently.",
+        "durability": "Persistence unchanged — the daemon's config.json write + reconcile own durability; the plugin never writes config.json directly."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "DaemonGateway.writeSetting",
+          "signature": "fun writeSetting(pathSegments: List<String>, value: Any?): SaveResult",
+          "parameters": [
+            {
+              "name": "pathSegments",
+              "type": "List<String>",
+              "purpose": "The config key as LITERAL segments (never a dotted string), passed verbatim as config.write's path array so a dotted dynamic key is never mis-nested (lc1/k4).",
+              "optional": false
+            },
+            {
+              "name": "value",
+              "type": "Any?",
+              "purpose": "The already-parsed, type-correct value (Boolean/number/String) so the daemon stores the right JSON type; never the raw editor string.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "SaveResult",
+            "meaning": "Saved on config.write ok=true; Rejected(reason) on ok=false; Unavailable(reason) on socket down / result.error / RuntimeException."
+          },
+          "errors": [
+            {
+              "type": "SaveResult.Rejected",
+              "condition": "config.write reply ok=false (invalid path / empty segment refused)."
+            },
+            {
+              "type": "SaveResult.Unavailable",
+              "condition": "DaemonUnavailableException, transport result.error, or a RuntimeException."
+            }
+          ],
+          "preconditions": [
+            "pathSegments non-empty, no empty segment.",
+            "value already parsed + validated by SettingsEditModel."
+          ],
+          "postconditions": [
+            "On Saved the daemon wrote config.json and ran reloadChatConfig (ac2).",
+            "Never throws — every failure is a sealed SaveResult (ac4)."
+          ]
+        },
+        {
+          "name": "DaemonGateway.clearSetting",
+          "signature": "fun clearSetting(pathSegments: List<String>): SaveResult",
+          "parameters": [
+            {
+              "name": "pathSegments",
+              "type": "List<String>",
+              "purpose": "The config key to REMOVE, as literal segments. Reset-to-default of a global setting (s3) and override removal (s4/s5).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "SaveResult",
+            "meaning": "Same three-state classification; Saved means the key was removed and the daemon default now applies."
+          },
+          "errors": [
+            {
+              "type": "SaveResult.Rejected",
+              "condition": "config.write reply ok=false."
+            },
+            {
+              "type": "SaveResult.Unavailable",
+              "condition": "DaemonUnavailableException / result.error / RuntimeException."
+            }
+          ],
+          "preconditions": [
+            "pathSegments non-empty, no empty segment."
+          ],
+          "postconditions": [
+            "Implemented as config.write with the value field OMITTED → JSON.stringify drops the undefined leaf → key removed; daemon config.write reused UNCHANGED (k3/k4).",
+            "After a Saved clear the setting reads isSet=false and renders the daemon default (ac3)."
+          ]
+        },
+        {
+          "name": "SettingsEditModel",
+          "signature": "class SettingsEditModel(catalog: SettingsCatalogDto) { fun editField(path: String, rawInput: Any?): Unit; fun revertField(path: String): Unit; fun markResetToDefault(path: String): Unit; fun isModified(): Boolean; fun validationError(path: String): String?; fun collectDirty(): List<PendingWrite>; fun onSaved(path: String): Unit }",
+          "parameters": [
+            {
+              "name": "catalog",
+              "type": "SettingsCatalogDto",
+              "purpose": "The daemon self-description (sc1) the model builds one FieldState per option from; default/type/enumValues drive control choice + validation, currentValue/isSet seed the last-saved value.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "SettingsEditModel",
+            "meaning": "Pure headless edit state: per-field pending value, dirty-vs-last-saved, per-type validation, and segment/op mapping. Load-bearing logic lives here (not in the Swing shell) so it is unit-testable."
+          },
+          "errors": [
+            {
+              "type": "IllegalArgumentException",
+              "condition": "edit/revert/markResetToDefault called with a path not in the catalog (programmer error)."
+            }
+          ],
+          "preconditions": [
+            "editField rawInput mapped from the control (Boolean/String) but not yet type-parsed — the model parses+validates."
+          ],
+          "postconditions": [
+            "isModified() true iff any field's pending differs from last-saved OR is reset-to-default while set.",
+            "collectDirty() returns only changed fields as PendingWrite(segments, Set(parsed)|Clear); a validationError field is excluded.",
+            "onSaved(path) advances last-saved (or clears it for a reset) and clears dirty.",
+            "A parsed value equal to last-saved is NOT dirty — unchanged settings never written (ac2)."
+          ]
+        },
+        {
+          "name": "InsrcSettingsConfigurable.apply",
+          "signature": "override fun apply(): Unit  // + isModified(): Boolean, reset(): Unit",
+          "parameters": [],
+          "returns": {
+            "type": "Unit",
+            "meaning": "Native Apply backed by SettingsEditModel: per PendingWrite calls writeSetting/clearSetting, advances via onSaved on Saved; Rejected/Unavailable preserve the edit and surface the failure (ac4). isModified() delegates to the model; reset() reverts all fields to last-saved (ac3)."
+          },
+          "errors": [
+            {
+              "type": "ConfigurationException",
+              "condition": "A field fails validation, or a write returns not-Saved — apply throws so the Settings dialog blocks and shows the message, preserving the edit (ac4)."
+            }
+          ],
+          "preconditions": [
+            "The page rendered from a Loaded SettingsCatalogResult (an Unavailable page installs no editors — unchanged from S002)."
+          ],
+          "postconditions": [
+            "Only dirty keys written; unchanged keys untouched (ac2).",
+            "A partial failure advances the Saved ones and leaves the failed one dirty with its edit + a surfaced message (ac4)."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "SaveResult",
+        "change": "new",
+        "details": "New sealed interface in the daemon package beside SettingsCatalogResult: Saved (data object), Rejected(reason: String), Unavailable(reason: String). The sc2 three-state result.",
+        "callSites": [
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGateway.kt"
+        ]
+      },
+      {
+        "entity": "PendingWrite / WriteOp",
+        "change": "new",
+        "details": "New pure data types in the settings package: PendingWrite(segments: List<String>, op: WriteOp) and WriteOp { Set(value: Any?) | Clear }. collectDirty() emits these; the Configurable maps Set→writeSetting and Clear→clearSetting. Keeps segment/op selection in the testable layer.",
+        "callSites": [
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/SettingsView.kt"
+        ]
+      },
+      {
+        "entity": "FieldState (internal to SettingsEditModel)",
+        "change": "new",
+        "details": "Per-option pure state: the ConfigOptionDto, the last-saved value (currentValue when isSet else an unset sentinel), the pending edited value, a resetToDefault flag, and a derived validationError. Number parsing tolerates the Gson-Double catalog shape (S002 numeric lesson) so an integral last-saved value compares equal to an integral edit. Private to s3.",
+        "callSites": [
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/SettingsView.kt"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc2",
+        "role": "implements",
+        "howDetails": "s3 OWNS sc2: adds writeSetting/clearSetting + the sealed SaveResult to DaemonGateway (+ DaemonGatewayImpl over rpc.call(METHOD_CONFIG_WRITE) + the DaemonGatewayService delegate + the 4 test doubles). writeSetting sends config.write({path: segments, value}); clearSetting sends config.write({path: segments}) with value omitted. Both exercised in-story so s4/s5 inherit a tested surface."
+      },
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Consumes settingsCatalog(): SettingsCatalogResult UNCHANGED; the edit model reads each ConfigOptionDto's type/default/enumValues/currentValue/isSet to choose the control, seed last-saved, and validate. Forks no schema, adds no field."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "Consumes the s2 Configurable scaffold: replaces readOnlyControl with edit-capable controls and wires the native isModified/apply/reset (S002 no-ops) to SettingsEditModel; groupsOf + collapsible layout unchanged. Registers NO SettingsSection (that seam is for s4/s5)."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The daemon rejects a write (config.write returns ok=false).",
+          "detection": "DaemonGatewayImpl sees DaemonResult.ok==false with no thrown exception → SaveResult.Rejected(reason) (generic reason when the bare {ok:false} carries no error string).",
+          "response": "apply does not advance last-saved, keeps the field dirty with the edit intact, throws ConfigurationException naming the setting so the dialog stays open.",
+          "userImpact": "Clear failure message; pending edit preserved; never a false success (ac4).",
+          "recoverable": true
+        },
+        {
+          "scenario": "The daemon is down / socket unreachable at apply.",
+          "detection": "rpc.call throws DaemonUnavailableException (or transport surfaces result.error) → SaveResult.Unavailable(reason).",
+          "response": "Same preserve-and-surface as Rejected but the message says 'unavailable'; already-Saved fields stay saved.",
+          "userImpact": "Told the daemon is unavailable, can retry; no edit lost (ac4).",
+          "recoverable": true
+        },
+        {
+          "scenario": "Partial-batch failure: several dirty fields, one not Saved mid-loop.",
+          "detection": "apply records per-field SaveResult and detects at least one non-Saved.",
+          "response": "Saved fields advanced via onSaved; failed field(s) stay dirty with edits; apply throws ConfigurationException summarizing failures; no rollback of the already-persisted Saved writes.",
+          "userImpact": "Honest partial progress; failures' edits preserved (ac2/ac4).",
+          "recoverable": true
+        },
+        {
+          "scenario": "A field fails type validation before any write.",
+          "detection": "SettingsEditModel.validationError(path) non-null; collectDirty excludes it and apply checks for any validationError first.",
+          "response": "apply throws ConfigurationException pointing at the field BEFORE any config.write, so nothing invalid reaches the daemon.",
+          "userImpact": "Guided to fix; nothing invalid persisted (ac1/ac4).",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A number setting whose default/currentValue arrived as Gson Double 40.0 and the developer re-types '40'.",
+          "expected": "Parsed and compared numerically to 40.0 as EQUAL → not dirty → no write (S002 integral-Double lesson). Editing to '41' is dirty and writes the JVM number 41."
+        },
+        {
+          "input": "Reset-to-default on a setting that is currently unset.",
+          "expected": "No-op: markResetToDefault leaves it not-dirty (no key to remove); apply issues no clearSetting (ac2/ac3)."
+        },
+        {
+          "input": "Reset-to-default on a setting set to a non-default value, then Apply.",
+          "expected": "PendingWrite(segments, Clear) → clearSetting → config.write value omitted → key removed → next catalog shows isSet=false rendering the default (ac3)."
+        },
+        {
+          "input": "Revert (reset()) after edits, before Apply.",
+          "expected": "Every pending value returns to last-saved, resetToDefault flags clear, isModified()=false, no daemon call (ac3)."
+        },
+        {
+          "input": "The page opened while the daemon was Unavailable, then Apply invoked.",
+          "expected": "No editors installed (S002 placeholder) → no dirty state → apply is a no-op."
+        },
+        {
+          "input": "A string setting edited to an empty string.",
+          "expected": "Empty string is a VALID string, written verbatim as \"\" via writeSetting (distinct from clearSetting which omits value)."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "A setting write goes through the daemon's segment-aware config.write with a LITERAL segment array (never a naive dotted split); s3 passes segments verbatim and adds no daemon-side write logic.",
+          "source": "c5"
+        },
+        {
+          "text": "The plugin talks to the daemon only over the existing Unix-socket JSON-RPC transport and honours its ok/error framing (ok=false→Rejected, thrown/result.error→Unavailable); no new transport, no direct config.json write.",
+          "source": "c4"
+        },
+        {
+          "text": "The daemon stays the single source of truth for schema/defaults/reconcile; the plugin persists no default of its own — reset-to-default REMOVES the key so the daemon default governs.",
+          "source": "c7"
+        },
+        {
+          "text": "The recognized-settings catalog stays the single definition site the surface renders from; s3 forks no schema and adds no field to the catalog or DTO.",
+          "source": "c1"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove the load-bearing edit logic headlessly (the review-epic split): type→control, per-type parse/validate, dirty-vs-last-saved, reset semantics, segment/op mapping.",
+          "subjects": [
+            "SettingsEditModel control-kind per type",
+            "number parse + integral-Double equality, enum-membership, empty-string-valid",
+            "isModified/collectDirty emits only changed fields; validationError excluded",
+            "revertField / markResetToDefault (set→Clear, unset→no-op) / onSaved",
+            "path→segments verbatim (lc1)"
+          ],
+          "fixturesNeeded": [
+            "An in-memory SettingsCatalogDto with one option of each type, some set some unset"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove sc2 gateway classification against the real transport framing (extends SettingsCatalogGatewayTest).",
+          "subjects": [
+            "writeSetting ok=true→Saved / ok=false→Rejected / DaemonUnavailable→Unavailable; sends {path,value}",
+            "clearSetting OMITS the value key; ok=true→Saved",
+            "WireRpc over real UnixSocketDaemonRpc.parse: {result:{ok:true}}→Saved, {result:{error}}→Unavailable"
+          ],
+          "fixturesNeeded": [
+            "FakeDaemonRpc capturing (method, params)",
+            "WireRpc replaying a canned reply through parse"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Guard the Swing shell wiring by source-scan (not headlessly bootable), extending InsrcSettingsConfigurableTest.",
+          "subjects": [
+            "apply calls gateway.writeSetting/clearSetting (not a raw config.write string), delegates isModified/reset to the model, throws ConfigurationException on not-Saved/validation",
+            "edit-capable controls installed per type (not the S002 read-only JLabel/disabled checkbox)"
+          ],
+          "fixturesNeeded": [
+            "Read of InsrcSettingsConfigurable.kt source"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "SettingsEditModel control-kind-per-type unit test",
+            "InsrcSettingsConfigurable source-scan: edit-capable controls per type"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "collectDirty emits only changed fields",
+            "writeSetting sends {path: segments, value} and ok=true→Saved",
+            "integral-Double equality: re-typing the same number is not dirty"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "revertField restores last-saved",
+            "markResetToDefault: set→Clear, unset→no-op",
+            "clearSetting omits value (Fake/WireRpc)"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "writeSetting ok=false→Rejected and DaemonUnavailable→Unavailable",
+            "not-Saved apply keeps the field dirty (onSaved not called); validationError excludes + surfaces",
+            "source-scan: apply throws ConfigurationException on not-Saved/validation"
+          ]
+        }
+      ],
+      "testFramework": "JUnit5 (org.junit.jupiter) on JDK21 via ./gradlew test, matching S002's SettingsViewTest/SettingsCatalogGatewayTest; source-scan tests read the Kotlin source. No BasePlatformTestCase and no daemon/TS test (config.write unchanged, already covered by src/config write-path tests)."
+    },
+    "migration": {
+      "stateBefore": "After S002 (main d6552ef) the Settings page is READ-ONLY: readOnlyControl renders a disabled checkbox/label and isModified/apply/reset are no-ops; DaemonGateway has settingsCatalog() but no write. The daemon's config.write + segment-aware write-path exist and are tested but nothing in the plugin calls them.",
+      "stateAfter": "The page is EDITABLE for global settings: type-appropriate controls, a pure SettingsEditModel for validation + dirty + reset, native isModified/apply/reset backed by it, Apply writing only dirty keys through sc2 (writeSetting/clearSetting) with preserve-on-failure, and a reset-to-default that clears the key. The daemon is UNCHANGED; per-role/per-repo sub-sections remain unbuilt (s4/s5).",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the sc2 surface: sealed SaveResult + writeSetting/clearSetting on DaemonGateway + DaemonGatewayImpl (clearSetting omits value) + the DaemonGatewayService delegate + stubs in the 4 test doubles. Additive to the interface.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add the pure SettingsEditModel + PendingWrite/WriteOp/FieldState with per-type parse/validate, dirty tracking, reset semantics, and path→segments mapping. No existing symbol changes.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Replace readOnlyControl with edit-capable controls bound to the model and wire isModified/apply/reset (apply calls sc2 per dirty PendingWrite, throws ConfigurationException on not-Saved/validation). Unavailable placeholder + layout untouched.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Extend the test suite (SettingsEditModel, gateway classification + WireRpc, Configurable source-scan) and run ./gradlew test on JDK21.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "The DaemonGateway interface only GAINS methods; settingsCatalog() and all S001/S002 behaviour are unchanged. The daemon's config.write is reused verbatim (no daemon code change), so config.json stays valid and older/newer daemons interoperate. reset-to-default is a key removal via config.write-with-value-omitted (existing unchanged daemon behaviour) — no new IPC or migration. A page against an Unavailable daemon falls back to the S002 read-only placeholder. Values already on disk render exactly as before; editing writes only changed keys.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Pure edit-model + three-state SaveResult; reset-to-default = clear the key",
+        "oneLineSummary": "A headless SettingsEditModel owns per-option editor state/validation/dirty/segment-mapping; sc2 = writeSetting/clearSetting returning Saved|Rejected|Unavailable; reset-to-default is a clearSetting (config.write with value omitted).",
+        "approach": "A pure headless model holds one FieldState per option (last-saved, pending, per-type parse+validate, isDirty, segment mapping); apply() collects only dirty fields and calls writeSetting or, for a reset, clearSetting, advancing last-saved on Saved and preserving the edit on Rejected/Unavailable. The Swing Configurable is a thin shell delegating isModified/apply/reset to the model.",
+        "pros": [
+          "Load-bearing logic is headlessly unit-testable (review-epic split).",
+          "reset-to-default=clear keeps k4 exact and truly returns the setting to the daemon default (isSet→false).",
+          "No daemon change (config.write reused for write + clear).",
+          "Three-state SaveResult separates rejection from unavailability (ac4)."
+        ],
+        "cons": [
+          "More types up front.",
+          "The clear-via-value-omission relies on config.write treating an absent value as undefined — must be pinned by a gateway test."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "In-shell edit logic (no pure model); controls self-track dirty",
+        "oneLineSummary": "Keep all edit/validate/dirty logic inside the Swing shell; controls capture a baseline and apply() walks components; sc2 SaveResult identical.",
+        "approach": "No separate model; each control captures its baseline, isModified walks components, apply parses/validates inline and calls writeSetting per dirty control.",
+        "pros": [
+          "Fewest new types.",
+          "Straightforward native isModified/apply/reset wiring."
+        ],
+        "cons": [
+          "Load-bearing validation/dirty/segment logic lives in the untestable Swing shell — the silent-defect gap the review epic keeps catching.",
+          "Per-type parse/validate scattered; harder for s4/s5 to reuse.",
+          "Walking live Swing components for dirty state is fragile and EDT-coupled."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Puts validation/dirty/preserve-on-failure in the untestable shell — partial on ac2/ac3/ac4, exactly the class of silent UI defect the review split exists to prevent."
+      },
+      {
+        "id": "a3",
+        "name": "Pure model, but reset-to-default writes the default VALUE (clear reserved for overrides)",
+        "oneLineSummary": "Same pure model + SaveResult as a1, but reset-to-default writeSetting(segments, catalogDefault) instead of clearSetting.",
+        "approach": "Identical to a1 except reset-to-default persists the catalog default value; clearSetting is delivered for s4/s5 but unused by s3.",
+        "pros": [
+          "reset-to-default uses the same write path as a normal edit.",
+          "Keeps a1's pure-model testability."
+        ],
+        "cons": [
+          "Writing the default leaves the key SET (isSet=true), so the row stops reading as default and stops tracking a future default change — not a true reset (ac3).",
+          "Rewrites a key the user is un-setting, muddying k4.",
+          "Leaves clearSetting unexercised by its owning story, weakening sc2 where it is defined."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Loses on ac3 (write-default is not a true reset) and sc2 (ships clearSetting untested by its owner) — a1 dominates it."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/daemon/index.ts:1335",
+      "quotedText": "'config.write' handler: params {path: string|string[]; value: unknown} -> setConfigAtPath -> writeFileSync -> reloadChatConfig; returns {ok:true}, or {ok:false} on an invalid path."
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/config/write-path.ts",
+      "quotedText": "setConfigAtPath always ASSIGNS obj[leaf]=value (no delete); toConfigSegments rejects an empty path/segment. A clear is achievable by omitting value so JSON.stringify drops the undefined leaf."
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/SettingsView.kt (S002, main d6552ef)",
+      "quotedText": "object SettingsView { groupsOf; displayValue } + SettingsGroupModel + interface SettingsSection (declared, unused in S002 — the sc3 seam)."
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGateway.kt",
+      "quotedText": "interface DaemonGateway over DaemonRpc.call(method, params): DaemonResult(ok,data,error); sealed three-state results; S002 added settingsCatalog() + METHOD_CONFIG_CATALOG."
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "HLD sc2 (docs/epics/expose-all-daemon-config-settings-via-E20260919b5f333f8/HLD.md)",
+      "quotedText": "sc2: Settings write surface (segment-aware write + clear) behind a sealed SaveResult; writeSetting(pathSegments,value) -> config.write; clearSetting removes a key; owned by s3, consumed by s4/s5."
+    },
+    {
+      "id": "c7",
+      "kind": "convention",
+      "ref": "HLD constraint k5 (docs/epics/expose-all-daemon-config-settings-via-E20260919b5f333f8/HLD.md) / CLAUDE.md project principles",
+      "quotedText": "Changing which values are stored is the daemon's job; the plugin remains a thin surface that reads the daemon's schema and current values and writes user edits back, owning no settings semantics or defaults of its own."
+    }
+  ]
+}

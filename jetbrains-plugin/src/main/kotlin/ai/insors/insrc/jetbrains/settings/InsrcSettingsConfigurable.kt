@@ -13,6 +13,8 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.options.Configurable
 import com.intellij.openapi.options.ConfigurationException
 import com.intellij.openapi.progress.ProgressManager
+import com.intellij.ui.components.JBScrollPane
+import com.intellij.util.ui.JBUI
 import java.awt.BorderLayout
 import java.awt.Component
 import java.awt.Dimension
@@ -55,7 +57,7 @@ import javax.swing.table.TableCellRenderer
  */
 class InsrcSettingsConfigurable : Configurable {
 
-    private var root: JPanel? = null
+    private var root: JScrollPane? = null
     private var model: SettingsEditModel? = null
     private var optionPaths: List<String> = emptyList()
 
@@ -68,9 +70,18 @@ class InsrcSettingsConfigurable : Configurable {
     override fun getDisplayName(): String = "insrc"
 
     override fun createComponent(): JComponent {
-        val panel = JPanel(BorderLayout())
-        root = panel
-        panel.add(JLabel("Loading insrc settings…"), BorderLayout.NORTH)
+        // The TOP-LEVEL component is the scroll pane itself (not a JPanel wrapping
+        // one): the Settings dialog sizes a plain panel to its preferred height and
+        // grows it past the pane (clipping), but it bounds a JScrollPane to the pane
+        // and lets the scrollbar govern. We swap the scroll pane's VIEWPORT VIEW from
+        // a loading note to the rendered body once the off-EDT read returns.
+        val scroll = JBScrollPane(
+            JLabel("Loading insrc settings…"),
+            ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
+            ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER,
+        )
+        scroll.border = JBUI.Borders.empty()
+        root = scroll
 
         // Read off the EDT (local socket round-trips), then render on the EDT.
         val gateway = service<DaemonGatewayService>()
@@ -81,15 +92,14 @@ class InsrcSettingsConfigurable : Configurable {
             val registered = gateway.registeredRepos()
             ApplicationManager.getApplication().invokeLater({
                 // Only render if this component is still the live page.
-                if (root === panel) {
-                    panel.removeAll()
-                    panel.add(renderBody(catalog, overrides, perRepo, registered, gateway), BorderLayout.CENTER)
-                    panel.revalidate()
-                    panel.repaint()
+                if (root === scroll) {
+                    scroll.setViewportView(renderBody(catalog, overrides, perRepo, registered, gateway))
+                    scroll.revalidate()
+                    scroll.repaint()
                 }
             }, ModalityState.any())
         }
-        return panel
+        return scroll
     }
 
     /** Modified iff the global model OR any sub-section has an unsaved change. */
@@ -135,7 +145,9 @@ class InsrcSettingsConfigurable : Configurable {
                 try {
                     section.apply()
                 } catch (e: ConfigurationException) {
-                    e.message?.let { failures.add(it) }
+                    // localizedMessage (inherited Throwable) rather than the newer-IDE
+                    // deprecated ConfigurationException.getMessage() — same text.
+                    e.localizedMessage?.let { failures.add(it) }
                 }
             }
         }, "Saving insrc Settings…", false, null)
@@ -253,11 +265,10 @@ class InsrcSettingsConfigurable : Configurable {
         }
         for (p in placeholders) content.add(placeholderNote(p))
 
-        return JScrollPane(
-            content,
-            ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
-            ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED,
-        )
+        // Return the content column directly — createComponent's top-level
+        // JScrollPane scrolls it. The column tracks the viewport width and keeps its
+        // natural height (ScrollableContentPanel), so the outer scrollbar governs.
+        return content
     }
 
     /**
@@ -316,18 +327,15 @@ class InsrcSettingsConfigurable : Configurable {
             val valueCol = table.columnModel.getColumn(SettingsTableModel.COL_VALUE)
             valueCol.cellRenderer = SettingsValueCellRenderer(tableModel)
             valueCol.cellEditor = SettingsValueCellEditor(tableModel)
-            // Content-size the table (rows*rowHeight) and turn its OWN scrollbars OFF
-            // (NEVER), so the table renders every row and the ONE outer AS_NEEDED page
-            // scrollbar governs overflow — no nested/dead inner scrollbar (ac1).
-            table.preferredScrollableViewportSize = Dimension(
-                table.preferredSize.width,
-                table.rowHeight * tableModel.rowCount,
-            )
-            JScrollPane(
-                table,
-                ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER,
-                ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER,
-            )
+            // No inner scroll pane: the table is content-sized by its own model
+            // (rows*rowHeight) and rendered in full, with its column header supplied
+            // manually (a JTable outside a scroll pane shows no header otherwise). The
+            // ONE outer page JScrollPane governs all overflow.
+            JPanel(BorderLayout()).apply {
+                alignmentX = Component.LEFT_ALIGNMENT
+                add(table.tableHeader, BorderLayout.NORTH)
+                add(table, BorderLayout.CENTER)
+            }
         }
         is SettingsTreeNode.Section -> {
             val section = sections.first { it.title == node.title }
@@ -347,14 +355,40 @@ class InsrcSettingsConfigurable : Configurable {
 /**
  * The collapsible-sections column (Story S001): a [Scrollable] BoxLayout panel that
  * tracks the enclosing viewport's WIDTH (so the panels fill the page horizontally)
- * but NOT its HEIGHT (so the panels keep their natural preferred heights at the top
- * and the ONE outer AS_NEEDED [JScrollPane] governs vertical overflow — the reason
- * this rework needs neither a maximum-size cap nor a trailing vertical glue).
+ * but ALWAYS keeps its natural HEIGHT (never letting the viewport compress it), so
+ * the outer AS_NEEDED scroll pane governs vertical overflow and the content-sized
+ * tables never clip — hence no maximum-size cap and no trailing vertical glue. When
+ * the content is shorter than the viewport it sits at its natural height with empty
+ * space below (a normal settings-page look), never stretched.
  */
 private class ScrollableContentPanel : JPanel(), Scrollable {
-    override fun getPreferredScrollableViewportSize(): Dimension = preferredSize
+    /**
+     * The preferred viewport size the enclosing scroll pane sizes itself to. The
+     * WIDTH is the content's own (stable) preferred width — NEVER the live viewport
+     * width: reading the viewport width here fed the width back on itself and, with
+     * [getScrollableTracksViewportWidth] true, spiralled the panel infinitely wider.
+     * The HEIGHT is a bounded, [JBUI]-scaled default — NEVER the full content height:
+     * returning the full height made the scroll pane's preferred height grow with the
+     * content, so the Settings dialog grew the WHOLE page to fit on every expand
+     * (pushing the scrollbar out and clipping past the fold) instead of staying
+     * bounded and letting the vertical scrollbar scroll. Neither dimension reads the
+     * viewport, so there is no layout feedback loop.
+     */
+    override fun getPreferredScrollableViewportSize(): Dimension =
+        Dimension(preferredSize.width, JBUI.scale(500))
+
     override fun getScrollableTracksViewportWidth(): Boolean = true
+
+    /**
+     * ALWAYS false: never let the viewport force this column to its own height. If it
+     * did (e.g. when the content momentarily looks like it fits), the BoxLayout would
+     * COMPRESS its children below their natural heights — squeezing the content-sized,
+     * no-scrollbar category tables so their rows clip and the outer scrollbar vanishes
+     * ("shows then disappears"). Keeping the natural (taller) height means the outer
+     * AS_NEEDED scrollbar always governs the overflow and never clips.
+     */
     override fun getScrollableTracksViewportHeight(): Boolean = false
+
     override fun getScrollableUnitIncrement(visibleRect: Rectangle, orientation: Int, direction: Int): Int = 16
     override fun getScrollableBlockIncrement(visibleRect: Rectangle, orientation: Int, direction: Int): Int =
         if (orientation == SwingConstants.VERTICAL) visibleRect.height else visibleRect.width

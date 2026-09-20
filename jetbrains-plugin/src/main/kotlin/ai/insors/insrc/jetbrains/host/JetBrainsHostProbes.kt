@@ -8,8 +8,8 @@ import java.nio.file.Path
 /**
  * The real per-host probes for the two JetBrains agentic hosts (Story S002 / t3)
  * — the one external (`c8`) surface. Each probe answers, for its host: is the
- * host plugin installed+enabled, is its config shape one we can safely anchor
- * into, and where are its MCP-config and rules files.
+ * host plugin installed, is its config shape one we can safely anchor into, and
+ * where are its MCP-config and rules files.
  *
  * Everything host-specific (plugin id, file layout, recognised shape) is isolated
  * here behind [HostProbe] so the rest of sc3 stays host-agnostic. All resolution
@@ -55,7 +55,7 @@ object JetBrainsHostProbes {
     fun all(): List<HostProbe> = AiHostKind.entries.map { kind -> probeFor(specFor(kind)) }
 
     private fun probeFor(spec: HostSpec): HostProbe = HostProbe {
-        if (!isInstalledAndEnabled(spec.pluginIds)) {
+        if (!isInstalled(spec.pluginIds)) {
             HostResolution.Absent
         } else {
             val mcp = recogniseAnchorable(spec.mcpConfigPath)
@@ -72,18 +72,18 @@ object JetBrainsHostProbes {
         }
     }
 
-    /** Installed AND enabled — a disabled or absent plugin is treated as not present. */
-    private fun isInstalledAndEnabled(pluginIds: List<String>): Boolean {
-        // Public, non-deprecated API: getLoadedPlugins() is the set of installed AND
-        // enabled plugins (a disabled plugin is not loaded) — same semantics we need,
-        // without the @ApiStatus.Internal PluginManager.findEnabledPlugin (which the
-        // Plugin Verifier flags) or the deprecated PluginManager.getPlugin.
-        val loaded = PluginManager.getLoadedPlugins()
-        return pluginIds.any { id ->
-            val pid = PluginId.getId(id)
-            loaded.any { it.pluginId == pid }
-        }
-    }
+    /**
+     * Whether the host plugin is present (installed). Uses the long-stable PUBLIC
+     * [PluginManager.isPluginInstalled] — NOT the @ApiStatus.Internal
+     * findEnabledPlugin / getLoadedPlugins nor the deprecated getPlugin, all of
+     * which the Plugin Verifier flags on newer IDEs. isPluginInstalled reports
+     * "installed" (an explicitly-disabled plugin still counts); we treat that as
+     * present, since registering MCP/steering into a disabled host's config is inert
+     * until the user re-enables it, and there is no cross-version public "enabled"
+     * check.
+     */
+    private fun isInstalled(pluginIds: List<String>): Boolean =
+        pluginIds.any { id -> PluginManager.isPluginInstalled(PluginId.getId(id)) }
 
     /**
      * Recognise a host file we can safely anchor a marker block into (c8), or

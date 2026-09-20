@@ -93,6 +93,36 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h3>0.2.10</h3>
+        <ul>
+            <li><b>Vertical scrolling fix.</b> The Settings page is now itself a scroll
+                pane, so the IDE bounds it to the window and its vertical scrollbar
+                reliably reaches all content &mdash; expanding a section no longer
+                clips rows or makes the scrollbar flash and vanish.</li>
+        </ul>
+        <h3>0.2.8</h3>
+        <ul>
+            <li><b>Fixed vertical scrolling on the Settings page.</b> The page stays
+                bounded to the window and its vertical scrollbar reaches all content;
+                the earlier horizontal-growth glitch is gone (the page never scrolls
+                sideways &mdash; it fills the width).</li>
+        </ul>
+        <h3>0.2.7</h3>
+        <ul>
+            <li><b>Compatibility:</b> removed all internal/deprecated platform-API
+                usage flagged by the Plugin Verifier on newer IDEs &mdash; host
+                detection uses the stable <code>isPluginInstalled</code>, and the
+                Settings apply path no longer calls a deprecated exception accessor.
+                The build now verifies against recent IDE releases so this class of
+                drift is caught at build time.</li>
+        </ul>
+        <h3>0.2.6</h3>
+        <ul>
+            <li><b>Fixed: the Settings page clipped its content on expand.</b> Expanding
+                a section grew the whole page to fit and pushed the scrollbar out, so
+                content past the fold became unreachable. The page now stays bounded to
+                the window and its scrollbar scrolls the overflow.</li>
+        </ul>
         <h3>0.2.5</h3>
         <ul>
             <li><b>Compatibility:</b> the AI-host detection no longer calls an

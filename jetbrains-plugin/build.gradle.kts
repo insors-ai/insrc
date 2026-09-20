@@ -1,4 +1,5 @@
 import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
+import org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask.FailureLevel
 
 // insrc JetBrains IDE plugin (Epic 61d8c73edb68041a, Story S001).
 //
@@ -69,17 +70,40 @@ intellijPlatform {
         }
     }
 
-    // `verifyPlugin` (run in CI) checks the built artifact's API usage against a
-    // real IDE. Verify against the compile target (IntelliJ IDEA Community, the
-    // platformVersion) — the one artifact loads across all four IDEs off the
-    // common-platform descriptor, so the common-platform IDE is the meaningful
-    // target and keeps the verifier download bounded.
+    // `verifyPlugin` checks the built artifact's API usage against real IDEs. It
+    // must run against NEWER IDEs than the 2024.2 compile target, because a platform
+    // API can be public at compile time yet go @ApiStatus.Internal or @Deprecated in
+    // a later release — verifying only 2024.2 is exactly why findEnabledPlugin /
+    // getLoadedPlugins / ConfigurationException.getMessage slipped through and were
+    // caught by a user's own verifier run instead of here. `recommended()` resolves
+    // the current recommended release set (no hardcoded version guessing), plus the
+    // compile target for the lower bound.
+    //
+    // failureLevel makes these FAIL the build (not just warn), so an internal /
+    // deprecated / scheduled-for-removal API usage is caught at `verifyPlugin` time.
     pluginVerification {
+        failureLevel = listOf(
+            FailureLevel.COMPATIBILITY_PROBLEMS,
+            FailureLevel.INTERNAL_API_USAGES,
+            FailureLevel.DEPRECATED_API_USAGES,
+            FailureLevel.SCHEDULED_FOR_REMOVAL_API_USAGES,
+            FailureLevel.INVALID_PLUGIN,
+        )
         ides {
+            // The compile target (lower bound) plus a NEWER release, so an API that
+            // goes internal/deprecated in a later IDE is caught here. `select` with
+            // the RELEASE channel resolves ACTUAL downloadable releases in the build
+            // range (recommended() can pick an unreleased/undownloadable version).
             ide(
                 IntelliJPlatformType.IntellijIdeaCommunity,
                 providers.gradleProperty("platformVersion").get(),
             )
+            select {
+                types = listOf(IntelliJPlatformType.IntellijIdeaCommunity)
+                channels = listOf(org.jetbrains.intellij.platform.gradle.models.ProductRelease.Channel.RELEASE)
+                sinceBuild = "243"
+                untilBuild = "252.*"
+            }
         }
     }
 }

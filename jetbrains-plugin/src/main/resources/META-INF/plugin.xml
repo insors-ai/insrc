@@ -164,6 +164,19 @@
             anchor="right"
             secondary="true"
             factoryClass="ai.insors.insrc.jetbrains.review.ReviewToolWindowFactory"/>
+
+        <!--
+          Settings page (Epic expose-all-daemon-config-settings-via / Story S002):
+          a native Settings ▸ Tools ▸ insrc page that renders the daemon's
+          self-describing config.catalog read-only, grouped + collapsible. An
+          application-level Configurable (settings are the daemon's global
+          config.json, not per-project). Editing + overrides arrive in S003–S005.
+        -->
+        <applicationConfigurable
+            parentId="tools"
+            id="ai.insors.insrc.settings"
+            displayName="insrc"
+            instance="ai.insors.insrc.jetbrains.settings.InsrcSettingsConfigurable"/>
     </extensions>
 
 </idea-plugin>

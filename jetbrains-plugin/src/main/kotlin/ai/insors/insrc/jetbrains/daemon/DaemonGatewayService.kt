@@ -43,4 +43,6 @@ class DaemonGatewayService : DaemonGateway {
         overrideReason: String?,
     ): ApproveResult =
         delegate.approve(projectRootPath, mdPath, overrideReason)
+
+    override fun settingsCatalog(): SettingsCatalogResult = delegate.settingsCatalog()
 }

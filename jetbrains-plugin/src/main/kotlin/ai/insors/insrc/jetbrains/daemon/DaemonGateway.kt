@@ -164,6 +164,63 @@ class DaemonUnavailableException(
 ) : RuntimeException(message, cause)
 
 /**
+ * One recognized reasoning role + its default tier (Story S002 / sc1), forwarded
+ * verbatim from the config.catalog payload's `roles`. Rendered by the per-role
+ * override editor (S004); carried here as part of the shared settings DTO.
+ */
+data class RoleDto(
+    val id: String,
+    val defaultTier: String,
+)
+
+/**
+ * One enriched catalog row + its resolved current value (Story S002 / sc1),
+ * mirroring the daemon's ConfigOption plus the folded-in current value.
+ * [isSet] is true iff the payload's `values` map contained this path (so
+ * [currentValue] is meaningful); false means the setting is unset / using its
+ * default. [enumValues] is present only for `type == "enum"` rows.
+ */
+data class ConfigOptionDto(
+    val path: String,
+    val type: String,
+    val default: Any?,
+    val desc: String,
+    val enumValues: List<String>?,
+    val group: String,
+    val currentValue: Any?,
+    val isSet: Boolean,
+)
+
+/**
+ * The plugin mirror of the daemon's config.catalog payload (Story S002 / sc1):
+ * every recognized setting, the distinct group labels (in catalog order), the
+ * recognized roles + their default tiers, and the allowed tier names. Everything
+ * is forwarded verbatim from the daemon — the plugin hardcodes no setting,
+ * group, role, or tier (k1/lc1).
+ */
+data class SettingsCatalogDto(
+    val groups: List<String>,
+    val options: List<ConfigOptionDto>,
+    val roles: List<RoleDto>,
+    val tierNames: List<String>,
+)
+
+/**
+ * The result of a config.catalog read (Story S002 / sc1). Two-state by design,
+ * mirroring [ArtifactContentResult]: a [Loaded] catalog is DISTINCT from
+ * [Unavailable] (the daemon was unreachable / errored / replied malformed), so
+ * the settings page never blanks an unreachable daemon into an empty form
+ * (k3, ac3, the S001 result.error framing).
+ */
+sealed interface SettingsCatalogResult {
+    /** The daemon described its settings; [catalog] is the payload. */
+    data class Loaded(val catalog: SettingsCatalogDto) : SettingsCatalogResult
+
+    /** The daemon was unreachable / errored / replied malformed; [reason] explains. */
+    data class Unavailable(val reason: String) : SettingsCatalogResult
+}
+
+/**
  * sc2 (Story S001): a thin handle to the backend daemon, shared across the
  * S002 wiring / S003 lifecycle / S005 onboarding branches. Read paths never
  * allocate registry membership (k2); every method takes the active project's
@@ -242,6 +299,14 @@ interface DaemonGateway {
         mdPath: String,
         overrideReason: String? = null,
     ): ApproveResult
+
+    /**
+     * Read the self-describing settings catalog (Story S002 / sc1) over the
+     * read-only `config.catalog` IPC. No params — the catalog is global. A
+     * framed error / unreachable daemon / malformed reply is
+     * [SettingsCatalogResult.Unavailable], never a blank [SettingsCatalogResult.Loaded].
+     */
+    fun settingsCatalog(): SettingsCatalogResult
 }
 
 /**
@@ -400,6 +465,24 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
             ApproveResult.Unavailable(e.message ?: "unexpected daemon fault")
         }
 
+    override fun settingsCatalog(): SettingsCatalogResult =
+        try {
+            val r = rpc.call(METHOD_CONFIG_CATALOG, emptyMap())
+            if (!r.ok || r.error != null) {
+                // A framed error reply is Unavailable, never a blank Loaded (k3, ac3, S001 framing).
+                SettingsCatalogResult.Unavailable(r.error ?: "config.catalog returned an error")
+            } else {
+                SettingsCatalogResult.Loaded(parseCatalog(r.data))
+            }
+        } catch (e: DaemonUnavailableException) {
+            SettingsCatalogResult.Unavailable(e.message ?: "daemon unavailable")
+        } catch (e: RuntimeException) {
+            // Defense-in-depth: a malformed reply (e.g. options not a list) or any
+            // unexpected transport fault surfaces as Unavailable rather than crashing
+            // the Settings page open (ac3) — never a partially-parsed Loaded.
+            SettingsCatalogResult.Unavailable(e.message ?: "unexpected daemon fault")
+        }
+
     companion object {
         const val METHOD_STATUS = "daemon.status"
         const val METHOD_REPO_LIST = "repo.list"
@@ -408,6 +491,7 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
         const val METHOD_WORKFLOW_ARTIFACT_CONTENT = "workflow.artifactContent"
         const val METHOD_WORKFLOW_RESOLVE_COMMENT = "workflow.resolveComment"
         const val METHOD_WORKFLOW_APPROVE = "workflow.approve"
+        const val METHOD_CONFIG_CATALOG = "config.catalog"
         const val FIELD_STALE = "stale"
         const val FIELD_REPOS = "repos"
         const val FIELD_ARTIFACTS = "artifacts"
@@ -485,6 +569,44 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
         }
 
         private fun str(v: Any?): String = (v as? String) ?: ""
+
+        /**
+         * Map the daemon's `config.catalog` reply to the settings DTO (Story S002,
+         * verbatim k1). options/groups/roles/tierNames come straight from the
+         * payload; the `values` map is folded into each option's currentValue/isSet
+         * (isSet = the option's path was present in values). enumValues is carried
+         * only when present. A non-list/non-map field degrades to empty, never a throw.
+         */
+        private fun parseCatalog(data: Map<String, Any?>): SettingsCatalogDto {
+            // A missing/non-list `options` is a malformed reply, not an empty catalog:
+            // require a list so the gateway's catch maps it to Unavailable (never a
+            // blank Loaded). A legitimately empty catalog sends options: [] (a list).
+            val optionsRaw = data["options"]
+            require(optionsRaw is List<*>) { "config.catalog reply has no options list" }
+            val values = data["values"] as? Map<*, *> ?: emptyMap<Any?, Any?>()
+            val options = optionsRaw.mapNotNull { item ->
+                val m = item as? Map<*, *> ?: return@mapNotNull null
+                val path = str(m["path"])
+                val isSet = values.containsKey(path)
+                ConfigOptionDto(
+                    path = path,
+                    type = str(m["type"]),
+                    default = m["default"],
+                    desc = str(m["desc"]),
+                    enumValues = (m["enumValues"] as? List<*>)?.map { it.toString() },
+                    group = str(m["group"]),
+                    currentValue = if (isSet) values[path] else null,
+                    isSet = isSet,
+                )
+            } ?: emptyList()
+            val groups = (data["groups"] as? List<*>)?.map { it.toString() } ?: emptyList()
+            val tierNames = (data["tierNames"] as? List<*>)?.map { it.toString() } ?: emptyList()
+            val roles = (data["roles"] as? List<*>)?.mapNotNull { item ->
+                val m = item as? Map<*, *> ?: return@mapNotNull null
+                RoleDto(id = str(m["id"]), defaultTier = str(m["defaultTier"]))
+            } ?: emptyList()
+            return SettingsCatalogDto(groups = groups, options = options, roles = roles, tierNames = tierNames)
+        }
 
         /**
          * Map the daemon's `workflow.artifactContent` reply to the review-view

@@ -5,6 +5,7 @@ import ai.insors.insrc.jetbrains.LifecycleBroadcaster
 import ai.insors.insrc.jetbrains.ProjectContext
 import ai.insors.insrc.jetbrains.daemon.DaemonGateway
 import ai.insors.insrc.jetbrains.daemon.ApproveResult
+import ai.insors.insrc.jetbrains.daemon.SettingsCatalogResult
 import ai.insors.insrc.jetbrains.daemon.ArtifactContentResult
 import ai.insors.insrc.jetbrains.daemon.ResolveCommentResult
 import ai.insors.insrc.jetbrains.daemon.ReviewCommentDto
@@ -51,6 +52,7 @@ class OnboardingWiringTest : BasePlatformTestCase() {
         override fun artifactReviewView(projectRootPath: String, mdPath: String): ArtifactContentResult = ArtifactContentResult.Unavailable("not used in this test")
         override fun resolveComment(projectRootPath: String, artifactId: String, comments: List<ReviewCommentDto>): ResolveCommentResult = ResolveCommentResult.Unavailable("not used in this test")
         override fun approve(projectRootPath: String, mdPath: String, overrideReason: String?): ApproveResult = ApproveResult.Unavailable("not used in this test")
+        override fun settingsCatalog(): SettingsCatalogResult = SettingsCatalogResult.Unavailable("not used in this test")
     }
 
     fun testOnboardingLifecycle_registeredOnBroadcaster_offEdt_and_reachedByUninstall() {

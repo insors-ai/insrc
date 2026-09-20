@@ -1,0 +1,245 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1789849407032-gxbkc2",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-19T20:26:24.823Z",
+    "epicCreatedAt": "2026-09-19T14:57:29.012Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 177728,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b5f333f8d7ba421b",
+    "epicSlug": "expose-all-daemon-config-settings-via",
+    "storyId": "s2",
+    "lldRunId": "wf-1789847310051-dhdmrw",
+    "lldEffectiveHash": "ee39a9f5fd11df006188d3b2038117bb0cd01aa61eaff9cccc9ea69fbfb78612",
+    "review": {
+      "artifact": "plan",
+      "stage": "plan",
+      "verdict": "pass",
+      "findings": [],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 0
+      },
+      "reviewedAt": "2026-09-19T20:26:58.192Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-20T05:08:14.688Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add settingsCatalog gateway method + DTOs + parseCatalog",
+        "summary": "In DaemonGateway.kt add `fun settingsCatalog(): SettingsCatalogResult` to the interface, the sealed SettingsCatalogResult (Loaded|Unavailable) + data-class DTOs (SettingsCatalogDto, ConfigOptionDto, RoleDto), a parseCatalog helper (parse options/groups/roles/tierNames from the reply map; fold payload.values into each ConfigOptionDto.currentValue/isSet), and implement settingsCatalog() in DaemonGatewayImpl following the pendingArtifacts/artifactReviewView idiom (rpc.call config.catalog; !ok||error -> Unavailable; DaemonUnavailableException + RuntimeException -> Unavailable; else Loaded).",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "DaemonGatewayImpl.settingsCatalog() returns Loaded(SettingsCatalogDto) on an ok reply with options/groups/roles/tierNames parsed and values folded into currentValue/isSet.",
+          "!ok||error, DaemonUnavailableException, and a malformed reply (e.g. options not a list) all map to Unavailable(reason) — never a blank Loaded, never a throw.",
+          "The call issues method 'config.catalog' with no params over the existing DaemonRpc transport."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "SettingsCatalogGatewayTest: ok+data -> Loaded with options/groups/roles/tierNames parsed and values folded into currentValue/isSet (over a FakeDaemonRpc)"
+          },
+          {
+            "level": "unit",
+            "name": "SettingsCatalogGatewayTest: !ok/error/DaemonUnavailable/malformed(options not a list) -> Unavailable, no throw"
+          },
+          {
+            "level": "unit",
+            "name": "SettingsCatalogGatewayTest: over the real UnixSocketDaemonRpc.parse, {result:{payload}} -> Loaded and {result:{error}} -> Unavailable (framing)"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Fix the gateway-extension compile break (delegate + 4 test doubles)",
+        "summary": "Add the settingsCatalog() delegate to DaemonGatewayService (forwarding to the impl) and a trivial `override fun settingsCatalog()` stub returning a canned Unavailable/Loaded to the four DaemonGateway test doubles (DaemonLifecycleServiceTest, OnboardingCleanupIntegrationTest, OnboardingWiringTest, OnboardingLifecycleTest), all in this change so the module compiles.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "DaemonGatewayService exposes settingsCatalog() delegating to the impl.",
+          "All four test doubles override settingsCatalog(); `./gradlew test` compiles the test source set green (no other double left unimplemented)."
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "the full ./gradlew test suite compiles + passes green (the delegate + 4 test-double overrides are proven by the test source set building)"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Add the pure sc3 view types: SettingsGroupModel + SettingsView + SettingsSection",
+        "summary": "In a new plugin settings package add SettingsGroupModel(group, options), the pure `object SettingsView { groupsOf(catalog): List<SettingsGroupModel>; displayValue(option): String }`, and the SettingsSection extension interface. groupsOf buckets options into SettingsGroupModels in payload.groups order (an option whose group is absent from groups[] goes into a trailing bucket; an empty group yields no model; every option appears exactly once). displayValue returns the current value when isSet, else the default with an explicit default marker.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "SettingsView.groupsOf orders groups by payload.groups, drops no option, emits no empty-group model, and trailing-buckets an out-of-groups option.",
+          "SettingsView.displayValue shows the actual value when isSet and the default with an explicit default marker when unset.",
+          "SettingsView is pure — no Swing/IO imports; SettingsSection is declared for downstream override sections."
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "SettingsViewTest: groupsOf orders by payload.groups, every option in exactly one model, out-of-groups -> trailing bucket, empty group -> no model"
+          },
+          {
+            "level": "unit",
+            "name": "SettingsViewTest: displayValue shows the value when isSet and the default with an explicit marker when unset"
+          },
+          {
+            "level": "unit",
+            "name": "SettingsViewTest: an unrecognized type still yields a display string (text fallback), never dropped/thrown"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Add InsrcSettingsConfigurable (read-only page) + applicationConfigurable registration",
+        "summary": "Add InsrcSettingsConfigurable : Configurable that obtains the gateway via service<DaemonGatewayService>(), calls settingsCatalog() off the EDT and marshals onto the EDT, and renders: Loaded -> collapsible group panels (one per SettingsView.groupsOf model) of read-only per-type display rows (chooser/toggle/number/text shown read-only; unknown type -> text fallback) with value/default/desc; Unavailable -> a distinct placeholder carrying the reason that re-reads on reopen. Read-only: isModified()=false, apply()/reset() no-ops, no config.write. Register it via a new <applicationConfigurable> entry in plugin.xml beside the toolWindow (displayName under Tools ▸ insrc).",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "Opening the page renders collapsible group panels with each setting's current value + default + description (Loaded); a daemon-unavailable read shows the distinct placeholder and re-reads on reopen.",
+          "The Configurable never writes config.json / calls config.write and never triggers a reload; isModified()=false and apply()/reset() are no-ops.",
+          "plugin.xml registers an <applicationConfigurable> pointing at InsrcSettingsConfigurable; the plugin builds (./gradlew buildPlugin) and the descriptor validates."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "InsrcSettingsConfigurableTest (source-scan): plugin.xml registers <applicationConfigurable> pointing at InsrcSettingsConfigurable"
+          },
+          {
+            "level": "unit",
+            "name": "InsrcSettingsConfigurableTest (source-scan): read-only — isModified() returns false, apply()/reset() no-ops, no config.write/writeSetting call in the class"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "SettingsView.groupsOf buckets options into SettingsGroupModels in payload.groups order; every option appears in exactly one group; an option whose group is absent from groups[] falls into a trailing bucket (never dropped); an empty group yields no model",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "SettingsView.displayValue returns the current value when isSet and the default with an explicit default-marker when unset (ac2)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "an unrecognized ConfigOptionDto.type degrades to a read-only text display, not dropped/thrown",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "settingsCatalog() over a fake DaemonRpc: ok+data -> Loaded(SettingsCatalogDto) with options/groups/roles/tierNames parsed and values folded into currentValue/isSet",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "!ok or error!=null -> Unavailable(reason); DaemonUnavailableException -> Unavailable; a malformed reply (options not a list) -> Unavailable (no throw)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "over the REAL UnixSocketDaemonRpc.parse: a {result:{...payload}} reply -> Loaded; a {result:{error}} reply -> Unavailable (result.error framing)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "isSet is true iff the values map contained the path; currentValue is that value",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "plugin.xml registers an <applicationConfigurable> pointing at InsrcSettingsConfigurable",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "InsrcSettingsConfigurable is read-only: isModified() returns false and apply()/reset() are no-ops (no gateway write / config.write call)",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "the DaemonGatewayService delegate + all four test doubles implement settingsCatalog() (compile-green is itself the proof)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 contractDetails.api settingsCatalog + SettingsCatalogDto/ConfigOptionDto/RoleDto (sc1 gateway consumption; jetbrains-plugin DaemonGateway.kt)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 invariantsToPreserve: read-only page (no config.write, no reload; k5)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 contractDetails.api SettingsView/SettingsGroupModel/SettingsSection/InsrcSettingsConfigurable + applicationConfigurable registration (sc3)"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 migration: DaemonGateway interface extension breaks impl+DaemonGatewayService delegate+4 test doubles (compile-break)"
+    }
+  ]
+}

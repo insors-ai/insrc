@@ -1,0 +1,55 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1789882204107-iws9zn",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-20T05:30:04.108Z",
+    "model": "client",
+    "elapsedMs": 6,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b5f333f8d7ba421b",
+    "storyId": "s2"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "b5f333f8d7ba421b",
+    "storyId": "s2",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGateway.kt",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGatewayService.kt",
+        "jetbrains-plugin/src/main/resources/META-INF/plugin.xml",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleServiceTest.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/onboarding/OnboardingCleanupIntegrationTest.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/onboarding/OnboardingLifecycleTest.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/onboarding/OnboardingWiringTest.kt"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 0
+    }
+  }
+}

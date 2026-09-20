@@ -13,10 +13,10 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.options.Configurable
 import com.intellij.openapi.options.ConfigurationException
 import com.intellij.openapi.progress.ProgressManager
-import com.intellij.ui.JBSplitter
 import java.awt.BorderLayout
-import java.awt.CardLayout
 import java.awt.Component
+import java.awt.Dimension
+import java.awt.Rectangle
 import javax.swing.AbstractCellEditor
 import javax.swing.BorderFactory
 import javax.swing.BoxLayout
@@ -27,31 +27,31 @@ import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.JScrollPane
 import javax.swing.JTable
+import javax.swing.JTextArea
 import javax.swing.JTextField
-import javax.swing.JTree
+import javax.swing.JToggleButton
+import javax.swing.Scrollable
 import javax.swing.ScrollPaneConstants
+import javax.swing.SwingConstants
 import javax.swing.table.AbstractTableModel
 import javax.swing.table.TableCellEditor
 import javax.swing.table.TableCellRenderer
-import javax.swing.tree.DefaultMutableTreeNode
-import javax.swing.tree.DefaultTreeCellRenderer
-import javax.swing.tree.DefaultTreeModel
-import javax.swing.tree.TreeSelectionModel
 
 /**
  * The native insrc Settings page (Settings ▸ Tools ▸ insrc).
  *
- * S002/S003/S004/S005 built a read → edit → per-role → per-repo page as a flat,
- * one-scrolling-column BoxLayout. This rework (standalone S001) presents it as a
- * master-detail: a LEFT [JTree] of setting categories (from [SettingsView.settingsTree])
- * plus one node per override [SettingsSection], and a RIGHT detail panel that shows
- * either the selected category's editable Key/Value/Default [SettingsTableModel] table
- * or an override node's `section.component()`. The tree and the detail each sit in
- * their own AS_NEEDED [JScrollPane] (so overflow always scrolls); 'General' is
- * selected on first render. The pure [SettingsEditModel] + [SettingsView.groupsOf] +
- * the PerRole/PerRepo sections are consumed UNCHANGED — apply/isModified/reset still
- * fan out over the model + the sections list. An Unavailable daemon shows the
- * placeholder and installs no tree.
+ * S002/S003/S004/S005 built a read → edit → per-role → per-repo page. This rework
+ * (standalone S001) presents it as ONE vertically-scrolling page of COLLAPSIBLE
+ * SECTIONS: for each [SettingsView.settingsTree] node either a setting CATEGORY (a
+ * '▾/▸ group' toggle header over the category's editable Key/Value/Default
+ * [SettingsTableModel] table, the table content-sized so the OUTER page scrollbar
+ * governs) or an override SECTION (a toggle header over `section.component()`).
+ * The whole content sits in ONE AS_NEEDED [JScrollPane] (so overflow always
+ * scrolls, ac1); 'General' ([SettingsTree.defaultIndex]) is expanded on first
+ * render and the rest collapsed. The pure [SettingsEditModel] +
+ * [SettingsView.groupsOf] + the PerRole/PerRepo sections are consumed UNCHANGED —
+ * apply/isModified/reset still fan out over the model + the sections list. An
+ * Unavailable daemon shows the placeholder and installs no panels.
  */
 class InsrcSettingsConfigurable : Configurable {
 
@@ -218,81 +218,95 @@ class InsrcSettingsConfigurable : Configurable {
                 placeholders.add("Per-repo overrides are unavailable — $reason")
             }
 
-            buildMasterDetail(catalog, editModel, placeholders)
+            buildCollapsiblePage(catalog, editModel, placeholders)
         }
     }
 
     /**
-     * The master-detail page: a JTree of the [SettingsView.settingsTree] nodes on the
-     * left (its own scroll pane), a card-swapped detail on the right (its own scroll
-     * pane). Each category card is an editable Key/Value/Default JTable; each section
-     * card is that section's component(). 'General' is selected on first render.
+     * The collapsible-sections page: ONE vertically-scrolling column of
+     * [SettingsView.settingsTree] nodes, each a collapsible panel — a category over
+     * its editable Key/Value/Default JTable, a section over its `component()`. The
+     * whole column sits in ONE AS_NEEDED [JScrollPane] (ac1); the
+     * [SettingsTree.defaultIndex] category ('General' when present) is expanded on
+     * first render, the rest collapsed. Any Unavailable-override placeholders are
+     * appended as plain notes below the panels.
+     *
+     * The column is a [ScrollableContentPanel] (tracks the viewport WIDTH but not
+     * its HEIGHT) so the panels keep their natural heights at the top and the outer
+     * scrollbar governs overflow — no `maximumSize` caps and no vertical glue.
      */
-    private fun buildMasterDetail(
+    private fun buildCollapsiblePage(
         catalog: ai.insors.insrc.jetbrains.daemon.SettingsCatalogDto,
         editModel: SettingsEditModel,
         placeholders: List<String>,
     ): JComponent {
         val tree = SettingsView.settingsTree(catalog, sections.map { it.title })
 
-        val treeRoot = DefaultMutableTreeNode("insrc")
-        for (node in tree.nodes) treeRoot.add(DefaultMutableTreeNode(node))
-        val jtree = JTree(DefaultTreeModel(treeRoot))
-        jtree.isRootVisible = false
-        jtree.showsRootHandles = true
-        jtree.selectionModel.selectionMode = TreeSelectionModel.SINGLE_TREE_SELECTION
-        jtree.cellRenderer = object : DefaultTreeCellRenderer() {
-            override fun getTreeCellRendererComponent(
-                t: JTree?, value: Any?, sel: Boolean, expanded: Boolean,
-                leaf: Boolean, row: Int, hasFocus: Boolean,
-            ): Component {
-                val c = super.getTreeCellRendererComponent(t, value, sel, expanded, leaf, row, hasFocus)
-                val payload = (value as? DefaultMutableTreeNode)?.userObject
-                if (payload is SettingsTreeNode) text = payload.label
-                return c
-            }
+        val content = ScrollableContentPanel()
+        content.layout = BoxLayout(content, BoxLayout.Y_AXIS)
+        content.border = BorderFactory.createEmptyBorder(4, 6, 4, 6)
+
+        tree.nodes.forEachIndexed { i, node ->
+            val expanded = i == tree.defaultIndex
+            val body = bodyFor(node, editModel)
+            content.add(collapsiblePanel(node.label, body, expanded))
         }
+        for (p in placeholders) content.add(placeholderNote(p))
 
-        // The detail: one card per node, swapped on selection.
-        val cards = CardLayout()
-        val detail = JPanel(cards)
-        tree.nodes.forEachIndexed { i, node -> detail.add(cardFor(node, editModel), i.toString()) }
-
-        jtree.addTreeSelectionListener {
-            val sel = jtree.lastSelectedPathComponent as? DefaultMutableTreeNode ?: return@addTreeSelectionListener
-            val idx = treeRoot.getIndex(sel)
-            if (idx >= 0) cards.show(detail, idx.toString())
-        }
-        if (tree.defaultIndex >= 0) jtree.setSelectionRow(tree.defaultIndex)
-
-        val treeScroll = JScrollPane(
-            jtree,
+        return JScrollPane(
+            content,
             ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
             ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED,
         )
-        val left: JComponent = if (placeholders.isEmpty()) {
-            treeScroll
-        } else {
-            val notes = JPanel()
-            notes.layout = BoxLayout(notes, BoxLayout.Y_AXIS)
-            notes.border = BorderFactory.createEmptyBorder(4, 6, 4, 6)
-            for (p in placeholders) notes.add(JLabel(p))
-            JPanel(BorderLayout()).apply {
-                add(treeScroll, BorderLayout.CENTER)
-                add(notes, BorderLayout.SOUTH)
-            }
-        }
-        // The detail is NOT wrapped again — each card supplies its OWN AS_NEEDED
-        // JScrollPane (cardFor), so there is exactly one scroll level per card (a
-        // second outer pane would leave a dead inner pane / double scrollbars).
-        val splitter = JBSplitter(false, 0.3f)
-        splitter.firstComponent = left
-        splitter.secondComponent = detail
-        return splitter
     }
 
-    /** The detail card for one tree node: an editable table (category) or the section component. */
-    private fun cardFor(node: SettingsTreeNode, editModel: SettingsEditModel): JComponent = when (node) {
+    /**
+     * One collapsible panel: a '▾/▸ title' toggle header over [body], whose
+     * visibility flips on toggle. [expanded] governs the initial state. The panel
+     * takes its natural (preferred) height; the outer page scrollbar governs.
+     */
+    private fun collapsiblePanel(title: String, body: JComponent, expanded: Boolean): JComponent {
+        val panel = JPanel(BorderLayout())
+        panel.alignmentX = Component.LEFT_ALIGNMENT
+        val header = JToggleButton(headerText(title, expanded), expanded).apply {
+            horizontalAlignment = SwingConstants.LEFT
+            isFocusPainted = false
+            isContentAreaFilled = false
+            border = BorderFactory.createEmptyBorder(4, 2, 4, 2)
+        }
+        body.isVisible = expanded
+        header.addActionListener {
+            val open = header.isSelected
+            header.text = headerText(title, open)
+            body.isVisible = open
+            panel.revalidate()
+            panel.repaint()
+        }
+        panel.add(header, BorderLayout.NORTH)
+        panel.add(body, BorderLayout.CENTER)
+        return panel
+    }
+
+    private fun headerText(title: String, expanded: Boolean): String = "${if (expanded) "▾" else "▸"} $title"
+
+    /**
+     * A width-tracking, WRAPPING note for an Unavailable-override reason. A bare
+     * JLabel would be clipped in the width-tracked column (no horizontal scroll), so
+     * a non-editable, transparent, line-wrapping JTextArea keeps a long reason fully
+     * visible as the window narrows.
+     */
+    private fun placeholderNote(reason: String): JComponent = JTextArea(reason).apply {
+        isEditable = false
+        isFocusable = false // a pure static note: wraps + reflows, but never a caret/tab-stop
+        isOpaque = false
+        lineWrap = true
+        wrapStyleWord = true
+        alignmentX = Component.LEFT_ALIGNMENT
+        border = BorderFactory.createEmptyBorder(4, 2, 4, 2)
+    }
+
+    /** The collapsible body for one node: an editable table (category) or the section component. */
+    private fun bodyFor(node: SettingsTreeNode, editModel: SettingsEditModel): JComponent = when (node) {
         is SettingsTreeNode.Category -> {
             val tableModel = SettingsTableModel(node.options, editModel)
             tableModels.add(tableModel)
@@ -302,19 +316,22 @@ class InsrcSettingsConfigurable : Configurable {
             val valueCol = table.columnModel.getColumn(SettingsTableModel.COL_VALUE)
             valueCol.cellRenderer = SettingsValueCellRenderer(tableModel)
             valueCol.cellEditor = SettingsValueCellEditor(tableModel)
+            // Content-size the table (rows*rowHeight) and turn its OWN scrollbars OFF
+            // (NEVER), so the table renders every row and the ONE outer AS_NEEDED page
+            // scrollbar governs overflow — no nested/dead inner scrollbar (ac1).
+            table.preferredScrollableViewportSize = Dimension(
+                table.preferredSize.width,
+                table.rowHeight * tableModel.rowCount,
+            )
             JScrollPane(
                 table,
-                ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
-                ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED,
+                ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER,
+                ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER,
             )
         }
         is SettingsTreeNode.Section -> {
             val section = sections.first { it.title == node.title }
-            JScrollPane(
-                section.component(),
-                ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
-                ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED,
-            )
+            section.component()
         }
     }
 
@@ -325,6 +342,22 @@ class InsrcSettingsConfigurable : Configurable {
         panel.add(JLabel("insrc settings are unavailable — $reason"), BorderLayout.NORTH)
         return panel
     }
+}
+
+/**
+ * The collapsible-sections column (Story S001): a [Scrollable] BoxLayout panel that
+ * tracks the enclosing viewport's WIDTH (so the panels fill the page horizontally)
+ * but NOT its HEIGHT (so the panels keep their natural preferred heights at the top
+ * and the ONE outer AS_NEEDED [JScrollPane] governs vertical overflow — the reason
+ * this rework needs neither a maximum-size cap nor a trailing vertical glue).
+ */
+private class ScrollableContentPanel : JPanel(), Scrollable {
+    override fun getPreferredScrollableViewportSize(): Dimension = preferredSize
+    override fun getScrollableTracksViewportWidth(): Boolean = true
+    override fun getScrollableTracksViewportHeight(): Boolean = false
+    override fun getScrollableUnitIncrement(visibleRect: Rectangle, orientation: Int, direction: Int): Int = 16
+    override fun getScrollableBlockIncrement(visibleRect: Rectangle, orientation: Int, direction: Int): Int =
+        if (orientation == SwingConstants.VERTICAL) visibleRect.height else visibleRect.width
 }
 
 /**

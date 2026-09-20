@@ -144,24 +144,36 @@ class InsrcSettingsConfigurableTest {
     }
 
     @Test
-    fun `InsrcSettingsConfigurable renders a master-detail category tree with editable tables and a scrolling viewport (S001 rework)`() {
+    fun `InsrcSettingsConfigurable renders collapsible category sections with editable tables in one scrolling page (S001 a2 rework)`() {
         val src = read("src/main/kotlin/ai/insors/insrc/jetbrains/settings/InsrcSettingsConfigurable.kt")
-        // ac2: categories render as a JTree (built from the pure tree model).
-        assertTrue(src.contains("JTree"), "categories render as a JTree (ac2)")
-        assertTrue(src.contains("SettingsView.settingsTree("), "the tree is built from the pure SettingsView.settingsTree model")
-        // ac3/ac4: the detail is an editable Key/Value/Default JTable bound to the model.
-        assertTrue(src.contains("JTable"), "the detail is a JTable (ac4)")
+        // ac2: categories render as COLLAPSIBLE panels (a toggle header over a body),
+        // built from the pure panel-node model — NOT a master-detail JTree/JBSplitter/CardLayout.
+        assertTrue(src.contains("collapsiblePanel("), "categories render as collapsible panels (ac2)")
+        assertTrue(src.contains("JToggleButton"), "each collapsible panel has a toggle header (ac2)")
+        assertTrue(src.contains("SettingsView.settingsTree("), "the panels are built from the pure SettingsView.settingsTree model")
+        assertFalse(src.contains("JTree"), "the a1 master-detail JTree is gone (ac2)")
+        assertFalse(src.contains("JBSplitter"), "the a1 master-detail JBSplitter is gone (ac2)")
+        assertFalse(src.contains("CardLayout"), "the a1 CardLayout detail is gone (ac2)")
+        // ac3/ac4: each category body is an editable Key/Value/Default JTable bound to the model.
+        assertTrue(src.contains("JTable"), "each category body is a JTable (ac4)")
         assertTrue(src.contains("SettingsTableModel("), "the table is bound to the per-category SettingsTableModel (ac3/ac4)")
-        // ac1: the tree + detail scroll (AS_NEEDED) and the scroll-suppressing constructs are gone.
-        assertTrue(src.contains("JScrollPane"), "the tree + detail are wrapped in scroll panes (ac1)")
-        assertTrue(src.contains("VERTICAL_SCROLLBAR_AS_NEEDED"), "the viewport scrolls when content overflows (ac1)")
-        assertFalse(src.contains("maximumSize = Dimension"), "no per-wrapper maximumSize height caps remain (ac1)")
+        // ac1: ONE outer AS_NEEDED page scroll; each category table is content-sized with
+        // its OWN scrollbars OFF (NEVER), so the outer scroll governs — no maximumSize caps,
+        // no vertical glue.
+        assertTrue(src.contains("JScrollPane"), "the page is wrapped in a scroll pane (ac1)")
+        assertTrue(src.contains("VERTICAL_SCROLLBAR_AS_NEEDED"), "the outer page scrolls when content overflows (ac1)")
+        assertTrue(src.contains("VERTICAL_SCROLLBAR_NEVER"), "each category table's own scroll is off so the outer scroll governs (ac1)")
+        assertTrue(src.contains("preferredScrollableViewportSize"), "each category table is content-sized (ac1)")
+        assertTrue(src.contains("ScrollableContentPanel"), "the column tracks the viewport width but not its height (fills the settings window, no fixed size) (ac1)")
+        assertFalse(src.contains("maximumSize = Dimension"), "no per-wrapper maximumSize height caps in the page shell (ac1)")
         assertFalse(src.contains("Box.createVerticalGlue"), "no vertical glue remains (ac1)")
         // The flat S002/S003 render path is gone.
         assertFalse(src.contains("collapsibleGroup"), "the flat collapsibleGroup render is replaced")
         assertFalse(src.contains("settingRow"), "the flat settingRow render is replaced")
-        // ac5: General is selected/expanded on first render.
-        assertTrue(src.contains("setSelectionRow(tree.defaultIndex)"), "General (the default node) is selected on first render (ac5)")
+        // ac5: General (the default node) is expanded on first render.
+        assertTrue(src.contains("i == tree.defaultIndex"), "General (the default node) is expanded on first render (ac5)")
+        // ac7: the override sections are rendered as collapsible panels over section.component().
+        assertTrue(src.contains("section.component()"), "override sections render inside a collapsible panel over section.component() (ac7)")
         // ac6: the editable Value cell drives the unchanged edit model.
         assertTrue(src.contains("SettingsValueCellEditor"), "the Value column has an editable per-type cell editor (ac6)")
         assertTrue(src.contains("edit.editField"), "the table's setValueAt routes to SettingsEditModel.editField (ac6)")

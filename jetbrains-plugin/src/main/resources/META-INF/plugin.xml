@@ -93,6 +93,19 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h3>0.2.3</h3>
+        <ul>
+            <li><b>Settings page is now collapsible sections.</b>
+                <b>Settings &rsaquo; Tools &rsaquo; insrc</b> is a single scrolling page
+                of <b>expand/collapse</b> category sections &mdash; click a
+                <b>&#9662;/&#9656;</b> header to open a category into its editable
+                <b>key / value / default</b> table. <b>General</b> is expanded on load,
+                the rest collapsed.</li>
+            <li>The whole page scrolls as one, each table sized to its content, and the
+                page fills the Settings window rather than a fixed size.</li>
+            <li>The per-role and per-repository override editors are their own
+                collapsible sections on the same page.</li>
+        </ul>
         <h3>0.2.2</h3>
         <ul>
             <li><b>Reworked Settings page.</b> <b>Settings &rsaquo; Tools &rsaquo; insrc</b>

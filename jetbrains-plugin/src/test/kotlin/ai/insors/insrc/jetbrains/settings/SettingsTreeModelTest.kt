@@ -7,10 +7,11 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 /**
- * S001 rework unit tests for the pure category-tree builder (SettingsView.settingsTree):
- * node ordering (categories in groupsOf order, then one node per section title),
- * default-selection ('General' when present else the first category), and that no
- * option is dropped/duplicated/reordered (an out-of-groups option gets a trailing node).
+ * S001 a2 rework unit tests for the pure collapsible-panel builder
+ * (SettingsView.settingsTree): panel-node ordering (categories in groupsOf order,
+ * then one node per section title), default-EXPANDED node ('General' when present
+ * else the first category), and that no option is dropped/duplicated/reordered (an
+ * out-of-groups option gets a trailing node).
  */
 class SettingsTreeModelTest {
 

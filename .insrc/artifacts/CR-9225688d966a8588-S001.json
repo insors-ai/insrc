@@ -1,11 +1,11 @@
 {
   "meta": {
     "workflow": "code-review",
-    "runId": "cr-1789902450278-cf12vr",
+    "runId": "cr-1789905769257-1kwdkh",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-09-20T11:07:30.279Z",
+    "createdAt": "2026-09-20T12:02:49.258Z",
     "model": "client",
-    "elapsedMs": 4,
+    "elapsedMs": 5,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "9225688d966a8588",
@@ -18,11 +18,14 @@
     "groundingMode": "degraded",
     "subject": {
       "changedFiles": [
+        ".insrc/artifacts/LLD-9225688d966a8588-S001.json",
+        ".insrc/artifacts/PLAN-9225688d966a8588-S001.json",
         "jetbrains-plugin/gradle.properties",
         "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/InsrcSettingsConfigurable.kt",
         "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/SettingsView.kt",
         "jetbrains-plugin/src/main/resources/META-INF/plugin.xml",
-        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/InsrcSettingsConfigurableTest.kt"
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/InsrcSettingsConfigurableTest.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/SettingsTreeModelTest.kt"
       ]
     },
     "dimensions": [
@@ -36,14 +39,7 @@
       },
       {
         "dimension": "coverage",
-        "findings": [
-          {
-            "dimension": "coverage",
-            "severity": "LOW",
-            "location": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/InsrcSettingsConfigurable.kt:1",
-            "message": "Daemon code-review grounding is HOLLOW on Kotlin: it returned only 5 file-level nodes with no symbols, so automated coverage could not be graph-grounded (the recurring Kotlin-grounding gap). Coverage was instead verified LOCALLY (./gradlew test on JDK21 — 237 tests, 0 failures, incl. SettingsTreeModelTest 5 + SettingsTableModelTest 6 + the revised InsrcSettingsConfigurableTest source-scan 8) AND by an independent opposite-actor cold review (24-for-24) which found no HIGH/MED functional defect and confirmed the edit->validate->off-EDT-write->re-seed pipeline, tree/card wiring, default-selection, and Unavailable paths; 3 LOW/UX findings were fixed (redundant nested scroll panes, Value-cell selection highlight, immediate combo/checkbox commit) and re-reviewed clean. Recorded as an honest observation, not a gap."
-          }
-        ]
+        "findings": []
       },
       {
         "dimension": "quality",
@@ -51,8 +47,14 @@
           {
             "dimension": "quality",
             "severity": "LOW",
-            "location": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/InsrcSettingsConfigurable.kt:365",
-            "message": "Accepted design residual (cold-review finding 4): the Value column shows the effective value (controlValue = the catalog default for an unset setting), so an unset setting reads the same in Value and Default with no '(default)' marker (the old flat page marked it via SettingsView.displayValue). This is deliberate for the Key/Value/Default table — the separate Default column keeps the default discoverable — not a correctness defect. A future polish could italicize/gray an unset Value."
+            "location": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/InsrcSettingsConfigurable.kt:326",
+            "message": "Cosmetic: each collapsible category is its own JTable, so the Key/Value/Default column header repeats down the page. Not a defect (informative per-section); a single shared legend would be tidier. Deferred."
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/InsrcSettingsConfigurable.kt:274",
+            "message": "Cosmetic: the toggle header uses isContentAreaFilled=false + isFocusPainted=false, so it renders as plain arrow+text with no button/hover chrome; the ▾/▸ glyph is the only affordance cue. Acceptable; a subtle hover/separator could improve discoverability. Deferred."
           }
         ]
       }

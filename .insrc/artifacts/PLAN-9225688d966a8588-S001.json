@@ -1,10 +1,10 @@
 {
   "meta": {
     "workflow": "plan",
-    "runId": "wf-1789898509046-bhpbcb",
+    "runId": "wf-1789903995739-ci7nly",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-09-20T10:06:13.180Z",
-    "epicCreatedAt": "2026-09-20T10:06:13.181Z",
+    "createdAt": "2026-09-20T11:38:45.934Z",
+    "epicCreatedAt": "2026-09-20T11:38:45.935Z",
     "attribution": {
       "outputs": [
         {
@@ -15,42 +15,152 @@
         }
       ]
     },
-    "elapsedMs": 264123,
+    "elapsedMs": 330187,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "9225688d966a8588",
-    "epicSlug": "standalone-feature-rework-jetbrains-plugin-s",
+    "epicSlug": "re-author-s001-lld-collapsible-sections",
     "storyId": "S001",
-    "lldRunId": "wf-1789897898189-060gr5",
-    "lldEffectiveHash": "9225688d966a8588bcbb6ea8377f242c0cabadd30a580f4d2cf95a559e46f0c8",
+    "lldRunId": "wf-1789903113653-bjwxm4",
+    "lldEffectiveHash": "3d393f126c411340e69799da9f856ed074192d1c03de125e1f50b4eb68c48ddc",
     "review": {
       "artifact": "plan",
       "stage": "plan",
       "verdict": "pass",
-      "findings": [],
+      "findings": [
+        {
+          "claimId": "cl1",
+          "ref": "t1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "SettingsView exposes settingsTree(catalog, sectionTitles): SettingsTree with a sealed SettingsTreeNode{Category,Section} that t1 repurposes without a signature change.",
+          "evidence": "SettingsView.kt has fun settingsTree(, sealed interface SettingsTreeNode, class SettingsTree, data class Category, data class Section — all confirmed in src.",
+          "action": "None; the pure builder exists as cited and t1 repurposes it in place.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl2",
+          "ref": "t1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "groupsOf is the grouping helper SettingsView.settingsTree builds category nodes from (declared groups first, out-of-groups trailing).",
+          "evidence": "fun groupsOf( and GENERAL_GROUP both resolve in SettingsView.kt (src hits).",
+          "action": "None; groupsOf grouping helper exists.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl3",
+          "ref": "t2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "SettingsTableModel exists with columns Key/Value/Default (COL_KEY/COL_VALUE/COL_DEFAULT), only-Value editable, setValueAt->editField, resetToDefault->markResetToDefault, and is consumed unchanged.",
+          "evidence": "class SettingsTableModel, COL_VALUE, COL_DEFAULT, markResetToDefault all resolve in InsrcSettingsConfigurable.kt / settings src.",
+          "action": "None; the editable table model exists and is reused unchanged.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl4",
+          "ref": "t2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "SettingsValueCellRenderer and SettingsValueCellEditor exist and are the per-type Value-column renderer/editor reused unchanged.",
+          "evidence": "SettingsValueCellRenderer resolves in settings src; SettingsValueCellEditor's specific pattern was crowded out of the truncated top-50 by doc/LLD matches but it is defined in the same InsrcSettingsConfigurable.kt file as the renderer.",
+          "action": "None; both cell classes exist and are reused unchanged.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl5",
+          "ref": "t2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "SettingsEditModel is the pure edit surface (editField/markResetToDefault/collectDirty/isModified) reused unchanged.",
+          "evidence": "class SettingsEditModel, fun editField, fun collectDirty, fun markResetToDefault all resolve in SettingsEditModel.kt (src).",
+          "action": "None; the pure edit surface exists and is reused unchanged.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl6",
+          "ref": "t3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "InsrcSettingsConfigurable currently renders the a1 master-detail (buildMasterDetail with JTree + JBSplitter + CardLayout) which t3 replaces.",
+          "evidence": "buildMasterDetail, JBSplitter, CardLayout all resolve in InsrcSettingsConfigurable.kt (src); JTree's pattern was truncated by doc matches but the a1 master-detail shell is confirmed present via the other three.",
+          "action": "None; the a1 render shell to replace is confirmed present.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl7",
+          "ref": "t3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The apply path goes through gateway.writeSetting/clearSetting and throws ConfigurationException, preserved unchanged by t3.",
+          "evidence": "runProcessWithProgressSynchronously resolves in settings src (2 hits) confirming the off-EDT apply path; writeSetting/clearSetting/ConfigurationException patterns were truncated by doc matches but are the established DaemonGateway/apply surface shipped in S003.",
+          "action": "None; the apply gate is preserved unchanged.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl8",
+          "ref": "t3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "PerRoleSection and PerRepoSection implement the SettingsSection seam (title/component/isModified/apply/reset) and are hosted as collapsible panels unchanged.",
+          "evidence": "class PerRoleSection, class PerRepoSection, interface SettingsSection, fun component() all resolve in settings src (PerRepoSection.kt:52, PerRoleSection.kt:43, SettingsView.kt:56).",
+          "action": "None; the override sections implement the SettingsSection seam and are hosted unchanged.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl9",
+          "ref": "t4",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "There are three settings test files: SettingsTreeModelTest (reworked), SettingsTableModelTest (kept), InsrcSettingsConfigurableTest (rewritten).",
+          "evidence": "All three test classes resolve: SettingsTreeModelTest.kt:15, SettingsTableModelTest.kt:16, InsrcSettingsConfigurableTest.kt:19.",
+          "action": "None; the three test files exist and t4 reworks/keeps/rewrites them as stated.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl10",
+          "ref": "tasks",
+          "kind": "ordering",
+          "severity": "LOW",
+          "premise": "Task order is a valid topological order: t3 depends on t1+t2, t4 depends on t3; the dependency graph is acyclic.",
+          "evidence": "Task dependency graph: t1=[], t2=[], t3=[t1,t2], t4=[t3] — acyclic; order 1,2,3,4 is a valid topological order.",
+          "action": "None; ordering is sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl11",
+          "ref": "tasks",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "The four tasks (t1 builder, t2 reuse checkpoint, t3 render shell, t4 tests+gate) collectively cover the entire LLD handoff (c1 edit model, c2 grouping, c3 override sections) with no uncovered invariant.",
+          "evidence": "derivedFrom union = {c1,c2,c3}; c1 (edit model) covered by t2/t3/t4, c2 (grouping) by t1/t3/t4, c3 (override sections) by t3/t4 — every LLD invariant covered.",
+          "action": "None; coverage is complete.",
+          "fixability": "manual"
+        }
+      ],
       "counts": {
         "high": 0,
         "med": 0,
-        "low": 0
+        "low": 11
       },
-      "reviewedAt": "2026-09-20T10:06:57.330Z",
+      "reviewedAt": "2026-09-20T11:40:48.180Z",
       "model": "client"
     },
-    "approvedAt": "2026-09-20T10:44:01.014Z"
+    "approvedAt": "2026-09-20T11:42:31.017Z"
   },
   "body": {
     "tasks": [
       {
         "id": "t1",
-        "title": "Pure tree-node model + builder in SettingsView",
-        "summary": "Add a PURE, Swing-free tree-node model + builder to SettingsView.kt: given SettingsView.groupsOf(catalog) + the ordered host section titles, produce the ordered nodes — category nodes first (groupsOf order, each carrying its group + its options) then one node per override section title — and expose which node is default-selected/expanded ('General' when a General category exists, else the first category). No Swing imports; groupsOf/displayValue/renderScalar/ControlKind/SettingsEditModel unchanged.",
+        "title": "Repurpose SettingsView.settingsTree as the collapsible-panel builder",
+        "summary": "Keep SettingsTreeNode{Category,Section}/SettingsTree + settingsTree(catalog, sectionTitles) unchanged in signature/logic: ordered Category nodes from groupsOf (declared groups then trailing bucket, every option once) followed by one Section node per sectionTitle, defaultIndex = General-or-first-else-first-node (-1 when empty). It now describes which panels to render + which is expanded on first load, not JTree nodes. No new symbol.",
         "size": "S",
         "order": 1,
         "dependsOn": [],
         "acceptanceChecks": [
-          "the builder yields category nodes in SettingsView.groupsOf order followed by one node per supplied section title",
-          "every catalog option maps to exactly one category node's option-set (no drop/dup/reorder); an out-of-groups option gets a trailing node",
-          "default selection is 'General' when present, else the first category node"
+          "settingsTree returns Category nodes in groupsOf order then one Section node per section title; every catalog option lands in exactly one Category node's options (no drop/dup/reorder), out-of-groups options in a trailing node",
+          "defaultIndex is the General category index when present, else the first category, else the first node (-1 only when there are no nodes)"
         ],
         "derivedFrom": [
           "c2"
@@ -58,92 +168,61 @@
         "tests": [
           {
             "level": "unit",
-            "name": "SettingsTreeModelTest: builder yields category nodes in groupsOf order then one node per supplied section title; every option maps to exactly one node's option-set (no drop/dup/reorder); an out-of-groups option gets a trailing node"
+            "name": "SettingsTreeModelTest: settingsTree yields category nodes in groupsOf order then one node per section title"
           },
           {
             "level": "unit",
-            "name": "SettingsTreeModelTest: default selection is 'General' when present, and falls back to the first category node when there is no General"
+            "name": "SettingsTreeModelTest: defaultIndex is General when present, else the first category, else the first node"
+          },
+          {
+            "level": "unit",
+            "name": "SettingsTreeModelTest: every catalog option maps to exactly one category node (no drop/dup/reorder); an out-of-groups option gets a trailing node"
           }
         ]
       },
       {
         "id": "t2",
-        "title": "Per-category editable table model + per-type Value cell editor/renderer",
-        "summary": "Add a per-category AbstractTableModel (columns Key/Value/Default): getValueAt returns the setting path, SettingsEditModel.controlValue(path) rendered via renderScalar, and the option default via renderScalar; isCellEditable true ONLY for the Value column; setValueAt routes to SettingsEditModel.editField(path,raw). Add a per-type TableCellEditor/TableCellRenderer for the Value column that swaps the widget by ControlKind (JComboBox over enumValues for CHOOSER, JCheckBox for TOGGLE, JTextField for NUMBER/TEXT) with a reset-to-default affordance calling markResetToDefault. Backed entirely by the UNCHANGED SettingsEditModel + renderScalar.",
-        "size": "M",
+        "title": "Consume the SettingsTableModel + cell editor/renderer + SettingsEditModel unchanged",
+        "summary": "Reuse SettingsTableModel (Key/Value/Default, only-Value-editable, getValueAt path/controlValue/renderScalar(default), setValueAt->editField, resetToDefault->markResetToDefault) with SettingsValueCellRenderer/SettingsValueCellEditor on the Value column as each category panel's body, over the shared SettingsEditModel. No logic change to these types — only their host changes (collapsible panel vs CardLayout card). This is an explicit reuse checkpoint pinning the invariant that the edit stack must not be forked; its wiring is realized in t3.",
+        "size": "S",
         "order": 2,
-        "dependsOn": [
-          "t1"
-        ],
+        "dependsOn": [],
         "acceptanceChecks": [
-          "the table model exposes Key/Value/Default; getValueAt reads controlValue + option default via renderScalar; isCellEditable true only for Value",
-          "setValueAt routes to SettingsEditModel.editField and a dirty cell reflects in isModified/collectDirty; a boolean round-trips as a Boolean",
-          "reset-to-default maps to markResetToDefault (Value shows the default; apply would Clear); the per-type cell editor picks combo/checkbox/text by ControlKind"
+          "The category panel body is a JTable over the existing SettingsTableModel with the per-type SettingsValueCellRenderer/Editor on the Value column; a dirty Value cell contributes to isModified()/collectDirty() through the shared SettingsEditModel exactly as before, and reset maps to a Clear",
+          "SettingsTableModel/SettingsValueCellRenderer/SettingsValueCellEditor/SettingsEditModel are unchanged in behaviour (no fork/bypass of the edit model)"
         ],
         "derivedFrom": [
-          "c2"
+          "c1"
         ],
         "tests": [
           {
             "level": "unit",
-            "name": "SettingsTableModelTest: 3 columns Key/Value/Default; getValueAt returns the path + controlValue(path) rendered + the option default via renderScalar; isCellEditable true only for the Value column"
+            "name": "SettingsTableModelTest (unchanged): 3 columns Key/Value/Default, only Value editable, getValueAt reads path/controlValue/renderScalar(default)"
           },
           {
             "level": "unit",
-            "name": "SettingsTableModelTest: setValueAt on the Value column routes to SettingsEditModel.editField and the value/isModified reflect it; a boolean round-trips as a Boolean (not a string)"
+            "name": "SettingsTableModelTest (unchanged): setValueAt routes to editField, boolean round-trips as Boolean, isModified/collectDirty reflect the edit"
           },
           {
             "level": "unit",
-            "name": "SettingsTableModelTest: reset-to-default maps to markResetToDefault (Value shows the default, apply would emit a Clear)"
+            "name": "SettingsTableModelTest (unchanged): resetToDefault maps to markResetToDefault (Value shows default; apply would Clear)"
           }
         ]
       },
       {
         "id": "t3",
-        "title": "InsrcSettingsConfigurable render rework (master JTree + detail, scroll fix, sections-as-nodes, General expand)",
-        "summary": "Replace renderBody's flat BoxLayout/collapsibleGroup/settingRow/editControl/rowRefreshers with a master-detail: a LEFT JTree built from the t1 tree model (category nodes + one node per registered SettingsSection) in its own AS_NEEDED JScrollPane, and a RIGHT detail panel in its own AS_NEEDED JScrollPane that on selection shows either the category's editable t2 JTable or the override node's section.component(). Remove the maximumSize caps + Box.createVerticalGlue. Select+expand General on first render. Keep the off-EDT read (invokeLater guarded on root===panel), the sections MutableList, the SettingsEditModel wiring, and apply/isModified/reset (off-EDT runProcessWithProgressSynchronously over collectDirty + section.apply, throwing ConfigurationException on not-Saved/validation); reset re-seeds via table-model fireTableDataChanged instead of rowRefreshers. The Unavailable-catalog placeholder path is unchanged.",
+        "title": "Replace the master-detail render shell with collapsible section panels",
+        "summary": "Replace InsrcSettingsConfigurable.buildMasterDetail (JTree + JBSplitter + CardLayout + tree selection wiring) with a BoxLayout content panel in ONE AS_NEEDED JScrollPane: per Category node a toggle-header (▾/▸) panel over the content-sized SettingsTableModel JTable (own scroll off so the outer scroll governs), then per Section node a toggle-header panel over section.component(); expand the settingsTree.defaultIndex category, collapse the rest. Keep the off-EDT read + invokeLater root===panel guard, the sections list, SettingsEditModel wiring, off-EDT apply (validation-first, runProcessWithProgressSynchronously, ConfigurationException, onSaved + refreshTables), isModified fan-out, reset fan-out, refreshTables (fireTableDataChanged), and the Unavailable placeholder. No maximumSize caps / vertical glue.",
         "size": "M",
         "order": 3,
         "dependsOn": [
+          "t1",
           "t2"
         ],
         "acceptanceChecks": [
-          "the page renders a JTree of categories + the sections as top-level tree nodes; selecting a category shows its editable Key/Value/Default JTable, an override node shows section.component()",
-          "the tree + detail are each in an AS_NEEDED JScrollPane and NO maximumSize caps / Box.createVerticalGlue remain in the render path; General is selected+expanded on first render",
-          "apply still persists via gateway.writeSetting/clearSetting over collectDirty + section.apply and throws ConfigurationException on not-Saved/validation; the Unavailable placeholder path is unchanged"
-        ],
-        "derivedFrom": [
-          "c1",
-          "c3"
-        ],
-        "tests": [
-          {
-            "level": "unit",
-            "name": "InsrcSettingsConfigurableTest (source-scan): builds a JTree of categories + registers PerRoleSection/PerRepoSection as tree nodes (renders section.title/component() for override nodes)"
-          },
-          {
-            "level": "unit",
-            "name": "InsrcSettingsConfigurableTest (source-scan): the detail is an editable Key/Value/Default JTable; tree + detail are each in a JScrollPane and NO maximumSize caps / Box.createVerticalGlue remain; General is selected/expanded on first render"
-          },
-          {
-            "level": "unit",
-            "name": "InsrcSettingsConfigurableTest (source-scan): apply still goes through gateway.writeSetting/clearSetting and throws ConfigurationException on not-Saved/validation (unchanged apply gate)"
-          }
-        ]
-      },
-      {
-        "id": "t4",
-        "title": "Tests + JDK21 gate",
-        "summary": "Add pure unit tests for the t1 tree-node builder (node ordering, General-or-first default selection, no option dropped/duplicated/reordered, out-of-groups trailing) and the t2 table model (Key/Value/Default columns, only-Value-editable, setValue->editField, boolean round-trip, reset->markResetToDefault). Revise InsrcSettingsConfigurableTest's source-scan: assert the JTree + editable JTable(Key/Value/Default) + tree/detail JScrollPanes with NO maximumSize caps / vertical glue + General default-expand + PerRoleSection/PerRepoSection registered as tree nodes + apply-via-gateway-still-throws-ConfigurationException (replacing the old collapsibleGroup/settingRow assertions). Run ./gradlew test on JDK21.",
-        "size": "M",
-        "order": 4,
-        "dependsOn": [
-          "t3"
-        ],
-        "acceptanceChecks": [
-          "tree-model + table-model unit tests cover ac1..ac7's pure parts (ordering, default-select, no-drop, columns, editability, editField/boolean/reset)",
-          "the revised source-scan asserts the JTree + editable Key/Value/Default JTable + scroll-without-caps + General expand + sections-as-nodes + gateway apply gate",
-          "./gradlew test is green on JDK21 with no backtick-';' compile break"
+          "createComponent renders, on Loaded, a BoxLayout page of collapsible toggle-header panels (one per category over its JTable body, then one per SettingsSection over section.component()) inside ONE JScrollPane with VERTICAL_SCROLLBAR_AS_NEEDED; no JTree/JBSplitter/CardLayout remain and each table is content-sized (preferredScrollableViewportSize) with no maximumSize caps / Box.createVerticalGlue",
+          "General (settingsTree.defaultIndex) is expanded on first render and the other panels collapsed; the override PerRoleSection/PerRepoSection are rendered as collapsible panels and still registered in the sections list; apply still goes through gateway.writeSetting/clearSetting and throws ConfigurationException on validation/rejection; the Unavailable read keeps the existing placeholder",
+          "The off-EDT discipline is preserved: reads render via invokeLater guarded on root===panel and apply runs off the EDT with model mutation + refreshTables back on the EDT"
         ],
         "derivedFrom": [
           "c1",
@@ -153,100 +232,119 @@
         "tests": [
           {
             "level": "unit",
-            "name": "Full jetbrains-plugin suite green on JDK21 via ./gradlew test (SettingsTreeModelTest + SettingsTableModelTest + the revised InsrcSettingsConfigurableTest source-scan), no backtick-';' compile break; a category taller than the viewport still exposes all rows"
+            "name": "InsrcSettingsConfigurableTest source-scan: collapsible toggle-header category panels, no JTree/JBSplitter/CardLayout"
+          },
+          {
+            "level": "unit",
+            "name": "InsrcSettingsConfigurableTest source-scan: ONE JScrollPane AS_NEEDED + content-sized tables (preferredScrollableViewportSize), no maximumSize caps / Box.createVerticalGlue"
+          },
+          {
+            "level": "unit",
+            "name": "InsrcSettingsConfigurableTest source-scan: General expanded on first render via settingsTree.defaultIndex; sections as collapsible panels registered in the sections list; apply via gateway.writeSetting/clearSetting + ConfigurationException"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Revise the tests and run the JDK21 gate",
+        "summary": "Rename/rework SettingsTreeModelTest to assert panel ordering + General-or-first default-expanded (semantics unchanged); keep SettingsTableModelTest verbatim; rewrite the InsrcSettingsConfigurableTest source-scan to assert collapsible toggle-header panels + JTable body + ONE JScrollPane(AS_NEEDED) + content-sized tables + absence of JTree/JBSplitter/CardLayout/maximumSize/vertical-glue + General expanded via defaultIndex + sections as collapsible panels + the unchanged gateway apply gate. Run ./gradlew test + buildPlugin on JDK21 green.",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "The panel-builder unit test proves ordering + General-or-first default-expanded + no option dropped/duplicated/reordered; SettingsTableModelTest is unchanged and green",
+          "The rewritten InsrcSettingsConfigurableTest source-scan asserts collapsible toggle-header panels + Key/Value/Default JTable body + ONE JScrollPane AS_NEEDED + content-sized tables + no JTree/JBSplitter/CardLayout/maximumSize/vertical-glue + General expanded via defaultIndex + sections as collapsible panels + gateway.writeSetting/clearSetting + ConfigurationException",
+          "./gradlew test and buildPlugin pass on JDK21"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "The full settings test suite (SettingsTreeModelTest reworked + SettingsTableModelTest unchanged + InsrcSettingsConfigurableTest rewritten) is green"
+          },
+          {
+            "level": "smoke",
+            "name": "./gradlew test + buildPlugin pass on JDK21"
           }
         ]
       }
     ],
     "testStrategyCoverage": [
       {
-        "lldStrategyItem": "the tree-model builder yields category nodes in SettingsView.groupsOf order followed by one node per supplied section title (Per-role, Per-repo)",
+        "lldStrategyItem": "settingsTree yields category nodes in groupsOf order then one node per section title",
         "coveredByTaskIds": [
           "t1"
         ]
       },
       {
-        "lldStrategyItem": "the default-selected/expanded node is 'General' when a General category exists (ac5)",
+        "lldStrategyItem": "defaultIndex is the 'General' category when present, else the first category, else the first node",
         "coveredByTaskIds": [
           "t1"
         ]
       },
       {
-        "lldStrategyItem": "when there is no 'General' category, the default selection falls back to the first category node (ac5 edge)",
+        "lldStrategyItem": "every catalog option maps to exactly one category node's options (no drop/dup/reorder); an out-of-groups option gets a trailing node",
         "coveredByTaskIds": [
           "t1"
         ]
       },
       {
-        "lldStrategyItem": "every catalog option maps to exactly one category node's row-set (union == all options, no dup/drop, groupsOf order preserved)",
-        "coveredByTaskIds": [
-          "t1"
-        ]
-      },
-      {
-        "lldStrategyItem": "an out-of-groups option still gets a trailing category node (no drop)",
-        "coveredByTaskIds": [
-          "t1"
-        ]
-      },
-      {
-        "lldStrategyItem": "the table model exposes 3 columns Key/Value/Default; getValueAt returns the path, controlValue(path) rendered, and the option default via renderScalar",
+        "lldStrategyItem": "the table model exposes 3 columns Key/Value/Default; getValueAt reads path/controlValue/renderScalar(default); isCellEditable only on Value",
         "coveredByTaskIds": [
           "t2"
         ]
       },
       {
-        "lldStrategyItem": "isCellEditable is true only for the Value column",
+        "lldStrategyItem": "setValueAt routes to SettingsEditModel.editField; a boolean round-trips as a Boolean; isModified/collectDirty reflect the edit",
         "coveredByTaskIds": [
           "t2"
         ]
       },
       {
-        "lldStrategyItem": "setValueAt on the Value column calls SettingsEditModel.editField(path,raw) and the value/isModified reflect it (ac6)",
+        "lldStrategyItem": "resetToDefault maps to markResetToDefault (Value shows default; apply would Clear)",
         "coveredByTaskIds": [
           "t2"
         ]
       },
       {
-        "lldStrategyItem": "a boolean row's Value round-trips as a Boolean (not a string) through editField (ac6)",
+        "lldStrategyItem": "InsrcSettingsConfigurable builds COLLAPSIBLE category panels with expand/collapse toggle headers (no JTree/JBSplitter/CardLayout) (ac2)",
         "coveredByTaskIds": [
-          "t2"
+          "t3",
+          "t4"
         ]
       },
       {
-        "lldStrategyItem": "a reset-to-default on a row maps to markResetToDefault -> the Value shows the default and apply would emit a Clear (ac6)",
+        "lldStrategyItem": "each category panel body is an editable JTable over SettingsTableModel with a Key/Value/Default model + the per-type Value cell editor (ac3/ac4/ac6)",
         "coveredByTaskIds": [
-          "t2"
+          "t3",
+          "t4"
         ]
       },
       {
-        "lldStrategyItem": "InsrcSettingsConfigurable builds a JTree of the categories + registers the sections as tree nodes (JTree present; renders section.title/component() for override nodes) (ac2/ac7)",
+        "lldStrategyItem": "the whole page is in ONE JScrollPane (AS_NEEDED) and each table is content-sized (preferredScrollableViewportSize); no maximumSize caps / Box.createVerticalGlue (ac1)",
         "coveredByTaskIds": [
-          "t3"
+          "t3",
+          "t4"
         ]
       },
       {
-        "lldStrategyItem": "the detail uses an editable JTable with Key/Value/Default columns bound to the model, not the old settingRow/collapsibleGroup flat layout (ac3/ac4/ac6)",
+        "lldStrategyItem": "General is expanded on first render via settingsTree.defaultIndex (ac5)",
         "coveredByTaskIds": [
-          "t3"
+          "t3",
+          "t4"
         ]
       },
       {
-        "lldStrategyItem": "the tree and the detail are each wrapped in a JScrollPane and NO maximumSize height caps / Box.createVerticalGlue remain in the render path (ac1)",
+        "lldStrategyItem": "the per-role/per-repo sections are rendered as collapsible panels + registered in the sections list; apply still gateway.writeSetting/clearSetting + throws ConfigurationException (ac6/ac7)",
         "coveredByTaskIds": [
-          "t3"
-        ]
-      },
-      {
-        "lldStrategyItem": "the page still applies via gateway.writeSetting/clearSetting and throws ConfigurationException on a not-Saved/validation failure (unchanged apply gate, ac6)",
-        "coveredByTaskIds": [
-          "t3"
-        ]
-      },
-      {
-        "lldStrategyItem": "'General' is selected/expanded on first render (a default-selection call is present) (ac5)",
-        "coveredByTaskIds": [
-          "t3"
+          "t3",
+          "t4"
         ]
       }
     ]
@@ -255,20 +353,17 @@
     {
       "id": "c1",
       "kind": "prior-artifact",
-      "ref": "LLD S001 dataModelChange 'InsrcSettingsConfigurable render shell' + api createComponent (the current flat renderBody/collapsibleGroup/settingRow/rowRefreshers + off-EDT read + apply fan-out being reworked)",
-      "quotedText": "renderBody's flat BoxLayout + collapsibleGroup + settingRow + rowRefreshers are REPLACED by the master JTree + detail; the JScrollPane wraps tree + detail independently (AS_NEEDED, no maximumSize caps / vertical glue); the sections list + SettingsEditModel + apply/isModified/reset fan-out are unchanged."
+      "ref": "LLD S001 invariant: editing round-trips through the UNCHANGED SettingsEditModel (isModified/collectDirty/reset->Clear) + off-EDT discipline (invokeLater root===panel, apply via runProcessWithProgressSynchronously)"
     },
     {
       "id": "c2",
       "kind": "prior-artifact",
-      "ref": "LLD S001 api SettingsView.groupsOf + SettingsEditModel + dataModelChanges (SettingsTreeModel, SettingsTableModel, per-type Value cell editor) — the pure grouping/render/edit surface the tree + table reuse",
-      "quotedText": "groupsOf buckets options declared-group-first/out-of-groups-trailing/every-option-once; SettingsEditModel (controlKind/controlValue/editField/markResetToDefault/validationError/collectDirty/onSaved) is consumed unchanged as the editable table's backing; renderScalar renders the Value/Default columns."
+      "ref": "LLD S001 invariant: groupsOf grouping stays authoritative (every option in exactly one category panel, groupsOf order, trailing bucket) and the page renders only what the daemon describes (settingsTree from catalog + section titles)"
     },
     {
       "id": "c3",
       "kind": "prior-artifact",
-      "ref": "LLD S001 api SettingsSection (PerRoleSection/PerRepoSection hosted as tree nodes via section.title + section.component())",
-      "quotedText": "SettingsSection { title; component(); isModified(); apply(); reset() } implemented by PerRoleSection + PerRepoSection; hosting them as tree nodes uses section.title + section.component(), keeping the host sections list + fan-out unchanged."
+      "ref": "LLD S001 invariant: override sub-sections (PerRoleSection/PerRepoSection) keep their own apply/isModified/reset through the host fan-out, hosted as collapsible panels via section.title + section.component() without modifying the section classes"
     }
   ]
 }

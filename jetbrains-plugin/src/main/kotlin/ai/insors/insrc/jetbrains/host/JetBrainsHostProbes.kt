@@ -73,13 +73,17 @@ object JetBrainsHostProbes {
     }
 
     /** Installed AND enabled — a disabled or absent plugin is treated as not present. */
-    private fun isInstalledAndEnabled(pluginIds: List<String>): Boolean =
-        pluginIds.any { id ->
-            // Public API: findEnabledPlugin returns non-null ONLY for an installed
-            // AND enabled plugin — same semantics as the former internal
-            // PluginManagerCore.getPlugin + deprecated descriptor.isEnabled.
-            PluginManager.getInstance().findEnabledPlugin(PluginId.getId(id)) != null
+    private fun isInstalledAndEnabled(pluginIds: List<String>): Boolean {
+        // Public, non-deprecated API: getLoadedPlugins() is the set of installed AND
+        // enabled plugins (a disabled plugin is not loaded) — same semantics we need,
+        // without the @ApiStatus.Internal PluginManager.findEnabledPlugin (which the
+        // Plugin Verifier flags) or the deprecated PluginManager.getPlugin.
+        val loaded = PluginManager.getLoadedPlugins()
+        return pluginIds.any { id ->
+            val pid = PluginId.getId(id)
+            loaded.any { it.pluginId == pid }
         }
+    }
 
     /**
      * Recognise a host file we can safely anchor a marker block into (c8), or

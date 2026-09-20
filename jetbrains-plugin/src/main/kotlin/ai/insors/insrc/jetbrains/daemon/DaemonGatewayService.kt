@@ -53,4 +53,8 @@ class DaemonGatewayService : DaemonGateway {
         delegate.clearSetting(pathSegments)
 
     override fun perRoleOverrides(): PerRoleOverridesResult = delegate.perRoleOverrides()
+
+    override fun perRepoOverrides(): PerRepoOverridesResult = delegate.perRepoOverrides()
+
+    override fun registeredRepos(): RegisteredReposResult = delegate.registeredRepos()
 }

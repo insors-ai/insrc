@@ -102,4 +102,44 @@ class InsrcSettingsConfigurableTest {
         assertTrue(src.contains("model.rows()"), "rows come from the model (daemon-derived, lc1)")
         assertTrue(src.contains("model.tierNames()"), "tier choices come from the model (daemon-derived)")
     }
+
+    @Test
+    fun `PerRepoSection persists via the sc2 gateway with a byRepo segment list, not a raw config write (S005)`() {
+        val src = read("src/main/kotlin/ai/insors/insrc/jetbrains/settings/PerRepoSection.kt")
+        assertTrue(src.contains("gateway.writeSetting"), "sets go through sc2 writeSetting")
+        assertTrue(src.contains("gateway.clearSetting"), "removals go through sc2 clearSetting")
+        assertFalse(
+            src.contains("\"config.write\""),
+            "the section must go through the gateway, never a raw config.write method string",
+        )
+        assertTrue(
+            src.contains("throw ConfigurationException"),
+            "a not-Saved leaf write throws ConfigurationException (ac2/ac3)",
+        )
+        // The three nested editors are driven from the model (daemon-derived, lc1/k5):
+        // coreFloor + tasks combos + per-tier runner/model text fields.
+        assertTrue(src.contains("model.rows()"), "rows come from the model (daemon-derived)")
+        assertTrue(src.contains("model.tierNames()"), "tier choices come from the model (daemon-derived)")
+        assertTrue(src.contains("model.roles()"), "per-role task rows come from the model (daemon-derived)")
+        assertTrue(src.contains("model.addableRepos()"), "the add-picker candidates come from the model")
+        assertTrue(src.contains("JComboBox"), "coreFloor + task tiers use a chooser")
+        assertTrue(src.contains("JTextField"), "per-tier runner/model use free-text fields (k5)")
+        assertTrue(src.contains("setTierField"), "the tiers editor edits runner/model leaves independently")
+    }
+
+    @Test
+    fun `InsrcSettingsConfigurable host registers a PerRepoSection and reads perRepoOverrides plus registeredRepos (S005)`() {
+        val src = read("src/main/kotlin/ai/insors/insrc/jetbrains/settings/InsrcSettingsConfigurable.kt")
+        assertTrue(src.contains("PerRepoSection("), "the host builds the per-repo section")
+        // The section rides the SAME sections list + off-EDT fan-out as S004 (no new machinery).
+        assertTrue(src.contains("sections.add(section)"), "the per-repo section is registered into the sections list")
+        // createComponent's off-EDT read gains the two new reads.
+        assertTrue(src.contains("gateway.perRepoOverrides()"), "createComponent reads perRepoOverrides")
+        assertTrue(src.contains("gateway.registeredRepos()"), "createComponent reads registeredRepos")
+        // A section is registered ONLY when both reads are Loaded (else a placeholder).
+        assertTrue(
+            src.contains("PerRepoOverridesResult.Loaded") && src.contains("RegisteredReposResult.Loaded"),
+            "the per-repo section renders only when both reads are Loaded",
+        )
+    }
 }

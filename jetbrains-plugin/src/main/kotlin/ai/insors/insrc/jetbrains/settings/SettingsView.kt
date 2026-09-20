@@ -1,8 +1,10 @@
 package ai.insors.insrc.jetbrains.settings
 
 import ai.insors.insrc.jetbrains.daemon.ConfigOptionDto
+import ai.insors.insrc.jetbrains.daemon.RepoOverrideDto
 import ai.insors.insrc.jetbrains.daemon.RoleDto
 import ai.insors.insrc.jetbrains.daemon.SettingsCatalogDto
+import ai.insors.insrc.jetbrains.daemon.TierSpecDto
 
 /**
  * The settings-page framework's PURE view logic (Story S002 / sc3), kept out of
@@ -391,4 +393,277 @@ class PerRoleOverridesModel(
         val s = state(roleId)
         s.saved = s.pending
     }
+}
+
+// ── Per-repo overrides (Story S005) ──────────────────────────────────────────
+
+/** Which leaf of a per-repo tier spec a [PerRepoOverridesModel.setTierField] edits. */
+enum class TierField(val segment: String) {
+    Runner("runner"),
+    Model("model"),
+}
+
+/**
+ * One per-repo override row the section renders (Story S005 / ac1): a repository
+ * with an override, carrying its full nested pending state — the scalar
+ * [coreFloor], the per-role [tasks] (roleId -> tier) map, and the per-tier
+ * [tiers] (tierName -> {runner,model}) map — plus [hasOverride] (always true for
+ * a rendered row).
+ */
+data class PerRepoRow(
+    val repoPath: String,
+    val coreFloor: String?,
+    val tasks: Map<String, String>,
+    val tiers: Map<String, TierSpecDto>,
+    val hasOverride: Boolean,
+)
+
+/**
+ * The pure, headless per-repo overrides editor state (Story S005 / sc5 internal),
+ * kept out of the Swing section so the load-bearing logic — which repos are
+ * overridden, the nested coreFloor/tasks/tiers edits, dirty tracking, and the
+ * repoPath -> literal-nested-segment mapping — is unit-testable (the S002-S004
+ * split; mirror-references the S004 [PerRoleOverridesModel] shape).
+ *
+ * A per-repo override lives under config's models.byRepo.<repoPath>.{coreFloor |
+ * tasks.<roleId> | tiers.<tierName>.<runner|model>}. Every write goes through sc2
+ * with the repoPath (and any dotted roleId) as ONE literal segment (k4), so a
+ * dotted/slashed path never mis-nests, and each write touches exactly that one
+ * leaf — per-repo isolation (ac2/ac3, lc1). Removing a whole override is ONE
+ * Clear at models.byRepo.<repoPath> (drops the entire subtree), never per-leaf.
+ */
+class PerRepoOverridesModel(
+    registeredRepos: List<String>,
+    roles: List<RoleDto>,
+    private val tierNames: List<String>,
+    current: Map<String, RepoOverrideDto>,
+) {
+    private val roleList: List<RoleDto> = roles
+    private val roleIds: Set<String> = roles.map { it.id }.toSet()
+
+    /** Mutable per-tier spec (runner/model), the working + saved copies of one tier. */
+    private class Tier(var runner: String?, var model: String?) {
+        fun copy(): Tier = Tier(runner, model)
+        fun toDto(): TierSpecDto = TierSpecDto(runner, model)
+    }
+
+    private class RepoState(saved: RepoOverrideDto?) {
+        // The last-saved baseline (mutable so onSaved can advance one leaf at a time).
+        var savedPresent: Boolean = saved != null
+        var savedCoreFloor: String? = saved?.coreFloor
+        val savedTasks: MutableMap<String, String> = saved?.tasks?.toMutableMap() ?: mutableMapOf()
+        val savedTiers: MutableMap<String, Tier> =
+            (saved?.tiers ?: emptyMap()).mapValues { Tier(it.value.runner, it.value.model) }.toMutableMap()
+
+        // The pending working copy, initialized from the baseline.
+        var present: Boolean = savedPresent
+        var coreFloor: String? = savedCoreFloor
+        val tasks: MutableMap<String, String> = savedTasks.toMutableMap()
+        val tiers: MutableMap<String, Tier> = savedTiers.mapValues { it.value.copy() }.toMutableMap()
+    }
+
+    // A stable order over EVERY known repoPath: the currently-overridden ones
+    // (config.show order) first, then registered repos with no override. No write
+    // ever targets a repoPath outside this set (addOverride requires a registered one).
+    private val order: List<String> =
+        current.keys.toList() + registeredRepos.filter { it !in current.keys }
+    private val registeredOrder: List<String> = registeredRepos
+    private val states: Map<String, RepoState> =
+        order.associateWith { RepoState(current[it]) }
+
+    private fun state(repoPath: String): RepoState =
+        states[repoPath] ?: throw IllegalArgumentException("unknown repoPath: $repoPath")
+
+    /** The allowed tier names (from sc1) — the coreFloor/tasks choosers' options. */
+    fun tierNames(): List<String> = tierNames
+
+    /** The recognized roles (from sc1) — the per-repo tasks (role->tier) editor's rows. */
+    fun roles(): List<RoleDto> = roleList
+
+    /** One row per repository that currently has a (pending) override (ac1). */
+    fun rows(): List<PerRepoRow> = order.mapNotNull { repoPath ->
+        val s = states.getValue(repoPath)
+        if (!s.present) return@mapNotNull null
+        PerRepoRow(
+            repoPath = repoPath,
+            coreFloor = s.coreFloor,
+            tasks = s.tasks.toMap(),
+            tiers = s.tiers.mapValues { it.value.toDto() },
+            hasOverride = true,
+        )
+    }
+
+    /** Registered repos with no (pending) override — the add-override candidates. */
+    fun addableRepos(): List<String> = registeredOrder.filter { !states.getValue(it).present }
+
+    /** Add an (empty) override for a registered repo that has none yet. */
+    fun addOverride(repoPath: String) {
+        val s = state(repoPath)
+        require(!s.present) { "repo already has an override: $repoPath" }
+        s.present = true
+    }
+
+    /** Remove a repo's whole override (a single Clear at the repoPath on apply). */
+    fun removeOverride(repoPath: String) {
+        state(repoPath).present = false
+    }
+
+    /** Set (or clear, with null) a repo's coreFloor tier. */
+    fun setCoreFloor(repoPath: String, tier: String?) {
+        require(tier == null || tier in tierNames) { "unknown tier: $tier" }
+        state(repoPath).coreFloor = tier
+    }
+
+    /** Set (or clear, with null) a repo's per-role task tier. */
+    fun setTaskTier(repoPath: String, roleId: String, tier: String?) {
+        require(roleId in roleIds) { "unknown roleId: $roleId" }
+        require(tier == null || tier in tierNames) { "unknown tier: $tier" }
+        val s = state(repoPath)
+        if (tier == null) s.tasks.remove(roleId) else s.tasks[roleId] = tier
+    }
+
+    /** Set (or clear, with null/empty) one leaf (runner|model) of a repo's per-tier spec. */
+    fun setTierField(repoPath: String, tierName: String, field: TierField, value: String?) {
+        require(tierName in tierNames) { "unknown tier: $tierName" }
+        val s = state(repoPath)
+        val v = value?.takeIf { it.isNotEmpty() }
+        val tier = s.tiers.getOrPut(tierName) { Tier(null, null) }
+        when (field) {
+            TierField.Runner -> tier.runner = v
+            TierField.Model -> tier.model = v
+        }
+        // Drop a tier that has neither leaf so it does not linger as an empty spec.
+        if (tier.runner == null && tier.model == null) s.tiers.remove(tierName)
+    }
+
+    /** Drop all pending intent, restoring every repo to its last-saved override. */
+    fun revert() {
+        for (s in states.values) {
+            s.present = s.savedPresent
+            s.coreFloor = s.savedCoreFloor
+            s.tasks.clear(); s.tasks.putAll(s.savedTasks)
+            s.tiers.clear()
+            for ((k, v) in s.savedTiers) s.tiers[k] = v.copy()
+        }
+    }
+
+    /** True iff any repo's pending state differs from its last-saved baseline. */
+    fun isModified(): Boolean = states.values.any { repoModified(it) }
+
+    private fun repoModified(s: RepoState): Boolean {
+        if (s.savedPresent && !s.present) return true // whole-override removal pending
+        if (!s.present) return false // never added, or add-then-remove
+        return leavesDiffer(s)
+    }
+
+    private fun leavesDiffer(s: RepoState): Boolean {
+        if (s.coreFloor != s.savedCoreFloor) return true
+        if (s.tasks != s.savedTasks) return true
+        val names = s.tiers.keys + s.savedTiers.keys
+        for (name in names) {
+            val p = s.tiers[name]
+            val q = s.savedTiers[name]
+            if ((p?.runner) != (q?.runner) || (p?.model) != (q?.model)) return true
+        }
+        return false
+    }
+
+    /**
+     * The dirty repos as leaf-granular [PendingWrite]s (per-key isolation, ac2/ac3):
+     *   - a whole-override removal  -> ONE Clear at [models,byRepo,repoPath];
+     *   - else each changed leaf    -> Set/Clear at its literal nested segment array
+     *     (coreFloor / tasks.<roleId> / tiers.<tierName>.<runner|model>).
+     * repoPath and a dotted roleId are each ONE literal segment (k4). Only changed
+     * leaves appear; same-value not dirty, add-then-revert / clear-of-unset a no-op.
+     */
+    fun collectWrites(): List<PendingWrite> {
+        val out = mutableListOf<PendingWrite>()
+        for (repoPath in order) {
+            val s = states.getValue(repoPath)
+            if (s.savedPresent && !s.present) {
+                // Drop the entire override subtree in a single Clear.
+                out.add(PendingWrite(base(repoPath), WriteOp.Clear))
+                continue
+            }
+            if (!s.present) continue
+            // coreFloor leaf.
+            if (s.coreFloor != s.savedCoreFloor) {
+                val seg = base(repoPath) + "coreFloor"
+                out.add(PendingWrite(seg, s.coreFloor?.let { WriteOp.Set(it) } ?: WriteOp.Clear))
+            }
+            // tasks leaves.
+            for (roleId in (s.tasks.keys + s.savedTasks.keys)) {
+                val pv = s.tasks[roleId]
+                val qv = s.savedTasks[roleId]
+                if (pv == qv) continue
+                val seg = base(repoPath) + "tasks" + roleId
+                out.add(PendingWrite(seg, pv?.let { WriteOp.Set(it) } ?: WriteOp.Clear))
+            }
+            // tiers leaves (runner + model per tier, independently).
+            for (tierName in (s.tiers.keys + s.savedTiers.keys)) {
+                val p = s.tiers[tierName]
+                val q = s.savedTiers[tierName]
+                for (field in TierField.entries) {
+                    val pv = if (field == TierField.Runner) p?.runner else p?.model
+                    val qv = if (field == TierField.Runner) q?.runner else q?.model
+                    if (pv == qv) continue
+                    val seg = base(repoPath) + "tiers" + tierName + field.segment
+                    out.add(PendingWrite(seg, pv?.let { WriteOp.Set(it) } ?: WriteOp.Clear))
+                }
+            }
+        }
+        return out
+    }
+
+    /**
+     * Advance the last-saved baseline for exactly the leaf named by [segments]
+     * (or the whole repo on a repoPath Clear) after its write persisted (ac2/ac3).
+     * [segments] is a PendingWrite's segment array from [collectWrites].
+     */
+    fun onSaved(segments: List<String>) {
+        // segments = [models, byRepo, repoPath, ...]
+        if (segments.size < 3) return
+        val repoPath = segments[2]
+        val s = states[repoPath] ?: return
+        when {
+            segments.size == 3 -> {
+                // Whole-override removal persisted: the repo leaves the baseline AND
+                // its working copy is wiped, so a re-add in the same dialog starts from
+                // a clean slate rather than resurrecting the just-dropped subtree. (The
+                // working copy is only reset here, on the PERSISTED clear — an
+                // un-applied remove keeps its working leaves so revert() / a remove-then-
+                // re-add without Apply still returns to the saved override.)
+                s.savedPresent = false
+                s.savedCoreFloor = null
+                s.savedTasks.clear()
+                s.savedTiers.clear()
+                s.present = false
+                s.coreFloor = null
+                s.tasks.clear()
+                s.tiers.clear()
+            }
+            segments.size == 4 && segments[3] == "coreFloor" -> {
+                s.savedPresent = true
+                s.savedCoreFloor = s.coreFloor
+            }
+            segments.size == 5 && segments[3] == "tasks" -> {
+                s.savedPresent = true
+                val roleId = segments[4]
+                val v = s.tasks[roleId]
+                if (v == null) s.savedTasks.remove(roleId) else s.savedTasks[roleId] = v
+            }
+            segments.size == 6 && segments[3] == "tiers" -> {
+                s.savedPresent = true
+                val tierName = segments[4]
+                val field = segments[5]
+                val pending = s.tiers[tierName]
+                val saved = s.savedTiers.getOrPut(tierName) { Tier(null, null) }
+                if (field == "runner") saved.runner = pending?.runner
+                if (field == "model") saved.model = pending?.model
+                if (saved.runner == null && saved.model == null) s.savedTiers.remove(tierName)
+            }
+        }
+    }
+
+    private fun base(repoPath: String): List<String> = listOf("models", "byRepo", repoPath)
 }

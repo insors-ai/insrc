@@ -1,0 +1,64 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1789896206464-9koxtq",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-20T09:23:26.464Z",
+    "model": "client",
+    "elapsedMs": 10,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b5f333f8d7ba421b",
+    "storyId": "s5"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "b5f333f8d7ba421b",
+    "storyId": "s5",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGateway.kt",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGatewayService.kt",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/InsrcSettingsConfigurable.kt",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/SettingsView.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleServiceTest.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/onboarding/OnboardingCleanupIntegrationTest.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/onboarding/OnboardingLifecycleTest.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/onboarding/OnboardingWiringTest.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/InsrcSettingsConfigurableTest.kt"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/InsrcSettingsConfigurable.kt:74",
+            "message": "createComponent issues perRoleOverrides() and perRepoOverrides() as two SEPARATE config.show round-trips (plus config.catalog + repo.list) — four sequential socket trips where two share an identical config.show read. Accepted efficiency nit: the reads are on the page-open off-EDT path (not hot), and merging them would couple the S004/S005 gateway methods. No correctness impact."
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 1
+    }
+  }
+}

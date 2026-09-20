@@ -5,6 +5,8 @@ import ai.insors.insrc.jetbrains.daemon.DaemonGateway
 import ai.insors.insrc.jetbrains.daemon.ApproveResult
 import ai.insors.insrc.jetbrains.daemon.SaveResult
 import ai.insors.insrc.jetbrains.daemon.PerRoleOverridesResult
+import ai.insors.insrc.jetbrains.daemon.PerRepoOverridesResult
+import ai.insors.insrc.jetbrains.daemon.RegisteredReposResult
 import ai.insors.insrc.jetbrains.daemon.SettingsCatalogResult
 import ai.insors.insrc.jetbrains.daemon.ArtifactContentResult
 import ai.insors.insrc.jetbrains.daemon.ResolveCommentResult
@@ -62,6 +64,8 @@ class OnboardingCleanupIntegrationTest : BasePlatformTestCase() {
         override fun writeSetting(pathSegments: List<String>, value: Any?): SaveResult = SaveResult.Unavailable("not used in this test")
         override fun clearSetting(pathSegments: List<String>): SaveResult = SaveResult.Unavailable("not used in this test")
         override fun perRoleOverrides(): PerRoleOverridesResult = PerRoleOverridesResult.Unavailable("not used in this test")
+        override fun perRepoOverrides(): PerRepoOverridesResult = PerRepoOverridesResult.Unavailable("not used in this test")
+        override fun registeredRepos(): RegisteredReposResult = RegisteredReposResult.Unavailable("not used in this test")
     }
 
     private fun present(host: AiHost) = HostProbe { HostResolution.Present(host) }

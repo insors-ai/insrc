@@ -256,6 +256,61 @@ sealed interface PerRoleOverridesResult {
 }
 
 /**
+ * One per-repo tier spec (Story S005): the two leaves under
+ * models.byRepo.<repoPath>.tiers.<tierName> — a `runner` and a `model`. Both are
+ * free-string daemon values (no sc1 enum domain), and either may be absent
+ * (null) when the config only stores one leaf; the plugin invents no default for
+ * an unset sibling (k5).
+ */
+data class TierSpecDto(
+    val runner: String?,
+    val model: String?,
+)
+
+/**
+ * The plugin mirror of ONE models.byRepo.<repoPath> entry (Story S005): the full
+ * per-repo TieringOverride — a scalar [coreFloor] tier, a per-role [tasks]
+ * (roleId -> tier) map, and a per-tier [tiers] (tierName -> {runner,model}) map.
+ * Parsed verbatim from config.show; the shape the per-repo editor consumes as its
+ * current state. Absent nested pieces degrade to null/empty, never a throw.
+ */
+data class RepoOverrideDto(
+    val coreFloor: String?,
+    val tasks: Map<String, String>,
+    val tiers: Map<String, TierSpecDto>,
+)
+
+/**
+ * The result of reading the current per-repo overrides (Story S005). Two-state,
+ * mirroring [PerRoleOverridesResult]: a [Loaded] map (repoPath -> its full
+ * [RepoOverrideDto], the daemon's models.byRepo) is DISTINCT from [Unavailable]
+ * (the daemon was unreachable / a transport fault), so the per-repo section never
+ * blanks an unreachable daemon into an empty (= "no overrides") list. A
+ * legitimately-empty override map is Loaded(emptyMap), not Unavailable.
+ */
+sealed interface PerRepoOverridesResult {
+    /** The daemon's current per-repo overrides: repoPath -> full override. Empty = none. */
+    data class Loaded(val overrides: Map<String, RepoOverrideDto>) : PerRepoOverridesResult
+
+    /** The daemon was unreachable / errored; [reason] explains. */
+    data class Unavailable(val reason: String) : PerRepoOverridesResult
+}
+
+/**
+ * The result of reading the daemon's registered repos (Story S005) — the
+ * repo.list `repos` paths — used to populate the per-repo add-override picker.
+ * Two-state like [PerRepoOverridesResult]: [Loaded] (possibly empty) is DISTINCT
+ * from [Unavailable] (unreachable / a transport fault / a framed error).
+ */
+sealed interface RegisteredReposResult {
+    /** The daemon's registered repo paths. Empty = none registered. */
+    data class Loaded(val repos: List<String>) : RegisteredReposResult
+
+    /** The daemon was unreachable / errored; [reason] explains. */
+    data class Unavailable(val reason: String) : RegisteredReposResult
+}
+
+/**
  * sc2 (Story S001): a thin handle to the backend daemon, shared across the
  * S002 wiring / S003 lifecycle / S005 onboarding branches. Read paths never
  * allocate registry membership (k2); every method takes the active project's
@@ -376,6 +431,26 @@ interface DaemonGateway {
      * throws.
      */
     fun perRoleOverrides(): PerRoleOverridesResult
+
+    /**
+     * Read the current per-repo overrides (Story S005) — the daemon's
+     * `models.byRepo` { repoPath -> {coreFloor, tasks, tiers} } map — over the
+     * EXISTING `config.show` IPC. These dynamic keys are not in the sc1 catalog
+     * `values`, so this is a separate read (mirrors [perRoleOverrides]). Returns
+     * [PerRepoOverridesResult.Loaded] (empty when none configured; a malformed
+     * nested leaf is skipped, never throws) or [PerRepoOverridesResult.Unavailable]
+     * on an unreachable/errored daemon.
+     */
+    fun perRepoOverrides(): PerRepoOverridesResult
+
+    /**
+     * Read the daemon's registered repos (Story S005) — the `repo.list` `repos`
+     * paths — over the EXISTING `repo.list` IPC, to populate the per-repo
+     * add-override picker. Returns [RegisteredReposResult.Loaded] (possibly empty)
+     * or [RegisteredReposResult.Unavailable] on an unreachable/errored daemon;
+     * never throws.
+     */
+    fun registeredRepos(): RegisteredReposResult
 }
 
 /**
@@ -626,6 +701,56 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
             PerRoleOverridesResult.Unavailable(e.message ?: "unexpected daemon fault")
         }
 
+    override fun perRepoOverrides(): PerRepoOverridesResult =
+        try {
+            // config.show returns the RAW config object directly (no {ok} envelope),
+            // so DaemonResult.data IS the config; models.byRepo is the
+            // { repoPath -> {coreFloor, tasks, tiers} } override map. Each level
+            // degrades independently: a missing/non-map models|byRepo -> empty Loaded;
+            // a non-map repo entry is skipped; a non-string leaf -> null/omitted.
+            // Never Unavailable for a shape mismatch (that is reserved for an
+            // unreachable/errored daemon).
+            val r = rpc.call(METHOD_CONFIG_SHOW, emptyMap())
+            if (!r.ok || r.error != null) {
+                PerRepoOverridesResult.Unavailable(r.error ?: "config.show returned an error")
+            } else {
+                val models = r.data["models"] as? Map<*, *>
+                val byRepo = models?.get("byRepo") as? Map<*, *> ?: emptyMap<Any?, Any?>()
+                val overrides = buildMap<String, RepoOverrideDto> {
+                    for ((repoKey, entryRaw) in byRepo) {
+                        val repoPath = repoKey as? String ?: continue
+                        val entry = entryRaw as? Map<*, *> ?: continue // skip a non-map entry
+                        put(repoPath, parseRepoOverride(entry))
+                    }
+                }
+                PerRepoOverridesResult.Loaded(overrides)
+            }
+        } catch (e: DaemonUnavailableException) {
+            PerRepoOverridesResult.Unavailable(e.message ?: "daemon unavailable")
+        } catch (e: RuntimeException) {
+            // Defense-in-depth: a malformed reply / transport fault -> Unavailable, never a throw.
+            PerRepoOverridesResult.Unavailable(e.message ?: "unexpected daemon fault")
+        }
+
+    override fun registeredRepos(): RegisteredReposResult =
+        try {
+            // repo.list returns the registered repo paths under `repos` (the same
+            // read isProjectRegistered uses). A framed error / unreachable daemon
+            // is Unavailable; a legitimately-empty list stays Loaded(emptyList).
+            val r = rpc.call(METHOD_REPO_LIST, emptyMap())
+            if (!r.ok || r.error != null) {
+                RegisteredReposResult.Unavailable(r.error ?: "repo.list returned an error")
+            } else {
+                val repos = (r.data[FIELD_REPOS] as? Collection<*>)
+                    ?.mapNotNull { it as? String } ?: emptyList()
+                RegisteredReposResult.Loaded(repos)
+            }
+        } catch (e: DaemonUnavailableException) {
+            RegisteredReposResult.Unavailable(e.message ?: "daemon unavailable")
+        } catch (e: RuntimeException) {
+            RegisteredReposResult.Unavailable(e.message ?: "unexpected daemon fault")
+        }
+
     companion object {
         const val METHOD_STATUS = "daemon.status"
         const val METHOD_REPO_LIST = "repo.list"
@@ -715,6 +840,35 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
         }
 
         private fun str(v: Any?): String = (v as? String) ?: ""
+
+        /**
+         * Parse ONE models.byRepo.<repoPath> entry into a [RepoOverrideDto] (Story
+         * S005), verbatim (k1). coreFloor is a scalar tier (non-string -> null);
+         * tasks is a { roleId -> tier } map (string tiers only, others skipped);
+         * tiers is a { tierName -> {runner, model} } map where each spec's runner
+         * and model are pulled as String? (non-string/absent -> null), and a
+         * non-map tier spec is skipped. Never throws on a shape mismatch.
+         */
+        private fun parseRepoOverride(entry: Map<*, *>): RepoOverrideDto {
+            val coreFloor = entry["coreFloor"] as? String
+            val tasks = buildMap<String, String> {
+                val raw = entry["tasks"] as? Map<*, *> ?: emptyMap<Any?, Any?>()
+                for ((k, v) in raw) {
+                    val roleId = k as? String ?: continue
+                    val tier = v as? String ?: continue // skip a non-string tier
+                    put(roleId, tier)
+                }
+            }
+            val tiers = buildMap<String, TierSpecDto> {
+                val raw = entry["tiers"] as? Map<*, *> ?: emptyMap<Any?, Any?>()
+                for ((k, v) in raw) {
+                    val tierName = k as? String ?: continue
+                    val spec = v as? Map<*, *> ?: continue // skip a non-map tier spec
+                    put(tierName, TierSpecDto(runner = spec["runner"] as? String, model = spec["model"] as? String))
+                }
+            }
+            return RepoOverrideDto(coreFloor = coreFloor, tasks = tasks, tiers = tiers)
+        }
 
         /**
          * Map the daemon's `config.catalog` reply to the settings DTO (Story S002,

@@ -2,7 +2,9 @@ package ai.insors.insrc.jetbrains.settings
 
 import ai.insors.insrc.jetbrains.daemon.ConfigOptionDto
 import ai.insors.insrc.jetbrains.daemon.DaemonGatewayService
+import ai.insors.insrc.jetbrains.daemon.PerRepoOverridesResult
 import ai.insors.insrc.jetbrains.daemon.PerRoleOverridesResult
+import ai.insors.insrc.jetbrains.daemon.RegisteredReposResult
 import ai.insors.insrc.jetbrains.daemon.SaveResult
 import ai.insors.insrc.jetbrains.daemon.SettingsCatalogResult
 import com.intellij.openapi.application.ApplicationManager
@@ -73,11 +75,13 @@ class InsrcSettingsConfigurable : Configurable {
         ApplicationManager.getApplication().executeOnPooledThread {
             val catalog = gateway.settingsCatalog()
             val overrides = gateway.perRoleOverrides()
+            val perRepo = gateway.perRepoOverrides()
+            val registered = gateway.registeredRepos()
             ApplicationManager.getApplication().invokeLater({
                 // Only render if this component is still the live page.
                 if (root === panel) {
                     panel.removeAll()
-                    panel.add(renderBody(catalog, overrides, gateway), BorderLayout.CENTER)
+                    panel.add(renderBody(catalog, overrides, perRepo, registered, gateway), BorderLayout.CENTER)
                     panel.revalidate()
                     panel.repaint()
                 }
@@ -180,6 +184,8 @@ class InsrcSettingsConfigurable : Configurable {
     private fun renderBody(
         result: SettingsCatalogResult,
         overrides: PerRoleOverridesResult,
+        perRepo: PerRepoOverridesResult,
+        registered: RegisteredReposResult,
         gateway: DaemonGatewayService,
     ): JComponent = when (result) {
         is SettingsCatalogResult.Unavailable -> {
@@ -215,6 +221,30 @@ class InsrcSettingsConfigurable : Configurable {
                     // Catalog loaded but the override read failed: show a placeholder,
                     // register no section (so apply/reset never touch a half-built model).
                     content.add(JLabel("Per-role overrides are unavailable — ${overrides.reason}"))
+            }
+            // The per-repo overrides sub-section (S005) below the per-role one. Needs
+            // BOTH the config.show read (current overrides) AND the repo.list read
+            // (add-picker candidates); if either is Unavailable, show a placeholder and
+            // register no section (apply/reset never touch a half-built model).
+            if (perRepo is PerRepoOverridesResult.Loaded && registered is RegisteredReposResult.Loaded) {
+                val section = PerRepoSection(
+                    PerRepoOverridesModel(
+                        registeredRepos = registered.repos,
+                        roles = result.catalog.roles,
+                        tierNames = result.catalog.tierNames,
+                        current = perRepo.overrides,
+                    ),
+                    gateway,
+                )
+                sections.add(section)
+                content.add(section.component())
+            } else {
+                val reason = when {
+                    perRepo is PerRepoOverridesResult.Unavailable -> perRepo.reason
+                    registered is RegisteredReposResult.Unavailable -> registered.reason
+                    else -> "unavailable"
+                }
+                content.add(JLabel("Per-repo overrides are unavailable — $reason"))
             }
             content.add(Box.createVerticalGlue())
             JScrollPane(content)

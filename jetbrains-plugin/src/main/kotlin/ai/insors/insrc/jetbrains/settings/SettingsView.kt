@@ -1,6 +1,7 @@
 package ai.insors.insrc.jetbrains.settings
 
 import ai.insors.insrc.jetbrains.daemon.ConfigOptionDto
+import ai.insors.insrc.jetbrains.daemon.RoleDto
 import ai.insors.insrc.jetbrains.daemon.SettingsCatalogDto
 
 /**
@@ -295,5 +296,99 @@ class SettingsEditModel(catalog: SettingsCatalogDto) {
             if (a is Number && b is Number) return a.toDouble() == b.toDouble()
             return a == b
         }
+    }
+}
+
+/** One per-role override row the section renders (Story S004 / ac1). */
+data class PerRoleRow(
+    val roleId: String,
+    /** The tier in effect: the pending override when overridden, else the role's default. */
+    val effectiveTier: String,
+    /** True when this role has a pending explicit override (vs default routing). */
+    val isOverride: Boolean,
+)
+
+/**
+ * The pure, headless per-role overrides editor state (Story S004 / sc4 internal),
+ * kept out of the Swing section so the load-bearing logic — override-vs-default,
+ * add/change/remove intent, dirty tracking, and the roleId->literal-segment
+ * mapping — is unit-testable (the review-epic split).
+ *
+ * A per-role override lives at config's models.tasks.<roleId> = a tier name; a
+ * role absent from that map uses its RoleDescriptor.defaultTier. The write goes
+ * through sc2 with the roleId as ONE literal segment (listOf("models","tasks",
+ * roleId)) so a DOTTED roleId (e.g. "design.contract.detail") is never mis-nested
+ * (k4), and each write touches exactly that one key (per-key isolation, ac2/ac3).
+ */
+class PerRoleOverridesModel(
+    roles: List<RoleDto>,
+    private val tierNames: List<String>,
+    current: Map<String, String>,
+) {
+    private class RoleState(val role: RoleDto, var saved: String?) {
+        /** The desired override: a tier name, or null = no override (default routing). */
+        var pending: String? = saved
+    }
+
+    // Preserve role order for stable rendering.
+    private val states: Map<String, RoleState> =
+        roles.associate { it.id to RoleState(it, current[it.id]) }
+    private val order: List<String> = roles.map { it.id }
+
+    private fun state(roleId: String): RoleState =
+        states[roleId] ?: throw IllegalArgumentException("unknown roleId: $roleId")
+
+    /** The allowed tier names (from sc1) — the chooser's options. */
+    fun tierNames(): List<String> = tierNames
+
+    /** One row per recognized role, reflecting the PENDING state (ac1). */
+    fun rows(): List<PerRoleRow> = order.map { roleId ->
+        val s = states.getValue(roleId)
+        val override = s.pending
+        PerRoleRow(
+            roleId = roleId,
+            effectiveTier = override ?: s.role.defaultTier,
+            isOverride = override != null,
+        )
+    }
+
+    /** Set (or change) a role's override to [tier] (one of tierNames). */
+    fun setOverride(roleId: String, tier: String) {
+        require(tier in tierNames) { "unknown tier: $tier" }
+        state(roleId).pending = tier
+    }
+
+    /** Remove a role's override so it falls back to default routing. */
+    fun removeOverride(roleId: String) {
+        state(roleId).pending = null
+    }
+
+    /** Drop all pending intent, restoring every role to its last-saved override. */
+    fun revert() {
+        for (s in states.values) s.pending = s.saved
+    }
+
+    /** True iff any role's pending override differs from its last-saved state. */
+    fun isModified(): Boolean = states.values.any { it.pending != it.saved }
+
+    /**
+     * The dirty roles as [PendingWrite]s: a set/change -> Set(tier) at
+     * listOf("models","tasks",roleId); a removal -> Clear. roleId is ONE literal
+     * segment (dots intact). Only changed roles appear (same-tier not dirty;
+     * remove-of-unset a no-op) — per-key isolation (ac2/ac3).
+     */
+    fun collectWrites(): List<PendingWrite> = order.mapNotNull { roleId ->
+        val s = states.getValue(roleId)
+        if (s.pending == s.saved) return@mapNotNull null
+        val segments = listOf("models", "tasks", roleId)
+        val pending = s.pending
+        if (pending != null) PendingWrite(segments, WriteOp.Set(pending))
+        else PendingWrite(segments, WriteOp.Clear)
+    }
+
+    /** Advance one role's last-saved baseline after its write persisted (ac2/ac3). */
+    fun onSaved(roleId: String) {
+        val s = state(roleId)
+        s.saved = s.pending
     }
 }

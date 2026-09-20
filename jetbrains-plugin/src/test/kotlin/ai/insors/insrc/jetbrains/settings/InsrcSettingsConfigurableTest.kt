@@ -68,4 +68,38 @@ class InsrcSettingsConfigurableTest {
             "S003 controls must be editable (no disabled read-only control)",
         )
     }
+
+    @Test
+    fun `InsrcSettingsConfigurable host renders SettingsSections and fans apply-isModified-reset to them (S004)`() {
+        val src = read("src/main/kotlin/ai/insors/insrc/jetbrains/settings/InsrcSettingsConfigurable.kt")
+        // A generic section list is rendered + driven (the sc3 seam is now consumed).
+        assertTrue(src.contains("sections"), "the host must keep a list of SettingsSections")
+        assertTrue(src.contains("PerRoleSection("), "the host builds the per-role section")
+        assertTrue(src.contains("section.apply()"), "apply fans out to sections")
+        assertTrue(src.contains("section.reset()"), "reset fans out to sections")
+        assertTrue(
+            src.contains("sections.any { it.isModified() }"),
+            "isModified ORs the sections",
+        )
+        // Section writes ride the SAME off-EDT ProgressManager block as the global writes.
+        assertTrue(src.contains("runProcessWithProgressSynchronously"), "writes run off the EDT")
+    }
+
+    @Test
+    fun `PerRoleSection persists via the sc2 gateway with a literal segment list, not a raw config write`() {
+        val src = read("src/main/kotlin/ai/insors/insrc/jetbrains/settings/PerRoleSection.kt")
+        assertTrue(src.contains("gateway.writeSetting"), "sets go through sc2 writeSetting")
+        assertTrue(src.contains("gateway.clearSetting"), "removals go through sc2 clearSetting")
+        assertFalse(
+            src.contains("\"config.write\""),
+            "the section must go through the gateway, never a raw config.write method string",
+        )
+        assertTrue(
+            src.contains("throw ConfigurationException"),
+            "a not-Saved section write throws ConfigurationException (ac2/ac3)",
+        )
+        // No hardcoded role or tier: the rows/tiers come from the model (daemon-derived).
+        assertTrue(src.contains("model.rows()"), "rows come from the model (daemon-derived, lc1)")
+        assertTrue(src.contains("model.tierNames()"), "tier choices come from the model (daemon-derived)")
+    }
 }

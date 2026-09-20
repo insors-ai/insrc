@@ -6,6 +6,7 @@ import ai.insors.insrc.jetbrains.ProjectContext
 import ai.insors.insrc.jetbrains.daemon.DaemonGateway
 import ai.insors.insrc.jetbrains.daemon.ApproveResult
 import ai.insors.insrc.jetbrains.daemon.SaveResult
+import ai.insors.insrc.jetbrains.daemon.PerRoleOverridesResult
 import ai.insors.insrc.jetbrains.daemon.SettingsCatalogResult
 import ai.insors.insrc.jetbrains.daemon.ArtifactContentResult
 import ai.insors.insrc.jetbrains.daemon.ResolveCommentResult
@@ -49,6 +50,8 @@ class DaemonLifecycleServiceTest : BasePlatformTestCase() {
             throw AssertionError("S003 must never call writeSetting (that is the settings page)")
         override fun clearSetting(pathSegments: List<String>): SaveResult =
             throw AssertionError("S003 must never call clearSetting (that is the settings page)")
+        override fun perRoleOverrides(): PerRoleOverridesResult =
+            throw AssertionError("S003 must never call perRoleOverrides (that is the settings page)")
     }
 
     private class FakeConsent(initial: Boolean) : SetupConsentStore {

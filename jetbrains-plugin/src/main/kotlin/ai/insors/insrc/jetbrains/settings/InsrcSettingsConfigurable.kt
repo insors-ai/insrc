@@ -2,6 +2,7 @@ package ai.insors.insrc.jetbrains.settings
 
 import ai.insors.insrc.jetbrains.daemon.ConfigOptionDto
 import ai.insors.insrc.jetbrains.daemon.DaemonGatewayService
+import ai.insors.insrc.jetbrains.daemon.PerRoleOverridesResult
 import ai.insors.insrc.jetbrains.daemon.SaveResult
 import ai.insors.insrc.jetbrains.daemon.SettingsCatalogResult
 import com.intellij.openapi.application.ApplicationManager
@@ -50,6 +51,9 @@ class InsrcSettingsConfigurable : Configurable {
     private var model: SettingsEditModel? = null
     private var optionPaths: List<String> = emptyList()
 
+    /** The sc3 sub-sections plugged in below the global groups (S004 per-role; S005 per-repo). */
+    private val sections = mutableListOf<SettingsSection>()
+
     /** Per-row control re-seeders, run on reset()/reset-to-default to reflect model state. */
     private val rowRefreshers = mutableListOf<() -> Unit>()
 
@@ -63,15 +67,17 @@ class InsrcSettingsConfigurable : Configurable {
         root = panel
         panel.add(JLabel("Loading insrc settings…"), BorderLayout.NORTH)
 
-        // Read off the EDT (a local socket round-trip), then render on the EDT.
+        // Read off the EDT (local socket round-trips), then render on the EDT. Two
+        // reads: the catalog (sc1) + the current per-role overrides (config.show).
         val gateway = service<DaemonGatewayService>()
         ApplicationManager.getApplication().executeOnPooledThread {
-            val result = gateway.settingsCatalog()
+            val catalog = gateway.settingsCatalog()
+            val overrides = gateway.perRoleOverrides()
             ApplicationManager.getApplication().invokeLater({
                 // Only render if this component is still the live page.
                 if (root === panel) {
                     panel.removeAll()
-                    panel.add(renderBody(result), BorderLayout.CENTER)
+                    panel.add(renderBody(catalog, overrides, gateway), BorderLayout.CENTER)
                     panel.revalidate()
                     panel.repaint()
                 }
@@ -80,8 +86,8 @@ class InsrcSettingsConfigurable : Configurable {
         return panel
     }
 
-    /** Modified iff the pure model has any unsaved change (S003). */
-    override fun isModified(): Boolean = model?.isModified() ?: false
+    /** Modified iff the global model OR any sub-section has an unsaved change (S003 + S004). */
+    override fun isModified(): Boolean = (model?.isModified() ?: false) || sections.any { it.isModified() }
 
     /**
      * Persist the dirty settings via sc2. Validation is checked FIRST so no
@@ -91,20 +97,24 @@ class InsrcSettingsConfigurable : Configurable {
      * partial-batch failure keeps the Saved ones and re-throws for the rest.
      */
     override fun apply() {
-        val m = model ?: return
-        // Block on the first validation error before issuing any write (ac1/ac4).
-        for (path in optionPaths) {
-            val err = m.validationError(path)
-            if (err != null) throw ConfigurationException("$path: $err")
+        val m = model
+        // Block on the first GLOBAL validation error before issuing any write (ac1/ac4).
+        if (m != null) {
+            for (path in optionPaths) {
+                val err = m.validationError(path)
+                if (err != null) throw ConfigurationException("$path: $err")
+            }
         }
-        val dirty = m.collectDirty()
-        if (dirty.isEmpty()) return
+        val dirty = m?.collectDirty() ?: emptyList()
+        val dirtySections = sections.filter { it.isModified() }
+        if (dirty.isEmpty() && dirtySections.isEmpty()) return
 
         // The daemon config.write does writeFileSync + reloadChatConfig per call,
-        // so N dirty fields = N blocking round-trips. Run them OFF the EDT under a
+        // so each write is a blocking round-trip. Run them all OFF the EDT under a
         // modal progress dialog (apply() stays synchronous — the Settings contract —
-        // but the EDT is not frozen and SlowOperations is not tripped). Model
-        // mutation (onSaved) and control re-seeding stay on the EDT below.
+        // but the EDT is not frozen and SlowOperations is not tripped). Global model
+        // mutation + control re-seeding stay on the EDT below; each section persists
+        // itself (model + gateway only, no Swing) inside the block.
         val gateway = service<DaemonGatewayService>()
         val saved = mutableListOf<String>()
         val failures = mutableListOf<String>()
@@ -121,21 +131,30 @@ class InsrcSettingsConfigurable : Configurable {
                     is SaveResult.Unavailable -> failures.add("$path: ${result.reason}")
                 }
             }
+            for (section in dirtySections) {
+                // Each section persists its own changes (off-EDT here) and throws
+                // ConfigurationException naming its failures; aggregate them.
+                try {
+                    section.apply()
+                } catch (e: ConfigurationException) {
+                    e.message?.let { failures.add(it) }
+                }
+            }
         }, "Saving insrc Settings…", false, null)
 
-        // Back on the EDT: advance the baseline for the Saved fields only (a partial
-        // failure keeps the failed fields dirty with their edits), then re-seed.
-        for (path in saved) m.onSaved(path)
+        // Back on the EDT: advance the baseline for the Saved GLOBAL fields only (a
+        // partial failure keeps the failed fields dirty with their edits), then re-seed.
+        for (path in saved) m?.onSaved(path)
         refreshAllRows()
         if (failures.isNotEmpty()) {
             throw ConfigurationException("Some settings could not be saved:\n" + failures.joinToString("\n"))
         }
     }
 
-    /** Revert every field to its last-saved value and re-seed the controls (ac3). */
+    /** Revert every field + section to its last-saved value and re-seed the controls (ac3). */
     override fun reset() {
-        val m = model ?: return
-        for (path in optionPaths) m.revertField(path)
+        model?.let { m -> for (path in optionPaths) m.revertField(path) }
+        for (section in sections) section.reset()
         refreshAllRows()
     }
 
@@ -143,6 +162,7 @@ class InsrcSettingsConfigurable : Configurable {
         root = null
         model = null
         optionPaths = emptyList()
+        sections.clear()
         rowRefreshers.clear()
     }
 
@@ -157,11 +177,16 @@ class InsrcSettingsConfigurable : Configurable {
 
     // --- rendering (thin shell over the pure SettingsView / SettingsEditModel) --
 
-    private fun renderBody(result: SettingsCatalogResult): JComponent = when (result) {
+    private fun renderBody(
+        result: SettingsCatalogResult,
+        overrides: PerRoleOverridesResult,
+        gateway: DaemonGatewayService,
+    ): JComponent = when (result) {
         is SettingsCatalogResult.Unavailable -> {
-            // No model, no editors on an unavailable page (apply/reset become no-ops).
+            // No model, no editors, no sections on an unavailable page (apply/reset become no-ops).
             model = null
             optionPaths = emptyList()
+            sections.clear()
             rowRefreshers.clear()
             unavailablePanel(result.reason)
         }
@@ -169,11 +194,27 @@ class InsrcSettingsConfigurable : Configurable {
             val editModel = SettingsEditModel(result.catalog)
             model = editModel
             optionPaths = result.catalog.options.map { it.path }
+            sections.clear()
             rowRefreshers.clear()
             val content = JPanel()
             content.layout = BoxLayout(content, BoxLayout.Y_AXIS)
             for (group in SettingsView.groupsOf(result.catalog)) {
                 content.add(collapsibleGroup(group, editModel))
+            }
+            // The per-role overrides sub-section (S004) below the global groups.
+            when (overrides) {
+                is PerRoleOverridesResult.Loaded -> {
+                    val section = PerRoleSection(
+                        PerRoleOverridesModel(result.catalog.roles, result.catalog.tierNames, overrides.overrides),
+                        gateway,
+                    )
+                    sections.add(section)
+                    content.add(section.component())
+                }
+                is PerRoleOverridesResult.Unavailable ->
+                    // Catalog loaded but the override read failed: show a placeholder,
+                    // register no section (so apply/reset never touch a half-built model).
+                    content.add(JLabel("Per-role overrides are unavailable — ${overrides.reason}"))
             }
             content.add(Box.createVerticalGlue())
             JScrollPane(content)

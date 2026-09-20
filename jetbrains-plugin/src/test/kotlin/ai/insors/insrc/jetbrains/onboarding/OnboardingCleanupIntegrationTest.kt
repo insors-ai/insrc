@@ -4,6 +4,7 @@ import ai.insors.insrc.jetbrains.LifecycleBroadcaster
 import ai.insors.insrc.jetbrains.daemon.DaemonGateway
 import ai.insors.insrc.jetbrains.daemon.ApproveResult
 import ai.insors.insrc.jetbrains.daemon.SaveResult
+import ai.insors.insrc.jetbrains.daemon.PerRoleOverridesResult
 import ai.insors.insrc.jetbrains.daemon.SettingsCatalogResult
 import ai.insors.insrc.jetbrains.daemon.ArtifactContentResult
 import ai.insors.insrc.jetbrains.daemon.ResolveCommentResult
@@ -60,6 +61,7 @@ class OnboardingCleanupIntegrationTest : BasePlatformTestCase() {
         override fun settingsCatalog(): SettingsCatalogResult = SettingsCatalogResult.Unavailable("not used in this test")
         override fun writeSetting(pathSegments: List<String>, value: Any?): SaveResult = SaveResult.Unavailable("not used in this test")
         override fun clearSetting(pathSegments: List<String>): SaveResult = SaveResult.Unavailable("not used in this test")
+        override fun perRoleOverrides(): PerRoleOverridesResult = PerRoleOverridesResult.Unavailable("not used in this test")
     }
 
     private fun present(host: AiHost) = HostProbe { HostResolution.Present(host) }

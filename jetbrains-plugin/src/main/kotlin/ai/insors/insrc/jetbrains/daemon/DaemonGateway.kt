@@ -240,6 +240,22 @@ sealed interface SaveResult {
 }
 
 /**
+ * The result of reading the current per-role overrides (Story S004). Two-state,
+ * mirroring [SettingsCatalogResult]: a [Loaded] map (roleId -> tierName, the
+ * daemon's models.tasks) is DISTINCT from [Unavailable] (the daemon was
+ * unreachable / a transport fault), so the per-role section never blanks an
+ * unreachable daemon into an empty (= "no overrides") list. A legitimately-empty
+ * override map is Loaded(emptyMap), not Unavailable.
+ */
+sealed interface PerRoleOverridesResult {
+    /** The daemon's current per-role overrides: roleId -> tier. Empty = no overrides. */
+    data class Loaded(val overrides: Map<String, String>) : PerRoleOverridesResult
+
+    /** The daemon was unreachable / errored; [reason] explains. */
+    data class Unavailable(val reason: String) : PerRoleOverridesResult
+}
+
+/**
  * sc2 (Story S001): a thin handle to the backend daemon, shared across the
  * S002 wiring / S003 lifecycle / S005 onboarding branches. Read paths never
  * allocate registry membership (k2); every method takes the active project's
@@ -350,6 +366,16 @@ interface DaemonGateway {
      * for s4/s5). Same [SaveResult] classification as [writeSetting].
      */
     fun clearSetting(pathSegments: List<String>): SaveResult
+
+    /**
+     * Read the current per-role model overrides (Story S004) — the daemon's
+     * `models.tasks` { roleId -> tier } map — over the EXISTING `config.show` IPC.
+     * These dynamic keys are not in the sc1 catalog `values`, so this is a separate
+     * read. Returns [PerRoleOverridesResult.Loaded] (empty when none configured) or
+     * [PerRoleOverridesResult.Unavailable] on an unreachable/errored daemon; never
+     * throws.
+     */
+    fun perRoleOverrides(): PerRoleOverridesResult
 }
 
 /**
@@ -572,6 +598,34 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
             SaveResult.Unavailable(e.message ?: "unexpected daemon fault")
         }
 
+    override fun perRoleOverrides(): PerRoleOverridesResult =
+        try {
+            // config.show returns the RAW config object directly (no {ok} envelope),
+            // so DaemonResult.data IS the config; models.tasks is the { roleId -> tier }
+            // override map. Missing/non-map degrades to an empty Loaded (= no overrides),
+            // NOT Unavailable (which is reserved for an unreachable/errored daemon).
+            val r = rpc.call(METHOD_CONFIG_SHOW, emptyMap())
+            if (!r.ok || r.error != null) {
+                PerRoleOverridesResult.Unavailable(r.error ?: "config.show returned an error")
+            } else {
+                val models = r.data["models"] as? Map<*, *>
+                val tasks = models?.get("tasks") as? Map<*, *> ?: emptyMap<Any?, Any?>()
+                val overrides = buildMap<String, String> {
+                    for ((k, v) in tasks) {
+                        val roleId = k as? String ?: continue
+                        val tier = v as? String ?: continue // skip non-string tiers, never throw
+                        put(roleId, tier)
+                    }
+                }
+                PerRoleOverridesResult.Loaded(overrides)
+            }
+        } catch (e: DaemonUnavailableException) {
+            PerRoleOverridesResult.Unavailable(e.message ?: "daemon unavailable")
+        } catch (e: RuntimeException) {
+            // Defense-in-depth: a malformed reply / transport fault -> Unavailable, never a throw.
+            PerRoleOverridesResult.Unavailable(e.message ?: "unexpected daemon fault")
+        }
+
     companion object {
         const val METHOD_STATUS = "daemon.status"
         const val METHOD_REPO_LIST = "repo.list"
@@ -582,6 +636,7 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
         const val METHOD_WORKFLOW_APPROVE = "workflow.approve"
         const val METHOD_CONFIG_CATALOG = "config.catalog"
         const val METHOD_CONFIG_WRITE = "config.write"
+        const val METHOD_CONFIG_SHOW = "config.show"
         const val FIELD_STALE = "stale"
         const val FIELD_REPOS = "repos"
         const val FIELD_ARTIFACTS = "artifacts"

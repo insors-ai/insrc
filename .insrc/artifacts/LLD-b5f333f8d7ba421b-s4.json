@@ -1,0 +1,598 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1789885744362-nsth05",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-20T06:37:09.930Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 485460,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-09-19T14:57:29.012Z",
+    "epicHash": "b5f333f8d7ba421b",
+    "epicSlug": "expose-all-daemon-config-settings-via",
+    "storyId": "s4",
+    "hldBaseRunId": "wf-1789841045868-kib3gd",
+    "hldEffectiveHash": "ee39a9f5fd11df006188d3b2038117bb0cd01aa61eaff9cccc9ea69fbfb78612",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 0
+      },
+      "reviewedAt": "2026-09-20T06:38:32.883Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-20T06:44:16.646Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "A daemon-owned, self-describing settings contract feeds a native JetBrains Settings page that renders whatever the daemon reports. The plugin adds config gateway methods behind the established sealed three-state result pattern and a native applicationConfigurable built purely from the daemon's description. Reads use the catalog IPC plus the existing value read; writes reuse the existing segment-aware write. The plugin owns no settings semantics; the daemon stays the single source of truth.",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "Self-describing settings catalog (enriched ConfigOption + role taxonomy) over config.catalog, and its plugin read surface",
+          "purpose": "The single daemon-owned description the whole IDE surface renders from: settings + the recognized roles/tiers + current values.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c1",
+            "c2"
+          ]
+        },
+        {
+          "id": "sc2",
+          "name": "Settings write surface (segment-aware write + clear) behind a sealed SaveResult",
+          "purpose": "The one way the IDE persists an edit: a segment-array write + a clear that removes a key, each returning a sealed SaveResult. Reused by both override editors.",
+          "ownedByStory": "s3",
+          "consumedByStories": [
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c5"
+          ]
+        },
+        {
+          "id": "sc3",
+          "name": "Settings page framework (Configurable host + grouped collapsible rendering + type→control mapping)",
+          "purpose": "The native applicationConfigurable + rendering scaffold, exposing the SettingsSection extension point where the dynamic-key sub-sections plug in.",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c3"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s4",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3"
+        ],
+        "internal": "Wholly private to s4: the per-role overrides sub-section — listing roles from sc1, showing override vs default routing, and add/change/remove that writes or clears models.tasks.<roleId> via sc2. Plugs into sc3's SettingsSection seam; introduces no contract others consume."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1"
+          ],
+          "depends": [],
+          "internal": "Daemon-side catalog enrichment + config.catalog assembly stay private to s1; other stories consume only the sc1 payload shape."
+        },
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc3"
+          ],
+          "depends": [
+            "sc1"
+          ],
+          "internal": "Read-only rendering + collapsible layout + the daemon-unavailable placeholder stay private to s2; the SettingsSection seam is declared here."
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc2"
+          ],
+          "depends": [
+            "sc1",
+            "sc3"
+          ],
+          "internal": "Per-type edit controls + validation/dirty/apply for global settings stay private to s3; it exposes only sc2 for the override editors."
+        },
+        {
+          "storyId": "s5",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "The per-repo overrides sub-section (models.byRepo.<repoPath>.*) is wholly private to s5; it plugs into sc3's section seam and reuses sc2."
+        }
+      ],
+      "rolloutPhase": "Phase D — Dynamic-key override editors (per-role, per-repo)",
+      "nonFunctional": {
+        "performance": "One config.catalog round-trip + the config.show read on open; rendering the roles is trivial Swing work. No polling; reads on open and after Apply.",
+        "security": "No new surface beyond the existing local Unix-socket transport; writes go only to config.json via config.write.",
+        "observability": "config.write logs each write; the plugin surfaces daemon-unavailable and write-rejected states rather than failing silently.",
+        "durability": "Persistence unchanged — the daemon's config.json write + reconcile own durability; the plugin never writes config.json directly."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "DaemonGateway.perRoleOverrides",
+          "signature": "fun perRoleOverrides(): PerRoleOverridesResult",
+          "parameters": [],
+          "returns": {
+            "type": "PerRoleOverridesResult",
+            "meaning": "Loaded(overrides: Map<String,String>) = the current models.tasks { roleId -> tierName } read over the EXISTING config.show IPC; Unavailable(reason) when the daemon is unreachable / a transport fault. No new daemon code."
+          },
+          "errors": [
+            {
+              "type": "PerRoleOverridesResult.Unavailable",
+              "condition": "DaemonUnavailableException / a RuntimeException from the config.show call (never throws)."
+            }
+          ],
+          "preconditions": [
+            "None — global read, no params (config.show is global)."
+          ],
+          "postconditions": [
+            "Parses data.models.tasks into a Map<String,String>; a missing/non-map models or tasks yields a Loaded empty map (distinct from Unavailable).",
+            "Only string-valued entries kept (a non-string tier skipped); never a partial throw."
+          ]
+        },
+        {
+          "name": "PerRoleOverridesModel",
+          "signature": "class PerRoleOverridesModel(roles: List<RoleDto>, tierNames: List<String>, current: Map<String,String>) { fun rows(): List<PerRoleRow>; fun setOverride(roleId: String, tier: String): Unit; fun removeOverride(roleId: String): Unit; fun revert(): Unit; fun isModified(): Boolean; fun collectWrites(): List<PendingWrite>; fun onSaved(roleId: String): Unit }",
+          "parameters": [
+            {
+              "name": "roles",
+              "type": "List<RoleDto>",
+              "purpose": "The recognized roles (id + defaultTier) from sc1 — daemon-derived (lc1), never hardcoded.",
+              "optional": false
+            },
+            {
+              "name": "tierNames",
+              "type": "List<String>",
+              "purpose": "The allowed tier names from sc1 (cheap/mid/core) — chooser options + validation domain.",
+              "optional": false
+            },
+            {
+              "name": "current",
+              "type": "Map<String,String>",
+              "purpose": "The current models.tasks overrides (roleId -> tier) from the config.show read; present = override, absent = default routing.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "PerRoleOverridesModel",
+            "meaning": "The pure, headless per-role editor state: override-vs-default rows, add/change/remove intent, dirty, and the roleId->segment mapping. Load-bearing logic lives here (not the Swing section) so it is unit-testable."
+          },
+          "errors": [
+            {
+              "type": "IllegalArgumentException",
+              "condition": "setOverride/removeOverride with a roleId not in `roles`, or setOverride with a tier not in `tierNames` (programmer error)."
+            }
+          ],
+          "preconditions": [
+            "setOverride's tier is one of tierNames."
+          ],
+          "postconditions": [
+            "rows() returns one PerRoleRow per role {roleId, effectiveTier, isOverride}, reflecting PENDING state; effectiveTier = pending override tier when overridden else defaultTier (ac1).",
+            "isModified() true iff any role's pending override differs from its `current` state.",
+            "collectWrites() returns only changed roles as PendingWrite(listOf(\"models\",\"tasks\",roleId), Set(tier)) for add/change and (..., Clear) for a removal — roleId is ONE literal segment (dots intact), per-key isolation (ac2/ac3).",
+            "onSaved(roleId) advances that role's `current` baseline and clears its dirty flag.",
+            "Selecting the same tier a role already overrides to is NOT dirty; removing a role with no override is a no-op."
+          ]
+        },
+        {
+          "name": "PerRoleSection",
+          "signature": "class PerRoleSection(model: PerRoleOverridesModel, gateway: DaemonGateway) : SettingsSection { override val title: String; override fun component(): JComponent; override fun isModified(): Boolean; override fun apply(); override fun reset() }",
+          "parameters": [
+            {
+              "name": "model",
+              "type": "PerRoleOverridesModel",
+              "purpose": "The pure per-role edit state the section renders + drives.",
+              "optional": false
+            },
+            {
+              "name": "gateway",
+              "type": "DaemonGateway",
+              "purpose": "The sc2 write surface (writeSetting/clearSetting) the section applies through.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "SettingsSection",
+            "meaning": "The per-role sub-section plugged into the sc3 seam: a thin Swing shell of role rows (tier chooser + use-default/remove) bound to the model. apply() runs collectWrites via sc2 and advances onSaved on Saved; isModified/reset delegate to the model."
+          },
+          "errors": [
+            {
+              "type": "SettingsWriteException",
+              "condition": "apply surfaces a not-Saved SaveResult to the host so the host throws ConfigurationException preserving the pending intent (returned to the host, not thrown raw)."
+            }
+          ],
+          "preconditions": [
+            "Rendered only on a Loaded catalog; an Unavailable page installs no section."
+          ],
+          "postconditions": [
+            "apply writes only changed roles via sc2 with the literal segment array; a Saved role advances the model; a not-Saved role keeps its pending intent and is surfaced (ac2/ac3, never a false success).",
+            "Registers NO new shared contract; consumes sc1/sc2/sc3 only."
+          ]
+        },
+        {
+          "name": "InsrcSettingsConfigurable.apply",
+          "signature": "override fun apply(): Unit  // + isModified(), reset(), createComponent host glue for SettingsSection",
+          "parameters": [],
+          "returns": {
+            "type": "Unit",
+            "meaning": "The host now also drives registered SettingsSections: createComponent renders each section below the global groups; isModified() ORs the global model with any section.isModified(); apply() runs the global dirty writes AND each section's writes in the SAME off-EDT ProgressManager block, then throws ConfigurationException if any failed; reset() reverts the global model AND each section. Minimal glue activating the sc3 seam s2 declared."
+          },
+          "errors": [
+            {
+              "type": "ConfigurationException",
+              "condition": "any global field or section write returns not-Saved, or a validation error — thrown after the off-EDT writes so the dialog stays open with edits preserved (ac2/ac3)."
+            }
+          ],
+          "preconditions": [
+            "Loaded catalog; sections built from the same catalog + the perRoleOverrides read."
+          ],
+          "postconditions": [
+            "Per-key isolation: each section write is an independent sc2 call at one literal key; a partial failure advances only the Saved ones.",
+            "Writes run OFF the EDT (S003 pattern); model/section mutation + re-seed back on the EDT."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "PerRoleOverridesResult",
+        "change": "new",
+        "details": "New sealed interface in the daemon package: Loaded(val overrides: Map<String,String>) | Unavailable(val reason: String). The config.show-backed perRoleOverrides() result; two-state (mirrors SettingsCatalogResult) so an unreachable daemon is distinct from a legitimately-empty override map.",
+        "callSites": [
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGateway.kt"
+        ]
+      },
+      {
+        "entity": "PerRoleRow",
+        "change": "new",
+        "details": "New pure row DTO in the settings package: {roleId: String, effectiveTier: String, isOverride: Boolean}. What the section renders per role (ac1). Reuses PendingWrite/WriteOp from S003 for collectWrites().",
+        "callSites": [
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/SettingsView.kt"
+        ]
+      },
+      {
+        "entity": "RoleState (internal to PerRoleOverridesModel)",
+        "change": "new",
+        "details": "Per-role pure state: the RoleDto, the current-override tier (or none), the pending intent (override-to-tier / removed / unchanged). Private to s4.",
+        "callSites": [
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/SettingsView.kt"
+        ]
+      },
+      {
+        "entity": "InsrcSettingsConfigurable section list",
+        "change": "field-add",
+        "details": "The host gains a list of SettingsSection built on Loaded (S003 rendered only global groups); createComponent renders them and isModified/apply/reset fan out to them — activating the sc3 seam s2 declared but left unused.",
+        "callSites": [
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/InsrcSettingsConfigurable.kt"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Consumes settingsCatalog()'s roles (id+defaultTier) + tierNames UNCHANGED for the rows + chooser (lc1). Does NOT amend sc1: the CURRENT override values come from the existing config.show read (perRoleOverrides), not a grown catalog payload."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "Consumes writeSetting/clearSetting VERBATIM: add/change = writeSetting(listOf(\"models\",\"tasks\",roleId), tier); removal = clearSetting(listOf(\"models\",\"tasks\",roleId)). roleId is ONE literal segment (dotted roleId never mis-nested, k4; per-key isolation, ac2/ac3). Reuses the S003 SaveResult + off-EDT apply."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "Consumes the SettingsSection seam s2 declared: provides PerRoleSection : SettingsSection + minimal host glue to render registered sections and fan isModified/apply/reset. Activates the declared extension point; does not redesign sc3."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The daemon is unreachable when reading the current per-role overrides on page open.",
+          "detection": "perRoleOverrides() catches DaemonUnavailableException/RuntimeException from config.show and returns PerRoleOverridesResult.Unavailable(reason).",
+          "response": "The section renders an unavailable placeholder and installs no editable rows; consistent with the settingsCatalog Unavailable page.",
+          "userImpact": "The section is shown unavailable rather than an empty/misleading role list; retry on reopen.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A per-role override write is rejected by the daemon (config.write ok=false).",
+          "detection": "sc2.writeSetting/clearSetting returns SaveResult.Rejected (data['ok']==false) — the S003 classification.",
+          "response": "The host apply does not advance that role via onSaved, keeps the pending intent, collects the failure, throws ConfigurationException naming the role; other roles' Saved writes stand.",
+          "userImpact": "Clear failure; the pending override/removal preserved; never a false success (ac2/ac3).",
+          "recoverable": true
+        },
+        {
+          "scenario": "The daemon drops mid-apply after some role writes succeeded.",
+          "detection": "a later write throws DaemonUnavailableException -> SaveResult.Unavailable; the host records it in failures.",
+          "response": "Already-Saved roles advanced; failed + remaining roles keep pending intent; apply throws ConfigurationException summarizing failures.",
+          "userImpact": "Honest partial progress; no override silently lost (ac2/ac3).",
+          "recoverable": true
+        },
+        {
+          "scenario": "config.show returns a config whose models.tasks is present but not a JSON object.",
+          "detection": "perRoleOverrides's `as? Map` cast fails -> treated as no overrides (empty); non-string entries skipped.",
+          "response": "The editor shows every role as default routing rather than throwing; the developer can still add overrides.",
+          "userImpact": "Degrades to 'no overrides' instead of a crash.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A roleId that contains dots (e.g. 'design.contract.detail') is overridden.",
+          "expected": "collectWrites emits PendingWrite(listOf(\"models\",\"tasks\",\"design.contract.detail\"), Set(tier)) — roleId ONE segment; config.write keys models.tasks['design.contract.detail'] flat (k4/ac2)."
+        },
+        {
+          "input": "Set a role's override to the SAME tier it already overrides to.",
+          "expected": "Not dirty; collectWrites omits it; no write."
+        },
+        {
+          "input": "Set a role's override equal to its defaultTier.",
+          "expected": "An explicit override write (models.tasks.<roleId> = defaultTier) — dirty vs 'no override', written, NOT auto-converted to a removal; removal is the separate use-default affordance."
+        },
+        {
+          "input": "Mark a removal on a role that has an override, then revert before apply.",
+          "expected": "revert() restores every role to `current`; isModified()=false; no daemon call."
+        },
+        {
+          "input": "The daemon has an override for a roleId NOT in the recognized role set.",
+          "expected": "rows() lists only recognized roles (lc1); the unknown key is not shown and is left untouched (per-key isolation)."
+        },
+        {
+          "input": "The per-role overrides map is empty.",
+          "expected": "Every recognized role listed as default routing (ac1); isModified()=false until a change."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The overridable roles + tier names come from the daemon's recognized taxonomy (sc1), never hardcoded (lc1).",
+          "source": "c1"
+        },
+        {
+          "text": "A per-role write goes through config.write with a LITERAL [models, tasks, roleId] segment array so a dotted roleId is never mis-nested; per-key isolation — one role's key never disturbs another or the surrounding models.tasks map.",
+          "source": "c5"
+        },
+        {
+          "text": "The plugin talks to the daemon only over the existing Unix-socket transport and honours its framing (config.show returns the object directly; config.write's ok lives in data); no new transport, no direct config.json write.",
+          "source": "c4"
+        },
+        {
+          "text": "The daemon stays the single source of truth: removing an override CLEARS the key so the role falls back to the daemon's default routing.",
+          "source": "c7"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove the pure per-role logic headlessly: override-vs-default rows, add/change/remove intent, dirty, and the DOTTED roleId->literal-segment mapping + per-key isolation.",
+          "subjects": [
+            "rows(): override shows its value, absent shows defaultTier (ac1)",
+            "dirty semantics: same-tier not dirty; remove-of-unset no-op; default-tier is an explicit override",
+            "collectWrites: Set at listOf('models','tasks',roleId) / Clear; a DOTTED roleId stays ONE segment (ac2/ac3, k4)",
+            "per-key isolation: one changed role -> exactly one PendingWrite",
+            "revert()/onSaved(roleId)"
+          ],
+          "fixturesNeeded": [
+            "roles (incl. a dotted roleId) + tierNames [cheap,mid,core] + a current map with one override and one unset role"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove the config.show-backed perRoleOverrides read + parse against the real transport framing.",
+          "subjects": [
+            "Loaded(map) from data.models.tasks; missing/non-map -> Loaded empty; non-string skipped",
+            "DaemonUnavailable/RuntimeException -> Unavailable",
+            "WireRpc over real UnixSocketDaemonRpc.parse: {result:{models:{tasks:{...}}}} -> Loaded (config.show returns the object directly)"
+          ],
+          "fixturesNeeded": [
+            "FakeDaemonRpc returning a canned config",
+            "WireRpc replaying a config.show JSON reply through parse"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Guard the section + host glue by source-scan (Swing shell not headlessly bootable).",
+          "subjects": [
+            "PerRoleSection applies via gateway.writeSetting/clearSetting with listOf('models','tasks',...) not a raw config.write/dotted string",
+            "InsrcSettingsConfigurable renders registered SettingsSections + fans isModified/apply/reset; section writes ride the off-EDT apply",
+            "no hardcoded role/tier literal in the section (built from catalog.roles)"
+          ],
+          "fixturesNeeded": [
+            "Read of PerRoleSection.kt + InsrcSettingsConfigurable.kt source"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "PerRoleOverridesModel.rows lists overrides with value + non-overrides as default routing",
+            "perRoleOverrides parses data.models.tasks (Fake + WireRpc)"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "collectWrites emits Set at listOf('models','tasks',roleId) with a DOTTED roleId as one segment",
+            "per-key isolation: adding one override -> exactly one PendingWrite",
+            "source-scan: PerRoleSection applies via gateway.writeSetting (segment list)"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "collectWrites emits Clear on removal",
+            "removing one override leaves others unchanged (per-key isolation)",
+            "onSaved after a clear advances the role to default-routing baseline"
+          ]
+        }
+      ],
+      "testFramework": "JUnit5 (org.junit.jupiter) on JDK21 via ./gradlew test, matching S002/S003's SettingsEditModelTest/SettingsWriteGatewayTest; source-scan tests read the Kotlin source. No BasePlatformTestCase and no daemon/TS test (config.show + config.write reused unchanged)."
+    },
+    "migration": {
+      "stateBefore": "After S003 (main c5eab8f) the page edits the GLOBAL catalog settings via sc2 with a pure SettingsEditModel + off-EDT apply. The sc3 SettingsSection interface is declared but the InsrcSettingsConfigurable host NEVER renders a section. The gateway has no read of the dynamic per-role overrides (models.tasks.<roleId>); sc1's `values` carries only the ~31 static paths. config.show + config.write exist and are unchanged.",
+      "stateAfter": "The page shows a per-role overrides sub-section below the global groups: each recognized role with its effective tier + override-vs-default, add/change (writeSetting models.tasks.<roleId>=tier) and remove (clearSetting) via sc2. A thin perRoleOverrides read over config.show supplies the current overrides; a pure PerRoleOverridesModel owns the logic; PerRoleSection plugs into the now-activated sc3 host glue. Daemon UNCHANGED; s5 not built.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add PerRoleOverridesResult + DaemonGateway.perRoleOverrides() over config.show + the DaemonGatewayService delegate + stubs in the 4 test doubles. Additive to the interface.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add the pure PerRoleOverridesModel + PerRoleRow (+ RoleState) reusing PendingWrite/WriteOp; no existing-symbol changes.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add PerRoleSection : SettingsSection + the minimal host glue in InsrcSettingsConfigurable (section list on Loaded, render below groups, fan isModified/apply(off-EDT)/reset). Activates the sc3 seam.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Extend the test suite (PerRoleOverridesModelTest, perRoleOverrides gateway Fake+WireRpc, Configurable source-scan) and run ./gradlew test on JDK21.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "The DaemonGateway interface only GAINS perRoleOverrides() (+ 4 test-double stubs); settingsCatalog/writeSetting/clearSetting and all S001-S003 behaviour unchanged. config.show + config.write reused verbatim — no daemon code change, config.json stays valid, older/newer daemons interoperate. A per-role write lands at models.tasks.<roleId> (the daemon's existing dynamic-key namespace); per-key isolation leaves existing overrides untouched. A page against an Unavailable daemon renders no section. No migration or data rewrite.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "config.show read + generic SettingsSection registry + pure per-role model",
+        "oneLineSummary": "A thin gateway read over the existing config.show yields the current models.tasks map; a pure PerRoleOverridesModel owns the logic; a PerRoleSection : SettingsSection plugs into the host, which renders registered sections generically and fans apply/isModified/reset to them.",
+        "approach": "perRoleOverrides() over config.show -> Map<roleId,tier>; PerRoleOverridesModel(roles, tierNames, current) exposes rows/setOverride/removeOverride/revert/isModified/collectWrites/onSaved with roleId as one literal segment; PerRoleSection : SettingsSection; minimal host glue renders sections + fans apply/isModified/reset; s5 reuses the same glue.",
+        "pros": [
+          "Reads current overrides from an EXISTING daemon IPC (config.show) named in the HLD — no daemon change, no sc1 amendment.",
+          "Load-bearing logic (override-vs-default, dotted roleId->segments, add/change/remove, dirty) is pure + headless-testable.",
+          "Activates the sc3 seam generically so s5 reuses it with zero further host change.",
+          "Reuses sc2 verbatim + the S003 off-EDT apply."
+        ],
+        "cons": [
+          "A second read round-trip (config.catalog + config.show) on open — trivial for a local socket.",
+          "The host-glue edit touches s2's file (mitigated: only consumes the declared seam).",
+          "A new gateway read even though s4 owns no contract — an s4-internal consumption, not a shared contract."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Amend sc1 to include current per-role override values in the catalog payload",
+        "oneLineSummary": "Propose an HLD amendment (sharedContract.fieldAdd) so config.catalog also carries the current models.tasks overrides, read from the existing settingsCatalog().",
+        "approach": "fieldAdd roleOverrides to SettingsCatalogPayload/DTO; the daemon's buildSettingsCatalog folds config's models.tasks in; the section reads catalog.roleOverrides. Same pure model + host glue otherwise.",
+        "pros": [
+          "One read instead of two; overrides arrive with the roles/tierNames.",
+          "Rides the same sealed SettingsCatalogResult."
+        ],
+        "cons": [
+          "Requires editing s1's daemon code + the sc1 DTO — inside s1's adjacent boundary, needs an HLD amendment + re-approval for a value config.show already provides.",
+          "Grows sc1's payload unnecessarily.",
+          "Couples s4's rollout to an sc1 change."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Only partial on sc1: it redesigns another story's contract + daemon code for a capability the existing config.show already exposes; a1 gets the same result within s4's boundary."
+      },
+      {
+        "id": "a3",
+        "name": "config.show read but hardcode the per-role section in the Configurable (logic in the shell)",
+        "oneLineSummary": "Same config.show read, but build the per-role rows + add/change/remove logic directly inside InsrcSettingsConfigurable instead of a pure model + generic SettingsSection.",
+        "approach": "perRoleOverrides() read as in a1, but the Configurable constructs the rows inline, tracks dirty by walking combo boxes, and calls sc2 in apply — no pure model, no generic section list.",
+        "pros": [
+          "Fewest new types.",
+          "Everything in one place."
+        ],
+        "cons": [
+          "Load-bearing override/dirty/dotted-segment logic lives in the untestable Swing shell — the silent-defect gap (ac1/ac2/ac3 effectively untested).",
+          "Leaves the sc3 seam dead and forces s5 to duplicate inline host code.",
+          "Walking live combo boxes for dirty state is fragile + EDT-coupled; the dotted-key mapping is buried."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Partial on ac1/ac2/ac3 (logic in the untestable shell) and partial on sc3 (seam unused) — the exact pattern the review split exists to prevent."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/config/settings-catalog.ts:82-84 + src/config/role-taxonomy.ts",
+      "quotedText": "buildSettingsCatalog: roles = taxonomy.roles.map({id, defaultTier}); tierNames = Object.keys(taxonomy.rankOf) (cheap/mid/core) — the daemon-derived role set/tiers sc1 delivers."
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/config/settings-catalog.ts (values assembly)",
+      "quotedText": "buildSettingsCatalog `values` is populated only for the static CONFIG_CATALOG paths; the dynamic models.tasks.<roleId> keys never appear in it."
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "jetbrains-plugin/.../settings/SettingsView.kt (S002) + InsrcSettingsConfigurable.kt",
+      "quotedText": "interface SettingsSection { title; component(); isModified(); apply(); reset() } declared as the sc3 seam but never rendered by the host (renderBody builds only the catalog groups)."
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/daemon/index.ts:1296 (config.show) + jetbrains-plugin/.../daemon/UnixSocketDaemonRpc.kt",
+      "quotedText": "config.show returns the raw config object directly (parse-or-{}), so data.models.tasks is the current { roleId: tier } map; the transport framing is the existing Unix-socket JSON-RPC."
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/config/write-path.ts + jetbrains-plugin/.../daemon/DaemonGateway.kt (sc2)",
+      "quotedText": "models.tasks.<roleId> keys contain dots; sc2 writeSetting/clearSetting take a LITERAL List<String> so roleId is one segment; setConfigAtPath sets/removes only that leaf (per-key isolation)."
+    },
+    {
+      "id": "c7",
+      "kind": "convention",
+      "ref": "HLD constraint k5 / CLAUDE.md project principles",
+      "quotedText": "Changing which values are stored is the daemon's job; the plugin owns no settings semantics or defaults — removing an override clears the key so the daemon default governs."
+    }
+  ]
+}

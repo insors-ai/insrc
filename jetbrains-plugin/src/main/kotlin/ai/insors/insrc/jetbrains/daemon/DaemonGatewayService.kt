@@ -51,4 +51,6 @@ class DaemonGatewayService : DaemonGateway {
 
     override fun clearSetting(pathSegments: List<String>): SaveResult =
         delegate.clearSetting(pathSegments)
+
+    override fun perRoleOverrides(): PerRoleOverridesResult = delegate.perRoleOverrides()
 }

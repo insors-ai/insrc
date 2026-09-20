@@ -1,0 +1,58 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1789922425418-8xdq63",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-20T16:40:25.419Z",
+    "model": "client",
+    "elapsedMs": 3,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "be438ed37a36f5fc",
+    "storyId": "S001"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "be438ed37a36f5fc",
+    "storyId": "S001",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "src/daemon/index.ts",
+        "src/daemon/queue.ts",
+        "src/shared/types.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/daemon/index.ts:552",
+            "message": "repo.stats matches params.repoPath against the registry by EXACT string equality (no resolve()/normalization), so a trailing-slash or non-canonical spelling of a registered repo returns {error: not a registered repo} instead of its stats. Intentional — identical to the sibling repo.resolveForCwd handler, and clients get canonical paths from repo.list. Accepted residual."
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 1
+    }
+  }
+}

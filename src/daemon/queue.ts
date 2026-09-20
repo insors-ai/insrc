@@ -1,3 +1,4 @@
+import { sep } from 'node:path';
 import type { IndexJob } from '../shared/types.js';
 import { getLogger } from '../shared/logger.js';
 
@@ -20,6 +21,35 @@ export class IndexQueue {
 
   /** Current number of pending jobs. */
   get depth(): number { return this.queue.length; }
+
+  /**
+   * Pending jobs attributable to one repo (Story repo-stats / S001). Counts a
+   * queued job when it names `repoPath` directly (`full` / `reembed` /
+   * `doc-summarise-repo`) or its `filePath` lives under `repoPath` (`file` /
+   * `config-file`). Repo-agnostic jobs (`config-full` / `config-reindex` /
+   * `doc-summarise-entity`) never count. Read-only over the in-memory queue;
+   * the private `queue` array is not exposed.
+   */
+  depthForRepo(repoPath: string): number {
+    const prefix = repoPath.endsWith(sep) ? repoPath : repoPath + sep;
+    let n = 0;
+    for (const job of this.queue) {
+      switch (job.kind) {
+        case 'full':
+        case 'reembed':
+        case 'doc-summarise-repo':
+          if (job.repoPath === repoPath) n++;
+          break;
+        case 'file':
+        case 'config-file':
+          if (job.filePath === repoPath || job.filePath.startsWith(prefix)) n++;
+          break;
+        default:
+          break; // config-full / config-reindex / doc-summarise-entity: not per-repo
+      }
+    }
+    return n;
+  }
 
   /** Add a job to the end of the queue. */
   enqueue(job: IndexJob): void {

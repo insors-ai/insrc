@@ -1,0 +1,405 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1789920153160-3mmdom",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-20T16:05:47.125Z",
+    "epicCreatedAt": "2026-09-20T16:05:47.126Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 193951,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "be438ed37a36f5fc",
+    "epicSlug": "add-new-repo-stats-daemon-ipc",
+    "storyId": "S001",
+    "lldRunId": "wf-1789919341873-xbemgn",
+    "lldEffectiveHash": "be438ed37a36f5fc4d6a1e922f777ec9733c201f878350e2ea889b98fccb542f",
+    "review": {
+      "artifact": "plan",
+      "stage": "plan",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "ref": "t1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "RepoStatus, EntityKind, and Language are existing types in src/shared/types.ts that RepoStats reuses.",
+          "evidence": "type RepoStatus, type EntityKind, type Language all resolve in src/shared/types.ts; interface RepoStats has 0 src hits — correct, it is the new type t1 adds.",
+          "action": "None.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl2",
+          "ref": "t2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "IndexQueue has a private jobs array and a global get depth(); t2 adds depthForRepo without exposing the array.",
+          "evidence": "class IndexQueue + private readonly queue + get depth() resolve in src/daemon/queue.ts; depthForRepo has 0 src hits — correct, it is the new accessor t2 adds.",
+          "action": "None.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl3",
+          "ref": "t2",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "IndexJob variants carry repoPath (full/reembed/doc-summarise-repo) or filePath (file/config-file) for per-repo depth attribution.",
+          "evidence": "All five IndexJob variants (full/reembed/doc-summarise-repo with repoPath, file/config-file with filePath) resolve in src.",
+          "action": "None; per-repo depth attribution is well-founded.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl4",
+          "ref": "t3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "collectRepoStats reuses store.entity.getRange()+decodeEntityRow, store.outEdge.getRange(), and listRepos — all existing.",
+          "evidence": "decodeEntityRow, entity/outEdge sub-DBs, and listRepos all resolve in src — the reads collectRepoStats reuses.",
+          "action": "None.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl5",
+          "ref": "t4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The daemon handler map in src/daemon/index.ts holds inline handlers (repo.list, daemon.status) where the new repo.stats handler is registered; repo.stats does not exist yet.",
+          "evidence": "'repo.list'/'daemon.status' handlers + getGraphStore + listRepos(db) resolve in src/daemon/index.ts; 'repo.stats' has 0 src hits — correct, it is the new handler t4 adds.",
+          "action": "None.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl6",
+          "ref": "t5",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The graph-store test idiom setGraphStorePath/closeGraphStore over a tmpdir exists (the integration test extends it).",
+          "evidence": "setGraphStorePath + closeGraphStore resolve in src/db/graph/store.ts — the tmpdir test idiom the integration test extends.",
+          "action": "None.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl7",
+          "ref": "tasks",
+          "kind": "ordering",
+          "severity": "LOW",
+          "premise": "Task order is a valid topological order: t3 depends on t1+t2, t4 on t3, t5 on t3+t4; acyclic.",
+          "evidence": "Task dependency graph t3<-t1,t2; t4<-t3; t5<-t3,t4 is acyclic and order 1..5 is a valid topological order.",
+          "action": "None.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl8",
+          "ref": "tasks",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "The five tasks collectively cover the whole LLD handoff (c1 entities, c2 relations, c3 type+registry, c4 queue accessor, c5 handler) with every derivedFrom citation referenced.",
+          "evidence": "derivedFrom union {c1,c2,c3,c4,c5} covers the full LLD handoff; every citation is referenced by ≥1 task.",
+          "action": "None; coverage complete.",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 8
+      },
+      "reviewedAt": "2026-09-20T16:06:51.514Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-20T16:26:49.169Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add the RepoStats type to src/shared/types.ts",
+        "summary": "Add the additive RepoStats interface (repoPath, status: RepoStatus, lastIndexed?, addedAt, errorMsg?, fileCount, filesByLanguage: Record<string,number>, entityCount, entityCountByKind: Record<string,number>, relationCount, sizeBytes, pendingJobs) reusing the existing RepoStatus/EntityKind/Language unions. No existing type changes.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "src/shared/types.ts exports an interface RepoStats with exactly the LLD fields; status is typed RepoStatus; the byLanguage/byKind maps are Record<string,number>",
+          "tsc passes; no existing type in types.ts is modified"
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "tsc typecheck: RepoStats is exported from src/shared/types.ts with the LLD field shape (compiled implicitly by the build + the aggregator/source-scan tests importing it)"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Add IndexQueue.depthForRepo read accessor (src/daemon/queue.ts)",
+        "summary": "Add a read-only depthForRepo(repoPath): number method to IndexQueue that counts currently-queued IndexJobs attributable to repoPath — jobs whose repoPath===repoPath (full/reembed/doc-summarise-repo) or whose filePath is under repoPath+sep (file/config-file). The private queue array is NOT exposed and the existing get depth() is unchanged.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "depthForRepo counts full/reembed/doc-summarise-repo jobs by repoPath and file/config-file jobs by filePath-under-repo; unrelated/global jobs are not counted; returns 0 for a repo with no jobs",
+          "the private IndexJob[] stays private (no new getter exposing it) and get depth() is byte-unchanged"
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "IndexQueue.depthForRepo: a full/reembed/doc-summarise-repo job with repoPath===R counts toward R; a file/config-file job whose filePath is under R+sep counts toward R"
+          },
+          {
+            "level": "unit",
+            "name": "IndexQueue.depthForRepo: a job for another repo (or a global config-full) does NOT count toward R; returns 0 for a repo with no queued jobs; get depth() unchanged and the private jobs array not exposed"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Create src/daemon/repo-stats.ts (pure buildRepoStats + thin collectRepoStats)",
+        "summary": "New module: pure buildRepoStats(entities, relationSourceRepos, registeredRepos, sizeOf, pendingFor) that groups entity rows per repo (fileCount = distinct files; filesByLanguage = distinct (file,language) pairs; entityCount; entityCountByKind), counts relationSourceRepos per repo, and fills registry + sizeOf + pendingFor — ignoring rows for unregistered repos, emitting one RepoStats per registered repo. Plus the thin collectRepoStats(store, registeredRepos, queue) that does one store.entity.getRange() scan (building the u64→repo map) + one store.outEdge.getRange() scan (resolving each source u64→repo, skipping danglers) + best-effort fs.statSync sizing (missing file → 0) + queue.depthForRepo, then delegates to buildRepoStats. The two symbols share the file + accumulator shape; the acceptanceChecks keep the pure-vs-I/O concerns separated.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "buildRepoStats is PURE (no store/fs/queue access; sizeOf/pendingFor injected), deterministic, and emits one RepoStats per registeredRepos entry with correct counts/breakdowns; a mixed-language file counts once in fileCount but in each language bucket; a cross-repo edge is attributed to its SOURCE repo; unregistered-repo rows and dangling edges are ignored",
+          "collectRepoStats reuses store.entity.getRange()+decodeEntityRow + store.outEdge.getRange() + listRepos-provided rows + queue.depthForRepo, sizes via fs.statSync with best-effort 0 on a missing file, and is read-only (no store/queue mutation)"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "buildRepoStats: fileCount = distinct file paths per repo; filesByLanguage = distinct (file,language) pairs (a mixed-language file counts once in fileCount but in each language bucket)"
+          },
+          {
+            "level": "unit",
+            "name": "buildRepoStats: entityCount = total rows for the repo; entityCountByKind groups by EntityKind"
+          },
+          {
+            "level": "unit",
+            "name": "buildRepoStats: relationCount = count of relationSourceRepos per repo (source-repo attribution); a source-repo not in registeredRepos and a dangling source are ignored"
+          },
+          {
+            "level": "unit",
+            "name": "buildRepoStats: registry fields copied verbatim from the RegisteredRepo row; a registered repo with zero entities yields a zero-count RepoStats (present, not omitted)"
+          },
+          {
+            "level": "unit",
+            "name": "buildRepoStats: sizeBytes = the injected sizeOf value for the repo's distinct file set; pendingJobs = the injected pendingFor(repoPath)"
+          },
+          {
+            "level": "unit",
+            "name": "buildRepoStats: an entity row whose repo is not a registered repo is ignored (never invents a repo); an empty entities/relations input yields all-zero RepoStats per registered repo"
+          },
+          {
+            "level": "integration",
+            "name": "collectRepoStats over a tmpdir store: seeded entities across two repos + out-edges (incl. a cross-repo edge) yield the expected per-repo fileCount/filesByLanguage/entityCount/entityCountByKind/relationCount"
+          },
+          {
+            "level": "integration",
+            "name": "collectRepoStats: sizeBytes reflects the summed on-disk bytes of the seeded files; a seeded entity whose file was NOT written to disk contributes 0 without throwing"
+          },
+          {
+            "level": "integration",
+            "name": "collectRepoStats: a cross-repo edge is counted under its source repo only"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Register the inline repo.stats handler in src/daemon/index.ts",
+        "summary": "Add a 'repo.stats' handler to the daemon handler map (next to repo.list/daemon.status): read getGraphStore()+listRepos(db)+the queue, call collectRepoStats, and return the single RepoStats for params.repoPath (or `{ error: 'repo.stats: <path> is not a registered repo' }` when unregistered) or the full RepoStats[] when repoPath is omitted. Additive; no existing handler changes; read-only.",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "'repo.stats' is registered in the index.ts handler map and delegates to collectRepoStats/buildRepoStats; with repoPath it returns one RepoStats (or {error} when unregistered, not thrown); omitted returns RepoStats[] (=== [] when zero repos)",
+          "the handler mutates nothing (no writeFileSync/setConfigAtPath/store put/enqueue) and does not alter repo.list/daemon.status"
+        ],
+        "derivedFrom": [
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "source-scan: src/daemon/index.ts registers a 'repo.stats' handler that delegates to collectRepoStats/buildRepoStats and returns a single RepoStats for params.repoPath else the RepoStats[] array"
+          },
+          {
+            "level": "unit",
+            "name": "source-scan: the handler returns { error } (not throw) when repoPath is not in listRepos(), and is READ-ONLY (no writeFileSync/setConfigAtPath/store put/enqueue in the handler body); src/shared/types.ts declares the RepoStats interface"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Tests + local gate (tsc + test sweep)",
+        "summary": "Add unit(buildRepoStats) over in-memory rows + stub sizeOf/pendingFor; unit(IndexQueue.depthForRepo) over an enqueue()-seeded queue; integration(collectRepoStats) over a real tmpdir store (setGraphStorePath/closeGraphStore) with seeded entities/edges + real temp files; and a source-scan of index.ts asserting the repo.stats handler shape + read-only. Run npm run build (tsc) + npx tsx --test 'src/**/__tests__/*.test.ts' locally (no GitHub CI).",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t3",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "unit + integration + source-scan tests cover the LLD test strategy (counts/breakdowns, size best-effort, per-repo queue depth, registry fields, zero-count/orphan/dangling/cross-repo edge, {error} for unregistered, read-only)",
+          "tsc clean and the full test sweep passes locally"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "npm run build (tsc) is clean and npx tsx --test 'src/**/__tests__/*.test.ts' passes (the full repo-stats unit + integration + source-scan suites green)"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "fileCount = distinct file paths per repo; filesByLanguage = distinct (file,language) pairs (a mixed-language file counts once in fileCount but in each language bucket)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "entityCount = total rows for the repo; entityCountByKind groups by EntityKind",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "relationCount = count of relationSourceRepos entries per repo (source-repo attribution); a source-repo not in registeredRepos and a dangling source are ignored",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "registry fields (status/lastIndexed?/addedAt/errorMsg?) copied verbatim from the RegisteredRepo row; a registered repo with zero entities yields a zero-count RepoStats (present, not omitted)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "sizeBytes = the value returned by the injected sizeOf for that repo's distinct file set; pendingJobs = the injected pendingFor(repoPath)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "an entity row whose repo is not a registered repo is ignored (never invents a repo); an empty entities/relations input yields all-zero RepoStats per registered repo",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "a full/reembed/doc-summarise-repo job with repoPath===R counts toward R; a file/config-file job whose filePath is under R+sep counts toward R",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "a job for another repo (or a global config-full) does NOT count toward R",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "depthForRepo returns 0 for a repo with no queued jobs; the existing global get depth() is unchanged and the private jobs array is not exposed",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "seed entities across two repos (with real file paths on disk) + out-edges (incl. a cross-repo edge) via the store put APIs, then assert collectRepoStats yields the expected per-repo fileCount/filesByLanguage/entityCount/entityCountByKind/relationCount",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "sizeBytes reflects the summed on-disk bytes of the seeded files; a seeded entity whose file was NOT written to disk contributes 0 to sizeBytes without throwing",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "a cross-repo edge is counted under its source repo only",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/daemon/index.ts registers a 'repo.stats' handler that delegates to collectRepoStats/buildRepoStats and returns a single RepoStats for params.repoPath else the RepoStats[] array",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "the handler returns `{ error }` (not throw) when repoPath is not in listRepos(), and is READ-ONLY (no writeFileSync/setConfigAtPath/store put/enqueue in the handler body)",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/shared/types.ts declares the RepoStats interface",
+        "coveredByTaskIds": [
+          "t4",
+          "t1"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 invariant/grounding: entities scanned via store.entity.getRange()+decodeEntityRow yielding repo/file/kind/language — the source of file/entity counts + language/kind breakdown (buildRepoStats grouping)."
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 invariant/grounding: relations are outEdge/inEdge edges attributed to the SOURCE entity's repo (dependency-closure scoping) — the source of relationCount."
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contract: RepoStats type + the registry read (listRepos → RegisteredRepo status/lastIndexed/addedAt/errorMsg) consumed unchanged."
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contract: IndexQueue.depthForRepo new read-only accessor over the repoPath/filePath-tagged IndexJobs (private jobs array stays hidden, get depth() unchanged) — the source of pendingJobs."
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contract: the inline read-only repo.stats handler in src/daemon/index.ts's handler map delegating to collectRepoStats/buildRepoStats (single-vs-array by params.repoPath; {error} for unregistered)."
+    }
+  ]
+}

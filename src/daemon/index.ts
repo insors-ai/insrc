@@ -73,6 +73,7 @@ import { deleteEntitiesForRepo, findEntitiesByFile, getEntity } from '../db/enti
 import { deleteUnresolvedForRepo } from '../db/relations.js';
 import { Watcher } from '../indexer/watcher.js';
 import { IndexQueue } from './queue.js';
+import { collectRepoStats } from './repo-stats.js';
 import { IndexerService } from '../indexer/index.js';
 import { IpcServer } from './server.js';
 import {
@@ -534,6 +535,23 @@ async function main(): Promise<void> {
 
 		'repo.list': async () => {
 			return await listRepos(db);
+		},
+
+		// Combined per-repo index statistics in one call (Story
+		// add-new-repo-stats-daemon-ipc / S001). Read-only: scans the graph +
+		// registry + queue and returns a RepoStats for `repoPath` (or {error}
+		// when it is not a registered repo), or a RepoStats[] for every
+		// registered repo when `repoPath` is omitted. No mutation, no indexing.
+		'repo.stats': async (params) => {
+			const { repoPath } = (params ?? {}) as { repoPath?: unknown };
+			const repos = await listRepos(db);
+			const store = await getGraphStore();
+			const all = collectRepoStats(store, repos, queue);
+			if (typeof repoPath === 'string' && repoPath.length > 0) {
+				const one = all.find(s => s.repoPath === repoPath);
+				return one ?? { error: `repo.stats: ${repoPath} is not a registered repo` };
+			}
+			return all;
 		},
 
 		// Session-aware repo resolution: given a session CWD, return the

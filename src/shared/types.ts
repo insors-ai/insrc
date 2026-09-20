@@ -893,6 +893,38 @@ export interface DaemonStatus {
   lmdbFileSizeMb?:   number;
 }
 
+/** The index status of a registered repo — the same union `RegisteredRepo.status` uses. */
+export type RepoStatus = 'pending' | 'indexing' | 'ready' | 'error';
+
+/**
+ * Combined per-repo index statistics — the payload of the `repo.stats` IPC
+ * (Story add-new-repo-stats-daemon-ipc / S001). One object per registered
+ * workspace repo, computed on demand from the graph store + registry + queue;
+ * a read-only snapshot, never cached. Registry fields (status/lastIndexed/
+ * addedAt/errorMsg) are copied verbatim from the repo's `RegisteredRepo` row.
+ */
+export interface RepoStats {
+  repoPath:          string;
+  status:            RepoStatus;
+  lastIndexed?:      string;
+  addedAt:           string;
+  errorMsg?:         string;
+  /** Distinct indexed source files. */
+  fileCount:         number;
+  /** Distinct-file count keyed by Language (a mixed-language file counts in each bucket). */
+  filesByLanguage:   Record<string, number>;
+  /** Total indexed entities. */
+  entityCount:       number;
+  /** Entity counts keyed by EntityKind. */
+  entityCountByKind: Record<string, number>;
+  /** Relations attributed to this repo (by their source entity). */
+  relationCount:     number;
+  /** Summed on-disk bytes of the repo's distinct indexed source files (best-effort). */
+  sizeBytes:         number;
+  /** Queued index jobs attributable to this repo. */
+  pendingJobs:       number;
+}
+
 // ---------------------------------------------------------------------------
 // Plan graph — persistent across sessions
 // ---------------------------------------------------------------------------

@@ -4,6 +4,8 @@ import ai.insors.insrc.jetbrains.IdeKind
 import ai.insors.insrc.jetbrains.LifecycleBroadcaster
 import ai.insors.insrc.jetbrains.ProjectContext
 import ai.insors.insrc.jetbrains.daemon.DaemonGateway
+import ai.insors.insrc.jetbrains.daemon.SteeringSelection
+import ai.insors.insrc.jetbrains.daemon.RepoStatsResult
 import ai.insors.insrc.jetbrains.daemon.ApproveResult
 import ai.insors.insrc.jetbrains.daemon.SaveResult
 import ai.insors.insrc.jetbrains.daemon.PerRoleOverridesResult
@@ -34,8 +36,10 @@ class DaemonLifecycleServiceTest : BasePlatformTestCase() {
     private class FakeGateway(private val state: DaemonState) : DaemonGateway {
         override fun probe(): DaemonState = state
         override fun isProjectRegistered(projectRootPath: String): Boolean = false
-        override fun registerProject(projectRootPath: String): RegistrationResult =
+        override fun registerProject(projectRootPath: String, steering: SteeringSelection?): RegistrationResult =
             throw AssertionError("S003 must never call registerProject (that is S005)")
+        override fun repoStats(projectRootPath: String): RepoStatsResult =
+            throw AssertionError("S003 must never call repoStats")
         override fun pendingArtifacts(projectRootPath: String): PendingQueryResult =
             throw AssertionError("S003 must never call pendingArtifacts (that is the review panel)")
         override fun artifactReviewView(projectRootPath: String, mdPath: String): ArtifactContentResult =

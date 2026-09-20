@@ -93,6 +93,20 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h3>0.3.0</h3>
+        <ul>
+            <li><b>New: an insrc entry on the Project-view right-click menu.</b>
+                Right-click in the Project tool window and pick <b>insrc</b>. The
+                item is context-aware: when the open project is already registered
+                with the insrc daemon it reads <b>Show Repo status</b> and opens a
+                popup with that repo's index stats &mdash; indexed file count (and a
+                per-language breakdown), entity and relation counts (by kind),
+                on-disk size, pending index jobs, and last-indexed time. When the
+                project is not yet registered it reads <b>Register Repo</b> and opens
+                a popup that registers it, with optional toggles to inject the insrc
+                steering block into <code>CLAUDE.md</code> and/or
+                <code>AGENTS.md</code>.</li>
+        </ul>
         <h3>0.2.10</h3>
         <ul>
             <li><b>Vertical scrolling fix.</b> The Settings page is now itself a scroll
@@ -269,5 +283,22 @@
             displayName="insrc"
             instance="ai.insors.insrc.jetbrains.settings.InsrcSettingsConfigurable"/>
     </extensions>
+
+    <!--
+      insrc Project-view context-menu entry (Story
+      jetbrains-plugin-add-insrc-entry-project / S001) — the plugin's first action.
+      Dynamic label: "Show Repo status" when the project root is a registered insrc
+      repo, else "Register Repo". Attached to the PLATFORM group ProjectViewPopupMenu
+      so the single artifact contributes it in all four IDEs (no IDE-specific dep).
+    -->
+    <actions>
+        <action
+            id="ai.insors.insrc.ShowOrRegisterRepo"
+            class="ai.insors.insrc.jetbrains.actions.ShowOrRegisterRepoAction"
+            text="insrc"
+            description="Show the insrc repo status, or register this project with the insrc daemon.">
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
+        </action>
+    </actions>
 
 </idea-plugin>

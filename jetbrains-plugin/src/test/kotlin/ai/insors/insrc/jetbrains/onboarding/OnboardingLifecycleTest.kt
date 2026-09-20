@@ -3,6 +3,8 @@ package ai.insors.insrc.jetbrains.onboarding
 import ai.insors.insrc.jetbrains.IdeKind
 import ai.insors.insrc.jetbrains.ProjectContext
 import ai.insors.insrc.jetbrains.daemon.DaemonGateway
+import ai.insors.insrc.jetbrains.daemon.SteeringSelection
+import ai.insors.insrc.jetbrains.daemon.RepoStatsResult
 import ai.insors.insrc.jetbrains.daemon.ApproveResult
 import ai.insors.insrc.jetbrains.daemon.SaveResult
 import ai.insors.insrc.jetbrains.daemon.PerRoleOverridesResult
@@ -54,11 +56,13 @@ class OnboardingLifecycleTest {
             if (isRegisteredThrows) throw DaemonUnavailableException("insrc-test: daemon down")
             return registeredAnswer
         }
-        override fun registerProject(projectRootPath: String): RegistrationResult {
+        override fun registerProject(projectRootPath: String, steering: SteeringSelection?): RegistrationResult {
             registerCalls += projectRootPath
             if (registerThrows) throw DaemonUnavailableException("insrc-test: daemon down at accept")
             return registerResult
         }
+        override fun repoStats(projectRootPath: String): RepoStatsResult =
+            RepoStatsResult.Unavailable("not used in this test")
         override fun pendingArtifacts(projectRootPath: String): PendingQueryResult =
             PendingQueryResult.Available(emptyList())
         override fun artifactReviewView(projectRootPath: String, mdPath: String): ArtifactContentResult =

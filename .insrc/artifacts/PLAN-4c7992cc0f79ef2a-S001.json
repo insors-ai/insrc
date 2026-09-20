@@ -1,0 +1,458 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1789924621457-uf51d6",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-20T17:22:45.421Z",
+    "epicCreatedAt": "2026-09-20T17:22:45.422Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 343946,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "4c7992cc0f79ef2a",
+    "epicSlug": "jetbrains-plugin-add-insrc-entry-project",
+    "storyId": "S001",
+    "lldRunId": "wf-1789923781696-2z38yg",
+    "lldEffectiveHash": "4c7992cc0f79ef2aa4e344bb28de3cb849fb465c2795d5aa3fd9c0949caf54a6",
+    "review": {
+      "artifact": "plan",
+      "stage": "plan",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "p1",
+          "ref": "t1/t2",
+          "kind": "external-contract",
+          "severity": "LOW",
+          "premise": "The daemon repo.stats handler reads its request param as `repoPath` (not `repo`), so the plan's new PARAM_REPO_PATH=\"repoPath\" is the correct request key.",
+          "evidence": "CONFIRMED: src/daemon/index.ts:546 `const { repoPath } = (params ?? {})` and :545 the 'repo.stats' handler; the shipped LLD signature is `(params?: { repoPath?: string })`. The plan's PARAM_REPO_PATH=\"repoPath\" is the correct request key.",
+          "action": "none — verified sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p2",
+          "ref": "t1/t2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The existing DaemonGatewayImpl companion defines PARAM_REPO=\"repo\" (distinct from the repoPath key repo.stats needs) and PARAM_PATH=\"path\" (repo.add's key) — so reusing PARAM_REPO for repo.stats would be wrong, confirming the plan's need for a new PARAM_REPO_PATH.",
+          "evidence": "CONFIRMED: DaemonGateway.kt:795 PARAM_REPO=\"repo\", :793 PARAM_PATH=\"path\", and grep for PARAM_REPO_PATH returns 0 — so repo.stats needs the NEW constant the plan adds; reusing PARAM_REPO would send the wrong key.",
+          "action": "none — verified sound (the plan's PARAM_REPO_PATH addition is exactly right).",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p3",
+          "ref": "t3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "registerProject today calls repo.add with a path-only map and returns RegistrationResult, so extending it with a nullable-default steering param is an additive change over the existing impl.",
+          "evidence": "CONFIRMED: DaemonGateway.kt:524 `override fun registerProject(projectRootPath: String): RegistrationResult` and :525 `rpc.call(METHOD_REPO_ADD, mapOf(PARAM_PATH to projectRootPath))` (path-only). The nullable-default steering param is additive; the test FakeGateways override the current single-arg signature (they will compile against a default-arg overload).",
+          "action": "none — verified sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p4",
+          "ref": "t5",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The 'insrc' BALLOON NotificationGroup the RegisterRepoDialog success path reuses already exists in plugin.xml (no new declaration needed).",
+          "evidence": "CONFIRMED: src/main/resources/META-INF/plugin.xml:245 `<notificationGroup id=\"insrc\" displayType=\"BALLOON\"/>` — the dialog reuses it, no new declaration.",
+          "action": "none — verified sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p5",
+          "ref": "t6",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The two test idioms the plan reuses exist: the fake-DaemonRpc gateway unit test (Sc2DaemonGatewayTest) and the File.readText source-scan test (InsrcSettingsConfigurableTest).",
+          "evidence": "CONFIRMED: Sc2DaemonGatewayTest.kt:17 and InsrcSettingsConfigurableTest.kt:19 both exist — the two reused test idioms are real.",
+          "action": "none — verified sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p6",
+          "ref": "tasks",
+          "kind": "ordering",
+          "severity": "LOW",
+          "premise": "The task DAG is acyclic and topologically ordered: t1 has no deps; t2,t3 depend on t1; t4,t5 depend on t2,t3; t6 depends on t2-t5; t7 depends on t6.",
+          "evidence": "No probe (ordering is an artifact-internal fact). By inspection of the PLAN dependsOn lists the DAG is acyclic and order 1..7 is a valid topological sort: t1(∅)→t2,t3(t1)→t4,t5(t2,t3)→t6(t2-t5)→t7(t6). No cycle, no forward dependency.",
+          "action": "none — verified sound by inspection of the artifact's own dependency lists.",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 6
+      },
+      "reviewedAt": "2026-09-20T17:23:40.596Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-20T17:23:58.433Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add value types + companion constants",
+        "summary": "Add to the daemon package: RepoStatsDto (data class mirroring RepoStats 1:1 — repoPath/status:String, lastIndexed?/errorMsg?:String?, addedAt:String, fileCount/entityCount/relationCount/pendingJobs:Int, sizeBytes:Long, filesByLanguage/entityCountByKind:Map<String,Int>); the sealed interface RepoStatsResult { Loaded(stats) | Unavailable(reason) }; the plugin-side SteeringSelection(claude:Boolean, agents:Boolean); and the companion constants METHOD_REPO_STATS=\"repo.stats\", PARAM_REPO_PATH=\"repoPath\" (the repo.stats request key — the daemon handler reads params.repoPath, NOT the existing PARAM_REPO=\"repo\"), and PARAM_STEERING=\"steering\". Purely additive, no existing type touched.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "RepoStatsDto declares every RepoStats field with Int/Long/Map<String,Int>/String? types matching the LLD.",
+          "RepoStatsResult is a sealed interface with exactly Loaded(stats: RepoStatsDto) and Unavailable(reason: String).",
+          "SteeringSelection(claude:Boolean, agents:Boolean) exists plugin-side.",
+          "METHOD_REPO_STATS=\"repo.stats\", PARAM_REPO_PATH=\"repoPath\", and PARAM_STEERING=\"steering\" constants are declared in the DaemonGatewayImpl companion."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "RepoStatsResult is a sealed two-state (Loaded/Unavailable) and RepoStatsDto/SteeringSelection compile with the LLD field types (covered indirectly by the t6 gateway/parse tests that construct them)"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Add DaemonGateway.repoStats + parseRepoStats + service delegate",
+        "summary": "Add fun repoStats(projectRootPath: String): RepoStatsResult to the interface and DaemonGatewayImpl: rpc.call(METHOD_REPO_STATS, mapOf(PARAM_REPO_PATH to projectRootPath)) — the key MUST be \"repoPath\". Classify !r.ok||r.error!=null → Unavailable(reason) else Loaded(parseRepoStats(r.data)); wrap in the DaemonUnavailableException + RuntimeException try/catch (never throws). Add a private parseRepoStats companion helper coercing Gson Double→Int/Long and nested Map<*,*>→Map<String,Int>, absent optionals→null, unknown status verbatim. Add the delegating override in DaemonGatewayService.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "repoStats calls rpc with METHOD_REPO_STATS and params carrying the repoPath key (not \"repo\").",
+          "repoStats classifies a framed {error}/unreachable/malformed reply to Unavailable and never throws.",
+          "parseRepoStats coerces Double→Int/Long and nested maps to Map<String,Int>, leaving absent optionals null and an unknown status verbatim.",
+          "DaemonGatewayService delegates repoStats so it still compiles as a DaemonGateway."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "repoStats(root): a Gson-Double-shaped data map → RepoStatsResult.Loaded with coerced Int/Long + Map<String,Int>"
+          },
+          {
+            "level": "unit",
+            "name": "repoStats(root): framed {error} / DaemonUnavailableException / malformed reply → Unavailable (never throws)"
+          },
+          {
+            "level": "unit",
+            "name": "repoStats(root): the fake rpc records METHOD_REPO_STATS and params {repoPath: root}"
+          },
+          {
+            "level": "unit",
+            "name": "parseRepoStats: Double→Int/Long, nested maps→Map<String,Int>, absent optionals→null, unknown status verbatim, empty maps"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Extend registerProject to forward steering",
+        "summary": "Change registerProject to registerProject(projectRootPath: String, steering: SteeringSelection? = null): RegistrationResult; when steering != null build mapOf(PARAM_PATH to root, PARAM_STEERING to mapOf(\"claude\" to steering.claude, \"agents\" to steering.agents)) else the existing path-only map; keep the r.ok classification + DaemonUnavailableException throw. Update the DaemonGatewayService delegate. Nullable-default = backward-compatible. SteeringSelection(false,false) sends both-false (daemon no-op); null sends NO steering key.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "registerProject(root, SteeringSelection(true,false)) sends repo.add params with steering={claude:true,agents:false}.",
+          "registerProject(root, SteeringSelection(false,false)) sends steering={claude:false,agents:false} (daemon no-op).",
+          "registerProject(root) / registerProject(root, null) sends NO steering key (existing callers unchanged).",
+          "The nullable-default param compiles against the existing onboarding call site with no edit."
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "registerProject(root, SteeringSelection(true,false)): fake rpc records METHOD_REPO_ADD params path=root AND steering={claude:true,agents:false}"
+          },
+          {
+            "level": "unit",
+            "name": "registerProject(root, null) and registerProject(root): NO steering key in the recorded params (backward-compat)"
+          },
+          {
+            "level": "unit",
+            "name": "registerProject: r.ok=true→registered=true; r.ok=false→registered=false+reason; DaemonUnavailableException still propagates"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Add ShowOrRegisterRepoAction + first plugin.xml <actions> block",
+        "summary": "Add ShowOrRegisterRepoAction (package ai.insors.insrc.jetbrains.actions) extending AnAction: getActionUpdateThread()=ActionUpdateThread.BGT; update() reads e.project?.basePath (null/blank → isEnabledAndVisible=false) then isProjectRegistered(root) in try/catch → 'Show Repo status' vs 'Register Repo' (DaemonUnavailableException → 'Register Repo', enabled); actionPerformed(e) opens RepoStatusDialog or RegisterRepoDialog. Register it in the FIRST plugin.xml <actions> block with <add-to-group group-id=ProjectViewPopupMenu anchor=last>, keeping <depends> platform-only.",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "ShowOrRegisterRepoAction overrides getActionUpdateThread()=BGT and sets the dynamic label from isProjectRegistered, disabling on null/blank basePath, catching DaemonUnavailableException.",
+          "plugin.xml has an <actions> block with the action added to ProjectViewPopupMenu and still <depends> only com.intellij.modules.platform."
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "source-scan: plugin.xml registers <action> class=...ShowOrRegisterRepoAction with <add-to-group group-id=ProjectViewPopupMenu>; still <depends> only com.intellij.modules.platform"
+          },
+          {
+            "level": "unit",
+            "name": "source-scan: ShowOrRegisterRepoAction source shows getActionUpdateThread=BGT, basePath null/blank disable, 'Show Repo status'/'Register Repo' labels, try/catch around the probe"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Add RepoStatusDialog + RegisterRepoDialog",
+        "summary": "Add RepoStatusDialog (DialogWrapper 'insrc — Repo status'): loading placeholder → executeOnPooledThread { gateway.repoStats(root) } → invokeLater (guarded) render Loaded rich fields (status/lastIndexed/addedAt/fileCount/sizeBytes/entityCount/relationCount/pendingJobs/filesByLanguage/entityCountByKind/errorMsg) vs Unavailable message; OK-only. Add RegisterRepoDialog (DialogWrapper 'insrc — Register Repo'): read-only root field + two JCheckBoxes (CLAUDE.md/AGENTS.md, default off) + Register runs gateway.registerProject(root, SteeringSelection(claude,agents)) off the EDT catching DaemonUnavailableException; registered=true → close + success via the EXISTING 'insrc' NotificationGroup, else keep open + show reason (no close-as-success on failure).",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "RepoStatusDialog reads repoStats off the EDT (executeOnPooledThread+invokeLater guarded) and renders the rich fields on Loaded / a distinct message on Unavailable.",
+          "RegisterRepoDialog shows a read-only root + two steering checkboxes, calls registerProject off the EDT, and does NOT close-as-success on registered=false / DaemonUnavailableException.",
+          "The success notification reuses the existing 'insrc' NotificationGroup (no new declaration)."
+        ],
+        "derivedFrom": [
+          "c3",
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "source-scan: RepoStatusDialog reads gateway.repoStats via executeOnPooledThread+invokeLater and renders both Loaded (rich fields) and Unavailable branches"
+          },
+          {
+            "level": "unit",
+            "name": "source-scan: RegisterRepoDialog has a read-only root + two JCheckBoxes, calls registerProject(root, SteeringSelection(...)) off the EDT, and does NOT close-as-success on failure; reuses the 'insrc' NotificationGroup"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Add unit + source-scan tests",
+        "summary": "Add the fake-DaemonRpc gateway unit tests + the pure parseRepoStats boundary-type unit test + the source-scan tests named on t2–t5. Reuses the Sc2DaemonGatewayTest (fake DaemonRpc recording method+params) and InsrcSettingsConfigurableTest (File.readText source-scan) idioms.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t2",
+          "t3",
+          "t4",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "Gateway unit tests assert repoStats records the repoPath key + classification + parseRepoStats boundary types + registerProject steering(true/false-false/null) backward-compat against a fake DaemonRpc.",
+          "Source-scan tests assert the plugin.xml action registration + platform-only depends, the action's BGT/dynamic label/try-catch, and the dialogs' off-EDT/no-close-as-success wiring."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "The full gateway + parse unit suite and the action/plugin.xml/dialogs source-scan suite named on t2–t5 are authored and pass"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Verify locally (gradlew test buildPlugin)",
+        "summary": "Run cd jetbrains-plugin && JAVA_HOME=<corretto-21> ./gradlew test buildPlugin --console=plain --no-build-cache --no-configuration-cache (cache OFF because the registerProject signature + RepoStatsDto ctor changed — stale cache → NoSuchMethodError). All tests green + the plugin ZIP builds. NO GitHub CI.",
+        "size": "S",
+        "order": 7,
+        "dependsOn": [
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "gradlew test buildPlugin runs with --no-build-cache and reports all tests green.",
+          "buildPlugin produces the plugin distribution ZIP without error."
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "gradlew test buildPlugin (JDK21, --no-build-cache) is green and produces the plugin ZIP"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "repoStats: a Gson-Double-shaped data map → RepoStatsResult.Loaded with correctly coerced Int/Long fields and Map<String,Int> maps",
+        "coveredByTaskIds": [
+          "t2",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "repoStats: a DaemonResult(ok=false, error='not a registered repo') → Unavailable(reason)",
+        "coveredByTaskIds": [
+          "t2",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "repoStats: a DaemonUnavailableException → Unavailable (never thrown); a malformed field → Unavailable via the RuntimeException catch",
+        "coveredByTaskIds": [
+          "t2",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "repoStats: the fake rpc is called with METHOD_REPO_STATS and params carrying repoPath=the projectRootPath",
+        "coveredByTaskIds": [
+          "t2",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "registerProject(root, SteeringSelection(true,false)): the fake rpc records METHOD_REPO_ADD params carrying path=root AND steering=mapOf('claude' to true,'agents' to false)",
+        "coveredByTaskIds": [
+          "t3",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "registerProject(root, null) and registerProject(root): NO steering key in the params (backward-compatible zero-steering path)",
+        "coveredByTaskIds": [
+          "t3",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "registerProject: r.ok=true → registered=true; r.ok=false → registered=false+reason; DaemonUnavailableException still propagates",
+        "coveredByTaskIds": [
+          "t3",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "plugin.xml registers an <action> with class ai.insors.insrc.jetbrains.actions.ShowOrRegisterRepoAction and <add-to-group group-id=\"ProjectViewPopupMenu\">",
+        "coveredByTaskIds": [
+          "t4",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "ShowOrRegisterRepoAction: getActionUpdateThread=BGT; update() reads basePath and disables when null/blank; sets 'Show Repo status' vs 'Register Repo'; wraps the probe in try/catch",
+        "coveredByTaskIds": [
+          "t4",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "RepoStatusDialog: reads gateway.repoStats OFF the EDT (executeOnPooledThread + invokeLater), renders Loaded vs Unavailable, references the rich fields",
+        "coveredByTaskIds": [
+          "t5",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "RegisterRepoDialog: read-only root + two JCheckBoxes (CLAUDE.md/AGENTS.md) + Register calls registerProject(root, SteeringSelection(...)) off the EDT and does NOT close-as-success on failure",
+        "coveredByTaskIds": [
+          "t5",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "plugin.xml still <depends> ONLY com.intellij.modules.platform",
+        "coveredByTaskIds": [
+          "t4",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "parseRepoStats: sizeBytes 1024.0 (Double) → Long 1024; fileCount 3.0 → Int 3",
+        "coveredByTaskIds": [
+          "t2",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "parseRepoStats: lastIndexed/errorMsg absent → null",
+        "coveredByTaskIds": [
+          "t2",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "parseRepoStats: unknown status string → verbatim String",
+        "coveredByTaskIds": [
+          "t2",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "parseRepoStats: empty filesByLanguage/entityCountByKind → empty maps",
+        "coveredByTaskIds": [
+          "t2",
+          "t6"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 — DaemonGateway.repoStats + registerProject(steering) APIs; RepoStatsDto/RepoStatsResult/SteeringSelection types; companion constants; onboarding backward-compat",
+      "quotedText": "fun registerProject(projectRootPath: String, steering: SteeringSelection? = null): RegistrationResult"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 — RepoStatsDto Gson-Double/nested-Map coercion + the repo.stats/repo.add wire contract (repoPath key)",
+      "quotedText": "Numbers are coerced from Gson Double; the two Record<string,number> maps parse to Map<String,Int> via (v as? Number)?.toInt()"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 — error paths + off-EDT idiom + sealed-result framing (UnixSocketDaemonRpc.parse classifies !r.ok||r.error, executeOnPooledThread+invokeLater guarded)",
+      "quotedText": "All daemon I/O happens OFF the EDT (executeOnPooledThread) with the render marshalled back via invokeLater guarded on a still-live component"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 — the first plugin.xml <actions> block on ProjectViewPopupMenu + platform-only depends + BGT action",
+      "quotedText": "The FIRST <actions> block: <action id=\"ai.insors.insrc.ShowOrRegisterRepo\" class=\"ai.insors.insrc.jetbrains.actions.ShowOrRegisterRepoAction\"><add-to-group group-id=\"ProjectViewPopupMenu\" anchor=\"last\"/>"
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "s1 test.locate — fake-DaemonRpc gateway unit idiom (Sc2DaemonGatewayTest) + File.readText source-scan idiom (InsrcSettingsConfigurableTest)",
+      "quotedText": "construct DaemonGatewayImpl(fakeRpc) ... assert the sealed-result classification ... a pure DTO-parse test over a Gson-shaped Map"
+    }
+  ]
+}

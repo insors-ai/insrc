@@ -311,6 +311,54 @@ sealed interface RegisteredReposResult {
 }
 
 /**
+ * The plugin mirror of the daemon's `repo.stats` payload (Story
+ * jetbrains-plugin-add-insrc-entry-project / S001). Mirrors the daemon
+ * `RepoStats` interface 1:1. [status] is kept a free String (not an enum) so an
+ * unknown daemon status is forwarded verbatim (k1) rather than throwing. Numbers
+ * cross the Gson socket as Double, so they are coerced to Int/Long and the two
+ * `Record<string,number>` maps to `Map<String,Int>` during parse; an absent
+ * optional ([lastIndexed]/[errorMsg]) is null.
+ */
+data class RepoStatsDto(
+    val repoPath: String,
+    val status: String,
+    val lastIndexed: String?,
+    val addedAt: String,
+    val errorMsg: String?,
+    val fileCount: Int,
+    val filesByLanguage: Map<String, Int>,
+    val entityCount: Int,
+    val entityCountByKind: Map<String, Int>,
+    val relationCount: Int,
+    val sizeBytes: Long,
+    val pendingJobs: Int,
+)
+
+/**
+ * The result of a `repo.stats` read (Story jetbrains-plugin-add-insrc-entry-project
+ * / S001). Two-state like [SettingsCatalogResult]/[RegisteredReposResult]: a
+ * [Loaded] stats snapshot is DISTINCT from [Unavailable] (the daemon was
+ * unreachable / framed an error / the repo is not registered / a malformed reply),
+ * so the status popup never blanks an error into fabricated zeros.
+ */
+sealed interface RepoStatsResult {
+    /** The daemon returned the single RepoStats object; [stats] is the snapshot. */
+    data class Loaded(val stats: RepoStatsDto) : RepoStatsResult
+
+    /** The daemon was unreachable / errored / not-registered / malformed; [reason] explains. */
+    data class Unavailable(val reason: String) : RepoStatsResult
+}
+
+/**
+ * Per-file steering selection carried on the `repo.add` IPC (Story
+ * jetbrains-plugin-add-insrc-entry-project / S001), mirroring the daemon
+ * `SteeringSelection`. Serialized on the wire as `{ claude, agents }` under the
+ * `steering` param; when both flags are false the daemon writes no
+ * CLAUDE.md/AGENTS.md block and registers no MCP client (a no-op).
+ */
+data class SteeringSelection(val claude: Boolean, val agents: Boolean)
+
+/**
  * sc2 (Story S001): a thin handle to the backend daemon, shared across the
  * S002 wiring / S003 lifecycle / S005 onboarding branches. Read paths never
  * allocate registry membership (k2); every method takes the active project's
@@ -331,9 +379,24 @@ interface DaemonGateway {
      * Register [projectRootPath] via the strict `repo.add` contract. Idempotent;
      * returns `{registered:false, reason}` on backend rejection, and registers
      * only that one project (never auto-allocates others, k2).
+     *
+     * [steering] (Story jetbrains-plugin-add-insrc-entry-project / S001) is the
+     * per-file steering selection forwarded as `repo.add`'s optional `steering`
+     * param. Null (the default, preserving every existing zero-steering call site)
+     * ⇒ no steering key is sent; a non-null selection is sent verbatim (both-false
+     * is a daemon no-op).
      * @throws DaemonUnavailableException when the daemon cannot be reached.
      */
-    fun registerProject(projectRootPath: String): RegistrationResult
+    fun registerProject(projectRootPath: String, steering: SteeringSelection? = null): RegistrationResult
+
+    /**
+     * The combined per-repo index stats for [projectRootPath] (Story
+     * jetbrains-plugin-add-insrc-entry-project / S001) over the read-only
+     * `repo.stats` IPC — mirrors [settingsCatalog]/[registeredRepos]. Read-only;
+     * never auto-allocates. Does NOT throw: an unreachable/errored/not-registered/
+     * malformed reply maps to [RepoStatsResult.Unavailable], never a blank Loaded.
+     */
+    fun repoStats(projectRootPath: String): RepoStatsResult
 
     /**
      * The pending-approval artifacts for [projectRootPath] (Story S001 / sc1).
@@ -521,14 +584,43 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
         return (r.data[FIELD_REPOS] as? Collection<*>)?.mapNotNull { it as? String } ?: emptyList()
     }
 
-    override fun registerProject(projectRootPath: String): RegistrationResult {
-        val r = rpc.call(METHOD_REPO_ADD, mapOf(PARAM_PATH to projectRootPath))
+    override fun registerProject(projectRootPath: String, steering: SteeringSelection?): RegistrationResult {
+        // repo.add takes { path } plus an OPTIONAL steering:{claude,agents}. Only
+        // send the steering key when a selection is present; a null selection keeps
+        // the exact path-only payload the existing callers always sent (additive).
+        val params = buildMap<String, Any?> {
+            put(PARAM_PATH, projectRootPath)
+            if (steering != null) {
+                put(PARAM_STEERING, mapOf("claude" to steering.claude, "agents" to steering.agents))
+            }
+        }
+        val r = rpc.call(METHOD_REPO_ADD, params)
         return if (r.ok) {
             RegistrationResult(registered = true)
         } else {
             RegistrationResult(registered = false, reason = r.error ?: "registration rejected")
         }
     }
+
+    override fun repoStats(projectRootPath: String): RepoStatsResult =
+        try {
+            // repo.stats reads params.repoPath (NOT `repo`) and returns the SINGLE
+            // matching RepoStats object, or a framed { error } for an unregistered
+            // repoPath (surfaced by parse() as ok=false). So classify Unavailable on
+            // !r.ok || r.error, else parse the rich fields off r.data — mirroring
+            // settingsCatalog/registeredRepos. Never throws.
+            val r = rpc.call(METHOD_REPO_STATS, mapOf(PARAM_REPO_PATH to projectRootPath))
+            if (!r.ok || r.error != null) {
+                RepoStatsResult.Unavailable(r.error ?: "repo.stats returned an error")
+            } else {
+                RepoStatsResult.Loaded(parseRepoStats(r.data))
+            }
+        } catch (e: DaemonUnavailableException) {
+            RepoStatsResult.Unavailable(e.message ?: "daemon unavailable")
+        } catch (e: RuntimeException) {
+            // Defense-in-depth: a malformed reply / transport fault -> Unavailable, never a throw.
+            RepoStatsResult.Unavailable(e.message ?: "unexpected daemon fault")
+        }
 
     override fun pendingArtifacts(projectRootPath: String): PendingQueryResult =
         try {
@@ -787,12 +879,16 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
         const val METHOD_CONFIG_CATALOG = "config.catalog"
         const val METHOD_CONFIG_WRITE = "config.write"
         const val METHOD_CONFIG_SHOW = "config.show"
+        const val METHOD_REPO_STATS = "repo.stats"
         const val FIELD_STALE = "stale"
         const val FIELD_REPOS = "repos"
         const val FIELD_ARTIFACTS = "artifacts"
         const val PARAM_PATH = "path"
         const val PARAM_VALUE = "value"
         const val PARAM_REPO = "repo"
+        // repo.stats reads params.repoPath (a DISTINCT key from repo.list/pending's `repo`).
+        const val PARAM_REPO_PATH = "repoPath"
+        const val PARAM_STEERING = "steering"
         const val PARAM_MD_PATH = "mdPath"
         const val PARAM_ARTIFACT_ID = "artifactId"
         const val PARAM_COMMENTS = "comments"
@@ -893,6 +989,42 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
                 }
             }
             return RepoOverrideDto(coreFloor = coreFloor, tasks = tasks, tiers = tiers)
+        }
+
+        /**
+         * Parse the daemon's `repo.stats` reply (the single RepoStats object) into a
+         * [RepoStatsDto], forwarding every field verbatim (k1). Numbers cross the Gson
+         * socket as [Double], so they are coerced via `(v as? Number)?.toInt()/toLong()`
+         * (a missing/non-numeric field defaults to 0); the two `Record<string,number>`
+         * maps parse from `Map<*,*>` (String keys, Number values) to `Map<String,Int>`;
+         * an absent optional (lastIndexed/errorMsg) or a blank errorMsg is null; the
+         * status is a free String taken verbatim (an unknown daemon status never throws).
+         */
+        internal fun parseRepoStats(data: Map<String, Any?>): RepoStatsDto = RepoStatsDto(
+            repoPath = str(data["repoPath"]),
+            status = str(data["status"]),
+            lastIndexed = (data["lastIndexed"] as? String)?.takeIf { it.isNotEmpty() },
+            addedAt = str(data["addedAt"]),
+            errorMsg = (data["errorMsg"] as? String)?.takeIf { it.isNotEmpty() },
+            fileCount = (data["fileCount"] as? Number)?.toInt() ?: 0,
+            filesByLanguage = numberMap(data["filesByLanguage"]),
+            entityCount = (data["entityCount"] as? Number)?.toInt() ?: 0,
+            entityCountByKind = numberMap(data["entityCountByKind"]),
+            relationCount = (data["relationCount"] as? Number)?.toInt() ?: 0,
+            sizeBytes = (data["sizeBytes"] as? Number)?.toLong() ?: 0L,
+            pendingJobs = (data["pendingJobs"] as? Number)?.toInt() ?: 0,
+        )
+
+        /** A Gson `Record<string,number>` (Map with String keys + Double values) -> Map<String,Int>. */
+        private fun numberMap(raw: Any?): Map<String, Int> {
+            val m = raw as? Map<*, *> ?: return emptyMap()
+            return buildMap {
+                for ((k, v) in m) {
+                    val key = k as? String ?: continue
+                    val n = (v as? Number)?.toInt() ?: continue
+                    put(key, n)
+                }
+            }
         }
 
         /**

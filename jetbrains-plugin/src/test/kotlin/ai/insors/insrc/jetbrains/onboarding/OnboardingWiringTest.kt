@@ -4,6 +4,8 @@ import ai.insors.insrc.jetbrains.IdeKind
 import ai.insors.insrc.jetbrains.LifecycleBroadcaster
 import ai.insors.insrc.jetbrains.ProjectContext
 import ai.insors.insrc.jetbrains.daemon.DaemonGateway
+import ai.insors.insrc.jetbrains.daemon.SteeringSelection
+import ai.insors.insrc.jetbrains.daemon.RepoStatsResult
 import ai.insors.insrc.jetbrains.daemon.ApproveResult
 import ai.insors.insrc.jetbrains.daemon.SaveResult
 import ai.insors.insrc.jetbrains.daemon.PerRoleOverridesResult
@@ -51,7 +53,8 @@ class OnboardingWiringTest : BasePlatformTestCase() {
     private object AlreadyRegisteredGateway : DaemonGateway {
         override fun probe(): DaemonState = DaemonState.CURRENT
         override fun isProjectRegistered(projectRootPath: String): Boolean = true // no offer needed
-        override fun registerProject(projectRootPath: String): RegistrationResult = RegistrationResult(true)
+        override fun registerProject(projectRootPath: String, steering: SteeringSelection?): RegistrationResult = RegistrationResult(true)
+        override fun repoStats(projectRootPath: String): RepoStatsResult = RepoStatsResult.Unavailable("not used")
         override fun pendingArtifacts(projectRootPath: String): PendingQueryResult = PendingQueryResult.Available(emptyList())
         override fun artifactReviewView(projectRootPath: String, mdPath: String): ArtifactContentResult = ArtifactContentResult.Unavailable("not used in this test")
         override fun resolveComment(projectRootPath: String, artifactId: String, comments: List<ReviewCommentDto>): ResolveCommentResult = ResolveCommentResult.Unavailable("not used in this test")

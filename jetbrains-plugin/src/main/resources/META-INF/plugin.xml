@@ -93,6 +93,15 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h3>0.3.1</h3>
+        <ul>
+            <li><b>Polished the Project-view insrc menu &amp; status popup.</b> The
+                <b>insrc</b> context-menu item now shows the insrc icon, and the
+                <b>Show Repo status</b> popup presents the repo's stats as
+                <b>expandable sections</b> (Repository, Files by language, Entities by
+                kind) with tidy tables in a fixed-size, scrollable popup &mdash; long
+                paths and values stay readable (hover to see the full value).</li>
+        </ul>
         <h3>0.3.0</h3>
         <ul>
             <li><b>New: an insrc entry on the Project-view right-click menu.</b>

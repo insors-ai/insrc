@@ -6,6 +6,7 @@ import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.components.service
+import com.intellij.openapi.util.IconLoader
 import com.intellij.openapi.util.Key
 
 /**
@@ -33,6 +34,8 @@ class ShowOrRegisterRepoAction : AnAction() {
             return
         }
         e.presentation.isEnabledAndVisible = true
+        // The insrc icon identifies the item regardless of registration state.
+        e.presentation.icon = INSRC_ICON
         val registered = probeRegistered(root)
         // Stash the BGT-computed state so actionPerformed reuses it (no EDT socket call).
         e.presentation.putClientProperty(REGISTERED_KEY, registered)
@@ -70,5 +73,11 @@ class ShowOrRegisterRepoAction : AnAction() {
 
     private companion object {
         private val REGISTERED_KEY: Key<Boolean> = Key.create("insrc.showOrRegisterRepo.registered")
+
+        /** The insrc menu-item icon, loaded once from the plugin's bundled icon
+         *  (IconLoader scales the SVG to the menu size). A missing resource yields
+         *  a blank icon, never a throw. */
+        private val INSRC_ICON =
+            IconLoader.getIcon("/META-INF/pluginIcon.svg", ShowOrRegisterRepoAction::class.java)
     }
 }

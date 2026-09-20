@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1789928599261-my1d7c",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-20T18:23:19.263Z",
+    "model": "client",
+    "elapsedMs": 3,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e4b8b9dc9aa7978a",
+    "storyId": "S001"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "e4b8b9dc9aa7978a",
+    "storyId": "S001",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/actions/RepoStatusDialog.kt",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/actions/ShowOrRegisterRepoAction.kt"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/actions/RepoStatusDialog.kt:100",
+            "message": "The diff implements the approved LLD (chosen alt a1) faithfully: the menu icon is set via IconLoader on pluginIcon.svg (ShowOrRegisterRepoAction), and RepoStatusDialog's Loaded render is reworked into accordion collapsiblePanel groups (Repository / Files-by-language / Entities-by-kind) with content-sized JTables inside ONE outer JBScrollPane(AS_NEEDED/NEVER) over the new width-tracking ScrollableColumn, while preserving the off-EDT read + !disposed guard + Unavailable-as-plain-message. The shared InsrcCollapsible helper is new (settings page untouched). No adherence breach.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/actions/RepoStatusDialog.kt:143",
+            "message": "Follows the established plugin idioms: the accordion + Scrollable-column + content-sized-JTable (tableHeader NORTH + table CENTER, no inner scroll pane) mirror InsrcSettingsConfigurable's bodyFor/collapsiblePanel/ScrollableContentPanel verbatim; JBUI.scale for all sizes; off-EDT read via executeOnPooledThread + invokeLater(ModalityState.any()) guarded on @Volatile disposed. No convention breach in the diff.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/actions/ShowOrRegisterRepoAction.kt:37",
+            "message": "GROUNDING LIMITATION (reported honestly): the daemon grounding is again file-level diff-only over the 2 git-TRACKED changed files (Kotlin is not symbol-indexed; the NEW ui/InsrcCollapsible.kt helper + the new RepoStatusPopupLayoutTest.kt are UNTRACKED and absent from the diff). Coverage was verified locally instead: the full gradlew test suite is green (47/47 test classes, 0 failures) INCLUDING the new RepoStatusPopupLayoutTest (ac1 icon; ac2 accordion+tables not flat rows; ac3 one outer AS_NEEDED/NEVER JBScrollPane + ScrollableColumn tracksHeight=false + viewport-independent preferred size; ac4 off-EDT preserved + settings page unmodified). Not a code defect — an automated-grounding limitation.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/actions/RepoStatusDialog.kt:150",
+            "message": "Correctness verified: the fixed-size + scroll mechanic reproduces the hardened settings-page fix (ScrollableColumn tracksViewportHeight=ALWAYS false + a viewport-independent bounded preferred size, now floored at a CONSTANT JBUI.scale(480) min width via coerceAtLeast — no width-feedback spiral); the value column gets a tooltip renderer (leak-free flyweight idiom) so long path/error values are fully readable; empty maps render a '(none)' row; the icon load is safe (blank on missing resource, never throws). An opposite-actor cold review (author != reviewer) traced the layout + threading against the settings-page mechanic and returned SHIP (0/0/0) after a MED born-too-narrow popup was fixed. No outstanding quality risk.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 4
+    }
+  }
+}

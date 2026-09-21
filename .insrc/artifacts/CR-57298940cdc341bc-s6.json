@@ -1,0 +1,51 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1789997002474-dds8xf",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-21T13:23:22.475Z",
+    "model": "client",
+    "elapsedMs": 2,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "57298940cdc341bc",
+    "storyId": "s6"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "57298940cdc341bc",
+    "storyId": "s6",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "jetbrains-plugin/gradle.properties",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/ops/DebugConfigurable.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/ops/DebugPageTest.kt"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 0
+    }
+  }
+}

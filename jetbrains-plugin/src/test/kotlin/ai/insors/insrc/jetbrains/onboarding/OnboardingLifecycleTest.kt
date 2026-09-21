@@ -5,6 +5,7 @@ import ai.insors.insrc.jetbrains.ProjectContext
 import ai.insors.insrc.jetbrains.daemon.DaemonGateway
 import ai.insors.insrc.jetbrains.daemon.SteeringSelection
 import ai.insors.insrc.jetbrains.daemon.RepoStatsResult
+import ai.insors.insrc.jetbrains.daemon.DaemonStatusResult
 import ai.insors.insrc.jetbrains.daemon.ApproveResult
 import ai.insors.insrc.jetbrains.daemon.SaveResult
 import ai.insors.insrc.jetbrains.daemon.PerRoleOverridesResult
@@ -85,6 +86,8 @@ class OnboardingLifecycleTest {
             PerRepoOverridesResult.Unavailable("not used in this test")
         override fun registeredRepos(): RegisteredReposResult =
             RegisteredReposResult.Unavailable("not used in this test")
+
+        override fun daemonStatus(): DaemonStatusResult = DaemonStatusResult.Unavailable("not used in this test")
     }
 
     /** Recording sc3 adapter: scripts detectPresent; records removals; asserts writes never happen. */

@@ -6,6 +6,7 @@ import ai.insors.insrc.jetbrains.ProjectContext
 import ai.insors.insrc.jetbrains.daemon.DaemonGateway
 import ai.insors.insrc.jetbrains.daemon.SteeringSelection
 import ai.insors.insrc.jetbrains.daemon.RepoStatsResult
+import ai.insors.insrc.jetbrains.daemon.DaemonStatusResult
 import ai.insors.insrc.jetbrains.daemon.ApproveResult
 import ai.insors.insrc.jetbrains.daemon.SaveResult
 import ai.insors.insrc.jetbrains.daemon.PerRoleOverridesResult
@@ -62,6 +63,8 @@ class DaemonLifecycleServiceTest : BasePlatformTestCase() {
             throw AssertionError("S003 must never call perRepoOverrides (that is the settings page)")
         override fun registeredRepos(): RegisteredReposResult =
             throw AssertionError("S003 must never call registeredRepos (that is the settings page)")
+
+        override fun daemonStatus(): DaemonStatusResult = DaemonStatusResult.Stopped
     }
 
     private class FakeConsent(initial: Boolean) : SetupConsentStore {

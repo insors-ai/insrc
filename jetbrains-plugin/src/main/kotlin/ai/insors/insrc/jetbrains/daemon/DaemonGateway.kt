@@ -350,6 +350,48 @@ sealed interface RepoStatsResult {
 }
 
 /**
+ * A parsed `daemon.status` snapshot (Story E2026092157298940:S001 / sc2). Realized
+ * to the true `DaemonStatus` payload (`src/shared/types.ts`): [running] is derived
+ * (always true inside a [DaemonStatusResult.Loaded] — a decoded reply means the
+ * daemon answered), [uptimeSec] is the payload's `uptime` (seconds), [modelPullStatus]
+ * is the free 'pulling'/'ready' string (default 'ready' when absent), and [repoCount]
+ * is the length of the payload's `repos` array (the payload carries no scalar count).
+ * Numbers cross the Gson socket as Double and are coerced to Int/Long during parse; an
+ * absent optional ([modelPullPct]/[lmdbFileSizeMb]) is null. The payload carries no
+ * socket/version/pid — S004's Debug card derives those locally, so they are not here.
+ */
+data class DaemonStatusDto(
+    val running: Boolean,
+    val uptimeSec: Long,
+    val queueDepth: Int,
+    val embeddingsPending: Int,
+    val modelPullStatus: String,
+    val modelPullPct: Int?,
+    val lmdbFileSizeMb: Int?,
+    val repoCount: Int,
+)
+
+/**
+ * The result of a rich `daemon.status` read (Story E2026092157298940:S001 / sc2),
+ * consumed by the S002 Daemon health readout and the S004 Debug status card. THREE
+ * states, distinct by design (mirrors [RepoStatsResult]/[PendingQueryResult] but with
+ * a dedicated [Stopped]): a [Loaded] snapshot; [Stopped] when the daemon is reachable-
+ * negative / not running (the socket refuses); and [Unavailable] when it errors or
+ * returns a malformed reply. The distinct [Stopped] lets a consumer offer Start for a
+ * cleanly-stopped daemon versus surface an error for a genuine fault. Never throws.
+ */
+sealed interface DaemonStatusResult {
+    /** The daemon answered with a status snapshot. */
+    data class Loaded(val status: DaemonStatusDto) : DaemonStatusResult
+
+    /** The daemon is not running (unreachable socket / connection refused). */
+    data object Stopped : DaemonStatusResult
+
+    /** The daemon errored or returned a malformed reply; [reason] explains. */
+    data class Unavailable(val reason: String) : DaemonStatusResult
+}
+
+/**
  * Per-file steering selection carried on the `repo.add` IPC (Story
  * jetbrains-plugin-add-insrc-entry-project / S001), mirroring the daemon
  * `SteeringSelection`. Serialized on the wire as `{ claude, agents }` under the
@@ -514,6 +556,18 @@ interface DaemonGateway {
      * never throws.
      */
     fun registeredRepos(): RegisteredReposResult
+
+    /**
+     * Read the rich daemon runtime status (Story E2026092157298940:S001 / sc2) over
+     * the EXISTING `daemon.status` IPC — the full payload (uptime, queue depth, pending
+     * embeddings, model-pull state, on-disk index size, registered-repo count), parsed
+     * into a [DaemonStatusDto]. Application-scoped (takes no repo). Extends the
+     * stale-only [probe] without touching it. Does NOT throw: an unreachable daemon is
+     * [DaemonStatusResult.Stopped], a framed error / malformed reply is
+     * [DaemonStatusResult.Unavailable], else [DaemonStatusResult.Loaded]. Consumed by
+     * the S002 Daemon page + the S004 Debug status card.
+     */
+    fun daemonStatus(): DaemonStatusResult
 }
 
 /**
@@ -868,6 +922,27 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
             RegisteredReposResult.Unavailable(e.message ?: "unexpected daemon fault")
         }
 
+    override fun daemonStatus(): DaemonStatusResult =
+        try {
+            // Reuse METHOD_STATUS (the same read probe() uses) with no params; parse the
+            // FULL payload here rather than probe()'s single `stale` flag. A cleanly-
+            // stopped daemon throws DaemonUnavailableException (socket refused) => the
+            // distinct Stopped; a framed error/malformed reply => Unavailable; else the
+            // decoded Loaded. Mirrors repoStats()' classification, never throws.
+            val r = rpc.call(METHOD_STATUS, emptyMap())
+            if (!r.ok || r.error != null) {
+                DaemonStatusResult.Unavailable(r.error ?: "daemon.status returned an error")
+            } else {
+                DaemonStatusResult.Loaded(parseDaemonStatus(r.data))
+            }
+        } catch (e: DaemonUnavailableException) {
+            // Reachable-negative: the daemon is not running, not an error.
+            DaemonStatusResult.Stopped
+        } catch (e: RuntimeException) {
+            // Defense-in-depth: a malformed reply / transport fault -> Unavailable, never a throw.
+            DaemonStatusResult.Unavailable(e.message ?: "unexpected daemon fault")
+        }
+
     companion object {
         const val METHOD_STATUS = "daemon.status"
         const val METHOD_REPO_LIST = "repo.list"
@@ -1013,6 +1088,28 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
             relationCount = (data["relationCount"] as? Number)?.toInt() ?: 0,
             sizeBytes = (data["sizeBytes"] as? Number)?.toLong() ?: 0L,
             pendingJobs = (data["pendingJobs"] as? Number)?.toInt() ?: 0,
+        )
+
+        /**
+         * Parse the daemon's `daemon.status` reply into a [DaemonStatusDto] (Story
+         * E2026092157298940:S001 / sc2). Realized to the true `DaemonStatus` payload:
+         * [running] is derived true (a decoded reply means the daemon answered),
+         * [uptimeSec] from `uptime`, [repoCount] from the length of the `repos` array
+         * (no scalar count is sent), [modelPullStatus] the free string defaulting to
+         * 'ready' when absent. Numbers cross the Gson socket as Double and are coerced
+         * via `(v as? Number)?.toInt()/toLong()` (a missing/non-numeric required field
+         * defaults to 0); an absent optional ([modelPullPct]/[lmdbFileSizeMb]) is null.
+         * Never throws on a shape mismatch.
+         */
+        internal fun parseDaemonStatus(data: Map<String, Any?>): DaemonStatusDto = DaemonStatusDto(
+            running = true,
+            uptimeSec = (data["uptime"] as? Number)?.toLong() ?: 0L,
+            queueDepth = (data["queueDepth"] as? Number)?.toInt() ?: 0,
+            embeddingsPending = (data["embeddingsPending"] as? Number)?.toInt() ?: 0,
+            modelPullStatus = (data["modelPullStatus"] as? String) ?: "ready",
+            modelPullPct = (data["modelPullPct"] as? Number)?.toInt(),
+            lmdbFileSizeMb = (data["lmdbFileSizeMb"] as? Number)?.toInt(),
+            repoCount = (data["repos"] as? Collection<*>)?.size ?: 0,
         )
 
         /** A Gson `Record<string,number>` (Map with String keys + Double values) -> Map<String,Int>. */

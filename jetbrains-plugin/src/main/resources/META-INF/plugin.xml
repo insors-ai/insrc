@@ -291,6 +291,30 @@
             id="ai.insors.insrc.settings"
             displayName="insrc"
             instance="ai.insors.insrc.jetbrains.settings.InsrcSettingsConfigurable"/>
+
+        <!--
+          Nested operational pages (Epic expand-jetbrains-plugin-s-insrc-settings /
+          Story S001 / sc1): Daemon / Workflows / Debug register as CHILD Configurables
+          under the parent insrc node (parentId=ai.insors.insrc.settings, unchanged), so
+          the operational surfaces sit where the developer already finds insrc config.
+          Each is a thin InsrcOpsConfigurable subclass; S001 ships them empty-but-
+          navigable and S002/S003/S004 fill their bodies.
+        -->
+        <applicationConfigurable
+            parentId="ai.insors.insrc.settings"
+            id="ai.insors.insrc.daemon"
+            displayName="Daemon"
+            instance="ai.insors.insrc.jetbrains.ops.DaemonConfigurable"/>
+        <applicationConfigurable
+            parentId="ai.insors.insrc.settings"
+            id="ai.insors.insrc.workflows"
+            displayName="Workflows"
+            instance="ai.insors.insrc.jetbrains.ops.WorkflowsConfigurable"/>
+        <applicationConfigurable
+            parentId="ai.insors.insrc.settings"
+            id="ai.insors.insrc.debug"
+            displayName="Debug"
+            instance="ai.insors.insrc.jetbrains.ops.DebugConfigurable"/>
     </extensions>
 
     <!--

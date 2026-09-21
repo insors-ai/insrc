@@ -1,0 +1,536 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1789971334172-d6d5rr",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-21T06:28:12.034Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 757837,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-09-21T05:46:35.262Z",
+    "epicHash": "57298940cdc341bc",
+    "epicSlug": "expand-jetbrains-plugin-s-insrc-settings",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1789970136758-lvyg6v",
+    "hldEffectiveHash": "7b17d6a14b2a62383210886c5fc8a4d3db9366569ad01726cd49bbd35b17dae1",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "ref": "sc2",
+          "kind": "external-contract",
+          "severity": "LOW",
+          "premise": "The daemon.status IPC payload (DaemonStatus in src/shared/types.ts:882) carries uptime:number, repos:RegisteredRepo[], queueDepth, embeddingsPending, modelPullStatus?:'pulling'|'ready', modelPullPct?, lmdbFileSizeMb? — and has NO socket/running/scalar-repoCount field, so the DTO derives running from reachability and repoCount from repos.length.",
+          "evidence": "read anchor src/shared/types.ts:882 found:true = 'export interface DaemonStatus {'; grep confirms modelPullStatus + lmdbFileSizeMb are real payload fields. The DTO's derive-running / repoCount=repos.length realization is consistent with a payload that has no socket/running/scalar-count field.",
+          "action": "",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl2",
+          "ref": "sc2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "DaemonGateway currently has a stale-only `fun probe(): DaemonState` whose impl reuses METHOD_STATUS='daemon.status' and reads FIELD_STALE='stale'; there is no daemonStatus() yet.",
+          "evidence": "read DaemonGateway.kt:552 found:true = 'override fun probe(): DaemonState'; grep confirms `const val METHOD_STATUS = \"daemon.status\"` (:872) and `const val FIELD_STALE = \"stale\"` (:883) exist; fun daemonStatus( appears only in the HLD/LLD docs, confirming it is NEW.",
+          "action": "",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl3",
+          "ref": "sc2",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The DaemonGateway transport is an injectable DaemonRpc whose call() returns a DaemonResult{ok:Boolean, data:Map, error:String?, list:List?}, and repoStats() already classifies Unavailable on !ok/error and coerces Gson Doubles — the idiom daemonStatus() mirrors.",
+          "evidence": "grep confirms interface DaemonRpc (:526), data class DaemonResult (:538), override fun repoStats( (:605); read DaemonGateway.kt:612 found:true shows repoStats calling rpc.call(METHOD_...) — the injectable-transport + sealed-result classification idiom daemonStatus() mirrors is real.",
+          "action": "",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl4",
+          "ref": "sc1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "plugin.xml registers the parent applicationConfigurable id=ai.insors.insrc.settings (instance InsrcSettingsConfigurable) under parentId=tools; child pages nest by adding more applicationConfigurable elements with parentId=ai.insors.insrc.settings without editing the parent.",
+          "evidence": "read plugin.xml:289 found:true = '<applicationConfigurable'; grep confirms id=ai.insors.insrc.settings + InsrcSettingsConfigurable; child nesting via parentId=ai.insors.insrc.settings is valid and the parent is untouched.",
+          "action": "",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl5",
+          "ref": "sc1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "ui/InsrcCollapsible.kt exposes fun collapsiblePanel(title, body, expanded) and class ScrollableColumn(viewportHeightPx, minWidthPx) — the shared scroll shell the InsrcOpsConfigurable base composes; S001 adds no new scroll primitive.",
+          "evidence": "read InsrcCollapsible.kt:31 found:true = 'fun collapsiblePanel(title: Strin...'; grep confirms class ScrollableColumn exists — the shared scroll shell the S001 base composes is real, no new primitive.",
+          "action": "",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl6",
+          "ref": "sc1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "InsrcSettingsConfigurable implements com.intellij.openapi.options.Configurable and createComponent() runs the read via executeOnPooledThread and renders back via invokeLater — the off-EDT/guarded-render idiom the S001 base generalizes; this shipped file is not edited by S001.",
+          "evidence": "read InsrcSettingsConfigurable.kt:72 found:true = 'override fun creat...(createComponent)'; grep confirms class InsrcSettingsConfigurable + executeOnPooledThread + invokeLater — the off-EDT/guarded-render idiom the base generalizes; the file is not edited by S001.",
+          "action": "",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl7",
+          "ref": "test",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The gateway test idiom (RepoStatsGatewayTest) drives DaemonGatewayImpl against a fake DaemonRpc (RecordingRpc) feeding Gson-Double numbers, which the daemonStatus() unit tests extend; JUnit 5 is the framework.",
+          "evidence": "read RepoStatsGatewayTest.kt:20 found:true = 'private class RecordingRp...'; grep confirms class RepoStatsGatewayTest + RecordingRpc + org.junit.jupiter — JUnit 5 fake-DaemonRpc idiom the daemonStatus() unit tests extend is real.",
+          "action": "",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 7
+      },
+      "reviewedAt": "2026-09-21T06:29:25.677Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-21T07:59:43.174Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Chosen shape a1: three new child Settings pages (Daemon, Workflows, Debug) registered declaratively under the UNCHANGED parent insrc Configurable, each a thin Swing page on a shared abstract page-shell base; S001 (Phase A) delivers sc1 (nav scaffold + shell) and sc2 (rich daemonStatus() read).",
+      "ownedContracts": [
+        {
+          "id": "sc1",
+          "name": "NestedSettingsNavScaffold + SharedPageShell",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4"
+          ]
+        },
+        {
+          "id": "sc2",
+          "name": "DaemonStatusRead",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s4"
+          ]
+        }
+      ],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [
+          "sc1",
+          "sc2"
+        ],
+        "depends": [],
+        "internal": "S001 delivers the empty-but-navigable pages + the shared status read (sc1+sc2); it does not implement any page's domain body — those are the consuming Stories'."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s2",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "Daemon page body + lifecycle actions (S002-internal)."
+        },
+        {
+          "storyId": "s3",
+          "owns": [],
+          "depends": [
+            "sc1"
+          ],
+          "internal": "Workflows read-only chain reader + page (S003-internal)."
+        },
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc3"
+          ],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "Debug status card + orphan ProcessHandle seam; owns DebugPageHost (sc3)."
+        },
+        {
+          "storyId": "s5",
+          "owns": [],
+          "depends": [
+            "sc3"
+          ],
+          "internal": "MCP/sessions Debug section (S005-internal)."
+        },
+        {
+          "storyId": "s6",
+          "owns": [],
+          "depends": [
+            "sc3"
+          ],
+          "internal": "Log-editor Debug section (S006-internal)."
+        }
+      ],
+      "rolloutPhase": "Phase A — Foundation (nav scaffold + shared status read)",
+      "nonFunctional": {
+        "performance": "Off-EDT reads + guarded invokeLater render (k2).",
+        "security": "Read-only surfaces (k3 mutation is S004-only, out of scope); local socket only.",
+        "observability": "Surfaces the daemon's own state; no new telemetry.",
+        "durability": "No persisted plugin state; live snapshot."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "interactionWithShared": [
+        {
+          "contractId": "sc1",
+          "role": "implements",
+          "howDetails": "S001 OWNS sc1: abstract InsrcOpsConfigurable base + three no-arg child Configurables under parentId=ai.insors.insrc.settings with empty-but-navigable bodies; parent InsrcSettingsConfigurable untouched (lc1/k4). S002/S003/S004 subclass the base."
+        },
+        {
+          "contractId": "sc2",
+          "role": "implements",
+          "howDetails": "S001 OWNS sc2: adds daemonStatus(): DaemonStatusResult to DaemonGateway + DaemonGatewayImpl (reusing METHOD_STATUS + DaemonRpc + the repoStats() classification idiom) plus DaemonStatusDto/DaemonStatusResult; realized to the true daemon.status payload. S002/S004 consume it."
+        }
+      ],
+      "api": [
+        {
+          "name": "InsrcOpsConfigurable",
+          "signature": "abstract class InsrcOpsConfigurable : com.intellij.openapi.options.Configurable { protected abstract fun pageTitle(): String; protected abstract fun buildBody(): javax.swing.JComponent }",
+          "parameters": [],
+          "returns": {
+            "type": "abstract class (Configurable)",
+            "meaning": "sc1: the shared page-shell base. createComponent() builds a JBScrollPane over a ui/InsrcCollapsible.ScrollableColumn, runs buildBody() on executeOnPooledThread and mounts it via a disposed-guarded invokeLater; getDisplayName() delegates to pageTitle(); isModified()=false + no-op apply/reset defaults; subclasses supply only pageTitle()+buildBody()."
+          },
+          "errors": [
+            {
+              "type": "none (never throws to the EDT)",
+              "condition": "buildBody() runs off the EDT; a throw renders a plain error label instead of propagating (k2)."
+            }
+          ],
+          "preconditions": [
+            "Registered as an applicationConfigurable child via parentId=ai.insors.insrc.settings in plugin.xml."
+          ],
+          "postconditions": [
+            "A subclass implements one page via buildBody(); no subclass touches threading or the scroll shell.",
+            "The parent InsrcSettingsConfigurable + its plugin.xml element are unchanged (lc1/k4)."
+          ]
+        },
+        {
+          "name": "DaemonConfigurable",
+          "signature": "class DaemonConfigurable : InsrcOpsConfigurable()",
+          "parameters": [],
+          "returns": {
+            "type": "Configurable (no-arg)",
+            "meaning": "The Daemon child page; S001 empty-but-navigable placeholder body, S002 fills it. Registered id ai.insors.insrc.daemon."
+          },
+          "errors": [],
+          "preconditions": [
+            "plugin.xml registers it under parentId=ai.insors.insrc.settings."
+          ],
+          "postconditions": [
+            "Nested child node under insrc; own page (ac1/ac2)."
+          ]
+        },
+        {
+          "name": "WorkflowsConfigurable",
+          "signature": "class WorkflowsConfigurable : InsrcOpsConfigurable()",
+          "parameters": [],
+          "returns": {
+            "type": "Configurable (no-arg)",
+            "meaning": "The Workflows child page; S001 placeholder, S003 fills it. Registered id ai.insors.insrc.workflows."
+          },
+          "errors": [],
+          "preconditions": [
+            "plugin.xml registers it under parentId=ai.insors.insrc.settings."
+          ],
+          "postconditions": [
+            "Nested child node; own page (ac1/ac2)."
+          ]
+        },
+        {
+          "name": "DebugConfigurable",
+          "signature": "class DebugConfigurable : InsrcOpsConfigurable()",
+          "parameters": [],
+          "returns": {
+            "type": "Configurable (no-arg)",
+            "meaning": "The Debug child page; S001 placeholder, S004 fills it (and owns sc3). Registered id ai.insors.insrc.debug."
+          },
+          "errors": [],
+          "preconditions": [
+            "plugin.xml registers it under parentId=ai.insors.insrc.settings."
+          ],
+          "postconditions": [
+            "Nested child node; own page (ac1/ac2)."
+          ]
+        },
+        {
+          "name": "DaemonGateway.daemonStatus",
+          "signature": "fun daemonStatus(): DaemonStatusResult",
+          "parameters": [],
+          "returns": {
+            "type": "DaemonStatusResult",
+            "meaning": "sc2: the rich daemon-status read. Loaded(DaemonStatusDto) on a decoded daemon.status reply; Stopped when the socket is unreachable; Unavailable(reason) on error/malformed. Never throws; app-scoped (no repo param); reuses METHOD_STATUS."
+          },
+          "errors": [
+            {
+              "type": "DaemonStatusResult.Stopped",
+              "condition": "rpc.call throws DaemonUnavailableException (no socket / refused)."
+            },
+            {
+              "type": "DaemonStatusResult.Unavailable",
+              "condition": "!r.ok || r.error != null, or any RuntimeException (malformed/transport fault), caught and mapped."
+            }
+          ],
+          "preconditions": [
+            "Uses the existing METHOD_STATUS='daemon.status' constant with empty params (no new method constant)."
+          ],
+          "postconditions": [
+            "Mirrors repoStats()/registeredRepos() classification; Gson-Double coercion; existing probe() untouched."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "DaemonStatusDto",
+        "change": "new",
+        "details": "Parsed daemon.status snapshot (sc2), realized to the true payload (src/shared/types.ts:882). Fields: running:Boolean (derived, always true in a Loaded), uptimeSec:Long (from `uptime`), queueDepth:Int, embeddingsPending:Int, modelPullStatus:String ('pulling'|'ready', default 'ready'), modelPullPct:Int? (absent→null), lmdbFileSizeMb:Int? (absent→null), repoCount:Int (=repos[].size). Gson Doubles coerced via (v as? Number)?.toInt()/toLong(). Faithful realization of the HLD type-level sc2 sketch: uptimeSec←uptime, modelPull→modelPullStatus, repoCount derived, socket dropped (S004 derives socket/version/pid locally). Sealed three-state shape + never-throws preserved. schemaDiff: + data class DaemonStatusDto(running: Boolean, uptimeSec: Long, queueDepth: Int, embeddingsPending: Int, modelPullStatus: String, modelPullPct: Int?, lmdbFileSizeMb: Int?, repoCount: Int).",
+        "callSites": [
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGateway.kt (DaemonGatewayImpl.daemonStatus + parseDaemonStatus)",
+          "consumed later by S002/S004 (out of S001 scope)"
+        ]
+      },
+      {
+        "entity": "DaemonStatusResult",
+        "change": "new",
+        "details": "Sealed three-state outcome (sc2), verbatim from the HLD: Loaded(DaemonStatusDto) | Stopped (data object; reachable-negative) | Unavailable(reason). Distinct Stopped vs Unavailable so a consumer can offer Start vs surface an error. Mirrors RepoStatsResult/PendingQueryResult. schemaDiff: + sealed interface DaemonStatusResult { data class Loaded(val status: DaemonStatusDto); data object Stopped; data class Unavailable(val reason: String) }.",
+        "callSites": [
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGateway.kt",
+          "consumed later by S002/S004 (out of S001 scope)"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "implements",
+        "howDetails": "S001 OWNS sc1: ships the abstract InsrcOpsConfigurable base + the three no-arg child Configurables registered under parentId=ai.insors.insrc.settings with empty-but-navigable bodies; parent untouched (lc1/k4)."
+      },
+      {
+        "contractId": "sc2",
+        "role": "implements",
+        "howDetails": "S001 OWNS sc2: adds daemonStatus()+DaemonStatusDto/DaemonStatusResult to DaemonGateway; consumed by S002/S004."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The daemon is not running (socket absent / connection refused) when daemonStatus() is called.",
+          "detection": "rpc.call(METHOD_STATUS, emptyMap()) throws DaemonUnavailableException, caught in daemonStatus() try/catch.",
+          "response": "Return DaemonStatusResult.Stopped — never rethrow, never fabricate a Loaded with zeros.",
+          "userImpact": "A consuming page (S002/S004) shows a real 'stopped' state and can offer Start; S001 guarantees the classification.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The daemon replies with an error, or the reply is malformed (missing/non-numeric fields, non-map payload).",
+          "detection": "!r.ok || r.error != null after the call, or a RuntimeException in parseDaemonStatus coercion caught by the outer catch(RuntimeException).",
+          "response": "Return DaemonStatusResult.Unavailable(reason); numeric coercion defaults a missing/non-numeric field to 0, so only a structurally broken reply reaches Unavailable.",
+          "userImpact": "The consuming page shows a distinct 'status unavailable' line, not blank or fabricated numbers.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A child page's buildBody() throws on the pooled thread.",
+          "detection": "InsrcOpsConfigurable wraps the off-EDT buildBody() call in try/catch.",
+          "response": "Marshal a plain error-label component back via the guarded invokeLater; the page still mounts.",
+          "userImpact": "The settings page opens with readable error text, not a broken panel or an IDE exception balloon (k2).",
+          "recoverable": true
+        },
+        {
+          "scenario": "The Configurable is disposed (settings closed) before the off-EDT read completes.",
+          "detection": "A @Volatile disposed flag set in disposeUIResources(); the guarded invokeLater checks it before mounting.",
+          "response": "Drop the late render (the established idiom); never touch a disposed component tree.",
+          "userImpact": "No exception or stale mutation after the user closes Settings.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "daemon.status omits optional modelPullPct + lmdbFileSizeMb (fresh daemon).",
+          "expected": "Those DTO fields are null; modelPullStatus defaults 'ready'; a valid Loaded is returned."
+        },
+        {
+          "input": "daemon.status has an empty repos[] array.",
+          "expected": "DaemonStatusDto.repoCount = 0; a valid Loaded (not Stopped/Unavailable)."
+        },
+        {
+          "input": "Numbers arrive as Gson Double (uptime=12.0, queueDepth=3.0).",
+          "expected": "Coerced to uptimeSec=12L, queueDepth=3 — exercised against the real boundary type."
+        },
+        {
+          "input": "The user selects the parent insrc node (not a child).",
+          "expected": "The existing InsrcSettingsConfigurable page renders unchanged; the three children are additive peers (ac1/lc1)."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The shipped parent InsrcSettingsConfigurable + its <applicationConfigurable id=ai.insors.insrc.settings> element are NOT modified; the three new pages are additive parentId children only.",
+          "source": "c8"
+        },
+        {
+          "text": "All daemon/socket I/O (daemonStatus() and each buildBody()) runs OFF the EDT via executeOnPooledThread with a disposed-guarded invokeLater render — the existing createComponent() idiom.",
+          "source": "c8"
+        },
+        {
+          "text": "daemonStatus() NEVER throws: unreachable→Stopped, error/malformed→Unavailable(reason), mirroring probe()/repoStats(); the existing probe() is untouched.",
+          "source": "c7"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "JUnit 5 (org.junit.jupiter) — fake-DaemonRpc unit tests + source-scan tests, run locally via ./gradlew test buildPlugin under JDK21 (no GitHub-CI).",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Drive DaemonGatewayImpl.daemonStatus() against a fake DaemonRpc to prove three-state classification + DTO coercion against the real Gson boundary shape.",
+          "subjects": [
+            "Loaded on a well-formed reply (Doubles coerced; repoCount=repos.size; optionals null; modelPullStatus default 'ready')",
+            "Stopped when the fake throws DaemonUnavailableException",
+            "Unavailable when !ok/error or malformed",
+            "request uses METHOD_STATUS with empty params; probe() unchanged"
+          ],
+          "fixturesNeeded": [
+            "RecordingRpc(handler) fake (RepoStatsGatewayTest idiom)",
+            "gsonStatus() helper emitting the payload as the transport does (Double numbers)"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Source-scan the registration + base-shell wiring (cannot headlessly boot) to prove nested nav (ac1/ac2) + parent-untouched (lc1/k4).",
+          "subjects": [
+            "plugin.xml declares three child applicationConfigurables under parentId=ai.insors.insrc.settings with the three ids + instances",
+            "the parent applicationConfigurable + InsrcSettingsConfigurable.kt are unchanged",
+            "InsrcOpsConfigurable base uses executeOnPooledThread + guarded invokeLater + disposed guard + JBScrollPane over ScrollableColumn",
+            "each child extends InsrcOpsConfigurable() and overrides pageTitle()/buildBody()"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "Source-scan: three child applicationConfigurables (Daemon/Workflows/Debug) under parentId=ai.insors.insrc.settings",
+            "Source-scan: parent element + InsrcSettingsConfigurable.kt unchanged"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "Source-scan: each child has a distinct id + own instance= Configurable extending InsrcOpsConfigurable",
+            "Source-scan: InsrcOpsConfigurable.createComponent() builds each page's own buildBody() off the EDT"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "One parent applicationConfigurable (id ai.insors.insrc.settings) with no children; DaemonGateway has a stale-only probe() and no daemonStatus()/DaemonStatusDto; ui/InsrcCollapsible.kt already ships the scroll shell; daemon.status already returns the full payload (no daemon change).",
+      "stateAfter": "Three child applicationConfigurables under parentId=ai.insors.insrc.settings, each an empty-but-navigable InsrcOpsConfigurable subclass; DaemonGateway gains daemonStatus():DaemonStatusResult over a DaemonStatusDto parsed from daemon.status, alongside the untouched probe(); parent page byte-unchanged.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the abstract InsrcOpsConfigurable base (shared off-EDT-load + guarded-render + JBScrollPane/ScrollableColumn shell). Additive.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add three no-arg subclasses with placeholder buildBody() bodies.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add three child <applicationConfigurable parentId=ai.insors.insrc.settings> entries to plugin.xml; leave the parent element unchanged.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Add DaemonStatusDto + DaemonStatusResult types to DaemonGateway.kt. Additive.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Add daemonStatus() to the interface + DaemonGatewayImpl (reuse METHOD_STATUS; three-state classification; Gson-Double coercion); leave probe() unchanged.",
+          "rollbackable": true
+        },
+        {
+          "order": 6,
+          "action": "Add the daemonStatus() override to every DaemonGateway test-fake/no-op impl; add the unit + source-scan tests.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Additive only. The DaemonGateway interface gains one method (daemonStatus()); every existing signature is unchanged, so callers are unaffected — the only compile impact is each concrete impl/test-fake adding the override (mirroring the earlier repoStats()/registerProject() additions). The parent InsrcSettingsConfigurable + its plugin.xml element are not modified. The daemon is untouched.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Abstract base Configurable (template-method) + sealed daemonStatus()",
+        "oneLineSummary": "sc1 is an abstract InsrcOpsConfigurable base (subclass overrides pageTitle()/buildBody()); each of the three child pages is a thin no-arg subclass registered via parentId; sc2 is a new daemonStatus() returning the HLD's sealed Loaded/Stopped/Unavailable over a DaemonStatusDto parsed from daemon.status.",
+        "approach": "sc1: an abstract class InsrcOpsConfigurable : Configurable owns createComponent()'s shell (JBScrollPane over ui/InsrcCollapsible.ScrollableColumn + executeOnPooledThread + disposed-guarded invokeLater), exposing protected abstract pageTitle()/buildBody(). S001 ships the base + three no-arg subclasses with placeholder bodies, registered via <applicationConfigurable parentId=ai.insors.insrc.settings> (parent byte-unchanged). sc2: add daemonStatus() to DaemonGateway + DaemonGatewayImpl reusing METHOD_STATUS; Stopped on DaemonUnavailableException, Unavailable on !ok/error/RuntimeException, else parse a DaemonStatusDto (Gson-Double-coerced) into Loaded — mirroring repoStats(), never throwing.",
+        "verdict": "CHOSEN",
+        "why": "The only alternative that honors both shared contracts verbatim: sc1 matches the HLD abstract-base interfaceSketch downstream stories consume, and sc2 keeps the mandated three-state result so a not-running daemon maps to the meaningful Stopped. Zero edit to the parent settings page; off-EDT + never-throws (k2)."
+      },
+      {
+        "id": "a2",
+        "name": "Composition helper (no inheritance) + sealed daemonStatus()",
+        "oneLineSummary": "sc1 is a standalone shell helper each child Configurable CALLS from its own createComponent, rather than a base class the pages extend; sc2 identical to a1.",
+        "approach": "sc1 ships a composition helper (object InsrcOpsPageShell { fun mount(title, loadOffEdt, render): JComponent }) encapsulating the JBScrollPane/ScrollableColumn + executeOnPooledThread + guarded invokeLater; each child Configurable calls it from createComponent(). plugin.xml registration identical. sc2 as a1.",
+        "verdict": "REJECTED",
+        "why": "Diverges from the HLD sc1 interfaceSketch (abstract InsrcOpsConfigurable with pageTitle()/buildBody()) that S002/S003/S004 were told to consume, and adds per-page Configurable ceremony — a contract drift needing an HLD back-flow for zero real gain (ranked 2)."
+      },
+      {
+        "id": "a3",
+        "name": "Base class + fold Stopped into Unavailable (two-state result)",
+        "oneLineSummary": "sc1 identical to a1 (abstract base), but sc2's DaemonStatusResult is two-state (Loaded | Unavailable) — a not-running daemon is just an Unavailable(reason).",
+        "approach": "sc1 is the a1 abstract base. sc2 shapes daemonStatus() as a two-state sealed result: Loaded(DaemonStatusDto) when a status decodes, else Unavailable(reason) covering both unreachable and error; the stopped-vs-unreachable distinction collapses into the reason string.",
+        "verdict": "REJECTED",
+        "why": "Contradicts the sc2 sketch's mandated distinct data object Stopped; mislabels a cleanly-stopped daemon (socket refused) as an error and loses the state S002 needs to offer Start; would force an HLD amendment for no real simplification (ranked 3)."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c7",
+      "kind": "analyze-bundle",
+      "ref": "s1 external-contract + symbol.locate — src/shared/types.ts:882 (DaemonStatus payload) + daemon/DaemonGateway.kt (probe/METHOD_STATUS/sealed-result idiom)",
+      "quotedText": "interface DaemonStatus { uptime; repos[]; queueDepth; embeddingsPending; modelPullStatus?; modelPullPct?; lmdbFileSizeMb? } — probe() reuses METHOD_STATUS but reads only FIELD_STALE; daemonStatus() is NEW; classify Unavailable on !ok/error, coerce Gson Doubles, never throw."
+    },
+    {
+      "id": "c8",
+      "kind": "convention",
+      "ref": "s1 symbol.locate — plugin.xml:289-293 parent applicationConfigurable + settings/InsrcSettingsConfigurable.kt createComponent (off-EDT + guarded invokeLater) + ui/InsrcCollapsible.kt (collapsiblePanel/ScrollableColumn)",
+      "quotedText": "A child page nests by adding <applicationConfigurable parentId=ai.insors.insrc.settings id=... instance=.../>; the parent element is left byte-unchanged (lc1/k4); createComponent() runs the read on executeOnPooledThread and renders via invokeLater over a JBScrollPane."
+    }
+  ]
+}

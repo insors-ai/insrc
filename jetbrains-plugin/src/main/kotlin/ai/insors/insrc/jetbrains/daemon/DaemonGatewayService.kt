@@ -60,4 +60,6 @@ class DaemonGatewayService : DaemonGateway {
     override fun perRepoOverrides(): PerRepoOverridesResult = delegate.perRepoOverrides()
 
     override fun registeredRepos(): RegisteredReposResult = delegate.registeredRepos()
+
+    override fun daemonStatus(): DaemonStatusResult = delegate.daemonStatus()
 }

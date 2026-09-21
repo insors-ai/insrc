@@ -7,6 +7,7 @@ import ai.insors.insrc.jetbrains.daemon.DaemonGateway
 import ai.insors.insrc.jetbrains.daemon.SteeringSelection
 import ai.insors.insrc.jetbrains.daemon.RepoStatsResult
 import ai.insors.insrc.jetbrains.daemon.DaemonStatusResult
+import ai.insors.insrc.jetbrains.daemon.DebugStatusResult
 import ai.insors.insrc.jetbrains.daemon.DaemonActionResult
 import ai.insors.insrc.jetbrains.daemon.ApproveResult
 import ai.insors.insrc.jetbrains.daemon.SaveResult
@@ -66,6 +67,7 @@ class DaemonLifecycleServiceTest : BasePlatformTestCase() {
             throw AssertionError("S003 must never call registeredRepos (that is the settings page)")
 
         override fun daemonStatus(): DaemonStatusResult = DaemonStatusResult.Stopped
+        override fun debugStatus(): DebugStatusResult = DebugStatusResult.Unavailable("not used in this test")
         override fun shutdown(): DaemonActionResult = DaemonActionResult.Failed("not used")
         override fun backup(targetDir: String): DaemonActionResult = DaemonActionResult.Failed("not used")
         override fun compact(): DaemonActionResult = DaemonActionResult.Failed("not used")

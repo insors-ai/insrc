@@ -392,6 +392,41 @@ sealed interface DaemonStatusResult {
 }
 
 /**
+ * One session attached to the daemon socket (Story E2026092157298940:S005) — the
+ * plugin's projection of the daemon's `AttachedClient` (src/shared/types.ts), parsed
+ * from the `daemon.debug-status` reply's `clients[]`. [id] and [connectedAtMs] are
+ * always present; [label] is the client's self-declared name ('unknown' when the
+ * connection sent no identity envelope); [pid] and [lastMethod] are present only when
+ * the client supplied them. Numbers cross the socket as Gson Double and are coerced to
+ * Long. Observational only — nothing here can close or mutate a connection (k3).
+ */
+data class AttachedSessionDto(
+    val id: Long,
+    val label: String,
+    val pid: Long?,
+    val connectedAtMs: Long,
+    val lastMethod: String?,
+)
+
+/**
+ * The result of a `daemon.debug-status` read (Story E2026092157298940:S005) — the
+ * sessions currently attached to the daemon socket, consumed read-only by the Debug
+ * page's MCP section. TWO states (a debug read has no distinct 'stopped', unlike sc2's
+ * [DaemonStatusResult]): a [Loaded] snapshot (sessions sorted by connectedAtMs ascending,
+ * possibly empty) or [Unavailable] when the socket is unreachable or the reply carries a
+ * framed error. A reachable ok-reply always decodes to [Loaded] — a present-but-junk
+ * `clients` field tolerantly yields [Loaded] with the parseable sessions (empty when none),
+ * mirroring the tolerant [daemonStatus]/parseDaemonStatus idiom. Never throws.
+ */
+sealed interface DebugStatusResult {
+    /** The daemon answered; [sessions] are the attached sessions (sorted, possibly empty). */
+    data class Loaded(val sessions: List<AttachedSessionDto>) : DebugStatusResult
+
+    /** The daemon is unreachable or returned a framed error; [reason] explains. */
+    data class Unavailable(val reason: String) : DebugStatusResult
+}
+
+/**
  * The uniform outcome of a Daemon-page lifecycle action (Story
  * E2026092157298940:S002) — the three gateway IPCs (backup/compact/shutdown) AND the
  * three daemon-ctl.sh runner commands (start/restart/update) all report through this
@@ -594,6 +629,18 @@ interface DaemonGateway {
      * the S002 Daemon page + the S004 Debug status card.
      */
     fun daemonStatus(): DaemonStatusResult
+
+    /**
+     * Read the sessions attached to the daemon socket (Story E2026092157298940:S005)
+     * over the EXISTING `daemon.debug-status` IPC — its `{ clients: AttachedClient[] }`
+     * payload parsed into [AttachedSessionDto]s sorted by connectedAtMs ascending.
+     * Application-scoped (takes no repo). Adds only a client-side read over an
+     * already-shipped IPC — the daemon is unchanged (k1). Does NOT throw: an unreachable
+     * socket / framed error / malformed reply is [DebugStatusResult.Unavailable], else
+     * [DebugStatusResult.Loaded]. Read-only — sends empty params and never mutates the
+     * daemon (k3). Consumed by the S005 Debug MCP section.
+     */
+    fun debugStatus(): DebugStatusResult
 
     /**
      * Request a graceful daemon stop over the `daemon.shutdown` IPC (Story
@@ -993,6 +1040,24 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
             DaemonStatusResult.Unavailable(e.message ?: "unexpected daemon fault")
         }
 
+    override fun debugStatus(): DebugStatusResult =
+        try {
+            // daemon.debug-status is read-only (empty params) and already shipped; it
+            // returns { clients: AttachedClient[] }. Classify exactly like daemonStatus():
+            // an unreachable socket / framed error / malformed reply -> Unavailable, else
+            // Loaded with the parsed sessions sorted by connectedAtMs. Never throws (k1/k3).
+            val r = rpc.call(METHOD_DEBUG_STATUS, emptyMap())
+            if (!r.ok || r.error != null) {
+                DebugStatusResult.Unavailable(r.error ?: "daemon.debug-status returned an error")
+            } else {
+                DebugStatusResult.Loaded(parseAttachedSessions(r.data))
+            }
+        } catch (e: DaemonUnavailableException) {
+            DebugStatusResult.Unavailable(e.message ?: "daemon unavailable")
+        } catch (e: RuntimeException) {
+            DebugStatusResult.Unavailable(e.message ?: "unexpected daemon fault")
+        }
+
     override fun shutdown(): DaemonActionResult =
         // Graceful stop: the daemon.shutdown handler returns {ok:true} then terminates
         // itself. A DaemonUnavailableException means the socket is already down => the
@@ -1037,6 +1102,7 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
 
     companion object {
         const val METHOD_STATUS = "daemon.status"
+        const val METHOD_DEBUG_STATUS = "daemon.debug-status"
         const val METHOD_SHUTDOWN = "daemon.shutdown"
         const val METHOD_BACKUP = "daemon.backup"
         const val METHOD_COMPACT = "daemon.compact"
@@ -1206,6 +1272,28 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
             lmdbFileSizeMb = (data["lmdbFileSizeMb"] as? Number)?.toInt(),
             repoCount = (data["repos"] as? Collection<*>)?.size ?: 0,
         )
+
+        /**
+         * Parse the `daemon.debug-status` reply's `clients[]` into [AttachedSessionDto]s
+         * (Story S005), sorted by connectedAtMs ascending. Each client crosses the socket
+         * as a Gson Map with Double numbers; id/pid/connectedAt are coerced to Long (the
+         * daemonStatus coercion idiom), label defaults to 'unknown' and pid/lastMethod are
+         * null when absent. A non-list `clients` or a non-map element is skipped, never a
+         * throw — the never-throws contract holds for junk-but-ok replies.
+         */
+        internal fun parseAttachedSessions(data: Map<String, Any?>): List<AttachedSessionDto> {
+            val clients = data["clients"] as? List<*> ?: return emptyList()
+            return clients.mapNotNull { el ->
+                val m = el as? Map<*, *> ?: return@mapNotNull null
+                AttachedSessionDto(
+                    id = (m["id"] as? Number)?.toLong() ?: 0L,
+                    label = (m["label"] as? String) ?: "unknown",
+                    pid = (m["pid"] as? Number)?.toLong(),
+                    connectedAtMs = (m["connectedAt"] as? Number)?.toLong() ?: 0L,
+                    lastMethod = m["lastMethod"] as? String,
+                )
+            }.sortedBy { it.connectedAtMs }
+        }
 
         /** A Gson `Record<string,number>` (Map with String keys + Double values) -> Map<String,Int>. */
         private fun numberMap(raw: Any?): Map<String, Int> {

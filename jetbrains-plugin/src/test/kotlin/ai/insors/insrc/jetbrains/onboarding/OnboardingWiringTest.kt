@@ -7,6 +7,7 @@ import ai.insors.insrc.jetbrains.daemon.DaemonGateway
 import ai.insors.insrc.jetbrains.daemon.SteeringSelection
 import ai.insors.insrc.jetbrains.daemon.RepoStatsResult
 import ai.insors.insrc.jetbrains.daemon.DaemonStatusResult
+import ai.insors.insrc.jetbrains.daemon.DebugStatusResult
 import ai.insors.insrc.jetbrains.daemon.DaemonActionResult
 import ai.insors.insrc.jetbrains.daemon.ApproveResult
 import ai.insors.insrc.jetbrains.daemon.SaveResult
@@ -68,6 +69,7 @@ class OnboardingWiringTest : BasePlatformTestCase() {
         override fun perRepoOverrides(): PerRepoOverridesResult = PerRepoOverridesResult.Unavailable("not used in this test")
         override fun registeredRepos(): RegisteredReposResult = RegisteredReposResult.Unavailable("not used in this test")
         override fun daemonStatus(): DaemonStatusResult = DaemonStatusResult.Unavailable("not used in this test")
+        override fun debugStatus(): DebugStatusResult = DebugStatusResult.Unavailable("not used in this test")
         override fun shutdown(): DaemonActionResult = DaemonActionResult.Failed("not used in this test")
         override fun backup(targetDir: String): DaemonActionResult = DaemonActionResult.Failed("not used in this test")
         override fun compact(): DaemonActionResult = DaemonActionResult.Failed("not used in this test")

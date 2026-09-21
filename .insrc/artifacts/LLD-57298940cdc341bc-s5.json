@@ -1,0 +1,558 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1789990038657-p988fx",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-21T11:36:21.654Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 542849,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-09-21T05:46:35.262Z",
+    "epicHash": "57298940cdc341bc",
+    "epicSlug": "expand-jetbrains-plugin-s-insrc-settings",
+    "storyId": "s5",
+    "hldBaseRunId": "wf-1789970136758-lvyg6v",
+    "hldEffectiveHash": "7b17d6a14b2a62383210886c5fc8a4d3db9366569ad01726cd49bbd35b17dae1",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "c1",
+          "kind": "external-contract",
+          "severity": "LOW",
+          "premise": "The daemon registers the 'daemon.debug-status' IPC returning { clients: AttachedClient[] } at src/daemon/index.ts around line 937.",
+          "evidence": "READ src/daemon/index.ts:937 found=True and grep 'daemon.debug-status' returned a source match — the daemon.debug-status IPC returning { clients: AttachedClient[] } ships as cited.",
+          "action": "None — citation resolves.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "c2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The AttachedClient interface { id, label, pid?, connectedAt, lastMethod? } is declared in src/shared/types.ts around line 835.",
+          "evidence": "READ src/shared/types.ts:835 found=True; grep 'interface AttachedClient' matched in source. The AttachedClient interface is declared where cited.",
+          "action": "None — citation resolves.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "c3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The daemon server exposes attachedClients(): AttachedClient[] at src/daemon/server.ts around line 84, which the debug-status handler returns.",
+          "evidence": "READ src/daemon/server.ts:84 found=True — attachedClients(): AttachedClient[] exists at the cited line, backing the debug-status handler.",
+          "action": "None — citation resolves.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "c4",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "The plugin's MCP-client universe is the closed AiHostKind union {AI_ASSISTANT, JUNIE}, detected via AiHostAdapter.detectPresent(): List<AiHost>.",
+          "evidence": "grep 'enum class AiHostKind' matched exactly once in source and 'fun detectPresent' matched in source — the closed AiHostKind union {AI_ASSISTANT, JUNIE} and AiHostAdapter.detectPresent() exist as described.",
+          "action": "None — closed-union holds.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "c5",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "JsonMcpConfigWriter writes/removes under the mcpServers.insrc key and exposes no public read helper; McpRegistrationReader reads the mcpServers.insrc key itself without reaching JsonMcpConfigWriter internals.",
+          "evidence": "grep 'class JsonMcpConfigWriter' matched in source and 'mcpServers' matched broadly — JsonMcpConfigWriter operates on the mcpServers.insrc key; the reader's own key read (no writer-internals reach) is consistent with the source.",
+          "action": "None — citation resolves.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "c6",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "DaemonGateway exposes a sealed daemonStatus() result idiom (DaemonStatusResult sealed with Loaded/Stopped/Unavailable, fun daemonStatus()) which the new debugStatus() mirrors.",
+          "evidence": "grep 'DaemonStatusResult' and 'fun daemonStatus' resolve in source (DaemonGateway.kt override at :975 confirms the sealed daemonStatus() idiom the new debugStatus() mirrors).",
+          "action": "None — idiom citation resolves.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "c7",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "S004's DebugConfigurable (class DebugConfigurable : InsrcOpsConfigurable(), DebugPageHost) is the existing Debug page that S005 appends its MCP section to via sections().",
+          "evidence": "grep 'class DebugConfigurable' and 'DebugPageHost' matched in source — S004's DebugConfigurable : InsrcOpsConfigurable(), DebugPageHost with a sections() method exists as the append target.",
+          "action": "None — cross-artifact trace to S004 holds.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "c8",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The sc3 DebugPageHost seam defines interface DebugSection {title/component} + interface DebugPageHost {sections} in the debug package, which McpDebugSection implements.",
+          "evidence": "grep 'interface DebugSection', 'interface DebugPageHost', 'fun title', 'fun component' all matched in source — the sc3 DebugSection/DebugPageHost seam exists with title/component as McpDebugSection implements.",
+          "action": "None — citation resolves.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "c9",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "Adding debugStatus() to the DaemonGateway interface forces the override across every existing impl (real + delegate + test fakes), the same compile-forced fanout the sc2 daemonStatus() override already spans (grep override fun daemonStatus).",
+          "evidence": "grep 'override fun daemonStatus' matched real source files (DaemonGateway.kt:975, DaemonGatewayService.kt:64), confirming the compile-forced override fanout the new debugStatus() replicates.",
+          "action": "None — inventory/fanout claim holds.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "c10",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The daemonStatus() gateway sends its request via an injectable DaemonRpc with a METHOD constant (mirroring METHOD_DEBUG_STATUS='daemon.debug-status' the new method uses), and coerces Gson Double->Long for numeric fields.",
+          "evidence": "grep 'DaemonRpc', 'daemon.status', and 'toLong' resolve in source (toLong coercion present in plugin sources). The specific constant name METHOD_DAEMON_STATUS is not load-bearing (my probe guess); the injectable-DaemonRpc + Gson Double->Long coercion idiom the debugStatus() mirrors is confirmed.",
+          "action": "None — semantic idiom holds.",
+          "fixability": "auto"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 10
+      },
+      "reviewedAt": "2026-09-21T11:38:59.081Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-21T11:39:41.964Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Chosen shape a1: three new child Settings pages (Daemon, Workflows, Debug) are registered declaratively as <applicationConfigurable parentId=\"ai.insors.insrc.settings\"> nodes under the UNCHANGED parent insrc Configurable, each a thin Swing page built on a shared abstract page-shell base (the off-EDT-load + InsrcCollapsible/JBScrollPane idiom the settings page already established). Every page is a read/act surface over a plugin-side seam placed at its natural home — the DaemonGateway grows in-place sealed *Result IPC methods, a lifecycle-command runner reuses the existing ScriptDaemonProvisioner/script-locator to run daemon-ctl.sh subcommands, an OS-process seam (Java ProcessHandle) does the single guarded orphan-kill, a read-only chain reader projects .insrc/artifacts, and a first-of-its-kind log-editor seam (LightVirtualFile + FileEditorManager) hosts the tail. Nothing touches the shipped parent settings page or the daemon; everything is additive, plugin-only, and off-EDT.",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "id": "sc3",
+          "name": "DebugPageHost",
+          "purpose": "The Debug Configurable's section-host: S004 builds the Debug page as a small ordered set of sections, so S005 (MCP clients + attached sessions) and S006 (the log-open affordance) can attach their read-only sections without re-owning the Debug page. Owned by S004; consumed by S005 and S006 (both depend on S004).",
+          "interfaceSketch": "// Kotlin type-level (no bodies)\ninterface DebugSection {          // one collapsible read-only area on the Debug page\n  fun title(): String\n  fun component(): javax.swing.JComponent   // built off-EDT by the section, rendered under the shell\n}\ninterface DebugPageHost {         // the S004 Debug page exposes an ordered section list\n  fun sections(): List<DebugSection>        // S004 seeds status+orphans; S005/S006 contribute theirs\n}",
+          "ownedByStory": "s4",
+          "consumedByStories": [
+            "s5",
+            "s6"
+          ],
+          "assumptions": [
+            "c3"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s5",
+        "owns": [],
+        "depends": [
+          "sc3"
+        ],
+        "internal": "PRIVATE to S005: the MCP diagnostic section it contributes to the Debug page host — a read-only view combining the plugin's existing host-detection (which MCP clients are registered/connected) with a new DaemonGateway debug-status read (daemon.debug-status → the sessions attached to the socket, with identity + connection time), degrading to a clear unavailable line when the daemon is unreachable. No mutating control (k3)."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1",
+            "sc2"
+          ],
+          "depends": [],
+          "internal": "PRIVATE to S001: the concrete registration wiring of the three child Configurable classes in plugin.xml, the abstract page-shell base implementation (its createComponent off-EDT/guarded-render mechanics), and the parse of the daemon.status payload into DaemonStatusDto. S001 delivers the empty-but-navigable pages + the shared status read; it does not implement any page's domain body — those are the consuming Stories'."
+        },
+        {
+          "storyId": "s2",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "PRIVATE to S002: the Daemon page body (health readout rendered from sc2 + the six action controls), and the lifecycle-action backing used only here — the new DaemonGateway IPC methods for backup/compact/shutdown (sealed *Result) and a lifecycle-command runner that executes daemon-ctl.sh subcommands (start/stop/restart/update) via the existing ScriptDaemonProvisioner + DefaultDaemonScriptLocator, off the EDT with streamed progress and a backup-dir prompt. No other Story consumes these, so they stay S002-internal."
+        },
+        {
+          "storyId": "s3",
+          "owns": [],
+          "depends": [
+            "sc1"
+          ],
+          "internal": "PRIVATE to S003: the plugin-side read-only chain reader that scans the open project's .insrc/artifacts (DEF-/HLD-/LLD-/PLAN-*.json) and projects a ChainReport-shaped model (define/HLD marks, per-story design/approved/stale, next action, amendment counts), plus the Workflows page that renders it read-only (no approve/reject/amend — k6) with an empty state. Entirely local file reads; no daemon IPC and no shared surface."
+        },
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc3"
+          ],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "PRIVATE to S004: the Debug status card rendered from sc2 (plus locally-derived pid/version where the status payload lacks them), and the OS-process seam — a Java ProcessHandle enumerator that recommends stray daemon-entry processes (excluding the managed one) and a confirm-gated kill that acts solely on the explicit selection and degrades to 'unsupported' off a capable platform (the single mutation, k3). S004 also implements the DebugPageHost (sc3) and seeds its own status+orphan section."
+        },
+        {
+          "storyId": "s6",
+          "owns": [],
+          "depends": [
+            "sc3"
+          ],
+          "internal": "PRIVATE to S006: the log-editor seam — the plugin's first LightVirtualFile + FileEditorManager surface — that opens a chosen daemon/agent log (from the known LOG_DIR) as a read-only editor tab and streams appended lines off the EDT into it, with a level/module/text filter applied to the view. The 'open log' affordance attaches to the Debug page host (sc3). Nothing deletes/rotates/clears the underlying log (k5, read-only)."
+        }
+      ],
+      "rolloutPhase": "Phase C — Debug sections (MCP/sessions, log editor)",
+      "nonFunctional": {
+        "performance": "Every read (status, chain scan, debug-status, MCP list, process scan) and every action (lifecycle scripts, backup/compact) runs on a pooled thread with a guarded invokeLater render (k2); the log editor streams into a bounded view so a long-running tail stays memory-safe, mirroring the CLI's bounded ring buffer.",
+        "security": "The single mutating operation anywhere in the Epic is the Debug orphan-process kill, which is confirm-gated and acts only on the operator's explicit selection (k3); all other surfaces are strictly read-only. No credentials are handled; the plugin reaches only the local socket, local files, and local processes on the same machine.",
+        "observability": "The pages surface the daemon's OWN observable state (status/queue/logs/attached clients); the Epic adds no new telemetry of its own — it is a read/act projection of existing signals.",
+        "durability": "No persisted plugin state: every page shows a live snapshot (or a live stream for logs); closing a page or the log editor drops only in-memory view state. Lifecycle actions mutate the daemon via its own scripts/IPCs, not via any plugin-held store."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "DaemonGateway.debugStatus",
+          "signature": "interface DaemonGateway { fun debugStatus(): DebugStatusResult }  // + impl in DaemonGatewayImpl over the injectable DaemonRpc; delegated by DaemonGatewayService",
+          "parameters": [],
+          "returns": {
+            "type": "DebugStatusResult",
+            "meaning": "A sealed read result over the shipped daemon.debug-status IPC: DebugStatusResult.Loaded(sessions: List<AttachedSessionDto>) with the attached sessions sorted by connectedAtMs ascending, or DebugStatusResult.Unavailable(reason) when the socket is unreachable / the reply is not ok / malformed. Mirrors the daemonStatus() sealed-result idiom; never throws."
+          },
+          "errors": [
+            {
+              "type": "(none — never throws)",
+              "condition": "DaemonUnavailableException (socket down) -> Unavailable; a !ok/error reply or a RuntimeException (malformed payload) -> Unavailable(reason). Never propagates to the EDT render, matching the daemonStatus() contract."
+            }
+          ],
+          "preconditions": [
+            "Called off the EDT (from the MCP section's component() on a pooled thread) — it does a blocking socket round-trip."
+          ],
+          "postconditions": [
+            "Read-only: sends METHOD_DEBUG_STATUS='daemon.debug-status' with emptyMap() params and never mutates the daemon (k3).",
+            "The daemon is UNCHANGED — only the client-side gateway method is added over the already-registered IPC (k1)."
+          ]
+        },
+        {
+          "name": "McpRegistrationReader.read",
+          "signature": "class McpRegistrationReader(detectPresent: () -> List<AiHost> = { service<AiHostAdapterService>().detectPresent() }, isInsrcRegistered: (mcpConfigPath: String) -> Boolean = ::mcpServersInsrcPresent) { fun read(): List<McpHostStatusDto> }",
+          "parameters": [],
+          "returns": {
+            "type": "List<McpHostStatusDto>",
+            "meaning": "One McpHostStatusDto {kind: AiHostKind, present: Boolean, registered: Boolean} per host the plugin's existing detectPresent() reports — present is always true for a detected host; registered = the host's mcpConfigPath JSON carries the mcpServers.insrc key. The plugin's own MCP-client universe (AiHostKind {AI_ASSISTANT, JUNIE}), not the CLI's claude/codex."
+          },
+          "errors": [
+            {
+              "type": "(none — never throws)",
+              "condition": "A detectPresent() failure yields an empty list; a per-host config read that throws (missing/unreadable/malformed JSON) folds to registered=false for that host, so the projection never propagates an exception."
+            }
+          ],
+          "preconditions": [
+            "Called off the EDT (blocking local file reads of each host's mcpConfigPath)."
+          ],
+          "postconditions": [
+            "Read-only: no host file is written; mirrors the existing detectPresent() host-detection + a mcpServers.insrc key read (no reach into JsonMcpConfigWriter internals).",
+            "Returns one entry per detected host, in detectPresent() order."
+          ]
+        },
+        {
+          "name": "McpDebugSection.component",
+          "signature": "class McpDebugSection(gateway: DaemonGateway, registration: McpRegistrationReader) : DebugSection { override fun title(): String; override fun component(): javax.swing.JComponent }",
+          "parameters": [],
+          "returns": {
+            "type": "javax.swing.JComponent",
+            "meaning": "The read-only MCP diagnostic: a per-host registration table (kind / present / registered) from McpRegistrationReader.read() + an attached-sessions table (id, label, pid, connected-at, last method) from gateway.debugStatus(); a clear 'daemon unreachable' line replaces the sessions table when debugStatus() is Unavailable (ac1). NO disconnect/terminate control anywhere (ac2/k3)."
+          },
+          "errors": [
+            {
+              "type": "(none propagated)",
+              "condition": "Both reads never throw (their contracts); the component is built off the EDT by the sc3 host and rendered under the sc1 base's disposed-guarded invokeLater."
+            }
+          ],
+          "preconditions": [
+            "Built off the EDT: component() is invoked while DebugConfigurable.buildBody() runs on a pooled thread (sc1 base)."
+          ],
+          "postconditions": [
+            "Strictly read-only — the section exposes no mutating or disconnecting affordance (ac2/k3).",
+            "Implements the sc3 DebugSection interface (title + off-EDT-built component)."
+          ]
+        },
+        {
+          "name": "DebugConfigurable.sections",
+          "signature": "override fun sections(): List<DebugSection>  // now returns [statusSection(), orphansSection(), mcpSection()]",
+          "parameters": [],
+          "returns": {
+            "type": "List<DebugSection>",
+            "meaning": "The sc3 ordered section list, now with the S005 McpDebugSection APPENDED after S004's Status and Orphans sections — the section-additive consumption of sc3. S004's status/orphan sections are unchanged."
+          },
+          "errors": [],
+          "preconditions": [
+            "Assembled off the EDT (each section's component() may read the socket / host files)."
+          ],
+          "postconditions": [
+            "Consumes sc3 by appending exactly one DebugSection; does NOT re-design S004's sections (stays within the s5 boundary).",
+            "The parent settings page + plugin.xml <applicationConfigurable> element remain byte-unchanged (k4)."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "DebugStatusResult",
+        "change": "new",
+        "details": "Plugin-side sealed result of the daemon.debug-status read: `Loaded(sessions: List<AttachedSessionDto>)` | `Unavailable(reason: String)`. Mirrors the shipped DaemonStatusResult shape (Loaded/Stopped/Unavailable) but two-state (a debug read has no distinct 'stopped'); the CLI equivalent is DebugStatusModel {reachable:true,clients}|{reachable:false}.",
+        "callSites": [
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGateway.kt",
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/debug/McpDebugSection.kt"
+        ]
+      },
+      {
+        "entity": "AttachedSessionDto",
+        "change": "new",
+        "details": "Plugin projection of the daemon's AttachedClient (src/shared/types.ts:835): { id:Long, label:String, pid:Long?, connectedAtMs:Long, lastMethod:String? } parsed from the debug-status `clients[]` payload (Gson Double->Long coercion for id/pid/connectedAt, matching the daemonStatus() coercion idiom). Rendered read-only as one attached-session row.",
+        "callSites": [
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGateway.kt",
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/debug/McpDebugSection.kt"
+        ]
+      },
+      {
+        "entity": "McpHostStatusDto",
+        "change": "new",
+        "details": "Per-host registration projection: { kind: AiHostKind, present: Boolean, registered: Boolean } over the closed AiHostKind union {AI_ASSISTANT, JUNIE}. present from AiHostAdapter.detectPresent() (installed+enabled); registered from whether the host's mcpConfigPath JSON carries the mcpServers.insrc key. Rendered read-only as one MCP-client row.",
+        "callSites": [
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/debug/McpRegistrationReader.kt",
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/debug/McpDebugSection.kt"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "S005 CONSUMES sc3 (owned by S004): it implements the DebugSection interface with a new S005-internal McpDebugSection and APPENDS it to DebugConfigurable.sections() (now [Status, Orphans, Mcp]) — the section-additive contract. It does NOT re-own or re-design the DebugPageHost or S004's Status/Orphans sections; it only contributes one read-only section built off the EDT under the sc1 base. No change to the sc3 interface shape."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The daemon socket is down / not running when the MCP section loads (the diagnostic's core use case).",
+          "detection": "DaemonGateway.debugStatus() catches DaemonUnavailableException from the DaemonRpc round-trip (the daemonStatus() idiom) and returns DebugStatusResult.Unavailable(reason).",
+          "response": "The attached-sessions table is replaced by a clear 'daemon unreachable: <reason>' line (ac1 — not a blank); the per-host registration table still renders (it needs no daemon, only local host-detection + config reads).",
+          "userImpact": "The developer sees an explicit unavailable line plus the still-useful registration state, never a blank or a stack trace.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The daemon.debug-status reply is malformed / not ok (a truncated payload, a non-array clients field, or an {error} reply).",
+          "detection": "The gateway's Gson parse of `clients[]` throws (JsonSyntaxException / IllegalStateException) or the reply carries !ok/error; both are caught in the debugStatus() classification (RuntimeException/!ok -> Unavailable), matching daemonStatus().",
+          "response": "debugStatus() returns Unavailable(reason); the section shows the unavailable line rather than a partial/garbled table. Never rethrows to the EDT.",
+          "userImpact": "A daemon glitch surfaces as 'unavailable', not a broken UI.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A detected host's mcpConfigPath JSON is missing, unreadable (permissions), or malformed when computing registration.",
+          "detection": "The injected isInsrcRegistered(mcpConfigPath) read wraps the file read + Gson parse; an IOException/JsonSyntaxException is caught per host.",
+          "response": "That host folds to registered=false (present stays true — the host is detected); the other hosts are still evaluated. McpRegistrationReader.read() never throws.",
+          "userImpact": "A host with an unreadable/absent mcp config shows as present-but-not-registered rather than dropping the whole MCP table.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The plugin's host-detection (detectPresent) itself fails (probe error).",
+          "detection": "McpRegistrationReader.read() wraps the detectPresent() provider call; a thrown detection folds to an empty list.",
+          "response": "The registration table renders empty (or a 'no MCP hosts detected' line); the attached-sessions table is unaffected (it comes from the gateway).",
+          "userImpact": "The developer still sees attached sessions even if host-detection hiccups; no crash.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "The daemon is reachable but has ZERO attached sessions (no client currently on the socket).",
+          "expected": "DebugStatusResult.Loaded(emptyList) -> the attached-sessions table renders an empty-but-present state ('no sessions attached') rather than the Unavailable line — reachable-with-none is distinct from unreachable."
+        },
+        {
+          "input": "No MCP hosts are detected on this machine (neither AI_ASSISTANT nor JUNIE installed/enabled).",
+          "expected": "McpRegistrationReader.read() returns an empty list -> the registration table shows a clear 'no MCP hosts detected' empty state; the attached-sessions table still renders from the gateway."
+        },
+        {
+          "input": "A detected host is present but the insrc entry is NOT registered (mcpServers.insrc absent).",
+          "expected": "McpHostStatusDto {present=true, registered=false} -> the row shows present + not-registered (the expected read-only diagnostic signal)."
+        },
+        {
+          "input": "Multiple sessions are attached with the same label (e.g. two of the same client).",
+          "expected": "Each AttachedClient is a distinct row keyed by its id; the table lists all of them sorted by connectedAtMs ascending (identity = id/label/pid, connection time = connectedAtMs), never de-duplicated away."
+        },
+        {
+          "input": "An AttachedClient omits the optional pid / lastMethod fields.",
+          "expected": "AttachedSessionDto.pid / lastMethod are null and render as '—'; id/label/connectedAtMs (required) still render."
+        },
+        {
+          "input": "connectedAt / id arrive as JSON numbers (Gson Double over the socket).",
+          "expected": "The Double is coerced to Long for connectedAtMs/id/pid (the daemonStatus() coercion idiom), not left as a fractional/scientific string."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The MCP diagnostic is STRICTLY READ-ONLY — it surfaces registration + attached sessions but exposes NO control that disconnects/terminates a client or session (ac2/k3). The epic's single mutation stays S004's confirm-gated orphan kill; c5 is the existing host-detection capability this section reuses read-only (detectPresent + a mcpServers.insrc key read), adding no write to any host file.",
+          "source": "c5"
+        },
+        {
+          "text": "The daemon is NOT modified: S005 only adds a client-side DaemonGateway method over the ALREADY-REGISTERED daemon.debug-status IPC and consumes it read-only; no daemon handler / IPC / CI change (k1). Grounded in the s1 external-contract bundle (daemon.debug-status ships at src/daemon/index.ts:937).",
+          "source": "c5"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "JUnit5 (org.junit.jupiter) — the jetbrains-plugin test module, mirroring the DaemonStatusGatewayTest/Sc2DaemonGatewayTest fake-DaemonRpc idiom and the DebugPageTest/NestedOpsPagesTest source-scan idiom.",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove DaemonGateway.debugStatus() over a fake DaemonRpc: sends METHOD_DEBUG_STATUS='daemon.debug-status' with empty params; parses `clients[]` into AttachedSessionDto sorted by connectedAtMs with the Gson Double->Long coercion; classifies DaemonUnavailableException/!ok/RuntimeException-malformed -> Unavailable; never throws.",
+          "subjects": [
+            "DaemonGatewayImpl.debugStatus (RecordingRpc fake returning a canned {clients:[...]}, an {error}/!ok reply, a throwing rpc, and a malformed payload)"
+          ],
+          "fixturesNeeded": [
+            "a canned {clients:[{id,label,pid,connectedAt,lastMethod}, ...]} reply with numbers as Gson Double + optional pid/lastMethod omitted",
+            "a rpc that throws DaemonUnavailableException; a reply that is !ok/error; a malformed (non-array clients) reply"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove McpRegistrationReader.read() folds the injected detectPresent() + isInsrcRegistered seam into per-host McpHostStatusDto {kind,present,registered}, and never throws: a per-host config read failure folds to registered=false; a detectPresent failure yields empty.",
+          "subjects": [
+            "McpRegistrationReader.read (injected detectPresent + isInsrcRegistered providers)",
+            "the mcpServers.insrc key read helper (over temp JSON)"
+          ],
+          "fixturesNeeded": [
+            "injected detectPresent returning [AiHost(AI_ASSISTANT,path), AiHost(JUNIE,path)] and an empty list",
+            "temp mcpConfig JSON with mcpServers.insrc present, absent, and malformed/unreadable (to assert registered=true/false/false)"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Source-scan guard the Debug MCP section + its sc3 consumption: DebugConfigurable.sections() now includes the MCP section (appended after Status/Orphans), McpDebugSection implements DebugSection + reads gateway.debugStatus()+McpRegistrationReader, renders an unavailable line, and exposes NO disconnect/terminate control (read-only, ac2/k3); parent settings page untouched (k4).",
+          "subjects": [
+            "McpDebugSection.kt source text (implements DebugSection, uses DaemonGateway.debugStatus + McpRegistrationReader, an 'unreachable'/unavailable line, no disconnect/terminate/JButton-action)",
+            "DebugConfigurable.kt source text (sections() appends the MCP section; Status/Orphans unchanged)"
+          ],
+          "fixturesNeeded": [
+            "read of src/main/kotlin/ai/insors/insrc/jetbrains/debug/McpDebugSection.kt",
+            "read of src/main/kotlin/ai/insors/insrc/jetbrains/ops/DebugConfigurable.kt"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "unit(gateway): a canned {clients:[...]} reply -> DebugStatusResult.Loaded with AttachedSessionDto rows (id/label/pid/connectedAtMs/lastMethod) sorted by connectedAtMs, Gson Double coerced to Long",
+            "unit(gateway): DaemonUnavailableException / !ok / malformed -> DebugStatusResult.Unavailable(reason) (the degrade-not-blank signal)",
+            "unit(reader): detectPresent + mcpServers.insrc present/absent -> per-host McpHostStatusDto{present,registered}; a host with an unreadable config -> registered=false; empty detect -> empty list",
+            "source-scan(section): McpDebugSection reads gateway.debugStatus() + McpRegistrationReader and renders a per-host registration table + attached-sessions table, with an unavailable line when the gateway read fails"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "source-scan(section): McpDebugSection.kt contains no disconnect/terminate/JButton-action-listener control and no daemon-mutating IPC — strictly read-only (k3)",
+            "source-scan(page): DebugConfigurable.sections() only APPENDS the MCP section; the epic's single mutation stays S004's orphan kill (no new mutating control on the page)"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "The Debug page (S004) renders exactly two sc3 sections — DebugConfigurable.sections() returns listOf(statusSection(), orphansSection()) (s1 convention.detect). DaemonGateway exposes daemonStatus() (sc2) + the S002 action IPCs, but NO debug-status read (s1 convention.detect); the daemon.debug-status IPC ships at src/daemon/index.ts:937 returning { clients: AttachedClient[] } and is consumed only by the CLI today (s1 external-contract). The plugin's host-detection AiHostAdapter.detectPresent():List<AiHost> over AiHostKind {AI_ASSISTANT, JUNIE} exists (s1 symbol.locate) but nothing surfaces MCP registration/attached-sessions on the Debug page. JsonMcpConfigWriter exposes only write/remove of mcpServers.insrc, no public read.",
+      "stateAfter": "DaemonGateway grows a read-only debugStatus():DebugStatusResult over the already-shipped daemon.debug-status IPC (Loaded(sessions)|Unavailable, mirroring daemonStatus(); parses AttachedSessionDto with Gson Double->Long). A pure McpRegistrationReader folds detectPresent() + an injected mcpServers.insrc key read into per-host McpHostStatusDto{kind,present,registered}. A new S005-internal McpDebugSection (sc3 DebugSection) renders both read-only via InsrcCollapsible with an unavailable line, and DebugConfigurable.sections() APPENDS it (now [Status, Orphans, Mcp]). No disconnect/terminate control (k3/ac2); daemon + parent settings page + plugin.xml unchanged (k1/k4).",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the new plugin-internal types + the DaemonGateway read: DebugStatusResult{Loaded(sessions)|Unavailable(reason)} + AttachedSessionDto, and interface DaemonGateway.debugStatus() with the DaemonGatewayImpl impl (METHOD_DEBUG_STATUS='daemon.debug-status', emptyMap params, parse clients[] with Gson Double->Long, sealed classification mirroring daemonStatus(), never throws) + the DaemonGatewayService delegate. Adding a method to the DaemonGateway interface forces the override in every impl (real + delegating + test fakes).",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add the pure McpRegistrationReader (+ McpHostStatusDto) over an injected detectPresent() + a small mcpServersInsrcPresent(mcpConfigPath):Boolean read helper (Gson read of the mcpServers.insrc key; per-host swallow -> registered=false) — additive, reads host files read-only, no reach into JsonMcpConfigWriter internals.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add the S005-internal McpDebugSection implementing the sc3 DebugSection (title + off-EDT component rendering the registration table + attached-sessions table via InsrcCollapsible, unavailable line, strictly read-only).",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Append the McpDebugSection to DebugConfigurable.sections() (now [statusSection(), orphansSection(), mcpSection()]) — the only edit to an existing file, confined to adding one list element; S004's Status/Orphans sections unchanged.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Add McpDebugStatusGatewayTest (fake DaemonRpc: Loaded/Unavailable/malformed + Gson Double coercion) + McpRegistrationReaderTest (temp JSON: present/absent/malformed registration, empty detect) + extend DebugPageTest (source-scan: sections() appends the MCP section; McpDebugSection read-only + unavailable line). Add the debugStatus() stub override to the DaemonGateway test fakes. Verify locally: gradlew test buildPlugin (JDK21, --no-build-cache after the interface change).",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "The DaemonGateway INTERFACE gains a new method debugStatus() — additive, but every existing impl (DaemonGatewayImpl real, DaemonGatewayService delegate, and the daemon test fakes) must add the override (a compile-forced fanout, exactly as sc2 daemonStatus() did across the 6 impls; grep `override fun daemonStatus(` = the inventory). No EXISTING method signature changes and no behavior change to daemonStatus()/the action IPCs, so no runtime backward-incompatibility — only the new-method override is required. sc3 is consumed unchanged (no interface change). The daemon is untouched (the debug-status IPC already ships). DebugConfigurable's <applicationConfigurable> id is unchanged; the sections() list only grows by one.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "DaemonGateway sealed debug-status read + pure host-registration reader + sc3 section",
+        "oneLineSummary": "Add a sealed debugStatus() to DaemonGateway over the shipped daemon.debug-status IPC (attached sessions), a pure McpRegistrationReader projecting per-host {present, registered} from the existing detectPresent() + an injected config-read seam, and an McpDebugSection (sc3 DebugSection) that DebugConfigurable.sections() appends and renders read-only with an unavailable line.",
+        "approach": "DaemonGateway grows a new read method mirroring daemonStatus(): a sealed `DebugStatusResult { Loaded(sessions: List<AttachedSessionDto>) | Unavailable(reason) }` where AttachedSessionDto = {id:Long, label:String, pid:Long?, connectedAtMs:Long, lastMethod:String?} parsed from the `clients[]` payload (Gson Double->Long coercion) and sorted by connectedAtMs; reuses the injectable DaemonRpc with METHOD_DEBUG_STATUS='daemon.debug-status'; DaemonUnavailableException/!ok/error/RuntimeException -> Unavailable; never throws. A pure `McpRegistrationReader` folds AiHostAdapter.detectPresent():List<AiHost> with an injected `isInsrcRegistered: (mcpConfigPath) -> Boolean` (a tiny local read of the mcpServers.insrc key) into a per-host `McpHostStatusDto {kind, present, registered}` over the closed AiHostKind union. A new S005-internal `McpDebugSection` implements the sc3 DebugSection (title + off-EDT-built component) rendering a per-host registration table + the attached-sessions table via ui/InsrcCollapsible, strictly read-only (no disconnect/terminate control), with a clear 'daemon unreachable' line when debugStatus() is Unavailable (ac1). DebugConfigurable.sections() APPENDS this section to its ordered list (the sc3 section-additive contract) — S004's status/orphan sections unchanged.",
+        "verdict": "chosen",
+        "why": "DaemonGateway sealed debug-status read (mirrors daemonStatus) + pure McpRegistrationReader over the existing detectPresent() + an sc3 McpDebugSection appended read-only; satisfies ac1/ac2 + sc3 + k1/k2/k3/k4 and is fully unit-testable."
+      },
+      {
+        "id": "a2",
+        "name": "CLI-parity live MCP status via spawning `<cli> mcp list` per client",
+        "oneLineSummary": "Reproduce the CLI mcpStatus exactly — spawn `<cli> mcp list` for each known client (claude/codex), parse registered+connected from stdout — plus the debug-status attached-sessions read.",
+        "approach": "Instead of the plugin's host-detection, S005 spawns the claude/codex CLI binaries with `mcp list` per render (mirroring debug.ts mcpStatusWith + parseMcpList), parsing the `insrc` server line for registered/connected, and combines that with the daemon.debug-status attached-sessions read; the section renders both.",
+        "verdict": "rejected",
+        "why": "Most literal CLI 'connected' parity but uses the wrong client universe (claude/codex, not the plugin's AiHostKind hosts) and a heavy per-render subprocess the plugin was designed not to reimplement.",
+        "reasonRejected": "Uses the WRONG client universe (spawns claude/codex, not the plugin's own AiHostKind {AI_ASSISTANT, JUNIE} hosts — ignoring the boundary's 'plugin's existing host-detection') and a heavy per-render CLI subprocess the plugin was explicitly designed not to reimplement (partial ac1/k1/k2), and is far harder to unit-test than an injected detectPresent()+config-read."
+      },
+      {
+        "id": "a3",
+        "name": "Inline the debug-status rpc + registration read directly in the section (no gateway method, no reader seam)",
+        "oneLineSummary": "Do the daemon.debug-status rpc and the mcpServers.insrc read inline inside the McpDebugSection, with no DaemonGateway method and no pure registration reader.",
+        "approach": "The McpDebugSection opens the DaemonRpc / reaches JsonMcpConfigWriter internals directly in its component() body and formats the result inline — no sealed DebugStatusResult on DaemonGateway, no injectable McpRegistrationReader.",
+        "verdict": "rejected",
+        "why": "Smallest diff but inlines the rpc + a JsonMcpConfigWriter-private reach into the section, leaving the debug-status parse + registration projection untestable and breaking the gateway convention.",
+        "reasonRejected": "Breaks the HLD's chosen shape ('the DaemonGateway grows in-place sealed *Result IPC methods') by putting a raw rpc + JSON parse in a Swing section, and leaves the Unavailable/Gson-Double parse + the registration projection UNTESTABLE (no gateway seam / no pure reader to inject a fake into) — partial ac1/k2; it also couples to JsonMcpConfigWriter's private internals."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 external-contract — daemon.debug-status IPC {clients:AttachedClient[]} (index.ts:937; types.ts:835; server.ts:84); the CLI attachedClientsWith"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 symbol.locate — AiHostAdapter.detectPresent():List<AiHost> over AiHostKind {AI_ASSISTANT,JUNIE}; mcpServers.insrc registration (JsonMcpConfigWriter)"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1 convention.detect — sc3 section-additive consumption + the daemonStatus() sealed-result gateway idiom + off-EDT render (InsrcCollapsible)"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "s1 test.locate — DaemonStatusGatewayTest/Sc2DaemonGatewayTest fake-DaemonRpc + DebugPageTest source-scan idioms"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "HLD 57298940cdc341bc sc3 (DebugPageHost) ownedByStory s4, consumed by s5; existingCapabilityRefs c5 = host-detection"
+    }
+  ]
+}

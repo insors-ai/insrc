@@ -53,6 +53,43 @@ class DebugPageTest {
             "the Debug page performs no daemon-mutating IPC — the kill is a local process signal only (k3)")
     }
 
+    // ---- S005: the appended MCP section (read-only, sc3-additive) ------------
+
+    private val mcpSection by lazy { read("src/main/kotlin/ai/insors/insrc/jetbrains/debug/McpDebugSection.kt") }
+
+    @Test
+    fun `s5 ac1 - sections() appends the MCP section after Status and Orphans`() {
+        assertTrue(
+            page.contains("listOf(statusSection(), orphansSection(), mcpSection())"),
+            "the MCP section is appended last; S004's two sections are unchanged",
+        )
+        assertTrue(page.contains("McpDebugSection()"), "the appended section is the S005 McpDebugSection")
+    }
+
+    @Test
+    fun `s5 ac1 - the MCP section is a DebugSection that reads the gateway + registration and renders an unavailable line`() {
+        assertTrue(mcpSection.contains(": DebugSection"), "McpDebugSection implements the sc3 DebugSection")
+        assertTrue(mcpSection.contains("gateway.debugStatus()"), "reads attached sessions via DaemonGateway.debugStatus()")
+        assertTrue(mcpSection.contains("registration.read()"), "reads registration via McpRegistrationReader")
+        assertTrue(mcpSection.contains("daemon unreachable"), "an Unavailable read degrades to a clear line, not a blank (ac1)")
+        assertTrue(mcpSection.contains("No sessions attached"), "reachable-with-zero renders an empty-but-present state")
+        assertTrue(mcpSection.contains("No MCP hosts detected"), "no-hosts renders an empty state")
+    }
+
+    @Test
+    fun `s5 ac2 - k3 - the MCP section exposes no mutating control and no daemon-mutating IPC`() {
+        assertFalse(mcpSection.contains("addActionListener"), "no action control on the read-only MCP section")
+        assertFalse(mcpSection.contains("JButton"), "no button on the read-only MCP section")
+        assertFalse(
+            mcpSection.contains("disconnect") || mcpSection.contains("terminate") || mcpSection.contains("destroy"),
+            "no disconnect/terminate control — sessions are observed, never mutated (ac2/k3)",
+        )
+        assertFalse(
+            mcpSection.contains("gateway.shutdown") || mcpSection.contains("gateway.backup") || mcpSection.contains("gateway.compact"),
+            "the MCP section performs no daemon-mutating IPC (k3)",
+        )
+    }
+
     @Test
     fun `k4 - the page does not touch the parent settings page`() {
         assertFalse(page.contains("InsrcSettingsConfigurable"), "the Debug page never references the parent settings page (k4)")

@@ -6,6 +6,7 @@ import ai.insors.insrc.jetbrains.debug.DebugStatusCardModel
 import ai.insors.insrc.jetbrains.debug.DebugStatusCardReader
 import ai.insors.insrc.jetbrains.debug.KillOutcome
 import ai.insors.insrc.jetbrains.debug.KillResult
+import ai.insors.insrc.jetbrains.debug.McpDebugSection
 import ai.insors.insrc.jetbrains.debug.OrphanProcess
 import ai.insors.insrc.jetbrains.debug.OrphanProcessSeam
 import ai.insors.insrc.jetbrains.debug.OrphanScanResult
@@ -39,8 +40,8 @@ class DebugConfigurable : InsrcOpsConfigurable(), DebugPageHost {
 
     override fun pageTitle(): String = "Debug"
 
-    /** sc3: the ordered read-only sections S004 seeds (S005/S006 append theirs). */
-    override fun sections(): List<DebugSection> = listOf(statusSection(), orphansSection())
+    /** sc3: the ordered read-only sections S004 seeds; S005 appends the MCP section (S006 later). */
+    override fun sections(): List<DebugSection> = listOf(statusSection(), orphansSection(), mcpSection())
 
     override fun buildBody(): JComponent {
         val column = JPanel().apply {
@@ -77,6 +78,11 @@ class DebugConfigurable : InsrcOpsConfigurable(), DebugPageHost {
         card.add(row("Version", model.version ?: "—"))
         return card
     }
+
+    // ---- MCP clients section (read-only, appended by S005) -------------------
+
+    /** sc3: the S005 read-only MCP registration + attached-sessions section (no mutation, k3). */
+    private fun mcpSection(): DebugSection = McpDebugSection()
 
     // ---- Orphans section (the single confirm-gated mutation, k3) -------------
 

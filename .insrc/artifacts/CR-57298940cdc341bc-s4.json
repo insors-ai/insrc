@@ -1,0 +1,59 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1789989770437-0drbua",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-21T11:22:50.437Z",
+    "model": "client",
+    "elapsedMs": 2,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "57298940cdc341bc",
+    "storyId": "s4"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "57298940cdc341bc",
+    "storyId": "s4",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "jetbrains-plugin/gradle.properties",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/ops/DebugConfigurable.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/ops/NestedOpsPagesTest.kt"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/ops/DebugConfigurable.kt:137",
+            "message": "The cold-review LOW was fixed: the killed-list pruning now removes ONLY pids whose outcome is TERMINATED/FORCED, so a failed kill (ERROR / still-alive) stays visible rather than silently vanishing. Remaining cold-review LOWs are deliberately left as CLI-inherited parity the LLD chose (EPERM classified benign for same-user targets; the stale-pidfile hazard mirrors the CLI managedPid exclusion; repoCount taken verbatim from the sc2 DTO) or cosmetic (Cancel doesn't poll the ProgressIndicator). The kill escalation is byte-faithful to debug.ts killOrphansWith (SIGTERM→grace→SIGKILL survivors, input-order outcomes). No quality defect.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 1
+    }
+  }
+}

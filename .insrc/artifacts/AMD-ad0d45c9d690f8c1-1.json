@@ -1,0 +1,36 @@
+{
+  "id": "AMD-ad0d45c9d690f8c1-1",
+  "epicHash": "ad0d45c9d690f8c1",
+  "epicSlug": "build-insrc-vs-code-extension-v1",
+  "hldBaseRunId": "wf-1790009331473-c5to0q",
+  "amendment": {
+    "type": "sharedContract.methodAdd",
+    "contractId": "sc1",
+    "method": {
+      "name": "reachability",
+      "signature": "reachability(): Promise<DaemonReachability>",
+      "purpose": "Derive DaemonReachability ('running'|'stopped'|'errored') from a daemon.status call outcome, because the daemon's real DaemonStatus (src/shared/types.ts:882) carries NO `running` field — reachability must be inferred (status resolves ⇒ running; rpc's ENOENT/ECONNREFUSED throw ⇒ stopped; other throw ⇒ errored). Centralized on sc1 so s1's status surface and the consumers s2/s4/s5 do not each re-derive it."
+    }
+  },
+  "rationale": "Small additive correction: the HLD sc1 sketch's DaemonStatus{running,...} was explicitly illustrative; grounding shows the wire DaemonStatus (index.ts:913) has no `running` boolean, so reachability is derived, not read. Adding a `reachability()` method to sc1 (non-breaking, additive) gives every consumer one derivation point and keeps the sketch's already-declared DaemonReachability type meaningful. No field is removed — the implementation simply re-exports the REAL DaemonStatus from shared/types rather than the sketch's illustrative fields.",
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/daemon/index.ts:913 (daemon.status returns DaemonStatus with no `running`)"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/shared/types.ts:882 (real DaemonStatus shape)"
+    }
+  ],
+  "proposedBy": {
+    "workflow": "design.story",
+    "runId": "wf-1790010529619-xyb76l",
+    "storyId": "s1",
+    "stepId": "s4"
+  },
+  "proposedAt": "2026-09-21T17:19:36.966Z",
+  "status": "pending"
+}

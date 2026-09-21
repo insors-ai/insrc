@@ -1,0 +1,358 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1790012650312-g63937",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-21T17:48:01.940Z",
+    "epicCreatedAt": "2026-09-21T16:32:40.301Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 231415,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ad0d45c9d690f8c1",
+    "epicSlug": "build-insrc-vs-code-extension-v1",
+    "storyId": "s1",
+    "lldRunId": "wf-1790010529619-xyb76l",
+    "lldEffectiveHash": "1e2038ef723235b64e83ceb16211d8262911619c0f401b3886b6a4c352eda9a9",
+    "review": {
+      "artifact": "plan",
+      "stage": "plan",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "ref": "t1",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "Exactly four non-test files import `rpc` from '../client.js' (src/cli/services/{debug,repo,config,daemon}.ts) — the importers t1's re-export must keep byte-compatible.",
+          "evidence": "Confirmed exactly four src importers of `rpc` from '../client.js': src/cli/services/config.ts:12, daemon.ts:17, debug.ts:25, repo.ts:15 (the 5th grep hit is the LLD doc itself, not a source import). t1's re-export must preserve exactly these.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl2",
+          "ref": "t1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/cli/client.ts:15 holds the `rpc` fn body that t1 moves into src/shared/ipc-client.",
+          "evidence": "Read src/cli/client.ts:15 = `export async function rpc<T = unknown>(method: string, params: unknown = {}, connect: () => Socket = () => createConnection(PATHS.sockFile)): Promise<T> {` — the exact fn t1 moves. Confirmed verbatim.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl3",
+          "ref": "t1",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "src/cli/client.ts imports only node:net + src/shared/types + src/shared/paths, so t1's extraction keeps the k5 thin boundary (no daemon internals to leak).",
+          "evidence": "src/cli/client.ts:1 imports { createConnection, Socket } from 'node:net'; :2 IpcRequest/IpcResponse from ../shared/types.js; :3 PATHS from ../shared/paths.js — no daemon internals/indexer/storage on the graph, so t1's extraction keeps the k5 thin boundary.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl4",
+          "ref": "tasks",
+          "kind": "ordering",
+          "severity": "LOW",
+          "premise": "The plan task DAG is acyclic and topologically ordered: t1/t2 have no deps; t3/t4/t5 depend on t2; t6 depends on t1/t3/t4/t5 — every dependency precedes its dependant by `order`.",
+          "evidence": "Self-contained artifact-internal claim (no source probe needed): the plan's own task table shows t1/t2 with no deps, t3/t4/t5 dependsOn t2, t6 dependsOn t1/t3/t4/t5, with orders 1-6 — a valid acyclic topological order (every dependency's order < its dependant's). Verified in the s6 checklist (t3 passed).",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl5",
+          "ref": "coverage",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "Every LLD testStrategy subject (11 items) maps to ≥1 covering task in testStrategyCoverage, and every derivedFrom citation c1-c5 traces to an approved-LLD sc/handoff item.",
+          "evidence": "Self-contained artifact-internal claim: the plan's testStrategyCoverage table maps all 11 LLD subjects each to ≥1 task (t1×5/t2×1/t3/t4/t5/t6×3), and citations c1-c5 each carry a prior-artifact ref to an approved-LLD sc/handoff item, each referenced by ≥1 task. Verified in the s6 checklist (cov1/cov2/gr1 passed).",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 5
+      },
+      "reviewedAt": "2026-09-21T17:48:55.983Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-21T17:53:18.458Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Extract src/shared/ipc-client + make src/cli/client.ts a re-export",
+        "summary": "Create src/shared/ipc-client.ts holding the moved `rpc` fn (body verbatim from src/cli/client.ts:15, keeping the connect seam + {label,pid} envelope), plus a `createIpcClient(connect?)` factory exposing rpc<T>(), status(): Promise<DaemonStatus> (rpc('daemon.status')), and reachability(): Promise<DaemonReachability> (success⇒running; the ENOENT/ECONNREFUSED 'daemon is not running' throw⇒stopped; other throw⇒errored; never throws). Re-export IpcRequest/IpcResponse/DaemonStatus from src/shared/types.js and `sockFilePath` (= PATHS.sockFile). Turn src/cli/client.ts into `export { rpc } from '../shared/ipc-client.js'`.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "src/shared/ipc-client.ts exports rpc, createIpcClient, IpcRequest, IpcResponse, DaemonStatus, DaemonReachability, sockFilePath",
+          "src/cli/client.ts re-exports rpc; the four importers (src/cli/services/{debug,repo,config,daemon}.ts) compile + pass unchanged, and the { label: 'cli', pid } client-identity envelope is still emitted on the wire",
+          "reachability() derives running/stopped/errored from the call outcome and never throws",
+          "src/shared/ipc-client's import graph contains only node:net + src/shared/types + src/shared/paths (no daemon internals/indexer/storage)"
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "rpc() over a fake connect seam: success resolves result; ENOENT/ECONNREFUSED→'daemon is not running'; {error} line→Error(res.error); non-JSON→'invalid response from daemon'; { label:'cli', pid } envelope written on connect"
+          },
+          {
+            "level": "unit",
+            "name": "reachability() derives running/stopped/errored/(timeout→errored) from the call outcome and never throws"
+          },
+          {
+            "level": "unit",
+            "name": "source-scan: src/cli/client.ts re-exports rpc from src/shared/ipc-client and src/shared/ipc-client re-exports IpcRequest/IpcResponse/DaemonStatus from src/shared/types (no parallel type defs); import graph has no daemon internals/indexer/storage"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Scaffold the vscode-plugin/ package + activation entry",
+        "summary": "Create the NEW top-level vscode-plugin/ package (sibling to jetbrains-plugin/): its own tsconfig (strict/ESM/NodeNext) + a MINIMAL package.json with only what s1 needs to compile and declare the activation entry + status-bar contribution (the Marketplace listing metadata / full contributes / .vsix packaging is s6's boundary, deferred). Add the extension entry module exporting activate(context)/deactivate() stubs the later tasks fill in. Wire it to import the shared ipc-client.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "vscode-plugin/ exists with tsconfig.json + a minimal package.json declaring the activation entry (no Marketplace listing metadata — that is s6)",
+          "the package builds and exports activate/deactivate",
+          "no reasoning/LLM/analysis/graph code is present in the extension (k2/lc2)"
+        ],
+        "derivedFrom": [
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "vscode-plugin/ builds (tsc) and its entry module exports activate + deactivate"
+          },
+          {
+            "level": "unit",
+            "name": "source-scan: the extension bundle imports only src/shared/ipc-client (no daemon internals/indexer/storage/cloud path) — k2/lc2/k5"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Implement sc2 StatusSurface",
+        "summary": "Add the StatusSurface interface (set(snapshot: StatusSnapshot): void; current(): StatusSnapshot) with DaemonUiState = running|stopped|errored|unknown, and one default impl wrapping an INJECTED status-bar handle (window.createStatusBarItem passed in), mapping each DaemonUiState to text/icon. No daemon calls here.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "StatusSurface.set updates the injected handle's text/icon per DaemonUiState; current() returns the last snapshot",
+          "the impl takes its VS Code handle via injection so it is testable with a fake (no live window required)"
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "StatusSurface.set()/current() maps each DaemonUiState (running/stopped/errored/unknown) to the fake status-bar handle's text/icon"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Implement sc3 CommandRegistry",
+        "summary": "Add the CommandRegistry interface (register(descriptor: CommandDescriptor, run: () => Promise<void>): void) with InsrcCommandId + CommandDescriptor, and a default impl over an INJECTED registerCommand-like fn that pushes each Disposable into the ExtensionContext.subscriptions sink and rejects a duplicate InsrcCommandId. s1 registers no command bodies itself.",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "register() registers via the injected fn and stores the Disposable in the subscriptions sink",
+          "registering the same InsrcCommandId twice throws a guarded programming-error",
+          "no command bodies are registered by s1 (the registry is the only surface)"
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "CommandRegistry.register() pushes a Disposable into a fake subscriptions sink and rejects a duplicate InsrcCommandId"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Implement sc4 ConsentGate",
+        "summary": "Add the ConsentGate interface (ask(request: ConsentRequest): Promise<ConsentOutcome>) with ConsentRequest {title, detail, acceptLabel, items?} + ConsentOutcome = accepted|declined|dismissed, and a default impl over an INJECTED modal message fn (window.showInformationMessage modal:true) mapping the selection to the outcome. s1 performs NO invasive action — it only supplies the gate.",
+        "size": "S",
+        "order": 5,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "ask() maps the injected modal fn's return to accepted/declined/dismissed",
+          "no side effect occurs in s1 — the gate performs nothing itself"
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "ConsentGate.ask() maps the fake modal fn's return to accepted/declined/dismissed and performs no side effect"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Wire the activation shell (never-throws, off-UI probe → status)",
+        "summary": "Fill activate(context): construct the ipc client (t1) + sc2/sc3/sc4 (t3/t4/t5), register the status-bar item into context.subscriptions, and kick off a BOUNDED off-the-UI-path reachability probe whose derived DaemonUiState is pushed into StatusSurface.set; a failed/timed-out probe degrades to stopped/errored and activation never throws / never modifies the editor. deactivate() disposes the status-bar item + registered Disposables so a re-activate leaves no duplicate.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t1",
+          "t3",
+          "t4",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "activate() constructs client + surfaces, registers the status-bar item, runs the reachability probe OFF the activation critical path (activate() returns without awaiting/blocking on it) and pushes the derived state to sc2 (ac1/ac2)",
+          "activate() never throws and never modifies the editor even when the probe fails/times out (degrades to stopped/errored within a bounded deadline)",
+          "deactivate() disposes the status-bar item + command Disposables (re-activate leaves no duplicate)"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "activate(context) constructs client + sc2/sc3/sc4, registers the status-bar item into context.subscriptions, runs the reachability probe off the UI path and calls StatusSurface.set with the derived state"
+          },
+          {
+            "level": "unit",
+            "name": "activate(context): a probe that throws/times out degrades to 'stopped'/'errored' and activation still returns (never throws)"
+          },
+          {
+            "level": "unit",
+            "name": "deactivate() disposes status-bar + command Disposables (re-activate leaves no duplicate item)"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "src/shared/ipc-client: rpc() over a fake connect seam (success resolves result; ENOENT/ECONNREFUSED → 'daemon is not running' Error; {error} line → Error(res.error); non-JSON line → 'invalid response from daemon'); client-identity envelope { label, pid } written on connect",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "IpcClient.reachability(): success ⇒ 'running'; 'daemon is not running' throw ⇒ 'stopped'; other throw ⇒ 'errored'; timeout ⇒ 'errored'",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "StatusSurface: set()/current() maps each DaemonUiState to the fake status-bar handle's text/icon",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "CommandRegistry: register() pushes a Disposable into a fake subscriptions sink and rejects a duplicate InsrcCommandId",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "ConsentGate: ask() maps the fake modal fn's return to accepted/declined/dismissed and performs no side effect",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "activate(context): constructs client + sc2/sc3/sc4, registers the status-bar item into context.subscriptions, runs the bounded reachability probe off the UI path, and calls StatusSurface.set with the derived state",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "activate(context): a probe that throws/times out degrades to 'stopped'/'errored' and activation still returns (never throws)",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "deactivate(): disposes status-bar + command Disposables (re-activate leaves no duplicate item)",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/cli/client.ts still exports `rpc` (a re-export of src/shared/ipc-client) with an identical call signature — a source/type-level assertion that the four importers (src/cli/services/{debug,repo,config,daemon}.ts) resolve it unchanged",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/shared/ipc-client re-exports IpcRequest/IpcResponse/DaemonStatus from src/shared/types.ts (no parallel type definitions)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/shared/ipc-client's import graph contains no daemon internals/indexer/storage modules (k5 thin-boundary guard, a source-scan assertion)",
+        "coveredByTaskIds": [
+          "t1",
+          "t2"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 sc1 SharedIpcClient — rpc extraction + createIpcClient { rpc, status, reachability } + cli/client.ts re-export (methodAdd amendment sc1.reachability)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 sc2 StatusSurface — set/current over an injected status-bar handle, DaemonUiState"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 sc3 CommandRegistry — register over an injected registerCommand + subscriptions sink, InsrcCommandId, duplicate-id guard"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 sc4 ConsentGate — ask over an injected modal fn returning accepted/declined/dismissed"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 activate/deactivate + vscode-plugin/ package scaffold (minimal manifest; Marketplace listing deferred to s6)"
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "name": "insrc-vscode",
+  "displayName": "insrc",
+  "description": "insrc for VS Code — grounded code-knowledge and the tracked workflow, wired into your AI assistant.",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {},
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "tsx --test 'src/**/__tests__/*.test.ts'"
+  }
+}

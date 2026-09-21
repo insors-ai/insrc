@@ -1,0 +1,831 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1790010529619-xyb76l",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-21T17:19:36.960Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 647330,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-09-21T16:32:40.301Z",
+    "epicHash": "ad0d45c9d690f8c1",
+    "epicSlug": "build-insrc-vs-code-extension-v1",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1790009331473-c5to0q",
+    "hldEffectiveHash": "1e2038ef723235b64e83ceb16211d8262911619c0f401b3886b6a4c352eda9a9",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "ref": "rpc",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/cli/client.ts:15 defines `export async function rpc<T = unknown>(method, params, connect = () => createConnection(PATHS.sockFile)): Promise<T>` — the fn the LLD moves into src/shared/ipc-client.",
+          "evidence": "Confirmed verbatim: src/cli/client.ts:15 = `export async function rpc<T = unknown>(method: string, params: unknown = {}, connect: () => Socket = () => createConnection(PATHS.sockFile)): Promise<T>`. The move-into-src/shared/ipc-client premise is grounded.",
+          "action": "None — rpc signature/location resolves.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl2",
+          "ref": "dataModel",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "Exactly four non-test files import `rpc` from '../client.js': src/cli/services/{debug,repo,config,daemon}.ts — the importers the re-export must keep byte-compatible.",
+          "evidence": "Confirmed: the four importers src/cli/services/{config:12,daemon:17,debug:25,repo:15}.ts each `import { rpc } from '../client.js'` — exactly the inventory the byte-compatible re-export must preserve. No other non-test importer.",
+          "action": "None — importer inventory is exact.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl3",
+          "ref": "IpcClient.status",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The daemon's real DaemonStatus (src/shared/types.ts:882) has fields uptime/repos[]/queueDepth/embeddingsPending/modelPull*/lmdbFileSizeMb? and NO `running` boolean — the basis for the reachability amendment.",
+          "evidence": "Confirmed: src/shared/types.ts:882 `export interface DaemonStatus {` with uptime/repos/queueDepth/embeddingsPending/modelPull*/lmdbFileSizeMb? and no `running` field (the test fixture at command.test.ts:32 mirrors those fields). The reachability-amendment basis holds.",
+          "action": "None — DaemonStatus shape confirmed; reachability derivation is correctly grounded.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl4",
+          "ref": "IpcClient.status",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The daemon registers a 'daemon.status' IPC handler (src/daemon/index.ts:913) returning that DaemonStatus — the call reachability() makes.",
+          "evidence": "Confirmed: src/daemon/index.ts:913 `'daemon.status': async () => {` — the real handler reachability() calls.",
+          "action": "None — daemon.status handler resolves.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl5",
+          "ref": "IpcRequest/IpcResponse",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/shared/types.ts already exports IpcRequest (798) and IpcResponse (812) that the shared client re-uses (no mirrored copies), and IpcRequest carries the { label, pid } client envelope.",
+          "evidence": "Confirmed: src/shared/types.ts:798 IpcRequest, :812 IpcResponse, and :809 the `client?: { readonly label; readonly pid }` envelope — the shared client reuses these existing types (no mirrored copies), and the { label, pid } wire envelope is real.",
+          "action": "None — IPC types + client envelope confirmed.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl6",
+          "ref": "dataModel",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/shared/paths.ts:19 defines sockFile = join(INSRC_DIR, 'daemon.sock') — the socket path the sc1 client dials / exposes as sockFilePath.",
+          "evidence": "Confirmed: src/shared/paths.ts:19 `sockFile: join(INSRC_DIR, 'daemon.sock')` — the socket path the sc1 client dials / exposes.",
+          "action": "None — socket path resolves.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl7",
+          "ref": "dataModel",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "src/cli/client.ts's only imports are node:net + src/shared/types + src/shared/paths (all shared-safe), so extracting rpc into src/shared/ipc-client pulls no daemon internals (the k5 thin-boundary basis).",
+          "evidence": "Confirmed: src/cli/client.ts:1 imports only `{ createConnection, Socket } from 'node:net'` plus IpcRequest/IpcResponse from ../shared/types.js and PATHS from ../shared/paths.js — no daemon internals/indexer/storage on the import graph, so the extraction keeps the k5 thin boundary. (The 52 grep hits are unrelated Socket uses across the tree, not client.ts imports.)",
+          "action": "None — the thin-boundary import basis holds; a build-time import-graph test is specified to guard it.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl8",
+          "ref": "interactionWithShared",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "s1 implements only contracts it owns per the HLD (sc1-sc4); the adjacent-owned sc5/sc6/sc7 are named only as future consumers, not implemented here.",
+          "evidence": "Internal-consistency check (no source probe): the LLD's interactionWithShared implements only sc1-sc4 (all ownedByStory=s1 in the HLD); sc5/sc6/sc7 appear only as adjacent-owned future consumers, never designed/implemented — the scope boundary (sbdry5) holds.",
+          "action": "None — s1 stays within its owned contracts.",
+          "fixability": "auto"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 8
+      },
+      "reviewedAt": "2026-09-21T17:20:56.910Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-21T17:44:04.838Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "The insrc VS Code extension is a thin orchestrator that owns no reasoning: a new top-level vscode-plugin/ TypeScript package (sibling to jetbrains-plugin/, its own package.json + build + Marketplace metadata) whose whole job is to wire insrc into stock VS Code at lifecycle moments (activate, first workspace open, uninstall). It re-expresses the shipped jetbrains-plugin/ thin-config-orchestrator in TS over VS Code primitives, reaching the daemon ONLY through a NEW in-repo src/shared/ipc-client module that generalizes the existing src/cli/client.ts `rpc` fn + its IPC request/reply types + the socket path — giving exactly one socket-client code path shared by the CLI and the extension (k5), with no daemon internals, indexer, or storage in the extension bundle, and no cloud path opened by the extension (k2). The extension is decomposed into small per-capability seams, each with an injectable boundary so its load-bearing logic is unit-testable off the VS Code API, and every invasive action (install the daemon, wire a host, register the workspace) is consent-gated and exposed as a durable first-class command.",
+      "ownedContracts": [
+        {
+          "id": "sc1",
+          "name": "SharedIpcClient",
+          "purpose": "The single thin socket-client boundary (k5): a generalized `rpc` fn + the daemon IPC request/reply types + the socket path, extracted into src/shared/ipc-client so both src/cli and vscode-plugin/ import ONE client. Keeps daemon internals/indexer/storage out of the extension and is the only channel through which the extension reaches reasoning (k2).",
+          "interfaceSketch": "// src/shared/ipc-client\nexport interface IpcRequest<P = unknown> { method: string; params?: P }\nexport interface DaemonStatus {\n  running: boolean;\n  uptimeMs?: number;\n  version?: string;\n  queueDepth?: number;\n  registeredRepos?: number;\n}\nexport type DaemonReachability = 'running' | 'stopped' | 'errored';\nexport interface IpcClient {\n  rpc<T>(method: string, params?: unknown): Promise<T>;\n  status(): Promise<DaemonStatus>;\n}\nexport declare const sockFilePath: string; // = PATHS.sockFile",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s1",
+            "s2",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c1",
+            "c2"
+          ]
+        },
+        {
+          "id": "sc2",
+          "name": "StatusSurface",
+          "purpose": "The glanceable editor status indicator (ac2/k6): a small state model reflecting the daemon as running/stopped/errored plus an update method the lifecycle and onboarding seams push resulting state into. Owned at the foundation because the status-bar view is created at activation and updated from multiple branches.",
+          "interfaceSketch": "export type DaemonUiState = 'running' | 'stopped' | 'errored' | 'unknown';\nexport interface StatusSnapshot {\n  state: DaemonUiState;\n  detail?: string;\n}\nexport interface StatusSurface {\n  set(snapshot: StatusSnapshot): void;\n  current(): StatusSnapshot;\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s1",
+            "s2",
+            "s5"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        },
+        {
+          "id": "sc3",
+          "name": "CommandRegistry",
+          "purpose": "The durable-command contract (ac2/k6): a registration surface for the extension's first-class commands (install, wire, register, and the daemon lifecycle actions) so no dismissed onboarding prompt becomes a dead end. Cross-cutting across s2/s3/s4/s5 — owned at the nearest common ancestor s1.",
+          "interfaceSketch": "export type InsrcCommandId =\n  | 'insrc.daemon.install' | 'insrc.daemon.start' | 'insrc.daemon.stop'\n  | 'insrc.daemon.restart' | 'insrc.daemon.update'\n  | 'insrc.hosts.wire' | 'insrc.workspace.register';\nexport interface CommandDescriptor {\n  id: InsrcCommandId;\n  title: string;\n}\nexport interface CommandRegistry {\n  register(descriptor: CommandDescriptor, run: () => Promise<void>): void;\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s1",
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        },
+        {
+          "id": "sc4",
+          "name": "ConsentGate",
+          "purpose": "The single consent-prompt contract (k4): every invasive action asks and performs nothing until the developer accepts. One shape for the prompt-gated Install (s2), the single combined wiring consent naming every detected host (s3), and the one-time register prompt (s4); the onboarding capstone (s5) sequences these. Cross-cutting — owned at nearest common ancestor s1.",
+          "interfaceSketch": "export interface ConsentRequest {\n  title: string;\n  detail: string;\n  acceptLabel: string;\n  items?: string[]; // e.g. the detected host names for the combined wiring prompt\n}\nexport type ConsentOutcome = 'accepted' | 'declined' | 'dismissed';\nexport interface ConsentGate {\n  ask(request: ConsentRequest): Promise<ConsentOutcome>;\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s1",
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        }
+      ],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "SharedIpcClient",
+          "purpose": "The single thin socket-client boundary (k5): a generalized `rpc` fn + the daemon IPC request/reply types + the socket path, extracted into src/shared/ipc-client so both src/cli and vscode-plugin/ import ONE client. Keeps daemon internals/indexer/storage out of the extension and is the only channel through which the extension reaches reasoning (k2).",
+          "interfaceSketch": "// src/shared/ipc-client\nexport interface IpcRequest<P = unknown> { method: string; params?: P }\nexport interface DaemonStatus {\n  running: boolean;\n  uptimeMs?: number;\n  version?: string;\n  queueDepth?: number;\n  registeredRepos?: number;\n}\nexport type DaemonReachability = 'running' | 'stopped' | 'errored';\nexport interface IpcClient {\n  rpc<T>(method: string, params?: unknown): Promise<T>;\n  status(): Promise<DaemonStatus>;\n}\nexport declare const sockFilePath: string; // = PATHS.sockFile",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s1",
+            "s2",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c1",
+            "c2"
+          ]
+        },
+        {
+          "id": "sc2",
+          "name": "StatusSurface",
+          "purpose": "The glanceable editor status indicator (ac2/k6): a small state model reflecting the daemon as running/stopped/errored plus an update method the lifecycle and onboarding seams push resulting state into. Owned at the foundation because the status-bar view is created at activation and updated from multiple branches.",
+          "interfaceSketch": "export type DaemonUiState = 'running' | 'stopped' | 'errored' | 'unknown';\nexport interface StatusSnapshot {\n  state: DaemonUiState;\n  detail?: string;\n}\nexport interface StatusSurface {\n  set(snapshot: StatusSnapshot): void;\n  current(): StatusSnapshot;\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s1",
+            "s2",
+            "s5"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        },
+        {
+          "id": "sc3",
+          "name": "CommandRegistry",
+          "purpose": "The durable-command contract (ac2/k6): a registration surface for the extension's first-class commands (install, wire, register, and the daemon lifecycle actions) so no dismissed onboarding prompt becomes a dead end. Cross-cutting across s2/s3/s4/s5 — owned at the nearest common ancestor s1.",
+          "interfaceSketch": "export type InsrcCommandId =\n  | 'insrc.daemon.install' | 'insrc.daemon.start' | 'insrc.daemon.stop'\n  | 'insrc.daemon.restart' | 'insrc.daemon.update'\n  | 'insrc.hosts.wire' | 'insrc.workspace.register';\nexport interface CommandDescriptor {\n  id: InsrcCommandId;\n  title: string;\n}\nexport interface CommandRegistry {\n  register(descriptor: CommandDescriptor, run: () => Promise<void>): void;\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s1",
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        },
+        {
+          "id": "sc4",
+          "name": "ConsentGate",
+          "purpose": "The single consent-prompt contract (k4): every invasive action asks and performs nothing until the developer accepts. One shape for the prompt-gated Install (s2), the single combined wiring consent naming every detected host (s3), and the one-time register prompt (s4); the onboarding capstone (s5) sequences these. Cross-cutting — owned at nearest common ancestor s1.",
+          "interfaceSketch": "export interface ConsentRequest {\n  title: string;\n  detail: string;\n  acceptLabel: string;\n  items?: string[]; // e.g. the detected host names for the combined wiring prompt\n}\nexport type ConsentOutcome = 'accepted' | 'declined' | 'dismissed';\nexport interface ConsentGate {\n  ask(request: ConsentRequest): Promise<ConsentOutcome>;\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s1",
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc4"
+        ],
+        "depends": [],
+        "internal": "The VS Code activation entrypoint, the extension-bundle packaging (its build over src/shared/ipc-client), and the daemon-reachability probe implementation stay private to s1. How the status-bar item is created and rendered, and the concrete extraction of src/cli/client.ts into a re-export over src/shared/ipc-client (without regressing the CLI/TUI), are internal detail — only the four type-level contracts (sc1–sc4) are exposed."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc6"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4"
+          ],
+          "internal": "The bundled installer asset (which installer script ships and how it is invoked over scripts/insrc-daemon-install.sh), the exact daemon-ctl.sh subcommand invocation and output parsing, and streamed lifecycle progress are private to s2. Only the sc6 lifecycle contract is exposed; the install/lifecycle commands are registered into sc3 and gated by sc4."
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc5"
+          ],
+          "depends": [
+            "sc3",
+            "sc4"
+          ],
+          "internal": "The concrete per-host config locations and shapes (extension-ID hosts like Copilot/Claude Code/Continue/Cline vs editor-environment hosts like Cursor/Windsurf/VSCodium via .vscode/mcp.json or the host's own file), the marker-delimited JSON-merge and steering writers, and the detection mechanics stay private to each adapter behind sc5. Only the sc5 interface + registry is exposed; the wire command is registered into sc3 and the combined consent uses sc4."
+        },
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc7"
+          ],
+          "depends": [
+            "sc1",
+            "sc3",
+            "sc4"
+          ],
+          "internal": "The workspace-root resolution from the open VS Code workspace folders and the already-registered check semantics stay private to s4. Only the sc7 registrar contract is exposed; enrolment goes exclusively through the daemon's repo.add over sc1, the register command is registered into sc3, and the one-time prompt uses sc4."
+        },
+        {
+          "storyId": "s5",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6",
+            "sc7"
+          ],
+          "internal": "The first-run flow sequencing (the order and coalescing of the install → register → wire consent prompts into one coherent flow rather than scattered pop-ups), the persisted 'already onboarded' state, and the uninstall hook that drives sc5.unwire across wired hosts are private to s5. It owns no new shared contract — it composes the branch owners' contracts and pushes resulting state through sc2."
+        },
+        {
+          "storyId": "s6",
+          "owns": [],
+          "depends": [],
+          "internal": "The vscode-plugin/package.json manifest (contributes/engines.vscode/activationEvents), the Marketplace listing assets (icon, README, categories), the packaging into a single .vsix, and the manually-triggered (workflow_dispatch) Marketplace-only publish path stay entirely private to s6 — no runtime contract is exposed and it depends on no other story's contract, only on the s1 package existing."
+        }
+      ],
+      "rolloutPhase": "Phase A — Foundation & cross-cutting contracts",
+      "nonFunctional": {
+        "performance": "Activation must not block the editor: the daemon-reachability probe and every socket read run off the UI path with a bounded timeout, and a stopped/unreachable daemon degrades to an 'errored'/'stopped' status rather than hanging activation (ac1/ac2).",
+        "security": "No cloud path is opened by the extension and no secrets are stored (k2); all reasoning stays behind daemon IPC over the local Unix socket. Every write into a host-owned config is marker-delimited and reversible (sc5), preserving the developer's surrounding content and fully reversed on uninstall (ac3).",
+        "observability": "Every invasive action reflects its resulting state through the status surface (sc2) and returns a structured LifecycleResult/RegistrationState/ConsentOutcome; consent outcomes (accepted/declined/dismissed) are explicit so a dismissed prompt is recoverable via its durable sc3 command.",
+        "durability": "Workspace enrolment is durable only through the daemon's repo.add registry contract (k3) — the extension holds no shadow registry. Onboarding persists a per-workspace 'already prompted/onboarded' state so prompts are one-time, and the host wiring it writes survives a mere disable and is removed only on uninstall."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "hld": {
+        "amendmentProposal": {
+          "amendment": {
+            "type": "sharedContract.methodAdd",
+            "contractId": "sc1",
+            "method": {
+              "name": "reachability",
+              "signature": "reachability(): Promise<DaemonReachability>",
+              "purpose": "Derive DaemonReachability ('running'|'stopped'|'errored') from a daemon.status call outcome, because the daemon's real DaemonStatus (src/shared/types.ts:882) carries NO `running` field — reachability must be inferred (status resolves ⇒ running; rpc's ENOENT/ECONNREFUSED throw ⇒ stopped; other throw ⇒ errored). Centralized on sc1 so s1's status surface and the consumers s2/s4/s5 do not each re-derive it."
+            }
+          },
+          "rationale": "Small additive correction: the HLD sc1 sketch's DaemonStatus{running,...} was explicitly illustrative; grounding shows the wire DaemonStatus (index.ts:913) has no `running` boolean, so reachability is derived, not read. Adding a `reachability()` method to sc1 (non-breaking, additive) gives every consumer one derivation point and keeps the sketch's already-declared DaemonReachability type meaningful. No field is removed — the implementation simply re-exports the REAL DaemonStatus from shared/types rather than the sketch's illustrative fields.",
+          "citations": [
+            {
+              "id": "c1",
+              "kind": "code",
+              "ref": "src/daemon/index.ts:913 (daemon.status returns DaemonStatus with no `running`)"
+            },
+            {
+              "id": "c2",
+              "kind": "code",
+              "ref": "src/shared/types.ts:882 (real DaemonStatus shape)"
+            }
+          ],
+          "breaking": false
+        }
+      },
+      "api": [
+        {
+          "name": "rpc",
+          "signature": "export async function rpc<T = unknown>(method: string, params?: unknown, connect?: () => Socket): Promise<T>",
+          "parameters": [
+            {
+              "name": "method",
+              "type": "string",
+              "purpose": "The daemon JSON-RPC method name (e.g. 'daemon.status').",
+              "optional": false
+            },
+            {
+              "name": "params",
+              "type": "unknown",
+              "purpose": "Method params; defaults to {}.",
+              "optional": true
+            },
+            {
+              "name": "connect",
+              "type": "() => Socket",
+              "purpose": "Injectable socket-connection seam (defaults to createConnection(PATHS.sockFile)); lets tests pass a fake socket.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<T>",
+            "meaning": "The daemon's result for that method; rejects on daemon error or unreachable socket."
+          },
+          "errors": [
+            {
+              "type": "Error('daemon is not running — start it with: insrc daemon start')",
+              "condition": "socket error code ENOENT or ECONNREFUSED (daemon down)."
+            },
+            {
+              "type": "Error(res.error)",
+              "condition": "the daemon returned an IpcResponse with an `error` field."
+            },
+            {
+              "type": "Error('invalid response from daemon')",
+              "condition": "a response line is not parseable JSON."
+            }
+          ],
+          "preconditions": [
+            "No behavioral change — the function body is MOVED verbatim from src/cli/client.ts:15 into the new src/shared/ipc-client.ts."
+          ],
+          "postconditions": [
+            "src/cli/client.ts re-exports `rpc` from '../shared/ipc-client.js' so its four importers (src/cli/services/{debug,repo,config,daemon}.ts) are byte-unchanged (lc1 / Phase-A backward-compat).",
+            "Only node:net + src/shared/types + src/shared/paths are on the import graph, so an extension importing src/shared/ipc-client pulls no daemon internals (k5/lc1)."
+          ]
+        },
+        {
+          "name": "IpcClient.status",
+          "signature": "status(): Promise<DaemonStatus>",
+          "parameters": [],
+          "returns": {
+            "type": "Promise<DaemonStatus>",
+            "meaning": "The daemon's real status (the shared/types.ts DaemonStatus: uptime, repos[], queueDepth, embeddingsPending, modelPull*, lmdbFileSizeMb?), obtained via rpc('daemon.status')."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "propagates rpc()'s errors when the daemon is down or returns an error."
+            }
+          ],
+          "preconditions": [
+            "sc1 re-exports the REAL DaemonStatus + IpcRequest/IpcResponse from src/shared/types.ts (no mirrored copies)."
+          ],
+          "postconditions": [
+            "Returns the wire DaemonStatus unchanged; the extension never opens a cloud path (k2)."
+          ]
+        },
+        {
+          "name": "IpcClient.reachability",
+          "signature": "reachability(): Promise<DaemonReachability>",
+          "parameters": [],
+          "returns": {
+            "type": "Promise<DaemonReachability>",
+            "meaning": "'running' if status() resolves; 'stopped' if rpc threw the ENOENT/ECONNREFUSED 'daemon is not running' error; 'errored' for any other failure."
+          },
+          "errors": [],
+          "preconditions": [
+            "Added to sc1 via the methodAdd amendment above (never throws — it CATCHES rpc's throws to classify them)."
+          ],
+          "postconditions": [
+            "Gives s1 activation and consumers s2/s4/s5 a single reachability derivation matching ac1 ('determines whether the daemon is reachable')."
+          ]
+        },
+        {
+          "name": "StatusSurface.set",
+          "signature": "set(snapshot: StatusSnapshot): void",
+          "parameters": [
+            {
+              "name": "snapshot",
+              "type": "StatusSnapshot",
+              "purpose": "{ state: DaemonUiState; detail?: string } — the new status to render in the status-bar item.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "Updates the glanceable status-bar indicator (ac2)."
+          },
+          "errors": [],
+          "preconditions": [
+            "The default impl wraps an injected StatusBarItem-like handle (window.createStatusBarItem), so its mapping logic is testable with a fake."
+          ],
+          "postconditions": [
+            "The status-bar text/icon reflects running/stopped/errored/unknown; current() returns the last set snapshot."
+          ]
+        },
+        {
+          "name": "CommandRegistry.register",
+          "signature": "register(descriptor: CommandDescriptor, run: () => Promise<void>): void",
+          "parameters": [
+            {
+              "name": "descriptor",
+              "type": "CommandDescriptor",
+              "purpose": "{ id: InsrcCommandId; title: string } — the durable command to expose.",
+              "optional": false
+            },
+            {
+              "name": "run",
+              "type": "() => Promise<void>",
+              "purpose": "The command handler later stories supply (s1 registers none itself).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "Registers a first-class VS Code command so a dismissed prompt is never a dead end (ac2/k6)."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "the same InsrcCommandId is registered twice (guarded — a duplicate is a programming error)."
+            }
+          ],
+          "preconditions": [
+            "The default impl wraps an injected registerCommand-like fn + pushes the Disposable into the ExtensionContext.subscriptions sink."
+          ],
+          "postconditions": [
+            "The command id is invocable from the palette/status surface; s1 owns only the registry, not the command bodies (those are s2/s3/s4/s5)."
+          ]
+        },
+        {
+          "name": "ConsentGate.ask",
+          "signature": "ask(request: ConsentRequest): Promise<ConsentOutcome>",
+          "parameters": [
+            {
+              "name": "request",
+              "type": "ConsentRequest",
+              "purpose": "{ title; detail; acceptLabel; items? } — the prompt describing the invasive action.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<ConsentOutcome>",
+            "meaning": "'accepted' | 'declined' | 'dismissed' — the developer's decision; nothing invasive happens until 'accepted' (k4)."
+          },
+          "errors": [],
+          "preconditions": [
+            "The default impl wraps an injected modal message fn (window.showInformationMessage with modal:true); s1 performs NO invasive action itself — it only provides the gate."
+          ],
+          "postconditions": [
+            "Consumers (s2 install, s3 wire, s4 register) call ask() before any side effect; a non-'accepted' outcome performs nothing."
+          ]
+        },
+        {
+          "name": "activate",
+          "signature": "export function activate(context: ExtensionContext): void",
+          "parameters": [
+            {
+              "name": "context",
+              "type": "ExtensionContext",
+              "purpose": "VS Code extension context; its `subscriptions` receives the status-bar item + command Disposables for clean teardown.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "The extension entrypoint: constructs the ipc client + sc2/sc3/sc4 surfaces, registers the status-bar item, and kicks off an off-the-UI reachability probe that pushes a DaemonUiState into sc2 (ac1/ac2)."
+          },
+          "errors": [
+            {
+              "type": "(never throws)",
+              "condition": "activation must not block/hang the editor — the reachability probe is bounded and its failure degrades to 'stopped'/'errored', never a thrown activation."
+            }
+          ],
+          "preconditions": [
+            "No reasoning/LLM/analysis/graph runs in-process (k2/lc2); the editor is not modified (ac1)."
+          ],
+          "postconditions": [
+            "The status-bar item shows the derived reachability; later stories attach their commands via sc3."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "src/shared/ipc-client (new module)",
+        "change": "new",
+        "details": "New module holding the moved `rpc` fn + `createIpcClient` factory producing an IpcClient { rpc, status, reachability }, re-exporting IpcRequest/IpcResponse/DaemonStatus from src/shared/types.ts and `sockFilePath` (= PATHS.sockFile). This is the sc1 home — the single socket-client path shared by the CLI/TUI and the extension.",
+        "callSites": [
+          "src/cli/client.ts:15",
+          "src/shared/types.ts:798",
+          "src/shared/paths.ts:19"
+        ]
+      },
+      {
+        "entity": "src/cli/client.ts",
+        "change": "invariant-change",
+        "details": "Its `rpc` body moves to src/shared/ipc-client; client.ts becomes `export { rpc } from '../shared/ipc-client.js'`. Public surface is byte-identical so the four importers are untouched — the load-bearing backward-compat invariant of Phase A.",
+        "callSites": [
+          "src/cli/services/debug.ts:25",
+          "src/cli/services/repo.ts:15",
+          "src/cli/services/config.ts:12",
+          "src/cli/services/daemon.ts:17"
+        ]
+      },
+      {
+        "entity": "vscode-plugin/ (new package)",
+        "change": "new",
+        "details": "New top-level TS package (sibling to jetbrains-plugin/) with its own tsconfig/package.json and an activation entry that stands up sc1-sc4. s1 stands up only the minimal manifest needed to compile + register the status-bar item and commands; the Marketplace listing/contributes/.vsix packaging is s6's boundary. VS Code API access is injected behind each surface's boundary so logic is unit-testable off VS Code.",
+        "callSites": [
+          "jetbrains-plugin/gradle.properties"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "implements",
+        "howDetails": "s1 owns sc1: creates src/shared/ipc-client with the moved rpc + IpcClient { rpc, status, reachability } re-exporting the real IpcRequest/IpcResponse/DaemonStatus + sockFilePath; cli/client.ts re-exports rpc. The reachability() method is added via the methodAdd amendment (the wire DaemonStatus has no `running` field)."
+      },
+      {
+        "contractId": "sc2",
+        "role": "implements",
+        "howDetails": "s1 owns sc2: a StatusSurface with set/current over an injected StatusBarItem handle; activation pushes the derived DaemonUiState so the status-bar reflects running/stopped/errored/unknown (ac2)."
+      },
+      {
+        "contractId": "sc3",
+        "role": "implements",
+        "howDetails": "s1 owns sc3: a CommandRegistry.register over an injected registerCommand + the ExtensionContext.subscriptions Disposable sink. s1 registers no command bodies — it provides the durable-registration surface that s2/s3/s4/s5 populate (k6)."
+      },
+      {
+        "contractId": "sc4",
+        "role": "implements",
+        "howDetails": "s1 owns sc4: a ConsentGate.ask over an injected modal message fn returning accepted/declined/dismissed. s1 performs no invasive action; it only supplies the single consent gate the invasive stories (s2/s3/s4) call before any side effect (k4)."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The daemon is not installed or not running when the extension activates (socket path absent / refused).",
+          "detection": "reachability() calls rpc('daemon.status'); the rpc socket 'error' handler sees err.code ENOENT or ECONNREFUSED and rejects with the 'daemon is not running' Error, which reachability() catches and classifies as 'stopped'.",
+          "response": "Activation completes normally; the status surface is set to { state: 'stopped' }. No exception propagates out of activate().",
+          "userImpact": "The developer sees a 'stopped' status-bar indicator rather than a broken/erroring extension; later stories offer install/start via durable commands.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The daemon socket exists but the daemon returns an error or an unparseable line for daemon.status.",
+          "detection": "rpc() either rejects with Error(res.error) (daemon returned {error}) or Error('invalid response from daemon') (JSON.parse failed); reachability() catches any non-ENOENT/ECONNREFUSED throw.",
+          "response": "reachability() classifies it as 'errored'; the status surface is set to { state: 'errored', detail: <message> }.",
+          "userImpact": "The developer sees an 'errored' indicator with a hover detail; the extension stays loaded and usable.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The daemon.status call hangs (socket connects but no response line arrives).",
+          "detection": "The reachability probe is wrapped in a bounded timeout (activation must not block the editor per the performance NFR); when the timeout elapses before a response, the probe resolves to a timed-out outcome.",
+          "response": "reachability() treats the timeout as 'errored' (or 'stopped' if the connection never established); the status surface reflects that and activation is never blocked waiting.",
+          "userImpact": "The editor never hangs on activation; the developer sees a non-running status within the bounded window.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A command id is registered more than once (e.g. two seams register the same InsrcCommandId).",
+          "detection": "CommandRegistry.register checks its internal id set (or catches the VS Code 'command already exists' error from the injected registerCommand) before/at registration.",
+          "response": "The duplicate registration throws a programming-error Error during activation of the offending seam; the first registration stands. (s1 registers no commands itself, so this only fires on a downstream misuse.)",
+          "userImpact": "None at runtime for a correct build; a duplicate is caught in tests/dev, not shipped.",
+          "recoverable": false
+        },
+        {
+          "scenario": "No workspace folder is open when the extension activates.",
+          "detection": "activate() reads the VS Code workspace folders and finds none.",
+          "response": "The extension still activates and probes reachability (the daemon is machine-global, not workspace-scoped); the status surface shows the daemon state. Workspace-scoped behavior (registration) is s4's concern and simply has nothing to enrol yet.",
+          "userImpact": "The developer sees daemon status even with no folder open; nothing errors.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "daemon.status resolves but with modelPullStatus: 'pulling' (daemon up but still pulling a model).",
+          "expected": "reachability() returns 'running' (the call succeeded); the status surface shows 'running' (optionally a detail noting a pull in progress). Model-pull nuance is not a reachability state."
+        },
+        {
+          "input": "The extension is disabled then re-enabled (deactivate then activate again).",
+          "expected": "deactivate() disposes the status-bar item + command Disposables via ExtensionContext.subscriptions; a fresh activate() rebuilds them cleanly with no duplicate status-bar items or leaked registrations."
+        },
+        {
+          "input": "A consumer calls IpcClient.status() concurrently from two seams during activation.",
+          "expected": "Each call opens its own short-lived socket via the connect seam (rpc is unary and closes on first line), so concurrent calls are independent; no shared mutable socket state."
+        },
+        {
+          "input": "The CLI/TUI runs after the extraction (rpc now lives in src/shared/ipc-client, re-exported from src/cli/client.ts).",
+          "expected": "The four importers (src/cli/services/{debug,repo,config,daemon}.ts) resolve `rpc` unchanged; the client-identity envelope still sends { label: 'cli', pid } so the daemon's attached-client registry is unaffected."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "src/cli/client.ts's public `rpc` export must remain byte-compatible for its four CLI/TUI importers after the body moves to src/shared/ipc-client (a re-export) — the CLI/TUI must not regress, including the { label: 'cli', pid } client-identity envelope on the wire.",
+          "source": "c2"
+        },
+        {
+          "text": "The daemon IPC method names, payload shapes, and socket path (~/.insrc/daemon.sock) stay identical — the shared client is a move, not a protocol change; the daemon and every other client remain interoperable.",
+          "source": "c2"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove the sc1 client's reachability derivation + the sc2/sc3/sc4 surface logic without booting VS Code, using injected fakes for the socket connect seam and the VS Code API handles.",
+          "subjects": [
+            "src/shared/ipc-client: rpc() over a fake connect seam (success resolves result; ENOENT/ECONNREFUSED → 'daemon is not running' Error; {error} line → Error(res.error); non-JSON line → 'invalid response from daemon'); client-identity envelope { label, pid } written on connect",
+            "IpcClient.reachability(): success ⇒ 'running'; 'daemon is not running' throw ⇒ 'stopped'; other throw ⇒ 'errored'; timeout ⇒ 'errored'",
+            "StatusSurface: set()/current() maps each DaemonUiState to the fake status-bar handle's text/icon",
+            "CommandRegistry: register() pushes a Disposable into a fake subscriptions sink and rejects a duplicate InsrcCommandId",
+            "ConsentGate: ask() maps the fake modal fn's return to accepted/declined/dismissed and performs no side effect"
+          ],
+          "fixturesNeeded": [
+            "a fake Socket (EventEmitter-like) that scripts connect/data/error events",
+            "a fake StatusBarItem handle (records text/tooltip)",
+            "a fake registerCommand fn + a fake Disposable sink",
+            "a fake modal-message fn returning a scripted selection"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove the activation shell wires the surfaces + derives+pushes reachability, and never throws, with a fully faked VS Code API + injected ipc client.",
+          "subjects": [
+            "activate(context): constructs client + sc2/sc3/sc4, registers the status-bar item into context.subscriptions, runs the bounded reachability probe off the UI path, and calls StatusSurface.set with the derived state",
+            "activate(context): a probe that throws/times out degrades to 'stopped'/'errored' and activation still returns (never throws)",
+            "deactivate(): disposes status-bar + command Disposables (re-activate leaves no duplicate item)"
+          ],
+          "fixturesNeeded": [
+            "a fake ExtensionContext with a subscriptions array",
+            "an injected IpcClient whose reachability() is scripted per case"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "Prove the extraction preserves the CLI/TUI surface + the daemon wire contract (the Phase-A backward-compat invariant).",
+          "subjects": [
+            "src/cli/client.ts still exports `rpc` (a re-export of src/shared/ipc-client) with an identical call signature — a source/type-level assertion that the four importers (src/cli/services/{debug,repo,config,daemon}.ts) resolve it unchanged",
+            "src/shared/ipc-client re-exports IpcRequest/IpcResponse/DaemonStatus from src/shared/types.ts (no parallel type definitions)",
+            "src/shared/ipc-client's import graph contains no daemon internals/indexer/storage modules (k5 thin-boundary guard, a source-scan assertion)"
+          ],
+          "fixturesNeeded": [
+            "the built module graph / import list of src/shared/ipc-client"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "activate(context) constructs the surfaces + probes reachability and never modifies the editor / never throws (activation unit test)",
+            "IpcClient.reachability() derives running/stopped/errored from the daemon.status call outcome (reachability unit test) — proves 'determines whether the daemon is reachable'",
+            "src/shared/ipc-client import-graph contains no daemon internals/indexer/storage (k5 contract test) — proves the thin boundary + no in-process reasoning"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "StatusSurface.set maps each DaemonUiState (running/stopped/errored/unknown) to the status-bar handle (StatusSurface unit test)",
+            "activate(context) pushes the derived DaemonUiState into the status surface so the indicator reflects the daemon state (activation unit test)"
+          ]
+        }
+      ],
+      "testFramework": "node:test (tsx --test) — the repo's existing runner for src/**/__tests__/*.test.ts; the new vscode-plugin/ package uses the same node:test runner over injected fakes so its logic tests need no VS Code host (mirroring the JetBrains stories' off-platform unit + source-scan split)."
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Faithful-wire sc1 factory + injectable VS Code-backed sc2/sc3/sc4 seams",
+        "oneLineSummary": "src/shared/ipc-client re-exports the REAL IpcRequest/IpcResponse/DaemonStatus + the moved `rpc` fn + `sockFilePath`, and adds a tiny `createIpcClient(connect?)` factory whose `.rpc()`/`.status()`/`.reachability()` derive reachability from call outcome; sc2/sc3/sc4 are plain interfaces each with one default VS Code-backed impl behind an injectable boundary, wired by an activation shell.",
+        "approach": "sc1: create src/shared/ipc-client.ts holding the `rpc` fn body (moved verbatim, keeping the `connect` seam + client-identity envelope), re-exporting IpcRequest/IpcResponse + the real DaemonStatus from src/shared/types.ts and sockFilePath (= PATHS.sockFile). Add a thin IpcClient { rpc, status, reachability } produced by createIpcClient(connect?); reachability is DERIVED (status resolves ⇒ running; ENOENT/ECONNREFUSED throw ⇒ stopped; other throw ⇒ errored). src/cli/client.ts becomes a re-export so the four CLI importers are byte-unchanged. sc2/sc3/sc4 are plain interfaces each with one default impl wrapping a narrow injected VS Code surface, so their logic is unit-testable with a fake. The activation entry constructs the client + surfaces, registers the status-bar item, kicks off an off-the-UI reachability probe, and pushes the derived DaemonUiState into sc2.",
+        "pros": [
+          "sc1 stays faithful to the real wire contract (reuses shared/types' types — no mirrored copies, honoring k5).",
+          "The rpc extraction is mechanically minimal and the four CLI importers keep their exact surface.",
+          "Each of sc2/sc3/sc4 is a small interface with an injected VS Code boundary, unit-testable off the editor.",
+          "Functional factory matches the existing functional rpc precedent; reachability derived from outcome means no stale cached boolean."
+        ],
+        "cons": [
+          "Four contracts + an activation shell is more surface to stand up before anything is visible (sizeEstimate L).",
+          "Deriving reachability at the client means a real daemon.status probe on activation rather than a cheap boolean read (bounded, off-UI)."
+        ],
+        "costEstimate": "L"
+      },
+      {
+        "id": "a2",
+        "name": "Class-based IpcClient holding a cached status + class-based surfaces",
+        "oneLineSummary": "sc1 as a stateful `IpcClient` class that owns the connect seam and caches the last DaemonStatus plus a `running` boolean field; sc2/sc3/sc4 as classes constructed at activation.",
+        "approach": "src/shared/ipc-client exports a class IpcClient constructed with an optional connect seam; it exposes rpc(), status(), and a cached lastStatus/running it refreshes on each call. The activation shell instantiates it once and shares the instance; sc2/sc3/sc4 are likewise classes holding their VS Code handles as private fields. Reachability is read off the cached running boolean updated after each probe.",
+        "pros": [
+          "A single shared client instance is an obvious handle every later seam holds.",
+          "Cached status avoids re-probing when several callers want the last-known state in quick succession."
+        ],
+        "cons": [
+          "A cached running/lastStatus field can go stale between refreshes — the status shown may lag the real daemon state.",
+          "Diverges from the existing FUNCTIONAL rpc precedent (class ceremony around a one-shot fn).",
+          "Class-held private VS Code handles are harder to fake than an injected boundary, weakening testability."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Honors k5 but only PARTIAL on ac2 (a cached `running` boolean can lag the real daemon state), sc1 (class ceremony over the functional precedent + cache to invalidate) and sc4 (class-held handles harder to fake). No hard violation but weaker than a1 on freshness + testability."
+      },
+      {
+        "id": "a3",
+        "name": "No extraction — the extension imports src/cli/client.ts directly",
+        "oneLineSummary": "Skip the src/shared/ipc-client module; the vscode-plugin/ imports the existing `rpc` from src/cli/client.ts and defines sc2/sc3/sc4 locally.",
+        "approach": "Rather than moving rpc, the extension imports it straight from src/cli/client.ts (whose current imports are already shared-safe), and stands up sc2/sc3/sc4 in vscode-plugin/. sc1 as a named contract still exists conceptually but its home stays under src/cli/. This is the smallest possible change to the backend.",
+        "pros": [
+          "Zero change to existing backend files — no extraction, so no Phase-A regression risk at all.",
+          "Fastest path to a compiling extension."
+        ],
+        "cons": [
+          "VIOLATES lc1/k5 and the HLD's explicit sc1 boundary: the extension would depend on src/cli/, so any future CLI-only import silently leaks into the extension bundle.",
+          "src/cli/ is the TUI package; making it a dependency of the extension couples two deliverables the HLD separates behind src/shared/.",
+          "Leaves sc1 without a real home module, so s2/s4/s5 would also import from src/cli/, spreading the violation."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "VIOLATES k5 and sc1 by coupling the extension to src/cli/ instead of the mandated src/shared/ipc-client extraction; the smallest change but breaks the load-bearing thin-boundary contract, so it ranks last."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 symbol.locate: src/cli/client.ts:15 `export async function rpc<T = unknown>(method, params, connect = () => createConnection(PATHS.sockFile)): Promise<T>` — unary JSON-RPC-over-Unix-socket, imports only node:net + shared/types + shared/paths",
+      "quotedText": "extracting the fn body into a NEW src/shared/ipc-client.ts and leaving src/cli/client.ts as a re-export is mechanically clean."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 usage.example + data-model.trace: the four rpc importers (src/cli/services/{debug:25,repo:15,config:12,daemon:17}.ts); IpcRequest(798)/IpcResponse(812)/DaemonStatus(882) in src/shared/types.ts; daemon.status handler src/daemon/index.ts:913 returns DaemonStatus with no `running` field; socket ~/.insrc/daemon.sock (paths.ts:19)",
+      "quotedText": "the daemon's real DaemonStatus (types.ts:882) is {uptime, repos[], queueDepth, embeddingsPending, modelPull*, lmdbFileSizeMb?} — it has NO `running` boolean; reachability is INFERRED at the client."
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1 convention.detect: no VS Code manifest exists today; vscode-plugin/ is a NEW package sibling to jetbrains-plugin/; VS Code API (createStatusBarItem/registerCommand/showInformationMessage) is the sc2/sc3/sc4 substrate behind injectable boundaries",
+      "quotedText": "s1 stands up only the minimal package + activation entry it needs to compile and register the status-bar item + commands, deferring listing/publish metadata to s6."
+    },
+    {
+      "id": "c4",
+      "kind": "convention",
+      "ref": "CLAUDE.md: TypeScript strict/ESM/NodeNext; 'No direct cloud REST' (k2); tests via `npx tsx --test src/**/__tests__/*.test.ts` (node:test)",
+      "quotedText": "The extension is a thin orchestrator: it displays and acts, but performs no reasoning of its own."
+    }
+  ]
+}

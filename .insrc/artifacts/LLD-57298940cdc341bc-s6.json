@@ -145,6 +145,13 @@
         "choice": "Resolve from the Settings dialog's own DataContext (CommonDataKeys.PROJECT), with the ProjectManager.getInstance().openProjects most-recent scan as fallback, behind the same injectable projectResolver seam; degrade to a clear 'open a project to view logs' line when none resolves.",
         "rationale": "Removes the wrong-window failure mode under multiple open projects without adding UI or abandoning the HLD-named editor surface; keeps the injectable seam so tests use a fake resolver unchanged.",
         "resolvedAt": "2026-09-21T12:50:38.842Z"
+      },
+      "qca0ebf08": {
+        "question": "The LiveLogTailFs watch mechanism (java.nio WatchService vs a polling ticker) is a build-time implementation choice behind the injectable LogTailFs seam; both satisfy the never-throws + append-only contract, so the scripted-fake unit tests are unaffected either way.",
+        "status": "resolved",
+        "choice": "Fixed-interval polling ticker: LiveLogTailFs runs a single scheduled ~1s ticker that stats the active segment and reads only the appended bytes from the last offset; each tick is wrapped in a catch-all so a failed stat/read is a skipped tick (never-throws), cancelled on dispose.",
+        "rationale": "Smallest single code path that satisfies never-throws + append-only identically on every platform; the JDK WatchService already degrades to polling on macOS (the primary dev platform), so event-driven options add concurrency surface without a reliable latency win. Swappable behind the injectable LogTailFs seam later.",
+        "resolvedAt": "2026-09-21T12:51:05.359Z"
       }
     }
   },

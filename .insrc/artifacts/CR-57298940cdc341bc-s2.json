@@ -1,0 +1,81 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1789982065421-qdzkeo",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-21T09:14:25.422Z",
+    "model": "client",
+    "elapsedMs": 4,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "57298940cdc341bc",
+    "storyId": "s2"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "57298940cdc341bc",
+    "storyId": "s2",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        ".insrc/artifacts/LLD-57298940cdc341bc-s2.json",
+        ".insrc/artifacts/PLAN-57298940cdc341bc-s2.json",
+        "docs/epics/expand-jetbrains-plugin-s-insrc-settings-E2026092157298940/S002/LLD.md",
+        "docs/epics/expand-jetbrains-plugin-s-insrc-settings-E2026092157298940/S002/PLAN.md",
+        "jetbrains-plugin/gradle.properties",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGateway.kt",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGatewayService.kt",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleCommandRunner.kt",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/ops/DaemonConfigurable.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonActionGatewayTest.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleCommandRunnerTest.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleServiceTest.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/onboarding/OnboardingCleanupIntegrationTest.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/onboarding/OnboardingLifecycleTest.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/onboarding/OnboardingWiringTest.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/ops/DaemonPageTest.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/ops/NestedOpsPagesTest.kt"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/ops/DaemonConfigurable.kt:1",
+            "message": "GROUNDING CAVEAT (honest): the code-review grounding is DIFF-FALLBACK at FILE level (Kotlin is not symbol-indexed, so there are no per-symbol testsReaching edges to verify coverage against the graph). Coverage is asserted from the LOCAL suite instead: DaemonActionGatewayTest (8) proves the backup/compact/shutdown DaemonActionResult classification + wire shape + never-throws against the real DaemonResult boundary; DaemonLifecycleCommandRunnerTest (6) proves the daemon-ctl.sh subcommand + exit-code (0/2/3/4/missing/IOException) mapping via fakes with no real process; DaemonPageTest (4) source-scans the six-action wiring + off-EDT ProgressManager + backup chooser + parent-untouched; NestedOpsPagesTest (3) keeps the placeholder guard for the still-empty Workflows/Debug pages. The DaemonConfigurable Swing body's live rendering is NOT unit-covered (the Settings dialog cannot boot headlessly) — asserted only by source-scan, matching the established idiom. 282 tests + buildPlugin green (JDK21); independent opposite-actor cold review returned SHIP (0 HIGH / 0 MED).",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/ops/DaemonConfigurable.kt:96",
+            "message": "renderStatus() calls revalidate()/repaint() during the INITIAL buildBody(), which the S001 base runs OFF the EDT — technically off-EDT Swing calls. Benign in practice: the panel is not yet realized/mounted (the base mounts it on the EDT via the guarded invokeLater), so there is no live component tree to mutate; and the post-action refresh path is correctly marshalled through invokeLater. Flagged as an honest observation (surfaced by the cold review), not a defect requiring a fix.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 2
+    }
+  }
+}

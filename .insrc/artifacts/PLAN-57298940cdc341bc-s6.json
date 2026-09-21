@@ -1,0 +1,463 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1789995079858-nxhaks",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-21T12:56:40.738Z",
+    "epicCreatedAt": "2026-09-21T05:46:35.262Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 320867,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "57298940cdc341bc",
+    "epicSlug": "expand-jetbrains-plugin-s-insrc-settings",
+    "storyId": "s6",
+    "lldRunId": "wf-1789993926997-qxib1o",
+    "lldEffectiveHash": "7b17d6a14b2a62383210886c5fc8a4d3db9366569ad01726cd49bbd35b17dae1",
+    "review": {
+      "artifact": "plan",
+      "stage": "plan",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl_tail_max_lines",
+          "ref": "t2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The CLI defines TAIL_MAX_LINES = 500, which the plan uses as the LogTailSeam default maxLines.",
+          "evidence": "src/cli/services/debug.ts:350 reads `const TAIL_MAX_LINES = 500;` verbatim. Plan t2 uses maxLines=TAIL_MAX_LINES=500. Confirmed, no defect.",
+          "action": "None — the plan's TAIL_MAX_LINES=500 mirror is accurate.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl_log_dir",
+          "ref": "t2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "PATHS.logDir resolves to /tmp/.insrc (join('/tmp','.insrc')), which the plan mirrors as defaultLogDir() (NOT ~/.insrc).",
+          "evidence": "src/shared/paths.ts:5 `const LOG_DIR = join('/tmp', '.insrc');` and paths.ts:103 `logDir: LOG_DIR`. Plan's defaultLogDir()=/tmp/.insrc (NOT ~/.insrc) is correct.",
+          "action": "None — the /tmp/.insrc log-dir mirror is accurate and correctly distinguished from OrphanProcessSeam's ~/.insrc.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl_segment_regex",
+          "ref": "t2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The CLI resolves the active log segment via the regex ^<stem>\\.(\\d+)\\.log$ over logDir, which the plan mirrors.",
+          "evidence": "Read anchor src/cli/services/debug.ts:479 confirms `const re = new RegExp(`^${stem}\\.(\\d+)\\.log$`)`. The grep returned 0 due to my pattern's escaping, but the read anchor verifies the citation verbatim. Plan's `^<stem>\\.(\\d+)\\.log$` mirror is exact.",
+          "action": "None — the segment regex citation is accurate.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl_log_categories",
+          "ref": "t1",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "The CLI LOG_CATEGORIES inventory has exactly two members: daemon and agent, which the plan mirrors as LogCategories.all=[Daemon,Agent].",
+          "evidence": "src/cli/services/debug.ts:353 `const LOG_CATEGORIES: readonly LogCategory[] = [` with exactly two members {id:'daemon',title:'Daemon',stem:'daemon'} and {id:'agent',title:'Agent',stem:'agent'} (confirmed via grep matches). Plan's LogCategories.all=[Daemon,Agent] mirrors the two-member inventory.",
+          "action": "None — the daemon/agent inventory is complete and accurate.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl_parse_log_line",
+          "ref": "t1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The CLI parseLogLine is a best-effort pino-JSON parser that never throws (non-JSON -> raw only), which the plan's LogModel.parseLogLine mirrors.",
+          "evidence": "src/cli/services/debug.ts:381 `function parseLogLine(raw: string): LogLine {`. Confirmed the CLI symbol the plan's LogModel.parseLogLine mirrors exists.",
+          "action": "None — parseLogLine citation is accurate.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl_matches_filter",
+          "ref": "t1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The CLI matchesFilter ANDs minLevel/module/text conditions (dropping no-level and no-module lines), which the plan's LogModel.matchesFilter mirrors.",
+          "evidence": "src/cli/services/debug.ts:462 `export function matchesFilter(line: LogLine, filter: LogFilter): boolean {`. Confirmed the CLI ANDed filter symbol the plan mirrors exists.",
+          "action": "None — matchesFilter citation is accurate.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl_tail_log_with",
+          "ref": "t2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The CLI tailLogWith performs an append-only rotation-aware tail (initial last-maxLines, seen-tracking, truncation re-tail, never throws), which the plan's LogTailSeam.tail mirrors.",
+          "evidence": "src/cli/services/debug.ts:406 `export function tailLogWith(stem, onLines, deps): () => void`. Confirmed the rotation-aware append-only tail the plan's LogTailSeam.tail mirrors exists.",
+          "action": "None — tailLogWith citation is accurate.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl_sections_shape",
+          "ref": "t4",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "DebugConfigurable.sections() currently returns [statusSection(), orphansSection(), mcpSection()] and the plan appends a 4th logSection() to make [status, orphans, mcp, log].",
+          "evidence": "jetbrains-plugin/.../ops/DebugConfigurable.kt:44 `override fun sections(): List<DebugSection> = listOf(statusSection(), orphansSection(), mcpSection())` and :85 `private fun mcpSection(): DebugSection = McpDebugSection()`. Confirmed the current [status,orphans,mcp] shape the plan appends a 4th logSection() to. Scope is a single append, matching S005's mcpSection() pattern.",
+          "action": "None — the sc3 [status,orphans,mcp]->+log append is correctly scoped to one added section.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl_debug_section_iface",
+          "ref": "t4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "A DebugSection interface (with component()) exists in the plugin (sc3) that LogEditorSection will implement.",
+          "evidence": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/debug/DebugPageHost.kt:11 `interface DebugSection {`. Confirmed the sc3 DebugSection interface that LogEditorSection (t4) implements exists.",
+          "action": "None — DebugSection interface citation is accurate.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl_seam_test_idiom",
+          "ref": "t5",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The plugin already uses a scripted-fake seam test idiom (OrphanProcessSeamTest) and a source-scan idiom (DebugPageTest) that t5 reuses.",
+          "evidence": "jetbrains-plugin/src/test/.../debug/OrphanProcessSeamTest.kt:14 `class OrphanProcessSeamTest` and ops/DebugPageTest.kt:14 `class DebugPageTest` both exist. Confirmed the scripted-fake seam and source-scan idioms t5 reuses.",
+          "action": "None — the reused test idioms exist as cited.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl_task_dag",
+          "ref": "tasks",
+          "kind": "ordering",
+          "severity": "LOW",
+          "premise": "The task dependency graph is acyclic and topological: t1 (no deps), t2->t1, t3->t1,t2, t4->t3, t5->t1,t2,t3,t4.",
+          "evidence": "From the task table: t1 (no deps), t2->t1, t3->t1,t2, t4->t3, t5->t1,t2,t3,t4. Every edge points to a lower-numbered task; no back-edge, so the graph is acyclic and already in topological order t1..t5. t4 depending only on t3 (transitively t1,t2) is valid; t5 gathers all. No cycle.",
+          "action": "None — the task DAG is acyclic and topological.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl_lld_coverage",
+          "ref": "tasks",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "The 5 tasks collectively cover the LLD handoff surfaces: core (LogModel t1), seam (LogTailSeam t2), surface (LogEditorSurface t3), section (LogEditorSection t4), tests (t5).",
+          "evidence": "The 5 tasks map onto the LLD handoff surfaces one-to-one: t1 core (LogModel.kt), t2 seam (LogTailSeam.kt/LogTailFs/LiveLogTailFs), t3 surface (LogEditorSurface.kt), t4 section (LogEditorSection.kt + DebugConfigurable append), t5 tests+local verify. The Test-strategy coverage table maps every LLD strategy item to t1..t5. No handoff surface is left uncovered.",
+          "action": "None — the 5 tasks collectively cover the LLD (core, seam, surface, section, tests).",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 12
+      },
+      "reviewedAt": "2026-09-21T12:59:00.003Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-21T12:59:46.545Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add the pure LogModel core (LogLine/LogFilter/LogCategory/LogLevels + parseLogLine + matchesFilter)",
+        "summary": "New debug/LogModel.kt mirroring the CLI byte-for-byte: data class LogLine{raw:String,timeMs:Long?,level:Int?,module:String?,msg:String?} + parseLogLine(raw):LogLine (Gson JsonParser best-effort: time->timeMs, level->level, name->module, msg->msg; non-JSON/malformed -> raw only, never throws); data class LogFilter{minLevel:Int?,module:String?,text:String?} + matchesFilter(line,filter):Boolean (minLevel drops no-level; module case-insensitive substring on module, no-module dropped; text case-insensitive substring over raw incl. non-JSON; ANDed; empty matches all); enum LogCategoryId{DAEMON,AGENT} + data class LogCategory{id,title,stem} + object LogCategories(all=[Daemon('daemon'),Agent('agent')]); object LogLevels(trace10/debug20/info30/warn40/error50/fatal60 + label(Int?):String + parseLevel(String):Int?). Pure, no platform.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "LogLine/LogFilter/LogCategory/LogCategoryId/LogLevels match the CLI shapes; parseLogLine + matchesFilter mirror the CLI byte-for-byte and never throw",
+          "LogLevels carries the exact numeric map (trace10..fatal60); parseLevel handles a name, a numeric string, and '' (->null); label falls back to the raw number for an unknown level",
+          "The file is pure Kotlin (no IntelliJ-platform import); an empty LogFilter matches every line"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "LogModelTest.parseLogLineMirrorsCli (canonical pino-JSON, name-but-no-msg, non-JSON, partial JSON -> raw only, never throws)"
+          },
+          {
+            "level": "unit",
+            "name": "LogModelTest.matchesFilterMirrorsCli (minLevel keep/drop incl. no-level; module substring incl. no-module; text over raw incl. non-JSON; ANDed; empty matches all)"
+          },
+          {
+            "level": "unit",
+            "name": "LogModelTest.logLevelsParseAndLabel ('warn'->40, '40'->40, ''->null, junk->null; label 35->'35', 30->'info')"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Add LogTailSeam + injectable LogTailFs + the polling-ticker LiveLogTailFs",
+        "summary": "New debug/LogTailSeam.kt: interface LogTailFs{listSegments(dir,stem):List<Path>; readLines(file):List<String>; watch(dir,onEvent):AutoCloseable} + class LogTailSeam(fs=LiveLogTailFs, logDir=defaultLogDir(), maxLines=TAIL_MAX_LINES=500){ fun tail(category, onLines):AutoCloseable } mirroring the CLI tailLogWith: active segment = highest-N `<stem>.<N>.log` (regex `^<stem>\\.(\\d+)\\.log$` sorted by N), initial emit = last maxLines, append-only via `seen`, truncation (<seen) re-tails from 0, rotation resets seen, NEVER throws (per-call guards + empty-initial-emit+quiet-retry), idempotent close() with a disposed guard. defaultLogDir()=/tmp/.insrc (mirrors PATHS.logDir, NOT ~/.insrc). LiveLogTailFs binds java.nio (Files.list+name regex, Files.readAllLines drop-trailing-empty) with a FIXED-INTERVAL POLLING-TICKER watch (a ScheduledExecutorService ~1s that stats the active segment + fires onEvent on a size change; each tick catch-all -> skipped tick; cancelled on close — the resolved watch decision, no WatchService). Resolve at build the plugin-available scheduler (AppExecutorUtil.getAppScheduledExecutorService() or a plain ScheduledThreadPoolExecutor).",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "tail() resolves the highest-N segment, emits the last maxLines initially, then append-only fresh lines; truncation re-tails from 0; a new higher-N segment resets seen; never throws",
+          "close() is idempotent and a disposed guard suppresses any post-dispose emit; a throwing LogTailFs still cannot crash tail()",
+          "defaultLogDir() is /tmp/.insrc (mirrors PATHS.logDir, distinct from OrphanProcessSeam ~/.insrc/daemon); LiveLogTailFs is read-only (list/read/poll only, no write/rotate/clear) and its polling ticker is cancelled on close"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "LogTailSeamTest.initialLastMaxLinesOfHighestNSegment"
+          },
+          {
+            "level": "unit",
+            "name": "LogTailSeamTest.appendOnlyFreshLinesOnWatchTrigger"
+          },
+          {
+            "level": "unit",
+            "name": "LogTailSeamTest.rotationResetsSeenTruncationReTails"
+          },
+          {
+            "level": "unit",
+            "name": "LogTailSeamTest.neverThrowsOnThrowingFsAndIdempotentDisposeSuppressesPostDisposeEmit"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Add LogEditorSurface (user-read-only LightVirtualFile + FileEditorManager off-EDT stream)",
+        "summary": "New debug/LogEditorSurface.kt: class LogEditorSurface(seam=LogTailSeam()){ fun openLog(project, category) }. Create a user-read-only LightVirtualFile('insrc-<stem>.log', PlainTextFileType, '') (isWritable=false), open via FileEditorManager.getInstance(project).openFile(file, true), hold a bounded (MAX_BUFFER=1000) ring buffer + the current LogFilter, subscribe LogTailSeam.tail OFF the EDT, and on each batch append to the buffer then rebuild the FILTERED document text on a disposed-guarded invokeLater under a write action (never re-reads disk on a filter change). A minimal level/module/text filter toolbar re-renders from the buffer. Dispose the tail on editor close (FileEditorManagerListener.fileClosed for this file) / project close; the on-disk log is never modified (k5). Never throws (guarded). Re-opening a category re-focuses the existing tab rather than duplicating. Per the s3 critique, RESOLVE the streamed-rebuild write-action mechanism AT BUILD by a real IntelliJ-API spike BEFORE writing the loop: obtain the Document via FileDocumentManager.getInstance().getDocument(file) and rebuild it under ApplicationManager.getApplication().runWriteAction { CommandProcessor ... doc.setText(...) }, keeping the file user-read-only (isWritable=false) while allowing the plugin's own setText — verified by the source-scan test + the local build, not assumed. Keep the filter toolbar minimal (a small editor top-component or in-file header).",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "openLog opens a user-read-only LightVirtualFile via FileEditorManager (k5: an editor tab, not inline) and streams the filtered bounded buffer into its Document off the EDT under a guarded invokeLater + write action (k2); the write-action rebuild mechanism is resolved against the real IntelliJ API and compiles",
+          "The on-disk log is never written/deleted/rotated/cleared; a filter change re-renders from the 1000-line buffer with no disk re-read; the buffer is bounded",
+          "The tail is disposed on editor/project close; a late post-close emit is dropped (disposed guard), never an exception; re-opening a category re-focuses the existing tab"
+        ],
+        "derivedFrom": [
+          "c5",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "LogEditorSurfaceTest.sourceScanReadOnlyLightVirtualFileFileEditorManagerOffEdtWriteActionDisposeNoDeleteRotateClear"
+          },
+          {
+            "level": "smoke",
+            "name": "gradlew buildPlugin compiles the resolved FileDocumentManager/runWriteAction rebuild mechanism (JDK21)"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Add LogEditorSection (sc3 DebugSection + project resolution) and append it to DebugConfigurable.sections()",
+        "summary": "New debug/LogEditorSection.kt implementing sc3 DebugSection (title 'Logs' + off-EDT component()): a read-only category picker (Daemon/Agent from LogCategories.all) + an 'Open in editor' control that resolves a Project via an injectable projectResolver (default = DataManager DataContext CommonDataKeys.PROJECT of the section component, falling back to ProjectManager.getInstance().openProjects.firstOrNull()) and calls LogEditorSurface.openLog; a null resolve renders a clear 'open a project to view logs' line and opens nothing. Then the ONE-LINE edit to ops/DebugConfigurable.kt: sections()=listOf(statusSection(), orphansSection(), mcpSection(), logSection()) + a private logSection()=LogEditorSection() factory (mirrors S005's mcpSection()). The 'Open in editor' button lives in LogEditorSection.kt (NOT DebugConfigurable.kt), so DebugConfigurable's sole-mutating-control (Kill button) source-scan invariant stays true. Per the s3 critique, RESOLVE at build the real DataManager/DataContext accessor for CommonDataKeys.PROJECT (grep existing plugin DataManager/CommonDataKeys usages; if DataContext is not cleanly available inside a Configurable component, fall back to a ProjectManager-only resolver) — the injectable projectResolver seam stays unchanged so the section test uses a fake resolver regardless.",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "LogEditorSection implements DebugSection, resolves a Project (real resolved DataContext accessor + openProjects fallback, or ProjectManager-only if DataContext is unavailable in a Configurable), opens the log ONLY in an editor tab (not inline), and degrades to a clear line when no project resolves",
+          "DebugConfigurable.sections() returns [status, orphans, mcp, log] with the log section appended last; S004/S005 sections + buildBody() unchanged; parent settings page + plugin.xml byte-unchanged (k1/k4)",
+          "The section adds no log-mutating control (nothing deletes/rotates/clears a log); the epic's single mutation stays S004's orphan kill (k3); the 'Open in editor' button lives in LogEditorSection.kt, not DebugConfigurable.kt"
+        ],
+        "derivedFrom": [
+          "c6",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "LogEditorSectionTest.sourceScanImplementsDebugSectionResolvesProjectDegradesOpensEditorNotInlineNoLogMutation"
+          },
+          {
+            "level": "unit",
+            "name": "DebugPageTest.sectionsAppendsLogAfterStatusOrphansMcp (+ existing ac2 sole-mutating-control Kill-button assertion still passes)"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Add tests (core golden vectors + scripted-fake seam + editor source-scan) and verify locally",
+        "summary": "LogModelTest (golden CLI-parity vectors for parseLogLine + matchesFilter + LogLevels), LogTailSeamTest (ScriptedLogTailFs fake: initial last-maxLines, append-only fresh-only via manual watch trigger, rotation reset, truncation re-tail, throwing-fake never-throws + valid dispose, idempotent close + post-dispose no-emit), and source-scan extensions. Per the s3 critique: put the 'Open in editor' affordance + LightVirtualFile/FileEditorManager source-scan in a NEW LogEditorSection/LogEditorSurface-targeted test file (opens via FileEditorManager into a user-read-only LightVirtualFile, off-EDT invokeLater/write action, dispose-on-close, NO delete/rotate/clear; section resolves a Project + degrades + opens in an editor not inline; default logDir /tmp/.insrc), and EXPLICITLY re-confirm the existing DebugPageTest ac2 (sole-mutating-control = the Kill button) still passes after the sections() append (add only the [status,orphans,mcp,log] append assertion to DebugPageTest). Verify locally: gradlew test buildPlugin (JDK21, --no-build-cache after new types).",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "LogModelTest proves parseLogLine/matchesFilter/LogLevels CLI parity incl. no-level/no-module drops, non-JSON free-text, unknown-level; LogTailSeamTest proves rotation/append-only/truncation/never-throws/idempotent-dispose over the scripted fake",
+          "A NEW LogEditor-targeted source-scan asserts the read-only LightVirtualFile + FileEditorManager editor-tab surface, the off-EDT invokeLater/write action, dispose-on-close, no delete/rotate/clear, the Project-resolve+degrade, and the /tmp/.insrc default; DebugPageTest gains only the [status,orphans,mcp,log] append assertion and its existing ac2 sole-mutating-control assertion still passes",
+          "Full jetbrains-plugin test + buildPlugin green locally on JDK21"
+        ],
+        "derivedFrom": [
+          "c7",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "LogModelTest (assembled golden CLI-parity vectors)"
+          },
+          {
+            "level": "unit",
+            "name": "LogTailSeamTest (assembled scripted-fake rotation/append/truncation/never-throws/dispose)"
+          },
+          {
+            "level": "unit",
+            "name": "LogEditorSurfaceTest + LogEditorSectionTest + DebugPageTest (assembled source-scans + append assertion + preserved ac2)"
+          },
+          {
+            "level": "smoke",
+            "name": "gradlew test buildPlugin green locally on JDK21 (--no-build-cache after new types)"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "parseLogLine (canonical pino-JSON, name-but-no-msg, non-JSON, partial JSON)",
+        "coveredByTaskIds": [
+          "t1",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "matchesFilter (minLevel keep/drop incl. no-level; module substring incl. no-module; text substring over raw incl. non-JSON; ANDed; empty)",
+        "coveredByTaskIds": [
+          "t1",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "LogLevels.parseLevel ('warn'->40, '40'->40, ''->null, junk->null) + label(35->'35', 30->'info')",
+        "coveredByTaskIds": [
+          "t1",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "initial emit = last maxLines of the highest-N segment",
+        "coveredByTaskIds": [
+          "t2",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "append-only follow: a watch trigger emits ONLY fresh lines (seen)",
+        "coveredByTaskIds": [
+          "t2",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "rotation: a new higher-N segment resets seen, follow continues with no dup",
+        "coveredByTaskIds": [
+          "t2",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "truncation: file shrinks below seen -> seen=0, re-tail (no negative slice)",
+        "coveredByTaskIds": [
+          "t2",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "never-throws: a throwing listSegments/readLines/watch -> empty initial emit + valid dispose()",
+        "coveredByTaskIds": [
+          "t2",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "dispose(): idempotent; a post-dispose trigger emits nothing (disposed guard)",
+        "coveredByTaskIds": [
+          "t2",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "DebugConfigurable.kt: sections() = [status, orphans, mcp, log] (S006 appended; S004/S005 unchanged)",
+        "coveredByTaskIds": [
+          "t4",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "LogEditorSurface.kt: opens via FileEditorManager + a user-read-only LightVirtualFile (isWritable=false), streams under a guarded invokeLater + write action, disposes the tail on editor/project close, NO delete/rotate/clear of the on-disk log",
+        "coveredByTaskIds": [
+          "t3",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "LogEditorSection.kt: implements DebugSection, resolves a Project (degrades to a line when null), opens in an editor NOT inline, no log-mutating control",
+        "coveredByTaskIds": [
+          "t4",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "LogTailSeam.kt/LogModel.kt: default log dir /tmp/.insrc (mirrors PATHS.logDir, NOT ~/.insrc) + `<stem>.<N>.log` regex",
+        "coveredByTaskIds": [
+          "t2",
+          "t5"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 contractDetails.api parseLogLine (best-effort pino-JSON -> LogLine, non-JSON -> raw only, never throws) + dataModelChanges LogLine, mirroring CLI debug.ts/debug-types.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 contractDetails.api matchesFilter + dataModelChanges LogFilter/LogCategory/LogLevels (the pure CLI-parity filter/level core)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 contractDetails.api LogTailSeam.tail + LogTailFs (rotation-aware /tmp/.insrc tail mirroring tailLogWith, never-throws, idempotent dispose) + interactionWithShared sc3 (off-EDT, k2/k5)"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "plan s1 seam-sizing: the fixed-interval polling-ticker LiveLogTailFs decision (resolved watch mechanism) + defaultLogDir /tmp/.insrc distinct from OrphanProcessSeam ~/.insrc/daemon"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 contractDetails.api LogEditorSurface.openLog (user-read-only LightVirtualFile + FileEditorManager off-EDT stream, bounded buffer, dispose-on-close, k5/ac2) + the plan s1 platform-glue-sizing write-action resolution"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 contractDetails.api LogEditorSection.component (sc3 DebugSection + project resolution) + DebugConfigurable.sections() append (section-additive sc3 consume, k1/k3/k4)"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 testStrategy: JUnit5 golden CLI-parity vectors + scripted-fake LogTailFs seam test + DebugPageTest/LogEditor source-scan idiom; local gradlew test buildPlugin gate"
+    }
+  ]
+}

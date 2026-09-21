@@ -6,6 +6,7 @@ import ai.insors.insrc.jetbrains.debug.DebugStatusCardModel
 import ai.insors.insrc.jetbrains.debug.DebugStatusCardReader
 import ai.insors.insrc.jetbrains.debug.KillOutcome
 import ai.insors.insrc.jetbrains.debug.KillResult
+import ai.insors.insrc.jetbrains.debug.LogEditorSection
 import ai.insors.insrc.jetbrains.debug.McpDebugSection
 import ai.insors.insrc.jetbrains.debug.OrphanProcess
 import ai.insors.insrc.jetbrains.debug.OrphanProcessSeam
@@ -40,8 +41,8 @@ class DebugConfigurable : InsrcOpsConfigurable(), DebugPageHost {
 
     override fun pageTitle(): String = "Debug"
 
-    /** sc3: the ordered read-only sections S004 seeds; S005 appends the MCP section (S006 later). */
-    override fun sections(): List<DebugSection> = listOf(statusSection(), orphansSection(), mcpSection())
+    /** sc3: the ordered read-only sections S004 seeds; S005 appends MCP, S006 appends the log section. */
+    override fun sections(): List<DebugSection> = listOf(statusSection(), orphansSection(), mcpSection(), logSection())
 
     override fun buildBody(): JComponent {
         val column = JPanel().apply {
@@ -83,6 +84,11 @@ class DebugConfigurable : InsrcOpsConfigurable(), DebugPageHost {
 
     /** sc3: the S005 read-only MCP registration + attached-sessions section (no mutation, k3). */
     private fun mcpSection(): DebugSection = McpDebugSection()
+
+    // ---- Logs section (read-only editor-tab affordance, appended by S006) -----
+
+    /** sc3: the S006 log-open affordance; the live log opens in an editor tab (k5), not inline. */
+    private fun logSection(): DebugSection = LogEditorSection()
 
     // ---- Orphans section (the single confirm-gated mutation, k3) -------------
 

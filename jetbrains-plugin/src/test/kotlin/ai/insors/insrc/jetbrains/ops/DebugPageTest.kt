@@ -59,9 +59,11 @@ class DebugPageTest {
 
     @Test
     fun `s5 ac1 - sections() appends the MCP section after Status and Orphans`() {
+        // The MCP section is present after Status/Orphans (S006 later appends the Logs section too).
+        assertTrue(page.contains("mcpSection()"), "sections() includes the MCP section")
         assertTrue(
-            page.contains("listOf(statusSection(), orphansSection(), mcpSection())"),
-            "the MCP section is appended last; S004's two sections are unchanged",
+            page.contains("statusSection(), orphansSection(), mcpSection()"),
+            "the MCP section follows Status + Orphans; S004's two sections are unchanged",
         )
         assertTrue(page.contains("McpDebugSection()"), "the appended section is the S005 McpDebugSection")
     }
@@ -88,6 +90,20 @@ class DebugPageTest {
             mcpSection.contains("gateway.shutdown") || mcpSection.contains("gateway.backup") || mcpSection.contains("gateway.compact"),
             "the MCP section performs no daemon-mutating IPC (k3)",
         )
+    }
+
+    // ---- S006: the appended Logs section (read-only editor-tab affordance) ----
+
+    @Test
+    fun `s6 - sections() appends the Logs section after Status, Orphans and Mcp`() {
+        assertTrue(
+            page.contains("listOf(statusSection(), orphansSection(), mcpSection(), logSection())"),
+            "the Logs section is appended last; S004's + S005's sections are unchanged",
+        )
+        assertTrue(page.contains("LogEditorSection()"), "the appended section is the S006 LogEditorSection")
+        // the log-open button lives in LogEditorSection.kt, NOT here — DebugConfigurable's sole
+        // mutating control stays S004's Kill button (the ac2 assertion above still holds).
+        assertTrue(page.contains("JButton(\"Kill selected"), "the sole mutating control on DebugConfigurable stays the Kill button")
     }
 
     @Test

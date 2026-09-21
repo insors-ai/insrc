@@ -392,6 +392,32 @@ sealed interface DaemonStatusResult {
 }
 
 /**
+ * The uniform outcome of a Daemon-page lifecycle action (Story
+ * E2026092157298940:S002) — the three gateway IPCs (backup/compact/shutdown) AND the
+ * three daemon-ctl.sh runner commands (start/restart/update) all report through this
+ * one type so the page treats every action identically (ac2). Two-state: [Ok] carries
+ * an optional human message; [Failed] carries a reason (compact's busy-refusal and
+ * every non-zero daemon-ctl.sh exit map to [Failed]). DISTINCT from the sc2
+ * [DaemonStatusResult] (a data read) — this is an action outcome. S002-internal.
+ */
+sealed interface DaemonActionResult {
+    /** The action succeeded; [message] is an optional human summary. */
+    data class Ok(val message: String? = null) : DaemonActionResult
+
+    /** The action did not succeed; [reason] is a user-facing explanation. */
+    data class Failed(val reason: String) : DaemonActionResult
+}
+
+/**
+ * The daemon-ctl.sh subcommands the S002 lifecycle-command runner drives (Story
+ * E2026092157298940:S002). START/RESTART/UPDATE only — Stop is served by the
+ * daemon.shutdown IPC and backup/compact by their IPCs. DISTINCT from the S003-owned
+ * [ProvisionKind][ai.insors.insrc.jetbrains.lifecycle.ProvisionKind] (INSTALL|UPDATE),
+ * which is not touched.
+ */
+enum class LifecycleCommand { START, RESTART, UPDATE }
+
+/**
  * Per-file steering selection carried on the `repo.add` IPC (Story
  * jetbrains-plugin-add-insrc-entry-project / S001), mirroring the daemon
  * `SteeringSelection`. Serialized on the wire as `{ claude, agents }` under the
@@ -568,6 +594,30 @@ interface DaemonGateway {
      * the S002 Daemon page + the S004 Debug status card.
      */
     fun daemonStatus(): DaemonStatusResult
+
+    /**
+     * Request a graceful daemon stop over the `daemon.shutdown` IPC (Story
+     * E2026092157298940:S002) — the daemon terminates itself. Returns
+     * [DaemonActionResult.Ok] on success (or when the daemon was already down),
+     * [DaemonActionResult.Failed] on a framed error / malformed reply. Never throws.
+     */
+    fun shutdown(): DaemonActionResult
+
+    /**
+     * Back up the daemon's stores to [targetDir] over the `daemon.backup` IPC (Story
+     * E2026092157298940:S002) — [targetDir] is forwarded as the required `path` param.
+     * Returns [DaemonActionResult.Ok] on success, [DaemonActionResult.Failed] on a
+     * framed error (incl. a missing path) / unreachable daemon. Never throws.
+     */
+    fun backup(targetDir: String): DaemonActionResult
+
+    /**
+     * Compact the daemon's LMDB env over the `daemon.compact` IPC (Story
+     * E2026092157298940:S002). Returns [DaemonActionResult.Ok] on success;
+     * [DaemonActionResult.Failed] carrying the daemon's message when it refuses because
+     * the indexer is busy, or on any framed error / unreachable daemon. Never throws.
+     */
+    fun compact(): DaemonActionResult
 }
 
 /**
@@ -943,8 +993,53 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
             DaemonStatusResult.Unavailable(e.message ?: "unexpected daemon fault")
         }
 
+    override fun shutdown(): DaemonActionResult =
+        // Graceful stop: the daemon.shutdown handler returns {ok:true} then terminates
+        // itself. A DaemonUnavailableException means the socket is already down => the
+        // daemon is already stopped, which is success for a Stop action.
+        runAction(METHOD_SHUTDOWN, emptyMap(), unreachableAsOk = true, okMessage = "daemon stopped")
+
+    override fun backup(targetDir: String): DaemonActionResult =
+        // daemon.backup requires a non-empty `path`; the page has already prompted for it.
+        runAction(METHOD_BACKUP, mapOf(PARAM_PATH to targetDir), okMessage = "backup written to $targetDir")
+
+    override fun compact(): DaemonActionResult =
+        // daemon.compact refuses (framed error) when the indexer is busy; runAction
+        // forwards that reason verbatim as Failed.
+        runAction(METHOD_COMPACT, emptyMap(), okMessage = "index compacted")
+
+    /**
+     * Shared classification for the fire-and-report action IPCs (backup/compact/shutdown),
+     * mirroring the repoStats()/daemonStatus() sealed-result idiom: an ok reply -> Ok, a
+     * framed error (!ok || error) -> Failed(reason), a RuntimeException -> Failed; never
+     * throws. [unreachableAsOk] treats a DaemonUnavailableException as Ok (used by
+     * shutdown, where an already-down socket means already-stopped).
+     */
+    private fun runAction(
+        method: String,
+        params: Map<String, Any?>,
+        unreachableAsOk: Boolean = false,
+        okMessage: String? = null,
+    ): DaemonActionResult =
+        try {
+            val r = rpc.call(method, params)
+            if (!r.ok || r.error != null) {
+                DaemonActionResult.Failed(r.error ?: "$method returned an error")
+            } else {
+                DaemonActionResult.Ok(okMessage)
+            }
+        } catch (e: DaemonUnavailableException) {
+            if (unreachableAsOk) DaemonActionResult.Ok(okMessage)
+            else DaemonActionResult.Failed(e.message ?: "the daemon is not running")
+        } catch (e: RuntimeException) {
+            DaemonActionResult.Failed(e.message ?: "unexpected daemon fault")
+        }
+
     companion object {
         const val METHOD_STATUS = "daemon.status"
+        const val METHOD_SHUTDOWN = "daemon.shutdown"
+        const val METHOD_BACKUP = "daemon.backup"
+        const val METHOD_COMPACT = "daemon.compact"
         const val METHOD_REPO_LIST = "repo.list"
         const val METHOD_REPO_ADD = "repo.add"
         const val METHOD_WORKFLOW_PENDING = "workflow.pending"

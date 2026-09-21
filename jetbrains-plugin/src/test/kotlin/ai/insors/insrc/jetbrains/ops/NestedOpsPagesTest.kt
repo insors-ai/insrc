@@ -79,10 +79,13 @@ class NestedOpsPagesTest {
             assertTrue(src.contains("class $cls : InsrcOpsConfigurable()"), "$cls extends InsrcOpsConfigurable()")
             assertTrue(src.contains("override fun pageTitle(): String = \"$title\""), "$cls titles itself $title")
             assertTrue(src.contains("override fun buildBody()"), "$cls overrides buildBody()")
-            // S001 ships PLACEHOLDER bodies only — a JLabel, no page domain logic / no sc3.
-            assertTrue(src.contains("JLabel(\""), "$cls's buildBody() is a placeholder JLabel")
-            // S001 ships PLACEHOLDER bodies only: no daemon/service wiring in the page code.
-            assertFalse(src.contains("service<"), "$cls wires no daemon read in S001 (placeholder only)")
+            // The still-unfilled pages (Workflows=S003, Debug=S004) keep the S001
+            // placeholder JLabel body with no daemon/service wiring; Daemon was filled by
+            // S002 so it is exempt from the placeholder-only guard.
+            if (cls != "DaemonConfigurable") {
+                assertTrue(src.contains("JLabel(\""), "$cls's buildBody() is still a placeholder JLabel")
+                assertFalse(src.contains("service<"), "$cls wires no daemon read yet (placeholder only)")
+            }
         }
     }
 }

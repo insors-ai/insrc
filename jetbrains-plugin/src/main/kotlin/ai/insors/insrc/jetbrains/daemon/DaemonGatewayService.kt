@@ -62,4 +62,10 @@ class DaemonGatewayService : DaemonGateway {
     override fun registeredRepos(): RegisteredReposResult = delegate.registeredRepos()
 
     override fun daemonStatus(): DaemonStatusResult = delegate.daemonStatus()
+
+    override fun shutdown(): DaemonActionResult = delegate.shutdown()
+
+    override fun backup(targetDir: String): DaemonActionResult = delegate.backup(targetDir)
+
+    override fun compact(): DaemonActionResult = delegate.compact()
 }

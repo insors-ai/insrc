@@ -1,0 +1,719 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1789993926997-qxib1o",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-21T12:43:51.150Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 704098,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-09-21T05:46:35.262Z",
+    "epicHash": "57298940cdc341bc",
+    "epicSlug": "expand-jetbrains-plugin-s-insrc-settings",
+    "storyId": "s6",
+    "hldBaseRunId": "wf-1789970136758-lvyg6v",
+    "hldEffectiveHash": "7b17d6a14b2a62383210886c5fc8a4d3db9366569ad01726cd49bbd35b17dae1",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "c-logdir",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "PATHS.logDir (LOG_DIR) resolves to join('/tmp','.insrc') — the log root is /tmp/.insrc, NOT ~/.insrc — which the LLB uses as the seam's default logDir.",
+          "evidence": "src/shared/paths.ts:5 `const LOG_DIR = join('/tmp', '.insrc');` and paths.ts:103 `logDir: LOG_DIR`. Confirmed the log root is /tmp/.insrc, NOT ~/.insrc. debug.ts binds realTailDeps.logDir = PATHS.logDir (debug.ts:477). The LLD's default seam logDir=/tmp/.insrc is correct.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c-taillogwith",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The CLI src/cli/services/debug.ts defines tailLogWith (rotation-aware tail: highest-N active segment, last-maxLines initial emit, append-only via seen, truncation re-tail, never-throws, idempotent dispose) plus TAIL_MAX_LINES=500 and LOG_CATEGORIES — the source-of-truth the seam mirrors.",
+          "evidence": "tailLogWith, resolveActive, seen, and LOG_CATEGORIES all present in src/cli/services/debug.ts; realTailDeps at debug.ts:476, tailLogWith invoked at debug.ts:504. The rotation-aware/append-only/never-throws source-of-truth exists as cited.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c-tailmax-500",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "TAIL_MAX_LINES equals 500 in the CLI, matching the LLD's 'initial emit = last maxLines(500)'.",
+          "evidence": "src/cli/services/debug.ts:350 `const TAIL_MAX_LINES = 500;` and debug.ts:498 `maxLines: TAIL_MAX_LINES`. The LLD's 'initial emit = last maxLines(500)' matches exactly.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c-parseline-matchfilter",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The CLI parseLogLine (pino-JSON -> time/level/module(from name)/msg, non-JSON keeps raw only, never throws) and matchesFilter (minLevel numeric >=, drops null-level; module case-insensitive substring on module; text case-insensitive substring over raw; ANDed; empty matches all) exist as the byte-parity source-of-truth.",
+          "evidence": "`function parseLogLine` (1 def) and `function matchesFilter` (1 def, debug.ts:462) both exist in the CLI; minLevel (37 refs) and toLowerCase present, consistent with the ANDed/case-insensitive-substring/null-level-drop semantics the LLD mirrors. Pure-core source-of-truth confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c-types-levels",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "debug-types.ts defines LogLine/LogFilter/LogCategory/LogCategoryId and LEVELS with numeric pairs trace 10, debug 20, info 30, warn 40, error 50, fatal 60.",
+          "evidence": "src/cli/services/debug-types.ts defines LogCategoryId ('daemon'|'agent', :142), LogFilter (:174), LogLine, and LogCategory (:148); LEVELS defined in src/cli/panes/LogsSection.tsx:34 (name/n pairs) and the 6 level names in shared/logger.ts VALID_LEVELS. The projected enum/data-class inventory is grounded. (The exact numeric mapping trace10..fatal60 was not surfaced in the capped grep window but is the standard pino scale and is not contradicted.)",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c-stem-rotation",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The CLI uses a '<stem>.<N>.log' rotation scheme (pino-roll segments) that the seam's listSegments/regex mirrors.",
+          "evidence": "src/cli/services/debug.ts:479 `const re = new RegExp(`^${stem}\\.(\\d+)\\.log$`);` in realTailDeps (:476). The `<stem>.<N>.log` scheme the seam's listSegments/regex mirrors is confirmed verbatim.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c-sc3-shape",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The sc3 contract (owned by S004) is interface DebugSection { title(); component() } and interface DebugPageHost { sections() } in debug/DebugPageHost.kt — the interface S006's LogEditorSection implements without changing.",
+          "evidence": "jetbrains-plugin/src/main/.../debug/DebugPageHost.kt:11 `interface DebugSection {`, :12 `fun title(): String`, :13 `fun component(): JComponent`, :22 `interface DebugPageHost {`, :23 `fun sections(): List<DebugSection>`. The sc3 contract shape the LLD's LogEditorSection implements is exactly as stated; no change to the interface.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c-sections-current",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "DebugConfigurable.sections() currently returns exactly three sections [status, orphans, mcp] (S004 status+orphans, S005 mcp); S006 appends a fourth log section, editing only this method.",
+          "evidence": "DebugConfigurable.kt:44 `override fun sections(): List<DebugSection> = listOf(statusSection(), ...` with private factories statusSection, orphansSection, and mcpSection (:85 `private fun mcpSection(): DebugSection = McpDebugSection()`). `logSection` has 0 code matches (only in docs), confirming it does not exist yet — S006 correctly appends a fourth section, editing only this method. Current = [status, orphans, mcp].",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c-no-editor-surface",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "The plugin currently has NO editor surface — no FileEditorManager or LightVirtualFile usage anywhere under jetbrains-plugin/src/main — so S006's LogEditorSurface is the first such surface (a grep finding them absent is expected).",
+          "evidence": "grep FileEditorManager and LightVirtualFile return ZERO matches under jetbrains-plugin/src/main (all 32 matches each are in docs/ HLD+LLDs). Confirms the plugin has no editor surface yet, so S006's LogEditorSurface is genuinely the first — the absence is expected, not a defect.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c-hld-lightvf",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "The HLD names the LightVirtualFile + FileEditorManager log-editor seam as the chosen shape, so the LLD's a1 (LightVirtualFile+FileEditorManager) adheres to the HLD and the rejected a2 (ConsoleView)/a3 (inline) correctly cite HLD contradiction.",
+          "evidence": "HLD.md:7 (chosen shape a1 names the log-editor seam), :125 'PRIVATE to S006: the log-editor seam — the plugin's first LightVirtualFile...', :168 'First VirtualFile/FileEditor surface (S006 log editor)'. The HLD names LightVirtualFile+FileEditorManager, so the LLD's chosen a1 adheres and its rejection of a2 (ConsoleView)/a3 (inline) citing HLD contradiction is correct.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c-test-idioms",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The existing seam/source-scan test idioms the strategy mirrors exist: OrphanProcessSeamTest (scripted-fake seam) and DebugPageTest (source-scan) under the jetbrains-plugin test module.",
+          "evidence": "DebugPageTest.kt confirmed at jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/ops/DebugPageTest.kt (source-scan idiom, referenced across evidence); OrphanProcessSeamTest and WorkflowChainReaderTest match in the plugin test module. The cited test idioms the strategy mirrors exist.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 11
+      },
+      "reviewedAt": "2026-09-21T12:48:33.446Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-21T12:49:32.625Z",
+    "questionResolutions": {
+      "q43a765ae": {
+        "question": "Project resolution for the application-scoped Debug page: FileEditorManager is Project-scoped, so the 'Open in editor' affordance resolves the first/most-recently-focused ProjectManager.getInstance().openProjects entry (injectable projectResolver) and degrades to a clear 'open a project to view logs' line when none is open. Chosen default is internal to the S006 boundary; flagged for visibility, not a shared-contract change.",
+        "status": "resolved",
+        "choice": "Resolve from the Settings dialog's own DataContext (CommonDataKeys.PROJECT), with the ProjectManager.getInstance().openProjects most-recent scan as fallback, behind the same injectable projectResolver seam; degrade to a clear 'open a project to view logs' line when none resolves.",
+        "rationale": "Removes the wrong-window failure mode under multiple open projects without adding UI or abandoning the HLD-named editor surface; keeps the injectable seam so tests use a fake resolver unchanged.",
+        "resolvedAt": "2026-09-21T12:50:38.842Z"
+      }
+    }
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Chosen shape a1: three new child Settings pages (Daemon, Workflows, Debug) registered declaratively as <applicationConfigurable parentId=\"ai.insors.insrc.settings\"> under the UNCHANGED parent insrc Configurable, each a thin Swing page on a shared off-EDT page-shell base. Every page is a read/act surface over a plugin-side seam at its natural home — incl. a first-of-its-kind log-editor seam (LightVirtualFile + FileEditorManager) hosting the tail. Additive, plugin-only, off-EDT; the parent settings page + daemon are untouched.",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "id": "sc3",
+          "name": "DebugPageHost",
+          "purpose": "The Debug Configurable's section-host: S004 builds the Debug page as an ordered set of sections so S005/S006 attach their read-only sections without re-owning it. Owned by S004; consumed by S005 and S006.",
+          "ownedByStory": "s4",
+          "consumedByStories": [
+            "s5",
+            "s6"
+          ],
+          "assumptions": [
+            "c3"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s6",
+        "owns": [],
+        "depends": [
+          "sc3"
+        ],
+        "internal": "PRIVATE to S006: the log-editor seam — the plugin's first LightVirtualFile + FileEditorManager surface — that opens a chosen daemon/agent log (from /tmp/.insrc) as a read-only editor tab and streams appended lines off the EDT into it, with a level/module/text filter applied to the view. The 'open log' affordance attaches to the sc3 host. Nothing deletes/rotates/clears the underlying log (k5)."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc3"
+          ],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "PRIVATE to S004: the Debug status card + the OS-process orphan-kill seam (the single mutation, k3); S004 implements the DebugPageHost (sc3) and seeds status+orphan sections."
+        },
+        {
+          "storyId": "s5",
+          "owns": [],
+          "depends": [
+            "sc3"
+          ],
+          "internal": "PRIVATE to S005: the MCP diagnostic section (host-detection registration + daemon.debug-status attached sessions), read-only."
+        }
+      ],
+      "rolloutPhase": "Phase C — Debug sections (MCP/sessions, log editor)",
+      "nonFunctional": {
+        "performance": "The log editor streams into a bounded (1000-line) view off a pooled thread with a guarded invokeLater render (k2), so a long-running tail stays memory-safe, mirroring the CLI's bounded ring buffer.",
+        "security": "Strictly read-only: the plugin reaches only local log files under /tmp/.insrc; the epic's single mutation stays S004's confirm-gated orphan kill (k3).",
+        "observability": "Surfaces the daemon/agent's OWN log output; adds no new telemetry.",
+        "durability": "No persisted plugin state: the log view is a live stream; closing the tab drops only in-memory view state."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "parseLogLine",
+          "signature": "fun parseLogLine(raw: String): LogLine",
+          "parameters": [
+            {
+              "name": "raw",
+              "type": "String",
+              "purpose": "One verbatim tail line, possibly a pino-JSON object or free text",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "LogLine",
+            "meaning": "Best-effort parse mirroring the CLI parseLogLine: a pino-JSON line fills timeMs(from `time`), level(from `level`, numeric), module(from `name`), msg(from `msg`); a non-JSON/partial line keeps ONLY raw. raw is ALWAYS the verbatim line."
+          },
+          "errors": [
+            {
+              "type": "(none — never throws)",
+              "condition": "A malformed / non-object JSON line is caught and yields LogLine(raw only); the parse never propagates."
+            }
+          ],
+          "preconditions": [
+            "Pure; no I/O, no platform."
+          ],
+          "postconditions": [
+            "Deterministic: identical output to the CLI parseLogLine for the same input (byte-parity)."
+          ]
+        },
+        {
+          "name": "matchesFilter",
+          "signature": "fun matchesFilter(line: LogLine, filter: LogFilter): Boolean",
+          "parameters": [
+            {
+              "name": "line",
+              "type": "LogLine",
+              "purpose": "The parsed line to test",
+              "optional": false
+            },
+            {
+              "name": "filter",
+              "type": "LogFilter",
+              "purpose": "The active {minLevel?, module?, text?} predicate",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Boolean",
+            "meaning": "True iff the line passes ALL active filter fields (ANDed), mirroring the CLI matchesFilter EXACTLY: minLevel keeps lines whose numeric level >= minLevel (a null-level line is DROPPED by an active minLevel); module is a case-insensitive substring on LogLine.module (null module DROPPED by an active module filter); text is a case-insensitive substring over LogLine.raw (free-text still matches a non-JSON line via raw); an unset/empty field imposes no constraint."
+          },
+          "errors": [
+            {
+              "type": "(none)",
+              "condition": "Pure total predicate; never throws."
+            }
+          ],
+          "preconditions": [
+            "Pure; no I/O."
+          ],
+          "postconditions": [
+            "An empty LogFilter (all null) matches every line."
+          ]
+        },
+        {
+          "name": "LogTailSeam.tail",
+          "signature": "class LogTailSeam(fs: LogTailFs = LiveLogTailFs, logDir: Path = defaultLogDir(), maxLines: Int = TAIL_MAX_LINES) { fun tail(category: LogCategory, onLines: (List<LogLine>) -> Unit): AutoCloseable }",
+          "parameters": [
+            {
+              "name": "category",
+              "type": "LogCategory",
+              "purpose": "Which log to follow (its stem globs `<stem>.<N>.log`)",
+              "optional": false
+            },
+            {
+              "name": "onLines",
+              "type": "(List<LogLine>) -> Unit",
+              "purpose": "Callback invoked with the initial last-maxLines batch, then only newly-appended (parsed) lines on each fs event",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "AutoCloseable",
+            "meaning": "An idempotent dispose handle: close() stops the watcher and a `disposed` guard suppresses any post-dispose emit. Mirrors the CLI tailLogWith dispose()."
+          },
+          "errors": [
+            {
+              "type": "(none — never throws)",
+              "condition": "A missing logDir / read error / un-installable watcher degrades to an empty initial emit + a quiet retry on the next event; nothing propagates (mirrors tailLogWith)."
+            }
+          ],
+          "preconditions": [
+            "Called OFF the EDT (blocking directory + file reads; k2).",
+            "onLines marshals any UI update back to the EDT itself (the seam invokes it on the fs/pooled thread)."
+          ],
+          "postconditions": [
+            "Read-only: only lists/reads/watches `<stem>.<N>.log` under logDir; never writes/rotates/clears a log (k5).",
+            "Active segment = highest-N `<stem>.<N>.log`; initial emit = last maxLines; subsequent emits append-only (tracks `seen`); a truncated file (< seen) re-tails from 0; a new/higher-N segment resets seen."
+          ]
+        },
+        {
+          "name": "LogTailFs",
+          "signature": "interface LogTailFs { fun listSegments(dir: Path, stem: String): List<Path>; fun readLines(file: Path): List<String>; fun watch(dir: Path, onEvent: () -> Unit): AutoCloseable }",
+          "parameters": [],
+          "returns": {
+            "type": "interface",
+            "meaning": "The injectable fs seam behind LogTailSeam (mirrors the CLI TailDeps): listSegments returns `<stem>.<N>.log` files under dir sorted ascending by N; readLines returns a file's current lines (trailing empty dropped); watch installs a directory watcher firing on append/creation and returns an AutoCloseable unwatch. LiveLogTailFs is the java.nio default; a scripted fake drives the unit tests."
+          },
+          "errors": [
+            {
+              "type": "(implementation-defined)",
+              "condition": "The LIVE impl swallows its own IO errors so LogTailSeam stays never-throwing; the seam also guards each call, so a throwing fake still cannot crash tail()."
+            }
+          ],
+          "preconditions": [
+            "Injected; the live default binds java.nio (Files.list + name regex, Files.readAllLines, a WatchService or polling ticker)."
+          ],
+          "postconditions": [
+            "Strictly read-only — no method writes to disk."
+          ]
+        },
+        {
+          "name": "LogEditorSurface.openLog",
+          "signature": "class LogEditorSurface(seam: LogTailSeam = LogTailSeam()) { fun openLog(project: com.intellij.openapi.project.Project, category: LogCategory): Unit }",
+          "parameters": [
+            {
+              "name": "project",
+              "type": "com.intellij.openapi.project.Project",
+              "purpose": "The project whose FileEditorManager hosts the editor tab (resolved by the caller)",
+              "optional": false
+            },
+            {
+              "name": "category",
+              "type": "LogCategory",
+              "purpose": "Which log to open + follow",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Unit",
+            "meaning": "Opens (or re-focuses) a user-read-only LightVirtualFile('insrc-<stem>.log') via FileEditorManager.getInstance(project).openFile(file, true), subscribes the LogTailSeam OFF the EDT, and streams the filtered bounded (MAX_BUFFER=1000) buffer into the file's Document via a disposed-guarded invokeLater + write action. A per-editor filter toolbar re-renders from the buffer on a LogFilter change. The tail is disposed on editor close (FileEditorManagerListener) / project close."
+          },
+          "errors": [
+            {
+              "type": "(none propagated)",
+              "condition": "The tail seam never throws; the open + document rebuild are guarded (disposed check + try/catch), so a late post-close emit is dropped, never an exception."
+            }
+          ],
+          "preconditions": [
+            "A non-null Project (the section resolves it; when none is open the section shows a line and does NOT call openLog).",
+            "openLog is invoked from the EDT (an action handler); the blocking tail reads happen on the seam's own off-EDT feed."
+          ],
+          "postconditions": [
+            "The on-disk log is NEVER modified: the LightVirtualFile is a separate in-memory file, user-read-only (isWritable=false), and only the plugin rebuilds its Document (k5/ac2).",
+            "The bounded buffer caps memory (last 1000 lines); filtering re-renders from the buffer, never re-reads the disk."
+          ]
+        },
+        {
+          "name": "LogEditorSection.component",
+          "signature": "class LogEditorSection(surface: LogEditorSurface = LogEditorSurface(), projectResolver: () -> com.intellij.openapi.project.Project? = ::resolveOpenProject) : DebugSection { override fun title(): String; override fun component(): javax.swing.JComponent }",
+          "parameters": [],
+          "returns": {
+            "type": "javax.swing.JComponent",
+            "meaning": "The sc3 log-open affordance: a read-only category picker (Daemon/Agent from LogCategories.all) + an 'Open in editor' control that resolves a target Project (projectResolver, default = the first/most-recently-focused ProjectManager.getInstance().openProjects entry) and calls LogEditorSurface.openLog; when no project is open it shows a clear 'open a project to view logs' line and opens nothing. Built off the EDT by the sc3 host, rendered under the sc1 base."
+          },
+          "errors": [
+            {
+              "type": "(none propagated)",
+              "condition": "projectResolver returning null -> the no-project line (not a throw); openLog never throws."
+            }
+          ],
+          "preconditions": [
+            "Built off the EDT (component() runs inside DebugConfigurable.buildBody on a pooled thread, sc1 base).",
+            "The 'Open in editor' click handler runs on the EDT and delegates the blocking work to the off-EDT tail feed."
+          ],
+          "postconditions": [
+            "Implements the sc3 DebugSection (title + off-EDT-built component).",
+            "Opens the log ONLY in an editor tab (k5) — never renders the live log inline in the section.",
+            "Adds no log-mutating control; nothing deletes/rotates/clears a log (ac2/k5); the epic's single mutation stays S004's orphan kill (k3)."
+          ]
+        },
+        {
+          "name": "DebugConfigurable.sections",
+          "signature": "override fun sections(): List<DebugSection>  // now [statusSection(), orphansSection(), mcpSection(), logSection()]",
+          "parameters": [],
+          "returns": {
+            "type": "List<DebugSection>",
+            "meaning": "The sc3 ordered section list, now with the S006 LogEditorSection APPENDED after S004's Status/Orphans and S005's Mcp sections — the section-additive consumption of sc3. S004's + S005's sections are unchanged."
+          },
+          "errors": [],
+          "preconditions": [
+            "Assembled off the EDT (each section's component() may read files / open editors)."
+          ],
+          "postconditions": [
+            "Consumes sc3 by appending exactly one DebugSection; does NOT re-design S004's/S005's sections.",
+            "The parent settings page + plugin.xml <applicationConfigurable> element remain byte-unchanged (k4)."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "LogLine",
+        "change": "new",
+        "details": "Plugin projection of the CLI LogLine (debug-types.ts): data class LogLine{ raw: String, timeMs: Long?, level: Int?, module: String?, msg: String? }. raw always verbatim; timeMs/level/module/msg best-effort pino-JSON (level numeric, module from `name`, timeMs from `time`); non-JSON -> raw only. Gson Double->Long/Int coercion.",
+        "callSites": [
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/debug/LogModel.kt",
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/debug/LogTailSeam.kt",
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/debug/LogEditorSurface.kt"
+        ]
+      },
+      {
+        "entity": "LogFilter",
+        "change": "new",
+        "details": "Plugin projection of the CLI LogFilter: data class LogFilter{ minLevel: Int?, module: String?, text: String? }. Consumed by matchesFilter (ANDed active fields). Empty matches all.",
+        "callSites": [
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/debug/LogModel.kt",
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/debug/LogEditorSurface.kt"
+        ]
+      },
+      {
+        "entity": "LogCategory",
+        "change": "new",
+        "details": "Plugin projection of the CLI LogCategory + LogCategoryId: enum LogCategoryId{ DAEMON, AGENT } + data class LogCategory{ id, title, stem }; LogCategories.all = [Daemon(stem 'daemon'), Agent(stem 'agent')] mirroring LOG_CATEGORIES. The stem globs `<stem>.<N>.log`.",
+        "callSites": [
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/debug/LogModel.kt",
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/debug/LogTailSeam.kt",
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/debug/LogEditorSection.kt"
+        ]
+      },
+      {
+        "entity": "LogLevels",
+        "change": "new",
+        "details": "Plugin projection of the CLI LEVELS: object LogLevels with the name<->numeric pairs (trace 10, debug 20, info 30, warn 40, error 50, fatal 60), label(level:Int?):String, parseLevel(token:String):Int? (a name or a numeric string; '' clears). Drives the level filter parse + display.",
+        "callSites": [
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/debug/LogModel.kt",
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/debug/LogEditorSurface.kt"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "S006 CONSUMES sc3 (owned by S004): it implements the DebugSection interface with a new S006-internal LogEditorSection and APPENDS it to DebugConfigurable.sections() (now [Status, Orphans, Mcp, Logs]) — the section-additive contract. It does NOT re-own or re-design the DebugPageHost or S004's/S005's sections. The section's component is a read-only picker + 'Open in editor' affordance built off the EDT under the sc1 base; the live log renders in a FileEditorManager editor tab (k5), NOT inline. No change to the sc3 interface shape."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The log directory (/tmp/.insrc) does not exist or has no `<stem>.<N>.log` segment yet.",
+          "detection": "LogTailSeam.tail's resolveActive() catches the directory-list failure / empty match (LogTailFs.listSegments returns empty or throws, guarded) and finds no active segment.",
+          "response": "Empty initial emit (loaded-but-empty), the watcher stays installed, a later fs event re-resolves + emits when the file appears (mirrors tailLogWith). The editor opens with an empty document + a 'waiting for <category> log…' header.",
+          "userImpact": "The tab opens cleanly and begins streaming as soon as the daemon writes; no dialog, no crash.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A file read of the active segment fails transiently (mid-rotation / momentarily locked / partial read).",
+          "detection": "LogTailFs.readLines throws and the seam's per-emit guard catches it (mirrors tailLogWith's try/catch around readLines).",
+          "response": "That emit is skipped (no lines, `seen` unchanged); the next fs event retries; the seam never throws.",
+          "userImpact": "A momentary pause; the next appended line resumes it. No visible error.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The directory watcher cannot be installed (WatchService unavailable / too many watches).",
+          "detection": "LogTailFs.watch throws and LogTailSeam.tail catches it around the watch() call (mirrors tailLogWith).",
+          "response": "The initial last-N emit is still delivered; live follow silently degrades; the seam returns a valid dispose() regardless.",
+          "userImpact": "The developer sees the current tail but not new lines until re-open; no crash (a polling-ticker LiveLogTailFs avoids this).",
+          "recoverable": true
+        },
+        {
+          "scenario": "'Open in editor' is used but NO project is open (welcome screen / all projects closed).",
+          "detection": "LogEditorSection's projectResolver (first/most-recent ProjectManager.getInstance().openProjects) returns null.",
+          "response": "The section renders a clear 'open a project to view logs' line and does NOT call openLog; no LightVirtualFile is created.",
+          "userImpact": "A clear instruction instead of a silent no-op or NPE; the developer opens a project and retries.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A late tail emit arrives AFTER the editor tab / project has closed (dispose race).",
+          "detection": "LogEditorSurface's disposed guard (set by the FileEditorManagerListener.fileClosed / project-close handler that also close()s the tail) short-circuits the invokeLater body; the file/Document validity is checked before the write.",
+          "response": "The stray batch is dropped, the tail is idempotently closed, no exception (the disposed-guarded invokeLater idiom).",
+          "userImpact": "No 'already disposed' exception, no zombie watcher leaking a handle after the tab closes.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The developer attempts to TYPE in / edit the opened log editor tab.",
+          "detection": "The LightVirtualFile is user-read-only (isWritable=false), so the platform editor rejects user edits at the document level.",
+          "response": "Edit keystrokes are refused; only the plugin's guarded write-action rebuild mutates the in-memory Document; the on-disk log is never touched.",
+          "userImpact": "The tab behaves like any read-only file — scroll/select/copy/search work, editing does not (ac2/k5).",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A rotation happens WHILE following: pino-roll opens `<stem>.<N+1>.log`.",
+          "expected": "resolveActive() re-resolves to the new highest-N segment on the next event, resets `seen`=0, continues append-only from the new file — no dup, no gap beyond the initial-tail boundary."
+        },
+        {
+          "input": "The active segment is TRUNCATED / replaced in place (line count drops below `seen`).",
+          "expected": "The seam detects lines.length < seen, resets seen=0 and re-tails from the start, re-syncing rather than mis-slicing negative indices."
+        },
+        {
+          "input": "A pino-JSON line with `name` but no `msg`, or a numeric level not among the 6 known (e.g. 35).",
+          "expected": "parseLogLine fills module/level(35), msg null; LogLevels.label(35) falls back to '35'; matchesFilter minLevel=30 keeps 35 (35>=30). No crash, no dropped field."
+        },
+        {
+          "input": "A stream exceeding the bounded buffer (>1000 lines).",
+          "expected": "The ring buffer keeps only the last 1000 lines; the document is rebuilt from that bounded buffer, so memory stays flat over an unbounded tail (mirrors the CLI ring buffer)."
+        },
+        {
+          "input": "The developer changes the filter while the stream is live.",
+          "expected": "The view re-renders the CURRENT bounded buffer via matchesFilter (no disk re-read); newly-appended lines are appended-then-filtered; an empty filter shows everything."
+        },
+        {
+          "input": "The same category is opened twice while its tab is open.",
+          "expected": "FileEditorManager.openFile re-focuses the existing LightVirtualFile tab (same identity) rather than duplicating; the single tail subscription is reused (or the prior disposed first) — no double-stream."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The rotation-aware tail mirrors the CLI tailLogWith EXACTLY: active segment = highest-N `<stem>.<N>.log`, initial emit = last maxLines(500), subsequent emits append-only via `seen`, a truncated file re-tails from 0, a new segment resets seen, and the whole seam NEVER throws (missing dir/read/watch -> empty initial emit + quiet retry).",
+          "source": "c6"
+        },
+        {
+          "text": "The log stream is STRICTLY READ-ONLY: the plugin only lists/reads/watches `<stem>.<N>.log` under /tmp/.insrc and renders into a separate user-read-only in-memory LightVirtualFile; nothing the developer does deletes/rotates/clears the underlying on-disk log (k5/ac2). The epic's single mutation stays S004's confirm-gated orphan kill.",
+          "source": "c6"
+        },
+        {
+          "text": "The pure LogLine/LogFilter/parseLogLine/matchesFilter/LogLevels core mirrors the CLI byte-for-byte: minLevel drops no-level lines, module case-insensitive substring on module (no-module dropped by an active module filter), text case-insensitive substring over raw (free-text still matches non-JSON), ANDed, empty filter matches all.",
+          "source": "c6"
+        },
+        {
+          "text": "All file I/O runs OFF the EDT and every editor/document mutation is marshalled back via a disposed-guarded invokeLater under a write action (k2); the log opens ONLY as a FileEditorManager editor tab (k5), never inline. The section consumes sc3 additively (one appended DebugSection) and touches neither S004/S005's sections nor the parent settings page / plugin.xml (k1/k4).",
+          "source": "c3"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "JUnit5 (org.junit.jupiter) — the jetbrains-plugin test module, mirroring the OrphanProcessSeamTest scripted-fake seam idiom + the WorkflowChainReaderTest golden-CLI-vector idiom + the DebugPageTest source-scan idiom.",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove the PURE log core mirrors the CLI byte-for-byte (parseLogLine, matchesFilter, LogLevels).",
+          "subjects": [
+            "parseLogLine (canonical pino-JSON, name-but-no-msg, non-JSON, partial JSON)",
+            "matchesFilter (minLevel keep/drop incl. no-level; module substring incl. no-module; text substring over raw incl. non-JSON; ANDed; empty)",
+            "LogLevels.parseLevel ('warn'->40, '40'->40, ''->null, junk->null) + label(35->'35', 30->'info')"
+          ],
+          "fixturesNeeded": [
+            "golden CLI-parity string vectors (pino-JSON + free-text lines)",
+            "a LogFilter matrix (each field alone + combined + empty)"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove LogTailSeam mirrors tailLogWith rotation/append/truncation/never-throws over a SCRIPTED LogTailFs fake (no real disk watcher).",
+          "subjects": [
+            "initial emit = last maxLines of the highest-N segment",
+            "append-only follow: a watch trigger emits ONLY fresh lines (seen)",
+            "rotation: a new higher-N segment resets seen, follow continues with no dup",
+            "truncation: file shrinks below seen -> seen=0, re-tail (no negative slice)",
+            "never-throws: a throwing listSegments/readLines/watch -> empty initial emit + valid dispose()",
+            "dispose(): idempotent; a post-dispose trigger emits nothing (disposed guard)"
+          ],
+          "fixturesNeeded": [
+            "a ScriptedLogTailFs fake with programmable segments/lines + a manual watch-trigger hook",
+            "a throwing-variant fake for each of listSegments/readLines/watch"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Source-scan guard the platform-coupled editor surface + the sc3 consumption (Settings dialog + FileEditorManager not headlessly bootable).",
+          "subjects": [
+            "DebugConfigurable.kt: sections() = [status, orphans, mcp, log] (S006 appended; S004/S005 unchanged)",
+            "LogEditorSurface.kt: opens via FileEditorManager + a user-read-only LightVirtualFile (isWritable=false), streams under a guarded invokeLater + write action, disposes the tail on editor/project close, NO delete/rotate/clear of the on-disk log",
+            "LogEditorSection.kt: implements DebugSection, resolves a Project (degrades to a line when null), opens in an editor NOT inline, no log-mutating control",
+            "LogTailSeam.kt/LogModel.kt: default log dir /tmp/.insrc (mirrors PATHS.logDir, NOT ~/.insrc) + `<stem>.<N>.log` regex"
+          ],
+          "fixturesNeeded": [
+            "read of ops/DebugConfigurable.kt",
+            "read of debug/LogEditorSurface.kt, debug/LogEditorSection.kt, debug/LogTailSeam.kt, debug/LogModel.kt"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "unit(seam): LogTailSeam.tail emits the initial last-maxLines batch then append-only fresh lines on each watch trigger, never throwing",
+            "unit(seam): rotation + truncation cases keep the follow correct",
+            "source-scan(surface): LogEditorSurface opens the log via FileEditorManager into a LightVirtualFile editor tab (k5) and streams into its Document under a guarded off-EDT invokeLater (k2)",
+            "source-scan(section): 'Open in editor' resolves a Project and calls openLog; a null project degrades to a clear line; no inline live view",
+            "source-scan(page): DebugConfigurable.sections() appends the log section after status/orphans/mcp"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "unit(core): matchesFilter shows only matching lines for level/module/text (incl. no-level/no-module drop + non-JSON free-text) and empty matches all",
+            "unit(core): LogLevels.parseLevel maps the level filter token; the re-render uses matchesFilter (proven pure)",
+            "source-scan(surface): the LightVirtualFile is user-read-only (isWritable=false) and no write/delete/rotate/clear of the on-disk log (k5)",
+            "source-scan(seam): LogTailFs is read-only (list/read/watch only)"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "The Debug page renders exactly THREE sc3 sections (status, orphans, mcp) and buildBody() iterates them under InsrcCollapsible off the EDT (s1 symbol.locate). The plugin has NO editor surface — no FileEditorManager/LightVirtualFile usage (s1 capability.map). The rotation-aware tail + LogLine/LogFilter/parseLogLine/matchesFilter/LEVELS model exist ONLY in the CLI (s1 capability.map + data-model.trace). The logs live under /tmp/.insrc (PATHS.logDir), a DISTINCT root from the plugin's ~/.insrc daemon-root (s1 external-contract).",
+      "stateAfter": "The Debug page renders FOUR sc3 sections (status, orphans, mcp, log). A new debug/ log stack exists: a pure core (LogLine/LogFilter/LogCategory/LogLevels + parseLogLine + matchesFilter mirroring the CLI), a LogTailSeam over an injectable LogTailFs (rotation-aware tail under logDir=/tmp/.insrc, last-500 initial, append-only, never-throws, idempotent dispose), and a LogEditorSurface opening a user-read-only LightVirtualFile via FileEditorManager streaming the filtered bounded (1000-line) buffer off the EDT under a guarded write action, disposing the tail on editor/project close. The LogEditorSection resolves a Project + offers a read-only 'Open in editor' affordance. The log opens ONLY as an editor tab (k5), strictly read-only; the daemon, parent settings page, plugin.xml, and S004/S005 sections are unchanged (k1/k4).",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the PURE log core (debug/LogModel.kt): LogLine/LogFilter/LogCategory/LogCategoryId/LogLevels + parseLogLine + matchesFilter mirroring the CLI byte-for-byte. Additive; golden CLI-parity unit tests.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add LogTailSeam + injectable LogTailFs (debug/LogTailSeam.kt) with a LiveLogTailFs java.nio default binding logDir=/tmp/.insrc (NOT ~/.insrc) + the `<stem>.<N>.log` regex; rotation/append/truncation/never-throws mirror tailLogWith. Additive; scripted-fake unit tests.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add LogEditorSurface (debug/LogEditorSurface.kt): open a user-read-only LightVirtualFile via FileEditorManager, subscribe off the EDT, stream the filtered 1000-line buffer into the Document under a disposed-guarded invokeLater + write action, dispose the tail on editor/project close. Additive; the plugin's FIRST editor surface.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Add LogEditorSection (debug/LogEditorSection.kt) implementing the sc3 DebugSection: a read-only category picker + 'Open in editor' affordance resolving a Project (default first/most-recent open project), degrading to a clear line when none is open. Additive.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Append logSection() to DebugConfigurable.sections() (now [status, orphans, mcp, log]) — the ONLY edit to existing code, one list element + one private factory. S004/S005 sections, buildBody(), parent settings page, plugin.xml byte-unchanged.",
+          "rollbackable": true
+        },
+        {
+          "order": 6,
+          "action": "Add tests: golden-vector core tests, a scripted-fake LogTailSeam test, and DebugPageTest source-scan extensions. Verify locally: gradlew test buildPlugin (JDK21, --no-build-cache after new types).",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No existing PUBLIC API changes signature or behavior. The only existing-code edit is appending one element to DebugConfigurable.sections() (an internal S004-owned method whose contract is 'an ordered section list'); S004's and S005's sections are untouched, so the Debug page's prior behavior is a strict subset. Everything else is additive new files in debug/. The daemon, the sc3 interface shape, the parent applicationConfigurable id, and plugin.xml are unchanged (k1/k4).",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Pure LogTailSeam + LogFilter core + a LightVirtualFile editor surface, one sc3 log-open section",
+        "oneLineSummary": "A pure injectable LogTailSeam + pure LogLine/LogFilter/parseLogLine/matchesFilter/LEVELS core, driven into a user-read-only LightVirtualFile opened via FileEditorManager and streamed off-EDT under a guarded write action; the sc3 section is a category picker + 'Open in editor' affordance appended to DebugConfigurable.sections().",
+        "approach": "Three plugin-internal layers, each at its natural testability boundary: (1) a PURE core (LogLine/LogFilter/LogCategory/LogLevels + parseLogLine + matchesFilter mirroring the CLI byte-for-byte, golden-vector tested); (2) a LogTailSeam over an injectable LogTailFs mirroring tailLogWith (rotation-aware, last-500 initial, append-only, truncation re-tail, never-throws, idempotent dispose, scripted-fake tested); (3) a LogEditorSurface opening a user-read-only LightVirtualFile via FileEditorManager and streaming the filtered bounded buffer into the Document off the EDT under a guarded write action, disposing on editor/project close. The sc3 LogEditorSection is a read-only category picker + 'Open in editor' affordance appended to DebugConfigurable.sections().",
+        "verdict": "chosen",
+        "why": "Satisfies every AC + sc3 + k1-k5 and honors the HLD's named LightVirtualFile + FileEditorManager seam; the three-layer split confines all fiddly platform glue behind pure, off-platform-testable seams (the proven OrphanProcessSeam + DebugPageTest idiom)."
+      },
+      {
+        "id": "a2",
+        "name": "ConsoleView (execution console) hosted in the editor area",
+        "oneLineSummary": "Reuse the same pure core but render the tail into a com.intellij.execution.ui.ConsoleView mounted as an editor-area tab, appending filtered lines incrementally.",
+        "approach": "Keep the LogTailSeam + pure core from a1 but replace the surface: openLog builds a ConsoleView via TextConsoleBuilderFactory and console.print()s each matchesFilter-passing line with per-level content type; a filter change clears + re-prints the buffer.",
+        "verdict": "rejected",
+        "why": "A nicer streaming console (incremental append + highlighting) but DIVERGES from the HLD's explicitly-named LightVirtualFile + FileEditorManager seam (k5 partial) and is a weaker literal match to ac1's 'editor panel'.",
+        "reasonRejected": "It would require an HLD back-flow/amendment rather than a clean consume (the HLD names LightVirtualFile+FileEditorManager), and the heavier com.intellij.execution surface is harder to source-scan-assert as the 'editor tab' invariant ac1 states."
+      },
+      {
+        "id": "a3",
+        "name": "Inline bounded log view rendered directly in the Debug settings section",
+        "oneLineSummary": "Drop the editor surface: render the filtered tail inline inside the sc3 section (a scrolling text component in an InsrcCollapsible panel).",
+        "approach": "Reuse the LogTailSeam + pure core, but LogEditorSection.component() itself hosts a filter toolbar + a bounded scrolling text component fed off-EDT from the tail; no LightVirtualFile, no FileEditorManager, no Project resolution.",
+        "verdict": "rejected",
+        "why": "Violates ac1/k5 outright — the AC requires the log open 'in an IDE editor panel (not inline in the settings page)'.",
+        "reasonRejected": "An inline settings-page view is exactly the anti-pattern k5 rules out; a modal, small, dispose-on-close settings dialog is a poor host for a continuously-scrolling log, and it contradicts the HLD's named LightVirtualFile + FileEditorManager seam."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "Project resolution for the application-scoped Debug page: FileEditorManager is Project-scoped, so the 'Open in editor' affordance resolves the first/most-recently-focused ProjectManager.getInstance().openProjects entry (injectable projectResolver) and degrades to a clear 'open a project to view logs' line when none is open. Chosen default is internal to the S006 boundary; flagged for visibility, not a shared-contract change.",
+      "The LiveLogTailFs watch mechanism (java.nio WatchService vs a polling ticker) is a build-time implementation choice behind the injectable LogTailFs seam; both satisfy the never-throws + append-only contract, so the scripted-fake unit tests are unaffected either way."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 capability.map: CLI src/cli/services/debug.ts tailLogWith rotation-aware tail (resolveActive highest-N, last-maxLines initial, append-only seen, truncation re-tail, never-throws, idempotent dispose) + LOG_CATEGORIES + injectable TailDeps"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 data-model.trace: CLI src/cli/services/debug-types.ts LogCategory/LogLine/LogFilter + parseLogLine + matchesFilter + LEVELS (trace10..fatal60) semantics"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1 symbol.locate: sc3 DebugPageHost/DebugSection (debug/DebugPageHost.kt) + DebugConfigurable.sections() render loop + the InsrcOpsConfigurable off-EDT/disposed-guarded-invokeLater base (k2/k4)"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "s1 capability.map: the plugin has NO editor surface yet (grep FileEditorManager/LightVirtualFile = none) + the FileEditorManager project-scoping tension; the user-read-only LightVirtualFile + FileEditorManager.openFile pattern"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/shared/paths.ts: PATHS.logDir = LOG_DIR = join('/tmp', '.insrc') (the log root is /tmp/.insrc, NOT ~/.insrc) + the `<stem>.<N>.log` rotation scheme in debug.ts realTailDeps"
+    },
+    {
+      "id": "c6",
+      "kind": "analyze-bundle",
+      "ref": "s1 external-contract + capability.map + data-model.trace jointly: the CLI source-of-truth for the tail semantics, the strictly-read-only log access, and the byte-for-byte pure filter/parse core S006 mirrors"
+    }
+  ]
+}

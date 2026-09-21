@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>settings — insrc</title>
+<meta name="description" content="Everything insrc exposes in the JetBrains IDE under Settings → Tools → insrc: a live editor for the whole daemon configuration (models, tiers, per-role and per-repo overrides, workflow, analysis, embeddings), plus operational pages for the daemon, the tracked-workflow chain, and diagnostics (status, orphan processes, MCP clients, logs).">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13' font-family='monospace' fill='%234ade80'>▌</text></svg>">
+<link rel="stylesheet" href="css/tui.css">
+</head>
+<body>
+<a class="skip" href="#main">skip to content</a>
+
+<nav class="nav"><div class="nav-inner">
+  <span class="brand">insrc<span class="sig">.daemon</span></span>
+  <div class="nav-links">
+    <a href="index.html">home</a>
+    <a href="getting-started.html">getting started</a>
+    <a href="workflow.html">workflow</a>
+    <a href="cli.html">cli</a>
+    <a href="plugin.html">plugin</a>
+    <a href="settings.html">settings</a>
+    <a href="architecture.html">architecture</a>
+    <a href="analyze.html">analyze</a>
+    <a href="tracker.html">tracker</a>
+    <a href="tools.html">tools</a>
+  </div>
+  <button class="theme-btn" type="button" aria-label="toggle theme">◐ light</button>
+</div></nav>
+
+<div class="wrap"><main id="main">
+
+  <h1>Settings</h1>
+  <p class="lead">The <a href="plugin.html">JetBrains plugin</a> surfaces the whole daemon under <strong>Settings / Preferences → Tools → insrc</strong> — a native settings tree, not a config file you hand-edit. The parent page is a <strong>live editor for the entire daemon configuration</strong>; three child pages give you an <strong>operational cockpit</strong> for the daemon, the tracked-workflow chain, and diagnostics. Every read runs off the UI thread against the local daemon socket; every write goes through the daemon's own <code>config.write</code> contract.</p>
+
+  <div class="tip"><strong>One socket, no files.</strong> The plugin never edits <code>~/.insrc/config.json</code> directly — it reads the catalog over the <code>config.catalog</code> IPC and writes single leaves over <code>config.write</code>, so the daemon stays the single source of truth and reconciles/validates every change on its side.</div>
+
+  <h2 id="where">Where to find it</h2>
+  <p>Open your IDE's settings (<strong>⌘,</strong> on macOS, <strong>Ctrl+Alt+S</strong> on Windows/Linux) and expand <strong>Tools → insrc</strong>. Under it sit three child pages:</p>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Page</th><th>What it is</th></tr></thead>
+    <tbody>
+      <tr><td><strong>insrc</strong> <span class="c">(parent)</span></td><td>The configuration editor — every daemon setting, grouped and editable live.</td></tr>
+      <tr><td><strong>Daemon</strong></td><td>Health readout + lifecycle controls (start / stop / restart / update / backup / compact).</td></tr>
+      <tr><td><strong>Workflows</strong></td><td>Read-only status of the tracked <a href="workflow.html">define → design → plan → build</a> chain per epic.</td></tr>
+      <tr><td><strong>Debug</strong></td><td>Diagnostics: daemon status, stray-process cleanup, MCP clients &amp; attached sessions, and live log tails.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="config">The configuration editor <span class="c">(parent page)</span></h2>
+  <p>The parent <strong>insrc</strong> page renders the daemon's whole configuration catalog as one scrolling page of <strong>collapsible category sections</strong>. Each setting shows its current value, its default, and an inline description; edits apply through the daemon and are reconciled + validated there. The catalog is grouped so the surface stays legible:</p>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Group</th><th>Controls</th><th>Example keys</th></tr></thead>
+    <tbody>
+      <tr><td><strong>General</strong></td><td>Daemon-wide basics.</td><td><code>logLevel</code>, <code>ollama.host</code></td></tr>
+      <tr><td><strong>Workflow &amp; review</strong></td><td>How features are routed, gated and reviewed.</td><td><code>permissions.mode</code>, <code>routing.mode</code>, <code>classifier.confirmIntent</code>, <code>codeReview.enforce</code>, <code>codeReview.freshnessTimeoutMs</code></td></tr>
+      <tr><td><strong>Analysis &amp; memory</strong></td><td>Analyzer routing and implicit memory capture.</td><td><code>analyzer.useLocal</code>, <code>memory.implicitCapture.enabled</code></td></tr>
+      <tr><td><strong>Models — tiers</strong></td><td>The per-tier backend + model, and the accuracy floor.</td><td><code>models.tiers.{core,mid,cheap}.{runner,model}</code>, <code>models.coreFloor</code></td></tr>
+      <tr><td><strong>Models — shaper</strong></td><td>The local shaper's loop + output limits.</td><td><code>models.shaper.maxToolTurns</code>, <code>…structuredOutputRetries</code>, <code>…ollamaNumCtx</code>, <code>…ollamaNumPredict</code></td></tr>
+      <tr><td><strong>Models — plan depth</strong></td><td>Max plan-tree depth per scope size.</td><td><code>models.maxPlanDepth.{XS,S,M,L,XL}</code></td></tr>
+      <tr><td><strong>Local &amp; embeddings</strong></td><td>The local Ollama provider + the indexer's embedder.</td><td><code>models.local.host</code>, <code>…embeddingModel</code>, <code>…embeddingDim</code>, <code>…coreModel</code></td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="tip"><strong>Accuracy-first tiering.</strong> insrc routes each role to a model <em>tier</em> (<code>core</code> / <code>mid</code> / <code>cheap</code>), and <code>models.coreFloor</code> guarantees the <strong>critical</strong> roles — design, review, build, validate — never run below that floor, no matter how you tune the cheaper tiers for classification, probes and summaries. Set a tier's <code>runner</code> to <code>ollama</code> to keep it fully local, or <code>cli-claude</code> / <code>cli-codex</code> to route it through your installed CLI's OAuth session. See the <a href="architecture.html">architecture</a> page for the model-tiering design.</div>
+
+  <h3 id="per-role">Per-role overrides</h3>
+  <p>Below the catalog, a collapsible <strong>per-role</strong> section lets you override the tier/runner/model for an individual workflow role (for example, pin <em>review</em> to a stronger model than the rest) without changing the global tiers. Each override is a leaf write, so clearing it falls back to the tier default.</p>
+
+  <h3 id="per-repo">Per-repo overrides</h3>
+  <p>A collapsible <strong>per-repo</strong> section does the same at repository granularity — <code>coreFloor</code>, per-task tiers, and per-tier <code>{runner, model}</code> scoped to one registered repo (the daemon's <code>models.byRepo</code> map). Use it to run one heavy repo entirely on cloud tiers while keeping the rest local. The picker lists the repos the daemon has registered.</p>
+
+  <h2 id="daemon">Daemon page</h2>
+  <p>A live health readout of the backing daemon over the <code>daemon.status</code> IPC — running state, uptime, index-queue depth, pending embeddings, model-pull progress, on-disk index size and registered-repo count — plus the six lifecycle actions, each run off the UI thread with streamed progress:</p>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Action</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Start / Restart / Update</strong></td><td>Runs the daemon's own <code>daemon-ctl.sh</code> lifecycle script (the same one the CLI uses) — start can't go over the daemon's own socket, so these go through the script.</td></tr>
+      <tr><td><strong>Stop</strong></td><td>A graceful shutdown over the socket; an already-stopped daemon is treated as success.</td></tr>
+      <tr><td><strong>Backup</strong></td><td>Backs up the daemon's stores to a folder you pick (prompted first; cancel does nothing).</td></tr>
+      <tr><td><strong>Compact</strong></td><td>Compacts the LMDB store; the daemon refuses (with the reason surfaced) while the indexer is busy.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="workflows">Workflows page</h2>
+  <p>A <strong>read-only</strong> projection of the tracked-workflow chain for the open project — it scans <code>.insrc/artifacts</code> and shows, per epic: whether <em>define</em> and the HLD exist and are approved, each story's design / approval / staleness state, the amendment tally, and the suggested next action. It mirrors the CLI's chain view exactly, including the staleness hashing, so the IDE and CLI never disagree. It surfaces status only — there is no approve / reject / amend here (those stay explicit, in-chat actions).</p>
+
+  <h2 id="debug">Debug page</h2>
+  <p>The diagnostics cockpit, assembled as an ordered set of read-only sections. The <strong>only</strong> control anywhere on the page that changes system state is the confirm-gated orphan-process kill — everything else observes:</p>
+  <ul>
+    <li><strong>Daemon status.</strong> The same status snapshot as the Daemon page, plus locally-derived socket path, PID and installed-daemon version.</li>
+    <li><strong>Orphan processes.</strong> Enumerates stray daemon-entry processes (via <code>java.lang.ProcessHandle</code>), excluding the managed one, and offers a <em>confirm-gated</em> kill that acts only on your explicit selection and degrades to “unsupported” off a capable platform. This is the single mutating action in the whole settings surface.</li>
+    <li><strong>MCP clients.</strong> Per-host registration status — which detected AI hosts (AI&nbsp;Assistant, Junie) carry the insrc MCP registration — combined with the sessions currently attached to the daemon socket (id, label, pid, connect time), degrading to a clear line when the daemon is unreachable.</li>
+    <li><strong>Logs.</strong> Opens the daemon or agent log as a live, filterable, <strong>read-only editor tab</strong> — a normal IDE editor, not an inline panel — streaming new lines as they are written, with a level / module / text filter applied to the view. Nothing you do deletes, rotates or clears the underlying log.</li>
+  </ul>
+
+  <h2 id="design">Design notes</h2>
+  <ul>
+    <li><strong>Read-only by default.</strong> Every surface here observes the daemon's own state; the <em>only</em> mutations are the config edits (through <code>config.write</code>), the Daemon-page lifecycle actions, and the Debug orphan kill — each explicit and, where it matters, confirm-gated.</li>
+    <li><strong>Off the UI thread.</strong> Every socket read, file scan, process scan and lifecycle action runs on a pooled thread with the render marshalled back safely — the IDE never blocks on the daemon.</li>
+    <li><strong>No cloud path, no stored secrets.</strong> Like the rest of the plugin, these pages reach only the local socket, local files and local processes; all model access still routes through your assistant's own CLI / OAuth sessions.</li>
+    <li><strong>Nested under one unchanged node.</strong> The three child pages hang off the existing <code>Tools → insrc</code> node as declarative child pages — the parent configuration editor is untouched by them.</li>
+  </ul>
+
+  <h2 id="next">Where next</h2>
+  <div class="grid">
+    <a class="card" href="plugin.html"><div class="glyph">▚</div><h4>The plugin</h4><p>Install, first-run setup, the in-IDE surfaces, and clean removal.</p><span class="more">read</span></a>
+    <a class="card" href="architecture.html"><div class="glyph">⬡</div><h4>Architecture</h4><p>The daemon, the IPC contract, and the accuracy-first model tiering these settings tune.</p><span class="more">read</span></a>
+    <a class="card" href="workflow.html"><div class="glyph">⟿</div><h4>Workflow</h4><p>The define → design → plan → build chain the Workflows page reports on.</p><span class="more">read</span></a>
+  </div>
+
+</main></div>
+
+<footer class="foot"><div class="foot-inner">
+  <span class="seg"><span class="accent">insrc</span> · code-knowledge daemon</span>
+  <span class="seg">TypeScript · ESM · Node 20+</span>
+  <span class="seg">LMDB + Lance + DuckDB</span>
+  <span class="seg"><a href="https://github.com/insors-ai/insrc">github</a></span>
+  <span class="seg" style="margin-left:auto">local-first · no keys · no REST</span>
+</div></footer>
+
+<script src="js/tui.js"></script>
+</body>
+</html>

@@ -19,6 +19,7 @@
     <a href="workflow.html">workflow</a>
     <a href="cli.html">cli</a>
     <a href="plugin.html">plugin</a>
+    <a href="settings.html">settings</a>
     <a href="architecture.html">architecture</a>
     <a href="analyze.html">analyze</a>
     <a href="tracker.html">tracker</a>
@@ -80,6 +81,15 @@
     <li><strong>Per-project scope.</strong> Every capability call carries the open project's path, so each window is scoped to its own repo — no cross-talk between projects.</li>
   </ul>
 
+  <h2 id="in-ide">In the IDE</h2>
+  <p>Beyond the invisible wiring, the plugin adds a small set of native surfaces so you can drive and inspect insrc without leaving the IDE or dropping to a shell:</p>
+  <ul>
+    <li><strong>Settings → Tools → insrc.</strong> A live editor for the daemon's entire configuration — models and tiers, per-role and per-repo overrides, workflow/review, analysis and embeddings — plus nested <strong>Daemon</strong>, <strong>Workflows</strong> and <strong>Debug</strong> pages that give you a health readout with lifecycle controls, the read-only workflow-chain status, and diagnostics (stray-process cleanup, MCP clients &amp; attached sessions, and live log tails). See the <a href="settings.html">settings guide</a> for the full surface.</li>
+    <li><strong>Project-view context menu.</strong> Right-click a project in the Project tool window for <strong>Show Repo status</strong> — a rich popup of the repo's index stats (file / entity / relation counts, languages, size, queue depth, last indexed) — and <strong>Register Repo</strong>, a one-click add with steering toggles for a repo not yet tracked.</li>
+    <li><strong>Artifact review tool window.</strong> Review the tracked workflow's pending artifacts in-IDE: read each design/plan document, leave inline-anchored comments, and approve — the same gated approval the workflow enforces, without switching to the terminal.</li>
+  </ul>
+  <div class="note">These surfaces are read-only by default. The only state-changing controls are explicit and, where they matter, confirm-gated: the config edits, the Daemon-page lifecycle actions (start/stop/restart/update/backup/compact), the Debug orphan-process kill, and artifact approval. Everything reaches only the local socket, local files and local processes.</div>
+
   <h2 id="removal">Clean removal</h2>
   <p>All of the plugin's writes into host-owned files are reversible:</p>
   <ul>
@@ -102,9 +112,9 @@
 
   <h2 id="next">Where next</h2>
   <div class="grid">
+    <a class="card" href="settings.html"><div class="glyph">⚙</div><h4>Settings</h4><p>Every setting the plugin exposes under Tools → insrc, plus the Daemon, Workflows and Debug pages.</p><span class="more">read</span></a>
     <a class="card" href="getting-started.html"><div class="glyph">▶</div><h4>Getting started</h4><p>Install and run the daemon, index a repo, and ask your first grounded question.</p><span class="more">read</span></a>
     <a class="card" href="architecture.html"><div class="glyph">⬡</div><h4>Architecture</h4><p>The daemon, the IPC contract, and how every client — including this plugin — attaches to it.</p><span class="more">read</span></a>
-    <a class="card" href="workflow.html"><div class="glyph">⟿</div><h4>Workflow</h4><p>The define → design → plan → build flow your assistant routes features through.</p><span class="more">read</span></a>
   </div>
 
 </main></div>

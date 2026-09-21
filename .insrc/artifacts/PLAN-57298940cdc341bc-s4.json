@@ -1,0 +1,395 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1789987837126-goz9ek",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-21T10:55:42.127Z",
+    "epicCreatedAt": "2026-09-21T05:46:35.262Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 304925,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "57298940cdc341bc",
+    "epicSlug": "expand-jetbrains-plugin-s-insrc-settings",
+    "storyId": "s4",
+    "lldRunId": "wf-1789984944132-7k0epd",
+    "lldEffectiveHash": "7b17d6a14b2a62383210886c5fc8a4d3db9366569ad01726cd49bbd35b17dae1",
+    "review": {
+      "artifact": "plan",
+      "stage": "plan",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "pl1",
+          "ref": "tasks",
+          "kind": "ordering",
+          "severity": "LOW",
+          "premise": "The plan's 7 tasks form an acyclic dependency graph with a valid topological order (t1<-t2,t3; t4,t5 independent; t6<-t2,t3,t4,t5; t7<-t2,t3,t4,t6), respecting storyDependsOn s1 (already shipped).",
+          "evidence": "The dependsOn graph (t1:[], t2:[t1], t3:[t1], t4:[], t5:[], t6:[t2,t3,t4,t5], t7:[t2,t3,t4,t6]) is acyclic and order 1..7 is a valid topological sort; s1 (sc1 base + sc2 + placeholder Debug page) is already shipped, so ordering respects storyDependsOn.",
+          "action": "None — ordering is valid.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "pl2",
+          "ref": "t2/t3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/cli/services/debug.ts defines the orphan scan/kill heuristic (scanOrphansWith + killOrphansWith) the OrphanProcessSeam tasks t2/t3 mirror.",
+          "evidence": "Confirmed: scanOrphansWith + killOrphansWith resolve in src/cli/services/debug.ts (imported at debug-orphans.test.ts:17), the exact CLI heuristic t2/t3 mirror — and the CLI even carries a debug-orphans.test.ts seam-test the plugin tests parallel.",
+          "action": "None — both CLI functions resolve.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "pl3",
+          "ref": "t4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/cli/services/debug.ts buildDaemonCard + readPid/readVersion is the local-derive t4 mirrors for the status card socket/pid/version.",
+          "evidence": "Confirmed: buildDaemonCard at debug.ts:82 with readPid (debug.ts:55, pidfile) + readVersion (debug.ts:66, DAEMON_ROOT/package.json) — the local-derive t4 mirrors for socket/pid/version.",
+          "action": "None — citation resolves.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "pl4",
+          "ref": "t4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The shipped sc2 daemonStatus():DaemonStatusResult (DaemonGateway.kt) is consumed unchanged by t4's DebugStatusCardReader.",
+          "evidence": "Confirmed: DaemonGateway.kt:383 sealed interface DaemonStatusResult + :596 interface daemonStatus() (+ :975 impl) — the shipped sc2 t4 consumes unchanged.",
+          "action": "None — sc2 surface resolves.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "pl5",
+          "ref": "t5/t6",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The sc1 base InsrcOpsConfigurable + the placeholder DebugConfigurable both exist in the plugin; t6 fills the latter (implementing the new DebugPageHost).",
+          "evidence": "Confirmed: InsrcOpsConfigurable.kt has the abstract base and DebugConfigurable.kt:13 'class DebugConfigurable : InsrcOpsConfigurable()' is the placeholder t6 fills (implementing the new DebugPageHost).",
+          "action": "None — base + fill target resolve.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "pl6",
+          "ref": "t7",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The test idioms t7 extends exist: NestedOpsPagesTest.kt (placeholder guard) + DaemonLifecycleCommandRunnerTest.kt (seam-injection idiom) + the CLI debug.test.ts.",
+          "evidence": "Confirmed: NestedOpsPagesTest.kt:17 (the placeholder guard t7 edits) + DaemonLifecycleCommandRunnerTest.kt:19 (the seam-injection idiom the seam tests extend); the CLI debug.test.ts/debug-orphans.test.ts are the mirrored TS tests.",
+          "action": "None — test idioms resolve.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "pl7",
+          "ref": "coverage",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "Every task derivedFrom id (c1..c7) resolves to a plan citation, and all 6 LLD testStrategy subjects are covered by >=1 task in testStrategyCoverage.",
+          "evidence": "All task derivedFrom ids c1..c7 are defined in the plan's citations block, and all 6 LLD testStrategy subjects appear in testStrategyCoverage each with >=1 covering task — no dead citation, no uncovered subject.",
+          "action": "None — grounding + coverage complete.",
+          "fixability": "auto"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 7
+      },
+      "reviewedAt": "2026-09-21T10:56:36.260Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-21T11:05:35.682Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add the OrphanProcessSeam data types + seam skeleton (debug/ package)",
+        "summary": "Create jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/debug/OrphanProcessSeam.kt with the read-only data types (ProcessSnapshot{pid:Long,commandLine:String?}, OrphanProcess{pid:Long,command:String}, sealed OrphanScanResult{Unsupported|Scanned(orphans:List<OrphanProcess>)}, KillOutcome{pid:Long,result:KillResult}, enum KillResult{TERMINATED,FORCED,NOT_FOUND,SKIPPED,ERROR}) and the OrphanProcessSeam class shell with injectable ctor providers (processes/managedPid/daemonEntry/platformSupported/killer/waiter) + the scan()/kill() signatures + default providers (liveProcessSnapshots via ProcessHandle.allProcesses(), pidFromDaemonPidFile reading ~/.insrc/daemon.pid, defaultDaemonEntry = <DAEMON_ROOT>/out/daemon/index.js, isPosix). No behaviour yet beyond the never-throws scaffold.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "The file compiles with the five data/enum types matching the LLD shapes exactly",
+          "OrphanProcessSeam exposes the injectable ctor providers + scan():OrphanScanResult + kill(pids:List<Long>):List<KillOutcome>",
+          "Plugin-internal read/act types only — no daemon IPC/socket reference (k1)"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "OrphanProcessSeamTest: the five data/enum types carry the exact LLD shapes and the seam exposes scan()/kill() + injectable providers (compile + shape smoke)"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Implement OrphanProcessSeam.scan() (match/exclude/degrade, never-throws)",
+        "summary": "Fill scan(): if !platformSupported() -> Unsupported; enumerate processes() (swallow a thrown enumeration -> Scanned(empty)); if command lines are unobservable (every snapshot commandLine null) -> Unsupported; else keep snapshots whose commandLine contains daemonEntry, EXCLUDING managedPid, as OrphanProcess -> Scanned(list). Read-only, never a signal, never throws — mirrors debug.ts scanOrphansWith.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Returns only daemonEntry-matching, non-managed pids as orphans; a managed-only match yields Scanned(empty)",
+          "Unobservable command lines / unsupported platform -> OrphanScanResult.Unsupported",
+          "A processes() enumeration failure degrades to Scanned(empty); never throws; no signal issued (k3)"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "OrphanProcessSeamTest.scan match/exclude: canned snapshots -> only daemonEntry-matching, non-managed pids; managed-only match -> Scanned(empty)"
+          },
+          {
+            "level": "unit",
+            "name": "OrphanProcessSeamTest.scan degrade: unobservable-commandLine set / platformSupported()=false -> Unsupported; a throwing processes() provider -> Scanned(empty), never throws"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Implement OrphanProcessSeam.kill() (selection-only, SIGTERM->wait->SIGKILL, managed SKIPPED)",
+        "summary": "Fill kill(pids): act ONLY on the passed pids (empty -> empty result); re-exclude managedPid (reported SKIPPED, never signalled, k5); SIGTERM(destroy) each target -> wait grace -> re-probe liveness (ProcessHandle.of(pid).isPresent/isAlive) -> SIGKILL(destroyForcibly) survivors; per-pid NOT_FOUND (already gone) / ERROR (signal refused); outcomes in INPUT pid order; never throws; [] off an unsupported platform — mirrors debug.ts killOrphansWith.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Acts only on the passed pids and returns one KillOutcome per input pid in input order",
+          "SIGTERM-death -> TERMINATED; SIGTERM-survivor -> SIGKILL -> FORCED; already-gone -> NOT_FOUND; refused -> ERROR",
+          "The managed pid in the selection is SKIPPED and never signalled (k5); empty selection is a no-op; never throws"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "OrphanProcessSeamTest.kill escalation: fake killer scripts SIGTERM-death->TERMINATED, survivor->SIGKILL->FORCED, already-gone->NOT_FOUND, throws->ERROR; outcomes in input order"
+          },
+          {
+            "level": "unit",
+            "name": "OrphanProcessSeamTest.kill k5/no-op: the managed pid in the selection is SKIPPED + never signalled; empty pids -> empty result; never throws"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Add DebugStatusCardReader + DebugStatusCardModel (sc2 fold + local-derive)",
+        "summary": "Add jetbrains-plugin/.../debug/DebugStatusCardReader.kt (+ DebugStatusCardModel) consuming the UNCHANGED sc2 daemonStatus():DaemonStatusResult and folding in locally-derived socket (DaemonSocket.defaultPath()), pid (~/.insrc/daemon.pid), version (<DAEMON_ROOT>/package.json), best-effort/null-degrading — mirroring debug.ts buildDaemonCard. Loaded->reachable card (running/uptimeSec/repoCount + socket + pid/version); Stopped/Unavailable->not-reachable card still carrying socket + best-effort. Injectable status/socketPath/pid/version providers; never throws.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Loaded folds into a reachable DebugStatusCardModel with running/uptimeSec/repoCount + socket always + pid/version local-derive",
+          "Stopped/Unavailable -> not-reachable card still carrying the socket path + best-effort pid/version",
+          "A missing pidfile / package.json degrades pid/version to null without failing the card (never throws)"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "DebugStatusCardReaderTest: Loaded -> reachable card (running/uptimeSec/repoCount + socket + pid/version); Stopped/Unavailable -> not-reachable card still carrying socket + best-effort"
+          },
+          {
+            "level": "unit",
+            "name": "DebugStatusCardReaderTest: missing pidfile / package.json providers -> pid/version null without failing the card (never throws)"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Add the sc3 DebugPageHost + DebugSection interfaces",
+        "summary": "Add the two new plugin-internal interfaces (DebugSection{title():String; component():JComponent} + DebugPageHost{sections():List<DebugSection>}) that S004 OWNS, so S005/S006 attach read-only sections later without re-owning the page. Type-level contract only.",
+        "size": "S",
+        "order": 5,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "DebugSection + DebugPageHost interfaces exist matching the HLD sketch (title/component + sections list)",
+          "Section-additive: no coupling to S004's concrete sections (S005/S006 can append)"
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "DebugPageTest source-scan: DebugSection{title/component} + DebugPageHost{sections} interfaces exist matching the HLD sketch"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Fill DebugConfigurable.buildBody(): implement DebugPageHost, seed Status + Orphans sections with the confirm-gated Kill",
+        "summary": "Replace the S001 placeholder body: DebugConfigurable implements DebugPageHost and seeds sections()=[StatusSection (DebugStatusCardReader.read() rendered read-only), OrphansSection (OrphanProcessSeam.scan() as a multi-select JList or an 'unsupported' label + a Kill button)], rendered via ui/InsrcCollapsible.collapsiblePanel off the EDT (sc1 base). The Kill is gated on Messages.showYesNoDialog and runs seam.kill(selection) under ProgressManager.runProcessWithProgressSynchronously (off-EDT), reporting per-pid outcomes; empty selection no-ops. The ONLY mutating control (k3); parent settings page + plugin.xml untouched (k4).",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t2",
+          "t3",
+          "t4",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "DebugConfigurable implements DebugPageHost and renders sections()=[Status, Orphans] via InsrcCollapsible off the EDT",
+          "The Status card + orphan LIST are read-only; the Kill is confirm-gated (showYesNoDialog) + runProcessWithProgressSynchronously and is the ONLY mutating control (k3)",
+          "Empty selection kills nothing; an Unsupported scan shows the 'unsupported' line + no Kill; still `class DebugConfigurable : InsrcOpsConfigurable()`",
+          "InsrcSettingsConfigurable + plugin.xml untouched (k4); replaces the S001 placeholder"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "DebugPageTest source-scan: DebugConfigurable extends the base + implements DebugPageHost, seeds sections()=[Status,Orphans] via InsrcCollapsible, uses OrphanProcessSeam + DebugStatusCardReader"
+          },
+          {
+            "level": "unit",
+            "name": "DebugPageTest source-scan (k3): the Kill is gated on Messages.showYesNoDialog + runProcessWithProgressSynchronously and is the ONLY mutating control; Status/orphan-list read-only"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Add seam + reader + page tests and clear the NestedOpsPagesTest placeholder guard",
+        "summary": "Add OrphanProcessSeamTest.kt (JUnit5 injected-fake providers: scan match/exclude/unsupported/enumeration-swallow; kill selection-only/SKIPPED/SIGTERM->wait->SIGKILL/input-order/empty-no-op) + DebugStatusCardReaderTest.kt (Loaded/Stopped/Unavailable folds + pid/version null-degrade) + DebugPageTest.kt (source-scan: extends base, implements DebugPageHost, uses the seam+reader, showYesNoDialog + runProcessWithProgressSynchronously = only mutation, k4 parent-untouched). Edit NestedOpsPagesTest: after S004 ALL THREE child pages are filled, so the placeholder-only branch has no remaining page — drop the now-empty placeholder-only assertion while KEEPING the extends-base + pageTitle + overrides-buildBody assertions for all three. Verify locally: gradlew test buildPlugin (JDK21, --no-build-cache after the new types).",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t2",
+          "t3",
+          "t4",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "OrphanProcessSeamTest covers scan match/exclude/unsupported/enumeration-swallow + kill selection-only/SKIPPED/escalation/input-order/empty",
+          "DebugStatusCardReaderTest covers Loaded/Stopped/Unavailable + pid/version null-degrade",
+          "DebugPageTest source-scan asserts sc1+sc3, the confirm-gated single mutation, and parent-untouched; NestedOpsPagesTest placeholder guard cleanly cleared (no false failures)",
+          "Full jetbrains-plugin test + buildPlugin green locally on JDK21"
+        ],
+        "derivedFrom": [
+          "c7",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "DebugPageTest source-scan (k4): InsrcSettingsConfigurable is not repointed at DebugConfigurable; parent page + plugin.xml untouched"
+          },
+          {
+            "level": "unit",
+            "name": "NestedOpsPagesTest: the placeholder-only assertion is cleared (all three pages filled) while the extends-base/pageTitle/overrides-buildBody assertions still pass for Daemon/Workflows/Debug"
+          },
+          {
+            "level": "smoke",
+            "name": "Local gate: gradlew test buildPlugin green on JDK21 (--no-build-cache after the new types)"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "OrphanProcessSeam.scan (injected processes/managedPid/daemonEntry/platformSupported providers)",
+        "coveredByTaskIds": [
+          "t2",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "OrphanProcessSeam.kill (fake killer records signals + scripts per-pid liveness; instant grace clock)",
+        "coveredByTaskIds": [
+          "t3",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "DebugStatusCardReader.read (injected status/socketPath/pid/version providers)",
+        "coveredByTaskIds": [
+          "t4",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "DebugConfigurable.kt source text (extends InsrcOpsConfigurable, implements DebugPageHost, uses OrphanProcessSeam + DebugStatusCardReader, showYesNoDialog + runProcessWithProgressSynchronously, no S001 placeholder)",
+        "coveredByTaskIds": [
+          "t6",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "InsrcSettingsConfigurable.kt source text (not repointed at DebugConfigurable)",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "DebugConfigurable.sections() (the sc3 DebugPageHost implementation, exercised directly where constructible without the platform, else source-scanned for the seeded section list)",
+        "coveredByTaskIds": [
+          "t5",
+          "t6"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 dataModelChanges + contractDetails.OrphanProcessSeam — ProcessSnapshot/OrphanProcess/OrphanScanResult/KillOutcome/KillResult + scan()/kill() over java.lang.ProcessHandle"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 data-model.trace — debug.ts scanOrphansWith/killOrphansWith heuristic (daemonEntry match, managedPid exclude, SIGTERM→wait→SIGKILL, input-order outcomes)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 contractDetails.DebugStatusCardReader + s1 symbol.locate — the buildDaemonCard local-derive (socket=DaemonSocket.defaultPath, pid=daemon.pid, version=DAEMON_ROOT/package.json)"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "s1 convention.detect — sc3 DebugPageHost/DebugSection (new, S004-owned) + DebugConfigurable placeholder + InsrcCollapsible section idiom (off-EDT via sc1 base)"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 interactionWithShared sc2 — the shipped daemonStatus():DaemonStatusResult (DaemonGateway.kt:363/383) consumed unchanged"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/cli/services/debug.ts — the CLI orphan-scan/kill + daemon-card contract the plugin seam + page mirror"
+    },
+    {
+      "id": "c7",
+      "kind": "analyze-bundle",
+      "ref": "s1 test.locate — seam-injection unit idiom (DaemonLifecycleCommandRunnerTest) + debug.test.ts + source-scan (DaemonPageTest/NestedOpsPagesTest)"
+    }
+  ]
+}

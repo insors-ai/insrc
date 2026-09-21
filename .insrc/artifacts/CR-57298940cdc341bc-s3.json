@@ -1,0 +1,59 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1789984650680-ulg2zz",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-21T09:57:30.681Z",
+    "model": "client",
+    "elapsedMs": 3,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "57298940cdc341bc",
+    "storyId": "s3"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "57298940cdc341bc",
+    "storyId": "s3",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "jetbrains-plugin/gradle.properties",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/ops/WorkflowsConfigurable.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/ops/NestedOpsPagesTest.kt"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/ops/WorkflowsConfigurable.kt:88",
+            "message": "storyText uses a fully-qualified type `ai.insors.insrc.jetbrains.workflow.StoryChainMark` inline rather than an import, while the sibling types (StageMark, WorkflowChainDto, WorkflowChainReader) are imported at the top. Cosmetic only — compiles and reads fine; a top-level import would match the file's own convention. No behavioral impact.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 1
+    }
+  }
+}

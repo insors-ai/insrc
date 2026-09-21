@@ -39,5 +39,7 @@ declare module 'vscode' {
 
   export interface ExtensionContext {
     readonly subscriptions: { dispose(): unknown }[];
+    /** Absolute path of the directory the extension is installed in. */
+    readonly extensionPath: string;
   }
 }

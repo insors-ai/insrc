@@ -1,0 +1,348 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1790015822206-0fqy9r",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-21T18:40:26.464Z",
+    "epicCreatedAt": "2026-09-21T16:32:40.301Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 204200,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ad0d45c9d690f8c1",
+    "epicSlug": "build-insrc-vs-code-extension-v1",
+    "storyId": "s2",
+    "lldRunId": "wf-1790014807551-63lt7j",
+    "lldEffectiveHash": "1e2038ef723235b64e83ceb16211d8262911619c0f401b3886b6a4c352eda9a9",
+    "review": {
+      "artifact": "plan",
+      "stage": "plan",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "ref": "t2",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "The S001 InsrcCommandId union already declares the five daemon command ids (insrc.daemon.install/start/stop/restart/update) that t2 registers — no new id is introduced.",
+          "evidence": "Confirmed: vscode-plugin/src/surfaces/command-registry.ts declares the insrc.daemon.* union (the surfaces test round-trips 'insrc.daemon.start'); the five ids t2 registers already exist in the S001 InsrcCommandId type — no new id.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl2",
+          "ref": "t3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "scripts/insrc-daemon-install.sh exists as the source the t3 bundle-fidelity copy targets.",
+          "evidence": "Confirmed: scripts/insrc-daemon-install.sh exists ('insrc daemon bootstrap installer', prereqs Node>=20/git) — the source the t3 bundle-fidelity copy targets.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl3",
+          "ref": "t1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "scripts/daemon-ctl.sh exists with the start/stop/restart/update subcommands + DAEMON_ENTRY (out/daemon/index.js) that t1's controller spawns + checks.",
+          "evidence": "Confirmed: scripts/daemon-ctl.sh:47 DAEMON_ENTRY=$DAEMON_ROOT/out/daemon/index.js and :290 the restart) cmd_restart dispatch (start/stop/restart/update present) — the subcommands + compiled-entry path t1's controller spawns/checks.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl4",
+          "ref": "t1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The S001 sc1 client (src/shared/ipc-client.ts) exposes reachability() that t1's controller consumes for resulting state.",
+          "evidence": "Confirmed: src/shared/ipc-client.ts:97 `reachability(): Promise<DaemonReachability>;` — the S001 method t1's controller consumes for resulting state.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl5",
+          "ref": "t4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "vscode-plugin/src/extension.ts is the sole 'vscode' importer and the never-throws activation shell t4 extends.",
+          "evidence": "Confirmed: vscode-plugin/src/extension.ts:9 `import * as vscode from 'vscode'` (the sole importer) + the `export function activate(` shell (asserted by activation.test) — the never-throws activation surface t4 extends.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl6",
+          "ref": "tasks",
+          "kind": "ordering",
+          "severity": "LOW",
+          "premise": "The plan task DAG is acyclic and topologically ordered: t1/t3 have no deps; t2→t1; t4→t1/t2/t3; orders 1-4 place each dependency before its dependant.",
+          "evidence": "Internal-consistency check (no source probe): the plan's task table shows t1/t3 with no deps, t2 dependsOn t1, t4 dependsOn t1/t2/t3, orders 1-4 — a valid acyclic topological order (every dependency's order < its dependant's). Verified in the s6 checklist (t3 passed).",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl7",
+          "ref": "coverage",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "Every LLD testStrategy subject (13 items) maps to ≥1 covering task in testStrategyCoverage, and every derivedFrom citation c1-c4 traces to an approved-S002-LLD handoff item.",
+          "evidence": "Internal-consistency check: the plan's testStrategyCoverage maps all 13 LLD subjects each to ≥1 task (t1 controller+source-scan, t2 wiring, t3 bundle-fidelity, t4 activation), and citations c1-c4 each carry a prior-artifact ref to an approved-S002-LLD handoff item, each referenced by ≥1 task. Verified in the s6 checklist (cov1/cov2/gr1 passed).",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 7
+      },
+      "reviewedAt": "2026-09-21T18:41:22.384Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-21T19:25:59.095Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "DaemonLifecycleController over an injectable SubprocessRunner + DaemonPaths",
+        "summary": "Create vscode-plugin/src/daemon/ with: the SubprocessRunner interface (run(command: readonly string[], opts?): Promise<{ code: number }>) + a default node:child_process spawn impl; the DaemonPaths interface (daemonRoot/ctlScript/daemonEntry/bundledInstaller) + a default that resolves ~/.insrc/daemon + its scripts; and createDaemonLifecycleController({ runner, paths, client }) implementing isInstalled() (fs existence of daemonEntry, never throws), install() (bash <bundledInstaller> -y), run(action) (bash <ctlScript> <action>). On exit 0, state = await client.reachability(); on non-zero, ok=false, state='errored', message = the documented exit-code reason (ctl 1/2/3/4; installer 1/2). Reproduces none of the scripts' logic (lc2/k5).",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "run(action) spawns ['bash', paths.ctlScript, <action>] for each of start/stop/restart/update and maps EACH ctl exit code 1/2/3/4 to its documented reason (not just 'errored'); on exit 0 state = client.reachability(); never throws",
+          "install() spawns ['bash', paths.bundledInstaller, '-y']; on exit 0 state = client.reachability(); on non-zero maps EACH installer code 1/2 to its documented reason",
+          "isInstalled() returns true iff paths.daemonEntry exists, false for a clone-without-build, never throws on a stat failure",
+          "vscode-plugin/src/daemon/ imports only node builtins (child_process/fs/path/os) + src/shared/ipc-client + the s1 surfaces — no daemon internals/indexer/storage, no cloud/HTTP (k5)"
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "run(action) spawns ['bash', paths.ctlScript, <action>] for start/stop/restart/update (argv assertion) and on exit 0 sets state = fake reachability() (incl. update⇒stopped); never throws"
+          },
+          {
+            "level": "unit",
+            "name": "run(action) maps EACH ctl exit code 1/2/3/4 to its documented errored reason, and a missing ctlScript returns errored/~not installed without spawning"
+          },
+          {
+            "level": "unit",
+            "name": "install() spawns ['bash', paths.bundledInstaller, '-y']; exit 0 → state=reachability(); installer codes 1/2 → mapped errored messages"
+          },
+          {
+            "level": "unit",
+            "name": "isInstalled() true iff paths.daemonEntry exists (fixture fs), false for clone-without-build, never throws on stat failure"
+          },
+          {
+            "level": "unit",
+            "name": "source-scan: vscode-plugin/src/daemon/ imports only node builtins + src/shared/ipc-client + the s1 surfaces (no daemon internals/indexer/storage, no cloud/HTTP)"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "registerDaemonCommands wiring (5 commands, install sc4-gated, state→sc2)",
+        "summary": "Add registerDaemonCommands({ commands, consent, status, controller }): registers the five insrc.daemon.{install,start,stop,restart,update} commands into sc3. The install command asks sc4 and calls controller.install() ONLY on 'accepted' (k4); the four lifecycle commands call controller.run(action) (no gate). Every command pushes the returned LifecycleResult.state into sc2 (StatusSurface.set), including 'errored' with the mapped message on failure.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "registers exactly the five insrc.daemon.* commands into the CommandRegistry",
+          "the install command calls ConsentGate.ask and invokes controller.install() only on 'accepted'; on 'declined'/'dismissed' it calls nothing (k4)",
+          "each lifecycle command calls controller.run(action) and pushes the resulting LifecycleResult.state into StatusSurface.set; a failing action pushes 'errored' with the mapped message"
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "registerDaemonCommands registers exactly the five insrc.daemon.{install,start,stop,restart,update} commands into the fake CommandRegistry"
+          },
+          {
+            "level": "unit",
+            "name": "the install command asks sc4 and calls controller.install() ONLY on 'accepted'; nothing on declined/dismissed (k4)"
+          },
+          {
+            "level": "unit",
+            "name": "each lifecycle command calls controller.run(action) and pushes the resulting LifecycleResult.state (incl. a failing action→'errored'+message) into StatusSurface.set"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Bundle the installer asset into the extension package via a repeatable copy step",
+        "summary": "Establish vscode-plugin/assets/insrc-daemon-install.sh as a copy of scripts/insrc-daemon-install.sh, produced by a REPEATABLE build/copy step (a package.json script) so it stays in sync and ships in the .vsix; have the default DaemonPaths.bundledInstaller resolve it relative to the extension install dir (context.extensionPath). The final .vsix packaging that includes assets/ is s6's boundary; s2 establishes the asset + its copy step + the resolution.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "vscode-plugin/assets/insrc-daemon-install.sh exists and byte-matches scripts/insrc-daemon-install.sh (a source-scan/drift test flags divergence)",
+          "the copy is produced by a repeatable step (a package.json script), not a one-off manual copy",
+          "the default DaemonPaths resolves bundledInstaller to the assets path relative to the extension dir (injectable for tests)"
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "bundle-fidelity: vscode-plugin/assets/insrc-daemon-install.sh exists and byte-matches scripts/insrc-daemon-install.sh (drift test)"
+          },
+          {
+            "level": "smoke",
+            "name": "the copy step (package.json script) regenerates assets/insrc-daemon-install.sh from scripts/ deterministically"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Wire the daemon lifecycle into extension.ts (+ activation-time Install offer)",
+        "summary": "In extension.ts (the sole 'vscode' importer): construct the DaemonLifecycleController with the real SubprocessRunner + a DaemonPaths built from context.extensionPath, call registerDaemonCommands with the s1 surfaces + controller, and fire a MINIMAL activation-time Install offer (via sc4) when isInstalled() is false — all off the activation critical path so the S001 never-throws/never-block contract is preserved. The install→register→wire coalescing stays s5's job.",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "extension.ts constructs the controller (real SubprocessRunner + DaemonPaths from context.extensionPath) and calls registerDaemonCommands with the s1 surfaces",
+          "with the daemon absent, the activation-time Install offer is made via sc4 and nothing is spawned before 'accepted'; activate() still never throws / never blocks (S001 contract preserved)",
+          "the vscode-plugin package typechecks (tsc -p tsconfig.json)"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "activation wiring: with the daemon absent (fake isInstalled=false) the Install offer is made via sc4 and nothing is spawned before 'accepted'; activate() never throws / never blocks (S001 preserved)"
+          },
+          {
+            "level": "smoke",
+            "name": "the vscode-plugin package typechecks (tsc -p tsconfig.json) with the sc6 wiring added to extension.ts"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "run(action) spawns ['bash', DaemonPaths.ctlScript, <action>] for each of start/stop/restart/update (argv assertion via the fake runner)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "run(action) on exit 0 sets state = fake client.reachability() (running/stopped/errored) — including update⇒'stopped' when reachability says stopped (never assumes 'running' from exit 0)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "run(action) maps ctl exit codes 1/2/3/4 to { ok:false, state:'errored', message:<documented reason> } and never throws",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "run(action) when DaemonPaths.ctlScript is missing returns { ok:false, state:'errored', message:~/not installed/ } without spawning",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "install() spawns ['bash', DaemonPaths.bundledInstaller, '-y']; on exit 0 state = reachability(); on non-zero maps installer codes 1/2 to an errored message",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "isInstalled() returns true iff DaemonPaths.daemonEntry exists (fixture fs), false for a clone-without-build, and never throws on a stat failure",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "registers exactly the five insrc.daemon.{install,start,stop,restart,update} commands into the fake CommandRegistry",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "the install command calls ConsentGate.ask and invokes controller.install() ONLY on 'accepted'; on 'declined'/'dismissed' it calls nothing (k4)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "each lifecycle command calls controller.run(action) (no consent gate) and pushes the returned LifecycleResult.state into StatusSurface.set",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "a failing action pushes 'errored' with the mapped message to the status surface",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "source-scan: vscode-plugin/src/daemon/ imports only node builtins (child_process/fs/path/os) + src/shared/ipc-client + the s1 surfaces — no daemon internals/indexer/storage, no cloud/HTTP",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "activation wiring: with the daemon absent (fake isInstalled=false) the activation-time Install offer is made via sc4 and nothing is spawned before 'accepted'; activate() still never throws / never blocks (S001 contract preserved)",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "the bundled installer asset exists at vscode-plugin/assets/insrc-daemon-install.sh and matches scripts/insrc-daemon-install.sh (bundle-fidelity check)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 sc6 DaemonLifecycleController — isInstalled/install/run over an injectable SubprocessRunner + DaemonPaths, exit-code→message mapping (ctl 1/2/3/4, installer 1/2), sc1.reachability()-derived state, k5 thin boundary"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 registerDaemonCommands — registers the five insrc.daemon.* commands into sc3, install gated by sc4 ('accepted'), each pushes LifecycleResult.state into sc2"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 dataModel: vscode-plugin/assets/insrc-daemon-install.sh bundled asset copied from scripts/insrc-daemon-install.sh, resolved via DaemonPaths.bundledInstaller (final .vsix packaging deferred to s6)"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 dataModel: vscode-plugin/src/extension.ts activation wiring — constructs the controller (real SubprocessRunner + DaemonPaths from context.extensionPath), calls registerDaemonCommands, fires the activation-time Install offer, preserving the S001 never-throws/off-UI contract"
+    }
+  ]
+}

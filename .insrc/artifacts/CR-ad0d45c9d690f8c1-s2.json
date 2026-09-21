@@ -1,0 +1,59 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1790019398043-pktjap",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-21T19:36:38.043Z",
+    "model": "client",
+    "elapsedMs": 8,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ad0d45c9d690f8c1",
+    "storyId": "s2"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "ad0d45c9d690f8c1",
+    "storyId": "s2",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "vscode-plugin/package.json",
+        "vscode-plugin/src/extension.ts",
+        "vscode-plugin/src/vscode.d.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "vscode-plugin/package.json:18",
+            "message": "k4/k5/ac1/ac2 are honored (independently confirmed by the cold review + the tests): the controller delegates to daemon-ctl.sh + the bundled installer via an injectable seam (no daemon internals/indexer/storage, no cloud path), install is sc4-gated through offerDaemonInstall (nothing provisions on decline/dismiss), and run() derives resulting state from client.reachability() so update⇒stopped is truthful. The cold review flagged a MED cross-story gap — the five runtime-registered commands were absent from contributes.commands, so a dismissed Install offer had no Command-Palette recovery until S006 (contradicting the k6 'never a dead end' narrative). FIXED pre-commit: contributes.commands now declares the five insrc.daemon.* commands (a bundle test locks it), making k6 real this story; the Marketplace LISTING assets (publisher/icon/README/categories/.vsix) remain S006's boundary.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 1
+    }
+  }
+}

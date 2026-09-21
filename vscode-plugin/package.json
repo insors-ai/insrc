@@ -15,9 +15,18 @@
     "onStartupFinished"
   ],
   "main": "./out/extension.js",
-  "contributes": {},
+  "contributes": {
+    "commands": [
+      { "command": "insrc.daemon.install", "title": "Install daemon", "category": "insrc" },
+      { "command": "insrc.daemon.start", "title": "Start daemon", "category": "insrc" },
+      { "command": "insrc.daemon.stop", "title": "Stop daemon", "category": "insrc" },
+      { "command": "insrc.daemon.restart", "title": "Restart daemon", "category": "insrc" },
+      { "command": "insrc.daemon.update", "title": "Update daemon", "category": "insrc" }
+    ]
+  },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "sync-assets": "cp ../scripts/insrc-daemon-install.sh assets/insrc-daemon-install.sh",
+    "build": "npm run sync-assets && tsc -p tsconfig.json",
     "test": "tsx --test 'src/**/__tests__/*.test.ts'"
   }
 }

@@ -79,10 +79,10 @@ class NestedOpsPagesTest {
             assertTrue(src.contains("class $cls : InsrcOpsConfigurable()"), "$cls extends InsrcOpsConfigurable()")
             assertTrue(src.contains("override fun pageTitle(): String = \"$title\""), "$cls titles itself $title")
             assertTrue(src.contains("override fun buildBody()"), "$cls overrides buildBody()")
-            // The still-unfilled pages (Workflows=S003, Debug=S004) keep the S001
-            // placeholder JLabel body with no daemon/service wiring; Daemon was filled by
-            // S002 so it is exempt from the placeholder-only guard.
-            if (cls != "DaemonConfigurable") {
+            // The still-unfilled page (Debug=S004) keeps the S001 placeholder JLabel body
+            // with no daemon/service wiring; Daemon was filled by S002 and Workflows by
+            // S003, so both are exempt from the placeholder-only guard.
+            if (cls != "DaemonConfigurable" && cls != "WorkflowsConfigurable") {
                 assertTrue(src.contains("JLabel(\""), "$cls's buildBody() is still a placeholder JLabel")
                 assertFalse(src.contains("service<"), "$cls wires no daemon read yet (placeholder only)")
             }

@@ -1,0 +1,550 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1789982225210-bo9ivm",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-21T09:28:56.849Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 711599,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-09-21T05:46:35.262Z",
+    "epicHash": "57298940cdc341bc",
+    "epicSlug": "expand-jetbrains-plugin-s-insrc-settings",
+    "storyId": "s3",
+    "hldBaseRunId": "wf-1789970136758-lvyg6v",
+    "hldEffectiveHash": "7b17d6a14b2a62383210886c5fc8a4d3db9366569ad01726cd49bbd35b17dae1",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "ref": "HLD context / data model",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/workflow/chain.ts defines the ChainReport interface (define/hld/stories/amendments/tracker/nextAction) that the plugin's WorkflowChainDto projects a read-only subset of.",
+          "evidence": "Confirmed: src/workflow/chain.ts:30 'export interface ChainReport {' resolves exactly; the DTO is correctly described as a read-only subset of it.",
+          "action": "None — citation resolves.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl2",
+          "ref": "contractDetails",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The artifacts directory constant is '.insrc/artifacts' defined in src/workflow/storage.ts (~line 53), the layout the reader scans.",
+          "evidence": "Partly confirmed: the '.insrc/artifacts'/ARTIFACTS_DIR grep returned 50 (capped) matches so the specific storage.ts:53 line was not isolated in the shown hits, but the layout is corroborated across the codebase and is not correctness-load-bearing beyond the well-known artifacts path.",
+          "action": "None needed; the artifacts-dir path is a stable convention. Build step can confirm storage.ts:53 exactly.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl3",
+          "ref": "computeHldEffectiveHash",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "computeHldEffectiveHash lives in src/workflow/artifacts/lld.ts (~line 176) and folds sha256(baseRunId + '|'+id per approved amendment) — the rule the plugin mirrors.",
+          "evidence": "Confirmed: computeHldEffectiveHash is exported from ../artifacts/lld.js (28 src hits incl. chain.test.ts and adjacent-scope-gate.test.ts imports); the plugin correctly mirrors this sha256(runId+'|'+id) rule.",
+          "action": "None — symbol resolves.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl4",
+          "ref": "staleness rule",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/workflow/gates.ts (~line 293) compares lld.meta.hldEffectiveHash against the recomputed effective hash with a !== staleness check.",
+          "evidence": "Supported: hldEffectiveHash has 34 src hits and computeHldEffectiveHash is the staleness comparator; the specific gates.ts:293 line was not isolated in the capped grep but the !== staleness comparison is well-grounded (workflow-design.md:676 'by hldEffectiveHash mismatch').",
+          "action": "None needed; line anchor is advisory for the mirror, verifiable at build.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl5",
+          "ref": "amendments count",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "countAmendments in src/workflow/chain.ts (~line 195) tallies AMD artifacts by status (pending/approved/rejected) for the matching epicHash.",
+          "evidence": "Confirmed exactly: src/workflow/chain.ts:195 'function countAmendments(repoPath, epicHash): ChainReport[amendments]' and chain.ts:88 calls it — the by-status tally the DTO mirrors.",
+          "action": "None — citation resolves.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl6",
+          "ref": "StageMark",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "An artifact's approval is marked by a non-empty meta.approvedAt (and rejection by meta.rejectedAt), which chain.ts reads to decide define/HLD/LLD approved state.",
+          "evidence": "Supported: approvedAt/rejectedAt are the approval markers across the workflow artifacts (rejectedAt 20 hits; approvedAt semantics confirmed in CLAUDE.md 'It stamps approvedAt'); chain.ts reads these for stage approval.",
+          "action": "None — approval-marker semantics hold.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl7",
+          "ref": "sc1 consumption",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The consumed sc1 base InsrcOpsConfigurable exists in the plugin at ops/InsrcOpsConfigurable.kt with an abstract buildBody() the Workflows page fills.",
+          "evidence": "Confirmed: jetbrains-plugin/.../ops/InsrcOpsConfigurable.kt:33 'abstract class InsrcOpsConfigurable : Configurable {' with an abstract buildBody — the sc1 base the page consumes.",
+          "action": "None — base class resolves.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl8",
+          "ref": "migration stateBefore",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "WorkflowsConfigurable.kt currently exists as a placeholder child page under ops/ that S003 will fill.",
+          "evidence": "Confirmed: jetbrains-plugin/.../ops/WorkflowsConfigurable.kt:12 'class WorkflowsConfigurable : InsrcOpsConfigurable()' exists as the placeholder page S003 fills.",
+          "action": "None — target class resolves.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl9",
+          "ref": "interactionWithShared",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "The HLD assigns sc1 ownership to s1 and lists s3 among its consumers; S003 consumes sc1 and owns no shared contract.",
+          "evidence": "Supported: ownedByStory is the HLD ownership field (22 doc hits); sc1 ownedByStory=s1 with s3 as a consumer is grounded in the HLD context slice, and S003 owns no shared contract (interactionWithShared role=consumes only).",
+          "action": "None — cross-artifact ownership trace holds.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl10",
+          "ref": "project resolution",
+          "kind": "external-contract",
+          "severity": "LOW",
+          "premise": "ProjectManager.getInstance().openProjects is the IntelliJ platform API an app-level Configurable uses to reach open projects (no injected Project), as the review UI reads project.basePath.",
+          "evidence": "External IntelliJ platform contract: ProjectManager.getInstance().openProjects is a stable public API (not yet referenced in plugin src, which is expected pre-build); basePath is already used by prior plugin LLDs. Correct approach for an app-level Configurable with no injected Project.",
+          "action": "None — platform API is valid; build will introduce the reference.",
+          "fixability": "auto"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 10
+      },
+      "reviewedAt": "2026-09-21T09:30:50.318Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-21T09:31:33.488Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Chosen shape a1: three new child Settings pages (Daemon, Workflows, Debug) are registered declaratively as <applicationConfigurable parentId=\"ai.insors.insrc.settings\"> nodes under the UNCHANGED parent insrc Configurable, each a thin Swing page built on a shared abstract page-shell base (the off-EDT-load + InsrcCollapsible/JBScrollPane idiom the settings page already established). Every page is a read/act surface over a plugin-side seam placed at its natural home — the DaemonGateway grows in-place sealed *Result IPC methods, a lifecycle-command runner reuses the existing ScriptDaemonProvisioner/script-locator to run daemon-ctl.sh subcommands, an OS-process seam (Java ProcessHandle) does the single guarded orphan-kill, a read-only chain reader projects .insrc/artifacts, and a first-of-its-kind log-editor seam (LightVirtualFile + FileEditorManager) hosts the tail. Nothing touches the shipped parent settings page or the daemon; everything is additive, plugin-only, and off-EDT.",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "NestedSettingsNavScaffold + SharedPageShell",
+          "purpose": "The S001 foundation every child page builds on: the declarative parent-nesting pattern (child applicationConfigurables under id ai.insors.insrc.settings, parent unchanged — k4) plus a shared abstract page-shell base that standardizes the off-EDT load + guarded EDT render + the InsrcCollapsible/JBScrollPane page idiom, so each page implements only its own body.",
+          "interfaceSketch": "// Kotlin type-level (no bodies)\nabstract class InsrcOpsConfigurable : com.intellij.openapi.options.Configurable {\n  // subclasses supply the page body; the base owns createComponent()'s\n  // off-EDT load + guarded invokeLater render + JBScrollPane/ScrollableColumn shell\n  protected abstract fun pageTitle(): String\n  protected abstract fun buildBody(): javax.swing.JComponent  // called on a pooled thread\n}\n// plugin.xml (declarative nesting, parent untouched):\n// <applicationConfigurable parentId=\"ai.insors.insrc.settings\" id=\"ai.insors.insrc.daemon\"   instance=\"...DaemonConfigurable\"/>\n// <applicationConfigurable parentId=\"ai.insors.insrc.settings\" id=\"ai.insors.insrc.workflows\" instance=\"...WorkflowsConfigurable\"/>\n// <applicationConfigurable parentId=\"ai.insors.insrc.settings\" id=\"ai.insors.insrc.debug\"     instance=\"...DebugConfigurable\"/>",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4"
+          ],
+          "assumptions": [
+            "c8"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s3",
+        "owns": [],
+        "depends": [
+          "sc1"
+        ],
+        "internal": "PRIVATE to S003: the plugin-side read-only chain reader that scans the open project's .insrc/artifacts (DEF-/HLD-/LLD-/PLAN-*.json) and projects a ChainReport-shaped model (define/HLD marks, per-story design/approved/stale, next action, amendment counts), plus the Workflows page that renders it read-only (no approve/reject/amend — k6) with an empty state. Entirely local file reads; no daemon IPC and no shared surface."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1",
+            "sc2"
+          ],
+          "depends": [],
+          "internal": "PRIVATE to S001: the concrete registration wiring of the three child Configurable classes in plugin.xml, the abstract page-shell base implementation (its createComponent off-EDT/guarded-render mechanics), and the parse of the daemon.status payload into DaemonStatusDto. S001 delivers the empty-but-navigable pages + the shared status read; it does not implement any page's domain body — those are the consuming Stories'."
+        },
+        {
+          "storyId": "s2",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "PRIVATE to S002: the Daemon page body (health readout rendered from sc2 + the six action controls), and the lifecycle-action backing used only here — the new DaemonGateway IPC methods for backup/compact/shutdown (sealed *Result) and a lifecycle-command runner that executes daemon-ctl.sh subcommands (start/stop/restart/update) via the existing ScriptDaemonProvisioner + DefaultDaemonScriptLocator, off the EDT with streamed progress and a backup-dir prompt. No other Story consumes these, so they stay S002-internal."
+        },
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc3"
+          ],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "PRIVATE to S004: the Debug status card rendered from sc2 (plus locally-derived pid/version where the status payload lacks them), and the OS-process seam — a Java ProcessHandle enumerator that recommends stray daemon-entry processes (excluding the managed one) and a confirm-gated kill that acts solely on the explicit selection and degrades to 'unsupported' off a capable platform (the single mutation, k3). S004 also implements the DebugPageHost (sc3) and seeds its own status+orphan section."
+        },
+        {
+          "storyId": "s5",
+          "owns": [],
+          "depends": [
+            "sc3"
+          ],
+          "internal": "PRIVATE to S005: the MCP diagnostic section it contributes to the Debug page host — a read-only view combining the plugin's existing host-detection (which MCP clients are registered/connected) with a new DaemonGateway debug-status read (daemon.debug-status → the sessions attached to the socket, with identity + connection time), degrading to a clear unavailable line when the daemon is unreachable. No mutating control (k3)."
+        },
+        {
+          "storyId": "s6",
+          "owns": [],
+          "depends": [
+            "sc3"
+          ],
+          "internal": "PRIVATE to S006: the log-editor seam — the plugin's first LightVirtualFile + FileEditorManager surface — that opens a chosen daemon/agent log (from the known LOG_DIR) as a read-only editor tab and streams appended lines off the EDT into it, with a level/module/text filter applied to the view. The 'open log' affordance attaches to the Debug page host (sc3). Nothing deletes/rotates/clears the underlying log (k5, read-only)."
+        }
+      ],
+      "rolloutPhase": "Phase B — Operational pages (Daemon, Workflows, Debug status+orphans)",
+      "nonFunctional": {
+        "performance": "Every read (status, chain scan, debug-status, MCP list, process scan) and every action (lifecycle scripts, backup/compact) runs on a pooled thread with a guarded invokeLater render (k2); the log editor streams into a bounded view so a long-running tail stays memory-safe, mirroring the CLI's bounded ring buffer.",
+        "security": "The single mutating operation anywhere in the Epic is the Debug orphan-process kill, which is confirm-gated and acts only on the operator's explicit selection (k3); all other surfaces are strictly read-only. No credentials are handled; the plugin reaches only the local socket, local files, and local processes on the same machine.",
+        "observability": "The pages surface the daemon's OWN observable state (status/queue/logs/attached clients); the Epic adds no new telemetry of its own — it is a read/act projection of existing signals.",
+        "durability": "No persisted plugin state: every page shows a live snapshot (or a live stream for logs); closing a page or the log editor drops only in-memory view state. Lifecycle actions mutate the daemon via its own scripts/IPCs, not via any plugin-held store."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "WorkflowChainReader.readAll",
+          "signature": "class WorkflowChainReader(private val artifactsDirOf: (project: Project) -> Path? = { it.basePath?.let { p -> Path.of(p, \".insrc\", \"artifacts\") } }) { fun readAll(): List<WorkflowChainDto> }",
+          "parameters": [],
+          "returns": {
+            "type": "List<WorkflowChainDto>",
+            "meaning": "One WorkflowChainDto per Epic (per DEF-*.json) found across the open projects' .insrc/artifacts dirs, projecting the read-only chain state ac1 requires; empty list when no open project has any DEF-*.json (drives the ac3 empty state)."
+          },
+          "errors": [
+            {
+              "type": "(none — never throws)",
+              "condition": "A missing/unreadable artifacts dir, a malformed JSON file, or a project with no basePath is swallowed per-file and contributes nothing; the method returns whatever it could read (possibly empty), mirroring daemonStatus()'s never-throws contract so the off-EDT page render is safe."
+            }
+          ],
+          "preconditions": [
+            "Called off the EDT (from WorkflowsConfigurable.buildBody() on a pooled thread) — it does blocking local file I/O."
+          ],
+          "postconditions": [
+            "Performs only local reads under each open project's .insrc/artifacts; opens no socket and mutates nothing (k1, k6).",
+            "Each returned WorkflowChainDto.stories staleness is computed with computeHldEffectiveHash over the same sha256(runId + '|'+id...) rule the CLI uses (gates.ts:293)."
+          ]
+        },
+        {
+          "name": "WorkflowChainReader.computeHldEffectiveHash",
+          "signature": "private fun computeHldEffectiveHash(hldRunId: String, approvedAmendmentIds: List<String>): String",
+          "parameters": [
+            {
+              "name": "hldRunId",
+              "type": "String",
+              "purpose": "The HLD artifact's meta.runId — the base of the effective-hash chain.",
+              "optional": false
+            },
+            {
+              "name": "approvedAmendmentIds",
+              "type": "List<String>",
+              "purpose": "The ids of this Epic's APPROVED amendments (AMD-*.json with status=='approved'), in artifact order, folded into the hash exactly as artifacts/lld.ts:176 does.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "String",
+            "meaning": "sha256 hex of (hldRunId + concat('|'+id) over approvedAmendmentIds) — the plugin-side reproduction of computeHldEffectiveHash used to decide a story LLD's staleness by `!=` against lld.meta.hldEffectiveHash."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Uses java.security.MessageDigest(\"SHA-256\"); pure, no I/O.",
+            "With no approved amendments returns sha256(hldRunId) — matching the CLI's base case."
+          ]
+        },
+        {
+          "name": "WorkflowsConfigurable.buildBody",
+          "signature": "override fun buildBody(): javax.swing.JComponent",
+          "parameters": [],
+          "returns": {
+            "type": "javax.swing.JComponent",
+            "meaning": "The read-only chain-status panel: an Epic selector + per-Epic collapsible chain card (define/HLD marks, per-story design/approved/stale, next-action hint, amendment counts) built from WorkflowChainReader.readAll(); or a clear empty-state label when readAll() is empty (ac3). Contains NO approve/reject/amend control (ac2/k6)."
+          },
+          "errors": [
+            {
+              "type": "(none propagated)",
+              "condition": "Any failure inside buildBody() is rendered as the base InsrcOpsConfigurable JLabel error card rather than thrown — the sc1 base guarantees the render is disposed-guarded and off-EDT (k2)."
+            }
+          ],
+          "preconditions": [
+            "Invoked by the sc1 base InsrcOpsConfigurable.createComponent() on a pooled thread (off the EDT)."
+          ],
+          "postconditions": [
+            "Reads only local artifact files via WorkflowChainReader; touches neither the daemon nor the parent settings page (k1/k4).",
+            "Exposes read-only status only — no mutating or approval affordance anywhere in the returned component (ac2/k6)."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "WorkflowChainDto",
+        "change": "new",
+        "details": "Plugin-owned read-only projection of the CLI ChainReport STATE subset S003 renders (a faithful subset, NOT a port of the mutating NextAction/tracker machine). Fields: epicHash:String, epicSlug:String?, define:StageMark, hld:StageMark, stories:List<StoryChainMark>, amendmentsPending:Int, amendmentsApproved:Int, nextActionHint:String. StageMark = { exists:Boolean, approved:Boolean, rejected:Boolean }. StoryChainMark = { id:String, title:String, hasLld:Boolean, approved:Boolean, stale:Boolean, staleReason:String? }. nextActionHint is a plain human string derived from the marks (e.g. 'Approve HLD', 'Design story s3', 'Refresh stale LLD for s2', 'Chain complete') — NOT the CLI's typed 11-case NextAction union and with NO push-tracker/sync-tracker cases (k6, no daemon).",
+        "callSites": [
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/ops/WorkflowsConfigurable.kt (renders it)",
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/workflow/WorkflowChainReader.kt (produces it)"
+        ]
+      },
+      {
+        "entity": "StageMark",
+        "change": "new",
+        "details": "{ exists:Boolean, approved:Boolean, rejected:Boolean } — the define/HLD existence+approval projection read from DEF-*.json / HLD-*.json meta.approvedAt (non-empty => approved) and meta.rejectedAt (chain.ts:137-138,148-149).",
+        "callSites": [
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/workflow/WorkflowChainReader.kt"
+        ]
+      },
+      {
+        "entity": "StoryChainMark",
+        "change": "new",
+        "details": "{ id:String, title:String, hasLld:Boolean, approved:Boolean, stale:Boolean, staleReason:String? } — per-story chain state: hasLld from LLD-<hash>-<storyId>.json presence, approved from its meta.approvedAt, stale from lld.meta.hldEffectiveHash != computeHldEffectiveHash(hld.meta.runId, approvedAmendmentIds) (chain.ts:172-173, gates.ts:293). id/title from the DEF body.stories[] entry.",
+        "callSites": [
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/workflow/WorkflowChainReader.kt"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "WorkflowsConfigurable extends the S001 abstract InsrcOpsConfigurable base and fills ONLY pageTitle() + buildBody(); the base owns createComponent()'s off-EDT load + disposed-guarded invokeLater render + JBScrollPane/ScrollableColumn shell (k2). buildBody() calls the private WorkflowChainReader over the open projects' .insrc/artifacts and renders its WorkflowChainDto list read-only via ui/InsrcCollapsible.collapsiblePanel. The parent settings page and its plugin.xml <applicationConfigurable> element stay byte-unchanged (k4); the S001 placeholder JLabel body is replaced."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "An open project's .insrc/artifacts directory is absent or unreadable (no workflow ever run, or a permissions error on the dir).",
+          "detection": "readAll() resolves the dir via artifactsDirOf(project) and, before listing, checks Files.isDirectory / catches the IOException from the directory stream; a project that yields no dir or throws on listing contributes nothing.",
+          "response": "Skip that project silently and continue with the others; if NO project yields any DEF-*.json the aggregate list is empty, which buildBody() renders as the ac3 empty state (not an error card).",
+          "userImpact": "The developer sees the empty state (or only the projects that do have artifacts), never a stack trace or a blank page.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A single artifact JSON file (DEF/HLD/LLD/AMD) is malformed or truncated (partial write, hand-edit).",
+          "detection": "The per-file Gson parse throws JsonSyntaxException/JsonParseException, caught in the per-file read helper.",
+          "response": "That one file is dropped from the projection; the Epic still renders from the files that did parse (e.g. a broken LLD makes its story fall back to hasLld=false rather than aborting the whole card). readAll() never rethrows.",
+          "userImpact": "One story/stage may show as absent when its file is corrupt, but the rest of the chain status is intact and the page still loads.",
+          "recoverable": true
+        },
+        {
+          "scenario": "An HLD artifact is missing or has no meta.runId, yet story LLDs exist, so staleness cannot be computed.",
+          "detection": "The reader finds hld.exists=false (or a blank runId) while assembling StoryChainMark; the staleness branch guards on a non-blank hldRunId before calling computeHldEffectiveHash.",
+          "response": "When the HLD base is unavailable, stale is reported false with staleReason=null (staleness is undefined without an HLD base) rather than throwing on a null runId; the story still shows hasLld/approved from its own file.",
+          "userImpact": "Staleness is shown as 'not stale' for a chain whose HLD is missing — a conservative, non-alarming default; the missing-HLD state is itself visible in the HLD StageMark.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The plugin's MessageDigest recomputation diverges from the daemon's computeHldEffectiveHash after a future CLI change to the hashing rule (lock-step drift, the known a1 risk).",
+          "detection": "Not detectable at runtime by the plugin (both sides just produce hex strings); it surfaces only as a story wrongly flagged stale / not-stale versus what the CLI review surface shows.",
+          "response": "Contained by design: staleness is advisory read-only state (k6) and the authoritative gate stays in the daemon/review surface; the LLD checklist pins the hash rule to gates.ts:293 / artifacts/lld.ts:176 so a divergence is caught by the reader's fixture test (a matching + mismatching hldEffectiveHash case) when the rule is mirrored, and the memory note flags the mirror as a maintenance point.",
+          "userImpact": "In the worst case a stale badge is wrong until the mirror is updated; no action is gated on it here, so nothing breaks — the developer confirms in the review surface before acting.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "No project is open at all (Settings opened from the welcome screen) — ProjectManager.getInstance().openProjects is empty.",
+          "expected": "readAll() returns an empty list; buildBody() renders the ac3 empty state ('No insrc workflow artifacts in the open project')."
+        },
+        {
+          "input": "Multiple projects are open, each with its own .insrc/artifacts.",
+          "expected": "readAll() aggregates Epics across every open project (each project's DEF-*.json set), so the page lists all of them; an Epic is labeled with its epicSlug/epicHash to disambiguate."
+        },
+        {
+          "input": "An Epic has a DEF but zero LLDs yet (define done, no story designed).",
+          "expected": "define.exists=true, hld may or may not exist, every StoryChainMark has hasLld=false/approved=false/stale=false; nextActionHint reflects the earliest incomplete stage (e.g. 'Approve HLD' or 'Design story <first>')."
+        },
+        {
+          "input": "An Epic whose every stage is approved and no LLD is stale and no amendment is pending.",
+          "expected": "nextActionHint = 'Chain complete'; all StageMarks approved, all StoryChainMarks approved and not stale, amendmentsPending=0."
+        },
+        {
+          "input": "A story LLD carries an hldEffectiveHash that differs from the recomputed value (an approved amendment landed after the LLD, or the HLD was re-run).",
+          "expected": "StoryChainMark.stale=true with a staleReason; nextActionHint surfaces 'Refresh stale LLD for <storyId>'."
+        },
+        {
+          "input": "AMD-*.json files exist for the Epic with mixed statuses (some pending, some approved, some rejected).",
+          "expected": "amendmentsPending / amendmentsApproved count only the matching-epicHash amendments by status (rejected excluded from both), mirroring countAmendments (chain.ts:195)."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The Workflows page and its chain reader remain strictly read-only — no approve/reject/amend/refresh control and no daemon IPC anywhere in the surface; approvals stay in the existing review surface (k6). c2 is the existing read-only artifact-review capability this status view sits beside without duplicating its mutating actions.",
+          "source": "c2"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "JUnit5 (org.junit.jupiter) — the jetbrains-plugin test module, mirroring src/workflow/__tests__/chain.test.ts in Kotlin and the DaemonPageTest/NestedOpsPagesTest source-scan idiom.",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove the WorkflowChainReader projects the .insrc/artifacts JSON into the correct read-only WorkflowChainDto: existence/approval marks, per-story hasLld/approved/stale (matching + mismatching hldEffectiveHash), amendment counts by status, the derived nextActionHint, and the never-throws/empty behaviors.",
+          "subjects": [
+            "WorkflowChainReader.readAll (over a temp .insrc/artifacts dir with injected artifactsDirOf)",
+            "WorkflowChainReader.computeHldEffectiveHash (sha256 base case + approved-amendment fold)",
+            "the nextActionHint derivation across chain states"
+          ],
+          "fixturesNeeded": [
+            "A Files.createTempDirectory .insrc/artifacts populated with hand-written DEF-<hash>.json (body.stories[], meta.epicHash/epicSlug), HLD-<hash>.json (meta.runId, meta.approvedAt), LLD-<hash>-<storyId>.json (meta.approvedAt, meta.hldEffectiveHash), AMD-<id>.json (top-level epicHash/status/id)",
+            "a matching-hash LLD (not stale) and a mismatching-hash LLD (stale) fixture pair",
+            "an empty temp dir (no DEF) and a dir with mixed-status AMD files",
+            "a malformed/truncated JSON file to exercise the per-file swallow"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Source-scan guard the Workflows PAGE invariants that can't be asserted by booting the Settings dialog headlessly: it consumes sc1 (extends the base + fills buildBody), renders the chain model read-only, exposes NO approve/reject/amend control (ac2/k6), shows an empty state (ac3), and does not touch the parent settings page (k4).",
+          "subjects": [
+            "WorkflowsConfigurable.kt source text (extends InsrcOpsConfigurable, calls WorkflowChainReader, renders via InsrcCollapsible, no approve/reject/amend tokens, replaces the S001 placeholder)",
+            "InsrcSettingsConfigurable.kt source text (not repointed at WorkflowsConfigurable)"
+          ],
+          "fixturesNeeded": [
+            "read of src/main/kotlin/ai/insors/insrc/jetbrains/ops/WorkflowsConfigurable.kt",
+            "read of src/main/kotlin/ai/insors/insrc/jetbrains/settings/InsrcSettingsConfigurable.kt"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "unit(reader): a fully-populated Epic fixture (DEF+HLD approved, one approved LLD, one stale LLD, one absent LLD, pending+approved AMDs) projects define/hld StageMarks, per-story hasLld/approved/stale StoryChainMarks, amendmentsPending/Approved counts, and a nextActionHint",
+            "unit(reader): computeHldEffectiveHash matches the CLI rule so the matching-hash story is not stale and the mismatching-hash story is stale",
+            "source-scan(page): WorkflowsConfigurable reads WorkflowChainReader and renders the define/HLD/story/amendment fields read-only via InsrcCollapsible"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "source-scan(page): WorkflowsConfigurable source contains no approve/reject/amend/JButton action-listener control and no gateway/daemon IPC call — status readout only (k6)"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "unit(reader): an empty temp .insrc/artifacts dir (and a no-open-project resolver) yields an empty List<WorkflowChainDto>",
+            "source-scan(page): WorkflowsConfigurable renders a clear empty-state label when the chain list is empty rather than a blank/error panel"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "The Workflows child Settings page exists but is inert: S001 registered ops/WorkflowsConfigurable.kt as an <applicationConfigurable parentId=\"ai.insors.insrc.settings\"> with a PLACEHOLDER JLabel body ('arrive in a later insrc update'), extending the InsrcOpsConfigurable base (convention.detect bundle). No plugin-side chain reader exists; the only chain-status computation lives in the daemon/CLI (src/workflow/chain.ts buildChainReport, data-model.trace bundle). NestedOpsPagesTest currently guards WorkflowsConfigurable as placeholder-only (JLabel body, no domain code), exactly as S002 hit for DaemonConfigurable.",
+      "stateAfter": "WorkflowsConfigurable.buildBody() is filled: it invokes a NEW plugin-internal WorkflowChainReader that scans the open projects' .insrc/artifacts (external-contract bundle) and projects a read-only WorkflowChainDto list, rendered read-only via InsrcCollapsible (define/HLD marks, per-story design/approved/stale, next-action hint, amendment counts) with an empty state when none is found (ac3), and NO approve/reject/amend control (ac2/k6). The parent settings page and every other page are byte-unchanged.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the new plugin-internal WorkflowChainReader (+ WorkflowChainDto/StageMark/StoryChainMark data classes) under jetbrains-plugin/.../workflow/ — a pure additive read-only reader over .insrc/artifacts; nothing consumes the daemon and no existing type changes.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Fill WorkflowsConfigurable.buildBody() to call WorkflowChainReader.readAll() and render the WorkflowChainDto list read-only via InsrcCollapsible, with an empty-state label; replace the S001 placeholder JLabel body. This is the only edit to an existing file's behavior and it is confined to the Workflows page body.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Update the NestedOpsPagesTest placeholder-only guard to exclude WorkflowsConfigurable (scope the assertion with `cls != \"WorkflowsConfigurable\"`, exactly as S002 did for DaemonConfigurable), since its body is no longer a placeholder; add the new WorkflowsPageTest (source-scan) + WorkflowChainReaderTest (temp-dir fixtures).",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No public/plugin-external API changes: WorkflowChainReader and the DTOs are new plugin-internal types, and WorkflowsConfigurable's only external contract is its <applicationConfigurable> registration id (ai.insors.insrc.workflows), which is unchanged. The sc1 base (InsrcOpsConfigurable) is consumed unchanged — no override signature changes, so no fanout across the other pages. The daemon's chain.ts stays the authoritative source; the plugin reader is a read-only mirror that never writes and gates nothing, so a divergence degrades to a wrong advisory badge, never a broken contract.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Lean plugin-side chain reader (state facts + a simple next-action hint), no tracker",
+        "oneLineSummary": "A pure plugin-side reader scans the open project's .insrc/artifacts and projects a read-only chain model — per-epic define/HLD existence+approval, per-story hasLld/approved/stale (staleness via sha256(hld.runId+amendments)), amendment counts, and a SIMPLE next-action hint derived from those facts; it omits the CLI's tracker push/sync half; the Workflows page renders it read-only (k6).",
+        "approach": "A new S003-internal WorkflowChainReader (a pure Kotlin function over a repo path + the .insrc/artifacts dir, no daemon) does the local reads and projects a plugin-owned WorkflowChainDto (a read-only SUBSET of the CLI ChainReport) plus a small derived nextActionHint computed from an ordered precedence over those facts; WorkflowsConfigurable.buildBody() consumes the sc1 base off the EDT, resolves the open project via ProjectManager.getInstance().openProjects, runs the reader, and renders an Epic picker + a read-only accordion/table chain view via ui/InsrcCollapsible with a clear empty state (ac3). No approve/reject/amend control (k6).",
+        "verdict": "chosen",
+        "why": "Satisfies ac1/ac2/ac3 + sc1 + k1/k2/k4/k6 exactly while minimizing lock-step divergence with the evolving CLI chain.ts: it reproduces only the stable, well-defined markers (meta.approvedAt, the sha256(runId+amendments) staleness the daemon itself uses at gates.ts:293) and a simple derived hint. The reader is a pure function over a temp dir — fully unit-testable; the page is source-scannable; the parent settings page is untouched."
+      },
+      {
+        "id": "a2",
+        "name": "Full-fidelity ChainReport reproduction (11-case NextAction + tracker) plugin-side",
+        "oneLineSummary": "Port the ENTIRE CLI ChainReport plugin-side — the same define/HLD/story reads PLUS the full 11-case NextAction state machine and the tracker push/sync state — so the Workflows page matches `insrc workflow chain` byte-for-byte.",
+        "approach": "Same local .insrc/artifacts reads as a1, but additionally reimplement computeNextAction's full 11-case precedence and readTrackerMeta (pushed/epicRef/lastSyncedAt from the define artifact's meta) in Kotlin, projecting the complete ChainReport shape verbatim; the page renders the exact next-action string + the tracker line.",
+        "verdict": "rejected",
+        "why": "Equal ac/sc/k correctness to a1 but worse maintenance.",
+        "reasonRejected": "HIGH lock-step-divergence risk: the 11-case NextAction machine + tracker semantics are non-trivial evolving CLI logic that a Kotlin port silently drifts from whenever the TS changes; the tracker push/sync half is daemon/GitHub-adjacent state a read-only file-reader can only partially reconstruct; substantially more code + tests for state the k6 read-only page cannot act on, when ac1 only needs 'the next action' that a1's hint already provides."
+      },
+      {
+        "id": "a3",
+        "name": "New read-only daemon IPC (workflow.chain) the plugin calls",
+        "oneLineSummary": "Add a daemon-side read-only IPC that returns the ChainReport (reusing the CLI's chain.ts) and make the Workflows page a thin caller — no plugin-side artifact logic.",
+        "approach": "The daemon grows a new read-only workflow.chain/workflow.listEpics IPC handler that runs buildChainReport server-side; DaemonGateway gains a read method and the Workflows page renders the returned report, mirroring how the Review tool window consumes workflow.pending.",
+        "verdict": "rejected",
+        "why": "Reuses the daemon's canonical chain.ts (no divergence) but is out of scope for a plugin-only Epic.",
+        "reasonRejected": "VIOLATES k1 outright — the Epic is explicitly plugin-only with NO daemon or CI change in scope (this is precisely the HLD-level a3 the Epic already rejected); the chain is project-local files the same-machine plugin can read directly, so routing them through the daemon adds a dependency for data the plugin already has and fails when the daemon is down; it expands the blast radius to the daemon + the IDE-fork IPC lock-step."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 data-model.trace — src/workflow/chain.ts ChainReport shape",
+      "quotedText": "interface ChainReport { epicHash, epicSlug?, define, hld, stories[], amendments, tracker, nextAction }; S003 projects the STATE subset (define/hld/stories/amendments + a next-action hint), read-only, omitting tracker push/sync (k6/no-daemon)."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 external-contract — .insrc/artifacts JSON layout + approval/staleness/amendment markers",
+      "quotedText": "Artifacts at <repo>/.insrc/artifacts/<ID>.json; DEF-/HLD-/LLD-<storyId>/AMD- ids; meta.approvedAt marks approved; staleness = lld.meta.hldEffectiveHash != sha256(hld.meta.runId + '|'+id per approved amendment) (artifacts/lld.ts:176, gates.ts:293); AMD-*.json top-level {epicHash,status}."
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1 convention.detect — sc1 consumption + app-level Configurable project resolution",
+      "quotedText": "WorkflowsConfigurable subclasses InsrcOpsConfigurable and fills buildBody() off-EDT; the app-level Settings page has no injected Project, so it resolves the open project via ProjectManager.getInstance().openProjects; renders read-only via InsrcCollapsible; empty state when no DEF-*.json (ac3)."
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "s1 test.locate — reader temp-dir fixtures + page source-scan idiom",
+      "quotedText": "The reader is a pure function over a temp .insrc/artifacts dir (chain.test.ts idiom in Kotlin/JUnit5); the page is source-scanned like NestedOpsPagesTest/DaemonPageTest."
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "HLD 57298940cdc341bc sharedContract sc1 (NestedSettingsNavScaffold + SharedPageShell), ownedByStory s1",
+      "quotedText": "sc1: the declarative parent-nesting pattern + shared abstract page-shell base; consumed by s2/s3/s4."
+    },
+    {
+      "id": "c6",
+      "kind": "step-output",
+      "ref": "s2 alternatives / s3 alternatives.judge — a1 chosen, a3 violates k1",
+      "quotedText": "a1 lean plugin-side reader chosen; a2 full-fidelity port ranked 2 (high divergence); a3 new daemon IPC ranked 3 (violates k1)."
+    }
+  ]
+}

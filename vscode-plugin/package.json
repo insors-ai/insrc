@@ -29,6 +29,7 @@
   "scripts": {
     "sync-assets": "cp ../scripts/insrc-daemon-install.sh assets/insrc-daemon-install.sh && cp ../src/prompts/steering-block.md assets/steering-block.md",
     "build": "npm run sync-assets && tsc -p tsconfig.json",
-    "test": "tsx --test 'src/**/__tests__/*.test.ts'"
+    "test": "tsx --test 'src/**/__tests__/*.test.ts'",
+    "vscode:uninstall": "node ./out/uninstall.js"
   }
 }

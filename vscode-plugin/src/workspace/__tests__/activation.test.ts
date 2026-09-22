@@ -19,10 +19,13 @@ test('extension.ts constructs the WorkspaceRegistrar over the shared client + re
   assert.match(entry, /registerWorkspaceCommands\(\{\s*commands,\s*consent,\s*status,\s*registrar,\s*folders\s*\}\)/, 'wires the durable command with the s1 surfaces');
 });
 
-test('the activation-time offerWorkspaceRegistration is fire-and-forget + guarded (never throws/blocks, S001)', () => {
+test('the activation-time workspace register runs through the guarded runOnboarding sequence (S005 coalescing; S001 never-throws)', () => {
+  // S005 replaced the standalone activation-time offerWorkspaceRegistration IIFE
+  // with the coalesced runOnboarding capstone, which drives the register step
+  // (over the same registrar/folders/prompts) inside one guarded fire-and-forget IIFE.
   const entry = readFileSync(join(PKG, 'src', 'extension.ts'), 'utf8');
-  assert.match(entry, /offerWorkspaceRegistration\(\{ consent, status, registrar, folders, prompts \}\)/, 'the offer runs the shared flow');
-  assert.match(entry, /void \(async \(\) =>[\s\S]*offerWorkspaceRegistration[\s\S]*catch \{/, 'the register offer is fire-and-forget + guarded');
+  assert.match(entry, /runOnboarding\(\{[^}]*registrar[^}]*folders[^}]*prompts[^}]*\}\)/, 'the register step flows through runOnboarding');
+  assert.match(entry, /void \(async \(\) =>[\s\S]*runOnboarding[\s\S]*catch \{/, 'onboarding (incl. the register step) is fire-and-forget + guarded');
 });
 
 test('contributes.commands includes insrc.workspace.register alongside the S002 daemon + S003 hosts entries (k6)', () => {

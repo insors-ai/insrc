@@ -42,8 +42,10 @@ test('extension.ts wires the daemon controller (real runner + DaemonPaths from e
   assert.match(entry, /createDaemonLifecycleController\(/, 'constructs the sc6 controller');
   assert.match(entry, /defaultDaemonPaths\(context\.extensionPath\)/, 'resolves DaemonPaths from context.extensionPath');
   assert.match(entry, /registerDaemonCommands\(/, 'registers the durable lifecycle commands');
-  assert.match(entry, /offerDaemonInstall\(/, 'fires the activation-time Install offer');
-  // The offer must be off the critical path (fire-and-forget) + guarded so activate never throws.
-  assert.match(entry, /void \(async \(\) =>/, 'the Install offer is fire-and-forget (does not block activate)');
+  // S005: the activation-time Install offer now runs inside the coalesced
+  // runOnboarding sequence (the controller is passed in), not a standalone IIFE.
+  assert.match(entry, /runOnboarding\(\{[^}]*controller[^}]*\}\)/, 'the install step flows through runOnboarding');
+  // The onboarding call must be off the critical path (fire-and-forget) + guarded so activate never throws.
+  assert.match(entry, /void \(async \(\) =>/, 'onboarding (incl. install) is fire-and-forget (does not block activate)');
   assert.match(entry, /catch \{/, 'the Install offer is guarded so activation never throws');
 });

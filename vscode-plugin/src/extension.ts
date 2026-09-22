@@ -19,19 +19,23 @@ import { activateExtension } from './activation.js';
 import { defaultSubprocessRunner } from './daemon/subprocess.js';
 import { defaultDaemonPaths } from './daemon/paths.js';
 import { createDaemonLifecycleController } from './daemon/controller.js';
-import { registerDaemonCommands, offerDaemonInstall } from './daemon/commands.js';
+import { registerDaemonCommands } from './daemon/commands.js';
 import { defaultHostFileSystem } from './hosts/fs.js';
 import { createHostRegistry } from './hosts/adapter.js';
 import { HOST_SPECS } from './hosts/specs.js';
-import { registerHostCommands, offerHostWiring } from './hosts/commands.js';
+import { registerHostCommands } from './hosts/commands.js';
 import type { HostEnv } from './hosts/types.js';
 import { createWorkspaceRegistrar } from './workspace/registrar.js';
-import { registerWorkspaceCommands, offerWorkspaceRegistration } from './workspace/commands.js';
+import { registerWorkspaceCommands } from './workspace/commands.js';
 import type { PromptStore, WorkspaceFolders } from './workspace/types.js';
+import { runOnboarding } from './onboarding/onboarding.js';
+import type { OnboardingStore } from './onboarding/types.js';
 import type { StatusBarHandle } from './surfaces/types.js';
 
 /** The workspaceState key prefix for the one-time register-prompt dismissal flag (S004). */
 const REGISTER_DISMISSED_KEY = 'insrc.workspace.register.dismissed';
+/** The workspaceState key prefix for the one-time onboarding-completed flag (S005). */
+const ONBOARDED_KEY = 'insrc.workspace.onboarded';
 
 /**
  * VS Code activation entry. Constructs the shared daemon client + the sc2/sc3/sc4
@@ -108,39 +112,35 @@ export function activate(context: vscode.ExtensionContext): void {
 
   activateExtension({ client, status });
 
-  // A minimal first-run Install offer when no daemon is installed — off the
-  // activation critical path, never throws. The coalescing of install/register/
-  // wire into one coherent onboarding flow is Story S005's job.
-  void (async () => {
-    try {
-      if (await controller.isInstalled()) return;
-      await offerDaemonInstall({ consent, status, controller });
-    } catch {
-      /* never let the offer surface an error into activation */
-    }
-  })();
+  // S005 sc-capstone: the per-workspace one-time onboarding-completed flag over
+  // workspaceState (distinct key from the S004 register-dismissed flag).
+  const onboarded: OnboardingStore = {
+    wasOnboarded: (root) => {
+      try {
+        return context.workspaceState.get<boolean>(`${ONBOARDED_KEY}:${root}`, false);
+      } catch {
+        return false;
+      }
+    },
+    markOnboarded: (root) => {
+      try {
+        void context.workspaceState.update(`${ONBOARDED_KEY}:${root}`, true);
+      } catch {
+        /* a persistence failure must never break the flow */
+      }
+    },
+  };
 
-  // A minimal activation-time host-wire offer — off the critical path, guarded so
-  // it never throws/blocks (S001 preserved). offerHostWiring only prompts when a
-  // supported host is present; the persisted 'already onboarded' gate + the
-  // install→register→wire coalescing are Story S005's job.
+  // S005: ONE coherent first-run onboarding sequence (install → register → wire),
+  // replacing the three scattered fire-and-forget offer IIFEs — off the activation
+  // critical path, guarded so activate() never throws/blocks (S001 preserved). Any
+  // step the developer skips stays reachable via its durable command (ac2); the
+  // uninstall reversal is the vscode:uninstall hook (src/uninstall.ts).
   void (async () => {
     try {
-      await offerHostWiring({ consent, status, registry });
+      await runOnboarding({ controller, registrar, registry, consent, status, folders, prompts, onboarded });
     } catch {
-      /* never let the offer surface an error into activation */
-    }
-  })();
-
-  // A minimal one-time workspace-register offer (S004) — off the critical path,
-  // guarded so it never throws/blocks (S001). offerWorkspaceRegistration only
-  // prompts when a folder is open, unregistered, and not previously dismissed;
-  // the install→register→wire coalescing is Story S005's job.
-  void (async () => {
-    try {
-      await offerWorkspaceRegistration({ consent, status, registrar, folders, prompts });
-    } catch {
-      /* never let the offer surface an error into activation */
+      /* never let onboarding surface an error into activation */
     }
   })();
 }

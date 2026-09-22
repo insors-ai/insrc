@@ -23,14 +23,13 @@ test('extension.ts constructs the AiHostRegistry (HostSpecs + real HostEnv/HostF
   assert.match(entry, /paths\.daemonRoot[\s\S]*insrc-mcp\.js/, 'resolves the launch target from the S002 daemon home');
 });
 
-test('the activation-time host-wire offer is fire-and-forget + guarded (never throws/blocks) and only fires when present hosts exist', () => {
+test('the activation-time host-wire step runs through the guarded runOnboarding sequence (S005 coalescing) and only fires when present hosts exist', () => {
   const entry = readFileSync(join(PKG, 'src', 'extension.ts'), 'utf8');
-  // The offer runs in a fire-and-forget async IIFE guarded by try/catch (S001/S002 pattern).
-  assert.match(entry, /offerHostWiring\(\{ consent, status, registry \}\)/, 'the offer calls the shared wire flow');
-  // offerHostWiring internally no-ops (no prompt) when no host is present — the "only fires when present" gate.
-  const offerBlocks = entry.split('offerHostWiring');
-  assert.ok(offerBlocks.length >= 2, 'offerHostWiring is invoked at activation');
-  assert.match(entry, /void \(async \(\) =>[\s\S]*offerHostWiring[\s\S]*catch \{/, 'the host-wire offer is fire-and-forget + guarded');
+  // S005: the host-wire offer now runs inside the coalesced runOnboarding sequence
+  // (the registry is passed in), not a standalone activation IIFE. offerHostWiring
+  // still internally no-ops (no prompt) when no host is present.
+  assert.match(entry, /runOnboarding\(\{[^}]*registry[^}]*\}\)/, 'the wire step flows through runOnboarding');
+  assert.match(entry, /void \(async \(\) =>[\s\S]*runOnboarding[\s\S]*catch \{/, 'onboarding (incl. the wire step) is fire-and-forget + guarded');
 });
 
 test('contributes.commands includes insrc.hosts.wire alongside the S002 daemon entries (palette reachability, k6)', () => {

@@ -166,6 +166,14 @@ export function activate(context: vscode.ExtensionContext): void {
       if (changed.length > 0) void configSync.applyChanges(changed);
     }),
   );
+  // S003 sc8: a first-class 'Refresh insrc settings' command (k6) that drives the
+  // on-demand reconcile — re-reads the daemon and republishes the native mirror,
+  // so an external change from another client (CLI / JetBrains / other window) is
+  // reconciled without reactivating. Registered via the shipped sc3 registry.
+  commands.register(
+    { id: 'insrc.settings.refresh', title: 'Refresh insrc settings' },
+    () => configSync.pullFromDaemon(),
+  );
 
   // S005 sc-capstone: the per-workspace one-time onboarding-completed flag over
   // workspaceState (distinct key from the S004 register-dismissed flag).

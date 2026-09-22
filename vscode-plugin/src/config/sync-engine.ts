@@ -77,6 +77,34 @@ export function createConfigSyncEngine(deps: ConfigSyncDeps): ConfigSyncEngine {
   // revert UX reads it — S001 only maintains it + uses it for the idempotent no-op.
   let lastSyncedSnapshot = new Map<string, unknown>();
 
+  /**
+   * S003 auto-revert: restore a rejected native setting to the value the daemon
+   * actually holds (the last-known-good). The snapshot is NOT advanced on a
+   * rejection, so the reverted value equals lastSyncedSnapshot.get(key) and the
+   * revert write's onDidChangeConfiguration echo hits the idempotent-no-op guard
+   * at the top of applyChanges (no loop). When there is no last-known value, fall
+   * back to the option default AND pre-set the snapshot first so the default-echo
+   * is also a no-op (no unintended daemon write). Never throws.
+   */
+  const revertToLastKnown = async (nativeKey: string, option: ConfigOption): Promise<void> => {
+    let value: unknown;
+    if (lastSyncedSnapshot.has(nativeKey)) {
+      value = lastSyncedSnapshot.get(nativeKey);
+    } else {
+      // No last-known value (e.g. a pull was skipped): fall back to the option
+      // default. This can transiently show a value the daemon may not hold, but
+      // the activation/refresh pullFromDaemon reassigns the snapshot to the
+      // daemon's real value and rewrites the setting — self-healing.
+      value = option.default;
+      lastSyncedSnapshot.set(nativeKey, value);
+    }
+    try {
+      await settings.write(nativeKey, value);
+    } catch {
+      // A revert write failure must never throw; the rejection was already surfaced.
+    }
+  };
+
   return {
     async pullFromDaemon(): Promise<void> {
       let snapshot;
@@ -151,6 +179,7 @@ export function createConfigSyncEngine(deps: ConfigSyncDeps): ConfigSyncEngine {
         const invalid = validateAgainstOption(entry.option, change.value);
         if (invalid !== undefined) {
           notifier.error(`insrc: '${change.key}' ${invalid} — change not applied`);
+          await revertToLastKnown(change.key, entry.option); // S003: restore the truthful value.
           continue;
         }
 
@@ -165,10 +194,12 @@ export function createConfigSyncEngine(deps: ConfigSyncDeps): ConfigSyncEngine {
             lastSyncedSnapshot.set(change.key, change.value);
           } else {
             notifier.error(`insrc: daemon rejected '${change.key}' — ${result.reason}`);
+            await revertToLastKnown(change.key, entry.option); // S003: daemon refused → revert.
           }
         } catch (err) {
           const message = err instanceof Error ? err.message : String(err);
           notifier.error(`insrc: could not save '${change.key}' — ${message}`);
+          await revertToLastKnown(change.key, entry.option); // S003: daemon unreachable → revert.
         }
       }
     },

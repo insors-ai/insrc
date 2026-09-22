@@ -66,6 +66,11 @@
         "command": "insrc.workspace.register",
         "title": "Register workspace",
         "category": "insrc"
+      },
+      {
+        "command": "insrc.settings.refresh",
+        "title": "Refresh insrc settings",
+        "category": "insrc"
       }
     ],
     "configuration": [

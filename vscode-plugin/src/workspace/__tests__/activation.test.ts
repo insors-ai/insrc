@@ -30,9 +30,12 @@ test('the activation-time workspace register runs through the guarded runOnboard
 
 test('contributes.commands includes insrc.workspace.register alongside the S002 daemon + S003 hosts entries (k6)', () => {
   const pkg = JSON.parse(readFileSync(join(PKG, 'package.json'), 'utf8'));
-  const ids = (pkg.contributes?.commands ?? []).map((c: { command: string }) => c.command).sort();
-  assert.deepEqual(ids, [
+  const ids = (pkg.contributes?.commands ?? []).map((c: { command: string }) => c.command);
+  // Subset check: the config-track (settings-UI epic) appends insrc.settings.refresh.
+  for (const id of [
     'insrc.daemon.install', 'insrc.daemon.restart', 'insrc.daemon.start', 'insrc.daemon.stop', 'insrc.daemon.update',
     'insrc.hosts.wire', 'insrc.workspace.register',
-  ], 'the register command is palette-reachable and the S002/S003 entries are untouched');
+  ]) {
+    assert.ok(ids.includes(id), `${id} must stay palette-reachable (k6)`);
+  }
 });

@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1790083973418-o73vf3",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-22T13:32:53.418Z",
+    "model": "client",
+    "elapsedMs": 1,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "401ae5fb7b8537cc",
+    "storyId": "s3"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "401ae5fb7b8537cc",
+    "storyId": "s3",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "vscode-plugin/package.json",
+        "vscode-plugin/src/__tests__/packaging.test.ts",
+        "vscode-plugin/src/config/sync-engine.ts",
+        "vscode-plugin/src/extension.ts",
+        "vscode-plugin/src/surfaces/command-registry.ts",
+        "vscode-plugin/src/workspace/__tests__/activation.test.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/config/sync-engine.ts:80",
+            "message": "Realizes S003's ac1/ac2/ac3 + k5 truthful-sync exactly as the LLD/winner a1: auto-revert-on-reject added INSIDE applyChanges (all 3 reject exits) with NO sc8 signature change; loop-suppressed by the existing idempotent-no-op guard (cold review traced the guard runs BEFORE validation, so every revert echo — incl. the no-last-known default pre-set — is suppressed). The Refresh command reuses pullFromDaemon (no new daemon capability, k3); insrc.advanced is correctly NOT declared (deferral honored + guard-tested). No breach.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/surfaces/command-registry.ts:21",
+            "message": "Follows conventions: the Refresh command is added to the closed InsrcCommandId union (one additive member; the 7 shipped ids unchanged) and registered via the shipped sc3 CommandRegistry in extension.ts (the sole 'vscode' importer, after configSync is built — no use-before-init); the engine stays VS-Code-free. node:test over the S001/S002 fakes. No convention breach.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/config/sync-engine.ts:63",
+            "message": "Clean: the revert helper is a single shared function called from all 3 reject exits, try/catch so applyChanges never throws (k1), with a comment documenting the no-last-known default self-heal. The cold review's two actionable LOW nits were fixed pre-CR (dead test vars removed; self-heal comment added); its third (an inherent lock-free revert-echo race in the sub-ms window) is pre-existing in sc8's model and out of S003 scope. No quality defect.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 3
+    }
+  }
+}

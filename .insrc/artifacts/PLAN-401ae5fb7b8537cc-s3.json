@@ -1,0 +1,238 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1790083046929-igid7t",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-22T13:21:06.413Z",
+    "epicCreatedAt": "2026-09-22T10:29:17.310Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 219461,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "401ae5fb7b8537cc",
+    "epicSlug": "work-framed-approved-spec-proceed-from",
+    "storyId": "s3",
+    "lldRunId": "wf-1790082091322-pefqg6",
+    "lldEffectiveHash": "790f3d6f5efd1ec7853ed7547c7c5ad8b56ec8f6ada70b53c07be4e73716ab6b",
+    "approvedAt": "2026-09-22T13:23:15.349Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add the auto-revert-on-reject branch to the ConfigSyncEngine (sc8, no signature change)",
+        "summary": "In vscode-plugin/src/config/sync-engine.ts, add a small shared revert helper called from all THREE rejected-write exits of applyChanges (invalid-value pre-flight, daemon {ok:false}, rpc reject): after the existing notifier.error, write the last-known-good value back — settings.write(change.key, lastSyncedSnapshot.get(change.key) ?? entry.option.default), wrapped in try/catch (never throws). When the key has no last-known value, pre-set lastSyncedSnapshot.set(key, option.default) BEFORE the revert so the echo is a no-op. The snapshot is NOT advanced on a rejection (unchanged) and the existing top-of-applyChanges idempotent-no-op guard suppresses the revert echo. applyChanges/pullFromDaemon signatures stay void (sc8 interface unchanged).",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "on an invalid value, a daemon {ok:false}, and an rpc reject, applyChanges calls notifier.error AND settings.write(key, last-known-good) — the setting is reverted; the snapshot is not advanced",
+          "when the key has no last-synced value the revert uses option.default and pre-sets the snapshot; a revert settings.write failure is swallowed (applyChanges never throws)",
+          "the sc8 applyChanges/pullFromDaemon signatures are unchanged and the 118 existing S001/S002 plugin tests still pass (k1)"
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "applyChanges on invalid-value / {ok:false} / rpc-reject reports the reason AND reverts the SettingsStore to the last-synced value, without advancing the snapshot"
+          },
+          {
+            "level": "unit",
+            "name": "the revert echo is a loop-suppressed idempotent no-op (no second toast/write); no-last-synced reverts to option.default with a pre-set snapshot; a revert-write failure is swallowed"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Add insrc.settings.refresh to the sc3 InsrcCommandId union + package.json contributes.commands",
+        "summary": "Add 'insrc.settings.refresh' to the closed InsrcCommandId union in vscode-plugin/src/surfaces/command-registry.ts (one additive member; the 7 shipped ids unchanged) and a contributes.command entry { command:'insrc.settings.refresh', title:'Refresh insrc settings', category:'insrc' } in vscode-plugin/package.json alongside the existing 7 commands.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "InsrcCommandId includes 'insrc.settings.refresh' and tsc compiles; the other 7 ids are unchanged",
+          "package.json contributes.commands has the insrc.settings.refresh entry (title 'Refresh insrc settings', category 'insrc') and remains valid JSON with the 7 shipped commands intact"
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "manifest + union scan: package.json contributes.commands + the InsrcCommandId union both include insrc.settings.refresh, the 7 shipped commands/ids unchanged"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Register the Refresh command in extension.ts (drives pullFromDaemon)",
+        "summary": "In vscode-plugin/src/extension.ts (the sole 'vscode' importer), register the durable command via the existing sc3 CommandRegistry: commands.register({ id:'insrc.settings.refresh', title:'Refresh insrc settings' }, () => configSync.pullFromDaemon()) — beside the existing registerDaemonCommands/registerHostCommands/registerWorkspaceCommands calls, after configSync is constructed. No new listener, no new daemon capability; the command's Disposable lands in context.subscriptions.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "extension.ts registers 'insrc.settings.refresh' through the sc3 CommandRegistry with a body that calls configSync.pullFromDaemon()",
+          "the command is registered after configSync is built; activation still never throws/blocks and the existing 7 commands + status bar are unchanged (k1)"
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "source-scan: extension.ts registers insrc.settings.refresh via the sc3 CommandRegistry with a body calling configSync.pullFromDaemon()"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Add the revert + reconcile + command tests (extend the S001/S002 fakes)",
+        "summary": "New node:test (tsx --test) coverage over the existing fakes: (a) revert units — applyChanges on invalid-value / {ok:false} / reject reports the reason AND reverts the fake SettingsStore to the last-synced value without advancing the snapshot; the revert echo is an idempotent no-op; the no-last-synced revert uses option.default with a pre-set snapshot; a revert-write failure is swallowed; (b) reconcile units — pullFromDaemon republishes daemon values over a stale local value + re-captures the snapshot, and a daemon-unreachable refresh notifies + changes nothing + does not throw; (c) command scans — manifest has insrc.settings.refresh, the InsrcCommandId union includes it, extension.ts wires it to pullFromDaemon; the config seam still imports no 'vscode' and calls only config.catalog/config.write/config.show; (d) a deferral guard — assert insrc.advanced is NOT declared in S003 (escape-hatch deferred).",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "the revert unit tests cover invalid-value/{ok:false}/reject revert + loop-suppressed echo + no-last-synced default + swallowed-failure, over the fake SettingsStore/ConfigGateway/Notifier",
+          "the reconcile units + command manifest/source scans pass; the full vscode-plugin suite (S001+S002+S003) is green and tsc is clean"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "reconcile units: pullFromDaemon republishes daemon values over a stale local value + re-captures the snapshot; a daemon-unreachable refresh notifies + changes nothing + does not throw"
+          },
+          {
+            "level": "unit",
+            "name": "seam source-scan: the config engine imports no 'vscode' and calls only config.catalog/config.write/config.show (k1/k2/k3)"
+          },
+          {
+            "level": "unit",
+            "name": "deferral guard: package.json does NOT declare insrc.advanced in S003 (escape-hatch deferred to a later story)"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "applyChanges on an INVALID value reports the reason via Notifier AND writes the last-synced value back to the fake SettingsStore (the revert) — the setting is restored to what the daemon holds",
+        "coveredByTaskIds": [
+          "t1",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "applyChanges on a daemon {ok:false}/reject reports the reason AND reverts the SettingsStore key to the last-synced value; the snapshot is NOT advanced",
+        "coveredByTaskIds": [
+          "t1",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "the revert is loop-suppressed: re-applying the reverted value (the onDidChangeConfiguration echo) is an idempotent no-op — no second Notifier error, no second writeKey/writeKeyPath, no further revert",
+        "coveredByTaskIds": [
+          "t1",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "when the rejected key has NO last-synced value, the revert falls back to option.default and the engine pre-sets the snapshot so the default-echo is also a no-op (no unintended daemon write)",
+        "coveredByTaskIds": [
+          "t1",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "the revert's own settings.write failure is swallowed (applyChanges never throws) — the toast still fired",
+        "coveredByTaskIds": [
+          "t1",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "pullFromDaemon republishes the daemon's current values into the fake SettingsStore, overwriting a stale local value another client changed, and re-captures the snapshot (reconcile)",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "a Refresh runs pullFromDaemon; when the gateway rejects (daemon unreachable), no settings change + a Notifier error + no throw (the command resolves)",
+        "coveredByTaskIds": [
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "package.json contributes.commands includes { command:'insrc.settings.refresh', title:'Refresh insrc settings', category:'insrc' } alongside the 7 shipped commands",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "the InsrcCommandId union in surfaces/command-registry.ts includes 'insrc.settings.refresh' (additive; the other 7 ids unchanged)",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "extension.ts registers 'insrc.settings.refresh' via the sc3 CommandRegistry with a body that calls configSync.pullFromDaemon()",
+        "coveredByTaskIds": [
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "source-scan: the config seam still imports no 'vscode' and the engine reaches the daemon only via config.catalog/config.write/config.show (k1/k2/k3 preserved)",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "package.json declares insrc.advanced as a machine-scoped object setting (type 'object', default {}, scope:'machine')",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "the full S001+S002 suite still passes unchanged (global sync + per-role sync green) — applyChanges/pullFromDaemon signatures unchanged (sc8 interface preserved)",
+        "coveredByTaskIds": [
+          "t1",
+          "t4"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 contractDetails/invariants — the auto-revert-on-reject branch INSIDE createConfigSyncEngine.applyChanges (vscode-plugin/src/config/sync-engine.ts): settings.write(key, lastSyncedSnapshot.get(key) ?? option.default) on reject, loop-suppressed by the existing idempotent-no-op guard; sc8 signatures unchanged"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 — the 'insrc.settings.refresh' durable command: an additive member of the sc3 InsrcCommandId union (vscode-plugin/src/surfaces/command-registry.ts) + a package.json contributes.command + extension.ts registration whose body calls configSync.pullFromDaemon() (k6, no new daemon capability)"
+    }
+  ]
+}

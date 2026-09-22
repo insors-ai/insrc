@@ -146,6 +146,13 @@
         "choice": "Accept explicit override (defer delete)",
         "rationale": "Behaviourally identical to no override; true key-removal via a config.write unset is a deferred s3/later follow-up. No new daemon capability (k3). User-approved.",
         "resolvedAt": "2026-09-22T12:08:14.801Z"
+      },
+      "q0f2cc4da": {
+        "question": "sc8 extension confirmation: S002 adds two ADDITIVE methods to the S001-owned sc8 ConfigGateway (writeKeyPath, rawConfig) + two optional ConfigKeyEntry fields (segments, source) via a tracked sharedContract.methodAdd HLD amendment, realizing the per-role segmentation S001 explicitly deferred to S002. Confirm at approval that additively extending S001-owned sc8 is acceptable (vs an S001 back-flow).",
+        "status": "resolved",
+        "choice": "Accept additive sc8 extension via amendment",
+        "rationale": "Strictly additive (S001 writeKey + global behavior unchanged); realizes the per-role segmentation S001 explicitly deferred to S002; keeps ConfigSync as the one engine. User-approved.",
+        "resolvedAt": "2026-09-22T12:08:33.181Z"
       }
     }
   },

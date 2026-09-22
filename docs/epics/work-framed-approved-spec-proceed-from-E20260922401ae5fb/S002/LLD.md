@@ -263,6 +263,8 @@ A single native setting `insrc.models.tasks` of JSON-schema type 'object' holds 
 
 - `q0df05a28` — Remove-override-on-Reset: when the user Resets a per-role setting (or sets it equal to defaultTier), S002 leaves an explicit models.tasks.<roleId>=defaultTier override rather than DELETING the key (config.write sets, it does not delete). Behaviourally identical to no override but not a true removal; the delete-on-reset affordance is deferred to s3 or a later refinement.
   - **resolved**: Accept explicit override (defer delete) — Behaviourally identical to no override; true key-removal via a config.write unset is a deferred s3/later follow-up. No new daemon capability (k3). User-approved. _(2026-09-22T12:08:14.801Z)_
+- `q0f2cc4da` — sc8 extension confirmation: S002 adds two ADDITIVE methods to the S001-owned sc8 ConfigGateway (writeKeyPath, rawConfig) + two optional ConfigKeyEntry fields (segments, source) via a tracked sharedContract.methodAdd HLD amendment, realizing the per-role segmentation S001 explicitly deferred to S002. Confirm at approval that additively extending S001-owned sc8 is acceptable (vs an S001 back-flow).
+  - **resolved**: Accept additive sc8 extension via amendment — Strictly additive (S001 writeKey + global behavior unchanged); realizes the per-role segmentation S001 explicitly deferred to S002; keeps ConfigSync as the one engine. User-approved. _(2026-09-22T12:08:33.181Z)_
 
 ## Citations
 

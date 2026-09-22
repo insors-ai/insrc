@@ -1,0 +1,59 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1790077618787-x9sb01",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-22T11:46:58.788Z",
+    "model": "client",
+    "elapsedMs": 5,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "401ae5fb7b8537cc",
+    "storyId": "s1"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "401ae5fb7b8537cc",
+    "storyId": "s1",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "vscode-plugin/package.json",
+        "vscode-plugin/src/extension.ts",
+        "vscode-plugin/src/vscode.d.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/extension.ts:159",
+            "message": "The SettingsStore write targets ConfigurationTarget.Global (not a non-existent 'Machine' target) — this is the CORRECT VS Code semantics for a scope:'machine' setting (machine-scope is enforced by the manifest declaration + excluded from Settings Sync, written at the user/Global target). This intentionally diverges from the LLD/PLAN wording 'machine ConfigurationTarget', which was imprecise; the ac3/k7 machine-scope guarantee is delivered by the manifest scope:'machine' on all 31 keys, verified by the contract test. No breach.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 1
+    }
+  }
+}

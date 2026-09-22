@@ -31,6 +31,10 @@ import type { PromptStore, WorkspaceFolders } from './workspace/types.js';
 import { runOnboarding } from './onboarding/onboarding.js';
 import type { OnboardingStore } from './onboarding/types.js';
 import type { StatusBarHandle } from './surfaces/types.js';
+import { createConfigSyncEngine } from './config/sync-engine.js';
+import { createDaemonConfigGateway } from './config/gateway.js';
+import { CONFIG_KEY_MAP } from './config/key-map.js';
+import type { ChangedKey, Notifier, SettingsStore } from './config/types.js';
 
 /** The workspaceState key prefix for the one-time register-prompt dismissal flag (S004). */
 const REGISTER_DISMISSED_KEY = 'insrc.workspace.register.dismissed';
@@ -111,6 +115,57 @@ export function activate(context: vscode.ExtensionContext): void {
   registerWorkspaceCommands({ commands, consent, status, registrar, folders });
 
   activateExtension({ client, status });
+
+  // S001-settings-UI sc8: the ConfigSync engine that keeps the native
+  // `contributes.configuration` surface truthful to the daemon. The real
+  // bindings live here (the sole `vscode` importer): a ConfigGateway over the
+  // existing sc1 client (config.catalog/config.write only — no new capability,
+  // k3), a SettingsStore over `workspace.getConfiguration` writing at the Global
+  // (user) target (machine-scope is enforced by the manifest `scope:"machine"`
+  // declaration, not a write target — VS Code has no machine target), and a
+  // Notifier over `showErrorMessage`. Pull runs off the activation path (never
+  // throws/blocks, S001 preserved); a change listener live-pushes insrc.* edits.
+  const configSettings: SettingsStore = {
+    read: (key) => vscode.workspace.getConfiguration().get(key),
+    write: async (key, value) => {
+      await vscode.workspace.getConfiguration().update(key, value, vscode.ConfigurationTarget.Global);
+    },
+    snapshot: () => {
+      const values = new Map<string, unknown>();
+      const config = vscode.workspace.getConfiguration();
+      for (const entry of CONFIG_KEY_MAP.entries) {
+        values.set(entry.nativeKey, config.get(entry.nativeKey));
+      }
+      return values;
+    },
+  };
+  const configNotifier: Notifier = {
+    error: (message) => {
+      void vscode.window.showErrorMessage(message);
+    },
+  };
+  const configSync = createConfigSyncEngine({
+    gateway: createDaemonConfigGateway(client),
+    settings: configSettings,
+    notifier: configNotifier,
+    keyMap: CONFIG_KEY_MAP,
+  });
+  // Reconcile the native mirror with the daemon on activation (non-blocking).
+  void configSync.pullFromDaemon();
+  // Live-push each native insrc.* edit to the daemon (diff/validate/write in sc8).
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeConfiguration((event) => {
+      if (!event.affectsConfiguration('insrc')) return;
+      const config = vscode.workspace.getConfiguration();
+      const changed: ChangedKey[] = [];
+      for (const entry of CONFIG_KEY_MAP.entries) {
+        if (event.affectsConfiguration(entry.nativeKey)) {
+          changed.push({ key: entry.nativeKey, value: config.get(entry.nativeKey) });
+        }
+      }
+      if (changed.length > 0) void configSync.applyChanges(changed);
+    }),
+  );
 
   // S005 sc-capstone: the per-workspace one-time onboarding-completed flag over
   // workspaceState (distinct key from the S004 register-dismissed flag).

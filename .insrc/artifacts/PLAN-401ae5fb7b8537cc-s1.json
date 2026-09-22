@@ -1,0 +1,310 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1790075197840-02p1yy",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-22T11:10:59.913Z",
+    "epicCreatedAt": "2026-09-22T10:29:17.310Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 262060,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "401ae5fb7b8537cc",
+    "epicSlug": "work-framed-approved-spec-proceed-from",
+    "storyId": "s1",
+    "lldRunId": "wf-1790074153585-o14e1o",
+    "lldEffectiveHash": "790f3d6f5efd1ec7853ed7547c7c5ad8b56ec8f6ada70b53c07be4e73716ab6b",
+    "approvedAt": "2026-09-22T11:31:49.100Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Extend the compile-only vscode.d.ts shim with the config API surface",
+        "summary": "Add to vscode-plugin/src/vscode.d.ts (no @types/vscode) the minimal ambient declarations sc8's bindings need: workspace.getConfiguration('insrc') returning a WorkspaceConfiguration (get/update/has/inspect), workspace.onDidChangeConfiguration + ConfigurationChangeEvent (affectsConfiguration), and ConfigurationTarget with the Machine member. This gates tsc compile for the extension.ts bindings in t5.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "tsc -p vscode-plugin/tsconfig.json compiles the new config API references with no error and no new dependency added",
+          "the shim declares workspace.getConfiguration, workspace.onDidChangeConfiguration, ConfigurationChangeEvent, and ConfigurationTarget.Machine"
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "tsc -p vscode-plugin/tsconfig.json compiles clean with the extended shim and no @types/vscode dependency"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Declare the 31 machine-scoped global keys in package.json contributes.configuration",
+        "summary": "Author one native setting per global CONFIG_CATALOG option (31 keys, 7 group sections): id `insrc.` + ConfigOption.path, JSON-schema type from ConfigOption.type (enum -> enumValues array for the 6 enum options), default from ConfigOption.default, markdownDescription from desc, scope:'machine' on every key. Net-new contributes.configuration block (the manifest had contributes.commands only).",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "vscode-plugin/package.json contributes.configuration declares exactly the 31 global CONFIG_CATALOG paths as `insrc.<path>` keys, each scope:'machine'",
+          "each key's type/enum/default matches its ConfigOption.type/enumValues/default",
+          "package.json remains valid JSON and the manifest still lists the existing 7 commands"
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "manifest-catalog contract: declared insrc.* keys exactly cover the 31 global CONFIG_CATALOG paths with matching type/enum/default and scope:'machine'"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Build the static ConfigKeyMap (native-key <-> catalog-path <-> ConfigOption)",
+        "summary": "Add a pure, VS-Code-free module that derives, from the imported global CONFIG_CATALOG, a static bidirectional table pairing each native key (`insrc.<path>`) with its catalog path and its ConfigOption (type + enumValues for validation). This is the single source sc8's pull/apply lookups and the manifest<->catalog contract test both read. Private to the sc8 boundary.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "a VS-Code-free module exports a ConfigKeyMap covering all 31 global CONFIG_CATALOG options with native key, catalog path, and ConfigOption",
+          "the module imports CONFIG_CATALOG from the daemon config-catalog source and imports no 'vscode'",
+          "lookups are 1:1 and total over the global options (nativeKey->option and path->option both resolve)"
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "ConfigKeyMap covers all 31 global options and resolves both nativeKey->option and path->option 1:1"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Implement the VS-Code-free ConfigSyncEngine core (createConfigSyncEngine)",
+        "summary": "Add createConfigSyncEngine(deps) mirroring the S002 createDaemonLifecycleController pattern, over injected ConfigGateway + SettingsStore + Notifier + the t3 ConfigKeyMap. pullFromDaemon: read ConfigGateway.catalog() values -> write each into SettingsStore under its native key (ConfigOption.default for omitted paths), capture lastSyncedSnapshot, never throw (catch + Notifier on catalog reject). applyChanges: for each ChangedKey map native key->catalog path, pre-flight-validate against the ConfigOption (type + enumValues), writeKey on success; on validation failure or {ok:false}/reject report a rejected write via Notifier without advancing the snapshot; idempotent no-op when the value equals the snapshot. Implements only pull+validate+write (no revert-loop/Refresh UX — that is s3).",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "createConfigSyncEngine returns { pullFromDaemon, applyChanges } and imports no 'vscode'",
+          "pullFromDaemon maps catalog values (default for omitted) into the SettingsStore and captures the last-synced snapshot; a catalog() rejection writes nothing and surfaces via Notifier without throwing",
+          "applyChanges writes exactly once per valid change, rejects an invalid value (type/enum) without calling writeKey, reports {ok:false}/reject without advancing the snapshot, and is a no-op when the value equals the snapshot"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "pullFromDaemon writes each catalog value (ConfigOption.default for omitted) into the fake SettingsStore under its native key"
+          },
+          {
+            "level": "unit",
+            "name": "pullFromDaemon captures the last-synced snapshot and on a catalog() rejection writes nothing + notifies without throwing"
+          },
+          {
+            "level": "unit",
+            "name": "applyChanges on a valid change maps native key->path and calls writeKey exactly once"
+          },
+          {
+            "level": "unit",
+            "name": "applyChanges rejects an invalid value (type/enum) without calling writeKey and reports a client-authored reason via Notifier"
+          },
+          {
+            "level": "unit",
+            "name": "applyChanges on writeKey {ok:false}/reject reports a rejected write and does not advance the snapshot"
+          },
+          {
+            "level": "unit",
+            "name": "applyChanges is an idempotent no-op when the value equals the lastSyncedSnapshot"
+          },
+          {
+            "level": "unit",
+            "name": "source-scan: the ConfigSyncEngine core module imports no 'vscode'"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Wire the real sc8 bindings + activation pull + change listener in extension.ts",
+        "summary": "In extension.ts (the sole 'vscode' importer): construct ConfigGateway over the existing sc1 SharedIpcClient (rpc('config.catalog')/rpc('config.write'), widening {ok:boolean} to ConfigWriteResult with a client-authored reason), SettingsStore over workspace.getConfiguration('insrc') + a machine-scope update() + snapshot of current insrc.* values, and Notifier over window.showErrorMessage. Call pullFromDaemon() on activation (non-blocking, never throws) and register an onDidChangeConfiguration listener that filters affectsConfiguration('insrc') and passes only insrc.* ChangedKeys to applyChanges. No new daemon capability; the 7 existing commands + status-bar wiring stay intact.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t1",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "extension.ts constructs the ConfigGateway (over sc1 config.catalog/config.write only), SettingsStore (machine-scope update), and Notifier, and hands them to createConfigSyncEngine",
+          "activation calls pullFromDaemon() without blocking or throwing, and the existing 7 commands + status-bar behavior are unchanged",
+          "an onDidChangeConfiguration listener filters affectsConfiguration('insrc') and invokes applyChanges with only insrc.* keys"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "source-scan: extension.ts wires onDidChangeConfiguration('insrc') -> applyChanges and binds SettingsStore at the machine ConfigurationTarget"
+          },
+          {
+            "level": "unit",
+            "name": "source-scan: the ConfigGateway reaches the daemon only via config.catalog/config.write (no new IPC, no cloud/HTTP)"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Add the ConfigSyncEngine unit suite, the manifest<->catalog contract test, and the seam source-scans",
+        "summary": "New node:test (tsx --test) suites: (a) unit tests driving createConfigSyncEngine over a fake SettingsStore/ConfigGateway/Notifier for pull mapping+defaults+snapshot, catalog-reject no-op, valid-write-once, invalid-value rejection, {ok:false}/reject handling, and idempotent no-op; (b) a contract test asserting the declared insrc.* keys exactly cover the 31 global CONFIG_CATALOG paths with matching type/enum/default and scope:'machine'; (c) source-scans proving the ConfigSyncEngine core imports no 'vscode' and the ConfigGateway reaches the daemon only via config.catalog/config.write.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t2",
+          "t4",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "the unit suite covers all six ConfigSyncEngine subjects and passes under tsx --test over the fakes",
+          "the contract test fails on any manifest<->CONFIG_CATALOG drift (missing/extra key, wrong type/enum/default, non-machine scope) and passes on the authored manifest",
+          "source-scan tests assert the core imports no 'vscode' and no IPC method beyond config.catalog/config.write is referenced (k1/k2/k3)"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "the full sc8 test suite (engine units + manifest-catalog contract + seam source-scans) passes green under tsx --test"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "pullFromDaemon writes each global option's config.catalog value into the fake SettingsStore under its native key, and writes the ConfigOption.default for any path the catalog `values` omits",
+        "coveredByTaskIds": [
+          "t4",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "pullFromDaemon captures a last-synced snapshot equal to what the (fake) daemon returned, and on a ConfigGateway.catalog() rejection performs NO writes + surfaces via the fake Notifier without throwing",
+        "coveredByTaskIds": [
+          "t4",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "applyChanges for a VALID changed value maps native key→catalog path and calls ConfigGateway.writeKey exactly once (value applied immediately, no save step)",
+        "coveredByTaskIds": [
+          "t4",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "applyChanges for an INVALID value (wrong type / outside enumValues) does NOT call writeKey and reports a rejected write with a client-authored reason via the fake Notifier",
+        "coveredByTaskIds": [
+          "t4",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "applyChanges when writeKey resolves {ok:false} or rejects reports a rejected write ('daemon refused'/'unreachable') and does not advance the snapshot for that key",
+        "coveredByTaskIds": [
+          "t4",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "applyChanges is an idempotent no-op when the changed value equals the lastSyncedSnapshot value (no writeKey call)",
+        "coveredByTaskIds": [
+          "t4",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "the declared insrc.* global keys in vscode-plugin/package.json contributes.configuration EXACTLY cover the global CONFIG_CATALOG paths (id = `insrc.` + ConfigOption.path), no missing + no extra",
+        "coveredByTaskIds": [
+          "t2",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "each declared key's JSON-schema type/enum + default match its ConfigOption.type/enumValues/default",
+        "coveredByTaskIds": [
+          "t2",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "EVERY declared insrc.* key carries scope:'machine' (ac3/k7)",
+        "coveredByTaskIds": [
+          "t2",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "the ConfigSyncEngine core module imports NO 'vscode' (only extension.ts constructs the real SettingsStore/Notifier bindings + the onDidChangeConfiguration('insrc') listener that calls applyChanges)",
+        "coveredByTaskIds": [
+          "t4",
+          "t5",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "the ConfigGateway reaches the daemon ONLY via the existing sc1 SharedIpcClient config.catalog/config.write — no new IPC method, no cloud/HTTP path (k3/k2)",
+        "coveredByTaskIds": [
+          "t5",
+          "t6"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails — config.catalog/config.write IPC shapes + CONFIG_CATALOG/ConfigOption + the native insrc.* manifest keys and ConfigKeyMap (src/daemon/index.ts:1327/:1353, src/config/config-catalog.ts:30/:77, src/config/settings-catalog.ts:35)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 invariantsToPreserve + convention — the injectable-seam pattern with extension.ts as the sole 'vscode' importer and never-throw, non-blocking activation preserving the existing 7 commands + status bar (k1)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 errorPaths — config.write does NOT type-validate the value (only refuses an invalid path), so the k5 pre-flight validation against the ConfigOption must live client-side in applyChanges"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 testStrategy — node:test (tsx --test) over injected fakes (SettingsStore/ConfigGateway/Notifier) + a manifest↔catalog contract test + seam source-scans; the vscode.d.ts shim is extended, no @types/vscode"
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "s1 test.locate — vscode-plugin unit tests run via node:test over fakes with the S002 controller.test.ts / surfaces.test.ts precedent; the daemon catalog shape is separately locked by src/config/__tests__/settings-catalog.test.ts"
+    }
+  ]
+}

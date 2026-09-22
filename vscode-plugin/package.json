@@ -32,13 +32,296 @@
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
-      { "command": "insrc.daemon.install", "title": "Install daemon", "category": "insrc" },
-      { "command": "insrc.daemon.start", "title": "Start daemon", "category": "insrc" },
-      { "command": "insrc.daemon.stop", "title": "Stop daemon", "category": "insrc" },
-      { "command": "insrc.daemon.restart", "title": "Restart daemon", "category": "insrc" },
-      { "command": "insrc.daemon.update", "title": "Update daemon", "category": "insrc" },
-      { "command": "insrc.hosts.wire", "title": "Wire AI hosts", "category": "insrc" },
-      { "command": "insrc.workspace.register", "title": "Register workspace", "category": "insrc" }
+      {
+        "command": "insrc.daemon.install",
+        "title": "Install daemon",
+        "category": "insrc"
+      },
+      {
+        "command": "insrc.daemon.start",
+        "title": "Start daemon",
+        "category": "insrc"
+      },
+      {
+        "command": "insrc.daemon.stop",
+        "title": "Stop daemon",
+        "category": "insrc"
+      },
+      {
+        "command": "insrc.daemon.restart",
+        "title": "Restart daemon",
+        "category": "insrc"
+      },
+      {
+        "command": "insrc.daemon.update",
+        "title": "Update daemon",
+        "category": "insrc"
+      },
+      {
+        "command": "insrc.hosts.wire",
+        "title": "Wire AI hosts",
+        "category": "insrc"
+      },
+      {
+        "command": "insrc.workspace.register",
+        "title": "Register workspace",
+        "category": "insrc"
+      }
+    ],
+    "configuration": [
+      {
+        "title": "General",
+        "properties": {
+          "insrc.logLevel": {
+            "type": "string",
+            "default": "info",
+            "markdownDescription": "daemon log level: 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace' (matches shared/logger VALID_LEVELS)",
+            "scope": "machine",
+            "enum": [
+              "fatal",
+              "error",
+              "warn",
+              "info",
+              "debug",
+              "trace"
+            ]
+          },
+          "insrc.ollama.host": {
+            "type": "string",
+            "default": "http://localhost:11434",
+            "markdownDescription": "Ollama server URL (daemon-wide)",
+            "scope": "machine"
+          }
+        }
+      },
+      {
+        "title": "Workflow & review",
+        "properties": {
+          "insrc.permissions.mode": {
+            "type": "string",
+            "default": "validate",
+            "markdownDescription": "tool permission mode: 'validate' | 'auto-accept'",
+            "scope": "machine",
+            "enum": [
+              "validate",
+              "auto-accept"
+            ]
+          },
+          "insrc.routing.mode": {
+            "type": "string",
+            "default": "static",
+            "markdownDescription": "agent routing mode",
+            "scope": "machine"
+          },
+          "insrc.classifier.confirmIntent": {
+            "type": "boolean",
+            "default": false,
+            "markdownDescription": "prompt to confirm the classified intent each turn",
+            "scope": "machine"
+          },
+          "insrc.codeReview.enforce": {
+            "type": "boolean",
+            "default": false,
+            "markdownDescription": "enforce a blocking code-review verdict at Story completion (off ⇒ advisory)",
+            "scope": "machine"
+          },
+          "insrc.codeReview.freshnessTimeoutMs": {
+            "type": "number",
+            "default": 120000,
+            "markdownDescription": "max ms the code-review freshness gate block-and-polls for a fresh index before re-prompting",
+            "scope": "machine"
+          }
+        }
+      },
+      {
+        "title": "Analysis & memory",
+        "properties": {
+          "insrc.analyzer.useLocal": {
+            "type": "boolean",
+            "default": false,
+            "markdownDescription": "force code/data analyzers to local Ollama instead of cloud",
+            "scope": "machine"
+          },
+          "insrc.memory.implicitCapture.enabled": {
+            "type": "boolean",
+            "default": false,
+            "markdownDescription": "implicit memory capture during retrieval (backstop)",
+            "scope": "machine"
+          }
+        }
+      },
+      {
+        "title": "Models — tiers",
+        "properties": {
+          "insrc.models.tiers.core.runner": {
+            "type": "string",
+            "default": "cli-claude",
+            "markdownDescription": "core-tier backend: 'ollama' | 'cli-claude' | 'cli-codex'",
+            "scope": "machine",
+            "enum": [
+              "ollama",
+              "cli-claude",
+              "cli-codex"
+            ]
+          },
+          "insrc.models.tiers.core.model": {
+            "type": "string",
+            "default": "",
+            "markdownDescription": "core-tier model id (empty ⇒ CLI default, e.g. opus)",
+            "scope": "machine"
+          },
+          "insrc.models.tiers.mid.runner": {
+            "type": "string",
+            "default": "cli-claude",
+            "markdownDescription": "mid-tier backend: 'ollama' | 'cli-claude' | 'cli-codex'",
+            "scope": "machine",
+            "enum": [
+              "ollama",
+              "cli-claude",
+              "cli-codex"
+            ]
+          },
+          "insrc.models.tiers.mid.model": {
+            "type": "string",
+            "default": "sonnet",
+            "markdownDescription": "mid-tier model id (e.g. sonnet)",
+            "scope": "machine"
+          },
+          "insrc.models.tiers.cheap.runner": {
+            "type": "string",
+            "default": "ollama",
+            "markdownDescription": "cheap-tier backend (local by default): 'ollama' | 'cli-claude' | 'cli-codex'",
+            "scope": "machine",
+            "enum": [
+              "ollama",
+              "cli-claude",
+              "cli-codex"
+            ]
+          },
+          "insrc.models.tiers.cheap.model": {
+            "type": "string",
+            "default": "qwen3.6:27b",
+            "markdownDescription": "cheap-tier model id (Ollama local by default)",
+            "scope": "machine"
+          },
+          "insrc.models.coreFloor": {
+            "type": "string",
+            "default": "mid",
+            "markdownDescription": "min tier for critical tasks: 'core' | 'mid' | 'cheap'",
+            "scope": "machine",
+            "enum": [
+              "core",
+              "mid",
+              "cheap"
+            ]
+          }
+        }
+      },
+      {
+        "title": "Models — shaper",
+        "properties": {
+          "insrc.models.shaper.maxToolTurns": {
+            "type": "number",
+            "default": 40,
+            "markdownDescription": "max tool-loop turns for the shaper",
+            "scope": "machine"
+          },
+          "insrc.models.shaper.structuredOutputRetries": {
+            "type": "number",
+            "default": 3,
+            "markdownDescription": "structured-output retry count",
+            "scope": "machine"
+          },
+          "insrc.models.shaper.ollamaNumCtx": {
+            "type": "number",
+            "default": 32768,
+            "markdownDescription": "shaper Ollama context window",
+            "scope": "machine"
+          },
+          "insrc.models.shaper.ollamaNumPredict": {
+            "type": "number",
+            "default": 20480,
+            "markdownDescription": "shaper Ollama max output tokens",
+            "scope": "machine"
+          }
+        }
+      },
+      {
+        "title": "Models — plan depth",
+        "properties": {
+          "insrc.models.maxPlanDepth.XS": {
+            "type": "number",
+            "default": 2,
+            "markdownDescription": "max plan-tree depth — XS-scope roots",
+            "scope": "machine"
+          },
+          "insrc.models.maxPlanDepth.S": {
+            "type": "number",
+            "default": 3,
+            "markdownDescription": "max plan-tree depth — S-scope roots",
+            "scope": "machine"
+          },
+          "insrc.models.maxPlanDepth.M": {
+            "type": "number",
+            "default": 4,
+            "markdownDescription": "max plan-tree depth — M-scope roots",
+            "scope": "machine"
+          },
+          "insrc.models.maxPlanDepth.L": {
+            "type": "number",
+            "default": 5,
+            "markdownDescription": "max plan-tree depth — L-scope roots",
+            "scope": "machine"
+          },
+          "insrc.models.maxPlanDepth.XL": {
+            "type": "number",
+            "default": 6,
+            "markdownDescription": "max plan-tree depth — XL-scope roots",
+            "scope": "machine"
+          }
+        }
+      },
+      {
+        "title": "Local & embeddings",
+        "properties": {
+          "insrc.models.local.host": {
+            "type": "string",
+            "default": "http://localhost:11434",
+            "markdownDescription": "Ollama host for the embedder/local provider",
+            "scope": "machine"
+          },
+          "insrc.models.local.embeddingModel": {
+            "type": "string",
+            "default": "qwen3-embedding:0.6b",
+            "markdownDescription": "embedder model id ('nomic-ai/nomic-embed-text-v1.5' for ONNX) — read by the embedder",
+            "scope": "machine"
+          },
+          "insrc.models.local.embeddingDim": {
+            "type": "number",
+            "default": 1024,
+            "markdownDescription": "embedder dimensions (768 for ONNX) — read by the embedder",
+            "scope": "machine"
+          },
+          "insrc.models.local.coreModel": {
+            "type": "string",
+            "default": "qwen3.6:27b",
+            "markdownDescription": "local core / summariser model id used by the indexer embedder",
+            "scope": "machine"
+          },
+          "insrc.models.local.charsPerToken": {
+            "type": "number",
+            "default": 3,
+            "markdownDescription": "chars→tokens heuristic (local provider)",
+            "scope": "machine"
+          },
+          "insrc.models.local.embeddingKeepAlive": {
+            "type": "string",
+            "default": "24h",
+            "markdownDescription": "Ollama keep_alive for the embedder model ('24h' / '-1' forever / '0' eager-unload) — keeps the hot-path embed model resident during index bursts",
+            "scope": "machine"
+          }
+        }
+      }
     ]
   },
   "scripts": {

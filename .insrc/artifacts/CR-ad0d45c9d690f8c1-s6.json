@@ -1,0 +1,68 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1790064553392-wtmyio",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-22T08:09:13.392Z",
+    "model": "client",
+    "elapsedMs": 6,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ad0d45c9d690f8c1",
+    "storyId": "s6"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "ad0d45c9d690f8c1",
+    "storyId": "s6",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "vscode-plugin/package.json",
+        "vscode-plugin/src/__tests__/activation.test.ts",
+        "vscode-plugin/src/hosts/steering-body.ts",
+        "vscode-plugin/src/uninstall.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/hosts/steering-body.ts:26",
+            "message": "s6 (packaging, owns no runtime contract) edits files owned by adjacent boundaries s3 (steering-body.ts) and s5 (uninstall.ts). Both edits are genuinely required because the esbuild bundle (t1) collapses the module layout, breaking a fixed-`..` asset path and the argv[1] main-check — a capability uncovered by every boundary, so per the LLD's own anti-overreach rule it is a legitimate expansion. It is documented in each diff's comment. Recorded as an observation, not a breach: the change consumes/hardens the S003/S005 contracts rather than re-designing them (same function signatures, same exports, same runtime intent).",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/hosts/steering-body.ts:26",
+            "message": "The walk-up's BUNDLE-layout branch (resolving assets/ one level up from out/) is not directly unit-tested by a call to defaultSteeringBody() from the bundled layout — the bundle smoke exercises extension.js load + the uninstall sweep, and the S003 host tests exercise the dev-layout path. The dev branch is covered; the bundle branch is validated only indirectly (the file compiles into the bundle and the walk-up is layout-agnostic). Low risk given the fallback + the existsSync guard, but a direct assertion would close it.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 2
+    }
+  }
+}

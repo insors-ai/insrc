@@ -1,0 +1,56 @@
+# Dedicated publish lane for the insrc VS Code extension, separate from the TS
+# backend's test sweep in ci.yml and the JetBrains build in jetbrains-plugin.yml.
+#
+# MANUAL-ONLY (workflow_dispatch): publishing is NOT run automatically on
+# push/PR — GitHub Actions minutes are expensive and the vscode-plugin test
+# suite runs locally as the real gate (`cd vscode-plugin && npm test`). Trigger
+# this workflow by hand from the Actions tab only when cutting a release.
+#
+# Targets the VS Code Marketplace ONLY (no Open VSX / ovsx / manual-VSIX
+# channel — out of v1 scope). The Marketplace token lives only as the VSCE_PAT
+# repo secret; it is never stored in the repo.
+name: vscode-plugin
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # Install at the REPO ROOT: the vscode-plugin package has no lockfile of
+      # its own (`npm ci` needs one) and its build tools — tsc, tsx, esbuild —
+      # resolve from the root node_modules. npm adds ancestor node_modules/.bin
+      # to PATH when running a script from the nested package, so the
+      # vscode:prepublish typecheck + bundle find their binaries.
+      - name: Install dependencies (repo root)
+        run: npm ci
+
+      - name: Bundle the extension (esbuild)
+        working-directory: vscode-plugin
+        run: npm run bundle
+
+      # `vsce package` produces the single installable .vsix; `vsce publish`
+      # pushes it to the VS Code Marketplace only, authenticated with the
+      # maintainer's VSCE_PAT secret. Both auto-run `vscode:prepublish`
+      # (tsc typecheck + esbuild bundle) first. The version must be bumped in
+      # package.json beforehand (vsce rejects a duplicate version).
+      - name: Package the extension
+        working-directory: vscode-plugin
+        run: npx --yes @vscode/vsce@3.2.1 package
+
+      - name: Publish to the VS Code Marketplace
+        working-directory: vscode-plugin
+        run: npx --yes @vscode/vsce@3.2.1 publish
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}

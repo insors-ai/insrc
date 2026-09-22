@@ -78,8 +78,8 @@ test('the extension package is scaffolded (package.json + tsconfig + activate/de
   assert.equal(pkg.main, './out/extension.js');
   assert.ok(pkg.engines?.vscode, 'declares an engines.vscode range');
   assert.deepEqual(pkg.activationEvents, ['onStartupFinished']);
-  // No Marketplace listing metadata yet — that is Story S006.
-  assert.equal(pkg.publisher, undefined, 'no publisher/listing metadata in s1 (deferred to s6)');
+  // Marketplace listing metadata is delivered by Story S006 (publish scaffolding).
+  assert.equal(typeof pkg.publisher, 'string', 'S006 added the Marketplace publisher');
 
   const entry = readFileSync(join(PKG, 'extension.ts'), 'utf8');
   assert.match(entry, /export function activate\(/);

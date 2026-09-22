@@ -3,12 +3,27 @@
   "displayName": "insrc",
   "description": "insrc for VS Code — grounded code-knowledge and the tracked workflow, wired into your AI assistant.",
   "version": "0.1.0",
-  "private": true,
+  "publisher": "insors-ai",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/insors-ai/insrc.git",
+    "directory": "vscode-plugin"
+  },
+  "icon": "icon.png",
+  "keywords": [
+    "insrc",
+    "code-knowledge",
+    "workflow",
+    "mcp",
+    "ai"
+  ],
   "type": "module",
   "engines": {
     "vscode": "^1.75.0"
   },
   "categories": [
+    "Machine Learning",
     "Other"
   ],
   "activationEvents": [
@@ -28,8 +43,14 @@
   },
   "scripts": {
     "sync-assets": "cp ../scripts/insrc-daemon-install.sh assets/insrc-daemon-install.sh && cp ../src/prompts/steering-block.md assets/steering-block.md",
+    "bundle": "npm run sync-assets && node esbuild.mjs",
     "build": "npm run sync-assets && tsc -p tsconfig.json",
     "test": "tsx --test 'src/**/__tests__/*.test.ts'",
+    "vscode:prepublish": "tsc -p tsconfig.json && npm run bundle",
+    "package": "npx --yes @vscode/vsce@3.2.1 package",
     "vscode:uninstall": "node ./out/uninstall.js"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.1"
   }
 }

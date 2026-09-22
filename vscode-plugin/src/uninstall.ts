@@ -13,6 +13,7 @@
  * (v1 is noEmit); the reversal logic here is unit-tested now over a fake fs.
  */
 import { fileURLToPath } from 'node:url';
+import { realpathSync } from 'node:fs';
 
 import { createHostAdapter } from './hosts/adapter.js';
 import { HOST_SPECS } from './hosts/specs.js';
@@ -60,8 +61,24 @@ export async function runUninstall(): Promise<void> {
   }
 }
 
-// Auto-run ONLY when invoked directly as the uninstall script (node out/uninstall.js),
-// not when imported by tests: compare this module's path to argv[1].
-if (process.argv[1] !== undefined && fileURLToPath(import.meta.url) === process.argv[1]) {
+/**
+ * True only when this module is invoked directly as the uninstall script
+ * (`node out/uninstall.js`), not when imported by a test. Both sides are
+ * realpath-normalized so the check still fires when the extension install path
+ * (or the OS temp dir) contains a symlink — e.g. macOS `/var` -> `/private/var`,
+ * where Node realpaths `import.meta.url`'s `__filename` but leaves `argv[1]`
+ * unresolved. A plain `===` would silently skip the reversal in that case.
+ */
+function isRunAsMain(): boolean {
+  const argv1 = process.argv[1];
+  if (argv1 === undefined) return false;
+  try {
+    return realpathSync(fileURLToPath(import.meta.url)) === realpathSync(argv1);
+  } catch {
+    return false;
+  }
+}
+
+if (isRunAsMain()) {
   void runUninstall();
 }

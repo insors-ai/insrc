@@ -1,0 +1,29 @@
+# Story E20260921ad0d45c9:S006 / t4 — the .vsix content boundary.
+#
+# The extension is BUNDLED (esbuild inlines the thin shared ipc-client), so the
+# raw TypeScript source, the tests, the typecheck config, the bundler config,
+# and the sibling repo `src/` never need to ship. The .vsix carries ONLY the
+# runtime bits + Marketplace listing assets:
+#   package.json, out/ (the bundle), assets/ (installer + steering-block),
+#   README.md, icon.png, LICENSE
+# Everything else is excluded — no source, no tests, no daemon internals (k5).
+
+# TypeScript source + tests (bundled into out/, never shipped raw)
+src/**
+**/__tests__/**
+**/*.test.ts
+**/*.ts
+
+# Build / typecheck / bundler config
+tsconfig.json
+esbuild.mjs
+
+# Repo tooling that is not part of the runtime package
+.github/**
+.vscode/**
+.gitignore
+.npmrc
+
+# NOTE: the sibling repo `src/` (the daemon internals) is never at risk of being
+# packaged — vsce only ever includes files WITHIN the package root, and the
+# esbuild bundle inlined only the thin ipc-client (k5). No glob is needed for it.

@@ -27,10 +27,12 @@ test('the asset is produced by a repeatable copy step, not a one-off manual copy
 
 test('the five daemon commands are declared in contributes.commands so they are Command-Palette reachable (k6)', () => {
   const pkg = JSON.parse(readFileSync(join(PKG, 'package.json'), 'utf8'));
-  const ids = (pkg.contributes?.commands ?? []).map((c: { command: string }) => c.command).sort();
-  assert.deepEqual(ids, [
-    'insrc.daemon.install', 'insrc.daemon.restart', 'insrc.daemon.start', 'insrc.daemon.stop', 'insrc.daemon.update',
-  ], 'a dismissed Install offer stays recoverable from the palette (k6 — no dead end)');
+  const ids = new Set((pkg.contributes?.commands ?? []).map((c: { command: string }) => c.command));
+  // Subset check: later stories (S003 host wiring, …) add their own commands to
+  // the same array — assert the five daemon entries are present, not the exact set.
+  for (const id of ['insrc.daemon.install', 'insrc.daemon.start', 'insrc.daemon.stop', 'insrc.daemon.restart', 'insrc.daemon.update']) {
+    assert.ok(ids.has(id), `${id} must stay palette-reachable (k6 — a dismissed Install offer has no dead end)`);
+  }
 });
 
 // ---- t4: activation wiring uses the daemon lifecycle over injectable seams -

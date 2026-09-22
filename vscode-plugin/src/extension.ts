@@ -6,6 +6,9 @@
  * no reasoning (k2) and reaches the daemon only through the shared ipc-client +
  * the daemon's own scripts (k5). The Marketplace listing + packaging is Story S006.
  */
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
+
 import * as vscode from 'vscode';
 
 import { createIpcClient } from '../../src/shared/ipc-client.js';
@@ -17,6 +20,11 @@ import { defaultSubprocessRunner } from './daemon/subprocess.js';
 import { defaultDaemonPaths } from './daemon/paths.js';
 import { createDaemonLifecycleController } from './daemon/controller.js';
 import { registerDaemonCommands, offerDaemonInstall } from './daemon/commands.js';
+import { defaultHostFileSystem } from './hosts/fs.js';
+import { createHostRegistry } from './hosts/adapter.js';
+import { HOST_SPECS } from './hosts/specs.js';
+import { registerHostCommands, offerHostWiring } from './hosts/commands.js';
+import type { HostEnv } from './hosts/types.js';
 import type { StatusBarHandle } from './surfaces/types.js';
 
 /**
@@ -44,12 +52,30 @@ export function activate(context: vscode.ExtensionContext): void {
 
   // S002 sc6: the daemon lifecycle controller over the daemon's own scripts, and
   // its durable commands (install gated by sc4; start/stop/restart/update).
+  const paths = defaultDaemonPaths(context.extensionPath);
   const controller = createDaemonLifecycleController({
     runner: defaultSubprocessRunner,
-    paths: defaultDaemonPaths(context.extensionPath),
+    paths,
     client,
   });
   registerDaemonCommands({ commands, consent, status, controller });
+
+  // S003 sc5: the pluggable AI-host registry over the real editor env + fs, with
+  // the insrc-mcp launch target resolved from the same daemon home S002 installs.
+  const env: HostEnv = {
+    getExtension: (id) => vscode.extensions.getExtension(id) !== undefined,
+    appName: vscode.env.appName,
+    uriScheme: vscode.env.uriScheme,
+  };
+  const registry = createHostRegistry(HOST_SPECS, {
+    env,
+    fs: defaultHostFileSystem,
+    launchTarget: () => {
+      const target = join(paths.daemonRoot, 'out', 'bin', 'insrc-mcp.js');
+      return existsSync(target) ? target : undefined;
+    },
+  });
+  registerHostCommands({ commands, consent, status, registry });
 
   activateExtension({ client, status });
 
@@ -60,6 +86,18 @@ export function activate(context: vscode.ExtensionContext): void {
     try {
       if (await controller.isInstalled()) return;
       await offerDaemonInstall({ consent, status, controller });
+    } catch {
+      /* never let the offer surface an error into activation */
+    }
+  })();
+
+  // A minimal activation-time host-wire offer — off the critical path, guarded so
+  // it never throws/blocks (S001 preserved). offerHostWiring only prompts when a
+  // supported host is present; the persisted 'already onboarded' gate + the
+  // install→register→wire coalescing are Story S005's job.
+  void (async () => {
+    try {
+      await offerHostWiring({ consent, status, registry });
     } catch {
       /* never let the offer surface an error into activation */
     }

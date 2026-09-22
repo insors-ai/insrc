@@ -1,0 +1,344 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1790053428057-aliukj",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-22T05:10:12.763Z",
+    "epicCreatedAt": "2026-09-21T16:32:40.301Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 384698,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ad0d45c9d690f8c1",
+    "epicSlug": "build-insrc-vs-code-extension-v1",
+    "storyId": "s3",
+    "lldRunId": "wf-1790052456217-lgatm9",
+    "lldEffectiveHash": "1e2038ef723235b64e83ceb16211d8262911619c0f401b3886b6a4c352eda9a9",
+    "review": {
+      "artifact": "plan",
+      "stage": "plan",
+      "verdict": "pass",
+      "findings": [],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 0
+      },
+      "reviewedAt": "2026-09-22T05:11:32.163Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-22T05:13:12.976Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Shared reversible writers + composeMcpEntry over an injectable HostFileSystem",
+        "summary": "Create vscode-plugin/src/hosts/ with: HostFileSystem interface { read(path): string|undefined; write(path, content): void; exists(path): boolean } + a default node:fs impl (creates parent dirs on write); McpConfigWriter.writeInsrcServer/removeInsrcServer (JSON key-merge under mcpServers.insrc preserving every other key; throw HostFileAccessError on a present-but-non-object mcpServers — never clobber; idempotent; no partial write on fs failure); SteeringWriter.upsert/remove (pure marker-delimited block: no-markers→append preserving prior content, markers→replace between, malformed/duplicate→leave untouched); composeMcpEntry(launchTargetPath): { command:'node', args:[path] } | undefined (fail-safe skip when absent; no cloud/env/argv — k2). Mirrors JsonMcpConfigWriter/MarkerSection/InsrcMcpRegistration; the HostFileAccessError type lives here.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "McpConfigWriter.writeInsrcServer sets mcpServers.insrc preserving other keys/servers; idempotent; creates {} for an absent file; removeInsrcServer deletes only the insrc key; throws HostFileAccessError (no write) on a non-object mcpServers",
+          "SteeringWriter.upsert appends when no markers / replaces between markers / leaves malformed-or-duplicate markers untouched; remove deletes the block; both no-op idempotently",
+          "both writers leave the file byte-unchanged when HostFileSystem.write throws (no partial write); errors surface as HostFileAccessError",
+          "composeMcpEntry returns { command:'node', args:[path] } and undefined for an undefined launch target (no cloud/env/argv)"
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "McpConfigWriter.writeInsrcServer sets mcpServers.insrc preserving every other key/server; idempotent on re-run; creates {} when the file is absent"
+          },
+          {
+            "level": "unit",
+            "name": "McpConfigWriter throws HostFileAccessError (no write) when mcpServers is present-but-non-object (never clobber)"
+          },
+          {
+            "level": "unit",
+            "name": "McpConfigWriter.removeInsrcServer deletes only the insrc key (other servers intact) and is a no-op when absent"
+          },
+          {
+            "level": "unit",
+            "name": "SteeringWriter.upsert: no-markers→append preserving prior content; markers→replace between; malformed/duplicate→leave untouched (guarded no-op); idempotent; remove deletes the block + no-op when no markers"
+          },
+          {
+            "level": "unit",
+            "name": "both writers leave the file byte-unchanged when HostFileSystem.write throws (no partial write)"
+          },
+          {
+            "level": "unit",
+            "name": "composeMcpEntry(path) = { command:'node', args:[path] } and returns undefined (skip) for an undefined launch target (no cloud/env/argv)"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "sc5 types + createHostAdapter factory + HostSpec registry over an injectable HostEnv",
+        "summary": "Add the sc5 contract types (HostDetection, HostDescriptor, AiHostAdapter, AiHostRegistry) + a HostEnv seam { getExtension(id): boolean; appName: string; uriScheme: string } (default over vscode.extensions/vscode.env). Add createHostAdapter(spec, deps) whose detectPresent runs spec.detect over HostEnv (never throws→false) and whose wire/unwire delegate to the t1 writers (wire writes the mcp entry via composeMcpEntry+McpConfigWriter AND the steering block via SteeringWriter; skips the mcp entry when the launch target is absent; unwire removes exactly both). Add a SMALL data-only HostSpec starter list scoped to hosts with a genuinely known/stable config location — at least one 'by-extension-id' and one 'by-editor-env' so both detection kinds + ac3 are exercised — each HostSpec.resolveConfig isolated so an evolving path is a one-line fix. Add createHostRegistry(specs, deps) implementing adapters() (all) + detectPresent() (present subset, omitting any adapter whose detectPresent throws). A new host = one HostSpec (ac3).",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "AiHostAdapter.detectPresent: 'by-extension-id'→HostEnv.getExtension(id); 'by-editor-env'→appName/uriScheme match; never throws (indeterminate→false)",
+          "AiHostAdapter.wire writes BOTH the mcp entry + the steering block via the t1 writers (steering-only when the launch target is absent); unwire removes exactly both (reversible)",
+          "AiHostRegistry.detectPresent returns only present adapters and omits an adapter whose detectPresent throws; adapters() returns the full pluggable set",
+          "createHostAdapter builds an adapter from a data-only HostSpec — adding a HostSpec needs no change to existing adapters (ac3); the starter list has ≥1 by-extension-id + ≥1 by-editor-env with an isolated resolveConfig each"
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "AiHostAdapter.detectPresent: 'by-extension-id'→getExtension(id) truthiness; 'by-editor-env'→appName/uriScheme match; never throws (indeterminate→false)"
+          },
+          {
+            "level": "unit",
+            "name": "AiHostAdapter.wire writes BOTH the mcpServers.insrc entry + the steering block via the shared writers; wire() skips the mcp entry (steering only) when the launch target is absent"
+          },
+          {
+            "level": "unit",
+            "name": "AiHostAdapter.unwire removes exactly the insrc key + the marker block, restoring prior content (reversible)"
+          },
+          {
+            "level": "unit",
+            "name": "AiHostRegistry.detectPresent returns only present adapters and omits an adapter whose detectPresent throws (never-throws); adapters() returns the full pluggable set"
+          },
+          {
+            "level": "unit",
+            "name": "createHostAdapter builds an adapter from a data-only HostSpec (ac3 pluggability: a new HostSpec needs no existing-adapter change); the starter list has ≥1 by-extension-id + ≥1 by-editor-env"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "registerHostCommands wiring (insrc.hosts.wire, combined consent, wire-only-on-accepted, state→sc2)",
+        "summary": "Add registerHostCommands({ commands, consent, status, registry }): registers the durable insrc.hosts.wire command into sc3. On run: registry.detectPresent(); if none, set a 'no supported AI hosts detected' status; else present ONE combined sc4 ConsentGate prompt with items = the detected adapters' displayNames and wire each ONLY on 'accepted' (k4/ac1). A failing adapter (HostFileAccessError) does not abort the others; the aggregate outcome is pushed into sc2 (StatusSurface.set). Nothing is written on declined/dismissed. Mirrors S002 registerDaemonCommands + a shared offerHostWiring helper (reused by the activation offer).",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "registers the insrc.hosts.wire command into the CommandRegistry",
+          "the wire command asks a single combined ConsentGate prompt (items = detected displayNames) and wires NONE until 'accepted'; declined/dismissed writes nothing (k4)",
+          "on 'accepted' every detected adapter.wire() runs; one adapter throwing does not abort the others; the outcome is pushed into StatusSurface.set",
+          "no supported host present → a 'no hosts detected' status, no prompt, no write"
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "registerHostCommands registers the insrc.hosts.wire command into the fake CommandRegistry"
+          },
+          {
+            "level": "unit",
+            "name": "the wire command calls ConsentGate.ask with items = every detected adapter's displayName (single combined prompt) and wires NONE until 'accepted' (k4); on declined/dismissed nothing is written"
+          },
+          {
+            "level": "unit",
+            "name": "on 'accepted' every detected adapter.wire() runs; a failing adapter (HostFileAccessError) does not abort the others; the outcome is pushed into StatusSurface.set"
+          },
+          {
+            "level": "unit",
+            "name": "no supported host present → the command sets a 'no hosts detected' status and wires nothing"
+          },
+          {
+            "level": "unit",
+            "name": "source-scan: vscode-plugin/src/hosts/ imports only node builtins + the s1 surfaces (+ the shared writers) — no daemon internals/indexer/storage, no cloud/HTTP (k5)"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Extend vscode.d.ts (extensions/env) + wire the host registry into extension.ts",
+        "summary": "Extend vscode-plugin/src/vscode.d.ts with the public members the real HostEnv binds: `extensions.getExtension(id): { id: string } | undefined` and `env.appName: string` + `env.uriScheme: string`. In extension.ts (sole 'vscode' importer): construct the real HostEnv (over vscode.extensions/vscode.env) + real HostFileSystem (node:fs) + a launch-target resolver reusing the S002 DaemonPaths daemon home, build the AiHostRegistry from the HostSpec list, call registerHostCommands with the s1 surfaces, and fire a MINIMAL activation-time combined-consent wire offer when present hosts are unwired — fire-and-forget + guarded so activate() never throws / never blocks (S001 preserved). The install→register→wire coalescing stays s5's job. ADD the single insrc.hosts.wire entry to the EXISTING contributes.commands array (do not remove the S002 daemon entries) so the wire command is Command-Palette reachable (k6).",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "vscode.d.ts declares extensions.getExtension + env.appName/uriScheme; the package typechecks (tsc -p tsconfig.json)",
+          "extension.ts constructs the AiHostRegistry (real HostEnv/HostFileSystem + launch-target resolver) and calls registerHostCommands with the s1 surfaces",
+          "the activation-time combined-consent wire offer is fire-and-forget + guarded so activate() never throws / never blocks; it only fires when present hosts exist",
+          "insrc.hosts.wire is ADDED to the existing contributes.commands array (S002 daemon entries untouched) so a dismissed offer stays Command-Palette reachable (k6)"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "extension.ts constructs the AiHostRegistry (HostSpec list + real HostEnv/HostFileSystem) and calls registerHostCommands with the s1 surfaces; the activation-time wire offer is fire-and-forget + guarded (never throws/blocks) and only fires when present hosts exist (source-scan)"
+          },
+          {
+            "level": "unit",
+            "name": "contributes.commands includes insrc.hosts.wire alongside the S002 daemon entries (palette reachability, k6)"
+          },
+          {
+            "level": "smoke",
+            "name": "the vscode-plugin package typechecks (tsc -p tsconfig.json) with the vscode.d.ts extensions/env shim + the hosts wiring added"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "McpConfigWriter.writeInsrcServer sets mcpServers.insrc while preserving every other key/server; idempotent on re-run; creates {} when the file is absent",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "McpConfigWriter throws HostFileAccessError (no write) when mcpServers is present-but-non-object (never clobber)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "McpConfigWriter.removeInsrcServer deletes only the insrc key (other servers intact) and is a no-op when absent",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "SteeringWriter.upsert: no-markers→append preserving prior content; markers→replace between; malformed/duplicate→leave untouched (guarded no-op); idempotent",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "SteeringWriter.remove deletes the marker block and is a no-op when no markers exist",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "both writers leave the file byte-unchanged when HostFileSystem.write throws (no partial write)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "composeMcpEntry(path) = { command:'node', args:[path] } and returns undefined (skip) for an undefined launch target (no cloud/env/argv)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "AiHostAdapter.detectPresent: 'by-extension-id'→getExtension(id) truthiness; 'by-editor-env'→appName/uriScheme match; never throws (indeterminate→false)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "AiHostAdapter.wire writes BOTH the mcpServers.insrc entry + the steering block via the shared writers; wire() skips the mcp entry (steering only) when the launch target is absent",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "AiHostAdapter.unwire removes exactly the insrc key + the marker block, restoring prior content (reversible)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "AiHostRegistry.detectPresent returns only present adapters and omits an adapter whose detectPresent throws (never-throws); adapters() returns the full pluggable set",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "createHostAdapter builds an adapter from a data-only HostSpec (ac3 pluggability: a new HostSpec needs no existing-adapter change)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "registers the insrc.hosts.wire command into the fake CommandRegistry",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "the wire command calls ConsentGate.ask with items = every detected adapter's displayName (single combined prompt) and wires NONE until 'accepted' (k4); on declined/dismissed nothing is written",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "on 'accepted' every detected adapter.wire() runs; a failing adapter (HostFileAccessError) does not abort the others; the outcome is pushed into StatusSurface.set",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "no supported host present → the command sets a 'no hosts detected' status and wires nothing",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "source-scan: vscode-plugin/src/hosts/ imports only node builtins + the s1 surfaces (+ the shared writers) — no daemon internals/indexer/storage, no cloud/HTTP (k5)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "extension.ts constructs the AiHostRegistry (HostSpec list + real HostEnv/HostFileSystem) and calls registerHostCommands with the s1 surfaces",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "the activation-time combined-consent wire offer is fire-and-forget + guarded so activate() never throws / never blocks; it only fires when present hosts exist",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 handoff: sc5 shared reversible writers — McpConfigWriter (JSON key-merge, never-clobber) + SteeringWriter (marker block) + composeMcpEntry over an injectable HostFileSystem; HostFileAccessError"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 handoff: sc5 contract types (HostDetection/HostDescriptor/AiHostAdapter/AiHostRegistry) + createHostAdapter factory + data-only HostSpec list + createHostRegistry over an injectable HostEnv"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 handoff: registerHostCommands — the insrc.hosts.wire command with a single combined sc4 consent, wire-only-on-accepted, failing adapter isolation, outcome pushed to sc2"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 handoff: extension.ts activation wiring (real HostEnv/HostFileSystem + launch-target resolver, guarded fire-and-forget wire offer preserving S001 never-throws) + vscode.d.ts extensions/env shim + contributes.commands insrc.hosts.wire (k6)"
+    }
+  ]
+}

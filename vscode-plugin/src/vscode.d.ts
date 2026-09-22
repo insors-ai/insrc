@@ -37,6 +37,18 @@ declare module 'vscode' {
     export function registerCommand(command: string, callback: (...args: unknown[]) => unknown): Disposable;
   }
 
+  export namespace extensions {
+    /** The installed+enabled extension with `extensionId`, or undefined (host-detection, S003). */
+    export function getExtension(extensionId: string): { readonly id: string } | undefined;
+  }
+
+  export namespace env {
+    /** The running editor's product name (e.g. 'Visual Studio Code', 'Cursor'). */
+    export const appName: string;
+    /** The running editor's uri scheme (e.g. 'vscode', 'cursor'). */
+    export const uriScheme: string;
+  }
+
   export interface ExtensionContext {
     readonly subscriptions: { dispose(): unknown }[];
     /** Absolute path of the directory the extension is installed in. */

@@ -64,6 +64,20 @@ export interface ConfigGateway {
   catalog(): Promise<ConfigCatalogSnapshot>;
   /** Write `value` at the daemon dot-path `key`; the daemon does NOT validate the value. */
   writeKey(key: string, value: unknown): Promise<ConfigWriteResult>;
+  /**
+   * Write `value` at a literal-SEGMENT config path (S002 sc8 extension, additive).
+   * The dot-safe array form config.write requires for dynamic dotted keys like
+   * `models.tasks.<roleId>` (a dot-split string would mis-nest the leaf). Sits
+   * beside `writeKey`; the global (dot-free) keys keep using `writeKey`.
+   */
+  writeKeyPath(segments: readonly string[], value: unknown): Promise<ConfigWriteResult>;
+  /**
+   * Read the raw `~/.insrc/config.json` via the existing `config.show` IPC (S002
+   * sc8 extension, additive). The source of dynamic per-role override values
+   * (`models.tasks.*`) that the `config.catalog` snapshot omits. Rejects when the
+   * daemon is unreachable.
+   */
+  rawConfig(): Promise<Record<string, unknown>>;
 }
 
 /** One row of the static native-key ↔ catalog-path ↔ ConfigOption table. */
@@ -74,6 +88,20 @@ export interface ConfigKeyEntry {
   readonly path: string;
   /** The catalog row that drives both the native key's schema AND validation. */
   readonly option: ConfigOption;
+  /**
+   * The literal write SEGMENTS for a dynamic dotted key (S002 per-role keys, e.g.
+   * `['models','tasks','context.assemble']`). When present, the engine writes via
+   * `ConfigGateway.writeKeyPath(segments, ...)` instead of `writeKey(path, ...)`.
+   * Absent for S001's dot-free global keys.
+   */
+  readonly segments?: readonly string[];
+  /**
+   * Where the pull reads this key's current value from (S002 addition). `'catalog'`
+   * (the default when omitted) reads the `config.catalog` snapshot; `'raw'` reads
+   * `ConfigGateway.rawConfig()` at the segment path — needed for dynamic
+   * `models.tasks.*` overrides the catalog `values` omits.
+   */
+  readonly source?: 'catalog' | 'raw';
 }
 
 /** The static, total, bidirectional native-key ↔ catalog-path table (t3). */

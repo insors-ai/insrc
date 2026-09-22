@@ -36,9 +36,11 @@ function declaredProperties(): Record<string, Record<string, unknown>> {
 const DECLARED = declaredProperties();
 const jsonType = (t: string) => (t === 'enum' ? 'string' : t);
 
-test('declared insrc.* keys EXACTLY cover the global CONFIG_CATALOG paths (no missing, no extra)', () => {
+test('declared global insrc.* keys EXACTLY cover the global CONFIG_CATALOG paths (no missing, no extra)', () => {
   const expected = new Set(CONFIG_CATALOG.map((o) => 'insrc.' + o.path));
-  const declared = new Set(Object.keys(DECLARED));
+  // The per-role insrc.models.tasks.* keys are S002's dynamic axis (locked by a
+  // separate manifest<->taxonomy contract test), not global CONFIG_CATALOG rows.
+  const declared = new Set(Object.keys(DECLARED).filter((k) => !k.startsWith('insrc.models.tasks.')));
 
   const missing = [...expected].filter((k) => !declared.has(k));
   const extra = [...declared].filter((k) => !expected.has(k));

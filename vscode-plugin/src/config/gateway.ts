@@ -38,5 +38,20 @@ export function createDaemonConfigGateway(client: IpcClient): ConfigGateway {
       if (result?.ok) return { ok: true };
       return { ok: false, reason: 'the daemon refused the write (invalid path)' };
     },
+
+    async writeKeyPath(segments: readonly string[], value: unknown): Promise<ConfigWriteResult> {
+      // The ARRAY form of config.write: each element is one literal key segment,
+      // so a dotted leaf (models.tasks['context.assemble']) is written un-mis-nested.
+      const result = await client.rpc<{ ok: boolean }>('config.write', { path: segments, value });
+      if (result?.ok) return { ok: true };
+      return { ok: false, reason: 'the daemon refused the write (invalid path)' };
+    },
+
+    async rawConfig(): Promise<Record<string, unknown>> {
+      // The existing config.show read: the raw parsed ~/.insrc/config.json (or {}),
+      // the source of dynamic per-role overrides the config.catalog snapshot omits.
+      const raw = await client.rpc<Record<string, unknown>>('config.show');
+      return raw ?? {};
+    },
   };
 }

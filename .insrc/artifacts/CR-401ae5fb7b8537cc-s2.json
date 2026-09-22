@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1790079981601-01i4yh",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-22T12:26:21.601Z",
+    "model": "client",
+    "elapsedMs": 1,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "401ae5fb7b8537cc",
+    "storyId": "s2"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "401ae5fb7b8537cc",
+    "storyId": "s2",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "vscode-plugin/package.json",
+        "vscode-plugin/src/config/__tests__/manifest-catalog.test.ts",
+        "vscode-plugin/src/config/__tests__/seam.test.ts",
+        "vscode-plugin/src/config/gateway.ts",
+        "vscode-plugin/src/config/key-map.ts",
+        "vscode-plugin/src/config/sync-engine.ts",
+        "vscode-plugin/src/config/types.ts",
+        "vscode-plugin/src/extension.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/config/gateway.ts:37",
+            "message": "The sc8 extension is additive and k3-clean: writeKeyPath sends config.write's existing ARRAY form ({path: segments, value}) and rawConfig wraps the existing config.show — no new daemon capability. The cold review independently verified the write lands at models.tasks[roleId] where the daemon's parseTieringOverride actually reads (src/config/analyze.ts), so the dotted-roleId segment-write is correct (not a dead path). S001's writeKey + global behavior are untouched. No breach.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/config/key-map.ts:1",
+            "message": "Follows the S001 conventions: per-role map generated FROM the ONE daemon taxonomy (reasoningRoleTaxonomy) not a plugin copy, .js import extensions, import type for types, VS-Code-free (extension.ts remains the sole 'vscode' importer, enforced by the seam scan). The manifest is generated from the taxonomy exactly as S001 generated its global keys. No convention breach.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/config/sync-engine.ts:100",
+            "message": "Error handling is thorough (both reads try/caught; pull never throws; catalog-reject early-returns preserving S001 behavior; rawConfig-reject degrades per-role only while global keys still sync). A real pull bug caught mid-build (the write loop wrote undefined for skipped raw keys) was fixed by iterating `next`. The cold review's two LOW nits were fixed pre-CR: a distinct per-role-degrade error message (sync-engine.ts) + the seam test title. No quality defect.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 3
+    }
+  }
+}

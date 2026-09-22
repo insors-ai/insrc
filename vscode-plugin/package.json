@@ -321,6 +321,341 @@
             "scope": "machine"
           }
         }
+      },
+      {
+        "title": "Models — per-role tiers",
+        "properties": {
+          "insrc.models.tasks.design.alternatives.enumerate": {
+            "type": "string",
+            "enum": [
+              "cheap",
+              "mid",
+              "core"
+            ],
+            "default": "core",
+            "markdownDescription": "Model tier for the `design.alternatives.enumerate` role (critical). Leave at the default to use the daemon's routing.",
+            "scope": "machine"
+          },
+          "insrc.models.tasks.design.alternatives.judge": {
+            "type": "string",
+            "enum": [
+              "cheap",
+              "mid",
+              "core"
+            ],
+            "default": "core",
+            "markdownDescription": "Model tier for the `design.alternatives.judge` role (critical). Leave at the default to use the daemon's routing.",
+            "scope": "machine"
+          },
+          "insrc.models.tasks.design.contract.detail": {
+            "type": "string",
+            "enum": [
+              "cheap",
+              "mid",
+              "core"
+            ],
+            "default": "core",
+            "markdownDescription": "Model tier for the `design.contract.detail` role (critical). Leave at the default to use the daemon's routing.",
+            "scope": "machine"
+          },
+          "insrc.models.tasks.scope.audit": {
+            "type": "string",
+            "enum": [
+              "cheap",
+              "mid",
+              "core"
+            ],
+            "default": "core",
+            "markdownDescription": "Model tier for the `scope.audit` role (critical). Leave at the default to use the daemon's routing.",
+            "scope": "machine"
+          },
+          "insrc.models.tasks.review": {
+            "type": "string",
+            "enum": [
+              "cheap",
+              "mid",
+              "core"
+            ],
+            "default": "core",
+            "markdownDescription": "Model tier for the `review` role (critical). Leave at the default to use the daemon's routing.",
+            "scope": "machine"
+          },
+          "insrc.models.tasks.build": {
+            "type": "string",
+            "enum": [
+              "cheap",
+              "mid",
+              "core"
+            ],
+            "default": "core",
+            "markdownDescription": "Model tier for the `build` role (critical). Leave at the default to use the daemon's routing.",
+            "scope": "machine"
+          },
+          "insrc.models.tasks.define.scope.assess": {
+            "type": "string",
+            "enum": [
+              "cheap",
+              "mid",
+              "core"
+            ],
+            "default": "core",
+            "markdownDescription": "Model tier for the `define.scope.assess` role (critical). Leave at the default to use the daemon's routing.",
+            "scope": "machine"
+          },
+          "insrc.models.tasks.define.epic.frame": {
+            "type": "string",
+            "enum": [
+              "cheap",
+              "mid",
+              "core"
+            ],
+            "default": "core",
+            "markdownDescription": "Model tier for the `define.epic.frame` role (critical). Leave at the default to use the daemon's routing.",
+            "scope": "machine"
+          },
+          "insrc.models.tasks.define.stories.compose": {
+            "type": "string",
+            "enum": [
+              "cheap",
+              "mid",
+              "core"
+            ],
+            "default": "core",
+            "markdownDescription": "Model tier for the `define.stories.compose` role (critical). Leave at the default to use the daemon's routing.",
+            "scope": "machine"
+          },
+          "insrc.models.tasks.context.assemble": {
+            "type": "string",
+            "enum": [
+              "cheap",
+              "mid",
+              "core"
+            ],
+            "default": "mid",
+            "markdownDescription": "Model tier for the `context.assemble` role (peripheral). Leave at the default to use the daemon's routing.",
+            "scope": "machine"
+          },
+          "insrc.models.tasks.design.decompose": {
+            "type": "string",
+            "enum": [
+              "cheap",
+              "mid",
+              "core"
+            ],
+            "default": "mid",
+            "markdownDescription": "Model tier for the `design.decompose` role (peripheral). Leave at the default to use the daemon's routing.",
+            "scope": "machine"
+          },
+          "insrc.models.tasks.design.error.paths": {
+            "type": "string",
+            "enum": [
+              "cheap",
+              "mid",
+              "core"
+            ],
+            "default": "mid",
+            "markdownDescription": "Model tier for the `design.error.paths` role (peripheral). Leave at the default to use the daemon's routing.",
+            "scope": "machine"
+          },
+          "insrc.models.tasks.design.test.strategy": {
+            "type": "string",
+            "enum": [
+              "cheap",
+              "mid",
+              "core"
+            ],
+            "default": "mid",
+            "markdownDescription": "Model tier for the `design.test.strategy` role (peripheral). Leave at the default to use the daemon's routing.",
+            "scope": "machine"
+          },
+          "insrc.models.tasks.design.migration.write": {
+            "type": "string",
+            "enum": [
+              "cheap",
+              "mid",
+              "core"
+            ],
+            "default": "mid",
+            "markdownDescription": "Model tier for the `design.migration.write` role (peripheral). Leave at the default to use the daemon's routing.",
+            "scope": "machine"
+          },
+          "insrc.models.tasks.design.framework.write": {
+            "type": "string",
+            "enum": [
+              "cheap",
+              "mid",
+              "core"
+            ],
+            "default": "mid",
+            "markdownDescription": "Model tier for the `design.framework.write` role (peripheral). Leave at the default to use the daemon's routing.",
+            "scope": "machine"
+          },
+          "insrc.models.tasks.design.rollout.overview": {
+            "type": "string",
+            "enum": [
+              "cheap",
+              "mid",
+              "core"
+            ],
+            "default": "mid",
+            "markdownDescription": "Model tier for the `design.rollout.overview` role (peripheral). Leave at the default to use the daemon's routing.",
+            "scope": "machine"
+          },
+          "insrc.models.tasks.synthesize": {
+            "type": "string",
+            "enum": [
+              "cheap",
+              "mid",
+              "core"
+            ],
+            "default": "mid",
+            "markdownDescription": "Model tier for the `synthesize` role (peripheral). Leave at the default to use the daemon's routing.",
+            "scope": "machine"
+          },
+          "insrc.models.tasks.workflow.questions": {
+            "type": "string",
+            "enum": [
+              "cheap",
+              "mid",
+              "core"
+            ],
+            "default": "mid",
+            "markdownDescription": "Model tier for the `workflow.questions` role (peripheral). Leave at the default to use the daemon's routing.",
+            "scope": "machine"
+          },
+          "insrc.models.tasks.brainstorm.decision.draft": {
+            "type": "string",
+            "enum": [
+              "cheap",
+              "mid",
+              "core"
+            ],
+            "default": "mid",
+            "markdownDescription": "Model tier for the `brainstorm.decision.draft` role (peripheral). Leave at the default to use the daemon's routing.",
+            "scope": "machine"
+          },
+          "insrc.models.tasks.tracker.render.issueBody": {
+            "type": "string",
+            "enum": [
+              "cheap",
+              "mid",
+              "core"
+            ],
+            "default": "cheap",
+            "markdownDescription": "Model tier for the `tracker.render.issueBody` role (peripheral). Leave at the default to use the daemon's routing.",
+            "scope": "machine"
+          },
+          "insrc.models.tasks.tracker.render.summary": {
+            "type": "string",
+            "enum": [
+              "cheap",
+              "mid",
+              "core"
+            ],
+            "default": "cheap",
+            "markdownDescription": "Model tier for the `tracker.render.summary` role (peripheral). Leave at the default to use the daemon's routing.",
+            "scope": "machine"
+          },
+          "insrc.models.tasks.analyze.decompose": {
+            "type": "string",
+            "enum": [
+              "cheap",
+              "mid",
+              "core"
+            ],
+            "default": "mid",
+            "markdownDescription": "Model tier for the `analyze.decompose` role (peripheral). Leave at the default to use the daemon's routing.",
+            "scope": "machine"
+          },
+          "insrc.models.tasks.analyze.synthesize": {
+            "type": "string",
+            "enum": [
+              "cheap",
+              "mid",
+              "core"
+            ],
+            "default": "mid",
+            "markdownDescription": "Model tier for the `analyze.synthesize` role (peripheral). Leave at the default to use the daemon's routing.",
+            "scope": "machine"
+          },
+          "insrc.models.tasks.analyze.plan": {
+            "type": "string",
+            "enum": [
+              "cheap",
+              "mid",
+              "core"
+            ],
+            "default": "mid",
+            "markdownDescription": "Model tier for the `analyze.plan` role (peripheral). Leave at the default to use the daemon's routing.",
+            "scope": "machine"
+          },
+          "insrc.models.tasks.analyze.classify": {
+            "type": "string",
+            "enum": [
+              "cheap",
+              "mid",
+              "core"
+            ],
+            "default": "cheap",
+            "markdownDescription": "Model tier for the `analyze.classify` role (peripheral). Leave at the default to use the daemon's routing.",
+            "scope": "machine"
+          },
+          "insrc.models.tasks.analyze.scope.pick": {
+            "type": "string",
+            "enum": [
+              "cheap",
+              "mid",
+              "core"
+            ],
+            "default": "cheap",
+            "markdownDescription": "Model tier for the `analyze.scope.pick` role (peripheral). Leave at the default to use the daemon's routing.",
+            "scope": "machine"
+          },
+          "insrc.models.tasks.analyze.adherence": {
+            "type": "string",
+            "enum": [
+              "cheap",
+              "mid",
+              "core"
+            ],
+            "default": "mid",
+            "markdownDescription": "Model tier for the `analyze.adherence` role (peripheral). Leave at the default to use the daemon's routing.",
+            "scope": "machine"
+          },
+          "insrc.models.tasks.analyze.aggregate": {
+            "type": "string",
+            "enum": [
+              "cheap",
+              "mid",
+              "core"
+            ],
+            "default": "mid",
+            "markdownDescription": "Model tier for the `analyze.aggregate` role (peripheral). Leave at the default to use the daemon's routing.",
+            "scope": "machine"
+          },
+          "insrc.models.tasks.analyze.narrow": {
+            "type": "string",
+            "enum": [
+              "cheap",
+              "mid",
+              "core"
+            ],
+            "default": "cheap",
+            "markdownDescription": "Model tier for the `analyze.narrow` role (peripheral). Leave at the default to use the daemon's routing.",
+            "scope": "machine"
+          },
+          "insrc.models.tasks.indexer.summarise": {
+            "type": "string",
+            "enum": [
+              "cheap",
+              "mid",
+              "core"
+            ],
+            "default": "cheap",
+            "markdownDescription": "Model tier for the `indexer.summarise` role (peripheral). Leave at the default to use the daemon's routing.",
+            "scope": "machine"
+          }
+        }
       }
     ]
   },

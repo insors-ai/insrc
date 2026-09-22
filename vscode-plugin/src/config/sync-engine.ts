@@ -52,6 +52,22 @@ export function validateAgainstOption(option: ConfigOption, value: unknown): str
   }
 }
 
+/**
+ * Read the value at a literal-SEGMENT path inside a raw config object (each
+ * segment is one key, dots and all — so `['models','tasks','context.assemble']`
+ * reads `roleTiers['context.assemble']` un-mis-nested). Returns undefined if any
+ * segment along the way is absent or not a traversable object.
+ */
+export function readAtSegments(root: Record<string, unknown>, segments: readonly string[]): unknown {
+  let cur: unknown = root;
+  for (const seg of segments) {
+    if (typeof cur !== 'object' || cur === null || Array.isArray(cur)) return undefined;
+    cur = (cur as Record<string, unknown>)[seg];
+    if (cur === undefined) return undefined;
+  }
+  return cur;
+}
+
 /** Build the sc8 ConfigSync engine over its injected boundaries. Never throws. */
 export function createConfigSyncEngine(deps: ConfigSyncDeps): ConfigSyncEngine {
   const { gateway, settings, notifier, keyMap } = deps;
@@ -73,8 +89,31 @@ export function createConfigSyncEngine(deps: ConfigSyncDeps): ConfigSyncEngine {
         return;
       }
 
+      // Dynamic-source (per-role) entries read their current value from the raw
+      // config (config.catalog omits models.tasks.*). Fetch it once, and only when
+      // needed; a raw-read failure degrades the per-role keys ONLY (global keys
+      // still sync), leaving those settings at their last-known values.
+      let raw: Record<string, unknown> | undefined;
+      if (keyMap.entries.some((e) => e.source === 'raw')) {
+        try {
+          raw = await gateway.rawConfig();
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          // Distinct from the whole-config read failure: only the per-role
+          // overrides degrade here; the global keys still synced from the catalog.
+          notifier.error(`insrc: could not read per-role overrides — ${message}`);
+          // raw stays undefined ⇒ per-role keys are skipped below.
+        }
+      }
+
       const next = new Map<string, unknown>();
       for (const entry of keyMap.entries) {
+        if (entry.source === 'raw') {
+          if (raw === undefined) continue; // raw read failed — leave this key untouched.
+          const current = readAtSegments(raw, entry.segments ?? []);
+          next.set(entry.nativeKey, current !== undefined ? current : entry.option.default);
+          continue;
+        }
         // Omitted path ⇒ the option default (the payload treats absent as unset).
         next.set(
           entry.nativeKey,
@@ -87,9 +126,9 @@ export function createConfigSyncEngine(deps: ConfigSyncDeps): ConfigSyncEngine {
       // guard instead of writing the daemon back (avoiding an activation write/
       // reload storm — the k5 loop-suppression UX proper is still s3's).
       lastSyncedSnapshot = next;
-      for (const entry of keyMap.entries) {
+      for (const [nativeKey, value] of next) {
         try {
-          await settings.write(entry.nativeKey, next.get(entry.nativeKey));
+          await settings.write(nativeKey, value);
         } catch {
           // A settings-write failure must not abort the whole pull; skip this key.
           continue;
@@ -116,7 +155,12 @@ export function createConfigSyncEngine(deps: ConfigSyncDeps): ConfigSyncEngine {
         }
 
         try {
-          const result = await gateway.writeKey(entry.path, change.value);
+          // A per-role (segment-bearing) entry writes the dot-safe ARRAY form so a
+          // dotted roleId leaf is not mis-nested; global keys keep the string path.
+          const result =
+            entry.segments !== undefined
+              ? await gateway.writeKeyPath(entry.segments, change.value)
+              : await gateway.writeKey(entry.path, change.value);
           if (result.ok) {
             lastSyncedSnapshot.set(change.key, change.value);
           } else {

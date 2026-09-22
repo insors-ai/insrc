@@ -33,7 +33,7 @@ import type { OnboardingStore } from './onboarding/types.js';
 import type { StatusBarHandle } from './surfaces/types.js';
 import { createConfigSyncEngine } from './config/sync-engine.js';
 import { createDaemonConfigGateway } from './config/gateway.js';
-import { CONFIG_KEY_MAP } from './config/key-map.js';
+import { MERGED_KEY_MAP } from './config/key-map.js';
 import type { ChangedKey, Notifier, SettingsStore } from './config/types.js';
 
 /** The workspaceState key prefix for the one-time register-prompt dismissal flag (S004). */
@@ -133,7 +133,7 @@ export function activate(context: vscode.ExtensionContext): void {
     snapshot: () => {
       const values = new Map<string, unknown>();
       const config = vscode.workspace.getConfiguration();
-      for (const entry of CONFIG_KEY_MAP.entries) {
+      for (const entry of MERGED_KEY_MAP.entries) {
         values.set(entry.nativeKey, config.get(entry.nativeKey));
       }
       return values;
@@ -148,7 +148,7 @@ export function activate(context: vscode.ExtensionContext): void {
     gateway: createDaemonConfigGateway(client),
     settings: configSettings,
     notifier: configNotifier,
-    keyMap: CONFIG_KEY_MAP,
+    keyMap: MERGED_KEY_MAP,
   });
   // Reconcile the native mirror with the daemon on activation (non-blocking).
   void configSync.pullFromDaemon();
@@ -158,7 +158,7 @@ export function activate(context: vscode.ExtensionContext): void {
       if (!event.affectsConfiguration('insrc')) return;
       const config = vscode.workspace.getConfiguration();
       const changed: ChangedKey[] = [];
-      for (const entry of CONFIG_KEY_MAP.entries) {
+      for (const entry of MERGED_KEY_MAP.entries) {
         if (event.affectsConfiguration(entry.nativeKey)) {
           changed.push({ key: entry.nativeKey, value: config.get(entry.nativeKey) });
         }

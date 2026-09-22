@@ -1,0 +1,296 @@
+{
+  "meta": {
+    "workflow": "design.epic",
+    "runId": "wf-1790073320669-iy7sqb",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-22T10:44:49.553Z",
+    "epicCreatedAt": "2026-09-22T10:29:17.310Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 568867,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "401ae5fb7b8537cc",
+    "epicSlug": "work-framed-approved-spec-proceed-from",
+    "review": {
+      "artifact": "design.epic",
+      "stage": "design.epic",
+      "verdict": "pass",
+      "findings": [],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 0
+      },
+      "reviewedAt": "2026-09-22T10:45:46.208Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-22T10:46:59.532Z"
+  },
+  "body": {
+    "frameworkSummary": "The Epic re-expresses the shipped JetBrains settings + nested-pages surface on the VS Code side as two net-new injectable seams layered over the extension's existing sc1-sc7 contracts, following the exact S001-S006 convention: small VS-Code-free cores behind injected boundaries, with extension.ts the SOLE 'vscode' importer and every core unit-testable off the editor API via node:test. Editable config lives in native VS Code Settings (a statically-declared, machine-scoped contributes.configuration for the stable global + fixed per-role keys) driven by ONE ConfigSync engine that keeps the native surface truthful to the daemon (pull on activation/refresh, live-push each change with pre-flight validate and revert-on-reject). The read-only Daemon/Workflows/Debug pages and the per-repo editor live behind ONE WebviewPanelHost (a tabbed Detailed Status panel + a separate Repo Configuration panel) fed by a read-only DaemonData gateway over the existing daemon IPC. Everything reaches the daemon only through the existing config.catalog/config.write + read IPC via sc1; no new daemon capability is added.",
+    "architectureShape": "Two foundation stories anchor two independent tracks that mirror the DEF dependency graph. The CONFIG track: s1 owns sc8 ConfigSync (the native-settings↔daemon truthful engine); s2 (per-role tier keys) and s3 (the reject/revert + reconcile + refresh guarantees) are additive consumers of sc8 — so the k5 truthfulness engine is authored once. The PANEL track: s4 owns sc9 WebviewPanelHost (the status-bar 2-item menu, the tabbed panel shell + postMessage plumbing, the palette commands, and the read-only DaemonData gateway facade over sc1); s5 (Daemon status + Workflow chain), s6 (Debug: MCP clients + live log tail + consent-gated orphan-kill), and s7 (the Repo Configuration per-repo editor) are additive consumers of sc9. The two tracks share only the pre-existing sc1 SharedIpcClient, sc2 StatusSurface, sc3 CommandRegistry, and sc4 ConsentGate (all from the completed extension epic). Per-repo config writes in s7 go through the existing sc1 config.write directly (not sc8, which is native-settings-specific), keeping ownership within the panel track. The real VS Code bindings (workspace.getConfiguration/onDidChangeConfiguration at machine scope, window.createWebviewPanel, commands, notifications) are constructed ONLY in extension.ts and injected into the two cores.",
+    "sharedContracts": [
+      {
+        "id": "sc8",
+        "name": "ConfigSync",
+        "purpose": "The single VS-Code-free engine that keeps the native contributes.configuration surface truthful to the daemon: maps the config.catalog schema onto the statically-declared global + per-role keys, pulls daemon values into settings on activation/refresh, and on each native change diffs against the last-synced snapshot, pre-flight-validates, writes via config.write, and reverts to last-known-good on rejection. Consumed by every config-track story so the k5 invariant lives in one place.",
+        "interfaceSketch": "export interface ConfigSyncEngine {\n  /** Pull daemon values into the native settings mirror (activation + manual refresh). */\n  pullFromDaemon(): Promise<void>;\n  /** React to a native settings change: diff vs snapshot, validate, write, revert-on-reject. */\n  applyChanges(changed: readonly ChangedKey[]): Promise<void>;\n}\nexport interface ChangedKey { readonly key: string; readonly value: unknown; }\nexport interface SettingsStore {\n  read(key: string): unknown;\n  write(key: string, value: unknown): Promise<void>;\n  snapshot(): ReadonlyMap<string, unknown>;\n}\nexport interface Notifier { error(message: string): void; }\nexport interface ConfigGateway {\n  catalog(): Promise<ConfigCatalogSnapshot>;\n  writeKey(key: string, value: unknown): Promise<ConfigWriteResult>;\n}\nexport type ConfigWriteResult = { ok: true } | { ok: false; reason: string };\nexport interface ConfigCatalogSnapshot { readonly values: ReadonlyMap<string, unknown>; readonly repos: readonly RepoRef[]; }\nexport interface RepoRef { readonly path: string; readonly name: string; }",
+        "ownedByStory": "s1",
+        "consumedByStories": [
+          "s1",
+          "s2",
+          "s3"
+        ],
+        "assumptions": [
+          "c3",
+          "c1",
+          "c5"
+        ]
+      },
+      {
+        "id": "sc9",
+        "name": "WebviewPanelHost",
+        "purpose": "The single tabbed-webview host + read-only DaemonData gateway for all live pages: opens/reveals the Detailed Status panel (Daemon default + Workflows + Debug tabs) and the Repo Configuration panel, owns the status-bar 2-item menu + the durable palette commands, and exposes a VS-Code-free typed facade over the existing daemon read IPC (status, workflow chain, MCP clients, registered repos, orphan-process scan, log tail). Consumed by every panel-track story so the panel shell + on-demand-refresh discipline exist once.",
+        "interfaceSketch": "export type DetailTab = 'daemon' | 'workflows' | 'debug';\nexport interface WebviewPanelHost {\n  openDetailedStatus(tab?: DetailTab): void;\n  openRepoConfiguration(): void;\n}\nexport interface DaemonDataGateway {\n  status(): Promise<DaemonStatusView>;\n  workflowChain(): Promise<WorkflowChainView>;\n  mcpClients(): Promise<readonly McpClientView[]>;\n  registeredRepos(): Promise<readonly RepoRef[]>;\n  scanOrphans(): Promise<readonly OrphanProcess[]>;\n}\nexport interface DaemonStatusView { readonly state: string; readonly detail?: string; }\nexport interface WorkflowChainView { readonly rows: readonly WorkflowChainRow[]; }\nexport interface WorkflowChainRow { readonly slug: string; readonly stage: string; readonly status: string; }\nexport interface McpClientView { readonly host: string; readonly wired: boolean; }\nexport interface OrphanProcess { readonly pid: number; readonly command: string; }\nexport interface RepoRef { readonly path: string; readonly name: string; }",
+        "ownedByStory": "s4",
+        "consumedByStories": [
+          "s4",
+          "s5",
+          "s6",
+          "s7"
+        ],
+        "assumptions": [
+          "c3",
+          "c4"
+        ]
+      }
+    ],
+    "storyBoundaries": [
+      {
+        "storyId": "s1",
+        "owns": [
+          "sc8"
+        ],
+        "depends": [],
+        "internal": "The exact set of stable global config keys declared in contributes.configuration (machine scope) and the mapping from config.catalog paths to those native keys; the last-synced snapshot representation; and the internal validate→write→revert mechanics of the ConfigSync engine. Only the sc8 ConfigSyncEngine + its injected boundary types are exposed; how the pull and the per-change diff are computed is private."
+      },
+      {
+        "storyId": "s2",
+        "owns": [],
+        "depends": [
+          "sc8"
+        ],
+        "internal": "How the fixed RoleId taxonomy is enumerated into per-role tier-override keys and rendered as enum (core/mid/cheap) native settings, and how a role's effective tier (default vs override, clamped by coreFloor) is displayed. Consumes sc8 for the actual apply/truthful-sync; adds no new contract."
+      },
+      {
+        "storyId": "s3",
+        "owns": [],
+        "depends": [
+          "sc8"
+        ],
+        "internal": "The toast + auto-revert UX on a rejected write (the loop-suppression while reverting), the reconcile-on-activation and the 'Refresh insrc settings' durable command that drives sc8.pullFromDaemon, and the insrc.advanced escape-hatch handling. Consumes sc8; owns no shared contract."
+      },
+      {
+        "storyId": "s4",
+        "owns": [
+          "sc9"
+        ],
+        "depends": [],
+        "internal": "The status-bar item's 2-item QuickPick menu, the concrete Webview panel lifecycle (create/reveal/dispose), the in-panel tab framework + host↔webview postMessage protocol, the durable palette commands for both panels, and the DaemonDataGateway's concrete IPC/log/process-scan wiring. Only the sc9 WebviewPanelHost + DaemonDataGateway types are exposed; the panel HTML/messaging internals are private."
+      },
+      {
+        "storyId": "s5",
+        "owns": [],
+        "depends": [
+          "sc9"
+        ],
+        "internal": "The Daemon status view and the Workflows chain-report rendering inside their tabs, and each view's on-demand refresh control (open/tab-switch/manual). Consumes sc9's host + gateway; adds no new contract and does no background polling."
+      },
+      {
+        "storyId": "s6",
+        "owns": [],
+        "depends": [
+          "sc9"
+        ],
+        "internal": "The Debug tab: the MCP-clients list rendering, the continuous polling-ticker live log tail (rotation-aware, the only continuously-refreshing view), and the consent-gated orphan-process cleanup (via the shipped sc4 ConsentGate before any kill). Consumes sc9; the ticker + confirm UX are private."
+      },
+      {
+        "storyId": "s7",
+        "owns": [],
+        "depends": [
+          "sc9"
+        ],
+        "internal": "The Repo Configuration panel's repo picker (populated from sc9's registeredRepos) and the per-repo overrides editor form, plus its own per-repo config writes over the existing sc1 config.write and its inline write-feedback. Consumes sc9 for the panel host + repo list; the form layout + per-repo write handling are private."
+      }
+    ],
+    "nonFunctional": {
+      "performance": "Panel and settings reads run off the UI path with bounded socket timeouts; Daemon/Workflows refresh only on open/tab-switch/manual (no background polling), and only the Debug log tail runs a continuous ticker. Activation is never blocked — the config pull-sync and every panel load degrade gracefully when the daemon is unreachable.",
+      "security": "No cloud path and no secrets (k2); all config + status access is over the local Unix-socket IPC via sc1. The only daemon-mutating action (orphan-kill) is consent-gated via the shipped sc4 before it runs (k4). Native config keys are machine-scoped so config is never carried off the machine by Settings Sync (k7).",
+      "observability": "Every surface reflects daemon-derived state truthfully: a rejected config write shows the daemon's reason and reverts, external changes reconcile on refresh (k5), and status/consent outcomes surface through the existing sc2 StatusSurface + getLogger (never console).",
+      "durability": "The daemon's ~/.insrc/config.json is the single source of truth; the native Settings mirror and all panels are stateless views/editors over it — no shadow config store. Per-repo overrides are keyed to the daemon's own repo registry (k7), independent of open workspace folders; panel state is ephemeral and rebuilt from the daemon on each open."
+    },
+    "rolloutOverview": {
+      "phases": [
+        {
+          "name": "Phase A — Config foundation (sc8 ConfigSync)",
+          "includesStories": [
+            "s1"
+          ],
+          "rationale": "s1 owns sc8, the native-settings↔daemon truthful engine every other config-track story consumes; it must land first so s2/s3 have the ConfigSync seam to build on. It also introduces contributes.configuration + the machine-scope decision into the manifest.",
+          "backwardCompat": "Preserve the shipped onboarding-first behavior (k1): S001-S006 daemon-lifecycle / host-wiring / workspace-registration and the never-throw activation stay untouched; adding contributes.configuration + the settings listener must not regress activation or the existing 7 commands.",
+          "featureFlag": null
+        },
+        {
+          "name": "Phase B — Config editing complete (per-role + truthful sync)",
+          "includesStories": [
+            "s2",
+            "s3"
+          ],
+          "rationale": "s2 (per-role tier keys) and s3 (reject/revert + reconcile + Refresh command) both depend on s1 and consume sc8; they complete the editable-config surface once the engine exists. Ordered after Phase A per the s2→s1 and s3→s1 edges.",
+          "backwardCompat": "The per-role keys added to contributes.configuration must not collide with the s1 global keys; the Refresh command registers alongside the existing durable commands without changing them.",
+          "featureFlag": null
+        },
+        {
+          "name": "Phase C — Panel foundation (sc9 WebviewPanelHost)",
+          "includesStories": [
+            "s4"
+          ],
+          "rationale": "s4 owns sc9 — the status-bar 2-item menu, the tabbed panel shell + postMessage plumbing, the palette commands, and the read-only DaemonData gateway — which every panel-track story consumes; it must land before s5/s6/s7. Independent of the config track (s1/s4 are the two DEF roots), so it may proceed in parallel with Phases A/B but is sequenced here for a linear rollout.",
+          "backwardCompat": "The status-bar item gains a click handler + menu; its existing daemon-health glyph behavior (sc2 StatusSurface) must be preserved. The new Webview must not block or throw during activation.",
+          "featureFlag": null
+        },
+        {
+          "name": "Phase D — Live pages + per-repo editor",
+          "includesStories": [
+            "s5",
+            "s6",
+            "s7"
+          ],
+          "rationale": "s5 (Daemon + Workflows views), s6 (Debug: MCP clients + live log tail + consent-gated orphan-kill), and s7 (Repo Configuration per-repo editor) all depend on s4 and consume sc9; each fills content into the shared host. Ordered after Phase C per the s5/s6/s7→s4 edges; they are mutually independent and may land in any order within the phase.",
+          "backwardCompat": "Each page adds only its tab/panel content to the sc9 host; the s4 panel lifecycle + the other tabs must remain intact. s6's orphan-kill must route through the shipped sc4 ConsentGate (k4). s7's per-repo writes reuse the existing sc1 config.write without a new daemon method.",
+          "featureFlag": null
+        }
+      ],
+      "orderingRationale": "The rollout follows the two independent DEF tracks anchored by the two root stories. The CONFIG track ships first — Phase A lands s1 (owns sc8) so Phase B's s2/s3 (both dependsOn s1, both consume sc8) have the truthful engine to build on. The PANEL track follows — Phase C lands s4 (owns sc9) so Phase D's s5/s6/s7 (all dependsOn s4, all consume sc9) have the panel host + gateway. Owner stories (s1, s4) always precede their consumers, satisfying every dependsOn edge and every shared-contract dependency; because s1 and s4 are independent roots, Phases A/B and C could run in parallel, but the linear A→B→C→D order is a safe superset.",
+      "riskyBits": [
+        {
+          "area": "Static native schema vs the dynamic config.catalog (drift across daemon versions)",
+          "why": "contributes.configuration is declared statically at package.json build time, but the daemon's config.catalog can grow/rename keys between versions — a shipped extension could show a stale or missing key.",
+          "mitigation": "Derive the per-role keys from the static RoleId taxonomy (known at build), route anything catalog-only/unknown through the single insrc.advanced JSON escape-hatch, and have sc8 pre-flight-validate every write against the live config.catalog so an unknown/invalid key is rejected + reverted rather than silently written."
+        },
+        {
+          "area": "The k5 truthfulness revert loop",
+          "why": "sc8's revert-on-reject writes the last-known-good value back into settings, which itself fires onDidChangeConfiguration — a naive revert can loop or re-push the rejected value.",
+          "mitigation": "Author the suppression-flag guard ONCE inside sc8 (ignore the change handler's own echo while a revert write is in flight) — the same pattern S006 used for the uninstall main-check; unit-test it off VS Code over a fake SettingsStore so the loop can't regress."
+        },
+        {
+          "area": "Webview + log-ticker lifecycle leaks",
+          "why": "The sibling JetBrains nested-settings-pages epic hit real MED lifecycle leaks (close-during-open race + a ticker that outlived project close); the VS Code Debug log tail is a continuous ticker inside a disposable Webview panel with the same hazards.",
+          "mitigation": "sc9 owns a single panel lifecycle (create/reveal/dispose) and stops the Debug log ticker on tab-hide and on panel dispose; reuse the JetBrains LogTail rotation-aware /tmp/.insrc pattern and cover the dispose/close paths with unit tests over an injected tail/timer boundary."
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Two new shared seams over the established S001-S006 injectable-boundary pattern",
+        "oneLineSummary": "Introduce exactly two new cross-story shared contracts — a ConfigSync seam (native settings ↔ daemon) and a WebviewPanelHost seam (tabbed panel + a read-only DaemonData gateway) — both VS-Code-free cores behind injectable boundaries, wired only in extension.ts, mirroring the JetBrains DaemonGateway/section model in TS.",
+        "approach": "The Epic adds two shared contracts that sit alongside the existing sc1-sc7. (A) A ConfigSync seam owns the truthful native-config surface: it maps the daemon's config.catalog schema onto the statically-declared contributes.configuration keys (global + the fixed per-role tier keys), and runs the live-push / pull-sync / pre-flight-validate / reject-revert engine over sc1 as a VS-Code-free core, driven by injected boundaries for reading and writing VS Code settings and for surfacing notifications. Stories s1/s2/s3 all consume this one seam (s1 global, s2 per-role, s3 the truthful-sync guarantees), so the k5 revert/reconcile logic is written once. (B) A WebviewPanelHost seam owns the tabbed-panel shell plus a small read-only DaemonData gateway (a typed facade over sc1 for daemon status, workflow chain, MCP clients, log tail, orphan-process scan, and the registered-repo list). Stories s4/s5/s6/s7 consume it: s4 builds the host + the status-bar 2-item menu + palette commands, s5/s6 fill the Daemon/Workflows/Debug tabs, and s7 uses the same host + gateway for the Repo Configuration panel.\n\nEvery core stays testable off the VS Code API via node:test over fakes, extension.ts remains the sole 'vscode' importer binding workspace.getConfiguration / onDidChangeConfiguration / createWebviewPanel / commands into the injected boundaries, and the compile-only vscode.d.ts shim is extended per story — exactly the convention S001-S006 established. This shape maps the shipped JetBrains DaemonGateway + PerRole/PerRepo sections + Daemon/Workflows/Debug pages onto the two natural VS Code surfaces (native settings for editable config, one webview host for live pages) without inventing daemon capability.",
+        "pros": [
+          "The k5 truthful-sync engine (validate → write → revert-on-reject + pull-sync reconcile) is authored ONCE in the ConfigSync seam and reused by s1/s2/s3, instead of re-implemented per story.",
+          "s4/s5/s6/s7 share ONE WebviewPanelHost + DaemonData gateway, so the tabbed panel, the postMessage plumbing, and the on-demand-refresh discipline exist once; s5/s6/s7 add only their tab/panel content.",
+          "Follows the exact injectable-seam + sole-vscode-importer convention S001-S006 shipped (k1), so every core is unit-testable off VS Code via node:test.",
+          "Two clean shared contracts give the 7 stories a stable boundary map: s1 and s4 are the two foundation stories, the rest are additive consumers — matching the DEF dependency graph exactly."
+        ],
+        "cons": [
+          "Introduces two new cross-story contracts that s1 and s4 must land before their dependents, so the two foundation stories carry more design weight than the leaf stories.",
+          "The DaemonData gateway must fold several existing daemon IPC methods (status, chain, debug-status, log, repo.list, orphan scan) behind one read facade, so its shape is only as clean as those methods — a couple (log tail, orphan scan) are node-side, not pure IPC."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "One monolithic insrc Control Center webview owning config editing too",
+        "oneLineSummary": "A single webview renders EVERYTHING — the editable config (global/per-role/per-repo) and the Daemon/Workflows/Debug pages — as one contract with one entry point.",
+        "approach": "Rather than splitting native-settings config from a webview for live pages, this shape puts the entire settings/config UI into one large webview 'Control Center' with its own config-editing forms, per-role and per-repo editors, and the Daemon/Workflows/Debug pages as tabs. One contract (the webview + its message bus over sc1) drives all 7 stories; config edits are applied via config.write directly from the webview's own form controls, and the status pages live as sibling tabs.\n\nThe webview owns all rendering and theming, so there is no dependence on VS Code's native Settings schema at all — the dynamic config.catalog can be rendered directly at runtime with no static package.json schema. Stories become 'add a tab/section to the Control Center' rather than 'wire a native setting' or 'add a webview page'.",
+        "pros": [
+          "A single surface + one message contract for all 7 stories — no native-settings-vs-webview split to maintain, and the dynamic config.catalog can be rendered live with no static schema.",
+          "Full control over config-editing UX (grouping, per-role forms, per-repo forms) in one place, closest 1:1 to the JetBrains Swing Configurable form model."
+        ],
+        "cons": [
+          "Directly VIOLATES the DEF non-goals + k7: it abandons native VS Code Settings (losing built-in search, the settings UI, machine-scope semantics) for the config half — the spec explicitly ruled this out.",
+          "Re-implements a whole config-editing UI + theming inside a webview that VS Code's native Settings already provides for free — materially more UI/theming effort for the config surface than declaring native keys.",
+          "Loses the idiomatic 'edit insrc config where you edit every other extension's settings' discoverability that the native-settings decision was chosen for."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Violates k7 (abandons native machine-scoped VS Code Settings for a monolithic webview — the exact shape the DEF non-goals + the spec's hybrid decision ruled out) and is only partial on k1/k5/k6."
+      },
+      {
+        "id": "a3",
+        "name": "Per-story ad-hoc surfaces with no shared framework contracts",
+        "oneLineSummary": "Each of the 7 stories wires its own daemon reads + its own UI directly in extension.ts, with no shared ConfigSync engine, panel host, or DaemonData gateway.",
+        "approach": "Each story is built as an independent slice: s1/s2/s3 each add their own settings-change listener and config.write calls; s4 opens its own webview; s5/s6/s7 each open/append their own views with their own daemon calls. No cross-story contract is introduced — the only shared thing remains sc1.\n\nThis minimizes upfront framework design: the first story ships without having to define a ConfigSync or PanelHost contract, and each subsequent story is self-contained.",
+        "pros": [
+          "Lowest upfront design cost — no new shared contract has to be settled before the first story can ship.",
+          "Each story is fully self-contained, so stories can be built in any order with no foundation-story dependency."
+        ],
+        "cons": [
+          "The k5 truthful-sync engine (validate/revert/reconcile) would be re-implemented in each of s1/s2/s3, tripling the surface for subtle sync bugs the invariant is meant to prevent.",
+          "s4/s5/s6/s7 all target the SAME Detailed Status panel; without a shared panel host they collide — either duplicating tab/postMessage plumbing or racing to own the panel, which the DEF dependency graph (s5/s6/s7 depend on s4) already implies needs a shared host.",
+          "Breaks the S001-S006 convention of small injectable seams behind boundaries — ad-hoc daemon calls scattered across stories are harder to unit-test off VS Code and drift from the established pattern (k1)."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Partial on k1 (ad-hoc surfaces drift from the established small-injectable-seam convention and are harder to unit-test off VS Code) and, critically, partial on k5 (re-implements the validate→write→revert→reconcile truthfulness engine separately in s1/s2/s3, multiplying the risk that the very invariant k5 exists to guarantee breaks); the shared-panel need of s5/s6/s7 makes the no-shared-contract shape fragile."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 gap.locate — current vscode-plugin surface (7 commands + sc2 StatusSurface via extension.ts; no contributes.configuration/Webview; sc1 SharedIpcClient the only daemon path)",
+      "quotedText": "package.json has contributes.commands only — NO contributes.configuration and NO Webview anywhere; the sc1 SharedIpcClient is the only daemon path and is reused."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 convention.detect — the injectable-seam + sole-vscode-importer convention (sc1-sc7 type-level contracts in surfaces/; extension.ts the sole 'vscode' importer; node:test off VS Code)",
+      "quotedText": "extension.ts is the SOLE 'vscode' importer... cross-story shared contracts are type-level (sc1 SharedIpcClient, sc2 StatusSurface, sc3 CommandRegistry, sc4 ConsentGate)... the new config + webview surfaces MUST follow the same injectable-seam pattern."
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1 reuse.map — config.catalog/config.write daemon IPC (src/daemon/index.ts) + the JetBrains parity target (PerRoleSection/PerRepoSection + Daemon/Workflows/Debug pages)",
+      "quotedText": "config.catalog reads schema+values incl. registered repos; config.write writes a key... the VS Code Epic re-expresses all of it over the SAME IPC, no new daemon capability."
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "s1 reuse.map — the daemon IPC each page consumes mirroring the JetBrains DaemonGateway (repo.list, daemon.status, debug-status, workflow chain, log tail, orphan scan; only orphan-kill mutates, consent-gated k4)",
+      "quotedText": "repo.list (the Repo Configuration picker), daemon.status, the daemon.debug-status IPC (MCP-clients), the workflow chain report, the rotation-aware /tmp/.insrc log tail, and an orphan-process scan/kill... only the orphan-kill mutates and is consent-gated (k4)."
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/config/role-taxonomy.ts (RoleId static taxonomy) + src/config/core-floor-guard.ts (applyCoreFloor) + src/analyze/context/role-router.ts — role SET static, roleTiers a user-editable override",
+      "quotedText": "The role SET is a static RoleId taxonomy; role→tier is a user-editable override (roleTiers) clamped by the coreFloor — so per-role keys are known at build time yet user-editable."
+    },
+    {
+      "id": "c6",
+      "kind": "analyze-bundle",
+      "ref": "s1 import.graph — vscode-plugin/src capability-folder structure (surfaces/daemon/hosts/workspace/onboarding + extension.ts) where the new config/ + webview/ seams land",
+      "quotedText": "The new work lands as sibling capability folders — a config/ seam and a webview/ (panels/) host — each behind an injectable boundary, with the real VS Code bindings constructed ONLY in extension.ts."
+    }
+  ]
+}

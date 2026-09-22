@@ -1,0 +1,90 @@
+<!-- insrc:artifact SPEC-d18668bb33798f21 -->
+
+# Spec: Bring the insrc settings/config UI to the VS Code extension, at full parity with the shipped JetBrains plugin, built as one multi-story epic.
+
+**Category:** design
+
+## Intent
+
+Bring the insrc settings/config UI to the VS Code extension, at full parity with the shipped JetBrains plugin, built as one multi-story epic. Rendering is HYBRID: the editable config surface uses native VS Code `contributes.configuration` (the stable, known-shape global and per-role keys declared statically in package.json, scope: "machine" — user-only, excluded from Settings Sync), plus one `insrc.advanced` object-type escape-hatch setting reserved for daemon-version-drift forward-compat; the read-only Daemon/Workflows/Debug pages render in a single Webview. Native-settings edits sync live — `vscode.workspace.onDidChangeConfiguration` diffs against the last-synced snapshot and calls config.write per changed key immediately (pre-flight validated against config.catalog), with no manual save step; a daemon rejection surfaces a toast with the daemon's message and auto-reverts settings.json to the last-known-good value (loop-guarded) so the native UI never lies about actual daemon state. Because the daemon config.json is process-global and other clients (JetBrains plugin, CLI, other VS Code windows) write to it independently, the native surface also pulls from the daemon on activation and via a manual "Refresh insrc settings" command, reconciling external drift. The insrc status-bar item (daemon status glyph) opens a two-option menu — "Detailed Status" opens the Webview as a tabbed editor panel (Daemon status as the default view, with Workflows and Debug as in-panel tabs: chain report, orphan-kill action, MCP clients, log tail), and "Repo Configuration" opens a dedicated per-repo editor panel whose repo picker is populated from config.catalog's registered-repo list (independent of open folders) and whose edits write via config.write; both panels are ALSO reachable via durable Command Palette commands (k6 palette-reachability). Live data refresh mirrors JetBrains: on-demand (open, tab-switch, manual refresh button) for Daemon/Workflows, with a continuous polling-ticker live tail reserved only for the Debug log section; the orphan-kill mutation is consent-gated.
+
+## Scope boundary
+
+This is one multi-story epic delivering FULL JetBrains parity (read-only→editable→per-role→per-repo config plus all 3 nested pages incl. the orphan-kill mutation) — not a trimmed first cut. It stops at the VS Code client: it adds NO new daemon-side capability (no config-changed subscribe/push IPC channel), reaching the daemon only through the existing config.catalog / config.write IPC. It does NOT hand-author per-repo overrides as raw JSON in settings.json, nor scope them to open workspace folders — per-repo is authored exclusively through the Webview repo-picker editor keyed to the daemon's own repo registry. It does NOT render the read-only status/action pages via native contributes.configuration or a TreeView, does NOT combine the editable config editor and the read-only pages into a single Webview, does NOT add a per-field manual 'save' UX, does NOT stream/push live updates into the Webview for the Daemon/Workflows sections, and does NOT participate in VS Code Settings Sync for the config keys (machine scope, so config stays local to each machine's daemon). Declaring the full dynamic per-repo/config-catalog space as static package.json keys is out of scope (routed through the insrc.advanced escape hatch / Webview editor instead).
+
+## Non-goals
+
+- A single Webview handling both the editable config editor and the read-only pages (ruled out in favor of the native+Webview split)
+- A pure native contributes.configuration render for the read-only Daemon/Workflows/Debug pages (rejected — those aren't settings, they're live status/actions)
+- A TreeView-based renderer for either surface
+- A trimmed v1 (rejected in favor of full JetBrains parity as one multi-story epic)
+- Declaring the full dynamic per-repo config space as static package.json keys (rejected — routed through the insrc.advanced escape hatch instead)
+- A per-field manual 'save' UX for config edits (rejected in favor of live push on change)
+- Hand-editing per-repo overrides directly in settings.json JSON (rejected in favor of a dedicated per-repo picker+editor UI inside the Webview)
+- Streaming/push-based live updates into the Webview for Daemon/Workflows sections (rejected in favor of on-demand refresh, matching JetBrains)
+- Silently trusting settings.json as the source of truth after activation (rejected — added activation pull-sync + manual refresh so external writes from other clients are reconciled, not just VS Code→daemon pushes)
+- Native `contributes.configuration` settings only
+- Single Webview panel for everything (config + nested pages)
+- TreeView (sidebar) for everything
+- Config-first v1: ship the full config editor (read-only→editable→per-role→per-repo) only; defer the Daemon/Workflows/Debug nested pages to a follow-up epic
+- Read-only-first v1: config editor is view-only + all 3 nested pages are read-only (status only, no orphan-kill mutation); editable config and the kill action are deferred
+- Status-pages-first v1: ship the 3 nested Daemon/Workflows/Debug pages (incl. orphan-kill) first since they're pure-Webview with no settings-schema work; defer the config editor entirely
+- Build-time codegen: at extension build, query a reference daemon's config.catalog and generate package.json's contributes.configuration from it (including per-role keys), re-running whenever the catalog shape changes; per-repo axes still fall back to a JSON object setting
+- Reopen d1 for config editing: move the per-role/per-repo editable surface into the existing Webview (which already renders catalog-driven UI dynamically for Daemon/Workflows/Debug), keep contributes.configuration only for the flat global keys
+- Enable VS Code's proposed/internal configuration-registration API to register schema at runtime from the live catalog
+- Explicit batch: local edits accumulate; a command / status-bar action ("Apply insrc Config Changes") diffs and pushes all pending changes to config.write on demand
+- Poll-based reconciliation: a background timer periodically re-reads config.catalog and diffs it against the local settings.json, pushing any drift
+- Command Palette entry point (`insrc: Open Status`) + in-Webview tab strip across the top for Daemon/Workflows/Debug
+- New Activity Bar icon + TreeView with 3 entries (Daemon/Workflows/Debug), each opening the Webview scrolled/focused to that section
+- Explicit repo-key map inside `insrc.advanced` (e.g. `{"repos": {"<repoPath>": {...overrides}}}`), edited as one raw-JSON blob
+- VS Code resource-scope settings (per-folder settings.json overrides, like language-specific settings)
+- Uniform continuous polling for all three sections on a fixed interval while the Webview is open
+- Uniform on-demand only: every section, including the log tail, refreshes solely on tab-activation or a manual click — no ticker anywhere
+- Push-based: the extension host holds an active daemon subscription and proactively pushes state changes to the Webview with no polling at all
+- scope: "application" — user-only setting, no per-workspace/folder override possible; editable only from the User Settings tab
+- Default/unscoped (window or resource) — behaves like most extension settings, editable at Workspace and Workspace Folder level too
+- Split by axis: application scope for global/per-role keys, but leave the per-repo axis in `insrc.advanced` unscoped/window so it can vary per open workspace folder
+- Toast only, no revert: show an error notification but leave the rejected value in settings.json as-is; user must manually fix or re-edit it
+- Surface failures as a list in the Webview's Daemon page ('last sync errors') instead of a toast, no auto-revert
+- Pre-flight validate: call a validation check via config.catalog before writing, so rejections become rare; on the rare failure just log to the output channel
+- Pull-sync on extension activation only: read config.catalog once at startup, populate settings.json, no further syncing until reload
+- Periodic polling pull-sync (e.g. every 30s) that overwrites settings.json whenever the daemon value differs from the last-synced snapshot
+- Daemon push notification: extension subscribes to a config-changed IPC event and the daemon proactively pushes on external writes
+
+## Decisions
+
+- **Hybrid: native `contributes.configuration` for editable config + one Webview for the read-only Daemon/Workflows/Debug pages** — What UI paradigm renders the config editor and the nested Daemon/Workflows/Debug pages in VS Code?
+  - Ruled out: _Native `contributes.configuration` settings only_, _Single Webview panel for everything (config + nested pages)_, _TreeView (sidebar) for everything_
+- **Full parity: editable config (read-only→editable→per-role→per-repo) + all 3 nested pages (Daemon, Workflows, Debug incl. orphan-kill mutation) — mirrors JetBrains exactly, built as a multi-story epic like the JetBrains one was** — How much of the JetBrains parity ships in v1 — full config+pages parity, or a trimmed first cut?
+  - Ruled out: _Config-first v1: ship the full config editor (read-only→editable→per-role→per-repo) only; defer the Daemon/Workflows/Debug nested pages to a follow-up epic_, _Read-only-first v1: config editor is view-only + all 3 nested pages are read-only (status only, no orphan-kill mutation); editable config and the kill action are deferred_, _Status-pages-first v1: ship the 3 nested Daemon/Workflows/Debug pages (incl. orphan-kill) first since they're pure-Webview with no settings-schema work; defer the config editor entirely_
+- **Fixed skeleton + escape-hatch object setting: declare the stable, known-shape global/per-role keys statically in package.json; route anything catalog-only or truly dynamic (arbitrary per-repo overrides) into one generic `insrc.advanced` object-type setting edited as raw JSON via VS Code's standard settings.json editor** — contributes.configuration requires VS Code's native Settings UI to know the config schema statically at package.json build time, but the daemon's config.catalog is dynamic — it varies by daemon version and only reveals per-role/per-repo axes (roles, registered repos) at runtime. How does the native config editor reconcile that?
+  - Ruled out: _Build-time codegen: at extension build, query a reference daemon's config.catalog and generate package.json's contributes.configuration from it (including per-role keys), re-running whenever the catalog shape changes; per-repo axes still fall back to a JSON object setting_, _Reopen d1 for config editing: move the per-role/per-repo editable surface into the existing Webview (which already renders catalog-driven UI dynamically for Daemon/Workflows/Debug), keep contributes.configuration only for the flat global keys_, _Enable VS Code's proposed/internal configuration-registration API to register schema at runtime from the live catalog_
+- **Live push: listen on `vscode.workspace.onDidChangeConfiguration`, diff against the last-synced snapshot, call config.write per changed key immediately** — VS Code's native Settings UI has no per-field "save" callback like the JetBrains Swing form used — how do edits made in the native config surface actually reach the daemon's config.write IPC?
+  - Ruled out: _Explicit batch: local edits accumulate; a command / status-bar action ("Apply insrc Config Changes") diffs and pushes all pending changes to config.write on demand_, _Poll-based reconciliation: a background timer periodically re-reads config.catalog and diffs it against the local settings.json, pushing any drift_
+- **Status bar item (daemon status glyph) that opens the Webview on click, landing on Daemon by default with in-panel tabs for the other two** — The read-only Daemon/Workflows/Debug pages live in one Webview panel with three sections — but how does the user open it, and how do they move between the three sections once it's open?
+  - Ruled out: _Command Palette entry point (`insrc: Open Status`) + in-Webview tab strip across the top for Daemon/Workflows/Debug_, _New Activity Bar icon + TreeView with 3 entries (Daemon/Workflows/Debug), each opening the Webview scrolled/focused to that section_
+- **Dedicated per-repo JSON editor inside the read-only Webview (a picker populated from config.catalog's repo list + an editable panel)** — d3 routes per-repo overrides through the `insrc.advanced` raw-JSON setting — but how does the UI/data model actually key those overrides to a specific registered repo, given the daemon's repo registry is independent of which folders happen to be open in this VS Code window?
+  - Ruled out: _Explicit repo-key map inside `insrc.advanced` (e.g. `{"repos": {"<repoPath>": {...overrides}}}`), edited as one raw-JSON blob_, _VS Code resource-scope settings (per-folder settings.json overrides, like language-specific settings)_
+- **Mirror JetBrains: on-demand refresh (on open + tab-switch + a manual refresh button) for Daemon/Workflows sections; a continuous polling-ticker live tail only for the Debug log section** — The Webview's Daemon/Workflows/Debug sections show daemon-derived state (status, chain staleness, orphan processes, MCP clients, log tail) that can change while the panel is open. The extension host owns the daemon IPC connection, not the Webview — so how does live data actually reach and stay current in the Webview once opened?
+  - Ruled out: _Uniform continuous polling for all three sections on a fixed interval while the Webview is open_, _Uniform on-demand only: every section, including the log tail, refreshes solely on tab-activation or a manual click — no ticker anywhere_, _Push-based: the extension host holds an active daemon subscription and proactively pushes state changes to the Webview with no polling at all_
+- **scope: "machine" — user-only, but excluded from Settings Sync (stays local to this machine)** — Grounded in client-provider-resolution memory ("config is global — one ~/.insrc/config.json") and consistent with d6's reasoning that the daemon's repo registry, and by extension its config, is independent of the current VS Code workspace.
+  - Ruled out: _scope: "application" — user-only setting, no per-workspace/folder override possible; editable only from the User Settings tab_, _Default/unscoped (window or resource) — behaves like most extension settings, editable at Workspace and Workspace Folder level too_, _Split by axis: application scope for global/per-role keys, but leave the per-repo axis in `insrc.advanced` unscoped/window so it can vary per open workspace folder_
+- **Toast + auto-revert: show a VS Code error notification with the daemon's message, and the extension writes the last-known-good value back into settings.json so the native UI never lies about what the daemon actually holds** — d4's live-push writes each changed native setting straight to config.write with no manual save step. When the daemon rejects a write (validation error, or daemon unreachable), the value the user typed is already sitting in settings.json looking accepted — how does the extension surface the failure and keep the native UI truthful to actual daemon state?
+  - Ruled out: _Toast only, no revert: show an error notification but leave the rejected value in settings.json as-is; user must manually fix or re-edit it_, _Surface failures as a list in the Webview's Daemon page ('last sync errors') instead of a toast, no auto-revert_, _Pre-flight validate: call a validation check via config.catalog before writing, so rejections become rare; on the rare failure just log to the output channel_
+- **Pull-sync on activation + a manual 'Refresh insrc settings' command/status-bar action, mirroring the on-demand pattern already chosen for the Webview in d7** — The daemon's config.json is process-global and can change from OTHER clients while this VS Code window is open — the JetBrains plugin, the CLI, or another VS Code window each calling config.write independently. d4/d9 cover VS Code → daemon pushes and their failure handling, but nothing yet pulls daemon → VS Code, so the native Settings UI (backed by settings.json) can silently drift from what the daemon actually holds. How does the native config surface stay truthful to external changes?
+  - Ruled out: _Pull-sync on extension activation only: read config.catalog once at startup, populate settings.json, no further syncing until reload_, _Periodic polling pull-sync (e.g. every 30s) that overwrites settings.json whenever the daemon value differs from the last-synced snapshot_, _Daemon push notification: extension subscribes to a config-changed IPC event and the daemon proactively pushes on external writes_
+
+## Citations
+
+- **[[c1]]** `step-output` `s1` — "Hybrid: native contributes.configuration for editable config + one Webview for the read-only Daemon/Workflows/Debug pages; full JetBrains parity as one multi-story epic; machine-scoped native settings"
+- **[[c2]]** `analyze-bundle` `per-role model-tiering config grounding: src/config/role-taxonomy.ts (RoleId is a static taxonomy), roleTiers override map + models.coreFloor, applyCoreFloor (src/config/core-floor-guard.ts), createRoleRouter (src/analyze/context/role-router.ts) — confirms the role SET is static but role→tier is a user-editable override, so per-role belongs in the editable config surface.` — "roleTiers map of role → tier (user overrides); a critical role assigned below the floor is raised to the floor; the role SET is a static RoleId taxonomy."
+
+<!-- insrc:review -->
+
+## Review
+
+### ✅ Review `PASS` — brainstorm (brainstorm)
+
+**0 HIGH · 0 MED · 0 LOW** · model `client` · reviewed 2026-09-22T10:18:06.585Z
+
+_No load-bearing premises were extracted._

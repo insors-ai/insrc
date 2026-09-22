@@ -29,6 +29,24 @@ Skipped a prompt? Every action is also a durable command in the Command Palette:
 Uninstalling the extension runs a `vscode:uninstall` hook that removes the insrc
 entries from every host config it wrote.
 
+## Configure insrc
+
+The daemon's configuration is editable directly from **native VS Code Settings**
+(search `insrc`) — every option is a typed, machine-scoped setting, so it never
+syncs off this machine:
+
+- **Global options** (`insrc.*`) — log level, Ollama host, permission mode,
+  model tiers, plan depth, embeddings, and more, each with the daemon's current
+  value.
+- **Per-role model tiers** (`insrc.models.tasks.*`) — override which tier
+  (`cheap` / `mid` / `core`) serves each insrc reasoning role.
+
+The Settings view stays **truthful to the daemon**: an edit the daemon rejects is
+reverted with its reason, and external changes (from the CLI, JetBrains, or
+another window) are reconciled on demand via **`insrc: Refresh insrc settings`**
+in the Command Palette. All config access is over the local daemon socket — no
+cloud path.
+
 ## Building & packaging (maintainers)
 
 ```bash

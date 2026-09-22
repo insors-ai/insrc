@@ -22,7 +22,8 @@
       { "command": "insrc.daemon.stop", "title": "Stop daemon", "category": "insrc" },
       { "command": "insrc.daemon.restart", "title": "Restart daemon", "category": "insrc" },
       { "command": "insrc.daemon.update", "title": "Update daemon", "category": "insrc" },
-      { "command": "insrc.hosts.wire", "title": "Wire AI hosts", "category": "insrc" }
+      { "command": "insrc.hosts.wire", "title": "Wire AI hosts", "category": "insrc" },
+      { "command": "insrc.workspace.register", "title": "Register workspace", "category": "insrc" }
     ]
   },
   "scripts": {

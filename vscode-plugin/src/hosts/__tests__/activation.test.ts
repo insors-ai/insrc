@@ -35,11 +35,13 @@ test('the activation-time host-wire offer is fire-and-forget + guarded (never th
 
 test('contributes.commands includes insrc.hosts.wire alongside the S002 daemon entries (palette reachability, k6)', () => {
   const pkg = JSON.parse(readFileSync(join(PKG, 'package.json'), 'utf8'));
-  const ids = (pkg.contributes?.commands ?? []).map((c: { command: string }) => c.command).sort();
-  assert.deepEqual(ids, [
-    'insrc.daemon.install', 'insrc.daemon.restart', 'insrc.daemon.start', 'insrc.daemon.stop', 'insrc.daemon.update',
-    'insrc.hosts.wire',
-  ], 'the wire command is palette-reachable and the S002 daemon entries are untouched');
+  const ids = new Set((pkg.contributes?.commands ?? []).map((c: { command: string }) => c.command));
+  // Subset check: later stories (S004 workspace register, …) append their own
+  // commands to the same array — assert the S002 daemon + S003 wire entries are
+  // present, not the exact set.
+  for (const id of ['insrc.daemon.install', 'insrc.daemon.start', 'insrc.daemon.stop', 'insrc.daemon.restart', 'insrc.daemon.update', 'insrc.hosts.wire']) {
+    assert.ok(ids.has(id), `${id} must stay palette-reachable (k6)`);
+  }
 });
 
 test('sync-assets bundles the canonical steering block so the steering body ships with the extension', () => {

@@ -1,0 +1,666 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1790055602237-euewfb",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-22T05:48:41.229Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 518970,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-09-21T16:32:40.301Z",
+    "epicHash": "ad0d45c9d690f8c1",
+    "epicSlug": "build-insrc-vs-code-extension-v1",
+    "storyId": "s4",
+    "hldBaseRunId": "wf-1790009331473-c5to0q",
+    "hldEffectiveHash": "1e2038ef723235b64e83ceb16211d8262911619c0f401b3886b6a4c352eda9a9",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 0
+      },
+      "reviewedAt": "2026-09-22T05:49:43.537Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-22T05:52:04.601Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "The insrc VS Code extension is a thin orchestrator that owns no reasoning: a new top-level vscode-plugin/ TypeScript package (sibling to jetbrains-plugin/, its own package.json + build + Marketplace metadata) whose whole job is to wire insrc into stock VS Code at lifecycle moments (activate, first workspace open, uninstall). It re-expresses the shipped jetbrains-plugin/ thin-config-orchestrator in TS over VS Code primitives, reaching the daemon ONLY through a NEW in-repo src/shared/ipc-client module that generalizes the existing src/cli/client.ts `rpc` fn + its IPC request/reply types + the socket path — giving exactly one socket-client code path shared by the CLI and the extension (k5), with no daemon internals, indexer, or storage in the extension bundle, and no cloud path opened by the extension (k2). The extension is decomposed into small per-capability seams, each with an injectable boundary so its load-bearing logic is unit-testable off the VS Code API, and every invasive action (install the daemon, wire a host, register the workspace) is consent-gated and exposed as a durable first-class command.",
+      "ownedContracts": [
+        {
+          "id": "sc7",
+          "name": "WorkspaceRegistrar",
+          "purpose": "The workspace-enrolment contract (k3): check whether the open root is already enrolled and register it ONLY through the daemon's explicit repo.add contract, never silently. Owned by the registration story; consumed by the onboarding capstone for the register step.",
+          "interfaceSketch": "export interface RegistrationState {\n  root: string;\n  registered: boolean;\n}\nexport interface WorkspaceRegistrar {\n  state(root: string): Promise<RegistrationState>;\n  register(root: string): Promise<RegistrationState>; // via repo.add IPC only\n}",
+          "ownedByStory": "s4",
+          "consumedByStories": [
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c1",
+            "c2"
+          ]
+        }
+      ],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "SharedIpcClient",
+          "purpose": "The single thin socket-client boundary (k5): a generalized `rpc` fn + the daemon IPC request/reply types + the socket path, extracted into src/shared/ipc-client so both src/cli and vscode-plugin/ import ONE client. Keeps daemon internals/indexer/storage out of the extension and is the only channel through which the extension reaches reasoning (k2).",
+          "interfaceSketch": "// src/shared/ipc-client\nexport interface IpcRequest<P = unknown> { method: string; params?: P }\nexport interface DaemonStatus {\n  running: boolean;\n  uptimeMs?: number;\n  version?: string;\n  queueDepth?: number;\n  registeredRepos?: number;\n}\nexport type DaemonReachability = 'running' | 'stopped' | 'errored';\nexport interface IpcClient {\n  rpc<T>(method: string, params?: unknown): Promise<T>;\n  status(): Promise<DaemonStatus>;\n}\nexport declare const sockFilePath: string; // = PATHS.sockFile",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s1",
+            "s2",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c1",
+            "c2"
+          ]
+        },
+        {
+          "id": "sc3",
+          "name": "CommandRegistry",
+          "purpose": "The durable-command contract (ac2/k6): a registration surface for the extension's first-class commands (install, wire, register, and the daemon lifecycle actions) so no dismissed onboarding prompt becomes a dead end. Cross-cutting across s2/s3/s4/s5 — owned at the nearest common ancestor s1.",
+          "interfaceSketch": "export type InsrcCommandId =\n  | 'insrc.daemon.install' | 'insrc.daemon.start' | 'insrc.daemon.stop'\n  | 'insrc.daemon.restart' | 'insrc.daemon.update'\n  | 'insrc.hosts.wire' | 'insrc.workspace.register';\nexport interface CommandDescriptor {\n  id: InsrcCommandId;\n  title: string;\n}\nexport interface CommandRegistry {\n  register(descriptor: CommandDescriptor, run: () => Promise<void>): void;\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s1",
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        },
+        {
+          "id": "sc4",
+          "name": "ConsentGate",
+          "purpose": "The single consent-prompt contract (k4): every invasive action asks and performs nothing until the developer accepts. One shape for the prompt-gated Install (s2), the single combined wiring consent naming every detected host (s3), and the one-time register prompt (s4); the onboarding capstone (s5) sequences these. Cross-cutting — owned at nearest common ancestor s1.",
+          "interfaceSketch": "export interface ConsentRequest {\n  title: string;\n  detail: string;\n  acceptLabel: string;\n  items?: string[]; // e.g. the detected host names for the combined wiring prompt\n}\nexport type ConsentOutcome = 'accepted' | 'declined' | 'dismissed';\nexport interface ConsentGate {\n  ask(request: ConsentRequest): Promise<ConsentOutcome>;\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s1",
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        },
+        {
+          "id": "sc7",
+          "name": "WorkspaceRegistrar",
+          "purpose": "The workspace-enrolment contract (k3): check whether the open root is already enrolled and register it ONLY through the daemon's explicit repo.add contract, never silently. Owned by the registration story; consumed by the onboarding capstone for the register step.",
+          "interfaceSketch": "export interface RegistrationState {\n  root: string;\n  registered: boolean;\n}\nexport interface WorkspaceRegistrar {\n  state(root: string): Promise<RegistrationState>;\n  register(root: string): Promise<RegistrationState>; // via repo.add IPC only\n}",
+          "ownedByStory": "s4",
+          "consumedByStories": [
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c1",
+            "c2"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s4",
+        "owns": [
+          "sc7"
+        ],
+        "depends": [
+          "sc1",
+          "sc3",
+          "sc4"
+        ],
+        "internal": "The workspace-root resolution from the open VS Code workspace folders and the already-registered check semantics stay private to s4. Only the sc7 registrar contract is exposed; enrolment goes exclusively through the daemon's repo.add over sc1, the register command is registered into sc3, and the one-time prompt uses sc4."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4"
+          ],
+          "depends": [],
+          "internal": "The VS Code activation entrypoint, the extension-bundle packaging (its build over src/shared/ipc-client), and the daemon-reachability probe implementation stay private to s1. How the status-bar item is created and rendered, and the concrete extraction of src/cli/client.ts into a re-export over src/shared/ipc-client (without regressing the CLI/TUI), are internal detail — only the four type-level contracts (sc1–sc4) are exposed."
+        },
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc6"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4"
+          ],
+          "internal": "The bundled installer asset (which installer script ships and how it is invoked over scripts/insrc-daemon-install.sh), the exact daemon-ctl.sh subcommand invocation and output parsing, and streamed lifecycle progress are private to s2. Only the sc6 lifecycle contract is exposed; the install/lifecycle commands are registered into sc3 and gated by sc4."
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc5"
+          ],
+          "depends": [
+            "sc3",
+            "sc4"
+          ],
+          "internal": "The concrete per-host config locations and shapes (extension-ID hosts like Copilot/Claude Code/Continue/Cline vs editor-environment hosts like Cursor/Windsurf/VSCodium via .vscode/mcp.json or the host's own file), the marker-delimited JSON-merge and steering writers, and the detection mechanics stay private to each adapter behind sc5. Only the sc5 interface + registry is exposed; the wire command is registered into sc3 and the combined consent uses sc4."
+        },
+        {
+          "storyId": "s5",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6",
+            "sc7"
+          ],
+          "internal": "The first-run flow sequencing (the order and coalescing of the install → register → wire consent prompts into one coherent flow rather than scattered pop-ups), the persisted 'already onboarded' state, and the uninstall hook that drives sc5.unwire across wired hosts are private to s5. It owns no new shared contract — it composes the branch owners' contracts and pushes resulting state through sc2."
+        },
+        {
+          "storyId": "s6",
+          "owns": [],
+          "depends": [],
+          "internal": "The vscode-plugin/package.json manifest (contributes/engines.vscode/activationEvents), the Marketplace listing assets (icon, README, categories), the packaging into a single .vsix, and the manually-triggered (workflow_dispatch) Marketplace-only publish path stay entirely private to s6 — no runtime contract is exposed and it depends on no other story's contract, only on the s1 package existing."
+        }
+      ],
+      "rolloutPhase": "Phase B — Capability seams (lifecycle, host wiring, registration)",
+      "nonFunctional": {
+        "performance": "Activation must not block the editor: the daemon-reachability probe and every socket read run off the UI path with a bounded timeout, and a stopped/unreachable daemon degrades to an 'errored'/'stopped' status rather than hanging activation (ac1/ac2).",
+        "security": "No cloud path is opened by the extension and no secrets are stored (k2); all reasoning stays behind daemon IPC over the local Unix socket. Every write into a host-owned config is marker-delimited and reversible (sc5), preserving the developer's surrounding content and fully reversed on uninstall (ac3).",
+        "observability": "Every invasive action reflects its resulting state through the status surface (sc2) and returns a structured LifecycleResult/RegistrationState/ConsentOutcome; consent outcomes (accepted/declined/dismissed) are explicit so a dismissed prompt is recoverable via its durable sc3 command.",
+        "durability": "Workspace enrolment is durable only through the daemon's repo.add registry contract (k3) — the extension holds no shadow registry. Onboarding persists a per-workspace 'already prompted/onboarded' state so prompts are one-time, and the host wiring it writes survives a mere disable and is removed only on uninstall."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "WorkspaceRegistrar.state",
+          "signature": "state(root: string): Promise<RegistrationState>",
+          "parameters": [
+            {
+              "name": "root",
+              "type": "string",
+              "purpose": "The open workspace root (absolute) to check enrolment for.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<RegistrationState>",
+            "meaning": "{ root, registered } where registered = the normalized-absolute root equals the `path` of some row returned by rpc<RegisteredRepo[]>('repo.list'). Derives membership from the registry, never assumes (k3)."
+          },
+          "errors": [
+            {
+              "type": "(never throws for membership)",
+              "condition": "A daemon/socket failure from rpc('repo.list') is caught and surfaced as registered:false with the reason logged, so activation degrades rather than hanging (nonFunctional.performance); the caller may re-run via the durable command."
+            }
+          ],
+          "preconditions": [
+            "Reads only the shared ipc-client rpc + the passed root; opens no cloud path (k2)."
+          ],
+          "postconditions": [
+            "registered reflects the real repo.list membership at call time; no mutation."
+          ]
+        },
+        {
+          "name": "WorkspaceRegistrar.register",
+          "signature": "register(root: string): Promise<RegistrationState>",
+          "parameters": [
+            {
+              "name": "root",
+              "type": "string",
+              "purpose": "The open workspace root (absolute) to enrol.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<RegistrationState>",
+            "meaning": "{ root, registered:true } after rpc('repo.add', { path: root }) resolves { ok:true }. Enrols ONLY through the daemon's explicit repo.add (ac2/k3)."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "rpc('repo.add') rejects (invalid path — src/daemon/index.ts:470 'rejected repo.add: invalid path', or the daemon is unreachable); surfaced to the caller, which reflects an errored status via sc2 and leaves the durable command available to retry."
+            }
+          ],
+          "preconditions": [
+            "The CALLER obtained sc4 'accepted' before register() runs (k4) — register() itself performs no consent.",
+            "`steering` is OMITTED from the repo.add params so the daemon does NOT also inject steering / register host MCP clients (host wiring is the reversible s3 flow — no double-wiring)."
+          ],
+          "postconditions": [
+            "The daemon registry contains a row whose path === root; a subsequent state(root) returns registered:true (idempotent — a second register is a harmless re-add)."
+          ]
+        },
+        {
+          "name": "createWorkspaceRegistrar",
+          "signature": "createWorkspaceRegistrar(deps: { client: IpcClient }): WorkspaceRegistrar",
+          "parameters": [
+            {
+              "name": "deps",
+              "type": "{ client: IpcClient }",
+              "purpose": "The sc1 shared ipc-client the registrar issues repo.list/repo.add over — injected so the registrar is unit-testable with a fake client.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "WorkspaceRegistrar",
+            "meaning": "The sc7 implementation whose state()/register() delegate to repo.list membership + repo.add, mirroring the S002 createDaemonLifecycleController factory."
+          },
+          "errors": [],
+          "preconditions": [
+            "client is the same shared ipc-client the extension binds in s1 (no new IPC)."
+          ],
+          "postconditions": [
+            "A registrar with no VS Code dependency — pure over the injected client."
+          ]
+        },
+        {
+          "name": "WorkspaceFolders",
+          "signature": "type WorkspaceFolders = () => readonly string[]",
+          "parameters": [],
+          "returns": {
+            "type": "readonly string[]",
+            "meaning": "The absolute roots of the open workspace folders (from vscode.workspace.workspaceFolders), injected so root resolution is testable off VS Code. Empty when no folder is open."
+          },
+          "errors": [],
+          "preconditions": [
+            "Bound in extension.ts to vscode.workspace.workspaceFolders?.map(f => f.uri.fsPath) ?? []."
+          ],
+          "postconditions": [
+            "The first entry is treated as the primary root for the one-time offer; a no-folder window yields [] (no prompt)."
+          ]
+        },
+        {
+          "name": "PromptStore",
+          "signature": "interface PromptStore { wasDismissed(key: string): boolean; markDismissed(key: string): void }",
+          "parameters": [],
+          "returns": {
+            "type": "PromptStore",
+            "meaning": "A per-workspace persisted flag store (default over vscode.ExtensionContext.workspaceState Memento) so a dismissed register prompt is not re-nagged (lc1). Injected so the one-time gate is testable off VS Code."
+          },
+          "errors": [],
+          "preconditions": [
+            "The default impl reads/writes workspaceState under a namespaced key; a read never throws (missing ⇒ not dismissed)."
+          ],
+          "postconditions": [
+            "Once markDismissed(root) runs, wasDismissed(root) stays true for that workspace across activations (until the workspace is registered, which makes the prompt moot)."
+          ]
+        },
+        {
+          "name": "registerWorkspaceCommands",
+          "signature": "registerWorkspaceCommands(deps: { commands: CommandRegistry; consent: ConsentGate; status: StatusSurface; registrar: WorkspaceRegistrar; folders: WorkspaceFolders }): void",
+          "parameters": [
+            {
+              "name": "deps",
+              "type": "{ commands: CommandRegistry; consent: ConsentGate; status: StatusSurface; registrar: WorkspaceRegistrar; folders: WorkspaceFolders }",
+              "purpose": "The s1 surfaces (sc3/sc4/sc2) + the sc7 registrar + the folders seam the command composes.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "Registers the durable insrc.workspace.register command (sc3): resolve the primary root, ask sc4, and register on 'accepted' (k4), pushing the outcome to sc2. Mirrors S002 registerDaemonCommands / S003 registerHostCommands."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "Propagates a duplicate-InsrcCommandId programming error from CommandRegistry.register (build-time guard)."
+            }
+          ],
+          "preconditions": [
+            "s4 owns the register capability + command; the install→register→wire coalescing is s5's boundary."
+          ],
+          "postconditions": [
+            "A dismissed register prompt stays reachable via the durable insrc.workspace.register command (k6); nothing enrols without sc4 'accepted' (k4)."
+          ]
+        },
+        {
+          "name": "offerWorkspaceRegistration",
+          "signature": "offerWorkspaceRegistration(deps: { consent: ConsentGate; status: StatusSurface; registrar: WorkspaceRegistrar; folders: WorkspaceFolders; prompts: PromptStore }): Promise<void>",
+          "parameters": [
+            {
+              "name": "deps",
+              "type": "{ consent; status; registrar; folders; prompts }",
+              "purpose": "The shared one-time offer flow reused by the durable command and the activation-time offer.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "Resolve the primary root; if absent → no-op; if already registered (state()) → no prompt; if previously dismissed (prompts.wasDismissed) → no prompt; else ask sc4 — on 'accepted' register() + push status, on 'declined'/'dismissed' markDismissed (lc1) and write nothing."
+          },
+          "errors": [
+            {
+              "type": "(guarded)",
+              "condition": "Any failure is caught by the activation caller's fire-and-forget guard so activate() never throws (S001)."
+            }
+          ],
+          "preconditions": [
+            "Reuses sc7.state for the registered check and PromptStore for the dismissed check — the two-part one-time gate (lc1)."
+          ],
+          "postconditions": [
+            "ac1: an unregistered root shows a one-time prompt and never enrols silently; a dismissal is remembered and not re-nagged."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "vscode-plugin/src/workspace/ (new module dir)",
+        "change": "new",
+        "details": "New sc7 home mirroring vscode-plugin/src/daemon/ + src/hosts/: RegistrationState + WorkspaceRegistrar types, createWorkspaceRegistrar (over the sc1 client), the WorkspaceFolders + PromptStore injectable seams (default impls over vscode.workspace.workspaceFolders + vscode.ExtensionContext.workspaceState), and registerWorkspaceCommands + the shared offerWorkspaceRegistration flow. No daemon internals/indexer/storage imported (k5); reaches the daemon only through the shared ipc-client rpc.",
+        "callSites": [
+          "src/cli/services/repo.ts",
+          "src/daemon/index.ts"
+        ]
+      },
+      {
+        "entity": "RegistrationState",
+        "change": "new",
+        "details": "{ root: string; registered: boolean } — the sc7 result type (verbatim from the HLD sketch). registered is derived from repo.list membership by normalized-absolute path equality against RegisteredRepo.path (src/shared/types.ts RegisteredRepo).",
+        "callSites": [
+          "src/cli/services/repo.ts"
+        ]
+      },
+      {
+        "entity": "extension.ts (activation wiring)",
+        "change": "invariant-change",
+        "details": "extension.ts constructs the WorkspaceRegistrar (over the shared client), the real WorkspaceFolders (vscode.workspace.workspaceFolders) + PromptStore (context.workspaceState), calls registerWorkspaceCommands with the s1 surfaces, and fires a guarded fire-and-forget activation-time offerWorkspaceRegistration; the S001 never-throws/off-UI contract is preserved. Adds insrc.workspace.register to contributes.commands (k6). The install→register→wire coalescing stays s5's.",
+        "callSites": [
+          "vscode-plugin/src/extension.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc7",
+        "role": "implements",
+        "howDetails": "s4 owns sc7: createWorkspaceRegistrar returns a WorkspaceRegistrar whose state() derives registered-ness from rpc('repo.list') membership and register() enrols via rpc('repo.add', { path }) with no steering."
+      },
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "All daemon access is rpc<RegisteredRepo[]>('repo.list') + rpc('repo.add', …) over the injected shared ipc-client — no new IPC, no daemon internals (k5)."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "registerWorkspaceCommands registers the existing insrc.workspace.register command id into the CommandRegistry so a dismissed prompt stays reachable (k6)."
+      },
+      {
+        "contractId": "sc4",
+        "role": "consumes",
+        "howDetails": "The register offer asks a single ConsentGate prompt and enrols only on 'accepted'; declined/dismissed enrols nothing (k4)."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "registerWorkspaceCommands / offerWorkspaceRegistration push the register outcome (registered / errored / declined) into StatusSurface.set (not re-designed)."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The daemon is not running / the socket is unreachable when state(root) issues repo.list at activation.",
+          "detection": "rpc('repo.list') rejects (ENOENT/ECONNREFUSED 'daemon is not running' from the shared ipc-client).",
+          "response": "state() catches the rejection and returns { root, registered:false } with the reason logged; offerWorkspaceRegistration's activation call is fire-and-forget + guarded so activate() never throws. NO prompt is forced by a failed probe (the registered check is treated as indeterminate-not-registered but the offer still respects the dismissed flag).",
+          "userImpact": "Activation is not blocked or crashed by a stopped daemon; once the daemon is up the developer can register via the durable insrc.workspace.register command.",
+          "recoverable": true
+        },
+        {
+          "scenario": "register(root) calls repo.add but the daemon rejects the path as invalid (does not exist / not a directory).",
+          "detection": "rpc('repo.add') rejects; the daemon logs 'rejected repo.add: invalid path' (src/daemon/index.ts:470).",
+          "response": "register() surfaces the error to the caller (the command / offer), which sets an errored status via sc2 with the reason and does NOT mark the workspace registered; the durable command stays available to retry.",
+          "userImpact": "The developer sees why enrolment failed and can fix the path / retry; nothing is half-registered.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The developer accepts the register prompt but the daemon becomes unreachable between the consent and the repo.add.",
+          "detection": "rpc('repo.add') rejects with a connection error after ConsentGate returned 'accepted'.",
+          "response": "register() rejects; offerWorkspaceRegistration reflects an errored status via sc2. It does NOT markDismissed (the developer opted IN), so the offer / durable command can retry once the daemon is reachable.",
+          "userImpact": "The accepted intent is not lost to a permanent dismissal; the developer can retry and enrol succeeds.",
+          "recoverable": true
+        },
+        {
+          "scenario": "repo.list resolves but returns a shape that is not an array (a daemon-version drift / error object).",
+          "detection": "state() checks Array.isArray on the repo.list result before membership.",
+          "response": "A non-array result is treated as 'no rows' → registered:false (logged); membership is never inferred from a malformed payload.",
+          "userImpact": "A daemon shape drift degrades to 'offer to register' rather than a crash or a false 'already registered'.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "No workspace folder is open (an empty VS Code window).",
+          "expected": "folders() returns []; offerWorkspaceRegistration resolves the primary root as undefined and no-ops — no prompt, no repo.list call (ac1 applies only to an open workspace root)."
+        },
+        {
+          "input": "The open root is ALREADY registered (state().registered === true) at activation.",
+          "expected": "offerWorkspaceRegistration shows no prompt (the one-time offer is moot); a status detail may reflect 'workspace registered'. The durable command, if run manually, reports already-registered and does a harmless idempotent no-op."
+        },
+        {
+          "input": "The developer previously dismissed the register prompt for this workspace (PromptStore.wasDismissed(root) === true) and re-activates.",
+          "expected": "offerWorkspaceRegistration does NOT prompt again (lc1); the durable insrc.workspace.register command still works if the developer chooses to register later (k6)."
+        },
+        {
+          "input": "A multi-root workspace (several folders open).",
+          "expected": "The primary root (folders()[0]) is offered for the one-time activation prompt; the durable command also targets the primary root. Enrolling additional roots is left to re-running the command per root / s5's coalescing — s4 does not silently enrol every folder."
+        },
+        {
+          "input": "register() is run for a root that is already registered (double-accept, or command re-run).",
+          "expected": "repo.add is idempotent at the registry (a re-add of the same path is harmless); register() returns { root, registered:true } and no duplicate row is created."
+        },
+        {
+          "input": "The workspace root path contains a trailing slash / differs only by case or normalization from the registered row's path.",
+          "expected": "state() compares NORMALIZED absolute paths (resolve) on both sides so a trailing-slash / '.' segment difference still matches the registered row; the same normalized root is what register() passes to repo.add."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Enrolment happens ONLY through the daemon's explicit repo.add over the shared ipc-client (k3): the extension holds no shadow registry and never marks a workspace registered without a successful repo.add; state() derives membership from repo.list, never assumes.",
+          "source": "c4"
+        },
+        {
+          "text": "The register prompt is one-time-per-workspace (lc1): a dismissal is persisted (PromptStore) and not re-nagged on subsequent activations, and an already-registered root is never re-prompted.",
+          "source": "c1"
+        },
+        {
+          "text": "The sc5-style never-throws/off-UI activation contract holds: the activation-time register offer runs off the critical path, guarded, so activate() never throws or blocks the editor (mirrors S001/S002/S003).",
+          "source": "c1"
+        },
+        {
+          "text": "register() OMITS the steering param to repo.add so the daemon does not also inject steering / register host MCP clients — host wiring stays the reversible s3 flow, no double-wiring (k2 boundary + s3 ownership).",
+          "source": "c4"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test (tsx --test) — the same runner S001/S002/S003 use for vscode-plugin/ over injected fakes (no VS Code host); a fake IpcClient records repo.list/repo.add calls, fake WorkspaceFolders/PromptStore/ConsentGate/StatusSurface/CommandRegistry drive the flow, plus a source-scan test for the k5 boundary.",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove createWorkspaceRegistrar's state()/register() over a fake IpcClient: membership from repo.list, enrolment via repo.add without steering, never-throws + normalization.",
+          "subjects": [
+            "state(root) returns registered:true iff a repo.list row's normalized-absolute path equals the normalized root; false otherwise",
+            "state(root) returns registered:false (never throws) when rpc('repo.list') rejects (daemon unreachable) or returns a non-array",
+            "state(root) normalizes both sides (trailing slash / '.' segments) so a cosmetically-different root still matches a registered row",
+            "register(root) calls rpc('repo.add', { path: root }) with NO steering key and returns { root, registered:true } on { ok:true }",
+            "register(root) surfaces the error (does not mark registered) when rpc('repo.add') rejects"
+          ],
+          "fixturesNeeded": [
+            "a fake IpcClient recording { method, params } and returning scripted repo.list rows / repo.add resolutions or rejections",
+            "sample RegisteredRepo[] rows (matching, non-matching, trailing-slash)"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove the one-time offer + durable command wiring over fake sc2/sc3/sc4 + fake registrar/folders/prompts: consent-gated, one-time, never silent.",
+          "subjects": [
+            "offerWorkspaceRegistration shows NO prompt and does nothing when folders() is empty (no open root)",
+            "offerWorkspaceRegistration shows NO prompt when state(root).registered is already true",
+            "offerWorkspaceRegistration shows NO prompt when PromptStore.wasDismissed(root) is true (lc1)",
+            "on 'accepted' offerWorkspaceRegistration calls registrar.register(root) exactly once and pushes the outcome to StatusSurface.set",
+            "on 'declined'/'dismissed' it calls PromptStore.markDismissed(root), calls registrar.register NEVER, and writes nothing (k4)",
+            "on an accepted-but-register-fails path it does NOT markDismissed (retryable) and reflects an errored status",
+            "registerWorkspaceCommands registers the insrc.workspace.register command into the fake CommandRegistry"
+          ],
+          "fixturesNeeded": [
+            "fake ConsentGate returning a scripted outcome + recording the request",
+            "fake StatusSurface recording set() calls",
+            "fake CommandRegistry recording registered ids",
+            "a fake WorkspaceRegistrar (scripted state/register, one register-throws variant) + fake WorkspaceFolders + in-memory PromptStore"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove the k5 thin-boundary + activation wiring by source scan (mirroring S002/S003).",
+          "subjects": [
+            "source-scan: vscode-plugin/src/workspace/ imports only node builtins + the shared ipc-client + the s1 surfaces — no daemon internals/indexer/storage, no cloud/HTTP (k5)",
+            "extension.ts constructs createWorkspaceRegistrar over the shared client + real WorkspaceFolders/PromptStore and calls registerWorkspaceCommands with the s1 surfaces",
+            "the activation-time offerWorkspaceRegistration is fire-and-forget + guarded so activate() never throws/blocks (S001)",
+            "contributes.commands includes insrc.workspace.register alongside the S002 daemon + S003 hosts entries (k6)"
+          ],
+          "fixturesNeeded": [
+            "source read of vscode-plugin/src/extension.ts + vscode-plugin/src/workspace/*.ts",
+            "read of vscode-plugin/package.json contributes.commands"
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "Prove the package still typechecks with the sc7 workspace module + vscode.d.ts additions.",
+          "subjects": [
+            "the vscode-plugin package typechecks (tsc -p tsconfig.json) with the workspace module + the workspaceFolders/workspaceState vscode.d.ts additions"
+          ],
+          "fixturesNeeded": [
+            "the vscode-plugin tsconfig"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "offerWorkspaceRegistration shows a prompt only when the root is present, unregistered, and not previously dismissed — and enrols NOTHING until 'accepted' (offer unit tests) — proves the one-time, never-silent prompt",
+            "offerWorkspaceRegistration shows NO prompt when already registered / when previously dismissed / when no folder is open (offer unit tests) — proves the one-time gate (lc1)",
+            "on 'declined'/'dismissed' nothing is written and markDismissed persists (offer unit test) — proves never-silent + not-re-nagged"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "register(root) calls rpc('repo.add', { path }) with no steering and returns registered:true only on { ok:true } (registrar unit test) — proves enrolment goes ONLY through the daemon's explicit repo.add (k3)",
+            "on 'accepted' offerWorkspaceRegistration calls registrar.register exactly once (offer unit test) — proves acceptance drives the repo.add enrolment path"
+          ]
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Thin sc7 registrar over the shared ipc-client + injected workspace-folders + injected one-time PromptStore",
+        "oneLineSummary": "sc7 as an injectable seam: state()=repo.list membership, register()=repo.add (no steering), a one-time prompt gated by state() + a per-workspace persisted-dismissed flag.",
+        "approach": "Implement sc7 as a small injectable seam mirroring S002/S003. state(root) = rpc<RegisteredRepo[]>('repo.list') then membership by normalized-absolute path equality against the rows' `path`; register(root) = rpc('repo.add', { path }) with NO `steering` (host wiring is s3's job — passing steering would double-wire the daemon's own MCP/steering), returning { root, registered:true } on the daemon's { ok:true }. A WorkspaceFolders seam (injected () => readonly string[]) resolves the open root(s) off vscode.workspace.workspaceFolders; a PromptStore seam (injected get/set over vscode.ExtensionContext.workspaceState Memento) persists a per-workspace 'register prompt dismissed' flag so lc1's one-time-and-not-re-nagged holds. registerWorkspaceCommands registers the durable insrc.workspace.register command (sc3) that asks sc4 then registers on 'accepted'; the activation-time offer fires only when the root is present, NOT registered (state()), and NOT previously dismissed (PromptStore) — guarded fire-and-forget so activate() never throws (S001). Outcome pushed to sc2.",
+        "pros": [
+          "Consumes the real repo.add/repo.list contract verbatim over sc1 — adds NO new IPC and honors k3 (registry is the only registration path, never silent).",
+          "Mirrors the shipped S002 (DaemonPaths/SubprocessRunner) + S003 (HostEnv/HostFileSystem) injectable-seam pattern exactly — WorkspaceFolders + PromptStore are unit-testable off VS Code.",
+          "Idempotent by construction: once registered, state()=registered so no re-prompt; the persisted-dismissed flag covers the still-unregistered decline case (lc1).",
+          "Omitting `steering` keeps repo.add's daemon-side MCP/steering injection OUT of the extension's path — host wiring stays the reversible s3 flow, no double-wiring."
+        ],
+        "cons": [
+          "Introduces a small s4-owned persistence seam (workspaceState flag) adjacent to s5's 'already onboarded' state — must be scoped narrowly (a single register-dismissed boolean) and injected so s5 can later fold it into its coalesced onboarding state.",
+          "Membership is exact normalized-path equality; a workspace root nested under an already-registered parent repo reads as 'not registered' (documented edge, resolved in s5's coalescing if needed)."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "sc7 exposes state/register + the durable command only; ALL one-time persistence deferred to s5",
+        "oneLineSummary": "s4 owns no persistence — the activation offer fires whenever unregistered, leaving the one-time/dismissal memory entirely to s5.",
+        "approach": "Same registrar over the shared ipc-client, but s4 owns NO persistence: the activation offer fires whenever the root is unregistered, and the 'don't re-nag on dismiss' persistence is left entirely to s5's onboarding-coalescing state. s4 ships only state(), register(), and the durable insrc.workspace.register command + a bare activation offer.",
+        "pros": [
+          "Keeps the s4/s5 boundary maximally clean — s5 owns every persisted onboarding bit.",
+          "Smaller s4 surface (no PromptStore seam)."
+        ],
+        "cons": [
+          "Violates lc1 directly: until the developer accepts, the register prompt re-fires on EVERY activation (a dismissal is not respected), exactly what ac1's 'one-time prompt' + lc1 forbid.",
+          "Pushes an acceptance-criterion (lc1) responsibility onto another story — s4 would ship not meeting its own acceptance criteria."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Scored 'violates' on ac1 (and lc1): without persisted dismissal the prompt re-fires every activation. lc1 is an s4 constraint, so s4 must own the minimal one-time gate; a1 does this with an injected seam s5 can later compose."
+      },
+      {
+        "id": "a3",
+        "name": "Derive registered-ness from repo.stats instead of repo.list membership",
+        "oneLineSummary": "sc7.state calls repo.stats and treats its { error: 'not a registered repo' } payload as not-registered.",
+        "approach": "sc7.state(root) calls rpc('repo.stats', { repoPath: root }) and treats the { error: '… is not a registered repo' } shape (src/daemon/index.ts:552) as not-registered, any success as registered; register() still uses repo.add. Membership is inferred from the stats error rather than an explicit registry listing.",
+        "pros": [
+          "One call returns rich per-repo stats alongside the membership answer (could feed a richer status detail)."
+        ],
+        "cons": [
+          "repo.stats returns an error-shaped payload for the unregistered case — parsing an error string to infer membership is brittle vs. the explicit repo.list rows.",
+          "repo.stats does more work (store/fs/queue reads) than the membership question needs; repo.list is the canonical, lightweight registry source the CLI itself uses (src/cli/services/repo.ts:31).",
+          "Couples sc7 to the exact repo.stats error wording."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Only 'partial' on ac1/sc7: inferring membership from a brittle error-shaped payload heavier than the canonical repo.list source. a1 uses the explicit, lightweight, wording-independent repo.list rows."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 symbol.locate+search.text: the real repo.add/repo.list IPC contract — daemon handlers src/daemon/index.ts:459/536, CLI wrappers src/cli/services/repo.ts:31-33/49-58; repo.add applies steering/MCP only when steering is passed (src/daemon/steering-inject.ts)"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 data-model.trace: RegisteredRepo (src/shared/types.ts:670) = { path, name, addedAt, status, ... }; repo.list returns workspace rows keyed by absolute path; AddRepoResult = { path, mcp? }"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1 convention.detect: CLAUDE.md rule 6 'Repo registry is the contract' (repo.add is the only registration path; storage never auto-allocates; UnregisteredRepoError) + the S002/S003 injectable-seam + node:test pattern the extension mirrors"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "HLD sc7 WorkspaceRegistrar sketch (state/register, register via repo.add IPC only) + k3 (registry is the contract) + k2 (no cloud path) constraints"
+    }
+  ]
+}

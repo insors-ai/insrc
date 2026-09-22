@@ -1,0 +1,378 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1790056327214-18owxi",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-22T05:55:14.665Z",
+    "epicCreatedAt": "2026-09-21T16:32:40.301Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 187440,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ad0d45c9d690f8c1",
+    "epicSlug": "build-insrc-vs-code-extension-v1",
+    "storyId": "s4",
+    "lldRunId": "wf-1790055602237-euewfb",
+    "lldEffectiveHash": "1e2038ef723235b64e83ceb16211d8262911619c0f401b3886b6a4c352eda9a9",
+    "review": {
+      "artifact": "plan",
+      "stage": "plan",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "ref": "t1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The daemon result of repo.add is shaped { ok: true; mcp? } (not { path }), so register() checks ok:true — confirmed by the CLI wrapper's rpc<{ ok:true; mcp? }>('repo.add', ...).",
+          "evidence": "src/cli/services/repo.ts:54 confirms repo.add is rpc<{ ok: true; mcp?: { clients } }> — register() checking { ok:true } is correct.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl2",
+          "ref": "t1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "repo.list is invoked as rpc<RegisteredRepo[]>('repo.list') and RegisteredRepo carries a `path` field to compare against — the membership source t1 consumes.",
+          "evidence": "src/cli/services/repo.ts:31/32 listRepos = rpc<RegisteredRepo[]>('repo.list'); src/shared/types.ts:670 interface RegisteredRepo exists — the membership source t1 consumes.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl3",
+          "ref": "t2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The s1 surfaces (CommandRegistry/ConsentGate/StatusSurface) that t2 composes exist, and the InsrcCommandId union already includes 'insrc.workspace.register'.",
+          "evidence": "command-registry.ts:21 declares 'insrc.workspace.register'; CommandRegistry/ConsentGate/StatusSurface interfaces exist at surfaces/*.ts (28/22/19).",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl4",
+          "ref": "t2/t3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The S002/S003 register+offer precedent t2 mirrors exists (registerDaemonCommands/offerDaemonInstall + registerHostCommands/offerHostWiring).",
+          "evidence": "registerDaemonCommands (daemon/commands.ts:58) + registerHostCommands (hosts/commands.ts:77) exist — the S002/S003 register+offer precedent t2 mirrors.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl5",
+          "ref": "t3",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "The existing contributes.commands array holds the 5 daemon ids + insrc.hosts.wire (6 entries) that t3 must leave untouched while appending insrc.workspace.register.",
+          "evidence": "package.json:20-25 holds exactly the 5 insrc.daemon.* ids + insrc.hosts.wire (6 entries) t3 must leave untouched.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl6",
+          "ref": "t3",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "extension.ts is the sole 'vscode' importer + the wiring home, and the shared IpcClient (createIpcClient) is already constructed there for the registrar to reuse.",
+          "evidence": "extension.ts:12 `import * as vscode from 'vscode'` (sole importer, enforced by activation.test:108) and :43 `const client = createIpcClient()` — the shared client is already constructed for the registrar to reuse.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl7",
+          "ref": "t3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The vscode.d.ts shim that t3 extends with vscode.workspace.workspaceFolders + ExtensionContext.workspaceState exists and already declares the vscode module + ExtensionContext.",
+          "evidence": "vscode.d.ts:8 `declare module 'vscode'` + :52 `interface ExtensionContext` — the shim t3 extends exists.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl8",
+          "ref": "tasks",
+          "kind": "ordering",
+          "severity": "LOW",
+          "premise": "The task DAG t1→t2→t3 (t1→t3) is acyclic and orders the registrar/types before the commands/offer before the activation wiring.",
+          "evidence": "Ordering claim (no probe): edges t1→t2→t3 + t1→t3 form a DAG; order 1<2<3 is a valid topological order placing registrar before commands before activation wiring.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 8
+      },
+      "reviewedAt": "2026-09-22T05:56:04.343Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-22T06:04:51.650Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "sc7 types + createWorkspaceRegistrar over the shared ipc-client + the injectable seam interfaces",
+        "summary": "Create vscode-plugin/src/workspace/ with: RegistrationState { root; registered } + WorkspaceRegistrar types; createWorkspaceRegistrar({ client }) whose state(root)=rpc<RegisteredRepo[]>('repo.list') then registered = normalized-absolute path equality against a row's `path` (Array.isArray guard; catches rpc rejection → registered:false, never throws), and register(root)=rpc('repo.add', { path }) WITH NO steering key → { root, registered:true } on { ok:true } (surfaces the error on reject). Export ONLY the TYPE/interface for the WorkspaceFolders seam (type () => readonly string[]) + the PromptStore seam (interface wasDismissed/markDismissed) — plus an optional in-memory PromptStore for tests; the REAL vscode.workspace.workspaceFolders + vscode.ExtensionContext.workspaceState bindings are constructed in extension.ts (t3), so workspace/ carries NO 'vscode' import (k5). Mirrors the S002 createDaemonLifecycleController factory. Path normalization via node:path resolve.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "state(root) returns registered:true iff a repo.list row's normalized-absolute path equals the normalized root; false otherwise; never throws (rpc reject / non-array → registered:false)",
+          "register(root) calls rpc('repo.add', { path: root }) with NO steering key, returns { root, registered:true } on { ok:true }, and surfaces the error (does not mark registered) on reject",
+          "RegistrationState + WorkspaceRegistrar types + the WorkspaceFolders/PromptStore seam interfaces are exported from workspace/; the registrar is pure over the injected IpcClient and workspace/ carries no 'vscode' import (k5)",
+          "path comparison normalizes both sides (resolve) so a trailing-slash / '.' difference still matches"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "state(root) returns registered:true iff a repo.list row's normalized-absolute path equals the normalized root; false otherwise"
+          },
+          {
+            "level": "unit",
+            "name": "state(root) returns registered:false (never throws) when rpc('repo.list') rejects (daemon unreachable) or returns a non-array"
+          },
+          {
+            "level": "unit",
+            "name": "state(root) normalizes both sides (trailing slash / '.' segments) so a cosmetically-different root still matches a registered row"
+          },
+          {
+            "level": "unit",
+            "name": "register(root) calls rpc('repo.add', { path: root }) with NO steering key and returns { root, registered:true } on { ok:true }"
+          },
+          {
+            "level": "unit",
+            "name": "register(root) surfaces the error (does not mark registered) when rpc('repo.add') rejects"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "registerWorkspaceCommands + the shared one-time offerWorkspaceRegistration flow",
+        "summary": "Add registerWorkspaceCommands({ commands, consent, status, registrar, folders }): registers the durable insrc.workspace.register command (sc3) whose body resolves the primary root (folders()[0]), and runs the shared offerWorkspaceRegistration. Add offerWorkspaceRegistration({ consent, status, registrar, folders, prompts }): no root → no-op; already registered (state()) → no prompt; previously dismissed (prompts.wasDismissed) → no prompt; else ask a single sc4 ConsentGate prompt — on 'accepted' call registrar.register(root) once + push the outcome to sc2, on 'declined'/'dismissed' markDismissed(root) + write nothing (k4/lc1); on an accepted-but-register-fails path do NOT markDismissed (retryable) + push an errored status. Mirrors S002 registerDaemonCommands/offerDaemonInstall + S003 registerHostCommands/offerHostWiring.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "registerWorkspaceCommands registers the insrc.workspace.register command into the CommandRegistry",
+          "offerWorkspaceRegistration shows NO prompt (no-op) when no root is open, when already registered, or when previously dismissed (lc1)",
+          "on 'accepted' registrar.register(root) runs exactly once and the outcome is pushed to StatusSurface.set; on 'declined'/'dismissed' markDismissed(root) runs and nothing is registered (k4)",
+          "on an accepted-but-register-throws path it does NOT markDismissed and reflects an errored status (retryable)",
+          "source-scan: vscode-plugin/src/workspace/ imports only node builtins + the shared ipc-client + the s1 surfaces — no daemon internals/indexer/storage, no cloud/HTTP (k5)"
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "offerWorkspaceRegistration shows NO prompt and does nothing when folders() is empty (no open root)"
+          },
+          {
+            "level": "unit",
+            "name": "offerWorkspaceRegistration shows NO prompt when state(root).registered is already true"
+          },
+          {
+            "level": "unit",
+            "name": "offerWorkspaceRegistration shows NO prompt when PromptStore.wasDismissed(root) is true (lc1)"
+          },
+          {
+            "level": "unit",
+            "name": "on 'accepted' offerWorkspaceRegistration calls registrar.register(root) exactly once and pushes the outcome to StatusSurface.set"
+          },
+          {
+            "level": "unit",
+            "name": "on 'declined'/'dismissed' it calls PromptStore.markDismissed(root), calls registrar.register NEVER, and writes nothing (k4)"
+          },
+          {
+            "level": "unit",
+            "name": "on an accepted-but-register-fails path it does NOT markDismissed (retryable) and reflects an errored status"
+          },
+          {
+            "level": "unit",
+            "name": "registerWorkspaceCommands registers the insrc.workspace.register command into the fake CommandRegistry"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "vscode.d.ts additions + wire the registrar/command/offer into extension.ts",
+        "summary": "Extend vscode-plugin/src/vscode.d.ts with vscode.workspace.workspaceFolders (readonly { uri: { fsPath: string } }[] | undefined) + ExtensionContext.workspaceState (a Memento with get<T>(key, default) / update(key, value)). In extension.ts (sole 'vscode' importer): construct the real WorkspaceFolders (() => vscode.workspace.workspaceFolders?.map(f => f.uri.fsPath) ?? []) + the default PromptStore over context.workspaceState, build createWorkspaceRegistrar over the existing shared client, call registerWorkspaceCommands with the s1 surfaces, and fire a guarded fire-and-forget activation-time offerWorkspaceRegistration (preserving S001 never-throws). ADD insrc.workspace.register to the EXISTING contributes.commands array (S002 daemon + S003 hosts entries untouched) so the command is palette-reachable (k6).",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "vscode.d.ts declares vscode.workspace.workspaceFolders + ExtensionContext.workspaceState; the package typechecks (tsc -p tsconfig.json)",
+          "extension.ts constructs the registrar (over the shared client) + real WorkspaceFolders/PromptStore and calls registerWorkspaceCommands with the s1 surfaces",
+          "the activation-time offerWorkspaceRegistration is fire-and-forget + guarded so activate() never throws/blocks (S001) and only acts when a root is open",
+          "insrc.workspace.register is ADDED to the existing contributes.commands array (S002/S003 entries untouched) so it stays palette-reachable (k6)"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "extension.ts constructs createWorkspaceRegistrar over the shared client + real WorkspaceFolders/PromptStore and calls registerWorkspaceCommands with the s1 surfaces; the activation-time offerWorkspaceRegistration is fire-and-forget + guarded (never throws/blocks, S001) — source-scan"
+          },
+          {
+            "level": "unit",
+            "name": "contributes.commands includes insrc.workspace.register alongside the S002 daemon + S003 hosts entries (k6)"
+          },
+          {
+            "level": "smoke",
+            "name": "the vscode-plugin package typechecks (tsc -p tsconfig.json) with the workspace module + the workspaceFolders/workspaceState vscode.d.ts additions"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "state(root) returns registered:true iff a repo.list row's normalized-absolute path equals the normalized root; false otherwise",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "state(root) returns registered:false (never throws) when rpc('repo.list') rejects (daemon unreachable) or returns a non-array",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "state(root) normalizes both sides (trailing slash / '.' segments) so a cosmetically-different root still matches a registered row",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "register(root) calls rpc('repo.add', { path: root }) with NO steering key and returns { root, registered:true } on { ok:true }",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "register(root) surfaces the error (does not mark registered) when rpc('repo.add') rejects",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "offerWorkspaceRegistration shows NO prompt and does nothing when folders() is empty (no open root)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "offerWorkspaceRegistration shows NO prompt when state(root).registered is already true",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "offerWorkspaceRegistration shows NO prompt when PromptStore.wasDismissed(root) is true (lc1)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "on 'accepted' offerWorkspaceRegistration calls registrar.register(root) exactly once and pushes the outcome to StatusSurface.set",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "on 'declined'/'dismissed' it calls PromptStore.markDismissed(root), calls registrar.register NEVER, and writes nothing (k4)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "on an accepted-but-register-fails path it does NOT markDismissed (retryable) and reflects an errored status",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "registerWorkspaceCommands registers the insrc.workspace.register command into the fake CommandRegistry",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "source-scan: vscode-plugin/src/workspace/ imports only node builtins + the shared ipc-client + the s1 surfaces — no daemon internals/indexer/storage, no cloud/HTTP (k5)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "extension.ts constructs createWorkspaceRegistrar over the shared client + real WorkspaceFolders/PromptStore and calls registerWorkspaceCommands with the s1 surfaces",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "the activation-time offerWorkspaceRegistration is fire-and-forget + guarded so activate() never throws/blocks (S001)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "contributes.commands includes insrc.workspace.register alongside the S002 daemon + S003 hosts entries (k6)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "the vscode-plugin package typechecks (tsc -p tsconfig.json) with the workspace module + the workspaceFolders/workspaceState vscode.d.ts additions",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 handoff: sc7 WorkspaceRegistrar.state/register + createWorkspaceRegistrar over the sc1 ipc-client (state()=repo.list membership, register()=repo.add {path} no steering)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 handoff: RegistrationState type + the injectable WorkspaceFolders + PromptStore seams (default impls over vscode.workspace.workspaceFolders + ExtensionContext.workspaceState)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 handoff: registerWorkspaceCommands + the shared one-time offerWorkspaceRegistration flow (combined sc4 consent, register-on-accepted, markDismissed on decline, outcome to sc2)"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 handoff: extension.ts activation wiring (real WorkspaceFolders/PromptStore + guarded fire-and-forget offer preserving S001 never-throws) + vscode.d.ts workspaceFolders/workspaceState additions + contributes.commands insrc.workspace.register (k6)"
+    }
+  ]
+}

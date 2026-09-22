@@ -49,9 +49,26 @@ declare module 'vscode' {
     export const uriScheme: string;
   }
 
+  export interface WorkspaceFolder {
+    readonly uri: { readonly fsPath: string };
+  }
+
+  export namespace workspace {
+    /** The open workspace folders, or undefined when no folder is open (S004). */
+    export const workspaceFolders: readonly WorkspaceFolder[] | undefined;
+  }
+
+  /** A per-scope persisted key/value store (VS Code's `Memento`). */
+  export interface Memento {
+    get<T>(key: string, defaultValue: T): T;
+    update(key: string, value: unknown): PromiseLike<void>;
+  }
+
   export interface ExtensionContext {
     readonly subscriptions: { dispose(): unknown }[];
     /** Absolute path of the directory the extension is installed in. */
     readonly extensionPath: string;
+    /** Per-workspace persisted state (S004 one-time register-prompt flag). */
+    readonly workspaceState: Memento;
   }
 }

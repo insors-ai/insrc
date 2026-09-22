@@ -1,0 +1,685 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1790058200031-ods9oh",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-22T06:39:42.342Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 982246,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-09-21T16:32:40.301Z",
+    "epicHash": "ad0d45c9d690f8c1",
+    "epicSlug": "build-insrc-vs-code-extension-v1",
+    "storyId": "s5",
+    "hldBaseRunId": "wf-1790009331473-c5to0q",
+    "hldEffectiveHash": "1e2038ef723235b64e83ceb16211d8262911619c0f401b3886b6a4c352eda9a9",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 0
+      },
+      "reviewedAt": "2026-09-22T06:40:48.210Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-22T06:47:49.709Z",
+    "questionResolutions": {
+      "q8d382450": {
+        "question": "The vscode:uninstall hook's actual EXECUTION depends on S006 adding emit + packaging the .vsix (v1 is noEmit today); s5 authors src/uninstall.ts + unwireAllHosts + declares scripts['vscode:uninstall'], all unit-tested now over a fake fs, and S006 completes ac3 end-to-end.",
+        "status": "resolved",
+        "choice": "Split: s5 authors + unit-tests, S006 closes ac3",
+        "resolvedAt": "2026-09-22T06:48:46.952Z"
+      }
+    }
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "The insrc VS Code extension is a thin orchestrator that owns no reasoning: a new top-level vscode-plugin/ TypeScript package (sibling to jetbrains-plugin/, its own package.json + build + Marketplace metadata) whose whole job is to wire insrc into stock VS Code at lifecycle moments (activate, first workspace open, uninstall). It re-expresses the shipped jetbrains-plugin/ thin-config-orchestrator in TS over VS Code primitives, reaching the daemon ONLY through a NEW in-repo src/shared/ipc-client module that generalizes the existing src/cli/client.ts `rpc` fn + its IPC request/reply types + the socket path — giving exactly one socket-client code path shared by the CLI and the extension (k5), with no daemon internals, indexer, or storage in the extension bundle, and no cloud path opened by the extension (k2). The extension is decomposed into small per-capability seams, each with an injectable boundary so its load-bearing logic is unit-testable off the VS Code API, and every invasive action (install the daemon, wire a host, register the workspace) is consent-gated and exposed as a durable first-class command.",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "SharedIpcClient",
+          "purpose": "The single thin socket-client boundary (k5): a generalized `rpc` fn + the daemon IPC request/reply types + the socket path, extracted into src/shared/ipc-client so both src/cli and vscode-plugin/ import ONE client. Keeps daemon internals/indexer/storage out of the extension and is the only channel through which the extension reaches reasoning (k2).",
+          "interfaceSketch": "// src/shared/ipc-client\nexport interface IpcRequest<P = unknown> { method: string; params?: P }\nexport interface DaemonStatus {\n  running: boolean;\n  uptimeMs?: number;\n  version?: string;\n  queueDepth?: number;\n  registeredRepos?: number;\n}\nexport type DaemonReachability = 'running' | 'stopped' | 'errored';\nexport interface IpcClient {\n  rpc<T>(method: string, params?: unknown): Promise<T>;\n  status(): Promise<DaemonStatus>;\n}\nexport declare const sockFilePath: string; // = PATHS.sockFile",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s1",
+            "s2",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c1",
+            "c2"
+          ]
+        },
+        {
+          "id": "sc2",
+          "name": "StatusSurface",
+          "purpose": "The glanceable editor status indicator (ac2/k6): a small state model reflecting the daemon as running/stopped/errored plus an update method the lifecycle and onboarding seams push resulting state into. Owned at the foundation because the status-bar view is created at activation and updated from multiple branches.",
+          "interfaceSketch": "export type DaemonUiState = 'running' | 'stopped' | 'errored' | 'unknown';\nexport interface StatusSnapshot {\n  state: DaemonUiState;\n  detail?: string;\n}\nexport interface StatusSurface {\n  set(snapshot: StatusSnapshot): void;\n  current(): StatusSnapshot;\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s1",
+            "s2",
+            "s5"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        },
+        {
+          "id": "sc3",
+          "name": "CommandRegistry",
+          "purpose": "The durable-command contract (ac2/k6): a registration surface for the extension's first-class commands (install, wire, register, and the daemon lifecycle actions) so no dismissed onboarding prompt becomes a dead end. Cross-cutting across s2/s3/s4/s5 — owned at the nearest common ancestor s1.",
+          "interfaceSketch": "export type InsrcCommandId =\n  | 'insrc.daemon.install' | 'insrc.daemon.start' | 'insrc.daemon.stop'\n  | 'insrc.daemon.restart' | 'insrc.daemon.update'\n  | 'insrc.hosts.wire' | 'insrc.workspace.register';\nexport interface CommandDescriptor {\n  id: InsrcCommandId;\n  title: string;\n}\nexport interface CommandRegistry {\n  register(descriptor: CommandDescriptor, run: () => Promise<void>): void;\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s1",
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        },
+        {
+          "id": "sc4",
+          "name": "ConsentGate",
+          "purpose": "The single consent-prompt contract (k4): every invasive action asks and performs nothing until the developer accepts. One shape for the prompt-gated Install (s2), the single combined wiring consent naming every detected host (s3), and the one-time register prompt (s4); the onboarding capstone (s5) sequences these. Cross-cutting — owned at nearest common ancestor s1.",
+          "interfaceSketch": "export interface ConsentRequest {\n  title: string;\n  detail: string;\n  acceptLabel: string;\n  items?: string[]; // e.g. the detected host names for the combined wiring prompt\n}\nexport type ConsentOutcome = 'accepted' | 'declined' | 'dismissed';\nexport interface ConsentGate {\n  ask(request: ConsentRequest): Promise<ConsentOutcome>;\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s1",
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        },
+        {
+          "id": "sc5",
+          "name": "AiHostAdapter",
+          "purpose": "The pluggable AI-host adapter interface (ac3/k4/k2): detect whether a supported host is present (by installed-extension identity or running-editor environment) and reversibly wire/unwire the insrc MCP registration + tracked-workflow steering into that host's own config, preserving surrounding content. A new host plugs in without reworking existing adapters. Owned by the host-wiring story; consumed by the onboarding capstone for the wire step and the uninstall reversal.",
+          "interfaceSketch": "export type HostDetection = 'by-extension-id' | 'by-editor-env';\nexport interface HostDescriptor {\n  id: string;\n  displayName: string;\n  detection: HostDetection;\n}\nexport interface AiHostAdapter {\n  readonly descriptor: HostDescriptor;\n  detectPresent(): Promise<boolean>;\n  wire(): Promise<void>;   // reversible, marker-delimited write into the host's own config\n  unwire(): Promise<void>; // removes exactly the insrc markers, restoring prior content\n}\nexport interface AiHostRegistry {\n  adapters(): readonly AiHostAdapter[];\n  detectPresent(): Promise<readonly AiHostAdapter[]>;\n}",
+          "ownedByStory": "s3",
+          "consumedByStories": [
+            "s3",
+            "s5"
+          ],
+          "assumptions": [
+            "c1",
+            "c3"
+          ]
+        },
+        {
+          "id": "sc6",
+          "name": "DaemonLifecycleController",
+          "purpose": "The daemon lifecycle contract (ac1/ac2/k4): carry out start/stop/restart/update through the daemon's own daemon-ctl.sh mechanism and provision the daemon, on explicit consent, from an installer bundled in the extension. Owned by the lifecycle story; consumed by the onboarding capstone for the install step and the durable lifecycle commands.",
+          "interfaceSketch": "export type LifecycleAction = 'start' | 'stop' | 'restart' | 'update';\nexport interface LifecycleResult {\n  ok: boolean;\n  state: 'running' | 'stopped' | 'errored';\n  message?: string;\n}\nexport interface DaemonLifecycleController {\n  isInstalled(): Promise<boolean>;\n  install(): Promise<LifecycleResult>; // from the bundled installer asset\n  run(action: LifecycleAction): Promise<LifecycleResult>;\n}",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s2",
+            "s5"
+          ],
+          "assumptions": [
+            "c1",
+            "c3"
+          ]
+        },
+        {
+          "id": "sc7",
+          "name": "WorkspaceRegistrar",
+          "purpose": "The workspace-enrolment contract (k3): check whether the open root is already enrolled and register it ONLY through the daemon's explicit repo.add contract, never silently. Owned by the registration story; consumed by the onboarding capstone for the register step.",
+          "interfaceSketch": "export interface RegistrationState {\n  root: string;\n  registered: boolean;\n}\nexport interface WorkspaceRegistrar {\n  state(root: string): Promise<RegistrationState>;\n  register(root: string): Promise<RegistrationState>; // via repo.add IPC only\n}",
+          "ownedByStory": "s4",
+          "consumedByStories": [
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c1",
+            "c2"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s5",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc4",
+          "sc5",
+          "sc6",
+          "sc7"
+        ],
+        "internal": "The first-run flow sequencing (the order and coalescing of the install → register → wire consent prompts into one coherent flow rather than scattered pop-ups), the persisted 'already onboarded' state, and the uninstall hook that drives sc5.unwire across wired hosts are private to s5. It owns no new shared contract — it composes the branch owners' contracts and pushes resulting state through sc2."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4"
+          ],
+          "depends": [],
+          "internal": "The VS Code activation entrypoint, the extension-bundle packaging (its build over src/shared/ipc-client), and the daemon-reachability probe implementation stay private to s1. How the status-bar item is created and rendered, and the concrete extraction of src/cli/client.ts into a re-export over src/shared/ipc-client (without regressing the CLI/TUI), are internal detail — only the four type-level contracts (sc1–sc4) are exposed."
+        },
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc6"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4"
+          ],
+          "internal": "The bundled installer asset (which installer script ships and how it is invoked over scripts/insrc-daemon-install.sh), the exact daemon-ctl.sh subcommand invocation and output parsing, and streamed lifecycle progress are private to s2. Only the sc6 lifecycle contract is exposed; the install/lifecycle commands are registered into sc3 and gated by sc4."
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc5"
+          ],
+          "depends": [
+            "sc3",
+            "sc4"
+          ],
+          "internal": "The concrete per-host config locations and shapes (extension-ID hosts like Copilot/Claude Code/Continue/Cline vs editor-environment hosts like Cursor/Windsurf/VSCodium via .vscode/mcp.json or the host's own file), the marker-delimited JSON-merge and steering writers, and the detection mechanics stay private to each adapter behind sc5. Only the sc5 interface + registry is exposed; the wire command is registered into sc3 and the combined consent uses sc4."
+        },
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc7"
+          ],
+          "depends": [
+            "sc1",
+            "sc3",
+            "sc4"
+          ],
+          "internal": "The workspace-root resolution from the open VS Code workspace folders and the already-registered check semantics stay private to s4. Only the sc7 registrar contract is exposed; enrolment goes exclusively through the daemon's repo.add over sc1, the register command is registered into sc3, and the one-time prompt uses sc4."
+        },
+        {
+          "storyId": "s6",
+          "owns": [],
+          "depends": [],
+          "internal": "The vscode-plugin/package.json manifest (contributes/engines.vscode/activationEvents), the Marketplace listing assets (icon, README, categories), the packaging into a single .vsix, and the manually-triggered (workflow_dispatch) Marketplace-only publish path stay entirely private to s6 — no runtime contract is exposed and it depends on no other story's contract, only on the s1 package existing."
+        }
+      ],
+      "rolloutPhase": "Phase C — Onboarding capstone & clean removal",
+      "nonFunctional": {
+        "performance": "Activation must not block the editor: the daemon-reachability probe and every socket read run off the UI path with a bounded timeout, and a stopped/unreachable daemon degrades to an 'errored'/'stopped' status rather than hanging activation (ac1/ac2).",
+        "security": "No cloud path is opened by the extension and no secrets are stored (k2); all reasoning stays behind daemon IPC over the local Unix socket. Every write into a host-owned config is marker-delimited and reversible (sc5), preserving the developer's surrounding content and fully reversed on uninstall (ac3).",
+        "observability": "Every invasive action reflects its resulting state through the status surface (sc2) and returns a structured LifecycleResult/RegistrationState/ConsentOutcome; consent outcomes (accepted/declined/dismissed) are explicit so a dismissed prompt is recoverable via its durable sc3 command.",
+        "durability": "Workspace enrolment is durable only through the daemon's repo.add registry contract (k3) — the extension holds no shadow registry. Onboarding persists a per-workspace 'already prompted/onboarded' state so prompts are one-time, and the host wiring it writes survives a mere disable and is removed only on uninstall."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "runOnboarding",
+          "signature": "runOnboarding(deps: { controller: DaemonLifecycleController; registrar: WorkspaceRegistrar; registry: AiHostRegistry; consent: ConsentGate; status: StatusSurface; folders: WorkspaceFolders; prompts: PromptStore; onboarded: OnboardingStore }): Promise<void>",
+          "parameters": [
+            {
+              "name": "deps",
+              "type": "{ controller; registrar; registry; consent; status; folders; prompts; onboarded }",
+              "purpose": "The shipped sc6/sc7/sc5 seams + the s1 sc2/sc4 surfaces + the s4 folders/prompts seams + the new OnboardingStore gate the orchestrator composes.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "Runs the first-run flow ONCE per workspace: resolve the primary root; if onboarded.wasOnboarded(root) -> no-op; else await offerDaemonInstall -> offerWorkspaceRegistration -> offerHostWiring IN ORDER (each keeps its own internal guard so a not-needed step silently no-ops), then onboarded.markOnboarded(root). A no-folder window still runs the global install/wire steps but skips the onboarded gate + register. Never re-registers commands; pure sequencing (lc1)."
+          },
+          "errors": [
+            {
+              "type": "(guarded by the caller)",
+              "condition": "Each offer already swallows its own errors into a status; the activation caller additionally wraps runOnboarding in a fire-and-forget try/catch so activate() never throws (S001)."
+            }
+          ],
+          "preconditions": [
+            "The three offers + the controller/registrar/registry/surfaces are already constructed by extension.ts (S001-S004); runOnboarding only orders them."
+          ],
+          "postconditions": [
+            "ac1: a fresh workspace sees the needed prompts in a single coherent install->register->wire sequence, once; a skipped step stays reachable via its durable command (ac2, unchanged)."
+          ]
+        },
+        {
+          "name": "OnboardingStore",
+          "signature": "interface OnboardingStore { wasOnboarded(root: string): boolean; markOnboarded(root: string): void }",
+          "parameters": [],
+          "returns": {
+            "type": "OnboardingStore",
+            "meaning": "A per-workspace persisted flag so the auto-run onboarding sequence fires ONCE per workspace root (default over vscode.ExtensionContext.workspaceState, a distinct namespaced key from S004's register-dismissed flag). Injected so the gate is testable off VS Code. Mirrors S004's PromptStore."
+          },
+          "errors": [],
+          "preconditions": [
+            "The default impl reads/writes workspaceState under a namespaced key; a read never throws (missing => not onboarded)."
+          ],
+          "postconditions": [
+            "Once markOnboarded(root) runs, wasOnboarded(root) stays true for that workspace; the durable commands remain the way to (re-)perform any step."
+          ]
+        },
+        {
+          "name": "unwireAllHosts",
+          "signature": "unwireAllHosts(deps: { specs: readonly HostSpec[]; fs: HostFileSystem }): Promise<{ unwired: number; failed: number }>",
+          "parameters": [
+            {
+              "name": "deps",
+              "type": "{ specs: readonly HostSpec[]; fs: HostFileSystem }",
+              "purpose": "The static HOST_SPECS list + the injected node HostFileSystem (unwire needs no editor detection), so the reversal is unit-testable off VS Code + off a real fs.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<{ unwired: number; failed: number }>",
+            "meaning": "The uninstall reversal: for each HostSpec, build an sc5 adapter (createHostAdapter over deps.fs + a no-op env/launchTarget - unwire ignores them) and call adapter.unwire() (removes exactly the insrc mcp entry + steering block; reversible no-op when absent). One host's HostFileAccessError does not abort the others; returns a tally. This is the body the vscode:uninstall hook invokes (ac3)."
+          },
+          "errors": [
+            {
+              "type": "(aggregated, never throws)",
+              "condition": "A per-host unwire failure (HostFileAccessError) is counted in failed and does not abort the sweep; the function resolves a tally rather than throwing so the uninstall script always completes."
+            }
+          ],
+          "preconditions": [
+            "Runs in a plain-node context (the vscode:uninstall script) - no vscode import; only the sc5 adapters + the default node fs.",
+            "unwire is idempotent: a host that was never wired is left byte-unchanged (no-op)."
+          ],
+          "postconditions": [
+            "ac3: every host insrc wired is restored to its pre-insrc content; the sweep is safe to run whether or not any host was wired."
+          ]
+        },
+        {
+          "name": "runUninstall",
+          "signature": "runUninstall(): Promise<void>",
+          "parameters": [],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "The vscode:uninstall node entry (src/uninstall.ts): calls unwireAllHosts over HOST_SPECS + defaultHostFileSystem and exits cleanly. Declared in package.json scripts['vscode:uninstall'] = 'node ./out/uninstall.js'. NOTE: execution requires the S006 emit/.vsix (the package is noEmit for v1) - s5 authors this entry + declares the hook; s6 makes it run in a real uninstall."
+          },
+          "errors": [
+            {
+              "type": "(never throws)",
+              "condition": "unwireAllHosts never throws; runUninstall additionally guards so the uninstall script never exits non-zero on a host-file error."
+            }
+          ],
+          "preconditions": [
+            "Invoked by VS Code's uninstall lifecycle (the vscode:uninstall npm script), NOT by deactivate() (which fires on disable/reload - wiring must survive those, durability)."
+          ],
+          "postconditions": [
+            "The extension's reversible host wiring is removed on uninstall (ac3)."
+          ]
+        },
+        {
+          "name": "activate",
+          "signature": "activate(context: vscode.ExtensionContext): void",
+          "parameters": [
+            {
+              "name": "context",
+              "type": "vscode.ExtensionContext",
+              "purpose": "The VS Code activation context (already the entrypoint); s5 replaces its three independent offer IIFEs with one guarded runOnboarding call + constructs the OnboardingStore over context.workspaceState.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "The S001-owned activation entry, minimally changed by s5: the three separate fire-and-forget offer IIFEs (offerDaemonInstall / offerHostWiring / offerWorkspaceRegistration) are replaced by ONE guarded fire-and-forget runOnboarding(...) that sequences them; activateExtension + the three registerXCommands calls are unchanged. Preserves the S001 never-throws/off-UI contract."
+          },
+          "errors": [
+            {
+              "type": "(guarded)",
+              "condition": "The single runOnboarding IIFE is wrapped in try/catch so activation never throws (S001)."
+            }
+          ],
+          "preconditions": [
+            "extension.ts remains the sole vscode importer + the only place the OnboardingStore binds context.workspaceState."
+          ],
+          "postconditions": [
+            "The scattered concurrent modals (ac1 defect) are replaced by one coherent sequence; nothing else in activation changes."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "vscode-plugin/src/onboarding/ (new module dir)",
+        "change": "new",
+        "details": "The s5 onboarding orchestrator: runOnboarding (sequences the three shipped offers behind the OnboardingStore gate) + the OnboardingStore seam interface (default impl over context.workspaceState constructed in extension.ts). Imports only node builtins + the shipped daemon/hosts/workspace command modules + the s1 surfaces (k5). Owns no new shared contract.",
+        "callSites": [
+          "vscode-plugin/src/daemon/commands.ts",
+          "vscode-plugin/src/hosts/commands.ts",
+          "vscode-plugin/src/workspace/commands.ts",
+          "vscode-plugin/src/extension.ts"
+        ]
+      },
+      {
+        "entity": "vscode-plugin/src/uninstall.ts (new node entry) + unwireAllHosts",
+        "change": "new",
+        "details": "The fs-only uninstall reversal (ac3): unwireAllHosts iterates HOST_SPECS building an sc5 adapter per spec over defaultHostFileSystem and calls unwire() on each; runUninstall is the vscode:uninstall entry. No vscode import (plain node). package.json gains scripts['vscode:uninstall']='node ./out/uninstall.js'. Reuses createHostAdapter/HOST_SPECS/adapter.unwire() (src/hosts/adapter.ts:74, specs.ts:50) + defaultHostFileSystem (src/hosts/fs.ts).",
+        "callSites": [
+          "vscode-plugin/src/hosts/adapter.ts",
+          "vscode-plugin/src/hosts/specs.ts",
+          "vscode-plugin/src/hosts/fs.ts",
+          "vscode-plugin/package.json"
+        ]
+      },
+      {
+        "entity": "vscode-plugin/src/extension.ts (activation wiring)",
+        "change": "invariant-change",
+        "details": "Replace the three independent fire-and-forget offer IIFEs (offerDaemonInstall / offerHostWiring / offerWorkspaceRegistration, src/extension.ts ~lines 72/85/97) with ONE guarded fire-and-forget runOnboarding(...) call + construct the OnboardingStore over context.workspaceState. activateExtension + registerDaemonCommands/registerHostCommands/registerWorkspaceCommands are unchanged (ac2 stays satisfied). The S001 never-throws/off-UI contract is preserved.",
+        "callSites": [
+          "vscode-plugin/src/extension.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc6",
+        "role": "consumes",
+        "howDetails": "runOnboarding awaits offerDaemonInstall (which drives DaemonLifecycleController.install on sc4 'accepted') as the FIRST step; not re-designed."
+      },
+      {
+        "contractId": "sc7",
+        "role": "consumes",
+        "howDetails": "runOnboarding awaits offerWorkspaceRegistration (which drives WorkspaceRegistrar.register via repo.add) as the SECOND step; not re-designed."
+      },
+      {
+        "contractId": "sc5",
+        "role": "consumes",
+        "howDetails": "runOnboarding awaits offerHostWiring (drives AiHostRegistry.detectPresent + adapter.wire) as the THIRD step; unwireAllHosts drives adapter.unwire() across HOST_SPECS for the uninstall reversal (ac3). sc5 unchanged."
+      },
+      {
+        "contractId": "sc4",
+        "role": "consumes",
+        "howDetails": "Each sequenced step keeps its OWN sc4 ConsentGate prompt - per-action consent granularity preserved (k4); s5 adds no combined mega-consent."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "s5 registers NO new command (the durable install/wire/register/lifecycle commands are already registered by s2/s3/s4); ac3 uses the uninstall hook, not a command - no new InsrcCommandId."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "Each offer pushes its outcome into StatusSurface.set (unchanged); the orchestrator adds no separate status logic (lc1)."
+      },
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "The daemon is reached only through the offers' existing rpc usage (install via daemon-ctl.sh, register via repo.add) - no new IPC (k5)."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "One onboarding step's offer throws unexpectedly mid-sequence (e.g. a bug or an unguarded rejection inside offerDaemonInstall), which would otherwise abort the whole runOnboarding sequence before register/wire run.",
+          "detection": "runOnboarding awaits each offer inside a per-step try/catch (each offer already swallows its own errors into a status, but the orchestrator guards the await too).",
+          "response": "The failing step is logged + skipped; the sequence CONTINUES to the next step (install failing does not prevent register/wire being offered). The whole runOnboarding is additionally wrapped by the activation caller's fire-and-forget try/catch so activate() never throws (S001).",
+          "userImpact": "A failure in one step never blocks the others or crashes activation; every step stays reachable via its durable command (ac2).",
+          "recoverable": true
+        },
+        {
+          "scenario": "The onboarding sequence is interrupted (window closed / reloaded) after some steps ran but before markOnboarded, so the persisted onboarded flag is never set.",
+          "detection": "On the next activation, onboarded.wasOnboarded(root) reads false (the flag was never written).",
+          "response": "runOnboarding re-runs the sequence - but each offer's OWN internal guard makes already-done steps no-ops (install skips when installed; register skips when registered/dismissed; wire re-detects). Only genuinely-unfinished steps re-prompt. markOnboarded runs after the (idempotent) completion.",
+          "userImpact": "At worst one extra pass of already-satisfied (silent) steps; no duplicate installs/registrations. The idempotent guards make re-entry safe.",
+          "recoverable": true
+        },
+        {
+          "scenario": "During the uninstall sweep, one host's config file cannot be written (read-only / permissions / a present-but-malformed mcpServers), so its unwire() throws HostFileAccessError.",
+          "detection": "unwireAllHosts wraps each adapter.unwire() in try/catch and counts a thrown HostFileAccessError in failed.",
+          "response": "The failing host is counted and SKIPPED; the sweep proceeds to the remaining hosts and resolves a { unwired, failed } tally. runUninstall never throws / never exits non-zero.",
+          "userImpact": "A single un-removable host does not abort the reversal for the others; the uninstall completes and the removable wiring is cleaned up.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The vscode:uninstall node script is invoked but the built out/uninstall.js does not exist yet (v1 is noEmit until S006 adds the bundle/.vsix).",
+          "detection": "Node fails to resolve ./out/uninstall.js when VS Code runs the script (a packaging-time condition, surfaced by node's module resolution).",
+          "response": "This is the called-out cross-story dependency: s5 authors src/uninstall.ts + declares scripts['vscode:uninstall']; the driver's logic (unwireAllHosts) is unit-tested now over a fake fs, but the hook only executes once S006 emits + packages the .vsix. Flagged as an openQuestion / scope note, NOT silently assumed working.",
+          "userImpact": "Until S006 ships the bundle, uninstall does not auto-unwire; the unwire logic is proven by tests and the hook is declared, so S006 packaging completes ac3 end-to-end.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A fresh workspace with no daemon, no wiring, no registration (the ac1 happy path).",
+          "expected": "runOnboarding runs offerDaemonInstall (prompt: install?) -> on its resolution offerWorkspaceRegistration (prompt: register?) -> then offerHostWiring (prompt: wire detected hosts?) IN ORDER - one coherent sequence of at most three sequential modals, not three concurrent pop-ups; then markOnboarded(root)."
+        },
+        {
+          "input": "The workspace was already onboarded (wasOnboarded(root) === true) on a later activation.",
+          "expected": "runOnboarding no-ops immediately - no prompts. The durable commands remain the way to perform any step the developer wants to (re-)do (ac2)."
+        },
+        {
+          "input": "No workspace folder is open (empty VS Code window) at activation.",
+          "expected": "runOnboarding still offers the GLOBAL steps whose guard permits (install if not installed; wire if a host is present) but SKIPS register (no root) and does NOT set the per-root onboarded flag (there is no root to key it on) - so opening a folder later still runs the register step."
+        },
+        {
+          "input": "The daemon is already installed + the workspace already registered, but a supported host is present and unwired, on a FRESH (not-yet-onboarded) workspace.",
+          "expected": "runOnboarding's install + register steps silently no-op (their guards), and only the wire prompt appears - the sequence degrades to just the needed step, then markOnboarded."
+        },
+        {
+          "input": "unwireAllHosts runs when NO host was ever wired (uninstall of an extension that only installed the daemon).",
+          "expected": "Each adapter.unwire() is an idempotent no-op (removeInsrcServer finds no key / SteeringWriter.remove finds no markers); the tally is { unwired: 0..n-no-op, failed: 0 } and every host file is left byte-unchanged."
+        },
+        {
+          "input": "The developer declines the install step but the workspace/host steps are still applicable.",
+          "expected": "offerDaemonInstall records the decline (its own status); the sequence still proceeds to offer register + wire (they are independent consents, k4). Declining install does not silently skip the later prompts."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Per-action consent granularity (k4): each of install / register / wire keeps its OWN sc4 ConsentGate prompt in the sequence - s5 introduces NO combined mega-consent, so a developer can accept one step and decline another.",
+          "source": "c1"
+        },
+        {
+          "text": "The uninstall reversal runs ONLY on true uninstall (the vscode:uninstall hook), NEVER in deactivate() - host wiring survives a mere disable / window reload (durability); unwire is idempotent + reversible (removes exactly the insrc markers, restoring prior content).",
+          "source": "c1"
+        },
+        {
+          "text": "lc1: s5 holds NO duplicated action logic - it only sequences the existing offers (which share the durable commands' flow) and pushes state through sc2; it registers no new command and re-implements no consent/branch logic.",
+          "source": "c1"
+        },
+        {
+          "text": "The S001 activation contract holds: the single runOnboarding call runs off the activation critical path, guarded fire-and-forget, so activate() never throws or blocks the editor (mirrors S001-S004).",
+          "source": "c1"
+        },
+        {
+          "text": "k5/k2: the onboarding orchestrator + the uninstall driver import only node builtins + the shipped seams (daemon/hosts/workspace + s1 surfaces) - no daemon internals/indexer/storage, no cloud path; the uninstall driver carries no vscode import (plain node).",
+          "source": "c4"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test (tsx --test) - the same runner S001-S004 use for vscode-plugin/ over injected fakes (no VS Code host); fake ConsentGate/StatusSurface + fake DaemonLifecycleController/WorkspaceRegistrar/AiHostRegistry + fake OnboardingStore/WorkspaceFolders/PromptStore drive runOnboarding; an in-memory HostFileSystem drives unwireAllHosts; plus source-scan tests for the k5 boundary + the extension.ts activation rewrite + the package.json vscode:uninstall hook.",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove runOnboarding sequences the three offers coherently, once-per-workspace, with each step's own guard + consent intact.",
+          "subjects": [
+            "runOnboarding awaits the three offers IN ORDER install->register->wire (recorded call order), not concurrently - one coherent sequence, then markOnboarded(root)",
+            "runOnboarding no-ops (no offer runs, no prompt) when onboarded.wasOnboarded(root) is already true",
+            "a step that internally no-ops (already installed / already registered / no host) is silently skipped while the remaining needed steps still run - the sequence degrades to only the needed prompts",
+            "one step's offer throwing does NOT abort the sequence - the later steps still run (per-step guard); runOnboarding never throws",
+            "no workspace folder open -> register step is skipped and the per-root onboarded flag is NOT set (a later folder-open still onboards), while the global install/wire steps may still run",
+            "each step keeps its OWN sc4 consent (no combined mega-consent) - declining install still offers register + wire (k4)"
+          ],
+          "fixturesNeeded": [
+            "fake ConsentGate returning scripted per-step outcomes + recording each ask",
+            "fake DaemonLifecycleController/WorkspaceRegistrar/AiHostRegistry (scripted isInstalled/state/detectPresent; one throw variant) + fake StatusSurface/WorkspaceFolders/PromptStore",
+            "an in-memory OnboardingStore recording wasOnboarded/markOnboarded"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove unwireAllHosts reverses every HostSpec's wiring over a fake fs, idempotently, isolating per-host failures.",
+          "subjects": [
+            "unwireAllHosts builds an adapter per HostSpec over the injected fs and calls unwire() on each (mcp key + steering block removed), returning a { unwired, failed } tally",
+            "unwireAllHosts is an idempotent no-op for a host that was never wired (file left byte-unchanged; failed:0)",
+            "a host whose unwire() throws HostFileAccessError is counted in failed and does NOT abort the sweep (the other hosts are still unwired)",
+            "runUninstall calls unwireAllHosts over HOST_SPECS + defaultHostFileSystem and never throws / never exits non-zero"
+          ],
+          "fixturesNeeded": [
+            "an in-memory HostFileSystem seeded with wired + un-wired + write-failing host configs",
+            "a couple of test HostSpecs (or the real HOST_SPECS) for the sweep"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove the k5 boundary + the activation rewrite + the uninstall-hook declaration by source scan (mirroring S002-S004).",
+          "subjects": [
+            "source-scan: vscode-plugin/src/onboarding/ imports only node builtins + the shipped daemon/hosts/workspace command modules + the s1 surfaces - no daemon internals/indexer/storage, no cloud/HTTP (k5)",
+            "source-scan: vscode-plugin/src/uninstall.ts carries NO vscode import (plain node) and imports only the sc5 host seams + node builtins (k5)",
+            "extension.ts calls runOnboarding exactly ONCE (guarded fire-and-forget) and NO LONGER fires the three separate offer IIFEs - the scattered-pop-up defect is gone (S001 never-throws preserved)",
+            "package.json declares scripts['vscode:uninstall'] = 'node ./out/uninstall.js' (the ac3 hook is declared)"
+          ],
+          "fixturesNeeded": [
+            "source read of vscode-plugin/src/onboarding/*.ts + vscode-plugin/src/uninstall.ts + vscode-plugin/src/extension.ts",
+            "read of vscode-plugin/package.json scripts"
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "Prove the package still typechecks with the onboarding module + uninstall entry added.",
+          "subjects": [
+            "the vscode-plugin package typechecks (tsc -p tsconfig.json) with src/onboarding/ + src/uninstall.ts + the extension.ts rewrite"
+          ],
+          "fixturesNeeded": [
+            "the vscode-plugin tsconfig"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "runOnboarding awaits the three offers IN ORDER install->register->wire (recorded call order), not concurrently - one coherent sequence (runOnboarding unit test) - proves 'coherent rather than unrelated pop-ups'",
+            "a step that internally no-ops is skipped while the needed steps still run (runOnboarding unit test) - proves the sequence guides through only the NEEDED prompts",
+            "extension.ts calls runOnboarding once + no longer fires the three separate offer IIFEs (activation source-scan) - proves the scattered-pop-up defect is removed",
+            "each step keeps its own sc4 consent - no combined mega-consent (runOnboarding unit test) - proves k4 per-action granularity within the coherent flow"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "runOnboarding no-ops when already onboarded, and a step it skips stays performable - the durable install/wire/register/lifecycle commands are ALREADY registered by s2/s3/s4 (runOnboarding unit test asserts s5 registers no new command; the existing registerXCommands are untouched) - proves no dismissed prompt is a dead end",
+            "package.json still declares the install/wire/register + daemon-lifecycle commands in contributes.commands (bundle source-scan, unchanged from S002-S004) - proves the durable commands remain palette-reachable (k6)"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "unwireAllHosts removes the mcp entry + steering block for each wired HostSpec over the fake fs and restores prior content (unwire unit test) - proves the reversible wiring is removed on the uninstall path",
+            "unwireAllHosts is an idempotent no-op for an un-wired host + isolates a per-host failure (unwire unit test) - proves the uninstall sweep is safe + complete",
+            "package.json declares scripts['vscode:uninstall'] = 'node ./out/uninstall.js' + src/uninstall.ts carries no vscode import (source-scan) - proves the uninstall HOOK that invokes the reversal is declared (its execution completed by S006 emit/.vsix)"
+          ]
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "A coalescing onboarding orchestrator (sequenced offers + persisted once-per-workspace gate) + a plain-node vscode:uninstall unwire driver",
+        "oneLineSummary": "One new src/onboarding/ seam runs the three existing offers as an awaited install->register->wire sequence behind a persisted OnboardingStore; a fs-only uninstall entry unwires every HostSpec.",
+        "approach": "Add a new injectable seam src/onboarding/ that composes the shipped contracts - it OWNS no new shared contract, only sequences. runOnboarding({ controller, registrar, folders, registry, consent, status, onboarded }) awaits offerDaemonInstall -> offerWorkspaceRegistration -> offerHostWiring IN ORDER (each keeps its own internal no-op guard), gated by an injected OnboardingStore { wasOnboarded(root); markOnboarded(root) } (default over context.workspaceState, per-root key, mirroring S004's PromptStore) so the sequence auto-runs ONCE per workspace; on completion markOnboarded(root). extension.ts replaces its three independent fire-and-forget offer IIFEs with ONE guarded fire-and-forget runOnboarding call (S001 never-throws preserved). The durable commands stay registered by the existing registerXCommands (ac2 already satisfied - s5 re-registers nothing). For ac3, add src/uninstall.ts: a plain-node entry (no vscode import) that iterates HOST_SPECS, builds an adapter per spec via createHostAdapter over defaultHostFileSystem, and calls unwire() on each (reversible no-op when absent); declare package.json scripts['vscode:uninstall'] = 'node ./out/uninstall.js'. Actual execution needs the S006 emit/.vsix (noEmit today) - s5 authors the driver + declares the hook; s6 makes it run.",
+        "pros": [
+          "Coalesces the three scattered pop-ups into one coherent awaited sequence (ac1) with ZERO change to the owning stories' offers/commands - pure composition (lc1).",
+          "Mirrors the shipped S004 PromptStore-over-workspaceState pattern exactly - OnboardingStore is unit-testable off VS Code via an injected fake.",
+          "The uninstall driver reuses sc5.unwire() verbatim over the default node fs (unwire needs no editor detection), so ac3 is delivered with no new host logic and no new command id (no sc3 amendment).",
+          "The vscode:uninstall node script is the CORRECT VS Code uninstall hook (deactivate() fires on disable/reload too and must NOT unwire - durability)."
+        ],
+        "cons": [
+          "Introduces one more workspaceState flag (the onboarded gate) adjacent to S004's register-dismissed flag - must be namespaced distinctly.",
+          "The uninstall hook is authored + declared here but only becomes executable once S006 adds emit + packages the .vsix - a cross-story dependency that must be called out."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Onboarding gated only by live probes (no persisted onboarded flag) + uninstall in deactivate()",
+        "oneLineSummary": "Skip the persisted gate - rely on each offer's own guards - and run unwire from deactivate() instead of a vscode:uninstall script.",
+        "approach": "runOnboarding sequences the three offers but persists NO 'onboarded' flag - it relies purely on each offer's internal guard. unwire is driven from extension.ts deactivate() over the sc5 adapters.",
+        "pros": [
+          "Slightly less state - no new workspaceState flag.",
+          "deactivate() is a real VS Code lifecycle hook that always fires."
+        ],
+        "cons": [
+          "Without the persisted onboarded gate, the WIRE step re-prompts on EVERY activation (offerHostWiring has no persisted dismissal) - exactly the 're-nag' ac1 forbids.",
+          "deactivate() fires on DISABLE and WINDOW RELOAD, not just uninstall - unwiring there REMOVES the host wiring on every reload/toggle, violating durability + ac3.",
+          "Re-running unwire on every reload churns the developer's host config files."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Fails ac3 (deactivate() unwires on disable/reload, not just uninstall) and only partial on ac1 (the wire step re-nags without the persisted onboarded gate)."
+      },
+      {
+        "id": "a3",
+        "name": "A single mega-consent prompt that bundles install+register+wire into one modal",
+        "oneLineSummary": "Replace the three sc4 prompts with ONE combined consent that performs all three actions on a single 'accept'.",
+        "approach": "Instead of sequencing the three offers, present ONE combined ConsentGate prompt listing all three actions, and on a single 'accepted' perform install + register + wire together; skip the per-step prompts.",
+        "pros": [
+          "Only one modal ever - minimal clicks for the happy path."
+        ],
+        "cons": [
+          "Collapses three DISTINCT invasive actions behind ONE consent - weakening k4's per-action granularity (can't accept register but decline host-file writes).",
+          "Re-implements consent/branching logic in s5 rather than reusing the owning stories' offers - violates lc1.",
+          "A partial failure has no clean per-step status/recovery - the structured per-step observability is lost."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Violates k4/sc4 (one mega-consent collapses three distinct invasive actions behind one consent) and lc1 (re-implements branching logic in s5)."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "The vscode:uninstall hook's actual EXECUTION depends on S006 adding emit + packaging the .vsix (v1 is noEmit today); s5 authors src/uninstall.ts + unwireAllHosts + declares scripts['vscode:uninstall'], all unit-tested now over a fake fs, and S006 completes ac3 end-to-end."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "Shipped S002/S003/S004 offers + durable commands: offerDaemonInstall (src/daemon/commands.ts:41), offerHostWiring (src/hosts/commands.ts:29), offerWorkspaceRegistration (src/workspace/commands.ts:81); registerDaemonCommands/registerHostCommands/registerWorkspaceCommands already register the durable commands"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "The scattered-pop-up defect: extension.ts fires the three offers as three independent fire-and-forget IIFEs (src/extension.ts ~72/85/97) that s5 replaces with one sequenced runOnboarding"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "Reversible unwire + uninstall hook: AiHostAdapter.unwire() (src/hosts/adapter.ts:74) over HOST_SPECS (src/hosts/specs.ts:50) + defaultHostFileSystem (src/hosts/fs.ts); the VS Code uninstall hook is package.json scripts['vscode:uninstall'] (plain node)"
+    },
+    {
+      "id": "c4",
+      "kind": "convention",
+      "ref": "InsrcCommandId (src/surfaces/command-registry.ts) has no unwire id (ac3 via the uninstall hook, no sc3 amendment); lc1 first-class-commands + the k5/k2 thin boundary; the OnboardingStore mirrors S004's PromptStore-over-workspaceState"
+    }
+  ]
+}

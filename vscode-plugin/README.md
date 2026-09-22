@@ -48,7 +48,7 @@ Publishing is a **deliberate, manually-triggered** action — never a per-push C
 job — and targets the **VS Code Marketplace only**:
 
 1. Set the `publisher` field in `package.json` to your Marketplace publisher id
-   (currently `insors-ai`).
+   (currently `insors`).
 2. Add a Marketplace Personal Access Token as the `VSCE_PAT` GitHub Actions
    secret (it lives only as a secret — never in the repo).
 3. Bump the `version` in `package.json`.

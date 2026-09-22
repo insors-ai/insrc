@@ -3,7 +3,7 @@
   "displayName": "insrc",
   "description": "insrc for VS Code — grounded code-knowledge and the tracked workflow, wired into your AI assistant.",
   "version": "0.1.0",
-  "publisher": "insors-ai",
+  "publisher": "insors",
   "license": "MIT",
   "repository": {
     "type": "git",

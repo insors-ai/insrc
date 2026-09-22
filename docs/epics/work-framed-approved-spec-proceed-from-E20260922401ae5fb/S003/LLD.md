@@ -267,6 +267,8 @@ As a1 (revert inside applyChanges, Refresh command, escape-hatch), but instead o
 
 - `q1d25cad6` — insrc.advanced escape-hatch scope: S003 declares a minimal machine-scoped object setting whose leaves are write-through to config.write (forward-compat only), NOT a pulled/round-tripped raw-JSON editor. Confirm this minimal shape is acceptable, or defer the escape-hatch entirely to a later story (it is boundary-internal but not named in ac1/ac2/ac3).
   - **resolved**: Defer escape-hatch to a later story — No S003 AC names insrc.advanced, and a write-only-not-pulled setting would contradict S003's own truthful-sync (k5) guarantee — the shown value could drift from the daemon with no correction. S003 covers only ac1/ac2/ac3 (reject/revert/reconcile); a later story that names the escape-hatch in its ACs picks it up. _(2026-09-22T13:17:01.640Z)_
+- `q0ee160d6` — sc3 command-union edit: the Refresh command requires adding insrc.settings.refresh to the closed InsrcCommandId union in the shipped ad0d45c9 CommandRegistry (surfaces/command-registry.ts) — a small additive edit to another epic surface (not this epic sc8). Confirm at approval.
+  - **resolved**: Accept additive union edit — One-member, strictly additive edit to the closed InsrcCommandId union; keeps every command in the one typed CommandRegistry; no new daemon capability. Matches the additive-extension precedent approved for S002. User-approved. _(2026-09-22T13:17:19.582Z)_
 
 ## Citations
 

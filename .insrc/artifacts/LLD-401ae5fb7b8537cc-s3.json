@@ -126,6 +126,13 @@
         "choice": "Defer escape-hatch to a later story",
         "rationale": "No S003 AC names insrc.advanced, and a write-only-not-pulled setting would contradict S003's own truthful-sync (k5) guarantee — the shown value could drift from the daemon with no correction. S003 covers only ac1/ac2/ac3 (reject/revert/reconcile); a later story that names the escape-hatch in its ACs picks it up.",
         "resolvedAt": "2026-09-22T13:17:01.640Z"
+      },
+      "q0ee160d6": {
+        "question": "sc3 command-union edit: the Refresh command requires adding insrc.settings.refresh to the closed InsrcCommandId union in the shipped ad0d45c9 CommandRegistry (surfaces/command-registry.ts) — a small additive edit to another epic surface (not this epic sc8). Confirm at approval.",
+        "status": "resolved",
+        "choice": "Accept additive union edit",
+        "rationale": "One-member, strictly additive edit to the closed InsrcCommandId union; keeps every command in the one typed CommandRegistry; no new daemon capability. Matches the additive-extension precedent approved for S002. User-approved.",
+        "resolvedAt": "2026-09-22T13:17:19.582Z"
       }
     }
   },

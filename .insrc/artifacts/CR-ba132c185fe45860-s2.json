@@ -1,0 +1,60 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1790172448331-ngtivd",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-23T14:07:28.331Z",
+    "model": "client",
+    "elapsedMs": 3,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ba132c185fe45860",
+    "storyId": "s2"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "ba132c185fe45860",
+    "storyId": "s2",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        ".insrc/artifacts/CR-ba132c185fe45860-s1.json",
+        "src/agent/providers/ollama.ts",
+        "src/daemon/index.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/agent/providers/ollama.ts:239",
+            "message": "No correctness / avoidable-complexity / duplication / error-handling risks observed. The ollama timeout race clears its timer in a finally (no leaked setTimeout), rejects on non-array models / entries without a string name (no partial/garbage list), and uses its own short bound (OLLAMA_LIST_TIMEOUT_MS=4000, not the 300s completion header-timeout). The dispatch never calls the ollama lister for a cloud provider and constructs no cloud client (k1/ac4). An independent cold review reached the same verdict (0 HIGH/0 MED). One accepted follow-up LOW: on timeout the underlying client.list() HTTP request is not aborted (correctness-neutral, brief resource leak; the ollama client's list() does not cleanly expose an abort signal) — documented, not fixed.",
+            "expectationRef": "quality: correctness/complexity/duplication/error-handling",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 1
+    }
+  }
+}

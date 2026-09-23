@@ -87,6 +87,7 @@ import {
 // in Phase 2-3.
 
 import type { RpcHandler, StreamHandler } from './server.js';
+import { listModels } from './list-models.js';
 
 const BACKEND_OFFLINE_REASON =
 	'backend offline: this RPC was removed during the cleanup. The next backend (Ollama + CLI subprocess) will reinstate the surface.';
@@ -1516,7 +1517,7 @@ async function main(): Promise<void> {
 		// IDE gets a slimmer surface in Phase 6 (Ollama + claude/codex
 		// CLI auth status). Until then these return offline so the pane
 		// shows a clean error and the user can switch panes.
-		'providers.listModels': offlineRpc('providers.listModels'),
+		'providers.listModels': (params) => listModels(params),   // sc2 (Epic ba132c185fe45860, S002): revived read-only model-list dispatch
 		'providers.testKey':    offlineRpc('providers.testKey'),
 		'providers.getConfig':  offlineRpc('providers.getConfig'),
 		'providers.setConfig':  offlineRpc('providers.setConfig'),

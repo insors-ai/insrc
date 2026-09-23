@@ -24,6 +24,20 @@ const log = getLogger('ollama');
 const MAX_TRANSIENT_RETRIES         = 1;
 const TRANSIENT_RETRY_BASE_DELAY_MS = 5_000;
 
+// Default bound for the installed-model list (/api/tags). Deliberately short: a
+// UI-triggered "which models can I pick" query must NOT inherit the provider's
+// 300s completion header-timeout (Epic ba132c185fe45860, S002). A local ollama
+// tags query is sub-second when up; when down we want to fail fast to an
+// available:false signal rather than hang the picker.
+const OLLAMA_LIST_TIMEOUT_MS = 4_000;
+
+/** One installed model, structurally compatible with the daemon's sc2 ModelInfo
+ *  (kept local so this agent-layer file does not import from the daemon layer). */
+export interface LocalModelInfo {
+  readonly id:           string;
+  readonly displayName?: string;
+}
+
 function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -204,6 +218,51 @@ export class OllamaProvider implements LLMProvider {
       return true;
     } catch {
       return false;
+    }
+  }
+
+  /**
+   * List the machine's installed ollama models via a read-only /api/tags query
+   * (Epic ba132c185fe45860, S002). Bounded by opts.timeoutMs (default
+   * OLLAMA_LIST_TIMEOUT_MS) so a UI-triggered list never inherits the 300s
+   * completion header-timeout. Maps each ModelResponse.name -> { id } (no
+   * displayName). REJECTS on unreachable/timeout/malformed (a non-array `models`
+   * or an entry without a string name) — the caller (the daemon list-models
+   * dispatch) maps any rejection to an available:false result; a partial/garbage
+   * list is never emitted. The `listFn` seam lets tests drive the mapping +
+   * timeout without a live ollama. Read-only: no model pull/mutation.
+   */
+  async listLocalModels(
+    opts: { timeoutMs?: number; listFn?: () => Promise<{ models?: unknown }> } = {},
+  ): Promise<readonly LocalModelInfo[]> {
+    const timeoutMs = opts.timeoutMs ?? OLLAMA_LIST_TIMEOUT_MS;
+    const listFn    = opts.listFn ?? (() => this.client.list());
+
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const timeout = new Promise<never>((_resolve, reject) => {
+      timer = setTimeout(
+        () => reject(new Error(`ollama model list timed out after ${timeoutMs}ms`)),
+        timeoutMs,
+      );
+    });
+
+    try {
+      const res    = await Promise.race([listFn(), timeout]);
+      const models = (res as { models?: unknown }).models;
+      if (!Array.isArray(models)) {
+        throw new Error('ollama model list returned a malformed response (no models array)');
+      }
+      const out: LocalModelInfo[] = [];
+      for (const m of models) {
+        const name = (m as { name?: unknown }).name;
+        if (typeof name !== 'string' || name.length === 0) {
+          throw new Error('ollama model list returned an entry without a valid name');
+        }
+        out.push({ id: name });
+      }
+      return out;
+    } finally {
+      if (timer !== undefined) clearTimeout(timer);
     }
   }
 

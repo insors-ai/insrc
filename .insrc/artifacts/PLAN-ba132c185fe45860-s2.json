@@ -1,0 +1,347 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1790171239226-xzo4r2",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-23T13:50:38.370Z",
+    "epicCreatedAt": "2026-09-23T11:52:34.345Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 199130,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ba132c185fe45860",
+    "epicSlug": "work-framed-approved-spec-proceed-from",
+    "storyId": "s2",
+    "lldRunId": "wf-1790170484323-dcz1a6",
+    "lldEffectiveHash": "3fb0b2204d884534004431928d86df688607742e1aa556119172742624bc5e9a",
+    "approvedAt": "2026-09-23T13:57:13.053Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add bounded OllamaProvider.listLocalModels()",
+        "summary": "Add a public listLocalModels(opts?: {timeoutMs?}) method to OllamaProvider (src/agent/providers/ollama.ts) that wraps its private this.client.list() (/api/tags) in a short Promise.race timeout, maps ModelResponse.name -> ModelInfo.id (displayName omitted), and rejects on failure/timeout. It must NOT use the 300s completion header-timeout. Provide the lightest testability seam consistent with strict TS + the OllamaProvider surface (an optional injected list-fn param or a small protected hook, matching the S001 inject-the-dependency style) so client.list() can be faked without a live ollama. Additive to the existing class; nothing calls it yet.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "listLocalModels() maps a successful client.list() ({models:[{name}...]}) to readonly ModelInfo[] with id = name and no displayName",
+          "listLocalModels({timeoutMs}) settles as a failure (rejects/throws) when the underlying list() exceeds the bound — it does NOT hang and does NOT use the 300s header-timeout",
+          "a client.list() rejection (ollama unreachable) surfaces as a rejection the caller can map to available:false",
+          "the ollama client.list() is fakeable via the chosen seam without a live ollama (drives the t4 unit test)",
+          "the method is read-only against ollama (only /api/tags list; no pull/mutation) and constructs no cloud/Anthropic client"
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "listLocalModels() with a fake client.list() returning {models:[{name:'llama3'},{name:'qwen'}]} -> [{id:'llama3'},{id:'qwen'}]"
+          },
+          {
+            "level": "unit",
+            "name": "listLocalModels() maps only .name -> id, omits displayName (no fabricated label)"
+          },
+          {
+            "level": "unit",
+            "name": "listLocalModels({timeoutMs}) rejects/settles as failure when the fake list() exceeds the bound (does NOT hang; does NOT use the 300s header-timeout)"
+          },
+          {
+            "level": "unit",
+            "name": "listLocalModels() surfaces a client.list() rejection (unreachable) as a rejection the caller maps to available:false"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Add the src/daemon/list-models.ts dispatch module (sc2 types + listModels)",
+        "summary": "Create src/daemon/list-models.ts exporting the sc2 types (ModelProvider/ModelInfo/ModelListResult/ListModelsParams) + listModels(params: unknown, deps?: ListModelsDeps): Promise<ModelListResult>. Validate params.provider against the three ModelProvider literals; cloud (cli-claude/cli-codex) -> getCuratedCatalog().modelsFor mapped to {available:true, models}; ollama -> the bounded lister wrapped in try/catch -> {available:true, models} on success or {available:false, models:[]} on any failure/timeout/malformed; unknown/missing provider -> the invalid-params error result. Injected deps default to the real bounded OllamaProvider lister (t1) + getCuratedCatalog (sc1, consumed). Strictly read-only, no cloud REST.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "listModels({provider:'cli-claude'|'cli-codex'}) returns {provider, available:true, models} mapped from getCuratedCatalog().modelsFor (empty array stays available:true)",
+          "listModels({provider:'ollama'}) returns available:true + mapped models on success; available:false + [] on lister rejection/timeout/malformed; available:true + [] when reachable-but-zero",
+          "listModels with an unknown/missing provider returns the invalid-params error result, throwing nothing and mutating nothing",
+          "the module imports only the ollama provider + getCuratedCatalog + node built-ins — no Anthropic/OpenAI/cloud-REST client is constructed or imported (k1/ac4)",
+          "types match the sc2 interfaceSketch exactly; ModelProvider is the three runner values"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "listModels({provider:'cli-claude'}) with a stub catalog -> {provider:'cli-claude', available:true, models} mapped from CatalogModel"
+          },
+          {
+            "level": "unit",
+            "name": "listModels({provider:'cli-codex'}) -> the cli-codex curated list, available:true"
+          },
+          {
+            "level": "unit",
+            "name": "listModels({provider:'ollama'}) with a fake lister returning models -> {provider:'ollama', available:true, models} mapped from names"
+          },
+          {
+            "level": "unit",
+            "name": "listModels({provider:'ollama'}) with a fake lister that REJECTS (unreachable) -> {provider:'ollama', available:false, models:[]}"
+          },
+          {
+            "level": "unit",
+            "name": "listModels({provider:'ollama'}) with a fake lister that never resolves within the bound (timeout) -> available:false + []"
+          },
+          {
+            "level": "unit",
+            "name": "listModels({provider:'ollama'}) with a fake lister returning a malformed shape (no models array / entry without name) -> available:false + []"
+          },
+          {
+            "level": "unit",
+            "name": "listModels with an unknown/missing provider (e.g. {provider:'gpt'} / {} / null) -> the invalid-params error result, no throw, no mutation"
+          },
+          {
+            "level": "unit",
+            "name": "cloud branch: the injected catalog stub's modelsFor is called and NO ollama lister / HTTP client is invoked (ac4 — assert the fake ollama lister is never called for a cloud provider)"
+          },
+          {
+            "level": "unit",
+            "name": "read-only: listModels invokes no mutation on the injected deps (the stub catalog + fake lister expose only read methods; assert no config write path is reachable)"
+          },
+          {
+            "level": "unit",
+            "name": "the list-models module's imports contain no direct cloud-REST/provider-SDK reference (only the ollama provider + getCuratedCatalog + node built-ins) — a source-scan assertion mirroring the k1 discipline"
+          },
+          {
+            "level": "unit",
+            "name": "the cli-claude/cli-codex branch reaches getCuratedCatalog only (no network call constructed)"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Flip the providers.listModels map entry to the real handler",
+        "summary": "Change the daemon IPC handler-map entry (src/daemon/index.ts, ~:1519) for 'providers.listModels' from offlineRpc('providers.listModels') to a real RpcHandler that delegates to listModels(params) from src/daemon/list-models.ts. One-line map-entry change + one import; no other entry changes; revive-in-place (lc1) so there is exactly one working model-listing entry.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "the 'providers.listModels' map entry is a real handler delegating to listModels(params), no longer offlineRpc — invoking it does NOT return the backend-offline error",
+          "invoking the registered handler with {provider:'cli-claude'} returns a ModelListResult sourced from the real getCuratedCatalog() (post-boot)",
+          "no dead duplicate model-listing entry exists (lc1); no other handler-map entry or transport changes"
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "the daemon handler map entry for 'providers.listModels' is not offlineRpc (invoking it does NOT return the backend-offline error)"
+          },
+          {
+            "level": "integration",
+            "name": "the handler is registered once (no dead duplicate model-listing entry) — lc1"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Add colocated node:test tests for the dispatch + listLocalModels + handler wiring",
+        "summary": "Add colocated tests: (a) src/daemon/__tests__ for the list-models dispatch (cloud / ollama success/unreachable/timeout/malformed / reachable-zero / invalid provider / read-only / no-cloud-REST source-scan) via injected fake lister + stub catalog, mirroring model-catalog.test.ts; (b) a listLocalModels test beside src/agent/providers/ via a fake ollama client (success/reject/slow/malformed); (c) a handler-map integration check that 'providers.listModels' is no longer offlineRpc. node:test (tsx --test).",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "dispatch tests cover cloud, ollama success/unreachable/timeout/malformed, reachable-zero (available:true+[]), invalid provider, and read-only — all via injected fakes, no live daemon/ollama",
+          "a listLocalModels unit test drives the mapping + timeout + rejection via the t1 seam (fake ollama client), no live ollama",
+          "a source-scan test asserts the list-models module + listLocalModels construct no cloud-REST/provider-SDK client (ac4)",
+          "a handler-map integration test asserts 'providers.listModels' is a real handler (not offlineRpc) returning a ModelListResult",
+          "the full local test sweep passes (npx tsx --test) with no network access"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "invoking the registered handler with {provider:'cli-claude'} returns a ModelListResult sourced from the real getCuratedCatalog() (post-boot)"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "listModels({provider:'cli-claude'}) with a stub catalog -> {provider:'cli-claude', available:true, models} mapped from CatalogModel",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "listModels({provider:'cli-codex'}) -> the cli-codex curated list, available:true",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "listModels({provider:'ollama'}) with a fake lister returning models -> {provider:'ollama', available:true, models} mapped from names",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "listModels({provider:'ollama'}) with a fake lister that REJECTS (unreachable) -> {provider:'ollama', available:false, models:[]}",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "listModels({provider:'ollama'}) with a fake lister that never resolves within the bound (timeout) -> available:false + []",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "listModels({provider:'ollama'}) with a fake lister returning a malformed shape (no models array / entry without name) -> available:false + []",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "listModels with an unknown/missing provider (e.g. {provider:'gpt'} / {} / null) -> the invalid-params error result, no throw, no mutation",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "cloud branch: the injected catalog stub's modelsFor is called and NO ollama lister / HTTP client is invoked (ac4 — assert the fake ollama lister is never called for a cloud provider)",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "read-only: listModels invokes no mutation on the injected deps (the stub catalog + fake lister expose only read methods; assert no config write path is reachable)",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "listLocalModels() with a fake client.list() returning {models:[{name:'llama3'},{name:'qwen'}]} -> [{id:'llama3'},{id:'qwen'}]",
+        "coveredByTaskIds": [
+          "t1",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "listLocalModels() maps only .name -> id, omits displayName (no fabricated label)",
+        "coveredByTaskIds": [
+          "t1",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "listLocalModels({timeoutMs}) rejects/settles as failure when the fake list() exceeds the bound (does NOT hang; does NOT use the 300s header-timeout)",
+        "coveredByTaskIds": [
+          "t1",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "listLocalModels() surfaces a client.list() rejection (unreachable) as a rejection the caller maps to available:false",
+        "coveredByTaskIds": [
+          "t1",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "the daemon handler map entry for 'providers.listModels' is not offlineRpc (invoking it does NOT return the backend-offline error)",
+        "coveredByTaskIds": [
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "invoking the registered handler with {provider:'cli-claude'} returns a ModelListResult sourced from the real getCuratedCatalog() (post-boot)",
+        "coveredByTaskIds": [
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "the handler is registered once (no dead duplicate model-listing entry) — lc1",
+        "coveredByTaskIds": [
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "the list-models module's imports contain no direct cloud-REST/provider-SDK reference (only the ollama provider + getCuratedCatalog + node built-ins) — a source-scan assertion mirroring the k1 discipline",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "the cli-claude/cli-codex branch reaches getCuratedCatalog only (no network call constructed)",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "LLD s2 contractDetails/migration: the offline-stubbed 'providers.listModels' at src/daemon/index.ts:1519 (offlineRpc factory :94), RpcHandler=(params:unknown)=>Promise<unknown> (server.ts:38), and the forbidden Anthropic-SDK claude.models path (:1290) NOT reused.",
+      "quotedText": "'providers.listModels': offlineRpc('providers.listModels') (index.ts:1519); flip to a real handler delegating to listModels; RpcHandler = (params: unknown) => Promise<unknown> (server.ts:38)."
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 interactionWithShared (consumes sc1): S001's getCuratedCatalog().modelsFor('cli-claude'|'cli-codex') in src/daemon/model-catalog.ts — the shipped accessor the cloud branch reads.",
+      "quotedText": "The cloud branch consumes getCuratedCatalog().modelsFor mapped CatalogModel -> ModelInfo into a {available:true, models} result."
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "LLD s2 contractDetails (listLocalModels): OllamaProvider (src/agent/providers/ollama.ts:136) wraps the ollama package Ollama client (host ollama.host, config-catalog.ts:80); client.list() (/api/tags) returns ListResponse.models[].name; the ollama list needs its OWN bounded timeout, NOT the 300s completion header-timeout.",
+      "quotedText": "listLocalModels(opts?) wraps this.client.list() (/api/tags) in a timeout race, maps ModelResponse.name -> ModelInfo.id; failure/timeout -> available:false + []."
+    },
+    {
+      "id": "c6",
+      "kind": "analyze-bundle",
+      "ref": "LLD s2 dataModelChanges: ModelProvider = 'ollama'|'cli-claude'|'cli-codex' — the reused runner enum AnalyzeShaperProviderKind (src/config/analyze.ts:88), unchanged (k3).",
+      "quotedText": "type ModelProvider = 'ollama' | 'cli-claude' | 'cli-codex'; the sc2 provider discriminant, exactly the reused runner enum values (k3)."
+    }
+  ]
+}

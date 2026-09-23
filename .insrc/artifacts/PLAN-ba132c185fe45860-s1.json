@@ -1,0 +1,286 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1790168806420-qngzpv",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-23T13:09:49.256Z",
+    "epicCreatedAt": "2026-09-23T11:52:34.345Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 182811,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ba132c185fe45860",
+    "epicSlug": "work-framed-approved-spec-proceed-from",
+    "storyId": "s1",
+    "lldRunId": "wf-1790166442417-ni3a1m",
+    "lldEffectiveHash": "3fb0b2204d884534004431928d86df688607742e1aa556119172742624bc5e9a",
+    "approvedAt": "2026-09-23T13:19:11.003Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add the curated cloud model catalog JSON asset",
+        "summary": "Create src/assets/models/cloud-model-catalog.json matching the CloudModelCatalogFile shape { version:number, providers: { 'cli-claude': CatalogModel[], 'cli-codex': CatalogModel[] } } with an initial maintainer-curated set of cli-claude + cli-codex model entries ({ id, displayName? }). No copy-assets.mjs change — it ships to out/assets/ via the existing 'assets' DIRS membership.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "src/assets/models/cloud-model-catalog.json exists and is valid JSON matching { version:number, providers: { 'cli-claude': [...], 'cli-codex': [...] } }",
+          "each entry has a string id (+ optional string displayName); both cloud providers are present with at least one real curated model each",
+          "no copy-assets.mjs edit is required (the file sits under src/assets/)"
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "the actual shipped src/assets/models/cloud-model-catalog.json validates against the CloudModelCatalogFile schema (the real curated asset, not a fixture)"
+          },
+          {
+            "level": "integration",
+            "name": "every entry in the shipped catalog has a string id; displayName when present is a string"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Add the daemon catalog module: types + validateModelCatalog + getCuratedCatalog + modelsFor",
+        "summary": "Create a new daemon module (e.g. src/daemon/model-catalog.ts) defining CloudModelCatalogFile / CatalogModel / CloudProvider types + ModelCatalogValidationError, validateModelCatalog() (read the shipped asset, JSON-parse, schema-validate version+providers+entries, cache the frozen parse, else throw ModelCatalogValidationError naming the file + a copy-assets Fix: hint), getCuratedCatalog() (returns the singleton accessor; throws the boot-ordering Error if the cache is unset), and CuratedCatalog.modelsFor(provider) over the frozen parse. Mirrors src/docgen/asset-validator.ts. No cloud REST; nothing consumes it yet.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "validateModelCatalog() resolves for a valid catalog and throws ModelCatalogValidationError (message names the file + a copy-assets Fix: hint) for a missing or malformed/schema-invalid asset, short-circuiting on the first structural failure",
+          "getCuratedCatalog() returns a CuratedCatalog whose modelsFor('cli-claude'|'cli-codex') returns the frozen readonly arrays, an empty array for a provider the catalog omits, and throws the boot-ordering Error when called before validateModelCatalog cached the parse",
+          "the module makes NO network/provider call (no HTTP client constructed) and does NOT read/write config.json or touch the config-reconcile system",
+          "CloudProvider = 'cli-claude' | 'cli-codex' only (ollama excluded); types match the sc1 interfaceSketch exactly"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "validateModelCatalog: valid catalog fixture -> resolves, caches the frozen parse"
+          },
+          {
+            "level": "unit",
+            "name": "validateModelCatalog: removed/absent catalog file -> throws ModelCatalogValidationError naming the file + a copy-assets Fix: line"
+          },
+          {
+            "level": "unit",
+            "name": "validateModelCatalog: non-JSON file -> throws (parse failure) naming the file"
+          },
+          {
+            "level": "unit",
+            "name": "validateModelCatalog: schema-invalid (missing version / providers not the two-key object / entry missing id / id not a string) -> throws naming the specific failure, short-circuits"
+          },
+          {
+            "level": "unit",
+            "name": "modelsFor('cli-claude') / modelsFor('cli-codex') over a loaded catalog -> returns the curated readonly arrays"
+          },
+          {
+            "level": "unit",
+            "name": "modelsFor for a provider omitted from the catalog -> returns an empty readonly array (not an error)"
+          },
+          {
+            "level": "unit",
+            "name": "getCuratedCatalog before validateModelCatalog populated the cache -> throws the boot-ordering Error"
+          },
+          {
+            "level": "unit",
+            "name": "unit + accessor tests make no network/provider call — the loader/accessor have no cloud-REST code path (no HTTP client is constructed or invoked)"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Wire validateModelCatalog() into the daemon boot sequence",
+        "summary": "Insert a new boot step (6d″) in src/daemon/index.ts immediately after the validateDocgenAssets() await (:313): dynamically import + await validateModelCatalog(), re-raising to the top-level fatal handler exactly like its siblings so a missing/malformed catalog is a fail-fast startup refusal.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "src/daemon/index.ts awaits validateModelCatalog() in the boot block right after the validateDocgenAssets() await, before the daemon serves IPC",
+          "a missing/malformed catalog makes the daemon refuse to boot (the error re-raises to the top-level fatal handler); a valid catalog lets boot proceed",
+          "the insertion follows the existing sibling shape (dynamic import + await) and changes no other boot behaviour"
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "daemon boot with a valid catalog present -> boot proceeds past the validation step"
+          },
+          {
+            "level": "integration",
+            "name": "daemon boot with the catalog removed/malformed -> boot throws and does not begin serving IPC (fail-fast)"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Add colocated node:test tests for the catalog validator + accessor + boot wiring + packaging",
+        "summary": "Add colocated tests (sibling of src/docgen/__tests__/asset-validator.test.ts) staging a fake asset dir per case (tmpAssetDir pattern): validateModelCatalog pass/missing/non-JSON/schema-invalid branches; modelsFor populated / provider-omitted / empty-array; the boot-ordering guard; a boot-integration test (validateModelCatalog runs in the boot block and a missing/malformed catalog aborts boot); a contract test that the real shipped catalog validates against the schema; and a copy-assets smoke that out/assets/ carries the file. node:test (tsx --test).",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "a colocated *.test.ts exercises validateModelCatalog's pass/missing/non-JSON/schema-invalid branches and the modelsFor accessor cases (populated / provider-omitted / empty array) + the boot-ordering guard",
+          "a boot-integration test asserts validateModelCatalog is invoked in the boot block and a missing/malformed catalog aborts boot (re-raises) rather than starting a degraded daemon",
+          "a contract test validates the actual shipped src/assets catalog against the CloudModelCatalogFile schema (every entry id is a string; displayName when present is a string)",
+          "a smoke test confirms the catalog is present under out/assets/ after copy-assets runs",
+          "the full local test sweep passes (npx tsx --test) with no network access"
+        ],
+        "derivedFrom": [
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "after `npm run build` (or a copy-assets run), the catalog file exists under out/assets/ at the path validateModelCatalog reads"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "validateModelCatalog: valid catalog fixture -> resolves, caches the frozen parse",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "validateModelCatalog: removed/absent catalog file -> throws ModelCatalogValidationError naming the file + a copy-assets Fix: line",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "validateModelCatalog: non-JSON file -> throws (parse failure) naming the file",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "validateModelCatalog: schema-invalid (missing version / providers not the two-key object / entry missing id / id not a string) -> throws naming the specific failure, short-circuits",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "modelsFor('cli-claude') / modelsFor('cli-codex') over a loaded catalog -> returns the curated readonly arrays",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "modelsFor for a provider omitted from the catalog -> returns an empty readonly array (not an error)",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "getCuratedCatalog before validateModelCatalog populated the cache -> throws the boot-ordering Error",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "the actual shipped src/assets/models/cloud-model-catalog.json validates against the CloudModelCatalogFile schema (the real curated asset, not a fixture)",
+        "coveredByTaskIds": [
+          "t1",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "every entry in the shipped catalog has a string id; displayName when present is a string",
+        "coveredByTaskIds": [
+          "t1",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "daemon boot with a valid catalog present -> boot proceeds past the validation step",
+        "coveredByTaskIds": [
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "daemon boot with the catalog removed/malformed -> boot throws and does not begin serving IPC (fail-fast)",
+        "coveredByTaskIds": [
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "after `npm run build` (or a copy-assets run), the catalog file exists under out/assets/ at the path validateModelCatalog reads",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 dataModelChanges: CloudModelCatalogFile — the on-disk JSON asset shape shipped under src/assets/, copied to out/assets/ by copy-assets.mjs's existing 'assets' DIRS membership.",
+      "quotedText": "src/assets/models/cloud-model-catalog.json : { version: number, providers: { 'cli-claude': CatalogModel[], 'cli-codex': CatalogModel[] } }"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails: the sc1 CuratedCatalog surface — CloudModelCatalogFile/CatalogModel/CloudProvider types + validateModelCatalog + getCuratedCatalog + modelsFor(provider).",
+      "quotedText": "interface CuratedCatalog { modelsFor(provider: CloudProvider): readonly CatalogModel[] }; function validateModelCatalog(): Promise<void>; function getCuratedCatalog(): CuratedCatalog"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "s1 sizing bundle: copy-assets.mjs (DIRS=['prompts','assets'] + recursive cpSync) + src/docgen/asset-validator.ts (validateDocgenAssets load-then-throw) invoked in the daemon boot block at src/daemon/index.ts:303-313 — the module + boot-wiring idiom S001 mirrors.",
+      "quotedText": "validateDocgenAssets() (:312-313) re-raises to the top-level fatal handler; S001's validateModelCatalog wires in as a sibling immediately after :313."
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 errorPaths + testStrategy: the pass/missing/malformed/schema-invalid validator branches, the modelsFor accessor cases, the boot-ordering guard, the contract test over the shipped asset, and the copy-assets smoke — mirroring src/docgen/__tests__/asset-validator.test.ts (tmpAssetDir).",
+      "quotedText": "node:test (tsx --test), colocated under src/**/__tests__/*.test.ts — matching src/docgen/__tests__/asset-validator.test.ts and src/analyze/context/__tests__/boot-validator.test.ts"
+    },
+    {
+      "id": "c6",
+      "kind": "analyze-bundle",
+      "ref": "s1 grounding: src/config/analyze.ts:88 AnalyzeShaperProviderKind = 'ollama'|'cli-claude'|'cli-codex' — CloudProvider is the two-cloud subset (k3), the enum the catalog + tests key off unchanged.",
+      "quotedText": "runner an enum over ['ollama','cli-claude','cli-codex'] (analyze.ts:88 AnalyzeShaperProviderKind); the enum/allowlist is reused unchanged."
+    }
+  ]
+}

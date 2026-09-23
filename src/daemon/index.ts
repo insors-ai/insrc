@@ -312,6 +312,14 @@ async function main(): Promise<void> {
 	const { validateDocgenAssets } = await import('../docgen/asset-validator.js');
 	await validateDocgenAssets();
 
+	// 6d″. Validate the curated cloud model catalog (cli-claude/cli-codex model
+	//      list, Epic ba132c185fe45860, S001). Mirrors the docgen validator: a
+	//      missing/malformed catalog asset is a fail-fast startup refusal
+	//      (ModelCatalogValidationError re-raises to the top-level fatal handler)
+	//      rather than a silent empty cloud model list at first list-models use.
+	const { validateModelCatalog } = await import('./model-catalog.js');
+	await validateModelCatalog();
+
 	// 6e. Register the analyze framework's task-template catalog
 	//     (design/analyze-plan-builder.md "Param resolution from
 	//     context"). The Plan Builder picks tasks from this catalog;

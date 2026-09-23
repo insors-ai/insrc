@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "providers": {
+    "cli-claude": [
+      { "id": "claude-opus-5-5", "displayName": "Claude Opus 5.5" },
+      { "id": "claude-sonnet-5", "displayName": "Claude Sonnet 5" },
+      { "id": "claude-fable-5-1", "displayName": "Claude Fable 5.1" },
+      { "id": "claude-haiku-4-5-20251001", "displayName": "Claude Haiku 4.5" }
+    ],
+    "cli-codex": [
+      { "id": "gpt-5-codex", "displayName": "GPT-5 Codex" },
+      { "id": "gpt-5", "displayName": "GPT-5" },
+      { "id": "o4-mini", "displayName": "o4-mini" }
+    ]
+  }
+}

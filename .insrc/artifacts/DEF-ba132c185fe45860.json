@@ -1,0 +1,474 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "wf-1790164061661-so4ror",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-23T11:52:34.345Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 292659,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ba132c185fe45860",
+    "epicSlug": "work-framed-approved-spec-proceed-from",
+    "seededFromSpec": "4a6e7a40b308e164",
+    "review": {
+      "artifact": "define",
+      "stage": "define",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The daemon registers a providers.listModels IPC that is stubbed to offlineRpc (returns an offline error, no usable model list) at src/daemon/index.ts:1511.",
+          "evidence": "CONFIRMED: read src/daemon/index.ts:1511 -> \"'providers.listModels': offlineRpc('providers.listModels'),\" — the registered-but-stubbed IPC this Epic replaces.",
+          "action": "Confirmed — no change needed.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The global model tiers are configured at models.tiers.<core|mid|cheap>.{runner,model} — a runner enum + a free-text model field — in src/config/config-catalog.ts around line 96.",
+          "evidence": "CONFIRMED: read src/config/config-catalog.ts:96 -> \"{ path: 'models.tiers.core.runner', type: 'enum', default: 'cli-claude', ... enumValues: ['ollama','cli-claude','cli-codex'] }\" — the global tier runner enum + (adjacent) free-text model field.",
+          "action": "Confirmed — no change needed.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The tier runner allowlist is the type AnalyzeShaperProviderKind = 'ollama' | 'cli-claude' | 'cli-codex' at src/config/analyze.ts:88.",
+          "evidence": "CONFIRMED: read src/config/analyze.ts:88 -> \"export type AnalyzeShaperProviderKind = 'ollama' | 'cli-claude' | 'cli-codex';\" — the fixed runner allowlist reused unchanged.",
+          "action": "Confirmed — no change needed.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The daemon already has prior art for a live ollama model query (a block fetching ollama model tags) around src/daemon/index.ts:1281 — the local, no-cloud precedent for S002's ollama listing.",
+          "evidence": "PARTIAL: read src/daemon/index.ts:1281 lands on the comment '// Claude model listing' (the claude.models handler), NOT the ollama-tags block — the ollama live-query prior art sits a few lines ABOVE :1281 (confirmed earlier this session at ~:1275). The substantive premise (a live ollama model-tags query already exists as prior art, plus a claude static-fallback catalog) holds; only the exact anchor line is imprecise.",
+          "action": "Anchor is off by a few lines; the S002 LLD should cite the precise ollama-query line rather than :1281 (which is the Claude-model-listing comment). Non-blocking — the prior art exists nearby.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "Tighten the c4 citation in the downstream S002 LLD to the exact ollama-tags query line (a few lines above 1281) instead of the Claude-model-listing comment, so the ollama live-query prior art is anchored precisely."
+          }
+        },
+        {
+          "claimId": "cl5",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "The runner/provider allowlist this Epic reuses unchanged is exactly the three-member set {ollama, cli-claude, cli-codex} — declared as the config enumValues and the AnalyzeShaperProviderKind union.",
+          "evidence": "CONFIRMED: src/config/config-catalog.ts:96 enumValues ['ollama','cli-claude','cli-codex'] + the AnalyzeShaperProviderKind union (analyze.ts:88) — the runner allowlist is exactly that closed 3-member set, reused unchanged (k3).",
+          "action": "Confirmed — no change needed.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl6",
+          "kind": "external-contract",
+          "severity": "LOW",
+          "premise": "The project forbids direct cloud REST from our process (cloud LLM access is via the claude/codex CLI binaries only) — the invariant k1/c6 the cloud model list must not violate.",
+          "evidence": "CONFIRMED: CLAUDE.md:12 -> 'No direct cloud REST calls from our process. Cloud LLM access happens through the locally-installed claude and codex CLI binaries (via CliProvider)... must not be reintroduced.' — the k1 invariant the cloud catalog design honors.",
+          "action": "Confirmed — no change needed.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl7",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "This DEF is seeded from the approved SPEC-4a6e7a40b308e164 and its constraints/decisions (dropdown-only, daemon-as-proxy, curated JSON catalog, hard-block+Refresh, current-not-in-catalog, clear-on-switch, global tiers only) faithfully carry the spec's 5 decisions.",
+          "evidence": "CONFIRMED: .insrc/artifacts/SPEC-4a6e7a40b308e164.json exists and the DEF's constraints (k1-k7) + non-goals faithfully carry the spec's 5 settled decisions (strict dropdown-only, daemon-as-proxy, curated JSON catalog, hard-block+Refresh, current-not-in-catalog, clear-on-switch, global tiers only).",
+          "action": "Confirmed — no change needed.",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 7
+      },
+      "reviewedAt": "2026-09-23T12:14:44.846Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-23T12:14:49.819Z"
+  },
+  "body": {
+    "flavor": "enhancement",
+    "problem": "Configuring which model each global tier (core/mid/cheap) uses currently means typing a raw model identifier into a free-text field, on both the VS Code and JetBrains plugins. Nothing tells the user which models are actually available for the provider they picked: they must already know the exact model id by heart, a typo or an outdated name silently misconfigures the tier (surfacing only later as a runtime failure), locally-installed ollama models are invisible in-product, and there is no in-product signal of which cloud models are valid. The friction is duplicated across both plugins, and the daemon exposes no working way to enumerate the models a given provider offers — the one place that could answer 'what can I pick here' is currently non-functional.",
+    "nonGoals": [
+      {
+        "text": "Per-role model tiers — only the three global tiers (core/mid/cheap) are in scope",
+        "rationale": "The problem is about picking a model for the global tiers; per-role tiering is a separate, larger surface the stakeholder explicitly scoped out to keep this bounded."
+      },
+      {
+        "text": "Per-repo tier overrides — per-repo config continues to just reference a globally-defined tier, it does not redefine tier models",
+        "rationale": "The stakeholder confirmed tiers are defined globally and per-repo only selects among them; adding per-repo model editing would broaden the config model beyond the problem."
+      },
+      {
+        "text": "Changing or extending the provider/runner allowlist itself (ollama | cli-claude | cli-codex)",
+        "rationale": "The existing runner set is sufficient and unchanged; the problem is model discovery within a chosen provider, not which providers exist."
+      },
+      {
+        "text": "Any free-text / manual model-entry override for any provider",
+        "rationale": "A settled decision (d1): the list is authoritative, so a typo'd/invalid model id can never be configured; an override would reopen the exact silent-misconfiguration problem this Epic closes."
+      },
+      {
+        "text": "A user-editable model catalog under ~/.insrc/ or folding the catalog into the user-config reconcile system",
+        "rationale": "Settled decisions (d3): the cloud catalog is a maintainer-curated in-repo asset (what CAN be picked), kept distinct from user config (what IS picked) which has a different lifecycle."
+      },
+      {
+        "text": "A daemon-side last-known-good cache or degraded free-text fallback on list failure",
+        "rationale": "Settled decisions (d2): a failed list hard-blocks with a manual Refresh instead, keeping the failure model simple and never reopening free-text."
+      }
+    ],
+    "assumptions": [
+      {
+        "text": "The tier runner is chosen from a fixed enum (ollama | cli-claude | cli-codex) that this Epic reuses unchanged; the model is the only field becoming a picker.",
+        "confidence": "high",
+        "source": "c3"
+      },
+      {
+        "text": "Model tiers are defined globally at models.tiers.<core|mid|cheap>.{runner,model}; per-repo config only references a globally-defined tier.",
+        "confidence": "high",
+        "source": "c2"
+      },
+      {
+        "text": "The locally-installed ollama models can be enumerated by the daemon via a local query (no cloud path), so ollama's list is always current.",
+        "confidence": "med",
+        "source": "c4"
+      },
+      {
+        "text": "Cloud (cli-claude/cli-codex) models cannot be enumerated by our process via a provider API — cloud access is CLI-only — so their list must come from a maintainer-curated catalog shipped with the daemon.",
+        "confidence": "high",
+        "source": "c6"
+      },
+      {
+        "text": "The daemon already registers a providers.listModels IPC, but it is stubbed to an offline error and returns nothing usable — there is no working model-list capability today.",
+        "confidence": "high",
+        "source": "c1"
+      }
+    ],
+    "constraints": [
+      {
+        "id": "k1",
+        "text": "No direct cloud REST from our process: cli-claude/cli-codex model lists come from a curated in-repo catalog, never a provider API call (cloud access stays CLI-only).",
+        "type": "invariant",
+        "source": "c6"
+      },
+      {
+        "id": "k2",
+        "text": "The daemon is the single proxy/source of truth for the per-provider model list; both plugins are dumb dropdowns with no per-provider list logic or freshness/resilience handling.",
+        "type": "stakeholder",
+        "source": "c5"
+      },
+      {
+        "id": "k3",
+        "text": "The existing runner/provider enum is reused unchanged — no new provider allowlist and no change to how a runner is selected.",
+        "type": "contract",
+        "source": "c3"
+      },
+      {
+        "id": "k4",
+        "text": "The model picker is authoritative dropdown-only for all three providers — no free-text/manual model override; a model must appear in the daemon's returned list to be selectable.",
+        "type": "stakeholder",
+        "source": "c5"
+      },
+      {
+        "id": "k5",
+        "text": "The curated cloud catalog is a maintainer-curated JSON asset in the daemon repo (loaded by the daemon at boot), shipped through ordinary daemon updates — not a hardcoded literal, not a user-editable ~/.insrc/ file, not part of the user-config reconcile system.",
+        "type": "stakeholder",
+        "source": "c5"
+      },
+      {
+        "id": "k6",
+        "text": "Scope is the three global model tiers only, delivered on BOTH the VS Code and JetBrains plugins over one shared new read-only daemon list-models capability.",
+        "type": "stakeholder",
+        "source": "c5"
+      },
+      {
+        "id": "k7",
+        "text": "On an empty/errored list the picker hard-blocks (disabled, 'no models available') with a manual Refresh to re-query and leaves the saved value untouched; a saved model missing from a successful list shows as a disabled '(current, not in catalog)' entry; switching a tier's provider clears the model field.",
+        "type": "stakeholder",
+        "source": "c5"
+      }
+    ],
+    "stories": [
+      {
+        "id": "s1",
+        "title": "Curated cloud model catalog the daemon ships and validates",
+        "userValue": "A maintainer can keep the list of selectable cli-claude/cli-codex models current by editing one reviewed in-repo catalog and shipping a daemon update — so users always see a curated, valid set of cloud models without any product code path reaching a cloud API.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "the daemon starts up",
+            "when": "it loads the curated cloud model catalog that ships inside the daemon",
+            "then": "the catalog is loaded and validated at boot, and a missing or malformed catalog is reported rather than silently ignored",
+            "operationalizes": [
+              "k5"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "a provider has released a new cloud model that a maintainer has added to the catalog",
+            "when": "the daemon is updated to the version carrying the updated catalog",
+            "then": "that model becomes selectable with no user configuration change and no plugin change",
+            "operationalizes": [
+              "k5"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "the cloud providers (cli-claude, cli-codex) need a set of selectable models",
+            "when": "that set is produced",
+            "then": "it comes only from the curated in-repo catalog and never from a direct cloud API call",
+            "operationalizes": [
+              "k1"
+            ]
+          }
+        ],
+        "localConstraints": [
+          {
+            "id": "lc1",
+            "text": "The catalog is a maintainer-curated asset that ships inside the daemon and is not user-editable at runtime nor part of the user-config reconcile pipeline.",
+            "type": "stakeholder",
+            "source": "c5"
+          }
+        ],
+        "existingCapabilityRefs": [
+          "c4"
+        ],
+        "sizeEstimate": "M"
+      },
+      {
+        "id": "s2",
+        "title": "Ask the daemon which models a provider offers",
+        "userValue": "Any client (either plugin) can ask the daemon for the models available under a given provider and get a single authoritative answer — ollama's actual local models and the curated cloud models — without the client needing any provider-specific knowledge.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a supported provider (ollama, cli-claude, or cli-codex)",
+            "when": "a client asks the daemon for that provider's available models",
+            "then": "the daemon returns the provider's model list — ollama from a live local query, cli-claude/cli-codex from the curated catalog",
+            "operationalizes": [
+              "k2",
+              "k3"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "the selected provider is ollama and its models cannot currently be listed (e.g. ollama is unreachable)",
+            "when": "a client asks for the list",
+            "then": "the daemon reports an empty/unavailable result rather than a fabricated or cached-as-fresh list",
+            "operationalizes": [
+              "k7",
+              "k2"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "the model-list capability",
+            "when": "a client invokes it",
+            "then": "it is strictly read-only — asking for models never changes any configuration or provider state",
+            "operationalizes": [
+              "k2"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "a cloud provider (cli-claude/cli-codex)",
+            "when": "its models are listed",
+            "then": "no direct cloud REST call is made — the answer is served entirely from the curated catalog",
+            "operationalizes": [
+              "k1"
+            ]
+          }
+        ],
+        "localConstraints": [
+          {
+            "id": "lc1",
+            "text": "This capability replaces the currently non-functional (offline-stubbed) model-listing entry so there is exactly one working way to enumerate a provider's models.",
+            "type": "contract",
+            "source": "c1"
+          }
+        ],
+        "dependsOn": [
+          "s1"
+        ],
+        "existingCapabilityRefs": [
+          "c1",
+          "c4"
+        ],
+        "sizeEstimate": "M"
+      },
+      {
+        "id": "s3",
+        "title": "Pick a tier's model from a provider-filtered dropdown in VS Code",
+        "userValue": "A VS Code user can set a global tier's model by choosing from a dropdown of the models actually available for that tier's provider — no typing raw model ids, no silent typos — and recover from a transient outage with a Refresh.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a global tier with a selected provider",
+            "when": "the user runs the Set model tier action in VS Code",
+            "then": "a dropdown of that provider's available models is presented and the chosen model is saved for that tier",
+            "operationalizes": [
+              "k4",
+              "k6"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "the selected provider's model list is empty or unavailable",
+            "when": "the picker is opened",
+            "then": "it shows 'no models available' and offers a Refresh to re-query, leaving the tier's saved model untouched",
+            "operationalizes": [
+              "k7"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "a tier whose saved model is not present in the freshly listed set",
+            "when": "the picker is opened",
+            "then": "the saved model is shown as a disabled '(current, not in catalog)' entry so the user sees exactly what is configured, and picking any other entry replaces it",
+            "operationalizes": [
+              "k7",
+              "k4"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "the user changes the tier's provider during the flow",
+            "when": "the provider changes",
+            "then": "the model selection is cleared, forcing an explicit pick from the new provider's list before the tier can be saved",
+            "operationalizes": [
+              "k7"
+            ]
+          }
+        ],
+        "localConstraints": [
+          {
+            "id": "lc1",
+            "text": "Native VS Code Settings cannot render a provider-filtered live dropdown inline, so the picker is delivered as a dedicated action that presents the dropdown; the plugin stays a dumb dropdown over the daemon capability.",
+            "type": "stakeholder",
+            "source": "c5"
+          }
+        ],
+        "dependsOn": [
+          "s2"
+        ],
+        "existingCapabilityRefs": [
+          "c5"
+        ],
+        "sizeEstimate": "M"
+      },
+      {
+        "id": "s4",
+        "title": "Pick a tier's model from an inline provider-filtered combo in JetBrains",
+        "userValue": "A JetBrains user can set a global tier's model directly on the Settings page from an inline dropdown of the models available for that tier's provider — no typing raw model ids — with a Refresh button to re-query after an outage.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a global tier on the JetBrains Settings page with a selected provider",
+            "when": "the user opens that tier's model control",
+            "then": "it is an inline dropdown of the provider's available models, and the chosen model is written for that tier on apply",
+            "operationalizes": [
+              "k4",
+              "k6"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "the selected provider's model list is empty or unavailable",
+            "when": "the tier's model control is shown",
+            "then": "it shows 'no models available' (disabled) with a Refresh control beside it to re-query, leaving the saved model untouched",
+            "operationalizes": [
+              "k7"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "a tier whose saved model is not present in the freshly listed set",
+            "when": "the control is shown",
+            "then": "the saved model appears as a disabled '(current, not in catalog)' entry so the user sees exactly what is configured, and picking any other entry replaces it",
+            "operationalizes": [
+              "k7",
+              "k4"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "the user changes the tier's provider on the Settings page",
+            "when": "the provider changes",
+            "then": "the model selection is cleared, forcing an explicit pick from the new provider's list before apply",
+            "operationalizes": [
+              "k7"
+            ]
+          }
+        ],
+        "localConstraints": [
+          {
+            "id": "lc1",
+            "text": "The JetBrains Settings page is a custom UI, so the tier's model control is an inline editable dropdown/combo; the plugin stays a dumb dropdown over the daemon capability.",
+            "type": "stakeholder",
+            "source": "c5"
+          }
+        ],
+        "dependsOn": [
+          "s2"
+        ],
+        "existingCapabilityRefs": [
+          "c5"
+        ],
+        "sizeEstimate": "M"
+      }
+    ],
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/daemon/index.ts:1511",
+      "quotedText": "'providers.listModels': offlineRpc('providers.listModels') — the registered-but-stubbed IPC this Epic replaces."
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/config/config-catalog.ts:96",
+      "quotedText": "models.tiers.<core|mid|cheap>.{runner,model} — the global tier config surface (runner enum + free-text model)."
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/config/analyze.ts:88",
+      "quotedText": "AnalyzeShaperProviderKind = 'ollama' | 'cli-claude' | 'cli-codex' — the fixed runner allowlist, reused unchanged."
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/daemon/index.ts:1281",
+      "quotedText": "an existing daemon block querying ollama for model tags — prior art for the ollama live model query (local, no cloud)."
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": ".insrc/artifacts/SPEC-4a6e7a40b308e164.json",
+      "quotedText": "The approved brainstorm spec: strict dropdown-only, daemon-as-proxy dumb UI, curated JSON catalog asset, hard-block+Refresh, '(current, not in catalog)', clear-on-provider-switch, global tiers only."
+    },
+    {
+      "id": "c6",
+      "kind": "convention",
+      "ref": "CLAUDE.md — project principle: No direct cloud REST from our process; cloud LLM access via the claude/codex CLI binaries only",
+      "quotedText": "Direct REST providers to Anthropic / OpenAI / Gemini / Mistral must not be reintroduced."
+    }
+  ]
+}

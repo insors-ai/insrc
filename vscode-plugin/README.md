@@ -47,6 +47,13 @@ another window) are reconciled on demand via **`insrc: Refresh insrc settings`**
 in the Command Palette. All config access is over the local daemon socket — no
 cloud path.
 
+**Pick a tier's model from a dropdown** — **`insrc: Set model tier`** in the
+Command Palette walks you through a tier → provider → model picker whose model
+list is exactly what the daemon offers for that tier's provider (Ollama's
+installed models, or the curated Claude / Codex catalog) — no typing raw model
+ids. If a provider can't be listed it shows *no models available* with a Refresh;
+switching the provider re-filters the list.
+
 ## Status & panels
 
 The status-bar **insrc** item opens a two-item menu (also reachable from the

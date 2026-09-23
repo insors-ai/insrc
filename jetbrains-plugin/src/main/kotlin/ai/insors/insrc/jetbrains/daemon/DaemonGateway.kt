@@ -220,6 +220,28 @@ sealed interface SettingsCatalogResult {
     data class Unavailable(val reason: String) : SettingsCatalogResult
 }
 
+/** One model the daemon offers for a provider (Epic ba132c185fe45860 / S004, sc2). */
+data class ModelOption(val id: String, val displayName: String?)
+
+/**
+ * The result of a `providers.listModels` read (Epic ba132c185fe45860 / S004, sc2).
+ * Two-state, mirroring [SettingsCatalogResult] — BUT the daemon's own
+ * `available:false` (reachable-but-no-models, e.g. ollama down) is a Loaded state,
+ * NOT [Unavailable]: only a socket fault / framed error flips to [Unavailable]. So
+ * the model picker can show 'no models available' + Refresh (leaving the saved
+ * value untouched) distinctly from a daemon-down error (k7, the parse framing where
+ * a {provider,available,models} object lands in DaemonResult.data even when
+ * available:false).
+ */
+sealed interface ModelListResult {
+    /** The daemon replied with the list; [available]=false / empty [models] means
+     *  reachable-but-no-models (Refresh), NOT a fault. */
+    data class Loaded(val available: Boolean, val models: List<ModelOption>) : ModelListResult
+
+    /** The socket was unreachable / the daemon returned a framed error; [reason] explains. */
+    data class Unavailable(val reason: String) : ModelListResult
+}
+
 /**
  * The result of a settings write/clear (Story S003 / sc2). THREE-state by design:
  * a persisted [Saved] is distinct from a [Rejected] (the daemon refused the
@@ -617,6 +639,17 @@ interface DaemonGateway {
      * never throws.
      */
     fun registeredRepos(): RegisteredReposResult
+
+    /**
+     * List a provider's available models (Epic ba132c185fe45860 / S004, sc2) over the
+     * read-only `providers.listModels` IPC. [provider] is one of the reused runner
+     * enum values ('ollama' | 'cli-claude' | 'cli-codex'). Returns [ModelListResult.Loaded]
+     * (with the daemon's `available` flag + models) — a reachable-but-empty provider is
+     * Loaded(available=false, []), NOT [ModelListResult.Unavailable]; only a socket fault
+     * or a framed/invalid-params error is [ModelListResult.Unavailable]. Read-only; never
+     * throws. Consumed by the S004 Model-tiers section (dumb dropdown, k2/k4).
+     */
+    fun listModels(provider: String): ModelListResult
 
     /**
      * Read the rich daemon runtime status (Story E2026092157298940:S001 / sc2) over
@@ -1019,6 +1052,35 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
             RegisteredReposResult.Unavailable(e.message ?: "unexpected daemon fault")
         }
 
+    override fun listModels(provider: String): ModelListResult =
+        try {
+            // providers.listModels returns an OBJECT {provider,available,models} in the
+            // result envelope -> DaemonResult.data, ok=true, EVEN when available:false.
+            // An invalid-params reply is a framed {error,recoverable} -> the parse
+            // structured-error branch sets ok=false / error!=null. So a framed error /
+            // socket fault is Unavailable; a reachable-but-empty provider stays
+            // Loaded(available=false, []) so the picker distinguishes 'no models' from
+            // 'daemon down' (k7). A malformed models entry is skipped, never fabricated.
+            val r = rpc.call(METHOD_LIST_MODELS, mapOf(PARAM_PROVIDER to provider))
+            if (!r.ok || r.error != null) {
+                ModelListResult.Unavailable(r.error ?: "providers.listModels returned an error")
+            } else {
+                val available = r.data["available"] == true
+                val modelsRaw = r.data["models"] as? List<*> ?: emptyList<Any?>()
+                val models = modelsRaw.mapNotNull { item ->
+                    val m = item as? Map<*, *> ?: return@mapNotNull null
+                    val id = (m["id"] as? String)?.takeIf { it.isNotBlank() } ?: return@mapNotNull null
+                    ModelOption(id = id, displayName = m["displayName"] as? String)
+                }
+                ModelListResult.Loaded(available = available, models = models)
+            }
+        } catch (e: DaemonUnavailableException) {
+            ModelListResult.Unavailable(e.message ?: "daemon unavailable")
+        } catch (e: RuntimeException) {
+            // Defense-in-depth: a malformed reply / transport fault -> Unavailable, never a throw.
+            ModelListResult.Unavailable(e.message ?: "unexpected daemon fault")
+        }
+
     override fun daemonStatus(): DaemonStatusResult =
         try {
             // Reuse METHOD_STATUS (the same read probe() uses) with no params; parse the
@@ -1116,6 +1178,9 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
         const val METHOD_CONFIG_WRITE = "config.write"
         const val METHOD_CONFIG_SHOW = "config.show"
         const val METHOD_REPO_STATS = "repo.stats"
+        // providers.listModels (Epic ba132c185fe45860 / S004, sc2): one provider per call.
+        const val METHOD_LIST_MODELS = "providers.listModels"
+        const val PARAM_PROVIDER = "provider"
         const val FIELD_STALE = "stale"
         const val FIELD_REPOS = "repos"
         const val FIELD_ARTIFACTS = "artifacts"

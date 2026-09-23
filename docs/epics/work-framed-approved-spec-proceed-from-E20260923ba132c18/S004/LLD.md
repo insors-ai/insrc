@@ -1,0 +1,262 @@
+<!-- insrc:artifact LLD-ba132c185fe45860-s4 -->
+
+# LLD: E20260923ba132c18:S004
+
+**Epic:** `work-framed-approved-spec-proceed-from`
+**HLD base run:** `wf-1790165706650-c3lbx6`
+**HLD effective hash:** `3fb0b2204d88...`
+
+## HLD context
+
+**Framework:** The Epic adds a single read-only daemon capability that answers 'which models can I pick for provider X', plus the two thin plugin surfaces that render it as an authoritative dropdown for the global model tiers. The daemon is the sole proxy. Both plugins are provider-agnostic consumers of that one contract: VS Code adds an 'insrc: Set model tier' QuickPick command (S003), JetBrains turns its Settings-page model field into an inline combo + Refresh (S004). Every empty/error/'(current, not in catalog)'/clear-on-provider-switch behaviour is expressed once over the daemon's returned list, so neither plugin carries per-provider logic. The tier runner enum is reused unchanged and the catalog stays out of the user-config reconcile system.
+**Rollout phase:** Phase B — plugin pickers (VS Code + JetBrains)
+**Consumes:** `sc2` (ModelList)
+
+**Adjacent scope (owned by other stories — do NOT implement here):**
+- `s1`: S001's catalog file, copy-assets registration, boot-time load/validation, and curated entries are private; only the CuratedCatalog accessor + file shape are exposed. — owns `sc1`
+- `s2`: How the handler dispatches per provider, the live ollama query, how it determines availability, and how it reads the curated catalog are private. Only the read-only listModels IPC + its ModelListResult shape (sc2) are exposed; the handler mutates nothing. — owns `sc2`
+- `s3`: The VS Code 'insrc: Set model tier' QuickPick flow + its k7 presentation + writing the tier model are private to S003; it consumes only sc2 over the shared client.
+
+## Contract details
+
+**Surface level:** internal
+
+### `DaemonGateway.listModels`
+
+```typescript
+fun listModels(provider: String): ModelListResult
+```
+
+**Parameters:**
+- `provider: String (one of 'ollama' | 'cli-claude' | 'cli-codex')` — The tier's runner value, passed as the sc2 `provider` param over DaemonRpc.call('providers.listModels', {provider}).
+
+**Returns:** `ModelListResult (new sealed class: Loaded(available: Boolean, models: List<ModelOption>) | Unavailable)` — Loaded(available, models) when the daemon replied with the sc2 object {provider,available,models} (available:false/empty is still Loaded — reachable-but-empty, k7); Unavailable ONLY when the socket is down or the daemon returned ok=false (invalid-params/structured error). Never throws — mirrors settingsCatalog()'s Loaded/Unavailable idiom (DaemonGateway.kt:881).
+
+**Errors:**
+- `Unavailable (not thrown)` when DaemonRpc.call throws DaemonUnavailableException (socket absent/refused) OR returns DaemonResult.ok=false / non-null error (an invalid-params reply flipped by the parse structured-error branch) — caught and mapped to Unavailable, never propagated (the gateway never-throws idiom).
+
+**Preconditions:**
+- The sc2 handler is registered in the daemon (S002 shipped, src/daemon/index.ts:1520); the DaemonRpc transport is constructed (UnixSocketDaemonRpc).
+
+**Postconditions:**
+- Read-only: listing mutates no daemon/config state. available:false maps to Loaded(false, emptyList) — NOT Unavailable — so the UI can distinguish 'reachable but no models' (Refresh) from 'daemon down' while leaving the saved value untouched.
+
+### `ModelTiersModel`
+
+```typescript
+class ModelTiersModel(catalog: SettingsCatalogDto, listsByProvider: Map<String, ModelListResult>)
+```
+
+**Parameters:**
+- `catalog: SettingsCatalogDto` — The settingsCatalog snapshot (values omit defaults); the model reads each tier's effective runner+model, falling back to the per-tier CONFIG_CATALOG default (core/mid runner cli-claude, cheap ollama; model core '' / mid 'sonnet' / cheap 'qwen3.6:27b').
+- `listsByProvider: Map<String, ModelListResult>` — The pre-fetched sc2 result per in-use provider (fetched off the EDT); re-seeded on Refresh. The model holds no fetch logic itself — a dumb consumer of these results (k2).
+
+**Returns:** `ModelTiersModel` — The PURE, headless k7 state machine for the three tiers (mirrors PerRepoOverridesModel). Exposes per-tier: currentRunner(tier), currentModel(tier), modelOptions(tier): List<ModelChoice> (the provider's models + a disabled '(current, not in catalog)' entry when the saved OVERRIDE is absent from a Loaded list; a single disabled 'no models available' sentinel when Unavailable/empty), selectModel(tier, id), selectRunner(tier, provider) [clears that tier's pending model — ac4], isModified(), collectWrites(): List<PendingWrite>. Unit-testable with no Swing.
+
+**Errors:**
+- `none (pure)` when Total + never-throws: an unknown tier/provider is simply not represented; a null/blank effective value falls back to the catalog default.
+
+**Preconditions:**
+- Constructed on the EDT after the off-EDT pre-fetch resolves (like PerRoleOverridesModel from perRoleOverrides()).
+
+**Postconditions:**
+- collectWrites() emits PendingWrite(segments=['models','tiers',tier,'model'], value) for each tier whose model changed, and (only when the runner changed) PendingWrite(['models','tiers',tier,'runner'], provider). A tier at its default with no edit emits nothing. No write is emitted for an empty/Unavailable list (saved untouched, ac2).
+
+### `ModelTiersSection`
+
+```typescript
+class ModelTiersSection(model: ModelTiersModel, gateway: DaemonGateway) : SettingsSection
+```
+
+**Parameters:**
+- `model: ModelTiersModel` — The pure state machine the section renders; all k7 decisions come from it (the section is Swing-only glue).
+- `gateway: DaemonGateway` — For the Refresh action's off-EDT re-fetch (gateway.listModels) and for apply()'s writeSetting/clearSetting — the SAME sc8 gateway, no new capability (k3).
+
+**Returns:** `SettingsSection (title / component(): JComponent / isModified() / apply() / reset())` — The Swing section (mirrors PerRepoSection): per tier a runner JComboBox (enum, reused) + a NON-editable model JComboBox (dropdown-only, k4) + a shared Refresh button. Reuses the PerRoleSection idiom (suppressEdits guard, rowRefreshers, addActionListener routing to model.selectModel/selectRunner). Refresh re-invokes gateway.listModels off the EDT (ProgressManager) and re-seeds the combos. apply() fans model.collectWrites() → gateway.writeSetting/clearSetting, throws ConfigurationException naming failures (PerRoleSection.apply idiom). Registered in InsrcSettingsConfigurable.renderBody; models.tiers.* are EXCLUDED from the generic category table so they aren't duplicated.
+
+**Errors:**
+- `ConfigurationException (apply only)` when A writeSetting/clearSetting returns Rejected/Unavailable during apply() — collected and thrown naming the failed tier(s), matching PerRoleSection.apply (DaemonGateway never-throws, so the section classifies on SaveResult).
+
+**Preconditions:**
+- Constructed in createComponent after the off-EDT pre-fetch; registered alongside the other sections (renderBody, InsrcSettingsConfigurable.kt:210).
+
+**Postconditions:**
+- isModified()/apply()/reset() participate in the Configurable fan-out; a non-editable combo means only daemon-listed models (or the disabled current marker) are selectable (k4). The Refresh + apply run off the EDT (createComponent :88 / apply :131 patterns).
+
+## Data model changes
+
+### `ModelListResult (Kotlin sealed)` — new
+
+A new sealed result type beside the gateway's other sealed results (SettingsCatalogResult etc.): sealed interface ModelListResult { Loaded(available: Boolean, models: List<ModelOption>) | Unavailable } plus ModelOption(id: String, displayName: String?). Parsed in DaemonGatewayImpl from DaemonResult.data ('available' Boolean, 'models' List<Map> → id/displayName). S004-private; no daemon-side change.
+
+```
++ sealed interface ModelListResult { Loaded(available, models: List<ModelOption>) | Unavailable }
++ data class ModelOption(id: String, displayName: String?)
+```
+
+**Call sites:**
+- `src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGateway.kt:470 (interface: fun listModels)`
+- `src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGateway.kt:881 (impl: mirror settingsCatalog's rpc.call + Loaded/Unavailable mapping)`
+- `src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGatewayService.kt:50 (the one-line delegate)`
+
+### `DaemonGateway companion constants` — field-add
+
+Add METHOD_LIST_MODELS = "providers.listModels" and PARAM_PROVIDER = "provider" to the companion (alongside METHOD_CONFIG_CATALOG etc.), used by DaemonGatewayImpl.listModels to build rpc.call(METHOD_LIST_MODELS, mapOf(PARAM_PROVIDER to provider)).
+
+```
++ const val METHOD_LIST_MODELS = "providers.listModels"
++ const val PARAM_PROVIDER = "provider"
+```
+
+**Call sites:**
+- `src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGateway.kt:1103 (companion object constants block)`
+
+### `models.tiers.<tier>.model / .runner (config keys)` — invariant-change
+
+No schema change to the daemon keys. S004 changes HOW models.tiers.<core|mid|cheap>.model is EDITED in the JetBrains plugin — from a free-text JTextField cell in the generic category table (InsrcSettingsConfigurable.kt:491/505) to a non-editable provider-filtered combo in the dedicated ModelTiersSection — and writes it via the same config.write literal-segments path ['models','tiers',tier,'model']. The runner key stays an enum combo (reused unchanged, k3), now in the section. The two rows are EXCLUDED from the generic category table to avoid duplication.
+
+```
+(no daemon schema change; write path ['models','tiers',tier,'model'] / ['models','tiers',tier,'runner'] unchanged)
+```
+
+**Call sites:**
+- `src/config/config-catalog.ts:96 (the models.tiers.* option definitions, reused unchanged)`
+- `src/main/kotlin/ai/insors/insrc/jetbrains/settings/InsrcSettingsConfigurable.kt:210 (renderBody: register ModelTiersSection + exclude models.tiers.* from the generic table)`
+
+## Interaction with shared contracts
+
+| Contract | Role | How |
+| :--- | :--- | :--- |
+| `sc2` | consumes | S004 consumes sc2 (ModelList) read-only via a NEW DaemonGateway.listModels(provider) that calls DaemonRpc.call('providers.listModels', {provider}) and parses the ModelListResult object from DaemonResult.data — mirroring the settingsCatalog() worked example (DaemonGateway.kt:881). It maps the sc2 available flag through: available:false/empty → Loaded(false, []) (not Unavailable) so the UI shows 'no models available'+Refresh with the saved value untouched (k7); a socket failure / ok=false (invalid-params) → Unavailable. The section renders the Loaded models authoritatively (dropdown-only, k4) with the '(current, not in catalog)' + clear-on-provider-switch behaviour expressed once in the pure ModelTiersModel — matching S003 for cross-plugin parity (k6). S004 adds NO shared contract, does not re-implement S002's dispatch/ollama/catalog internals, and introduces no new daemon capability (k3) — it reuses the existing DaemonRpc transport + config.write. |
+
+## Error paths
+
+### Error cases
+
+- **The daemon socket is down/refused when the Settings page pre-fetches a provider's model list.** (recoverable)
+  - Detection: DaemonRpc.call('providers.listModels', {provider}) throws DaemonUnavailableException (UnixSocketDaemonRpc.call maps IOException/UnsupportedOperationException to it, :56); DaemonGatewayImpl.listModels catches it (the never-throws idiom).
+  - Response: Map to ModelListResult.Unavailable; ModelTiersModel.modelOptions(tier) then yields a single disabled 'no models available' sentinel and the section renders the Refresh button enabled. No write is emitted and the saved model is untouched (ac2/k7).
+  - User impact: The user sees 'no models available' + Refresh instead of an error dialog; starting the daemon + Refresh recovers the list. Recoverable.
+- **The daemon returns an invalid-params/structured error for a provider (e.g. an out-of-enum runner value slipped through).** (recoverable)
+  - Detection: The reply is {error, recoverable}; UnixSocketDaemonRpc.parse's structured-error branch (:130) sets DaemonResult.ok=false / error!=null; DaemonGatewayImpl.listModels sees !ok and maps to Unavailable (mirrors settingsCatalog's !r.ok||r.error!=null guard, :881).
+  - Response: Treated exactly like Unavailable — disabled 'no models available' + Refresh, no write. The section never passes an out-of-enum provider: a tier whose runner is not one of the three literals renders the runner combo defaulted (from the catalog default) and does not fetch until a valid provider is selected.
+  - User impact: No crash; the user picks a valid provider then Refreshes. Recoverable.
+- **A writeSetting/clearSetting is Rejected or Unavailable during apply() (daemon went down between page-open and Save, or an invalid path).** (recoverable)
+  - Detection: gateway.writeSetting/clearSetting returns SaveResult.Rejected or Unavailable (the gateway never-throws; the section inspects the sealed result, PerRoleSection.apply idiom, :69).
+  - Response: Collect the failed tiers and throw a single ConfigurationException naming them (the Configurable.apply contract for surfacing a save failure); tiers that DID save are marked onSaved so a retry only re-writes the rest. No partial silent loss.
+  - User impact: The Settings dialog shows the failure message and keeps the page open with the unsaved edits; retry after the daemon is back. Recoverable.
+- **The models array element from the daemon is malformed (missing/blank id, or 'models' is not a list).** (recoverable)
+  - Detection: DaemonGatewayImpl.listModels parsing DaemonResult.data['models'] as List<Map>: a non-list or an entry without a String id is filtered/skipped defensively (mirrors the parseCatalog tolerant-cast idiom, DaemonGateway.kt:1333).
+  - Response: Skip the malformed entry (never fabricate an id); if that leaves the list empty, present it as Loaded(available, emptyList) → the empty-state path. A blank id is never offered as a selectable model.
+  - User impact: The user simply doesn't see the malformed entry; the rest of the list is usable. Recoverable.
+
+### Edge cases
+
+| Input | Expected |
+| :--- | :--- |
+| A tier whose runner is the built-in default (unset in config.json, so absent from the settingsCatalog snapshot values). | ModelTiersModel falls back to the per-tier CONFIG_CATALOG default runner (core/mid cli-claude, cheap ollama) so the provider is always known and its list is fetched — the same defaults-omitted gotcha S003 handled (the snapshot omits defaults). |
+| A tier whose saved model IS present in the freshly listed set. | The model combo pre-selects that entry (marked current); no duplicate '(current, not in catalog)' entry is added; re-selecting it is an idempotent no-op (collectWrites emits nothing for that tier). |
+| A tier whose saved model is a built-in DEFAULT (not an override) that is absent from the list (e.g. mid default 'sonnet' vs full ids). | NO '(current, not in catalog)' entry is shown — only an actual OVERRIDE that fell off the list is flagged (the S003-learned rule); a defaulted tier the user never touched isn't presented as stale/foreign. |
+| The user changes a tier's provider (runner combo) then Saves without picking a model. | selectRunner cleared that tier's pending model (ac4); with no model chosen from the new provider, the model combo shows the new list with nothing selected and apply writes the runner (changed); the tier's model is left as-is until an explicit pick. The saved model is never silently carried across a provider switch. |
+| available:true but models:[] (a curated-empty or reachable-zero provider). | Same presentation as Unavailable for the model control — disabled 'no models available' + Refresh, saved model untouched — but the gateway returns Loaded(true, []) so it is distinct from a daemon-down Unavailable in semantics. |
+| reset() is invoked (Settings dialog Cancel/Reset) after edits. | The section re-seeds every combo to the last-loaded value under the suppressEdits guard (so re-seeding does not fire the addActionListener edit callbacks), and isModified() returns false afterwards — the PerRoleSection rowRefreshers idiom. |
+
+### Invariants to preserve
+
+- The plugin is a DUMB dropdown over the daemon list: the model combo shows EXACTLY the daemon's returned models (no per-provider list logic, no freshness/resilience handling in the plugin), availability comes from the sc2 available flag mapped through the gateway, and the combo is NON-editable (no free-text) — mirroring S003 for cross-plugin parity (k2/k4/k6). [[c1]]
+- No new daemon capability and no new transport: S004 reuses the existing DaemonRpc.call + the config.write writeSetting/clearSetting path and the SettingsSection seam; the only additions are a plugin-side gateway method + a pure model + a section. The daemon's config.json stays the single source of truth; the section holds no shadow state and re-reads on open/Refresh (k3). [[c5]]
+- available:false / empty (reachable-but-no-models) MUST map to Loaded(false, []), NOT Unavailable — only a socket failure or a daemon ok=false is Unavailable. This is the load-bearing distinction that lets the UI show 'no models available'+Refresh (leaving the saved value untouched) rather than conflating it with a daemon-down error, per the UnixSocketDaemonRpc.parse framing where a {provider,available,models} object lands in DaemonResult.data (ok=true) even when available:false. [[c3]]
+- The write goes through the existing config.write literal-SEGMENTS path ['models','tiers',tier,'model'] (and ['...','runner'] only on a provider switch) via the sc8 gateway.writeSetting/clearSetting — the EXISTING keys (config-catalog.ts:96), reusing the runner enum unchanged (k3). On any empty/Unavailable/unchanged path the saved value is left untouched (ac2/k7). The off-EDT read+write discipline (createComponent pooled read, apply runProcessWithProgressSynchronously) is preserved — no socket call on the EDT. [[c5]]
+
+## Test strategy
+
+**Test framework:** `JUnit 5 (Jupiter), ./gradlew test on JDK21 — pure-model tests (ModelTiersModelTest) mirroring PerRepoOverridesModelTest; a gateway test (Sc2ListModelsGatewayTest) with a handler-lambda FakeDaemonRpc driving the real DaemonGatewayImpl (Sc2DaemonGatewayTest idiom); a source-scan extension to InsrcSettingsConfigurableTest for the Swing wiring.`
+
+### Test levels
+
+- **unit** — Exercise the PURE ModelTiersModel (the whole k7 state machine) headlessly, since the Swing shell isn't bootable in tests — mirrors PerRepoOverridesModelTest / PerRoleOverridesModelTest.
+  - Subjects: `a Loaded list with the tier's provider → modelOptions(tier) is exactly the daemon's model ids (dropdown-only, no free-text) and pre-selects the saved model when present (marked current)`, `Unavailable → modelOptions(tier) is a single disabled 'no models available' sentinel; collectWrites emits nothing (saved untouched)`, `Loaded(available=false, []) AND Loaded(available=true, []) both → the same 'no models available' presentation, no write`, `a saved OVERRIDE absent from a Loaded list → a disabled '(current, not in catalog)' entry showing the saved id; selectModel(otherId) then emits PendingWrite(['models','tiers',tier,'model'], otherId)`, `a saved model that is a built-in DEFAULT (not an override) absent from the list → NO '(current, not in catalog)' entry`, `selectRunner(tier, newProvider) clears that tier's pending model (ac4) and modelOptions(tier) re-derives from listsByProvider[newProvider]; on confirm collectWrites emits BOTH ['...','runner'] and (once a model is picked) ['...','model']`, `selecting the already-saved model is an idempotent no-op (collectWrites emits nothing for that tier)`, `a tier whose runner is the built-in default (absent from the snapshot values) resolves the CONFIG_CATALOG default runner (core/mid cli-claude, cheap ollama) so its provider list is keyed correctly`, `isModified() is false with no edits and true after selectModel/selectRunner; reset semantics (re-seed) leave isModified false`
+  - Fixtures: `a SettingsCatalogDto builder with per-tier runner/model values (set + unset-to-default variants)`, `a Map<String, ModelListResult> of Loaded(true, [ids]) / Loaded(false, []) / Loaded(true, []) / Unavailable per provider`, `no Swing / no live daemon`
+- **unit** — Exercise the new DaemonGateway.listModels over a FakeDaemonRpc driving the REAL DaemonGatewayImpl — the Sc2DaemonGatewayTest / SettingsCatalogGatewayTest idiom — proving the available:false-≠-Unavailable mapping.
+  - Subjects: `a {provider,available:true,models:[{id,displayName?}]} data reply → Loaded(true, models) with ids+displayNames mapped`, `a {available:false,models:[]} data reply (ok=true) → Loaded(false, []) — NOT Unavailable (the load-bearing distinction)`, `a {available:true,models:[]} reply → Loaded(true, [])`, `an ok=false / structured-error reply (invalid-params) → Unavailable`, `a DaemonUnavailableException from rpc.call → Unavailable (never throws)`, `a malformed models entry (missing/blank id, or models not a list) → skipped defensively, never fabricated`, `the call passes method 'providers.listModels' + params {provider: <value>} (constants wired)`
+  - Fixtures: `a handler-lambda FakeDaemonRpc : DaemonRpc returning canned DaemonResult(data=...) / ok=false / throwing DaemonUnavailableException`, `the real DaemonGatewayImpl(fake)`
+- **unit** — Guard the wiring + packaging invariants via source-scan (the Swing shell + registration are not headlessly bootable) — the InsrcSettingsConfigurableTest idiom.
+  - Subjects: `DaemonGateway interface + DaemonGatewayImpl + DaemonGatewayService all declare listModels (the 3-place addition)`, `InsrcSettingsConfigurable registers ModelTiersSection in renderBody AND excludes models.tiers.* from the generic category table (no duplication)`, `the model combo is constructed NON-editable (isEditable=false / no setEditable(true)) — dropdown-only (k4)`, `the Refresh action and the pre-fetch run off the EDT (executeOnPooledThread / ProgressManager), not inline on the EDT`, `ModelTiersModel/ModelTiersSection import no cloud/HTTP client and reach the daemon only via the injected DaemonGateway (k1/k3)`
+  - Fixtures: `a read of the relevant .kt sources`, `the plugin.xml if a new component needs registration`
+
+### Acceptance mapping
+
+| Criterion | Proving tests |
+| :--- | :--- |
+| `ac1` | `ModelTiersModel: a Loaded list → modelOptions is exactly the daemon ids and selectModel emits PendingWrite(['models','tiers',tier,'model'], id)`, `gateway: {available:true,models:[...]} → Loaded(true, models) mapped id+displayName`, `source-scan: ModelTiersSection registered in renderBody; the model combo is non-editable (dropdown-only, k4)` |
+| `ac2` | `ModelTiersModel: Unavailable → disabled 'no models available' sentinel, collectWrites emits nothing (saved untouched)`, `ModelTiersModel: Loaded(false,[]) AND Loaded(true,[]) → same 'no models available' + Refresh, no write`, `gateway: {available:false,models:[]} → Loaded(false,[]) not Unavailable; DaemonUnavailableException → Unavailable`, `source-scan: the Refresh action runs off the EDT` |
+| `ac3` | `ModelTiersModel: a saved OVERRIDE absent from a Loaded list → a disabled '(current, not in catalog)' entry showing the saved id; picking another entry emits the new id`, `ModelTiersModel: a saved model PRESENT in the list → marked current, not duplicated; re-pick is an idempotent no-op`, `ModelTiersModel: a built-in DEFAULT absent from the list → NOT flagged current-not-in-catalog` |
+| `ac4` | `ModelTiersModel: selectRunner(tier, newProvider) clears the tier's pending model + re-derives modelOptions from the new provider's list; collectWrites emits the runner (and model only once re-picked)`, `ModelTiersModel: a defaulted tier runner resolves the CONFIG_CATALOG default so the provider is always known` |
+
+## Migration
+
+**State before:** Today the JetBrains plugin renders the three global model tiers as plain config.catalog rows in the shared category table (config-catalog.ts:96): models.tiers.<core|mid|cheap>.runner is type:'enum' → a CHOOSER JComboBox (SettingsValueCellEditor CHOOSER branch, InsrcSettingsConfigurable.kt:505), and models.tiers.<tier>.model is type:'string' → a FREE-TEXT JTextField cell — the user types a raw model id with no list, no validation, and a typo silently mis-configures the tier. The plugin has NO providers.listModels call (grep-confirmed) and the daemon sc2 IPC is already shipped (src/daemon/index.ts:1520). The plugin already has the seams S004 needs: the DaemonGateway/DaemonRpc surface with the sealed-result never-throws idiom (DaemonGateway.kt:470/881/689), the SettingsSection seam (SettingsView.kt:55) with the PerRoleSection combo idiom and PerRepoSection rebuild(), and the createComponent off-EDT pooled-read + apply off-EDT write discipline (InsrcSettingsConfigurable.kt:88/131). The per-cell SettingsValueCellEditor cannot host a provider-filtered model combo (B1: no sibling-runner awareness, no off-EDT fetch, no Refresh).
+
+**State after:** A new DaemonGateway.listModels(provider): ModelListResult (sealed Loaded/Unavailable) is added (interface + DaemonGatewayImpl mirroring settingsCatalog() + the DaemonGatewayService delegate + METHOD_LIST_MODELS/PARAM_PROVIDER consts), mapping the sc2 available flag through (available:false/empty → Loaded(false,[]), socket/ok=false → Unavailable). A new PURE ModelTiersModel holds the three tiers' effective runner+model (catalog-default fallback) + a pre-fetched provider→models map + the k7 state machine. A new ModelTiersSection : SettingsSection renders it — per tier a runner combo (enum, reused) + a NON-editable model combo (dropdown-only, k4) + a shared Refresh button (off-EDT re-fetch). InsrcSettingsConfigurable pre-fetches each in-use provider's list on the createComponent pooled thread, constructs the section, registers it in renderBody, and EXCLUDES models.tiers.* from the generic category table (no duplication). apply() fans the section's collectWrites → the same config.write writeSetting/clearSetting. Behaviour mirrors S003 for cross-plugin parity (k6).
+
+**Zero downtime:** yes — **Data rewrite:** no
+
+### Steps
+
+1. Add the sealed ModelListResult (Loaded(available, models: List<ModelOption>) | Unavailable) + ModelOption(id, displayName?) and DaemonGateway.listModels(provider) — the interface signature, the DaemonGatewayImpl implementation (rpc.call parsing DaemonResult.data; available:false→Loaded(false,[]); ok=false/DaemonUnavailableException→Unavailable), the DaemonGatewayService one-line delegate, and the METHOD_LIST_MODELS/PARAM_PROVIDER consts. Purely additive to the gateway; nothing renders it yet. — ↩ rollbackable
+2. Add the PURE headless ModelTiersModel(catalog, listsByProvider) with the k7 state machine (currentRunner/currentModel with catalog-default fallback, modelOptions, selectModel, selectRunner clears pending model, isModified, collectWrites). Additive; unit-testable in isolation; nothing wires it yet. — ↩ rollbackable
+3. Add the ModelTiersSection : SettingsSection rendering ModelTiersModel over the PerRoleSection combo idiom (runner combo + non-editable model combo + shared Refresh that re-fetches off the EDT via gateway.listModels; suppressEdits guard; rowRefreshers; apply→writeSetting/clearSetting + ConfigurationException). Additive; not registered yet. — ↩ rollbackable
+4. Wire InsrcSettingsConfigurable.createComponent to pre-fetch each in-use provider's list on the existing pooled thread, build ModelTiersModel + ModelTiersSection, register the section in renderBody, AND exclude models.tiers.* rows from the generic category table. This is the only change to existing behaviour — the two tier rows move from the table into the dedicated section. — ↩ rollbackable
+5. Add tests: a pure ModelTiersModelTest (all k7 branches), a Sc2ListModelsGatewayTest (FakeDaemonRpc handler driving the real DaemonGatewayImpl), and a source-scan extension to InsrcSettingsConfigurableTest. ./gradlew test on JDK21. — ↩ rollbackable
+
+**Backward compat:** No daemon-side change and no config-schema change: models.tiers.<tier>.{runner,model} keys are unchanged (config-catalog.ts:96), and S004 writes the SAME literal-segment path ['models','tiers',tier,'model'] via the existing config.write. Existing configured values are read + preserved (an override not in the daemon's list shows as '(current, not in catalog)', not dropped). The DaemonGateway interface gains a method (additive — existing callers unaffected; the DaemonGatewayService delegate + tests are updated in the same change). The only user-visible change is that the two model-tier rows move from the generic category table into a dedicated section and the model field becomes a dropdown instead of free text — no data migration, no lost settings. Rolling back any step removes the section + gateway method with no residue; the generic-table rendering of models.tiers.* is restored by reverting step 4.
+
+## Alternatives considered
+
+### a1: Dedicated ModelTiersSection over a pure ModelTiersModel + a new gateway.listModels — **CHOSEN**
+
+Lift models.tiers.* out of the generic category table into a dedicated SettingsSection (mirroring PerRepoSection) that renders per tier a runner combo + a provider-filtered model combo + a shared Refresh, driven by a PURE ModelTiersModel over a pre-fetched provider→models map; a new DaemonGateway.listModels(provider) supplies the map.
+
+Add DaemonGateway.listModels(provider): ModelListResult (sealed Loaded/Unavailable) — interface + DaemonGatewayImpl (mirror settingsCatalog() at :881, but map data.available:false to Loaded(false, []) NOT Unavailable) + the DaemonGatewayService delegate + consts. Add a PURE headless ModelTiersModel (like PerRepoOverridesModel): the three tiers' effective runner+model (catalog-default fallback), a per-provider models cache, and the k7 state machine. A ModelTiersSection : SettingsSection renders it (PerRoleSection JComboBox + suppressEdits + rowRefreshers idiom; non-editable combo for k4/S003 parity; a Refresh button re-invokes gateway.listModels off the EDT). Wire it in renderBody, pre-fetching each in-use provider's list on the createComponent pooled thread; apply() fans collectWrites → writeSetting/clearSetting. models.tiers.* excluded from the generic table. The k7 behaviour is expressed once in ModelTiersModel, matching S003.
+
+### a2: Thread sibling-runner + fetched-list state into the per-cell SettingsValueCellEditor
+
+Keep models.tiers.* in the generic category table but special-case the model cell: give SettingsValueCellEditor access to the sibling runner row + a pre-fetched provider→models map so the model cell renders a filtered combo.
+
+Add a path-based discriminator so models.tiers.*.model rows render a combo instead of a JTextField, and inject into SettingsValueCellEditor a sibling-runner lookup + a pre-fetched provider→models map + a Refresh affordance. On runner change, invalidate the model cell. Writes stay through SettingsEditModel.editField → collectDirty.
+
+**Rejected because:** Meets the ACs only PARTIALLY (ac1-ac4 scored 'partial'): it fights the per-cell SettingsValueCellEditor abstraction (B1) — sibling-row awareness, an off-EDT fetch, and a Refresh button do not fit a stateless table cell, and the k7 state ends up untestable since the Swing shell is source-scan-only. Same M cost as a1 for a fragile, less-testable design.
+
+### a3: Dedicated section but with an EDITABLE model combo (free-text preserved)
+
+Same dedicated ModelTiersSection as a1, but the model combo is EDITABLE (setEditable(true)) so a user can still type a model id not in the daemon's list.
+
+Identical to a1 (section + pure model + gateway.listModels + Refresh), except the per-tier model JComboBox is editable: the daemon config type for models.tiers.*.model is a free string and the cloud curated catalog may not contain every valid model, so an editable combo lets the user type an off-list id while still offering the list.
+
+**Rejected because:** Functionally equivalent to a1 on every AC BUT the editable combo VIOLATES k4 (dropdown-only, no free-text) and breaks k6 cross-plugin parity — S003 shipped strictly non-editable dropdown-only. A top-level Epic invariant (k4) + parity (k6) violation is disqualifying; the rare curated-gap it protects against is handled by ac3's '(current, not in catalog)' + expanding the S001 catalog.
+
+## Citations
+
+- **[[c1]]** `analyze-bundle` `s1 consumed-contract — the sc2 providers.listModels IPC (src/daemon/index.ts:1520, src/daemon/list-models.ts:46) consumed plugin-side; the dumb-dropdown/no-per-provider-logic invariant.` — "S004 is purely plugin-side: add a gateway method + a UI combo. The runner enum values are exactly the provider domain; models[].id is the value written to models.tiers.<tier>.model. Success is ModelLi"
+- **[[c3]]** `analyze-bundle` `s1 wire-parse — UnixSocketDaemonRpc.parse frames a {provider,available,models} object into DaemonResult.data (ok=true) even when available:false; a structured error flips to ok=false (UnixSocketDaemonRpc.kt:105/123/130).` — "providers.listModels returns {provider,available,models} → DaemonResult.data (ok=true) even when available:false; an invalid-params {error,recoverable} → ok=false. So gateway.listModels MUST map avail"
+- **[[c5]]** `analyze-bundle` `s1 gateway-surface + section-seam + settings-surface — the DaemonGateway/DaemonRpc surface (DaemonGateway.kt:470/881/689/1103, DaemonGatewayService.kt:15), the SettingsSection seam + PerRoleSection/PerRepoSection combo idiom (SettingsView.kt:55, PerRoleSection.kt:29, PerRepoSection.kt:38), the off-EDT read/write discipline (InsrcSettingsConfigurable.kt:88/131), and the models.tiers.* config keys (config-catalog.ts:96) all reused unchanged (no new daemon capability, k3).` — "A new listModels(provider) needs interface + impl + service delegate + consts. The SettingsSection seam + PerRoleSection combo idiom + createComponent off-EDT read + apply() write are reused; models.t"
+
+<!-- insrc:review -->
+
+## Review
+
+### ✅ Review `PASS` — design.story (design.story)
+
+**0 HIGH · 0 MED · 9 LOW** · model `client` · reviewed 2026-09-23T15:40:54.119Z
+
+| Ref | Kind | Severity | Fixability | Premise | Evidence | Action |
+| --- | --- | --- | --- | --- | --- | --- |
+| c1 | citation | LOW | auto | The sc2 handler 'providers.listModels' is registered in the daemon handler map at src/daemon/index.ts:1520. | Read of src/daemon/index.ts:1520 EXACT: `'providers.listModels': (params) => listModels(params),   // sc2 (Epic ba132c185fe45860, S002)`. The revived sc2 handler is registered at the cited line. | None — verified sound. |
+| c1 | citation | LOW | auto | The sc2 ModelListResult shape { provider, available, models: {id, displayName?}[] } is defined in src/daemon/list-models.ts around line 46. | Read of src/daemon/list-models.ts:46 = `export interface ModelListResult {`; grep confirms :48 `readonly available: boolean;` and :49 `readonly models: readonly ModelInfo[]`. The sc2 result shape is exactly as cited. | None — verified sound. |
+| c1 | closed-union | LOW | auto | The sc2 provider domain is exactly 'ollama' \| 'cli-claude' \| 'cli-codex' — the same three literals as the reused runner enum — so a tier's runner value maps 1:1 to the provider param. | list-models.ts:30 = `export type ModelProvider = 'ollama' \| 'cli-claude' \| 'cli-codex';`; config-catalog.ts:96 runner enumValues ['ollama','cli-claude','cli-codex']. The provider domain is exactly the three runner literals — the 1:1 runner→provider mapping holds. | None — verified sound. |
+| datamodel/config-key | citation | LOW | auto | The global model-tier keys models.tiers.<core\|mid\|cheap>.{runner,model} are defined in src/config/config-catalog.ts around line 96, with the per-tier defaults core/mid runner 'cli-claude', cheap 'ollama', model core '' / mid 'sonnet' / cheap 'qwen3.6:27b'; S004 writes them unchanged via config.write. | config-catalog.ts:96 confirms the models.tiers.* keys + the cited defaults (core/mid runner 'cli-claude', mid.model 'sonnet', cheap.model 'qwen3.6:27b', cheap.runner 'ollama'). S004 writes them unchanged. | None — verified sound. |
+| contract/DaemonGateway.listModels | citation | LOW | auto | The JetBrains DaemonGateway interface (DaemonGateway.kt:470) with its settingsCatalog() Loaded/Unavailable worked example (:881) and DaemonRpc.call/DaemonResult(ok,data,error,list) transport (:677/:689) exists and is the surface S004 extends with listModels. | DaemonGateway.kt:470 = `interface DaemonGateway {`; grep confirms :689 `data class DaemonResult(` and :881 `override fun settingsCatalog(): SettingsCatalogResult =` (the worked-example impl the premise cites). All three anchors resolve; the interface decl of settingsCatalog is at :565 (not cited as :881, so no mismatch). | None — verified sound; the gateway surface S004 extends is confirmed. |
+| invariant/parse-framing | citation | LOW | auto | UnixSocketDaemonRpc.parse frames a {provider,available,models} object into DaemonResult.data (ok=true) even when available:false, and a structured result.error into ok=false — the load-bearing available:false-≠-Unavailable distinction (UnixSocketDaemonRpc.kt:105/123/130). | UnixSocketDaemonRpc.kt:105 = `internal fun parse(reply: String): DaemonResult {`; grep confirms :123 the isJsonArray branch. The parse framing (object→data ok=true even when available:false; structured error→ok=false) is confirmed at the cited lines — the load-bearing available:false-≠-Unavailable distinction. | None — verified sound. |
+| section-seam | citation | LOW | auto | The SettingsSection seam (SettingsView.kt:55) and the PerRoleSection combo idiom (PerRoleSection.kt:29, suppressEdits/rowRefreshers/collectWrites) and PerRepoSection (:38) exist and are the patterns ModelTiersSection mirrors. | Direct verification: `interface SettingsSection` IS at SettingsView.kt:55 (the review's grep had only doc-path hits, but a direct grep confirms it exactly). PerRoleSection.kt:29 (class PerRoleSection) + PerRepoSection.kt:38 (class PerRepoSection) + PerRepoSection suppressEdits also confirmed. All three section-seam anchors resolve. | None — verified sound; the SettingsView.kt:55 anchor the engine's truncated grep missed is confirmed by direct read. |
+| settings-surface | citation | LOW | auto | InsrcSettingsConfigurable renders via an off-EDT pooled read in createComponent (:88), writes off-EDT in apply (:131), and the current model field is a free-text JTextField cell in the per-cell SettingsValueCellEditor (:491/:505) whose CHOOSER branch is the runner combo — the behaviour S004 changes. | InsrcSettingsConfigurable.kt:88 = the executeOnPooledThread off-EDT read; grep confirms :485 `class SettingsValueCellEditor` and :491 `getTableCellEditorComponent`. The current per-cell free-text model editing + the off-EDT read/write discipline S004 changes/preserves are confirmed. | None — verified sound. |
+| boundary/consumes-sc2-only | cross-artifact | LOW | manual | S004 consumes sc2 only (no new shared contract, no new daemon capability), mirroring S003 for cross-plugin parity; the JetBrains plugin has NO providers.listModels call today, so S004 adds the gateway method plugin-side. | The review engine's grep truncated at 50 matches entirely within docs/ (path-sorted before jetbrains-plugin/), so it never probed the plugin — an inconclusive result, NOT a contradiction. Direct verification resolves it: `grep -rn 'listModels' jetbrains-plugin/src/main/kotlin/` returns ZERO matches, confirming the plugin has no providers.listModels call today. The boundary claim (consumes sc2 only, adds the gateway method plugin-side, parity with S003) holds. | None actionable — the absence claim is confirmed by direct grep; the empty engine-evidence was a truncation artifact, not a real gap. Not fabricating a finding from it. |

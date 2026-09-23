@@ -90,10 +90,15 @@ class InsrcSettingsConfigurable : Configurable {
             val overrides = gateway.perRoleOverrides()
             val perRepo = gateway.perRepoOverrides()
             val registered = gateway.registeredRepos()
+            // S004: pre-fetch each provider's model list off the EDT (a socket round-trip
+            // must never run on the EDT). All three providers are fetched up front so an
+            // in-session runner switch immediately shows the new provider's list; Refresh
+            // re-queries them. The plugin is a dumb consumer of these results (k2).
+            val modelLists = ModelTiersModel.PROVIDERS.associateWith { gateway.listModels(it) }
             ApplicationManager.getApplication().invokeLater({
                 // Only render if this component is still the live page.
                 if (root === scroll) {
-                    scroll.setViewportView(renderBody(catalog, overrides, perRepo, registered, gateway))
+                    scroll.setViewportView(renderBody(catalog, overrides, perRepo, registered, modelLists, gateway))
                     scroll.revalidate()
                     scroll.repaint()
                 }
@@ -186,6 +191,7 @@ class InsrcSettingsConfigurable : Configurable {
         overrides: PerRoleOverridesResult,
         perRepo: PerRepoOverridesResult,
         registered: RegisteredReposResult,
+        modelLists: Map<String, ai.insors.insrc.jetbrains.daemon.ModelListResult>,
         gateway: DaemonGatewayService,
     ): JComponent = when (result) {
         is SettingsCatalogResult.Unavailable -> {
@@ -196,12 +202,23 @@ class InsrcSettingsConfigurable : Configurable {
             unavailablePanel(result.reason)
         }
         is SettingsCatalogResult.Loaded -> {
-            val catalog = result.catalog
+            val fullCatalog = result.catalog
+            // S004: the models.tiers.* rows are lifted out of the generic category table
+            // into the dedicated ModelTiersSection (dropdown-only model picker + Refresh),
+            // so the table/edit-model/settings-tree see a catalog WITHOUT them (no
+            // duplication). The ModelTiersModel reads the tiers from the FULL catalog.
+            val catalog = fullCatalog.copy(
+                options = fullCatalog.options.filterNot { it.path.startsWith("models.tiers.") },
+            )
             val editModel = SettingsEditModel(catalog)
             model = editModel
             optionPaths = catalog.options.map { it.path }
             sections.clear()
             tableModels.clear()
+
+            // S004: the dedicated Model-tiers section over the pure ModelTiersModel + the
+            // pre-fetched per-provider lists. Registered first so it heads the sub-sections.
+            sections.add(ModelTiersSection(ModelTiersModel(fullCatalog, modelLists), gateway))
 
             // Build the override sub-sections (unchanged S004/S005 wiring); a section
             // is registered only when its read is Loaded. Unavailable reads become a

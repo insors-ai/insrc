@@ -2,6 +2,7 @@ package ai.insors.insrc.jetbrains.onboarding
 
 import ai.insors.insrc.jetbrains.LifecycleBroadcaster
 import ai.insors.insrc.jetbrains.daemon.DaemonGateway
+import ai.insors.insrc.jetbrains.daemon.ModelListResult
 import ai.insors.insrc.jetbrains.daemon.SteeringSelection
 import ai.insors.insrc.jetbrains.daemon.RepoStatsResult
 import ai.insors.insrc.jetbrains.daemon.DaemonStatusResult
@@ -72,6 +73,7 @@ class OnboardingCleanupIntegrationTest : BasePlatformTestCase() {
         override fun perRoleOverrides(): PerRoleOverridesResult = PerRoleOverridesResult.Unavailable("not used in this test")
         override fun perRepoOverrides(): PerRepoOverridesResult = PerRepoOverridesResult.Unavailable("not used in this test")
         override fun registeredRepos(): RegisteredReposResult = RegisteredReposResult.Unavailable("not used in this test")
+        override fun listModels(provider: String): ModelListResult = ModelListResult.Unavailable("not used in this test")
         override fun daemonStatus(): DaemonStatusResult = DaemonStatusResult.Unavailable("not used in this test")
         override fun debugStatus(): DebugStatusResult = DebugStatusResult.Unavailable("not used in this test")
         override fun shutdown(): DaemonActionResult = DaemonActionResult.Failed("not used in this test")

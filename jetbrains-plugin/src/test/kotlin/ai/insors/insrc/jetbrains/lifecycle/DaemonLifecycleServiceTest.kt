@@ -4,6 +4,7 @@ import ai.insors.insrc.jetbrains.IdeKind
 import ai.insors.insrc.jetbrains.LifecycleBroadcaster
 import ai.insors.insrc.jetbrains.ProjectContext
 import ai.insors.insrc.jetbrains.daemon.DaemonGateway
+import ai.insors.insrc.jetbrains.daemon.ModelListResult
 import ai.insors.insrc.jetbrains.daemon.SteeringSelection
 import ai.insors.insrc.jetbrains.daemon.RepoStatsResult
 import ai.insors.insrc.jetbrains.daemon.DaemonStatusResult
@@ -66,6 +67,7 @@ class DaemonLifecycleServiceTest : BasePlatformTestCase() {
         override fun registeredRepos(): RegisteredReposResult =
             throw AssertionError("S003 must never call registeredRepos (that is the settings page)")
 
+        override fun listModels(provider: String): ModelListResult = ModelListResult.Unavailable("not used in this test")
         override fun daemonStatus(): DaemonStatusResult = DaemonStatusResult.Stopped
         override fun debugStatus(): DebugStatusResult = DebugStatusResult.Unavailable("not used in this test")
         override fun shutdown(): DaemonActionResult = DaemonActionResult.Failed("not used")

@@ -61,6 +61,8 @@ class DaemonGatewayService : DaemonGateway {
 
     override fun registeredRepos(): RegisteredReposResult = delegate.registeredRepos()
 
+    override fun listModels(provider: String): ModelListResult = delegate.listModels(provider)
+
     override fun daemonStatus(): DaemonStatusResult = delegate.daemonStatus()
 
     override fun debugStatus(): DebugStatusResult = delegate.debugStatus()

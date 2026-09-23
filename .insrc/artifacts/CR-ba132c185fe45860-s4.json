@@ -1,0 +1,64 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1790181037890-gecif1",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-23T16:30:37.890Z",
+    "model": "client",
+    "elapsedMs": 2,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ba132c185fe45860",
+    "storyId": "s4",
+    "approvedAt": "2026-09-23T16:30:42.071Z"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "ba132c185fe45860",
+    "storyId": "s4",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        ".insrc/artifacts/CR-ba132c185fe45860-s1.json",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGateway.kt",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGatewayService.kt",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/InsrcSettingsConfigurable.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleServiceTest.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/onboarding/OnboardingCleanupIntegrationTest.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/onboarding/OnboardingLifecycleTest.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/onboarding/OnboardingWiringTest.kt"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGateway.kt:1055",
+            "message": "GROUNDING CAVEAT (honest): the daemon graph grounding is HOLLOW — every symbol is kind:'file' and the two NEW files (ModelTiersModel.kt, ModelTiersSection.kt) + the new tests are not indexed at all (the recurring stale-Kotlin-index gotcha). Adherence judged by direct reading + the local suite (375/0/0 via ./gradlew test --no-build-cache). Verdict: ADHERENT. S004 consumes sc2 ONLY via the new DaemonGateway.listModels over the existing DaemonRpc (no new daemon capability, k3); the write reuses config.write writeSetting/clearSetting on the EXISTING models.tiers.<tier>.model keys (no schema change). The pure ModelTiersModel + section import no cloud/HTTP client (k1, source-scan-enforced). Dropdown-only non-editable combo (k4). Mirrors S003 for cross-plugin parity (k6). The load-bearing available:false≠Unavailable distinction is implemented (Loaded(false,[]) on a reachable-but-empty provider)."
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 1
+    }
+  }
+}

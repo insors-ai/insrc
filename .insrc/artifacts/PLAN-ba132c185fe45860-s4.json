@@ -1,0 +1,417 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1790179095482-4bmjpa",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-23T16:02:57.807Z",
+    "epicCreatedAt": "2026-09-23T11:52:34.345Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 282268,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ba132c185fe45860",
+    "epicSlug": "work-framed-approved-spec-proceed-from",
+    "storyId": "s4",
+    "lldRunId": "wf-1790176921142-iazckt",
+    "lldEffectiveHash": "3fb0b2204d884534004431928d86df688607742e1aa556119172742624bc5e9a",
+    "approvedAt": "2026-09-23T16:08:03.808Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add DaemonGateway.listModels + the sealed ModelListResult",
+        "summary": "Add the sealed ModelListResult { Loaded(available: Boolean, models: List<ModelOption>) | Unavailable } + ModelOption(id: String, displayName: String?), and DaemonGateway.listModels(provider: String): ModelListResult — the interface signature (DaemonGateway.kt:470), the DaemonGatewayImpl implementation (mirror settingsCatalog() at :881: rpc.call(METHOD_LIST_MODELS, mapOf(PARAM_PROVIDER to provider)) parsing DaemonResult.data; available:false/empty→Loaded(false,[]); DaemonUnavailableException/ok=false→Unavailable; malformed models entries filtered), the DaemonGatewayService one-line delegate (:50), and the METHOD_LIST_MODELS='providers.listModels'/PARAM_PROVIDER='provider' consts (companion :1103). Never-throws idiom. Purely additive; nothing renders it yet.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "DaemonGateway interface, DaemonGatewayImpl, and DaemonGatewayService all declare listModels(provider): ModelListResult (the 3-place addition compiles)",
+          "A {provider,available:true,models:[{id,displayName?}]} data reply → Loaded(true, models) with ids+displayNames mapped",
+          "A {available:false,models:[]} data reply (ok=true) → Loaded(false, []) — NOT Unavailable",
+          "A DaemonUnavailableException or ok=false/structured-error reply → Unavailable (never throws)",
+          "A malformed models entry (missing/blank id, or models not a list) is skipped defensively, never fabricated",
+          "The call passes method 'providers.listModels' + params {provider: <value>}"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "gateway: {available:true,models:[{id,displayName?}]} → Loaded(true, models) mapped id+displayName"
+          },
+          {
+            "level": "unit",
+            "name": "gateway: {available:false,models:[]} (ok=true) → Loaded(false, []) — NOT Unavailable"
+          },
+          {
+            "level": "unit",
+            "name": "gateway: {available:true,models:[]} → Loaded(true, [])"
+          },
+          {
+            "level": "unit",
+            "name": "gateway: ok=false/structured-error → Unavailable; DaemonUnavailableException → Unavailable (never throws)"
+          },
+          {
+            "level": "unit",
+            "name": "gateway: a malformed models entry (missing/blank id, or models not a list) is skipped defensively"
+          },
+          {
+            "level": "unit",
+            "name": "gateway: the call passes method 'providers.listModels' + params {provider: <value>}"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Add the pure headless ModelTiersModel (k7 state machine)",
+        "summary": "Add ModelTiersModel(catalog: SettingsCatalogDto, listsByProvider: Map<String, ModelListResult>) — a PURE, headless model mirroring PerRepoOverridesModel. Reads each tier's effective runner+model from the catalog snapshot, falling back to the per-tier CONFIG_CATALOG default (core/mid runner cli-claude, cheap ollama; model core '' / mid 'sonnet' / cheap 'qwen3.6:27b'). Exposes currentRunner/currentModel, modelOptions(tier) (the provider's models + a disabled '(current, not in catalog)' entry for a saved OVERRIDE absent from a Loaded list; a 'no models available' sentinel when Unavailable/empty), selectModel, selectRunner (clears that tier's pending model), isModified, collectWrites(): List<PendingWrite> (['models','tiers',tier,'model'] + runner only on a switch). No Swing, no fetch logic. Additive; nothing wires it yet.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "A Loaded list → modelOptions(tier) is exactly the daemon's model ids (dropdown-only), pre-selecting the saved model when present (marked current)",
+          "Unavailable AND Loaded(false,[]) AND Loaded(true,[]) → a single disabled 'no models available' sentinel; collectWrites emits nothing (saved untouched)",
+          "A saved OVERRIDE absent from a Loaded list → a disabled '(current, not in catalog)' entry showing the saved id; selectModel(otherId) emits PendingWrite(['models','tiers',tier,'model'], otherId)",
+          "A saved built-in DEFAULT (not an override) absent from the list → NO '(current, not in catalog)' entry",
+          "selectRunner(tier, newProvider) clears the pending model + re-derives modelOptions from listsByProvider[newProvider]; collectWrites emits runner (and model only once re-picked)",
+          "A defaulted tier runner resolves the CONFIG_CATALOG default so the provider is always known; re-selecting the saved model is an idempotent no-op"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "a Loaded list → modelOptions(tier) is exactly the daemon's ids (dropdown-only), pre-selects the saved model (marked current)"
+          },
+          {
+            "level": "unit",
+            "name": "Unavailable → a single disabled 'no models available' sentinel; collectWrites emits nothing (saved untouched)"
+          },
+          {
+            "level": "unit",
+            "name": "Loaded(false,[]) AND Loaded(true,[]) → same 'no models available' presentation, no write"
+          },
+          {
+            "level": "unit",
+            "name": "a saved OVERRIDE absent from a Loaded list → disabled '(current, not in catalog)' entry; selectModel(otherId) emits PendingWrite(['models','tiers',tier,'model'], otherId)"
+          },
+          {
+            "level": "unit",
+            "name": "a saved built-in DEFAULT (not an override) absent from the list → NO '(current, not in catalog)' entry"
+          },
+          {
+            "level": "unit",
+            "name": "selectRunner(tier, newProvider) clears the pending model + re-derives from listsByProvider[newProvider]; collectWrites emits runner then (on re-pick) model"
+          },
+          {
+            "level": "unit",
+            "name": "selecting the already-saved model is an idempotent no-op (collectWrites emits nothing)"
+          },
+          {
+            "level": "unit",
+            "name": "a defaulted tier runner resolves the CONFIG_CATALOG default; isModified false with no edits, true after a select, false again after reset"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Add the ModelTiersSection (Swing) over the pure model",
+        "summary": "Add ModelTiersSection(model: ModelTiersModel, gateway: DaemonGateway) : SettingsSection rendering the pure model over the PerRoleSection combo idiom: per tier a runner JComboBox (enum, reused) + a NON-editable model JComboBox (dropdown-only, k4) + a shared Refresh button. suppressEdits guard + rowRefreshers; addActionListener routes to model.selectRunner/selectModel; Refresh re-invokes gateway.listModels off the EDT (ProgressManager) and re-seeds the combos; apply() fans model.collectWrites() → gateway.writeSetting/clearSetting, throwing ConfigurationException naming failures. Additive; not registered yet.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "ModelTiersSection implements SettingsSection (title/component/isModified/apply/reset)",
+          "The model JComboBox is constructed NON-editable (no setEditable(true))",
+          "Refresh re-invokes gateway.listModels off the EDT (ProgressManager/executeOnPooledThread), not inline on the EDT, and re-seeds the combos under the suppressEdits guard",
+          "apply() fans collectWrites → writeSetting/clearSetting and throws ConfigurationException naming the failed tier(s); ModelTiersSection imports no cloud/HTTP client (reaches the daemon only via the injected DaemonGateway)"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "source-scan: the model combo is constructed NON-editable (no setEditable(true)) — dropdown-only (k4)"
+          },
+          {
+            "level": "unit",
+            "name": "source-scan: the Refresh action runs off the EDT (ProgressManager/executeOnPooledThread); ModelTiersSection imports no cloud/HTTP client"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Wire ModelTiersSection into InsrcSettingsConfigurable + exclude models.tiers.* from the generic table",
+        "summary": "In InsrcSettingsConfigurable.createComponent, pre-fetch each in-use provider's model list on the existing off-EDT pooled thread (alongside settingsCatalog/perRole/perRepo reads), build ModelTiersModel + ModelTiersSection, register the section in renderBody, AND exclude the models.tiers.* rows from the generic category table so runner+model aren't duplicated. This is the only change to existing behaviour — the two tier rows move from the table into the dedicated section.",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "InsrcSettingsConfigurable registers ModelTiersSection in renderBody and it participates in the isModified/apply/reset fan-out",
+          "models.tiers.* rows are EXCLUDED from the generic category table (no duplication)",
+          "The model-list pre-fetch runs on the createComponent off-EDT pooled thread (no socket call on the EDT)",
+          "The build compiles (./gradlew build) with the new wiring"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "source-scan: InsrcSettingsConfigurable registers ModelTiersSection in renderBody AND excludes models.tiers.* from the generic category table (no duplication)"
+          },
+          {
+            "level": "unit",
+            "name": "source-scan: the model-list pre-fetch runs on the createComponent off-EDT pooled thread"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Add JUnit5 tests: pure model + gateway + source-scan",
+        "summary": "Add ModelTiersModelTest (pure, all k7 branches over a SettingsCatalogDto builder + a Map<String,ModelListResult> of Loaded/Loaded-empty/Unavailable), Sc2ListModelsGatewayTest (a handler-lambda FakeDaemonRpc driving the real DaemonGatewayImpl — Loaded/available:false/Unavailable/malformed + method+params), and a source-scan extension to InsrcSettingsConfigurableTest (section registered, models.tiers.* excluded from the table, model combo non-editable, off-EDT Refresh). All green under ./gradlew test on JDK21 (verified locally).",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "ModelTiersModelTest covers all k7 branches (dropdown, empty/unavailable, '(current, not in catalog)' override-only, clear-on-provider-switch, idempotent no-op, defaulted-runner fallback) over injected fakes — no Swing/live daemon",
+          "Sc2ListModelsGatewayTest proves available:false→Loaded(false,[]) (not Unavailable), Unavailable on socket/ok=false, malformed skipped, and the method+params wiring",
+          "A source-scan asserts ModelTiersSection registered + models.tiers.* excluded + non-editable combo + off-EDT Refresh",
+          "The full plugin suite passes locally via ./gradlew test (JDK21), not on GitHub CI"
+        ],
+        "derivedFrom": [
+          "c6",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "the full jetbrains-plugin suite passes locally via ./gradlew test (JDK21)"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "a Loaded list with the tier's provider → modelOptions(tier) is exactly the daemon's model ids (dropdown-only, no free-text) and pre-selects the saved model when present (marked current)",
+        "coveredByTaskIds": [
+          "t2",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Unavailable → modelOptions(tier) is a single disabled 'no models available' sentinel; collectWrites emits nothing (saved untouched)",
+        "coveredByTaskIds": [
+          "t2",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Loaded(available=false, []) AND Loaded(available=true, []) both → the same 'no models available' presentation, no write",
+        "coveredByTaskIds": [
+          "t2",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "a saved OVERRIDE absent from a Loaded list → a disabled '(current, not in catalog)' entry showing the saved id; selectModel(otherId) then emits PendingWrite(['models','tiers',tier,'model'], otherId)",
+        "coveredByTaskIds": [
+          "t2",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "a saved model that is a built-in DEFAULT (not an override) absent from the list → NO '(current, not in catalog)' entry",
+        "coveredByTaskIds": [
+          "t2",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "selectRunner(tier, newProvider) clears that tier's pending model (ac4) and modelOptions(tier) re-derives from listsByProvider[newProvider]; on confirm collectWrites emits BOTH ['...','runner'] and (once a model is picked) ['...','model']",
+        "coveredByTaskIds": [
+          "t2",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "selecting the already-saved model is an idempotent no-op (collectWrites emits nothing for that tier)",
+        "coveredByTaskIds": [
+          "t2",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "a tier whose runner is the built-in default (absent from the snapshot values) resolves the CONFIG_CATALOG default runner (core/mid cli-claude, cheap ollama) so its provider list is keyed correctly",
+        "coveredByTaskIds": [
+          "t2",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "isModified() is false with no edits and true after selectModel/selectRunner; reset semantics (re-seed) leave isModified false",
+        "coveredByTaskIds": [
+          "t2",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "a {provider,available:true,models:[{id,displayName?}]} data reply → Loaded(true, models) with ids+displayNames mapped",
+        "coveredByTaskIds": [
+          "t1",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "a {available:false,models:[]} data reply (ok=true) → Loaded(false, []) — NOT Unavailable (the load-bearing distinction)",
+        "coveredByTaskIds": [
+          "t1",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "a {available:true,models:[]} reply → Loaded(true, [])",
+        "coveredByTaskIds": [
+          "t1",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "an ok=false / structured-error reply (invalid-params) → Unavailable",
+        "coveredByTaskIds": [
+          "t1",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "a DaemonUnavailableException from rpc.call → Unavailable (never throws)",
+        "coveredByTaskIds": [
+          "t1",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "a malformed models entry (missing/blank id, or models not a list) → skipped defensively, never fabricated",
+        "coveredByTaskIds": [
+          "t1",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "the call passes method 'providers.listModels' + params {provider: <value>} (constants wired)",
+        "coveredByTaskIds": [
+          "t1",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "DaemonGateway interface + DaemonGatewayImpl + DaemonGatewayService all declare listModels (the 3-place addition)",
+        "coveredByTaskIds": [
+          "t1",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "InsrcSettingsConfigurable registers ModelTiersSection in renderBody AND excludes models.tiers.* from the generic category table (no duplication)",
+        "coveredByTaskIds": [
+          "t4",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "the model combo is constructed NON-editable (isEditable=false / no setEditable(true)) — dropdown-only (k4)",
+        "coveredByTaskIds": [
+          "t3",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "the Refresh action and the pre-fetch run off the EDT (executeOnPooledThread / ProgressManager), not inline on the EDT",
+        "coveredByTaskIds": [
+          "t3",
+          "t4",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "ModelTiersModel/ModelTiersSection import no cloud/HTTP client and reach the daemon only via the injected DaemonGateway (k1/k3)",
+        "coveredByTaskIds": [
+          "t3",
+          "t5"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 — interactionWithShared sc2 (ModelList): consumed read-only via gateway.listModels; the dumb-dropdown k7 state machine expressed once in the pure ModelTiersModel.",
+      "quotedText": "S004 consumes sc2 (ModelList) read-only via a NEW DaemonGateway.listModels(provider)… the section renders the Loaded models authoritatively (dropdown-only, k4) with the '(current, not in catalog)' + clear-on-provider-switch behaviour expressed once in the pure ModelTiersModel — matching S003 for cross-plugin parity (k6)."
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 — contractDetails.DaemonGateway.listModels(provider): ModelListResult (sealed Loaded/Unavailable) + dataModelChanges (the sealed type + the companion consts).",
+      "quotedText": "fun listModels(provider: String): ModelListResult… Loaded(available, models) when the daemon replied with the sc2 object; Unavailable ONLY when the socket is down or the daemon returned ok=false. Never throws — mirrors settingsCatalog()'s idiom (DaemonGateway.kt:881)."
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1 wire-parse/consumed-contract — the sc2 handler (src/daemon/index.ts:1520), ModelListResult shape (list-models.ts:46), and the UnixSocketDaemonRpc.parse framing (kt:105/123) where an object lands in DaemonResult.data (ok=true) even when available:false.",
+      "quotedText": "providers.listModels returns {provider,available,models} → DaemonResult.data (ok=true) even when available:false; an invalid-params {error,recoverable} → ok=false. So gateway.listModels MUST map available:false→Loaded-empty, NOT Unavailable."
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 — contractDetails.ModelTiersModel + dataModelChanges (models.tiers.*.{runner,model} invariant-change; catalog-default fallback core/mid cli-claude, cheap ollama; write path ['models','tiers',tier,'model']).",
+      "quotedText": "The PURE, headless k7 state machine… modelOptions(tier) (the provider's models + a disabled '(current, not in catalog)' entry for a saved OVERRIDE…), selectRunner(tier, provider) [clears that tier's pending model — ac4]… collectWrites emits PendingWrite(['models','tiers',tier,'model'], value)."
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "s1 section-seam — SettingsSection (SettingsView.kt:55), PerRoleSection combo idiom (:29), PerRepoSection (:38), and InsrcSettingsConfigurable off-EDT createComponent read (:88)/apply (:131); the ModelTiersSection mirrors these and excludes models.tiers.* from the generic table.",
+      "quotedText": "SettingsSection (title/component/isModified/apply/reset); PerRoleSection JComboBox + suppressEdits + rowRefreshers + collectWrites→writeSetting/clearSetting; the createComponent off-EDT pooled read + apply off-EDT write; a dedicated ModelTiersSection lifts models.tiers.* out of the generic table."
+    },
+    {
+      "id": "c6",
+      "kind": "analyze-bundle",
+      "ref": "s1 test-prior-art — the pure-model JUnit5 idiom (PerRepoOverridesModelTest/PerRoleOverridesModelTest) the ModelTiersModelTest mirrors; the Swing shell is source-scan-only (InsrcSettingsConfigurableTest).",
+      "quotedText": "Settings-model tests are pure/headless… InsrcSettingsConfigurableTest is a SOURCE-SCAN test (the Swing shell isn't headlessly bootable) — so the k7 logic MUST live in the pure ModelTiersModel."
+    },
+    {
+      "id": "c7",
+      "kind": "analyze-bundle",
+      "ref": "s1 test-prior-art + gateway-surface — the handler-lambda FakeDaemonRpc driving the real DaemonGatewayImpl (Sc2DaemonGatewayTest/SettingsCatalogGatewayTest idiom); JUnit 5, ./gradlew test on JDK21.",
+      "quotedText": "Gateway tests use a handler-lambda FakeDaemonRpc : DaemonRpc driving the REAL DaemonGatewayImpl… a new gateway.listModels test = a FakeDaemonRpc returning {available,models} / {available:false} / {error} driven into DaemonGatewayImpl."
+    }
+  ]
+}

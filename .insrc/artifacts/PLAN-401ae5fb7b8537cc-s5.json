@@ -1,0 +1,351 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1790148201705-pf5j6l",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-23T07:28:02.719Z",
+    "epicCreatedAt": "2026-09-22T10:29:17.310Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 280998,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "401ae5fb7b8537cc",
+    "epicSlug": "work-framed-approved-spec-proceed-from",
+    "storyId": "s5",
+    "lldRunId": "wf-1790147235518-ps67hf",
+    "lldEffectiveHash": "790f3d6f5efd1ec7853ed7547c7c5ad8b56ec8f6ada70b53c07be4e73716ab6b",
+    "approvedAt": "2026-09-23T08:08:47.132Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "sc9 amendment types (types.ts): TabRenderer + detailRenderers + PanelHandle bridge",
+        "summary": "Additively extend vscode-plugin/src/panels/types.ts: export `type TabRenderer = (gateway: DaemonDataGateway) => Promise<string>`; add optional `detailRenderers?: Partial<Record<DetailTab, TabRenderer>>` to WebviewPanelHostDeps; add `onMessage(listener: (message: unknown) => void): void` + `postMessage(message: unknown): void` to PanelHandle. No existing member removed or changed (breaking:false).",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "types.ts exports TabRenderer + adds the optional detailRenderers field + the two PanelHandle bridge methods",
+          "No existing sc9 type member is removed/renamed (S004's shipped types still compile)",
+          "Compiles under strict/exactOptionalPropertyTypes with .js imports; no 'vscode' import"
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "types.ts structurally exposes TabRenderer + detailRenderers + PanelHandle.onMessage/postMessage (compile-time; exercised transitively by the renderer + host suites constructing against them)"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "The two S005 TabRenderers (new detail-renderers.ts)",
+        "summary": "Create vscode-plugin/src/panels/detail-renderers.ts with renderDaemonTab (awaits gateway.status(), renders DaemonStatusView state heading + optional detail line + a Refresh control that posts {type:'refresh'}) and renderWorkflowsTab (awaits gateway.workflowChain(), groups WorkflowChainRow[] by slug — one section per slug, one line per stage: stage + status — an explicit empty-state when rows=[], + a Refresh control). Both are VS-Code-free pure fns over the injected gateway and let a gateway rejection propagate (no swallow) so the host degrades. HTML-escape every daemon value via a SINGLE shared escaper — per s3, export escapeHtml from webview-host.ts (or lift it to a shared panels/html.ts) so renderers + host use one escaper (no divergent copy). No vscode, no cloud.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "renderDaemonTab renders state + optional detail (missing detail -> just the state); renderWorkflowsTab groups rows by slug with stage+status lines + an empty-state for rows=[]",
+          "Every daemon-derived value (state/detail/slug/stage/status) is HTML-escaped via the shared escaper; a '<script>' in a value cannot break out",
+          "Both include a Refresh control that posts {type:'refresh'}; a gateway rejection propagates (not swallowed); no 'vscode'/cloud import"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "renderDaemonTab(gateway) renders gateway.status()'s state + detail into the daemon body (ac1); a missing detail renders just the state (no empty line)"
+          },
+          {
+            "level": "unit",
+            "name": "renderWorkflowsTab(gateway) renders gateway.workflowChain() rows grouped by slug (one section per slug, one line per stage: stage + status) (ac2)"
+          },
+          {
+            "level": "unit",
+            "name": "renderWorkflowsTab shows an explicit empty-state when rows=[] (not blank, not error)"
+          },
+          {
+            "level": "unit",
+            "name": "Both renderers HTML-escape every daemon-derived value (state/detail/slug/stage/status) — an injected '<script>' in a value cannot break out"
+          },
+          {
+            "level": "unit",
+            "name": "Both renderers include a Refresh control that (in the rendered html) posts {type:'refresh'}"
+          },
+          {
+            "level": "unit",
+            "name": "A renderer lets a gateway rejection propagate (does not swallow it) so the host can degrade"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Amend the sc9 host (webview-host.ts): renderer dispatch + tab-strip buttons + CSP/nonce bridge + on-demand re-render",
+        "summary": "Amend vscode-plugin/src/panels/webview-host.ts (kept as ONE atomic L task per s3 — the four sub-concerns mutate the same host closure + share the nonce): (1) renderDetail dispatches to deps.detailRenderers?.[tab] (await) with the existing 'coming soon' placeholder fallback, REUSING the current never-throw outer try/catch (degraded body + logger.warn on reject/setHtml throw preserved); (2) track the per-panel active tab alongside the cached detailPanel ref; (3) rebuild detailHtml's tab strip as real buttons + add a Refresh control, and have shellHtml inject a per-render node-crypto NONCE'd <script> (posts {type:'switchTab',tab}/{type:'refresh'}) + a strict CSP <meta> limiting script-src to that nonce — the CSP meta lives in the SHARED shell so it also covers the repo-config placeholder; (4) subscribe via panel.onMessage(handler) where handler validates msg.type∈{switchTab,refresh} + msg.tab∈DETAIL_TABS, updates the active tab, and re-invokes renderDetail — on-demand ONLY, NO timer/interval; a late message after dispose is skipped (cached-ref guard). Stays VS-Code-free (nonce via node:crypto).",
+        "size": "L",
+        "order": 3,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "The daemon/workflows tab body comes from detailRenderers[tab]; an unregistered tab (debug) falls back to the 'coming soon' placeholder",
+          "The tab strip is interactive (buttons post switchTab) + a Refresh control posts refresh; a switchTab/refresh message re-invokes the active renderer exactly once (fresh read), with NO timer/interval armed",
+          "The rendered shell carries a strict CSP meta + a per-render nonce on the only inline script (shared shell, covers both panels); an unknown message type / invalid tab is a silent no-op; the host never throws (reuses the S004 setHtml guard) and the core imports no 'vscode'"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "openDetailedStatus renders the daemon tab body from detailRenderers.daemon (ac1); switching to workflows renders detailRenderers.workflows (ac2)"
+          },
+          {
+            "level": "unit",
+            "name": "A {type:'switchTab', tab:'workflows'} message (driven through the fake PanelHandle.onMessage) re-invokes the workflows renderer exactly once and re-sets the html (ac3)"
+          },
+          {
+            "level": "unit",
+            "name": "A {type:'refresh'} message re-invokes the ACTIVE tab's renderer exactly once (a fresh gateway read at that moment) (ac3)"
+          },
+          {
+            "level": "unit",
+            "name": "NO timer/interval is armed for the daemon/workflows views — the fake gateway call-count stays flat with no message (no background poll, ac3)"
+          },
+          {
+            "level": "unit",
+            "name": "An unknown message type, or switchTab with an invalid tab, is a silent no-op (no re-render, no throw)"
+          },
+          {
+            "level": "unit",
+            "name": "A tab with no renderer (debug) falls back to the S004 'coming soon' placeholder (shipped behaviour preserved)"
+          },
+          {
+            "level": "unit",
+            "name": "A renderer rejection degrades the tab body in-panel (+warn) and never throws; a setHtml throw after an async render is a logged no-op (never-throw preserved)"
+          },
+          {
+            "level": "unit",
+            "name": "A late switchTab/refresh after the panel was disposed is skipped (no setHtml on a dead panel)"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "extension.ts wiring: enableScripts + detailRenderers + onMessage/postMessage bridge",
+        "summary": "Amend vscode-plugin/src/extension.ts (sole vscode importer): pass detailRenderers { daemon: renderDaemonTab, workflows: renderWorkflowsTab } into createWebviewPanelHost; flip the PanelFactory's createWebviewPanel to enableScripts:true (shared factory — harmless for the script-less repo placeholder, which the shared CSP shell still covers, per s3); extend the returned PanelHandle with onMessage: (cb) => panel.webview.onDidReceiveMessage(cb) and postMessage: (m) => void panel.webview.postMessage(m). Uses the EXISTING vscode.d.ts shim members (no shim change). Remains the sole 'vscode' importer; no cloud path.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "extension.ts constructs the host with { daemon: renderDaemonTab, workflows: renderWorkflowsTab } and binds onMessage->webview.onDidReceiveMessage + postMessage->webview.postMessage",
+          "createWebviewPanel is created with enableScripts:true; extension.ts stays the sole 'vscode' importer and opens no cloud path",
+          "The existing onboarding/status/config-sync wiring + S004 panel behaviour are not regressed; no vscode.d.ts change needed"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "extension.ts constructs the host with detailRenderers { daemon: renderDaemonTab, workflows: renderWorkflowsTab } and binds the PanelFactory's onMessage->webview.onDidReceiveMessage + postMessage->webview.postMessage"
+          },
+          {
+            "level": "unit",
+            "name": "extension.ts creates the Detailed Status panel with enableScripts:true and the rendered shell carries a strict Content-Security-Policy meta + a per-render nonce on the only inline script (no unsafe-inline for arbitrary script)"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Tests: renderers + amended host (message/refresh/no-poll) + source-scan guards",
+        "summary": "Add vscode-plugin/src/panels/__tests__/detail-renderers.test.ts (the two renderers over fakeGateway: ac1 daemon state/detail incl. missing-detail, ac2 workflows grouped-by-slug + empty-state, XSS-escape, propagate-on-reject, Refresh-posts-refresh). Extend webview-host.test.ts's FakePanel with an onMessage capture + injectMessage + postMessage recorder, and add host tests: detailRenderers body injection (ac1/ac2), switchTab/refresh re-invoke exactly once (ac3), NO timer/interval armed — asserted via a CALL-COUNT check per s3 (the fake gateway counts status/workflowChain calls; count stays flat across a wait with no message and increments by exactly one per switch/refresh), invalid-message no-op, disposed-late-message skip, placeholder fallback, never-throw on renderer reject + setHtml throw. Add a source-scan asserting detail-renderers.ts imports no vscode/uses no cloud + the rendered SHARED shell carries a CSP meta + nonce + the bootstrap posts only switchTab/refresh. Full node:test sweep green locally.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t2",
+          "t3",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "detail-renderers.test.ts proves ac1/ac2 + empty-state + XSS-escape + propagate-on-reject",
+          "The host tests prove switchTab/refresh re-invoke exactly once (fresh read via call-count), NO background poll (call-count flat with no message), invalid/late-message no-op, placeholder fallback, and never-throw; the source-scan proves no-vscode/no-cloud + CSP/nonce in the shared shell",
+          "Full node:test (tsx --test) sweep is green locally; tsc clean; bundle stays thin (no new heavy dep)"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Source-scan: detail-renderers.ts imports no 'vscode' and uses no cloud/HTTP (only the injected gateway) — extension.ts stays the sole vscode importer"
+          },
+          {
+            "level": "unit",
+            "name": "The webview bootstrap script only posts the two sanctioned message shapes (switchTab/refresh) — source-asserted"
+          },
+          {
+            "level": "unit",
+            "name": "Full node:test (tsx --test) sweep is green locally (the aggregate gate over t2/t3/t4 tests)"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "renderDaemonTab(gateway) renders gateway.status()'s state + detail into the daemon body (ac1); a missing detail renders just the state (no empty line)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "renderWorkflowsTab(gateway) renders gateway.workflowChain() rows grouped by slug (one section per slug, one line per stage: stage + status) (ac2)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "renderWorkflowsTab shows an explicit empty-state when rows=[] (not blank, not error)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "Both renderers HTML-escape every daemon-derived value (state/detail/slug/stage/status) — an injected '<script>' in a value cannot break out",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "Both renderers include a Refresh control that (in the rendered html) posts {type:'refresh'}",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "A renderer lets a gateway rejection propagate (does not swallow it) so the host can degrade",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "openDetailedStatus renders the daemon tab body from detailRenderers.daemon (ac1); switching to workflows renders detailRenderers.workflows (ac2)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "A {type:'switchTab', tab:'workflows'} message (driven through the fake PanelHandle.onMessage) re-invokes the workflows renderer exactly once and re-sets the html (ac3)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "A {type:'refresh'} message re-invokes the ACTIVE tab's renderer exactly once (a fresh gateway read at that moment) (ac3)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "NO timer/interval is armed for the daemon/workflows views — asserted by a fake clock / by counting gateway calls staying flat with no message (no background poll, ac3)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "An unknown message type, or switchTab with an invalid tab, is a silent no-op (no re-render, no throw)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "A tab with no renderer (debug) falls back to the S004 'coming soon' placeholder (shipped behaviour preserved)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "A renderer rejection degrades the tab body in-panel (+warn) and never throws; a setHtml throw after an async render is a logged no-op (never-throw preserved)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "A late switchTab/refresh after the panel was disposed is skipped (no setHtml on a dead panel)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "Source-scan: detail-renderers.ts imports no 'vscode' and uses no cloud/HTTP (only the injected gateway) — extension.ts stays the sole vscode importer",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "extension.ts constructs the host with detailRenderers { daemon: renderDaemonTab, workflows: renderWorkflowsTab } and binds the PanelFactory's onMessage->webview.onDidReceiveMessage + postMessage->webview.postMessage",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "extension.ts creates the Detailed Status panel with enableScripts:true and the rendered shell carries a strict Content-Security-Policy meta + a per-render nonce on the only inline script (no unsafe-inline for arbitrary script)",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "The webview bootstrap script only posts the two sanctioned message shapes (switchTab/refresh) — source-asserted",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 contractDetails + dataModelChanges — the additive sc9 amendment (TabRenderer + detailRenderers dep + PanelHandle onMessage/postMessage bridge) over the S004 shell (renderDetail/DETAIL_TABS/shellHtml in webview-host.ts, WebviewPanelHostDeps/PanelHandle in types.ts, PanelFactory in extension.ts)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 contractDetails — the consumed-unchanged sc9 gateway (DaemonDataGateway.status -> DaemonStatusView{state,detail?}; workflowChain -> WorkflowChainView{rows: WorkflowChainRow{slug,stage,status}}) the two renderers read"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 invariantsToPreserve — XSS-safe webview: HTML-escape every daemon value (shared escaper) + the CSP/nonce mitigation for enableScripts:true (the S004 cold-review flagged enableScripts:false as the current safety)"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 invariantsToPreserve + errorPaths — on-demand ONLY (open/tab-switch/manual Refresh re-read, NO timer/interval; the continuous ticker is Debug-log-only/s6) + host never-throw (reuse the S004 setHtml guard) + message validation (msg.type/msg.tab)"
+    }
+  ]
+}

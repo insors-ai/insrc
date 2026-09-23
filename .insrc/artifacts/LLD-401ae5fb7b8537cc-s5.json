@@ -1,0 +1,689 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1790147235518-ps67hf",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-23T07:16:33.487Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 557947,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-09-22T10:29:17.310Z",
+    "epicHash": "401ae5fb7b8537cc",
+    "epicSlug": "work-framed-approved-spec-proceed-from",
+    "storyId": "s5",
+    "hldBaseRunId": "wf-1790073320669-iy7sqb",
+    "hldEffectiveHash": "790f3d6f5efd1ec7853ed7547c7c5ad8b56ec8f6ada70b53c07be4e73716ab6b",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The S004 sc9 host (webview-host.ts) has a PRIVATE renderDetail with a fixed DETAIL_TABS triad, decorative (non-interactive) tab spans, and is the shell S005's amendment extends.",
+          "evidence": "CONFIRMED: webview-host.ts:71 `const renderDetail = async (panel, tab)` is private; :30 `DETAIL_TABS = ['daemon','workflows','debug']`; :90 the 'coming soon' placeholder. The amendment correctly extends this exact shell.",
+          "action": "No change — the base the amendment builds on is accurately described.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl2",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The Detailed Status panel is currently created with enableScripts:false and has NO webview->host message bridge (no onDidReceiveMessage/postMessage wiring) — the amendment flips enableScripts to true + adds the bridge.",
+          "evidence": "CONFIRMED: extension.ts:204 createWebviewPanel currently passes enableScripts:false (S004); onDidReceiveMessage/postMessage appear only in the vscode.d.ts shim, NOT wired in extension.ts — so the message bridge is genuinely net-new. The amendment's enableScripts:true + bridge wiring is real work, not already present.",
+          "action": "No change — accurate.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl3",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The injected sc9 boundaries PanelHandle + WebviewPanelHostDeps exist in types.ts and are the additive surface the amendment extends (detailRenderers, onMessage/postMessage, TabRenderer).",
+          "evidence": "CONFIRMED: types.ts:106 `interface PanelHandle`, :144 WebviewPanelHostDeps, :116 PanelFactory, :129 MenuPicker — the injected boundaries the amendment additively extends.",
+          "action": "No change.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The sc9 DaemonDataGateway already exposes status(): Promise<DaemonStatusView> and workflowChain(): Promise<WorkflowChainView>, both consumed UNCHANGED by S005 (no gateway signature change).",
+          "evidence": "CONFIRMED: daemon-gateway.ts:52 status(), :90 workflowChain(); types.ts:48-49 the gateway interface. Both consumed unchanged — no gateway signature change.",
+          "action": "No change — the consume-unchanged claim holds.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl5",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "WorkflowChainView.rows are WorkflowChainRow { slug, stage, status } — the shape the workflows renderer groups by slug (ac2).",
+          "evidence": "CONFIRMED: types.ts:66-69 WorkflowChainRow { slug, stage, status } (readonly). The workflows renderer's group-by-slug + stage/status lines map to the real shape.",
+          "action": "No change.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl6",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "DaemonStatusView is { state: string; detail?: string } — the daemon renderer reads state + optional detail (ac1).",
+          "evidence": "CONFIRMED: types.ts:56-58 DaemonStatusView { state: string; detail?: string }. The daemon renderer reads exactly this.",
+          "action": "No change.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl7",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The vscode.d.ts shim ALREADY declares Webview { html, postMessage, onDidReceiveMessage } + createWebviewPanel options { enableScripts? } (added S004), so S005 needs NO shim change to enable scripts + wire the bridge.",
+          "evidence": "CONFIRMED: vscode.d.ts:49 postMessage, :50 onDidReceiveMessage, :72 enableScripts? — all already declared (S004 t2). S005 needs NO shim change to enable scripts + wire the bridge, as claimed.",
+          "action": "No change — accurate.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl8",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The host is VS-Code-free and extension.ts is the SOLE 'vscode' importer; S005's renderers + host message handling stay VS-Code-free (only extension.ts binds enableScripts/CSP/onDidReceiveMessage/postMessage).",
+          "evidence": "CONFIRMED: the only `import ... from 'vscode'` in vscode-plugin/src is extension.ts:12. The sole-vscode-importer invariant holds; the renderers + host stay VS-Code-free.",
+          "action": "No change.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl9",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The S004 host already guards its render body incl. setHtml in a try/catch (never-throw), which S005's switch/refresh re-render path reuses rather than adding a new unguarded path.",
+          "evidence": "CONFIRMED: webview-host.ts:73 comment 'the outer catch covers a setHtml throw' + the try/catch around renderDetail's body + logger.warn (:85 etc.). S005's switch/refresh re-render reuses this existing guard rather than a new unguarded path.",
+          "action": "No change — the never-throw reuse is real.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl10",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "DetailTab is the closed union 'daemon'|'workflows'|'debug' — the detailRenderers map keys + the switchTab tab validation rely on this exhaustive set.",
+          "evidence": "CONFIRMED: types.ts:25 `type DetailTab = 'daemon' | 'workflows' | 'debug'` — the closed union the detailRenderers keys + switchTab validation rely on.",
+          "action": "No change.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl11",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "sc9 is owned by S004 (not S005); S005 consumes it and extends it only via an additive HLD amendment (sharedContract.fieldAdd, breaking:false) that removes/renames no existing member.",
+          "evidence": "CONFIRMED: the HLD boundary assigns sc9 to S004; the LLD marks role=consumes and raises the extension as an additive sharedContract.fieldAdd (breaking:false) that removes/renames nothing — ownership stays with S004.",
+          "action": "No change — the amendment framing is correct.",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 11
+      },
+      "reviewedAt": "2026-09-23T07:18:16.276Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-23T07:23:16.301Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "The Epic re-expresses the shipped JetBrains settings + nested-pages surface on the VS Code side as two net-new injectable seams layered over the extension's existing sc1-sc7 contracts, following the exact S001-S006 convention: small VS-Code-free cores behind injected boundaries, with extension.ts the SOLE 'vscode' importer and every core unit-testable off the editor API via node:test. Editable config lives in native VS Code Settings (a statically-declared, machine-scoped contributes.configuration for the stable global + fixed per-role keys) driven by ONE ConfigSync engine that keeps the native surface truthful to the daemon (pull on activation/refresh, live-push each change with pre-flight validate and revert-on-reject). The read-only Daemon/Workflows/Debug pages and the per-repo editor live behind ONE WebviewPanelHost (a tabbed Detailed Status panel + a separate Repo Configuration panel) fed by a read-only DaemonData gateway over the existing daemon IPC. Everything reaches the daemon only through the existing config.catalog/config.write + read IPC via sc1; no new daemon capability is added.",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "id": "sc9",
+          "name": "WebviewPanelHost",
+          "purpose": "The single tabbed-webview host + read-only DaemonData gateway for all live pages: opens/reveals the Detailed Status panel (Daemon default + Workflows + Debug tabs) and the Repo Configuration panel, owns the status-bar 2-item menu + the durable palette commands, and exposes a VS-Code-free typed facade over the existing daemon read IPC (status, workflow chain, MCP clients, registered repos, orphan-process scan, log tail). Consumed by every panel-track story so the panel shell + on-demand-refresh discipline exist once.",
+          "interfaceSketch": "export type DetailTab = 'daemon' | 'workflows' | 'debug';\nexport interface WebviewPanelHost {\n  openDetailedStatus(tab?: DetailTab): void;\n  openRepoConfiguration(): void;\n}\nexport interface DaemonDataGateway {\n  status(): Promise<DaemonStatusView>;\n  workflowChain(): Promise<WorkflowChainView>;\n  mcpClients(): Promise<readonly McpClientView[]>;\n  registeredRepos(): Promise<readonly RepoRef[]>;\n  scanOrphans(): Promise<readonly OrphanProcess[]>;\n}\nexport interface DaemonStatusView { readonly state: string; readonly detail?: string; }\nexport interface WorkflowChainView { readonly rows: readonly WorkflowChainRow[]; }\nexport interface WorkflowChainRow { readonly slug: string; readonly stage: string; readonly status: string; }\nexport interface McpClientView { readonly host: string; readonly wired: boolean; }\nexport interface OrphanProcess { readonly pid: number; readonly command: string; }\nexport interface RepoRef { readonly path: string; readonly name: string; }",
+          "ownedByStory": "s4",
+          "consumedByStories": [
+            "s4",
+            "s5",
+            "s6",
+            "s7"
+          ],
+          "assumptions": [
+            "c3",
+            "c4"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s5",
+        "owns": [],
+        "depends": [
+          "sc9"
+        ],
+        "internal": "The Daemon status view and the Workflows chain-report rendering inside their tabs, and each view's on-demand refresh control (open/tab-switch/manual). Consumes sc9's host + gateway; adds no new contract and does no background polling."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc8"
+          ],
+          "depends": [],
+          "internal": "The exact set of stable global config keys declared in contributes.configuration (machine scope) and the mapping from config.catalog paths to those native keys; the last-synced snapshot representation; and the internal validate→write→revert mechanics of the ConfigSync engine. Only the sc8 ConfigSyncEngine + its injected boundary types are exposed; how the pull and the per-change diff are computed is private."
+        },
+        {
+          "storyId": "s2",
+          "owns": [],
+          "depends": [
+            "sc8"
+          ],
+          "internal": "How the fixed RoleId taxonomy is enumerated into per-role tier-override keys and rendered as enum (core/mid/cheap) native settings, and how a role's effective tier (default vs override, clamped by coreFloor) is displayed. Consumes sc8 for the actual apply/truthful-sync; adds no new contract."
+        },
+        {
+          "storyId": "s3",
+          "owns": [],
+          "depends": [
+            "sc8"
+          ],
+          "internal": "The toast + auto-revert UX on a rejected write (the loop-suppression while reverting), the reconcile-on-activation and the 'Refresh insrc settings' durable command that drives sc8.pullFromDaemon, and the insrc.advanced escape-hatch handling. Consumes sc8; owns no shared contract."
+        },
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc9"
+          ],
+          "depends": [],
+          "internal": "The status-bar item's 2-item QuickPick menu, the concrete Webview panel lifecycle (create/reveal/dispose), the in-panel tab framework + host↔webview postMessage protocol, the durable palette commands for both panels, and the DaemonDataGateway's concrete IPC/log/process-scan wiring. Only the sc9 WebviewPanelHost + DaemonDataGateway types are exposed; the panel HTML/messaging internals are private."
+        },
+        {
+          "storyId": "s6",
+          "owns": [],
+          "depends": [
+            "sc9"
+          ],
+          "internal": "The Debug tab: the MCP-clients list rendering, the continuous polling-ticker live log tail (rotation-aware, the only continuously-refreshing view), and the consent-gated orphan-process cleanup (via the shipped sc4 ConsentGate before any kill). Consumes sc9; the ticker + confirm UX are private."
+        },
+        {
+          "storyId": "s7",
+          "owns": [],
+          "depends": [
+            "sc9"
+          ],
+          "internal": "The Repo Configuration panel's repo picker (populated from sc9's registeredRepos) and the per-repo overrides editor form, plus its own per-repo config writes over the existing sc1 config.write and its inline write-feedback. Consumes sc9 for the panel host + repo list; the form layout + per-repo write handling are private."
+        }
+      ],
+      "rolloutPhase": "Phase D — Live pages + per-repo editor",
+      "nonFunctional": {
+        "performance": "Panel and settings reads run off the UI path with bounded socket timeouts; Daemon/Workflows refresh only on open/tab-switch/manual (no background polling), and only the Debug log tail runs a continuous ticker. Activation is never blocked — the config pull-sync and every panel load degrade gracefully when the daemon is unreachable.",
+        "security": "No cloud path and no secrets (k2); all config + status access is over the local Unix-socket IPC via sc1. The only daemon-mutating action (orphan-kill) is consent-gated via the shipped sc4 before it runs (k4). Native config keys are machine-scoped so config is never carried off the machine by Settings Sync (k7).",
+        "observability": "Every surface reflects daemon-derived state truthfully: a rejected config write shows the daemon's reason and reverts, external changes reconcile on refresh (k5), and status/consent outcomes surface through the existing sc2 StatusSurface + getLogger (never console).",
+        "durability": "The daemon's ~/.insrc/config.json is the single source of truth; the native Settings mirror and all panels are stateless views/editors over it — no shadow config store. Per-repo overrides are keyed to the daemon's own repo registry (k7), independent of open workspace folders; panel state is ephemeral and rebuilt from the daemon on each open."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "TabRenderer",
+          "signature": "export type TabRenderer = (gateway: DaemonDataGateway) => Promise<string>",
+          "parameters": [
+            {
+              "name": "gateway",
+              "type": "DaemonDataGateway",
+              "purpose": "The read-only sc9 gateway the renderer reads from (status/workflowChain) to build its tab body.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<string>",
+            "meaning": "The HTML BODY of one Detail tab (escaped/inner content only; the host wraps it in the panel shell + tab strip). Introduced by the sc9 amendment; S005 implements the daemon + workflows renderers."
+          },
+          "errors": [
+            {
+              "type": "(propagates)",
+              "condition": "A renderer may let a gateway GatewayReadError propagate; the host catches it and renders a degraded body (never-throw stays the host's invariant)."
+            }
+          ],
+          "preconditions": [
+            "The renderer is a pure data->html function; it reaches the daemon only via the injected gateway (no vscode, no cloud)."
+          ],
+          "postconditions": [
+            "Returns a self-contained HTML fragment for the tab; the host re-invokes it on open/switch/refresh."
+          ]
+        },
+        {
+          "name": "WebviewPanelHostDeps.detailRenderers",
+          "signature": "detailRenderers?: Partial<Record<DetailTab, TabRenderer>>",
+          "parameters": [],
+          "returns": {
+            "type": "Partial<Record<DetailTab, TabRenderer>> | undefined",
+            "meaning": "The sc9 amendment's OPTIONAL per-tab renderer map, supplied at host construction. A tab with no entry falls back to the existing 'coming soon' placeholder (preserving S004 behaviour + the debug tab until s6). S005 supplies { daemon, workflows }."
+          },
+          "errors": [],
+          "preconditions": [
+            "Passed to createWebviewPanelHost in extension.ts (the sole vscode importer)."
+          ],
+          "postconditions": [
+            "The host renders the active tab via detailRenderers[tab] when present, else the placeholder."
+          ]
+        },
+        {
+          "name": "PanelHandle.onMessage",
+          "signature": "onMessage(listener: (message: unknown) => void): void",
+          "parameters": [
+            {
+              "name": "listener",
+              "type": "(message: unknown) => void",
+              "purpose": "Receives webview->host messages ({type:'switchTab',tab} | {type:'refresh'}) so the host can re-render on-demand.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "sc9-amendment addition to the injected PanelHandle boundary: wraps webview.onDidReceiveMessage so the host core stays VS-Code-free. Bound in extension.ts's PanelFactory."
+          },
+          "errors": [],
+          "preconditions": [
+            "The panel was created with enableScripts:true (the amendment flips this on for the Detailed Status panel)."
+          ],
+          "postconditions": [
+            "The host receives each webview message and routes switchTab/refresh to a re-render."
+          ]
+        },
+        {
+          "name": "WebviewPanelHost.openDetailedStatus",
+          "signature": "openDetailedStatus(tab?: DetailTab): void",
+          "parameters": [
+            {
+              "name": "tab",
+              "type": "DetailTab",
+              "purpose": "The tab to open on; S005 consumes the existing default 'daemon'. Consumed unchanged from sc9.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "Consumed as-is: the sc9 host opens/reveals the single Detailed Status panel. Under the amendment its tab strip is now interactive (real buttons post switchTab) and the active tab body comes from detailRenderers."
+          },
+          "errors": [
+            {
+              "type": "(none thrown)",
+              "condition": "Host never-throws is preserved by the amendment (renderer errors degrade in-panel)."
+            }
+          ],
+          "preconditions": [
+            "The host was constructed with detailRenderers (S005's map) in extension.ts."
+          ],
+          "postconditions": [
+            "The daemon tab (default) renders gateway.status() (ac1); switching to workflows renders gateway.workflowChain() (ac2)."
+          ]
+        },
+        {
+          "name": "DaemonDataGateway.status",
+          "signature": "status(): Promise<DaemonStatusView>",
+          "parameters": [],
+          "returns": {
+            "type": "Promise<DaemonStatusView>",
+            "meaning": "Consumed unchanged: the daemon renderer reads { state, detail? } and renders the current operational status (ac1). No gateway change."
+          },
+          "errors": [
+            {
+              "type": "GatewayReadError",
+              "condition": "daemon.status failed/unreachable; the daemon renderer lets it propagate and the host degrades the body."
+            }
+          ],
+          "preconditions": [
+            "sc9 gateway available (from S004)."
+          ],
+          "postconditions": [
+            "Reaches only daemon.status over sc1 (k2/k3)."
+          ]
+        },
+        {
+          "name": "DaemonDataGateway.workflowChain",
+          "signature": "workflowChain(): Promise<WorkflowChainView>",
+          "parameters": [],
+          "returns": {
+            "type": "Promise<WorkflowChainView>",
+            "meaning": "Consumed unchanged: the workflows renderer reads { rows: WorkflowChainRow[] } and renders the chain report grouped by slug (ac2). No gateway change; a pure local .insrc/artifacts read."
+          },
+          "errors": [
+            {
+              "type": "GatewayReadError",
+              "condition": "A malformed artifact json; the workflows renderer lets it propagate and the host degrades the body."
+            }
+          ],
+          "preconditions": [
+            "sc9 gateway available (from S004)."
+          ],
+          "postconditions": [
+            "Reads only the local filesystem; no cloud/no new daemon capability (k2/k3)."
+          ]
+        },
+        {
+          "name": "renderDaemonTab",
+          "signature": "export const renderDaemonTab: TabRenderer",
+          "parameters": [
+            {
+              "name": "gateway",
+              "type": "DaemonDataGateway",
+              "purpose": "Reads gateway.status().",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<string>",
+            "meaning": "S005's daemon-tab renderer: awaits gateway.status() and renders the DaemonStatusView { state, detail } as the operational-status body (state heading + detail line), plus a Refresh control that posts {type:'refresh'} (ac1/ac3). A VS-Code-free pure fn in a new S005 module."
+          },
+          "errors": [
+            {
+              "type": "GatewayReadError",
+              "condition": "Propagated from gateway.status(); the host catches + degrades."
+            }
+          ],
+          "preconditions": [
+            "Registered under detailRenderers.daemon."
+          ],
+          "postconditions": [
+            "Escapes every daemon-derived value before it enters the HTML (XSS-safe, matching S004's escapeHtml discipline)."
+          ]
+        },
+        {
+          "name": "renderWorkflowsTab",
+          "signature": "export const renderWorkflowsTab: TabRenderer",
+          "parameters": [
+            {
+              "name": "gateway",
+              "type": "DaemonDataGateway",
+              "purpose": "Reads gateway.workflowChain().",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<string>",
+            "meaning": "S005's workflows-tab renderer: awaits gateway.workflowChain() and renders the rows grouped by slug (one section per work item, one line per stage: stage + status), an empty-state when rows=[], plus a Refresh control that posts {type:'refresh'} (ac2/ac3). VS-Code-free pure fn."
+          },
+          "errors": [
+            {
+              "type": "GatewayReadError",
+              "condition": "Propagated from gateway.workflowChain(); the host catches + degrades."
+            }
+          ],
+          "preconditions": [
+            "Registered under detailRenderers.workflows."
+          ],
+          "postconditions": [
+            "Escapes every row value (slug/stage/status) before it enters the HTML."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "sc9 WebviewPanelHostDeps + PanelHandle + TabRenderer (amended)",
+        "change": "field-add",
+        "details": "The sc9 amendment (additive, non-breaking) finishes the tab framework + host<->webview bridge the S004 shell stubbed. WebviewPanelHostDeps gains OPTIONAL detailRenderers?: Partial<Record<DetailTab, TabRenderer>>; a new TabRenderer type is exported; PanelHandle gains onMessage(listener) + postMessage(message). The host (webview-host.ts) is amended to: render the active tab via detailRenderers[tab] (placeholder fallback when absent), make the tab strip real buttons that postMessage {type:'switchTab',tab}, add a Refresh control that posts {type:'refresh'}, and on either message RE-INVOKE the active renderer + re-set the html (on-demand only — NO timer/interval). extension.ts's PanelFactory creates the Detailed Status panel with enableScripts:true + a strict CSP meta + a per-render nonce on the inline bootstrap script, and binds onMessage->webview.onDidReceiveMessage + postMessage->webview.postMessage. No existing sc9 member is removed or changed; S004's shipped tests/behaviour are preserved by the optional dep + placeholder fallback. NOTE: this is filed as an additive HLD amendment on the S004-owned sc9 (sharedContract.fieldAdd, breaking:false); ownership of sc9 stays with S004.",
+        "schemaDiff": "WebviewPanelHostDeps += detailRenderers?: Partial<Record<DetailTab, TabRenderer>>\nPanelHandle += onMessage(listener), postMessage(message)\n+ export type TabRenderer = (gateway: DaemonDataGateway) => Promise<string>",
+        "callSites": [
+          "vscode-plugin/src/panels/types.ts",
+          "vscode-plugin/src/panels/webview-host.ts",
+          "vscode-plugin/src/extension.ts"
+        ]
+      },
+      {
+        "entity": "vscode-plugin/src/panels/detail-renderers.ts (new S005 module)",
+        "change": "new",
+        "details": "The two S005-owned TabRenderers: renderDaemonTab (gateway.status() -> operational-status body + Refresh control) and renderWorkflowsTab (gateway.workflowChain() -> rows grouped by slug, one line per stage, empty-state, + Refresh control). VS-Code-free pure fns over the injected gateway; every daemon-derived value HTML-escaped. Wired into the host via detailRenderers in extension.ts.",
+        "schemaDiff": "+ vscode-plugin/src/panels/detail-renderers.ts (renderDaemonTab, renderWorkflowsTab)",
+        "callSites": [
+          "vscode-plugin/src/extension.ts",
+          "vscode-plugin/src/panels/webview-host.ts"
+        ]
+      },
+      {
+        "entity": "vscode.d.ts Webview.onDidReceiveMessage/postMessage (already declared)",
+        "change": "invariant-change",
+        "details": "The shim already declares Webview { html, postMessage, onDidReceiveMessage } + createWebviewPanel's options { enableScripts? } (added in S004 t2). S005 USES these existing shim members (no shim change needed): the PanelFactory now passes enableScripts:true and wires onDidReceiveMessage/postMessage. Invariant change: the Detailed Status panel goes from enableScripts:false (S004) to enableScripts:true (S005) — mitigated by a strict CSP + per-render nonce so only the host's own nonce'd bootstrap script runs (still XSS-safe; the tab bodies remain escaped fragments).",
+        "schemaDiff": "(no shim diff — existing members; behavior: enableScripts false -> true for the Detailed Status panel, under CSP+nonce)",
+        "callSites": [
+          "vscode-plugin/src/vscode.d.ts",
+          "vscode-plugin/src/extension.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc9",
+        "role": "consumes",
+        "howDetails": "S005 CONSUMES sc9 (owned by S004): it reads the DaemonDataGateway (status + workflowChain, both unchanged) and plugs into the WebviewPanelHost via the injected detailRenderers map. S005 owns ONLY the two pure TabRenderers (renderDaemonTab/renderWorkflowsTab) + their on-demand refresh semantics; the tab framework, the create/reveal lifecycle, and the host<->webview message bridge remain sc9's (S004's). Because the S004 shell stubbed the tab framework as non-interactive (enableScripts:false, no bridge, renderDetail hardcoded to 'daemon'), S005 requires an ADDITIVE sc9 AMENDMENT (sharedContract.fieldAdd, breaking:false): the optional detailRenderers dep + the PanelHandle onMessage/postMessage bridge + the host enabling scripts (CSP+nonce) and routing switchTab/refresh to a re-render. This finishes the exact capability the HLD already assigned to sc9 ('the in-panel tab framework + host<->webview postMessage protocol'); it removes/renames no existing member and preserves S004's shipped behaviour via the placeholder fallback. Ownership of sc9 stays with S004; S005 extends it under this amendment and owns only the two pure renderers. No new DAEMON capability (k3): status/workflowChain already exist; the amendment is entirely client-side. (a2 runtime-registry and a3 single-shared-provider were rejected in s3 for a wider public surface / cross-story coupling.)"
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "gateway.status() rejects (daemon unreachable) while the daemon renderer is building the daemon tab body.",
+          "detection": "renderDaemonTab awaits gateway.status() and does NOT catch — the rejection propagates to the host's renderActive wrapper (the S004 renderDetail try/catch), which recognises the rejected promise.",
+          "response": "The host renders the daemon tab as a degraded body ('insrc daemon unreachable') + logger.warn, keeping the tab strip + Refresh control visible; the renderer itself stays a pure function that just reads-and-throws.",
+          "userImpact": "The daemon tab shows a clear unreachable message with the tabs/refresh still usable (clicking Refresh retries) instead of a blank or crashed panel.",
+          "recoverable": true
+        },
+        {
+          "scenario": "gateway.workflowChain() rejects (a malformed .insrc/artifacts/*.json) while the workflows renderer builds its body.",
+          "detection": "renderWorkflowsTab awaits gateway.workflowChain(); the GatewayReadError propagates to the host's render wrapper.",
+          "response": "The host degrades the workflows tab body to an error state + logger.warn; the daemon tab and the tab strip are unaffected.",
+          "userImpact": "The Workflows tab shows a read-error message (not a crash); the rest of the panel keeps working; Refresh retries.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A webview->host message arrives with an unknown/absent type, or a switchTab carrying a tab that is not a valid DetailTab.",
+          "detection": "The host's onMessage listener validates the parsed message: it checks msg.type against the known set ('switchTab'|'refresh') and, for switchTab, checks msg.tab is one of the DETAIL_TABS union before acting.",
+          "response": "Ignore the message (no re-render, no throw); optionally logger.warn once. The webview cannot drive the host outside the two sanctioned actions.",
+          "userImpact": "None — a malformed or spoofed message is a silent no-op; the panel state is unchanged.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A switchTab/refresh message fires after the user has closed (disposed) the Detailed Status panel.",
+          "detection": "The host's message listener is bound to that panel's handle; after onDidDispose cleared the cached ref, a late message finds no live panel (the guard checks the panel is still the current cached one before re-rendering).",
+          "response": "The re-render is skipped (no setHtml on a disposed panel — the S004 never-throw setHtml guard also covers this); no throw.",
+          "userImpact": "None — a stray late message after close does nothing.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A tab renderer resolves but the subsequent host setHtml throws (panel disposed between the async render and the html set).",
+          "detection": "The S004 host already wraps the renderActive body (incl. setHtml) in try/catch; the same guard covers the renderer-driven re-render path S005 adds.",
+          "response": "logger.warn + no-op (the never-throw invariant holds for the switch/refresh re-render exactly as for the initial open).",
+          "userImpact": "None — a race between close and re-render degrades to a logged no-op.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "gateway.workflowChain() resolves with rows: [] (a repo with no .insrc/artifacts yet, or an absent artifacts root).",
+          "expected": "The workflows renderer shows an explicit empty-state ('No workflow artifacts yet.') — NOT a blank body and NOT an error; the tab + Refresh remain."
+        },
+        {
+          "input": "workflowChain rows span multiple slugs with several stages each.",
+          "expected": "The renderer groups rows by slug (one section per work item) and lists each stage line (stage + status) under its slug, mirroring the JetBrains chain report; ordering is stable."
+        },
+        {
+          "input": "DaemonStatusView.detail is undefined (status resolved but the gateway produced only { state }).",
+          "expected": "The daemon renderer shows just the state heading (no empty detail line); still a valid body."
+        },
+        {
+          "input": "The user rapidly clicks Refresh several times.",
+          "expected": "Each click posts one {type:'refresh'} and triggers exactly one gateway re-read + re-render; there is no debounce requirement but also no timer is ever armed (each is a discrete on-demand read, ac3)."
+        },
+        {
+          "input": "The user switches daemon->workflows->daemon.",
+          "expected": "Each switch re-invokes the destination tab's renderer once (a fresh read at switch time, ac3); no cached stale body is shown and no background poll runs between switches."
+        },
+        {
+          "input": "A tab with no registered renderer is activated (e.g. 'debug' before s6).",
+          "expected": "The host falls back to the existing 'coming soon' placeholder (S004 behaviour preserved via the optional-map fallback); no error."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The sc9 host NEVER throws to its caller: renderer rejections degrade the tab body in-panel (+logger.warn) and setHtml stays guarded — S005's switch/refresh re-render path reuses the exact S004 never-throw wrapper, not a new unguarded path.",
+          "source": "c1"
+        },
+        {
+          "text": "extension.ts remains the SOLE 'vscode' importer: the tab renderers + the host message handling are VS-Code-free over the injected gateway + the PanelHandle onMessage/postMessage boundary; only extension.ts binds enableScripts/CSP/nonce + webview.onDidReceiveMessage/postMessage.",
+          "source": "c2"
+        },
+        {
+          "text": "No new daemon capability and no cloud path (k2/k3): the daemon + workflows renderers reach the daemon only through the UNCHANGED sc9 gateway (daemon.status over sc1; workflowChain is a local .insrc/artifacts read). The amendment is entirely client-side.",
+          "source": "c2"
+        },
+        {
+          "text": "On-demand ONLY (ac3/k3, the JetBrains discipline): the Daemon + Workflows views re-read on open / tab-switch / manual Refresh and arm NO timer or interval — the continuous polling-ticker is reserved for the Debug log tail (s6), which S005 must not introduce.",
+          "source": "c4"
+        },
+        {
+          "text": "XSS-safe webview: enabling scripts (enableScripts:true) is bounded by a strict CSP + a per-render nonce so only the host's own bootstrap script runs; every daemon-derived value in a tab body stays HTML-escaped (matching S004's escapeHtml), and the tab bodies remain data-only fragments.",
+          "source": "c3"
+        },
+        {
+          "text": "S004's shipped behaviour + tests are preserved: the detailRenderers dep is OPTIONAL with a placeholder fallback, and the amendment removes/renames no existing sc9 member — a host constructed without renderers behaves exactly as the S004 shell.",
+          "source": "c1"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Drive the two S005 TabRenderers as pure fns over a fake DaemonDataGateway, asserting the daemon + workflows tab HTML reflects the gateway data (ac1/ac2) and is XSS-safe.",
+          "subjects": [
+            "renderDaemonTab(gateway) renders gateway.status()'s state + detail into the daemon body (ac1); a missing detail renders just the state (no empty line)",
+            "renderWorkflowsTab(gateway) renders gateway.workflowChain() rows grouped by slug (one section per slug, one line per stage: stage + status) (ac2)",
+            "renderWorkflowsTab shows an explicit empty-state when rows=[] (not blank, not error)",
+            "Both renderers HTML-escape every daemon-derived value (state/detail/slug/stage/status) — an injected '<script>' in a value cannot break out",
+            "Both renderers include a Refresh control that (in the rendered html) posts {type:'refresh'}",
+            "A renderer lets a gateway rejection propagate (does not swallow it) so the host can degrade"
+          ],
+          "fixturesNeeded": [
+            "Fake DaemonDataGateway scripting status()/workflowChain() (resolve variants incl. empty rows + missing detail; reject variant)",
+            "A value-with-HTML-metacharacters fixture for the escaping assertion"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Drive the amended sc9 host over the S004 fake harness, asserting tab-body injection via detailRenderers + the on-demand re-render on switch/refresh with no polling (ac1/ac2/ac3) + never-throw.",
+          "subjects": [
+            "openDetailedStatus renders the daemon tab body from detailRenderers.daemon (ac1); switching to workflows renders detailRenderers.workflows (ac2)",
+            "A {type:'switchTab', tab:'workflows'} message (driven through the fake PanelHandle.onMessage) re-invokes the workflows renderer exactly once and re-sets the html (ac3)",
+            "A {type:'refresh'} message re-invokes the ACTIVE tab's renderer exactly once (a fresh gateway read at that moment) (ac3)",
+            "NO timer/interval is armed for the daemon/workflows views — asserted by a fake clock / by counting gateway calls staying flat with no message (no background poll, ac3)",
+            "An unknown message type, or switchTab with an invalid tab, is a silent no-op (no re-render, no throw)",
+            "A tab with no renderer (debug) falls back to the S004 'coming soon' placeholder (shipped behaviour preserved)",
+            "A renderer rejection degrades the tab body in-panel (+warn) and never throws; a setHtml throw after an async render is a logged no-op (never-throw preserved)",
+            "A late switchTab/refresh after the panel was disposed is skipped (no setHtml on a dead panel)"
+          ],
+          "fixturesNeeded": [
+            "The S004 fake PanelFactory extended with an onMessage capture + a way to inject a scripted webview message + a postMessage recorder",
+            "Fake DaemonDataGateway (call-counting) + fake logger capturing warns",
+            "A fake timer/clock or a call-count assertion to prove no interval is armed"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Static/source guards + the extension.ts wiring for the amended sc9 host (sole-vscode-importer, CSP/nonce, enableScripts, message bridge).",
+          "subjects": [
+            "Source-scan: detail-renderers.ts imports no 'vscode' and uses no cloud/HTTP (only the injected gateway) — extension.ts stays the sole vscode importer",
+            "extension.ts constructs the host with detailRenderers { daemon: renderDaemonTab, workflows: renderWorkflowsTab } and binds the PanelFactory's onMessage->webview.onDidReceiveMessage + postMessage->webview.postMessage",
+            "extension.ts creates the Detailed Status panel with enableScripts:true and the rendered shell carries a strict Content-Security-Policy meta + a per-render nonce on the only inline script (no unsafe-inline for arbitrary script)",
+            "The webview bootstrap script only posts the two sanctioned message shapes (switchTab/refresh) — source-asserted"
+          ],
+          "fixturesNeeded": [
+            "Read of detail-renderers.ts + webview-host.ts + extension.ts sources",
+            "A regex/assertion for the CSP meta + nonce presence in the rendered shell html"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "unit(renderer): renderDaemonTab renders gateway.status() state + detail into the daemon body",
+            "unit(host): openDetailedStatus renders the daemon tab from detailRenderers.daemon on open",
+            "unit(renderer): missing detail renders just the state heading"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "unit(renderer): renderWorkflowsTab renders workflowChain rows grouped by slug (stage+status per line)",
+            "unit(renderer): empty rows -> explicit empty-state",
+            "unit(host): switching to the workflows tab renders detailRenderers.workflows"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "unit(host): a switchTab message re-invokes the destination renderer exactly once (fresh read at switch)",
+            "unit(host): a refresh message re-invokes the active renderer exactly once (fresh read at click)",
+            "unit(host): no timer/interval is armed for daemon/workflows — gateway call count stays flat with no message (no background poll)"
+          ]
+        }
+      ],
+      "testFramework": "node:test (tsx --test) over injected fakes — the shipped vscode-plugin panels convention (webview-host.test.ts / daemon-gateway.test.ts); no VS Code host, no live daemon."
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "sc9 deps-extension: static per-tab renderer map + host-owned message bridge",
+        "oneLineSummary": "Amend sc9 so the host is CONSTRUCTED with an optional per-DetailTab renderer map and enables a scripted webview message bridge; S005 supplies the daemon + workflows renderers, the host runs the active tab's renderer on open/switch/refresh.",
+        "chosen": true
+      },
+      {
+        "id": "a2",
+        "name": "sc9 runtime registry: host.registerDetailTab(tab, renderer)",
+        "oneLineSummary": "Amend sc9 with a runtime method the consuming stories call to register their tab renderer, plus the same message bridge; the host renders whichever tabs have registered.",
+        "reasonRejected": "Drops to partial on ac2 (tab presence becomes registration-order dependent — a missed/late registration silently leaves the workflows tab a placeholder) and on sc9 (a wider mutating public-method surface + a runtime coverage/ordering concern) — the exact tab-registry weakness S004 s3 already rejected."
+      },
+      {
+        "id": "a3",
+        "name": "sc9 single view-model provider fn + bridge (minimal surface)",
+        "oneLineSummary": "Amend sc9 with ONE injected active-tab body provider `renderTabBody(tab)=>Promise<string>` plus the bridge; S005 implements the provider covering daemon+workflows (debug placeholder until s6).",
+        "reasonRejected": "Drops to partial on sc9: the single provider fn is SHARED across S005 (daemon/workflows) and S006 (debug), coupling this story's LLD to S006's future edit and interleaving their branches; less cohesive/per-tab-testable than a1's isolated renderers, and the minimal surface is not worth the cross-story coupling."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "step-output",
+      "ref": "s1 symbol.locate + s4 contract — the S004 sc9 host shell (renderDetail private, decorative tabs, enableScripts:false) + the additive detailRenderers/never-throw amendment",
+      "quotedText": "createWebviewPanelHost ... built the Detailed Status panel as a SHELL ... the panel is created with enableScripts:false ... NO webview→host message bridge"
+    },
+    {
+      "id": "c2",
+      "kind": "step-output",
+      "ref": "s1 symbol.locate — the sc9 gateway status()/workflowChain() S005 consumes unchanged (daemon.status over sc1; workflowChain a local .insrc/artifacts read); no new daemon capability",
+      "quotedText": "The sc9 gateway ... already exposes the two reads S005 needs: status() ... and workflowChain() ... S005 consumes BOTH as-is — no gateway signature change needed"
+    },
+    {
+      "id": "c3",
+      "kind": "convention",
+      "ref": "S004 XSS discipline + the CSP/nonce mitigation for enableScripts:true (the S004 cold review flagged enableScripts:false as the current safety)",
+      "quotedText": "enabling scripts (enableScripts:true) is bounded by a strict CSP + a per-render nonce so only the host's own bootstrap script runs; every daemon-derived value ... stays HTML-escaped"
+    },
+    {
+      "id": "c4",
+      "kind": "step-output",
+      "ref": "s1 reuse.map — the JetBrains on-demand-refresh discipline (Daemon+Workflows refresh only on open/tab-switch/manual; the continuous ticker is Debug-log-only, s6)",
+      "quotedText": "On-demand refresh (open/tab-switch/manual) mirrors the JetBrains discipline: Daemon+Workflows refresh only on those three triggers, NEVER a background poll (the continuous ticker is Debug-log-only, s6)"
+    }
+  ]
+}

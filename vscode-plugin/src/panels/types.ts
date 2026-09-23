@@ -110,10 +110,27 @@ export interface PanelHandle extends DisposableLike {
   reveal(): void;
   /** Fire `listener` when the user closes the panel (clears the host's cached ref). */
   onDidDispose(listener: () => void): void;
+  /**
+   * Subscribe to webview->host messages (S005 sc9 amendment): the interactive tab
+   * strip + Refresh control post {type:'switchTab',tab} / {type:'refresh'} so the
+   * host can re-render on-demand. Wraps webview.onDidReceiveMessage.
+   */
+  onMessage(listener: (message: unknown) => void): void;
+  /** Post a host->webview message (S005 sc9 amendment). Wraps webview.postMessage. */
+  postMessage(message: unknown): void;
 }
 
 /** The `window.createWebviewPanel` slice the host uses (one factory per panel kind). */
 export type PanelFactory = (options: { readonly viewType: string; readonly title: string }) => PanelHandle;
+
+/**
+ * A per-tab body renderer (S005 sc9 amendment). A pure data->html function that
+ * reads the read-only gateway and returns the tab BODY html (the host wraps it in
+ * the shell + interactive tab strip). Consuming stories supply one per tab they
+ * own (S005: daemon + workflows); a tab with no renderer falls back to the host's
+ * built-in default (daemon status) or the 'coming soon' placeholder.
+ */
+export type TabRenderer = (gateway: DaemonDataGateway) => Promise<string>;
 
 /** One choice offered in the status-bar menu (VS Code's `QuickPickItem` satisfies it). */
 export interface MenuItem {
@@ -146,6 +163,13 @@ export interface WebviewPanelHostDeps {
   readonly pickMenu: MenuPicker;
   readonly gateway: DaemonDataGateway;
   readonly logger: PanelLogger;
+  /**
+   * OPTIONAL per-tab body renderers (S005 sc9 amendment). A tab with a renderer
+   * uses it; a tab without falls back to the host's built-in default (daemon
+   * status) or the 'coming soon' placeholder, so a host constructed without this
+   * behaves exactly as the S004 shell.
+   */
+  readonly detailRenderers?: Partial<Record<DetailTab, TabRenderer>> | undefined;
 }
 
 /** The read-only data sources `createDaemonDataGateway` wires (all local, no cloud). */

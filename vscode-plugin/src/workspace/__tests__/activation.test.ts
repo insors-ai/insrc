@@ -60,3 +60,15 @@ test('S004 sc9: both panel commands are palette-reachable (k6) and the menu comm
   assert.ok(ids.includes('insrc.status.repoConfig'), 'Open Repo Configuration is palette-reachable (k6)');
   assert.ok(!ids.includes('insrc.status.menu'), 'the status-bar menu command is not a palette entry');
 });
+
+test('S005 sc9: extension.ts wires detailRenderers + enableScripts:true + the onMessage/postMessage bridge', () => {
+  const entry = readFileSync(join(PKG, 'src', 'extension.ts'), 'utf8');
+  // The daemon + workflows renderers are injected into the host (ac1/ac2).
+  assert.match(entry, /detailRenderers:\s*\{\s*daemon:\s*renderDaemonTab,\s*workflows:\s*renderWorkflowsTab\s*\}/, 'the two renderers are wired via detailRenderers');
+  assert.match(entry, /import \{ renderDaemonTab, renderWorkflowsTab \} from '\.\/panels\/detail-renderers\.js'/, 'the renderers are imported');
+  // The Detailed Status webview is now scripted (for the on-demand tab/refresh bridge, under CSP+nonce).
+  assert.match(entry, /createWebviewPanel\([^)]*\{\s*enableScripts:\s*true\s*\}\)/, 'the panel is created with enableScripts:true');
+  // The PanelHandle bridge is bound to the real webview message API.
+  assert.match(entry, /onMessage:\s*\(listener\)\s*=>\s*\{\s*panel\.webview\.onDidReceiveMessage\(listener\)/, 'onMessage binds webview.onDidReceiveMessage');
+  assert.match(entry, /postMessage:\s*\(message\)\s*=>\s*\{[\s\S]*panel\.webview\.postMessage\(message\)/, 'postMessage binds webview.postMessage');
+});

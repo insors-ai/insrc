@@ -38,6 +38,7 @@ import type { ChangedKey, Notifier, SettingsStore } from './config/types.js';
 import { createDaemonDataGateway } from './panels/daemon-gateway.js';
 import { createWebviewPanelHost } from './panels/webview-host.js';
 import { defaultProcessScan } from './panels/process-scan.js';
+import { renderDaemonTab, renderWorkflowsTab } from './panels/detail-renderers.js';
 import type { PanelHandle } from './panels/types.js';
 
 /** The workspaceState key prefix for the one-time register-prompt dismissal flag (S004). */
@@ -201,7 +202,13 @@ export function activate(context: vscode.ExtensionContext): void {
   });
   const panelHost = createWebviewPanelHost({
     panels: ({ viewType, title }): PanelHandle => {
-      const panel = vscode.window.createWebviewPanel(viewType, title, vscode.ViewColumn.Active, { enableScripts: false });
+      // S005: enableScripts:true so the Detailed Status tab strip + Refresh can
+      // drive on-demand re-renders via the host<->webview message bridge. The
+      // rendered shell carries a strict CSP + per-render nonce (webview-host.ts),
+      // so only the host's own nonce'd bootstrap script runs (XSS-safe). The
+      // repo-config panel flows through the same factory (its script-less
+      // placeholder is unaffected; the shared CSP shell still covers it).
+      const panel = vscode.window.createWebviewPanel(viewType, title, vscode.ViewColumn.Active, { enableScripts: true });
       return {
         setHtml: (html) => {
           panel.webview.html = html;
@@ -210,12 +217,24 @@ export function activate(context: vscode.ExtensionContext): void {
         onDidDispose: (listener) => {
           panel.onDidDispose(listener);
         },
+        onMessage: (listener) => {
+          panel.webview.onDidReceiveMessage(listener);
+        },
+        postMessage: (message) => {
+          // A webview post failure is non-fatal; swallow the rejection (never an
+          // unhandled rejection). The host does not depend on the delivery result.
+          panel.webview.postMessage(message).then(undefined, () => {
+            /* ignore */
+          });
+        },
         dispose: () => panel.dispose(),
       };
     },
     pickMenu: (items) => Promise.resolve(vscode.window.showQuickPick(items, { placeHolder: 'insrc' })),
     gateway: daemonData,
     logger: panelLog,
+    // S005: the daemon + workflows tab bodies. Debug stays a placeholder until s6.
+    detailRenderers: { daemon: renderDaemonTab, workflows: renderWorkflowsTab },
   });
   // The status-bar item's click target — set on the raw StatusBarItem (the sc2
   // StatusBarHandle carries no `command` field and is left untouched).

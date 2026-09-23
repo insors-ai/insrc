@@ -24,7 +24,9 @@ class FakePanel implements PanelHandle {
   html = '';
   reveals = 0;
   disposed = false;
+  readonly posted: unknown[] = [];
   private disposeListener: (() => void) | undefined;
+  private messageListener: ((message: unknown) => void) | undefined;
   constructor(readonly viewType: string, readonly title: string) {}
   setHtml(html: string): void {
     this.html = html;
@@ -35,12 +37,22 @@ class FakePanel implements PanelHandle {
   onDidDispose(listener: () => void): void {
     this.disposeListener = listener;
   }
+  onMessage(listener: (message: unknown) => void): void {
+    this.messageListener = listener;
+  }
+  postMessage(message: unknown): void {
+    this.posted.push(message);
+  }
   dispose(): void {
     this.disposed = true;
   }
   /** Simulate the user closing the panel (fires the host's dispose handler). */
   userClose(): void {
     this.disposeListener?.();
+  }
+  /** Simulate a webview->host message (drives the host's onMessage handler). */
+  injectMessage(message: unknown): void {
+    this.messageListener?.(message);
   }
 }
 
@@ -60,6 +72,7 @@ function fakeGateway(overrides: Partial<DaemonDataGateway> = {}): DaemonDataGate
 function makeHost(opts: {
   pick?: MenuItem | undefined;
   gateway?: DaemonDataGateway;
+  detailRenderers?: WebviewPanelHostDeps['detailRenderers'];
 } = {}): {
   host: ReturnType<typeof createWebviewPanelHost>;
   created: FakePanel[];
@@ -81,6 +94,7 @@ function makeHost(opts: {
     },
     gateway: opts.gateway ?? fakeGateway(),
     logger: { warn: (m) => warns.push(m) },
+    detailRenderers: opts.detailRenderers,
   };
   return { host: createWebviewPanelHost(deps), created, offered, warns };
 }
@@ -189,6 +203,130 @@ test('openRepoConfiguration creates/reveals the separate Repo Configuration shel
   assert.match(created[0]!.html, /Repo Configuration/);
   host.openRepoConfiguration();
   assert.equal(created.length, 1, 'the repo panel is single-instance');
+});
+
+// ---- S005: detailRenderers injection + on-demand message bridge -----------
+
+/** Renderers that count their invocations, for the on-demand / no-poll assertions. */
+function countingRenderers(): {
+  detailRenderers: NonNullable<WebviewPanelHostDeps['detailRenderers']>;
+  counts: { daemon: number; workflows: number };
+} {
+  const counts = { daemon: 0, workflows: 0 };
+  return {
+    counts,
+    detailRenderers: {
+      daemon: async () => {
+        counts.daemon += 1;
+        return `<p class="daemon-view">daemon body</p>`;
+      },
+      workflows: async () => {
+        counts.workflows += 1;
+        return `<p class="workflows-view">workflows body</p>`;
+      },
+    },
+  };
+}
+
+test('S005: openDetailedStatus renders the daemon tab from detailRenderers.daemon (ac1)', async () => {
+  const { detailRenderers } = countingRenderers();
+  const { host, created } = makeHost({ detailRenderers });
+  host.openDetailedStatus();
+  await tick();
+  assert.match(created[0]!.html, /daemon body/, 'the daemon body comes from detailRenderers.daemon');
+  assert.doesNotMatch(created[0]!.html, /coming soon/);
+});
+
+test("S005: a {switchTab:'workflows'} message re-invokes the workflows renderer exactly once and re-sets the html (ac2/ac3)", async () => {
+  const { detailRenderers, counts } = countingRenderers();
+  const { host, created } = makeHost({ detailRenderers });
+  host.openDetailedStatus();
+  await tick();
+  assert.equal(counts.daemon, 1, 'daemon rendered once on open');
+  assert.equal(counts.workflows, 0);
+
+  created[0]!.injectMessage({ type: 'switchTab', tab: 'workflows' });
+  await tick();
+  assert.equal(counts.workflows, 1, 'switching re-invokes the workflows renderer exactly once');
+  assert.match(created[0]!.html, /workflows body/, 'the workflows body is now shown');
+  assert.match(created[0]!.html, /class="tab active"[^>]*data-tab="workflows"/, 'the workflows tab is active');
+});
+
+test('S005: a {refresh} message re-invokes the ACTIVE tab renderer exactly once (ac3)', async () => {
+  const { detailRenderers, counts } = countingRenderers();
+  const { host, created } = makeHost({ detailRenderers });
+  host.openDetailedStatus();
+  await tick();
+  assert.equal(counts.daemon, 1);
+
+  created[0]!.injectMessage({ type: 'refresh' });
+  await tick();
+  assert.equal(counts.daemon, 2, 'refresh re-reads the active (daemon) tab exactly once more');
+  assert.equal(counts.workflows, 0, 'refresh does not touch the inactive tab');
+});
+
+test('S005: NO timer/interval is armed — with no message the renderer call-count stays flat (no background poll, ac3)', async () => {
+  const { detailRenderers, counts } = countingRenderers();
+  const { host } = makeHost({ detailRenderers });
+  host.openDetailedStatus();
+  await tick();
+  const afterOpen = counts.daemon;
+  // Wait well beyond any plausible poll interval; with no message nothing re-reads.
+  await new Promise((r) => setTimeout(r, 30));
+  assert.equal(counts.daemon, afterOpen, 'the daemon renderer is not re-invoked without a message');
+  assert.equal(counts.workflows, 0);
+});
+
+test('S005: an unknown message type, or switchTab with an invalid tab, is a silent no-op', async () => {
+  const { detailRenderers, counts } = countingRenderers();
+  const { host, created, warns } = makeHost({ detailRenderers });
+  host.openDetailedStatus();
+  await tick();
+  const baseline = counts.daemon;
+
+  created[0]!.injectMessage({ type: 'nonsense' });
+  created[0]!.injectMessage({ type: 'switchTab', tab: 'not-a-tab' });
+  created[0]!.injectMessage('a bare string');
+  created[0]!.injectMessage({ type: 'switchTab' }); // missing tab
+  await tick();
+  assert.equal(counts.daemon, baseline, 'no re-render on a malformed/unknown message');
+  assert.equal(counts.workflows, 0);
+  assert.doesNotThrow(() => created[0]!.injectMessage(null), 'a null message never throws');
+  assert.equal(warns.length, 0, 'a malformed message is a silent no-op (not an error)');
+});
+
+test('S005: a late switchTab/refresh after the panel was disposed is skipped', async () => {
+  const { detailRenderers, counts } = countingRenderers();
+  const { host, created } = makeHost({ detailRenderers });
+  host.openDetailedStatus();
+  await tick();
+  const first = created[0]!;
+  const baseline = counts.daemon;
+
+  first.userClose(); // the host clears its cached ref
+  first.injectMessage({ type: 'refresh' }); // a stray late message on the dead panel
+  await tick();
+  assert.equal(counts.daemon, baseline, 'a message after dispose does not re-render');
+});
+
+test('S005: the rendered Detailed Status shell carries a strict CSP + a per-render nonce on the only inline script', async () => {
+  const { detailRenderers } = countingRenderers();
+  const { host, created } = makeHost({ detailRenderers });
+  host.openDetailedStatus();
+  await tick();
+  const html = created[0]!.html;
+  const cspMatch = /Content-Security-Policy" content="([^"]*)"/.exec(html);
+  assert.ok(cspMatch, 'a CSP meta is present');
+  assert.match(cspMatch![1]!, /script-src 'nonce-[^']+'/, "script-src is limited to a nonce");
+  assert.match(cspMatch![1]!, /default-src 'none'/, 'default-src is none');
+  const scriptMatch = /<script nonce="([^"]+)">/.exec(html);
+  assert.ok(scriptMatch, 'the only inline script carries a nonce');
+  assert.ok(cspMatch![1]!.includes(`nonce-${scriptMatch![1]!}`), 'the CSP nonce matches the script nonce');
+  // A second render mints a FRESH nonce (per-render).
+  created[0]!.injectMessage({ type: 'refresh' });
+  await tick();
+  const nonce2 = /<script nonce="([^"]+)">/.exec(created[0]!.html)![1]!;
+  assert.notEqual(nonce2, scriptMatch![1]!, 'each render uses a fresh nonce');
 });
 
 test('source-scan: webview-host.ts imports no vscode module (extension.ts stays the sole vscode importer)', () => {

@@ -89,6 +89,7 @@ import {
 import type { RpcHandler, StreamHandler } from './server.js';
 import { listModels } from './list-models.js';
 import { makeUpdateHandlers, launchUpdate, readUpdateOutcome } from './update-runner.js';
+import { readInstalledCommit } from './installed-commit.js';
 
 const BACKEND_OFFLINE_REASON =
 	'backend offline: this RPC was removed during the cleanup. The next backend (Ollama + CLI subprocess) will reinstate the surface.';
@@ -934,6 +935,9 @@ async function main(): Promise<void> {
 				embeddingsPending: queue.depth, // approximate
 				modelPullStatus: modelState.status === 'pulling' ? 'pulling' : 'ready',
 				...(modelState.pct !== undefined && { modelPullPct: modelState.pct }),
+				// Story S002 (sc2): the daemon's installed source commit for freshness
+				// checks. Best-effort git read; '' when undeterminable, never throws.
+				installedCommit: readInstalledCommit(),
 			};
 			// LMDB env file size for compact-when-needed surfacing.
 			try {

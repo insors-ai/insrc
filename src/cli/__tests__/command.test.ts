@@ -29,7 +29,7 @@ function ctxWith(overrides: Partial<Services> = {}): { ctx: CommandCtx; spies: S
 	const base: Services = {
 		daemon: {
 			isRunning: () => true,
-			getStatus: async () => ({ uptime: 61, repos: [], queueDepth: 3, embeddingsPending: 0, modelPullStatus: 'ready' }),
+			getStatus: async () => ({ uptime: 61, repos: [], queueDepth: 3, embeddingsPending: 0, modelPullStatus: 'ready', installedCommit: '' }),
 			startDaemon: async () => ({ started: true, logPath: '', alreadyRunning: false, pid: 42 }),
 			stopDaemon: async () => {},
 			restart: async () => ({ ok: true, steps: [] }),

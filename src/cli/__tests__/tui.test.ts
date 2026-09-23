@@ -29,7 +29,7 @@ import type { ModelRecommendation } from '../../shared/model-recommender.js';
 const settle = (): Promise<void> => new Promise(r => setTimeout(r, 25));
 
 function status(overrides: Partial<DaemonStatus> = {}): DaemonStatus {
-	return { uptime: 3661, repos: [], queueDepth: 2, embeddingsPending: 0, ...overrides };
+	return { uptime: 3661, repos: [], queueDepth: 2, embeddingsPending: 0, installedCommit: '', ...overrides };
 }
 
 function repo(path: string, s: RegisteredRepo['status'] = 'ready'): RegisteredRepo {

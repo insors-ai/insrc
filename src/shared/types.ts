@@ -891,6 +891,14 @@ export interface DaemonStatus {
    *  would reclaim space (LMDB never returns freed pages to the OS;
    *  large delete bursts inflate the file until compact-and-replace). */
   lmdbFileSizeMb?:   number;
+  /**
+   * The daemon's currently-installed source commit (Story S002 / sc2): the full
+   * `git rev-parse HEAD` of the daemon checkout root, or `""` when undeterminable
+   * (non-git/absent root, or git unavailable). A caller compares it against the
+   * upstream default-branch commit to judge freshness — no version scheme (k1).
+   * Read best-effort inside daemon.status's never-throw contract.
+   */
+  installedCommit:   string;
 }
 
 /**

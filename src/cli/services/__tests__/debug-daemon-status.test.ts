@@ -25,7 +25,7 @@ function repo(name: string, status: RegisteredRepo['status'], kind?: RegisteredR
 }
 
 function status(overrides: Partial<DaemonStatus> = {}): DaemonStatus {
-	return { uptime: 3661, repos: [], queueDepth: 0, embeddingsPending: 0, ...overrides };
+	return { uptime: 3661, repos: [], queueDepth: 0, embeddingsPending: 0, installedCommit: '', ...overrides };
 }
 
 const NO_FILES: Pick<DaemonStatusDeps, 'socket' | 'pidFile' | 'daemonRoot'> = {

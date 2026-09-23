@@ -893,6 +893,44 @@ export interface DaemonStatus {
   lmdbFileSizeMb?:   number;
 }
 
+/**
+ * Params for the `daemon.update` IPC (Story S001 / sc1). Reserved for
+ * future options (e.g. a target branch); no fields are required today, so
+ * the handler accepts an absent or empty object.
+ */
+export interface DaemonUpdateParams {
+  // reserved for future options; no fields required today
+  [key: string]: unknown;
+}
+
+/**
+ * Result of the `daemon.update` IPC (Story S001 / sc1). This is a LAUNCH
+ * acknowledgement, NOT the terminal outcome: the daemon spawns a detached
+ * update+restart helper and then exits, so the caller's socket drops. The
+ * caller reconnects and reads the terminal result via `daemon.updateOutcome`
+ * (plus the fresh installed commit from `daemon.status`).
+ */
+export interface DaemonUpdateResult {
+  /** the detached update+restart helper was spawned */
+  launched: boolean;
+  /** human-readable status (e.g. which branch is being updated) */
+  message?: string;
+}
+
+/**
+ * Terminal record of a daemon self-update (Story S001 / sc1), persisted by
+ * the detached helper to `PATHS.updateOutcome` and returned verbatim by the
+ * `daemon.updateOutcome` IPC. `error` carries the raw underlying error on
+ * failure; there is no retry or rollback (the daemon owns its own state).
+ */
+export interface DaemonUpdateOutcome {
+  state:      'succeeded' | 'failed';
+  /** raw error summary on failure */
+  error?:     string;
+  /** ISO-8601 timestamp of when the helper finished */
+  finishedAt: string;
+}
+
 /** The index status of a registered repo — the same union `RegisteredRepo.status` uses. */
 export type RepoStatus = 'pending' | 'indexing' | 'ready' | 'error';
 

@@ -22,6 +22,8 @@ function fakeClient(handlers: Record<string, (params: unknown) => unknown>): { c
     },
     status: async () => ({ uptime: 0 } as unknown as DaemonStatus),
     reachability: async () => 'running' as DaemonReachability,
+    update: async () => ({ launched: false }),
+    updateOutcome: async () => null,
   };
   return { client, calls };
 }

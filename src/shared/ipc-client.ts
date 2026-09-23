@@ -1,5 +1,5 @@
 import { createConnection, type Socket } from 'node:net';
-import type { IpcRequest, IpcResponse, DaemonStatus } from './types.js';
+import type { IpcRequest, IpcResponse, DaemonStatus, DaemonUpdateResult, DaemonUpdateOutcome } from './types.js';
 import { PATHS } from './paths.js';
 
 // The single thin socket-client boundary shared by the CLI/TUI and the VS Code
@@ -95,6 +95,16 @@ export interface IpcClient {
   status(): Promise<DaemonStatus>;
   /** Coarse reachability, derived from a `daemon.status` outcome. Never throws. */
   reachability(): Promise<DaemonReachability>;
+  /**
+   * Ask the daemon to update AND restart itself (Story S001 / sc1). Resolves with
+   * a launch acknowledgement ({ launched:true }); the daemon then restarts, so
+   * the caller's socket drops and it must reconnect. The terminal result is read
+   * back via {@link updateOutcome} after reconnect. Rejects (result.error) when an
+   * update is already in progress or the daemon root/helper cannot be resolved.
+   */
+  update(): Promise<DaemonUpdateResult>;
+  /** The last persisted daemon self-update outcome, or null when none exists. */
+  updateOutcome(): Promise<DaemonUpdateOutcome | null>;
 }
 
 /**
@@ -118,5 +128,7 @@ export function createIpcClient(connect?: () => Socket): IpcClient {
         return message.startsWith(DAEMON_DOWN_PREFIX) ? 'stopped' : 'errored';
       }
     },
+    update: () => call<DaemonUpdateResult>('daemon.update'),
+    updateOutcome: () => call<DaemonUpdateOutcome | null>('daemon.updateOutcome'),
   };
 }

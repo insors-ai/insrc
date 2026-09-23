@@ -148,6 +148,8 @@ test('the daemon gateway sends writeKeyPath as the config.write ARRAY form and r
     },
     status: async () => ({} as DaemonStatus),
     reachability: async () => 'running',
+    update: async () => ({ launched: false }),
+    updateOutcome: async () => null,
   };
   const gw = createDaemonConfigGateway(fakeClient);
   await gw.writeKeyPath(['models', 'tasks', 'context.assemble'], 'core');

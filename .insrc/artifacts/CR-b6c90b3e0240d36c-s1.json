@@ -1,0 +1,57 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1790189557375-ypoxjq",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-23T18:52:37.376Z",
+    "model": "client",
+    "elapsedMs": 10,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b6c90b3e0240d36c",
+    "storyId": "s1"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "b6c90b3e0240d36c",
+    "storyId": "s1",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        ".insrc/artifacts/CR-ba132c185fe45860-s1.json",
+        "src/daemon/index.ts",
+        "src/shared/ipc-client.ts",
+        "src/shared/paths.ts",
+        "src/shared/types.ts",
+        "vscode-plugin/src/__tests__/activation.test.ts",
+        "vscode-plugin/src/config/__tests__/per-role-engine.test.ts",
+        "vscode-plugin/src/daemon/__tests__/controller.test.ts",
+        "vscode-plugin/src/workspace/__tests__/registrar.test.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 0
+    }
+  }
+}

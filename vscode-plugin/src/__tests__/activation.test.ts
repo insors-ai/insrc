@@ -30,6 +30,8 @@ function clientReturning(reachability: DaemonReachability | (() => Promise<Daemo
     rpc: async () => undefined as never,
     status: async () => ({ uptime: 0, repos: [], queueDepth: 0, embeddingsPending: 0 } as DaemonStatus),
     reachability: typeof reachability === 'function' ? reachability : async () => reachability,
+    update: async () => ({ launched: false }),
+    updateOutcome: async () => null,
   };
 }
 

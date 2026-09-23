@@ -88,6 +88,7 @@ import {
 
 import type { RpcHandler, StreamHandler } from './server.js';
 import { listModels } from './list-models.js';
+import { makeUpdateHandlers, launchUpdate, readUpdateOutcome } from './update-runner.js';
 
 const BACKEND_OFFLINE_REASON =
 	'backend offline: this RPC was removed during the cleanup. The next backend (Ollama + CLI subprocess) will reinstate the surface.';
@@ -464,6 +465,11 @@ async function main(): Promise<void> {
 	};
 
 	// 7. Start IPC server
+	// Delay before the daemon shuts itself down after a daemon.update launch —
+	// long enough for the { launched:true } result to flush to the caller's
+	// socket, short enough that the detached helper's stop+start proceeds
+	// promptly (Story S001 / sc1).
+	const UPDATE_SHUTDOWN_DELAY_MS = 250;
 	const server = new IpcServer({
 		'repo.add': async (params) => {
 			const rawPath = (params as { path?: unknown })?.path;
@@ -1488,6 +1494,20 @@ async function main(): Promise<void> {
 			log.info({ ...result }, 'lmdb env compacted');
 			return result;
 		},
+
+		// Story S001 (sc1): the daemon-owned update+restart IPC. `daemon.update`
+		// spawns a DETACHED helper (daemon-ctl.sh restart) that outlives this
+		// process, then schedules our own shutdown so the helper's stop+start is
+		// clean — the caller's socket drops and it reconnects to the fresh daemon.
+		// `daemon.updateOutcome` reads back the terminal result the helper persists.
+		...makeUpdateHandlers({
+			launch:      launchUpdate,
+			readOutcome: readUpdateOutcome,
+			scheduleShutdown: () => {
+				const t = setTimeout(() => shutdown('daemon.update RPC'), UPDATE_SHUTDOWN_DELAY_MS);
+				t.unref();
+			},
+		}),
 
 		// Per-workspace data-analyzer DB introspection + reset. Backing
 		// pool lives at <workspaceRoot>/.insrc/data-analyzer.db. Status

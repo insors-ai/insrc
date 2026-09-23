@@ -1,0 +1,192 @@
+{
+  "meta": {
+    "workflow": "brainstorm",
+    "runId": "wf-1790182634361-gr39sp",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-23T17:23:43.069Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 1588536,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "specHash": "85236f6960022cbc",
+    "epicSlug": "both-plugins-vs-code-jetbrains-should",
+    "review": {
+      "artifact": "brainstorm",
+      "stage": "brainstorm",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "ref": "decision-3/intent",
+          "kind": "external-contract",
+          "severity": "MED",
+          "premise": "A daemon-owned IPC method for updating the daemon (e.g. 'maintenance.update') that pulls+rebuilds+respawns exists or is the intended surface; today the daemon handler map has no such maintenance.* update IPC (the plugins shell out to daemon-ctl.sh update instead), so this is a net-new daemon capability to build.",
+          "evidence": "Direct source check: the daemon handler map registers only 'daemon.backup', 'daemon.compact', 'daemon.debug-status', 'daemon.shutdown', 'daemon.status' — there is NO 'maintenance.*' IPC and no 'daemon.update'/'daemon.restart'/'daemon.respawn'. The update runs as an external script (scripts/daemon-ctl.sh update, git fetch + merge --ff-only), which both plugins currently SHELL OUT to (JetBrains 'UPDATE -> daemon-ctl.sh update'; VS Code LifecycleAction 'update' via the controller). So the SPEC/decision-3 wording 'runs the EXISTING update/restart service functions in-process' overstates today's reality: the daemon-owned update IPC does NOT exist — it is NET-NEW, and it must wrap the daemon-ctl.sh logic.",
+          "action": "Non-blocking for a requirements SPEC, but the design stage MUST size decision-3 as building a NEW daemon IPC (wrapping the existing daemon-ctl.sh update logic), not calling an existing one. Recommend the DEF/HLD note explicitly: 'maintenance.update' is a new daemon capability; the plugins move from shelling out to daemon-ctl.sh to calling this IPC.",
+          "fixability": "assisted"
+        },
+        {
+          "claimId": "cl2",
+          "ref": "intent/decision-3",
+          "kind": "external-contract",
+          "severity": "LOW",
+          "premise": "The daemon does NOT self-restart/respawn via IPC today (restart-after-update is the load-bearing gap the feature must add) — there is no daemon IPC that respawns the daemon process.",
+          "evidence": "Confirmed: no daemon self-restart/respawn IPC exists — the only lifecycle-ish IPC is 'daemon.shutdown'; restart/respawn is done externally by daemon-ctl.sh (kill + re-spawn the process). The SPEC CORRECTLY identifies restart-after-update as the load-bearing gap to build (a daemon respawning itself mid-request over IPC is genuinely net-new and is the crux the user flagged). Verified sound — the spec's framing matches reality.",
+          "action": "None — the SPEC accurately flags the self-restart gap. The design must solve daemon self-respawn (e.g. the daemon spawns a detached updater that rebuilds + restarts it, then the plugin reconnects).",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl3",
+          "ref": "decision-1/citation-c2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The daemon ships updates via scripts/daemon-ctl.sh update (git pull + rebuild), the unversioned rolling-release mechanism the git-commit-comparison detection is built on.",
+          "evidence": "Confirmed: scripts/daemon-ctl.sh update does `git -C $DAEMON_ROOT fetch origin <branch>` + `merge --ff-only` + rev-parse HEAD vs origin/branch (lines 81-104) — the unversioned rolling-release mechanism the git-commit-comparison detection (decision-1) is correctly built on. The rev-parse HEAD vs origin/branch is exactly the commit comparison the plugin will mirror via a remote check.",
+          "action": "None — verified sound; daemon-ctl.sh already computes current-vs-incoming commit, a useful reference for the detection design.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl4",
+          "ref": "intent/decision-1",
+          "kind": "external-contract",
+          "severity": "LOW",
+          "premise": "A daemon.status IPC exists today (the feature adds a lightweight installed-git-commit field to it, or a sibling IPC), so the plugin can read the daemon's installed commit over the existing socket.",
+          "evidence": "Confirmed: the 'daemon.status' IPC handler exists at src/daemon/index.ts:922. So decision-1's 'lightweight daemon.status field/IPC' reporting the installed git commit is feasible as an additive field on the existing status handler.",
+          "action": "None — verified sound.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl5",
+          "ref": "intent",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "Both plugins already have a daemon update action wired to daemon-ctl.sh update today (VS Code LifecycleAction 'update'; JetBrains DaemonLifecycle UPDATE -> daemon-ctl.sh update), which this feature re-points at the new daemon IPC (or augments with the startup check + self-update trigger).",
+          "evidence": "Confirmed: VS Code has LifecycleAction 'update' (controller.ts:16) and JetBrains maps UPDATE -> daemon-ctl.sh update (DaemonLifecycleContracts.kt:45) — both plugins already have a daemon-update action shelling out to the script, which this feature augments (startup check + self-update trigger) and re-points at the new daemon IPC.",
+          "action": "None — verified sound; the existing update actions are the natural integration point.",
+          "fixability": "auto"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 1,
+        "low": 4
+      },
+      "reviewedAt": "2026-09-23T17:25:40.179Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-23T17:27:15.126Z",
+    "reviewOverride": {
+      "reason": "Accept-with-note: the sole MED is a prose-accuracy nuance, not a flawed decision — the daemon-owned maintenance.update + self-restart IPC is confirmed NET-NEW (no daemon update/restart IPC exists today; the plugins shell out to daemon-ctl.sh). The decisions are all sound and the 4 LOWs verified sound. Carrying the correction forward: the DEF/HLD MUST size decision-3 as building a NEW daemon IPC that wraps the existing daemon-ctl.sh update logic AND adds daemon self-respawn/restart, with the plugins moving from shelling out to daemon-ctl.sh to calling this IPC. User explicitly approved on this basis.",
+      "at": "2026-09-23T17:27:15.126Z"
+    }
+  },
+  "body": {
+    "category": "requirements",
+    "intent": "Both the VS Code and JetBrains plugins keep the locally-installed insrc daemon current, not just themselves, via two paths that share one update mechanism. (1) Startup-check path: on every plugin activation (unconditional, no caching), once the plugin's existing daemon-connect flow has an IPC connection, the plugin asks the daemon for its installed git commit (a lightweight daemon.status field/IPC) and does a remote check (git ls-remote, no pull) against the daemon repo's default branch; if they differ it shows an in-IDE toast/balloon ('update available') with inline Update/Dismiss actions (no modal) and updates the daemon ONLY on the user's approval. (2) Self-update path: when the plugin's own updater updates the plugin itself, it ALSO triggers a daemon update automatically, with no second approval prompt, asynchronously/fire-and-forget — the plugin's own update+restart completes on its own timeline, the daemon update is kicked off separately (e.g. on the next successful IPC reconnect after the plugin restarts), and a notification that the daemon was updated too arrives independently. Both paths invoke the update the same way: the plugin calls a daemon-owned IPC method (e.g. maintenance.update) that runs the existing update/restart service functions in-process — pull, rebuild, AND respawn/restart (restart-after-update is the load-bearing part, since the IPC does not self-restart today) — and the plugin waits and reconnects. On a maintenance.update failure on either path the plugin surfaces a single failure notification with the raw error summary, leaves the daemon in whatever state the failed update left it, and does not retry or roll back.",
+    "scopeBoundary": "Freshness is judged purely by git-commit comparison against the daemon repo's default branch — the daemon gets NO versioned releases and no self-reported version number (per the existing release model). The startup-check path is the ONLY path that asks for approval; the plugin-self-update daemon-update trigger is automatic (notify-after) and does not prompt a second time, and it is fire-and-forget — it never blocks the plugin's own update/restart. The feature adds NO new daemon-autostart logic: the check runs only opportunistically when the plugin's existing connect flow already has the daemon reachable, and is simply skipped for an activation where the daemon is unreachable. The startup check is NOT throttled/cached (it runs on every activation). There is NO plugin-side retry and NO rollback on a failed update — the daemon owns its own lifecycle/state. The actual pull/rebuild/respawn is owned by the daemon's update capability, not reimplemented per-plugin and not shelled out to daemon-ctl.sh directly.",
+    "nonGoals": [
+      "Daemon does not get versioned releases — no daemon 'version number' is introduced; freshness is judged purely by git commit comparison, per the existing release model.",
+      "Plugin self-update's daemon-update trigger does not prompt for a second approval — only the startup-check path asks.",
+      "This feature does not add new daemon-autostart logic — the update check only runs opportunistically when the plugin's existing connect flow already has the daemon reachable.",
+      "No retry or rollback on a failed maintenance.update call, on either path.",
+      "The startup check is not throttled/cached — it runs on every plugin activation unconditionally.",
+      "The plugin's own update/restart flow does not block on the daemon update finishing — the daemon update is fire-and-forget relative to the plugin's self-update.",
+      "Introduce a semantic version the daemon self-reports (e.g. bump on each daemon-ctl.sh update run) and compare against a published 'latest' manifest.",
+      "Time-based heuristic: prompt to update if the daemon hasn't been updated in N days, regardless of whether upstream actually changed.",
+      "Separate approval prompt",
+      "Fully automatic, no notification",
+      "Plugin shells out directly to the `daemon-ctl.sh update` script as a subprocess, bypassing the live daemon entirely — the same path a human runs manually.",
+      "Each plugin reimplements the update sequence itself (kill daemon process, git pull/fetch, rebuild, respawn) using its own existing daemon-lifecycle code (the same code that installs/starts the daemon on first run).",
+      "Native OS notification/toast with 'Update' / 'Later' action buttons",
+      "Blocking in-IDE modal dialog shown right at startup",
+      "Non-blocking status-bar indicator (badge/tooltip) the user clicks to open an approve dialog, reusing each plugin's existing daemon-status status-bar surface",
+      "Throttled — cache the last check time (e.g. in plugin-local state); skip the remote check if the last one was within a cooldown window (e.g. 24h), regardless of how many times the IDE restarts in that window.",
+      "Throttled at startup AND re-checked periodically in the background while the IDE session stays open (e.g. every N hours via a timer).",
+      "Same failure notification, plus the plugin offers a 'Retry' action inline on that notification that re-invokes `maintenance.update`.",
+      "On failure, the daemon-side `maintenance.update` itself attempts to roll back to the last-known-good commit/build before reporting failure to the plugin.",
+      "Synchronous / blocking: the plugin's updater waits for maintenance.update (pull+rebuild+respawn+reconnect) to finish before it considers its own update flow done, then shows one consolidated 'plugin + daemon updated' notification."
+    ],
+    "decisions": [
+      {
+        "chosen": "Git commit comparison: daemon reports its installed git commit (new lightweight daemon.status field or IPC), plugin does a remote check (git ls-remote / fetch, no pull) against the daemon repo's default branch and flags 'update available' if commits differ.",
+        "ruledOut": [
+          "Introduce a semantic version the daemon self-reports (e.g. bump on each daemon-ctl.sh update run) and compare against a published 'latest' manifest.",
+          "Time-based heuristic: prompt to update if the daemon hasn't been updated in N days, regardless of whether upstream actually changed."
+        ],
+        "reason": "The daemon has no discrete versioned releases — per the existing release model, daemon features ship by pulling latest via daemon-ctl.sh update, not by cutting a version. So how should the plugin determine 'a daemon update is available'?"
+      },
+      {
+        "chosen": "Automatic, notify-after",
+        "ruledOut": [
+          "Separate approval prompt",
+          "Fully automatic, no notification"
+        ],
+        "reason": "Actual update execution should reuse the existing maintenance.update/restart service functions (daemon-ctl.sh update), not manual git+kill+nohup, per prior daemon-lifecycle-cli work — that's an implementation detail for the design stage, not this decision. This decision is purely about whether the bundled update needs its own consent step."
+      },
+      {
+        "chosen": "Plugin calls a daemon-owned IPC method (e.g. `maintenance.update`) that runs the existing update/restart service functions in-process; the daemon pulls, rebuilds, and respawns itself, and the plugin waits and reconnects.",
+        "ruledOut": [
+          "Plugin shells out directly to the `daemon-ctl.sh update` script as a subprocess, bypassing the live daemon entirely — the same path a human runs manually.",
+          "Each plugin reimplements the update sequence itself (kill daemon process, git pull/fetch, rebuild, respawn) using its own existing daemon-lifecycle code (the same code that installs/starts the daemon on first run)."
+        ],
+        "reason": "Once an update is approved (startup path) or auto-triggered (plugin self-update path), what actually performs the daemon update — how does the plugin invoke it?"
+      },
+      {
+        "chosen": "In-IDE notification-center/toast (VS Code's `showInformationMessage`, JetBrains' Notifications balloon) with inline Update/Dismiss actions, no modal",
+        "ruledOut": [
+          "Native OS notification/toast with 'Update' / 'Later' action buttons",
+          "Blocking in-IDE modal dialog shown right at startup",
+          "Non-blocking status-bar indicator (badge/tooltip) the user clicks to open an approve dialog, reusing each plugin's existing daemon-status status-bar surface"
+        ],
+        "reason": "For the startup-check path, what UI surface does the plugin use to notify the user 'a daemon update is available' and collect their approve/dismiss decision, in each IDE?"
+      },
+      {
+        "chosen": "Every startup, unconditionally — git ls-remote once each time the plugin activates, no caching.",
+        "ruledOut": [
+          "Throttled — cache the last check time (e.g. in plugin-local state); skip the remote check if the last one was within a cooldown window (e.g. 24h), regardless of how many times the IDE restarts in that window.",
+          "Throttled at startup AND re-checked periodically in the background while the IDE session stays open (e.g. every N hours via a timer)."
+        ],
+        "reason": "The startup path does a remote git check (ls-remote/fetch) against the daemon repo's default branch. Should this check run on every plugin/IDE startup, or be throttled to avoid a network round-trip on every launch?"
+      },
+      {
+        "chosen": "Surface a single failure notification with the raw error summary (toast/balloon), leave the daemon in whatever state `maintenance.update` left it (old build still running if respawn never happened, or down if it did), and stop — no retry, no rollback.",
+        "ruledOut": [
+          "Same failure notification, plus the plugin offers a 'Retry' action inline on that notification that re-invokes `maintenance.update`.",
+          "On failure, the daemon-side `maintenance.update` itself attempts to roll back to the last-known-good commit/build before reporting failure to the plugin."
+        ],
+        "reason": "If the daemon-owned `maintenance.update` call fails (git pull conflict, build/compile failure, respawn crash) on either path — startup-approved or plugin-self-update-triggered — what should the plugin do?"
+      },
+      {
+        "chosen": "Async / fire-and-forget: the plugin's own update+restart completes on its own timeline; the daemon maintenance.update call is kicked off separately (e.g. on the next successful IPC reconnect after the plugin restarts) and its success/failure notification arrives independently, whenever it lands.",
+        "ruledOut": [
+          "Synchronous / blocking: the plugin's updater waits for maintenance.update (pull+rebuild+respawn+reconnect) to finish before it considers its own update flow done, then shows one consolidated 'plugin + daemon updated' notification."
+        ],
+        "reason": "On the plugin-self-update path, the plugin's own updater triggers a daemon maintenance.update call automatically. Should the plugin's own update/restart flow BLOCK on the daemon update finishing, or proceed independently while the daemon updates in the background?"
+      }
+    ],
+    "openItems": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "step-output",
+      "ref": "s1",
+      "quotedText": "The confirmed brainstorm convergence (7 decisions) for the plugins-keep-the-daemon-current feature: git-commit detection, automatic notify-after self-update, daemon-owned maintenance.update IPC doing pull+rebuild+respawn, in-IDE toast/balloon notify, every-startup unconditional check, notify-and-stop failure, async/fire-and-forget self-update sequencing."
+    },
+    {
+      "id": "c2",
+      "kind": "convention",
+      "ref": "release-model + daemon-lifecycle-cli: the daemon ships by `daemon-ctl.sh update` (git pull + rebuild), unversioned, and update/restart go through the maintenance.update/restart service fns — the basis for the git-commit detection + IPC-owned execution decisions.",
+      "quotedText": "daemon features ship via daemon-ctl.sh update, not by cutting a release; update/restart via the maintenance.update/restart service fns, not manual git+kill+nohup."
+    }
+  ]
+}

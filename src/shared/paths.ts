@@ -17,6 +17,18 @@ export const PATHS = {
   conventions: join(INSRC_DIR, 'conventions'),  // global config conventions
   pidFile:     join(INSRC_DIR, 'daemon.pid'),
   sockFile:    join(INSRC_DIR, 'daemon.sock'),
+  // Terminal record of the last daemon self-update (Story S001 / sc1).
+  // The detached update+restart helper writes a DaemonUpdateOutcome here
+  // on completion/failure; the restarted daemon's `daemon.updateOutcome`
+  // handler reads it back so a reconnecting caller learns the result even
+  // though the triggering socket was severed by the restart.
+  updateOutcome: join(INSRC_DIR, 'daemon.update-outcome.json'),
+  // Concurrent-launch marker for `daemon.update` (Story S001 / sc1). Its
+  // presence (with a live pid) means an update helper is in flight, so a
+  // second daemon.update is rejected until it clears. A stale marker
+  // (dead pid / aged) is ignored, mirroring the daemon-ctl.sh pidfile
+  // staleness idiom.
+  updateLock:    join(INSRC_DIR, 'daemon.update.lock'),
   agents:      join(INSRC_DIR, 'agents'),          // agent run storage
   agentIndex:  join(INSRC_DIR, 'agents', 'index.json'),
   // Backing-file directory for ephemeral workbench panes (notepad,

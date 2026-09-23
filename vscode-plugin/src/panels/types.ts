@@ -154,6 +154,37 @@ export interface TabController {
   onActivate(ctx: TabActivationCtx): () => void;
 }
 
+/**
+ * The Repo Configuration panel body renderer (S007 sc9 amendment). A VS-Code-free
+ * pure fn: given the currently-selected repoPath (or undefined) it returns the
+ * panel BODY html (the repo <select> + the selected repo's per-repo form). Unlike
+ * a TabRenderer it takes NO gateway argument and reads its OWN data internally
+ * (registeredRepos + rawConfig, injected at construction), so the host stays a pure
+ * dispatcher that reads no config. A read rejection PROPAGATES so the host degrades
+ * the panel. extension.ts supplies the concrete renderer (renderRepoConfig).
+ */
+export type RepoConfigRenderer = (selected: string | undefined) => Promise<string>;
+
+/** The narrow injected boundary the Repo Configuration renderer reads through. */
+export interface RepoConfigRendererDeps {
+  /** The daemon's registered repos (folder-independent) — the picker source. */
+  registeredRepos(): Promise<readonly RepoRef[]>;
+  /** The raw ~/.insrc/config.json (config.show) — the source of per-repo overrides. */
+  rawConfig(): Promise<Record<string, unknown>>;
+}
+
+/**
+ * One per-repo field write emitted by the Repo Configuration form (S007). `segments`
+ * is the trailing path UNDER models.byRepo[repoPath] (e.g. ['tiers','core','runner']);
+ * the write handler prefixes ['models','byRepo',repoPath] before the config.write
+ * ARRAY form. `value` is the field value, or null to clear an override.
+ */
+export interface RepoConfigWrite {
+  readonly repoPath: string;
+  readonly segments: readonly string[];
+  readonly value: unknown;
+}
+
 /** One choice offered in the status-bar menu (VS Code's `QuickPickItem` satisfies it). */
 export interface MenuItem {
   readonly label: string;
@@ -206,6 +237,20 @@ export interface WebviewPanelHostDeps {
    * (the consent-gated orphan kill, k4); the host performs none itself.
    */
   readonly onDetailAction?: ((action: string) => void) | undefined;
+  /**
+   * OPTIONAL Repo Configuration panel body renderer (S007 sc9 amendment). When
+   * wired, openRepoConfiguration renders its body (picker + per-repo form) instead
+   * of the S004 placeholder. A host built without it renders the S004 placeholder
+   * exactly (fallback preserved).
+   */
+  readonly repoRenderer?: RepoConfigRenderer | undefined;
+  /**
+   * OPTIONAL sink for a per-repo config write (S007 sc9 amendment). The repo form
+   * posts a {type:'repoWrite', repoPath, segments, value} message; the host forwards
+   * a validated RepoConfigWrite here. extension.ts owns the effect (the consent-gated
+   * config.write, k4); the host performs no write itself.
+   */
+  readonly onRepoConfigWrite?: ((write: RepoConfigWrite) => void) | undefined;
 }
 
 /** The read-only data sources `createDaemonDataGateway` wires (all local, no cloud). */

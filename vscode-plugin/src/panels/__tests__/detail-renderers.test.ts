@@ -103,12 +103,22 @@ test('source-scan: detail-renderers.ts imports no vscode and uses no cloud/HTTP 
   assert.doesNotMatch(src, /\b(undici|fetch\(|node:http\b|node:https\b|axios)\b/, 'no cloud/HTTP client in the renderers');
 });
 
-test('source-scan: the webview bootstrap script only posts the sanctioned message shapes (switchTab/refresh/action)', () => {
+test('source-scan: the webview bootstraps post only the sanctioned message shapes (closed set)', () => {
   const src = readFileSync(join(HERE, '..', 'webview-host.ts'), 'utf8');
   const bootstrap = /const BOOTSTRAP = `([\s\S]*?)`;/.exec(src);
-  assert.ok(bootstrap, 'the BOOTSTRAP script constant is present');
-  const posts = [...bootstrap![1]!.matchAll(/postMessage\(\{\s*type:\s*'([^']+)'/g)].map((m) => m[1]);
+  assert.ok(bootstrap, 'the detail BOOTSTRAP script constant is present');
+  const detailPosts = [...bootstrap![1]!.matchAll(/postMessage\(\{\s*type:\s*'([^']+)'/g)].map((m) => m[1]);
   // S006 added {type:'action'} (the Debug Clean-up button) + {type:'ready'} (the
   // load handshake that gates the log ticker); still a fixed, closed set.
-  assert.deepEqual(posts.sort(), ['action', 'ready', 'refresh', 'switchTab'], 'the bootstrap posts only switchTab + refresh + action + ready');
+  assert.deepEqual(detailPosts.sort(), ['action', 'ready', 'refresh', 'switchTab'], 'the detail bootstrap posts only switchTab + refresh + action + ready');
+
+  // S007 added a SEPARATE repo bootstrap posting only {selectRepo} + {repoWrite}.
+  const repo = /const REPO_BOOTSTRAP = `([\s\S]*?)`;/.exec(src);
+  assert.ok(repo, 'the REPO_BOOTSTRAP script constant is present');
+  const repoPosts = [...repo![1]!.matchAll(/postMessage\(\{\s*type:\s*'([^']+)'/g)].map((m) => m[1]);
+  assert.deepEqual(repoPosts.sort(), ['repoWrite', 'selectRepo'], 'the repo bootstrap posts only selectRepo + repoWrite');
+
+  // The union across both bootstraps is the full closed set — nothing else is posted.
+  const union = [...new Set([...detailPosts, ...repoPosts])].sort();
+  assert.deepEqual(union, ['action', 'ready', 'refresh', 'repoWrite', 'selectRepo', 'switchTab'], 'the closed message set');
 });

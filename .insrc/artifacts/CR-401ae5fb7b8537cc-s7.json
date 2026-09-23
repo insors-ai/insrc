@@ -1,0 +1,62 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1790160165623-vwl225",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-23T10:42:45.623Z",
+    "model": "client",
+    "elapsedMs": 4,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "401ae5fb7b8537cc",
+    "storyId": "s7"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "401ae5fb7b8537cc",
+    "storyId": "s7",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "vscode-plugin/src/extension.ts",
+        "vscode-plugin/src/panels/__tests__/detail-renderers.test.ts",
+        "vscode-plugin/src/panels/__tests__/webview-host.test.ts",
+        "vscode-plugin/src/panels/types.ts",
+        "vscode-plugin/src/panels/webview-host.ts",
+        "vscode-plugin/src/workspace/__tests__/activation.test.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/extension.ts:197",
+            "message": "panelLog uses console.warn(`[insrc] …`) rather than a structured getLogger — the intentional, documented k5 deviation (importing the daemon pino stack would fail the thin-bundle allowlist), consistent with the S004/S005/S006 precedent.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 1
+    }
+  }
+}

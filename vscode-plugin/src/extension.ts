@@ -41,6 +41,7 @@ import { createWebviewPanelHost } from './panels/webview-host.js';
 import { defaultProcessScan } from './panels/process-scan.js';
 import { renderDaemonTab, renderWorkflowsTab } from './panels/detail-renderers.js';
 import { renderDebugTab, createDebugTabController, createDebugActionHandler } from './panels/debug-renderer.js';
+import { renderRepoConfig, createRepoConfigWriteHandler } from './panels/repo-config.js';
 import { createLogTail } from './panels/log-tail.js';
 import { createOrphanKill, readManagedPid } from './panels/orphan-kill.js';
 import type { PanelHandle } from './panels/types.js';
@@ -153,8 +154,12 @@ export function activate(context: vscode.ExtensionContext): void {
       void vscode.window.showErrorMessage(message);
     },
   };
+  // The sc8 ConfigGateway (config.catalog/config.show/config.write over the shared
+  // client) — constructed once and reused by the ConfigSync engine AND the S007
+  // Repo Configuration panel (its writeKeyPath/rawConfig per-repo read/write).
+  const configGateway = createDaemonConfigGateway(client);
   const configSync = createConfigSyncEngine({
-    gateway: createDaemonConfigGateway(client),
+    gateway: configGateway,
     settings: configSettings,
     notifier: configNotifier,
     keyMap: MERGED_KEY_MAP,
@@ -304,6 +309,24 @@ export function activate(context: vscode.ExtensionContext): void {
       kill: orphanKill,
       status,
       logger: panelLog,
+    }),
+    // S007: the Repo Configuration panel body — a repo picker (folder-independent,
+    // from the sc9 registeredRepos read) + the selected repo's per-repo model-tiering
+    // form read from the sc8 gateway's rawConfig (config.show).
+    repoRenderer: renderRepoConfig({
+      registeredRepos: () => daemonData.registeredRepos(),
+      rawConfig: () => configGateway.rawConfig(),
+    }),
+    // S007: the consent-gated per-repo write sink. Reuses the sc8 writeKeyPath ARRAY
+    // form (config.write) — no new daemon capability (k3); gated by sc4 (k4); the
+    // outcome surfaces via sc2 and the panel re-renders from fresh config (truthful).
+    onRepoConfigWrite: createRepoConfigWriteHandler({
+      consent,
+      writeKeyPath: (segments, value) => configGateway.writeKeyPath(segments, value),
+      registeredRepos: () => daemonData.registeredRepos(),
+      status,
+      logger: panelLog,
+      refresh: () => panelHost.openRepoConfiguration(),
     }),
   });
   // The status-bar item's click target — set on the raw StatusBarItem (the sc2

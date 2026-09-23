@@ -76,6 +76,8 @@ function makeHost(opts: {
   detailRenderers?: WebviewPanelHostDeps['detailRenderers'];
   tabControllers?: WebviewPanelHostDeps['tabControllers'];
   onDetailAction?: WebviewPanelHostDeps['onDetailAction'];
+  repoRenderer?: WebviewPanelHostDeps['repoRenderer'];
+  onRepoConfigWrite?: WebviewPanelHostDeps['onRepoConfigWrite'];
 } = {}): {
   host: ReturnType<typeof createWebviewPanelHost>;
   created: FakePanel[];
@@ -100,6 +102,8 @@ function makeHost(opts: {
     detailRenderers: opts.detailRenderers,
     tabControllers: opts.tabControllers,
     onDetailAction: opts.onDetailAction,
+    repoRenderer: opts.repoRenderer,
+    onRepoConfigWrite: opts.onRepoConfigWrite,
   };
   return { host: createWebviewPanelHost(deps), created, offered, warns };
 }
@@ -494,6 +498,119 @@ test('S006: never-throw — an onActivate throw, a dispose throw, and an onDetai
   assert.doesNotThrow(() => b.created[0]!.injectMessage({ type: 'switchTab', tab: 'daemon' }), 'a throwing dispose never surfaces');
   await tick();
   assert.ok(b.warns.some((w) => /dispose the active tab controller/.test(w)), 'the dispose throw was caught + logged');
+});
+
+// ---- S007: Repo Configuration panel — repoRenderer + repo-config message route ----
+
+test('S007: openRepoConfiguration renders the wired repoRenderer body; with no repoRenderer it renders the S004 placeholder unchanged', async () => {
+  // With a repoRenderer: its body is rendered inside the shell.
+  const wired = makeHost({ repoRenderer: async () => `<p class="repo-picker-body">picker</p>` });
+  wired.host.openRepoConfiguration();
+  await tick();
+  assert.equal(wired.created.length, 1);
+  assert.equal(wired.created[0]!.viewType, 'insrc.repoConfiguration');
+  assert.match(wired.created[0]!.html, /repo-picker-body/, 'the repoRenderer body is rendered');
+  assert.doesNotMatch(wired.created[0]!.html, /coming soon/);
+
+  // Without a repoRenderer: the exact S004 placeholder (fallback preserved).
+  const bare = makeHost();
+  bare.host.openRepoConfiguration();
+  await tick();
+  assert.match(bare.created[0]!.html, /coming soon/, 'no repoRenderer -> S004 placeholder preserved');
+});
+
+test('S007: a {selectRepo} message re-renders via repoRenderer(selectedRepo); a {repoWrite} forwards a validated RepoConfigWrite', async () => {
+  const seen: (string | undefined)[] = [];
+  const writes: unknown[] = [];
+  const { host, created } = makeHost({
+    repoRenderer: async (selected) => {
+      seen.push(selected);
+      return `<div>sel=${selected ?? 'none'}</div>`;
+    },
+    onRepoConfigWrite: (w) => writes.push(w),
+  });
+  host.openRepoConfiguration();
+  await tick();
+  assert.deepEqual(seen, [undefined], 'first render has no selection');
+
+  created[0]!.injectMessage({ type: 'selectRepo', repoPath: '/repo/a' });
+  await tick();
+  assert.deepEqual(seen.at(-1), '/repo/a', 'selectRepo re-renders for that repo');
+  assert.match(created[0]!.html, /sel=\/repo\/a/);
+
+  created[0]!.injectMessage({ type: 'repoWrite', repoPath: '/repo/a', segments: ['tiers', 'core', 'runner'], value: 'ollama' });
+  assert.deepEqual(
+    writes,
+    [{ repoPath: '/repo/a', segments: ['tiers', 'core', 'runner'], value: 'ollama' }],
+    'a valid repoWrite is forwarded to onRepoConfigWrite',
+  );
+});
+
+test('S007: a malformed selectRepo/repoWrite is a silent no-op (no re-render, no forward, no throw)', async () => {
+  let renders = 0;
+  const writes: unknown[] = [];
+  const { host, created, warns } = makeHost({
+    repoRenderer: async () => {
+      renders += 1;
+      return `<div>body</div>`;
+    },
+    onRepoConfigWrite: (w) => writes.push(w),
+  });
+  host.openRepoConfiguration();
+  await tick();
+  const baseRenders = renders;
+
+  created[0]!.injectMessage({ type: 'selectRepo' }); // missing repoPath
+  created[0]!.injectMessage({ type: 'repoWrite', repoPath: '/r', segments: 'not-array', value: 1 }); // bad segments
+  created[0]!.injectMessage({ type: 'repoWrite', segments: ['a'], value: 1 }); // missing repoPath
+  created[0]!.injectMessage({ type: 'nonsense' });
+  await tick();
+  assert.equal(renders, baseRenders, 'no re-render on a malformed message');
+  assert.deepEqual(writes, [], 'no forward on a malformed repoWrite');
+  assert.doesNotThrow(() => created[0]!.injectMessage(null), 'a null message never throws');
+  assert.equal(warns.length, 0, 'a malformed message is a silent no-op, not an error');
+});
+
+test('S007: the empty selectRepo option clears the selection back to picker-only', async () => {
+  const seen: (string | undefined)[] = [];
+  const { host, created } = makeHost({
+    repoRenderer: async (selected) => {
+      seen.push(selected);
+      return `<div>${selected ?? 'none'}</div>`;
+    },
+  });
+  host.openRepoConfiguration();
+  await tick();
+  created[0]!.injectMessage({ type: 'selectRepo', repoPath: '/repo/a' });
+  await tick();
+  created[0]!.injectMessage({ type: 'selectRepo', repoPath: '' }); // the "Choose a repo…" option
+  await tick();
+  assert.deepEqual(seen.at(-1), undefined, 'the empty option clears the selection');
+});
+
+test('S007: a repoRenderer throw (config read reject) degrades to an error body; an onRepoConfigWrite throw is caught', async () => {
+  const a = makeHost({
+    repoRenderer: async () => {
+      throw new Error('rawConfig rejected');
+    },
+  });
+  assert.doesNotThrow(() => a.host.openRepoConfiguration());
+  await tick();
+  assert.match(a.created[0]!.html, /could not load this view/, 'a renderer reject degrades to an error body');
+  assert.ok(a.warns.some((w) => /Repo Configuration view/.test(w)), 'the renderer failure was logged (never thrown)');
+
+  const b = makeHost({
+    repoRenderer: async () => `<div>ok</div>`,
+    onRepoConfigWrite: () => {
+      throw new Error('sink boom');
+    },
+  });
+  b.host.openRepoConfiguration();
+  await tick();
+  assert.doesNotThrow(() =>
+    b.created[0]!.injectMessage({ type: 'repoWrite', repoPath: '/r', segments: ['tiers', 'core', 'runner'], value: 'x' }),
+  );
+  assert.ok(b.warns.some((w) => /repo-config write handler failed/.test(w)), 'the onRepoConfigWrite throw was caught + logged');
 });
 
 test('source-scan: webview-host.ts imports no vscode module (extension.ts stays the sole vscode importer)', () => {

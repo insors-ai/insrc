@@ -85,6 +85,28 @@ window.addEventListener('message', function (event) {
 });
 vscode.postMessage({ type: 'ready' });`;
 
+/**
+ * The Repo Configuration panel's inline bootstrap (nonce'd; posts ONLY the two
+ * sanctioned repo message shapes). Static — it reads only host-rendered DOM data.
+ * The repo <select> change posts {type:'selectRepo',repoPath}; each per-repo form
+ * field change posts {type:'repoWrite',repoPath,segments,value} (value '' -> null to
+ * clear the override). The form's data-repo carries the selected repoPath and each
+ * field's data-segments carries the dot-joined trailing path under models.byRepo.
+ */
+const REPO_BOOTSTRAP = `const vscode = acquireVsCodeApi();
+const sel = document.getElementById('insrc-repo-select');
+if (sel) { sel.addEventListener('change', function () { vscode.postMessage({ type: 'selectRepo', repoPath: sel.value }); }); }
+const form = document.getElementById('insrc-repo-form');
+const repoPath = form ? form.getAttribute('data-repo') : '';
+for (const el of document.querySelectorAll('[data-segments]')) {
+  el.addEventListener('change', function () {
+    var segments;
+    try { segments = JSON.parse(el.getAttribute('data-segments')); } catch (e) { return; }
+    if (!Array.isArray(segments)) return;
+    vscode.postMessage({ type: 'repoWrite', repoPath: repoPath, segments: segments, value: el.value === '' ? null : el.value });
+  });
+}`;
+
 /** Build the sc9 WebviewPanelHost over its injected boundaries. Never throws. */
 export function createWebviewPanelHost(deps: WebviewPanelHostDeps): WebviewPanelHost {
   const { panels, pickMenu, gateway, logger } = deps;
@@ -94,6 +116,8 @@ export function createWebviewPanelHost(deps: WebviewPanelHostDeps): WebviewPanel
   let repoPanel: PanelHandle | undefined;
   // The Detailed Status panel's currently-active tab (ac3: switch re-renders it).
   let detailActiveTab: DetailTab = 'daemon';
+  // The Repo Configuration panel's currently-selected repo (S007; select re-renders).
+  let repoSelectedRepo: string | undefined;
   // The live tab controller's dispose (S006): exactly ONE ticker is armed at a
   // time, and none survives the panel; undefined when the active tab has none.
   let activeControllerDispose: (() => void) | undefined;
@@ -247,6 +271,76 @@ export function createWebviewPanelHost(deps: WebviewPanelHostDeps): WebviewPanel
     // Anything else is a silent no-op (a malformed/spoofed message can't drive the host).
   };
 
+  /**
+   * Render the Repo Configuration body for the currently-selected repo (S007). The
+   * body comes from the injected `repoRenderer`; a host without one renders the S004
+   * placeholder (fallback preserved). A renderer failure (registeredRepos/rawConfig
+   * reject) degrades to an in-panel error state, and a setHtml throw is caught — the
+   * host never-throw contract. The repo form is fully rendered here (no post-load
+   * host->webview push), so no ready-gate is needed; the picker/field messages drive
+   * the next re-render.
+   */
+  const renderRepoPanel = async (panel: PanelHandle): Promise<void> => {
+    try {
+      let body: string;
+      let scripted = false;
+      const renderer = deps.repoRenderer;
+      if (renderer !== undefined) {
+        try {
+          body = await renderer(repoSelectedRepo);
+          scripted = true; // the rendered body carries the picker/field controls.
+        } catch (err) {
+          logger.warn(`insrc: could not render the Repo Configuration view — ${errText(err)}`);
+          body = VIEW_ERR;
+        }
+      } else {
+        body = REPO_PLACEHOLDER; // S004 fallback (no repoRenderer wired).
+      }
+      panel.setHtml(shellHtml('Repo Configuration', body, makeNonce(), scripted ? REPO_BOOTSTRAP : undefined));
+    } catch (err) {
+      logger.warn(`insrc: could not render the Repo Configuration panel — ${errText(err)}`);
+    }
+  };
+
+  /**
+   * Handle a webview->host message for the Repo Configuration panel (S007). Validates
+   * the shape ({selectRepo,repoPath} / {repoWrite,repoPath,segments,value}), skips a
+   * late message after the panel was disposed/replaced, re-renders on a repo select,
+   * and forwards a validated RepoConfigWrite to the injected sink. Never throws.
+   */
+  const handleRepoMessage = (panel: PanelHandle, message: unknown): void => {
+    if (repoPanel !== panel) return; // stale panel (disposed/replaced) — no-op.
+    if (typeof message !== 'object' || message === null) return;
+    const msg = message as { type?: unknown; repoPath?: unknown; segments?: unknown; value?: unknown };
+    if (msg.type === 'selectRepo' && typeof msg.repoPath === 'string') {
+      // The empty option ('') clears the selection back to the picker-only view.
+      repoSelectedRepo = msg.repoPath.length > 0 ? msg.repoPath : undefined;
+      void renderRepoPanel(panel);
+      return;
+    }
+    if (
+      msg.type === 'repoWrite' &&
+      typeof msg.repoPath === 'string' &&
+      Array.isArray(msg.segments) &&
+      msg.segments.every((s) => typeof s === 'string')
+    ) {
+      // The host owns no write — it forwards a validated RepoConfigWrite to the sink
+      // (extension.ts runs the consent-gated config.write, k4). A sink throw must not
+      // surface (never-throw).
+      try {
+        deps.onRepoConfigWrite?.({
+          repoPath: msg.repoPath,
+          segments: msg.segments as readonly string[],
+          value: msg.value,
+        });
+      } catch (err) {
+        logger.warn(`insrc: the repo-config write handler failed — ${errText(err)}`);
+      }
+      return;
+    }
+    // Anything else is a silent no-op (a malformed/spoofed message can't drive the host).
+  };
+
   return {
     openDetailedStatus(tab: DetailTab = 'daemon'): void {
       detailActiveTab = tab;
@@ -272,19 +366,22 @@ export function createWebviewPanelHost(deps: WebviewPanelHostDeps): WebviewPanel
     },
 
     openRepoConfiguration(): void {
-      const panel = openSingleton(repoPanel, REPO_VIEW_TYPE, 'insrc — Repo Configuration', () => {
-        repoPanel = undefined;
-      });
+      const panel = openSingleton(
+        repoPanel,
+        REPO_VIEW_TYPE,
+        'insrc — Repo Configuration',
+        () => {
+          repoPanel = undefined;
+        },
+        (p) => {
+          p.onMessage((message) => handleRepoMessage(p, message)); // S007: wire the repo bridge once.
+        },
+      );
       if (panel === undefined) return;
-      repoPanel = panel;
-      // Shell only in S004 — the per-repo form is s7's. Guard the setHtml so a
-      // disposed-mid-open panel degrades to a logged no-op (host never-throw). The
-      // shared shell carries the CSP even though this panel runs no bootstrap.
-      try {
-        panel.setHtml(shellHtml('Repo Configuration', REPO_PLACEHOLDER, makeNonce()));
-      } catch (err) {
-        logger.warn(`insrc: could not render the Repo Configuration panel — ${errText(err)}`);
-      }
+      repoPanel = panel; // cache synchronously so a rapid second call reveals, not duplicates.
+      // Render the per-repo editor (S007) from fresh config; renderRepoPanel never
+      // throws. A host without a repoRenderer degrades to the S004 placeholder.
+      void renderRepoPanel(panel);
     },
 
     async showStatusMenu(): Promise<void> {

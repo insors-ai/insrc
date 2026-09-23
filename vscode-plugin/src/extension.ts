@@ -45,6 +45,8 @@ import { renderRepoConfig, createRepoConfigWriteHandler } from './panels/repo-co
 import { createLogTail } from './panels/log-tail.js';
 import { createOrphanKill, readManagedPid } from './panels/orphan-kill.js';
 import type { PanelHandle } from './panels/types.js';
+import { runSetModelTier } from './models/model-tier-picker.js';
+import type { ModelListResult, ModelProvider } from './models/model-tier-picker.js';
 
 /** The workspaceState key prefix for the one-time register-prompt dismissal flag (S004). */
 const REGISTER_DISMISSED_KEY = 'insrc.workspace.register.dismissed';
@@ -339,6 +341,28 @@ export function activate(context: vscode.ExtensionContext): void {
   commands.register({ id: 'insrc.status.repoConfig', title: 'Open Repo Configuration' }, async () => {
     panelHost.openRepoConfiguration();
   });
+
+  // S003-model-picker sc2 consumer: the 'insrc: Set model tier' guided command. A
+  // DUMB dropdown over the shipped sc2 list-models IPC (client.rpc, no new daemon
+  // capability, k3) that turns the free-text global model-tier field into an
+  // authoritative pick. The real editor seams live here (the sole `vscode`
+  // importer): listModels over the shared client, catalog+writeKeyPath over the
+  // already-hoisted sc8 configGateway, pick over showQuickPick, notify over
+  // showInformationMessage. All flow/k7 logic is in the VS-Code-free module.
+  commands.register({ id: 'insrc.models.setTier', title: 'insrc: Set model tier' }, () =>
+    runSetModelTier({
+      listModels: (provider: ModelProvider) =>
+        client.rpc<ModelListResult>('providers.listModels', { provider }),
+      catalog: () => configGateway.catalog(),
+      writeKeyPath: (segments, value) => configGateway.writeKeyPath(segments, value),
+      pick: (items, opts) => Promise.resolve(vscode.window.showQuickPick(items, opts)),
+      notify: (message) => {
+        // The bundled vscode.d.ts stub's showInformationMessage requires the
+        // options arg; {} (all fields optional) satisfies it with no buttons.
+        void vscode.window.showInformationMessage(message, {});
+      },
+    }),
+  );
 
   // S005 sc-capstone: the per-workspace one-time onboarding-completed flag over
   // workspaceState (distinct key from the S004 register-dismissed flag).

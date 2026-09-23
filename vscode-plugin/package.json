@@ -81,6 +81,11 @@
         "command": "insrc.status.repoConfig",
         "title": "Open Repo Configuration",
         "category": "insrc"
+      },
+      {
+        "command": "insrc.models.setTier",
+        "title": "Set model tier",
+        "category": "insrc"
       }
     ],
     "configuration": [

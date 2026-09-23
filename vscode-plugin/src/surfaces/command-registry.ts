@@ -22,7 +22,8 @@ export type InsrcCommandId =
   | 'insrc.settings.refresh'
   | 'insrc.status.menu'
   | 'insrc.status.detailed'
-  | 'insrc.status.repoConfig';
+  | 'insrc.status.repoConfig'
+  | 'insrc.models.setTier';
 
 export interface CommandDescriptor {
   id: InsrcCommandId;

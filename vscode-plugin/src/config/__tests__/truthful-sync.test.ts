@@ -198,7 +198,7 @@ test('package.json contributes.commands includes insrc.settings.refresh alongsid
   assert.ok(refresh, 'insrc.settings.refresh not declared');
   assert.equal(refresh.title, 'Refresh insrc settings');
   assert.equal(refresh.category, 'insrc');
-  assert.equal(cmds.length, 10); // 7 shipped + refresh + the 2 S004 panel commands
+  assert.equal(cmds.length, 11); // 7 shipped + refresh + the 2 S004 panel commands + the S003 model-picker command
 });
 
 test('the InsrcCommandId union includes insrc.settings.refresh and extension.ts wires it to pullFromDaemon', () => {

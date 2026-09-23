@@ -63,12 +63,29 @@ test('S004 sc9: both panel commands are palette-reachable (k6) and the menu comm
 
 test('S005 sc9: extension.ts wires detailRenderers + enableScripts:true + the onMessage/postMessage bridge', () => {
   const entry = readFileSync(join(PKG, 'src', 'extension.ts'), 'utf8');
-  // The daemon + workflows renderers are injected into the host (ac1/ac2).
-  assert.match(entry, /detailRenderers:\s*\{\s*daemon:\s*renderDaemonTab,\s*workflows:\s*renderWorkflowsTab\s*\}/, 'the two renderers are wired via detailRenderers');
+  // The daemon + workflows renderers are injected into the host (ac1/ac2); S006
+  // additionally wires the debug renderer (assessed by the S006 tests below).
+  assert.match(entry, /detailRenderers:\s*\{\s*daemon:\s*renderDaemonTab,\s*workflows:\s*renderWorkflowsTab/, 'the daemon + workflows renderers are wired via detailRenderers');
   assert.match(entry, /import \{ renderDaemonTab, renderWorkflowsTab \} from '\.\/panels\/detail-renderers\.js'/, 'the renderers are imported');
   // The Detailed Status webview is now scripted (for the on-demand tab/refresh bridge, under CSP+nonce).
   assert.match(entry, /createWebviewPanel\([^)]*\{\s*enableScripts:\s*true\s*\}\)/, 'the panel is created with enableScripts:true');
   // The PanelHandle bridge is bound to the real webview message API.
   assert.match(entry, /onMessage:\s*\(listener\)\s*=>\s*\{\s*panel\.webview\.onDidReceiveMessage\(listener\)/, 'onMessage binds webview.onDidReceiveMessage');
   assert.match(entry, /postMessage:\s*\(message\)\s*=>\s*\{[\s\S]*panel\.webview\.postMessage\(message\)/, 'postMessage binds webview.postMessage');
+});
+
+test('S006 sc9: extension.ts wires the debug renderer + tabController + onDetailAction over ONE shared managedPid (PATHS.pidFile)', () => {
+  const entry = readFileSync(join(PKG, 'src', 'extension.ts'), 'utf8');
+  // The debug renderer + controller + action handler are imported + wired.
+  assert.match(entry, /import \{ renderDebugTab, createDebugTabController, createDebugActionHandler \} from '\.\/panels\/debug-renderer\.js'/, 'the debug seams are imported');
+  assert.match(entry, /debug:\s*renderDebugTab\(\{\s*managedPid\s*\}\)/, 'the debug tab body renderer is wired');
+  assert.match(entry, /tabControllers:\s*\{\s*debug:\s*createDebugTabController\(/, 'the debug log ticker controller is wired');
+  assert.match(entry, /onDetailAction:\s*createDebugActionHandler\(/, 'the consent-gated action handler is wired');
+  // ONE shared managed-pid resolver over the pidfile, used by both the renderer + kill.
+  assert.match(entry, /const managedPid = \(\):\s*number \| undefined => readManagedPid\(PATHS\.pidFile\)/, 'a single managedPid resolver reads PATHS.pidFile');
+  assert.match(entry, /createOrphanKill\(\{[\s\S]*managedPid,[\s\S]*\}\)/, 'the kill is built over the shared managedPid');
+  // No new command was added (S006 adds no palette entry).
+  const pkg = JSON.parse(readFileSync(join(PKG, 'package.json'), 'utf8'));
+  const ids = (pkg.contributes?.commands ?? []).map((c: { command: string }) => c.command);
+  assert.ok(!ids.includes('insrc.status.debug'), 'S006 adds no new command');
 });

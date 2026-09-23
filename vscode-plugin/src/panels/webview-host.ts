@@ -16,7 +16,18 @@
  * status) or the 'coming soon' placeholder, so a host built without renderers
  * behaves exactly as the S004 shell. Tab-switch + Refresh are driven from inside
  * the webview via {type:'switchTab',tab}/{type:'refresh'} messages and re-render
- * ON-DEMAND ONLY — no timer/interval (the continuous ticker is s6's Debug log).
+ * ON-DEMAND ONLY.
+ *
+ * S006: an optional per-tab `tabControllers` map supplies a continuous ticker (the
+ * Debug log tail — the epic's ONLY ticker). The host arms exactly one controller
+ * (the active tab's) and disposes it on switch-away / refresh / panel-close, so a
+ * ticker never runs for an inactive tab. Arming is deferred until the webview posts
+ * {type:'ready'} (its message listener is live) so the controller's initial batch
+ * is not delivered into a not-yet-loaded document and dropped. A tab body may post
+ * {type:'action',action} — the host forwards a validated action to the injected
+ * `onDetailAction` sink (the consent-gated orphan kill lives in extension.ts, k4).
+ * A host built without either behaves exactly as the S005 shell. VS-Code-free +
+ * never-throw.
  */
 
 import { escapeHtml, makeNonce } from './html.js';
@@ -48,16 +59,31 @@ const DAEMON_ERR = `<p class="error">insrc daemon unreachable</p>`;
 const VIEW_ERR = `<p class="error">insrc: could not load this view.</p>`;
 
 /**
- * The ONLY inline webview script (nonce'd; posts ONLY the two sanctioned message
+ * The ONLY inline webview script (nonce'd; posts ONLY the sanctioned message
  * shapes). Static — it interpolates no untrusted data. Wires each tab button to
- * post {type:'switchTab',tab} and the Refresh control to post {type:'refresh'}.
+ * post {type:'switchTab',tab}, the Refresh control to post {type:'refresh'}, and
+ * each [data-action] control (S006: the Debug tab's Clean-up button) to post
+ * {type:'action',action}. It also listens for host->webview {type:'appendLog'}
+ * frames (S006: the live daemon-log ticker) and appends each line to #insrc-log
+ * via a text node — inherently XSS-safe, so the host escapes nothing for it.
  */
 const BOOTSTRAP = `const vscode = acquireVsCodeApi();
 for (const el of document.querySelectorAll('.tab')) {
   el.addEventListener('click', function () { vscode.postMessage({ type: 'switchTab', tab: el.getAttribute('data-tab') }); });
 }
 const r = document.getElementById('insrc-refresh');
-if (r) { r.addEventListener('click', function () { vscode.postMessage({ type: 'refresh' }); }); }`;
+if (r) { r.addEventListener('click', function () { vscode.postMessage({ type: 'refresh' }); }); }
+for (const el of document.querySelectorAll('[data-action]')) {
+  el.addEventListener('click', function () { vscode.postMessage({ type: 'action', action: el.getAttribute('data-action') }); });
+}
+window.addEventListener('message', function (event) {
+  const msg = event.data;
+  if (!msg || msg.type !== 'appendLog' || !Array.isArray(msg.lines)) return;
+  const log = document.getElementById('insrc-log');
+  if (!log) return;
+  for (const line of msg.lines) { log.appendChild(document.createTextNode(String(line) + '\\n')); }
+});
+vscode.postMessage({ type: 'ready' });`;
 
 /** Build the sc9 WebviewPanelHost over its injected boundaries. Never throws. */
 export function createWebviewPanelHost(deps: WebviewPanelHostDeps): WebviewPanelHost {
@@ -68,6 +94,43 @@ export function createWebviewPanelHost(deps: WebviewPanelHostDeps): WebviewPanel
   let repoPanel: PanelHandle | undefined;
   // The Detailed Status panel's currently-active tab (ac3: switch re-renders it).
   let detailActiveTab: DetailTab = 'daemon';
+  // The live tab controller's dispose (S006): exactly ONE ticker is armed at a
+  // time, and none survives the panel; undefined when the active tab has none.
+  let activeControllerDispose: (() => void) | undefined;
+
+  /** Dispose the live tab controller (if any) and clear it. Never throws. */
+  const disposeActiveController = (): void => {
+    const dispose = activeControllerDispose;
+    activeControllerDispose = undefined;
+    if (dispose === undefined) return;
+    try {
+      dispose();
+    } catch (err) {
+      logger.warn(`insrc: could not dispose the active tab controller — ${errText(err)}`);
+    }
+  };
+
+  /**
+   * Arm the ACTIVE tab's controller (S006), called when the webview reports it is
+   * ready (its message listener is live) — so the controller's initial emit is not
+   * posted into a not-yet-loaded document and dropped. Disposes any previous
+   * controller first (idempotent). Guarded against a stale `ready` from a
+   * disposed/replaced panel. The tab is always the current `detailActiveTab`, and
+   * the old controller was already stopped at render-start, so this is a pure arm.
+   * Never throws (the host never-throw contract).
+   */
+  const armActiveController = (panel: PanelHandle): void => {
+    if (detailPanel !== panel) return; // a ready from a stale (closed/replaced) panel — ignore.
+    disposeActiveController();
+    const controller = deps.tabControllers?.[detailActiveTab];
+    if (controller === undefined) return;
+    try {
+      activeControllerDispose = controller.onActivate({ postMessage: (message) => panel.postMessage(message) });
+    } catch (err) {
+      activeControllerDispose = undefined;
+      logger.warn(`insrc: could not activate the ${detailActiveTab} tab controller — ${errText(err)}`);
+    }
+  };
 
   /** Create-or-reveal a single-instance panel; a create failure is caught + logged. */
   const openSingleton = (
@@ -142,8 +205,19 @@ export function createWebviewPanelHost(deps: WebviewPanelHostDeps): WebviewPanel
   const handleDetailMessage = (panel: PanelHandle, message: unknown): void => {
     if (detailPanel !== panel) return; // stale panel (disposed/replaced) — no-op.
     if (typeof message !== 'object' || message === null) return;
-    const msg = message as { type?: unknown; tab?: unknown };
+    const msg = message as { type?: unknown; tab?: unknown; action?: unknown };
+    if (msg.type === 'ready') {
+      // The (re-)rendered webview finished loading and registered its message
+      // listener — NOW arm the active tab's controller so its initial batch is not
+      // posted into a not-yet-ready document and lost (fixes the first-open + the
+      // refresh re-seed). Any prior controller was stopped at render-start.
+      armActiveController(panel);
+      return;
+    }
     if (msg.type === 'refresh') {
+      // A fresh document replaces the old one (its listener is gone), so stop the
+      // live ticker now; the post-render `ready` re-arms it and re-seeds the log.
+      disposeActiveController();
       void renderDetail(panel, detailActiveTab);
       return;
     }
@@ -153,7 +227,22 @@ export function createWebviewPanelHost(deps: WebviewPanelHostDeps): WebviewPanel
       (DETAIL_TABS as readonly string[]).includes(msg.tab)
     ) {
       detailActiveTab = msg.tab as DetailTab;
+      // Stop the outgoing tab's ticker immediately (its document is being replaced),
+      // then re-render; the new document's `ready` arms the new tab's controller.
+      disposeActiveController();
       void renderDetail(panel, detailActiveTab);
+      return;
+    }
+    if (msg.type === 'action' && typeof msg.action === 'string') {
+      // A webview action (S006: the Debug Clean-up button). The host owns no effect
+      // — it forwards a validated action string to the injected sink (extension.ts
+      // runs the consent-gated kill, k4). A sink throw must not surface (never-throw).
+      try {
+        deps.onDetailAction?.(msg.action);
+      } catch (err) {
+        logger.warn(`insrc: the detail action handler failed — ${errText(err)}`);
+      }
+      return;
     }
     // Anything else is a silent no-op (a malformed/spoofed message can't drive the host).
   };
@@ -167,6 +256,7 @@ export function createWebviewPanelHost(deps: WebviewPanelHostDeps): WebviewPanel
         'insrc — Detailed Status',
         () => {
           detailPanel = undefined;
+          disposeActiveController(); // the panel is gone — no ticker survives it (S006).
         },
         (p) => {
           p.onMessage((message) => handleDetailMessage(p, message));
@@ -174,7 +264,11 @@ export function createWebviewPanelHost(deps: WebviewPanelHostDeps): WebviewPanel
       );
       if (panel === undefined) return;
       detailPanel = panel; // cache synchronously so a rapid second call reveals, not duplicates.
-      void renderDetail(panel, detailActiveTab); // async render; renderDetail never throws.
+      // Stop any live ticker (the reveal path may re-render over an existing panel),
+      // then render. The new document posts `ready` once loaded, which arms the
+      // active tab's controller — so its initial emit lands on a live webview.
+      disposeActiveController();
+      void renderDetail(panel, detailActiveTab);
     },
 
     openRepoConfiguration(): void {

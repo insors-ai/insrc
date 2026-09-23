@@ -14,6 +14,7 @@ import {
   type DaemonDataGateway,
   type MenuItem,
   type PanelHandle,
+  type TabController,
   type WebviewPanelHostDeps,
 } from '../types.js';
 
@@ -73,6 +74,8 @@ function makeHost(opts: {
   pick?: MenuItem | undefined;
   gateway?: DaemonDataGateway;
   detailRenderers?: WebviewPanelHostDeps['detailRenderers'];
+  tabControllers?: WebviewPanelHostDeps['tabControllers'];
+  onDetailAction?: WebviewPanelHostDeps['onDetailAction'];
 } = {}): {
   host: ReturnType<typeof createWebviewPanelHost>;
   created: FakePanel[];
@@ -95,6 +98,8 @@ function makeHost(opts: {
     gateway: opts.gateway ?? fakeGateway(),
     logger: { warn: (m) => warns.push(m) },
     detailRenderers: opts.detailRenderers,
+    tabControllers: opts.tabControllers,
+    onDetailAction: opts.onDetailAction,
   };
   return { host: createWebviewPanelHost(deps), created, offered, warns };
 }
@@ -327,6 +332,168 @@ test('S005: the rendered Detailed Status shell carries a strict CSP + a per-rend
   await tick();
   const nonce2 = /<script nonce="([^"]+)">/.exec(created[0]!.html)![1]!;
   assert.notEqual(nonce2, scriptMatch![1]!, 'each render uses a fresh nonce');
+});
+
+// ---- S006: tab-controller lifecycle + action route + appendLog bootstrap ----
+
+/** A fake TabController recording activate/dispose counts and the ctxs handed in. */
+function fakeController(): {
+  controller: TabController;
+  state: { activations: number; disposes: number };
+} {
+  const state = { activations: 0, disposes: 0 };
+  return {
+    state,
+    controller: {
+      onActivate() {
+        state.activations += 1;
+        return () => {
+          state.disposes += 1;
+        };
+      },
+    },
+  };
+}
+
+/** Open the debug tab and complete the webview ready-handshake so the controller arms. */
+async function openDebugReady(created: FakePanel[], host: ReturnType<typeof createWebviewPanelHost>): Promise<void> {
+  host.openDetailedStatus('debug');
+  await tick();
+  created[created.length - 1]!.injectMessage({ type: 'ready' }); // the webview finished loading.
+  await tick();
+}
+
+test('S006: the controller is armed ONLY after the webview {ready} handshake — never before (MED-1 fix: the initial batch is not posted into a not-yet-loaded document)', async () => {
+  const { controller, state } = fakeController();
+  const { host, created } = makeHost({ tabControllers: { debug: controller } });
+  host.openDetailedStatus('debug');
+  await tick();
+  assert.equal(state.activations, 0, 'the controller is NOT armed on render alone (the webview listener is not live yet)');
+
+  created[0]!.injectMessage({ type: 'ready' });
+  await tick();
+  assert.equal(state.activations, 1, 'the controller arms once the webview reports ready');
+});
+
+test('S006: activating the debug tab calls onActivate; switch-away / re-activate / panel-close dispose it EXACTLY once (one live)', async () => {
+  const { controller, state } = fakeController();
+  const { host, created } = makeHost({ tabControllers: { debug: controller } });
+
+  await openDebugReady(created, host);
+  assert.equal(state.activations, 1, 'the debug controller is armed after the ready handshake');
+  assert.equal(state.disposes, 0, 'nothing disposed yet');
+
+  // Switch AWAY to daemon (no controller) → the debug controller is disposed once (at switch).
+  created[0]!.injectMessage({ type: 'switchTab', tab: 'daemon' });
+  await tick();
+  assert.equal(state.disposes, 1, 'switching away disposes the debug controller exactly once');
+  created[0]!.injectMessage({ type: 'ready' }); // the daemon doc loads — no controller to arm.
+  await tick();
+  assert.equal(state.activations, 1, 'daemon has no controller to arm');
+
+  // Switch BACK to debug → re-armed after its ready (still exactly one live).
+  created[0]!.injectMessage({ type: 'switchTab', tab: 'debug' });
+  await tick();
+  created[0]!.injectMessage({ type: 'ready' });
+  await tick();
+  assert.equal(state.activations, 2, 're-activated on return');
+  assert.equal(state.disposes, 1, 'the earlier dispose was the only one');
+
+  // Close the panel → the live controller is disposed.
+  created[0]!.userClose();
+  assert.equal(state.disposes, 2, 'panel close disposes the live controller (no ticker survives)');
+});
+
+test('S006: refresh stops then re-arms the ticker on the fresh document (re-seeds the log; LOW-1 fix)', async () => {
+  const { controller, state } = fakeController();
+  const { host, created } = makeHost({ tabControllers: { debug: controller } });
+  await openDebugReady(created, host);
+  assert.equal(state.activations, 1);
+
+  created[0]!.injectMessage({ type: 'refresh' }); // fresh document — old listener gone
+  await tick();
+  assert.equal(state.disposes, 1, 'refresh stops the outgoing ticker (its document is replaced)');
+  created[0]!.injectMessage({ type: 'ready' }); // the re-rendered doc loads
+  await tick();
+  assert.equal(state.activations, 2, 'the controller re-arms on the fresh document (re-seeds the log)');
+});
+
+test('S006: a controller ctx.postMessage lands on the panel, and the shell wires the appendLog listener via textContent', async () => {
+  const controller: TabController = {
+    onActivate(ctx) {
+      ctx.postMessage({ type: 'appendLog', lines: ['line-x', 'line-y'] });
+      return () => {};
+    },
+  };
+  const { host, created } = makeHost({ tabControllers: { debug: controller } });
+  await openDebugReady(created, host);
+  assert.deepEqual(
+    created[0]!.posted.at(-1),
+    { type: 'appendLog', lines: ['line-x', 'line-y'] },
+    'the controller ctx.postMessage reached the live panel',
+  );
+  // The rendered shell's bootstrap appends appendLog lines via a text node (XSS-safe)
+  // and posts the ready handshake after registering its listener.
+  const html = created[0]!.html;
+  assert.match(html, /'appendLog'/, 'the bootstrap listens for appendLog frames');
+  assert.match(html, /createTextNode/, 'appended lines go in via a text node (no innerHTML)');
+  assert.match(html, /getElementById\('insrc-log'\)/, 'the appender targets #insrc-log');
+  assert.match(html, /postMessage\(\{ type: 'ready' \}\)/, 'the bootstrap posts the ready handshake');
+});
+
+test("S006: a {type:'action',action} message is forwarded to onDetailAction; a malformed action is a silent no-op", async () => {
+  const actions: string[] = [];
+  const { host, created, warns } = makeHost({ onDetailAction: (a) => actions.push(a) });
+  host.openDetailedStatus();
+  await tick();
+
+  created[0]!.injectMessage({ type: 'action', action: 'cleanupOrphans' });
+  assert.deepEqual(actions, ['cleanupOrphans'], 'a string action is forwarded to onDetailAction');
+
+  created[0]!.injectMessage({ type: 'action' }); // missing action
+  created[0]!.injectMessage({ type: 'action', action: 123 }); // non-string
+  assert.deepEqual(actions, ['cleanupOrphans'], 'a malformed action message is a no-op');
+  assert.equal(warns.length, 0, 'a malformed action is silent, not an error');
+});
+
+test('S006: a host built with no tabControllers/onDetailAction behaves exactly as the S005 shell (no throw, no ticker)', async () => {
+  const { host, created } = makeHost(); // no S006 deps
+  host.openDetailedStatus('debug');
+  await tick();
+  assert.doesNotThrow(() => created[0]!.injectMessage({ type: 'ready' }), 'a ready with no controller is a no-op');
+  assert.doesNotThrow(() => created[0]!.injectMessage({ type: 'action', action: 'cleanupOrphans' }), 'action with no sink is a no-op');
+  assert.match(created[0]!.html, /coming soon/, 'debug is still the placeholder with no renderer');
+});
+
+test('S006: never-throw — an onActivate throw, a dispose throw, and an onDetailAction throw are all caught + logged', async () => {
+  // onActivate throws.
+  const badActivate: TabController = {
+    onActivate() {
+      throw new Error('activate boom');
+    },
+  };
+  const a = makeHost({ tabControllers: { debug: badActivate }, onDetailAction: () => { throw new Error('sink boom'); } });
+  assert.doesNotThrow(() => a.host.openDetailedStatus('debug'));
+  await tick();
+  assert.doesNotThrow(() => a.created[0]!.injectMessage({ type: 'ready' }), 'an onActivate throw never surfaces from ready');
+  await tick();
+  assert.ok(a.warns.some((w) => /activate the debug tab controller/.test(w)), 'the onActivate throw was caught + logged');
+  a.created[0]!.injectMessage({ type: 'action', action: 'x' });
+  assert.ok(a.warns.some((w) => /detail action handler failed/.test(w)), 'the onDetailAction throw was caught + logged');
+
+  // dispose throws.
+  const badDispose: TabController = {
+    onActivate() {
+      return () => {
+        throw new Error('dispose boom');
+      };
+    },
+  };
+  const b = makeHost({ tabControllers: { debug: badDispose } });
+  await openDebugReady(b.created, b.host);
+  assert.doesNotThrow(() => b.created[0]!.injectMessage({ type: 'switchTab', tab: 'daemon' }), 'a throwing dispose never surfaces');
+  await tick();
+  assert.ok(b.warns.some((w) => /dispose the active tab controller/.test(w)), 'the dispose throw was caught + logged');
 });
 
 test('source-scan: webview-host.ts imports no vscode module (extension.ts stays the sole vscode importer)', () => {

@@ -132,6 +132,28 @@ export type PanelFactory = (options: { readonly viewType: string; readonly title
  */
 export type TabRenderer = (gateway: DaemonDataGateway) => Promise<string>;
 
+/**
+ * The host->webview channel handed to an activated tab controller (S006 sc9
+ * amendment). The controller pushes append-frames through it while its tab is the
+ * active one; the host binds `postMessage` to the live panel's webview.postMessage.
+ */
+export interface TabActivationCtx {
+  postMessage(message: unknown): void;
+}
+
+/**
+ * A per-tab continuous-ticker controller (S006 sc9 amendment). A tab that needs a
+ * live stream (the Debug log tail — the epic's ONLY continuous ticker) supplies
+ * one; the host calls `onActivate` when the tab becomes active (open / switch-to)
+ * and calls the returned dispose when the tab is left, replaced, or the panel is
+ * closed. Exactly one controller is live at a time and none survives dispose, so a
+ * ticker never runs for an inactive tab. VS-Code-free; unit-testable with a fake
+ * ctx. A tab with no controller (daemon/workflows) is a plain on-demand renderer.
+ */
+export interface TabController {
+  onActivate(ctx: TabActivationCtx): () => void;
+}
+
 /** One choice offered in the status-bar menu (VS Code's `QuickPickItem` satisfies it). */
 export interface MenuItem {
   readonly label: string;
@@ -170,6 +192,20 @@ export interface WebviewPanelHostDeps {
    * behaves exactly as the S004 shell.
    */
   readonly detailRenderers?: Partial<Record<DetailTab, TabRenderer>> | undefined;
+  /**
+   * OPTIONAL per-tab continuous-ticker controllers (S006 sc9 amendment). The host
+   * activates a tab's controller when it becomes active and disposes it when the
+   * tab is left / the panel closes (exactly one live). A host constructed without
+   * this behaves exactly as the S005 shell (no ticker).
+   */
+  readonly tabControllers?: Partial<Record<DetailTab, TabController>> | undefined;
+  /**
+   * OPTIONAL sink for a webview action (S006 sc9 amendment). A tab body may post a
+   * {type:'action', action} message (e.g. the Debug tab's 'cleanupOrphans'); the
+   * host forwards a validated `action` string here. extension.ts owns the effect
+   * (the consent-gated orphan kill, k4); the host performs none itself.
+   */
+  readonly onDetailAction?: ((action: string) => void) | undefined;
 }
 
 /** The read-only data sources `createDaemonDataGateway` wires (all local, no cloud). */

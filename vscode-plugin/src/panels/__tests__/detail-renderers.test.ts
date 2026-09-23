@@ -103,10 +103,12 @@ test('source-scan: detail-renderers.ts imports no vscode and uses no cloud/HTTP 
   assert.doesNotMatch(src, /\b(undici|fetch\(|node:http\b|node:https\b|axios)\b/, 'no cloud/HTTP client in the renderers');
 });
 
-test('source-scan: the webview bootstrap script only posts the two sanctioned message shapes (switchTab/refresh)', () => {
+test('source-scan: the webview bootstrap script only posts the sanctioned message shapes (switchTab/refresh/action)', () => {
   const src = readFileSync(join(HERE, '..', 'webview-host.ts'), 'utf8');
   const bootstrap = /const BOOTSTRAP = `([\s\S]*?)`;/.exec(src);
   assert.ok(bootstrap, 'the BOOTSTRAP script constant is present');
   const posts = [...bootstrap![1]!.matchAll(/postMessage\(\{\s*type:\s*'([^']+)'/g)].map((m) => m[1]);
-  assert.deepEqual(posts.sort(), ['refresh', 'switchTab'], 'the bootstrap posts only switchTab + refresh');
+  // S006 added {type:'action'} (the Debug Clean-up button) + {type:'ready'} (the
+  // load handshake that gates the log ticker); still a fixed, closed set.
+  assert.deepEqual(posts.sort(), ['action', 'ready', 'refresh', 'switchTab'], 'the bootstrap posts only switchTab + refresh + action + ready');
 });

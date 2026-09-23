@@ -6,12 +6,13 @@
  * no reasoning (k2) and reaches the daemon only through the shared ipc-client +
  * the daemon's own scripts (k5). The Marketplace listing + packaging is Story S006.
  */
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, watch as fsWatch } from 'node:fs';
 import { join } from 'node:path';
 
 import * as vscode from 'vscode';
 
 import { createIpcClient } from '../../src/shared/ipc-client.js';
+import { PATHS } from '../../src/shared/paths.js';
 import { createStatusSurface } from './surfaces/status-surface.js';
 import { createCommandRegistry } from './surfaces/command-registry.js';
 import { createConsentGate } from './surfaces/consent-gate.js';
@@ -39,6 +40,9 @@ import { createDaemonDataGateway } from './panels/daemon-gateway.js';
 import { createWebviewPanelHost } from './panels/webview-host.js';
 import { defaultProcessScan } from './panels/process-scan.js';
 import { renderDaemonTab, renderWorkflowsTab } from './panels/detail-renderers.js';
+import { renderDebugTab, createDebugTabController, createDebugActionHandler } from './panels/debug-renderer.js';
+import { createLogTail } from './panels/log-tail.js';
+import { createOrphanKill, readManagedPid } from './panels/orphan-kill.js';
 import type { PanelHandle } from './panels/types.js';
 
 /** The workspaceState key prefix for the one-time register-prompt dismissal flag (S004). */
@@ -200,6 +204,57 @@ export function activate(context: vscode.ExtensionContext): void {
     processScan: defaultProcessScan,
     logger: panelLog,
   });
+  // S006 sc9: ONE shared managed-daemon-pid resolver, read from the pidfile. Both
+  // the Debug renderer (to exclude the managed daemon from the orphan offer) and
+  // the consent-gated kill (defence-in-depth re-exclusion) read through it, so they
+  // agree on which process is the managed one.
+  const managedPid = (): number | undefined => readManagedPid(PATHS.pidFile);
+  // S006 sc9: the plugin-local rotation-aware daemon-log tail over node:fs (mirrors
+  // the daemon CLI's realTailDeps without importing the daemon service module, k5).
+  const debugLogTail = createLogTail({
+    logDir: PATHS.logDir,
+    stem: 'daemon',
+    listSegments: (dir, stem) => {
+      const re = new RegExp(`^${stem}\\.(\\d+)\\.log$`);
+      const matched: { file: string; n: number }[] = [];
+      for (const name of readdirSync(dir)) {
+        const m = re.exec(name);
+        if (m !== null && m[1] !== undefined) matched.push({ file: join(dir, name), n: Number.parseInt(m[1], 10) });
+      }
+      matched.sort((a, b) => a.n - b.n);
+      return matched.map((x) => x.file);
+    },
+    readLines: (file) => {
+      const lines = readFileSync(file, 'utf8').split('\n');
+      if (lines.length > 0 && lines[lines.length - 1] === '') lines.pop(); // drop the trailing empty.
+      return lines;
+    },
+    watch: (dir, onEvent) => {
+      const w = fsWatch(dir, { persistent: false }, () => onEvent());
+      w.on('error', () => {
+        /* watcher error — swallow; a re-open happens on the next follow */
+      });
+      return () => {
+        try {
+          w.close();
+        } catch {
+          /* ignore */
+        }
+      };
+    },
+    maxLines: 500,
+  });
+  // S006 sc9: the consent-gated orphan kill. NOT on the read-only gateway (killing
+  // is a mutation); invoked only after sc4 consent below, and only for the
+  // non-managed orphans the scan found (k4).
+  const orphanKill = createOrphanKill({
+    kill: (pid, signal) => {
+      process.kill(pid, signal);
+    },
+    wait: (ms) => new Promise<void>((resolve) => { setTimeout(resolve, ms); }),
+    managedPid,
+    platform: process.platform,
+  });
   const panelHost = createWebviewPanelHost({
     panels: ({ viewType, title }): PanelHandle => {
       // S005: enableScripts:true so the Detailed Status tab strip + Refresh can
@@ -233,8 +288,23 @@ export function activate(context: vscode.ExtensionContext): void {
     pickMenu: (items) => Promise.resolve(vscode.window.showQuickPick(items, { placeHolder: 'insrc' })),
     gateway: daemonData,
     logger: panelLog,
-    // S005: the daemon + workflows tab bodies. Debug stays a placeholder until s6.
-    detailRenderers: { daemon: renderDaemonTab, workflows: renderWorkflowsTab },
+    // S005: the daemon + workflows tab bodies. S006: the Debug tab body (mcp clients
+    // + managed-pid-excluded orphans + live-log region).
+    detailRenderers: { daemon: renderDaemonTab, workflows: renderWorkflowsTab, debug: renderDebugTab({ managedPid }) },
+    // S006: the Debug tab's continuous log ticker (the epic's only ticker), armed
+    // while the tab is active and disposed when it is left / the panel closes.
+    tabControllers: { debug: createDebugTabController({ logTail: debugLogTail, logger: panelLog }) },
+    // S006: a webview action from a tab body. The ONLY action is the Debug tab's
+    // 'cleanupOrphans' — the VS-Code-free handler re-scans, drops the managed
+    // daemon, prompts sc4 consent (k4), and kills only on accept, surfacing via sc2.
+    onDetailAction: createDebugActionHandler({
+      scanOrphans: () => daemonData.scanOrphans(),
+      managedPid,
+      consent,
+      kill: orphanKill,
+      status,
+      logger: panelLog,
+    }),
   });
   // The status-bar item's click target — set on the raw StatusBarItem (the sc2
   // StatusBarHandle carries no `command` field and is left untouched).

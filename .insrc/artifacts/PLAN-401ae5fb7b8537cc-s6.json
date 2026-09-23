@@ -1,0 +1,450 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1790152834788-7mrfp4",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-23T08:49:07.546Z",
+    "epicCreatedAt": "2026-09-22T10:29:17.310Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 512734,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "401ae5fb7b8537cc",
+    "epicSlug": "work-framed-approved-spec-proceed-from",
+    "storyId": "s6",
+    "lldRunId": "wf-1790151917927-0ozn6q",
+    "lldEffectiveHash": "790f3d6f5efd1ec7853ed7547c7c5ad8b56ec8f6ada70b53c07be4e73716ab6b",
+    "approvedAt": "2026-09-23T09:09:50.657Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "sc9 amendment types (types.ts): TabController + TabActivationCtx + tabControllers/onDetailAction",
+        "summary": "Additively extend vscode-plugin/src/panels/types.ts: export `interface TabController { onActivate(ctx: TabActivationCtx): () => void }` + `interface TabActivationCtx { postMessage(message: unknown): void }`; add optional `tabControllers?: Partial<Record<DetailTab, TabController>>` + `onDetailAction?: (action: string) => void` to WebviewPanelHostDeps. No existing member removed/changed (breaking:false); PanelHandle.postMessage (S005) is reused for the ctx.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "types.ts exports TabController + TabActivationCtx and adds the two optional WebviewPanelHostDeps fields",
+          "No existing sc9 type member (detailRenderers/PanelHandle/DaemonDataGateway) is removed/renamed — S004/S005 types still compile",
+          "Compiles under strict/exactOptionalPropertyTypes with .js imports; no 'vscode' import"
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "types source-scan: TabController/TabActivationCtx + tabControllers/onDetailAction added ADDITIVELY (no existing sc9 member removed/renamed; detailRenderers preserved)"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Thin rotation-aware LogTail (new log-tail.ts)",
+        "summary": "Create vscode-plugin/src/panels/log-tail.ts: createLogTail(deps: LogTailDeps { logDir, stem, listSegments, readLines, watch, maxLines }): LogTail with follow(onLines): () => void — emits the maxLines-bounded initial tail of the active segment, then follows appends + rotation (active-segment tracking) on a watch event; idempotent dispose flips a disposed flag (no post-dispose emit + removes the watcher); NEVER throws (every listSegments/readLines/watch call try/caught). Mirrors the CLI src/cli/services/debug.ts tailLogWith WITHOUT importing it (k5). VS-Code-free; reads only local files.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "follow emits the bounded initial tail then follows appended lines on a watch event; a rotation (active segment change) is tracked without drop/duplicate",
+          "dispose() is idempotent and guarantees no onLines fires after dispose",
+          "a missing dir / readLines throw / watch throw is swallowed (never throws); imports no 'vscode', no cloud, and NOT src/cli/services/debug.ts"
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "log-tail: follow emits the maxLines-bounded initial tail then follows appended lines on a watch event"
+          },
+          {
+            "level": "unit",
+            "name": "log-tail: a rotation (active segment roll) is tracked — appends emit from the new segment without drop/duplicate"
+          },
+          {
+            "level": "unit",
+            "name": "log-tail: dispose() is idempotent and guarantees no onLines fires after dispose"
+          },
+          {
+            "level": "unit",
+            "name": "log-tail: a missing dir / readLines throw / watch throw is swallowed — follow never throws"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Consent-gated OrphanKill seam + shared managedPid resolver (new orphan-kill.ts)",
+        "summary": "Create vscode-plugin/src/panels/orphan-kill.ts: readManagedPid(pidFile) (read+parse ~/.insrc/daemon.pid -> number|undefined, never throws) + createOrphanKill(deps: OrphanKillDeps { kill, wait, managedPid, platform }): (pids) => Promise<KillOutcome[]> — for each explicitly-passed pid (NEVER the managed daemon; re-excluded as 'not-found'): SIGTERM -> wait -> SIGKILL-for-survivors, one KillOutcome{pid,result:'terminated'|'forced'|'not-found'|'error'} per pid; a kill throw is caught per-pid as 'error'; non-POSIX -> no-op/'error'. Mirrors the CLI killOrphansWith WITHOUT importing it. VS-Code-free; NOT on the read-only gateway.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "createOrphanKill: a live pid -> SIGTERM->SIGKILL 'forced'; a pid dying on SIGTERM -> 'terminated'; a kill throw -> 'error'; the managed pid is never signalled ('not-found')",
+          "readManagedPid parses the pidFile to a number (or undefined on missing/garbage) and never throws",
+          "non-POSIX platform no-ops/reports 'error'; imports no 'vscode', no cloud; is NOT a gateway method"
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "orphan-kill: a live pid -> SIGTERM->SIGKILL 'forced'; a pid dying on SIGTERM -> 'terminated'"
+          },
+          {
+            "level": "unit",
+            "name": "orphan-kill: the managed daemon pid is never signalled even if passed in ('not-found'); only non-managed pids targeted"
+          },
+          {
+            "level": "unit",
+            "name": "orphan-kill: a per-pid kill throw is caught as 'error', the others proceed, the fn never throws"
+          },
+          {
+            "level": "unit",
+            "name": "orphan-kill: non-POSIX no-ops/reports 'error'; readManagedPid parses to number|undefined and never throws"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Debug renderer + controller (new debug-renderer.ts)",
+        "summary": "Create vscode-plugin/src/panels/debug-renderer.ts: renderDebugTab(deps { managedPid }): TabRenderer — awaits gateway.mcpClients() (host/wired list, empty-state when none; ac1) + gateway.scanOrphans() (filter out managedPid()), renders the escaped mcp + orphan lists, an empty <pre id=\"insrc-log\">, and a 'Clean up orphaned processes' <button> posting {type:'action',action:'cleanupOrphans'} ONLY when >=1 non-managed orphan; a gateway rejection propagates so the host degrades. createDebugTabController(deps { logTail, logger }): TabController — onActivate(ctx) starts logTail.follow(lines => ctx.postMessage({type:'appendLog', lines})) and returns the tail's dispose. VS-Code-free; reuse panels/html.ts escapeHtml.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "renderDebugTab lists mcpClients (host/wired, empty-state) + the managed-pid-excluded orphans + #insrc-log; the Clean-up button (posting {type:'action','cleanupOrphans'}) shows ONLY with >=1 non-managed orphan; every value escaped; a gateway reject propagates",
+          "createDebugTabController.onActivate arms exactly one logTail.follow -> ctx.postMessage appendLog and returns the tail dispose (idempotent)",
+          "imports no 'vscode', no cloud"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "renderDebugTab: lists gateway.mcpClients() host/wired rows; empty client list renders an explicit empty-state (ac1)"
+          },
+          {
+            "level": "unit",
+            "name": "renderDebugTab: orphan list EXCLUDES the managed pid; managed-only scan -> empty orphan list, no Clean-up button"
+          },
+          {
+            "level": "unit",
+            "name": "renderDebugTab: the Clean-up button shows ONLY with >=1 non-managed orphan and posts {type:'action',action:'cleanupOrphans'}"
+          },
+          {
+            "level": "unit",
+            "name": "renderDebugTab: body includes an empty <pre id=\"insrc-log\">; every mcp/orphan value escaped; a gateway rejection propagates"
+          },
+          {
+            "level": "unit",
+            "name": "createDebugTabController: onActivate arms exactly ONE logTail.follow -> postMessage appendLog per emit; returned dispose is idempotent"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Amend the sc9 host (webview-host.ts): tab-controller lifecycle + action route + appendLog bootstrap",
+        "summary": "Amend vscode-plugin/src/panels/webview-host.ts (ONE atomic host change — the pieces share the panel closure): (1) a per-panel active-controller lifecycle — activateTab(tab) disposes the previous controller then calls deps.tabControllers?.[tab]?.onActivate({ postMessage: (m)=>panel.postMessage(m) }) caching its dispose; invoked from openDetailedStatus (initial active tab) + handleDetailMessage (switchTab) + on panel onDidDispose (dispose the live controller). Exactly one controller live; none survives dispose. (2) handleDetailMessage += a {type:'action', action:string} branch -> deps.onDetailAction?.(action) (validated; unknown/malformed rejected; wrapped in the never-throw guard). (3) the host BOOTSTRAP += a window 'message' listener that on {type:'appendLog', lines} appends each line to #insrc-log via textContent (inherently XSS-safe). Stays VS-Code-free + never-throw; S004/S005 detailRenderers/switchTab/refresh behaviour unchanged.",
+        "size": "L",
+        "order": 5,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "activating a tab with a controller calls onActivate({postMessage}); switching away / re-activating / disposing the panel calls the previous controller's dispose exactly once (one live at a time, none survives dispose)",
+          "a {type:'action',action} message forwards to onDetailAction; an unknown action / malformed message is a silent no-op; the appendLog bootstrap appends lines to #insrc-log via textContent",
+          "the host stays never-throw (onActivate/dispose/onDetailAction try/caught) + XSS-safe (CSP/nonce unchanged); detailRenderers/switchTab/refresh + daemon/workflows on-demand behaviour is preserved"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "host: activating the debug tab (open or switchTab-to 'debug') calls tabControllers.debug.onActivate; switch-away/dispose calls the returned dispose EXACTLY once (one live)"
+          },
+          {
+            "level": "unit",
+            "name": "host: a {type:'appendLog',lines} message appends the escaped lines to #insrc-log via the bootstrap (rendered-shell + append protocol)"
+          },
+          {
+            "level": "unit",
+            "name": "host: a {type:'action','cleanupOrphans'} message is forwarded to onDetailAction; an unknown action / malformed message is a silent no-op"
+          },
+          {
+            "level": "unit",
+            "name": "host: onActivate/dispose/onDetailAction throwing is caught (never-throw); S004/S005 detailRenderers/switchTab/refresh + daemon/workflows on-demand unchanged"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "extension.ts wiring: detailRenderers.debug + tabControllers.debug + onDetailAction consent+kill",
+        "summary": "Amend vscode-plugin/src/extension.ts (sole vscode importer): build a shared managedPid = () => readManagedPid(PATHS.pidFile); pass detailRenderers.debug = renderDebugTab({ managedPid }); tabControllers = { debug: createDebugTabController({ logTail: createLogTail({ logDir: PATHS.logDir, stem: 'daemon', listSegments/readLines/watch over node:fs, maxLines }), logger: panelLog }) }; onDetailAction = async (action) => { if (action!=='cleanupOrphans') return; const orphans=(await daemonData.scanOrphans()).filter(o=>o.pid!==managedPid()); if(!orphans.length) return; const outcome=await consent.ask({title,detail,acceptLabel:'Terminate',items}); if(outcome!=='accepted') return; const results=await createOrphanKill({kill:process.kill,wait,managedPid,platform:process.platform})(orphans.map(o=>o.pid)); status.set(<summary>) }. Reuses the already-constructed sc4 consent + sc2 StatusSurface; no new command; no vscode.d.ts change; remains the sole 'vscode' importer.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t3",
+          "t4",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "extension.ts wires detailRenderers.debug + tabControllers.debug (logTail over real node:fs deps) + onDetailAction, with ONE shared managedPid resolver (PATHS.pidFile) used by both the renderer and the kill",
+          "onDetailAction filters the managed pid, short-circuits on zero orphans (no prompt), calls consent.ask, and calls the kill ONLY on 'accepted'; the outcome surfaces via sc2 StatusSurface",
+          "extension.ts stays the sole 'vscode' importer, opens no cloud path, adds no new command, and does not regress S004/S005 wiring"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "extension onDetailAction: >=1 non-managed orphan -> consent.ask; kill on 'accepted' with exactly those pids; kill NEVER on 'declined'/'dismissed' (k4)"
+          },
+          {
+            "level": "unit",
+            "name": "extension onDetailAction: managed pid filtered from scanOrphans() before prompting; zero non-managed orphans -> returns WITHOUT prompting or killing"
+          },
+          {
+            "level": "unit",
+            "name": "extension onDetailAction: action !== 'cleanupOrphans' is a no-op; the kill outcome surfaces via the sc2 StatusSurface"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Tests: debug renderer/controller + log-tail + orphan-kill + host lifecycle/action + extension consent-kill + source-scans",
+        "summary": "Add vscode-plugin/src/panels/__tests__/{debug-renderer,log-tail,orphan-kill}.test.ts + extend webview-host.test.ts (+ an extension onDetailAction test). Aggregates the per-task suites above; adds the cross-cutting source-scans (3 new files no vscode/no cloud; log-tail not importing src/cli debug.ts) and the full-sweep smoke. node:test (tsx --test) over injected fakes — no VS Code host, no live daemon, fake watch/kill/clock.",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t2",
+          "t3",
+          "t4",
+          "t5",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "all three seams + the debug renderer/controller + the host lifecycle/action + the extension consent-kill orchestration are covered (ac1/ac2/ac3), incl. the no-kill-without-consent + managed-exclusion + one-ticker-live assertions",
+          "source-scans prove the 3 new files import no 'vscode'/no cloud, log-tail.ts does not import src/cli/services/debug.ts, and the sc9 amendment is additive (no member removed)",
+          "full node:test (tsx --test) sweep is green locally; tsc clean; bundle stays thin"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "source-scan: debug-renderer.ts + log-tail.ts + orphan-kill.ts import no 'vscode' and use no cloud/HTTP (extension.ts stays the sole vscode importer)"
+          },
+          {
+            "level": "unit",
+            "name": "source-scan: log-tail.ts does NOT import the daemon-side src/cli/services/debug.ts (k5 bundle stays thin)"
+          },
+          {
+            "level": "smoke",
+            "name": "full node:test (tsx --test) sweep green + tsc clean + the k5 bundle allowlist (node:* + vscode only) still holds"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "renderDebugTab lists gateway.mcpClients() as host/wired rows (ac1); an empty client list renders an explicit empty-state",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "renderDebugTab renders the gateway.scanOrphans() orphan list EXCLUDING the managed pid (managedPid()); when only the managed daemon is scanned the orphan list is empty and the 'Clean up' button is NOT shown",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "the 'Clean up orphaned processes' button is shown ONLY when >=1 non-managed orphan exists and (in the html) posts {type:'action',action:'cleanupOrphans'}",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "the body includes an empty <pre id=\"insrc-log\"> appender target",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "every mcp/orphan value (host/command) is HTML-escaped; a gateway rejection propagates (not swallowed) so the host degrades",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "follow emits the maxLines-bounded initial tail of the active segment, then follows appended lines on a watch event",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "a rotation (active segment rolls; a new active segment appears) is tracked — subsequent appends emit from the new segment without dropping/duplicating across the roll",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "dispose() is idempotent and guarantees NO onLines fires after dispose (no post-dispose emit)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "a missing logDir / a readLines throw / a watch throw is SWALLOWED — follow never throws and still delivers what it can",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "for a live pid: SIGTERM -> (still alive after wait) -> SIGKILL -> KillOutcome 'forced'; for a pid that dies on SIGTERM -> 'terminated'",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "the managed daemon pid is NEVER signalled even if passed in — reported 'not-found'/skipped; only the explicitly-passed non-managed pids are targeted",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "a kill that throws (EPERM/ESRCH) is caught per-pid and reported as 'error'; the other pids still proceed; the fn never throws",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "on a non-POSIX platform the kill no-ops/reports 'error' rather than mis-signalling",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "createDebugTabController.onActivate(ctx) arms exactly ONE logTail.follow and postMessages {type:'appendLog',lines} on each emit; the returned dispose stops the follow idempotently",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "host: activating the debug tab (open or switchTab-to 'debug') calls tabControllers.debug.onActivate; switching AWAY or disposing the panel calls the returned dispose EXACTLY once (no ticker survives; only one live at a time)",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "host: a {type:'appendLog',lines} host->webview message appends the (escaped) lines to #insrc-log via the bootstrap (source/asserted on the rendered shell + the append protocol)",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "host: a {type:'action',action:'cleanupOrphans'} webview message is forwarded to onDetailAction; an unknown action / malformed message is a silent no-op (no throw)",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "host: onActivate/dispose/onDetailAction throwing is caught (never-throw preserved); S004/S005 behaviour (detailRenderers, switchTab/refresh, daemon/workflows on-demand) is unchanged",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "onDetailAction('cleanupOrphans') with >=1 non-managed orphan calls consent.ask(); on 'accepted' it calls the kill with exactly those pids; on 'declined'/'dismissed' it calls the kill NEVER (ac3/k4)",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "onDetailAction filters the managed pid out of scanOrphans() before prompting; with zero non-managed orphans it returns WITHOUT prompting consent or killing (no empty modal)",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "any action !== 'cleanupOrphans' is a no-op (no consent, no kill)",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "the kill outcome is surfaced via the sc2 StatusSurface (a summary), never console",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "Source-scan: debug-renderer.ts + log-tail.ts + orphan-kill.ts import no 'vscode' and use no cloud/HTTP (extension.ts stays the sole vscode importer)",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "Source-scan: log-tail.ts does NOT import the daemon-side src/cli/services/debug.ts (k5 bundle stays thin) — it is a plugin-local tail",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "types.ts adds TabController/TabActivationCtx + tabControllers/onDetailAction ADDITIVELY (no existing sc9 member removed/renamed; detailRenderers preserved)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD 401ae5fb7b8537cc:s6 — sc9 additive host/types amendment: TabController/TabActivationCtx + tabControllers/onDetailAction on WebviewPanelHostDeps, the per-panel activateTab controller lifecycle, and the host-owned {type:'appendLog'} bootstrap over the S005 detailRenderers/switchTab/refresh surface (types.ts + webview-host.ts)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD 401ae5fb7b8537cc:s6 — thin rotation-aware LogTail seam: createLogTail over injectable listSegments/readLines/watch, bounded initial tail + follow + idempotent never-throw dispose, mirroring the CLI src/cli/services/debug.ts tailLogWith without importing it (k5)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD 401ae5fb7b8537cc:s6 — consent-gated OrphanKill seam: readManagedPid + createOrphanKill (SIGTERM->SIGKILL, managed-daemon excluded, per-pid KillOutcome, non-POSIX gated), mirroring the CLI killOrphansWith; off the read-only gateway"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD 401ae5fb7b8537cc:s6 — debug renderer/controller + extension.ts wiring: renderDebugTab (mcpClients ac1 + managed-pid-excluded orphans + conditional cleanup button) into detailRenderers.debug, createDebugTabController into tabControllers.debug, and the onDetailAction consent(sc4)+kill+StatusSurface(sc2) orchestration with one shared managedPid resolver"
+    }
+  ]
+}

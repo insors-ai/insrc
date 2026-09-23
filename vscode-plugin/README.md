@@ -47,6 +47,25 @@ another window) are reconciled on demand via **`insrc: Refresh insrc settings`**
 in the Command Palette. All config access is over the local daemon socket — no
 cloud path.
 
+## Status & panels
+
+The status-bar **insrc** item opens a two-item menu (also reachable from the
+Command Palette):
+
+- **Open Detailed Status** — a tabbed panel over the running daemon:
+  - **Daemon** — the daemon's current state (uptime, repos, queue depth).
+  - **Workflows** — the workflow-artifact chain per work item.
+  - **Debug** — the attached MCP clients, a live tail of the daemon log, and a
+    **consent-gated** cleanup of stray insrc processes (the managed daemon is
+    never touched).
+- **Open Repo Configuration** — pick any repo the daemon has registered
+  (independent of which folders are open) and edit that repo's per-repo model-tier
+  overrides through form fields — no hand-editing JSON. Every write is
+  consent-gated and reflects back only what the daemon actually stored.
+
+All panels are read/edit views over the local daemon socket — no background
+polling (only the Debug log tails while its tab is open), no cloud path.
+
 ## Building & packaging (maintainers)
 
 ```bash

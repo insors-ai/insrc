@@ -41,7 +41,7 @@ test('package.json carries every Marketplace-required field for a single install
   assert.ok(Array.isArray(pkg.keywords) && pkg.keywords.length > 0, 'keywords is a non-empty list');
 });
 
-test('the 7 durable ad0d45c9 contributes.commands are preserved (S003 adds only insrc.settings.refresh)', () => {
+test('the 7 durable ad0d45c9 contributes.commands are preserved + the config/panel-track additions (S003 refresh, S004 panel commands)', () => {
   const ids = (pkg.contributes?.commands ?? []).map((c: { command: string }) => c.command);
   const shipped = [
     'insrc.daemon.install',
@@ -53,11 +53,14 @@ test('the 7 durable ad0d45c9 contributes.commands are preserved (S003 adds only 
     'insrc.workspace.register',
   ];
   for (const id of shipped) assert.ok(ids.includes(id), `shipped command ${id} must be preserved`);
-  // S003 additively adds exactly the Refresh command (the config-track's k6 command).
+  // S003 adds the Refresh command; S004 adds the two panel palette commands. The
+  // status-bar menu command (insrc.status.menu) is set on the status-bar item in
+  // extension.ts and is deliberately NOT a palette entry.
+  assert.ok(!ids.includes('insrc.status.menu'), 'insrc.status.menu is a status-bar command, not a palette entry');
   assert.deepEqual(
     ids.slice().sort(),
-    [...shipped, 'insrc.settings.refresh'].sort(),
-    'the 7 shipped commands + insrc.settings.refresh, no others',
+    [...shipped, 'insrc.settings.refresh', 'insrc.status.detailed', 'insrc.status.repoConfig'].sort(),
+    'the 7 shipped commands + insrc.settings.refresh + the 2 S004 panel commands, no others',
   );
 });
 

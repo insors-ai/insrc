@@ -39,3 +39,24 @@ test('contributes.commands includes insrc.workspace.register alongside the S002 
     assert.ok(ids.includes(id), `${id} must stay palette-reachable (k6)`);
   }
 });
+
+test('S004 sc9: extension.ts wires the status-bar click + both panels as first-class commands (ac1/ac3)', () => {
+  const entry = readFileSync(join(PKG, 'src', 'extension.ts'), 'utf8');
+  // The status-bar item's click opens the 2-item menu (the raw item's command; sc2 handle untouched).
+  assert.match(entry, /statusItem\.command\s*=\s*'insrc\.status\.menu'/, 'the status-bar item command is insrc.status.menu (ac1)');
+  // The host + gateway are built over the shared client + the panel factory/menu picker.
+  assert.match(entry, /createDaemonDataGateway\(\{/, 'the read-only DaemonDataGateway is constructed');
+  assert.match(entry, /createWebviewPanelHost\(\{/, 'the WebviewPanelHost is constructed');
+  // Each of the three commands is registered via the sc3 registry (menu + 2 panels, ac3).
+  for (const id of ['insrc.status.menu', 'insrc.status.detailed', 'insrc.status.repoConfig']) {
+    assert.match(entry, new RegExp(`register\\(\\{\\s*id:\\s*'${id.replace(/\./g, '\\.')}'`), `${id} is registered`);
+  }
+});
+
+test('S004 sc9: both panel commands are palette-reachable (k6) and the menu command is not', () => {
+  const pkg = JSON.parse(readFileSync(join(PKG, 'package.json'), 'utf8'));
+  const ids = (pkg.contributes?.commands ?? []).map((c: { command: string }) => c.command);
+  assert.ok(ids.includes('insrc.status.detailed'), 'Open Detailed Status is palette-reachable (k6)');
+  assert.ok(ids.includes('insrc.status.repoConfig'), 'Open Repo Configuration is palette-reachable (k6)');
+  assert.ok(!ids.includes('insrc.status.menu'), 'the status-bar menu command is not a palette entry');
+});

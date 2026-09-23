@@ -71,6 +71,16 @@
         "command": "insrc.settings.refresh",
         "title": "Refresh insrc settings",
         "category": "insrc"
+      },
+      {
+        "command": "insrc.status.detailed",
+        "title": "Open Detailed Status",
+        "category": "insrc"
+      },
+      {
+        "command": "insrc.status.repoConfig",
+        "title": "Open Repo Configuration",
+        "category": "insrc"
       }
     ],
     "configuration": [

@@ -28,11 +28,54 @@ declare module 'vscode' {
     detail?: string | undefined;
   }
 
+  /** The editor column a webview panel opens in (S004 sc9). */
+  export enum ViewColumn {
+    Active = -1,
+    Beside = -2,
+    One = 1,
+    Two = 2,
+  }
+
+  /** A quick-pick choice (S004 sc9 status-bar menu). A `label` plus caller fields. */
+  export interface QuickPickItem {
+    label: string;
+    description?: string | undefined;
+    detail?: string | undefined;
+  }
+
+  /** The webview body of a panel (S004 sc9): set `html`, and the host↔webview bridge. */
+  export interface Webview {
+    html: string;
+    postMessage(message: unknown): PromiseLike<boolean>;
+    onDidReceiveMessage(listener: (message: unknown) => unknown): Disposable;
+  }
+
+  /** A live webview panel (S004 sc9): create/reveal/dispose + its webview body. */
+  export interface WebviewPanel extends Disposable {
+    readonly webview: Webview;
+    readonly active: boolean;
+    readonly visible: boolean;
+    reveal(viewColumn?: ViewColumn): void;
+    onDidDispose(listener: () => unknown): Disposable;
+  }
+
   export namespace window {
     export function createStatusBarItem(alignment?: StatusBarAlignment, priority?: number): StatusBarItem;
     export function showInformationMessage(message: string, options: MessageOptions, ...items: string[]): PromiseLike<string | undefined>;
     /** Surface a non-blocking error toast (sc8 Notifier — a rejected config write). */
     export function showErrorMessage(message: string): PromiseLike<string | undefined>;
+    /** Create a webview panel in `showOptions` column (S004 sc9 WebviewPanelHost). */
+    export function createWebviewPanel(
+      viewType: string,
+      title: string,
+      showOptions: ViewColumn,
+      options?: { enableScripts?: boolean | undefined },
+    ): WebviewPanel;
+    /** Present a quick-pick menu; resolves the chosen item or undefined on dismiss (S004 sc9). */
+    export function showQuickPick<T extends QuickPickItem>(
+      items: readonly T[] | PromiseLike<readonly T[]>,
+      options?: { placeHolder?: string | undefined },
+    ): PromiseLike<T | undefined>;
   }
 
   export namespace commands {

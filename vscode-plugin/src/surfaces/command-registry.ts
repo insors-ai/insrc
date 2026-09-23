@@ -19,7 +19,10 @@ export type InsrcCommandId =
   | 'insrc.daemon.update'
   | 'insrc.hosts.wire'
   | 'insrc.workspace.register'
-  | 'insrc.settings.refresh';
+  | 'insrc.settings.refresh'
+  | 'insrc.status.menu'
+  | 'insrc.status.detailed'
+  | 'insrc.status.repoConfig';
 
 export interface CommandDescriptor {
   id: InsrcCommandId;

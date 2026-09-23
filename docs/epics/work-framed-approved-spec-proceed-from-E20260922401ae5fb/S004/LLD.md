@@ -1,0 +1,395 @@
+<!-- insrc:artifact LLD-401ae5fb7b8537cc-s4 -->
+
+# LLD: E20260922401ae5fb:S004
+
+**Epic:** `work-framed-approved-spec-proceed-from`
+**HLD base run:** `wf-1790073320669-iy7sqb`
+**HLD effective hash:** `790f3d6f5efd...`
+
+## HLD context
+
+**Framework:** The Epic re-expresses the shipped JetBrains settings + nested-pages surface on the VS Code side as two net-new injectable seams layered over the extension's existing sc1-sc7 contracts, following the exact S001-S006 convention: small VS-Code-free cores behind injected boundaries, with extension.ts the SOLE 'vscode' importer and every core unit-testable off the editor API via node:test. Editable config lives in native VS Code Settings (a statically-declared, machine-scoped contributes.configuration for the stable global + fixed per-role keys) driven by ONE ConfigSync engine that keeps the native surface truthful to the daemon (pull on activation/refresh, live-push each change with pre-flight validate and revert-on-reject). The read-only Daemon/Workflows/Debug pages and the per-repo editor live behind ONE WebviewPanelHost (a tabbed Detailed Status panel + a separate Repo Configuration panel) fed by a read-only DaemonData gateway over the existing daemon IPC. Everything reaches the daemon only through the existing config.catalog/config.write + read IPC via sc1; no new daemon capability is added.
+**Rollout phase:** Phase C — Panel foundation (sc9 WebviewPanelHost)
+**Owns:** `sc9` (WebviewPanelHost)
+**Consumes:** `sc9` (WebviewPanelHost)
+
+**Adjacent scope (owned by other stories — do NOT implement here):**
+- `s1`: The exact set of stable global config keys declared in contributes.configuration (machine scope) and the mapping from config.catalog paths to those native keys; the last-synced snapshot representation; and the internal validate→write→revert mechanics of the ConfigSync engine. Only the sc8 ConfigSyncEngine + its injected boundary types are exposed; how the pull and the per-change diff are computed is private. — owns `sc8`
+- `s2`: How the fixed RoleId taxonomy is enumerated into per-role tier-override keys and rendered as enum (core/mid/cheap) native settings, and how a role's effective tier (default vs override, clamped by coreFloor) is displayed. Consumes sc8 for the actual apply/truthful-sync; adds no new contract.
+- `s3`: The toast + auto-revert UX on a rejected write (the loop-suppression while reverting), the reconcile-on-activation and the 'Refresh insrc settings' durable command that drives sc8.pullFromDaemon, and the insrc.advanced escape-hatch handling. Consumes sc8; owns no shared contract.
+- `s5`: The Daemon status view and the Workflows chain-report rendering inside their tabs, and each view's on-demand refresh control (open/tab-switch/manual). Consumes sc9's host + gateway; adds no new contract and does no background polling.
+- `s6`: The Debug tab: the MCP-clients list rendering, the continuous polling-ticker live log tail (rotation-aware, the only continuously-refreshing view), and the consent-gated orphan-process cleanup (via the shipped sc4 ConsentGate before any kill). Consumes sc9; the ticker + confirm UX are private.
+- `s7`: The Repo Configuration panel's repo picker (populated from sc9's registeredRepos) and the per-repo overrides editor form, plus its own per-repo config writes over the existing sc1 config.write and its inline write-feedback. Consumes sc9 for the panel host + repo list; the form layout + per-repo write handling are private.
+
+## Contract details
+
+**Surface level:** internal-shared
+
+### `createWebviewPanelHost`
+
+```typescript
+export function createWebviewPanelHost(deps: WebviewPanelHostDeps): WebviewPanelHost
+```
+
+**Parameters:**
+- `deps: WebviewPanelHostDeps { panels: PanelFactory; pickMenu: MenuPicker; gateway: DaemonDataGateway; logger: Logger }` — The injected boundaries the VS-Code-free host runs over: a PanelFactory that wraps window.createWebviewPanel, a MenuPicker that wraps window.showQuickPick, the sc9 DaemonDataGateway, and the shared logger. Keeps extension.ts the sole 'vscode' importer.
+
+**Returns:** `WebviewPanelHost` — The sc9 host: openDetailedStatus(tab?) + openRepoConfiguration(), each a single-instance panel that is created on first call and revealed thereafter. Never throws to the caller; gateway/panel failures degrade to an in-panel error state.
+
+**Errors:**
+- `(none thrown)` when The factory never throws; a gateway read failure or a panel-create failure is caught internally and surfaced as an in-panel error message + a logger.warn, mirroring the sc6/sc8 never-throw core convention.
+
+**Preconditions:**
+- deps.panels/pickMenu/gateway/logger are all provided (extension.ts binds the real vscode + sc1-backed implementations).
+
+**Postconditions:**
+- Returns a host holding no open panel until a method is called; each open method creates-or-reveals exactly one panel of its kind.
+
+### `WebviewPanelHost.openDetailedStatus`
+
+```typescript
+openDetailedStatus(tab?: DetailTab): void
+```
+
+**Parameters:**
+- `tab: DetailTab ('daemon' | 'workflows' | 'debug')` _(optional)_ — Which tab to select on open; defaults to 'daemon' (ac2's default view) when omitted.
+
+**Returns:** `void` — Creates the Detailed Status panel if absent (fixed daemon/workflows/debug tab triad) and reveals it, selecting the requested tab (or 'daemon'); on an already-open panel it reveals + switches tab without recreating.
+
+**Errors:**
+- `(none thrown)` when A gateway.status() failure renders the daemon tab body as an error state (logger.warn), never throwing; ac2's tab scaffolding still appears.
+
+**Preconditions:**
+- The host was built via createWebviewPanelHost.
+
+**Postconditions:**
+- Exactly one Detailed Status panel exists afterwards; it lands on the daemon tab by default with Workflows + Debug tabs present (ac2).
+- The daemon tab body is rendered from gateway.status() (minimal DaemonStatusView); the Workflows/Debug tab bodies are placeholders filled by s5/s6.
+
+### `WebviewPanelHost.openRepoConfiguration`
+
+```typescript
+openRepoConfiguration(): void
+```
+
+**Returns:** `void` — Creates the separate Repo Configuration panel if absent and reveals it; the panel's form body is a placeholder filled by s7. S004 ships only the panel shell + reveal-or-create lifecycle.
+
+**Errors:**
+- `(none thrown)` when A panel-create failure is caught + logged; the menu action simply no-ops visibly rather than throwing.
+
+**Preconditions:**
+- The host was built via createWebviewPanelHost.
+
+**Postconditions:**
+- Exactly one Repo Configuration panel exists afterwards (shell only in S004).
+
+### `WebviewPanelHost.showStatusMenu`
+
+```typescript
+showStatusMenu(): Promise<void>
+```
+
+**Returns:** `Promise<void>` — The body of the status-bar 'insrc.status.menu' command: shows a QuickPick with EXACTLY two items (Detailed Status, Repo Configuration) via deps.pickMenu and routes the choice to openDetailedStatus() / openRepoConfiguration(). A dismissed pick is a no-op (ac1).
+
+**Errors:**
+- `(none thrown)` when A pick cancellation resolves to undefined and no-ops; the MenuPicker itself never rejects in the core (extension.ts wraps showQuickPick).
+
+**Preconditions:**
+- deps.pickMenu is bound to window.showQuickPick in extension.ts.
+
+**Postconditions:**
+- Presents exactly two menu choices (ac1); selecting one opens the corresponding panel.
+
+### `createDaemonDataGateway`
+
+```typescript
+export function createDaemonDataGateway(deps: DaemonDataGatewayDeps): DaemonDataGateway
+```
+
+**Parameters:**
+- `deps: DaemonDataGatewayDeps { client: SharedIpcClient; artifactsRoot: () => string | undefined; processScan: ProcessScan; logger: Logger }` — The read-only facade's data sources: the sc1 SharedIpcClient for daemon reads (daemon.status/repo.list/daemon.debug-status), a resolver for the .insrc/artifacts root (workflowChain), and a node ProcessScan boundary (scanOrphans). All local; no cloud (k2/k3).
+
+**Returns:** `DaemonDataGateway` — The sc9 typed facade: status/workflowChain/mcpClients/registeredRepos/scanOrphans, each mapping a daemon read or local read into its View type. S004 wires ALL five methods (a1).
+
+**Errors:**
+- `GatewayReadError` when Any method rejects when its underlying read fails (socket unreachable, malformed payload, unreadable artifacts dir); callers (the host tab bodies) catch it and render an error state — the gateway does not itself surface UI.
+
+**Preconditions:**
+- deps.client is the shared sc1 client already connected to the daemon socket (or reconnecting); artifactsRoot/processScan are bound by extension.ts.
+
+**Postconditions:**
+- Each method reaches only the local Unix socket via sc1 or the local filesystem/process table — never a cloud endpoint (ac4/k2/k3).
+
+### `DaemonDataGateway.status`
+
+```typescript
+status(): Promise<DaemonStatusView>
+```
+
+**Returns:** `Promise<DaemonStatusView>` — Maps the daemon.status DaemonStatus { uptime, repos, queueDepth, embeddingsPending, ... } into { state, detail } — the minimal default Daemon-tab view (ac2). s5 enriches the rendering; the mapping shape is fixed here.
+
+**Errors:**
+- `GatewayReadError` when The daemon.status RPC fails or times out over sc1.
+
+**Preconditions:**
+- sc1 client is available.
+
+**Postconditions:**
+- Reaches only daemon.status over sc1 (ac4).
+
+### `DaemonDataGateway.registeredRepos`
+
+```typescript
+registeredRepos(): Promise<readonly RepoRef[]>
+```
+
+**Returns:** `Promise<readonly RepoRef[]>` — Maps repo.list into RepoRef { path, name }. Consumed by s7's repo picker; wired here per the single-owner gateway (a1).
+
+**Errors:**
+- `GatewayReadError` when The repo.list RPC fails over sc1.
+
+**Preconditions:**
+- sc1 client is available.
+
+**Postconditions:**
+- Reaches only repo.list over sc1 (ac4).
+
+### `DaemonDataGateway.mcpClients`
+
+```typescript
+mcpClients(): Promise<readonly McpClientView[]>
+```
+
+**Returns:** `Promise<readonly McpClientView[]>` — Maps daemon.debug-status { clients: AttachedClient[] } into McpClientView { host, wired }. Consumed by s6's Debug tab; wired here (a1).
+
+**Errors:**
+- `GatewayReadError` when The daemon.debug-status RPC fails over sc1.
+
+**Preconditions:**
+- sc1 client is available.
+
+**Postconditions:**
+- Reaches only daemon.debug-status over sc1 (ac4).
+
+### `DaemonDataGateway.workflowChain`
+
+```typescript
+workflowChain(): Promise<WorkflowChainView>
+```
+
+**Returns:** `Promise<WorkflowChainView>` — Reads the .insrc/artifacts tree (mirroring the JetBrains WorkflowChainReader) into WorkflowChainView { rows: WorkflowChainRow[] }. Consumed by s5's Workflows tab; wired here per a1. No daemon IPC exists for a chain (k3-safe: pure local read).
+
+**Errors:**
+- `GatewayReadError` when The .insrc/artifacts root is absent/unreadable or a chain file is malformed.
+
+**Preconditions:**
+- artifactsRoot() resolves a directory (or returns undefined -> an empty rows view, not an error).
+
+**Postconditions:**
+- Reads only the local filesystem; opens no socket-cloud path (ac4/k2).
+
+### `DaemonDataGateway.scanOrphans`
+
+```typescript
+scanOrphans(): Promise<readonly OrphanProcess[]>
+```
+
+**Returns:** `Promise<readonly OrphanProcess[]>` — Scans the local process table (node ProcessScan boundary, mirroring the JetBrains OrphanProcessSeam) for stray daemon/mcp processes into OrphanProcess { pid, command }. Consumed by s6's consent-gated kill; wired here per a1. This method is READ-ONLY (the kill itself is s6, consent-gated via sc4 k4).
+
+**Errors:**
+- `GatewayReadError` when The process scan fails.
+
+**Preconditions:**
+- processScan is bound.
+
+**Postconditions:**
+- Read-only; enumerates local processes only, no mutation, no cloud (ac4/k2).
+
+## Data model changes
+
+### `WebviewPanelHost + DaemonDataGateway + view types (sc9)` — new
+
+The sc9 contract, implemented verbatim from the HLD interfaceSketch: DetailTab = 'daemon'|'workflows'|'debug'; WebviewPanelHost { openDetailedStatus(tab?), openRepoConfiguration() } (plus the private showStatusMenu() the status-bar command binds to); DaemonDataGateway { status, workflowChain, mcpClients, registeredRepos, scanOrphans }; and the View types DaemonStatusView { state, detail? }, WorkflowChainView { rows: WorkflowChainRow[] }, WorkflowChainRow { slug, stage, status }, McpClientView { host, wired }, OrphanProcess { pid, command }, RepoRef { path, name }. No methods added beyond the sketch (showStatusMenu is an internal host method, not a new sc9 surface member).
+
+```
++ vscode-plugin/src/panels/types.ts (sc9 host + gateway + view types + injected-boundary types: PanelFactory, MenuPicker, ProcessScan, WebviewPanelHostDeps, DaemonDataGatewayDeps)
++ vscode-plugin/src/panels/webview-host.ts (createWebviewPanelHost)
++ vscode-plugin/src/panels/daemon-gateway.ts (createDaemonDataGateway)
+```
+
+**Call sites:**
+- `vscode-plugin/src/extension.ts`
+- `vscode-plugin/src/surfaces/command-registry.ts`
+
+### `InsrcCommandId (sc3 CommandRegistry union)` — field-add
+
+Additively extend the closed InsrcCommandId union (same additive touch S003 made for insrc.settings.refresh) with THREE new command ids: 'insrc.status.menu' (the status-bar item's click target -> showStatusMenu), 'insrc.status.detailed' (durable palette command -> openDetailedStatus), and 'insrc.status.repoConfig' (durable palette command -> openRepoConfiguration). No existing member changed; ac3/k6 first-class palette reachability for both panels. NOTE: sc3 CommandRegistry is a SHIPPED contract of epic ad0d45c9 (not in this HLD's slice); it is CONSUMED here via its additive-union extension pattern, not re-designed.
+
+```
+InsrcCommandId = ... | 'insrc.status.menu' | 'insrc.status.detailed' | 'insrc.status.repoConfig'
+```
+
+**Call sites:**
+- `vscode-plugin/src/surfaces/command-registry.ts`
+- `vscode-plugin/src/extension.ts`
+- `vscode-plugin/package.json`
+
+### `src/vscode.d.ts (compile-only shim)` — field-add
+
+Additively extend the no-@types/vscode compile shim with the net-new Webview + QuickPick API the panels need: window.createWebviewPanel, WebviewPanel { webview: { html, postMessage, onDidReceiveMessage }, reveal, onDidDispose, dispose, active, visible }, ViewColumn, window.showQuickPick, QuickPickItem. StatusBarItem.command already exists in the shim (used to bind insrc.status.menu; StatusBarItem is the raw type behind the shipped sc2 StatusSurface, consumed unchanged). No existing shim member changed.
+
+```
++ createWebviewPanel/WebviewPanel/Webview/ViewColumn + showQuickPick/QuickPickItem declarations
+```
+
+**Call sites:**
+- `vscode-plugin/src/vscode.d.ts`
+- `vscode-plugin/src/extension.ts`
+
+### `package.json contributes (commands + statusBar wiring)` — field-add
+
+Add the two durable palette commands (insrc.status.detailed 'insrc: Open Detailed Status', insrc.status.repoConfig 'insrc: Open Repo Configuration') to contributes.commands (ac3/k6). insrc.status.menu is the status-bar item's command set in extension.ts (not a palette command). Bumps the extension's declared command set additively; the packaging + activation command-count tests are updated to the new exact set (the same test touch S003 required). The daemon read IPC the gateway consumes (daemon.status/repo.list/daemon.debug-status) reaches the daemon ONLY through the shipped shared sc1 SharedIpcClient — consumed, not re-designed; no new daemon capability (k3).
+
+```
+contributes.commands += [insrc.status.detailed, insrc.status.repoConfig]
+```
+
+**Call sites:**
+- `vscode-plugin/package.json`
+- `vscode-plugin/src/workspace/__tests__/activation.test.ts`
+- `vscode-plugin/src/__tests__/packaging.test.ts`
+
+## Interaction with shared contracts
+
+| Contract | Role | How |
+| :--- | :--- | :--- |
+| `sc9` | implements | S004 is the declared owner of sc9 (hldContextSlice.boundary.owns=[sc9]). It implements the contract VERBATIM from the interfaceSketch (no added members): createWebviewPanelHost yields the WebviewPanelHost (openDetailedStatus fixed daemon/workflows/debug triad landing on 'daemon' by default -> ac2; openRepoConfiguration -> the separate panel shell) and createDaemonDataGateway yields the full read-only facade with ALL five methods wired (a1): status/registeredRepos/mcpClients over the shipped sc1 SharedIpcClient IPC (daemon.status/repo.list/daemon.debug-status), workflowChain over a local .insrc/artifacts read, scanOrphans over a local process scan. S004 renders only the MINIMAL daemon default view + the tab/panel scaffolding; the rich tab bodies (s5 daemon/workflows, s6 debug, s7 repo form) are consuming stories that S004 must NOT build. CONSUMES the shipped ad0d45c9 surfaces (not in this HLD's slice): sc3 CommandRegistry (additive InsrcCommandId union extension for the three new command ids), sc2 StatusSurface (extension.ts sets the raw statusItem.command to insrc.status.menu; the StatusBarHandle boundary type is unmodified), and sc1 SharedIpcClient (the only daemon path; no new capability, no cloud — k2/k3/ac4). |
+
+## Error paths
+
+### Error cases
+
+- **gateway.status() fails while the Detailed Status panel is opening (daemon socket unreachable / daemon.status RPC rejects or times out).** (recoverable)
+  - Detection: createDaemonDataGateway.status() awaits client.rpc('daemon.status'); a reject/timeout is caught in the host's daemon-tab render path (try/catch around the awaited gateway call), surfacing as a rejected promise the host recognises rather than a thrown UI error.
+  - Response: The host still creates + reveals the panel with the full daemon/workflows/debug tab triad landing on 'daemon', but renders the daemon tab BODY as an error state ('insrc daemon unreachable') and logger.warn's the reason; it never throws out of openDetailedStatus.
+  - User impact: The panel opens with tabs present (ac2 scaffolding intact) and a clear 'daemon unreachable' message in the daemon tab instead of a crash or a silently blank panel.
+- **window.createWebviewPanel throws inside the injected PanelFactory (VS Code refuses to allocate a webview, e.g. during shutdown).** (recoverable)
+  - Detection: The host wraps deps.panels.create(...) in try/catch; a thrown error is caught at the create-or-reveal step of openDetailedStatus / openRepoConfiguration.
+  - Response: Catch, logger.warn, and leave no partially-constructed panel reference cached (so a subsequent invocation retries a fresh create rather than revealing a dead handle); the command invocation resolves as a visible no-op.
+  - User impact: The menu action appears to do nothing that one time rather than throwing an extension error; re-invoking the command retries cleanly.
+- **The user dismisses the status-bar QuickPick without choosing (Esc).** (recoverable)
+  - Detection: deps.pickMenu (window.showQuickPick wrapper) resolves to undefined; showStatusMenu checks the result before routing.
+  - Response: No-op: no panel is opened, no error logged.
+  - User impact: Nothing happens — the expected cancel behaviour (ac1's menu is presented, cancel is benign).
+- **gateway.workflowChain() cannot read the .insrc/artifacts tree (root resolves but a chain file is malformed / unreadable) when a consumer later calls it.** (recoverable)
+  - Detection: createDaemonDataGateway.workflowChain() catches fs read/parse failures around the artifacts scan and distinguishes 'root absent' (returns empty rows) from 'read failed' (rejects with GatewayReadError).
+  - Response: Reject with GatewayReadError carrying the reason; the consuming tab body (s5) catches + renders an error state. In S004 this path is only exercised by the gateway unit tests, not the shell render.
+  - User impact: No S004-visible impact (the daemon default view is unaffected); a later Workflows tab shows an error rather than a crash.
+- **gateway.scanOrphans() process scan fails (the injected ProcessScan boundary throws / the OS enumeration errors).** (recoverable)
+  - Detection: createDaemonDataGateway.scanOrphans() awaits deps.processScan() inside try/catch and rejects with GatewayReadError on failure.
+  - Response: Reject with GatewayReadError; the consuming Debug tab (s6) catches it. scanOrphans is strictly read-only — a scan failure never triggers a kill (the kill is s6's consent-gated action, out of S004 scope).
+  - User impact: No S004-visible impact; a later Debug tab shows a scan error rather than a crash, and no process is ever killed on a failed scan.
+- **openDetailedStatus / openRepoConfiguration invoked when its panel already exists but was disposed by the user (X-ed the tab).** (recoverable)
+  - Detection: The host listens on the panel's onDidDispose and clears its cached single-instance reference; a subsequent open sees no live reference and creates fresh.
+  - Response: Create a new panel rather than calling reveal() on a disposed handle (which would throw); the onDidDispose handler is the detection that keeps the cached reference truthful.
+  - User impact: Re-opening after closing the panel works normally (a new panel appears) instead of erroring on a stale handle.
+
+### Edge cases
+
+| Input | Expected |
+| :--- | :--- |
+| openDetailedStatus() called with no tab argument. | Panel opens (or reveals) on the 'daemon' tab — the default view (ac2). |
+| openDetailedStatus('debug') called while the panel is already open on 'daemon'. | The existing panel is revealed and switched to the 'debug' tab without creating a second panel (single-instance). |
+| openDetailedStatus() called twice in quick succession before the first gateway.status() resolves. | Exactly one panel exists; the second call reveals the same panel rather than creating a duplicate (the cached reference is set synchronously at create time, before the async status render). |
+| gateway.workflowChain() when .insrc/artifacts root does not exist (artifactsRoot() returns undefined or a missing dir). | Returns an empty WorkflowChainView { rows: [] } — NOT a GatewayReadError (absent artifacts is a valid empty state, e.g. a repo with no workflow runs yet). |
+| DaemonStatus payload from daemon.status omits optional fields (modelPullStatus/lmdbFileSizeMb absent). | status() still maps to a valid DaemonStatusView { state, detail? } using only the present fields; missing optionals just don't contribute to detail. |
+| The status-bar item is clicked before the host is fully wired during activation. | The insrc.status.menu command is only registered after createWebviewPanelHost is built in extension.ts, so a click cannot reach an unbuilt host; if unregistered, VS Code reports the standard 'command not found' rather than the extension throwing. |
+
+### Invariants to preserve
+
+- Every daemon-backed read reaches ONLY the local Unix socket via the sc1 SharedIpcClient (daemon.status/repo.list/daemon.debug-status) and workflowChain/scanOrphans touch only the local filesystem/process table — no cloud path and no new daemon capability (ac4/k2/k3). [[c2]]
+- extension.ts remains the SOLE 'vscode' importer: the sc9 host + gateway cores are VS-Code-free over injected boundaries (PanelFactory/MenuPicker/ProcessScan), preserving the shipped injectable-seam + off-editor unit-test convention. [[c2]]
+- The existing onboarding-first extension lifecycle (daemon install/host-wiring/register + the shipped status surface) is not regressed: the status-bar item gains a click command but its existing text/tooltip/show behaviour (sc2) is untouched, and the sc3 command union is extended additively only. [[c2]]
+- No daemon-mutating action is introduced in S004: the gateway is strictly read-only (scanOrphans enumerates but never kills); the only mutation in the epic (orphan-kill) stays consent-gated in s6 (k4). [[c2]]
+
+## Test strategy
+
+**Test framework:** `node:test (tsx --test) over injected fakes — the shipped vscode-plugin convention (surfaces.test.ts / controller.test.ts / sync-engine.test.ts); no VS Code host, no live daemon.`
+
+### Test levels
+
+- **unit** — Drive the VS-Code-free createWebviewPanelHost core over injected fakes, asserting the menu + panel-lifecycle behaviour that ac1/ac2/ac3 require without VS Code or a daemon.
+  - Subjects: `createWebviewPanelHost.showStatusMenu offers EXACTLY two menu items (Detailed Status, Repo Configuration) and routes each choice to the matching open method (ac1)`, `createWebviewPanelHost.openDetailedStatus creates ONE panel with the fixed daemon/workflows/debug tab triad, landing on 'daemon' by default, and renders the daemon body from gateway.status() (ac2)`, `openDetailedStatus single-instance: a second call reveals the same panel (and switches tab) rather than creating a duplicate; after onDidDispose it creates fresh`, `openRepoConfiguration creates/reveals the separate Repo Configuration panel shell (single-instance)`, `Cancel path: pickMenu resolving undefined is a no-op (no panel opened)`, `Degraded render: a rejected gateway.status() still opens the panel + tabs and shows a daemon-tab error state, never throwing (host never-throw invariant)`
+  - Fixtures: `Fake PanelFactory recording created/revealed/disposed panels + posted messages + selected tab`, `Fake MenuPicker scripting the user's choice (or a cancel -> undefined)`, `Fake DaemonDataGateway scripting status()/registeredRepos()/etc. (resolve + reject variants)`, `Fake Logger capturing warn calls`
+- **unit** — Drive createDaemonDataGateway over a fake sc1 client + fake artifacts-root + fake ProcessScan, asserting each method maps its source into the right View type and reaches only local sources (ac4).
+  - Subjects: `status() maps a DaemonStatus payload (incl. one missing optional fields) to a valid DaemonStatusView { state, detail? }`, `registeredRepos() maps repo.list -> RepoRef[]; mcpClients() maps daemon.debug-status { clients } -> McpClientView[]`, `workflowChain() returns empty rows when the artifacts root is absent, and rejects GatewayReadError on a malformed/unreadable chain file`, `scanOrphans() maps a scripted process scan to OrphanProcess[] and rejects GatewayReadError on a scan failure (and never mutates/kills)`, `Each daemon-backed method calls ONLY its expected sc1 rpc method name (recorded by the fake client) and no HTTP/cloud path is opened`
+  - Fixtures: `Fake SharedIpcClient recording rpc method names + returning scripted payloads (resolve/reject)`, `Fake artifactsRoot resolver (undefined / present dir) + an in-memory/temp .insrc/artifacts fixture`, `Fake ProcessScan boundary (scripted list / throw)`
+- **unit** — Static/source-level guards proving the injectable-seam + no-cloud invariants hold structurally (mirrors the shipped surfaces source-scan tests).
+  - Subjects: `Source-scan: src/panels/webview-host.ts + daemon-gateway.ts import no 'vscode' module (extension.ts stays the sole vscode importer)`, `Source-scan: the gateway core contains no cloud/HTTP client usage (undici/fetch/http) — only sc1 + fs + process (ac4/k2)`, `The sc3 InsrcCommandId union additively includes insrc.status.menu/detailed/repoConfig with no existing member removed`
+  - Fixtures: `Read of the panel source files`, `The command-registry duplicate-id guard fake (reused from surfaces.test.ts pattern)`
+- **contract** — Assert package.json + extension wiring declare the durable palette commands and the status-bar click command (ac3), keeping the packaging/activation command-count tests truthful.
+  - Subjects: `package.json contributes.commands includes insrc.status.detailed + insrc.status.repoConfig with their titles (ac3/k6)`, `The packaging test's exact command set is updated to include the two new palette commands (and NOT insrc.status.menu, which is the status-bar item command, not a palette entry)`, `The activation test asserts the status-bar item's command is set to insrc.status.menu and the host commands are registered`
+  - Fixtures: `The existing packaging.test.ts + workspace/activation.test.ts harness`
+
+### Acceptance mapping
+
+| Criterion | Proving tests |
+| :--- | :--- |
+| `ac1` | `unit: showStatusMenu offers exactly two items (Detailed Status, Repo Configuration) and routes each to the right open method`, `unit: cancel path (pickMenu undefined) opens no panel`, `contract: the status-bar item's command is wired to insrc.status.menu in activation` |
+| `ac2` | `unit: openDetailedStatus creates one panel with the daemon/workflows/debug tabs landing on 'daemon' by default`, `unit: the daemon tab body renders from gateway.status() (and degrades to an error state on reject while tabs still appear)`, `unit: openDetailedStatus('debug') on an open panel switches tab without duplicating` |
+| `ac3` | `contract: package.json contributes.commands includes insrc.status.detailed + insrc.status.repoConfig with titles`, `contract/packaging: the exact command set includes the two new palette commands`, `unit: the palette commands route to openDetailedStatus / openRepoConfiguration` |
+| `ac4` | `unit(gateway): each daemon-backed method calls only its expected sc1 rpc method and opens no cloud/HTTP path`, `unit(source-scan): the gateway core uses no undici/fetch/http and imports no vscode`, `unit(gateway): workflowChain/scanOrphans read only local fs/process sources` |
+
+## Alternatives considered
+
+### a1: One fully-wired gateway + minimal shell render — **CHOSEN**
+
+S004 defines sc9 exactly as the HLD sketches AND wires every DaemonDataGateway method now; the shell renders only a minimal daemon-status default view + placeholder tabs.
+
+
+
+### a2: AC-minimal gateway, consumer-filled tail methods
+
+S004 defines the full sc9 TYPE contract but only WIRES the methods its own ACs exercise (status + the one-line IPC reads); workflowChain/scanOrphans are declared contract methods the owning consumer story wires.
+
+
+
+**Rejected because:** Meets every AC but only PARTIALLY satisfies sc9 (s3): it splinters the gateway's concrete wiring across S004/s5/s6 against the boundary's explicit 'S004 owns the DaemonDataGateway's concrete IPC/log/process-scan wiring' clause, and adds a provider-slot seam whose declared-but-unwired methods are a forget-to-inject trap.
+
+### a3: Tab-renderer registry on the host
+
+sc9 gains a registerTab(tab, renderer) extension point so consuming stories register their tab bodies into the host, instead of the host hardcoding the three known tabs.
+
+
+
+**Rejected because:** Drops to PARTIAL on BOTH ac2 and sc9 (s3): a registration model makes tab presence depend on who has registered, weakening ac2's guarantee that the Workflows+Debug tabs always appear, and it adds a registerDetailTab method absent from the HLD interfaceSketch — widening sc9 for a benefit the fixed daemon/workflows/debug triad does not require.
+
+## Citations
+
+- **[[c1]]** `step-output` `s1 analyze bundle symbol.locate — status-bar surface + vscode.d.ts shim gap` — "extension.ts (the sole 'vscode' importer, which creates the raw statusItem BEFORE wrapping it in createStatusSurface) sets statusItem.command = a new 'insrc.status.menu' command whose body shows a 2-i"
+- **[[c2]]** `step-output` `s1 analyze bundle reuse.map + convention.detect — daemon read IPC + injectable-seam` — "The sc9 DaemonDataGateway is a VS-Code-free typed facade over the SHARED sc1 SharedIpcClient ... daemon.status ... repo.list ... daemon.debug-status ... workflowChain() reads the .insrc/artifacts tree"
+- **[[c3]]** `step-output` `s4 contract.detail — sc9 implemented verbatim from the HLD interfaceSketch (a1)` — "createWebviewPanelHost yields the WebviewPanelHost ... and createDaemonDataGateway yields the full read-only facade with ALL five methods wired (a1): status/registeredRepos/mcpClients over sc1 IPC, wo"
+- **[[c4]]** `step-output` `s3 alternatives.judge — a1 selected (all-satisfies on ac1-ac4 + sc9)` — "a1 is the only alternative that scores 'satisfies' on ALL four ACs AND on sc9. a2 drops to 'partial' on sc9 ... a3 drops to 'partial' on BOTH ac2 ... and sc9"
+- **[[c5]]** `step-output` `s8 checklist.verify — all items passed incl. sbdry1-5 (no scope encroachment, no HLD contradiction)` — "S004 builds only the shell + the sc9 gateway facade it OWNS + the minimal daemon default view (ac2); it explicitly does NOT build the adjacent-boundary tab bodies (s5 daemon/workflows rendering, s6 de"
+
+<!-- insrc:review -->
+
+## Review
+
+### ✅ Review `PASS` — design.story (design.story)
+
+**0 HIGH · 0 MED · 11 LOW** · model `client` · reviewed 2026-09-22T14:04:56.990Z
+
+| Ref | Kind | Severity | Fixability | Premise | Evidence | Action |
+| --- | --- | --- | --- | --- | --- | --- |
+| cl1 | citation | LOW | manual | The shared sc1 IPC client exists as SharedIpcClient with an rpc method and a status method, the sole daemon path the gateway uses. | CONFIRMED: sc1 SharedIpcClient lives at src/shared/ipc-client.ts (owner Story ad0d45c9:S001) and is already consumed inside vscode-plugin (config/gateway.ts, workspace/registrar.ts uses client.rpc). The rpc/status surface is real. | No change — the gateway correctly leans on the existing sc1 client. |
+| cl2 | citation | LOW | manual | A daemon.status IPC method exists and returns a DaemonStatus with uptime/repos/queueDepth/embeddingsPending (mapped to DaemonStatusView). | CONFIRMED: daemon.status is a real IPC method (src/cli/services/daemon.ts: rpc<DaemonStatus>('daemon.status'); daemon handler + server-registry test exercise it). DaemonStatus type with queueDepth/embeddingsPending exists. | No change — status() maps a real payload. |
+| cl3 | citation | LOW | manual | A repo.list IPC method exists (mapped to registeredRepos()). | CONFIRMED: repo.list handler exists at src/daemon/index.ts:536 and is already called from vscode-plugin/src/workspace/registrar.ts:40 (client.rpc('repo.list')). | No change — registeredRepos() maps a real IPC. |
+| cl4 | citation | LOW | assisted | A daemon.debug-status IPC method exists and returns { clients: AttachedClient[] } (mapped to mcpClients()). | PARTIALLY PRECISE: daemon.debug-status + AttachedClient are real (src/shared/types.ts, src/cli/services/debug-types.ts). But the actual payload is a UNION { reachable:true; clients: readonly AttachedClient[] } \| { reachable:false; ... }, not a bare { clients: AttachedClient[] } as the LLD abbreviates. mcpClients() must read clients only on the reachable branch. | Build-time note (not a design defect): when wiring mcpClients(), destructure the debug-status union's reachable branch before mapping clients; treat unreachable as an empty McpClientView[] or a GatewayReadError. Carry this into the s6 consumer too. |
+| cl5 | semantic | LOW | manual | The sc2 status-bar surface is StatusSurface over an injected StatusBarHandle (surfaces/types.ts) that has text/tooltip/show but NO `command` field, so the click command is set on the raw vscode StatusBarItem in extension.ts. | CONFIRMED: surfaces/types.ts:17 `export interface StatusBarHandle extends DisposableLike` has no `command` field; extension.ts:52-54 creates the raw vscode StatusBarItem and casts it to StatusBarHandle. So the click command must be set on the raw StatusBarItem in extension.ts, exactly as the LLD states. | No change — the ac1 wiring approach is sound. |
+| cl6 | closed-union | LOW | manual | InsrcCommandId is a closed union in surfaces/command-registry.ts and was additively extended by S003 for 'insrc.settings.refresh' (the precedent this story follows); the three new ids are additive. | CONFIRMED: command-registry.ts:22 shows the InsrcCommandId closed union ending with 'insrc.settings.refresh' (the S003 additive precedent). No insrc.status.* ids exist yet in vscode-plugin/src, so the three new ids are genuinely additive. | No change — additive-union extension matches the established pattern. |
+| cl7 | semantic | LOW | manual | extension.ts is the SOLE module importing 'vscode' (the injectable-seam convention the sc9 cores preserve). | CONFIRMED: the only `import * as vscode from 'vscode'` inside vscode-plugin/src is extension.ts:12 (other matches are tests/docs). The sole-vscode-importer invariant holds. | No change — the sc9 cores must stay VS-Code-free over injected boundaries. |
+| cl8 | semantic | LOW | manual | The compile-only src/vscode.d.ts shim currently declares StatusBarItem.command but NOT the Webview (createWebviewPanel/WebviewPanel/ViewColumn) or QuickPick (showQuickPick/QuickPickItem) API — these are net-new additive declarations. | CONFIRMED: vscode.d.ts declares StatusBarItem (line 13, with command) but has NO createWebviewPanel/WebviewPanel/showQuickPick/QuickPickItem anywhere in vscode-plugin/src (all 44 such matches are in docs). These are net-new additive shim declarations, as the LLD says. | No change — additive shim extension is required and correctly scoped. |
+| cl9 | inventory | LOW | manual | The panels module (src/panels/) is net-new — no existing panels/webview-host/daemon-gateway files. | CONFIRMED: no createWebviewPanelHost/createDaemonDataGateway/DaemonDataGateway symbols exist in vscode-plugin/src (all 37 matches are docs). src/panels/ is genuinely net-new. | No change — new-capability module, no collision. |
+| cl10 | citation | LOW | manual | The test convention is node:test over injected fakes with existing suites surfaces.test.ts / controller.test.ts / sync-engine.test.ts, and command-count tests in packaging.test.ts + workspace/__tests__/activation.test.ts. | CONFIRMED: node:test is the pervasive convention (40 test hits); surfaces.test.ts / controller.test.ts / sync-engine.test.ts all exist. The packaging + activation command-count tests are the ones S003 already had to touch. | No change — test strategy matches the shipped convention. |
+| cl11 | cross-artifact | LOW | manual | sc9 is owned by this story (s4) per the HLD boundary, and the LLD implements it verbatim from the HLD interfaceSketch (DetailTab triad, WebviewPanelHost 2 methods, DaemonDataGateway 5 methods) with no added surface members. | CONFIRMED: the HLD boundary assigns sc9 ownership to s4, and the LLD implements the interfaceSketch verbatim (DetailTab triad, 2 host methods, 5 gateway methods, view types) with showStatusMenu flagged as an internal (non-surface) host method — no added sc9 members. | No change — the implements-verbatim trace holds. |

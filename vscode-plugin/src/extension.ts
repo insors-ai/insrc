@@ -35,6 +35,10 @@ import { createConfigSyncEngine } from './config/sync-engine.js';
 import { createDaemonConfigGateway } from './config/gateway.js';
 import { MERGED_KEY_MAP } from './config/key-map.js';
 import type { ChangedKey, Notifier, SettingsStore } from './config/types.js';
+import { createDaemonDataGateway } from './panels/daemon-gateway.js';
+import { createWebviewPanelHost } from './panels/webview-host.js';
+import { defaultProcessScan } from './panels/process-scan.js';
+import type { PanelHandle } from './panels/types.js';
 
 /** The workspaceState key prefix for the one-time register-prompt dismissal flag (S004). */
 const REGISTER_DISMISSED_KEY = 'insrc.workspace.register.dismissed';
@@ -174,6 +178,55 @@ export function activate(context: vscode.ExtensionContext): void {
     { id: 'insrc.settings.refresh', title: 'Refresh insrc settings' },
     () => configSync.pullFromDaemon(),
   );
+
+  // S004-settings-UI sc9: the WebviewPanelHost + read-only DaemonDataGateway.
+  // The real editor bindings live here (the sole `vscode` importer): the gateway
+  // reads the daemon ONLY through the shared sc1 client (daemon.status/repo.list/
+  // daemon.debug-status — no new capability, k3) plus the local .insrc/artifacts
+  // tree and a POSIX process scan (no cloud, k2/ac4); the host wraps
+  // window.createWebviewPanel + window.showQuickPick. The status-bar item's click
+  // opens a 2-item menu, and both panels are first-class palette commands (k6).
+  // A thin degrade-path logger for the panels. The plugin ships no pino logger
+  // (that would drag the daemon logging stack into the thin extension bundle, k5);
+  // panel diagnostics go to the Extension Host console, the idiomatic channel.
+  const panelLog = { warn: (message: string): void => console.warn(`[insrc] ${message}`) };
+  const daemonData = createDaemonDataGateway({
+    rpc: (method, params) => client.rpc(method, params),
+    artifactsRoot: () => {
+      const root = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+      return root === undefined ? undefined : join(root, '.insrc', 'artifacts');
+    },
+    processScan: defaultProcessScan,
+    logger: panelLog,
+  });
+  const panelHost = createWebviewPanelHost({
+    panels: ({ viewType, title }): PanelHandle => {
+      const panel = vscode.window.createWebviewPanel(viewType, title, vscode.ViewColumn.Active, { enableScripts: false });
+      return {
+        setHtml: (html) => {
+          panel.webview.html = html;
+        },
+        reveal: () => panel.reveal(),
+        onDidDispose: (listener) => {
+          panel.onDidDispose(listener);
+        },
+        dispose: () => panel.dispose(),
+      };
+    },
+    pickMenu: (items) => Promise.resolve(vscode.window.showQuickPick(items, { placeHolder: 'insrc' })),
+    gateway: daemonData,
+    logger: panelLog,
+  });
+  // The status-bar item's click target — set on the raw StatusBarItem (the sc2
+  // StatusBarHandle carries no `command` field and is left untouched).
+  statusItem.command = 'insrc.status.menu';
+  commands.register({ id: 'insrc.status.menu', title: 'insrc status menu' }, () => panelHost.showStatusMenu());
+  commands.register({ id: 'insrc.status.detailed', title: 'Open Detailed Status' }, async () => {
+    panelHost.openDetailedStatus();
+  });
+  commands.register({ id: 'insrc.status.repoConfig', title: 'Open Repo Configuration' }, async () => {
+    panelHost.openRepoConfiguration();
+  });
 
   // S005 sc-capstone: the per-workspace one-time onboarding-completed flag over
   // workspaceState (distinct key from the S004 register-dismissed flag).

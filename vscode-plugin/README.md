@@ -54,6 +54,13 @@ installed models, or the curated Claude / Codex catalog) — no typing raw model
 ids. If a provider can't be listed it shows *no models available* with a Refresh;
 switching the provider re-filters the list.
 
+**Keeps the backing daemon current** — on activation the extension checks (only
+when the daemon is already reachable) whether the installed daemon has fallen
+behind its upstream, and if so offers an **Update / Dismiss** notification that
+updates the daemon in place on your OK. When you update the extension itself, it
+brings the daemon current automatically. Failures surface once with the reason;
+nothing is retried or rolled back — the daemon owns its own state.
+
 ## Status & panels
 
 The status-bar **insrc** item opens a two-item menu (also reachable from the

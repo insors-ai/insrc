@@ -10,6 +10,7 @@ import ai.insors.insrc.jetbrains.daemon.RepoStatsResult
 import ai.insors.insrc.jetbrains.daemon.DaemonStatusResult
 import ai.insors.insrc.jetbrains.daemon.DebugStatusResult
 import ai.insors.insrc.jetbrains.daemon.DaemonActionResult
+import ai.insors.insrc.jetbrains.daemon.DaemonUpdateOutcomeResult
 import ai.insors.insrc.jetbrains.daemon.ApproveResult
 import ai.insors.insrc.jetbrains.daemon.SaveResult
 import ai.insors.insrc.jetbrains.daemon.PerRoleOverridesResult
@@ -73,6 +74,10 @@ class DaemonLifecycleServiceTest : BasePlatformTestCase() {
         override fun shutdown(): DaemonActionResult = DaemonActionResult.Failed("not used")
         override fun backup(targetDir: String): DaemonActionResult = DaemonActionResult.Failed("not used")
         override fun compact(): DaemonActionResult = DaemonActionResult.Failed("not used")
+        override fun update(): DaemonActionResult =
+            throw AssertionError("S003 must never call update (that is the S004 freshness flow)")
+        override fun updateOutcome(): DaemonUpdateOutcomeResult =
+            throw AssertionError("S003 must never call updateOutcome (that is the S004 freshness flow)")
     }
 
     private class FakeConsent(initial: Boolean) : SetupConsentStore {

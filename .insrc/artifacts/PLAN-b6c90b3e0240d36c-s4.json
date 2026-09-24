@@ -1,0 +1,268 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1790231395895-hzm4tf",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-24T06:34:04.706Z",
+    "epicCreatedAt": "2026-09-23T17:38:50.877Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 248796,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b6c90b3e0240d36c",
+    "epicSlug": "work-framed-approved-spec-proceed-from",
+    "storyId": "s4",
+    "lldRunId": "wf-1790230251000-v9ucge",
+    "lldEffectiveHash": "0a15cb12814dcb165a774cb5a0897725fd968a36cc022f7ae7ecfdfbb00ad01f",
+    "approvedAt": "2026-09-24T06:38:49.818Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Gateway sc1/sc2 client bindings + last-seen state store",
+        "summary": "Add the client-side bindings the Kotlin plugin lacks so the flow can CONSUME the daemon-owned sc1/sc2 IPC (never a shell-out, k2): (a) DaemonGateway.update(): DaemonActionResult calling rpc.call(\"daemon.update\") via the runAction template (like shutdown()/compact()); (b) DaemonGateway.updateOutcome(): DaemonUpdateOutcomeResult calling rpc.call(\"daemon.updateOutcome\") — add the new sealed DaemonUpdateOutcomeResult { Loaded(state,error?,finishedAt) | None | Unavailable } modeled on DaemonStatusResult; (c) DaemonStatusDto gains installedCommit: String = \"\" extracted in parseDaemonStatus (default '' for a pre-S002 daemon, never-throw parse preserved); (d) add the delegate lines in DaemonGatewayService; (e) a new @Service(APP) PersistentStateComponent last-seen store (lastSeenPluginVersion: String) modeled on SetupConsentStoreService (Storage insrc.xml). PATCH every DaemonGateway fake/impl in tests (FakeGateway + any others) for the two new interface methods (known gotcha). No deps.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "DaemonGateway interface + DaemonGatewayImpl gain update(): DaemonActionResult (rpc.call('daemon.update')) and updateOutcome(): DaemonUpdateOutcomeResult (rpc.call('daemon.updateOutcome')); DaemonGatewayService delegates both",
+          "new sealed DaemonUpdateOutcomeResult { Loaded(state,error?,finishedAt) | None | Unavailable } added, modeled on DaemonStatusResult",
+          "DaemonStatusDto has installedCommit: String = \"\" and parseDaemonStatus extracts it (present -> sha, absent -> ''); Loaded/Stopped/Unavailable contract + Gson-Double coercion of existing fields unchanged",
+          "a new @Service(APP) PersistentStateComponent stores lastSeenPluginVersion:String (getState/loadState round-trip), Storage insrc.xml",
+          "every DaemonGateway fake/impl in test sources (incl. FakeGateway) is patched for the two new methods; ./gradlew test compiles + green (JDK21)"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "gateway update(): rpc.call('daemon.update') -> launched:true=Ok, launched:false/error=Failed, DaemonUnavailable=Failed (never a shell-out, k2)"
+          },
+          {
+            "level": "unit",
+            "name": "gateway updateOutcome(): rpc.call('daemon.updateOutcome') -> Loaded(state,error?,finishedAt) for a record, None for null, Unavailable when down"
+          },
+          {
+            "level": "unit",
+            "name": "gateway daemonStatus(): installedCommit extracted (present=sha, absent=''); Gson-Double coercion + Loaded/Stopped/Unavailable contract unchanged"
+          },
+          {
+            "level": "unit",
+            "name": "last-seen PersistentStateComponent: null before write, persisted after setLastSeen; getState/loadState round-trip lastSeenPluginVersion"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Pure DaemonFreshnessFlow + seam types",
+        "summary": "Add the VS-fixture-free pure flow DaemonFreshnessFlow.check(deps: FreshnessDeps) — the JetBrains analogue of S003's runDaemonFreshnessCheck — plus the seam types FreshnessDeps / FreshnessGateway (reachability/installedCommit/update/updateOutcome view over t1's gateway) / FreshnessNotify (UpdatePrompt|Info|Failure) / PluginVersionState (current + getLastSeen/setLastSeen). Flow: reachability gate (k6, skip unless reachable) -> installedCommit (sc2, '' -> skip) -> gitLsRemote(root,branch) drift (k1 no pull; ''/throw -> skip; ==installed -> skip) -> branch on version delta (k4, current=='' guard -> prompt path): self-update auto notify-after vs startup-check Update/Dismiss balloon -> update() -> reconnect-and-confirm via updateOutcome()/installedCommit under reconnectBudgetMs (300_000; stale-outcome guard by finishedAt>=start) -> success info balloon OR exactly ONE failure balloon with the raw error (k5, no retry/rollback); always setLastSeen(current) on every terminal path; outer try/catch = never throws. Injected sleep/now for deterministic tests. Deps t1.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "DaemonFreshnessFlow.check(deps) + FreshnessDeps/FreshnessGateway/FreshnessNotify/PluginVersionState added; pure, no IDE-fixture/platform import; never throws (outer try/catch)",
+          "startup-check drift (current==lastSeen) -> Update/Dismiss balloon (k7); update() ONLY on Update; unreachable/''-commit/==upstream/ls-remote-fail -> skip (no balloon/update)",
+          "self-update (current!=lastSeen, current!='') + drift -> update() with NO prompt (notify-after); current=='' guard -> prompt path",
+          "after update(): bounded reconnect-and-confirm via updateOutcome()/installedCommit; success -> info balloon; update() Failed OR fresh updateOutcome().state=='failed' OR no commit advance in budget -> exactly ONE failure balloon with the raw error, no retry; stale outcome (finishedAt<start) ignored",
+          "setLastSeen(current) on every terminal path; ./gradlew test green (JDK21)"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "startup-check drift: reachable + installedCommit != upstream + current==lastSeen -> Update/Dismiss balloon; update() ONLY on Update, NOT on Dismiss/expire (ac1)"
+          },
+          {
+            "level": "unit",
+            "name": "skip paths: unreachable -> no balloon/no update; installedCommit=='' -> skip; installedCommit==upstream -> skip; gitLsRemote ''/throws -> skip (ac2)"
+          },
+          {
+            "level": "unit",
+            "name": "self-update: current!=lastSeen + drift -> update() with NO prompt (notify-after), setLastSeen(current) recorded (ac3)"
+          },
+          {
+            "level": "unit",
+            "name": "reconnect-and-confirm success: fresh updateOutcome().state=='succeeded' / installedCommit advances -> info balloon"
+          },
+          {
+            "level": "unit",
+            "name": "failure: update() Failed OR fresh updateOutcome().state=='failed' OR no commit advance in budget -> exactly ONE failure balloon with the raw error, no retry, no second update() (ac4)"
+          },
+          {
+            "level": "unit",
+            "name": "never-throws: a throwing seam is swallowed by the outer backstop; check() returns; setLastSeen(current) runs on every terminal path"
+          },
+          {
+            "level": "unit",
+            "name": "empty-version guard: current=='' (PluginManagerCore null) -> startup-check prompt path, not the silent auto path"
+          },
+          {
+            "level": "unit",
+            "name": "stale-outcome guard: a prior updateOutcome with finishedAt before the update start is ignored; commit-advance decides"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "App-scoped freshness consumer wiring (off-EDT, real seams)",
+        "summary": "Add InstalledCommitFreshnessConsumer (a new app-scoped consumer) registered in AppScopedConsumers.ensureRegistered() alongside DaemonLifecycleService; onProjectOpened schedules DaemonFreshnessFlow.check(realSeams) fire-and-forget off-EDT via AppExecutorUtil.getAppExecutorService() and returns immediately (never blocks project-open, k6). Supply the real seams: gateway view = service<DaemonGatewayService>(); notify = the insrc NotificationGroup balloon (two NotificationAction.createSimple buttons Update/Dismiss for the prompt, a plain info notify, a single failure balloon — mirroring showOfferSetupNotification, k7); versionState = PluginManagerCore.getPlugin(PLUGIN_ID)?.version (?? '') + the t1 last-seen store; gitLsRemote = a ProcessBuilder git ls-remote origin <branch> runner (returns '' on any failure, never throws). Deps t2.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "InstalledCommitFreshnessConsumer registered in AppScopedConsumers.ensureRegistered() alongside DaemonLifecycleService; onProjectOpened schedules check() off-EDT via AppExecutorUtil.getAppExecutorService() and returns immediately (fire-and-forget)",
+          "real seams wired: gateway view over service<DaemonGatewayService>(); notify = insrc NotificationGroup balloon with Update/Dismiss (k7); versionState = PluginManagerCore version + the last-seen store; gitLsRemote = a ProcessBuilder git ls-remote returning '' on failure",
+          "no controller.run / daemon-ctl.sh shell-out is added for the freshness update (k2)",
+          "a unit test drives onProjectOpened with a synchronous test executor to assert check() is scheduled fire-and-forget; ./gradlew test green (JDK21)"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "consumer onProjectOpened schedules check() via the injected executor (fire-and-forget, returns immediately) — driven with a synchronous test executor"
+          },
+          {
+            "level": "unit",
+            "name": "source-scan: the freshness consumer wiring adds NO controller.run / daemon-ctl.sh shell-out for the update (k2)"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "startup-check drift: reachable + installedCommit != upstream + current==lastSeen → an Update/Dismiss balloon is shown; on Update gateway.update() is called; on Dismiss/expire it is NOT (ac1)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "skip paths: unreachable → no balloon/no update; installedCommit=='' → skip; installedCommit==upstream → skip; gitLsRemote ''/throws → skip (ac2)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "self-update: current!=lastSeen + drift → gateway.update() called with NO prompt (notify-after), setLastSeen(current) recorded (ac3)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "reconnect-and-confirm success: after update() a fresh updateOutcome().state=='succeeded' / installedCommit advances → an info balloon",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "failure: update() Failed OR fresh updateOutcome().state=='failed' OR commit never advances within budget → exactly ONE failure balloon carrying the raw error; no retry, no second update() (ac4)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "never-throws: any throwing seam is swallowed by the outer backstop — check() returns, setLastSeen(current) runs on every terminal path",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "empty-version guard: current=='' (PluginManagerCore null) → startup-check prompt path, not the silent auto path",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "stale-outcome guard: a prior updateOutcome with finishedAt before the update start is ignored; commit-advance decides",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "update(): rpc.call('daemon.update') mapping — launched:true → Ok, launched:false / error result → Failed; DaemonUnavailable → Failed (k2: the call goes to daemon.update, never a shell-out)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "updateOutcome(): rpc.call('daemon.updateOutcome') → Loaded(state,error?,finishedAt) for a record, None for null, Unavailable when the daemon is down",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "daemonStatus(): installedCommit extracted into DaemonStatusDto (present → the sha; absent → ''); Gson Double coercion of the other numeric fields still holds; the Loaded/Stopped/Unavailable contract is unchanged",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "the last-seen store returns null before any write and the persisted value after setLastSeen; getState/loadState round-trip the lastSeenPluginVersion string",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 contractDetails: DaemonGateway.update()/updateOutcome() + the runAction template (DaemonGateway.kt:492/:1145) — the gateway surface t1 extends"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 interactionWithShared sc1 (daemon.update/daemon.updateOutcome) + dataModelChanges DaemonUpdateOutcomeResult — the sc1 client binding t1 adds"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 error/convention: the k2 boundary (no daemon-ctl.sh shell-out; DaemonProvisioner/DaemonLifecycleCommandRunner NOT reused) t1/t3 honor"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 contractDetails DaemonFreshnessFlow.check + InstalledCommitFreshnessConsumer.onProjectOpened + errorPaths (never-throws, reconnect-confirm, single-failure) — the pure flow (t2) + off-EDT wiring (t3)"
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "s1 structural-map: startup/off-EDT wiring (InsrcProjectOpenActivity/AppScopedConsumers/DaemonLifecycleService AppExecutorUtil) + the insrc NotificationGroup balloon (showOfferSetupNotification) — t2 notify seam shape + t3 real seams"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 interactionWithShared sc2 (DaemonStatus.installedCommit) + the never-throw daemon.status invariant — the freshness anchor t2 reads (t1 extracts)"
+    },
+    {
+      "id": "c7",
+      "kind": "analyze-bundle",
+      "ref": "s1 capability-discovery + convention: DaemonStatusDto/parseDaemonStatus (DaemonGateway.kt:385/:1330), the SetupConsentStoreService PersistentStateComponent template + PLUGIN_ID, and the JUnit5 gateway-parse fake idiom (RecordingRpc/FakeGateway) — t1 DTO field-add + last-seen store + the fake-patching gotcha"
+    }
+  ]
+}

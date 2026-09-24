@@ -9,6 +9,7 @@ import ai.insors.insrc.jetbrains.daemon.RepoStatsResult
 import ai.insors.insrc.jetbrains.daemon.DaemonStatusResult
 import ai.insors.insrc.jetbrains.daemon.DebugStatusResult
 import ai.insors.insrc.jetbrains.daemon.DaemonActionResult
+import ai.insors.insrc.jetbrains.daemon.DaemonUpdateOutcomeResult
 import ai.insors.insrc.jetbrains.daemon.ApproveResult
 import ai.insors.insrc.jetbrains.daemon.SaveResult
 import ai.insors.insrc.jetbrains.daemon.PerRoleOverridesResult
@@ -96,6 +97,8 @@ class OnboardingLifecycleTest {
         override fun shutdown(): DaemonActionResult = DaemonActionResult.Failed("not used in this test")
         override fun backup(targetDir: String): DaemonActionResult = DaemonActionResult.Failed("not used in this test")
         override fun compact(): DaemonActionResult = DaemonActionResult.Failed("not used in this test")
+        override fun update(): DaemonActionResult = DaemonActionResult.Failed("not used in this test")
+        override fun updateOutcome(): DaemonUpdateOutcomeResult = DaemonUpdateOutcomeResult.Unavailable("not used in this test")
     }
 
     /** Recording sc3 adapter: scripts detectPresent; records removals; asserts writes never happen. */

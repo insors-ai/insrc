@@ -72,4 +72,8 @@ class DaemonGatewayService : DaemonGateway {
     override fun backup(targetDir: String): DaemonActionResult = delegate.backup(targetDir)
 
     override fun compact(): DaemonActionResult = delegate.compact()
+
+    override fun update(): DaemonActionResult = delegate.update()
+
+    override fun updateOutcome(): DaemonUpdateOutcomeResult = delegate.updateOutcome()
 }

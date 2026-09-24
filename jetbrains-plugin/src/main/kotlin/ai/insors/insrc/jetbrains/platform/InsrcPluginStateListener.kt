@@ -4,6 +4,7 @@ import ai.insors.insrc.jetbrains.InsrcPlugin
 import ai.insors.insrc.jetbrains.LifecycleBroadcaster
 import ai.insors.insrc.jetbrains.PluginStateEvent
 import ai.insors.insrc.jetbrains.UninstallPolicy
+import ai.insors.insrc.jetbrains.freshness.InstalledCommitFreshnessConsumer
 import ai.insors.insrc.jetbrains.host.McpWiringLifecycle
 import ai.insors.insrc.jetbrains.lifecycle.DaemonLifecycleService
 import ai.insors.insrc.jetbrains.onboarding.OnboardingLifecycle
@@ -84,7 +85,9 @@ internal class RunOnce {
  * - [McpWiringLifecycle] (Story S002 / t5) wires insrc-mcp into each detected host;
  * - [DaemonLifecycleService] (Story S003 / t7) keeps the backing daemon present/current;
  * - [SteeringInjectionLifecycle] (Story S004 / t4) injects the tracked-workflow steering;
- * - [OnboardingLifecycle] (Story S005 / t3) offers one-click registration + uninstall cleanup.
+ * - [OnboardingLifecycle] (Story S005 / t3) offers one-click registration + uninstall cleanup;
+ * - [InstalledCommitFreshnessConsumer] (daemon-auto-update S004) keeps the daemon at the
+ *   upstream commit (git-commit freshness check + self-update over the daemon-owned IPC).
  *
  * This replaces the former `InsrcAppLifecycle : AppLifecycleListener.appStarted()`
  * (an `@ApiStatus.Internal` hook flagged by the Plugin Verifier). The consumers act
@@ -102,6 +105,8 @@ internal object AppScopedConsumers {
         LifecycleBroadcaster.register(DaemonLifecycleService.production())
         LifecycleBroadcaster.register(SteeringInjectionLifecycle())
         LifecycleBroadcaster.register(OnboardingLifecycle.production())
+        // S004: keep the backing daemon current (git-commit freshness check + self-update).
+        LifecycleBroadcaster.register(InstalledCommitFreshnessConsumer.production())
     }
 
     /**

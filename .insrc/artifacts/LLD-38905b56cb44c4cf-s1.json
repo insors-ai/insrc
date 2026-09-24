@@ -1,0 +1,566 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1790249048427-otx3js",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-24T11:31:08.131Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 419691,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-09-24T10:32:18.030Z",
+    "epicHash": "38905b56cb44c4cf",
+    "epicSlug": "work-framed-approved-spec-proceed-from",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1790248075351-dbqnsq",
+    "hldEffectiveHash": "b8f0f1bf4237bd475f51a1368af9c5543f948c3358684f1bfc620ffdbb79d33e",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "ref": "contract/buildInsrcMcpServer",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/mcp/server.ts exports buildInsrcMcpServer, which is the single assembly site that calls server.registerTool for each insrc_* tool.",
+          "evidence": "Confirmed: src/mcp/server.ts is the assembly site (buildInsrcMcpServer) and server.registerTool is called there (earlier direct grep: 10 registerTool calls in server.ts). The probe's grep hits are dominated by docs/, but the reads on server.ts resolved and the direct source check confirms the symbol.",
+          "action": "No change — citation resolves.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl2",
+          "ref": "dataModel/InsrcToolSchemaRecord",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "server.ts registers exactly 10 insrc_* tools via server.registerTool, one InsrcToolSchemaRecord per call.",
+          "evidence": "Confirmed by direct source grep: exactly 10 `server.registerTool(` calls in src/mcp/server.ts, matching the one-record-per-tool inventory.",
+          "action": "No change — inventory resolves.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl3",
+          "ref": "dataModel/InsrcToolSchemaRecord callSites",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The 10 server.registerTool calls in src/mcp/server.ts sit at lines 130, 185, 316, 440, 501, 566, 635, 692, 757, 805.",
+          "evidence": "The probe's reads on src/mcp/server.ts:130/185/316/805 all resolved (found:true); the earlier direct grep listed the registerTool calls at exactly 130/185/316/440/501/566/635/692/757/805.",
+          "action": "No change — line anchors resolve.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl4",
+          "ref": "contract/registration",
+          "kind": "external-contract",
+          "severity": "LOW",
+          "premise": "server.registerTool accepts a config object with an inputSchema field (a zod raw shape), matching the call shape the LLD reshapes.",
+          "evidence": "Confirmed: src/mcp/server.ts:162 (read found:true) carries `inputSchema: ANALYZE_INPUT`; the registerTool config takes an inputSchema zod raw shape as the LLD describes.",
+          "action": "No change — registration contract resolves.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl5",
+          "ref": "testStrategy/convention",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The MCP test convention is node:test under src/mcp/__tests__/, e.g. analyze-step-handler.test.ts, which the new schema-handler test extends.",
+          "evidence": "Confirmed: src/mcp/__tests__/analyze-step-handler.test.ts exists (read found:true); node:test-under-__tests__ is the convention the new schema-handler test extends.",
+          "action": "No change — test convention resolves.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl6",
+          "ref": "contract/zod-to-json-schema",
+          "kind": "external-contract",
+          "severity": "LOW",
+          "premise": "A zod-to-json-schema conversion path is available in the codebase's dependencies for deriving JSON Schema from a registered zod raw shape.",
+          "evidence": "Confirmed available but with a build refinement: node_modules/zod-to-json-schema is installed, AND the MCP SDK ships its own conversion (dist/esm/server/zod-json-schema-compat.js + getZodSchemaObject/normalizeObjectSchema in mcp.js) which is exactly what the SDK uses to advertise each tool's schema. So the derivation path exists. NOTE for the build: prefer reusing the SDK's own conversion (the schema the SDK actually advertises) over a separately-imported zod-to-json-schema, so insrc_schema returns byte-identical output to the live tool schema (tightening k1) and avoids depending on a possibly-undeclared direct dependency.",
+          "action": "Carry a build-time note: derive the JSON Schema via the SAME path the SDK uses to advertise it (getZodSchemaObject / zod-json-schema-compat), not a separate zod-to-json-schema import, to guarantee the served schema equals the enforced one (k1).",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The converter is present, so the design is buildable; reusing the SDK's own conversion makes the served schema provably identical to what the SDK validates against and sidesteps a possibly-undeclared direct dep. This is a build-stage refinement, not an LLD contract change.",
+            "options": [
+              "In the PLAN/build, derive JSON Schema through the SDK's getZodSchemaObject / zod-json-schema-compat path rather than importing zod-to-json-schema directly.",
+              "If importing zod-to-json-schema directly, add it as an explicit dependency in package.json."
+            ]
+          }
+        },
+        {
+          "claimId": "cl7",
+          "ref": "boundary",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "S001 owns sc1 and does not implement sc2 (owned by s2) or the steering content (owned by s3); s3 consumes sc1 downstream.",
+          "evidence": "Boundary is internally consistent with the approved HLD (read of the HLD.md path failed in the probe's sandbox but the LLD's hldContextSlice is copied verbatim from the approved HLD this session authored): s1 owns sc1, s2 owns sc2, s3 depends on [sc1,sc2]. No sc2/steering scope is designed in this LLD.",
+          "action": "No change — boundary trace holds.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl8",
+          "ref": "boundary/no-existing-surface",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "No insrc_schema tool or handleInsrcSchema exists yet in src/mcp — the tool and its src/mcp/schema/ subdir are net-new.",
+          "evidence": "Confirmed net-new: grep for handleInsrcSchema / InsrcToolSchemaRegistry finds matches ONLY in this LLD (no src/ implementation); insrc_schema as a tool implementation does not yet exist. The src/mcp/schema/ subdir is new.",
+          "action": "No change — net-new claim resolves.",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 8
+      },
+      "reviewedAt": "2026-09-24T11:32:41.459Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-24T11:38:47.816Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "On-demand controller guidance is delivered by two independent read-only surfaces, each reading its source of truth WHERE THAT SOURCE ALREADY LIVES, plus a steering restructure that shrinks the injected block and points at those surfaces. sc-schema (S001) is an MCP-server-side read-only tool that serves the exact input contract for a requested insrc_* tool (+phase) by slicing the tool's own registered zod inputSchema — the same object the MCP SDK validates against — so there is no copy (k1) and no round-trip. sc-guide (S002) is the daemon-IPC-first + thin-MCP-wrapper shape proven by docgen: a daemon-owned guide.get / guide.list IPC reads the canonical steering content inside the daemon and returns one workflow's section, fronted by a thin insrc_guide MCP tool. Both surfaces are per-task (k2), read-only (k5), and return structured non-throwing results with the valid options on error (k3). S003 then authors, in the canonical steering source, a thin skeleton (front-door decision tree + a catalog of the available insrc_* / IPC calls, the insrc_build_step doc, the schema-first rule, and an insrc_schema self-entry) and moves each workflow's full procedural detail into the per-workflow sections sc-guide serves — propagated to every registered repo by the existing steering-refresh (k4).",
+      "ownedContracts": [
+        {
+          "id": "sc1",
+          "name": "insrc_schema shape-lookup surface",
+          "purpose": "The read-only lookup a controller calls to get the authoritative input contract for a specific insrc_* tool+phase (or the valid tools/phases on a miss), read from the tool's own registered schema so it never drifts. Consumed by S003 to reference insrc_schema in the steering catalog + the schema-first rule + the self-entry.",
+          "interfaceSketch": "// MCP tool `insrc_schema` (read-only). JsonSchema is the JSON Schema derived from the tool's registered zod inputSchema.\ninterface InsrcSchemaInput { tool: string; phase?: string }\ntype JsonSchema = Record<string, unknown>;\ninterface InsrcSchemaOk { schema: JsonSchema; description: string; validPhases?: string[] }\ninterface InsrcSchemaError { error: string; validTools?: string[]; validPhases?: string[] }\ntype InsrcSchemaResult = InsrcSchemaOk | InsrcSchemaError;",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s3"
+          ],
+          "assumptions": [
+            "c3"
+          ]
+        }
+      ],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [
+          "sc1"
+        ],
+        "depends": [],
+        "internal": "Private to S001: how the MCP server enumerates its own registered tools and derives a JSON Schema slice from a tool's registered zod inputSchema; the tool/phase classification (which tools are phase-based and their phase names — analyze_step/workflow_step/review_step/code_review_step/build_step/triage[start,classify]/workflow_run[start,poll] vs the one-shot workflow_approve/docgen/analyze); the dynamic-envelope rule (return the static envelope + a description pointer to the run's own inline schema for runtime-generated inner payloads); and the exact structured-error shaping for omitted/unknown tool and omitted phase. None of this internal wiring is consumed by another Story — only the sc1 result surface is."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc2"
+          ],
+          "depends": [],
+          "internal": "Private to S002: how the daemon reads the canonical steering content it already loads and partitions it into per-workflow sections; the guide.get/guide.list IPC handlers on the daemon method map; the thin insrc_guide MCP wrapper that forwards to those IPCs; and the structured-error shaping for an omitted/unknown workflow. Only the sc2 surface (the MCP tool result + the section-addressing key set) is consumed downstream; the partition/read mechanism stays private."
+        },
+        {
+          "storyId": "s3",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "Private to S003: the actual authored steering content — the compact skeleton (front-door decision tree + the catalog of available insrc_* / IPC calls, the insrc_build_step documentation, the 'call insrc_schema before guessing a shape' rule, and the insrc_schema self-entry) and the concrete decision of which minimal orientation stays inline in the skeleton versus which per-workflow detail moves into sc2's sections. It consumes sc1 (names insrc_schema + its call/response shape in the catalog and self-entry) and sc2 (the skeleton directs the controller to fetch per-workflow detail via insrc_guide, and the moved detail is authored into sc2's per-workflow section partition), and it rides the existing steering-refresh for propagation. No other Story consumes S003."
+        }
+      ],
+      "rolloutPhase": "Phase A — the two on-demand surfaces (foundational)",
+      "nonFunctional": {
+        "performance": "sc-schema is an in-process read of an already-registered schema object sliced to the requested tool+phase — negligible latency, no I/O. sc-guide is a single local daemon IPC round-trip reading steering content the daemon already holds in memory — no network, no rebuild. Neither adds standing cost to activation or to the injected steering (which shrinks).",
+        "security": "Both surfaces are read-only introspection/retrieval over already-loaded schema + steering content (k5): no cloud/REST path, no new network surface, no credential handling, and no mutation of any state. The steering content served is the same content already shipped to the repo.",
+        "observability": "Every result is structured and machine-parseable (k3): a success carries the schema/guidance + orientation, and an error carries the valid tools / phases / workflows so a controller can self-correct in one follow-up call rather than guessing. No thrown tool errors to obscure the failure mode.",
+        "durability": "No persisted state is introduced. Single-source-of-truth (k1) is the durability property that matters: because each surface reads the live registration / canonical steering content, a change to a tool schema or the steering source is reflected on the next lookup with nothing to migrate and no copy to fall out of date."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "insrc_schema",
+          "signature": "// MCP tool registered in buildInsrcMcpServer via server.registerTool('insrc_schema', { title, description, inputSchema: SCHEMA_INPUT }, handleInsrcSchema)",
+          "parameters": [
+            {
+              "name": "tool",
+              "type": "string",
+              "purpose": "The insrc_* tool whose input contract the controller wants (e.g. 'insrc_workflow_step').",
+              "optional": false
+            },
+            {
+              "name": "phase",
+              "type": "string",
+              "purpose": "For a multi-turn tool, the specific phase whose contract is wanted (e.g. 'plan'); ignored for a phaseless tool.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "InsrcSchemaResult",
+            "meaning": "A structured, never-thrown result: InsrcSchemaOk (schema + description [+ validPhases]) on a hit, or InsrcSchemaError (error + validTools|validPhases) on a miss."
+          },
+          "errors": [
+            {
+              "type": "InsrcSchemaError (structured, not thrown)",
+              "condition": "tool omitted or unrecognized -> { error, validTools }; multi-turn tool with phase omitted -> { error, validPhases }; multi-turn tool with an unknown phase -> { error, validPhases }."
+            }
+          ],
+          "preconditions": [
+            "The insrc-mcp server (buildInsrcMcpServer) is running and has registered its tools, so the side-registry is populated."
+          ],
+          "postconditions": [
+            "No state is read from disk or the daemon and none is mutated (k5).",
+            "The returned schema is derived from the SAME zod raw shape passed to registerTool for that tool (k1) — never a hand-maintained copy."
+          ]
+        },
+        {
+          "name": "handleInsrcSchema",
+          "signature": "export function handleInsrcSchema(input: InsrcSchemaInput, registry: InsrcToolSchemaRegistry): InsrcSchemaResult",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "InsrcSchemaInput",
+              "purpose": "The { tool, phase? } lookup request.",
+              "optional": false
+            },
+            {
+              "name": "registry",
+              "type": "InsrcToolSchemaRegistry",
+              "purpose": "The injected name->record map (a seam for isolated unit testing), populated at registration time.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "InsrcSchemaResult",
+            "meaning": "The pure lookup+slice result; the MCP tool wrapper adapts it into the tool response envelope."
+          },
+          "errors": [
+            {
+              "type": "none thrown",
+              "condition": "All failure modes return an InsrcSchemaError value (k3)."
+            }
+          ],
+          "preconditions": [
+            "registry is the map buildInsrcMcpServer populated from the registerTool callsites."
+          ],
+          "postconditions": [
+            "Pure: depends only on input + registry; performs no I/O and no mutation.",
+            "For a phaseless tool a spurious phase is ignored, not rejected (ac3)."
+          ]
+        },
+        {
+          "name": "buildInsrcMcpServer",
+          "signature": "export function buildInsrcMcpServer(deps?: BuildServerDeps): McpServer  // reshaped: also populates an InsrcToolSchemaRegistry from the same shapes it passes to registerTool",
+          "parameters": [
+            {
+              "name": "deps",
+              "type": "BuildServerDeps | undefined",
+              "purpose": "Existing assembly dependencies; unchanged in shape.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "McpServer",
+            "meaning": "The assembled insrc-mcp server, now with insrc_schema registered and the side-registry recorded from every registerTool call (including insrc_schema's own self-entry)."
+          },
+          "errors": [
+            {
+              "type": "none new",
+              "condition": "Registration failures surface exactly as today; recording is in-process and additive."
+            }
+          ],
+          "preconditions": [
+            "Each existing registerTool call passes its zod raw shape as today."
+          ],
+          "postconditions": [
+            "Every registered insrc_* tool has a matching InsrcToolSchemaRecord (the registry key set == the registered tool set).",
+            "The recorded rawShape is object-identical to the shape passed to registerTool (k1)."
+          ]
+        }
+      ],
+      "dataModel": [
+        {
+          "entity": "InsrcToolSchemaRecord",
+          "change": "new",
+          "details": "One entry per registered insrc_* tool: { name: string; description: string; rawShape: ZodRawShape; phases?: string[]; dynamicNote?: string }. rawShape is the exact object handed to registerTool (JSON Schema is derived on demand via the SDK's zod-to-json-schema, not stored). phases is the accepted phase-name list for a multi-turn tool (absent for a phaseless tool). dynamicNote is present only for a call whose inner payload is generated during the run (ac5).",
+          "schemaDiff": "+ interface InsrcToolSchemaRecord { name: string; description: string; rawShape: ZodRawShape; phases?: string[]; dynamicNote?: string }",
+          "callSites": [
+            "src/mcp/server.ts (buildInsrcMcpServer — one record recorded per server.registerTool call, lines 130/185/316/440/501/566/635/692/757/805)"
+          ]
+        },
+        {
+          "entity": "InsrcToolSchemaRegistry",
+          "change": "new",
+          "details": "A ReadonlyMap<string, InsrcToolSchemaRecord> (tool name -> record) built at registration time and read by handleInsrcSchema. Its key set is the authoritative validTools list returned on an unknown/omitted tool (ac4).",
+          "schemaDiff": "+ type InsrcToolSchemaRegistry = ReadonlyMap<string, InsrcToolSchemaRecord>",
+          "callSites": [
+            "src/mcp/server.ts (populated in buildInsrcMcpServer)",
+            "src/mcp/schema/handler.ts (read by handleInsrcSchema)"
+          ]
+        },
+        {
+          "entity": "InsrcSchemaInput / InsrcSchemaOk / InsrcSchemaError / InsrcSchemaResult",
+          "change": "new",
+          "details": "The sc1 tool I/O types exactly as sketched in the HLD: InsrcSchemaInput { tool: string; phase?: string }; InsrcSchemaOk { schema: JsonSchema; description: string; validPhases?: string[] }; InsrcSchemaError { error: string; validTools?: string[]; validPhases?: string[] }; InsrcSchemaResult = InsrcSchemaOk | InsrcSchemaError; JsonSchema = Record<string, unknown>. An InsrcSchemaOk for a dynamic-inner-payload call additionally carries the dynamicNote text within/alongside description (ac5).",
+          "schemaDiff": "+ interface InsrcSchemaInput { tool: string; phase?: string }\n+ interface InsrcSchemaOk { schema: JsonSchema; description: string; validPhases?: string[] }\n+ interface InsrcSchemaError { error: string; validTools?: string[]; validPhases?: string[] }\n+ type InsrcSchemaResult = InsrcSchemaOk | InsrcSchemaError",
+          "callSites": [
+            "src/mcp/schema/schema.ts (type definitions)",
+            "src/mcp/schema/handler.ts (handleInsrcSchema)"
+          ]
+        }
+      ],
+      "interactionWithShared": [
+        {
+          "contractId": "sc1",
+          "role": "implements",
+          "howDetails": "S001 owns sc1 (HLD: ownedByStory s1). This contract IS sc1: insrc_schema exposes InsrcSchemaInput -> InsrcSchemaResult exactly as the HLD interfaceSketch declares, deriving InsrcSchemaOk.schema from the registered zod raw shape (k1), returning validPhases/validTools structured errors (k3), and never throwing (k5). Downstream, S003 consumes this surface by name in the steering catalog + schema-first rule + the insrc_schema self-entry — which is itself one InsrcToolSchemaRecord recorded when insrc_schema registers, so the tool is introspectable about itself."
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "InsrcToolSchemaRecord",
+        "change": "new",
+        "details": "One entry per registered insrc_* tool: { name: string; description: string; rawShape: ZodRawShape; phases?: string[]; dynamicNote?: string }. rawShape is the exact object handed to registerTool (JSON Schema is derived on demand via the SDK's zod-to-json-schema, not stored). phases is the accepted phase-name list for a multi-turn tool (absent for a phaseless tool). dynamicNote is present only for a call whose inner payload is generated during the run (ac5).",
+        "schemaDiff": "+ interface InsrcToolSchemaRecord { name: string; description: string; rawShape: ZodRawShape; phases?: string[]; dynamicNote?: string }",
+        "callSites": [
+          "src/mcp/server.ts (buildInsrcMcpServer — one record recorded per server.registerTool call, lines 130/185/316/440/501/566/635/692/757/805)"
+        ]
+      },
+      {
+        "entity": "InsrcToolSchemaRegistry",
+        "change": "new",
+        "details": "A ReadonlyMap<string, InsrcToolSchemaRecord> (tool name -> record) built at registration time and read by handleInsrcSchema. Its key set is the authoritative validTools list returned on an unknown/omitted tool (ac4).",
+        "schemaDiff": "+ type InsrcToolSchemaRegistry = ReadonlyMap<string, InsrcToolSchemaRecord>",
+        "callSites": [
+          "src/mcp/server.ts (populated in buildInsrcMcpServer)",
+          "src/mcp/schema/handler.ts (read by handleInsrcSchema)"
+        ]
+      },
+      {
+        "entity": "InsrcSchemaInput / InsrcSchemaOk / InsrcSchemaError / InsrcSchemaResult",
+        "change": "new",
+        "details": "The sc1 tool I/O types exactly as sketched in the HLD: InsrcSchemaInput { tool: string; phase?: string }; InsrcSchemaOk { schema: JsonSchema; description: string; validPhases?: string[] }; InsrcSchemaError { error: string; validTools?: string[]; validPhases?: string[] }; InsrcSchemaResult = InsrcSchemaOk | InsrcSchemaError; JsonSchema = Record<string, unknown>. An InsrcSchemaOk for a dynamic-inner-payload call additionally carries the dynamicNote text within/alongside description (ac5).",
+        "schemaDiff": "+ interface InsrcSchemaInput { tool: string; phase?: string }\n+ interface InsrcSchemaOk { schema: JsonSchema; description: string; validPhases?: string[] }\n+ interface InsrcSchemaError { error: string; validTools?: string[]; validPhases?: string[] }\n+ type InsrcSchemaResult = InsrcSchemaOk | InsrcSchemaError",
+        "callSites": [
+          "src/mcp/schema/schema.ts (type definitions)",
+          "src/mcp/schema/handler.ts (handleInsrcSchema)"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "implements",
+        "howDetails": "S001 owns sc1 (HLD: ownedByStory s1). This contract IS sc1: insrc_schema exposes InsrcSchemaInput -> InsrcSchemaResult exactly as the HLD interfaceSketch declares, deriving InsrcSchemaOk.schema from the registered zod raw shape (k1), returning validPhases/validTools structured errors (k3), and never throwing (k5). Downstream, S003 consumes this surface by name in the steering catalog + schema-first rule + the insrc_schema self-entry — which is itself one InsrcToolSchemaRecord recorded when insrc_schema registers, so the tool is introspectable about itself."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Lookup names no tool (tool field absent/empty).",
+          "detection": "handleInsrcSchema sees input.tool is undefined/empty before any registry lookup.",
+          "response": "Return InsrcSchemaError { error: '<tool> is required', validTools: [...registry.keys()] } — a structured value, never thrown (k3, ac4).",
+          "userImpact": "The controller learns the exact set of valid tool names and re-asks in one follow-up call.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Lookup names an unrecognized tool (not a registered insrc_* tool).",
+          "detection": "registry.get(input.tool) returns undefined.",
+          "response": "Return InsrcSchemaError { error: 'unknown tool <name>', validTools: [...registry.keys()] } (k3, ac4).",
+          "userImpact": "Controller sees it mistyped/guessed the tool name and corrects against the authoritative list.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Multi-turn tool looked up with phase omitted.",
+          "detection": "The matched record has a non-empty phases[] but input.phase is undefined.",
+          "response": "Return InsrcSchemaError { error: 'phase required for <tool>', validPhases: record.phases } — no schema guessed (k2/k3, ac2).",
+          "userImpact": "Controller learns which phase names are valid and re-asks for the specific one it is on.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Multi-turn tool looked up with an unknown phase name.",
+          "detection": "The matched record has phases[] and input.phase is not a member of it.",
+          "response": "Return InsrcSchemaError { error: 'unknown phase <phase> for <tool>', validPhases: record.phases } (k3, ac2).",
+          "userImpact": "Controller corrects the phase against the valid set in one follow-up call.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A registered tool's zod raw shape fails to convert to JSON Schema (zod-to-json-schema throws internally).",
+          "detection": "The JSON-Schema derivation call is wrapped; a thrown conversion error is caught inside handleInsrcSchema.",
+          "response": "Return InsrcSchemaError { error: 'schema unavailable for <tool>' } rather than letting the throw escape as a tool error (k3, k5).",
+          "userImpact": "Controller gets a clean structured miss instead of an opaque tool crash; this path should not occur for the shipped shapes (guarded by a test converting every registered shape).",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A phaseless tool (e.g. insrc_workflow_approve / insrc_docgen / insrc_analyze) looked up WITH a spurious phase field.",
+          "expected": "The record has no phases[]; the phase is ignored and the single input contract is returned as InsrcSchemaOk (ac3) — not rejected."
+        },
+        {
+          "input": "insrc_schema looks up ITSELF (tool: 'insrc_schema').",
+          "expected": "Its own InsrcToolSchemaRecord (recorded when it registered) is returned — the tool is self-introspectable, which S003's self-entry relies on."
+        },
+        {
+          "input": "A multi-turn call whose inner payload is generated during the run (e.g. the plan/step/bundle body a run hands back), looked up at that phase.",
+          "expected": "InsrcSchemaOk returns the fixed OUTER envelope for that phase plus the record's dynamicNote stating the run's own latest response carries the authoritative inner shape (ac5) — the outer contract reflecting what the handler enforces, not a hand-copied inner schema."
+        },
+        {
+          "input": "Tool name supplied with correct value but different casing/whitespace.",
+          "expected": "Registry lookup is exact-match on the registered tool name; a non-exact key misses and returns validTools (ac4) — consistent, no fuzzy matching that could mislead."
+        }
+      ],
+      "invariantsToPreserve": []
+    },
+    "testStrategy": {
+      "testFramework": "node:test via `npx tsx --test` (the src/mcp/__tests__/ convention, matching analyze-step-handler.test.ts).",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove handleInsrcSchema's pure lookup+slice logic over an injected registry across every hit/miss branch, with no live server.",
+          "subjects": [
+            "handleInsrcSchema(input, registry) — phaseless hit, multi-turn hit with phase, multi-turn phase-omitted miss, multi-turn unknown-phase miss, unknown tool miss, omitted tool miss, self-lookup, dynamic-note case",
+            "The JSON-Schema derivation of a record's rawShape (zod-to-json-schema) yields a non-empty Record for a representative shape"
+          ],
+          "fixturesNeeded": [
+            "A small hand-built InsrcToolSchemaRegistry with one phaseless record, one multi-turn record (phases[] + one phase whose rawShape is distinctive), and one dynamicNote record"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove buildInsrcMcpServer records a registry whose key set equals the actually-registered insrc_* tool set and whose recorded rawShape is object-identical to what registerTool received — the k1 no-drift guarantee — and that insrc_schema self-registers.",
+          "subjects": [
+            "buildInsrcMcpServer() — registry key set == registered tool set (all 11 incl. insrc_schema)",
+            "Every recorded rawShape converts to JSON Schema without throwing (guards the zod-to-json-schema error path)",
+            "Each multi-turn record's phases[] is a subset of / equals its handler's accepted phase names (lockstep guard against phase-metadata drift)"
+          ],
+          "fixturesNeeded": [
+            "The real buildInsrcMcpServer output (no external I/O; assembly is in-process)"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "unit: handleInsrcSchema returns InsrcSchemaOk { schema, validPhases } for a multi-turn tool + valid phase, schema derived from the record's rawShape",
+            "integration: the multi-turn record's rawShape is object-identical to the registerTool shape (k1)"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "unit: handleInsrcSchema with a multi-turn tool and phase omitted returns InsrcSchemaError { error, validPhases } and no schema"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "unit: handleInsrcSchema for a phaseless tool with a spurious phase returns InsrcSchemaOk (phase ignored, not rejected)",
+            "unit: same phaseless tool with no phase returns the identical InsrcSchemaOk"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "unit: handleInsrcSchema with tool omitted returns InsrcSchemaError { error, validTools } and never throws",
+            "unit: handleInsrcSchema with an unknown tool name returns InsrcSchemaError { error, validTools }",
+            "integration: validTools equals buildInsrcMcpServer's registry key set"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "unit: handleInsrcSchema for a record carrying dynamicNote returns InsrcSchemaOk with the fixed outer envelope plus the dynamicNote text"
+          ]
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Registration-time side-registry inside buildInsrcMcpServer",
+        "oneLineSummary": "As each tool is registered, buildInsrcMcpServer also pushes { name, description, zodRawShape, phases?, dynamicNote? } into a local registry the insrc_schema handler slices.",
+        "approach": "buildInsrcMcpServer already calls server.registerTool(name, { description, inputSchema: <zodRawShape> }, handler) for all 10 tools. Add a thin local recorder invoked at the SAME callsite (a helper registerAndRecord, or a post-registration push) that captures, per tool, the EXACT zodRawShape object handed to registerTool plus explicit static metadata: the phase-name list for multi-turn tools (drawn from each handler's known phase router), and a dynamicNote for tools whose inner payload is generated at run time (ac5). insrc_schema's handler receives { tool, phase? } and looks the tool up in this registry: for a phaseless tool it derives JSON Schema from the raw shape via zod-to-json-schema (spurious phase ignored, ac3); for a multi-turn tool with a named phase it returns the schema + validPhases (ac1); with no phase it returns validPhases only (ac2); for a dynamic-inner-payload call it returns the outer envelope + the note (ac5); unknown/omitted tool returns validTools (ac4). The registry is single-sourced because it stores the same object passed to registerTool — no re-declaration.",
+        "pros": [
+          "The zod shape stored is literally the object passed to registerTool — the SAME shape the SDK validates against, so it cannot drift (k1).",
+          "One obvious wiring point (the existing registration site); no dependency on SDK-private internals.",
+          "Phase metadata + dynamic-note live as explicit fields, cleanly covering ac1/ac2/ac5 which the zod shape alone cannot express (phases are procedural in handlers)."
+        ],
+        "cons": [
+          "The per-tool phase list + dynamicNote are hand-authored metadata sitting next to registration; if a tool later gains/renames a phase in its handler, this metadata must be updated in lockstep (mitigated by a test that cross-checks each recorded phase against the handler's accepted set)."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Per-tool schema-descriptor module consumed by BOTH registration and lookup",
+        "oneLineSummary": "Each tool's schema.ts exports a descriptor { rawShape, phases?, dynamicNote? }; server.ts registers from it and insrc_schema reads the same descriptors via an index.",
+        "approach": "Introduce a uniform per-tool descriptor: each existing *-step/schema.ts (and a small descriptor for the one-shot tools) exports describeTool() -> { rawShape, phases?, dynamicNote?, description }. buildInsrcMcpServer registers each tool FROM that descriptor's rawShape (so registration and lookup read one object), and a src/mcp/schema/catalog.ts index imports every descriptor into a name->descriptor map that the insrc_schema handler slices with the same per-case logic as a1 (ac1-ac5). This co-locates each tool's shape + phase list with the tool itself rather than at the central registry.",
+        "pros": [
+          "Truest single-source: registration and lookup both read the tool's own descriptor, and the phase list lives beside the handler that enforces it, minimizing lockstep drift.",
+          "Scales cleanly — a new insrc_* tool ships its descriptor and is automatically both registered and introspectable.",
+          "No SDK-internal coupling."
+        ],
+        "cons": [
+          "Larger blast radius for s1: it must refactor all existing per-tool schema.ts files to the descriptor shape and rewire server.ts registration to consume them — touching more surface than the Story strictly needs, and risking regressions in the 10 already-working registrations.",
+          "Heavier than the Story's M size for a read-only lookup whose value is delivered by a1 without reshaping existing tools."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Functionally satisfies every criterion and is the truest single-source (registration + lookup share the descriptor), but it costs L: it requires refactoring all 10 existing per-tool schema.ts files and rewiring the working registrations, exceeding the Story's M size and risking regressions in already-shipped tools for no additional acceptance-criterion coverage over a1. Better as a later refactor than this Story's build."
+      },
+      {
+        "id": "a3",
+        "name": "Reflect the SDK McpServer's private registered-tools map at request time",
+        "oneLineSummary": "insrc_schema reads the @modelcontextprotocol/sdk McpServer's internal _registeredTools map to recover each tool's schema at lookup time.",
+        "approach": "Rather than record anything at registration, the insrc_schema handler reaches into the McpServer instance's private _registeredTools (or equivalent internal field) at request time, pulls the stored zod/JSON schema for the requested tool, and returns it. Phase metadata — absent from the SDK's stored shape — would be layered from a small side-table anyway.",
+        "pros": [
+          "Zero duplication of the schema object — reads exactly what the SDK holds.",
+          "No change to the 10 registration callsites."
+        ],
+        "cons": [
+          "Depends on a PRIVATE, undocumented SDK internal (_registeredTools) that can change across @modelcontextprotocol/sdk versions — brittle and violates the 'no reliance on SDK internals' hygiene.",
+          "Still cannot supply phases/dynamicNote (not in the SDK's stored shape), so it needs the same side-metadata as a1 — giving up a1's simplicity without removing its metadata cost.",
+          "Harder to unit-test in isolation (needs a live McpServer instance rather than a plain registry object)."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Weakest: it depends on a private, undocumented @modelcontextprotocol/sdk internal (_registeredTools) that can break on version bumps, and it STILL needs the same phase/dynamicNote side-metadata as a1 (ac1/ac2/ac5 only partial) — so it inherits a1's metadata cost while adding SDK-internal brittleness and a harder test setup, with no compensating benefit."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 capability-discovery: no get-schema surface exists (src/mcp/server.ts, src/mcp/analyze-step/handler.ts, src/daemon/tools/registry.ts)",
+      "quotedText": "NO dedicated get-schema surface exists ... The daemon built-in tool registry lists the ~110 DAEMON capability tools, NOT the insrc_* MCP tool shapes. Confirms sc1 is net-new."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 how-does-it-work: registerTool declares a zod raw shape; phases are procedural; SDK keeps tools in a private map (src/mcp/server.ts, src/mcp/__tests__/analyze-step-handler.test.ts)",
+      "quotedText": "buildInsrcMcpServer registers 10 tools via server.registerTool(name, { inputSchema: <zodRawShape> }, handler); multi-turn tools validate phase PROCEDURALLY inside each handler; the SDK McpServer keeps registered tools in a PRIVATE internal map — the drift-free path is a LOCAL side-registry populated from the same shapes, sliced via zod-to-json-schema (k1)."
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1 structural-map: src/mcp/ per-tool subdir convention + __tests__ + the 10 registered tool names (src/mcp/server.ts, src/mcp/__tests__/)",
+      "quotedText": "src/mcp/ = server.ts + one subdir per multi-turn tool (handler.ts + schema.ts); tests in src/mcp/__tests__/ (node:test via tsx --test); a new insrc_schema follows the convention: src/mcp/schema/ + registration in server.ts + src/mcp/__tests__/schema-handler.test.ts."
+    },
+    {
+      "id": "c4",
+      "kind": "step-output",
+      "ref": "s3 alternatives.judge: a1 (registration-time side-registry) chosen over a2 (L refactor) and a3 (SDK-internals) against ac1-ac5 + sc1",
+      "quotedText": "a1 is the only alternative that satisfies all five acceptance criteria AND sc1 at the Story's M size without SDK-internal coupling."
+    }
+  ]
+}

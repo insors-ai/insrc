@@ -1,0 +1,58 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1790251145279-gheuri",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-24T11:59:05.280Z",
+    "model": "client",
+    "elapsedMs": 13,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "38905b56cb44c4cf",
+    "storyId": "s1"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "38905b56cb44c4cf",
+    "storyId": "s1",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        ".insrc/artifacts/CR-ba132c185fe45860-s1.json",
+        "src/mcp/server.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "src/mcp/server.ts:63",
+            "message": "GROUNDING CAVEAT: the daemon graph for this Story is hollow — the code-review grounding indexed only the diff of a pre-existing .insrc/artifacts/CR-*.json, not the actual src/mcp/schema/* + server.ts changes, so no symbol/test edges were available. Adherence was therefore judged by reading the diff directly + running the suite. Verdict: ADHERES. insrc_schema is read-only (readOnlyHint:true, no I/O, no mutation — k5); every failure returns a structured InsrcSchemaError, nothing throws (k3); the served JSON Schema is derived from the exact registered zod rawShape object (registerAndRecord stores config.inputSchema by reference — k1), via the SDK's own toJsonSchemaCompat (no cloud/REST path). No project-rule breach found.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 1
+    }
+  }
+}

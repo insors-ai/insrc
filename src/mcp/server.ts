@@ -55,8 +55,65 @@ import { makeSamplerFromMcpServer } from './sampling-bridge.js';
 import { startRun, pollRun, abortRun, approveWorkflow, type UnaryRpcDeps } from './daemon-stream.js';
 import type { WorkflowProgress } from '../daemon/workflow-rpc.js';
 import { WORKFLOW_NAMES } from '../workflow/types.js';
+import type { ZodRawShape } from 'zod';
+import { SCHEMA_INPUT, type InsrcSchemaInput, type InsrcToolSchemaRecord, type InsrcToolSchemaRegistry } from './schema/schema.js';
+import { handleInsrcSchema } from './schema/handler.js';
 
 const log = getLogger('mcp:server');
+
+/**
+ * Static per-tool metadata for the `insrc_schema` side-registry (sc1), keyed
+ * by the exact registered tool name. `phases` mirrors each multi-turn tool's
+ * handler phase router VERBATIM — it is hand-maintained against the `case`
+ * labels in each `src/mcp/*-step/handler.ts` and MUST be updated in lockstep
+ * when a handler gains or renames a phase (a registry test asserts the
+ * recorded set matches the expected set, catching an accidental one-sided
+ * edit). `dynamicNote` flags a tool whose inner payload is generated during the run,
+ * so a lookup returns the fixed outer envelope + this note (ac5). Tools absent
+ * from this table are phaseless: they carry a single fixed input shape.
+ */
+const TOOL_SCHEMA_META: Readonly<Record<string, { phases?: string[]; dynamicNote?: string }>> = {
+	insrc_analyze_step: {
+		phases: ['start', 'plan', 'narrow', 'bundle'],
+		dynamicNote:
+			'Multi-turn: each phase after `start` emits JSON the run itself hands back — ' +
+			'this is the fixed OUTER call envelope; the run\'s own latest response carries the ' +
+			'authoritative inner `schema` (plan / narrow / bundle) to emit next.',
+	},
+	insrc_workflow_step: {
+		phases: ['start', 'plan', 'step', 'synthesize', 'resolve_question', 'review_deferred'],
+		dynamicNote:
+			'Multi-turn: the plan / step / synthesize bodies are schemas the run hands back — ' +
+			'this is the fixed OUTER call envelope; read the inner `schema` from the run\'s latest response.',
+	},
+	insrc_build_step: {
+		phases: ['implement', 'validate'],
+		dynamicNote:
+			'Multi-turn: the per-phase payload the run hands back is authoritative — ' +
+			'this is the fixed OUTER call envelope.',
+	},
+	insrc_review_step: {
+		phases: ['start', 'claims', 'verdicts'],
+		dynamicNote:
+			'Multi-turn: the claims / verdicts bodies are schemas the run hands back — ' +
+			'this is the fixed OUTER call envelope; read the inner `schema` from the run\'s latest response.',
+	},
+	insrc_code_review_step: {
+		phases: ['start', 'judgements'],
+		dynamicNote:
+			'Multi-turn: the judgements body is a schema the run hands back — ' +
+			'this is the fixed OUTER call envelope; read the inner `schema` from the run\'s latest response.',
+	},
+	insrc_triage: {
+		phases: ['start', 'classify'],
+	},
+	insrc_workflow_run: {
+		phases: ['start', 'poll', 'abort'],
+		dynamicNote:
+			'Async: START (no poll/abort) returns a runId; then POLL { poll, cursor } for ' +
+			'progress frames; ABORT { abort } cancels — one input shape, mode-switched by field presence.',
+	},
+};
 
 const SERVER_INFO = {
 	name:    'insrc-analyze',
@@ -117,7 +174,18 @@ const ANALYZE_INPUT = {
  * whatever transport it wants (stdio by default; tests use
  * `InMemoryTransport`).
  */
-export function buildInsrcMcpServer(): McpServer {
+/**
+ * Assemble the insrc-mcp server AND expose the sc1 tool-schema registry it
+ * builds at registration time. The registry maps each registered tool name to
+ * its recorded { rawShape, phases?, dynamicNote? }; `insrc_schema` slices it.
+ * Exposed (vs. kept private) so registration integrity — key set == tool set,
+ * rawShape object-identity (k1), phases lockstep — is testable without a live
+ * transport.
+ */
+export function buildInsrcMcpServerWithRegistry(): {
+	server: McpServer;
+	schemaRegistry: InsrcToolSchemaRegistry;
+} {
 	const server = new McpServer(SERVER_INFO, {
 		capabilities: {
 			tools:     {},
@@ -127,7 +195,32 @@ export function buildInsrcMcpServer(): McpServer {
 		},
 	});
 
-	server.registerTool(
+	// sc1 side-registry: as each tool registers, record the SAME zod raw shape
+	// handed to registerTool (k1, no copy) + its static phase/dynamic metadata.
+	// `insrc_schema` slices THIS registry; a `schema`-derivation happens on
+	// demand in the handler (never stored). `registerAndRecord` has the exact
+	// signature of `server.registerTool`, so the callsites below are unchanged
+	// apart from the name.
+	const schemaRecords = new Map<string, InsrcToolSchemaRecord>();
+	const registerTool = server.registerTool.bind(server);
+	const registerAndRecord: typeof server.registerTool = ((
+		name: string,
+		config: { description?: string; inputSchema?: ZodRawShape },
+		...rest: unknown[]
+	) => {
+		const result = (registerTool as (...a: unknown[]) => unknown)(name, config, ...rest);
+		const meta = TOOL_SCHEMA_META[name] ?? {};
+		schemaRecords.set(name, {
+			name,
+			description: config.description ?? '',
+			rawShape: config.inputSchema ?? {},
+			...(meta.phases ? { phases: meta.phases } : {}),
+			...(meta.dynamicNote ? { dynamicNote: meta.dynamicNote } : {}),
+		});
+		return result;
+	}) as typeof server.registerTool;
+
+	registerAndRecord(
 		'insrc_analyze',
 		{
 			title: 'insrc analyze',
@@ -182,7 +275,7 @@ export function buildInsrcMcpServer(): McpServer {
 	// discovery) still fire their inner LLM calls through the daemon's
 	// shaperProvider until Phase B lands.
 	// -------------------------------------------------------------------
-	server.registerTool(
+	registerAndRecord(
 		'insrc_analyze_step',
 		{
 			title: 'insrc analyze (multi-turn)',
@@ -313,7 +406,7 @@ export function buildInsrcMcpServer(): McpServer {
 	// insrc_analyze_step: server holds state under a 22-char opaque
 	// token, hands prompts + schemas to the outer LLM turn by turn.
 	// -------------------------------------------------------------------
-	server.registerTool(
+	registerAndRecord(
 		'insrc_workflow_step',
 		{
 			title: 'insrc workflow (multi-turn)',
@@ -437,7 +530,7 @@ export function buildInsrcMcpServer(): McpServer {
 	// code in the `implement` phase; the controller (Claude Code / Codex)
 	// does the actual editing/testing/committing.
 	// -------------------------------------------------------------------
-	server.registerTool(
+	registerAndRecord(
 		'insrc_build_step',
 		{
 			title: 'insrc build (controller-driven)',
@@ -498,7 +591,7 @@ export function buildInsrcMcpServer(): McpServer {
 	// + persist the report); the CONTROLLER emits the claims + verdicts.
 	// Genuine "two sets of eyes". Stamps meta.review with model='client'.
 	// -------------------------------------------------------------------
-	server.registerTool(
+	registerAndRecord(
 		'insrc_review_step',
 		{
 			title: 'insrc review (controller-driven, multi-turn)',
@@ -563,7 +656,7 @@ export function buildInsrcMcpServer(): McpServer {
 	// runCodeReview; YOU (the controller) supply each of the four dimensions'
 	// judgement — a second set of eyes off the provider that authored the code.
 	// -------------------------------------------------------------------
-	server.registerTool(
+	registerAndRecord(
 		'insrc_code_review_step',
 		{
 			title: 'insrc code review (controller-driven, multi-turn)',
@@ -632,7 +725,7 @@ export function buildInsrcMcpServer(): McpServer {
 	// standalone LLD → build; Trivial → build. Server maps size → route and
 	// pre-fills the exact next call. See `plans/feature-triage-router.md`.
 	// -------------------------------------------------------------------
-	server.registerTool(
+	registerAndRecord(
 		'insrc_triage',
 		{
 			title: 'insrc triage (classify size → route workflow entry)',
@@ -689,7 +782,7 @@ export function buildInsrcMcpServer(): McpServer {
 	// in the loop instead of watching a single blocking stream. See
 	// daemon/workflow-run-registry.ts for the server-side lifecycle.
 	// -------------------------------------------------------------------
-	server.registerTool(
+	registerAndRecord(
 		'insrc_workflow_run',
 		{
 			title: 'insrc workflow (async start/poll, daemon-driven)',
@@ -754,7 +847,7 @@ export function buildInsrcMcpServer(): McpServer {
 		},
 	);
 
-	server.registerTool(
+	registerAndRecord(
 		'insrc_workflow_approve',
 		{
 			title: 'insrc workflow approve (in-CLI, controller-driven gate)',
@@ -802,7 +895,7 @@ export function buildInsrcMcpServer(): McpServer {
 	// The read happens inside the daemon; this tool only forwards + returns
 	// the finished self-contained document / outcome (k2/ac2).
 	// -------------------------------------------------------------------
-	server.registerTool(
+	registerAndRecord(
 		'insrc_docgen',
 		{
 			title: 'insrc docgen (generate a self-contained code document)',
@@ -852,7 +945,43 @@ export function buildInsrcMcpServer(): McpServer {
 		async (rawArgs) => handleDocgen(rawArgs as Parameters<typeof handleDocgen>[0]),
 	);
 
-	return server;
+	// insrc_schema (sc1) — read-only shape lookup over the side-registry the
+	// recorder above populated. Registered last so its own self-entry is
+	// recorded too (the tool is introspectable about itself, which the S003
+	// steering self-entry relies on). Slices `schemaRecords` — no I/O, no
+	// mutation (k5); every miss returns a structured value, never throws (k3).
+	registerAndRecord(
+		'insrc_schema',
+		{
+			title: 'insrc schema (look up an insrc_* tool\'s input contract)',
+			description:
+				'Read-only: return the authoritative input contract (JSON Schema) for a ' +
+				'specific insrc_* tool — for a multi-turn tool, the specific `phase` you are ' +
+				'about to call. The schema is sliced from the tool\'s OWN registered shape, so ' +
+				'it can never drift from what the tool enforces.\n\n' +
+				'Call it BEFORE constructing a call whose shape you are unsure of, instead of ' +
+				'guessing fields. Misses are structured, never thrown: omit / mistype `tool` to ' +
+				'get { error, validTools }; omit / mistype `phase` on a multi-turn tool to get ' +
+				'{ error, validPhases }. A phaseless tool ignores a spurious `phase`.',
+			annotations: {
+				readOnlyHint:   true,
+				idempotentHint: true,    // pure lookup over the registered shapes
+				openWorldHint:  false,   // scope is this server's own registered tools
+			},
+			inputSchema: SCHEMA_INPUT,
+		},
+		async (rawArgs) => {
+			const result = handleInsrcSchema(rawArgs as InsrcSchemaInput, schemaRecords);
+			return { content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }] };
+		},
+	);
+
+	return { server, schemaRegistry: schemaRecords };
+}
+
+/** Assemble the insrc-mcp server (the sc1 registry stays internal here). */
+export function buildInsrcMcpServer(): McpServer {
+	return buildInsrcMcpServerWithRegistry().server;
 }
 
 // ---------------------------------------------------------------------------

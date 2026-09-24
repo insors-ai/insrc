@@ -7,6 +7,7 @@
  * the daemon's own scripts (k5). The Marketplace listing + packaging is Story S006.
  */
 import { existsSync, readFileSync, readdirSync, watch as fsWatch } from 'node:fs';
+import { execFile } from 'node:child_process';
 import { join } from 'node:path';
 
 import * as vscode from 'vscode';
@@ -47,11 +48,14 @@ import { createOrphanKill, readManagedPid } from './panels/orphan-kill.js';
 import type { PanelHandle } from './panels/types.js';
 import { runSetModelTier } from './models/model-tier-picker.js';
 import type { ModelListResult, ModelProvider } from './models/model-tier-picker.js';
+import { runDaemonFreshnessCheck } from './freshness/daemon-freshness.js';
 
 /** The workspaceState key prefix for the one-time register-prompt dismissal flag (S004). */
 const REGISTER_DISMISSED_KEY = 'insrc.workspace.register.dismissed';
 /** The workspaceState key prefix for the one-time onboarding-completed flag (S005). */
 const ONBOARDED_KEY = 'insrc.workspace.onboarded';
+/** The globalState key for the last plugin version seen — the self-update trigger (S003 daemon-auto-update). */
+const LAST_SEEN_PLUGIN_VERSION_KEY = 'insrc.daemonSelfUpdate.lastSeenPluginVersion';
 
 /**
  * VS Code activation entry. Constructs the shared daemon client + the sc2/sc3/sc4
@@ -127,6 +131,38 @@ export function activate(context: vscode.ExtensionContext): void {
   registerWorkspaceCommands({ commands, consent, status, registrar, folders });
 
   activateExtension({ client, status });
+
+  // S003 daemon-auto-update: keep the locally-installed daemon current. This is the
+  // SOLE vscode importer, so it binds the real seams — the daemon-owned update+restart
+  // IPC (client.update/updateOutcome, sc1; NEVER a daemon-ctl.sh shell-out, k2), the
+  // installed-commit read (client.status, sc2), a plugin-side git ls-remote (no pull,
+  // k1), a native Update/Dismiss notification (k7), and the per-plugin last-seen
+  // version over globalState + packageJSON.version (self-update trigger, k4). Fired
+  // fire-and-forget like runReachabilityProbe so it never blocks activation (k6); the
+  // flow module itself never rejects, so no .catch is needed.
+  void runDaemonFreshnessCheck({
+    client,
+    daemonRoot: paths.daemonRoot,
+    gitLsRemote: (root, branch) =>
+      new Promise<string>((resolve) => {
+        // A failure/timeout ⇒ undeterminable ⇒ '' (the flow skips). Never reject.
+        execFile('git', ['-C', root, 'ls-remote', 'origin', branch], { timeout: 15_000 }, (err, stdout) => {
+          if (err !== null) {
+            resolve('');
+            return;
+          }
+          const firstLine = stdout.split('\n', 1)[0] ?? '';
+          resolve(firstLine.split(/\s+/, 1)[0] ?? '');
+        });
+      }),
+    notify: (message, ...actions) =>
+      Promise.resolve(vscode.window.showInformationMessage(message, {}, ...actions)),
+    versionState: {
+      current: String(context.extension.packageJSON.version ?? ''),
+      getLastSeen: () => context.globalState.get<string>(LAST_SEEN_PLUGIN_VERSION_KEY),
+      setLastSeen: (v) => context.globalState.update(LAST_SEEN_PLUGIN_VERSION_KEY, v),
+    },
+  });
 
   // S001-settings-UI sc8: the ConfigSync engine that keeps the native
   // `contributes.configuration` surface truthful to the daemon. The real

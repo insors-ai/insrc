@@ -137,8 +137,15 @@ declare module 'vscode' {
 
   /** A per-scope persisted key/value store (VS Code's `Memento`). */
   export interface Memento {
+    get<T>(key: string): T | undefined;
     get<T>(key: string, defaultValue: T): T;
     update(key: string, value: unknown): PromiseLike<void>;
+  }
+
+  /** The manifest + identity of an installed extension (VS Code's `Extension<T>`). */
+  export interface Extension {
+    /** The parsed `package.json` of the extension (carries `version`). */
+    readonly packageJSON: { readonly version?: string; readonly [key: string]: unknown };
   }
 
   export interface ExtensionContext {
@@ -147,5 +154,9 @@ declare module 'vscode' {
     readonly extensionPath: string;
     /** Per-workspace persisted state (S004 one-time register-prompt flag). */
     readonly workspaceState: Memento;
+    /** Machine-global persisted state (S003 daemon-auto-update last-seen version). */
+    readonly globalState: Memento;
+    /** This extension's own descriptor (carries `packageJSON.version`). */
+    readonly extension: Extension;
   }
 }

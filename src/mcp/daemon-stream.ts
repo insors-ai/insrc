@@ -27,6 +27,7 @@ import type { RunWorkflowResult, WorkflowProgress } from '../daemon/workflow-rpc
 import type { RunStatus } from '../daemon/workflow-run-registry.js';
 import type { WorkflowApproveResult } from '../workflow/gates.js';
 import type { DocGenOutcome, RenderedDocumentShell, SerializableDocTypeRegistration } from '../docgen/types.js';
+import type { InsrcGuideResult } from '../daemon/guide-sections.js';
 import type { CodeReviewGrounding } from '../workflow/code-review/types.js';
 
 const log = getLogger('mcp:workflow-run');
@@ -355,4 +356,22 @@ export function docgenList(
 	deps: UnaryRpcDeps = {},
 ): Promise<{ docTypes: readonly SerializableDocTypeRegistration[] }> {
 	return unaryRpc<{ docTypes: readonly SerializableDocTypeRegistration[] }>('docgen.list', {}, deps);
+}
+
+/** insrc_guide (sc2): fetch one workflow's guidance section via the daemon
+ *  `guide.get` IPC — the read + partition happen inside the daemon over the
+ *  canonical steering asset; only the structured result crosses back. */
+export function guideGet(
+	params: { workflow: string },
+	deps: UnaryRpcDeps = {},
+): Promise<InsrcGuideResult> {
+	return unaryRpc<InsrcGuideResult>('guide.get', params, deps);
+}
+
+/** insrc_guide (sc2): list the workflow keys with an authored guidance section
+ *  via the daemon `guide.list` IPC. */
+export function guideList(
+	deps: UnaryRpcDeps = {},
+): Promise<{ workflows: string[] }> {
+	return unaryRpc<{ workflows: string[] }>('guide.list', {}, deps);
 }

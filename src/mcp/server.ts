@@ -58,6 +58,8 @@ import { WORKFLOW_NAMES } from '../workflow/types.js';
 import type { ZodRawShape } from 'zod';
 import { SCHEMA_INPUT, type InsrcSchemaInput, type InsrcToolSchemaRecord, type InsrcToolSchemaRegistry } from './schema/schema.js';
 import { handleInsrcSchema } from './schema/handler.js';
+import { GUIDE_INPUT, type InsrcGuideInput } from './guide/schema.js';
+import { handleInsrcGuide } from './guide/handler.js';
 
 const log = getLogger('mcp:server');
 
@@ -943,6 +945,35 @@ export function buildInsrcMcpServerWithRegistry(): {
 			},
 		},
 		async (rawArgs) => handleDocgen(rawArgs as Parameters<typeof handleDocgen>[0]),
+	);
+
+	// insrc_guide (sc2) — read-only per-workflow guidance retrieval. Thin wrapper
+	// forwarding to the daemon guide.get/guide.list IPC (the daemon reads the
+	// canonical steering asset). Phaseless, so it also lands in the insrc_schema
+	// registry below. No direct file/DB access here — the daemon owns content.
+	registerAndRecord(
+		'insrc_guide',
+		{
+			title: 'insrc guide (fetch one workflow\'s full guidance)',
+			description:
+				'Read-only: return the full step-by-step guidance for a specific insrc ' +
+				'workflow, on demand, sourced from the canonical steering content the ' +
+				'daemon ships (so it reflects the single source with no per-repo copy).\n\n' +
+				'Call it BEFORE running a workflow whose detailed procedure you need, ' +
+				'instead of relying on the injected skeleton. Omit / mistype `workflow` ' +
+				'to get { error, validWorkflows } (a structured list, never thrown).',
+			annotations: {
+				readOnlyHint:   true,
+				idempotentHint: true,    // pure read of the canonical steering content
+				openWorldHint:  false,   // scope is the daemon's own steering asset
+			},
+			inputSchema: GUIDE_INPUT,
+		},
+		async (rawArgs) => {
+			const r = await handleInsrcGuide(rawArgs as InsrcGuideInput);
+			const content = r.content.map((c) => ({ type: 'text' as const, text: c.text }));
+			return r.isError ? { content, isError: true } : { content };
+		},
 	);
 
 	// insrc_schema (sc1) — read-only shape lookup over the side-registry the

@@ -13,7 +13,8 @@
  */
 
 import { mkdirSync, readFileSync, writeFileSync, existsSync, appendFileSync, rmSync } from 'node:fs';
-import { injectSteeringBlock, type SteeringSelection } from './steering-inject.js';
+import { injectSteeringBlock, readSteeringBlock, type SteeringSelection } from './steering-inject.js';
+import { guideGetResult, guideListResult } from './guide-sections.js';
 import { registerMcpClients, daemonInstallRoot } from './mcp-register.js';
 import { PATHS } from '../shared/paths.js';
 import { setLogMode, getLogger } from '../shared/logger.js';
@@ -1367,6 +1368,19 @@ async function main(): Promise<void> {
 		'docgen.list': async () => {
 			const mod = await import('../docgen/index.js');
 			return { docTypes: mod.listDocTypes() } as unknown as Record<string, unknown>;
+		},
+
+		// insrc_guide (sc2) — read-only per-workflow guidance retrieval. Reads the
+		// SAME canonical steering asset steering-inject ships (readSteeringBlock),
+		// partitioned by the guide markers; a read failure is shaped as a structured
+		// result inside guideGetResult/guideListResult, never escaping the IPC.
+		'guide.get': async (params) => {
+			const { workflow } = (params ?? {}) as { workflow?: string };
+			return guideGetResult(readSteeringBlock, workflow) as unknown as Record<string, unknown>;
+		},
+
+		'guide.list': async () => {
+			return guideListResult(readSteeringBlock) as unknown as Record<string, unknown>;
 		},
 
 		'config.write': async (params) => {

@@ -19,6 +19,8 @@ import assert from 'node:assert/strict';
 import { buildInsrcMcpServerWithRegistry } from '../server.js';
 import { handleInsrcSchema } from '../schema/handler.js';
 import type { InsrcSchemaOk } from '../schema/schema.js';
+import { readSteeringBlock } from '../../daemon/steering-inject.js';
+import { readWorkflowGuide } from '../../daemon/guide-sections.js';
 
 const EXPECTED_TOOLS = [
 	'insrc_analyze',
@@ -26,6 +28,7 @@ const EXPECTED_TOOLS = [
 	'insrc_build_step',
 	'insrc_code_review_step',
 	'insrc_docgen',
+	'insrc_guide',
 	'insrc_review_step',
 	'insrc_schema',
 	'insrc_triage',
@@ -48,7 +51,7 @@ const EXPECTED_PHASES: Record<string, string[]> = {
 	insrc_workflow_run: ['start', 'poll', 'abort'],
 };
 
-const PHASELESS_TOOLS = ['insrc_analyze', 'insrc_workflow_approve', 'insrc_docgen', 'insrc_schema'];
+const PHASELESS_TOOLS = ['insrc_analyze', 'insrc_workflow_approve', 'insrc_docgen', 'insrc_schema', 'insrc_guide'];
 
 test('registry key set == registered tool set (all 11 incl. insrc_schema)', () => {
 	const { schemaRegistry } = buildInsrcMcpServerWithRegistry();
@@ -101,5 +104,20 @@ test('phaseless tools carry no phases', () => {
 		const record = schemaRegistry.get(name);
 		assert.ok(record, `${name} missing`);
 		assert.equal(record.phases, undefined, `${name} should be phaseless`);
+	}
+});
+
+// sc2 (insrc_guide) Phase-A: the real shipped steering asset has no per-workflow
+// guide marker pairs authored yet (that is S003's job), so readWorkflowGuide
+// returns null for every workflow key and does not throw.
+const PHASE_A_WORKFLOW_KEYS = [
+	'define', 'design.epic', 'design.story', 'plan', 'build',
+	'review', 'code-review', 'brainstorm', 'tracker', 'triage',
+];
+
+test('readWorkflowGuide over the REAL steering asset returns null for every key in Phase A', () => {
+	const text = readSteeringBlock(); // reads the shipped canonical asset; throws only if missing/empty
+	for (const key of PHASE_A_WORKFLOW_KEYS) {
+		assert.equal(readWorkflowGuide(text, key), null, `${key} should have no authored guide section yet`);
 	}
 });

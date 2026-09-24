@@ -1,0 +1,61 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1790253567137-fuyvpy",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-24T12:39:27.137Z",
+    "model": "client",
+    "elapsedMs": 3,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "38905b56cb44c4cf",
+    "storyId": "s2"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "38905b56cb44c4cf",
+    "storyId": "s2",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        ".insrc/artifacts/CR-ba132c185fe45860-s1.json",
+        "src/daemon/index.ts",
+        "src/mcp/__tests__/schema-registry.test.ts",
+        "src/mcp/daemon-stream.ts",
+        "src/mcp/server.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "src/daemon/index.ts:1372",
+            "message": "GROUNDING CAVEAT: the code-review graph for this Story is hollow — it indexed only bare diff file entries (src/daemon/index.ts, daemon-stream.ts, server.ts, schema-registry.test.ts) and did NOT index the new src/daemon/guide-sections.ts + src/mcp/guide/* at all, with no symbol/test edges. Adherence was judged by reading the diff + running the suite. Verdict: ADHERES. insrc_guide is read-only (readOnlyHint:true); the daemon guide.get/guide.list handlers reuse the EXPORTED readSteeringBlock() (the single canonical-asset reader steering-inject ships — k1, no copy) and shape every failure (read-throw / omitted / unknown workflow) as a structured InsrcGuideError inside guideGetResult/guideListResult so nothing escapes the IPC (k3/k5); no cloud/REST path. Follows the docgen daemon-IPC + thin-MCP-wrapper precedent. No project-rule breach.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 1
+    }
+  }
+}

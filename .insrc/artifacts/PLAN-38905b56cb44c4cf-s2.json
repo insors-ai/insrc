@@ -1,0 +1,199 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1790252853223-3von3u",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-24T12:31:06.189Z",
+    "epicCreatedAt": "2026-09-24T10:32:18.030Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 212949,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "38905b56cb44c4cf",
+    "epicSlug": "work-framed-approved-spec-proceed-from",
+    "storyId": "s2",
+    "lldRunId": "wf-1790251312157-sf22t7",
+    "lldEffectiveHash": "b8f0f1bf4237bd475f51a1368af9c5543f948c3358684f1bfc620ffdbb79d33e",
+    "approvedAt": "2026-09-24T12:31:36.091Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Pure guide-sections module (src/daemon/guide-sections.ts)",
+        "summary": "Add src/daemon/guide-sections.ts: the sc2 types (InsrcGuideInput { workflow?: string }, InsrcGuideOk { workflow; guidance }, InsrcGuideError { error; validWorkflows }, InsrcGuideResult union), the marker builders guideMarkerStart(key)/guideMarkerEnd(key) producing '<!-- insrc:guide:<key>:start|end -->', and the PURE readWorkflowGuide(steeringText, workflow): string|null + listWorkflowGuides(steeringText): string[]. readWorkflowGuide slices strictly between the requested key's own start/end markers (trimmed), null on a missing/half-present/inverted pair; listWorkflowGuides returns only keys with a COMPLETE pair, in document order.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "src/daemon/guide-sections.ts exports InsrcGuideInput/Ok/Error/Result, guideMarkerStart/guideMarkerEnd, readWorkflowGuide, listWorkflowGuides, matching the LLD signatures verbatim.",
+          "readWorkflowGuide is pure (no imports of node:fs) — depends only on its args; a half-present/inverted marker pair returns null.",
+          "listWorkflowGuides returns keys for COMPLETE pairs only, in document order; [] for text with no pairs.",
+          "tsc passes under strict + exactOptionalPropertyTypes."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "guide-sections.test.ts: readWorkflowGuide hit/unknown/half-present/inverted-pair + decoy-inner-marker; listWorkflowGuides complete-pairs-only in document order + [] empty; guideMarkerStart/End exact strings"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Daemon guide.get/guide.list IPC + daemon-stream clients",
+        "summary": "Add 'guide.get' and 'guide.list' read-only entries to the object-literal method map in src/daemon/index.ts, beside docgen.generate/docgen.list. Each reuses the EXPORTED readSteeringBlock() from steering-inject.ts (the single-source canonical-asset reader) wrapped in try/catch: guide.get returns readWorkflowGuide(text, workflow) shaped as { workflow, guidance } or { error, validWorkflows: listWorkflowGuides(text) } (also on omitted key / read failure -> { error, validWorkflows: [] }); guide.list returns { workflows: listWorkflowGuides(text) } (or { workflows: [] } on read failure). Add the thin unaryRpc client wrappers guideGet(params, deps)/guideList(deps) to src/mcp/daemon-stream.ts, mirroring docgenGenerate/docgenList, importing the InsrcGuideResult type from ../daemon/guide-sections.js.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "src/daemon/index.ts registers 'guide.get' and 'guide.list' read-only handlers that reuse readSteeringBlock() + t1's reader; a steering-read throw is caught and shaped as a structured result, never escaping the IPC (k3/k5) — PROVEN by a test injecting a throwing reader.",
+          "src/mcp/daemon-stream.ts exports guideGet(params, deps?) over unaryRpc('guide.get',...) and guideList(deps?) over unaryRpc('guide.list', {}, ...), returning InsrcGuideResult / { workflows }.",
+          "The daemon guide handlers are read-only — no writes, no cloud/REST (k5).",
+          "Existing daemon methods + daemon-stream clients are unchanged (additive)."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "guide-handlers.test.ts: the guide.get/guide.list handler logic over an injected read seam — known key -> {workflow,guidance}; unknown/omitted -> {error,validWorkflows}; read-seam throws -> guide.get {error,validWorkflows:[]} and guide.list {workflows:[]} (never escapes)"
+          },
+          {
+            "level": "unit",
+            "name": "guide-handlers.test.ts: guide.list returns {workflows} from listWorkflowGuides over injected fixture text (document order)"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Thin insrc_guide MCP tool + registration",
+        "summary": "Add src/mcp/guide/schema.ts (GUIDE_INPUT = { workflow: z.string().optional() } — workflow optional so an omitted workflow is the ac2 structured path; re-export InsrcGuideInput) and src/mcp/guide/handler.ts (handleInsrcGuide(args, deps?): forwards a present workflow to guideGet and wraps the InsrcGuideResult as { content:[{type:'text',text}] }; an omitted workflow calls guideList and returns a structured InsrcGuideError { error, validWorkflows } envelope; never throws for a miss). Register insrc_guide in src/mcp/server.ts via the s1 registerAndRecord recorder (readOnlyHint:true, phaseless) so it also lands in the insrc_schema registry.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "src/mcp/guide/handler.ts exports handleInsrcGuide importing ONLY the daemon guide clients (guideGet/guideList) + resolveRepoPath — no direct file/DB access.",
+          "insrc_guide is registered via registerAndRecord (phaseless) and appears in buildInsrcMcpServerWithRegistry()'s registry; GUIDE_INPUT.workflow is optional.",
+          "handleInsrcGuide never throws for a miss — an omitted/unknown workflow yields a structured InsrcGuideError envelope (k3, ac2).",
+          "tsc clean; full MCP suite green (the schema-registry key-set test updated for the added tool)."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "guide-handler.test.ts: handleInsrcGuide({workflow}) forwards to guideGet and wraps InsrcGuideOk in {content:[{type:'text',text}]} (ac1) over an injected UnaryRpc dep; handleInsrcGuide({}) forwards to guideList and returns a structured InsrcGuideError {error,validWorkflows} envelope, never throws (ac2)"
+          },
+          {
+            "level": "integration",
+            "name": "schema-registry.test.ts (extended): buildInsrcMcpServerWithRegistry() registry includes 'insrc_guide' (phaseless, no phases) and the EXPECTED_TOOLS key-set is updated to include it; readWorkflowGuide over the REAL shipped steering asset returns null for each WorkflowKey in Phase A and does not throw"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "readWorkflowGuide(text, key): hit returns the trimmed section between the key's start/end markers (ac1); unknown key returns null; half-present pair (start only / end only / end-before-start) returns null; inner text resembling another key's marker is returned verbatim, not mis-sliced",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "listWorkflowGuides(text): returns only keys with a COMPLETE pair, in document order; returns [] for text with no pairs (Phase-A empty case)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "guideMarkerStart(key)/guideMarkerEnd(key) produce the exact '<!-- insrc:guide:<key>:start|end -->' strings the reader keys on",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "guide.get handler: known key -> { workflow, guidance }; unknown/omitted key -> { error, validWorkflows }; asset-read throws -> { error, validWorkflows: [] } (never escapes the IPC)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "guide.list handler: returns { workflows } from listWorkflowGuides over the injected text; asset-read throws -> { workflows: [] }",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "handleInsrcGuide({ workflow }) -> forwards to guideGet and wraps InsrcGuideOk in { content:[{type:'text',text}] }",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "handleInsrcGuide({}) (omitted workflow) -> forwards to guideList and returns a structured InsrcGuideError { error, validWorkflows } envelope (ac2), never throws",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "buildInsrcMcpServerWithRegistry(): the registry now includes 'insrc_guide' (phaseless: no phases); the schema-registry key-set test count reflects the added tool",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "readWorkflowGuide over the REAL canonical steering asset returns null for every WorkflowKey in Phase A (no marker pairs authored yet) and does not throw",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "plan s1 how-does-it-work: the docgen thin-wrapper + daemon-stream client + method-map shapes to mirror, and readSteeringBlock reuse (src/mcp/daemon-stream.ts, src/daemon/index.ts, src/daemon/steering-inject.ts)",
+      "quotedText": "docgenGenerate is a one-liner over unaryRpc('docgen.generate',...); the daemon method map has 'docgen.generate'/'docgen.list'; steering-inject.ts EXPORTS readSteeringBlock() which the daemon guide handlers reuse (single-source, wrapped for read-failure)."
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 dataModelChanges: the sc2 types (InsrcGuide*) + the GUIDE_MARKER convention (guideMarkerStart/End) + the pure readWorkflowGuide/listWorkflowGuides reader",
+      "quotedText": "per-workflow marker pair '<!-- insrc:guide:<key>:start/end -->' mirroring STEERING_MARKER_START/END; readWorkflowGuide slices between markers (null on absent/half-present), listWorkflowGuides returns complete-pair keys in document order."
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 contractDetails + errorPaths: the daemon guide.get/guide.list IPC + guideGet/guideList clients + the read-failure structured-error path",
+      "quotedText": "guide.get/guide.list read-only handlers reuse the canonical-asset reader; a read failure is caught and shaped as { error, validWorkflows: [] } / { workflows: [] }, never escaping the IPC (k3/k5)."
+    },
+    {
+      "id": "c4",
+      "kind": "step-output",
+      "ref": "LLD s3 alternatives.judge (a1 chosen): marker-pair partitioning of the single canonical asset; insrc_guide is phaseless and rides the s1 registerAndRecord recorder into the insrc_schema registry",
+      "quotedText": "a1 is the only alternative that scores 'satisfies' on ALL of ac1-ac4 and sc2; insrc_guide registers via registerAndRecord (phaseless) so it also lands in the insrc_schema registry."
+    }
+  ]
+}

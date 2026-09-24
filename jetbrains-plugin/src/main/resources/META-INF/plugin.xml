@@ -93,6 +93,18 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h3>0.5.0</h3>
+        <ul>
+            <li><b>Keeps the backing daemon current.</b> When a project opens (only
+                if the daemon is already reachable) the plugin checks whether the
+                installed daemon has fallen behind its upstream, and if so shows an
+                <b>Update / Dismiss</b> balloon that updates the daemon in place on
+                your OK. When you update the plugin itself, it brings the daemon
+                current automatically. The check runs off the UI thread and never
+                blocks project opening; a failed update surfaces once with the raw
+                reason and is not retried or rolled back &mdash; the daemon owns its
+                own state.</li>
+        </ul>
         <h3>0.4.0</h3>
         <ul>
             <li><b>Pick a tier's model from a dropdown.</b> On the <b>insrc</b>

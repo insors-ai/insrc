@@ -1,0 +1,316 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1790353509991-vzzx93",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-25T16:29:48.238Z",
+    "epicCreatedAt": "2026-09-25T13:25:32.966Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 278178,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "edb76e2e4d41217d",
+    "epicSlug": "work-framed-approved-spec-proceed-from",
+    "storyId": "s3",
+    "lldRunId": "wf-1790351293705-rcb4i9",
+    "lldEffectiveHash": "f394a9ecb688a6435e9660c36070ff438589624b3026bbb4315135fee33e53b4",
+    "approvedAt": "2026-09-25T16:29:56.109Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "sc4 session-store.ts (types + memento + in-memory double)",
+        "summary": "Add vscode-plugin/src/chat/session-store.ts: the ChatSession/TranscriptEntry/ChatSummary types + the ChatSessionStore interface (create/get/list/append/save), a createMementoChatSessionStore(deps:{memento,now?,genId?}) real binding (chat sessions under an insrc.chat.* key prefix, JSON-serializable, graceful-degrade on corrupt/missing), and a createInMemoryChatSessionStore() volatile double. vscode-free (Memento typed via the plugin's vscode.d.ts). Mirrors the OnboardingStore/PromptStore seam.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Exports ChatSession/TranscriptEntry/ChatSummary/ChatSessionStore + createMementoChatSessionStore + createInMemoryChatSessionStore; imports nothing from 'vscode'; tsc clean.",
+          "create(provider) returns a fresh id + createdAt=now() + editMode 'auto' + empty transcript; append/save persist via memento.update; get/list reflect prior writes.",
+          "A missing or corrupt memento entry degrades to get->undefined / list->[] (no throw); nothing is written outside the injected memento (k3)."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "createMementoChatSessionStore round-trip over a fake Memento (create/append/save then get/list) + corrupt/missing degrade + in-memory parity"
+          },
+          {
+            "level": "unit",
+            "name": "store writes only to the injected memento (no daemon/other write) — k3"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "sc3 protocol.ts (Envelope + message unions)",
+        "summary": "Add vscode-plugin/src/chat/protocol.ts: Envelope<T>{v:1;payload:T} + the full HostToWebview/WebviewToHost unions (discriminated by `type`) verbatim from the HLD sketch, plus the minimal DocsArtifactSummary the docs-list variant carries. Imports TurnEvent/UnifiedDiff (sc2), TerminalTheme (sc1), ProviderId (sc5), TranscriptEntry/ChatSummary (sc4) — a type-only import dependency on t1, no runtime coupling. Type-only; vscode-free.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Exports Envelope + HostToWebview + WebviewToHost + DocsArtifactSummary; every message keeps a `type` discriminant; tsc clean with the sc1/sc2/sc4/sc5 imports resolving.",
+          "An exhaustive switch over each union compiles (compile-time exhaustiveness); imports nothing from 'vscode'."
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "sc3 exhaustive switch over HostToWebview/WebviewToHost compiles; every message keeps `type`; Envelope v===1"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "chat-panel.ts createChatPanelHost (turn loop + dispatch + shell)",
+        "summary": "Add vscode-plugin/src/chat/chat-panel.ts: ChatPanelHost/ChatPanelHostDeps + createChatPanelHost(deps). Renders the terminal chat webview shell (one nonce'd inline script under a strict per-render CSP, embedding renderTerminalStyle + surfaceClass('chat')); dispatches WebviewToHost messages; on submit-turn runs StreamAdapter.run and posts each TurnEvent INCREMENTALLY while appending TranscriptEntry rows; single-in-flight guard; onDidDispose -> cancel + stop posting; unknown-provider/errors surfaced as terminal error events; edit-*/docs-* accepted-but-ignored; passthrough (no workflow tool). vscode-free, deps-injected. The two concerns (vscode-free dispatch/turn-loop + the rendered shell) stay independently provable per the checks below.",
+        "size": "L",
+        "order": 3,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "(host logic) createChatPanelHost is vscode-free (imports nothing from 'vscode') and returns ChatPanelHost {open,dispose}; submit-turn drives StreamAdapter.run(TurnRequest{provider,prompt,cwd}) and posts each yielded TurnEvent incrementally (no whole-turn buffering); a terminal error event is posted inline; empty submit is a no-op; a second submit while streaming does not interleave (cancel-or-ignore).",
+          "(shell) the rendered shell keeps the one-inline-nonced-script + strict-CSP + fresh-nonce-per-render invariants and contains renderTerminalStyle output + surfaceClass('chat').",
+          "onDidDispose cancels the active turn and stops posting; every post routes through the injected fire-and-forget postMessage; the host never calls an insrc workflow/MCP tool (passthrough, k8)."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "submit-turn -> StreamAdapter.run + incremental turn-event posts (interleaved, not buffered) via FakePanel"
+          },
+          {
+            "level": "unit",
+            "name": "error TurnEvent posted inline + unknown-provider surfaced (not thrown); empty submit no-op; single-in-flight no interleave"
+          },
+          {
+            "level": "unit",
+            "name": "onDidDispose cancels the active turn + stops posting; edit-*/docs-*/malformed ignored; passthrough (no workflow-tool call on deps)"
+          },
+          {
+            "level": "integration",
+            "name": "rendered chat shell: one nonce'd inline script + strict CSP + fresh nonce/render + renderTerminalStyle/surfaceClass('chat') + no remote origin/asWebviewUri"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Flag-gated extension.ts wiring + package.json contributes",
+        "summary": "Wire extension.ts activate(): read insrc.chat.enabled via getConfiguration().get; when true, construct the memento-backed ChatSessionStore + a ProviderRegistry + createChatPanelHost with the injected vscode channel seams (createWebviewPanel/onDidReceiveMessage/postMessage/onDidDispose) mirroring the status-panel callsite, register the chat command, push its Disposable into context.subscriptions. Add the chat command + insrc.chat.enabled (boolean, default false) to vscode-plugin/package.json contributes. Existing wiring untouched.",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "The chat command is registered ONLY when insrc.chat.enabled reads true; the chat host is constructed with the real injected vscode seams + the memento store; the Disposable is pushed into context.subscriptions.",
+          "package.json contributes the chat command + the insrc.chat.enabled boolean config (default false); existing commands/panels are byte-unchanged."
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "extension.ts source-scan: chat command gated on insrc.chat.enabled (getConfiguration().get, full dotted key); host constructed with injected seams + memento store; Disposable pushed to context.subscriptions"
+          },
+          {
+            "level": "integration",
+            "name": "package.json contributes the chat command + insrc.chat.enabled boolean (default false)"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Test suites (unit + contract + extension-wiring scan)",
+        "summary": "Add node:test suites under vscode-plugin/src/chat/__tests__/: a FakePanel-driven unit suite for the host (incremental streaming, error/dispose/corrupt-store/malformed-message/double-submit, passthrough) + the store round-trip; a contract suite for the rendered shell CSP/nonce + sc1 consumption + sc3 exhaustiveness; an extension-wiring source-scan for the flag gate + injected seams + vscode-free host. Run the scoped src/chat suite then tsc + the full plugin sweep.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t3",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "Unit suite proves incremental posting, the error/dispose/corrupt/malformed/double-submit paths, passthrough (no workflow-tool call), and the store round-trip/degrade.",
+          "Contract suite proves the shell CSP/nonce invariants + renderTerminalStyle/surfaceClass('chat') consumption + sc3 exhaustiveness; extension-wiring scan proves the insrc.chat.enabled gate + injected seams + a vscode-free chat host.",
+          "npx tsc --noEmit clean; scoped src/chat suite green; full vscode-plugin sweep passes with no regressions."
+        ],
+        "derivedFrom": [
+          "c3",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "authors + runs the host + store unit suites green"
+          },
+          {
+            "level": "integration",
+            "name": "authors + runs the shell-contract + extension-wiring scan suites green"
+          },
+          {
+            "level": "smoke",
+            "name": "full vscode-plugin tsc + test sweep passes with no regressions"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "submit-turn -> host calls StreamAdapter.run(TurnRequest{provider,prompt,cwd}) and posts each yielded TurnEvent as a HostToWebview 'turn-event' INCREMENTALLY (assert posts interleave with the async iterable, not buffered to the end) — ac2",
+        "coveredByTaskIds": [
+          "t3",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "a terminal error TurnEvent (fake adapter) is posted inline and the turn is marked done, session still usable; unknown-provider is surfaced as an error event, not thrown",
+        "coveredByTaskIds": [
+          "t3",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "empty/whitespace submit-turn is a no-op (no StreamAdapter.run)",
+        "coveredByTaskIds": [
+          "t3",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "single-in-flight guard: a second submit while streaming cancels the prior turn (StreamAdapter.cancel) or is ignored — transcript never interleaves",
+        "coveredByTaskIds": [
+          "t3",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "onDidDispose -> host calls StreamAdapter.cancel(activeTurnId) and posts nothing further (posts routed through the fire-and-forget seam)",
+        "coveredByTaskIds": [
+          "t3",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "edit-*/docs-* and unknown/malformed inbound messages are accepted-but-ignored no-ops (logged, never thrown)",
+        "coveredByTaskIds": [
+          "t3",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "createMementoChatSessionStore round-trip over a fake Memento: create/append/save then get/list reflect it; a corrupt/missing entry degrades to undefined/[] (no throw); createInMemoryChatSessionStore parity",
+        "coveredByTaskIds": [
+          "t1",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "no chat data written anywhere but the injected memento (k3)",
+        "coveredByTaskIds": [
+          "t1",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "The rendered chat webview shell keeps the proven invariants: exactly one inline nonce'd script, strict CSP script-src limited to 'nonce-...', script nonce == CSP nonce, fresh nonce per render (mirrors webview-host.test.ts:321-338)",
+        "coveredByTaskIds": [
+          "t3",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "The shell embeds renderTerminalStyle(terminalTheme) (sc1) and targets surfaceClass('chat') — terminal styled, not chat-bubble (k6)",
+        "coveredByTaskIds": [
+          "t3",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "sc3 protocol.ts: an exhaustive switch over HostToWebview/WebviewToHost `type` compiles (compile-time exhaustiveness) and every message keeps the `type` discriminant; Envelope v===1",
+        "coveredByTaskIds": [
+          "t2",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "no remote origin / asWebviewUri in the rendered shell (k2 CSP-safe)",
+        "coveredByTaskIds": [
+          "t3",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "extension.ts registers the chat panel command ONLY when insrc.chat.enabled is read true (config gate), via getConfiguration().get with the full dotted key",
+        "coveredByTaskIds": [
+          "t4",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "extension.ts constructs createChatPanelHost with the real injected vscode seams (createWebviewPanel/onDidReceiveMessage/postMessage/onDidDispose) and the memento-backed ChatSessionStore — the chat host module imports nothing from 'vscode'",
+        "coveredByTaskIds": [
+          "t4",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "the chat panel Disposable is pushed into context.subscriptions",
+        "coveredByTaskIds": [
+          "t4",
+          "t5"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 contractDetails.api (createChatPanelHost + createMementoChatSessionStore)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 dataModelChanges (sc3 protocol types + sc4 ChatSession/store types)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 testStrategy (node:test FakePanel unit + contract + extension-wiring; acceptance ac1/ac2/ac3)"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 migration (flag-gated extension.ts wiring + package.json contributes)"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 errorPaths + invariants (streaming/dispose/corrupt-store/passthrough; CSP/nonce; memento-only k3)"
+    }
+  ]
+}

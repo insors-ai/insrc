@@ -40,7 +40,11 @@ test('declared global insrc.* keys EXACTLY cover the global CONFIG_CATALOG paths
   const expected = new Set(CONFIG_CATALOG.map((o) => 'insrc.' + o.path));
   // The per-role insrc.models.tasks.* keys are S002's dynamic axis (locked by a
   // separate manifest<->taxonomy contract test), not global CONFIG_CATALOG rows.
-  const declared = new Set(Object.keys(DECLARED).filter((k) => !k.startsWith('insrc.models.tasks.')));
+  // insrc.chat.* is a plugin-local UI flag (the dev-chat Phase-B gate), deliberately
+  // NOT a daemon-synced config — exclude it from the daemon-catalog cover check.
+  const declared = new Set(
+    Object.keys(DECLARED).filter((k) => !k.startsWith('insrc.models.tasks.') && !k.startsWith('insrc.chat.')),
+  );
 
   const missing = [...expected].filter((k) => !declared.has(k));
   const extra = [...declared].filter((k) => !expected.has(k));

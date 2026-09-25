@@ -86,9 +86,25 @@
         "command": "insrc.models.setTier",
         "title": "Set model tier",
         "category": "insrc"
+      },
+      {
+        "command": "insrc.chat.open",
+        "title": "Open chat",
+        "category": "insrc"
       }
     ],
     "configuration": [
+      {
+        "title": "Chat (preview)",
+        "properties": {
+          "insrc.chat.enabled": {
+            "type": "boolean",
+            "default": false,
+            "markdownDescription": "Enable the in-editor terminal chat panel (Phase B preview) over your own claude/codex CLI. Off by default.",
+            "scope": "machine"
+          }
+        }
+      },
       {
         "title": "General",
         "properties": {

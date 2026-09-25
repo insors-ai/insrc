@@ -49,6 +49,9 @@ import type { PanelHandle } from './panels/types.js';
 import { runSetModelTier } from './models/model-tier-picker.js';
 import type { ModelListResult, ModelProvider } from './models/model-tier-picker.js';
 import { runDaemonFreshnessCheck } from './freshness/daemon-freshness.js';
+import { createChatPanelHost } from './chat/chat-panel.js';
+import { createMementoChatSessionStore } from './chat/session-store.js';
+import { createProviderRegistry, nodeSpawner, defaultBinaryProbe } from './chat/cli-adapter.js';
 
 /** The workspaceState key prefix for the one-time register-prompt dismissal flag (S004). */
 const REGISTER_DISMISSED_KEY = 'insrc.workspace.register.dismissed';
@@ -403,6 +406,48 @@ export function activate(context: vscode.ExtensionContext): void {
       },
     }),
   );
+
+  // S003 (Phase B): the terminal chat panel, gated behind insrc.chat.enabled
+  // (default false). When enabled, wire createChatPanelHost with the real injected
+  // vscode channel seams (mirroring the status panel at :305), the memento-backed
+  // sc4 ChatSessionStore (chat history extension-local, k3), and the sc5
+  // ProviderRegistry over the installed claude/codex CLIs. The chat command is
+  // registered ONLY when the flag is on, so the surface is invisible until opted in.
+  const chatEnabled = vscode.workspace.getConfiguration().get<boolean>('insrc.chat.enabled') === true;
+  if (chatEnabled) {
+    const chatStore = createMementoChatSessionStore({ memento: context.globalState });
+    const chatProviders = createProviderRegistry({ spawn: nodeSpawner, isInstalled: defaultBinaryProbe });
+    const chatHost = createChatPanelHost({
+      createPanel: ({ viewType, title }) => {
+        const panel = vscode.window.createWebviewPanel(viewType, title, vscode.ViewColumn.Active, { enableScripts: true });
+        return {
+          setHtml: (html) => {
+            panel.webview.html = html;
+          },
+          postMessage: (message) => {
+            // Fire-and-forget: a post to a disposed/hidden panel must never reject inward.
+            panel.webview.postMessage(message).then(undefined, () => {
+              /* ignore */
+            });
+          },
+          onMessage: (listener) => {
+            panel.webview.onDidReceiveMessage((m) => listener(m));
+          },
+          onDidDispose: (listener) => {
+            panel.onDidDispose(listener);
+          },
+          reveal: () => panel.reveal(),
+          dispose: () => panel.dispose(),
+        };
+      },
+      providers: chatProviders,
+      store: chatStore,
+      cwd: () => vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? process.cwd(),
+    });
+    commands.register({ id: 'insrc.chat.open', title: 'insrc: Open chat' }, async () => {
+      chatHost.open();
+    });
+  }
 
   // S005 sc-capstone: the per-workspace one-time onboarding-completed flag over
   // workspaceState (distinct key from the S004 register-dismissed flag).

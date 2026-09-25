@@ -1,0 +1,637 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1790356631554-prnqzz",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-25T17:34:34.681Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 1043091,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-09-25T13:25:32.966Z",
+    "epicHash": "edb76e2e4d41217d",
+    "epicSlug": "work-framed-approved-spec-proceed-from",
+    "storyId": "s4",
+    "hldBaseRunId": "wf-1790343836936-uhegob",
+    "hldEffectiveHash": "f394a9ecb688a6435e9660c36070ff438589624b3026bbb4315135fee33e53b4",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "ref": "contractDetails/line",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "chat-panel.ts:88 defines the webview writer line(s) that sets textContent on a created <div> (the S003 writer S004 widens).",
+          "evidence": "CONFIRMED by the tool's path-anchored read: chat-panel.ts:88 = `function line(s){const d=document.createElement('div');d.textContent=s;...}` — the S003 writer S004 widens. Accurate.",
+          "action": "No change — citation resolves verbatim.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl2",
+          "ref": "migration/stateBefore",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The non-assistant-delta fall-through at chat-panel.ts:89 renders every non-delta event as the bare '['+ev.kind+']' (no glyph, no CSS class).",
+          "evidence": "CONFIRMED by read: chat-panel.ts:89 = the message handler rendering `line(ev.kind==='assistant-delta'?ev.text:'['+ev.kind+']')` — the bare-bracket non-delta fall-through. Accurate.",
+          "action": "No change — citation resolves verbatim.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl3",
+          "ref": "contractDetails/appendEvent",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The host appendEvent writer is at chat-panel.ts:205 and writes role:'marker' transcript rows for tool-call/file-edit/error but NOT for status or done.",
+          "evidence": "CONFIRMED: chat-panel.ts:205 appendEvent writes role:'marker' rows for tool-call/file-edit/error, and its trailing comment \"'status'/'done' are transient markers — not persisted as transcript rows\" proves the status/done gap the LLD targets. Accurate.",
+          "action": "No change — citation + gap resolve verbatim.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl4",
+          "ref": "interactionWithShared/sc1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "design-tokens.ts renderTerminalStyle emits the five marker CSS classes insrc-term__marker--pending|tool|edit|done|error (with ::before glyph + tone) that markerFor's cssClass values reference.",
+          "evidence": "CONFIRMED by direct grep of vscode-plugin/src/chat/design-tokens.ts: 5 `insrc-term__marker--` occurrences + renderTerminalStyle present (the tool's own greps were scoped to the backend src/ root and returned 0, i.e. hollow; verified against the real subtree). Accurate.",
+          "action": "No change — the five sc1 marker classes exist as cited.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl5",
+          "ref": "dataModelChanges/MarkerLine",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "markers.ts does not yet exist in vscode-plugin/src/chat/ — it is a NEW module this LLD introduces (markerFor + markerWebviewSource + MarkerLine).",
+          "evidence": "CONFIRMED: `ls vscode-plugin/src/chat/markers.ts` -> No such file. markers.ts is correctly a NEW module (change:'new' is truthful).",
+          "action": "No change — new module, no collision.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl6",
+          "ref": "contractDetails/markerFor",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "The sc2 TurnEvent union markerFor maps over has exactly these kinds: assistant-delta, tool-call, file-edit, status, done, error — and tool-call carries an optional mcp{server,name}.",
+          "evidence": "CONFIRMED by grep of stream-events.ts: exactly the six kinds assistant-delta/tool-call/file-edit/status/done/error, and tool-call carries optional mcp. The closed-union markerFor maps over is accurate.",
+          "action": "No change — union matches sc2.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl7",
+          "ref": "interactionWithShared/sc3",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The sc3 protocol carries a 'turn-event' HostToWebview message that markers ride on; S004 adds no new message type (protocol.ts already defines type:'turn-event').",
+          "evidence": "CONFIRMED: protocol.ts contains type:'turn-event' (1) and HostToWebview (2). Markers ride the existing message; no new protocol type needed. Accurate.",
+          "action": "No change — sc3 unchanged as claimed.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl8",
+          "ref": "testStrategy/testFramework",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The test homes design-tokens.test.ts and chat-panel.test.ts exist under vscode-plugin/src/chat/__tests__/ and use node:test (the framework S004's suites extend).",
+          "evidence": "CONFIRMED: both __tests__/design-tokens.test.ts and __tests__/chat-panel.test.ts exist and import from 'node:test'. The framework claim is accurate.",
+          "action": "No change — test homes + framework resolve.",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 8
+      },
+      "reviewedAt": "2026-09-25T17:36:46.227Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-25T17:52:12.796Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Layered extension-host core + a thin terminal-styled webview (alternative a1). All chat logic lives in vscode-free, deps-injected host modules that mirror the repo's existing createWebviewPanelHost(deps) factory idiom, so streaming, session, edit-governance and docs-review logic are unit-testable without a webview harness. The webview holds no business logic — it paints terminal-styled surfaces and emits user intents over a single typed, versioned message protocol. Each agentic CLI's native structured stream is normalized to ONE event union by a per-provider stream adapter, quarantining the still-to-spike claude/codex stream/resume contract at that boundary so no downstream surface is provider-specific. Grounding + tracked-workflow behaviour come through the CLI's own insrc MCP (the extension observes, never orchestrates — k8).",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "Terminal-UX design tokens + component vocabulary",
+          "purpose": "The single source of the terminal look & feel (monospace, box-drawing chrome, phosphor accents from the insrc docs-site TUI) that every rendered surface consumes, so the whole experience is terminal-styled and not a chat-bubble UI (k6).",
+          "interfaceSketch": "// design-tokens.ts (type-level)\nexport interface TerminalTheme {\n  readonly font: { mono: string; sizePx: number; linePx: number };\n  readonly color: { bg: string; fg: string; dim: string; accent: string; warn: string; err: string; sel: string };\n  readonly chrome: { border: string; boxChars: { h: string; v: string; tl: string; tr: string; bl: string; br: string } };\n  readonly marker: { pending: string; toolCall: string; edit: string; done: string; error: string };\n}\nexport type SurfaceKind = 'chat' | 'provider-dropdown' | 'history-dropdown' | 'inline-diff' | 'docs-review';",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7"
+          ],
+          "assumptions": [
+            "c2"
+          ]
+        },
+        {
+          "id": "sc2",
+          "name": "Normalized CLI stream-event schema",
+          "purpose": "The provider-agnostic event union the StreamAdapter emits per turn; the shared vocabulary that drives streaming render (s3), lifecycle markers (s4) and edit detection (s6), so a claude/codex stream-format difference never leaks past the adapter.",
+          "interfaceSketch": "// stream-events.ts (type-level)\nexport type TurnEvent =\n  | { kind: 'assistant-delta'; turnId: string; text: string }\n  | { kind: 'tool-call'; turnId: string; tool: string; mcp?: { server: string; name: string } }\n  | { kind: 'file-edit'; turnId: string; path: string; diff: UnifiedDiff }\n  | { kind: 'status'; turnId: string; phase: 'thinking' | 'streaming' | 'tool' | 'editing' }\n  | { kind: 'done'; turnId: string; ok: boolean }\n  | { kind: 'error'; turnId: string; message: string };\nexport interface UnifiedDiff { readonly path: string; readonly hunks: ReadonlyArray<{ oldStart: number; oldLines: number; newStart: number; newLines: number; lines: string[] }>; }",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s3",
+            "s4",
+            "s6"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        },
+        {
+          "id": "sc3",
+          "name": "Webview↔extension message protocol",
+          "purpose": "The single typed, versioned channel between the host and the thin webview — host→webview render/stream events and webview→host user intents — that every UI surface (chat, markers, dropdowns, inline-diff, docs-review) rides on, preventing ad-hoc channel drift.",
+          "interfaceSketch": "// protocol.ts (type-level)\nexport interface Envelope<T> { readonly v: 1; readonly payload: T; }\nexport type HostToWebview =\n  | { type: 'turn-event'; event: TurnEvent }\n  | { type: 'session-restored'; sessionId: string; transcript: TranscriptEntry[] }\n  | { type: 'history-list'; chats: ChatSummary[] }\n  | { type: 'edit-prompt'; path: string; diff: UnifiedDiff }\n  | { type: 'docs-list'; artifacts: DocsArtifactSummary[] }\n  | { type: 'theme'; theme: TerminalTheme };\nexport type WebviewToHost =\n  | { type: 'submit-turn'; text: string }\n  | { type: 'new-chat'; provider: ProviderId }\n  | { type: 'open-chat'; chatId: string }\n  | { type: 'set-edit-mode'; mode: 'auto' | 'review' }\n  | { type: 'edit-decision'; path: string; accept: boolean }\n  | { type: 'docs-decision'; artifactId: string; accept: boolean };",
+          "ownedByStory": "s3",
+          "consumedByStories": [
+            "s4",
+            "s5",
+            "s6",
+            "s7"
+          ],
+          "assumptions": []
+        }
+      ],
+      "boundary": {
+        "storyId": "s4",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3"
+        ],
+        "internal": "How status/tool-call TurnEvents are mapped to terminal-style marker lines, and how observed insrc MCP tool-calls are named/enriched into markers, are private to S004; it adds no new shared contract — it renders sc2 events as sc1-styled markers over sc3."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1"
+          ],
+          "depends": [],
+          "internal": "The concrete mockup deliverables (per-surface terminal-styled mock images/HTML), the design-rationale write-up, and the exact palette/character choices are private to S001; downstream stories consume only the sc1 token/vocabulary contract, not the mock files themselves."
+        },
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc2",
+            "sc5"
+          ],
+          "depends": [],
+          "internal": "The subprocess spawn mechanics, the per-provider parsing of each CLI's NATIVE stream format, the exact claude/codex flags (the stream/resume spike), backpressure/cancellation handling, and error normalization stay private to S002; consumers see only the normalized TurnEvent union (sc2) and the StreamAdapter/ProviderRegistry interface (sc5)."
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc3",
+            "sc4"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc5"
+          ],
+          "internal": "The terminal renderer internals (how TurnEvents paint as terminal output), the input box, the panel/webview lifecycle and single-active-panel management, and the CSP/webview bootstrap are private to S003; other stories consume only the message protocol (sc3) and the session-store shape (sc4)."
+        },
+        {
+          "storyId": "s5",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc3",
+            "sc4",
+            "sc5"
+          ],
+          "internal": "The provider-selector and history-dropdown UI, the new-chat vs open-chat flows, and the wiring of the StreamAdapter's native session-resume handle into a restored session are private to S005; it persists through sc4 and drives turns through sc5, adding no new shared contract."
+        },
+        {
+          "storyId": "s6",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4"
+          ],
+          "internal": "The inline-diff renderer, the EditGovernor that applies the per-session auto/review toggle, and (review mode) the interception of the CLI's edit/write before the write reaches disk are private to S006; it consumes file-edit TurnEvents (sc2), the edit-mode field on the session (sc4), and the edit-prompt/edit-decision messages (sc3)."
+        },
+        {
+          "storyId": "s7",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc3"
+          ],
+          "internal": "The docs-review pane and its DocsReviewClient over the existing daemon IPC (the exact pendingApproval listing + insrc_workflow_approve method names/payloads, pinned at the S007 LLD) and the mirroring of the JetBrains review/comment/accept-reject panel are private to S007; it consumes only the message protocol (sc3) and the terminal tokens (sc1) and adds no new shared contract to the Epic."
+        }
+      ],
+      "rolloutPhase": "Phase B — core terminal chat surface",
+      "nonFunctional": {
+        "performance": "Streaming is incremental: assistant-delta events render to the terminal panel as they arrive (no wait-for-turn-complete); the host must not buffer a whole turn before painting. Marker updates are cheap status lines. The webview holds no heavy state.",
+        "security": "No direct cloud REST from the extension (k2); all model access is via the user's own claude/codex CLI OAuth sessions. The webview runs under a strict CSP (no remote origins); host↔webview traffic is the typed sc3 protocol only. Chat history stays on the local machine (k3).",
+        "observability": "Per-turn lifecycle markers (thinking/tool-call/streaming/done) are the user-facing progress signal; host modules log via the repo's getLogger, never console.log. Errors surface as an error TurnEvent rendered inline, not a silent failure.",
+        "durability": "Chat history + per-session provider/native-session-id/edit-mode persist extension-local (VS Code state / local JSON) and survive window reload; nothing is written to the daemon. A missing/corrupt local store degrades to an empty history, never a crash."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "markerFor",
+          "signature": "markerFor(event: TurnEvent): MarkerLine | null",
+          "parameters": [
+            {
+              "name": "event",
+              "type": "TurnEvent",
+              "purpose": "The sc2 stream event to map to a terminal lifecycle marker. assistant-delta returns null (rendered as plain streamed text, not a marker).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "MarkerLine | null",
+            "meaning": "{ cssClass, label } where cssClass is exactly one of the sc1 marker classes (insrc-term__marker--pending|tool|edit|done|error) and label is the enriched line text; null for assistant-delta. status(thinking)->pending 'thinking…'; status(streaming)->pending 'streaming…'; status(tool)->tool 'running tool…'; status(editing)->edit 'editing…'; tool-call->tool (mcp ? `${mcp.server} · ${mcp.name}` : tool); file-edit->edit path; done->done (ok?'done':'done (failed)'); error->error message."
+          },
+          "errors": [],
+          "preconditions": [
+            "event is a well-formed sc2 TurnEvent (discriminated by kind)."
+          ],
+          "postconditions": [
+            "Pure + total over the TurnEvent union: every kind returns either a MarkerLine with a valid sc1 cssClass or (assistant-delta only) null; deterministic; no I/O, no vscode import.",
+            "Never invokes any insrc workflow/MCP tool — it only observes + maps the event (k8)."
+          ]
+        },
+        {
+          "name": "markerWebviewSource",
+          "signature": "markerWebviewSource(): string",
+          "parameters": [],
+          "returns": {
+            "type": "string",
+            "meaning": "A pure JS function-source string (mirroring markerFor) that the S003 webview bootstrap embeds inline, so the webview computes {cssClass,label} from a live turn-event with the SAME logic as the host markerFor — the single-source mechanism that prevents host/webview drift (a test executes both on sample events and asserts equality)."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "The returned source references only the five sc1 marker classes; contains no remote origin / import / vscode reference (stays CSP-safe inside the one nonce'd script)."
+          ]
+        },
+        {
+          "name": "line",
+          "signature": "line(text: string, markerClass?: string): void",
+          "parameters": [
+            {
+              "name": "text",
+              "type": "string",
+              "purpose": "The line text (via textContent — XSS-safe, unchanged from S003).",
+              "optional": false
+            },
+            {
+              "name": "markerClass",
+              "type": "string",
+              "purpose": "Optional sc1 marker class to set on the row <div> so ::before paints the glyph + tone; omitted for plain text lines.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "Appends a (optionally marker-classed) <div> to the terminal transcript and scrolls. The existing S003 webview writer (chat-panel.ts:88), WIDENED by S004 to carry a marker class — the only structural change to the writer."
+          },
+          "errors": [],
+          "preconditions": [
+            "Called from inside the webview bootstrap (the one nonce'd inline script)."
+          ],
+          "postconditions": [
+            "Still sets textContent (never innerHTML) — the S003 no-XSS invariant is preserved; markerClass only adds a class attribute.",
+            "The non-assistant-delta fall-through at chat-panel.ts:89 now routes through markerFor-equivalent -> line(label, cssClass) instead of the bare '['+kind+']'."
+          ]
+        },
+        {
+          "name": "appendEvent",
+          "signature": "appendEvent(s: ChatSession, ev: TurnEvent): void",
+          "parameters": [
+            {
+              "name": "s",
+              "type": "ChatSession",
+              "purpose": "The active session whose transcript receives the marker row (sc4, consumed).",
+              "optional": false
+            },
+            {
+              "name": "ev",
+              "type": "TurnEvent",
+              "purpose": "The event to record.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "The existing S003 host transcript writer (chat-panel.ts:205), REUSED to derive marker-row text from markerFor(ev).label so host rows + webview markers share one source; S004 fills the status/done gap (they previously produced no marker row)."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Uses markerFor(ev) for the role:'marker' row label; assistant-delta still -> role:'assistant'; no daemon write (k3), no workflow call (k8)."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "MarkerLine (markers.ts)",
+        "change": "new",
+        "details": "The S004-internal marker descriptor: { readonly cssClass: string; readonly label: string }, where cssClass is one of the sc1 marker classes (insrc-term__marker--pending|tool|edit|done|error). Type-only; vscode-free. New module vscode-plugin/src/chat/markers.ts (markerFor + markerWebviewSource + a MARKER_CLASS map). Not a shared contract — S004 owns no contract; markers.ts is consumed only within the chat area.",
+        "schemaDiff": "+ export interface MarkerLine { readonly cssClass: string; readonly label: string; }\n+ export function markerFor(event: TurnEvent): MarkerLine | null;\n+ export function markerWebviewSource(): string;",
+        "callSites": [
+          "vscode-plugin/src/chat/markers.ts (definition; consumed by chat-panel.ts host appendEvent (:205) + the widened webview line() (:88-89) fall-through)"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "markerFor emits exactly the sc1 marker CSS classes (insrc-term__marker--pending|tool|edit|done|error) that renderTerminalStyle already defines with glyph (::before content) + phosphor tone; S004 does not modify design-tokens.ts — it only references the class names."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "markerFor is a pure total mapper over the sc2 TurnEvent union (status phases, tool-call incl. mcp, file-edit, done, error, assistant-delta); it reads the union as-is and never reshapes it."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "Markers ride the EXISTING sc3 'turn-event' message — no new message type/field. The webview computes the marker from the live event via the embedded markerWebviewSource(); S004 adds nothing to the protocol (no amendment)."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A TurnEvent arrives with a kind markerFor does not map (adapter drift / a future sc2 kind added by S002 before S004 catches up).",
+          "detection": "markerFor's discriminated switch over TurnEvent.kind falls through to its default branch (no matching case); the TypeScript exhaustiveness check (`const _never: never = event`) also flags it at build if the union grew.",
+          "response": "Return null (treated exactly like assistant-delta at the render seam): the webview line() fall-through and host appendEvent render NO marker row rather than a bracketed placeholder or a throw.",
+          "userImpact": "An unknown event is silently skipped instead of crashing the panel or painting a raw '[kind]'; the turn keeps streaming.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The webview receives a turn-event whose event payload is malformed (null, missing kind, or non-object) — e.g. a corrupted postMessage.",
+          "detection": "The inline markerWebviewSource() function guards `event && typeof event.kind === 'string'` before switching (mirrors the host handleMessage envelope guard).",
+          "response": "Skip: render no marker line for that message (the existing S003 `if(!m)return` envelope guard already drops a malformed envelope; the marker guard covers a well-formed envelope with a bad event).",
+          "userImpact": "A malformed event produces no visible marker rather than an uncaught error inside the one nonce'd script (which would break all further rendering).",
+          "recoverable": true
+        },
+        {
+          "scenario": "markerWebviewSource() (the inline webview mapper) drifts from the host markerFor() — the two compute a different cssClass/label for the same event.",
+          "detection": "A parity unit test executes BOTH the host markerFor and the eval'd markerWebviewSource() source over a fixed sample of every TurnEvent kind and asserts the {cssClass,label} results are identical; drift fails the build.",
+          "response": "Build fails (red suite) before ship — the single-source contract is enforced at test time, not left to runtime divergence.",
+          "userImpact": "Host transcript rows and live webview markers can never disagree in a shipped build; a drift is caught by the author, never seen by the user.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "done event with ok=false (the turn ended in failure).",
+          "expected": "markerFor -> { cssClass: 'insrc-term__marker--done', label: 'done (failed)' } (done glyph ✓ in the accent tone; the failure is conveyed in the label). A separate error event, if emitted, still renders its own error marker."
+        },
+        {
+          "input": "tool-call event WITHOUT an mcp field (a plain CLI tool, not an insrc MCP call).",
+          "expected": "markerFor -> { cssClass: 'insrc-term__marker--tool', label: ev.tool } — the bare tool name, no server prefix."
+        },
+        {
+          "input": "tool-call event WITH mcp { server, name } (an observed insrc MCP call — ac2).",
+          "expected": "markerFor -> { cssClass: 'insrc-term__marker--tool', label: `${mcp.server} · ${mcp.name}` } — the marker NAMES the observed activity without the extension driving it (k8 passthrough)."
+        },
+        {
+          "input": "Repeated status events within one turn (thinking -> tool -> streaming -> editing -> ...).",
+          "expected": "Each maps to its pending/tool/edit marker and appends a fresh cheap status line; markers are not deduped or collapsed (the transcript is an append-only log of what happened)."
+        },
+        {
+          "input": "assistant-delta event.",
+          "expected": "markerFor returns null; the delta text renders as plain streamed terminal text (no marker glyph/class), exactly as S003 did."
+        },
+        {
+          "input": "status event with phase 'streaming' arriving before any assistant-delta.",
+          "expected": "markerFor -> { cssClass: 'insrc-term__marker--pending', label: 'streaming…' }; the pending marker paints even with an empty transcript body."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The webview keeps EXACTLY ONE nonce'd inline <script> under the strict per-render CSP (script-src 'nonce-...'): S004 widens line() and injects markerWebviewSource() INSIDE that same script; it adds no second <script>, no remote origin, no asWebviewUri. (s1 bundle: chat-panel.ts render seam :80-101.)",
+          "source": "c1"
+        },
+        {
+          "text": "Marker rows render via textContent only (never innerHTML); markerClass adds only a class attribute to the row <div>. The S003 no-XSS invariant on assistant/tool/edit text holds. (s1 bundle: chat-panel.ts:88 line() textContent.)",
+          "source": "c1"
+        },
+        {
+          "text": "markerFor and the webview marker path never invoke an insrc workflow/MCP tool: they only observe and render sc2 events. The extension stays a passthrough, not an orchestrator (k8). (s1 bundle: chat-panel.ts passthrough turn loop.)",
+          "source": "c2"
+        },
+        {
+          "text": "The sc3 protocol is unchanged: markers ride the EXISTING 'turn-event' message; S004 adds no new HostToWebview/WebviewToHost variant or field, and does not modify design-tokens.ts (sc1) or stream-events.ts (sc2). (s1 bundles: sc1 marker classes; sc2 TurnEvent union.)",
+          "source": "c2"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test + node:assert/strict, run via tsx --test (no vscode runtime; FakePanel + source-scans, matching design-tokens.test.ts / chat-panel.test.ts)",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Pin markerFor as a pure, total mapper over the sc2 TurnEvent union: every kind -> the right sc1 cssClass + enriched label (or null for assistant-delta), deterministic and vscode-free.",
+          "subjects": [
+            "markerFor(status{thinking|streaming|tool|editing}) -> pending/pending/tool/edit class + 'thinking…'/'streaming…'/'running tool…'/'editing…' label",
+            "markerFor(tool-call) -> tool class; label = ev.tool when no mcp, `${server} · ${name}` when mcp present (ac2)",
+            "markerFor(file-edit) -> edit class + path label; markerFor(done{ok:true|false}) -> done class + 'done'/'done (failed)'; markerFor(error) -> error class + message",
+            "markerFor(assistant-delta) -> null; markerFor(unknown/forward kind) -> null (no throw)",
+            "every returned cssClass is one of the five insrc-term__marker--* stems that renderTerminalStyle defines"
+          ],
+          "fixturesNeeded": [
+            "one sample TurnEvent per kind (incl. tool-call with and without mcp, done ok true/false)"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Guard the host<->webview single-source: the eval'd markerWebviewSource() output computes the identical {cssClass,label} as markerFor for every kind, and the source stays CSP-safe.",
+          "subjects": [
+            "for each sample event, eval(markerWebviewSource()) and assert its {cssClass,label} deepEquals markerFor(event) (drift fails the build)",
+            "markerWebviewSource() references only the five marker classes; contains no import / http(s): / asWebviewUri / vscode token"
+          ],
+          "fixturesNeeded": [
+            "the same per-kind TurnEvent sample set",
+            "a tiny eval harness that exposes the webview mapper fn from its source string"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "Assert the rendered webview shell wires markers through the new path and preserves the S003 CSP/XSS invariants (no drift into S003-owned shell internals).",
+          "subjects": [
+            "renderShell() output routes the non-assistant-delta turn-event through the marker mapper (applies an insrc-term__marker--* class), NOT the old bare '['+kind+']' fall-through",
+            "the shell still has EXACTLY ONE <script nonce=...> and the strict CSP (script-src 'nonce-...'); line() still uses textContent, never innerHTML",
+            "renderTerminalStyle output (sc1) is unchanged by S004 (design-tokens.ts not modified) and defines all five marker ::before rules the classes rely on"
+          ],
+          "fixturesNeeded": [
+            "render the shell via createChatPanelHost with a FakePanel + injected genNonce"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Drive a realistic turn through createChatPanelHost with a fake StreamAdapter and assert both the posted turn-events and the persisted transcript get marker rows for status/done (the S003 gap) as well as tool-call/file-edit/error.",
+          "subjects": [
+            "a status(thinking)->tool-call(mcp)->status(streaming)->file-edit->done(ok:true) sequence posts a turn-event per event AND appendEvent records a role:'marker' row for status and done (previously dropped) with markerFor(ev).label",
+            "an insrc MCP tool-call (mcp:{server:'insrc',name:'insrc_analyze_step'}) yields a marker row labelled 'insrc · insrc_analyze_step' and the host never invokes any workflow tool (k8 passthrough — fake adapter is the only side-effecting collaborator)",
+            "assistant-delta still -> role:'assistant' (no marker row); the errored-turn persistence from S003 still holds"
+          ],
+          "fixturesNeeded": [
+            "fake StreamAdapter/ProviderRegistry emitting a scripted TurnEvent sequence (reuse the chat-panel.test.ts harness)",
+            "in-memory ChatSessionStore double"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "unit: markerFor(status thinking/streaming/tool/editing) + done -> the correct pending/tool/edit/done sc1 class + label",
+            "contract: rendered shell routes non-delta turn-events to an insrc-term__marker--* class (not the bare bracket) under the one-nonce'd-script CSP",
+            "integration: a status->...->done turn posts marker turn-events and persists status+done marker rows"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "unit: markerFor(tool-call with mcp{server,name}) -> tool class + label `${server} · ${name}` (bare ev.tool when no mcp)",
+            "integration: an insrc MCP tool-call renders an enriched 'insrc · <tool>' marker while the host invokes no workflow tool (k8 passthrough)"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "S003 shipped the terminal chat panel behind flag insrc.chat.enabled (default off). In the webview bootstrap, line(s) sets textContent on a bare <div> with no class, and the non-assistant-delta fall-through renders every event as the bare '['+ev.kind+']' with no glyph/tone (s1 bundle: chat-panel.ts:88-89); the restore path replays rows via the same unstyled line (chat-panel.ts:90). Host-side, appendEvent already writes role:'marker' transcript rows for tool-call/file-edit/error but produces NO row for status or done (s1 bundle: chat-panel.ts:205-209). sc1 already defines the five insrc-term__marker--pending|tool|edit|done|error ::before glyph+tone rules (s1 bundle: design-tokens.ts renderTerminalStyle), but nothing maps a TurnEvent onto them. There is no markers.ts.",
+      "stateAfter": "A new pure vscode-free markers.ts exports markerFor(event)->MarkerLine|null + markerWebviewSource()->string (single-sourced mapper). The webview line() is widened to line(text, markerClass?) and the non-delta fall-through routes through the embedded markerWebviewSource() so each non-delta event paints with its sc1 marker class + enriched label instead of the bare bracket; the restore path replays rows unchanged (plain text). Host appendEvent derives every marker row's label from markerFor(ev) and now also records status and done rows (the S003 gap), while assistant-delta still -> role:'assistant'. sc1/sc2/sc3 are untouched; the panel stays behind insrc.chat.enabled.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the new module markers.ts (MarkerLine type + pure markerFor + markerWebviewSource) alongside its unit + parity suites. Purely additive; nothing imports it yet.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Widen the webview writer to accept an optional marker class and set it on the row <div> (still textContent only), and route the non-assistant-delta fall-through through the embedded markerWebviewSource() mapper so a non-delta event applies its sc1 marker class + label instead of '['+kind+']'. Assistant-delta and the session-restore replay path are unchanged.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Point host appendEvent's marker-row labels at markerFor(ev) and add the previously-missing status and done marker rows; keep assistant-delta -> role:'assistant' and preserve the errored-turn persistence behaviour.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Extend the contract/rendered-shell test to assert the shell routes non-delta events to an insrc-term__marker--* class (not the bare bracket) while keeping exactly one nonce'd script + strict CSP; run the full sweep.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "line() gains an OPTIONAL second parameter (markerClass?) so all existing call sites remain valid; it is an inline-bootstrap-local function, not an exported public API. appendEvent keeps its (session, event) signature and its assistant-delta/tool-call/file-edit/error behaviour; it only ADDS status+done marker rows (previously silently dropped) — a strictly additive change to the transcript. No exported/public API is removed or reshaped; sc1/sc2/sc3 contracts are unchanged, so S003/S005/S006/S007 are unaffected.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Single-source pure markers.ts consumed by BOTH host + webview (full sc1 tone)",
+        "oneLineSummary": "A new pure markers.ts maps each TurnEvent to a MarkerLine {cssClass (one of the sc1 .insrc-term__marker--* classes), label}; the host uses it for transcript rows and the S003 webview bootstrap applies the class via a widened line(text, cssClass?) so live markers render with the sc1 glyph + phosphor tone. No sc3/sc4 change.",
+        "approach": "Add vscode-plugin/src/chat/markers.ts (vscode-free, pure): markerFor(event: TurnEvent): { cssClass: string; label: string } | null — assistant-delta -> null (plain text); status{phase} -> pending/tool/edit class + a phase label ('thinking…', etc.); tool-call -> --tool class + enriched label (mcp ? `${mcp.server} · ${mcp.name}` : tool); file-edit -> --edit + path; done -> --done + (ok?'done':'done (failed)'); error -> --error + message. cssClass values are exactly the sc1 classes renderTerminalStyle already emits. To keep the webview mapping single-sourced (the bootstrap is an inline JS string), markers.ts ALSO exports the tiny mapping as data/a snippet the chat-panel bootstrap embeds; S004 widens the webview line() to line(text, cssClass?) so a marker row is a <div class=\"insrc-term__marker--X\">label</div> (::before paints the glyph+tone). Host-side appendEvent is filled in for the status/done gap using the same markerFor label. Live turn-events get full glyph+tone; restored transcript rows keep their existing marker-role text (no sc4 field added). Purely additive marker slice inside chat-panel.ts + the new markers.ts; no channel/session/CSP change.",
+        "pros": [
+          "Full sc1 styling: the correct glyph AND phosphor tone (accent/warn/err) per kind — the strongest k6 lifecycle-marker rendering",
+          "The mapping is a pure, unit-tested markerFor (every sc2 kind + mcp enrichment) — the exact epic test idiom",
+          "Single-sourced: host transcript rows + webview markers derive from ONE markers.ts, so no host/webview drift",
+          "No sc3/sc4 contract change and no touch to S003's channel/turn-loop/CSP internals — stays inside S004's declared marker-rendering slice"
+        ],
+        "cons": [
+          "The webview bootstrap must carry the mapping (a markers.ts-exported snippet/data embedded into the inline script) — a small mechanism to keep it single-sourced",
+          "Restored transcript markers render with modest role styling, not the full per-kind tone (live turn is the styled path; avoids an sc4 field)"
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Host bakes the sc1 glyph into the marker text; webview stays unchanged",
+        "oneLineSummary": "markers.ts computes a marker string that PREPENDS the sc1 glyph char to the label (e.g. '▸ insrc · insrc_analyze_step'); the host writes that as the transcript/marker text and the webview prints it plain — no widened line(), no CSS classes.",
+        "approach": "markers.ts maps each TurnEvent to a single display string `${glyph} ${label}` using terminalTheme.marker glyphs + the mcp enrichment. The host posts these (and stores them in transcript rows), and the existing webview line(text) prints them verbatim — zero webview/bootstrap change. Because the glyph is IN the text, both live and restored rows show the marker glyph identically.",
+        "pros": [
+          "Simplest — no webview/bootstrap edit at all; the S003 shell is untouched",
+          "Live AND restored rows show the glyph uniformly (the glyph is part of the persisted text)",
+          "markerFor is still a pure, unit-tested string mapper"
+        ],
+        "cons": [
+          "No per-kind COLOR tone — the glyph renders in the default fg, not the sc1 phosphor accent/warn/err, so it is a weaker k6 realization than the sc1 marker classes intend (the ::before tone is unused)",
+          "Baking glyphs into persisted transcript text couples stored data to the current glyph set (a future glyph change rewrites meaning of old rows)"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Simplest and covers restore uniformly, and markerFor stays testable — but it scores partial on ac1 and sc1 because baking the glyph into plain text drops the sc1 phosphor tone (k6's marker color), and it couples persisted transcript text to the current glyph set. Loses to a1 on styling fidelity."
+      },
+      {
+        "id": "a3",
+        "name": "Webview-inline marker mapping, no shared module",
+        "oneLineSummary": "Hand-write the TurnEvent->marker-class+label mapping directly inside the webview bootstrap string; the host keeps its plain-text transcript rows unchanged.",
+        "approach": "Extend only the inline bootstrap: replace the `'['+ev.kind+']'` fall-through with an inline switch that picks the sc1 marker class + label per kind and renders a classed <div>. No markers.ts module; the host transcript rows stay as they are.",
+        "pros": [
+          "Smallest diff footprint in one place (the bootstrap)",
+          "Full CSS-class styling for live markers (glyph + tone)"
+        ],
+        "cons": [
+          "The mapping lives inside a JS STRING literal — not unit-testable as a pure function (can't import it), so ac1/ac2 can only be asserted by scraping the rendered HTML",
+          "Host transcript marker text and the webview marker mapping DRIFT independently (two hand-written copies of the same kind->label logic)",
+          "The mcp tool-name enrichment logic is duplicated/untested in the string"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Full styling but the mapping is un-unit-testable (buried in the inline bootstrap string) and DRIFTS from the host transcript logic — partial on ac2 and sc2. a1 gets the same styling with a single-sourced, tested mapper."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 analyze bundle: chat-panel.ts:80-101/88-90/205-209 render seam + host appendEvent",
+      "quotedText": "the fall-through at :89 renders every NON-assistant-delta event as the bare '['+ev.kind+']'; appendEvent writes role:'marker' rows for tool-call/file-edit/error but NOT for status or done"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 analyze bundle: design-tokens.ts renderTerminalStyle sc1 marker classes + sc2 TurnEvent union",
+      "quotedText": "renderTerminalStyle emits five marker rules .insrc-term__marker--pending|tool|edit|done|error with glyph (::before) + tone"
+    },
+    {
+      "id": "c3",
+      "kind": "step-output",
+      "ref": "s3 judge: winnerId a1 (single-source pure markers.ts consumed by host+webview, full sc1 tone)",
+      "quotedText": "a1 satisfies every acceptance criterion and every touched contract with the full sc1 marker styling ... single-sourced across host+webview"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "HLD edb76e2e4d41217d: sc1/sc2/sc3 consumedContracts; S004 boundary.owns=[]",
+      "quotedText": "boundary s4 owns:[] depends:[sc1,sc2,sc3]; renders sc2 events as sc1-styled markers over sc3"
+    }
+  ]
+}

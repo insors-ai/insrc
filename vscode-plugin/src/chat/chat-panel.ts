@@ -11,6 +11,7 @@
  * tool (k8). All vscode calls are injected via {@link ChatPanelChannel}.
  */
 import { renderTerminalStyle, surfaceClass, terminalTheme, type TerminalTheme } from './design-tokens.js';
+import { markerFor, markerWebviewSource } from './markers.js';
 import { envelope, type WebviewToHost, type HostToWebview } from './protocol.js';
 import type { ProviderRegistry } from './cli-adapter.js';
 import type { ChatSessionStore, ChatSession } from './session-store.js';
@@ -85,8 +86,11 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     const bootstrap =
       `const vs=acquireVsCodeApi();` +
       `const t=document.getElementById('insrc-term');` +
-      `function line(s){const d=document.createElement('div');d.textContent=s;t.appendChild(d);t.scrollTop=t.scrollHeight;}` +
-      `window.addEventListener('message',e=>{const m=e.data&&e.data.payload;if(!m)return;if(m.type==='turn-event'){const ev=m.event;line(ev.kind==='assistant-delta'?ev.text:'['+ev.kind+']');}` +
+      // S004: line() widened to carry an optional sc1 marker class (className only; still textContent, no innerHTML).
+      `function line(s,cls){const d=document.createElement('div');if(cls)d.className=cls;d.textContent=s;t.appendChild(d);t.scrollTop=t.scrollHeight;}` +
+      // S004: the marker mapper, single-sourced with the host markerFor (markers.ts), embedded in THIS one nonce'd script.
+      `const markerFor=${markerWebviewSource()};` +
+      `window.addEventListener('message',e=>{const m=e.data&&e.data.payload;if(!m)return;if(m.type==='turn-event'){const ev=m.event;if(ev&&ev.kind==='assistant-delta'){line(ev.text);}else{const mk=markerFor(ev);if(mk)line(mk.label,mk.cssClass);}}` +
       `else if(m.type==='session-restored'){(m.transcript||[]).forEach(x=>line(x.text));}});` +
       `const box=document.getElementById('insrc-input');` +
       `box.addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.metaKey||e.ctrlKey)){vs.postMessage({v:1,payload:{type:'submit-turn',text:box.value}});box.value='';}});`;
@@ -203,11 +207,20 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   }
 
   function appendEvent(s: ChatSession, ev: TurnEvent): void {
-    if (ev.kind === 'assistant-delta') s.transcript.push({ role: 'assistant', text: ev.text, at: now() });
-    else if (ev.kind === 'tool-call') s.transcript.push({ role: 'marker', text: `tool: ${ev.tool}`, at: now() });
-    else if (ev.kind === 'file-edit') s.transcript.push({ role: 'marker', text: `edit: ${ev.path}`, at: now() });
-    else if (ev.kind === 'error') s.transcript.push({ role: 'marker', text: `error: ${ev.message}`, at: now() });
-    // 'status'/'done' are transient markers — not persisted as transcript rows.
+    if (ev.kind === 'assistant-delta') {
+      s.transcript.push({ role: 'assistant', text: ev.text, at: now() });
+      return;
+    }
+    // 'status' is a transient progress tick (thinking/streaming/tool/editing): it is
+    // rendered LIVE in the webview (from the posted turn-event) but NOT persisted —
+    // persisting every tick would bloat the durable transcript and replay as noise on
+    // restore. The durable lifecycle facts (tool-call/file-edit/done/error) ARE kept.
+    if (ev.kind === 'status') return;
+    // Durable markers are single-sourced through markerFor — the SAME mapper the webview
+    // uses — so a host row and its live marker never drift. done now persists a marker row
+    // (the S003 gap); an unmapped/future kind -> markerFor returns null -> no row.
+    const marker = markerFor(ev);
+    if (marker !== null) s.transcript.push({ role: 'marker', text: marker.label, at: now() });
   }
 
   function handleMessage(message: unknown): void {

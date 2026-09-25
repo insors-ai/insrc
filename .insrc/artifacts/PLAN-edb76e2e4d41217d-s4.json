@@ -1,0 +1,294 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1790358742027-2dbtkk",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-25T17:56:03.904Z",
+    "epicCreatedAt": "2026-09-25T13:25:32.966Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 221829,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "edb76e2e4d41217d",
+    "epicSlug": "work-framed-approved-spec-proceed-from",
+    "storyId": "s4",
+    "lldRunId": "wf-1790356631554-prnqzz",
+    "lldEffectiveHash": "f394a9ecb688a6435e9660c36070ff438589624b3026bbb4315135fee33e53b4",
+    "approvedAt": "2026-09-25T17:56:15.424Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "New pure markers.ts: MarkerLine + markerFor + markerWebviewSource",
+        "summary": "Add vscode-plugin/src/chat/markers.ts (vscode-free, pure): export interface MarkerLine {readonly cssClass; readonly label}; a single shared kind->{cssClass,label} decision table that BOTH markerFor and markerWebviewSource derive from (so they are structurally one source, per the s3 critique). markerFor(event: TurnEvent): MarkerLine | null is total over the sc2 union (assistant-delta->null; status thinking/streaming->pending, tool->tool, editing->edit + phase label; tool-call->tool with mcp?`${server} · ${name}`:tool; file-edit->edit path; done->done 'done'/'done (failed)'; error->error message), cssClass values exactly the five sc1 insrc-term__marker--* stems, plus a `const _never: never` exhaustiveness guard returning null on any unmapped kind. markerWebviewSource(): string returns a JS function-source mirroring that same table for the webview to embed inline (guards `event && typeof event.kind==='string'`, references only the five marker classes, no import/remote/vscode token).",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "markers.ts compiles under strict tsc, imports only the sc2 TurnEvent type, no vscode import",
+          "markerFor is total: every sc2 kind returns a MarkerLine with a valid sc1 cssClass, or null for assistant-delta / unmapped kind (never throws)",
+          "tool-call enrichment: label = `${mcp.server} · ${mcp.name}` when mcp present, ev.tool otherwise",
+          "markerWebviewSource() returns a source string with no import / http(s): / asWebviewUri / vscode reference, derived from the same decision table as markerFor"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "markerFor maps every sc2 status phase (thinking/streaming->pending, tool->tool, editing->edit) to the right class + label"
+          },
+          {
+            "level": "unit",
+            "name": "markerFor(tool-call) -> tool class; label ev.tool with no mcp, `${server} · ${name}` with mcp"
+          },
+          {
+            "level": "unit",
+            "name": "markerFor file-edit/done(ok true+false)/error -> edit/done/error class + label; assistant-delta + unknown kind -> null (no throw)"
+          },
+          {
+            "level": "unit",
+            "name": "every markerFor cssClass is one of the five insrc-term__marker--* stems"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Widen webview line() + route non-delta fall-through through the embedded mapper",
+        "summary": "In chat-panel.ts renderShell bootstrap: widen `line(text, markerClass?)` to set the optional class on the row <div> (still textContent, never innerHTML), embed markerWebviewSource() inside the SAME one nonce'd script, and replace the :89 non-assistant-delta fall-through `'['+ev.kind+']'` with a call through the embedded mapper -> line(marker.label, marker.cssClass) (assistant-delta still plain text; unmapped/null -> skip). The :90 session-restore replay stays unchanged (plain text).",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "line() accepts an optional marker class and sets it via className only; still uses textContent (no innerHTML)",
+          "non-assistant-delta turn-events render a <div class=\"insrc-term__marker--*\"> with the mapper label, not the bare '['+kind+']'",
+          "renderShell still emits EXACTLY ONE <script nonce=...> and the strict CSP (script-src 'nonce-...') unchanged",
+          "the restore-replay path is untouched"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "renderShell() output routes non-delta turn-events through the mapper (applies insrc-term__marker--* class), not the bare '['+kind+']'"
+          },
+          {
+            "level": "unit",
+            "name": "rendered shell keeps EXACTLY ONE <script nonce=...> + strict CSP; line() sets textContent, never innerHTML"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Reuse host appendEvent via markerFor; fill the status/done gap",
+        "summary": "In chat-panel.ts appendEvent (:205): derive every role:'marker' row's text from markerFor(ev).label (single-sourced with the webview), and ADD the previously-missing status and done marker rows; keep assistant-delta -> role:'assistant' and preserve the errored-turn persistence behaviour. No daemon write (k3), no workflow call (k8).",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "appendEvent records a role:'marker' row for status and done (previously dropped), with label from markerFor(ev)",
+          "tool-call/file-edit/error marker rows now use markerFor(ev).label (single source with webview)",
+          "assistant-delta still -> role:'assistant'; the S003 errored-turn persistence still holds; no new import of a workflow/MCP tool"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "appendEvent records status + done role:'marker' rows (S003 gap) with markerFor(ev).label; assistant-delta still role:'assistant'"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Tests: markerFor parity + shell-routing contract + integration turn",
+        "summary": "Add vscode-plugin/src/chat/__tests__/markers.test.ts (host<->webview parity + CSP-safe scan) and EXTEND the existing chat-panel.test.ts (reuse its FakePanel + fake StreamAdapter harness, no parallel harness): rendered-shell routes non-delta events to an insrc-term__marker--* class with one nonce'd script + CSP intact; integration: status->tool-call(mcp)->status->file-edit->done sequence persists status+done marker rows and enriches the insrc MCP marker while the host invokes no workflow tool. node:test + assert/strict, in-memory ChatSessionStore double.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "markers.test.ts covers the parity (eval(markerWebviewSource()) deepEquals markerFor per kind) + the CSP-safe assertions",
+          "chat-panel.test.ts (extended, same harness) asserts shell marker-routing (not the bare bracket), one nonce'd script + strict CSP, and status+done transcript rows via a scripted turn",
+          "the full vscode-plugin chat sweep is green under tsx --test",
+          "ac1 and ac2 each have >=1 passing proving test"
+        ],
+        "derivedFrom": [
+          "c6",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "eval(markerWebviewSource()) computes {cssClass,label} deepEqual to markerFor for every sample event (drift fails build)"
+          },
+          {
+            "level": "unit",
+            "name": "markerWebviewSource() references only the five marker classes; no import / http(s): / asWebviewUri / vscode token"
+          },
+          {
+            "level": "unit",
+            "name": "renderTerminalStyle output (sc1) unchanged by S004 and defines all five marker ::before rules"
+          },
+          {
+            "level": "integration",
+            "name": "a status(thinking)->tool-call(mcp)->status(streaming)->file-edit->done(ok:true) turn posts a marker turn-event per event and persists status+done rows (reuse chat-panel.test.ts harness)"
+          },
+          {
+            "level": "integration",
+            "name": "an insrc MCP tool-call renders an enriched 'insrc · insrc_analyze_step' marker while the host invokes no workflow tool (k8 passthrough)"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "markerFor(status{thinking|streaming|tool|editing}) -> pending/pending/tool/edit class + 'thinking…'/'streaming…'/'running tool…'/'editing…' label",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "markerFor(tool-call) -> tool class; label = ev.tool when no mcp, `${server} · ${name}` when mcp present (ac2)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "markerFor(file-edit) -> edit class + path label; markerFor(done{ok:true|false}) -> done class + 'done'/'done (failed)'; markerFor(error) -> error class + message",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "markerFor(assistant-delta) -> null; markerFor(unknown/forward kind) -> null (no throw)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "every returned cssClass is one of the five insrc-term__marker--* stems that renderTerminalStyle defines",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "for each sample event, eval(markerWebviewSource()) and assert its {cssClass,label} deepEquals markerFor(event) (drift fails the build)",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "markerWebviewSource() references only the five marker classes; contains no import / http(s): / asWebviewUri / vscode token",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "renderShell() output routes the non-assistant-delta turn-event through the marker mapper (applies an insrc-term__marker--* class), NOT the old bare '['+kind+']' fall-through",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "the shell still has EXACTLY ONE <script nonce=...> and the strict CSP (script-src 'nonce-...'); line() still uses textContent, never innerHTML",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "renderTerminalStyle output (sc1) is unchanged by S004 (design-tokens.ts not modified) and defines all five marker ::before rules the classes rely on",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "a status(thinking)->tool-call(mcp)->status(streaming)->file-edit->done(ok:true) sequence posts a turn-event per event AND appendEvent records a role:'marker' row for status and done (previously dropped) with markerFor(ev).label",
+        "coveredByTaskIds": [
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "an insrc MCP tool-call (mcp:{server:'insrc',name:'insrc_analyze_step'}) yields a marker row labelled 'insrc · insrc_analyze_step' and the host never invokes any workflow tool (k8 passthrough — fake adapter is the only side-effecting collaborator)",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "assistant-delta still -> role:'assistant' (no marker row); the errored-turn persistence from S003 still holds",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 contractDetails/markerFor + markerWebviewSource (the pure single-sourced mapper API)",
+      "quotedText": "markerFor(event: TurnEvent): MarkerLine | null; markerWebviewSource(): string — pure, total, no vscode import"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 dataModelChanges/MarkerLine (new markers.ts module)",
+      "quotedText": "new module vscode-plugin/src/chat/markers.ts exporting MarkerLine + markerFor + markerWebviewSource"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 contractDetails/line (widen the S003 webview writer + route non-delta fall-through)",
+      "quotedText": "line(text: string, markerClass?: string): void — the :89 fall-through now routes through the mapper instead of '['+kind+']'"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 contractDetails/appendEvent (host transcript writer reuse + status/done gap)",
+      "quotedText": "appendEvent uses markerFor(ev).label and fills the previously-missing status + done marker rows"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 migration (stateBefore->stateAfter render-seam edits + invariants)",
+      "quotedText": "widen line(), route the non-delta fall-through through markerWebviewSource(), add status+done host rows; one nonce'd script + CSP + textContent invariants preserved"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 testStrategy unit levels (markerFor totality + host/webview parity + CSP-safe)",
+      "quotedText": "unit: markerFor per-kind + mcp enrichment; parity eval(markerWebviewSource()) deepEquals markerFor; markerWebviewSource() CSP-safe"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 testStrategy contract + integration levels + acceptanceMapping (ac1/ac2)",
+      "quotedText": "contract: shell marker-routing + one nonce'd script/CSP; integration: status->...->done persists status+done rows + enriched insrc MCP marker (k8)"
+    }
+  ]
+}

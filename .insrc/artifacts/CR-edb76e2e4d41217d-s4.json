@@ -1,0 +1,57 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1790360058449-vji3mm",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-25T18:14:18.449Z",
+    "model": "client",
+    "elapsedMs": 3,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "edb76e2e4d41217d",
+    "storyId": "s4"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "edb76e2e4d41217d",
+    "storyId": "s4",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+        "vscode-plugin/src/chat/chat-panel.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/chat-panel.ts:94",
+            "message": "Restore render draws persisted role:'marker' rows via line(x.text) with no cssClass, so restored markers show only their (now bare, un-prefixed) label and are not visually distinguished from assistant text after a reload. The proper fix (persist cssClass on TranscriptEntry, sc4-owned, or a base marker CSS, sc1-owned) is out of S004's boundary; the LLD accepted the reduced-restore-styling con and this is deferred to S005 (owns session restore/resume + sc4). Live rendering is unaffected (full glyph+tone)."
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 1
+    }
+  }
+}

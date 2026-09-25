@@ -333,3 +333,78 @@ test('rendered shell mints a FRESH nonce per render', () => {
   };
   assert.notEqual(mk(), mk(), 'two renders use different nonces');
 });
+
+// ---- S004: per-turn lifecycle markers ----
+
+test('S004 rendered shell: non-delta turn-events route through the marker mapper (sc1 class, not the bare bracket)', () => {
+  const fc = fakeChannel();
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter([]) }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+    genNonce: () => 'FIXEDNONCE',
+  });
+  host.open();
+  const html = fc.html();
+  // The embedded, single-sourced marker mapper is present + the widened line(s,cls) writer.
+  assert.ok(html.includes('insrc-term__marker--'), 'the shell embeds the sc1 marker classes via the mapper');
+  assert.ok(/function line\(s,cls\)/.test(html), 'line() is widened to carry a marker class');
+  assert.match(html, /className=cls/, 'the marker class is applied via className');
+  assert.doesNotMatch(html, /'\['\+ev\.kind\+'\]'/, 'the bare [kind] fall-through is gone');
+  assert.doesNotMatch(html, /innerHTML/, 'renders via textContent, never innerHTML');
+  // The CSP shell invariants still hold after the S004 edit.
+  const scripts = html.match(/<script\b/g) ?? [];
+  assert.equal(scripts.length, 1, 'still exactly one inline script');
+  const csp = /Content-Security-Policy" content="([^"]*)"/.exec(html);
+  assert.match(csp![1]!, /script-src 'nonce-FIXEDNONCE'/, 'strict CSP unchanged');
+  assert.doesNotMatch(html, /https?:\/\//, 'no remote origin introduced by the mapper');
+});
+
+test('S004 integration: a status->tool-call(mcp)->status->file-edit->done turn posts a marker per event and persists status+done rows (ac1/ac2, k8)', async () => {
+  const fc = fakeChannel();
+  let workflowCalls = 0; // the host must NEVER invoke a workflow/MCP tool (k8 passthrough)
+  const evs: TurnEvent[] = [
+    { kind: 'status', turnId: 't1', phase: 'thinking' },
+    { kind: 'tool-call', turnId: 't1', tool: 'x', mcp: { server: 'insrc', name: 'insrc_analyze_step' } },
+    { kind: 'status', turnId: 't1', phase: 'streaming' },
+    { kind: 'assistant-delta', turnId: 't1', text: 'hi' },
+    { kind: 'file-edit', turnId: 't1', path: 'src/a.ts', diff: { path: 'src/a.ts', hunks: [] } },
+    { kind: 'done', turnId: 't1', ok: true },
+  ];
+  const store = createInMemoryChatSessionStore();
+  const adapter = scriptedAdapter(evs, { onRun: () => { /* the fake adapter is the ONLY side-effecting collaborator */ } });
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: adapter }, ['claude']),
+    store,
+    cwd: () => '/repo',
+  });
+  host.open();
+  fc.send(env('submit-turn', { text: 'go' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+
+  // Every event was posted to the webview as a turn-event (the marker is computed webview-side).
+  assert.deepEqual(
+    turnEvents(fc).map((e) => e.kind),
+    ['status', 'tool-call', 'status', 'assistant-delta', 'file-edit', 'done'],
+    'each event posted incrementally',
+  );
+
+  // status markers ARE shown live (posted as turn-events, rendered webview-side)...
+  assert.ok(
+    turnEvents(fc).some((e) => e.kind === 'status' && e.phase === 'thinking'),
+    'status(thinking) was posted live for the webview marker (ac1)',
+  );
+  // ...but status is TRANSIENT: it is NOT persisted into the durable transcript (MED-2).
+  // The durable lifecycle facts (tool-call/file-edit/done/error) ARE persisted, single-sourced via markerFor.
+  const s = store.list().length > 0 ? store.get(store.list()[0]!.id) : undefined;
+  const markers = s!.transcript.filter((r) => r.role === 'marker').map((r) => r.text);
+  assert.ok(!markers.includes('thinking…'), 'status(thinking) is NOT persisted (transient, live-only)');
+  assert.ok(!markers.includes('streaming…'), 'status(streaming) is NOT persisted (transient, live-only)');
+  assert.ok(markers.includes('done'), 'done persisted a marker row (S003 gap filled)');
+  assert.ok(markers.includes('insrc · insrc_analyze_step'), 'the insrc MCP tool-call marker is enriched (ac2)');
+  assert.ok(markers.includes('src/a.ts'), 'file-edit persisted a marker row');
+  assert.ok(s!.transcript.some((r) => r.role === 'assistant' && r.text === 'hi'), 'assistant-delta -> assistant row');
+  assert.equal(workflowCalls, 0, 'the host invoked no workflow/MCP tool (k8 passthrough)');
+});

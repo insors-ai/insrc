@@ -1,6 +1,9 @@
 # Gradle / IntelliJ-plugin build outputs
 .gradle/
 build/
+# Eclipse JDT.LS output (VS Code "Language Support for Java" compiles an
+# unmanaged folder to bin/ — Gradle's real output is build/ above)
+bin/
 # Kotlin Gradle plugin local state (incremental-compile caches, session files)
 .kotlin/
 # IntelliJ Platform Gradle plugin local cache (coordinates, downloaded IDE, etc.)

@@ -1,0 +1,18 @@
+# Python build + packaging artifacts (SCOPED to camon/ — the repo has source
+# directories named build/ elsewhere, e.g. src/prompts/build + src/workflow/
+# runners/build, so build/ and dist/ must NOT be ignored globally).
+.venv/
+venv/
+*.egg-info/
+build/
+dist/
+.coverage
+htmlcov/
+
+# Lint / type / test caches (the tools also self-ignore via a generated
+# .gitignore inside each dir, but be explicit in case that file is removed).
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+__pycache__/
+*.py[cod]

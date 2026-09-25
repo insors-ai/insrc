@@ -1,0 +1,15 @@
+{
+  // The JetBrains plugin (jetbrains-plugin/) is a Gradle + Kotlin project built
+  // with `./gradlew buildPlugin` (JDK 21; wrapper 8.10.2) — NOT via VS Code's Java
+  // tooling. Left to itself, the Red Hat "Language Support for Java" extension
+  // (Eclipse JDT.LS) imports that folder as an "invisible project" and compiles
+  // its sources to a stray `bin/` folder; Gradle's real output is `build/`.
+  // Exclude it from the Java importer and turn off autobuild so no `bin/` is
+  // generated. The daemon itself is TypeScript, so this loses no Java features.
+  "java.import.exclusions": [
+    "**/node_modules/**",
+    "**/.git/**",
+    "**/jetbrains-plugin/**"
+  ],
+  "java.autobuild.enabled": false
+}

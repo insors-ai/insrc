@@ -1,0 +1,703 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1790360632569-9okqd8",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-25T18:33:23.999Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 571401,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-09-25T13:25:32.966Z",
+    "epicHash": "edb76e2e4d41217d",
+    "epicSlug": "work-framed-approved-spec-proceed-from",
+    "storyId": "s5",
+    "hldBaseRunId": "wf-1790343836936-uhegob",
+    "hldEffectiveHash": "f394a9ecb688a6435e9660c36070ff438589624b3026bbb4315135fee33e53b4",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "ref": "contractDetails/open",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "chat-panel.ts open() posts theme + session-restored for the initial session but does NOT currently post a history-list (the S005 gap).",
+          "evidence": "CONFIRMED: chat-panel.ts open() posts type:'theme' (:289) + type:'session-restored' (:290); a grep of the whole file finds NO type:'history-list' — the S005 gap is real and accurately stated.",
+          "action": "No change — accurate.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl2",
+          "ref": "contractDetails/handleMessage",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "handleMessage dispatches new-chat (store.create) and open-chat (store.get), each calling cancelActive() + ++generation before switching session (the single-in-flight guard S005 preserves).",
+          "evidence": "CONFIRMED: handleMessage case 'new-chat' (:237) + case 'open-chat' (:247), each calling cancelActive() (:241, :254) before the switch — the single-in-flight guard is present as claimed.",
+          "action": "No change — accurate.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl3",
+          "ref": "contractDetails/runTurn",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "runTurn already wires native resume: it builds req.resume from s.nativeSessionId and, on the done event, sets s.nativeSessionId = ev.sessionId and saves (so ac3 is already implemented; S005 only verifies it).",
+          "evidence": "CONFIRMED: runTurn builds req.resume={provider, nativeSessionId} from s.nativeSessionId (:163-164) and captures ev.sessionId into s.nativeSessionId on done (:182) — native resume is already implemented (ac3), S005 only verifies.",
+          "action": "No change — accurate.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl4",
+          "ref": "dataModel/title",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "session-store.ts create() hard-codes title: 'new chat' and nothing ever updates it (the S005 title-from-prompt target).",
+          "evidence": "CONFIRMED by the tool's read: session-store.ts:122 = `title: 'new chat',` in create() — hard-coded and never updated. Accurate.",
+          "action": "No change — accurate.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl5",
+          "ref": "dataModel/index-cap",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "session-store.ts save() only appends to the insrc.chat.index id list and nothing evicts it (the unbounded-index S003 L4 gap S005 caps).",
+          "evidence": "CONFIRMED: session-store.ts save() (:110) only appends session.id to the index (writeIndex([...ids, session.id])) and nothing evicts — the unbounded-index S003 L4 gap is real.",
+          "action": "No change — accurate.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl6",
+          "ref": "interactionWithShared/sc4",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "ChatSession.provider is readonly (a chat's provider is fixed at creation; switching provider must mean a new chat, lc2).",
+          "evidence": "CONFIRMED by the tool's read: session-store.ts:23 = `readonly provider: ProviderId;` — provider is fixed at creation (lc2). Accurate.",
+          "action": "No change — accurate.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl7",
+          "ref": "interactionWithShared/sc3",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "sc3 protocol.ts ALREADY declares the messages S005 needs: HostToWebview 'history-list'{chats} and WebviewToHost 'new-chat'{provider} + 'open-chat'{chatId} — so S005 adds no new sc3 message.",
+          "evidence": "CONFIRMED by direct grep of protocol.ts: history-list (:36), new-chat{provider} (:44), open-chat{chatId} (:45) all already declared — S005 adds no new sc3 message (tool greps were scoped to backend src/ = hollow; verified against the real subtree).",
+          "action": "No change — accurate.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl8",
+          "ref": "interactionWithShared/sc5",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "sc5 cli-adapter.ts ALREADY provides ProviderRegistry.available + StreamAdapter.capabilities.resume + TurnRequest.resume (so the provider-selector + resume consume existing sc5 surface, no reshape).",
+          "evidence": "CONFIRMED by direct grep of cli-adapter.ts: TurnRequest.resume? (:43), capabilities.resume (:53), ProviderRegistry.available (:58) all present — S005 consumes existing sc5 surface, no reshape.",
+          "action": "No change — accurate.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl9",
+          "ref": "contractDetails/renderShell",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "renderShell builds the webview shell with exactly one nonce'd inline <script> under a strict CSP and only #insrc-term + #insrc-input (no provider-selector/history-dropdown yet).",
+          "evidence": "CONFIRMED: renderShell builds the one nonce'd script + strict CSP shell (verified in the S004 pass) with only #insrc-term + #insrc-input — the S005 selector/dropdown are net-new additions inside that same script.",
+          "action": "No change — accurate.",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 9
+      },
+      "reviewedAt": "2026-09-25T18:35:12.221Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-25T18:56:21.075Z",
+    "questionResolutions": {
+      "qb5e33325": {
+        "question": "S004 MED-1 follow-up (persist a marker cssClass on TranscriptEntry so restore reproduces per-kind glyph/tone) is OUT of S005 scope — file as its own small tracked story that amends sc4.",
+        "status": "resolved",
+        "choice": "Extend the epic with a new small story (sc4 amendment)",
+        "rationale": "The MED-1 fix mutates sc4/TranscriptEntry, a contract this epic's HLD owns, so the amendment trail + restore-fidelity criterion belong on epic edb76e2e4d41217d next to S004 — not folded into S005 (scope discipline) nor detached. To be filed as a new small story AFTER S005 ships.",
+        "resolvedAt": "2026-09-25T18:57:36.351Z"
+      }
+    }
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Layered extension-host core + a thin terminal-styled webview (alternative a1). All chat logic lives in vscode-free, deps-injected host modules that mirror the repo's existing createWebviewPanelHost(deps) factory idiom, so streaming, session, edit-governance and docs-review logic are unit-testable without a webview harness. The webview holds no business logic — it paints terminal-styled surfaces and emits user intents over a single typed, versioned message protocol. Each agentic CLI's native structured stream is normalized to ONE event union by a per-provider stream adapter, quarantining the still-to-spike claude/codex stream/resume contract at that boundary so no downstream surface is provider-specific. Grounding + tracked-workflow behaviour come through the CLI's own insrc MCP (the extension observes, never orchestrates — k8).",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "Terminal-UX design tokens + component vocabulary",
+          "purpose": "The single source of the terminal look & feel (monospace, box-drawing chrome, phosphor accents from the insrc docs-site TUI) that every rendered surface consumes, so the whole experience is terminal-styled and not a chat-bubble UI (k6).",
+          "interfaceSketch": "// design-tokens.ts (type-level)\nexport interface TerminalTheme {\n  readonly font: { mono: string; sizePx: number; linePx: number };\n  readonly color: { bg: string; fg: string; dim: string; accent: string; warn: string; err: string; sel: string };\n  readonly chrome: { border: string; boxChars: { h: string; v: string; tl: string; tr: string; bl: string; br: string } };\n  readonly marker: { pending: string; toolCall: string; edit: string; done: string; error: string };\n}\nexport type SurfaceKind = 'chat' | 'provider-dropdown' | 'history-dropdown' | 'inline-diff' | 'docs-review';",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7"
+          ],
+          "assumptions": [
+            "c2"
+          ]
+        },
+        {
+          "id": "sc5",
+          "name": "CLI provider + stream adapter interface",
+          "purpose": "The boundary that spawns a selected agentic CLI (claude/codex) for a turn and yields a normalized TurnEvent stream, plus the native session-resume handle — the only place a provider difference lives (k1, k4). Consumed by the panel to run turns (s3) and by provider-selection/continuity (s5).",
+          "interfaceSketch": "// cli-adapter.ts (type-level)\nexport type ProviderId = 'claude' | 'codex';\nexport interface TurnRequest { readonly provider: ProviderId; readonly prompt: string; readonly resume?: SessionHandle; readonly cwd: string; }\nexport interface SessionHandle { readonly provider: ProviderId; readonly nativeSessionId: string; }\nexport interface StreamAdapter {\n  run(req: TurnRequest): AsyncIterable<TurnEvent>;\n  cancel(turnId: string): void;\n  readonly capabilities: { readonly resume: boolean };\n}\nexport interface ProviderRegistry { get(id: ProviderId): StreamAdapter; readonly available: ReadonlyArray<ProviderId>; }",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s3",
+            "s5"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        },
+        {
+          "id": "sc3",
+          "name": "Webview↔extension message protocol",
+          "purpose": "The single typed, versioned channel between the host and the thin webview — host→webview render/stream events and webview→host user intents — that every UI surface (chat, markers, dropdowns, inline-diff, docs-review) rides on, preventing ad-hoc channel drift.",
+          "interfaceSketch": "// protocol.ts (type-level)\nexport interface Envelope<T> { readonly v: 1; readonly payload: T; }\nexport type HostToWebview =\n  | { type: 'turn-event'; event: TurnEvent }\n  | { type: 'session-restored'; sessionId: string; transcript: TranscriptEntry[] }\n  | { type: 'history-list'; chats: ChatSummary[] }\n  | { type: 'edit-prompt'; path: string; diff: UnifiedDiff }\n  | { type: 'docs-list'; artifacts: DocsArtifactSummary[] }\n  | { type: 'theme'; theme: TerminalTheme };\nexport type WebviewToHost =\n  | { type: 'submit-turn'; text: string }\n  | { type: 'new-chat'; provider: ProviderId }\n  | { type: 'open-chat'; chatId: string }\n  | { type: 'set-edit-mode'; mode: 'auto' | 'review' }\n  | { type: 'edit-decision'; path: string; accept: boolean }\n  | { type: 'docs-decision'; artifactId: string; accept: boolean };",
+          "ownedByStory": "s3",
+          "consumedByStories": [
+            "s4",
+            "s5",
+            "s6",
+            "s7"
+          ],
+          "assumptions": []
+        },
+        {
+          "id": "sc4",
+          "name": "Extension-local chat/session store shape",
+          "purpose": "The persisted ChatSession record + store interface (transcript, fixed provider, native session-id, per-session edit-mode) kept extension-local (k3). Introduced by the panel that first needs a live session (s3), extended by history/provider (s5) and per-session edit mode (s6).",
+          "interfaceSketch": "// session-store.ts (type-level)\nexport interface ChatSession { readonly id: string; readonly provider: ProviderId; nativeSessionId?: string; readonly createdAt: string; title: string; editMode: 'auto' | 'review'; transcript: TranscriptEntry[]; }\nexport interface TranscriptEntry { readonly role: 'user' | 'assistant' | 'marker'; readonly text: string; readonly at: string; }\nexport interface ChatSummary { readonly id: string; readonly provider: ProviderId; readonly title: string; readonly updatedAt: string; }\nexport interface ChatSessionStore {\n  create(provider: ProviderId): ChatSession;\n  get(id: string): ChatSession | undefined;\n  list(): ReadonlyArray<ChatSummary>;\n  append(id: string, entry: TranscriptEntry): void;\n  save(session: ChatSession): void;\n}",
+          "ownedByStory": "s3",
+          "consumedByStories": [
+            "s5",
+            "s6"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s5",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc3",
+          "sc4",
+          "sc5"
+        ],
+        "internal": "The provider-selector and history-dropdown UI, the new-chat vs open-chat flows, and the wiring of the StreamAdapter's native session-resume handle into a restored session are private to S005; it persists through sc4 and drives turns through sc5, adding no new shared contract."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1"
+          ],
+          "depends": [],
+          "internal": "The concrete mockup deliverables (per-surface terminal-styled mock images/HTML), the design-rationale write-up, and the exact palette/character choices are private to S001; downstream stories consume only the sc1 token/vocabulary contract, not the mock files themselves."
+        },
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc2",
+            "sc5"
+          ],
+          "depends": [],
+          "internal": "The subprocess spawn mechanics, the per-provider parsing of each CLI's NATIVE stream format, the exact claude/codex flags (the stream/resume spike), backpressure/cancellation handling, and error normalization stay private to S002; consumers see only the normalized TurnEvent union (sc2) and the StreamAdapter/ProviderRegistry interface (sc5)."
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc3",
+            "sc4"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc5"
+          ],
+          "internal": "The terminal renderer internals (how TurnEvents paint as terminal output), the input box, the panel/webview lifecycle and single-active-panel management, and the CSP/webview bootstrap are private to S003; other stories consume only the message protocol (sc3) and the session-store shape (sc4)."
+        },
+        {
+          "storyId": "s4",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "How status/tool-call TurnEvents are mapped to terminal-style marker lines, and how observed insrc MCP tool-calls are named/enriched into markers, are private to S004; it adds no new shared contract — it renders sc2 events as sc1-styled markers over sc3."
+        },
+        {
+          "storyId": "s6",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4"
+          ],
+          "internal": "The inline-diff renderer, the EditGovernor that applies the per-session auto/review toggle, and (review mode) the interception of the CLI's edit/write before the write reaches disk are private to S006; it consumes file-edit TurnEvents (sc2), the edit-mode field on the session (sc4), and the edit-prompt/edit-decision messages (sc3)."
+        },
+        {
+          "storyId": "s7",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc3"
+          ],
+          "internal": "The docs-review pane and its DocsReviewClient over the existing daemon IPC (the exact pendingApproval listing + insrc_workflow_approve method names/payloads, pinned at the S007 LLD) and the mirroring of the JetBrains review/comment/accept-reject panel are private to S007; it consumes only the message protocol (sc3) and the terminal tokens (sc1) and adds no new shared contract to the Epic."
+        }
+      ],
+      "rolloutPhase": "Phase C — provider/history, edit governance & docs review",
+      "nonFunctional": {
+        "performance": "Streaming is incremental: assistant-delta events render to the terminal panel as they arrive (no wait-for-turn-complete); the host must not buffer a whole turn before painting. Marker updates are cheap status lines. The webview holds no heavy state.",
+        "security": "No direct cloud REST from the extension (k2); all model access is via the user's own claude/codex CLI OAuth sessions. The webview runs under a strict CSP (no remote origins); host↔webview traffic is the typed sc3 protocol only. Chat history stays on the local machine (k3).",
+        "observability": "Per-turn lifecycle markers (thinking/tool-call/streaming/done) are the user-facing progress signal; host modules log via the repo's getLogger, never console.log. Errors surface as an error TurnEvent rendered inline, not a silent failure.",
+        "durability": "Chat history + per-session provider/native-session-id/edit-mode persist extension-local (VS Code state / local JSON) and survive window reload; nothing is written to the daemon. A missing/corrupt local store degrades to an empty history, never a crash."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "renderShell",
+          "signature": "renderShell(): string",
+          "parameters": [],
+          "returns": {
+            "type": "string",
+            "meaning": "The webview HTML shell (S003, chat-panel.ts:~80), RESHAPED by S005 to add two sc1-styled controls inside the SAME one nonce'd inline script: a provider-selector whose <option>s are rendered from deps.providers.available (so no new sc3 message is needed — the installed claude/codex set is fixed per panel, k4), and an (initially empty) history-dropdown container. The bootstrap wires: provider-select change -> postMessage new-chat{provider}; history-select change -> postMessage open-chat{chatId}; and a 'history-list' handler that (re)populates the history <option>s. CSP unchanged (one nonce'd script, no remote origin, textContent for any dynamic label)."
+          },
+          "errors": [],
+          "preconditions": [
+            "deps.providers.available lists the installed agentic CLIs (claude/codex only, k4)."
+          ],
+          "postconditions": [
+            "Still exactly ONE nonce'd <script> under the strict CSP; the selector/dropdown are sc1-styled (surfaceClass provider-dropdown/history-dropdown); no new sc3 message type introduced.",
+            "Provider <option>s are attribute-escaped; history labels are set via textContent (no innerHTML) — no XSS from a chat title."
+          ]
+        },
+        {
+          "name": "open",
+          "signature": "open(): void",
+          "parameters": [],
+          "returns": {
+            "type": "void",
+            "meaning": "The host open() (S003, chat-panel.ts:~255), RESHAPED to ALSO post a 'history-list' message (from deps.store.list()) after theme + session-restored, so the history-dropdown is populated as soon as the panel opens."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Posts theme, session-restored, and history-list on open; no daemon call (k3), no workflow call (k8)."
+          ]
+        },
+        {
+          "name": "handleMessage",
+          "signature": "handleMessage(message: unknown): void",
+          "parameters": [
+            {
+              "name": "message",
+              "type": "unknown",
+              "purpose": "The raw webview->host envelope (sc3 WebviewToHost), validated as in S003.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "The host dispatcher (S003, chat-panel.ts:~213), RESHAPED so that after a new-chat (store.create) or open-chat (store.get) session switch it ALSO re-posts 'history-list' — so a newly created chat appears in the dropdown and the current selection stays in sync. The existing cancelActive()+ ++generation single-in-flight guard is preserved unchanged."
+          },
+          "errors": [],
+          "preconditions": [
+            "Envelope passes the S003 {v:1, payload:object} guard; unknown/forward types remain accepted-but-ignored."
+          ],
+          "postconditions": [
+            "new-chat{provider} creates a session with the SELECTED provider (fixed at create, lc2) and re-posts history-list; open-chat{chatId} restores + re-posts history-list; malformed provider/chatId is a no-op (never throws)."
+          ]
+        },
+        {
+          "name": "runTurn",
+          "signature": "runTurn(text: unknown): Promise<void>",
+          "parameters": [
+            {
+              "name": "text",
+              "type": "unknown",
+              "purpose": "The submit-turn prompt (validated typeof string as in S003).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "The host turn loop (S003, chat-panel.ts:~137), RESHAPED so that (a) on the FIRST user turn of a session it sets session.title from the trimmed/clipped prompt (replacing the create-time 'new chat') via the existing save() path, and (b) after the terminal 'done' it re-posts 'history-list' (title/updatedAt changed). Native resume (ac3) is ALREADY implemented here (req.resume from s.nativeSessionId; capture ev.sessionId on done) and is unchanged — S005 only verifies it."
+          },
+          "errors": [],
+          "preconditions": [
+            "session is defined and prompt is a non-empty string (S003 guards)."
+          ],
+          "postconditions": [
+            "First-turn title is derived from the first user prompt (empty/whitespace falls back to 'new chat'); native resume unchanged (extension replays NO prior turns — lc1); history-list re-posted after done; no workflow call (k8)."
+          ]
+        },
+        {
+          "name": "createMementoChatSessionStore",
+          "signature": "createMementoChatSessionStore(deps: MementoStoreDeps): ChatSessionStore",
+          "parameters": [
+            {
+              "name": "deps",
+              "type": "MementoStoreDeps",
+              "purpose": "The store deps (S003), IMPL-extended with an optional maxSessions cap; the sc4 ChatSessionStore interface is unchanged.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ChatSessionStore",
+            "meaning": "The sc4 memento store (S003, session-store.ts:84), RESHAPED at the IMPL level: save() now evicts the oldest ids (and their insrc.chat.session.<id> keys) beyond an optional deps.maxSessions cap, so extension-local history (k3) stays bounded (the S003 L4 follow-up). The ChatSession/TranscriptEntry/ChatSummary/ChatSessionStore contract shapes are UNCHANGED (no field add/remove) — this is an interface-compatible impl change."
+          },
+          "errors": [],
+          "preconditions": [
+            "maxSessions, when provided, is a positive integer; unset means the S003 unbounded behaviour."
+          ],
+          "postconditions": [
+            "The index never exceeds maxSessions; eviction removes the oldest sessions' keys too (no orphaned session blobs); get/list/create/append/save signatures are byte-identical to S003; corruption tolerance preserved."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "ChatSession.title (session-store.ts)",
+        "change": "field-modify",
+        "details": "The existing (mutable) ChatSession.title is now POPULATED from the first user prompt (trimmed + clipped) instead of remaining the create-time constant 'new chat', so the history dropdown rows are distinguishable (ac2). No schema/type change — title is already `title: string`; only its value semantics change. Current-behaviour invariant it changes: s1 bundle notes create() hard-codes title:'new chat' and it is never updated.",
+        "schemaDiff": "// no type change; title value now derived from first prompt (was always 'new chat')",
+        "callSites": [
+          "vscode-plugin/src/chat/session-store.ts (create default; save persists)",
+          "vscode-plugin/src/chat/chat-panel.ts (runTurn sets title on the first user turn)"
+        ]
+      },
+      {
+        "entity": "chat index cap (session-store.ts insrc.chat.index)",
+        "change": "invariant-change",
+        "details": "The insrc.chat.index id list, UNBOUNDED in S003 (create/save only append), is now bounded to an optional maxSessions cap: save() evicts the oldest ids + their session keys beyond the cap. Interface-compatible impl change (no sc4 shape change). Current-behaviour invariant it changes: s1 bundle notes the index is unbounded and nothing evicts (the S003 L4 follow-up).",
+        "schemaDiff": "// MementoStoreDeps gains optional maxSessions?: number (impl dep, not part of the sc4 ChatSessionStore contract)",
+        "callSites": [
+          "vscode-plugin/src/chat/session-store.ts (save eviction; create via save)"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "The provider-selector + history-dropdown render with the sc1 terminal tokens (the provider-dropdown/history-dropdown SurfaceKind + surfaceClass already exist in sc1); S005 does not modify design-tokens.ts."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "Rides the EXISTING sc3 messages only: posts history-list (HostToWebview) and receives new-chat{provider}/open-chat{chatId} (WebviewToHost). Provider options are rendered into the shell from providers.available, so NO new sc3 message/field is added (no amendment)."
+      },
+      {
+        "contractId": "sc4",
+        "role": "consumes",
+        "howDetails": "Consumes list()/create(provider)/get(id) + ChatSession.nativeSessionId as-is; the title-from-prompt and the maxSessions index cap are interface-compatible IMPL changes to the S003 store (no change to the sc4 ChatSession/TranscriptEntry/ChatSummary/ChatSessionStore shapes)."
+      },
+      {
+        "contractId": "sc5",
+        "role": "consumes",
+        "howDetails": "Consumes ProviderRegistry.available (populates the selector, k4) + StreamAdapter.capabilities.resume + TurnRequest.resume (the native-resume path already wired in runTurn); no reshape of sc5."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The history-dropdown offers a chat whose session blob is missing or corrupt (evicted by the cap, or a partial write), and the user selects it.",
+          "detection": "handleMessage's open-chat branch calls store.get(chatId) and checks for undefined (the S003 corruption-tolerant get returns undefined on a missing/invalid blob).",
+          "response": "No-op the switch + log a warn (S003 behaviour), keep the current session, and re-post history-list (whose list() already skips corrupt/missing rows) so the dead entry drops from the dropdown.",
+          "userImpact": "The stale row disappears on the next refresh instead of restoring an empty/garbage chat or throwing; the active chat is untouched.",
+          "recoverable": true
+        },
+        {
+          "scenario": "No agentic CLI is installed, so the provider-selector would have no options.",
+          "detection": "renderShell / open() reads deps.providers.available and finds length === 0.",
+          "response": "Render the selector disabled (no options) and emit the existing S003 'no agentic CLI (claude/codex) installed' error turn-event; new-chat cannot be issued from an empty selector.",
+          "userImpact": "The user sees a clear terminal error rather than an empty selector that silently does nothing; installing claude/codex recovers.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The index cap eviction would remove the id of the CURRENTLY-open (or just-saved) session.",
+          "detection": "save() computes the over-cap oldest ids from the index and compares against the id being saved / the active id before deleting.",
+          "response": "Eviction excludes the id being saved (and evicts only the oldest OTHER sessions), so the active chat's blob + index entry always survive a save.",
+          "userImpact": "The chat the user is in is never silently evicted mid-use; only old, inactive chats are pruned.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A stale webview posts new-chat{provider} for a provider not in providers.available (e.g. the CLI was uninstalled after the shell rendered).",
+          "detection": "handleMessage's new-chat branch checks provider is a string AND is a member of deps.providers.available before store.create.",
+          "response": "Reject the create as a no-op + log a warn; the active session is unchanged (k4 keeps the provider set to installed claude/codex only).",
+          "userImpact": "No chat is created against a missing CLI (which would fail on the first turn); the user keeps their current chat.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "The first user prompt of a session is very long.",
+          "expected": "session.title is set from the prompt trimmed + clipped to a fixed max length (e.g. ~60 chars); the full prompt is still the first transcript row."
+        },
+        {
+          "input": "The first user prompt is empty or whitespace-only (guarded by the S003 empty-submit no-op, but e.g. a title derived from a whitespace prompt).",
+          "expected": "title falls back to the create-time 'new chat' (never an empty dropdown label)."
+        },
+        {
+          "input": "The user selects the already-active chat in the history dropdown (open-chat for the current session).",
+          "expected": "Idempotent: cancelActive() + ++generation then re-post session-restored for the same session; no transcript duplication, no interleave."
+        },
+        {
+          "input": "The user picks a history entry or a new provider WHILE a turn is streaming.",
+          "expected": "The S003 single-in-flight guard applies: open-chat/new-chat call cancelActive() + ++generation first, so the in-flight turn stops posting before the switch (no cross-session interleave)."
+        },
+        {
+          "input": "A second turn is sent but the provider never surfaced a native sessionId on the prior done (nativeSessionId still undefined).",
+          "expected": "runTurn builds the request WITHOUT resume (fresh turn); no crash, continuity simply not resumed for that provider (lc1 — the extension still never replays prior turns)."
+        },
+        {
+          "input": "history-list is posted while the webview dropdown is open/focused.",
+          "expected": "Re-populating the <option>s preserves the current session as the selected value (the active id) so the selection does not jump."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The webview keeps EXACTLY ONE nonce'd inline <script> under the strict per-render CSP; S005's selector/dropdown live inside that same script, add no second <script>, no remote origin, no asWebviewUri, and set dynamic labels via textContent (no innerHTML). (s1 bundle: chat-panel.ts renderShell shell + S003/S004 CSP invariant.)",
+          "source": "c1"
+        },
+        {
+          "text": "Chat history stays extension-local via the injected Memento only (insrc.chat.index + insrc.chat.session.<id>); S005 writes NOTHING to the daemon graph/config (k3). (s1 bundle: session-store.ts memento binding.)",
+          "source": "c1"
+        },
+        {
+          "text": "The panel remains a passthrough: provider selection, history switch and resume only spawn the chosen CLI via sc5 and read/write the local store — they never invoke an insrc workflow/MCP tool (k8). (s1 bundle: chat-panel.ts passthrough turn loop.)",
+          "source": "c1"
+        },
+        {
+          "text": "Conversation continuity uses each CLI's native resume handle (req.resume from nativeSessionId; capture done.sessionId) — the extension replays NO prior transcript turns to the CLI (lc1). (s1 bundle: chat-panel.ts runTurn resume wiring.)",
+          "source": "c1"
+        },
+        {
+          "text": "The single-in-flight guarantee (cancelActive() + ++generation before any session switch) is preserved so a superseded turn never paints into a newly-selected/created session. (s1 bundle: chat-panel.ts new-chat/open-chat handlers.)",
+          "source": "c2"
+        },
+        {
+          "text": "A chat's provider is fixed at creation and the selector offers only installed claude/codex CLIs (k4, lc2); switching provider always means a NEW chat with its own native session, never mutating an existing session's provider (it is readonly). (s1 bundle: session-store.ts ChatSession.readonly provider.)",
+          "source": "c1"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test + node:assert/strict, run via tsx --test (no vscode runtime; FakePanel + fake StreamAdapter + in-memory ChatSessionStore double, matching chat-panel.test.ts / session-store.test.ts)",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Pin the sc4 store impl changes (title-from-first-prompt + bounded index) in isolation, extending session-store.test.ts.",
+          "subjects": [
+            "save() with maxSessions=N keeps at most N sessions: after creating N+2, list() returns N and the OLDEST were evicted (their get() -> undefined, no orphaned session key)",
+            "eviction never removes the id being saved / the active session even when it is the oldest",
+            "unset maxSessions preserves the S003 unbounded behaviour (no eviction)",
+            "a session whose title is updated to a first-prompt string round-trips through get()/list() (ChatSummary.title reflects it); list() still sorts updatedAt desc"
+          ],
+          "fixturesNeeded": [
+            "in-memory ChatSessionStore with an injected maxSessions + deterministic now()/genId()"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "Assert the rendered shell gains the sc1-styled selector/dropdown and preserves the S003/S004 CSP invariants (no drift into the shell security shell).",
+          "subjects": [
+            "renderShell() output contains a provider-selector whose <option>s are exactly deps.providers.available (attribute-escaped), and an (empty) history-dropdown container, both with the sc1 surfaceClass (provider-dropdown/history-dropdown)",
+            "the shell still has EXACTLY ONE <script nonce=...> + strict CSP (script-src 'nonce-...'); no remote origin / asWebviewUri; dynamic history labels are set via textContent (scan: no innerHTML)",
+            "with providers.available empty, the selector renders disabled/optionless"
+          ],
+          "fixturesNeeded": [
+            "createChatPanelHost with a FakePanel + injected genNonce + a registry exposing available=['claude','codex'] (and a second with available=[])"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Drive the provider-selection + history + resume flows through createChatPanelHost with the FakePanel + fake adapter + in-memory store.",
+          "subjects": [
+            "open() posts a history-list (from store.list()) in addition to theme + session-restored",
+            "new-chat{provider:'codex'} creates a session whose provider is 'codex' (fixed), makes it active, and re-posts history-list including the new chat",
+            "new-chat with a provider NOT in available is a no-op (no session created, active session unchanged)",
+            "after a turn, session.title is set from the first user prompt and a fresh history-list is posted reflecting the new title/order",
+            "open-chat{chatId} for a prior chat posts session-restored with that chat's transcript; open-chat for a missing/corrupt id is a no-op + re-posts history-list (dead row dropped)",
+            "ac3 native resume: send turn 1 (adapter emits done{sessionId:'sess-1'}) then turn 2 -> the adapter's TurnRequest for turn 2 carries resume={provider, nativeSessionId:'sess-1'} and NO prior transcript turns are replayed to the adapter",
+            "selecting a history entry / new provider WHILE a turn streams cancels the in-flight turn first (single-in-flight preserved)"
+          ],
+          "fixturesNeeded": [
+            "fake StreamAdapter recording each TurnRequest (to assert req.resume) + emitting a scripted status->delta->done{sessionId} sequence",
+            "in-memory ChatSessionStore double; registry with available=['claude','codex']"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "contract: renderShell renders a provider-selector with options = providers.available (claude/codex only, k4)",
+            "integration: new-chat{provider:'codex'} creates a codex session with provider fixed at create; new-chat with a non-available provider is a no-op"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "integration: open() + post-turn post a history-list; open-chat{chatId} restores that chat's transcript via session-restored",
+            "unit: title-from-first-prompt makes ChatSummary rows distinguishable; corrupt/missing id -> no-op + dead row dropped"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "integration: turn 2 issues TurnRequest.resume={nativeSessionId} captured from turn 1's done.sessionId, and replays NO prior transcript to the adapter (lc1)"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "S003 shipped the chat panel + sc4 store behind flag insrc.chat.enabled; S004 added markers. Per s1 bundles: the webview renderShell has ONLY #insrc-term + #insrc-input — no provider-selector, no history-dropdown; it only sends submit-turn. open() posts theme + session-restored but NEVER a history-list. handleMessage already dispatches new-chat{provider}/open-chat{chatId} (each cancelActive()+ ++generation then session-restored) and runTurn already wires native resume (req.resume from nativeSessionId; capture done.sessionId). The sc4 store: create() hard-codes title 'new chat' and never updates it; the insrc.chat.index is unbounded (create/save only append, nothing evicts — the S003 L4 gap). sc3 already declares history-list/new-chat/open-chat; sc5 already has ProviderRegistry.available + capabilities.resume + TurnRequest.resume.",
+      "stateAfter": "The webview shell gains an sc1-styled provider-selector (options from providers.available) + a history-dropdown, both inside the existing one nonce'd script; the selector emits new-chat{provider}, the history-dropdown emits open-chat{chatId}, and a history-list handler (re)populates the dropdown keeping the active id selected. The host posts history-list on open() and re-posts it after each new-chat/open-chat and after each turn's done. runTurn sets session.title from the first user prompt (clipped; whitespace falls back to 'new chat'). The sc4 store impl gains an optional maxSessions cap: save() evicts the oldest non-active sessions (ids + session keys) beyond the cap. new-chat validates the provider against providers.available. Native resume is unchanged (verified by test). No sc1/sc3/sc4/sc5 contract shape change; no manifest change; still behind insrc.chat.enabled.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Extend the sc4 store impl (session-store.ts): add an optional maxSessions dep and evict the oldest non-active ids + their session keys in save() beyond the cap; keep create/get/list/append/save signatures byte-identical. Purely additive + interface-compatible; unset maxSessions = S003 behaviour.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Reshape renderShell (chat-panel.ts) to add the sc1-styled provider-selector (options from providers.available) + history-dropdown inside the SAME nonce'd script, wired to emit new-chat{provider}/open-chat{chatId} and to (re)populate history <option>s from a history-list message (labels via textContent). Keep exactly one script + strict CSP.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Reshape the host (chat-panel.ts): post history-list on open(); re-post after new-chat/open-chat and after a turn's done; set session.title from the first user prompt in runTurn; validate new-chat's provider against providers.available. Preserve the single-in-flight cancelActive()+ ++generation guard and the existing native-resume wiring.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Extend chat-panel.test.ts + session-store.test.ts: provider-selector/history-dropdown shell contract, history-list on open + after turns, open-chat restore + corrupt-id drop, title-from-first-prompt, maxSessions eviction (active-safe), and the two-turn native-resume assertion (req.resume carries the captured sessionId; no transcript replay). Run the full sweep.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No public/shared-contract API changes: sc1/sc3/sc4/sc5 shapes are untouched; the sc4 ChatSessionStore interface + create/get/list/append/save signatures are byte-identical (maxSessions is an optional impl dep on MementoStoreDeps, defaulting to the S003 unbounded behaviour). ChatSession.title stays `title: string` — only its populated value changes (was always 'new chat'), which no consumer parsed. Existing persisted sessions from S003/S004 load unchanged (older rows simply keep title 'new chat' until their next turn); no data rewrite. renderShell/open/handleMessage/runTurn are internal to the panel host (not exported public API); their reshapes are additive (new UI + extra history-list posts) and preserve all S003/S004 behaviour. No package.json/command/config change.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "In-panel sc1 chrome + host-driven history, with title-from-first-prompt and a bounded index",
+        "oneLineSummary": "Extend the S003 renderShell to add an sc1-styled provider-selector + history-dropdown inside the SAME one nonce'd script; the host posts history-list on open + after each done/new-chat/open, the dropdowns emit the already-handled new-chat{provider}/open-chat{chatId}; set session.title from the first user prompt and cap the sc4 index so the history list stays meaningful + bounded. Native resume is already wired in runTurn (verify+test).",
+        "approach": "renderShell webview bootstrap gains two sc1-styled controls (a provider <select> populated from the posted available providers, and a history <select> populated from history-list), both inside the existing single nonce'd inline script (no second script, CSP unchanged). Provider-select change -> postMessage new-chat{provider}; history-select change -> open-chat{chatId} (both already dispatched host-side). Host: on open() also post the available provider list + history-list; after a turn's done and after new-chat/open-chat, re-post history-list so the dropdown stays current. In service of ac2's own usefulness, set ChatSession.title from the first user prompt (trim/clip) on the first submit-turn via the existing save() path (a small sc4-IMPL touch, no interface/shape change), so the dropdown shows real titles not 'new chat'. Add a bounded cap to the memento store's index (evict oldest ids + their session keys beyond a constant N) so extension-local history (k3) does not grow unbounded (the S003 L4 follow-up) — also an sc4-impl-only change (no interface change). Native resume (ac3) is already implemented in runTurn (req.resume from s.nativeSessionId; capture ev.sessionId on done) — S005 asserts it with a two-turn test. NO new shared contract, NO HLD amendment.",
+        "pros": [
+          "Delivers a genuinely useful history dropdown: real per-chat titles + provider, bounded storage — fully satisfies ac1/ac2/ac3",
+          "Zero shared-contract/interface change and no manifest change — pure UI + host wiring + sc4-impl touches, no HLD amendment, no manifest-test tripwire",
+          "Fixes the S003 L4 unbounded-index follow-up where its natural consumer (the history list) lives",
+          "Stays in ONE nonce'd script under the existing strict CSP; reuses the FakePanel/in-memory-store test harness"
+        ],
+        "cons": [
+          "Touches the sc4 store IMPLEMENTATION (title-set + index cap) which is S003-owned code — interface-compatible, but it is editing another story's module (justified: in service of S005's own history ACs, no contract reshape)",
+          "title-from-first-prompt is a small product decision (clip length, empty-prompt fallback) that needs pinning"
+        ],
+        "costEstimate": "L"
+      },
+      {
+        "id": "a2",
+        "name": "Pure UI + wiring, store impl untouched (defer title + cap)",
+        "oneLineSummary": "Same in-panel provider-selector + history-dropdown + host history-list posting, but do NOT touch the sc4 store impl: the dropdown labels each chat by provider + updatedAt (from ChatSummary as-is), and the unbounded-index + 'new chat' title stay as-is, deferred to follow-ups.",
+        "approach": "Identical webview + host wiring as a1 (selector + dropdown in the one nonce'd script; post available providers + history-list; dropdowns emit new-chat/open-chat; verify native resume). The ONLY difference: leave session-store.ts (sc4, S003-owned) completely untouched. The history dropdown renders each row from the existing ChatSummary {provider, title:'new chat', updatedAt} — so rows are labelled e.g. 'claude · <time>' since title is always 'new chat'. No title-from-prompt, no index cap. File both (real titles, prune/cap) as separate follow-ups.",
+        "pros": [
+          "Strictly minimal + maximally in-scope: touches only the S005-owned UI/host wiring, never another story's module",
+          "Smallest diff + lowest regression risk on the shipped S003/S004 store",
+          "Still satisfies ac1/ac2/ac3 literally (a chat IS restorable and selectable; provider is fixed; resume works)"
+        ],
+        "cons": [
+          "The history dropdown is barely usable: every row reads 'new chat' (or provider+time) with no way to tell chats apart — a weak realization of ac2's intent",
+          "Leaves the S003 L4 unbounded-index growth unaddressed (k3 local storage grows forever)",
+          "Ships a UI whose obvious first follow-up (real titles) is visible immediately — poor first impression"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Maximally in-scope + lowest risk, and literally satisfies all three ACs, but scores PARTIAL on ac2 because the dropdown rows are indistinguishable ('new chat') and it leaves the S003 L4 unbounded-index growth. A good fallback if touching the S003-owned store is deemed out of bounds; loses to a1 on ac2 fidelity."
+      },
+      {
+        "id": "a3",
+        "name": "Separate createChatControls host module composed with the panel",
+        "oneLineSummary": "Introduce a new vscode-free createChatControls(deps) host module that owns provider/history selection + history-list posting + title/cap logic, composed alongside createChatPanelHost, rather than extending the panel host in place.",
+        "approach": "A new module chat-controls.ts exports createChatControls(deps) that, given the store + provider registry + a post seam, computes the provider list + history-list and handles new-chat/open-chat selection, delegating the actual session switch back to the panel. The panel host wires it in. The webview still renders the sc1 selector/dropdown but its intents route through the controls module. title-from-prompt + index cap live in the controls/store layer.",
+        "pros": [
+          "Separates provider/history concerns from the panel turn-loop into a testable unit",
+          "A clean home for future selection features (S006/S007 could reuse)"
+        ],
+        "cons": [
+          "Duplicates dispatch: the panel host ALREADY owns new-chat/open-chat + session switching (cancelActive + generation) — a separate controls module either re-implements that or calls back into the panel, adding a seam with no contract benefit",
+          "More surface + wiring for the same behaviour; the epic idiom is one deps-injected host per panel, not a controls sub-host",
+          "Higher risk of drift/interleave bugs at the controls↔panel boundary (the exact class of bug S003's single-in-flight fix addressed)"
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Adds a controls sub-host that duplicates the panel's already-owned new-chat/open-chat + single-in-flight session switching — more surface, a new controls<->panel seam (the interleave-bug class S003's generation guard addressed), and no contract benefit. Over-engineered vs a1 for the same ACs."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "S004 MED-1 follow-up (persist a marker cssClass on TranscriptEntry so restore reproduces per-kind glyph/tone) is OUT of S005 scope — file as its own small tracked story that amends sc4."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1: session-store.ts (sc4) create/get/list/save + insrc.chat.index; title hard-coded 'new chat' + unbounded index",
+      "quotedText": "create() hard-codes title:'new chat' and never updates it; the index is unbounded (nothing evicts)"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1: chat-panel.ts new-chat/open-chat/open/runTurn + renderShell shell; single-in-flight + native resume already wired",
+      "quotedText": "handleMessage dispatches new-chat/open-chat (cancelActive+ ++generation); runTurn wires req.resume from nativeSessionId + captures done.sessionId; renderShell has no selector/dropdown and open() posts no history-list"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1: protocol.ts (sc3) + cli-adapter.ts (sc5) already declare history-list/new-chat/open-chat + available/resume",
+      "quotedText": "sc3 has history-list + new-chat{provider} + open-chat{chatId}; sc5 has ProviderRegistry.available + capabilities.resume + TurnRequest.resume"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "HLD edb76e2e4d41217d: S005 boundary owns:[] depends:[sc1,sc3,sc4,sc5]; sc1 provider-dropdown/history-dropdown SurfaceKind",
+      "quotedText": "provider-selector + history-dropdown + native-resume wiring are private to S005; adds no new shared contract"
+    }
+  ]
+}

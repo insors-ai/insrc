@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>getting started — insrc</title>
-<meta name="description" content="Install, build and run the insrc daemon: prerequisites, indexing your first repo, asking a grounded question, and registering the MCP servers with claude / codex.">
+<meta name="description" content="Get started with insrc on any surface: the CLI + daemon, the VS Code extension, or the JetBrains plugin. An overview of the three, shared prerequisites, and a step-by-step quick start for each.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13' font-family='monospace' fill='%234ade80'>▌</text></svg>">
 <link rel="stylesheet" href="css/tui.css">
 </head>
@@ -33,13 +33,24 @@
 <div class="wrap"><main id="main">
 
   <h1>Getting started</h1>
-  <p class="lead">Five steps: install the toolchain, build the daemon, launch the TUI, index a repo, and ask your first grounded question. Everything runs locally.</p>
+  <p class="lead">There are three ways to use insrc — the <strong>CLI &amp; daemon</strong>, the <strong>VS Code</strong> extension, or the <strong>JetBrains</strong> plugin. All three drive the same local daemon; the only difference is how you install/manage it and where you invoke insrc's tools. Pick your surface below.</p>
 
-  <h2 id="prerequisites">1 · Prerequisites</h2>
+  <h2 id="overview">Overview — pick your surface</h2>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Surface</th><th>What it is</th><th>Best for</th><th>Start</th></tr></thead>
+    <tbody>
+      <tr><td><strong>CLI &amp; daemon</strong></td><td>The full-screen <code>insrc</code> TUI plus the daemon it manages — the canonical, editor-independent surface. You register MCP with <code>claude</code> / <code>codex</code> yourself.</td><td>Terminal-first workflows, headless / server setups, working on insrc itself.</td><td><a href="#cli">CLI quick start ↓</a></td></tr>
+      <tr><td><strong>VS Code</strong></td><td>An extension that installs + manages the daemon, wires your AI host's MCP config, and registers your workspace — all from the editor.</td><td>VS Code (or a fork like Cursor) users who want one-click onboarding.</td><td><a href="#vscode">VS Code quick start ↓</a></td></tr>
+      <tr><td><strong>JetBrains</strong></td><td>One plugin for IntelliJ IDEA, PyCharm, GoLand &amp; WebStorm that does the same orchestration and wires AI Assistant / Junie.</td><td>JetBrains IDE users with a JetBrains AI host.</td><td><a href="#jetbrains">JetBrains quick start ↓</a></td></tr>
+    </tbody>
+  </table></div>
+  <div class="tip"><strong>The plugins install the daemon for you.</strong> If you use the VS Code extension or JetBrains plugin, you can skip the manual daemon install — the plugin provisions and keeps it current on first use. You still need the shared prerequisites below (Ollama for local embeddings, a <code>claude</code>/<code>codex</code> host, git).</div>
+
+  <h2 id="prerequisites">Prerequisites <span class="c">(all surfaces)</span></h2>
   <div class="tablewrap"><table>
     <thead><tr><th>Requirement</th><th>Why</th><th>Check</th></tr></thead>
     <tbody>
-      <tr><td><strong>Node.js 20+</strong></td><td>runtime. Native modules build against Node 22.22.1 headers; the daemon spawns under Node 22 at install.</td><td><code>node -v</code></td></tr>
+      <tr><td><strong>Node.js 20+</strong></td><td>runtime. Native modules build against Node 22.22.1 headers; the daemon spawns under Node 22 at install. <em>(The IDE plugins can provision a private Node when the system one is unsuitable.)</em></td><td><code>node -v</code></td></tr>
       <tr><td><strong>Ollama</strong></td><td>local LLM + embeddings — embeddings are local-only, so this is always required.</td><td><code>ollama --version</code></td></tr>
       <tr><td><strong>claude</strong> and/or <strong>codex</strong> CLI</td><td>cloud LLM access is delegated to these CLIs' OAuth sessions — insrc never makes direct REST calls.</td><td><code>claude --version</code></td></tr>
       <tr><td><strong>git</strong></td><td>repo discovery, the git tools, and the workflow tracker.</td><td><code>git --version</code></td></tr>
@@ -55,13 +66,12 @@
     <p style="margin:10px 0 0">Embeddings are always local. The analyzer model is only needed when your core model tier runs on Ollama (<code>models.tiers.core.runner: ollama</code>) — skip <code>qwen3.6:27b</code> if you drive analyze / workflow reasoning through the <code>claude</code> / <code>codex</code> CLI instead.</p>
   </div>
 
-  <h2 id="install">2 · Install</h2>
+  <!-- ==================== CLI ==================== -->
+  <h2 id="cli">A · CLI &amp; daemon</h2>
+  <p>The editor-independent path: install the daemon, launch the TUI, index a repo, ask a grounded question, then register the MCP server with your CLI host.</p>
 
-  <h3>A · Release installer <span class="c">(recommended)</span></h3>
-  <p>Run the one-line installer — it downloads <code>insrc-daemon-install.sh</code> from the
-  latest release, verifies prerequisites, clones + builds the daemon into
-  <code>~/.insrc/daemon</code>, and starts it. Update later by re-running it or with
-  <code>~/.insrc/daemon/scripts/daemon-ctl.sh update</code>.</p>
+  <h3 id="cli-install">1 · Install the daemon</h3>
+  <p><strong>Release installer (recommended).</strong> The one-line installer verifies prerequisites, clones + builds the daemon into <code>~/.insrc/daemon</code>, and starts it. Update later by re-running it or with <code>~/.insrc/daemon/scripts/daemon-ctl.sh update</code>.</p>
   <div class="code">
     <div class="code-head"><span class="name">bash</span><button class="copy" type="button">copy</button></div>
 <pre><code><span class="p">$</span> curl -fsSL https://github.com/insors-ai/insrc/releases/latest/download/insrc-daemon-install.sh | bash
@@ -69,9 +79,7 @@
 <span class="p">$</span> curl -fsSL https://github.com/insors-ai/insrc/releases/latest/download/insrc-daemon-install.sh | bash -s -- --no-start --embedder ollama
 <span class="c"># options: --target &lt;path&gt;  --branch main  --no-start  --repo &lt;fork-url&gt;  --embedder auto|ollama|onnx</span></code></pre>
   </div>
-
-  <h3>B · From source <span class="c">(development)</span></h3>
-  <p>For working on the daemon itself:</p>
+  <p><strong>From source (development)</strong> — for working on the daemon itself:</p>
   <div class="code">
     <div class="code-head"><span class="name">bash</span><button class="copy" type="button">copy</button></div>
 <pre><code><span class="p">$</span> git clone https://github.com/insors-ai/insrc.git
@@ -84,8 +92,7 @@
     <li><code>out/daemon/index.js</code> — the daemon binary the IDE spawns.</li>
     <li><code>out/bin/insrc-mcp.js</code> — the MCP binary you register with <code>claude</code> / <code>codex</code>.</li>
   </ul>
-
-  <div class="note">Sanity-check the build with the fast test subsets:
+  <div class="note">Sanity-check a from-source build with the fast test subsets:
     <div class="code" style="margin-top:10px">
       <div class="code-head"><span class="name">bash</span><button class="copy" type="button">copy</button></div>
 <pre><code><span class="p">$</span> npx tsx --test <span class="s">'src/workflow/**/*.test.ts'</span> <span class="s">'src/mcp/**/*.test.ts'</span>   <span class="c"># ~5s</span>
@@ -94,7 +101,7 @@
     Live-service suites gate behind <code>INSRC_LIVE_TESTS=1</code> and skip cleanly when unset.
   </div>
 
-  <h2 id="run">3 · Launch the TUI</h2>
+  <h3 id="cli-run">2 · Launch the TUI</h3>
   <p>The <code>insrc</code> command is a full-screen ink (React) TUI. It starts (or attaches to) the daemon and gives you Daemon / Repos / Workflows / Setup panes.</p>
   <div class="code">
     <div class="code-head"><span class="name">bash</span><button class="copy" type="button">copy</button></div>
@@ -111,7 +118,7 @@
     </div>
   </div>
 
-  <h2 id="index">4 · Add &amp; index a repo</h2>
+  <h3 id="cli-index">3 · Add &amp; index a repo</h3>
   <p>Registry membership is established exclusively through the <code>repo.add</code> IPC — from the TUI, open the <strong>Repos</strong> pane and press <kbd>a</kbd>. The daemon parses the tree with tree-sitter, builds the graph, and generates embeddings.</p>
   <p>During <kbd>a</kbd>, insrc asks — per file — whether to install the <strong>steering block</strong> into the repo's <code>CLAUDE.md</code> (Claude Code) and/or <code>AGENTS.md</code> (Codex). Say yes and the daemon writes a safe, idempotent <code>insrc:steering</code> marked section (created if absent, replaced in place on re-add, never clobbering your surrounding content) so a controller reaches for <code>insrc_analyze_step</code> on code questions, <code>insrc_triage</code> first on build requests, and <code>insrc_review_step</code> before approving. No manual copy-paste needed.</p>
   <div class="tip"><strong>Approving a client's steering block also registers its MCP.</strong> When you say yes for Claude Code, the daemon runs <code>claude mcp add insrc --scope user</code> for you; yes for Codex runs <code>codex mcp add insrc</code> — both idempotent (an existing registration is left as-is). So on a fresh machine, a single <code>repo add</code> with the steering prompt wires up <em>both</em> the steering block and the MCP, and the per-client result (<code>registered</code> / <code>unchanged</code> / <code>failed</code>) is reported inline. Registration is <code>--scope user</code> / global and never fails the add. You can still register manually (below) — e.g. for a client you didn't approve steering for.</div>
@@ -120,7 +127,7 @@
   <p>Wait for the status to reach <code>ready</code> (embeddings pending shows as a count). Graph searches span the transitive <code>DEPENDS_ON</code> closure of the active repo, so add dependency repos too if you want cross-repo answers.</p>
   <p>On add, insrc writes a per-repo <code>.insrc/config.json</code> with an <code>ignore</code> section — seeded from the repo's <code>.gitignore</code> when present, otherwise from its type (node / python / java / go). Edit it to control which directories the indexer and file-watcher skip (e.g. <code>node_modules</code>, <code>dist</code>, <code>target</code>, <code>__pycache__</code>). It's created idempotently and never overwritten once you've customised it.</p>
 
-  <h2 id="ask">5 · Ask your first question</h2>
+  <h3 id="cli-ask">4 · Ask your first question</h3>
   <p>For any question about a codebase's structure, conventions or capabilities, use the analyze tools — every claim is grounded in a real graph exploration, with file paths drawn from the index (no hallucinated paths).</p>
   <div class="code">
     <div class="code-head"><span class="name">bash</span><button class="copy" type="button">copy</button></div>
@@ -128,12 +135,12 @@
   </div>
   <p>Prefer <code>insrc_analyze_step</code> (multi-turn, stays in your session) over the one-shot <code>insrc_analyze</code> when driving from an MCP client — it's more accurate and doesn't spawn a separate billing path. See <a href="analyze.html">the analyze guide</a>.</p>
 
-  <h2 id="mcp">Register the MCP servers <span class="c">(manual / explicit)</span></h2>
-  <p>Approving a steering block during <a href="#index"><code>repo add</code></a> already registers the matching client (above). This section is the manual path — for a client you skipped, a from-source install, or to re-register by hand. It wires the MCP binary <code>insrc-mcp.js</code> into each client, exposing the full tool suite — <code>insrc_analyze_step</code>, <code>insrc_triage</code>, <code>insrc_workflow_step</code> / <code>insrc_workflow_run</code>, <code>insrc_review_step</code> and <code>insrc_build_step</code>. The installer puts the binary at <code>~/.insrc/daemon/out/bin/insrc-mcp.js</code>; a from-source build has it at <code>out/bin/insrc-mcp.js</code> in the repo.</p>
+  <h3 id="cli-mcp">5 · Register the MCP servers <span class="c">(manual / explicit)</span></h3>
+  <p>Approving a steering block during <a href="#cli-index"><code>repo add</code></a> already registers the matching client (above). This is the manual path — for a client you skipped, a from-source install, or to re-register by hand. It wires the MCP binary <code>insrc-mcp.js</code> into each client, exposing the full tool suite — <code>insrc_analyze_step</code>, <code>insrc_triage</code>, <code>insrc_workflow_step</code>, <code>insrc_review_step</code> and <code>insrc_build_step</code>. The installer puts the binary at <code>~/.insrc/daemon/out/bin/insrc-mcp.js</code>; a from-source build has it at <code>out/bin/insrc-mcp.js</code> in the repo.</p>
 
   <div class="tip"><strong>Register once, at user / global scope.</strong> Repo resolution is session-aware, so a single global registration serves every repo and every concurrent session — no per-repo config, no <code>INSRC_REPO</code> pin. A <em>project-scoped</em> registration (Claude's <code>.mcp.json</code>) exposes insrc <em>only</em> inside that one repo, so a session in any other repo won't see the tools at all — the usual cause of "insrc isn't being used here."</div>
 
-  <h3 id="mcp-claude">Claude Code</h3>
+  <h4 id="mcp-claude">Claude Code</h4>
   <p>Register at <strong>user scope</strong> so insrc is available in every repo:</p>
   <div class="code">
     <div class="code-head"><span class="name">bash</span><button class="copy" type="button">copy</button></div>
@@ -153,7 +160,7 @@
 }</code></pre>
   </div>
 
-  <h3 id="mcp-codex">Codex</h3>
+  <h4 id="mcp-codex">Codex</h4>
   <p>Codex servers in <code>~/.codex/config.toml</code> are global by nature — add the <code>insrc</code> server there (absolute path; no <code>~</code>):</p>
   <div class="code">
     <div class="code-head"><span class="name">~/.codex/config.toml</span><button class="copy" type="button">copy</button></div>
@@ -163,8 +170,45 @@
   </div>
   <p>Restart the client (or reconnect its MCP) after editing a config file — both read it at startup.</p>
 
-  <h3 id="mcp-resolution">How the repo is resolved</h3>
-  <p>Resolution is <strong>session-aware</strong> for both clients, in order: an explicit <code>repo</code> argument wins; otherwise the server matches its working directory against the registered repos (the session workspace — both clients spawn the server with the workspace as its CWD); otherwise it falls back to an optional <code>INSRC_REPO</code> env for headless / cron use where there's no meaningful working directory. That's why one global registration with <strong>no <code>INSRC_REPO</code></strong> works everywhere. Either way the repo must be registered with the daemon and finished indexing.</p>
+  <h4 id="mcp-resolution">How the repo is resolved</h4>
+  <p>Resolution is <strong>session-aware</strong> for both clients, in order: an explicit <code>repo</code> argument wins; otherwise the server matches its working directory against the registered repos (the session workspace — both clients spawn the server with the workspace as its CWD); otherwise it falls back to an optional <code>INSRC_REPO</code> env for headless / cron use. That's why one global registration with <strong>no <code>INSRC_REPO</code></strong> works everywhere. Either way the repo must be registered with the daemon and finished indexing.</p>
+
+  <!-- ==================== VS Code ==================== -->
+  <h2 id="vscode">B · VS Code extension</h2>
+  <p>The extension installs and manages the daemon for you, so there's no manual daemon step — just install, accept the onboarding prompts, and use your assistant. Full detail on the <a href="vscode.html">VS Code page</a>.</p>
+
+  <h3 id="vscode-install">1 · Install the extension</h3>
+  <p>Open the <strong>Extensions</strong> view (<kbd>⇧⌘X</kbd> / <kbd>Ctrl+Shift+X</kbd>), search <strong>insrc</strong>, and click <strong>Install</strong> — or install <a href="https://marketplace.visualstudio.com/items?itemName=insors.insrc-vscode"><code>insors.insrc-vscode</code></a> from the Marketplace. (Pre-release: <strong>⋯ → Install from VSIX…</strong> with a built <code>insrc-vscode-&lt;version&gt;.vsix</code>.)</p>
+
+  <h3 id="vscode-onboard">2 · Accept the first-run onboarding</h3>
+  <p>On first activation the extension runs one coalesced flow, prompting for each step independently and only when needed — nothing happens without your explicit consent:</p>
+  <ol>
+    <li><strong>Install the insrc daemon</strong> into <code>~/.insrc/</code> (or keep an existing one current).</li>
+    <li><strong>Register this workspace</strong> with the daemon (<code>repo.add</code>) so it gets indexed.</li>
+    <li><strong>Wire your AI host</strong> (Claude Code, Cursor, …) so insrc's MCP tools are available to your assistant.</li>
+  </ol>
+  <div class="note">Skipped a prompt? Every action is also a durable Command-Palette command: <code>insrc: Install daemon</code> / <code>Start</code> / <code>Stop</code> / <code>Restart</code> / <code>Update daemon</code>, <code>insrc: Wire AI hosts</code>, <code>insrc: Register workspace</code>.</div>
+
+  <h3 id="vscode-use">3 · Use it</h3>
+  <p>Your assistant now explores the code through insrc's grounded tools. Edit the daemon's config from <strong>native VS Code Settings</strong> (search <code>insrc</code>), pick a tier's model with <code>insrc: Set model tier</code>, and open the status-bar <strong>insrc</strong> item for Detailed Status / Repo Configuration panels. See the <a href="vscode.html">VS Code page</a> and the <a href="settings.html">settings guide</a>.</p>
+
+  <!-- ==================== JetBrains ==================== -->
+  <h2 id="jetbrains">C · JetBrains plugin</h2>
+  <p>One plugin for IntelliJ IDEA, PyCharm, GoLand &amp; WebStorm (2024.2+). It manages the daemon and wires a JetBrains AI host; setup happens on project open. Full detail on the <a href="plugin.html">JetBrains page</a>.</p>
+
+  <h3 id="jetbrains-install">1 · Install the plugin</h3>
+  <p><strong>Settings → Plugins → Marketplace</strong>, search <strong>insrc</strong>, and click <strong>Install</strong>. (Pre-release: <strong>Settings → Plugins → ⚙ → Install Plugin from Disk…</strong> with a built <code>insrc-jetbrains-&lt;version&gt;.zip</code>.) You also need a JetBrains AI host — <strong>AI Assistant</strong> or <strong>Junie</strong>; without one the plugin stays dormant and re-checks on later project opens.</p>
+
+  <h3 id="jetbrains-setup">2 · First-run setup (on project open)</h3>
+  <p>Installing the plugin doesn't touch the daemon by itself — on the first project open with the plugin active it:</p>
+  <ol>
+    <li><strong>Probes for the daemon</strong> and, if absent, <strong>offers a one-click setup</strong> you accept explicitly (it clones + builds the daemon into <code>~/.insrc/daemon</code>; an existing daemon is silently kept current).</li>
+    <li><strong>Offers "Enable insrc for this project"</strong> — a one-click <code>repo.add</code> that registers the open project.</li>
+    <li><strong>Wires your AI host</strong> — writes the insrc MCP registration + the tracked-workflow steering into the detected host's config and rules files.</li>
+  </ol>
+
+  <h3 id="jetbrains-use">3 · Use it</h3>
+  <p>Your assistant is now grounded per-project. Drive and inspect insrc from <strong>Settings → Tools → insrc</strong> (a live config editor with Daemon / Workflows / Debug pages), the <strong>project-view context menu</strong> (repo status + register), and the <strong>artifact-review tool window</strong> (read, comment on and approve pending workflow artifacts). See the <a href="plugin.html">JetBrains page</a> and the <a href="settings.html">settings guide</a>.</p>
 
   <h2 id="next">Where next</h2>
   <div class="grid">

@@ -1,0 +1,75 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1790324585837-sf18td",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-25T08:23:05.837Z",
+    "model": "client",
+    "elapsedMs": 1,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "5f34b37c850e4ffb",
+    "storyId": "S001"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "5f34b37c850e4ffb",
+    "storyId": "S001",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        ".insrc/artifacts/CR-ba132c185fe45860-s1.json",
+        "src/daemon/index.ts",
+        "src/daemon/steering-inject.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "src/daemon/steering-inject.ts:334",
+            "message": "Adheres to the epic constraints and repo rules: runBootSteeringRefresh runs IN-PROCESS in the daemon so the LMDB registry read (listRegisteredRepos) stays daemon-owned (architectural rule 1); it is never-fatal (try/catch -> log.warn -> undefined) mirroring the boot config-reconcile and runUpdateSteeringRefresh; readSteeringBlock stays whole (guide.get unaffected). No cloud/REST, no mutation of refreshSteeringAcrossRepos. .js import extension + getLogger (no console.log) observed.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/daemon/index.ts:16",
+            "message": "Import extended in place with runBootSteeringRefresh (value import, .js extension); the boot call at step 5b uses `void ...then()` fire-and-forget with a clear comment, consistent with the existing best-effort boot-reconcile idiom. The test uses the established seam-injection + source-scan patterns from guide-strip.test.ts / the maintenance SOURCE-contract test. No convention breach.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/daemon/index.ts:283",
+            "message": "Placement is correct and better than the LLD's literal wording: the hook runs at step 5b (after initDb at step 3 + indexer.start, so the DB registry listRepos actually resolves) rather than immediately after the reconcile block (which precedes initDb and would have made the registry read always fail -> silent no-op). Fire-and-forget is safe because runBootSteeringRefresh never throws/rejects (it swallows to undefined), so the `void ...then()` has no unhandled-rejection path. Re-stamp churn is bounded by refreshMarkedSection idempotency (unchanged -> no write). NOTE (non-blocking): the write to a repo's CLAUDE.md/AGENTS.md during boot could be re-observed by the file-watcher, but only when content actually changed (post-update), which is the intended one-shot self-heal, not a loop.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 3
+    }
+  }
+}

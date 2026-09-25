@@ -330,3 +330,31 @@ export async function refreshSteeringAcrossRepos(
 	}
 	return outcomes;
 }
+
+// ---------------------------------------------------------------------------
+// runBootSteeringRefresh — the daemon-boot entry point
+// ---------------------------------------------------------------------------
+
+/** Best-effort daemon-BOOT wrapper over `refreshSteeringAcrossRepos`. Every
+ *  update entrypoint (the `daemon-ctl.sh` update/restart shell path and the
+ *  `daemon.update` IPC) ends in a fresh daemon boot, so running the refresh here
+ *  re-stamps the steering skeleton across every registered repo on any update —
+ *  the single hook that covers all paths, running IN-PROCESS so it owns the LMDB
+ *  registry (architectural rule 1). It mirrors the boot config-reconcile: NEVER
+ *  fatal — a `readBlock`/`listRepos` throw (which `refreshSteeringAcrossRepos`
+ *  would propagate) is caught, logged, and swallowed to `undefined` so a
+ *  steering-refresh fault can never abort daemon boot; per-file faults are
+ *  already isolated inside `refreshSteeringAcrossRepos`. Idempotent (the refresh
+ *  is a no-op when nothing changed), so it is safe to run on every boot.
+ *  `deps` is a test seam; production passes nothing. */
+export async function runBootSteeringRefresh(
+	deps: Partial<SteeringRefreshDeps> = {},
+): Promise<SteeringRefreshReport | undefined> {
+	try {
+		return await refreshSteeringAcrossRepos(deps);
+	} catch (err) {
+		const msg = err instanceof Error ? err.message : String(err);
+		log.warn({ err: msg }, 'boot steering refresh skipped -- non-fatal, retry on next boot');
+		return undefined;
+	}
+}

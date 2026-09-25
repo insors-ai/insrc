@@ -13,7 +13,7 @@
  */
 
 import { mkdirSync, readFileSync, writeFileSync, existsSync, appendFileSync, rmSync } from 'node:fs';
-import { injectSteeringBlock, readSteeringBlock, type SteeringSelection } from './steering-inject.js';
+import { injectSteeringBlock, readSteeringBlock, runBootSteeringRefresh, type SteeringSelection } from './steering-inject.js';
 import { guideGetResult, guideListResult } from './guide-sections.js';
 import { registerMcpClients, daemonInstallRoot } from './mcp-register.js';
 import { PATHS } from '../shared/paths.js';
@@ -276,6 +276,25 @@ async function main(): Promise<void> {
 	const indexer = new IndexerService(db, queue, watcher, configStore);
 
 	await indexer.start(repos);
+
+	// 5b. Boot-time steering refresh — re-stamp the insrc:steering skeleton into
+	// every registered repo that already carries the markers. This is the single
+	// hook that keeps repos current on a LIVE UPDATE: `daemon-ctl.sh` update/restart
+	// and the `daemon.update` IPC all terminate in a fresh daemon boot, but only
+	// the CLI-TUI update path used to run the refresh — so an updated daemon left
+	// registered repos' CLAUDE.md/AGENTS.md stale. Running it here (after the DB
+	// registry is loaded) mirrors the boot config-reconcile above: in-process so it
+	// owns the LMDB registry, best-effort + idempotent, and NON-BLOCKING so a slow
+	// or failing refresh never delays boot-ready. runBootSteeringRefresh never
+	// throws (swallows to undefined), so the fire-and-forget is safe.
+	void runBootSteeringRefresh().then(report => {
+		if (report === undefined) return;   // best-effort skip already logged
+		const refreshed = report.filter(o => o.action === 'replaced').length;
+		const skipped = report.filter(o => o.action === 'skipped').length;
+		if (refreshed > 0 || skipped > 0) {
+			log.info({ refreshed, skipped, files: report.length }, 'boot steering refresh complete');
+		}
+	}).catch(() => { /* wrapper never rejects; belt-and-suspenders so boot can't see an unhandled rejection */ });
 
 	// Run queue in background (never awaited until shutdown)
 	const queueDone = queue.start(job => indexer.processJob(job));

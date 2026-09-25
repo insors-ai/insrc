@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>philosophy — insrc</title>
+<meta name="description" content="The philosophy behind insrc: grounded understanding over guessing, structured development for large and long-lived codebases, an auditable trail from ask to design to code, and documentation that is generated from the live code graph so it cannot drift.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13' font-family='monospace' fill='%234ade80'>▌</text></svg>">
+<link rel="stylesheet" href="css/tui.css">
+</head>
+<body>
+<a class="skip" href="#main">skip to content</a>
+
+<nav class="nav"><div class="nav-inner">
+  <span class="brand">insrc<span class="sig">.daemon</span></span>
+  <div class="nav-links">
+    <a href="index.html">home</a>
+    <a href="philosophy.html">philosophy</a>
+    <a href="getting-started.html">getting started</a>
+    <a href="workflow.html">workflow</a>
+    <a href="cli.html">cli</a>
+    <a href="plugin.html">jetbrains</a>
+    <a href="vscode.html">vscode</a>
+    <a href="settings.html">settings</a>
+    <a href="architecture.html">architecture</a>
+    <a href="analyze.html">analyze</a>
+    <a href="tracker.html">tracker</a>
+    <a href="tools.html">tools</a>
+  </div>
+  <button class="theme-btn" type="button" aria-label="toggle theme">◐ light</button>
+</div></nav>
+
+<div class="wrap"><main id="main">
+
+  <h1>Philosophy</h1>
+  <p class="lead">insrc exists to make AI-assisted engineering on <strong>large, long-lived codebases</strong> grounded, structured and traceable — the opposite of ad-hoc <em>grep&nbsp;→&nbsp;guess&nbsp;→&nbsp;patch</em>. An assistant is only as good as its model of your code and the discipline around the changes it makes. insrc supplies both: a citation-grounded index of the codebase, and a tracked workflow that leaves an auditable trail from the first ask to the merged change.</p>
+
+  <div class="flow">
+    <span class="stage">ask</span><span class="arr">→</span>
+    <span class="stage">grounded understanding</span><span class="arr">→</span>
+    <span class="stage">tracked change</span><span class="arr">→</span>
+    <span class="stage new">auditable record</span>
+  </div>
+
+  <h2 id="problem">The failure mode we designed against</h2>
+  <p>On a small project an assistant can hold the whole thing in context and mostly get away with improvising. On a large or old codebase that breaks down, and the failures compound:</p>
+  <ul>
+    <li><strong>Hallucinated structure.</strong> Paths, symbols and call relationships get invented because they were never looked up.</li>
+    <li><strong>Ungrounded assumptions.</strong> A change is made against how the code is <em>imagined</em> to work, not how it actually does.</li>
+    <li><strong>Untracked, undocumented edits.</strong> One-off patches land with no statement of intent, no design, and no record of the alternatives that were rejected.</li>
+    <li><strong>Lost rationale.</strong> Six months later nobody — human or model — can reconstruct <em>why</em> the code is shaped the way it is.</li>
+  </ul>
+  <p>Speed without structure produces drift. insrc trades a little ceremony for correctness and a durable trail — because on a system that has to live for years, that is the cheaper trade.</p>
+
+  <h2 id="grounding">Grounding over guessing</h2>
+  <p>Understanding comes first. insrc parses your repositories into a typed <a href="architecture.html">entity/relation graph</a> plus a vector index, and every answer is built from that store rather than from a blind file read:</p>
+  <ul>
+    <li><strong>Every claim is cited.</strong> The <a href="analyze.html">analyze framework</a> returns a verified, 7-layer context bundle where each statement is anchored to a real exploration output — a module profile, a symbol locate, a class hierarchy, a doc constraint. File paths come from the index, so they cannot be hallucinated.</li>
+    <li><strong>Structure is queried, not skimmed.</strong> Callers, callees, transitive closures and unreachable code are answered from the graph; semantic questions go through vector search. No raw file dumps — context is always structured entity summaries and relations.</li>
+    <li><strong>Scope is bounded.</strong> Searches span only the transitive dependency closure of the active repo, so a query stays anchored to what actually matters to it.</li>
+  </ul>
+  <div class="tip"><strong>Better understanding is the multiplier.</strong> Once the assistant reasons over a real index instead of guesses, everything downstream — the design, the plan, the code, the review — inherits that accuracy. A wrong premise is the most expensive bug; grounding kills it at the source.</div>
+
+  <h2 id="structure">Structure scales; improvisation doesn't</h2>
+  <p>The core guarantee is simple: <strong>every change, big or small, is tracked.</strong> A natural-language ask is sized and routed by <a href="workflow.html">triage</a>, then flows through an authoring pipeline that maps 1:1 to the software-engineering ladder every team already knows — <strong>Epic → Story → Task</strong>:</p>
+  <div class="flow">
+    <span class="stage new">brainstorm</span><span class="arr">→</span>
+    <span class="stage">define</span><span class="arr">→</span>
+    <span class="stage">design.epic</span><span class="arr">→</span>
+    <span class="stage">design.story</span><span class="arr">→</span>
+    <span class="stage">plan</span><span class="arr">→</span>
+    <span class="stage">build</span><span class="arr">→</span>
+    <span class="stage new">code-review</span>
+  </div>
+  <ul>
+    <li><strong>Right-sized, never skipped.</strong> Triage routes an epic through the full chain, a feature through a standalone design → plan → build, a trivial change straight to build — but nothing bypasses the ledger. Even a one-liner becomes a record.</li>
+    <li><strong>Human-gated between every stage.</strong> Each stage produces exactly one artifact and hard-refuses to start until the upstream artifact is <em>approved</em>. The model never decides to jump ahead on its own.</li>
+    <li><strong>Decisions are made once, upstream.</strong> Open questions are resolved at the design stages and carried forward, so the plan and the build inherit settled decisions instead of re-litigating them.</li>
+  </ul>
+  <p>The payoff is that a large effort decomposes into reviewable slices with explicit boundaries — the same reason teams break work into epics and stories in the first place, now enforced for the assistant too.</p>
+
+  <h2 id="traceability">Traceability &amp; compliance</h2>
+  <p>Because each stage writes a persistent, cited artifact, the chain <em>is</em> the audit trail. From any merged change you can walk backward to the plan that produced it, the design that shaped it, the definition that framed it, and the review that gated it — each one a file that outlives the session:</p>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Artifact</th><th>Answers</th></tr></thead>
+    <tbody>
+      <tr><td><strong>DEF</strong> — definition</td><td>What problem, which non-goals, what constraints, which stories.</td></tr>
+      <tr><td><strong>HLD / LLD</strong> — design</td><td>The chosen shape, the alternatives considered and rejected, the contracts, the error paths, the rollout.</td></tr>
+      <tr><td><strong>PLAN</strong> — ordered tasks</td><td>The sequenced, sized, dependency-labelled units of work.</td></tr>
+      <tr><td><strong>BUILD / CR</strong> — change + review</td><td>The commits and the independent code review that gated completion.</td></tr>
+    </tbody>
+  </table></div>
+  <ul>
+    <li><strong>Two sets of eyes.</strong> Design and code are reviewed by an independent pass before approval — a different reviewer than the author — with block verdicts that withhold completion until resolved.</li>
+    <li><strong>Tracker-native.</strong> Approved artifacts push to a GitHub Epic ▸ Story ▸ Task tree as real sub-issues, linking each design/plan blob back from its issue, so the trail lives where your team already works.</li>
+    <li><strong>Reversible by construction.</strong> Every write insrc makes into a host-owned config or rules file is marker-delimited and replace-only — it preserves your surrounding content and is fully reversed on uninstall. Nothing is silently mutated.</li>
+    <li><strong>Provenance, not just output.</strong> Because claims are cited and artifacts are versioned, "why is this here?" has a real answer — the raw material compliance, onboarding and post-incident reviews all depend on.</li>
+  </ul>
+
+  <h2 id="documentation">Documentation that can't drift</h2>
+  <p>Hand-written docs rot the moment the code moves. insrc closes the gap from both ends:</p>
+  <ul>
+    <li><strong>Docs generated from the live graph.</strong> <code>insrc_docgen</code> produces self-contained, offline HTML documents — type/class structure, module-dependency maps, call sequences from an entry point, narrated walkthroughs — where every node and edge is graph-derived, so no path or symbol is invented and the diagram tracks the real code.</li>
+    <li><strong>Design artifacts are living documentation.</strong> The HLD/LLD chain records the intent and the rationale next to the code, not in a wiki that goes stale — and the next workflow reads it as the authoritative source.</li>
+    <li><strong>Understanding on demand.</strong> Any teammate (or assistant) can ask a grounded question and get a cited answer instead of spelunking, which is documentation at the moment you need it.</li>
+  </ul>
+
+  <h2 id="accuracy">Accuracy is the product</h2>
+  <p>The principles below are non-negotiable — they are what the rest is built to protect:</p>
+  <div class="panel">
+    <span class="panel-title">non-negotiable</span>
+    <ul>
+      <li><strong>Accuracy is primary; cost is the least priority.</strong> Given an accurate-but-expensive path and a cheap-but-lossy one, insrc chooses accuracy — more explorations, bigger context, a slower pipeline. No stage is skipped and no LLM call is parallelised to save turns.</li>
+      <li><strong>Local-first.</strong> Embeddings are computed locally by Ollama; the graph and vectors live on your disk under <code>~/.insrc/</code>. Your code is indexed on your machine.</li>
+      <li><strong>No direct cloud REST.</strong> Cloud LLM access happens only through your installed <code>claude</code> and <code>codex</code> CLI binaries — auth and quota stay with your own CLI OAuth sessions, and no API keys are stored.</li>
+      <li><strong>No raw file dumps.</strong> Context is always structured entity summaries and relations from the graph, never a blind file paste.</li>
+    </ul>
+  </div>
+
+  <h2 id="next">Where next</h2>
+  <div class="grid">
+    <a class="card" href="workflow.html"><div class="glyph">⟿</div><h4>Workflow</h4><p>The define → design → plan → build pipeline, its approval gates, and how every change lands on the ledger.</p><span class="more">read</span></a>
+    <a class="card" href="analyze.html"><div class="glyph">◎</div><h4>Analyze</h4><p>How a question becomes a verified, 7-layer, citation-grounded context bundle.</p><span class="more">read</span></a>
+    <a class="card" href="architecture.html"><div class="glyph">⬡</div><h4>Architecture</h4><p>The daemon, the graph + vector store, and the IPC contract every client attaches to.</p><span class="more">read</span></a>
+  </div>
+
+</main></div>
+
+<footer class="foot"><div class="foot-inner">
+  <span class="seg"><span class="accent">insrc</span> · code-knowledge daemon</span>
+  <span class="seg">TypeScript · ESM · Node 20+</span>
+  <span class="seg">LMDB + Lance + DuckDB</span>
+  <span class="seg"><a href="https://github.com/insors-ai/insrc">github</a></span>
+  <span class="seg" style="margin-left:auto">local-first · no keys · no REST</span>
+</div></footer>
+
+<script src="js/tui.js"></script>
+</body>
+</html>

@@ -408,3 +408,164 @@ test('S004 integration: a status->tool-call(mcp)->status->file-edit->done turn p
   assert.ok(s!.transcript.some((r) => r.role === 'assistant' && r.text === 'hi'), 'assistant-delta -> assistant row');
   assert.equal(workflowCalls, 0, 'the host invoked no workflow/MCP tool (k8 passthrough)');
 });
+
+// ---- S005: provider selector + history dropdown + native resume ----
+
+const historyLists = (fc: FakeChannel): unknown[] =>
+  fc.posted.filter((m) => m.payload.type === 'history-list').map((m) => m.payload['chats']);
+
+test('S005 shell: provider-selector options == available + history-dropdown; one script + CSP intact', () => {
+  const fc = fakeChannel();
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter([]), codex: scriptedAdapter([]) }, ['claude', 'codex']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+    genNonce: () => 'FIXEDNONCE',
+  });
+  host.open();
+  const html = fc.html();
+  assert.match(html, /<select id="insrc-provider"/, 'has a provider-selector');
+  assert.match(html, /<option value="claude">claude<\/option>/, 'claude option');
+  assert.match(html, /<option value="codex">codex<\/option>/, 'codex option');
+  assert.match(html, /<select id="insrc-history"/, 'has a history-dropdown');
+  const scripts = html.match(/<script\b/g) ?? [];
+  assert.equal(scripts.length, 1, 'still exactly one inline script');
+  assert.match(html, /script-src 'nonce-FIXEDNONCE'/, 'strict CSP unchanged');
+  assert.doesNotMatch(html, /https?:\/\//, 'no remote origin');
+  assert.doesNotMatch(html, /asWebviewUri/, 'no asWebviewUri');
+  assert.doesNotMatch(html, /innerHTML/, 'textContent only, never innerHTML');
+});
+
+test('S005 shell: empty providers.available -> disabled selector', () => {
+  const fc = fakeChannel();
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({}, []),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+  });
+  host.open();
+  assert.match(fc.html(), /<select id="insrc-provider"[^>]*disabled/, 'selector disabled when no CLI installed');
+});
+
+test('S005 open() posts a history-list', () => {
+  const fc = fakeChannel();
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter([]) }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+  });
+  host.open();
+  assert.ok(historyLists(fc).length >= 1, 'history-list posted on open');
+});
+
+test('S005 new-chat: valid provider creates a fixed-provider session + re-posts history; non-available is a no-op', () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter([]), codex: scriptedAdapter([]) }, ['claude', 'codex']),
+    store,
+    cwd: () => '/repo',
+  });
+  host.open(); // seeds a default claude session
+  const hlBefore = historyLists(fc).length;
+  fc.send(env('new-chat', { provider: 'codex' }));
+  assert.ok(store.list().some((c) => c.provider === 'codex'), 'codex session created (provider fixed at create)');
+  assert.ok(historyLists(fc).length > hlBefore, 'new-chat re-posts history-list');
+  const n = store.list().length;
+  fc.send(env('new-chat', { provider: 'gemini' })); // not installed
+  assert.equal(store.list().length, n, 'a non-available provider creates no session');
+});
+
+test('S005 open-chat: restores a prior transcript; a missing id is a no-op + refreshes history', () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  const prior = store.create('claude');
+  store.append(prior.id, { role: 'user', text: 'earlier', at: '2026-01-01T00:00:00.000Z' });
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter([]) }, ['claude']),
+    store,
+    cwd: () => '/repo',
+  });
+  host.open();
+  fc.send(env('open-chat', { chatId: prior.id }));
+  const restored = fc.posted.filter((m) => m.payload.type === 'session-restored').map((m) => m.payload);
+  assert.ok(
+    restored.some(
+      (r) =>
+        r['sessionId'] === prior.id &&
+        Array.isArray(r['transcript']) &&
+        (r['transcript'] as Array<{ text: string }>).some((x) => x.text === 'earlier'),
+    ),
+    'open-chat restored the prior chat transcript',
+  );
+  const hlBefore = historyLists(fc).length;
+  fc.send(env('open-chat', { chatId: 'does-not-exist' }));
+  assert.ok(historyLists(fc).length > hlBefore, 'a missing id re-posts history-list (dead row dropped)');
+});
+
+test('S005 ac3 native resume: turn 2 carries resume from turn 1 done.sessionId; only the new prompt is sent', async () => {
+  const fc = fakeChannel();
+  const reqs: TurnRequest[] = [];
+  const evs: TurnEvent[] = [
+    { kind: 'assistant-delta', turnId: 't1', text: 'hi' },
+    { kind: 'done', turnId: 't1', ok: true, sessionId: 'sess-1' },
+  ];
+  const adapter = scriptedAdapter(evs, { onRun: (r) => { reqs.push(r); } });
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: adapter }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+  });
+  host.open();
+  fc.send(env('submit-turn', { text: 'first' }));
+  await waitFor(() => reqs.length >= 1 && turnEvents(fc).some((e) => e.kind === 'done'));
+  fc.send(env('submit-turn', { text: 'second' }));
+  await waitFor(() => reqs.length >= 2);
+  const r2 = reqs[1]!;
+  assert.equal(r2.resume?.nativeSessionId, 'sess-1', 'turn 2 resumes with the captured native session id (ac3)');
+  assert.equal(r2.prompt, 'second', 'turn 2 sends only the new prompt — no prior-transcript replay (lc1)');
+});
+
+test('S005 switching chat mid-stream cancels the in-flight turn (single-in-flight preserved)', async () => {
+  const fc = fakeChannel();
+  let cancelled = false;
+  const adapter = scriptedAdapter([{ kind: 'status', turnId: 't1', phase: 'thinking' }], { hang: true, onCancel: () => { cancelled = true; } });
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: adapter }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+  });
+  host.open();
+  fc.send(env('submit-turn', { text: 'go' }));
+  await waitFor(() => turnEvents(fc).length >= 1); // streamed the status event, now hanging
+  fc.send(env('new-chat', { provider: 'claude' }));
+  await waitFor(() => cancelled);
+  assert.ok(cancelled, 'the in-flight turn was cancelled when switching to a new chat');
+});
+
+test('S005 a first-turn error still refreshes the history dropdown (title label)', async () => {
+  const fc = fakeChannel();
+  const adapter = scriptedAdapter([{ kind: 'error', turnId: 't1', message: 'boom' }]);
+  const store = createInMemoryChatSessionStore();
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: adapter }, ['claude']),
+    store,
+    cwd: () => '/repo',
+  });
+  host.open();
+  const hlBefore = historyLists(fc).length;
+  fc.send(env('submit-turn', { text: 'do a thing' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'error'));
+  await waitFor(() => historyLists(fc).length > hlBefore);
+  assert.ok(historyLists(fc).length > hlBefore, 'the first-turn error path re-posted history-list');
+  const s = store.get(store.list()[0]!.id);
+  assert.equal(s?.title, 'do a thing', 'title was set from the first prompt despite the error');
+});

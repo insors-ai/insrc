@@ -53,6 +53,12 @@ export interface MementoStoreDeps {
   readonly memento: MementoLike;
   readonly now?: () => string;
   readonly genId?: () => string;
+  /**
+   * Optional cap on how many sessions the index retains (S005): when set, save()
+   * evicts the oldest (least-recently-saved) sessions + their blobs beyond the cap,
+   * so extension-local history (k3) stays bounded. Unset = S003 unbounded behaviour.
+   */
+  readonly maxSessions?: number;
 }
 
 const INDEX_KEY = 'insrc.chat.index';
@@ -85,6 +91,10 @@ export function createMementoChatSessionStore(deps: MementoStoreDeps): ChatSessi
   const { memento } = deps;
   const now = deps.now ?? (() => new Date().toISOString());
   const genId = deps.genId ?? (() => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`);
+  // A non-positive / fractional cap would wipe the active session on save; treat only a
+  // positive integer as a real cap, otherwise fall back to the unbounded S003 behaviour.
+  const maxSessions =
+    deps.maxSessions !== undefined && deps.maxSessions >= 1 ? Math.floor(deps.maxSessions) : undefined;
 
   const readIndex = (): string[] => {
     try {
@@ -110,7 +120,23 @@ export function createMementoChatSessionStore(deps: MementoStoreDeps): ChatSessi
   const save = (session: ChatSession): void => {
     void memento.update(SESSION_PREFIX + session.id, session);
     const ids = readIndex();
-    if (!ids.includes(session.id)) writeIndex([...ids, session.id]);
+    if (maxSessions === undefined) {
+      // S003 unbounded behaviour, preserved byte-for-byte when no cap is set.
+      if (!ids.includes(session.id)) writeIndex([...ids, session.id]);
+      return;
+    }
+    // S005 bounded history (k3): LRU-order by moving the saved id to the end, then
+    // evict the oldest (front) beyond the cap — dropping each evicted session's blob
+    // too (no orphaned keys). The id being saved is at the end, so it is never evicted.
+    const reordered = ids.filter((id) => id !== session.id);
+    reordered.push(session.id);
+    if (reordered.length > maxSessions) {
+      const cut = reordered.length - maxSessions;
+      for (const id of reordered.slice(0, cut)) void memento.update(SESSION_PREFIX + id, undefined);
+      writeIndex(reordered.slice(cut));
+    } else {
+      writeIndex(reordered);
+    }
   };
 
   return {
@@ -146,7 +172,11 @@ export function createMementoChatSessionStore(deps: MementoStoreDeps): ChatSessi
 }
 
 /** A volatile, in-memory ChatSessionStore for tests — a Map-backed {@link MementoLike} behind the same logic. */
-export function createInMemoryChatSessionStore(deps?: { now?: () => string; genId?: () => string }): ChatSessionStore {
+export function createInMemoryChatSessionStore(deps?: {
+  now?: () => string;
+  genId?: () => string;
+  maxSessions?: number;
+}): ChatSessionStore {
   const map = new Map<string, unknown>();
   const memento: MementoLike = {
     get<T>(key: string): T | undefined {

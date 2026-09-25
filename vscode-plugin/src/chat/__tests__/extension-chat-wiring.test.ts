@@ -40,7 +40,7 @@ test('extension.ts constructs createChatPanelHost with the real injected vscode 
   assert.match(b, /panel\.webview\.onDidReceiveMessage\(/, 'injects the inbound registrar');
   assert.match(b, /panel\.webview\.postMessage\(message\)\.then\(undefined/, 'injects the fire-and-forget postMessage');
   assert.match(b, /panel\.onDidDispose\(/, 'injects onDidDispose');
-  assert.match(b, /createMementoChatSessionStore\(\{ memento: context\.globalState \}\)/, 'the sc4 store binds over context.globalState (k3)');
+  assert.match(b, /createMementoChatSessionStore\(\{ memento: context\.globalState, maxSessions: \d+ \}\)/, 'the sc4 store binds over context.globalState (k3) with a bounded history cap (S005)');
   assert.match(b, /createProviderRegistry\(\{ spawn: nodeSpawner, isInstalled: defaultBinaryProbe \}\)/, 'the sc5 registry over the installed CLIs');
 });
 

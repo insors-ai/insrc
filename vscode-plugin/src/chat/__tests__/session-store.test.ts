@@ -80,3 +80,55 @@ test('list sorts by updatedAt descending', () => {
   const ids = store.list().map((c) => c.id);
   assert.deepEqual(ids, [b.id, a.id]);
 });
+
+// ---- S005: bounded index (maxSessions) + title round-trip ----
+
+const seqId = () => { let n = 0; return () => `id-${++n}`; };
+
+test('S005: save() with maxSessions=N keeps at most N; oldest evicted, blob gone', () => {
+  const f = fakeMemento();
+  const store = createMementoChatSessionStore({ ...f, maxSessions: 2, now: () => 't', genId: seqId() });
+  const s1 = store.create('claude'); // id-1
+  const s2 = store.create('claude'); // id-2
+  const s3 = store.create('claude'); // id-3 -> evicts s1 (oldest)
+  assert.equal(store.list().length, 2, 'index capped at 2');
+  assert.deepEqual(store.list().map((c) => c.id).sort(), [s2.id, s3.id].sort());
+  assert.equal(store.get(s1.id), undefined, 'oldest session evicted');
+  assert.equal(f.map.get('insrc.chat.session.' + s1.id), undefined, 'no live orphan blob for the evicted id');
+});
+
+test('S005: eviction never removes the id being saved / active session even when oldest', () => {
+  const f = fakeMemento();
+  const store = createMementoChatSessionStore({ ...f, maxSessions: 2, now: () => 't', genId: seqId() });
+  const s1 = store.create('claude'); // id-1
+  const s2 = store.create('claude'); // id-2
+  store.save(s1); // active use of the oldest -> moves it to most-recent
+  const s3 = store.create('claude'); // now the oldest is s2, not s1
+  assert.equal(store.get(s1.id)?.id, s1.id, 's1 survived because it was just saved');
+  assert.equal(store.get(s2.id), undefined, 's2 evicted as the true oldest');
+  assert.ok(store.get(s3.id), 's3 (just saved) survives');
+});
+
+test('S005: unset maxSessions preserves the unbounded S003 behaviour', () => {
+  const store = createInMemoryChatSessionStore({ genId: seqId() });
+  for (let i = 0; i < 5; i++) store.create('claude');
+  assert.equal(store.list().length, 5, 'no eviction when maxSessions is unset');
+});
+
+test('S005: an updated (first-prompt) title round-trips through get()/list()', () => {
+  const store = createInMemoryChatSessionStore({ genId: seqId() });
+  const s = store.create('claude');
+  assert.equal(s.title, 'new chat', 'create default');
+  s.title = 'fix the parser';
+  store.save(s);
+  assert.equal(store.get(s.id)?.title, 'fix the parser');
+  assert.equal(store.list()[0]?.title, 'fix the parser', 'ChatSummary.title reflects the update');
+});
+
+test('S005: maxSessions <= 0 is treated as unbounded (never wipes the active session)', () => {
+  const store = createInMemoryChatSessionStore({ genId: seqId(), maxSessions: 0 });
+  const s1 = store.create('claude');
+  const s2 = store.create('claude');
+  assert.equal(store.list().length, 2, 'no eviction with a non-positive cap');
+  assert.ok(store.get(s1.id) && store.get(s2.id), 'both sessions survive');
+});

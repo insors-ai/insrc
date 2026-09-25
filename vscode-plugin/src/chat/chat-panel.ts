@@ -78,11 +78,24 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     channel.postMessage(envelope(msg));
   };
 
+  // S005: (re)post the extension-local chat history so the webview history-dropdown stays current.
+  const postHistory = (): void => post({ type: 'history-list', chats: [...deps.store.list()] });
+
   const renderShell = (): string => {
     const nonce = genNonce();
     const style = renderStyle(theme); // a complete <style>…</style>
     const csp = `default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';`;
     const cls = surfaceClass('chat');
+    const provCls = surfaceClass('provider-dropdown');
+    const histCls = surfaceClass('history-dropdown');
+    // S005: provider <option>s are rendered server-side from providers.available (the
+    // installed claude/codex set is fixed per panel, k4) so NO new sc3 message is needed;
+    // values are attribute-escaped. Empty available -> the selector is disabled.
+    const available = deps.providers.available;
+    const providerOpts = ['<option value="">provider…</option>']
+      .concat(available.map((p) => `<option value="${attr(p)}">${attr(p)}</option>`))
+      .join('');
+    const provDisabled = available.length === 0 ? ' disabled' : '';
     const bootstrap =
       `const vs=acquireVsCodeApi();` +
       `const t=document.getElementById('insrc-term');` +
@@ -90,15 +103,30 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `function line(s,cls){const d=document.createElement('div');if(cls)d.className=cls;d.textContent=s;t.appendChild(d);t.scrollTop=t.scrollHeight;}` +
       // S004: the marker mapper, single-sourced with the host markerFor (markers.ts), embedded in THIS one nonce'd script.
       `const markerFor=${markerWebviewSource()};` +
+      // S005: provider-selector + history-dropdown wiring (same one nonce'd script).
+      `var cur='';` +
+      `const ps=document.getElementById('insrc-provider');` +
+      `const hs=document.getElementById('insrc-history');` +
+      `ps.addEventListener('change',function(){if(ps.value){vs.postMessage({v:1,payload:{type:'new-chat',provider:ps.value}});ps.value='';}});` +
+      `hs.addEventListener('change',function(){if(hs.value){vs.postMessage({v:1,payload:{type:'open-chat',chatId:hs.value}});}});` +
       `window.addEventListener('message',e=>{const m=e.data&&e.data.payload;if(!m)return;if(m.type==='turn-event'){const ev=m.event;if(ev&&ev.kind==='assistant-delta'){line(ev.text);}else{const mk=markerFor(ev);if(mk)line(mk.label,mk.cssClass);}}` +
-      `else if(m.type==='session-restored'){(m.transcript||[]).forEach(x=>line(x.text));}});` +
+      // S005: session-restored CLEARS the terminal before replaying (so switching chats
+      // does not append onto the prior chat's view) + tracks the active id for the dropdown.
+      `else if(m.type==='session-restored'){cur=m.sessionId||'';t.textContent='';(m.transcript||[]).forEach(x=>line(x.text));hs.value=cur;}` +
+      // S005: history-list (re)populates the dropdown; labels via textContent (no innerHTML); keep active selected.
+      `else if(m.type==='history-list'){while(hs.options.length>1)hs.remove(1);(m.chats||[]).forEach(function(c){var o=document.createElement('option');o.value=c.id;o.textContent='['+c.provider+'] '+(c.title||c.id);hs.appendChild(o);});hs.value=cur;}});` +
       `const box=document.getElementById('insrc-input');` +
       `box.addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.metaKey||e.ctrlKey)){vs.postMessage({v:1,payload:{type:'submit-turn',text:box.value}});box.value='';}});`;
     return (
       `<!DOCTYPE html><html><head><meta charset="utf-8">` +
       `<meta http-equiv="Content-Security-Policy" content="${attr(csp)}">` +
       `${style}</head>` +
-      `<body class="${cls}"><div id="insrc-term"></div>` +
+      `<body class="${cls}">` +
+      `<div class="insrc-term-controls">` +
+      `<select id="insrc-provider" class="${provCls}" aria-label="provider"${provDisabled}>${providerOpts}</select>` +
+      `<select id="insrc-history" class="${histCls}" aria-label="history"><option value="">history…</option></select>` +
+      `</div>` +
+      `<div id="insrc-term"></div>` +
       `<textarea id="insrc-input" rows="2" aria-label="message"></textarea>` +
       `<script nonce="${nonce}">${bootstrap}</script></body></html>`
     );
@@ -150,6 +178,13 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     const s = session;
 
     s.transcript.push({ role: 'user', text: prompt, at: now() });
+    // S005: name the chat from its FIRST user prompt (clipped) so the history dropdown
+    // rows are distinguishable; a whitespace-only prompt is already rejected above, so
+    // the clip is non-empty. Later turns keep the established title.
+    if (s.transcript.filter((r) => r.role === 'user').length === 1) {
+      const derived = prompt.replace(/\s+/g, ' ').trim().slice(0, 60);
+      if (derived !== '') s.title = derived;
+    }
     deps.store.save(s);
 
     let adapter;
@@ -181,10 +216,12 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         if (ev.kind === 'done') {
           if (ev.sessionId !== undefined) s.nativeSessionId = ev.sessionId;
           deps.store.save(s);
+          postHistory(); // S005: title/updatedAt changed -> refresh the history dropdown
           break;
         }
         if (ev.kind === 'error') {
           deps.store.save(s); // persist the errored turn's transcript rows too
+          postHistory(); // S005: a first-turn error still set the title -> refresh the dropdown label
           break;
         }
       }
@@ -236,25 +273,36 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         return;
       case 'new-chat': {
         if (typeof msg.provider !== 'string') return;
+        // S005: only start a chat on an INSTALLED agentic CLI (k4). A stale webview
+        // option for an uninstalled provider is a no-op (it would fail on the first turn).
+        if (!deps.providers.available.some((p) => p === msg.provider)) {
+          log.warn(`[chat] new-chat: provider not available ${msg.provider}`);
+          return;
+        }
         // Switching the active session must stop any in-flight turn first, or its
         // deltas would paint into the newly-restored session's view.
         cancelActive();
         ++generation;
         session = deps.store.create(msg.provider);
         post({ type: 'session-restored', sessionId: session.id, transcript: session.transcript });
+        postHistory(); // S005: the new chat appears in the dropdown
         return;
       }
       case 'open-chat': {
         if (typeof msg.chatId !== 'string') return;
         const s = deps.store.get(msg.chatId);
         if (s === undefined) {
+          // S005: a missing/corrupt id (e.g. evicted by the cap) -> keep the active chat
+          // and refresh the dropdown so the dead row drops (list() skips corrupt rows).
           log.warn(`[chat] open-chat: unknown session ${msg.chatId}`);
+          postHistory();
           return;
         }
         cancelActive();
         ++generation;
         session = s;
         post({ type: 'session-restored', sessionId: s.id, transcript: s.transcript });
+        postHistory(); // S005: keep the dropdown selection/order in sync
         return;
       }
       default:
@@ -288,6 +336,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       if (session === undefined) session = deps.store.create(available[0]!);
       post({ type: 'theme', theme });
       post({ type: 'session-restored', sessionId: session.id, transcript: session.transcript });
+      postHistory(); // S005: populate the history dropdown as soon as the panel opens
     },
     dispose(): void {
       cancelActive();

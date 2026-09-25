@@ -1,0 +1,299 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1790362669046-0vds5h",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-25T19:01:43.878Z",
+    "epicCreatedAt": "2026-09-25T13:25:32.966Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 234826,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "edb76e2e4d41217d",
+    "epicSlug": "work-framed-approved-spec-proceed-from",
+    "storyId": "s5",
+    "lldRunId": "wf-1790360632569-9okqd8",
+    "lldEffectiveHash": "f394a9ecb688a6435e9660c36070ff438589624b3026bbb4315135fee33e53b4",
+    "approvedAt": "2026-09-25T19:01:50.120Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "sc4 store impl: optional maxSessions cap + title-from-prompt support",
+        "summary": "In session-store.ts: add optional maxSessions?: number to MementoStoreDeps and, in save(), after appending the id, evict the oldest ids beyond the cap — removing each evicted id from the index AND its insrc.chat.session.<id> key — never evicting the id being saved. Keep create/get/list/append/save signatures byte-identical (interface-compatible; unset maxSessions = S003 unbounded behaviour). Title itself is set by the host (t3) via the existing save(); this task just ensures save() persists an updated title (it already does).",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "MementoStoreDeps gains optional maxSessions?: number; ChatSessionStore + create/get/list/append/save signatures unchanged",
+          "save() with maxSessions=N keeps at most N sessions: creating N+2 leaves list().length===N, oldest evicted (get()->undefined) with no orphaned session key",
+          "eviction never removes the id being saved / active session, even if oldest",
+          "unset maxSessions preserves S003 unbounded behaviour; corruption tolerance preserved"
+        ],
+        "derivedFrom": [
+          "c5",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "save() with maxSessions=N keeps at most N sessions; oldest evicted (get->undefined, no orphaned session key)"
+          },
+          {
+            "level": "unit",
+            "name": "eviction never removes the id being saved / active session even when oldest; unset maxSessions = unbounded"
+          },
+          {
+            "level": "unit",
+            "name": "a title updated to a first-prompt string round-trips through get()/list() (ChatSummary.title); list() still sorts updatedAt desc"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Webview shell: sc1 provider-selector + history-dropdown in the one nonce'd script",
+        "summary": "In chat-panel.ts renderShell: add an sc1-styled provider-selector whose <option>s are rendered (attribute-escaped) from deps.providers.available, and an (empty) history-dropdown, both inside the SAME nonce'd inline script. Wire provider-select change -> postMessage new-chat{provider}; history-select change -> open-chat{chatId}; add a 'history-list' message handler that (re)populates the history <option>s via textContent, keeping the active id selected. Empty providers.available -> disabled selector. Keep exactly one <script> + strict CSP.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "renderShell output has a provider-selector with options == providers.available (attribute-escaped) + a history-dropdown, both with the sc1 surfaceClass",
+          "the webview handles a history-list message and sets option labels via textContent (no innerHTML); provider/history change -> postMessage new-chat/open-chat",
+          "shell still has EXACTLY ONE <script nonce=...> + strict CSP (script-src 'nonce-...'), no remote origin / asWebviewUri",
+          "providers.available empty -> selector renders disabled/optionless"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "renderShell renders a provider-selector with options == providers.available (attribute-escaped) + a history-dropdown, both sc1 surfaceClass"
+          },
+          {
+            "level": "unit",
+            "name": "shell keeps EXACTLY ONE <script nonce=...> + strict CSP, no remote origin/asWebviewUri, textContent (no innerHTML); empty available -> disabled selector"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Host wiring: post history-list, title-from-first-prompt, provider validation",
+        "summary": "In chat-panel.ts host: open() posts history-list (from deps.store.list()) after theme + session-restored; handleMessage re-posts history-list after new-chat/open-chat, and new-chat validates provider is a member of deps.providers.available before store.create (else no-op+warn); runTurn sets session.title from the first user prompt (trimmed/clipped; whitespace falls back to 'new chat') on the first turn via save(), and re-posts history-list after the terminal done. Preserve the cancelActive()+ ++generation single-in-flight guard and the existing native-resume wiring unchanged.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "open() posts theme + session-restored + history-list; history-list re-posted after new-chat/open-chat and after a turn's done",
+          "new-chat with a provider NOT in providers.available is a no-op (active session unchanged); valid provider creates a fixed-provider session",
+          "runTurn sets title from the first user prompt (empty->'new chat'); native resume path + single-in-flight guard unchanged; no workflow/daemon call (k8/k3)"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c4",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "open() posts history-list (with theme + session-restored); history-list re-posted after new-chat/open-chat and after a turn's done"
+          },
+          {
+            "level": "integration",
+            "name": "new-chat{provider:'codex'} creates a fixed-provider session; a non-available provider is a no-op (active session unchanged)"
+          },
+          {
+            "level": "integration",
+            "name": "after a turn, session.title is set from the first user prompt and reflected in a re-posted history-list"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Tests: store eviction/title + shell contract + history/resume integration",
+        "summary": "Extend session-store.test.ts (maxSessions eviction active-safe + no-orphan + unset=unbounded; title round-trip via list()) and chat-panel.test.ts (reuse FakePanel/fake-adapter/in-memory-store harness; extend the existing scriptedAdapter to RECORD the last TurnRequest): shell renders selector==available + history-dropdown + one nonce'd script/CSP; open() posts history-list; new-chat provider fixed + non-available rejected; open-chat restores + corrupt-id drop; title-from-first-prompt reflected in a re-posted history-list; two-turn native resume (turn 2 TurnRequest.resume carries turn 1's done.sessionId, no transcript replay); switch-mid-stream cancels in-flight. node:test + assert/strict.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "session-store.test.ts covers maxSessions eviction (active-safe, no orphan), unset-unbounded, and title round-trip",
+          "chat-panel.test.ts covers selector/dropdown shell contract + CSP, history-list on open + after turns, open-chat restore + corrupt drop, provider validation, two-turn resume req.resume, single-in-flight on switch",
+          "full vscode-plugin sweep green under tsx --test",
+          "ac1, ac2, ac3 each have >=1 passing proving test"
+        ],
+        "derivedFrom": [
+          "c7",
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "open-chat{chatId} restores a prior chat's transcript via session-restored; a missing/corrupt id is a no-op + re-posts history-list (dead row dropped)"
+          },
+          {
+            "level": "integration",
+            "name": "ac3 native resume: turn 2's recorded TurnRequest carries resume={nativeSessionId} from turn 1's done.sessionId and replays NO prior transcript"
+          },
+          {
+            "level": "integration",
+            "name": "selecting a history entry / new provider WHILE a turn streams cancels the in-flight turn first (single-in-flight preserved)"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "save() with maxSessions=N keeps at most N sessions: after creating N+2, list() returns N and the OLDEST were evicted (their get() -> undefined, no orphaned session key)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "eviction never removes the id being saved / the active session even when it is the oldest",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "unset maxSessions preserves the S003 unbounded behaviour (no eviction)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "a session whose title is updated to a first-prompt string round-trips through get()/list() (ChatSummary.title reflects it); list() still sorts updatedAt desc",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "renderShell() output contains a provider-selector whose <option>s are exactly deps.providers.available (attribute-escaped), and an (empty) history-dropdown container, both with the sc1 surfaceClass (provider-dropdown/history-dropdown)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "the shell still has EXACTLY ONE <script nonce=...> + strict CSP (script-src 'nonce-...'); no remote origin / asWebviewUri; dynamic history labels are set via textContent (scan: no innerHTML)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "with providers.available empty, the selector renders disabled/optionless",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "open() posts a history-list (from store.list()) in addition to theme + session-restored",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "new-chat{provider:'codex'} creates a session whose provider is 'codex' (fixed), makes it active, and re-posts history-list including the new chat",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "new-chat with a provider NOT in available is a no-op (no session created, active session unchanged)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "after a turn, session.title is set from the first user prompt and a fresh history-list is posted reflecting the new title/order",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "open-chat{chatId} for a prior chat posts session-restored with that chat's transcript; open-chat for a missing/corrupt id is a no-op + re-posts history-list (dead row dropped)",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "ac3 native resume: send turn 1 (adapter emits done{sessionId:'sess-1'}) then turn 2 -> the adapter's TurnRequest for turn 2 carries resume={provider, nativeSessionId:'sess-1'} and NO prior transcript turns are replayed to the adapter",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "selecting a history entry / new provider WHILE a turn streams cancels the in-flight turn first (single-in-flight preserved)",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 contractDetails/renderShell (add sc1 provider-selector + history-dropdown in the one nonce'd script)",
+      "quotedText": "renderShell RESHAPED to add a provider-selector (options from deps.providers.available) + history-dropdown inside the SAME nonce'd script; CSP unchanged"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 interactionWithShared/sc3 (rides existing history-list/new-chat/open-chat)",
+      "quotedText": "posts history-list (HostToWebview) + receives new-chat{provider}/open-chat{chatId}; no new sc3 message"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 contractDetails/createMementoChatSessionStore (maxSessions eviction impl)",
+      "quotedText": "save() evicts the oldest non-active ids + their session keys beyond an optional maxSessions cap; signatures byte-identical"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 contractDetails/runTurn + interactionWithShared/sc5 (title-from-first-prompt + native resume already wired)",
+      "quotedText": "runTurn sets title on the first turn + re-posts history-list; req.resume from nativeSessionId, capture done.sessionId (already implemented)"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 dataModel (ChatSession.title field-modify + chat index cap invariant-change)",
+      "quotedText": "title populated from first prompt; insrc.chat.index bounded by maxSessions"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 contractDetails/handleMessage + open (post history-list, validate provider in available)",
+      "quotedText": "open() posts history-list; new-chat validates provider in providers.available; re-post history-list after switches; single-in-flight preserved"
+    },
+    {
+      "id": "c7",
+      "kind": "analyze-bundle",
+      "ref": "s1: test homes chat-panel.test.ts + session-store.test.ts (FakePanel/fake-adapter/in-memory-store)",
+      "quotedText": "node:test + assert/strict; FakePanel + fake StreamAdapter + in-memory ChatSessionStore; extend the scriptedAdapter to record TurnRequests"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 testStrategy + migration (acceptance mapping ac1/ac2/ac3; zero-downtime interface-compatible)",
+      "quotedText": "unit store cap/title + contract shell + integration history/resume; ac1/ac2/ac3 mapped; no shape change, no data rewrite"
+    }
+  ]
+}

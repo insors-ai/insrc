@@ -415,7 +415,9 @@ export function activate(context: vscode.ExtensionContext): void {
   // registered ONLY when the flag is on, so the surface is invisible until opted in.
   const chatEnabled = vscode.workspace.getConfiguration().get<boolean>('insrc.chat.enabled') === true;
   if (chatEnabled) {
-    const chatStore = createMementoChatSessionStore({ memento: context.globalState });
+    // S005: cap extension-local chat history (k3) so globalState does not grow unbounded
+    // (the S003 L4 follow-up). save() evicts the oldest non-active sessions beyond this.
+    const chatStore = createMementoChatSessionStore({ memento: context.globalState, maxSessions: 200 });
     const chatProviders = createProviderRegistry({ spawn: nodeSpawner, isInstalled: defaultBinaryProbe });
     const chatHost = createChatPanelHost({
       createPanel: ({ viewType, title }) => {

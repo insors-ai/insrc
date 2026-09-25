@@ -59,7 +59,10 @@ when the daemon is already reachable) whether the installed daemon has fallen
 behind its upstream, and if so offers an **Update / Dismiss** notification that
 updates the daemon in place on your OK. When you update the extension itself, it
 brings the daemon current automatically. Failures surface once with the reason;
-nothing is retried or rolled back — the daemon owns its own state.
+nothing is retried or rolled back — the daemon owns its own state. After a
+successful update it nudges you to **Reload Window** so the insrc MCP connection
+reconnects to the freshly-updated daemon (a session run outside the editor needs
+a manual `claude` / `codex` restart instead).
 
 ## Status & panels
 

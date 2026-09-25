@@ -2,7 +2,7 @@
   "name": "insrc-vscode",
   "displayName": "insrc",
   "description": "insrc for VS Code — grounded code-knowledge and the tracked workflow, wired into your AI assistant.",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "publisher": "insors",
   "license": "MIT",
   "repository": {

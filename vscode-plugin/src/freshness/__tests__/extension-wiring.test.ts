@@ -62,6 +62,19 @@ test('extension.ts consumes the daemon-owned sc1 IPC (client), never a controlle
   assert.doesNotMatch(depsBlock, /daemon-ctl\.sh/, 'no daemon-ctl.sh shell-out inside the freshness deps (k2)');
 });
 
+test('extension.ts wires the reloadWindow seam to workbench.action.reloadWindow (S001 post-update nudge)', () => {
+  const src = extensionSource();
+  const block = /void runDaemonFreshnessCheck\(\{([\s\S]*?)\n  \}\);/.exec(src);
+  assert.ok(block, 'the runDaemonFreshnessCheck({ ... }); block is present');
+  const depsBlock = block![1]!;
+  assert.match(depsBlock, /reloadWindow:/, 'the freshness deps pass a reloadWindow seam');
+  assert.match(
+    depsBlock,
+    /reloadWindow:[\s\S]*?vscode\.commands\.executeCommand\('workbench\.action\.reloadWindow'\)/,
+    "reloadWindow is wired to executeCommand('workbench.action.reloadWindow')",
+  );
+});
+
 test('the new globalState key constant is defined and referenced for lastSeen persistence', () => {
   const src = extensionSource();
   assert.match(

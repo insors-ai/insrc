@@ -80,6 +80,8 @@ declare module 'vscode' {
 
   export namespace commands {
     export function registerCommand(command: string, callback: (...args: unknown[]) => unknown): Disposable;
+    /** Execute a built-in or contributed command (e.g. 'workbench.action.reloadWindow'). */
+    export function executeCommand<T = unknown>(command: string, ...rest: unknown[]): Thenable<T | undefined>;
   }
 
   export namespace extensions {

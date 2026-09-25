@@ -41,9 +41,12 @@ class DaemonFreshnessFlowTest {
     private class RecordingNotify(private val clickUpdate: Boolean = false) : FreshnessNotify {
         val kinds = mutableListOf<NotifyKind>()
         val messages = mutableListOf<String>()
+        /** Records, per show(), whether an action (onUpdate) was supplied. */
+        val hasAction = mutableListOf<Boolean>()
         override fun show(kind: NotifyKind, message: String, onUpdate: (() -> Unit)?) {
             kinds += kind
             messages += message
+            hasAction += (onUpdate != null)
             if (kind == NotifyKind.UPDATE_PROMPT && clickUpdate) onUpdate?.invoke()
         }
     }
@@ -252,6 +255,53 @@ class DaemonFreshnessFlowTest {
         )
         assertTrue(begun, "the winner acquires the gate")
         assertEquals(1, endCalls, "the gate is released exactly once after the update")
+    }
+
+    // ---- post-update MCP-reload nudge (S001) --------------------------------
+
+    @Test
+    fun `on a confirmed update the success balloon carries the reload-nudge message and no action`() {
+        val gateway = FakeGateway().apply { commitAfterUpdate = UPSTREAM }
+        val notify = RecordingNotify(clickUpdate = true)
+        DaemonFreshnessFlow.check(deps(gateway, notify, FakeVersionState("1.0.0", "1.0.0")))
+
+        val idx = notify.messages.indexOf(DaemonFreshnessFlow.RELOAD_NUDGE_MESSAGE)
+        assertTrue(idx >= 0, "the exact reload-nudge message is shown on success")
+        assertEquals(NotifyKind.INFO, notify.kinds[idx], "the nudge is an INFO balloon")
+        assertFalse(notify.hasAction[idx], "the nudge is notification-only (null action slot)")
+    }
+
+    @Test
+    fun `no reload nudge on a no-op or a failed update`() {
+        // no-op: installed == upstream -> skip, no nudge.
+        run {
+            val g = FakeGateway().apply { commit = UPSTREAM }
+            val n = RecordingNotify()
+            DaemonFreshnessFlow.check(deps(g, n, FakeVersionState("1.0.0", "1.0.0")))
+            assertFalse(n.messages.contains(DaemonFreshnessFlow.RELOAD_NUDGE_MESSAGE), "no nudge when already current")
+        }
+        // failed: commit never advances + no outcome -> failure balloon, not the nudge.
+        run {
+            val g = FakeGateway()
+            val n = RecordingNotify(clickUpdate = true)
+            DaemonFreshnessFlow.check(deps(g, n, FakeVersionState("1.0.0", "1.0.0"), now = { 1_000L }, budget = 0L))
+            assertFalse(n.messages.contains(DaemonFreshnessFlow.RELOAD_NUDGE_MESSAGE), "no nudge on a failed update")
+            assertEquals(1, n.kinds.count { it == NotifyKind.FAILURE }, "a failure balloon is shown instead")
+        }
+    }
+
+    @Test
+    fun `the self-update nudge records the plugin version so it does not silently re-fire`() {
+        // A self-update fires the nudge once and records the current version via setLastSeen;
+        // a later activation on the SAME version then sees current == lastSeen -> startup-check
+        // (prompt), never another silent auto-nudge. Here we prove the version is recorded.
+        val gateway = FakeGateway().apply { commitAfterUpdate = UPSTREAM }
+        val notify = RecordingNotify(clickUpdate = false) // no click -> self-update path only
+        val vs = FakeVersionState(current = "2.0.0", lastSeen = "1.0.0") // version changed -> self-update
+        DaemonFreshnessFlow.check(deps(gateway, notify, vs))
+        assertEquals(1, gateway.updateCalls, "the self-update fired once")
+        assertTrue(notify.messages.contains(DaemonFreshnessFlow.RELOAD_NUDGE_MESSAGE), "the nudge fired on the self-update")
+        assertEquals(listOf("2.0.0"), vs.saved, "setLastSeen(current) records the version so it does not silently re-fire")
     }
 
     @Test

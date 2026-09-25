@@ -13,6 +13,8 @@ import assert from 'node:assert/strict';
 
 import {
   runDaemonFreshnessCheck,
+  RELOAD_WINDOW_ACTION,
+  RELOAD_NUDGE_MESSAGE,
   type DaemonFreshnessDeps,
   type PluginVersionState,
 } from '../daemon-freshness.js';
@@ -111,7 +113,7 @@ test("startup-check drift: notify shows Update/Dismiss; update() runs ONLY on 'U
 
   assert.deepEqual(rec.actions[0], ['Update', 'Dismiss'], 'the drift prompt offers Update/Dismiss (no modal)');
   assert.equal(client.updateCalls, 1, "update() runs on 'Update'");
-  assert.ok(rec.messages.some((m) => /updated successfully/.test(m)), 'a success notify follows');
+  assert.ok(rec.messages.some((m) => /reconnect the insrc MCP/.test(m)), 'a success notify follows');
 });
 
 test("startup-check drift: Dismiss (and closed→undefined) does NOT call update()", async () => {
@@ -178,9 +180,10 @@ test('self-update: current!==lastSeen + drift → update() with NO prompt (notif
   await runDaemonFreshnessCheck(deps({ client, notify, versionState }));
 
   assert.equal(client.updateCalls, 1, 'auto-updates without a prompt');
-  // No prompt was shown (no notify carried actions); only the after-notify.
-  assert.ok(rec.actions.every((a) => a.length === 0), 'no Update/Dismiss prompt in self-update mode');
-  assert.ok(rec.messages.some((m) => /updated successfully/.test(m)), 'notify-after on success');
+  // No Update/Dismiss prompt was shown in self-update mode (the only actioned notify
+  // is the post-update reload nudge, which offers 'Reload Window', never 'Update').
+  assert.ok(rec.actions.every((a) => !a.includes('Update')), 'no Update/Dismiss prompt in self-update mode');
+  assert.ok(rec.messages.some((m) => /reconnect the insrc MCP/.test(m)), 'notify-after on success');
   assert.deepEqual(versionState.saved, ['2.0.0'], 'setLastSeen(current) recorded');
 });
 
@@ -191,7 +194,7 @@ test('first-ever activation (lastSeen undefined) is treated as self-update when 
   const versionState = fakeVersionState('1.0.0', undefined);
   await runDaemonFreshnessCheck(deps({ client, notify, versionState }));
   assert.equal(client.updateCalls, 1, 'first activation with drift auto-updates');
-  assert.ok(rec.actions.every((a) => a.length === 0), 'no prompt on first activation');
+  assert.ok(rec.actions.every((a) => !a.includes('Update')), 'no Update/Dismiss prompt on first activation');
 });
 
 test('self-update mode but daemon already up to date → no update, no notify, still setLastSeen (fire-once, k4)', async () => {
@@ -224,7 +227,7 @@ test('reconnect-and-confirm success: updateOutcome().state==="succeeded" → suc
   const { notify, rec } = fakeNotify('Update');
   const versionState = fakeVersionState('1.0.0', '1.0.0');
   await runDaemonFreshnessCheck(deps({ client, notify, versionState, now: () => 1_000 }));
-  assert.ok(rec.messages.some((m) => /updated successfully/.test(m)), 'fresh succeeded outcome → success notify');
+  assert.ok(rec.messages.some((m) => /reconnect the insrc MCP/.test(m)), 'fresh succeeded outcome → success notify');
 });
 
 test('reconnect tolerates a socket drop across passes: throws on pass 1, confirms on pass 2', async () => {
@@ -251,7 +254,7 @@ test('reconnect tolerates a socket drop across passes: throws on pass 1, confirm
   const versionState = fakeVersionState('1.0.0', '1.0.0');
   await runDaemonFreshnessCheck(deps({ client, notify, versionState, reconnectBudgetMs: 5_000, now: () => 1_000 }));
   assert.ok(outcomeCalls >= 2, 'polled again after the transient socket drop');
-  assert.ok(rec.messages.some((m) => /updated successfully/.test(m)), 'confirmed on the second pass');
+  assert.ok(rec.messages.some((m) => /reconnect the insrc MCP/.test(m)), 'confirmed on the second pass');
 });
 
 test('a STALE succeeded outcome (finished before the update started) is ignored; commit-advance decides', async () => {
@@ -265,7 +268,7 @@ test('a STALE succeeded outcome (finished before the update started) is ignored;
   const { notify, rec } = fakeNotify('Update');
   const versionState = fakeVersionState('1.0.0', '1.0.0');
   await runDaemonFreshnessCheck(deps({ client, notify, versionState, now: () => 5_000 }));
-  assert.ok(rec.messages.some((m) => /updated successfully/.test(m)), 'stale failed outcome ignored; commit advance → success');
+  assert.ok(rec.messages.some((m) => /reconnect the insrc MCP/.test(m)), 'stale failed outcome ignored; commit advance → success');
 });
 
 // ---- failure (ac4) ---------------------------------------------------------
@@ -336,4 +339,93 @@ test('setLastSeen(current) is recorded on the skip path too (self-update fires o
   const versionState = fakeVersionState('3.1.4', '3.1.4');
   await runDaemonFreshnessCheck(deps({ client, notify, versionState }));
   assert.deepEqual(versionState.saved, ['3.1.4']);
+});
+
+// ---- post-update MCP-reload nudge (S001) -----------------------------------
+
+/** A success-confirming client whose commit advances after update() (nudge fires). */
+function nudgeClient(): FakeClient {
+  let commit = INSTALLED;
+  return fakeClient({ installedCommit: () => commit, update: async () => { commit = UPSTREAM; return { launched: true }; } });
+}
+
+// Self-update mode (current !== lastSeen) skips the Update/Dismiss prompt entirely,
+// so the single scripted notify choice applies to the reload nudge, not the prompt.
+const SELF_UPDATE = () => fakeVersionState('2.0.0', '1.0.0');
+
+test('post-update nudge: on a confirmed update, notify is called with the reload-nudge message AND a Reload Window action', async () => {
+  const client = nudgeClient();
+  const { notify, rec } = fakeNotify(undefined); // dismissed nudge
+  await runDaemonFreshnessCheck(deps({ client, notify, versionState: SELF_UPDATE() }));
+
+  const idx = rec.messages.findIndex((m) => m === RELOAD_NUDGE_MESSAGE);
+  assert.ok(idx >= 0, 'the exact reload-nudge message was shown');
+  assert.deepEqual(rec.actions[idx], [RELOAD_WINDOW_ACTION], "the nudge offers exactly the 'Reload Window' action");
+});
+
+test("post-update nudge: choosing 'Reload Window' with the seam present invokes reloadWindow() exactly once", async () => {
+  const client = nudgeClient();
+  const { notify } = fakeNotify(RELOAD_WINDOW_ACTION);
+  let reloadCalls = 0;
+  await runDaemonFreshnessCheck(deps({ client, notify, versionState: SELF_UPDATE(), reloadWindow: async () => { reloadCalls += 1; } }));
+  assert.equal(reloadCalls, 1, "reloadWindow() invoked once on the 'Reload Window' choice");
+});
+
+test('post-update nudge: dismissing the nudge (undefined) does NOT invoke reloadWindow()', async () => {
+  const client = nudgeClient();
+  const { notify } = fakeNotify(undefined); // nudge dismissed / closed
+  let reloadCalls = 0;
+  await runDaemonFreshnessCheck(deps({ client, notify, versionState: SELF_UPDATE(), reloadWindow: async () => { reloadCalls += 1; } }));
+  assert.equal(reloadCalls, 0, 'reloadWindow() not invoked when the nudge is dismissed');
+});
+
+test('post-update nudge: with reloadWindow omitted, the flow is notification-only and never crashes', async () => {
+  const client = nudgeClient();
+  const { notify, rec } = fakeNotify(RELOAD_WINDOW_ACTION);
+  // No reloadWindow seam in deps → choosing 'Reload Window' is a no-op, no throw.
+  await assert.doesNotReject(() => runDaemonFreshnessCheck(deps({ client, notify, versionState: SELF_UPDATE() })));
+  assert.ok(rec.messages.includes(RELOAD_NUDGE_MESSAGE), 'the nudge was still shown (notification-only)');
+});
+
+test('post-update nudge: a reloadWindow rejection is swallowed — runDaemonFreshnessCheck still resolves', async () => {
+  const client = nudgeClient();
+  const { notify } = fakeNotify(RELOAD_WINDOW_ACTION);
+  const reloadWindow = async () => { throw new Error('reload host unavailable'); };
+  await assert.doesNotReject(() => runDaemonFreshnessCheck(deps({ client, notify, versionState: SELF_UPDATE(), reloadWindow })));
+});
+
+test('post-update nudge: the nudge also follows the startup-check prompt path (Update → success → nudge)', async () => {
+  // Combined path: same-version activation → Update/Dismiss prompt → 'Update' → confirmed
+  // update → the reload nudge. The single scripted choice 'Update' drives the prompt; the
+  // nudge (an actioned notify) also receives 'Update' (≠ RELOAD_WINDOW_ACTION), so it is
+  // shown but reloadWindow is not invoked — proving the nudge is not gated on self-update mode.
+  const client = nudgeClient();
+  const { notify, rec } = fakeNotify('Update');
+  const versionState = fakeVersionState('1.0.0', '1.0.0'); // startup-check (prompt) path
+  let reloadCalls = 0;
+  await runDaemonFreshnessCheck(deps({ client, notify, versionState, reloadWindow: async () => { reloadCalls += 1; } }));
+
+  assert.deepEqual(rec.actions[0], ['Update', 'Dismiss'], 'the drift prompt is shown first');
+  assert.ok(rec.messages.includes(RELOAD_NUDGE_MESSAGE), 'the reload nudge follows a prompt-driven update too');
+  assert.equal(reloadCalls, 0, "no reload without the 'Reload Window' choice");
+});
+
+test('post-update nudge: NO nudge on a no-op update (already current) or a failed update', async () => {
+  // No-op: installed === upstream → skip entirely, no nudge.
+  {
+    const client = fakeClient({ installedCommit: UPSTREAM });
+    const { notify, rec } = fakeNotify('Update');
+    const versionState = fakeVersionState('1.0.0', '1.0.0');
+    await runDaemonFreshnessCheck(deps({ client, notify, versionState }));
+    assert.ok(!rec.messages.includes(RELOAD_NUDGE_MESSAGE), 'no nudge when already current');
+  }
+  // Failed update: commit never advances + no outcome → failure notify, NOT a nudge.
+  {
+    const client = fakeClient({ installedCommit: INSTALLED, updateOutcome: async () => null });
+    const { notify, rec } = fakeNotify('Update');
+    const versionState = fakeVersionState('1.0.0', '1.0.0');
+    await runDaemonFreshnessCheck(deps({ client, notify, versionState, reconnectBudgetMs: 0, now: () => 1_000 }));
+    assert.ok(!rec.messages.includes(RELOAD_NUDGE_MESSAGE), 'no nudge on a failed update');
+    assert.ok(rec.messages.some((m) => /update failed/.test(m)), 'a failure notify was shown instead');
+  }
 });

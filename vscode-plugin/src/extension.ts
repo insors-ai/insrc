@@ -162,6 +162,10 @@ export function activate(context: vscode.ExtensionContext): void {
       getLastSeen: () => context.globalState.get<string>(LAST_SEEN_PLUGIN_VERSION_KEY),
       setLastSeen: (v) => context.globalState.update(LAST_SEEN_PLUGIN_VERSION_KEY, v),
     },
+    // Reload the window when the user accepts the post-update nudge: a reload
+    // respawns the MCP host so claude/codex reconnect to the freshly updated daemon.
+    reloadWindow: () =>
+      Promise.resolve(vscode.commands.executeCommand('workbench.action.reloadWindow')).then(() => undefined),
   });
 
   // S001-settings-UI sc8: the ConfigSync engine that keeps the native

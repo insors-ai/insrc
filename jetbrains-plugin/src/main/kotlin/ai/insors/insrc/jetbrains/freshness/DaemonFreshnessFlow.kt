@@ -45,6 +45,15 @@ object DaemonFreshnessFlow {
     /** How often (ms) the reconnect-and-confirm loop re-probes the restarting daemon. */
     const val DEFAULT_POLL_INTERVAL_MS = 1_000L
 
+    /**
+     * The message shown after a successful daemon update. The daemon is now current, but the
+     * MCP connection held by the `claude`/`codex` CLI still points at the pre-update daemon
+     * process — the user must restart their CLI session for the new daemon to take effect.
+     * Notification-only: the IDE cannot restart the CLI-owned MCP host in place.
+     */
+    const val RELOAD_NUDGE_MESSAGE =
+        "insrc: daemon updated. Restart your claude / codex session to reconnect the insrc MCP connection to the new daemon."
+
     private data class ConfirmResult(val succeeded: Boolean, val error: String?)
 
     /**
@@ -125,7 +134,11 @@ object DaemonFreshnessFlow {
 
             val result = confirmUpdate(deps, priorCommit, startedAtMs)
             if (result.succeeded) {
-                deps.notify.show(NotifyKind.INFO, "insrc: the daemon was updated.", null)
+                // The daemon is current, but the MCP connection held by the claude/codex CLI
+                // still points at the pre-update daemon process. There is no in-place MCP
+                // restart from the IDE, so nudge the user to restart their CLI session
+                // (notification-only — no action slot).
+                deps.notify.show(NotifyKind.INFO, RELOAD_NUDGE_MESSAGE, null)
             } else {
                 deps.notify.show(NotifyKind.FAILURE, failureMessage(result.error ?: "the daemon did not come back"), null)
             }

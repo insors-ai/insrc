@@ -1,0 +1,55 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1790333615961-de8nxi",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-25T10:53:35.963Z",
+    "model": "client",
+    "elapsedMs": 6,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b29f5fb26f3bd9fe",
+    "storyId": "S001"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "b29f5fb26f3bd9fe",
+    "storyId": "S001",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/freshness/DaemonFreshnessFlow.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/freshness/DaemonFreshnessFlowTest.kt",
+        "vscode-plugin/src/extension.ts",
+        "vscode-plugin/src/freshness/__tests__/daemon-freshness.test.ts",
+        "vscode-plugin/src/freshness/__tests__/extension-wiring.test.ts",
+        "vscode-plugin/src/freshness/daemon-freshness.ts",
+        "vscode-plugin/src/vscode.d.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 0
+    }
+  }
+}

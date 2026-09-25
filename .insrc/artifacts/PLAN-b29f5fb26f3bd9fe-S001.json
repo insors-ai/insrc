@@ -1,0 +1,259 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1790332453359-4om7ru",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-25T10:38:20.948Z",
+    "epicCreatedAt": "2026-09-25T10:38:20.948Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 247580,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b29f5fb26f3bd9fe",
+    "epicSlug": "after-daemon-self-update-actually-changes",
+    "storyId": "S001",
+    "lldRunId": "wf-1790331939226-pgnorf",
+    "lldEffectiveHash": "b29f5fb26f3bd9fef83c064f203fa196b05591a761d4bcdae2fd709367212161",
+    "approvedAt": "2026-09-25T10:41:31.119Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "VS Code: add reloadWindow seam + reload-nudge on the update-success branch",
+        "summary": "In vscode-plugin/src/freshness/daemon-freshness.ts: add readonly reloadWindow?: () => Promise<void> to DaemonFreshnessDeps; change the confirmUpdate-success branch (currently notify('insrc daemon updated successfully.')) to notify the MCP-reload nudge with a 'Reload Window' action, and if the returned choice is 'Reload Window' and deps.reloadWindow is set, await it inside try/catch (swallow rejection). Fire-once/no-op/failed gating inherited (no new logic).",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "DaemonFreshnessDeps has an optional reloadWindow?: () => Promise<void>",
+          "success branch calls notify(nudgeMsg, 'Reload Window'); choice 'Reload Window' + present seam -> await reloadWindow() once; rejection swallowed",
+          "failure/no-op branches unchanged; tsc/eslint clean"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "daemon-freshness: confirmed update -> notify called with reload-nudge message + 'Reload Window' action"
+          },
+          {
+            "level": "unit",
+            "name": "daemon-freshness: notify resolves 'Reload Window' + seam present -> reloadWindow() invoked exactly once"
+          },
+          {
+            "level": "unit",
+            "name": "daemon-freshness: notify dismissed (undefined) -> reloadWindow() NOT invoked"
+          },
+          {
+            "level": "unit",
+            "name": "daemon-freshness: reloadWindow omitted -> notification-only, no crash"
+          },
+          {
+            "level": "unit",
+            "name": "daemon-freshness: reloadWindow rejection swallowed -> runDaemonFreshnessCheck still resolves"
+          },
+          {
+            "level": "unit",
+            "name": "daemon-freshness: no nudge on no-op update (commit unchanged) or failed update"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "VS Code: wire the production reloadWindow seam in extension activation",
+        "summary": "In the VS Code extension activation that constructs the production DaemonFreshnessDeps, inject reloadWindow: () => executeCommand('workbench.action.reloadWindow') (as a Promise<void>).",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "extension activation passes a reloadWindow seam wired to workbench.action.reloadWindow",
+          "tsc clean; the bundle builds"
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "extension-wiring: production DaemonFreshnessDeps wires reloadWindow -> workbench.action.reloadWindow"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "JetBrains: reload-nudge message on the update-success branch (notification-only)",
+        "summary": "In jetbrains-plugin/.../freshness/DaemonFreshnessFlow.kt performUpdate success branch, change the notify.show(INFO, ...) message to the MCP-reload nudge naming the remedy ('restart your claude or codex session to refresh the insrc MCP connection'); keep the action slot null (no NotificationAction).",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "success branch notify.show(INFO, nudgeMsg, null) — message changed, action slot stays null",
+          "no new NotificationAction / no EDT dispatch introduced; compiles"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "DaemonFreshnessFlow: confirmed update -> notify.show(INFO, reload-nudge message, null action)"
+          },
+          {
+            "level": "unit",
+            "name": "DaemonFreshnessFlow: no nudge on no-op/failed update (failure balloon instead)"
+          },
+          {
+            "level": "unit",
+            "name": "DaemonFreshnessFlow: nudge fires at most once per plugin version (setLastSeen gating)"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Tests: extend the freshness suites in both plugins",
+        "summary": "VS Code: extend the daemon-freshness unit suite (nudge message + 'Reload Window' action; choice->reloadWindow() once; dismiss->not called; seam omitted->notification-only; rejection swallowed; no nudge on no-op/failed) + the extension-wiring source-scan (reloadWindow wired to workbench.action.reloadWindow). JetBrains: extend the DaemonFreshnessFlow unit tests (success->INFO nudge msg + null action; no nudge on no-op/failed; once-per-version).",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "VS Code freshness unit + extension-wiring tests cover all s6 subjects and pass",
+          "JetBrains DaemonFreshnessFlow tests cover the nudge subjects and pass",
+          "full VS Code + JetBrains freshness suites green (JDK21 for JetBrains)"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "VS Code freshness suite green: all nudge/reload/gating subjects (t1) pass under tsx --test"
+          },
+          {
+            "level": "integration",
+            "name": "VS Code extension-wiring suite green: reloadWindow production wiring (t2) passes"
+          },
+          {
+            "level": "unit",
+            "name": "JetBrains DaemonFreshnessFlow suite green: nudge/gating subjects (t3) pass under JUnit5/JDK21"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "on a confirmed update (installed commit advanced), notify is called with the reload-nudge message AND a 'Reload Window' action",
+        "coveredByTaskIds": [
+          "t1",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "when notify resolves to 'Reload Window' and deps.reloadWindow is set, deps.reloadWindow() is invoked exactly once",
+        "coveredByTaskIds": [
+          "t1",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "when notify resolves to undefined (dismissed), deps.reloadWindow() is NOT invoked",
+        "coveredByTaskIds": [
+          "t1",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "when deps.reloadWindow is omitted, no crash (notification-only)",
+        "coveredByTaskIds": [
+          "t1",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "a reloadWindow rejection is swallowed — runDaemonFreshnessCheck still resolves",
+        "coveredByTaskIds": [
+          "t1",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "no nudge on a no-op update (commit unchanged) or a failed update",
+        "coveredByTaskIds": [
+          "t1",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "on a confirmed update, notify.show is called with NotifyKind.INFO + the reload-nudge message + null action",
+        "coveredByTaskIds": [
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "no nudge on a no-op update (commit unchanged) or a failed update (failure balloon instead)",
+        "coveredByTaskIds": [
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "the nudge fires at most once per plugin version (setLastSeen gating)",
+        "coveredByTaskIds": [
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "extension wiring passes a reloadWindow seam that calls workbench.action.reloadWindow",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contract: VS Code update-success branch notifies the MCP-reload nudge with a 'Reload Window' action (daemon-freshness.ts)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contract: DaemonFreshnessDeps gains an optional reloadWindow seam invoked once on the 'Reload Window' choice, rejection swallowed"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contract: JetBrains DaemonFreshnessFlow success branch shows the reload nudge as a notification-only INFO balloon (null action)"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contract: nudge inherits the existing fire-once-per-version / no-op / failed gating (no new logic)"
+    }
+  ]
+}

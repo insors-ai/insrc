@@ -41,6 +41,22 @@ export const DEFAULT_RECONNECT_BUDGET_MS = 300_000;
 export const RECONNECT_POLL_INTERVAL_MS = 1_000;
 
 /**
+ * The action label offered on the post-update nudge. Choosing it invokes the
+ * {@link DaemonFreshnessDeps.reloadWindow} seam (a window reload respawns the MCP
+ * host so `claude`/`codex` reconnect to the freshly updated daemon).
+ */
+export const RELOAD_WINDOW_ACTION = 'Reload Window';
+
+/**
+ * The message shown after a successful daemon update. The daemon is now current,
+ * but the MCP connection held by the `claude`/`codex` CLI still points at the
+ * pre-update daemon process — the user must reload the window (respawns the MCP
+ * host) or restart their CLI session for the new daemon to take effect.
+ */
+export const RELOAD_NUDGE_MESSAGE =
+  'insrc daemon updated. Reload the window to reconnect the insrc MCP connection to the new daemon (or restart your claude / codex session).';
+
+/**
  * The native-notification seam (mirrors extension.ts's showInformationMessage):
  * `notify(message, ...actions)` resolves the chosen action label, or `undefined`
  * when the notification is dismissed/closed. No modal (k7). The real impl binds
@@ -81,6 +97,15 @@ export interface DaemonFreshnessDeps {
   sleep?: ((ms: number) => Promise<void>) | undefined;
   /** Injectable epoch-ms clock for the budget + outcome-freshness (tests advance it); defaults to Date.now. */
   now?: (() => number) | undefined;
+  /**
+   * Optional window-reload seam invoked when the user picks {@link RELOAD_WINDOW_ACTION}
+   * on the post-update nudge. The real impl binds
+   * `vscode.commands.executeCommand('workbench.action.reloadWindow')` — reloading
+   * the window respawns the MCP host so `claude`/`codex` reconnect to the freshly
+   * updated daemon. Omitted in tests / where no reload host exists ⇒ the nudge is
+   * notification-only. A rejection is swallowed (never surfaces from the flow).
+   */
+  reloadWindow?: (() => Promise<void>) | undefined;
 }
 
 interface ConfirmResult {
@@ -191,7 +216,17 @@ async function performUpdate(deps: DaemonFreshnessDeps, priorCommit: string): Pr
 
   const result = await confirmUpdate(deps, priorCommit, startedAtMs);
   if (result.state === 'succeeded') {
-    await deps.notify('insrc daemon updated successfully.');
+    // The daemon is current, but the MCP host held by claude/codex still points at
+    // the old daemon process. Nudge the user to reload the window (respawns the MCP
+    // host) — one-click when the reload seam is wired, notification-only otherwise.
+    const choice = await deps.notify(RELOAD_NUDGE_MESSAGE, RELOAD_WINDOW_ACTION);
+    if (choice === RELOAD_WINDOW_ACTION && deps.reloadWindow !== undefined) {
+      try {
+        await deps.reloadWindow();
+      } catch {
+        /* a reload failure must never surface from the fire-and-forget flow */
+      }
+    }
   } else {
     await deps.notify(failureMessage(result.error ?? 'the daemon did not come back'));
   }

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>vs code extension — insrc</title>
+<meta name="description" content="The insrc VS Code extension: a thin orchestrator that installs and manages the insrc daemon, wires insrc's MCP tools into your AI host, registers your workspace, and edits the daemon config from native VS Code Settings. Install, first-run onboarding, how it works, clean removal, and building from source.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13' font-family='monospace' fill='%234ade80'>▌</text></svg>">
+<link rel="stylesheet" href="css/tui.css">
+</head>
+<body>
+<a class="skip" href="#main">skip to content</a>
+
+<nav class="nav"><div class="nav-inner">
+  <span class="brand">insrc<span class="sig">.daemon</span></span>
+  <div class="nav-links">
+    <a href="index.html">home</a>
+    <a href="getting-started.html">getting started</a>
+    <a href="workflow.html">workflow</a>
+    <a href="cli.html">cli</a>
+    <a href="plugin.html">jetbrains</a>
+    <a href="vscode.html">vscode</a>
+    <a href="settings.html">settings</a>
+    <a href="architecture.html">architecture</a>
+    <a href="analyze.html">analyze</a>
+    <a href="tracker.html">tracker</a>
+    <a href="tools.html">tools</a>
+  </div>
+  <button class="theme-btn" type="button" aria-label="toggle theme">◐ light</button>
+</div></nav>
+
+<div class="wrap"><main id="main">
+
+  <h1>VS Code extension</h1>
+  <p class="lead">Grounded code-knowledge and the tracked insrc workflow, wired into your AI assistant — the VS Code counterpart to the insrc <a href="plugin.html">JetBrains plugin</a>. Like it, the extension is a <strong>thin orchestrator that owns no reasoning</strong>: it installs and manages the backing daemon, wires insrc into your AI host's MCP config, and registers your workspace — so your assistant answers from a citation-grounded model of <em>your</em> codebase.</p>
+
+  <h2 id="overview">What it is</h2>
+  <p>All the reasoning still runs through the insrc MCP server that your host's assistant invokes — the extension opens no cloud path of its own. Its whole job is orchestration at editor lifecycle moments (activation, install, uninstall):</p>
+  <ul>
+    <li><strong>Installs &amp; manages the daemon.</strong> It ensures the <a href="architecture.html">insrc daemon</a> is present and current, delegating to the same installer the CLI uses, and exposes its whole lifecycle as commands.</li>
+    <li><strong>Wires your AI host.</strong> It registers the insrc MCP server plus the tracked-workflow steering into your agentic host's own config and rules files (Claude Code, Cursor, …).</li>
+    <li><strong>Registers your workspace.</strong> It adds the open workspace to the daemon through the strict <code>repo.add</code> contract so it gets indexed, scoping every capability call to that repo.</li>
+    <li><strong>Edits the daemon config in native Settings.</strong> The daemon's configuration is a set of typed, machine-scoped <code>insrc.*</code> settings — no hand-edited JSON, and it never syncs off this machine.</li>
+  </ul>
+  <div class="tip"><strong>Privacy.</strong> The extension stores no secrets and opens no cloud path — all reasoning routes through your assistant's existing CLI / OAuth sessions. Every write into a host-owned config or rules file is marker-delimited and replace-only, so it preserves your surrounding content and is fully reversed on uninstall.</div>
+
+  <h2 id="requirements">Requirements</h2>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Requirement</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td><strong>VS Code 1.75+</strong></td><td>Stock Visual Studio Code (or a compatible fork such as Cursor). The extension activates on startup and stays dormant until you accept its onboarding prompts.</td></tr>
+      <tr><td><strong>An MCP-capable AI host</strong></td><td>The agentic assistant that invokes the insrc MCP server — e.g. Claude Code or Cursor. The extension writes the MCP registration into that host's config; without one, insrc's tools simply aren't wired.</td></tr>
+      <tr><td><strong>The insrc daemon</strong></td><td>The backend the extension talks to. It is installed on first use (see onboarding below); no manual step needed.</td></tr>
+      <tr><td><strong>Node + git</strong></td><td>Used by the daemon and its installer to clone and build the daemon into <code>~/.insrc/</code>.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="install">Install</h2>
+
+  <h3>A · VS Code Marketplace <span class="c">(recommended)</span></h3>
+  <p>Open the <strong>Extensions</strong> view (<kbd>⇧⌘X</kbd> / <kbd>Ctrl+Shift+X</kbd>), search for <strong>insrc</strong>, and click <strong>Install</strong> — or install <a href="https://marketplace.visualstudio.com/items?itemName=insors.insrc-vscode"><code>insors.insrc-vscode</code></a> from the Marketplace page. Updates arrive like any other extension.</p>
+
+  <h3>B · Install from a .vsix <span class="c">(pre-release / internal)</span></h3>
+  <p>Build the package (see <a href="#build">building from source</a>) — a single <code>insrc-vscode-&lt;version&gt;.vsix</code> — then install it directly:</p>
+  <p><strong>Extensions view → ⋯ → Install from VSIX…</strong> and select the built file, or from a shell: <code>code --install-extension insrc-vscode-&lt;version&gt;.vsix</code>.</p>
+
+  <h2 id="setup">First-run onboarding</h2>
+  <p>Installing the extension does <em>not</em> touch the daemon by itself — setup happens on first activation, as one coalesced flow that prompts for each step independently and only when it is actually needed:</p>
+  <ol>
+    <li><strong>Install the insrc daemon</strong> into <code>~/.insrc/</code>. Accepting runs the bootstrap installer that clones and builds the daemon; if it is already present it is silently kept current instead.</li>
+    <li><strong>Register this workspace</strong> with the daemon (<code>repo.add</code>) so it gets indexed.</li>
+    <li><strong>Wire your AI host</strong> (Claude Code, Cursor, …) so insrc's MCP tools are available to your assistant.</li>
+  </ol>
+  <div class="note">Skipped a prompt? Every action is also a durable Command-Palette command: <code>insrc: Install daemon</code> / <code>Start</code> / <code>Stop</code> / <code>Restart</code> / <code>Update daemon</code>, <code>insrc: Wire AI hosts</code>, and <code>insrc: Register workspace</code>. Nothing happens without your explicit consent.</div>
+
+  <h2 id="usage">How it works</h2>
+  <p>Once a workspace is registered, you keep using your assistant exactly as before — the extension just makes it far more grounded:</p>
+  <ul>
+    <li><strong>Grounded answers.</strong> Because the insrc MCP server is registered with your host, your assistant explores the code through insrc's citation-grounded <a href="analyze.html">analyze</a> tools — file paths come from the real index, not guesses.</li>
+    <li><strong>Tracked workflow.</strong> The steering block guides the assistant to route feature work through insrc's <a href="workflow.html">define → design → plan → build</a> workflow, with an independent review before approval.</li>
+    <li><strong>Per-workspace scope.</strong> Every capability call carries the open workspace's path, so each window is scoped to its own repo — no cross-talk between projects.</li>
+  </ul>
+
+  <h2 id="in-editor">In the editor</h2>
+  <p>Beyond the invisible wiring, the extension adds a small set of native surfaces so you can drive and inspect insrc without leaving VS Code or dropping to a shell:</p>
+  <ul>
+    <li><strong>Native Settings (<code>insrc.*</code>).</strong> The daemon's whole configuration is editable from VS Code Settings (search <code>insrc</code>) — log level, Ollama host, permission mode, model tiers, plan depth, embeddings, and per-role tier overrides (<code>insrc.models.tasks.*</code>). Every option is typed and machine-scoped, so it never syncs off this machine. The view stays <strong>truthful to the daemon</strong>: an edit the daemon rejects is reverted with its reason, and external changes (from the CLI, JetBrains, or another window) are reconciled via <code>insrc: Refresh insrc settings</code>. See the <a href="settings.html">settings guide</a>.</li>
+    <li><strong>Model-tier picker.</strong> <code>insrc: Set model tier</code> walks you through a tier → provider → model picker whose list is exactly what the daemon offers for that tier's provider (Ollama's installed models, or the curated Claude / Codex catalog) — no typing raw model ids.</li>
+    <li><strong>Status-bar panels.</strong> The status-bar <strong>insrc</strong> item opens <strong>Open Detailed Status</strong> — a tabbed panel over the running daemon (<strong>Daemon</strong> state, the per-work-item <strong>Workflows</strong> chain, and a <strong>Debug</strong> tab with attached MCP clients, a live daemon-log tail, and a consent-gated cleanup of stray insrc processes) — and <strong>Open Repo Configuration</strong>, a form editor for any registered repo's per-repo model-tier overrides.</li>
+  </ul>
+  <div class="note">These surfaces are read/edit views over the local daemon socket — no background polling (only the Debug log tails while its tab is open), and no cloud path. The only state-changing controls are explicit and, where they matter, consent-gated: config edits, the daemon lifecycle commands, the Debug stray-process cleanup, and repo-config writes.</div>
+
+  <h2 id="update">Keeping the daemon current</h2>
+  <p>On activation (only when the daemon is already reachable) the extension compares the installed daemon's commit against its upstream and, on drift, offers an <strong>Update / Dismiss</strong> notification that updates the daemon in place on your OK; updating the extension itself brings the daemon current automatically. A failed update surfaces once with the reason — nothing is retried or rolled back, because the daemon owns its own state.</p>
+  <div class="tip">After a successful update the extension nudges you to <strong>Reload Window</strong> so the insrc MCP connection reconnects to the freshly-updated daemon. A <code>claude</code> / <code>codex</code> session running outside the editor needs a manual restart instead — reloading the window respawns the editor's own MCP host, not an external CLI.</div>
+
+  <h2 id="removal">Clean removal</h2>
+  <p>All of the extension's writes into host-owned files are reversible:</p>
+  <ul>
+    <li><strong>Uninstall</strong> runs a <code>vscode:uninstall</code> hook that removes exactly the insrc marker-delimited blocks it added (the MCP registration and the steering section) from every host config it wrote — your own rules and other MCP servers are untouched.</li>
+    <li><strong>A mere disable</strong> leaves those writes intact, so re-enabling needs no re-prompting.</li>
+  </ul>
+
+  <h2 id="build">Build from source</h2>
+  <p>The extension lives in-repo under <code>vscode-plugin/</code>. It bundles with esbuild to a self-contained <code>.vsix</code> that inlines the shared IPC client and marks <code>vscode</code> external (shipping no repo source):</p>
+  <div class="code">
+    <div class="code-head"><span class="name">bash</span><button class="copy" type="button">copy</button></div>
+<pre><code><span class="p">$</span> cd vscode-plugin
+<span class="p">$</span> npm install
+<span class="p">$</span> npm test          <span class="c"># the node:test (tsx --test) suite — the local gate</span>
+<span class="p">$</span> npm run bundle    <span class="c"># esbuild → out/extension.js + out/uninstall.js (CJS)</span>
+<span class="p">$</span> npm run package   <span class="c"># @vscode/vsce package → a single .vsix</span></code></pre>
+  </div>
+  <div class="tip">Publishing is a <strong>deliberate, manually-triggered</strong> action — never a per-push CI job — and targets the VS Code Marketplace only: bump the <code>version</code> in <code>package.json</code>, then run the <strong>vscode-plugin</strong> GitHub Actions workflow (<code>workflow_dispatch</code>), which bundles, packages and <code>vsce publish</code>es using the <code>VSCE_PAT</code> secret.</div>
+
+  <h2 id="next">Where next</h2>
+  <div class="grid">
+    <a class="card" href="settings.html"><div class="glyph">⚙</div><h4>Settings</h4><p>Every <code>insrc.*</code> option the extension exposes in native VS Code Settings, plus the Detailed Status and Repo Configuration panels.</p><span class="more">read</span></a>
+    <a class="card" href="getting-started.html"><div class="glyph">▶</div><h4>Getting started</h4><p>Install and run the daemon, index a repo, and ask your first grounded question.</p><span class="more">read</span></a>
+    <a class="card" href="plugin.html"><div class="glyph">⬡</div><h4>JetBrains plugin</h4><p>The same integration for IntelliJ IDEA, PyCharm, GoLand and WebStorm.</p><span class="more">read</span></a>
+  </div>
+
+</main></div>
+
+<footer class="foot"><div class="foot-inner">
+  <span class="seg"><span class="accent">insrc</span> · code-knowledge daemon</span>
+  <span class="seg">TypeScript · ESM · Node 20+</span>
+  <span class="seg">LMDB + Lance + DuckDB</span>
+  <span class="seg"><a href="https://github.com/insors-ai/insrc">github</a></span>
+  <span class="seg" style="margin-left:auto">local-first · no keys · no REST</span>
+</div></footer>
+
+<script src="js/tui.js"></script>
+</body>
+</html>

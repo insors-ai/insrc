@@ -42,7 +42,7 @@ function buildNextCall(result: TriageResult, focus: string, repo: string): Triag
 	const { route, sizeClass, magnitude, rationale, storyTitle } = result;
 	// Epic → the full chain head, no standalone params.
 	if (route.startStage === 'define') {
-		return { tool: 'insrc_workflow_run', params: { repo, workflow: 'define', focus } };
+		return { tool: 'insrc_workflow_step', params: { phase: 'start', repo, workflow: 'define', focus } };
 	}
 	// Bugfix → the `issue` record first (single source for the chain + the GitHub
 	// issue body). The magnitude carried here lets the downstream flow decide
@@ -50,8 +50,9 @@ function buildNextCall(result: TriageResult, focus: string, repo: string): Triag
 	// plan→build). Standalone, like every non-epic entry.
 	if (route.startStage === 'issue') {
 		return {
-			tool: 'insrc_workflow_run',
+			tool: 'insrc_workflow_step',
 			params: {
+				phase: 'start',
 				repo, workflow: 'issue', focus,
 				params: {
 					standalone: true,
@@ -79,8 +80,9 @@ function buildNextCall(result: TriageResult, focus: string, repo: string): Triag
 	// Feature / Small → a standalone design.story (LLD). Feature then plans;
 	// Small goes straight to build after the LLD is approved.
 	return {
-		tool: 'insrc_workflow_run',
+		tool: 'insrc_workflow_step',
 		params: {
+			phase: 'start',
 			repo, workflow: 'design.story', focus,
 			params: {
 				standalone: true,

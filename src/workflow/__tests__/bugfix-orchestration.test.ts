@@ -73,9 +73,10 @@ test("nextAfterIssue: magnitude='small' -> standalone insrc_build_step (issue->b
 	assert.ok(nc.params['standalone']);
 });
 
-test("nextAfterIssue: magnitude='sized' -> standalone insrc_workflow_run design.story", () => {
+test("nextAfterIssue: magnitude='sized' -> standalone insrc_workflow_step design.story (START)", () => {
 	const nc = nextAfterIssue(issue({ magnitude: 'sized', approvedAt: APPROVED }), '/repo');
-	assert.equal(nc.tool, 'insrc_workflow_run');
+	assert.equal(nc.tool, 'insrc_workflow_step');
+	assert.equal(nc.params['phase'], 'start');
 	assert.equal(nc.params['workflow'], 'design.story');
 });
 

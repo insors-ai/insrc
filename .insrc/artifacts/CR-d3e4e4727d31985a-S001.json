@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1790329378050-a9kjo3",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-25T09:42:58.050Z",
+    "model": "client",
+    "elapsedMs": 1,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d3e4e4727d31985a",
+    "storyId": "S001"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "d3e4e4727d31985a",
+    "storyId": "S001",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "src/mcp/steering-template.md",
+        "src/mcp/triage-step/__tests__/handler.test.ts",
+        "src/mcp/triage-step/phases/classify.ts",
+        "src/mcp/triage-step/types.ts",
+        "src/workflow/__tests__/bugfix-orchestration.test.ts",
+        "src/workflow/bugfix/next-after-issue.ts",
+        "src/workflow/bugfix/types.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "src/mcp/triage-step/phases/classify.ts:45",
+            "message": "Adheres to the Story + the epic's intent: all three workflow_run nextCall branches (define/issue/design.story) + the sized bugfix branch now emit insrc_workflow_step with phase:'start'; the trivial insrc_build_step branch is untouched; the insrc_workflow_run MCP tool stays registered (only the recommendation changed). The narrowed nextCall.tool unions compiler-enforce 'no run path'. No adherence breach.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/bugfix/types.ts:23",
+            "message": "Conventions clean: the deliberate triage/bugfix module boundary is preserved (BugfixNextCall stays a local re-declaration, no cross-import); no console.log; .js imports; no exactOptionalPropertyTypes violation (epic branch omits params rather than assigning undefined). Stale module docstring in src/daemon/steering-inject.ts:10 (workflow_run -> workflow_step) folded pre-commit.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/mcp/triage-step/__tests__/handler.test.ts:53",
+            "message": "CAVEAT: the daemon graph grounding is HOLLOW (diff-fallback — all 7 changed files show 0 callers/0 testsReaching), so coverage can't be judged from graph edges. Judged by RUNNING the suites: handler.test.ts + bugfix-orchestration.test.ts assert both nextCall.tool==='insrc_workflow_step' AND params.phase==='start' for the feature/epic/issue/sized branches, and the trivial build_step branch is a retained regression guard; the full mcp+workflow sweep passes 972/972 (2 live-gated skips), tsc --noEmit clean. Coverage is complete for the change; not raising a HIGH from empty edges.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/mcp/triage-step/types.ts:64",
+            "message": "Good quality: narrowing the union (not just swapping the literal) makes tsc reject any future re-introduction of an insrc_workflow_run nextCall — a compiler-enforced guardrail, not just a runtime string change. nextCall is advisory (no runtime switch dispatches on .tool, verified), so the change is behaviorally safe. The emitted {phase:'start', repo, workflow, focus, params?} is a valid insrc_workflow_step START (phase enum includes 'start'; repo/params accepted — confirmed against server.ts registration).",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 4
+    }
+  }
+}

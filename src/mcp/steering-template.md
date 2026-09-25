@@ -12,8 +12,8 @@ region if present, and never clobbers your surrounding content. Re-running
 **The canonical block content lives in [`src/prompts/steering-block.md`](../prompts/steering-block.md)**
 (a shipped asset the daemon reads at inject time). It steers a controller
 (Claude / Codex) to use `insrc_analyze_step` for code questions, `insrc_triage`
-first for build requests, `insrc_workflow_run` to run the routed workflow, and
-`insrc_review_step` to review before approving.
+first for build requests, `insrc_workflow_step` to drive the routed workflow
+turn-by-turn, and `insrc_review_step` to review before approving.
 
 ## Manual install (if you declined the prompt)
 

@@ -71,8 +71,9 @@ export function nextAfterIssue(issue: IssueArtifact, repo: string): BugfixNextCa
 	// upstream gates carry it to build. The full defect body is the spec so the
 	// LLD author has the reproduction/root-cause/fix-intent, not just the title.
 	return {
-		tool:   'insrc_workflow_run',
+		tool:   'insrc_workflow_step',
 		params: {
+			phase:    'start',
 			repo,
 			workflow: 'design.story',
 			focus:    scope,

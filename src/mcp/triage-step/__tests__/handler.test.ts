@@ -50,7 +50,8 @@ test('feature → standalone design.story with plan; nextCall pre-fills standalo
 	assert.equal(done.route.startStage, 'design.story');
 	assert.equal(done.route.standalone, true);
 	assert.equal(done.route.needsPlan, true);
-	assert.equal(done.nextCall.tool, 'insrc_workflow_run');
+	assert.equal(done.nextCall.tool, 'insrc_workflow_step');
+	assert.equal((done.nextCall.params as { phase?: string }).phase, 'start');
 	assert.equal((done.nextCall.params as { workflow?: string }).workflow, 'design.story');
 	const p = done.nextCall.params['params'] as Record<string, unknown>;
 	assert.equal(p['standalone'], true);
@@ -83,6 +84,8 @@ test('epic → define, full chain, no standalone params', async () => {
 	const done = await classify(s.state, wellFormed('epic'));
 	assert.equal(done.route.startStage, 'define');
 	assert.equal(done.route.standalone, false);
+	assert.equal(done.nextCall.tool, 'insrc_workflow_step');
+	assert.equal((done.nextCall.params as { phase?: string }).phase, 'start');
 	assert.equal((done.nextCall.params as { workflow?: string }).workflow, 'define');
 	assert.equal(done.nextCall.params['params'], undefined, 'no standalone params for an Epic');
 });
@@ -95,7 +98,8 @@ test('bugfix (small) → issue → build; nextCall enters the issue workflow wit
 	assert.equal(done.route.standalone, true);
 	assert.equal(done.route.needsPlan, false);
 	assert.equal(done.route.producesLld, false);
-	assert.equal(done.nextCall.tool, 'insrc_workflow_run');
+	assert.equal(done.nextCall.tool, 'insrc_workflow_step');
+	assert.equal((done.nextCall.params as { phase?: string }).phase, 'start');
 	assert.equal((done.nextCall.params as { workflow?: string }).workflow, 'issue');
 	const p = done.nextCall.params['params'] as Record<string, unknown>;
 	assert.equal(p['magnitude'], 'small');

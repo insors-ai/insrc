@@ -56,9 +56,12 @@ export interface TriageDone {
 		readonly needsPlan:   boolean;
 		readonly producesLld: boolean;
 	};
-	/** The exact tool call the controller should make next, pre-filled. */
+	/** The exact tool call the controller should make next, pre-filled.
+	 *  Workflows are driven turn-by-turn via insrc_workflow_step (START phase) —
+	 *  never insrc_workflow_run, whose async poll/handoff can stall in a
+	 *  resolution loop and error on completion. */
 	readonly nextCall: {
-		readonly tool:   'insrc_workflow_run' | 'insrc_build_step';
+		readonly tool:   'insrc_workflow_step' | 'insrc_build_step';
 		readonly params: Record<string, unknown>;
 	};
 	/** Human-readable one-liner rendered to the user. */

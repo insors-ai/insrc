@@ -20,7 +20,7 @@ import type { TrackerCreateDeps, TrackerIssueResult } from './tracker.js';
  *  (src/mcp/triage-step/phases/classify.ts), re-declared locally so s4 does not
  *  import triage-step internals. */
 export interface BugfixNextCall {
-	readonly tool:   'insrc_workflow_run' | 'insrc_build_step';
+	readonly tool:   'insrc_workflow_step' | 'insrc_build_step';
 	readonly params: Record<string, unknown>;
 }
 

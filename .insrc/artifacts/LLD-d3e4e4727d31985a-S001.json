@@ -1,0 +1,391 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1790328529145-sdfs9k",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-25T09:32:41.875Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 232699,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d3e4e4727d31985a",
+    "epicSlug": "change-triage-buildnextcall-src-mcp-triage",
+    "storyId": "S001",
+    "hldBaseRunId": "wf-1790328529145-sdfs9k",
+    "hldEffectiveHash": "d3e4e4727d31985a3a6c8b5ee619d08af88da9f6c4b48ea824d9eca9a099b644",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "small",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "src/mcp/triage-step/phases/classify.ts buildNextCall has exactly three branches emitting tool:'insrc_workflow_run' (define, issue, design.story) plus one emitting tool:'insrc_build_step' (trivial).",
+          "evidence": "Confirmed: classify.ts has 3 tool:'insrc_workflow_run' branches + 1 tool:'insrc_build_step'; read at :45 confirmed.",
+          "action": "Confirmed — no change needed.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "TriageDone.nextCall.tool is declared as 'insrc_workflow_run' | 'insrc_build_step' in src/mcp/triage-step/types.ts.",
+          "evidence": "Confirmed: the union 'insrc_workflow_run' | 'insrc_build_step' at src/mcp/triage-step/types.ts:61.",
+          "action": "Confirmed — no change needed.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "BugfixNextCall.tool is declared as 'insrc_workflow_run' | 'insrc_build_step' in src/workflow/bugfix/types.ts, deliberately re-declared to avoid importing triage-step internals.",
+          "evidence": "Confirmed: interface BugfixNextCall at src/workflow/bugfix/types.ts:23 with the same union (the 'does not import' phrasing grep missed the exact wording but the :23 read confirmed the declaration).",
+          "action": "Confirmed — no change needed.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/workflow/bugfix/next-after-issue.ts emits tool:'insrc_workflow_run' for the sized design.story follow-up and tool:'insrc_build_step' for the trivial/small path.",
+          "evidence": "Confirmed: next-after-issue.ts emits both tool literals; the sized design.story branch at :74 emits insrc_workflow_run.",
+          "action": "Confirmed — no change needed.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl5",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/mcp/triage-step/__tests__/handler.test.ts asserts done.nextCall.tool==='insrc_workflow_run' (feature->design.story and bugfix->issue) and ==='insrc_build_step' (trivial).",
+          "evidence": "Confirmed: handler.test.ts asserts nextCall.tool==='insrc_workflow_run' (2) + 'insrc_build_step' (1); :53 confirmed.",
+          "action": "Confirmed — update these assertions in the build.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl6",
+          "kind": "external-contract",
+          "severity": "LOW",
+          "premise": "insrc_workflow_step's START call is shaped {phase:'start', workflow, focus, params?} (plus repo), so each converted branch is directly executable as an insrc_workflow_step START.",
+          "evidence": "The deterministic probe was capped/inconclusive (0 src matches surfaced), but insrc_workflow_step's START shape {phase:'start', workflow, focus, params?} is verified by this session's own repeated insrc_workflow_step START calls. The claim holds; only the probe was weak.",
+          "action": "Confirmed by direct usage; the build will still be validated by tsc + the running MCP contract.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl7",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "nextCall is advisory output only — no runtime code dispatches on nextCall.tool (no switch/if on the emitted tool value), so changing it breaks no consumer.",
+          "evidence": "Confirmed: no `switch.*\\.tool` in src; the only `.tool ===` matches are the test assertions (handler.test.ts), not runtime dispatch — so nextCall.tool is advisory-only and changing it breaks no consumer.",
+          "action": "Confirmed — no change needed.",
+          "fixability": "auto"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 7
+      },
+      "reviewedAt": "2026-09-25T09:34:09.390Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-25T09:36:03.294Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "S001",
+        "owns": [],
+        "depends": [],
+        "internal": "Route triage nextCall to insrc_workflow_step instead of insrc_workflow_run"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "buildNextCall",
+          "signature": "function buildNextCall(result: TriageResult, focus: string, repo: string): TriageDone['nextCall']",
+          "parameters": [
+            {
+              "name": "result",
+              "type": "TriageResult",
+              "purpose": "The classified triage result whose route.startStage selects the branch.",
+              "optional": false
+            },
+            {
+              "name": "focus",
+              "type": "string",
+              "purpose": "The story focus/spec forwarded into the emitted call params.",
+              "optional": false
+            },
+            {
+              "name": "repo",
+              "type": "string",
+              "purpose": "The repo path forwarded into the emitted call params.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "TriageDone['nextCall']",
+            "meaning": "The advisory pre-filled next tool call. Behaviour change: the define / issue / design.story branches now return tool:'insrc_workflow_step' with params.phase:'start' prepended (same repo/workflow/focus/params otherwise); the trivial branch still returns tool:'insrc_build_step' unchanged."
+          },
+          "errors": [
+            {
+              "type": "none",
+              "condition": "Pure function over the four fixed route.startStage values; no new error paths."
+            }
+          ],
+          "preconditions": [
+            "result.route.startStage is one of define/issue/build/design.story (unchanged)"
+          ],
+          "postconditions": [
+            "No branch returns tool:'insrc_workflow_run'; the run path is never recommended",
+            "The emitted design.story/define/issue call is directly executable as an insrc_workflow_step START (phase:'start')"
+          ]
+        }
+      ],
+      "dataModel": [
+        {
+          "entity": "TriageDone.nextCall.tool (src/mcp/triage-step/types.ts)",
+          "change": "field-modify",
+          "details": "Narrow the union from 'insrc_workflow_run' | 'insrc_build_step' to 'insrc_workflow_step' | 'insrc_build_step' so the compiler forbids re-introducing a workflow_run nextCall.",
+          "schemaDiff": "- readonly tool: 'insrc_workflow_run' | 'insrc_build_step'\n+ readonly tool: 'insrc_workflow_step' | 'insrc_build_step'",
+          "callSites": [
+            "src/mcp/triage-step/phases/classify.ts"
+          ]
+        },
+        {
+          "entity": "BugfixNextCall.tool (src/workflow/bugfix/types.ts)",
+          "change": "field-modify",
+          "details": "Same narrowing on the deliberately-duplicated bugfix descriptor (kept separate so the bugfix module does not import triage-step internals).",
+          "schemaDiff": "- readonly tool: 'insrc_workflow_run' | 'insrc_build_step'\n+ readonly tool: 'insrc_workflow_step' | 'insrc_build_step'",
+          "callSites": [
+            "src/workflow/bugfix/next-after-issue.ts"
+          ]
+        }
+      ],
+      "interactionWithShared": []
+    },
+    "dataModelChanges": [
+      {
+        "entity": "TriageDone.nextCall.tool (src/mcp/triage-step/types.ts)",
+        "change": "field-modify",
+        "details": "Narrow the union from 'insrc_workflow_run' | 'insrc_build_step' to 'insrc_workflow_step' | 'insrc_build_step' so the compiler forbids re-introducing a workflow_run nextCall.",
+        "schemaDiff": "- readonly tool: 'insrc_workflow_run' | 'insrc_build_step'\n+ readonly tool: 'insrc_workflow_step' | 'insrc_build_step'",
+        "callSites": [
+          "src/mcp/triage-step/phases/classify.ts"
+        ]
+      },
+      {
+        "entity": "BugfixNextCall.tool (src/workflow/bugfix/types.ts)",
+        "change": "field-modify",
+        "details": "Same narrowing on the deliberately-duplicated bugfix descriptor (kept separate so the bugfix module does not import triage-step internals).",
+        "schemaDiff": "- readonly tool: 'insrc_workflow_run' | 'insrc_build_step'\n+ readonly tool: 'insrc_workflow_step' | 'insrc_build_step'",
+        "callSites": [
+          "src/workflow/bugfix/next-after-issue.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A future edit re-introduces tool:'insrc_workflow_run' in a nextCall",
+          "detection": "The narrowed union type ('insrc_workflow_step' | 'insrc_build_step') makes tsc reject the 'insrc_workflow_run' literal at compile time.",
+          "response": "Compile fails; the run path cannot silently come back.",
+          "userImpact": "None at runtime — caught in the build.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "route.startStage === 'build' (trivial)",
+          "expected": "Unchanged: returns tool:'insrc_build_step' with phase:'implement' — not touched by this Story."
+        },
+        {
+          "input": "route.startStage === 'define' (epic)",
+          "expected": "Returns tool:'insrc_workflow_step', params:{phase:'start', repo, workflow:'define', focus} (no standalone params, as before)."
+        },
+        {
+          "input": "route.startStage === 'issue' (bugfix) / 'design.story' (feature|small)",
+          "expected": "Returns tool:'insrc_workflow_step', params:{phase:'start', repo, workflow, focus, params:{...}} — the standalone params block preserved verbatim, only tool + phase added."
+        },
+        {
+          "input": "bugfix next-after-issue sized path",
+          "expected": "Returns tool:'insrc_workflow_step' with phase:'start' for the design.story follow-up; the trivial/small build_step branch is unchanged."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "nextCall is ADVISORY output only — no runtime code dispatches on nextCall.tool; it is a string the controller reads to decide its next call. Changing the value therefore cannot break any consumer.",
+          "source": "c1"
+        },
+        {
+          "text": "The trivial route continues to emit tool:'insrc_build_step' (phase:'implement') unchanged — only the three workflow_run branches (+ the sized bugfix branch) are converted.",
+          "source": "c2"
+        },
+        {
+          "text": "The triage/bugfix module boundary is preserved: BugfixNextCall stays a local re-declaration (no import of triage-step internals), just with the narrowed union.",
+          "source": "c3"
+        },
+        {
+          "text": "The insrc_workflow_run MCP tool + its server dispatch remain registered; only the RECOMMENDATION (the pre-filled nextCall) stops pointing at it.",
+          "source": "c4"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove buildNextCall (and the bugfix next-after-issue) emit insrc_workflow_step START calls for every non-trivial route, and never insrc_workflow_run.",
+          "subjects": [
+            "classify: feature/small route -> nextCall.tool==='insrc_workflow_step' AND params.phase==='start' AND params.workflow==='design.story' (standalone params preserved)",
+            "classify: epic route -> nextCall.tool==='insrc_workflow_step', params.phase==='start', params.workflow==='define', no standalone params",
+            "classify: bugfix route -> nextCall.tool==='insrc_workflow_step', params.phase==='start', params.workflow==='issue'",
+            "classify: trivial route -> nextCall.tool==='insrc_build_step' (unchanged regression guard)",
+            "classify: no route emits tool==='insrc_workflow_run'",
+            "bugfix next-after-issue sized path -> nextCall.tool==='insrc_workflow_step' with params.phase==='start'"
+          ],
+          "fixturesNeeded": [
+            "Existing handler.test.ts start()/classify() helpers driving each sizeClass",
+            "Any existing bugfix next-after-issue unit test fixture"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "The narrowed union is compiler-enforced: tsc --noEmit must pass with the union set to 'insrc_workflow_step' | 'insrc_build_step' (a residual 'insrc_workflow_run' literal would fail to compile).",
+          "subjects": [
+            "tsc --noEmit clean after narrowing TriageDone.nextCall.tool and BugfixNextCall.tool"
+          ],
+          "fixturesNeeded": []
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "classify: feature/small -> insrc_workflow_step + phase:'start' + workflow design.story",
+            "classify: epic -> insrc_workflow_step + phase:'start' + workflow define",
+            "classify: bugfix -> insrc_workflow_step + phase:'start' + workflow issue"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "classify: trivial -> insrc_build_step unchanged",
+            "classify: no route emits insrc_workflow_run"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "bugfix next-after-issue sized path -> insrc_workflow_step + phase:'start'"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "tsc --noEmit clean with the narrowed nextCall.tool unions"
+          ]
+        }
+      ],
+      "testFramework": "node:test (tsx --test) + node:assert/strict — the convention used by src/mcp/triage-step/__tests__/handler.test.ts"
+    },
+    "migration": {
+      "stateBefore": "src/mcp/triage-step/phases/classify.ts buildNextCall emits tool:'insrc_workflow_run' for the define/issue/design.story branches, and src/workflow/bugfix/next-after-issue.ts emits it for the sized design.story follow-up; both nextCall.tool unions (triage-step/types.ts, bugfix/types.ts) allow 'insrc_workflow_run'. So triage/bugfix route the controller to the async START→POLL path, which stalls in a resolution loop and errors on the completion handoff.",
+      "stateAfter": "Those branches emit tool:'insrc_workflow_step' with params.phase:'start' (all other params unchanged); the trivial insrc_build_step branch is untouched. Both nextCall.tool unions are narrowed to 'insrc_workflow_step' | 'insrc_build_step', so the compiler forbids re-introducing the run path. The controller is always routed to the supported turn-by-turn driver.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Narrow TriageDone.nextCall.tool (src/mcp/triage-step/types.ts) and BugfixNextCall.tool (src/workflow/bugfix/types.ts) from 'insrc_workflow_run' | 'insrc_build_step' to 'insrc_workflow_step' | 'insrc_build_step'.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "In classify.ts buildNextCall, change the define / issue / design.story branches to tool:'insrc_workflow_step' and prepend phase:'start' to their params; leave the trivial insrc_build_step branch unchanged.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "In bugfix next-after-issue.ts, change the sized design.story follow-up to tool:'insrc_workflow_step' with phase:'start'; leave the trivial/small build_step branch unchanged.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Update the asserting unit tests (handler.test.ts + any bugfix next-after-issue test) to expect tool:'insrc_workflow_step' and params.phase==='start', keeping the build_step/workflow assertions.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "nextCall is advisory output the controller reads; no runtime code dispatches on nextCall.tool, so changing it breaks no consumer. The insrc_workflow_run MCP tool and its server dispatch remain registered and callable — only the pre-filled recommendation stops pointing at it. No wire/schema/persisted-data change.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "In-place swap + narrow the union to insrc_workflow_step",
+        "oneLineSummary": "Convert each workflow_run branch to {tool:'insrc_workflow_step', params:{phase:'start', ...}} in place, and change both nextCall.tool unions to 'insrc_workflow_step'|'insrc_build_step'.",
+        "approach": "In classify.ts buildNextCall, the define/issue/design.story branches keep their exact params but change tool to 'insrc_workflow_step' and prepend phase:'start'; mirror the sized branch in next-after-issue.ts; narrow both unions so the compiler forbids the run path; update the handler tests.",
+        "costEstimate": "S",
+        "chosen": true
+      },
+      {
+        "id": "a2",
+        "name": "Extract a shared stepStartCall() helper",
+        "oneLineSummary": "Add a helper that builds the step-start descriptor and call it from both classify.ts and next-after-issue.ts.",
+        "approach": "Create a helper stepStartCall(repo, workflow, focus, params?) in a neutral shared location used at all four emit sites.",
+        "costEstimate": "M",
+        "reasonRejected": "Violates dc2: the bugfix module deliberately re-declares BugfixNextCall to avoid importing triage-step internals, so a shared helper breaks that boundary (or needs a new module); over-engineered for a fixed 5-field shape at 4 sites (dc3 partial). Rank 2."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "src/mcp/triage-step/phases/classify.ts (buildNextCall) + src/mcp/server.ts",
+      "quotedText": "nextCall is advisory output the controller reads; no runtime code dispatches on nextCall.tool."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "src/mcp/triage-step/phases/classify.ts:70",
+      "quotedText": "build(trivial) -> {tool:'insrc_build_step', params:{phase:'implement',...}} (UNCHANGED — already the right shape)."
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/bugfix/types.ts:20-24",
+      "quotedText": "The routed next-stage descriptor — the SAME shape buildNextCall emits, re-declared locally so s4 does not import triage-step internals."
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "src/mcp/server.ts (insrc_workflow_run registration + dispatch)",
+      "quotedText": "The insrc_workflow_run MCP tool + its server dispatch stay registered (only the RECOMMENDATION changes)."
+    }
+  ]
+}

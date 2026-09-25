@@ -7,7 +7,7 @@
  * Steering-block injection — the daemon-side writer that `repo.add` uses to
  * install the insrc steering block into a target repo's `CLAUDE.md` /
  * `AGENTS.md`, so controllers (Claude Code / Codex) are steered to use
- * `insrc_triage` / `insrc_workflow_run` / `insrc_review_step`.
+ * `insrc_triage` / `insrc_workflow_step` / `insrc_review_step`.
  *
  * Design (LLD `make-repo-add-write-insrc-steering`, alternative a2 —
  * orchestration-layer writer; `db/repos.ts` stays free of fs side effects):

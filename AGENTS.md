@@ -188,8 +188,8 @@ a call from memory when the contract is one lookup away.
   build → code-review → complete. Every feature, big or small, is tracked. See
   `insrc_guide({ workflow: 'triage' })` for the routing table.
 - **Produce a design artifact / decision / tracker push** (Epic, HLD, LLD,
-  GitHub) → the workflow chain via `insrc_workflow_step` /
-  `insrc_workflow_run`. See the matching `insrc_guide` key.
+  GitHub) → drive the workflow chain turn-by-turn with `insrc_workflow_step`.
+  See the matching `insrc_guide` key.
 - **The exact shape of a call** → `insrc_schema`.
 - **A workflow's full procedure** → `insrc_guide({ workflow })`.
 
@@ -204,8 +204,8 @@ a multi-turn tool). Call `insrc_guide({ workflow })` for a workflow's procedure.
 | `insrc_analyze_step` | Multi-turn context bundle — same queries, reasoning stays in-session (preferred). |
 | `insrc_docgen` | Generate a self-contained offline HTML doc/diagram from the code graph. |
 | `insrc_triage` | Size a feature request and return a pre-filled `nextCall` routing it to a start stage. |
-| `insrc_workflow_step` | Drive one tracked workflow turn (define / design.epic / design.story / plan / brainstorm / tracker). |
-| `insrc_workflow_run` | Run a workflow daemon-side (async START → POLL); relay each progress batch. |
+| `insrc_workflow_step` | Drive one tracked workflow turn (define / design.epic / design.story / plan / brainstorm / tracker). **This is the ONLY supported way to run a workflow — always drive it turn-by-turn in-session.** |
+| `insrc_workflow_run` | Daemon-side async run (START → POLL). **NOT recommended — do not use.** The async poll/handoff can stall in a resolution loop and error out on completion; drive workflows with `insrc_workflow_step` instead. |
 | `insrc_build_step` | Drive the build stage (`implement` → `validate`) that turns an approved LLD/plan into code. |
 | `insrc_review_step` | Independent controller review of a design artifact (DEF/HLD/LLD) before approval. |
 | `insrc_code_review_step` | Post-build code review over the changed code (adherence / conventions / coverage / quality). |

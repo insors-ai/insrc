@@ -1,0 +1,557 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1790348278962-jxcfuz",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-25T15:10:53.452Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 774472,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-09-25T13:25:32.966Z",
+    "epicHash": "edb76e2e4d41217d",
+    "epicSlug": "work-framed-approved-spec-proceed-from",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1790343836936-uhegob",
+    "hldEffectiveHash": "f394a9ecb688a6435e9660c36070ff438589624b3026bbb4315135fee33e53b4",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "createWebviewPanelHost is the sole webview factory in the vscode-plugin, defined in vscode-plugin/src/panels/webview-host.ts.",
+          "evidence": "grep 'export function createWebviewPanelHost' matched vscode-plugin/src/panels/webview-host.ts:111; read of that anchor found=true. The factory exists exactly where cited.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The panel document is built as a template literal containing an inline <style> block in webview-host.ts and delivered by assigning panel.webview.html in extension.ts (no external stylesheet/asWebviewUri pipeline).",
+          "evidence": "read webview-host.ts:420 found=true and read extension.ts:316 found=true; grep 'panel\\.webview\\.html' matched extension.ts:316. The only asWebviewUri hits are inside docs/ artifacts (this LLD/HLD text), none under vscode-plugin/src — confirming the inline-<style>-via-panel.webview.html delivery with no asset-URI pipeline.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The existing webview styling idiom is var(--vscode-<token>, <literal fallback>) — a VS Code theme variable with a hard-coded fallback — as used in the webview-host.ts inline <style> rules.",
+          "evidence": "read webview-host.ts:421 found=true; grep 'var\\(--vscode-<token>,' matched 28 times across the plugin/templates, confirming var(--vscode-*, <fallback>) is an established repo idiom the sc1 renderer can reuse.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The repo's webview-output test idiom is a pure generated-string assertion suite (no webview runtime) in vscode-plugin/src/panels/__tests__/webview-host.test.ts, e.g. a Content-Security-Policy regex assertion.",
+          "evidence": "read vscode-plugin/src/panels/__tests__/webview-host.test.ts:1 found=true; grep 'Content-Security-Policy' + 'node:test' + 'node:assert/strict' confirm the generated-string assertion idiom exists and is the repo-wide test convention.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl5",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The sc1 module vscode-plugin/src/chat/design-tokens.ts is net-new (does not yet exist) and the LLD's scope is purely additive: it does NOT modify webview-host.ts or any existing surface.",
+          "evidence": "grep 'renderTerminalStyle', 'TERMINAL_SURFACE_CLASS' and 'chat/design-tokens' matched ONLY inside docs/ artifacts (this LLD) and nowhere under vscode-plugin/src, confirming the sc1 module is genuinely net-new and the change is additive (webview-host.ts untouched).",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl6",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "SurfaceKind is a five-member union (chat | provider-dropdown | history-dropdown | inline-diff | docs-review), matching the five mock deliverables and the HLD sc1 sketch.",
+          "evidence": "The five SurfaceKind members ('provider-dropdown','inline-diff','docs-review', plus chat/history-dropdown) appear consistently only in the artifact (net-new), matching the HLD sc1 sketch and the five named mock deliverables; internally consistent, no open/extra member.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl7",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The terminal aesthetic values codified by sc1 (near-black bg #0b0e14, phosphor-green accent #4ade80, monospace stack) come from the docs-site TUI stylesheet site/css/tui.css :root.",
+          "evidence": "reads of site/css/tui.css:17 and :28 both found=true, confirming the docs-site TUI :root palette (near-black bg / phosphor-green accent) that sc1 codifies exists at the cited anchors.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 7
+      },
+      "reviewedAt": "2026-09-25T15:13:28.546Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-25T15:26:34.981Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Layered extension-host core + a thin terminal-styled webview (alternative a1). All chat logic lives in vscode-free, deps-injected host modules that mirror the repo's existing createWebviewPanelHost(deps) factory idiom, so streaming, session, edit-governance and docs-review logic are unit-testable without a webview harness. The webview holds no business logic — it paints terminal-styled surfaces and emits user intents over a single typed, versioned message protocol. Each agentic CLI's native structured stream is normalized to ONE event union by a per-provider stream adapter, quarantining the still-to-spike claude/codex stream/resume contract at that boundary so no downstream surface is provider-specific. Grounding + tracked-workflow behaviour come through the CLI's own insrc MCP (the extension observes, never orchestrates — k8).",
+      "ownedContracts": [
+        {
+          "id": "sc1",
+          "name": "Terminal-UX design tokens + component vocabulary",
+          "purpose": "The single source of the terminal look & feel (monospace, box-drawing chrome, phosphor accents from the insrc docs-site TUI) that every rendered surface consumes, so the whole experience is terminal-styled and not a chat-bubble UI (k6).",
+          "interfaceSketch": "// design-tokens.ts (type-level)\nexport interface TerminalTheme {\n  readonly font: { mono: string; sizePx: number; linePx: number };\n  readonly color: { bg: string; fg: string; dim: string; accent: string; warn: string; err: string; sel: string };\n  readonly chrome: { border: string; boxChars: { h: string; v: string; tl: string; tr: string; bl: string; br: string } };\n  readonly marker: { pending: string; toolCall: string; edit: string; done: string; error: string };\n}\nexport type SurfaceKind = 'chat' | 'provider-dropdown' | 'history-dropdown' | 'inline-diff' | 'docs-review';",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7"
+          ],
+          "assumptions": [
+            "c2"
+          ]
+        }
+      ],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [
+          "sc1"
+        ],
+        "depends": [],
+        "internal": "The concrete mockup deliverables (per-surface terminal-styled mock images/HTML), the design-rationale write-up, and the exact palette/character choices are private to S001; downstream stories consume only the sc1 token/vocabulary contract, not the mock files themselves."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc2",
+            "sc5"
+          ],
+          "depends": [],
+          "internal": "The subprocess spawn mechanics, the per-provider parsing of each CLI's NATIVE stream format, the exact claude/codex flags (the stream/resume spike), backpressure/cancellation handling, and error normalization stay private to S002; consumers see only the normalized TurnEvent union (sc2) and the StreamAdapter/ProviderRegistry interface (sc5)."
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc3",
+            "sc4"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc5"
+          ],
+          "internal": "The terminal renderer internals (how TurnEvents paint as terminal output), the input box, the panel/webview lifecycle and single-active-panel management, and the CSP/webview bootstrap are private to S003; other stories consume only the message protocol (sc3) and the session-store shape (sc4)."
+        },
+        {
+          "storyId": "s4",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "How status/tool-call TurnEvents are mapped to terminal-style marker lines, and how observed insrc MCP tool-calls are named/enriched into markers, are private to S004; it adds no new shared contract — it renders sc2 events as sc1-styled markers over sc3."
+        },
+        {
+          "storyId": "s5",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc3",
+            "sc4",
+            "sc5"
+          ],
+          "internal": "The provider-selector and history-dropdown UI, the new-chat vs open-chat flows, and the wiring of the StreamAdapter's native session-resume handle into a restored session are private to S005; it persists through sc4 and drives turns through sc5, adding no new shared contract."
+        },
+        {
+          "storyId": "s6",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4"
+          ],
+          "internal": "The inline-diff renderer, the EditGovernor that applies the per-session auto/review toggle, and (review mode) the interception of the CLI's edit/write before the write reaches disk are private to S006; it consumes file-edit TurnEvents (sc2), the edit-mode field on the session (sc4), and the edit-prompt/edit-decision messages (sc3)."
+        },
+        {
+          "storyId": "s7",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc3"
+          ],
+          "internal": "The docs-review pane and its DocsReviewClient over the existing daemon IPC (the exact pendingApproval listing + insrc_workflow_approve method names/payloads, pinned at the S007 LLD) and the mirroring of the JetBrains review/comment/accept-reject panel are private to S007; it consumes only the message protocol (sc3) and the terminal tokens (sc1) and adds no new shared contract to the Epic."
+        }
+      ],
+      "rolloutPhase": "Phase A — foundational contracts (design system + CLI bridge)",
+      "nonFunctional": {
+        "performance": "Streaming is incremental: assistant-delta events render to the terminal panel as they arrive (no wait-for-turn-complete); the host must not buffer a whole turn before painting. Marker updates are cheap status lines. The webview holds no heavy state.",
+        "security": "No direct cloud REST from the extension (k2); all model access is via the user's own claude/codex CLI OAuth sessions. The webview runs under a strict CSP (no remote origins); host↔webview traffic is the typed sc3 protocol only. Chat history stays on the local machine (k3).",
+        "observability": "Per-turn lifecycle markers (thinking/tool-call/streaming/done) are the user-facing progress signal; host modules log via the repo's getLogger, never console.log. Errors surface as an error TurnEvent rendered inline, not a silent failure.",
+        "durability": "Chat history + per-session provider/native-session-id/edit-mode persist extension-local (VS Code state / local JSON) and survive window reload; nothing is written to the daemon. A missing/corrupt local store degrades to an empty history, never a crash."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "hld": {
+        "amendmentProposal": {
+          "amendment": {
+            "type": "sharedContract.methodAdd",
+            "contractId": "sc1",
+            "method": {
+              "name": "renderTerminalStyle",
+              "signature": "renderTerminalStyle(theme: TerminalTheme): string",
+              "purpose": "The canonical, pure token-to-CSS renderer that turns a TerminalTheme into an inlined style-element string. Named on sc1 because it is consumed ACROSS the boundary by S003 (webview bootstrap) so the terminal look is produced in exactly one place; without it sc1's 'single source every surface consumes' guarantee would rely on each surface re-deriving the CSS mapping."
+            }
+          },
+          "rationale": "The HLD sc1 interfaceSketch is type-only (TerminalTheme + SurfaceKind); designing the contract showed sc1 needs one canonical renderer method so downstream surfaces consume produced CSS rather than re-mapping tokens. This is a single additive method on the one contract s1 already owns (well under 30% of contracts touched, additive, non-breaking) -- an amendment, not a rework.",
+          "citations": [
+            {
+              "id": "c-hld-sc1",
+              "kind": "artifact",
+              "ref": "HLD sharedContract sc1 interfaceSketch (TerminalTheme + SurfaceKind)"
+            },
+            {
+              "id": "c-webviewhost",
+              "kind": "source",
+              "ref": "vscode-plugin/src/panels/webview-host.ts:420 (inline style delivery path S003 consumes)"
+            }
+          ]
+        }
+      },
+      "api": [
+        {
+          "name": "renderTerminalStyle",
+          "signature": "renderTerminalStyle(theme: TerminalTheme): string",
+          "parameters": [
+            {
+              "name": "theme",
+              "type": "TerminalTheme",
+              "purpose": "The terminal token set to render (defaults to the exported frozen terminalTheme; a caller may pass a variant such as a light-theme token set).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "A complete inlined style-element string. Every TerminalTheme token surfaces as a CSS rule or custom property using the repo idiom var(--vscode-<token>, <fallback>) so the terminal palette layers over the user's VS Code theme with the tui.css literals as fallbacks. Deterministic for a given theme (same input -> byte-identical output), which is what the mock round-trip test asserts."
+          },
+          "errors": [],
+          "preconditions": [
+            "Every TerminalTheme token string is non-empty (a caller passing the exported frozen terminalTheme trivially satisfies this)."
+          ],
+          "postconditions": [
+            "Return value opens with <style> and closes with </style>.",
+            "Every color/font/chrome/marker token in the passed theme appears at least once in the output.",
+            "No remote origins or asWebviewUri references are emitted (CSP-safe, k2); output is self-contained CSS text.",
+            "Pure: no I/O, no vscode import, no global state read/written."
+          ]
+        },
+        {
+          "name": "surfaceClass",
+          "signature": "surfaceClass(kind: SurfaceKind): string",
+          "parameters": [
+            {
+              "name": "kind",
+              "type": "SurfaceKind",
+              "purpose": "Which terminal surface (chat | provider-dropdown | history-dropdown | inline-diff | docs-review) the caller is rendering, so it gets the matching documented root class name.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "The stable root CSS class name for that surface (the class whose rules renderTerminalStyle emits), so downstream surfaces target the vocabulary by a typed accessor rather than a string literal."
+          },
+          "errors": [],
+          "preconditions": [
+            "kind is a member of the SurfaceKind union (enforced by the type system)."
+          ],
+          "postconditions": [
+            "Returned class name is one for which renderTerminalStyle emits at least one rule.",
+            "Total function over SurfaceKind (every member maps to a class)."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "TerminalTheme",
+        "change": "new",
+        "details": "The sc1 token interface, verbatim from the HLD interfaceSketch: readonly font { mono; sizePx; linePx }, color { bg; fg; dim; accent; warn; err; sel }, chrome { border; boxChars { h,v,tl,tr,bl,br } }, marker { pending; toolCall; edit; done; error }. Type-only; vscode-free. Lives in the new module vscode-plugin/src/chat/design-tokens.ts.",
+        "schemaDiff": "+ export interface TerminalTheme { readonly font: {mono:string;sizePx:number;linePx:number}; readonly color: {bg:string;fg:string;dim:string;accent:string;warn:string;err:string;sel:string}; readonly chrome: {border:string; boxChars:{h:string;v:string;tl:string;tr:string;bl:string;br:string}}; readonly marker: {pending:string;toolCall:string;edit:string;done:string;error:string}; }",
+        "callSites": [
+          "vscode-plugin/src/chat/design-tokens.ts (definition; consumed by S003 webview bootstrap at vscode-plugin/src/panels/webview-host.ts:420 in a later phase)"
+        ]
+      },
+      {
+        "entity": "SurfaceKind",
+        "change": "new",
+        "details": "The sc1 surface enumeration, verbatim from the HLD sketch: 'chat' | 'provider-dropdown' | 'history-dropdown' | 'inline-diff' | 'docs-review'. Drives surfaceClass and names the five mock deliverables.",
+        "schemaDiff": "+ export type SurfaceKind = 'chat' | 'provider-dropdown' | 'history-dropdown' | 'inline-diff' | 'docs-review';",
+        "callSites": [
+          "vscode-plugin/src/chat/design-tokens.ts (definition)"
+        ]
+      },
+      {
+        "entity": "terminalTheme",
+        "change": "new",
+        "details": "The frozen default TerminalTheme carrying the tui.css values (mono stack; bg #0b0e14, fg #c6cdd8, dim #4a5464, accent #4ade80, warn #fbbf24, err #f87171, sel rgba(74,222,128,0.22); chrome border #222a36 + Unicode box-drawing chars; marker glyphs). The single default every surface consumes.",
+        "schemaDiff": "+ export const terminalTheme: TerminalTheme = Object.freeze({ ... tui.css values ... });",
+        "callSites": [
+          "vscode-plugin/src/chat/design-tokens.ts (definition; default arg to renderTerminalStyle)"
+        ]
+      },
+      {
+        "entity": "TERMINAL_SURFACE_CLASS",
+        "change": "new",
+        "details": "A Record<SurfaceKind, string> mapping each surface to its documented root class name; the data behind surfaceClass, so the class vocabulary is a typed, single-sourced map rather than scattered string literals.",
+        "schemaDiff": "+ export const TERMINAL_SURFACE_CLASS: Record<SurfaceKind, string> = { 'chat': 'insrc-term-chat', ... };",
+        "callSites": [
+          "vscode-plugin/src/chat/design-tokens.ts (definition; read by surfaceClass and by the mock HTML files)"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "implements",
+        "howDetails": "s1 OWNS sc1 and implements it as vscode-plugin/src/chat/design-tokens.ts: the TerminalTheme interface + SurfaceKind union (verbatim from the HLD sketch), the frozen terminalTheme default, the TERMINAL_SURFACE_CLASS vocabulary, and the two pure functions renderTerminalStyle (token->inlined <style> string; the methodAdd amendment) and surfaceClass. Downstream stories consume this module: S003 calls renderTerminalStyle to build the webview <style> and targets surfaceClass('chat'); S004/S005/S006/S007 target their surfaceClass and reuse the marker/chrome tokens. s1 does NOT touch webview-host.ts or any sc2/sc3/sc4/sc5 surface -- those stay owned by S002/S003."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A caller passes a TerminalTheme variant with an empty or whitespace-only token value (e.g. color.accent === '').",
+          "detection": "renderTerminalStyle iterates the required token keys and checks each resolved value is a non-empty, trimmed string before assembling the <style>; an empty value fails that guard.",
+          "response": "Throw a descriptive TerminalThemeError naming the offending token path (e.g. 'color.accent'); do not emit a half-built <style>. This is a dev-time contract violation surfaced loudly, never a silent empty rule.",
+          "userImpact": "None at runtime for the shipped default (the frozen terminalTheme is complete); a developer authoring a bad theme variant gets an immediate, named failure in tests/build rather than an invisible unstyled surface.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A token value contains a style-breaking substring (e.g. '</style>' or an angle-bracket sequence) that could terminate the inlined <style> block early or inject markup.",
+          "detection": "renderTerminalStyle scans each token value for the closing-style sequence and angle brackets before interpolation; a match trips the guard.",
+          "response": "Throw a TerminalThemeError identifying the token; refuse to emit. Tokens are developer-controlled CSS-literal values, so this is a contract guard that keeps the inlined-<style> output CSP-safe and un-injectable (k2).",
+          "userImpact": "None for the shipped tokens; prevents a malformed theme from breaking out of the <style> element or the webview CSP.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A mock HTML deliverable's embedded <style> block has drifted from renderTerminalStyle(terminalTheme) (someone hand-edited a mock or changed a token without regenerating).",
+          "detection": "The round-trip test extracts each mock file's <style> block and asserts byte-equality with renderTerminalStyle(terminalTheme); a mismatch fails.",
+          "response": "The test fails in the local/CI sweep, naming the drifted mock; the fix is to regenerate the mock from the renderer. The drift never reaches a consumer.",
+          "userImpact": "None shipped — drift is caught before merge, keeping the mockups a faithful executable spec of the tokens (ac1).",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "renderTerminalStyle called with a light-theme TerminalTheme variant (the data-theme=light palette from tui.css).",
+          "expected": "Emits a valid, self-contained <style> string deterministically, with the light values in the var() fallbacks; identical structure to the dark render, only values differ."
+        },
+        {
+          "input": "A boxChars/marker token that is a multi-byte Unicode glyph (e.g. box-drawing chars or a marker symbol).",
+          "expected": "The glyph is emitted verbatim (UTF-8), unescaped, since it appears in CSS content/pseudo-element context; renderTerminalStyle does not mangle non-ASCII."
+        },
+        {
+          "input": "surfaceClass called for each of the five SurfaceKind members.",
+          "expected": "Returns a defined, non-empty class name for every member (total function; no undefined under noUncheckedIndexedAccess) and every returned class has at least one matching rule in renderTerminalStyle output."
+        },
+        {
+          "input": "renderTerminalStyle called twice with the same theme.",
+          "expected": "Byte-identical output both times (pure, deterministic; no timestamp/nonce/ordering nondeterminism) — the property the round-trip test relies on."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Styling reaches the webview ONLY as inlined CSS text assigned via panel.webview.html; there is no asWebviewUri / external-stylesheet / cspSource pipeline under vscode-plugin/src (s1 code bundle: webview-host.ts:420 constructs the inline <style>, extension.ts:316 assigns it). renderTerminalStyle must therefore return a complete self-contained <style> string with no external references, so S003 can drop it straight into the existing delivery path without inventing an asset pipeline.",
+          "source": "c2"
+        },
+        {
+          "text": "The webview styling idiom is var(--vscode-<token>, <literal fallback>) — theme variable first, hard-coded fallback second (s1 code bundle: webview-host.ts:421-427). renderTerminalStyle preserves this layering (tui.css literals as the fallbacks) so the terminal palette coexists with the user's VS Code theme rather than overriding it.",
+          "source": "c2"
+        },
+        {
+          "text": "The terminal aesthetic is the insrc docs-site TUI: monospace stack, near-black bg (#0b0e14), phosphor-green primary accent (#4ade80), box-drawing chrome — explicitly not chat-bubble (s1 asset bundle: site/css/tui.css :root). The sc1 tokens must codify these exact values so every consuming surface renders k6's terminal look.",
+          "source": "c5"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test (tsx --test) + node:assert/strict, mirroring vscode-plugin/src/panels/__tests__/webview-host.test.ts (pure generated-string assertions, no webview runtime).",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove the pure sc1 functions and token defaults behave per the s4 contract and s5 postconditions/edge cases.",
+          "subjects": [
+            "renderTerminalStyle(terminalTheme): output opens with <style>/closes with </style>; every color/font/chrome/marker token value appears in the output; contains the var(--vscode-*, <fallback>) layering; no asWebviewUri/http(s):// substring (CSP-safe, k2)",
+            "renderTerminalStyle determinism: two calls with the same theme are byte-identical",
+            "renderTerminalStyle guards: a theme with an empty token throws TerminalThemeError naming the token path; a token containing '</style>' or angle brackets throws",
+            "renderTerminalStyle with a light-theme variant emits a valid deterministic <style> with the light values",
+            "surfaceClass: total over all five SurfaceKind members, each returns a non-empty class present in the rendered output (no undefined under noUncheckedIndexedAccess)",
+            "terminalTheme: carries the exact tui.css values (mono stack, bg #0b0e14, accent #4ade80, warn #fbbf24, err #f87171) and is frozen (Object.isFrozen)"
+          ],
+          "fixturesNeeded": [
+            "A light-theme TerminalTheme variant literal",
+            "A deliberately-malformed TerminalTheme (empty token + a '</style>'-bearing token) for the guard tests"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "Lock the five mock deliverables to the shipped tokens so the mockups stay a faithful executable spec (the drift error path), and prove the module boundary invariants.",
+          "subjects": [
+            "Mock round-trip: for each SurfaceKind mock HTML file (chat, provider-dropdown, history-dropdown, inline-diff, docs-review), the embedded <style> block equals renderTerminalStyle(terminalTheme) byte-for-byte",
+            "Mock coverage: exactly the five SurfaceKind surfaces have a mock file, and each references its TERMINAL_SURFACE_CLASS root class",
+            "Source-scan: design-tokens.ts imports nothing from 'vscode' (vscode-free) and the mock files reference no remote origin / asWebviewUri (VS-Code-webview-only, ac2)",
+            "Anti-chat-bubble scan: mock markup uses the terminal vocabulary (box-drawing chrome / monospace / marker glyphs) and contains no chat-bubble constructs"
+          ],
+          "fixturesNeeded": [
+            "The five mock HTML files under vscode-plugin/src/chat/mocks/ (or a docs mocks dir) as the round-trip fixtures"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "renderTerminalStyle output contains the tui.css terminal palette + monospace + box-drawing/marker tokens (terminal look, not chat-bubble)",
+            "Mock round-trip: all five surfaces (chat, provider+history dropdowns, inline-diff, docs-review) are mocked and their <style> matches the shipped tokens",
+            "Anti-chat-bubble scan over the mock markup (box-drawing/monospace vocabulary present; no bubble constructs)"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "Source-scan: mock files reference no remote origin / asWebviewUri and design-tokens.ts is vscode-free (VS Code webview surface only)",
+            "Mock coverage asserts exactly the five VS Code surfaces exist with no JetBrains artifacts"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "vscode-plugin has no chat/ design-token module: the only webview styling is the hard-coded inline <style> literal inside the createWebviewPanelHost template at webview-host.ts:420-427, using the var(--vscode-<token>, <fallback>) idiom for a status/repo-config panel (s1 code bundle). The terminal aesthetic exists only as the docs-site CSS at site/css/tui.css :root (s1 asset bundle); nothing in the extension codifies it. No TerminalTheme / SurfaceKind / renderTerminalStyle / mock surfaces exist. sc1 is declared in the HLD but unimplemented.",
+      "stateAfter": "A new, purely-additive, vscode-free module vscode-plugin/src/chat/design-tokens.ts implements sc1: the TerminalTheme interface + SurfaceKind union, the frozen terminalTheme default (tui.css values), TERMINAL_SURFACE_CLASS, and the pure functions renderTerminalStyle + surfaceClass. Five terminal-styled mock HTML deliverables (one per SurfaceKind) live under vscode-plugin/src/chat/mocks/ and are locked to renderTerminalStyle(terminalTheme) by a round-trip test. Unit + contract test suites are added under vscode-plugin/src/chat/__tests__/. webview-host.ts, extension.ts and every existing surface are UNCHANGED; the sc1 methodAdd amendment is stamped on the HLD. Nothing is wired into activation (Phase A) — S003 will consume the module later.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the new vscode-free module vscode-plugin/src/chat/design-tokens.ts exporting the sc1 types (TerminalTheme, SurfaceKind), the frozen terminalTheme default, TERMINAL_SURFACE_CLASS, and the pure functions renderTerminalStyle + surfaceClass. No existing file is edited.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add the five terminal-styled mock HTML deliverables (chat, provider-dropdown, history-dropdown, inline-diff, docs-review) under vscode-plugin/src/chat/mocks/, each inlining renderTerminalStyle(terminalTheme) and targeting its TERMINAL_SURFACE_CLASS root class.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add the unit + contract test suites under vscode-plugin/src/chat/__tests__/ (renderTerminalStyle/surfaceClass unit tests, the mock round-trip drift-lock, the vscode-free + no-remote-origin source scans). Run tsc + the plugin sweep to confirm green.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Stamp the sc1 sharedContract.methodAdd amendment (renderTerminalStyle) on the HLD via the approval flow; no code consumes the new method yet (S003 consumes it in Phase B).",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No existing public API is affected. Every change is purely additive: a new module, new mock files, new tests, and an additive (non-breaking) methodAdd on the sc1 contract. webview-host.ts / createWebviewPanelHost and its inline <style> are untouched, so the existing status/repo-config panel behaves identically. No consumer imports design-tokens.ts until S003, so there is no compatibility surface to break.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Typed TerminalTheme object + pure renderTerminalStyle(theme): string, with drift-locked mock HTML",
+        "oneLineSummary": "sc1 = the HLD's TerminalTheme/SurfaceKind types + a frozen default theme + a pure vscode-free renderer that emits an inlined <style> string; mockups are static HTML that inline that same rendered CSS so mock and shipped tokens cannot drift.",
+        "approach": "A single vscode-free, dependency-free module (design-tokens.ts) exports the sc1 contract verbatim from the HLD interfaceSketch: the TerminalTheme interface, the SurfaceKind union, and a frozen `terminalTheme: TerminalTheme` default carrying the tui.css values (mono stack; bg #0b0e14, fg #c6cdd8; accent #4ade80 phosphor green, accent2 #38bdf8 cyan, amber #fbbf24, red #f87171; sel rgba(74,222,128,.22); box-drawing chars; marker glyphs). A sibling pure function `renderTerminalStyle(theme): string` produces an inlined <style> string reusing the repo idiom `var(--vscode-<token>, <fallback>)` so the terminal palette layers over the user's VS Code theme (fallbacks = the tui.css literals). A small documented class-name vocabulary (one class per SurfaceKind + chrome/marker classes) is the stable API downstream surfaces target. Mock deliverables are self-contained static HTML files (one per SurfaceKind: chat, provider-dropdown, history-dropdown, inline-diff, docs-review) that inline the SAME renderTerminalStyle output; a round-trip test asserts each mock's embedded <style> equals renderTerminalStyle(terminalTheme), locking mock<->token parity. Delivery into the live panel (the webview-host <style>/CSP path) stays owned by S003, which CONSUMES renderTerminalStyle.",
+        "pros": [
+          "Matches the HLD sc1 interfaceSketch exactly (TerminalTheme + SurfaceKind) — no contract reshape",
+          "Tokens are typed TS values consumers import as one object; the renderer is a pure string function testable with the repo's existing generated-string assertion idiom (webview-host.test.ts)",
+          "The round-trip test guarantees the mockups and the shipped tokens never drift — the mocks stay a faithful, executable spec",
+          "Reuses the established var(--vscode-*, <fallback>) layering so the terminal look coexists with the user's VS Code theme"
+        ],
+        "cons": [
+          "The mock HTML per surface is hand-authored (five files) rather than generated from a higher-level component kit",
+          "renderTerminalStyle must decide the token->CSS-var mapping now, which S003 then depends on (a small forward commitment)"
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "CSS-custom-property theme (:root{--insrc-*}) + thin TS class-name map",
+        "oneLineSummary": "sc1 ships primarily as a CSS :root{--insrc-*} variable block mirroring tui.css, with only a thin TS map of class names; surfaces reference tokens via var(--insrc-*).",
+        "approach": "Express the tokens the way tui.css itself does: a canonical CSS string exposing a `:root{ --insrc-bg; --insrc-fg; --insrc-accent; ... }` custom-property block (plus a data-theme=light variant), shipped as the inlined <style> base. The TS side is thin: a SurfaceKind union and a map of documented class names, but the token VALUES live in CSS, not a typed object. Downstream surfaces consume tokens as `var(--insrc-accent)` etc. and the class vocabulary. Runtime re-theming is possible by overriding the custom properties.",
+        "pros": [
+          "Closest to the docs-site's own mechanism (CSS custom properties) — familiar to anyone who worked on tui.css",
+          "Runtime-overridable: a light/high-contrast variant is just a data-theme block, no re-render",
+          "Surfaces reference stable var names, decoupled from concrete hex values"
+        ],
+        "cons": [
+          "Token VALUES escape the TS type system — the HLD's owned contract is a TS interface (TerminalTheme), so a CSS-first shape drifts from the declared sc1 contract shape and gives downstream consumers stringly-typed var names instead of a typed object",
+          "Weaker unit-testability: you assert on a CSS blob, not a structured theme object; typos in var names surface only at render time",
+          "A consumer that needs a token value in TS (e.g. a marker glyph in a host module) has no typed source — it must re-declare the value, inviting drift"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Aesthetically closest to tui.css and runtime-overridable, but it VIOLATES sc1 by reshaping the owned contract away from its declared TS-interface form and weakening type-safety/testability. Ranked last because a contract-shape violation on the very contract this Story owns outweighs the re-theming convenience."
+      },
+      {
+        "id": "a3",
+        "name": "Tokens-only data contract; CSS rendering deferred to S003",
+        "oneLineSummary": "sc1 is purely the typed TerminalTheme object + SurfaceKind + a documented class vocabulary + the mockups; turning tokens into the inlined <style> is left to S003's webview bootstrap.",
+        "approach": "Keep sc1 minimal and pure-data: export the TerminalTheme interface, the frozen default theme (tui.css values), the SurfaceKind union, and a documented class-name vocabulary, plus the static mock HTML deliverables. Do NOT ship a renderTerminalStyle function; S003 (which owns sc3 renderer + the webview <style>/CSP bootstrap) is responsible for mapping the theme object to the inlined CSS string as part of painting the panel. The mockups are authored directly against the intended CSS but the canonical token->CSS mapping is not part of sc1.",
+        "pros": [
+          "Tightest possible scope for s1 — sc1 becomes pure data with zero rendering behaviour to own",
+          "No forward commitment on the token->CSS mapping; S003 shapes it when it builds the real renderer"
+        ],
+        "cons": [
+          "Leaves 'how tokens become CSS' unowned: each consuming surface (S003/S004/S006/S007) could re-derive the mapping differently — exactly the drift the sc1 'single source' purpose exists to prevent",
+          "The mockups can drift from whatever S003 eventually renders, since no shared renderer locks them together (no round-trip parity test possible)",
+          "Weakens the HLD sc1 purpose ('the single source ... every rendered surface consumes') — without a canonical renderer sc1 is a suggestion, not a source of truth"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Tightest scope, but its sc1 verdict is only partial: without a canonical renderer sc1 is data-only and the 'single source every surface consumes' guarantee weakens, and mock<->implementation drift becomes unpreventable. Loses to a1 precisely on the sc1 constraint a1 satisfies."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 code bundle: vscode-plugin/src/panels/webview-host.ts:420-427 inline <style> + extension.ts:316 delivery; var(--vscode-*,<fallback>) idiom"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 asset bundle: site/css/tui.css :root terminal palette (mono stack, #0b0e14 bg, #4ade80 accent, box-drawing chrome)"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1 test bundle: vscode-plugin/src/panels/__tests__/webview-host.test.ts generated-string assertion idiom"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "HLD sharedContract sc1 (TerminalTheme + SurfaceKind), ownedByStory=s1"
+    },
+    {
+      "id": "c5",
+      "kind": "stakeholder",
+      "ref": "k6 terminal look & feel (c5) — anti-chat-bubble requirement"
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>insrc terminal mock — Core chat panel</title>
+<style>
+.insrc-term {
+  --it-font: var(--vscode-editor-font-family, ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Code", Menlo, Consolas, monospace);
+  --it-size: var(--vscode-editor-font-size, 13px);
+  --it-line: 20px;
+  --it-bg: var(--vscode-editor-background, #0b0e14);
+  --it-fg: var(--vscode-editor-foreground, #c6cdd8);
+  --it-dim: var(--vscode-descriptionForeground, #4a5464);
+  --it-accent: var(--vscode-terminal-ansiGreen, #4ade80);
+  --it-warn: var(--vscode-terminal-ansiYellow, #fbbf24);
+  --it-err: var(--vscode-errorForeground, #f87171);
+  --it-sel: var(--vscode-editor-selectionBackground, rgba(74, 222, 128, 0.22));
+  --it-border: var(--vscode-panel-border, #222a36);
+  --it-box-h: "─"; --it-box-v: "│";
+  --it-box-tl: "┌"; --it-box-tr: "┐"; --it-box-bl: "└"; --it-box-br: "┘";
+  --it-mk-pending: "◆"; --it-mk-tool: "▸"; --it-mk-edit: "✎"; --it-mk-done: "✓"; --it-mk-error: "✗";
+  font-family: var(--it-font);
+  font-size: var(--it-size);
+  line-height: var(--it-line);
+  background: var(--it-bg);
+  color: var(--it-fg);
+}
+.insrc-term-chat { display: block; background: var(--it-bg); color: var(--it-fg); border: 1px solid var(--it-border); }
+.insrc-term-provider { display: block; background: var(--it-bg); color: var(--it-fg); border: 1px solid var(--it-border); }
+.insrc-term-history { display: block; background: var(--it-bg); color: var(--it-fg); border: 1px solid var(--it-border); }
+.insrc-term-diff { display: block; background: var(--it-bg); color: var(--it-fg); border: 1px solid var(--it-border); }
+.insrc-term-review { display: block; background: var(--it-bg); color: var(--it-fg); border: 1px solid var(--it-border); }
+.insrc-term__box { border: 1px solid var(--it-border); }
+.insrc-term__box::before { content: var(--it-box-tl) var(--it-box-h) var(--it-box-tr); color: var(--it-border); }
+.insrc-term__box::after { content: var(--it-box-bl) var(--it-box-h) var(--it-box-br); color: var(--it-border); }
+.insrc-term__rule::before { content: var(--it-box-v); color: var(--it-border); }
+.insrc-term__sel { background: var(--it-sel); }
+.insrc-term__dim { color: var(--it-dim); }
+.insrc-term__marker--pending::before { content: var(--it-mk-pending); color: var(--it-accent); }
+.insrc-term__marker--tool::before { content: var(--it-mk-tool); color: var(--it-accent); }
+.insrc-term__marker--edit::before { content: var(--it-mk-edit); color: var(--it-warn); }
+.insrc-term__marker--done::before { content: var(--it-mk-done); color: var(--it-accent); }
+.insrc-term__marker--error::before { content: var(--it-mk-error); color: var(--it-err); }
+</style>
+</head>
+<body class="insrc-term">
+<div class="insrc-term-chat">
+  <div class="insrc-term__box">insrc chat — claude</div>
+  <div class="insrc-term__rule">❯ add a --json flag to the status command</div>
+  <div class="insrc-term__marker--pending">thinking…</div>
+  <div class="insrc-term__marker--tool">mcp · insrc · insrc_analyze_step</div>
+  <div class="insrc-term__marker--edit">edit src/cli/commands/status.ts</div>
+  <div class="insrc-term__marker--done">done · 1 file changed</div>
+</div>
+</body>
+</html>

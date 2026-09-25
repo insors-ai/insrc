@@ -1,0 +1,36 @@
+{
+  "id": "AMD-edb76e2e4d41217d-1",
+  "epicHash": "edb76e2e4d41217d",
+  "epicSlug": "work-framed-approved-spec-proceed-from",
+  "hldBaseRunId": "wf-1790343836936-uhegob",
+  "amendment": {
+    "type": "sharedContract.methodAdd",
+    "contractId": "sc1",
+    "method": {
+      "name": "renderTerminalStyle",
+      "signature": "renderTerminalStyle(theme: TerminalTheme): string",
+      "purpose": "The canonical, pure token-to-CSS renderer that turns a TerminalTheme into an inlined style-element string. Named on sc1 because it is consumed ACROSS the boundary by S003 (webview bootstrap) so the terminal look is produced in exactly one place; without it sc1's 'single source every surface consumes' guarantee would rely on each surface re-deriving the CSS mapping."
+    }
+  },
+  "rationale": "The HLD sc1 interfaceSketch is type-only (TerminalTheme + SurfaceKind); designing the contract showed sc1 needs one canonical renderer method so downstream surfaces consume produced CSS rather than re-mapping tokens. This is a single additive method on the one contract s1 already owns (well under 30% of contracts touched, additive, non-breaking) -- an amendment, not a rework.",
+  "citations": [
+    {
+      "id": "c-hld-sc1",
+      "kind": "artifact",
+      "ref": "HLD sharedContract sc1 interfaceSketch (TerminalTheme + SurfaceKind)"
+    },
+    {
+      "id": "c-webviewhost",
+      "kind": "source",
+      "ref": "vscode-plugin/src/panels/webview-host.ts:420 (inline style delivery path S003 consumes)"
+    }
+  ],
+  "proposedBy": {
+    "workflow": "design.story",
+    "runId": "wf-1790348278962-jxcfuz",
+    "storyId": "s1",
+    "stepId": "s4"
+  },
+  "proposedAt": "2026-09-25T15:10:53.453Z",
+  "status": "pending"
+}

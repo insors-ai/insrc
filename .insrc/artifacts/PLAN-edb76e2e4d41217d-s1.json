@@ -1,0 +1,251 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1790350017961-2o1wtd",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-25T15:30:32.191Z",
+    "epicCreatedAt": "2026-09-25T13:25:32.966Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 214033,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "edb76e2e4d41217d",
+    "epicSlug": "work-framed-approved-spec-proceed-from",
+    "storyId": "s1",
+    "lldRunId": "wf-1790348278962-jxcfuz",
+    "lldEffectiveHash": "f394a9ecb688a6435e9660c36070ff438589624b3026bbb4315135fee33e53b4",
+    "approvedAt": "2026-09-25T15:30:44.816Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "sc1 design-tokens.ts module (types + tokens + renderer)",
+        "summary": "Add the new vscode-free, dependency-free module vscode-plugin/src/chat/design-tokens.ts implementing sc1: the TerminalTheme interface + SurfaceKind union (verbatim from the HLD sketch), the frozen terminalTheme default carrying the exact site/css/tui.css values, TERMINAL_SURFACE_CLASS (Record<SurfaceKind,string>), and the two pure functions renderTerminalStyle(theme) (token->inlined <style> string via the var(--vscode-*, <fallback>) idiom, with the empty-token and style-breaking guards throwing TerminalThemeError) and surfaceClass(kind). No existing file edited; not wired into activation.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "design-tokens.ts exports TerminalTheme, SurfaceKind, terminalTheme (frozen), TERMINAL_SURFACE_CLASS, renderTerminalStyle, surfaceClass; imports nothing from 'vscode'; tsc --noEmit clean under the plugin tsconfig.",
+          "renderTerminalStyle(terminalTheme) returns a string opening with <style> and closing with </style>, containing every color/font/chrome/marker token value and the var(--vscode-*, <fallback>) layering, with no asWebviewUri/http(s):// substring; deterministic (two calls byte-identical).",
+          "renderTerminalStyle throws TerminalThemeError naming the token path on an empty/whitespace token and on a token containing '</style>' or angle brackets; surfaceClass is total over all five SurfaceKind members.",
+          "terminalTheme carries the tui.css values (mono stack, bg #0b0e14, accent #4ade80, warn #fbbf24, err #f87171) and is Object.isFrozen."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "renderTerminalStyle(terminalTheme) opens/closes <style>, contains every token + var(--vscode-*,<fallback>), no asWebviewUri/http(s) (CSP-safe)"
+          },
+          {
+            "level": "unit",
+            "name": "renderTerminalStyle determinism: two calls byte-identical"
+          },
+          {
+            "level": "unit",
+            "name": "renderTerminalStyle guards throw TerminalThemeError on empty token and on '</style>'/angle-bracket token"
+          },
+          {
+            "level": "unit",
+            "name": "renderTerminalStyle light-theme variant emits a valid deterministic <style>"
+          },
+          {
+            "level": "unit",
+            "name": "surfaceClass total over all five SurfaceKind members (non-empty, present in output)"
+          },
+          {
+            "level": "unit",
+            "name": "terminalTheme carries the tui.css values and is Object.isFrozen"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Five drift-locked terminal-styled mock HTML deliverables",
+        "summary": "Add the five per-surface mock HTML files under vscode-plugin/src/chat/mocks/ (one per SurfaceKind: chat, provider-dropdown, history-dropdown, inline-diff, docs-review), derived from the approved reference mock at docs/epics/.../S001/mocks.html. Per the s3 critique, each mock's <style> block is GENERATED programmatically from renderTerminalStyle(terminalTheme) (a small checked-in generator, e.g. vscode-plugin/src/chat/mocks/gen-mocks.ts, run to (re)produce the files) so the drift-lock passes by construction; only the per-surface body markup (targeting the surface's TERMINAL_SURFACE_CLASS root class, using the terminal vocabulary: box-drawing chrome, monospace, marker glyphs, not chat-bubble) is hand-authored.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Exactly five mock files exist, one per SurfaceKind, each referencing its TERMINAL_SURFACE_CLASS root class.",
+          "Each mock's embedded <style> block is generated from renderTerminalStyle(terminalTheme) and equals it byte-for-byte (drift-lock holds by construction; regenerating produces no diff).",
+          "Mock markup uses the terminal vocabulary (box-drawing/monospace/marker glyphs) and references no remote origin / asWebviewUri (VS Code webview surface only)."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Mock round-trip: each of the five mock files' <style> equals renderTerminalStyle(terminalTheme) byte-for-byte"
+          },
+          {
+            "level": "integration",
+            "name": "Mock coverage: exactly five SurfaceKind mock files exist, each referencing its TERMINAL_SURFACE_CLASS root class"
+          },
+          {
+            "level": "integration",
+            "name": "Mock files reference no remote origin / asWebviewUri (VS Code webview surface only)"
+          },
+          {
+            "level": "integration",
+            "name": "Anti-chat-bubble scan: mock markup uses box-drawing/monospace/marker vocabulary, no chat-bubble constructs"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Unit + contract test suites",
+        "summary": "Add node:test (tsx --test) + node:assert/strict suites under vscode-plugin/src/chat/__tests__/: a unit suite over renderTerminalStyle/surfaceClass/terminalTheme (postconditions, guards, determinism, light-variant, totality) and a contract suite (mock round-trip byte-equality, five-surface coverage, vscode-free + no-remote-origin source scans, anti-chat-bubble scan). Run the scoped src/chat suite first, then tsc + the full plugin sweep as the regression gate.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "Unit suite proves every renderTerminalStyle postcondition + both guards + determinism + the light-theme variant + surfaceClass totality + terminalTheme frozenness.",
+          "Contract suite proves the mock round-trip byte-equality for all five surfaces, exactly-five-surface coverage, the vscode-free + no-remote-origin/asWebviewUri source scans, and the anti-chat-bubble scan (mapping ac1 + ac2).",
+          "npx tsc --noEmit clean; the scoped src/chat/__tests__ suite passes, and the full vscode-plugin test sweep passes with no regressions."
+        ],
+        "derivedFrom": [
+          "c3",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "design-tokens unit suite authored under src/chat/__tests__/ (all renderer/surfaceClass/terminalTheme cases green)"
+          },
+          {
+            "level": "integration",
+            "name": "design-tokens contract suite authored (mock round-trip + coverage + vscode-free/no-remote-origin scans + anti-chat-bubble)"
+          },
+          {
+            "level": "integration",
+            "name": "design-tokens.ts vscode-free source-scan (no import from 'vscode')"
+          },
+          {
+            "level": "smoke",
+            "name": "full vscode-plugin tsc + test sweep passes with no regressions"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "renderTerminalStyle(terminalTheme): output opens with <style>/closes with </style>; every color/font/chrome/marker token value appears in the output; contains the var(--vscode-*, <fallback>) layering; no asWebviewUri/http(s):// substring (CSP-safe, k2)",
+        "coveredByTaskIds": [
+          "t1",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "renderTerminalStyle determinism: two calls with the same theme are byte-identical",
+        "coveredByTaskIds": [
+          "t1",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "renderTerminalStyle guards: a theme with an empty token throws TerminalThemeError naming the token path; a token containing '</style>' or angle brackets throws",
+        "coveredByTaskIds": [
+          "t1",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "renderTerminalStyle with a light-theme variant emits a valid deterministic <style> with the light values",
+        "coveredByTaskIds": [
+          "t1",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "surfaceClass: total over all five SurfaceKind members, each returns a non-empty class present in the rendered output (no undefined under noUncheckedIndexedAccess)",
+        "coveredByTaskIds": [
+          "t1",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "terminalTheme: carries the exact tui.css values (mono stack, bg #0b0e14, accent #4ade80, warn #fbbf24, err #f87171) and is frozen (Object.isFrozen)",
+        "coveredByTaskIds": [
+          "t1",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "Mock round-trip: for each SurfaceKind mock HTML file (chat, provider-dropdown, history-dropdown, inline-diff, docs-review), the embedded <style> block equals renderTerminalStyle(terminalTheme) byte-for-byte",
+        "coveredByTaskIds": [
+          "t2",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "Mock coverage: exactly the five SurfaceKind surfaces have a mock file, and each references its TERMINAL_SURFACE_CLASS root class",
+        "coveredByTaskIds": [
+          "t2",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "Source-scan: design-tokens.ts imports nothing from 'vscode' (vscode-free) and the mock files reference no remote origin / asWebviewUri (VS-Code-webview-only, ac2)",
+        "coveredByTaskIds": [
+          "t2",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "Anti-chat-bubble scan: mock markup uses the terminal vocabulary (box-drawing chrome / monospace / marker glyphs) and contains no chat-bubble constructs",
+        "coveredByTaskIds": [
+          "t2",
+          "t3"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails.api (renderTerminalStyle + surfaceClass signatures/postconditions)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 dataModelChanges (TerminalTheme, SurfaceKind, terminalTheme, TERMINAL_SURFACE_CLASS)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 testStrategy (node:test unit + contract suites; acceptance mapping ac1/ac2)"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 migration (five per-surface mock HTML deliverables under vscode-plugin/src/chat/mocks/)"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 errorPaths (empty-token + style-breaking guards; mock drift-lock; invariants)"
+    }
+  ]
+}

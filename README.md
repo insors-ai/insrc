@@ -1,64 +1,110 @@
-# insrc
+<div align="center">
 
-Standalone backend for the **insrc** code-knowledge system — a local-first
-daemon that indexes your repositories into a structural graph + vector store
-and exposes them for citation-grounded code exploration and multi-step
-engineering workflows.
+# `insrc`
 
-Split out from [insors-ai/insrc-ide](https://github.com/insors-ai/insrc-ide)
-on 2026-07-14. The IDE fork clones this repo into `~/.insrc/daemon/`, builds
-it, and spawns the compiled entry — the JSON-RPC IPC contract over the Unix
-socket is the only surface the IDE consumes.
+**local-first code-knowledge daemon**
+
+insrc parses your repos into a graph + vector store, answers questions with
+**citation-grounded** context, and drives an autonomous
+`define → design → plan → build` workflow — all through your local
+`claude` / `codex` CLI sessions.
+
+**No API keys. No data leaves your box.**
+
+[![docs](https://img.shields.io/badge/docs-insrc.insors.io-4ade80?style=flat-square)](https://insrc.insors.io)
+[![TypeScript](https://img.shields.io/badge/TypeScript-strict%20·%20ESM-3178c6?style=flat-square)](https://www.typescriptlang.org/)
+[![Node](https://img.shields.io/badge/Node-20%2B-339933?style=flat-square)](https://nodejs.org/)
+[![storage](https://img.shields.io/badge/LMDB%20+%20Lance%20+%20DuckDB-embedded-f59e0b?style=flat-square)](#architecture)
+[![license](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
+
+[Getting started](https://insrc.insors.io/getting-started.html) ·
+[How it works](https://insrc.insors.io/architecture.html) ·
+[Workflow](https://insrc.insors.io/workflow.html) ·
+[CLI](https://insrc.insors.io/cli.html) ·
+[Docs site →](https://insrc.insors.io)
+
+</div>
+
+---
+
+Ask a real question from your `claude` / `codex` session, get a grounded answer —
+every path and symbol comes from the indexed graph, not a guess:
+
+```console
+▸ insrc_analyze  "how does the workflow tracker push issues to GitHub?"
+◆ decompose → 3 explorations · module.profile · symbol.locate · doc.constraint
+◆ grounding on the dependency-closure graph … 41 entities, 7 relations
+◆ synthesizing (citation-grounded) …
+
+The tracker chain lives in src/workflow/tracker-auto.ts. On approval,
+autoPushEpicOnHld / autoPushStoryOnLld / autoPushTasksOnPlan create typed
+issues (Epic ▸ Story ▸ Task) as native sub-issues, committing the artifacts
+and linking the blobs back from each issue. [tracker-auto.ts:112]
+```
 
 ## What it does
 
 insrc parses your code with tree-sitter, resolves cross-file relations into a
 graph, embeds entities for semantic search, and serves both structural and
-semantic queries through a single background daemon. On top of that store it
-provides:
+semantic queries through a single background daemon. On top of that store:
 
-- **Analyze framework** — deterministic graph queries + citation-grounded
-  synthesis. Every claim is anchored to a real exploration output (module
-  profile, symbol locate, class hierarchy, doc constraint), so file paths come
-  from the indexed graph rather than being hallucinated.
-- **Workflow framework** — a `define → design.epic → design.story → tracker`
-  chain for turning a goal into approved HLD/LLD artifacts and GitHub
-  Epic/Story issues, with amendments and staleness gates.
-- **~110 built-in tools** — capability wrappers spanning
-  file/git/shell/http/web/gh/k8s/pkg/ssh/test/notify/search/graph/db/data/code/cloud.
+| | |
+|---|---|
+| **▚ Indexer** | tree-sitter parsing for TypeScript, Python, Go, Java, Scala & Kotlin into a typed entity/relation graph with deterministic IDs. |
+| **◎ Analyze framework** | deterministic graph queries + citation-grounded synthesis — every claim anchored to a real exploration output (module profile, symbol locate, class hierarchy, doc constraint), so paths come from the graph, never hallucinated. |
+| **⟿ Workflow framework** | an autonomous `define → design.epic → design.story → plan → build` chain that turns a goal into approved HLD/LLD artifacts, GitHub Epic/Story/Task issues, and code — with approval + review gates, open-question resolution, and staleness amendments. |
+| **⊘ Bugfix triage** | a defect fix is first-class: an `issue` stage captures reproduction + root cause, a tiered locator attaches it to the code it corrects, then it's scope-routed to build. |
+| **⚒ ~110 built-in tools** | capability wrappers spanning file · git · shell · http · web · gh · k8s · pkg · ssh · test · notify · search · graph · db · data · code · cloud. |
+| **▮ Interactive CLI** | a full-screen ink (React) TUI with Daemon / Repos / Workflows / Setup panes. |
 
-Both frameworks are exposed as MCP tools (`insrc_analyze`,
-`insrc_analyze_step`, `insrc_workflow_step`) so they can drive Claude Code,
-Codex, or any MCP client.
+Both frameworks are exposed as MCP tools (`insrc_analyze`, `insrc_analyze_step`,
+`insrc_triage`, `insrc_workflow_step`, `insrc_docgen`, …) so they drive Claude
+Code, Codex, or any MCP client.
+
+> Split out from [insors-ai/insrc-ide](https://github.com/insors-ai/insrc-ide)
+> on 2026-07-14. The IDE fork clones this repo into `~/.insrc/daemon/`, builds
+> it, and spawns the compiled entry — the JSON-RPC IPC contract over the Unix
+> socket is the only surface the IDE consumes.
 
 ## Design principles
 
 - **Accuracy is primary; cost is the least priority.** Given the choice between
   an accurate-but-expensive path and a cheap-but-lossy one, insrc chooses
   accuracy.
-- **Local-first.** Ollama is always available and embeddings are local-only.
+- **Local-first.** Ollama is always available and embeddings are local-only; the
+  graph + vectors live on your disk under `~/.insrc/`.
 - **No direct cloud REST calls.** Cloud LLM access goes exclusively through the
   locally-installed `claude` and `codex` CLI binaries (via `CliProvider`), so
   auth and quota stay with the user's CLI OAuth sessions.
 - **Daemon owns all storage.** The CLI, MCP server, and IDE never open LMDB or
   LanceDB directly — everything goes through daemon IPC.
+- **No raw file dumps.** Context is always structured entity summaries +
+  relations from the graph, never a blind file paste.
 
 ## Architecture
 
+Everything routes through one daemon. Clients never open a database directly —
+the daemon is the single owner of the graph, the vectors, and the tool registry.
+
 ```
-┌──────────────┐   JSON-RPC over    ┌────────────────────────────────┐
-│ CLI / MCP /  │  ~/.insrc/daemon.  │            Daemon              │
-│ IDE workbench │ ─── sock ──────▶  │  IPC · queue · watcher · tools │
-└──────────────┘                    └───────────────┬────────────────┘
-                                                     │
-                     ┌───────────────────────────────┼──────────────────────┐
-                     ▼                                ▼                       ▼
-              ┌────────────┐                  ┌──────────────┐        ┌──────────────┐
-              │  Indexer   │                  │   Storage    │        │  Providers   │
-              │ tree-sitter │                 │ LMDB graph + │        │ Ollama +     │
-              │ + embedder │                  │ Lance vectors│        │ CliProvider  │
-              └────────────┘                  │ + DuckDB pool│        └──────────────┘
-                                              └──────────────┘
+   claude / codex CLI        insrc TUI          IDE workbench
+          │                     │                     │
+          └──────────┬──────────┴──────────┬──────────┘
+                     ▼                      ▼
+              MCP servers            JSON-RPC over
+          insrc_analyze_step       ~/.insrc/daemon.sock
+          insrc_workflow_step              │
+                     └──────────┬──────────┘
+                                ▼
+                   ┌────────────────────────┐
+                   │         DAEMON          │  owns all DB access
+                   │  registry · queue · fs  │
+                   │  watcher · tool exec    │
+                   └───────────┬────────────┘
+              ┌────────────────┼────────────────┐
+              ▼                ▼                 ▼
+         LMDB graph      Lance vectors        DuckDB
+       entities/edges   ANN / embeddings   data-driver tools
 ```
 
 - **Storage** — LMDB (`lmdb-js`) as the KV substrate for a custom graph layer
@@ -70,60 +116,31 @@ Codex, or any MCP client.
   the active repo. Registry membership is established exclusively via the
   `repo.add` IPC; entities for unregistered repos fail the upsert.
 
-## Project structure
-
-```
-src/
-  shared/     Core types, ~/.insrc/ paths, pino logger
-  indexer/    Tree-sitter parsers, manifest resolution, embedder, file-watcher
-  db/         Storage — graph/ (LMDB), lance/ (vectors), DuckDB pool
-  daemon/     Daemon core (IPC server, registry, queue, lifecycle) + tools/
-  config/     On-disk config store, templates, feedback
-  agent/      providers/ — ollama.ts, cli-provider.ts, structured-output.ts
-  analyze/    Analyze framework (recipes, decomposer, synthesizer, context builder)
-  workflow/   Workflow framework (define, design.epic, design.story, tracker, gates)
-  mcp/        MCP servers (insrc_analyze_step, insrc_workflow_step)
-  cli/        `insrc` interactive TUI (ink) — panes, services, hooks
-  bin/        Executable entrypoints
-  prompts/    Shaper / analyze / workflow prompt templates
-  assets/     Non-TS runtime resources (copied by copy-assets.mjs)
-```
-
-Compiled outputs: the daemon binary the IDE spawns is `out/daemon/index.js`;
-the MCP binary is `out/bin/insrc-mcp.js` (registered as `insrc-mcp`).
-
-## Tech stack
-
-- **Language** — TypeScript (strict, ESM-only, NodeNext resolution)
-- **Runtime** — Node.js 20+ (`tsx` in dev); native modules build against Node
-  22 headers and the daemon spawns under Node 22 at install time
-- **Databases** — LMDB (`lmdb-js`), LanceDB, DuckDB (`@duckdb/node-api`)
-- **Parsing** — tree-sitter (TypeScript, Python, Go, Java, Scala)
-- **LLM providers** — Ollama (local, qwen3-coder + qwen3-embedding) +
-  `CliProvider` (claude + codex CLI subprocesses)
-- **Logging** — pino (+ pino-pretty, pino-roll)
-- **CLI** — ink + react (full-screen TUI) · **HTTP** — undici
-
-## Install
-
-Users: run the one-line release installer — it clones + builds the daemon into
-`~/.insrc/daemon` and starts it. See [`docs/installation.md`](docs/installation.md).
+## 60-second start
 
 ```bash
+# users — one-line release installer: clones + builds the daemon into ~/.insrc/daemon and starts it
 curl -fsSL https://github.com/insors-ai/insrc/releases/latest/download/insrc-daemon-install.sh | bash
-# pass options after `bash -s --`, e.g. --target <path> · --branch main · --no-start · --embedder auto|ollama|onnx
+# options after `bash -s --`, e.g. --target <path> · --branch main · --no-start · --embedder auto|ollama|onnx
+
+# launch the interactive TUI — add a repo from the Repos pane (press 'a')
+insrc
+
+# then register insrc as an MCP server (see below) and ask grounded questions
+# from your claude / codex session, e.g. via the insrc_analyze tool:
+#   "where is the repo registry contract enforced?"
 ```
 
-## Build (from source / development)
+See [`docs/installation.md`](docs/installation.md) or the
+[getting-started guide](https://insrc.insors.io/getting-started.html) for the
+full walk-through.
+
+## Build & test (from source)
 
 ```bash
 npm install        # runtime + dev deps
 npm run build      # tsc + copy-assets.mjs
-```
 
-## Test
-
-```bash
 npx tsx --test 'src/**/__tests__/*.test.ts'    # full sweep
 ```
 
@@ -138,35 +155,60 @@ npx tsx --test 'src/analyze/**/*.test.ts'                           # analyze fr
 Live-service tests gate behind env vars (`INSRC_LIVE_TESTS=1` for Ollama /
 CliProvider suites) and skip cleanly when unset.
 
+## Project structure
+
+```
+src/
+  shared/     Core types, ~/.insrc/ paths, pino logger
+  indexer/    Tree-sitter parsers, manifest resolution, embedder, file-watcher
+  db/         Storage — graph/ (LMDB), lance/ (vectors), DuckDB pool
+  daemon/     Daemon core (IPC server, registry, queue, lifecycle) + tools/
+  config/     On-disk config store, templates, feedback
+  agent/      providers/ — ollama.ts, cli-provider.ts, structured-output.ts
+  analyze/    Analyze framework (recipes, decomposer, synthesizer, context builder)
+  workflow/   Workflow framework (define, design.epic, design.story, plan, build, tracker, gates)
+  mcp/        MCP servers (insrc_analyze_step, insrc_workflow_step, …)
+  cli/        `insrc` interactive TUI (ink) — panes, services, hooks
+  bin/        Executable entrypoints
+  prompts/    Shaper / analyze / workflow prompt templates
+  assets/     Non-TS runtime resources (copied by copy-assets.mjs)
+```
+
+Compiled outputs: the daemon binary the IDE spawns is `out/daemon/index.js`; the
+MCP binary is `out/bin/insrc-mcp.js` (registered as `insrc-mcp`).
+
+**Tech stack** — TypeScript (strict, ESM-only, NodeNext) · Node.js 20+ (`tsx` in
+dev; native modules build against Node 22 headers) · LMDB + LanceDB + DuckDB ·
+tree-sitter (TS, Python, Go, Java, Scala, Kotlin) · Ollama (local LLM +
+embeddings) + `CliProvider` (claude + codex CLI subprocesses) · pino logging ·
+ink + react TUI · undici HTTP.
+
 ## CLI
 
 `insrc` is a **full-screen interactive terminal UI** (built on
-[ink](https://github.com/vadimdemedes/ink)) — there are no subcommands. Launch
-it in a terminal with the wrapper (no `node`/`npm` needed; runs from any
-directory):
+[ink](https://github.com/vadimdemedes/ink)) — no subcommands. Launch it in a
+terminal (no `node`/`npm` needed; runs from any directory):
 
 ```bash
 scripts/insrc                 # or `npm run insrc`
 # put it on PATH once:  ln -s "$PWD/scripts/insrc" /usr/local/bin/insrc  →  then just `insrc`
 ```
 
-It opens a dashboard with four panes (switch with `1`–`4`/`Tab`, `r` refresh,
-`q` quit):
+Four panes (switch with `1`–`4`/`Tab`, `r` refresh, `q` quit):
 
-- **Daemon** — live health (uptime, queue, model-pull, LMDB size) and the full
+- **Daemon** — live health (uptime, queue, model-pull, LMDB size) + the full
   maintenance lifecycle: `s` start · `x` stop · `R` restart · `u` update
-  (git fast-forward → `npm install` if the lockfile changed → build, mirroring
-  `daemon-ctl.sh`) · `b` backup · `c` compact.
+  (git fast-forward → `npm install` if the lockfile changed → build) · `b`
+  backup · `c` compact.
 - **Repos** — registered repositories with indexing status; `a` add · `d` remove
   · `i` reindex. The highlighted repo is what the Workflows pane targets.
-- **Workflows** — the Epic chain for the selected repo; open an Epic to approve
-  / reject the next pending artifact (HLD/LLD approvals auto-push to the GitHub
+- **Workflows** — the Epic chain for the selected repo; open an Epic to approve /
+  reject the next pending artifact (HLD/LLD approvals auto-push to the GitHub
   tracker) and approve / reject pending HLD amendments.
 - **Setup** — hardware detection + model recommendation; `a` apply config · `p`
   pull missing models (progress streamed inline).
 
-Press **`:`** anywhere to open a vim-style **command bar** and type the
-operations instead of navigating to them (REPL-style; `Esc` closes):
+Press **`:`** anywhere for a vim-style command bar (REPL-style; `Esc` closes):
 
 ```
 repo     add <path> | remove <path> | reindex <path> | list
@@ -177,18 +219,13 @@ setup    show | apply | pull
 pane <name> · help · quit
 ```
 
-`config set` parses the value as JSON when it can (`config set
-models.embeddingDim 768` stores a number) and otherwise as a string; writes go
-through the daemon into `~/.insrc/config.json`.
-
-It requires an interactive TTY (it exits with a message when stdin/stdout isn't
-one). Programmatic callers should talk to the daemon over the IPC socket
-directly rather than driving the UI.
+It requires an interactive TTY. Programmatic callers should talk to the daemon
+over the IPC socket directly rather than driving the UI.
 
 ## MCP server
 
-Register the compiled `insrc-mcp` binary with an MCP client (e.g. Claude Code
-in `~/.claude/settings.json`):
+Register the compiled `insrc-mcp` binary with an MCP client (e.g. Claude Code in
+`~/.claude/settings.json`):
 
 ```json
 {
@@ -201,15 +238,15 @@ in `~/.claude/settings.json`):
 }
 ```
 
-`INSRC_REPO` is optional — callers may pass `repo` on each tool call instead.
-The repo must be registered (Repos pane → `a` add in the `insrc` TUI) and
-finished indexing. When the
-client declares the `sampling` capability, inner LLM calls route back through
-MCP `sampling/createMessage` (single session, no subprocess); otherwise they
-fall back to the daemon's configured `shaperProvider`.
+`INSRC_REPO` is optional — callers may pass `repo` on each tool call instead. The
+repo must be registered (Repos pane → `a` add in the `insrc` TUI) and finished
+indexing. When the client declares the `sampling` capability, inner LLM calls
+route back through MCP `sampling/createMessage` (single session, no subprocess);
+otherwise they fall back to the daemon's configured `shaperProvider`.
 
 ## Documentation
 
+- **[insrc.insors.io](https://insrc.insors.io)** — full documentation site
 - [`docs/daemon.md`](docs/daemon.md) — daemon usage guide
 - [`docs/workflow.md`](docs/workflow.md) — workflow user guide
 - [`design/analyze-framework.md`](design/analyze-framework.md) — analyze framework

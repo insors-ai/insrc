@@ -32,6 +32,7 @@ import { fileURLToPath } from 'node:url';
 
 import { listRepos as listRegisteredRepos } from '../db/repos.js';
 import { getLogger } from '../shared/logger.js';
+import { listWorkflowGuides, guideMarkerStart, guideMarkerEnd } from './guide-sections.js';
 import type { RegisteredRepo, SteeringSelection } from '../shared/types.js';
 
 export type { SteeringSelection };
@@ -67,6 +68,31 @@ export function readSteeringBlock(): string {
 	const raw = readFileSync(path, 'utf8').trim();
 	if (raw.length === 0) throw new Error(`steering block asset is empty: ${path}`);
 	return raw;
+}
+
+/**
+ * Derive the INJECTED skeleton from the canonical steering text: the whole
+ * content with every per-workflow guide-marker section removed. The per-workflow
+ * detail stays in the canonical file (sc2's insrc_guide serves it from there);
+ * only the injected block shrinks. Pure — no I/O. Applied on the inject/refresh
+ * block-source path ONLY; `readSteeringBlock` stays whole so `guide.get` keeps
+ * serving the sections. Reuses sc2's public listWorkflowGuides + guideMarker*
+ * (only COMPLETE marker pairs are removed; a malformed/half section is left in,
+ * where a test catches it). Idempotent and empty-safe.
+ */
+export function stripGuideSections(steeringText: string): string {
+	let out = steeringText;
+	for (const key of listWorkflowGuides(steeringText)) {
+		const start = guideMarkerStart(key);
+		const end = guideMarkerEnd(key);
+		const startIdx = out.indexOf(start);
+		if (startIdx === -1) continue;
+		const endIdx = out.indexOf(end, startIdx + start.length);
+		if (endIdx === -1) continue;
+		out = out.slice(0, startIdx) + out.slice(endIdx + end.length);
+	}
+	// Collapse the blank runs left where sections were removed, then trim.
+	return out.replace(/\n{3,}/g, '\n\n').trim();
 }
 
 /** Wrap the block body in the insrc:steering markers. */
@@ -195,7 +221,7 @@ export async function injectSteeringBlock(
 		return { files: targets.map(t => ({ file: t.file, action: 'skipped' as const })) };
 	}
 
-	const block = readSteeringBlock();   // throws → caller guards (no partial write)
+	const block = stripGuideSections(readSteeringBlock());   // throws → caller guards (no partial write); inject the skeleton only
 	const files: SteeringFileOutcome[] = [];
 
 	for (const t of targets) {
@@ -227,7 +253,10 @@ export async function injectSteeringBlock(
 export interface SteeringRefreshDeps {
 	/** The registered workspace repos to walk. */
 	readonly listRepos: () => Promise<readonly RegisteredRepo[]>;
-	/** The canonical steering-block body to stamp. */
+	/** The canonical steering-block source to stamp. `refreshSteeringAcrossRepos`
+	 *  strips the per-workflow guide sections from whatever this returns, so a
+	 *  caller may hand back the RAW asset (e.g. the freshly-built one) and still
+	 *  get only the skeleton propagated. */
 	readonly readBlock: () => string;
 	/** Read a repo file; resolve `null` when it is absent (an opt-out signal). */
 	readonly readFile:  (path: string) => Promise<string | null>;
@@ -244,7 +273,7 @@ export type SteeringRefreshReport = readonly SteeringFileOutcome[];
 function defaultSteeringRefreshDeps(): SteeringRefreshDeps {
 	return {
 		listRepos: () => listRegisteredRepos(undefined),
-		readBlock: readSteeringBlock,
+		readBlock: readSteeringBlock,   // raw canonical asset; the skeleton strip is applied centrally below
 		readFile:  async (path) => {
 			try {
 				return await fsReadFile(path, 'utf8');
@@ -273,7 +302,12 @@ export async function refreshSteeringAcrossRepos(
 	deps: Partial<SteeringRefreshDeps> = {},
 ): Promise<SteeringRefreshReport> {
 	const d: SteeringRefreshDeps = { ...defaultSteeringRefreshDeps(), ...deps };
-	const block = d.readBlock();                 // may throw → caller guards
+	// Strip the per-workflow guide sections HERE, at the propagation boundary, so
+	// the skeleton-only contract holds no matter which `readBlock` a caller
+	// injects (the daemon-update path, runUpdateSteeringRefresh, supplies its own
+	// readBlock pointed at the freshly-built asset — it must not bypass the strip).
+	// Idempotent, so an already-stripped block passes through unchanged.
+	const block = stripGuideSections(d.readBlock());   // may throw → caller guards
 	const repos = await d.listRepos();           // may reject → caller guards
 	const outcomes: SteeringFileOutcome[] = [];
 

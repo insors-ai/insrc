@@ -1,0 +1,605 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1790253820995-le02sv",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-24T12:51:47.579Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 486563,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-09-24T10:32:18.030Z",
+    "epicHash": "38905b56cb44c4cf",
+    "epicSlug": "work-framed-approved-spec-proceed-from",
+    "storyId": "s3",
+    "hldBaseRunId": "wf-1790248075351-dbqnsq",
+    "hldEffectiveHash": "b8f0f1bf4237bd475f51a1368af9c5543f948c3358684f1bfc620ffdbb79d33e",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "ref": "c2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "injectSteeringBlock and refreshSteeringAcrossRepos both source the injected block from readSteeringBlock() in src/daemon/steering-inject.ts — the shared block source S003 wraps with stripGuideSections.",
+          "evidence": "Confirmed: src/daemon/steering-inject.ts:198 `const block = readSteeringBlock()` inside injectSteeringBlock (186), and :247 `readBlock: readSteeringBlock` is the refreshSteeringAcrossRepos (272) default — both inject paths source the block from readSteeringBlock, the exact wrap point S003 uses.",
+          "action": "No change — citation resolves.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl2",
+          "ref": "c2",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "S002's shipped guide.get / readWorkflowGuide also call readSteeringBlock() to read the WHOLE steering-block.md, so readSteeringBlock must stay unchanged (the strip is inject-path-only).",
+          "evidence": "Confirmed cross-artifact: src/daemon/index.ts:1379/1383 the 'guide.get'/'guide.list' handlers call guideGetResult(readSteeringBlock,...) / guideListResult(readSteeringBlock) — so S002's guide surface reads the WHOLE file via readSteeringBlock; therefore readSteeringBlock must stay unchanged and the strip is correctly inject-path-only.",
+          "action": "No change — the shared-reader constraint holds.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl3",
+          "ref": "sc2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "sc2 (S002) exports the PUBLIC surface stripGuideSections consumes: listWorkflowGuides, guideMarkerStart, guideMarkerEnd in src/daemon/guide-sections.ts.",
+          "evidence": "Confirmed: src/daemon/guide-sections.ts exports guideMarkerStart (43), guideMarkerEnd (46), listWorkflowGuides (75) — the exact sc2 PUBLIC surface stripGuideSections consumes (no re-implementation of sc2's private mechanism).",
+          "action": "No change — citation resolves.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl4",
+          "ref": "c2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The injected region is bounded by the existing insrc:steering:start/end markers via upsertMarkedSection / refreshMarkedSection in steering-inject.ts.",
+          "evidence": "Confirmed: src/daemon/steering-inject.ts:41 STEERING_MARKER_START, :91 upsertMarkedSection, :142 refreshMarkedSection — the injected region stays bounded by the insrc:steering markers, and the strip runs before the upsert.",
+          "action": "No change — citation resolves.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl5",
+          "ref": "c1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "insrc_build_step, insrc_schema, and insrc_guide currently have zero coverage in the canonical steering source src/prompts/steering-block.md (the catalog gap S003 fills).",
+          "evidence": "Confirmed: grep over src/prompts/steering-block.md returns 0 for insrc_build_step, insrc_schema, insrc_guide — the zero-coverage catalog gap the skeleton must fill (ac3).",
+          "action": "No change — the coverage-gap claim resolves.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl6",
+          "ref": "dataModel",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "stripGuideSections is net-new — no such symbol exists in the codebase yet.",
+          "evidence": "Confirmed net-new: no stripGuideSections symbol exists anywhere in src/ (every match is in the epic's own docs). The helper is new work in steering-inject.ts.",
+          "action": "No change — net-new claim resolves.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl7",
+          "ref": "test",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "The S002 Phase-A canary test exists in schema-registry.test.ts asserting readWorkflowGuide returns null for every WorkflowKey — the test S003 flips.",
+          "evidence": "Confirmed: src/mcp/__tests__/schema-registry.test.ts:113 PHASE_A_WORKFLOW_KEYS + :118 the canary test 'readWorkflowGuide over the REAL steering asset returns null for every key in Phase A' — the exact S002 test S003 flips once real guide sections are authored.",
+          "action": "No change — the test-flip target resolves.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl8",
+          "ref": "boundary",
+          "kind": "ordering",
+          "severity": "LOW",
+          "premise": "S003 depends on sc1 (s1) and sc2 (s2), both of which are shipped (Phase A complete) before S003 (Phase B).",
+          "evidence": "Ordering holds: the DEF frames s3 dependsOn [s1,s2]; both Phase-A stories are shipped (S001 main 025c6f4, S002 main 99c2dc5) before S003 (Phase B), so the consumed sc1/sc2 surfaces exist.",
+          "action": "No change — ordering resolves.",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 8
+      },
+      "reviewedAt": "2026-09-24T12:53:17.575Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-24T12:54:42.185Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "On-demand controller guidance is delivered by two independent read-only surfaces, each reading its source of truth WHERE THAT SOURCE ALREADY LIVES, plus a steering restructure that shrinks the injected block and points at those surfaces. sc-schema (S001) is an MCP-server-side read-only tool that serves the exact input contract for a requested insrc_* tool (+phase) by slicing the tool's own registered zod inputSchema — the same object the MCP SDK validates against — so there is no copy (k1) and no round-trip. sc-guide (S002) is the daemon-IPC-first + thin-MCP-wrapper shape proven by docgen: a daemon-owned guide.get / guide.list IPC reads the canonical steering content inside the daemon and returns one workflow's section, fronted by a thin insrc_guide MCP tool. Both surfaces are per-task (k2), read-only (k5), and return structured non-throwing results with the valid options on error (k3). S003 then authors, in the canonical steering source, a thin skeleton (front-door decision tree + a catalog of the available insrc_* / IPC calls, the insrc_build_step doc, the schema-first rule, and an insrc_schema self-entry) and moves each workflow's full procedural detail into the per-workflow sections sc-guide serves — propagated to every registered repo by the existing steering-refresh (k4).",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "insrc_schema shape-lookup surface",
+          "purpose": "The read-only lookup a controller calls to get the authoritative input contract for a specific insrc_* tool+phase (or the valid tools/phases on a miss), read from the tool's own registered schema so it never drifts. Consumed by S003 to reference insrc_schema in the steering catalog + the schema-first rule + the self-entry.",
+          "interfaceSketch": "// MCP tool `insrc_schema` (read-only). JsonSchema is the JSON Schema derived from the tool's registered zod inputSchema.\ninterface InsrcSchemaInput { tool: string; phase?: string }\ntype JsonSchema = Record<string, unknown>;\ninterface InsrcSchemaOk { schema: JsonSchema; description: string; validPhases?: string[] }\ninterface InsrcSchemaError { error: string; validTools?: string[]; validPhases?: string[] }\ntype InsrcSchemaResult = InsrcSchemaOk | InsrcSchemaError;",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s3"
+          ],
+          "assumptions": [
+            "c3"
+          ]
+        },
+        {
+          "id": "sc2",
+          "name": "insrc_guide per-workflow retrieval surface (MCP tool + daemon guide IPC + section addressing)",
+          "purpose": "The read-only retrieval a controller calls to get one workflow's full procedural guidance on demand, served daemon-side from the canonical steering content, plus the per-workflow section-addressing scheme that content is partitioned by. Consumed by S003, which authors the skeleton pointing at it and moves per-workflow detail into the sections this surface reads.",
+          "interfaceSketch": "// MCP tool `insrc_guide` (read-only) fronting daemon IPC guide.get / guide.list.\ninterface InsrcGuideInput { workflow?: string }\ninterface InsrcGuideOk { workflow: string; guidance: string }\ninterface InsrcGuideError { error: string; validWorkflows: string[] }\ntype InsrcGuideResult = InsrcGuideOk | InsrcGuideError;\ninterface GuideIpc {\n  'guide.get'(params: { workflow: string }): InsrcGuideResult;\n  'guide.list'(): { workflows: string[] };\n}\ntype WorkflowKey = 'define' | 'design.epic' | 'design.story' | 'plan' | 'build' | 'review' | 'code-review' | 'brainstorm' | 'tracker' | 'triage';",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s3"
+          ],
+          "assumptions": [
+            "c2",
+            "c4"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s3",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc2"
+        ],
+        "internal": "Private to S003: the actual authored steering content — the compact skeleton (front-door decision tree + the catalog of available insrc_* / IPC calls, the insrc_build_step documentation, the 'call insrc_schema before guessing a shape' rule, and the insrc_schema self-entry) and the concrete decision of which minimal orientation stays inline in the skeleton versus which per-workflow detail moves into sc2's sections. It consumes sc1 (names insrc_schema + its call/response shape in the catalog and self-entry) and sc2 (the skeleton directs the controller to fetch per-workflow detail via insrc_guide, and the moved detail is authored into sc2's per-workflow section partition), and it rides the existing steering-refresh for propagation. No other Story consumes S003."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1"
+          ],
+          "depends": [],
+          "internal": "Private to S001: how the MCP server enumerates its own registered tools and derives a JSON Schema slice from a tool's registered zod inputSchema; the tool/phase classification (which tools are phase-based and their phase names — analyze_step/workflow_step/review_step/code_review_step/build_step/triage[start,classify]/workflow_run[start,poll] vs the one-shot workflow_approve/docgen/analyze); the dynamic-envelope rule (return the static envelope + a description pointer to the run's own inline schema for runtime-generated inner payloads); and the exact structured-error shaping for omitted/unknown tool and omitted phase. None of this internal wiring is consumed by another Story — only the sc1 result surface is."
+        },
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc2"
+          ],
+          "depends": [],
+          "internal": "Private to S002: how the daemon reads the canonical steering content it already loads and partitions it into per-workflow sections; the guide.get/guide.list IPC handlers on the daemon method map; the thin insrc_guide MCP wrapper that forwards to those IPCs; and the structured-error shaping for an omitted/unknown workflow. Only the sc2 surface (the MCP tool result + the section-addressing key set) is consumed downstream; the partition/read mechanism stays private."
+        }
+      ],
+      "rolloutPhase": "Phase B — thin steering skeleton (consumer)",
+      "nonFunctional": {
+        "performance": "sc-schema is an in-process read of an already-registered schema object sliced to the requested tool+phase — negligible latency, no I/O. sc-guide is a single local daemon IPC round-trip reading steering content the daemon already holds in memory — no network, no rebuild. Neither adds standing cost to activation or to the injected steering (which shrinks).",
+        "security": "Both surfaces are read-only introspection/retrieval over already-loaded schema + steering content (k5): no cloud/REST path, no new network surface, no credential handling, and no mutation of any state. The steering content served is the same content already shipped to the repo.",
+        "observability": "Every result is structured and machine-parseable (k3): a success carries the schema/guidance + orientation, and an error carries the valid tools / phases / workflows so a controller can self-correct in one follow-up call rather than guessing. No thrown tool errors to obscure the failure mode.",
+        "durability": "No persisted state is introduced. Single-source-of-truth (k1) is the durability property that matters: because each surface reads the live registration / canonical steering content, a change to a tool schema or the steering source is reflected on the next lookup with nothing to migrate and no copy to fall out of date."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "stripGuideSections",
+          "signature": "export function stripGuideSections(steeringText: string): string",
+          "parameters": [
+            {
+              "name": "steeringText",
+              "type": "string",
+              "purpose": "The full canonical steering content (skeleton + per-workflow guide-marker sections).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "The skeleton: steeringText with every authored guide-marker section (start..end inclusive) removed, leftover blank runs collapsed, trimmed. Pure — no I/O."
+          },
+          "errors": [
+            {
+              "type": "none thrown",
+              "condition": "A text with no guide sections returns unchanged (idempotent); malformed/half-marked sections are left intact (only complete pairs from listWorkflowGuides are stripped)."
+            }
+          ],
+          "preconditions": [
+            "Depends only on its argument; reuses sc2's PUBLIC listWorkflowGuides(text) to enumerate the authored keys and guideMarkerStart(key)/guideMarkerEnd(key) to bound each removed section."
+          ],
+          "postconditions": [
+            "The result contains NO complete guide-marker pair (the injected skeleton excludes per-workflow detail, ac1).",
+            "Applying it twice yields the same result (idempotent)."
+          ]
+        },
+        {
+          "name": "injectSteeringBlock",
+          "signature": "export function injectSteeringBlock(repoRoot: string, selection: SteeringSelection): Promise<{ files: SteeringFileOutcome[] }>  // reshaped: the block source is stripGuideSections(readSteeringBlock()) instead of readSteeringBlock()",
+          "parameters": [
+            {
+              "name": "repoRoot",
+              "type": "string",
+              "purpose": "The repo whose CLAUDE.md/AGENTS.md receive the steering block.",
+              "optional": false
+            },
+            {
+              "name": "selection",
+              "type": "SteeringSelection",
+              "purpose": "Which files to write (unchanged).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<{ files: SteeringFileOutcome[] }>",
+            "meaning": "Per-file upsert outcomes (unchanged shape); the injected block is now the skeleton only."
+          },
+          "errors": [
+            {
+              "type": "none new",
+              "condition": "The block-asset read still throws (caller guards); per-file I/O still recorded as skipped. Additive: only the block source is wrapped."
+            }
+          ],
+          "preconditions": [
+            "readSteeringBlock() returns the whole canonical file (unchanged); stripGuideSections derives the skeleton from it."
+          ],
+          "postconditions": [
+            "The upserted steering region contains the skeleton, not the per-workflow guide sections (ac1).",
+            "readSteeringBlock is unchanged, so S002's guide.get still serves the full sections (no sc2 regression)."
+          ]
+        },
+        {
+          "name": "refreshSteeringAcrossRepos",
+          "signature": "export function refreshSteeringAcrossRepos(deps?: Partial<SteeringRefreshDeps>): Promise<SteeringRefreshReport>  // reshaped: the default readBlock is () => stripGuideSections(readSteeringBlock())",
+          "parameters": [
+            {
+              "name": "deps",
+              "type": "Partial<SteeringRefreshDeps> | undefined",
+              "purpose": "Injectable seams; only the DEFAULT readBlock changes (an explicit deps.readBlock override is still honoured verbatim).",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<SteeringRefreshReport>",
+            "meaning": "Per-file refresh outcomes (unchanged shape); the re-stamped block is the skeleton only."
+          },
+          "errors": [
+            {
+              "type": "none new",
+              "condition": "readBlock/listRepos failures still propagate to the caller; per-file failures still recorded + walk continues."
+            }
+          ],
+          "preconditions": [
+            "The default readBlock composes stripGuideSections over readSteeringBlock; an injected deps.readBlock (tests) is used as-is."
+          ],
+          "postconditions": [
+            "Every registered repo that carries the markers is re-stamped with the skeleton (ac1, ac4).",
+            "One canonical source; no per-repo hand-edit (ac4)."
+          ]
+        },
+        {
+          "name": "listWorkflowGuides",
+          "signature": "// CONSUMED from sc2 (src/daemon/guide-sections.ts): listWorkflowGuides(steeringText: string): string[]",
+          "parameters": [
+            {
+              "name": "steeringText",
+              "type": "string",
+              "purpose": "The canonical steering content; stripGuideSections calls this to enumerate the authored guide keys to remove.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string[]",
+            "meaning": "The workflow keys with a complete guide-marker pair — the set stripGuideSections removes."
+          },
+          "errors": [
+            {
+              "type": "none",
+              "condition": "Consumed as-is; S003 does not modify it."
+            }
+          ],
+          "preconditions": [
+            "sc2 shipped (S002)."
+          ],
+          "postconditions": [
+            "Consumed read-only — S003 does not re-implement sc2's partition mechanism."
+          ]
+        }
+      ],
+      "dataModel": [
+        {
+          "entity": "src/prompts/steering-block.md (restructured: thin skeleton + per-workflow guide sections)",
+          "change": "field-modify",
+          "details": "The canonical steering source is restructured: a COMPACT SKELETON (front-door decision tree mapping a controller's intent to the right tool/workflow; a CATALOG of all registered insrc_* tools + daemon IPC calls — one line each incl. insrc_build_step [previously zero coverage], insrc_schema, insrc_guide; the schema-first rule 'call insrc_schema before emitting a call whose shape you are unsure of'; the insrc_schema self-entry documenting its own call/response shape; and the pointer 'for a workflow's full step-by-step procedure call insrc_guide({workflow})') followed by the per-workflow DETAIL moved out of the current inline prose into sections wrapped in the sc2 guide-marker pairs guideMarkerStart(key)/guideMarkerEnd(key) for keys define/design.epic/design.story/plan/build/review/code-review/brainstorm/tracker/triage. Content-only; single canonical source (ac4).",
+          "schemaDiff": "~ steering-block.md: skeleton (catalog incl. insrc_build_step/insrc_schema/insrc_guide + schema-first rule + insrc_schema self-entry + insrc_guide pointer) + <!-- insrc:guide:<key>:start -->..<!-- insrc:guide:<key>:end --> per-workflow detail sections",
+          "callSites": [
+            "src/prompts/steering-block.md",
+            "src/daemon/steering-inject.ts (read + injected via stripGuideSections)",
+            "src/daemon/guide-sections.ts (guide.get serves the marker sections)"
+          ]
+        },
+        {
+          "entity": "stripGuideSections (pure skeleton-extraction helper)",
+          "change": "new",
+          "details": "A pure function in src/daemon/steering-inject.ts that removes every authored guide-marker section from the steering text, returning the skeleton. Built on sc2's PUBLIC listWorkflowGuides + guideMarkerStart/End — no new marker convention. Applied ONLY in the inject/refresh block-source path so the injected block is the skeleton while readSteeringBlock (guide.get) stays whole.",
+          "schemaDiff": "+ export function stripGuideSections(steeringText: string): string",
+          "callSites": [
+            "src/daemon/steering-inject.ts (injectSteeringBlock + refreshSteeringAcrossRepos default readBlock)"
+          ]
+        },
+        {
+          "entity": "S002 Phase-A canary test (schema-registry.test.ts)",
+          "change": "field-modify",
+          "details": "The S002 test asserting readWorkflowGuide returns null for every WorkflowKey in Phase A is flipped now that S003 authors real guide sections: it asserts each authored key now RESOLVES to non-empty guidance AND that stripGuideSections(steering) contains none of those sections (the injected skeleton excludes them).",
+          "schemaDiff": "~ schema-registry.test.ts: Phase-A null-for-every-key canary -> keys-resolve + skeleton-excludes-them",
+          "callSites": [
+            "src/mcp/__tests__/schema-registry.test.ts"
+          ]
+        }
+      ],
+      "interactionWithShared": [
+        {
+          "contractId": "sc1",
+          "role": "consumes",
+          "howDetails": "S003 CONSUMES sc1 (owned by s1) by NAME only: the skeleton's catalog lists insrc_schema, the schema-first rule instructs the controller to call insrc_schema before guessing a call's shape, and the insrc_schema self-entry documents its { tool, phase? } -> InsrcSchemaResult call/response so its own use never has to be guessed (ac3). No sc1 internals are touched or re-implemented."
+        },
+        {
+          "contractId": "sc2",
+          "role": "consumes",
+          "howDetails": "S003 CONSUMES sc2 (owned by s2) two ways: (1) the authored per-workflow detail is written into sc2's guide-marker sections (guideMarkerStart/End) so insrc_guide serves it, and the skeleton directs controllers to insrc_guide({workflow}) for on-demand detail (ac2); (2) stripGuideSections reuses sc2's PUBLIC listWorkflowGuides + guideMarkerStart/End to derive the injected skeleton. S003 does not re-implement sc2's private partition/read mechanism — only its public surface is used."
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "src/prompts/steering-block.md (restructured: thin skeleton + per-workflow guide sections)",
+        "change": "field-modify",
+        "details": "The canonical steering source is restructured: a COMPACT SKELETON (front-door decision tree mapping a controller's intent to the right tool/workflow; a CATALOG of all registered insrc_* tools + daemon IPC calls — one line each incl. insrc_build_step [previously zero coverage], insrc_schema, insrc_guide; the schema-first rule 'call insrc_schema before emitting a call whose shape you are unsure of'; the insrc_schema self-entry documenting its own call/response shape; and the pointer 'for a workflow's full step-by-step procedure call insrc_guide({workflow})') followed by the per-workflow DETAIL moved out of the current inline prose into sections wrapped in the sc2 guide-marker pairs guideMarkerStart(key)/guideMarkerEnd(key) for keys define/design.epic/design.story/plan/build/review/code-review/brainstorm/tracker/triage. Content-only; single canonical source (ac4).",
+        "schemaDiff": "~ steering-block.md: skeleton (catalog incl. insrc_build_step/insrc_schema/insrc_guide + schema-first rule + insrc_schema self-entry + insrc_guide pointer) + <!-- insrc:guide:<key>:start -->..<!-- insrc:guide:<key>:end --> per-workflow detail sections",
+        "callSites": [
+          "src/prompts/steering-block.md",
+          "src/daemon/steering-inject.ts (read + injected via stripGuideSections)",
+          "src/daemon/guide-sections.ts (guide.get serves the marker sections)"
+        ]
+      },
+      {
+        "entity": "stripGuideSections (pure skeleton-extraction helper)",
+        "change": "new",
+        "details": "A pure function in src/daemon/steering-inject.ts that removes every authored guide-marker section from the steering text, returning the skeleton. Built on sc2's PUBLIC listWorkflowGuides + guideMarkerStart/End — no new marker convention. Applied ONLY in the inject/refresh block-source path so the injected block is the skeleton while readSteeringBlock (guide.get) stays whole.",
+        "schemaDiff": "+ export function stripGuideSections(steeringText: string): string",
+        "callSites": [
+          "src/daemon/steering-inject.ts (injectSteeringBlock + refreshSteeringAcrossRepos default readBlock)"
+        ]
+      },
+      {
+        "entity": "S002 Phase-A canary test (schema-registry.test.ts)",
+        "change": "field-modify",
+        "details": "The S002 test asserting readWorkflowGuide returns null for every WorkflowKey in Phase A is flipped now that S003 authors real guide sections: it asserts each authored key now RESOLVES to non-empty guidance AND that stripGuideSections(steering) contains none of those sections (the injected skeleton excludes them).",
+        "schemaDiff": "~ schema-registry.test.ts: Phase-A null-for-every-key canary -> keys-resolve + skeleton-excludes-them",
+        "callSites": [
+          "src/mcp/__tests__/schema-registry.test.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "S003 CONSUMES sc1 (owned by s1) by NAME only: the skeleton's catalog lists insrc_schema, the schema-first rule instructs the controller to call insrc_schema before guessing a call's shape, and the insrc_schema self-entry documents its { tool, phase? } -> InsrcSchemaResult call/response so its own use never has to be guessed (ac3). No sc1 internals are touched or re-implemented."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "S003 CONSUMES sc2 (owned by s2) two ways: (1) the authored per-workflow detail is written into sc2's guide-marker sections (guideMarkerStart/End) so insrc_guide serves it, and the skeleton directs controllers to insrc_guide({workflow}) for on-demand detail (ac2); (2) stripGuideSections reuses sc2's PUBLIC listWorkflowGuides + guideMarkerStart/End to derive the injected skeleton. S003 does not re-implement sc2's private partition/read mechanism — only its public surface is used."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "An authored guide section is malformed (a start marker with no matching end, or an inverted pair).",
+          "detection": "stripGuideSections enumerates keys via sc2's listWorkflowGuides, which returns ONLY complete pairs; a half-marked/inverted section is not in that list, so it is not matched for removal.",
+          "response": "The malformed section is LEFT in the block and therefore remains visible in the injected skeleton rather than being silently dropped; a build-time authoring test asserts stripGuideSections(steering) contains no guide-start marker at all, so a half-marked section fails CI loudly.",
+          "userImpact": "An authoring mistake surfaces as leftover detail in the injected block (caught by the test), not as lost guidance.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A per-workflow section is authored under a key that is not one of the expected WorkflowKey values (typo, e.g. 'design_story' instead of 'design.story').",
+          "detection": "listWorkflowGuides returns the section's key verbatim (spelling-driven); a test compares the authored key set against the expected WorkflowKey set from the HLD.",
+          "response": "stripGuideSections still removes it from the injected block (any complete pair is stripped), but the key-set test fails, flagging that guide.get would serve it only under the misspelled key.",
+          "userImpact": "A controller asking for the correctly-spelled workflow would get a not-found; the key-set test prevents shipping the typo.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The strip runs but leaves ragged blank-line runs where sections were removed, producing an ugly / ambiguous skeleton.",
+          "detection": "stripGuideSections collapses consecutive blank lines and trims after removal; a unit test asserts no >2 consecutive newlines remain.",
+          "response": "The skeleton is normalized (blank runs collapsed) so the injected block reads cleanly.",
+          "userImpact": "The injected skeleton is tidy; no functional impact.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "steering-block.md BEFORE any guide sections are authored (or a build where they were removed).",
+          "expected": "listWorkflowGuides returns [] so stripGuideSections returns the text unchanged — the inject path behaves exactly as before S003 (backward-compatible; no accidental content loss)."
+        },
+        {
+          "input": "A guide section whose body itself contains the literal insrc:steering markers or another key's guide markers.",
+          "expected": "stripGuideSections removes each key's section strictly by that key's OWN start/end markers (reusing sc2's exact-marker slicing), so nested/decoy marker-like text inside a body does not cause over- or under-removal."
+        },
+        {
+          "input": "refreshSteeringAcrossRepos re-run after S003 on a repo already carrying the new skeleton.",
+          "expected": "The stripped skeleton is byte-identical to what is already stamped, so refreshMarkedSection reports 'unchanged' and writes nothing (idempotent)."
+        },
+        {
+          "input": "A test injects an explicit deps.readBlock into refreshSteeringAcrossRepos.",
+          "expected": "The injected readBlock is honoured verbatim (only the DEFAULT readBlock composes stripGuideSections), so existing steering-inject tests that inject a block are unaffected."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "readSteeringBlock() stays unchanged (returns the WHOLE canonical steering-block.md), so S002's guide.get/readWorkflowGuide keep serving the full per-workflow sections — stripGuideSections is applied ONLY on the inject/refresh block-source path, never inside readSteeringBlock.",
+          "source": "c2"
+        },
+        {
+          "text": "The injected region stays bounded by the existing insrc:steering:start/end markers via upsertMarkedSection/refreshMarkedSection; stripGuideSections runs BEFORE the upsert so the steering region never contains guide-marker content.",
+          "source": "c2"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test via `npx tsx --test` (src/daemon/__tests__/ for stripGuideSections + the inject path, src/mcp/__tests__/ for the schema-registry canary flip — matching the S001/S002 tests).",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove the pure stripGuideSections over fixture text: skeleton retained, every complete guide section removed, malformed left intact, blank runs collapsed, idempotent, empty-safe.",
+          "subjects": [
+            "stripGuideSections(text): removes every complete guide-marker section (start..end inclusive) so the result contains NO guide-start marker; the surrounding skeleton text is retained (ac1)",
+            "stripGuideSections leaves a malformed/half-marked section intact (only complete pairs from listWorkflowGuides are stripped) and collapses ragged blank runs (no >2 consecutive newlines)",
+            "stripGuideSections is idempotent (applying twice == once) and returns text with NO guide sections unchanged (empty-safe / backward-compatible)"
+          ],
+          "fixturesNeeded": [
+            "A fixture steering string = skeleton + 2-3 complete guide sections + one half-marked section + a decoy inner marker"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove the inject/refresh block-source path injects the SKELETON while readSteeringBlock stays whole (no sc2 regression), over the existing steering-inject injected seams.",
+          "subjects": [
+            "refreshSteeringAcrossRepos with the PRODUCTION default readBlock stamps a block that contains no guide-start marker (the skeleton) into a fixture repo file; readSteeringBlock (guide.get path) still returns the whole file incl. the guide sections",
+            "refreshSteeringAcrossRepos with an INJECTED deps.readBlock uses it verbatim (the default-only strip does not affect an explicit override) — existing steering-inject tests unaffected"
+          ],
+          "fixturesNeeded": [
+            "The existing steering-inject injected seams (listRepos/readFile/writeFile/readBlock) + a fixture repo file"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove over the REAL shipped steering-block.md that the authored content is well-formed end-to-end: every expected workflow key resolves via the reader, and the injected skeleton excludes them + covers every registered tool.",
+          "subjects": [
+            "readWorkflowGuide over the REAL steering asset returns non-empty guidance for EVERY expected WorkflowKey (define/design.epic/design.story/plan/build/review/code-review/brainstorm/tracker/triage) — the flipped S002 canary (ac2)",
+            "stripGuideSections(REAL steering) contains NO guide-start marker (the injected skeleton excludes per-workflow detail) AND is strictly shorter than the whole file (ac1)",
+            "the skeleton (stripGuideSections output) mentions every registered insrc_* tool incl. insrc_build_step, insrc_schema, insrc_guide + the schema-first rule text (ac3)"
+          ],
+          "fixturesNeeded": [
+            "The real shipped src/prompts/steering-block.md + the registered tool-name set (EXPECTED_TOOLS)"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "unit: stripGuideSections removes every complete guide section so the result has no guide-start marker (the injected skeleton excludes detail)",
+            "unit: refreshSteeringAcrossRepos default readBlock stamps a guide-marker-free skeleton",
+            "integration: stripGuideSections(REAL steering) has no guide-start marker and is strictly shorter than the whole file"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "integration: readWorkflowGuide over the REAL steering asset resolves non-empty guidance for every expected WorkflowKey (the skeleton's insrc_guide pointer has real sections to serve)"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "integration: the skeleton mentions every registered insrc_* tool incl. insrc_build_step / insrc_schema / insrc_guide and contains the schema-first rule + the insrc_schema self-entry"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "unit: refreshSteeringAcrossRepos re-stamps the single canonical skeleton into a fixture repo (one source, existing refresh) and is idempotent on a re-run (unchanged)",
+            "unit: readSteeringBlock stays whole (guide.get unaffected) — the strip is inject-path-only, so the single canonical source drives both surfaces"
+          ]
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Subtractive: strip guide sections from the injected block (reuse sc2's public surface)",
+        "oneLineSummary": "steering-block.md holds the skeleton + the per-workflow guide-marker sections; readSteeringBlock stays whole (for guide.get), and the inject path applies a pure stripGuideSections(block) so only the skeleton is injected.",
+        "approach": "Author steering-block.md as: (1) a compact SKELETON — the front-door decision tree + a catalog of ALL registered insrc_* tools / daemon IPC calls (each with a one-line purpose and 'call insrc_schema for its exact shape'), the insrc_build_step doc, the schema-first rule, the insrc_schema self-entry, and a pointer 'for a workflow's full step-by-step procedure call insrc_guide({workflow})'; followed by (2) the per-workflow DETAIL sections (the current classify->define/design/plan/build/review/code-review + workflow-authoring procedural prose) each wrapped in the sc2 guide-marker pair for its key. Add a pure stripGuideSections(text): string built on sc2's PUBLIC listWorkflowGuides(text) + guideMarkerStart(key)/guideMarkerEnd(key) that removes each authored guide section, returning the skeleton. Apply stripGuideSections in the block-source path of injectSteeringBlock + the refreshSteeringAcrossRepos default readBlock so the INJECTED block is the skeleton only (ac1); readSteeringBlock is unchanged, so guide.get still serves the full sections from the same canonical file (ac2, single-source ac4). Flip the S002 Phase-A canary test to assert the keys now resolve + the injected block excludes them.",
+        "pros": [
+          "Single canonical source (ac4/k1): the skeleton and every workflow's detail live in one steering-block.md; the injected block is derived (skeleton = file minus guide sections), never a second copy that can drift.",
+          "Reuses sc2's PUBLIC surface (listWorkflowGuides + guideMarkerStart/End) for the strip — no new marker convention, no re-implementation of sc2's private partition mechanism.",
+          "The injected block shrinks automatically as more detail moves into guide sections — the skeleton is defined negatively, so authoring is 'wrap detail in markers' with no second bookkeeping.",
+          "stripGuideSections is a pure function trivially unit-tested; the inject-path change is a one-line wrap at two callsites; readSteeringBlock (and thus guide.get) is untouched — minimal blast radius on S002."
+        ],
+        "cons": [
+          "Adds a small transform to the shared steering-inject propagation mechanism (one pure helper + two callsite wraps), so an inject-path test must prove the skeleton-only result."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Additive: an explicit skeleton-region marker injected instead of the whole file",
+        "oneLineSummary": "Wrap the skeleton portion of steering-block.md in a new '<!-- insrc:skeleton:start/end -->' region; the inject path injects only that region, guide.get reads the guide sections.",
+        "approach": "Introduce a SECOND marker convention delimiting the skeleton: '<!-- insrc:skeleton:start -->' / ':end -->' around the front-door tree + catalog. The inject path extracts only the skeleton region (rather than the whole file) and injects it; guide.get keeps reading the guide-marker sections. steering-block.md = skeleton region + guide sections.",
+        "pros": [
+          "The injected content is positively delimited (an explicit skeleton region), arguably easier to eyeball what ships.",
+          "Single file, single source (like a1)."
+        ],
+        "cons": [
+          "Introduces a SECOND, S003-specific marker convention alongside sc2's guide markers — two overlapping addressing schemes over the same file to keep consistent, more to document and test.",
+          "Positive delimiting is brittle: any skeleton content authored OUTSIDE the region silently never ships; a subtractive strip (a1) cannot 'forget' to include new skeleton text.",
+          "More mechanism than a1 for the same outcome; the strip in a1 already reuses sc2's markers, whereas this needs a fresh region parser."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Functionally satisfies ac1-ac4 but is only partial on sc2 consumption: it introduces a second S003-specific skeleton-region marker convention overlapping sc2's guide markers, and positive delimiting is brittle (skeleton text authored outside the region silently never ships). a1 reaches the identical outcome by reusing sc2's existing public markers with no new convention — strictly simpler and safer."
+      },
+      {
+        "id": "a3",
+        "name": "No strip: author guide sections but inject the whole file unchanged",
+        "oneLineSummary": "Move detail into guide-marker sections and add the catalog, but leave the inject path untouched so the whole file is injected.",
+        "approach": "Author the skeleton + guide sections in steering-block.md and rely on the existing refresh to inject the file as-is, with no strip step — the guide sections are simply also present in the injected block.",
+        "pros": [
+          "Smallest mechanism change — only steering-block.md content is edited; the inject path is literally unchanged.",
+          "guide.get works immediately (the sections are present)."
+        ],
+        "cons": [
+          "FAILS ac1: the injected block does NOT shrink — it actually GROWS (the catalog + build_step doc + schema-first rule are added on top of the still-inlined per-workflow detail), defeating the entire epic goal of a compact skeleton.",
+          "The controller still carries every workflow's full detail as standing instruction (violates k2 on-demand-per-task), so insrc_guide provides no reduction — only duplication."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "VIOLATES ac1 (the core acceptance): with no strip the injected block grows rather than shrinks, so the controller still carries every workflow's full detail (violates k2) and insrc_guide only duplicates injected content. Cheapest but defeats the epic's purpose."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 structural-map: steering-block.md structure (291 lines, 4 topic sections) + the zero-coverage tools (insrc_build_step/insrc_schema/insrc_guide) the catalog must add",
+      "quotedText": "steering-block.md is 291 lines with 4 ## topic sections; insrc_build_step = 0, insrc_schema = 0, insrc_guide = 0 coverage; the heavy per-workflow procedural detail moves into per-workflow guide sections while the front-door tree + catalog stay in the skeleton."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 how-does-it-work: the injected block is sourced from readSteeringBlock (shared with S002's guide.get) so shrinking it requires stripping guide sections at INJECT time (src/daemon/steering-inject.ts)",
+      "quotedText": "injectSteeringBlock + refreshSteeringAcrossRepos source the block from readSteeringBlock(); S002's guide.get ALSO reads the whole file via readSteeringBlock, so readSteeringBlock CANNOT change — S003 adds stripGuideSections applied in the inject path only, reusing sc2's public listWorkflowGuides + guideMarkerStart/End."
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "HLD consumed contract sc1 (insrc_schema): the { tool, phase? } -> InsrcSchemaResult surface S003 references in the catalog + schema-first rule + self-entry",
+      "quotedText": "insrc_schema is the read-only shape-lookup S003 documents in the skeleton so a controller looks up a call's exact shape before emitting one (ac3)."
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "HLD consumed contract sc2 (insrc_guide) + its shipped public surface (guideMarkerStart/End, listWorkflowGuides) S003 authors detail into + strips by",
+      "quotedText": "sc2's per-workflow marker sections are where S003 authors the detail insrc_guide serves; stripGuideSections consumes sc2's public listWorkflowGuides + guideMarkerStart/End to derive the injected skeleton."
+    }
+  ]
+}

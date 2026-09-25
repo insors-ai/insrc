@@ -1,0 +1,68 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1790255673230-7ptd77",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-24T13:14:33.230Z",
+    "model": "client",
+    "elapsedMs": 2,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "38905b56cb44c4cf",
+    "storyId": "s3"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "38905b56cb44c4cf",
+    "storyId": "s3",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        ".insrc/artifacts/CR-ba132c185fe45860-s1.json",
+        "src/daemon/steering-inject.ts",
+        "src/mcp/__tests__/schema-registry.test.ts",
+        "src/prompts/steering-block.md"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "src/daemon/steering-inject.ts:83",
+            "message": "stripGuideSections honours the epic constraints: it reads NOTHING (pure string transform), performs no mutation and no cloud/REST (k5), and is applied only on the INJECT path (injectSteeringBlock, defaultSteeringRefreshDeps) while readSteeringBlock stays whole so guide.get still single-sources the full canonical asset (k1, k4). No adherence breach observed.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/daemon/steering-inject.ts:83",
+            "message": "stripGuideSections drives removal off listWorkflowGuides (complete-pair keys only) and slices each key's own start..end via indexOf, so a dangling/half marker is intentionally left intact rather than greedily consumed — a safe, conservative choice consistent with the guide-sections addressing contract. Blank-run collapse (\\n{3,}->\\n\\n) + trim keep the propagated skeleton clean. NOTE: the review's changed-set also swept in .insrc/artifacts/CR-ba132c185fe45860-s1.json, an unrelated approvedAt stamp from a different epic, not part of S003.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 2
+    }
+  }
+}

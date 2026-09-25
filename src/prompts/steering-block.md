@@ -1,291 +1,251 @@
-## Code exploration via `insrc_analyze` / `insrc_analyze_step` (insrc MCP server)
+## insrc — front door (insrc MCP server)
 
-For ANY question about this codebase's structure, conventions,
-existing capabilities, adherence to documented rules, or design
-decisions, CALL one of the two insrc analyze tools FIRST before
-doing any manual file exploration (`Read`, `Grep`, `Glob`, `Bash`
-grep, etc.).
+This is the SKELETON. It names every insrc surface and routes an intent to the
+right one; it does NOT inline each workflow's full procedure. Two on-demand
+lookups carry the detail so this block can stay small:
 
-Both tools run the same deterministic graph queries + citation-
-grounded synthesis and return the same verified 7-layer context
-bundle. They are MORE accurate than manual grep + read for context
-questions because:
+- **`insrc_schema`** — the exact INPUT SHAPE of any insrc_* tool (and, for a
+  multi-turn tool, its accepted `phase` set). Call it before you emit a call
+  whose argument shape you are unsure of, instead of guessing.
+- **`insrc_guide`** — a workflow's full STEP-BY-STEP PROCEDURE. Call
+  `insrc_guide({ workflow })` before running a workflow you don't have fresh in
+  context, with one of: `define`, `design.epic`, `design.story`, `plan`,
+  `build`, `review`, `code-review`, `brainstorm`, `tracker`, `triage`. Omit
+  `workflow` to get the list of keys back.
 
-- Every claim is grounded in a real exploration output (module
-  profile, symbol locate, class hierarchy, doc constraint, etc.).
-- File paths are drawn from the indexed graph — no hallucinated
-  paths.
-- Contradictions in the docs are preserved verbatim, not
-  auto-resolved.
+**Schema-first rule:** call `insrc_schema` before emitting any insrc_* call whose
+shape (fields, or the `phase` you're in) you are not certain of. Don't hand-shape
+a call from memory when the contract is one lookup away.
 
-### Which tool to use
+### Front-door decision tree (intent → surface)
 
-| Intent                                                    | Tool                    |
-|-----------------------------------------------------------|-------------------------|
-| Map a module / explore its tree / count entities          | `insrc_analyze`         |
-| List conventions / naming / test layout                   | `insrc_analyze`         |
-| List indexed data sources or infra manifests              | `insrc_analyze`         |
-| Adherence check ("does the code follow rule X from doc?") | `insrc_analyze_step`    |
-| Capability discovery ("does the codebase already do Y?") | `insrc_analyze_step`    |
-| Prose retrieval / decision trace from docs                | `insrc_analyze_step`    |
+- **Question about the codebase** (structure, conventions, capabilities,
+  adherence, design decisions) → `insrc_analyze_step` (multi-turn, in-session,
+  preferred) or `insrc_analyze` (one-shot, Ollama). Do this BEFORE manual
+  `Read`/`Grep`/`Glob`.
+- **Draw / diagram / document / map the code** (a self-contained HTML doc from
+  the graph) → `insrc_docgen`.
+- **Build / add / implement a feature** → do NOT hand-pick a stage and do NOT
+  just start editing. Route it: `brainstorm` (if the idea is rough) →
+  `insrc_triage` (sizes + routes) → the routed workflow → review → approve →
+  build → code-review → complete. Every feature, big or small, is tracked. See
+  `insrc_guide({ workflow: 'triage' })` for the routing table.
+- **Produce a design artifact / decision / tracker push** (Epic, HLD, LLD,
+  GitHub) → the workflow chain via `insrc_workflow_step` /
+  `insrc_workflow_run`. See the matching `insrc_guide` key.
+- **The exact shape of a call** → `insrc_schema`.
+- **A workflow's full procedure** → `insrc_guide({ workflow })`.
 
-- **`insrc_analyze`** is one-shot: single tool call, server runs the
-  whole pipeline. Any inner narrow-LLM calls route to the daemon's
-  configured `shaperProvider` (Ollama by default).
-- **`insrc_analyze_step`** is multi-turn: the server hands you the
-  decomposer / synthesizer / narrow-LLM prompts + schemas via tool
-  responses, and YOUR model emits the JSON as its next reasoning
-  step. Better accuracy for adherence-check + capability-discovery +
-  prose-retrieval because the narrow reasoning happens in-session
-  with the model that's already looking at the user's question.
+### Tool catalog (all registered insrc_* MCP tools)
 
-### `insrc_analyze` (one-shot)
+Call `insrc_schema({ tool })` for any tool's exact input shape (add `phase` for
+a multi-turn tool). Call `insrc_guide({ workflow })` for a workflow's procedure.
 
-Call it once, render the returned markdown bundle to the user.
+| Tool | Purpose |
+|------|---------|
+| `insrc_analyze` | One-shot 7-layer context bundle for a codebase question (Ollama pipeline). |
+| `insrc_analyze_step` | Multi-turn context bundle — same queries, reasoning stays in-session (preferred). |
+| `insrc_docgen` | Generate a self-contained offline HTML doc/diagram from the code graph. |
+| `insrc_triage` | Size a feature request and return a pre-filled `nextCall` routing it to a start stage. |
+| `insrc_workflow_step` | Drive one tracked workflow turn (define / design.epic / design.story / plan / brainstorm / tracker). |
+| `insrc_workflow_run` | Run a workflow daemon-side (async START → POLL); relay each progress batch. |
+| `insrc_build_step` | Drive the build stage (`implement` → `validate`) that turns an approved LLD/plan into code. |
+| `insrc_review_step` | Independent controller review of a design artifact (DEF/HLD/LLD) before approval. |
+| `insrc_code_review_step` | Post-build code review over the changed code (adherence / conventions / coverage / quality). |
+| `insrc_workflow_approve` | Approve a pending artifact by `artifactPath` (or `epicHash` to batch) — only on the user's explicit yes. |
+| `insrc_schema` | Return any insrc_* tool's registered input shape + accepted phases. |
+| `insrc_guide` | Return one workflow's full step-by-step procedure from the canonical steering source. |
 
-```
-insrc_analyze({ focus: "map the payable extraction module" })
-  -> returns the 7-layer bundle as markdown
-```
+`insrc_analyze` / `insrc_analyze_step` / `insrc_docgen`: **repo** falls back to
+`$INSRC_REPO`; the repo must be registered with the daemon and finished
+indexing. The multi-turn tools (`*_step`, `insrc_triage`) hand you a `next` /
+`guidance` / `prompt` / `schema` each turn — follow `next` verbatim and preserve
+the opaque `state` token between calls. Do NOT use analyze to edit files, run
+tests/builds, or answer non-context questions; when a returned bundle is empty
+or off-topic, fall back to `Read` / `Grep` / `Glob`.
 
-### `insrc_analyze_step` (multi-turn)
+`insrc_docgen` `docType` values (each single-sources from the code graph — no
+hallucinated paths): `type-structure` (classes/interfaces + inheritance in a
+scope, `path?`), `component-dependency` (module dependency topology, `path?`),
+`call-sequence` (call flow from an entry point — needs `symbol`, `maxDepth?`),
+`narrative` (a base diagram + a graph-grounded walkthrough — needs `base` +
+`question`).
 
-Follow the `next` field in each response verbatim. The `guidance`
-field explains the next call in one sentence; `prompt` + `schema`
-are the authoritative instructions for the JSON your model emits.
-Preserve `state` verbatim between calls — it's an opaque token
-tied to a server-side run.
+### Approval discipline (applies to every workflow artifact)
 
-Loop shape:
+Never auto-approve and never send the user to the TUI. When a `done` response
+carries a `pendingApproval` block, PRESENT a concise summary and ASK the user;
+only on their explicit in-chat yes call
+`insrc_workflow_approve({ artifactPath })` (or `{ epicHash }` to batch). Review
+before you approve — see `insrc_guide({ workflow: 'review' })`.
 
-```
-1. insrc_analyze_step({ phase: 'start', focus: '...' })
-   -> { next: 'emit_plan', prompt, schema, state }
-2. [emit JSON matching the plan schema]
-   insrc_analyze_step({ phase: 'plan', plan: <JSON>, state })
-   -> either { next: 'emit_narrow', ..., explorationId, state } (loop)
-   -> or     { next: 'emit_bundle', ..., state }
-3. [only if emit_narrow] emit JSON matching the narrow schema
-   insrc_analyze_step({ phase: 'narrow', explorationId, narrow: <JSON>, state })
-   -> loop until emit_bundle
-4. [emit JSON matching the bundle schema]
-   insrc_analyze_step({ phase: 'bundle', bundle: <JSON>, state })
-   -> { next: 'done', markdown } — render this to the user
-```
-
-### When NOT to use either
-
-- Editing files (both tools are read-only).
-- Running tests / builds.
-- Answering non-context questions (unrelated math, general
-  knowledge, etc.).
-- When the returned bundle is empty or clearly off-topic — fall
-  back to `Read` / `Grep` / `Glob` at that point.
-
-### Follow-up pattern
-
-The first call returns a coarse 7-layer bundle. If you need to
-drill down, call again with a narrower `focus`. Example flow:
-
-```
-1. insrc_analyze({ focus: "map the payable extraction module" })
-   -> returns the module tree + naming schema
-
-2. insrc_analyze({
-     focus:  "how does the payable header extractor work",
-     target: "code",
-     scope:  "S"
-   })
-   -> narrower how-does-it-work bundle with usage examples
-```
-
-### `repo` argument
-
-If not passed, the tool uses `$INSRC_REPO` from the MCP server's
-environment. Explicit `repo` overrides it. The repo must be
-registered with the insrc daemon (`insrc repo add /path/to/repo`)
-and finished indexing.
-
-## Generating code documents via `insrc_docgen` (insrc MCP server)
-
-When the user asks you to **produce a document, diagram, or visual map OF the
-code** — a class/type diagram, a module-dependency map, a call flow from an
-entry point, or a narrated walkthrough — reach for **`insrc_docgen`** rather
-than hand-writing Mermaid or dumping files. It generates a SINGLE self-contained
-OFFLINE HTML file from the indexed code graph (diagram + runtime inlined,
-zoom/pan, no network); every node and edge is graph-derived, so no path or
-symbol is hallucinated.
-
-Call **`insrc_docgen({ docType, repo?, … })`**. `docType` is a registered
-document type; the current set (enumerated from the one registry, so it may
-grow):
-
-| docType                | produces                                                        | key inputs              |
-|------------------------|-----------------------------------------------------------------|-------------------------|
-| `type-structure`       | classes/interfaces/types + inheritance in a scope               | `path?`                 |
-| `component-dependency` | module/component dependency topology                            | `path?`                 |
-| `call-sequence`        | a call flow from an entry-point symbol                          | `symbol` (req), `maxDepth?` |
-| `narrative`            | a base diagram + an LLM-authored, graph-grounded walkthrough    | `base` + `question` (req) |
-
-- `repo` falls back to `$INSRC_REPO`; it must be registered + finished indexing
-  (else the tool returns `source-not-ready` — register + index it first).
-- Read-only + daemon-owned: the graph is read INSIDE the daemon and only the
-  finished document/outcome crosses back. Render or save the returned HTML for
-  the user; do not hand-build the diagram yourself.
-- Same capability is reachable as the daemon `docgen_generate` tool and the
-  `docgen.generate` / `docgen.list` IPC — all enumerate the same registry, so
-  they never drift.
-
-Use `insrc_docgen` for "draw / diagram / document / map the code"; use analyze
-for "explain / does X exist"; use the workflow for "define / design / build".
-
-## Building features via insrc — classify FIRST, review before approve
+<!-- insrc:guide:triage:start -->
+## triage — size a feature request and route it (`insrc_triage`)
 
 When the user asks you to **build / add / implement a feature** (not a question
-about the code — that's analyze), do NOT hand-pick `define` / `design.story` /
-`build` yourself, and do NOT just start editing files. The framework's core
-guarantee is that **every feature, big or small, is tracked**. Follow this:
+— that's analyze), do NOT hand-pick `define` / `design.story` / `build`, and do
+NOT just start editing. The framework's guarantee is that **every feature, big
+or small, is tracked**. `insrc_triage` sizes the request (grounded on your own
+`insrc_analyze_step` passes) and routes it to the right start stage:
 
-0. **`brainstorm` FIRST when the idea is rough.** If the request is a vague or
-   ambiguous idea rather than a crisp spec, run the **`brainstorm`** workflow
-   stage before triage: `insrc_workflow_step`/`insrc_workflow_run` with
-   `workflow: 'brainstorm'`. It's a SINGLE paused `elicit` turn — YOU conduct the
-   whole clarify → fold → show → confirm convergence in chat (fold each answer
-   into a running statement, show it back every turn, re-ask only the still-open
-   gaps; at a fork present the options + record the choice's `ruledOut`
-   alternatives in `nonGoals`), then resume ONCE with `confirmed: true` and no
-   open items. Review + approve the resulting **SpecArtifact** (same
-   present-ask-approve as below), then seed `insrc_triage` / `define` /
-   `design.story` from the approved spec. Skip brainstorm when the request is
-   already a clear, scoped spec — go straight to triage.
+- **epic** → `define` (full chain — new subsystem / many stories)
+- **feature** → standalone `design.story` (LLD) → `plan` → `build`
+- **small** → standalone `design.story` (LLD) → `build`
+- **trivial** → `build` (no LLD; a standalone BUILD record is its ledger entry)
 
-1. **`insrc_triage` FIRST.** It sizes the request (grounded on your own
-   `insrc_analyze_step` passes) and routes it to the right start stage:
-   - **epic** → `define` (full chain — new subsystem / many stories)
-   - **feature** → standalone `design.story` (LLD) → plan → build
-   - **small** → standalone `design.story` (LLD) → build
-   - **trivial** → `build` (no LLD; a standalone BUILD record is its ledger entry)
-
-   It returns a **pre-filled `nextCall`** — make exactly that call next.
-   Two-turn loop: `phase:'start'` with `{ focus, repo? }` → ground + emit the
-   `TriageResult` → `phase:'classify'` with `{ result, state }` → `{ nextCall }`.
-
-2. **Run the routed workflow.** Prefer **`insrc_workflow_run`** (async,
-   daemon-driven): `START` returns a `runId` immediately; then `POLL`
-   `{ poll: runId, cursor }` and RELAY each `progress` batch to the user so they
-   can watch a long run. Or drive each turn yourself with `insrc_workflow_step`.
-
-3. **Review before you approve — two sets of eyes.** After a workflow writes an
-   artifact (LLD/HLD/DEF), run **`insrc_review_step`** on it BEFORE approving. A
-   daemon self-review runs the SAME model that authored the artifact — no
-   independent perspective; `insrc_review_step` moves the review's reasoning into
-   YOU (the controller). It extracts the artifact's load-bearing premises, the
-   server re-runs deterministic probes against real source, and you judge the
-   verdicts against that evidence. It stamps `meta.review`; a `block` verdict
-   (unresolved HIGH/MED findings) then gates approval. Resolve the blocking
-   findings (apply / accept-with-note / override), THEN approve.
-
-4. **Approve in-CLI — present, ask, then approve.** The artifact-ready (`done`)
-   response carries a `pendingApproval` block. Do NOT auto-approve and do NOT
-   send the user to the TUI. PRESENT a concise summary of the artifact to the
-   user and ASK whether to approve and proceed. Only on the user's explicit
-   in-chat yes, call **`insrc_workflow_approve({ artifactPath })`** — or
-   `{ epicHash }` to batch-approve every pending artifact under the epic in one
-   call. It stamps `approvedAt` and enforces the review block-verdict: a
-   review-blocked artifact comes back in `skipped[]` with a reason (relay it);
-   pass `overrideReview` only with the user's explicit override reason. Then
-   continue the routed chain to the next stage.
-
-5. **Code review AFTER the build — then complete the Story.** Once the build
-   has produced its changes, run **`insrc_code_review_step`** over the changed
-   code (multi-turn: `phase:'start'` with `{ epicHash, storyId, repo? }` →
-   `emit_judgements` hands you the four dimension prompts + grounding → emit the
-   `{ judgements }` JSON → `done`). It writes a code-review record (adherence /
-   conventions / coverage / quality → block/warn/pass) — DISTINCT from
-   `insrc_review_step`, which reviews the design artifact. PRESENT the verdict,
-   then COMPLETE the Story by approving its **BUILD** artifact
-   (`insrc_workflow_approve` on the BUILD md/path). BUILD approval is the
-   code-review-gated completion act: under `codeReview.enforce` (config,
-   **off / advisory by default**) a `block` — or no review having run — withholds
-   completion into `skipped[]` unless you pass an explicit `overrideReview`.
+It returns a **pre-filled `nextCall`** — make exactly that call next. Two-turn
+loop: `phase:'start'` with `{ focus, repo? }` → ground + emit the `TriageResult`
+→ `phase:'classify'` with `{ result, state }` → `{ nextCall }`.
 
 Skip triage only for a genuine one-liner the user explicitly scoped, or when
 they name a specific stage. Everything else goes through the front door so it
-lands on the ledger.
+lands on the ledger. If the idea is still rough, run `brainstorm` first.
+<!-- insrc:guide:triage:end -->
 
-## Workflow authoring via `insrc_workflow_step` (insrc MCP server)
+<!-- insrc:guide:brainstorm:start -->
+## brainstorm — converge a rough idea into a spec (`workflow: 'brainstorm'`)
 
-Beyond code exploration, the insrc MCP server exposes a workflow
-runner that produces persistent, cited artifacts (Epic + Stories,
-HLD, LLD, GitHub tracker integration). Reach for
-`insrc_workflow_step` when the user asks you to:
+Run this BEFORE triage when the request is a vague or ambiguous idea rather than
+a crisp spec. It is a SINGLE paused `elicit` turn — YOU conduct the whole
+clarify → fold → show → confirm convergence in chat:
 
-- **Define** what to build ("frame an Epic for X", "define stories
-  for Y", "add feature Z") — runs `workflow=define`. Its FIRST step
-  (`scope.assess`) is the scope classifier: it runs `insrc_analyze_step`
-  over the existing docs + code and decides **new** vs **extend**:
-    - **new** — no existing Epic fits; it frames a fresh Epic (Stories
-      etc.) as usual.
-    - **extend** — the ask builds on an existing Epic/design. The
-      framework then SKIPS `epic.frame`/`stories.compose`, appends the
-      new Story to that Epic's Define, files a pending
-      `storyBoundary.addStory` HLD amendment, and writes an
-      **ExtendArtifact** (`EXT-…`). Do NOT force a new Epic. Relay its
-      `notify` line (what it builds on) to the user, then follow its
-      `nextAction`: approve the amendment + updated Epic, then run
-      `workflow=design.story` for the new Story to produce the LLD.
-- **Design HLD** ("HLD for tag filtering") — runs
-  `workflow=design.epic`. Requires an approved Define.
-- **Design LLD** ("LLD for Story s1") — runs
-  `workflow=design.story`. Requires an approved HLD.
-- **Push to GitHub** ("push Epic to GitHub", "sync tracker
-  status") — runs `workflow=tracker.push` / `tracker.sync` /
-  `tracker.post`. You invoke `gh` directly; the framework supplies
-  labels + task-list conventions.
+- fold each answer into a running problem statement,
+- show it back every turn,
+- re-ask only the still-open gaps,
+- at a fork, present the options and record the choice's `ruledOut`
+  alternatives in `nonGoals`.
 
-Every workflow produces a citation-grounded artifact that survives
-the session and downstream workflows read it as the authoritative
-source. Approval gates run between phases in-CLI: the `done` response
-carries `pendingApproval` — present a summary, ASK the user, then on
-their yes call `insrc_workflow_approve({ artifactPath })` (see the
-"Approve in-CLI" step above). Never send the user to the TUI.
+Then resume ONCE with `confirmed: true` and no open items. Review + approve the
+resulting **SpecArtifact** (same present-ask-approve discipline), then seed
+`insrc_triage` / `define` / `design.story` from the approved spec. Skip
+brainstorm when the request is already a clear, scoped spec — go straight to
+triage.
+<!-- insrc:guide:brainstorm:end -->
 
-### Loop shape (mirrors analyze-step)
+<!-- insrc:guide:define:start -->
+## define — frame an Epic + Stories (`workflow: 'define'`)
 
-```
-1. insrc_workflow_step({ phase: 'start', workflow: '...', focus: '...', params: {...} })
-   -> { next: 'emit_plan', prompt, schema, state }
-2. [emit the plan JSON matching schema]
-   insrc_workflow_step({ phase: 'plan', plan: <JSON>, state })
-   -> { next: 'emit_step', stepId, prompt, schema, state }
-3. [emit the step JSON matching schema]
-   insrc_workflow_step({ phase: 'step', stepId, response: <JSON>, state })
-   -> loop emit_step until you receive emit_synthesize
-4. [emit the artifact JSON matching schema]
-   insrc_workflow_step({ phase: 'synthesize', artifact: <JSON>, state })
-   -> { next: 'done', path, markdown, artifact } — the artifact is
-      written to disk; render `markdown` to the user
-```
+Runs when triage sizes the request as an **epic** (new subsystem / many
+stories). Produces a persistent, citation-grounded **Define** (Epic + Stories +
+constraints). Its FIRST step (`scope.assess`) is the scope classifier: it runs
+`insrc_analyze_step` over the existing docs + code and decides **new** vs
+**extend**:
 
-### Analyze vs workflow — decision heuristic
+- **new** — no existing Epic fits; it frames a fresh Epic (Stories etc.) as
+  usual.
+- **extend** — the ask builds on an existing Epic/design. The framework then
+  SKIPS `epic.frame` / `stories.compose`, appends the new Story to that Epic's
+  Define, files a pending `storyBoundary.addStory` HLD amendment, and writes an
+  **ExtendArtifact** (`EXT-…`). Do NOT force a new Epic. Relay its `notify` line
+  (what it builds on) to the user, then follow its `nextAction`: approve the
+  amendment + updated Epic, then run `design.story` for the new Story.
 
-- User asks a **question about the codebase** → analyze.
-- User asks you to **draw / diagram / document / map the code** (a
-  visual, self-contained HTML doc from the graph) → `insrc_docgen`.
-- User asks you to **produce a design artifact / decision / push**
-  (Epic, HLD, LLD, tracker) → workflow.
-- User asks "does X exist?" during workflow → use analyze from
-  inside the workflow step's LLM turn (context.assemble prompts
-  explicitly call for `insrc_analyze_step` invocations).
+Standard loop (mirrors analyze-step): `phase:'start'` → `emit_plan` →
+`phase:'plan'` → `emit_step` (loop) → `emit_synthesize` → `phase:'synthesize'` →
+`done` with the written artifact. Review the Define (`insrc_review_step`), then
+present-ask-approve. Next stage: `design.epic` (HLD).
+<!-- insrc:guide:define:end -->
 
-### `insrc workflow chain <slug>`
+<!-- insrc:guide:design.epic:start -->
+## design.epic — author the HLD (`workflow: 'design.epic'`)
 
-If you're unsure what step comes next for an Epic, the CLI can
-answer:
+Produces the Epic's **HLD** (high-level design: story boundaries, cross-cutting
+contracts, the winning architecture option). Requires an approved **Define**.
+Cross-cutting contracts are guided to the nearest-common-ancestor owner so a
+Story's LLD validates without amending the Epic.
 
-```
-insrc workflow chain <epic-slug>
-```
+Loop: `phase:'start'` with `{ workflow:'design.epic', focus, params }` →
+`emit_plan` → `phase:'plan'` → `emit_step` (loop) → `emit_synthesize` →
+`phase:'synthesize'` → `done`. Review the HLD with `insrc_review_step` before
+approving (a `block` verdict from unresolved HIGH/MED findings gates approval);
+resolve, then present-ask-approve. Next stage: `design.story` per Story.
+<!-- insrc:guide:design.epic:end -->
 
-Prints the current status of Define / HLD / LLDs / amendments /
-tracker + the exact next command to run.
+<!-- insrc:guide:design.story:start -->
+## design.story — author a Story's LLD (`workflow: 'design.story'`)
+
+Produces one Story's **LLD** (low-level design: interfaces, files, tasks,
+citations). Requires an approved **HLD** for an epic Story; a **standalone**
+`design.story` (from triage `feature` / `small`) skips the HLD/epic reads and
+runs on its own. Pass the LOWERCASE story id (e.g. `s1`) — an uppercase `S001`
+crashes with "Story not found".
+
+Stay inside the Story's own scope — the LLD carries `adjacentBoundaries` and an
+anti-overreach rule so authoring does not spill onto sibling Stories. Loop:
+`phase:'start'` → `emit_plan` → `phase:'plan'` → `emit_step` (loop) →
+`emit_synthesize` → `phase:'synthesize'` → `done`. Review (`insrc_review_step`),
+present-ask-approve, then run `plan`.
+<!-- insrc:guide:design.story:end -->
+
+<!-- insrc:guide:plan:start -->
+## plan — decompose an approved LLD into build tasks (`workflow: 'plan'`)
+
+Turns an approved LLD into an ordered, citation-grounded **PLAN** (the task
+breakdown the build follows). `readPlanUpstream` is scope-aware: a standalone
+LLD's plan skips the HLD/epic reads, so `plan` runs without an HLD. Loop mirrors
+the other workflows (`start` → `plan` → `step` loop → `synthesize` → `done`).
+Present-ask-approve the PLAN, then run `build`.
+<!-- insrc:guide:plan:end -->
+
+<!-- insrc:guide:build:start -->
+## build — implement an approved plan (`insrc_build_step`)
+
+Turns an approved LLD/PLAN into code. Multi-turn: `phase:'implement'` →
+`phase:'validate'`. A **trivial** triage result goes straight here with no LLD
+(a standalone BUILD record is its ledger entry). Call
+`insrc_schema({ tool:'insrc_build_step', phase })` for the exact shape of each
+phase.
+
+After the build has produced its changes, run `code-review` over the changed
+code, PRESENT the verdict, then COMPLETE the Story by approving its **BUILD**
+artifact with `insrc_workflow_approve` on the BUILD md/path. BUILD approval is
+the code-review-gated completion act: under `codeReview.enforce` (config, off /
+advisory by default) a `block` — or no review having run — withholds completion
+into `skipped[]` unless you pass an explicit `overrideReview`.
+<!-- insrc:guide:build:end -->
+
+<!-- insrc:guide:review:start -->
+## review — independent design-artifact review (`insrc_review_step`)
+
+Run this on a written artifact (DEF / HLD / LLD) BEFORE approving it — two sets
+of eyes. A daemon self-review runs the SAME model that authored the artifact
+(no independent perspective); `insrc_review_step` moves the review's reasoning
+into YOU, the controller, and the reviewer must be a DIFFERENT actor than the
+author. It extracts the artifact's load-bearing premises, the server re-runs
+deterministic probes against real source, and you judge the verdicts against
+that evidence.
+
+Loop: `phase:'start'` → `claims` → `verdicts`. It stamps `meta.review`; a
+`block` verdict (unresolved HIGH/MED findings) then gates approval. Resolve the
+blocking findings (apply / accept-with-note / override), THEN present-ask-approve
+with `insrc_workflow_approve({ artifactPath })`. A review-blocked artifact comes
+back from approve in `skipped[]` with a reason (relay it); pass `overrideReview`
+only with the user's explicit override reason.
+<!-- insrc:guide:review:end -->
+
+<!-- insrc:guide:code-review:start -->
+## code-review — post-build code review (`insrc_code_review_step`)
+
+Run this over the changed code AFTER the build produces its changes. DISTINCT
+from `insrc_review_step` (which reviews the design artifact). Multi-turn:
+`phase:'start'` with `{ epicHash, storyId, repo? }` → `emit_judgements` hands you
+the four dimension prompts + grounding → emit the `{ judgements }` JSON →
+`done`. It writes a code-review record across four dimensions — **adherence /
+conventions / coverage / quality** → block / warn / pass.
+
+If the graph grounding comes back hollow on just-created files (no symbol/test
+edges), judge coverage by RUNNING the suite and flag the caveat honestly —
+never fabricate a HIGH from empty grounding. PRESENT the verdict, then COMPLETE
+the Story by approving its **BUILD** artifact (see the `build` guide — BUILD
+approval is the code-review-gated completion act).
+<!-- insrc:guide:code-review:end -->
+
+<!-- insrc:guide:tracker:start -->
+## tracker — sync the Epic to GitHub (`workflow: 'tracker.push' / '.sync' / '.post'`)
+
+Push an Epic to GitHub, sync tracker status, or post an update. YOU invoke `gh`
+directly; the framework supplies the labels + task-list conventions. The repo's
+GitHub tracker target comes only from per-repo config or its own git remote,
+never a global default. Loop mirrors the other workflows. Present-ask-approve
+any artifact it writes.
+<!-- insrc:guide:tracker:end -->

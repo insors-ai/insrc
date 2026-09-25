@@ -19,7 +19,7 @@ import assert from 'node:assert/strict';
 import { buildInsrcMcpServerWithRegistry } from '../server.js';
 import { handleInsrcSchema } from '../schema/handler.js';
 import type { InsrcSchemaOk } from '../schema/schema.js';
-import { readSteeringBlock } from '../../daemon/steering-inject.js';
+import { readSteeringBlock, stripGuideSections } from '../../daemon/steering-inject.js';
 import { readWorkflowGuide } from '../../daemon/guide-sections.js';
 
 const EXPECTED_TOOLS = [
@@ -107,17 +107,30 @@ test('phaseless tools carry no phases', () => {
 	}
 });
 
-// sc2 (insrc_guide) Phase-A: the real shipped steering asset has no per-workflow
-// guide marker pairs authored yet (that is S003's job), so readWorkflowGuide
-// returns null for every workflow key and does not throw.
-const PHASE_A_WORKFLOW_KEYS = [
+// sc2 (insrc_guide) — S003 authored a per-workflow guide section for every
+// WorkflowKey in the canonical steering asset, so readWorkflowGuide now resolves
+// each key to a non-empty section. The injected block (via stripGuideSections)
+// carries the skeleton only: no guide markers, strictly shorter than the whole
+// asset, yet still naming every registered tool so the front-door catalog holds.
+const WORKFLOW_KEYS = [
 	'define', 'design.epic', 'design.story', 'plan', 'build',
 	'review', 'code-review', 'brainstorm', 'tracker', 'triage',
 ];
 
-test('readWorkflowGuide over the REAL steering asset returns null for every key in Phase A', () => {
+test('readWorkflowGuide over the REAL steering asset resolves every WorkflowKey to a non-empty section', () => {
 	const text = readSteeringBlock(); // reads the shipped canonical asset; throws only if missing/empty
-	for (const key of PHASE_A_WORKFLOW_KEYS) {
-		assert.equal(readWorkflowGuide(text, key), null, `${key} should have no authored guide section yet`);
+	for (const key of WORKFLOW_KEYS) {
+		const guidance = readWorkflowGuide(text, key);
+		assert.ok(guidance !== null && guidance.length > 0, `${key} should have an authored guide section`);
+	}
+});
+
+test('the injected skeleton (stripGuideSections) drops all guide markers, stays shorter, and still names every tool', () => {
+	const whole = readSteeringBlock();
+	const skeleton = stripGuideSections(whole);
+	assert.ok(!skeleton.includes('insrc:guide:'), 'no guide marker should survive in the injected skeleton');
+	assert.ok(skeleton.length < whole.length, 'the skeleton must be strictly shorter than the whole asset');
+	for (const tool of EXPECTED_TOOLS) {
+		assert.ok(skeleton.includes(tool), `the skeleton catalog should still name ${tool}`);
 	}
 });

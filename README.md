@@ -56,6 +56,7 @@ semantic queries through a single background daemon. On top of that store:
 | **⊘ Bugfix triage** | a defect fix is first-class: an `issue` stage captures reproduction + root cause, a tiered locator attaches it to the code it corrects, then it's scope-routed to build. |
 | **⚒ ~110 built-in tools** | capability wrappers spanning file · git · shell · http · web · gh · k8s · pkg · ssh · test · notify · search · graph · db · data · code · cloud. |
 | **▮ Interactive CLI** | a full-screen ink (React) TUI with Daemon / Repos / Workflows / Setup panes. |
+| **◱ IDE plugins** | thin VS Code & JetBrains orchestrators that install/manage the daemon, wire insrc's MCP tools into your IDE's AI assistant, and scope every call to the open project — [see below](#ide-plugins). |
 
 Both frameworks are exposed as MCP tools (`insrc_analyze`, `insrc_analyze_step`,
 `insrc_triage`, `insrc_workflow_step`, `insrc_docgen`, …) so they drive Claude
@@ -243,6 +244,34 @@ repo must be registered (Repos pane → `a` add in the `insrc` TUI) and finished
 indexing. When the client declares the `sampling` capability, inner LLM calls
 route back through MCP `sampling/createMessage` (single session, no subprocess);
 otherwise they fall back to the daemon's configured `shaperProvider`.
+
+## IDE plugins
+
+Prefer to stay in your editor? Two companion plugins bring insrc to the IDE. Both
+are **thin orchestrators that own no reasoning** — all reasoning still runs
+through the insrc MCP server your assistant invokes. Each one installs and keeps
+the daemon current, wires insrc's MCP tools + the tracked-workflow steering into
+your AI host, and scopes every call to the open project. Consent-gated,
+marker-delimited and fully reversed on uninstall; **no cloud path, no stored
+secrets** — auth stays with your existing CLI / OAuth sessions.
+
+- **VS Code** — [`insors.insrc-vscode`](https://marketplace.visualstudio.com/items?itemName=insors.insrc-vscode)
+  on the Marketplace (search **insrc**). Coalesced first-run onboarding (install
+  daemon → register workspace → wire your AI host: Claude Code, Cursor, …), every
+  action also a Command-Palette command, and the daemon's full configuration
+  editable from **native VS Code Settings** (`insrc.*`, machine-scoped). After a
+  daemon self-update it nudges you to **Reload Window** so the MCP connection
+  reconnects.
+- **JetBrains** — one plugin for **IntelliJ IDEA, PyCharm, GoLand & WebStorm**
+  (2024.2+) from a single install; wires JetBrains **AI Assistant** or **Junie**.
+  Adds **Settings → Tools → insrc** (a live daemon-config editor with nested
+  Daemon / Workflows / Debug pages), a **project-view context menu** (repo status
+  + one-click register), and an **artifact-review tool window** (read, comment on
+  and approve pending workflow artifacts in-IDE). On the JetBrains Marketplace
+  (search **insrc**), or install a built `insrc-jetbrains-<version>.zip` from disk.
+
+See the [plugin guide](https://insrc.insors.io/plugin.html) for setup and
+first-run details.
 
 ## Documentation
 

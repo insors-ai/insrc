@@ -52,7 +52,7 @@ test('the chat host + protocol + store modules are vscode-free', () => {
   }
 });
 
-test('package.json contributes the chat command + the insrc.chat.enabled config (default false)', () => {
+test('package.json contributes the chat command + the insrc.chat.enabled config (default on)', () => {
   const pkg = JSON.parse(read(PKG)) as {
     contributes: { commands: Array<{ command: string }>; configuration: Array<{ properties?: Record<string, { type?: string; default?: unknown }> }> };
   };
@@ -60,7 +60,7 @@ test('package.json contributes the chat command + the insrc.chat.enabled config 
   const props = Object.assign({}, ...pkg.contributes.configuration.map((g) => g.properties ?? {}));
   assert.ok('insrc.chat.enabled' in props, 'insrc.chat.enabled config contributed');
   assert.equal(props['insrc.chat.enabled'].type, 'boolean');
-  assert.equal(props['insrc.chat.enabled'].default, false, 'flag defaults off');
+  assert.equal(props['insrc.chat.enabled'].default, true, 'flag defaults on (sidebar chat visible out of the box)');
 });
 
 // ---- S006: diffView setting + edit-governance wiring ----
@@ -119,56 +119,51 @@ test('S007: the docs-review host + client modules are vscode-free', () => {
   }
 });
 
-// ---- S-activitybar: sidebar chat webview view ----
+// ---- Editor-title icon: chat launched from the editor toolbar (like Claude/Codex) ----
 
-test('S-activitybar: package.json contributes the insrc Activity Bar container + insrc.chatView webview view', () => {
+test('editor-title: the chat opens from an editor/title icon, NOT an Activity Bar container', () => {
   const pkg = JSON.parse(read(PKG)) as {
     contributes: {
-      viewsContainers?: { activitybar?: Array<{ id: string; title: string; icon: string }> };
-      views?: Record<string, Array<{ id: string; type?: string; when?: string }>>;
-      commands: Array<{ command: string }>;
+      viewsContainers?: Record<string, unknown>;
+      views?: Record<string, unknown>;
+      menus?: { 'editor/title'?: Array<{ command?: string; group?: string; when?: string }> };
+      commands: Array<{ command: string; icon?: unknown }>;
     };
   };
-  const container = (pkg.contributes.viewsContainers?.activitybar ?? []).find((c) => c.id === 'insrc');
-  assert.ok(container, 'insrc Activity Bar container contributed');
-  assert.equal(container!.icon, 'media/insrc.svg', 'container uses the themeable media/insrc.svg icon');
-  const view = (pkg.contributes.views?.['insrc'] ?? []).find((v) => v.id === 'insrc.chatView');
-  assert.ok(view, 'insrc.chatView view contributed under the insrc container');
-  assert.equal(view!.type, 'webview', 'the chat view is a webview view');
-  assert.equal(view!.when, 'insrc.chat.ready', 'the view is gated on the activate-time context key (M1: not the live config key, so a runtime toggle cannot surface a provider-less broken pane)');
-  // No new command id — the sidebar reuses insrc.chat.open.
-  assert.ok(!pkg.contributes.commands.some((c) => c.command === 'insrc.chatView.focus'), 'no manual focus command is contributed (VS Code auto-generates it)');
+  // No left-nav container/view.
+  assert.ok(!pkg.contributes.viewsContainers, 'no viewsContainers (removed from the left Activity Bar)');
+  assert.ok(!pkg.contributes.views, 'no contributed views');
+  // The insrc icon lives in the editor title bar (top-right), the same place Claude/Codex use.
+  const item = (pkg.contributes.menus?.['editor/title'] ?? []).find((m) => m.command === 'insrc.chat.open');
+  assert.ok(item, 'insrc.chat.open contributed to editor/title');
+  assert.equal(item!.group, 'navigation', 'shown as a navigation icon in the editor title toolbar');
+  assert.equal(item!.when, 'insrc.chat.ready', 'gated on the activate-time context key (M1)');
+  // The command carries the REAL insrc logo (themed light/dark), not a generic glyph.
+  const cmd = pkg.contributes.commands.find((c) => c.command === 'insrc.chat.open');
+  assert.deepEqual(cmd!.icon, { light: 'media/insrc-icon.svg', dark: 'media/insrc-icon-dark.svg' }, 'the command uses the real insrc icon (themed)');
 });
 
-test('S-activitybar: media/insrc.svg exists, is themeable (currentColor), and is not .vscodeignore’d', () => {
-  const svg = read(join(HERE, '..', '..', '..', 'media', 'insrc.svg'));
-  assert.match(svg, /currentColor/, 'the icon uses currentColor so VS Code themes it');
+test('editor-title: the real insrc icon SVGs exist, are non-empty, and ship in the .vsix', () => {
+  for (const f of ['insrc-icon.svg', 'insrc-icon-dark.svg']) {
+    const svg = read(join(HERE, '..', '..', '..', 'media', f));
+    assert.match(svg, /<svg[\s\S]*<\/svg>/, `${f} is a valid SVG`);
+    assert.ok(svg.length > 500, `${f} is the real (multi-shape) insrc mark, not a stub`);
+  }
   const ignore = read(join(HERE, '..', '..', '..', '.vscodeignore'));
   assert.doesNotMatch(ignore, /^media(\/|\*)/m, '.vscodeignore does not exclude media/');
 });
 
-test('S-activitybar: extension.ts registers the sidebar provider + repoints insrc.chat.open, leaving docs-review intact', () => {
+test('editor-title: extension.ts opens the chat as an editor-tab panel + gates the icon, docs-review intact', () => {
   const src = read(EXT);
   const block = /if \(chatEnabled\) \{([\s\S]*?)\n  \}/.exec(src);
   assert.ok(block, 'the chatEnabled block is present');
   const b = block![1]!;
-  assert.match(b, /createChatSidebarViewProvider\(\{/, 'builds the sidebar view provider');
-  assert.match(b, /registerWebviewViewProvider\(\s*'insrc\.chatView'/, 'registers the provider with the exact contributed view id');
-  assert.match(b, /retainContextWhenHidden:\s*true/, 'retains the webview context when hidden');
-  assert.match(b, /view\.webview\.options\s*=\s*\{\s*enableScripts:\s*true\s*\}/, 'enables scripts on the view');
-  assert.match(b, /makeHost:\s*\(createPanel\)\s*=>\s*createChatPanelHost\(\{\s*\.\.\.chatHostDeps,\s*createPanel\s*\}\)/, 'reuses createChatPanelHost with the shared deps + per-resolve createPanel');
-  assert.match(b, /commands\.register\(\{ id: 'insrc\.chat\.open'[\s\S]*?executeCommand\('insrc\.chatView\.focus'\)/, 'insrc.chat.open focuses the sidebar view (no new command id)');
-  assert.match(b, /createDocsReviewHost\(\{/, 'docs-review host remains registered (untouched)');
-  // H1: the host resumes the last active session across rebuilds; the provider persists it.
-  assert.match(b, /resumeSessionId:\s*\(\)\s*=>\s*context\.globalState\.get/, 'H1: chatHostDeps.resumeSessionId reads the persisted last-session id');
-  assert.match(b, /onActiveSession:\s*\(id\)\s*=>\s*\{[\s\S]*?context\.globalState\.update\(LAST_CHAT_SESSION_KEY, id\)/, 'H1: the provider persists the active session id');
-  // M1: the view is gated on an activate-time context key, set only inside the flag gate.
+  assert.match(b, /const chatHost = createChatPanelHost\(\{/, 'builds the chat host');
+  assert.match(b, /createPanel:[\s\S]*?vscode\.window\.createWebviewPanel\(viewType, title, vscode\.ViewColumn\.Beside/, 'the chat opens BESIDE the active editor (a split)');
+  assert.match(b, /panel\.iconPath\s*=\s*\{[\s\S]*?insrc-icon\.svg[\s\S]*?insrc-icon-dark\.svg/, 'the chat tab is stamped with the real insrc icon (themed)');
+  assert.match(b, /commands\.register\(\{ id: 'insrc\.chat\.open'[\s\S]*?chatHost\.open\(\)/, 'insrc.chat.open opens the editor-tab chat (no new command id)');
   assert.match(b, /setContext',\s*'insrc\.chat\.ready',\s*true/, 'M1: sets the insrc.chat.ready context key inside the chat gate');
-});
-
-test('S-activitybar: the chat-view-channel adapter module is runtime-vscode-free', () => {
-  const src = read(join(HERE, '..', 'chat-view-channel.ts'));
-  assert.doesNotMatch(src, /import\s+\{[^}]*\}\s+from ['"]vscode['"]/, 'no value import from vscode');
-  assert.doesNotMatch(src, /import\s+\*\s+as\s+\w+\s+from ['"]vscode['"]/, 'no namespace import from vscode');
-  assert.doesNotMatch(src, /require\(['"]vscode['"]\)/, 'no vscode require');
+  assert.match(b, /createDocsReviewHost\(\{/, 'docs-review host remains registered (untouched)');
+  // The sidebar experiment is gone: no webview-view provider wiring remains.
+  assert.doesNotMatch(b, /registerWebviewViewProvider/, 'no Activity Bar webview-view provider');
 });

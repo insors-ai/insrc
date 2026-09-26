@@ -29,6 +29,20 @@ function fakeMemento(): { memento: MementoLike; map: Map<string, unknown>; keys:
 
 const fixed = { now: () => '2026-01-01T00:00:00.000Z', genId: (() => { let n = 0; return () => `id-${++n}`; })() };
 
+test('draft(): an in-memory session NOT persisted until saved (no empty chats in history)', () => {
+  const store = createInMemoryChatSessionStore({ now: () => '2026-01-01T00:00:00.000Z', genId: (() => { let n = 0; return () => `id-${++n}`; })() });
+  const d = store.draft('claude');
+  assert.equal(d.provider, 'claude');
+  assert.deepEqual(d.transcript, []);
+  assert.equal(store.list().length, 0, 'a draft is not in the store/history yet');
+  assert.equal(store.get(d.id), undefined, 'a draft is not retrievable until saved');
+  // It enters the store only once it has content and is saved (mirrors the first chat turn).
+  d.transcript.push({ role: 'user', text: 'hi', at: '2026-01-01T00:00:01.000Z' });
+  store.save(d);
+  assert.equal(store.list().length, 1, 'saved once it has a message');
+  assert.equal(store.get(d.id)?.transcript.length, 1);
+});
+
 test('round-trip: create/append/save then get/list reflect it', () => {
   const store = createInMemoryChatSessionStore({ now: () => '2026-01-01T00:00:00.000Z', genId: (() => { let n = 0; return () => `id-${++n}`; })() });
   const s = store.create('claude');

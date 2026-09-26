@@ -270,3 +270,55 @@ test('ProviderRegistry.get() on an absent provider throws unknown-provider', () 
   const reg = createProviderRegistry(deps);
   assert.throws(() => reg.get('codex'), /unknown-provider/);
 });
+
+// ---- deriveChatTitle (LLM chat titling, option 1) ------------------------------
+
+import { deriveChatTitle } from '../cli-adapter.js';
+import type { StreamAdapter, ProviderRegistry } from '../cli-adapter.js';
+
+function titleReg(adapter: StreamAdapter): ProviderRegistry {
+  return { available: ['claude'], get: (id) => { if (id !== 'claude') throw new Error('unknown'); return adapter; } };
+}
+function scriptedTitleAdapter(run: (req: TurnRequest) => AsyncIterable<TurnEvent>): StreamAdapter {
+  return { run, cancel: () => {}, capabilities: { resume: true } };
+}
+async function* emit(events: TurnEvent[]): AsyncIterable<TurnEvent> {
+  for (const ev of events) { await Promise.resolve(); yield ev; }
+}
+
+test('deriveChatTitle: concatenates the assistant text of the one-shot (no resume passed)', async () => {
+  let sawResume: unknown = 'unset';
+  const reg = titleReg(scriptedTitleAdapter((req) => { sawResume = req.resume; return emit([
+    { kind: 'assistant-delta', turnId: 't', text: 'Status ' },
+    { kind: 'assistant-delta', turnId: 't', text: 'JSON Flag' },
+    { kind: 'done', turnId: 't', ok: true, sessionId: 'x' },
+  ]); }));
+  const out = await deriveChatTitle(reg, { provider: 'claude', prompt: 'add a --json flag', cwd: '/repo' });
+  assert.equal(out, 'Status JSON Flag');
+  assert.equal(sawResume, undefined, 'the title one-shot does NOT resume (never pollutes the conversation)');
+});
+
+test('deriveChatTitle: a hung provider is cancel()led at the timeout -> undefined (does not stall)', async () => {
+  let cancelled = false;
+  // Emits an init event (so the turnId is known), then hangs until cancel() is called.
+  const adapter: StreamAdapter = {
+    async *run() {
+      yield { kind: 'status', turnId: 'th', phase: 'thinking' };
+      while (!cancelled) await new Promise((r) => setTimeout(r, 5));
+    },
+    cancel: (turnId) => { assert.equal(turnId, 'th', 'cancels the captured turnId'); cancelled = true; },
+    capabilities: { resume: true },
+  };
+  const start = Date.now();
+  const out = await deriveChatTitle(titleReg(adapter), { provider: 'claude', prompt: 'x', cwd: '/repo' }, { timeoutMs: 40 });
+  assert.equal(out, undefined, 'timed out -> undefined');
+  assert.equal(cancelled, true, 'the hung CLI turn was cancelled (killed) on timeout');
+  assert.ok(Date.now() - start < 1500, 'returned promptly at the timeout, not hung');
+});
+
+test('deriveChatTitle: an error event -> undefined; an unknown provider -> undefined', async () => {
+  const errReg = titleReg(scriptedTitleAdapter(() => emit([{ kind: 'error', turnId: 't', message: 'boom' }])));
+  assert.equal(await deriveChatTitle(errReg, { provider: 'claude', prompt: 'x', cwd: '/repo' }), undefined);
+  const badReg: ProviderRegistry = { available: [], get: () => { throw new Error('unknown'); } };
+  assert.equal(await deriveChatTitle(badReg, { provider: 'claude', prompt: 'x', cwd: '/repo' }), undefined);
+});

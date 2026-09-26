@@ -39,6 +39,13 @@ export interface ChatSummary {
 
 export interface ChatSessionStore {
   create(provider: ProviderId): ChatSession;
+  /**
+   * A new in-memory session that is NOT persisted yet — it enters the store (index + history)
+   * only on the first {@link save} (i.e. once it has a message). Lets the chat open a fresh
+   * "draft" without cluttering history with empty chats that are never used. Same shape as
+   * {@link create}, minus the immediate save.
+   */
+  draft(provider: ProviderId): ChatSession;
   get(id: string): ChatSession | undefined;
   list(): ReadonlyArray<ChatSummary>;
   append(id: string, entry: TranscriptEntry): void;
@@ -141,17 +148,20 @@ export function createMementoChatSessionStore(deps: MementoStoreDeps): ChatSessi
     }
   };
 
+    const draft = (provider: ProviderId): ChatSession => ({
+      id: genId(),
+      provider,
+      createdAt: now(),
+      title: 'new chat',
+      editMode: 'auto',
+      transcript: [],
+    });
+
   return {
+    draft,
     create(provider: ProviderId): ChatSession {
-      const session: ChatSession = {
-        id: genId(),
-        provider,
-        createdAt: now(),
-        title: 'new chat',
-        editMode: 'auto',
-        transcript: [],
-      };
-      save(session);
+      const session = draft(provider);
+      save(session); // create persists immediately (S005 eviction relies on this)
       return session;
     },
     get,

@@ -368,6 +368,73 @@ export function createProviderRegistry(deps: AdapterDeps): ProviderRegistry {
   };
 }
 
+/**
+ * LLM chat titling (option 1): a SEPARATE one-shot over the provider — no `resume`, so it never
+ * pollutes the real conversation — that asks for a short title for the chat's first message. It is
+ * TIMEOUT-BOUNDED and abandons the iterator (`it.return()`) on timeout/error so a slow or hung CLI
+ * can NEVER stall the caller (unlike a bare `for await`). Returns the raw model text (the caller
+ * sanitizes) or undefined on any failure. vscode-free; the host injects this via deps.deriveTitle.
+ */
+export async function deriveChatTitle(
+  providers: ProviderRegistry,
+  input: { readonly provider: ProviderId; readonly prompt: string; readonly cwd: string },
+  opts?: { readonly timeoutMs?: number },
+): Promise<string | undefined> {
+  let adapter: StreamAdapter;
+  try {
+    adapter = providers.get(input.provider);
+  } catch {
+    return undefined;
+  }
+  const instruction =
+    `Reply with ONLY a concise 3-6 word title (no quotes, no punctuation, no preamble) ` +
+    `for a developer chat that begins with this message:\n\n${input.prompt}`;
+  const req: TurnRequest = { provider: input.provider, prompt: instruction, cwd: input.cwd };
+  const it = adapter.run(req)[Symbol.asyncIterator]();
+  const deadline = Date.now() + (opts?.timeoutMs ?? 8000);
+  let turnId: string | undefined;
+  let text = '';
+  // The reliable stop is adapter.cancel(turnId) — it kills the CLI child, which ends the stream
+  // (asyncIterator.return() cannot break a generator stuck in a no-yield await loop while a
+  // .next() is pending — the S003 lesson). A zero-output turn has no turnId yet, so it cannot be
+  // force-cancelled; real claude/codex emit an init event within ms, so slow titles are bounded.
+  const stop = (val: string | undefined): string | undefined => {
+    if (turnId !== undefined) {
+      try {
+        adapter.cancel(turnId);
+      } catch {
+        /* already finished */
+      }
+    }
+    try {
+      void it.return?.(undefined);
+    } catch {
+      /* returning an already-finished iterator is a no-op */
+    }
+    return val;
+  };
+  try {
+    for (;;) {
+      const remaining = deadline - Date.now();
+      if (remaining <= 0) return stop(undefined);
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      const timeout = new Promise<'timeout'>((r) => {
+        timer = setTimeout(() => r('timeout'), remaining);
+      });
+      const res = await Promise.race([it.next(), timeout]);
+      if (timer !== undefined) clearTimeout(timer);
+      if (res === 'timeout') return stop(undefined);
+      if (res.done === true) return stop(text);
+      const ev = res.value;
+      turnId = ev.turnId;
+      if (ev.kind === 'assistant-delta') text += ev.text;
+      else if (ev.kind === 'error') return stop(undefined);
+    }
+  } catch {
+    return stop(undefined);
+  }
+}
+
 // ---- production spawner (the only child_process user) ------------------------
 
 /**

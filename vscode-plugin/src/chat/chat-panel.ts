@@ -13,7 +13,7 @@
 import { renderTerminalStyle, surfaceClass, terminalTheme, type TerminalTheme } from './design-tokens.js';
 import { markerFor, markerWebviewSource } from './markers.js';
 import { envelope, type WebviewToHost, type HostToWebview } from './protocol.js';
-import type { ProviderRegistry } from './cli-adapter.js';
+import type { ProviderRegistry, ProviderId } from './cli-adapter.js';
 import type { ChatSessionStore, ChatSession } from './session-store.js';
 import type { TurnEvent, UnifiedDiff } from './stream-events.js';
 import {
@@ -70,12 +70,12 @@ export interface ChatPanelHostDeps {
   /** S006: edit governance (inline diff + auto/review + revert). Absent -> marker-only. */
   readonly editGovernance?: ChatEditGovernanceDeps;
   /**
-   * S-activitybar: on a FRESH host with no active session, resume this session id (if it
-   * still exists in the store) instead of creating a new empty chat. Lets the sidebar
-   * provider preserve the active conversation across host rebuilds (view re-resolution on
-   * window reload / host restart / view move). Absent -> always create a new session.
+   * LLM chat titling: after the first turn, produce a short title for the chat. Absent -> the
+   * built-in impl runs a SEPARATE one-shot CLI call (no resume, so it never pollutes the
+   * conversation) over the session's provider. Returns undefined on failure (the truncated
+   * first prompt then stays as the title). Injected in tests to decouple from the CLI.
    */
-  readonly resumeSessionId?: () => string | undefined;
+  readonly deriveTitle?: (input: { provider: ProviderId; prompt: string; cwd: string }) => Promise<string | undefined>;
 }
 
 export interface ChatPanelHost {
@@ -140,11 +140,82 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   // S005: (re)post the extension-local chat history so the webview history-dropdown stays current.
   const postHistory = (): void => post({ type: 'history-list', chats: [...deps.store.list()] });
 
+  // LLM chat titling: after the first turn, an INJECTED deriveTitle (extension.ts wires the
+  // one-shot CLI call) produces a short name that swaps in over the truncated first-prompt
+  // fallback. When no deriveTitle is provided (or it fails), the fallback stays. The one-shot
+  // itself lives in cli-adapter.ts (timeout-bounded) so the host stays free of a CLI call that
+  // could hang the turn machinery.
+  const TITLE_MAXLEN = 60;
+  const sanitizeTitle = (raw: string): string =>
+    raw.replace(/\s+/g, ' ').replace(/^[\s"'`.–—-]+|[\s"'`.]+$/g, '').trim().slice(0, TITLE_MAXLEN);
+  const applyTitle = async (target: ChatSession, firstPrompt: string): Promise<void> => {
+    if (deps.deriveTitle === undefined) return;
+    let raw: string | undefined;
+    try {
+      raw = await deps.deriveTitle({ provider: target.provider, prompt: firstPrompt, cwd: deps.cwd() });
+    } catch {
+      return; // keep the fallback title
+    }
+    if (raw === undefined) return;
+    const title = sanitizeTitle(raw);
+    if (title === '') return;
+    target.title = title;
+    deps.store.save(target);
+    postHistory(); // refresh the history dropdown with the LLM-derived name
+  };
+
   const renderShell = (): string => {
     const nonce = genNonce();
-    const style = renderStyle(theme); // a complete <style>…</style>
+    const style = renderStyle(theme); // a complete <style>…</style> (sc1 palette: --it-* tokens)
     const csp = `default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';`;
     const cls = surfaceClass('chat');
+    // The chat-surface LAYOUT (S003), ported VERBATIM from the reviewed S001 design mock
+    // (docs/epics/…/S001/mocks.html): a single-dark terminal .box (chrome header · .pad transcript
+    // with row/gutter markers · dashed .inputline with a ❯ caret · .statusbar), filling the panel
+    // edge to edge. The sc1 renderTerminalStyle still supplies the marker ::before glyphs; this
+    // owns the frame + palette (deliberately single-dark hex, not VS Code theme vars — it's a
+    // terminal). The sc1 marker classes are re-toned to the design's accent/cyan/amber/green/red.
+    const layoutStyle =
+      `<style>` +
+      `:root{color-scheme:dark;--font:"JetBrains Mono",ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,monospace;` +
+      `--bg:#0b0e14;--bg-alt:#10141c;--bg-inset:#0d1119;--panel:#11161f;--fg:#c6cdd8;--fg-strong:#e8edf4;--muted:#6b7688;--dim:#4a5464;` +
+      `--border:#222a36;--border-lit:#2f3a4a;--accent:#4ade80;--accent2:#38bdf8;--amber:#fbbf24;--magenta:#c084fc;--red:#f87171;--sel:rgba(74,222,128,.22);}` +
+      `*{box-sizing:border-box;}html,body{height:100%;width:100%;}` +
+      `body{margin:0;padding:0;display:flex;background:radial-gradient(1200px 600px at 80% -10%,rgba(56,189,248,.06),transparent 60%),radial-gradient(900px 500px at -5% 10%,rgba(74,222,128,.05),transparent 55%),var(--bg);color:var(--fg);font-family:var(--font);font-size:13.5px;line-height:1.5;-webkit-font-smoothing:antialiased;}` +
+      `::selection{background:var(--sel);}a{color:var(--accent2);}` +
+      // Full-bleed: the .box IS the whole panel (approved --panel surface), edge to edge — no floating
+      // card border/radius/shadow (that framing was the mock's page card; in-panel it fills).
+      `.box{flex:1 1 auto;width:100%;min-width:0;display:flex;flex-direction:column;min-height:0;background:var(--panel);overflow:hidden;}` +
+      `.chrome{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-inset);border-bottom:1px solid var(--border);color:var(--muted);font-size:12px;flex:0 0 auto;flex-wrap:wrap;}` +
+      `.chrome .dot{width:9px;height:9px;border-radius:50%;background:var(--accent);opacity:.85;flex:0 0 auto;}` +
+      `.chrome .title{color:var(--fg);}.chrome .right{margin-left:auto;display:inline-flex;align-items:center;gap:5px;color:var(--dim);}` +
+      `.pad{padding:14px 16px;flex:1 1 auto;display:flex;flex-direction:column;min-height:0;}` +
+      `#insrc-term{flex:1 1 auto;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:2px;white-space:pre-wrap;word-break:break-word;color:var(--fg);}` +
+      `#insrc-term>div{white-space:pre-wrap;}` +
+      `.insrc-term__marker--pending{color:var(--muted);}.insrc-term__marker--pending::before{color:var(--magenta)!important;margin-right:.55em;}` +
+      `.insrc-term__marker--tool{color:var(--accent2);}.insrc-term__marker--tool::before{color:var(--accent2)!important;margin-right:.55em;}` +
+      `.insrc-term__marker--edit{color:var(--fg);}.insrc-term__marker--edit::before{color:var(--amber)!important;margin-right:.55em;}` +
+      `.insrc-term__marker--done{color:var(--muted);}.insrc-term__marker--done::before{color:var(--accent)!important;margin-right:.55em;}` +
+      `.insrc-term__marker--error{color:var(--red);}.insrc-term__marker--error::before{color:var(--red)!important;margin-right:.55em;}` +
+      `.inputline{display:flex;gap:10px;align-items:flex-start;margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);flex:0 0 auto;}` +
+      `.inputline .caret{color:var(--accent);font-weight:700;padding-top:6px;user-select:none;}` +
+      `#insrc-input{flex:1 1 auto;min-width:0;resize:vertical;min-height:2.4em;background:var(--bg-inset);color:var(--fg);caret-color:var(--accent);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-family:var(--font);font-size:13.5px;line-height:1.5;outline:none;}` +
+      `#insrc-input::placeholder{color:var(--dim);}#insrc-input:focus{border-color:var(--accent);}` +
+      `.statusbar{display:flex;gap:16px;align-items:center;padding:7px 16px;background:var(--bg-inset);border-top:1px solid var(--border);color:var(--muted);font-size:12px;flex-wrap:wrap;flex:0 0 auto;}` +
+      `.statusbar .seg{display:inline-flex;align-items:center;gap:5px;}.statusbar .seg b{color:var(--fg);font-weight:500;}.statusbar .ok{color:var(--accent);margin-left:auto;}` +
+      // The provider/session/edits selects, styled as the bold segment value (transparent, borderless).
+      `.segsel{appearance:none;-webkit-appearance:none;background:transparent;border:none;color:var(--fg);font-family:var(--font);font-size:12px;font-weight:500;line-height:1.2;padding:0 14px 0 2px;margin:0;cursor:pointer;outline:none;` +
+      `background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 6px) 55%,calc(100% - 3px) 55%;background-size:3px 3px,3px 3px;background-repeat:no-repeat;}` +
+      `.segsel:hover{color:var(--accent);}.segsel:disabled{opacity:.5;cursor:default;}.segsel option{background:var(--bg-alt);color:var(--fg);font-weight:400;}` +
+      `.insrc-term-diff{border:1px solid var(--border-lit);border-radius:6px;margin:6px 0;overflow:hidden;}` +
+      `.insrc-diff-path{color:var(--dim);padding:4px 10px;background:var(--bg-inset);border-bottom:1px solid var(--border);}` +
+      `.insrc-diff-add{background:rgba(74,222,128,.10);color:var(--fg-strong);padding:0 10px;}` +
+      `.insrc-diff-del{background:rgba(248,113,113,.10);color:var(--fg);padding:0 10px;}` +
+      `.insrc-diff-ctx{color:var(--muted);padding:0 10px;}` +
+      `.insrc-diff-actions{display:flex;gap:8px;padding:8px 10px;background:var(--bg-inset);}` +
+      `.insrc-diff-actions button{border:1px solid var(--border-lit);background:var(--bg-alt);color:var(--fg);border-radius:6px;padding:4px 12px;font-family:var(--font);cursor:pointer;}` +
+      `.insrc-diff-actions button:hover{border-color:var(--accent);}` +
+      `</style>`;
     const provCls = surfaceClass('provider-dropdown');
     const histCls = surfaceClass('history-dropdown');
     const diffCls = surfaceClass('inline-diff'); // S006: sc1 'inline-diff' surface for the chat-view diff
@@ -152,9 +223,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     // installed claude/codex set is fixed per panel, k4) so NO new sc3 message is needed;
     // values are attribute-escaped. Empty available -> the selector is disabled.
     const available = deps.providers.available;
-    const providerOpts = ['<option value="">provider…</option>']
-      .concat(available.map((p) => `<option value="${attr(p)}">${attr(p)}</option>`))
-      .join('');
+    // No placeholder: the select shows the ACTIVE session's provider (set from history-list on
+    // restore); picking a different provider starts a new chat with it.
+    const providerOpts = available.map((p) => `<option value="${attr(p)}">${attr(p)}</option>`).join('');
     const provDisabled = available.length === 0 ? ' disabled' : '';
     const bootstrap =
       `const vs=acquireVsCodeApi();` +
@@ -167,8 +238,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `var cur='';` +
       `const ps=document.getElementById('insrc-provider');` +
       `const hs=document.getElementById('insrc-history');` +
-      `ps.addEventListener('change',function(){if(ps.value){vs.postMessage({v:1,payload:{type:'new-chat',provider:ps.value}});ps.value='';}});` +
-      `hs.addEventListener('change',function(){if(hs.value){vs.postMessage({v:1,payload:{type:'open-chat',chatId:hs.value}});}});` +
+      `ps.addEventListener('change',function(){if(ps.value){vs.postMessage({v:1,payload:{type:'new-chat',provider:ps.value}});}});` +
+      `hs.addEventListener('change',function(){if(hs.value){vs.postMessage({v:1,payload:{type:'open-chat',chatId:hs.value}});}else if(ps.value){vs.postMessage({v:1,payload:{type:'new-chat',provider:ps.value}});}});` +
       // S006: per-session edit-mode toggle (auto/review) + the chat-view inline diff renderer.
       // emode gates the accept/reject controls webview-side; the host is authoritative for revert.
       `var emode='auto';` +
@@ -186,21 +257,34 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // does not append onto the prior chat's view) + tracks the active id for the dropdown.
       `else if(m.type==='session-restored'){cur=m.sessionId||'';t.textContent='';(m.transcript||[]).forEach(x=>line(x.text,x.cssClass));hs.value=cur;}` +
       // S005: history-list (re)populates the dropdown; labels via textContent (no innerHTML); keep active selected.
-      `else if(m.type==='history-list'){while(hs.options.length>1)hs.remove(1);(m.chats||[]).forEach(function(c){var o=document.createElement('option');o.value=c.id;o.textContent='['+c.provider+'] '+(c.title||c.id);hs.appendChild(o);});hs.value=cur;}});` +
+      `else if(m.type==='history-list'){while(hs.options.length>1)hs.remove(1);(m.chats||[]).forEach(function(c){var o=document.createElement('option');o.value=c.id;o.textContent='['+c.provider+'] '+(c.title||c.id);hs.appendChild(o);});hs.value=cur;var _ac=(m.chats||[]).filter(function(c){return c.id===cur;})[0];if(_ac&&_ac.provider){ps.value=_ac.provider;}}});` +
       `const box=document.getElementById('insrc-input');` +
       `box.addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.metaKey||e.ctrlKey)){vs.postMessage({v:1,payload:{type:'submit-turn',text:box.value}});box.value='';}});`;
     return (
       `<!DOCTYPE html><html><head><meta charset="utf-8">` +
       `<meta http-equiv="Content-Security-Policy" content="${attr(csp)}">` +
-      `${style}</head>` +
-      `<body class="${cls}">` +
-      `<div class="insrc-term-controls">` +
-      `<select id="insrc-provider" class="${provCls}" aria-label="provider"${provDisabled}>${providerOpts}</select>` +
-      `<select id="insrc-history" class="${histCls}" aria-label="history"><option value="">history…</option></select>` +
-      `<select id="insrc-editmode" class="${provCls}" aria-label="edit mode"><option value="auto">auto-apply</option><option value="review">review edits</option></select>` +
+      `${style}${layoutStyle}</head>` +
+      `<body class="insrc-term ${cls}">` +
+      `<div class="box">` +
+      `<div class="chrome">` +
+      `<span class="dot"></span><span class="title">insrc</span>` +
+      `<span class="right">session <select id="insrc-history" class="segsel ${histCls}" aria-label="history"><option value="">new…</option></select></span>` +
       `</div>` +
-      `<div id="insrc-term"></div>` +
-      `<textarea id="insrc-input" rows="2" aria-label="message"></textarea>` +
+      `<div class="pad">` +
+      `<div id="insrc-term" class="term"></div>` +
+      `<div class="inputline">` +
+      `<span class="caret">❯</span>` +
+      `<textarea id="insrc-input" rows="2" aria-label="message" placeholder="message claude… (⌘↵ send)"></textarea>` +
+      `</div>` +
+      `</div>` +
+      // Approved layout: provider / session / edits live as STATUS-BAR segments at the bottom
+      // (the selects are styled as the bold segment value, transparent + borderless).
+      `<div class="statusbar">` +
+      `<span class="seg"><select id="insrc-provider" class="segsel ${provCls}" aria-label="provider"${provDisabled}>${providerOpts}</select></span>` +
+      `<span class="seg">edits <select id="insrc-editmode" class="segsel ${provCls}" aria-label="edit mode"><option value="auto">auto</option><option value="review">review</option></select></span>` +
+      `<span class="seg ok">✓ idle</span>` +
+      `</div>` +
+      `</div>` +
       `<script nonce="${nonce}">${bootstrap}</script></body></html>`
     );
   };
@@ -257,6 +341,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     if (s.transcript.filter((r) => r.role === 'user').length === 1) {
       const derived = prompt.replace(/\s+/g, ' ').trim().slice(0, 60);
       if (derived !== '') s.title = derived;
+      // Then ask the LLM for a better title in the background (keeps `derived` on failure).
+      void applyTitle(s, prompt);
     }
     deps.store.save(s);
 
@@ -370,9 +456,11 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         // deltas would paint into the newly-restored session's view.
         cancelActive();
         ++generation;
-        session = deps.store.create(msg.provider);
+        // A DRAFT (unsaved): the new chat is not written to history until its first turn, so
+        // repeatedly starting/abandoning new chats never leaves empty sessions behind.
+        session = deps.store.draft(msg.provider);
         post({ type: 'session-restored', sessionId: session.id, transcript: session.transcript });
-        postHistory(); // S005: the new chat appears in the dropdown
+        postHistory(); // refresh the dropdown (the draft is not yet listed until it has a message)
         return;
       }
       case 'open-chat': {
@@ -436,14 +524,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         post({ type: 'turn-event', event: { kind: 'error', turnId: 'none', message: 'no agentic CLI (claude/codex) installed' } });
         return;
       }
-      if (session === undefined) {
-        // S-activitybar: on a fresh host, resume the last active session (if it still exists)
-        // so a view re-resolution does not silently drop the conversation or leave a stray
-        // empty session; fall back to a new chat when there is nothing to resume.
-        const resumeId = deps.resumeSessionId?.();
-        const resumed = resumeId !== undefined ? deps.store.get(resumeId) : undefined;
-        session = resumed ?? deps.store.create(available[0]!);
-      }
+      // A DRAFT session (in-memory, not persisted): opening the chat does not save an empty
+      // session to history; it enters the store only on the first turn (runTurn's save).
+      if (session === undefined) session = deps.store.draft(available[0]!);
       post({ type: 'theme', theme });
       post({ type: 'session-restored', sessionId: session.id, transcript: session.transcript });
       postHistory(); // S005: populate the history dropdown as soon as the panel opens

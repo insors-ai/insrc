@@ -74,8 +74,6 @@ declare module 'vscode' {
   /** The webview body of a panel (S004 sc9): set `html`, and the host↔webview bridge. */
   export interface Webview {
     html: string;
-    /** Webview options; the sidebar chat view sets enableScripts before rendering (S-activitybar). */
-    options?: { enableScripts?: boolean | undefined; localResourceRoots?: readonly Uri[] | undefined } | undefined;
     postMessage(message: unknown): PromiseLike<boolean>;
     onDidReceiveMessage(listener: (message: unknown) => unknown): Disposable;
   }
@@ -85,22 +83,10 @@ declare module 'vscode' {
     readonly webview: Webview;
     readonly active: boolean;
     readonly visible: boolean;
+    /** The tab icon (themed light/dark) — the insrc chat sets this to the insrc mark. */
+    iconPath?: Uri | { readonly light: Uri; readonly dark: Uri } | undefined;
     reveal(viewColumn?: ViewColumn): void;
     onDidDispose(listener: () => unknown): Disposable;
-  }
-
-  /** A webview hosted in a view container (Activity Bar sidebar) — created BY VS Code and
-   *  delivered to a {@link WebviewViewProvider}. Reuses the {@link Webview} body. */
-  export interface WebviewView {
-    readonly webview: Webview;
-    readonly visible: boolean;
-    onDidDispose(listener: () => unknown): Disposable;
-    show(preserveFocus?: boolean): void;
-  }
-
-  /** Resolves a contributed webview view when VS Code first shows it (S-activitybar sidebar chat). */
-  export interface WebviewViewProvider {
-    resolveWebviewView(view: WebviewView, context: unknown, token: unknown): void | Thenable<void>;
   }
 
   export namespace window {
@@ -122,12 +108,6 @@ declare module 'vscode' {
       items: readonly T[] | PromiseLike<readonly T[]>,
       options?: { placeHolder?: string | undefined },
     ): PromiseLike<T | undefined>;
-    /** Register a webview view provider for a contributed sidebar view (S-activitybar sidebar chat). */
-    export function registerWebviewViewProvider(
-      viewId: string,
-      provider: WebviewViewProvider,
-      options?: { webviewOptions?: { retainContextWhenHidden?: boolean | undefined } | undefined },
-    ): Disposable;
   }
 
   export namespace commands {

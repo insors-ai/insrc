@@ -462,6 +462,74 @@ test('S005 open() posts a history-list', () => {
   assert.ok(historyLists(fc).length >= 1, 'history-list posted on open');
 });
 
+test('open()/close leaves NO empty session in history — the chat opens a draft, persisted only on first turn', () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter([]) }, ['claude']),
+    store,
+    cwd: () => '/repo',
+  });
+  host.open();
+  assert.equal(store.list().length, 0, 'opening the chat does not persist an empty session');
+  fc.fireDispose(); // close the panel/tab without sending anything
+  assert.equal(store.list().length, 0, 'closing an untouched chat leaves history empty (no empty chat saved)');
+  // Reopen + send a message -> now (and only now) a session is persisted.
+  host.open();
+  assert.equal(store.list().length, 0, 'reopening is still a draft');
+  fc.send(env('submit-turn', { text: 'hello' }));
+  assert.equal(store.list().length, 1, 'the first turn persists exactly one session');
+});
+
+test('LLM titling: the first turn swaps the truncated-prompt title for the LLM-derived name (+ refreshes history)', async () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter([{ kind: 'done', turnId: 't1', ok: true }]) }, ['claude']),
+    store,
+    cwd: () => '/repo',
+    deriveTitle: async (input) => { assert.equal(input.prompt, 'add a --json flag to status'); return 'Add JSON Flag'; },
+  });
+  host.open();
+  fc.send(env('submit-turn', { text: 'add a --json flag to status' }));
+  await waitFor(() => store.list()[0]?.title === 'Add JSON Flag');
+  assert.equal(store.list()[0]!.title, 'Add JSON Flag', 'LLM-derived title replaced the truncated-prompt fallback');
+});
+
+test('LLM titling: a failed/empty derivation keeps the truncated-prompt fallback', async () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter([{ kind: 'done', turnId: 't1', ok: true }]) }, ['claude']),
+    store,
+    cwd: () => '/repo',
+    deriveTitle: async () => undefined, // failure
+  });
+  host.open();
+  fc.send(env('submit-turn', { text: 'why is embed slow' }));
+  await waitFor(() => store.list().length === 1);
+  await new Promise((r) => setTimeout(r, 10));
+  assert.equal(store.list()[0]!.title, 'why is embed slow', 'fallback title unchanged on failed derivation');
+});
+
+test('LLM titling: with no deriveTitle injected, the truncated-prompt fallback is kept (no built-in CLI call)', async () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter([{ kind: 'done', turnId: 't1', ok: true }]) }, ['claude']),
+    store,
+    cwd: () => '/repo',
+  });
+  host.open();
+  fc.send(env('submit-turn', { text: 'refactor RoleRouter tiers' }));
+  await waitFor(() => store.list().length === 1);
+  assert.equal(store.list()[0]!.title, 'refactor RoleRouter tiers', 'no titling when deriveTitle is absent');
+});
+
 test('S005 new-chat: valid provider creates a fixed-provider session + re-posts history; non-available is a no-op', () => {
   const fc = fakeChannel();
   const store = createInMemoryChatSessionStore();
@@ -471,11 +539,14 @@ test('S005 new-chat: valid provider creates a fixed-provider session + re-posts 
     store,
     cwd: () => '/repo',
   });
-  host.open(); // seeds a default claude session
+  host.open(); // opens a DRAFT claude session (not persisted)
   const hlBefore = historyLists(fc).length;
   fc.send(env('new-chat', { provider: 'codex' }));
-  assert.ok(store.list().some((c) => c.provider === 'codex'), 'codex session created (provider fixed at create)');
+  assert.ok(!store.list().some((c) => c.provider === 'codex'), 'new-chat is a DRAFT — not written to history until its first message');
   assert.ok(historyLists(fc).length > hlBefore, 'new-chat re-posts history-list');
+  // The first turn persists the draft as a codex session (provider fixed at draft time).
+  fc.send(env('submit-turn', { text: 'hi' }));
+  assert.ok(store.list().some((c) => c.provider === 'codex'), 'the first turn persists the codex session');
   const n = store.list().length;
   fc.send(env('new-chat', { provider: 'gemini' })); // not installed
   assert.equal(store.list().length, n, 'a non-available provider creates no session');
@@ -755,12 +826,13 @@ test('S006 integration: set-edit-mode updates + persists session.editMode', asyn
     editGovernance: fakeGovernance().deps,
   });
   host.open();
-  const id = store.list()[0]!.id;
-  assert.equal(store.get(id)!.editMode, 'auto', 'defaults to auto');
+  assert.equal(store.list().length, 0, 'the fresh chat is a draft — not persisted until it is saved');
   fc.send(env('set-edit-mode', { mode: 'review' }));
-  assert.equal(store.get(id)!.editMode, 'review', 'set-edit-mode persisted review');
+  const id = store.list()[0]?.id;
+  assert.ok(id, 'set-edit-mode saved the (previously draft) session');
+  assert.equal(store.get(id!)!.editMode, 'review', 'set-edit-mode persisted review');
   fc.send(env('set-edit-mode', { mode: 'bogus' }));
-  assert.equal(store.get(id)!.editMode, 'review', 'an invalid mode is dropped (unchanged)');
+  assert.equal(store.get(id!)!.editMode, 'review', 'an invalid mode is dropped (unchanged)');
 });
 
 test('S006 integration: diffView=editor routes to the native editor seam (no chat edit-prompt)', async () => {

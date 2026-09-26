@@ -77,7 +77,20 @@ export type WebviewToHost =
   | { readonly type: 'open-doc'; readonly artifactId: string }
   // S002 (additive): the Stop control's intent — cancel the in-flight turn. The host
   // routes it to the existing cancelActive() reap; a no-op when no turn is active.
-  | { readonly type: 'cancel-turn' };
+  | { readonly type: 'cancel-turn' }
+  // S004 sc2 (additive): the approve/deny click on an in-chat permission card. `requestId`
+  // correlates back to the ApprovalRequestEvent so the adapter answers the RIGHT request.
+  // `scope` is accepted-but-inert this Story ('once' behaviour); a later story honours
+  // 'session' without a wire change.
+  | {
+      readonly type: 'permission-decision';
+      readonly requestId: string;
+      readonly decision: 'approve' | 'deny';
+      readonly scope?: 'once' | 'session';
+    }
+  // S004 sc2 (additive): the status-bar auto/review toggle. The host stores it per-session
+  // and applies it to the NEXT turn's buildArgs (never the in-flight spawn).
+  | { readonly type: 'set-permission-mode'; readonly mode: PermissionMode };
 
 /** The discriminant values of each direction (exported so consumers/tests can assert exhaustiveness). */
 export const HOST_TO_WEBVIEW_TYPES = [
@@ -100,6 +113,8 @@ export const WEBVIEW_TO_HOST_TYPES = [
   'docs-decision',
   'open-doc',
   'cancel-turn',
+  'permission-decision',
+  'set-permission-mode',
 ] as const;
 
 export type HostToWebviewType = (typeof HOST_TO_WEBVIEW_TYPES)[number];

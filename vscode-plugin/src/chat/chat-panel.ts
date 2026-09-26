@@ -14,7 +14,7 @@ import { renderTerminalStyle, surfaceClass, terminalTheme, type TerminalTheme } 
 import { markerFor, markerWebviewSource } from './markers.js';
 import { renderRegistryWebviewSource, RENDER_REGISTRY_STYLE } from './render-registry.js';
 import { clampSessionTitleWebviewSource } from './session-title.js';
-import { envelope, type WebviewToHost, type HostToWebview } from './protocol.js';
+import { envelope, type WebviewToHost, type HostToWebview, type PermissionMode } from './protocol.js';
 import type { ProviderRegistry, ProviderId } from './cli-adapter.js';
 import type { ChatSessionStore, ChatSession } from './session-store.js';
 import type { TurnEvent, UnifiedDiff } from './stream-events.js';
@@ -107,6 +107,11 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   let activeProvider: import('./cli-adapter.js').ProviderId | undefined;
   let activeIterator: AsyncIterator<TurnEvent> | undefined;
   let generation = 0;
+  // S004: the tool-permission mode for this chat panel. Default 'review' so permission
+  // requests surface as in-chat cards (ac1 — never silently blocked); the status-bar
+  // control switches it. View-time only, never persisted to the session store (k4);
+  // applied to the NEXT turn's buildArgs, never the in-flight spawn.
+  let permissionMode: PermissionMode = 'review';
 
   const post = (msg: HostToWebview): void => {
     if (disposed || channel === undefined) return;
@@ -215,6 +220,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `#insrc-input::placeholder{color:var(--dim);}#insrc-input:focus{border-color:var(--accent);}` +
       `.statusbar{display:flex;gap:16px;align-items:center;padding:7px 16px;background:var(--bg-inset);border-top:1px solid var(--border);color:var(--muted);font-size:12px;flex-wrap:wrap;flex:0 0 auto;}` +
       `.statusbar .seg{display:inline-flex;align-items:center;gap:5px;}.statusbar .seg b{color:var(--fg);font-weight:500;}.statusbar .ok{color:var(--accent);margin-left:auto;}` +
+      // S004: visibly flag auto permission mode in the status bar (k6 i).
+      `.statusbar .perm-auto{color:var(--accent);}` +
       // The provider/session/edits selects, styled as the bold segment value (transparent, borderless).
       `.segsel{appearance:none;-webkit-appearance:none;background:transparent;border:none;color:var(--fg);font-family:var(--font);font-size:12px;font-weight:500;line-height:1.2;padding:0 14px 0 2px;margin:0;cursor:pointer;outline:none;` +
       `background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 6px) 55%,calc(100% - 3px) 55%;background-size:3px 3px,3px 3px;background-repeat:no-repeat;}` +
@@ -262,6 +269,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // S001 sc1: the render registry, single-sourced with render-registry.ts, embedded in THIS one nonce'd script.
       // line() is pre-registered as the 'fallback' renderer; t4/S003/S004 register the concrete row renderers.
       `const reg=(${renderRegistryWebviewSource()})(document,line);` +
+      // S004 ac2: the approval card's approve/deny buttons post a permission-decision the host
+      // relays to the live turn's CLI (adapter.decide). Wired once via the sc1 decision sink.
+      `reg.onApprovalDecision(function(requestId,decision){vs.postMessage({v:1,payload:{type:'permission-decision',requestId:requestId,decision:decision}});});` +
       // S005: provider-selector + history-dropdown wiring (same one nonce'd script).
       `var cur='';` +
       `const ps=document.getElementById('insrc-provider');` +
@@ -289,6 +299,14 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `var emode='auto';` +
       `const em=document.getElementById('insrc-editmode');` +
       `em.addEventListener('change',function(){emode=em.value==='review'?'review':'auto';vs.postMessage({v:1,payload:{type:'set-edit-mode',mode:emode}});});` +
+      // S004 ac3: the DISTINCT tool-permission mode control (auto/review), separate from the
+      // edit-mode select above. Posts set-permission-mode; its wrapping seg gets a 'perm-auto'
+      // class so the status bar visibly indicates auto mode (k6 i). Default review.
+      `var pmode='review';` +
+      `const pm=document.getElementById('insrc-permmode');` +
+      `const pmseg=document.getElementById('insrc-permseg');` +
+      `function updatePermSeg(){if(pmseg)pmseg.className='seg'+(pmode==='auto'?' perm-auto':'');}` +
+      `if(pm)pm.addEventListener('change',function(){pmode=pm.value==='auto'?'auto':'review';vs.postMessage({v:1,payload:{type:'set-permission-mode',mode:pmode}});updatePermSeg();});` +
       // renderDiff: one row per hunk line via textContent (no innerHTML); add/remove/context
       // class by the +/-/space prefix computeDiff wrote. In review mode append accept/reject
       // buttons that post edit-decision for this path.
@@ -301,7 +319,11 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // transcript row — rapid phase changes update the one widget in place. assistant-delta/tool-call
       // still render via the sc1 view-model (S001); other markers still append. done/error hides the
       // widget + returns the button to ▶ (ac2). The host status-skip is untouched (lc1/k4).
-      `window.addEventListener('message',e=>{const m=e.data&&e.data.payload;if(!m)return;if(m.type==='turn-event'){const ev=m.event;if(ev&&ev.kind==='status'){var mkp=markerFor(ev);if(running&&mkp)setProgress(mkp.label);}else if(ev&&(ev.kind==='assistant-delta'||ev.kind==='tool-call')){reg.renderRow(reg.toViewModel(ev));}else{const mk=markerFor(ev);if(mk)reg.renderRow({kind:'fallback',text:mk.label,cssClass:mk.cssClass});}` +
+      `window.addEventListener('message',e=>{const m=e.data&&e.data.payload;if(!m)return;if(m.type==='turn-event'){const ev=m.event;if(ev&&ev.kind==='status'){var mkp=markerFor(ev);if(running&&mkp)setProgress(mkp.label);}else if(ev&&(ev.kind==='assistant-delta'||ev.kind==='tool-call')){reg.renderRow(reg.toViewModel(ev));}` +
+      // S004 ac1: a live approval-request renders the in-chat approve/deny card (the renderer
+      // builds a detached node, so the handler appends it) — never a silent block.
+      `else if(ev&&ev.kind==='approval-request'){var _c=reg.renderRow({kind:'approval',text:ev.title,collapsible:false,meta:{requestId:ev.requestId,title:ev.title,detail:ev.detail,toolName:ev.toolName}});if(_c){t.appendChild(_c);t.scrollTop=t.scrollHeight;}}` +
+      `else{const mk=markerFor(ev);if(mk)reg.renderRow({kind:'fallback',text:mk.label,cssClass:mk.cssClass});}` +
       `if(ev&&(ev.kind==='done'||ev.kind==='error')){setRunning(false);hideProgress();}}` +
       // S006: an edit-prompt carries the computed diff + the HOST's review flag -> render it
       // (+ accept/reject controls only when the host says review; never gated on local state).
@@ -354,6 +376,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `<div class="statusbar">` +
       `<span class="seg"><select id="insrc-provider" class="segsel ${provCls}" aria-label="provider"${provDisabled}>${providerOpts}</select></span>` +
       `<span class="seg">edits <select id="insrc-editmode" class="segsel ${provCls}" aria-label="edit mode"><option value="auto">auto</option><option value="review">review</option></select></span>` +
+      // S004: the tool-permission mode control — distinct from the edit-mode select (review finding cl11).
+      `<span class="seg" id="insrc-permseg">perms <select id="insrc-permmode" class="segsel ${provCls}" aria-label="permission mode"><option value="review">review</option><option value="auto">auto</option></select></span>` +
       `<span class="seg ok">✓ idle</span>` +
       `</div>` +
       `</div>` +
@@ -432,8 +456,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     }
 
     const req = s.nativeSessionId !== undefined
-      ? { provider: s.provider, prompt, cwd: deps.cwd(), resume: { provider: s.provider, nativeSessionId: s.nativeSessionId } }
-      : { provider: s.provider, prompt, cwd: deps.cwd() };
+      ? { provider: s.provider, prompt, cwd: deps.cwd(), permissionMode, resume: { provider: s.provider, nativeSessionId: s.nativeSessionId } }
+      : { provider: s.provider, prompt, cwd: deps.cwd(), permissionMode };
 
     // S006: capture the pre-turn baseline BEFORE the CLI can write (governor.beginTurn),
     // so the diff + revert are computed against the true pre-turn content (k8 observer).
@@ -576,6 +600,26 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         // An unknown/decided path is a no-op inside the governor.
         if (typeof msg.path !== 'string' || typeof msg.accept !== 'boolean') return;
         if (governor !== undefined) void governor.decide(msg.path, msg.accept);
+        return;
+      }
+      case 'permission-decision': {
+        // S004 ac2: relay the approve/deny click to the LIVE turn's adapter (its own captured
+        // provider, never the current session's — it may have switched). decide() no-ops on an
+        // unknown/stale/dead requestId, so a late/duplicate click is safe.
+        if (typeof msg.requestId !== 'string' || (msg.decision !== 'approve' && msg.decision !== 'deny')) return;
+        if (activeProvider === undefined || activeTurnId === undefined) return;
+        try {
+          deps.providers.get(activeProvider).decide(activeTurnId, msg.requestId, msg.decision);
+        } catch {
+          /* adapter gone / provider unavailable — the decision is undeliverable, never throw */
+        }
+        return;
+      }
+      case 'set-permission-mode': {
+        // S004 ac3: store the chosen mode for the NEXT turn's buildArgs (not the in-flight
+        // spawn). View-time only — never written to the session store (k4).
+        if (msg.mode !== 'auto' && msg.mode !== 'review') return; // invalid -> drop
+        permissionMode = msg.mode;
         return;
       }
       default:

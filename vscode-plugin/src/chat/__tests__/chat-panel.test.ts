@@ -48,6 +48,7 @@ interface AdapterHooks {
   hang?: boolean; // after emitting `events`, block until cancelled/returned
   hangBeforeFirst?: boolean; // emit NOTHING and block (models a zero-stdout turn)
   gateBeforeDone?: Promise<void>; // await this before yielding the terminal 'done'
+  onDecide?: (turnId: string, requestId: string, decision: 'approve' | 'deny') => void; // S004: decide() relay
 }
 function scriptedAdapter(events: TurnEvent[], hooks?: AdapterHooks): StreamAdapter {
   let cancelled = false;
@@ -73,6 +74,7 @@ function scriptedAdapter(events: TurnEvent[], hooks?: AdapterHooks): StreamAdapt
       }
     },
     cancel: () => { cancelled = true; hooks?.onCancel?.(); },
+    decide: (turnId, requestId, decision) => hooks?.onDecide?.(turnId, requestId, decision),
     capabilities: { resume: true },
   };
 }
@@ -153,6 +155,7 @@ test('single-in-flight: a second submit supersedes the first — no interleave +
       }
     },
     cancel: (turnId) => { cancelled.add(turnId); },
+    decide: () => {},
     capabilities: { resume: true },
   };
   const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: adapter }, ['claude']), store: createInMemoryChatSessionStore(), cwd: () => '/repo' });
@@ -1186,4 +1189,111 @@ test('S003 t1: renderShell embeds the role-tone + markdown/JSON widget + caption
   for (const id of ['insrc-term', 'insrc-input', 'insrc-send', 'insrc-progress', 'insrc-sesstitle']) {
     assert.match(html, new RegExp(`id="${id}"`), `${id} preserved`);
   }
+});
+
+// ---- S004 t7: approval routing + permission-decision + #insrc-permmode --------
+
+test('S004 t7: renderShell has a distinct #insrc-permmode control + wires the approval seams', () => {
+  const fc = fakeChannel();
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter([]) }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+  });
+  host.open();
+  const html = fc.html();
+  // The permission-mode control is distinct from the edit-mode select (review finding cl11).
+  assert.match(html, /id="insrc-permmode"/, 'has the permission-mode control');
+  assert.match(html, /id="insrc-editmode"/, 'still has the separate edit-mode select');
+  assert.ok(html.indexOf('insrc-permmode') !== html.indexOf('insrc-editmode'), 'they are two distinct controls');
+  assert.match(html, /aria-label="permission mode"/);
+  // Its options are review + auto.
+  const permBlock = html.slice(html.indexOf('insrc-permmode'));
+  assert.match(permBlock.slice(0, 200), /<option value="review">review<\/option><option value="auto">auto<\/option>/);
+  // The bootstrap wires the decision sink + posts set-permission-mode + handles the live card.
+  assert.match(html, /onApprovalDecision/, 'wires the approval decision sink');
+  assert.match(html, /type:'permission-decision'/, 'card posts permission-decision');
+  assert.match(html, /type:'set-permission-mode'/, 'the control posts set-permission-mode');
+  assert.match(html, /ev\.kind==='approval-request'/, 'the live handler routes approval-request');
+});
+
+test("S004 t7: a turn's buildArgs default to review; set-permission-mode switches the NEXT turn to auto", async () => {
+  const fc = fakeChannel();
+  const seen: TurnRequest[] = [];
+  const adapter = scriptedAdapter([{ kind: 'done', turnId: 't1', ok: true }], { onRun: (r) => seen.push(r) });
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: adapter }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+  });
+  host.open();
+  // First turn: default review.
+  fc.send(env('submit-turn', { text: 'one' }));
+  await waitFor(() => seen.length >= 1);
+  assert.equal(seen[0]!.permissionMode, 'review', 'defaults to review (surface prompts, ac1)');
+  // Switch to auto; it applies to the NEXT turn.
+  fc.send(env('set-permission-mode', { mode: 'auto' }));
+  fc.send(env('submit-turn', { text: 'two' }));
+  await waitFor(() => seen.length >= 2);
+  assert.equal(seen[1]!.permissionMode, 'auto', 'the next turn relays auto (ac3)');
+});
+
+test('S004 t7: an invalid set-permission-mode is dropped (mode unchanged)', async () => {
+  const fc = fakeChannel();
+  const seen: TurnRequest[] = [];
+  const adapter = scriptedAdapter([{ kind: 'done', turnId: 't', ok: true }], { onRun: (r) => seen.push(r) });
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: adapter }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+  });
+  host.open();
+  fc.send(env('set-permission-mode', { mode: 'bogus' }));
+  fc.send(env('submit-turn', { text: 'x' }));
+  await waitFor(() => seen.length >= 1);
+  assert.equal(seen[0]!.permissionMode, 'review', 'invalid mode ignored, stays review');
+});
+
+test('S004 t7: permission-decision is relayed to the live turn adapter.decide with (turnId, requestId, decision)', async () => {
+  const fc = fakeChannel();
+  const decided: Array<[string, string, string]> = [];
+  // The turn emits a status (sets activeTurnId) + an approval-request, then hangs (stays live).
+  const evs: TurnEvent[] = [
+    { kind: 'status', turnId: 't7', phase: 'tool' },
+    { kind: 'approval-request', turnId: 't7', requestId: 'perm-7', title: 'Run', detail: 'echo hi' },
+  ];
+  const adapter = scriptedAdapter(evs, { hang: true, onDecide: (t, r, d) => decided.push([t, r, d]) });
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: adapter }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+  });
+  host.open();
+  fc.send(env('submit-turn', { text: 'do it' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'approval-request'));
+  fc.send(env('permission-decision', { requestId: 'perm-7', decision: 'approve' }));
+  await waitFor(() => decided.length >= 1);
+  assert.deepEqual(decided[0], ['t7', 'perm-7', 'approve'], 'decide() got the live turnId + correlation id + decision');
+  // A malformed decision is dropped (no extra decide).
+  fc.send(env('permission-decision', { requestId: 'perm-7', decision: 'maybe' }));
+  fc.send(env('permission-decision', { decision: 'approve' }));
+  await new Promise((r) => setTimeout(r, 20));
+  assert.equal(decided.length, 1, 'invalid permission-decision messages are ignored');
+  fc.fireDispose(); // reap the hanging turn so the test process can exit (S002 lesson)
+});
+
+test('S004 t7: permission-decision with no active turn is a safe no-op (never throws)', () => {
+  const fc = fakeChannel();
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter([]) }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+  });
+  host.open();
+  assert.doesNotThrow(() => fc.send(env('permission-decision', { requestId: 'x', decision: 'approve' })));
 });

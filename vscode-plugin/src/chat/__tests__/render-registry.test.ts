@@ -297,3 +297,57 @@ test('S003 k6 d: the tool-command renderer stays inline, never wrapped in collap
   assert.equal(node!.className, 'insrc-term__marker--tool', 'tool tone, no msg/collapse class');
   assert.doesNotMatch(node!.className, /insrc-collapse|insrc-msg/, 'never collapsed, not a message row');
 });
+
+// ---- S003 t3: assistant content-type widgets ----
+
+function findByClass(node: FakeNode, cls: string): FakeNode | undefined {
+  if (node.className && node.className.split(/\s+/).includes(cls)) return node;
+  for (const c of node.children) { const hit = findByClass(c, cls); if (hit) return hit; }
+  return undefined;
+}
+function findByTag(node: FakeNode, tag: string): FakeNode | undefined {
+  if (node.tag === tag) return node;
+  for (const c of node.children) { const hit = findByTag(c, tag); if (hit) return hit; }
+  return undefined;
+}
+
+test('S003 ac3: valid JSON renders a structured JSON widget (key/value spans, no innerHTML)', () => {
+  const { reg } = makeRegistry();
+  const row = reg.renderRow({ kind: 'assistant-text', role: 'assistant', text: '{"a":1,"b":"x"}', collapsible: true })!;
+  const json = findByClass(row, 'insrc-json');
+  assert.ok(json, 'a JSON widget is rendered');
+  assert.ok(findByClass(json!, 'insrc-json-key'), 'has a key span');
+  assert.ok(findByClass(json!, 'insrc-json-val'), 'has a value span');
+});
+
+test('S003 ac3: markdown renders a markdown widget (heading + list + inline code)', () => {
+  const { reg } = makeRegistry();
+  const md = '# Title\n- item one\n- item two\nsome `code` here';
+  const row = reg.renderRow({ kind: 'assistant-text', role: 'assistant', text: md, collapsible: true })!;
+  // md has 4 lines -> long -> wrapped in collapse; the md widget lives under the collapse body.
+  const widget = findByClass(row, 'insrc-md');
+  assert.ok(widget, 'a markdown widget is rendered');
+  assert.ok(findByTag(widget!, 'h1'), 'heading rendered');
+  assert.ok(findByTag(widget!, 'ul') && findByTag(widget!, 'li'), 'list rendered');
+  assert.ok(findByClass(widget!, 'insrc-md-code'), 'inline code rendered as a span');
+});
+
+test('S003 ac3: plain text renders plain (no md/json widget)', () => {
+  const { reg } = makeRegistry();
+  const row = reg.renderRow({ kind: 'assistant-text', role: 'assistant', text: 'just some prose without markers', collapsible: true })!;
+  assert.ok(!findByClass(row, 'insrc-md'), 'no markdown widget');
+  assert.ok(!findByClass(row, 'insrc-json'), 'no JSON widget');
+  assert.equal(row.textContent, 'just some prose without markers', 'plain text preserved');
+});
+
+test('S003: almost-JSON falls through to plain text without throwing (per-row isolation)', () => {
+  const { reg } = makeRegistry();
+  let row: FakeNode | null = null;
+  assert.doesNotThrow(() => { row = reg.renderRow({ kind: 'assistant-text', role: 'assistant', text: '{not valid json', collapsible: true }); });
+  assert.ok(!findByClass(row!, 'insrc-json'), 'no JSON widget for malformed JSON');
+  assert.equal(row!.textContent, '{not valid json', 'falls through to plain text');
+});
+
+test('S003: no innerHTML anywhere in the render-registry source (k1)', () => {
+  assert.doesNotMatch(renderRegistryWebviewSource(), /innerHTML/, 'no innerHTML');
+});

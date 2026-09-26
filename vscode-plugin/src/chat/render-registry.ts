@@ -181,6 +181,45 @@ export function renderRegistryWebviewSource(): string {
     `d.appendChild(longMsg?host.collapsible(content,{defaultCollapsed:true}):content);` +
     `}` +
     `return d;}` +
+    // S003 t3: assistant content-type widgets (ac3). All via createElement/textContent, no innerHTML (k1).
+    // BT is the backtick char (built at runtime so the source carries no literal backtick).
+    `var BT=String.fromCharCode(96);` +
+    // inlineMd: render inline \`code\`, **strong**, *em* as spans/elements; plain segments as spans.
+    `function inlineMd(parent,text){` +
+    `var re=new RegExp('('+BT+'[^'+BT+']+'+BT+'|\\\\*\\\\*[^*]+\\\\*\\\\*|\\\\*[^*]+\\\\*)');` +
+    `var parts=(text||'').split(re);` +
+    `for(var i=0;i<parts.length;i++){var p=parts[i];if(!p)continue;var el;` +
+    `if(p.charAt(0)===BT){el=document.createElement('span');el.className='insrc-md-code';el.textContent=p.slice(1,-1);}` +
+    `else if(p.slice(0,2)==='**'){el=document.createElement('strong');el.textContent=p.slice(2,-2);}` +
+    `else if(p.charAt(0)==='*'){el=document.createElement('em');el.textContent=p.slice(1,-1);}` +
+    `else{el=document.createElement('span');el.textContent=p;}` +
+    `parent.appendChild(el);}}` +
+    // looksMarkdown: trigger on a heading / list item / code fence / inline code (NOT bare emphasis,
+    // which false-positives on prose). Emphasis is still rendered inside the widget when present.
+    `function looksMarkdown(s){s=s||'';return /(^|\\n)#{1,6}\\s/.test(s)||/(^|\\n)\\s*[-*]\\s+/.test(s)||s.indexOf(BT+BT+BT)>=0||new RegExp(BT+'[^'+BT+']+'+BT).test(s);}` +
+    `function mdWidget(s){` +
+    `var root=document.createElement('div');root.className='insrc-md';var lines=(s||'').split('\\n');var i=0;var ul=null;` +
+    `while(i<lines.length){var ln=lines[i];` +
+    `if(ln.indexOf(BT+BT+BT)===0){ul=null;var pre=document.createElement('pre');var buf=[];i++;while(i<lines.length&&lines[i].indexOf(BT+BT+BT)!==0){buf.push(lines[i]);i++;}pre.textContent=buf.join('\\n');root.appendChild(pre);i++;continue;}` +
+    `var h=/^(#{1,6})\\s+(.*)$/.exec(ln);` +
+    `if(h){ul=null;var lvl=h[1].length>3?3:h[1].length;var head=document.createElement('h'+lvl);inlineMd(head,h[2]);root.appendChild(head);i++;continue;}` +
+    `var li=/^\\s*[-*]\\s+(.*)$/.exec(ln);` +
+    `if(li){if(!ul){ul=document.createElement('ul');root.appendChild(ul);}var item=document.createElement('li');inlineMd(item,li[1]);ul.appendChild(item);i++;continue;}` +
+    `ul=null;if(ln.trim()===''){i++;continue;}var para=document.createElement('div');para.className='insrc-md-p';inlineMd(para,ln);root.appendChild(para);i++;}` +
+    `return root;}` +
+    `function jsonWidget(obj){` +
+    `var root=document.createElement('div');root.className='insrc-json';` +
+    `if(obj&&typeof obj==='object'&&!Array.isArray(obj)){var keys=Object.keys(obj);` +
+    `for(var i=0;i<keys.length;i++){var k=keys[i];var row=document.createElement('div');` +
+    `var ks=document.createElement('span');ks.className='insrc-json-key';ks.textContent=k;` +
+    `var ps=document.createElement('span');ps.className='insrc-json-punct';ps.textContent=': ';` +
+    `var vs=document.createElement('span');vs.className='insrc-json-val';var v=obj[k];` +
+    `vs.textContent=(v!==null&&typeof v==='object')?JSON.stringify(v):String(v);` +
+    `row.appendChild(ks);row.appendChild(ps);row.appendChild(vs);root.appendChild(row);}}` +
+    `else{var pre=document.createElement('pre');pre.textContent=JSON.stringify(obj,null,2);root.appendChild(pre);}` +
+    `return root;}` +
+    // detectAssistant: try JSON -> jsonWidget; else markdown -> mdWidget; else null (plain). Never throws.
+    `function detectAssistant(raw){try{var t=(raw||'').trim();if(t&&(t.charAt(0)==='{'||t.charAt(0)==='[')){var parsed=JSON.parse(t);if(parsed&&typeof parsed==='object')return jsonWidget(parsed);}if(looksMarkdown(raw))return mdWidget(raw);}catch(e){}return null;}` +
     `function renderRow(vm){` +
     `var r=(vm&&REG[vm.kind])||REG.fallback;` +
     `try{return r.render(vm,host);}` +
@@ -205,7 +244,7 @@ export function renderRegistryWebviewSource(): string {
     // S003 t2: role-differentiated + collapse-when-long (ac1/ac2). t3 extends assistant-text with
     // content-type widgets by passing an inner node to msgRow.
     `register('user',function(vm,host){return msgRow(vm,host,'insrc-msg--user');});` +
-    `register('assistant-text',function(vm,host){return msgRow(vm,host,'insrc-msg--assistant');});` +
+    `register('assistant-text',function(vm,host){return msgRow(vm,host,'insrc-msg--assistant',detectAssistant(vm&&vm.text));});` +
     // tool-command stays inline via line() with the sc1 tool tone — never collapsed (k6 d).
     `register('tool-command',function(vm){return line(vm.text,'insrc-term__marker--tool');});` +
     // S001 t5 (lc1): keyed append. A row rendered with a key is remembered; re-appending the

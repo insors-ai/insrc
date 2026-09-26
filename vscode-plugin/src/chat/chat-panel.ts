@@ -12,6 +12,7 @@
  */
 import { renderTerminalStyle, surfaceClass, terminalTheme, type TerminalTheme } from './design-tokens.js';
 import { markerFor, markerWebviewSource } from './markers.js';
+import { renderRegistryWebviewSource, RENDER_REGISTRY_STYLE } from './render-registry.js';
 import { envelope, type WebviewToHost, type HostToWebview } from './protocol.js';
 import type { ProviderRegistry, ProviderId } from './cli-adapter.js';
 import type { ChatSessionStore, ChatSession } from './session-store.js';
@@ -215,6 +216,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `.insrc-diff-actions{display:flex;gap:8px;padding:8px 10px;background:var(--bg-inset);}` +
       `.insrc-diff-actions button{border:1px solid var(--border-lit);background:var(--bg-alt);color:var(--fg);border-radius:6px;padding:4px 12px;font-family:var(--font);cursor:pointer;}` +
       `.insrc-diff-actions button:hover{border-color:var(--accent);}` +
+      // S001 sc1: the shared collapse/chevron primitive styles (icon-only chevron + 3-line clamp, k6 a/b).
+      RENDER_REGISTRY_STYLE +
       `</style>`;
     const provCls = surfaceClass('provider-dropdown');
     const histCls = surfaceClass('history-dropdown');
@@ -231,9 +234,13 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `const vs=acquireVsCodeApi();` +
       `const t=document.getElementById('insrc-term');` +
       // S004: line() widened to carry an optional sc1 marker class (className only; still textContent, no innerHTML).
-      `function line(s,cls){const d=document.createElement('div');if(cls)d.className=cls;d.textContent=s;t.appendChild(d);t.scrollTop=t.scrollHeight;}` +
+      // S001 sc1: line() now RETURNS its appended node so the fallback RowRenderer can hand it back from renderRow.
+      `function line(s,cls){const d=document.createElement('div');if(cls)d.className=cls;d.textContent=s;t.appendChild(d);t.scrollTop=t.scrollHeight;return d;}` +
       // S004: the marker mapper, single-sourced with the host markerFor (markers.ts), embedded in THIS one nonce'd script.
       `const markerFor=${markerWebviewSource()};` +
+      // S001 sc1: the render registry, single-sourced with render-registry.ts, embedded in THIS one nonce'd script.
+      // line() is pre-registered as the 'fallback' renderer; t4/S003/S004 register the concrete row renderers.
+      `const reg=(${renderRegistryWebviewSource()})(document,line);` +
       // S005: provider-selector + history-dropdown wiring (same one nonce'd script).
       `var cur='';` +
       `const ps=document.getElementById('insrc-provider');` +
@@ -249,7 +256,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // class by the +/-/space prefix computeDiff wrote. In review mode append accept/reject
       // buttons that post edit-decision for this path.
       `function renderDiff(path,diff,review){var box=document.createElement('div');box.className=${JSON.stringify(diffCls)};var hdr=document.createElement('div');hdr.className='insrc-diff-path';hdr.textContent=path;box.appendChild(hdr);var hunks=(diff&&diff.hunks)||[];hunks.forEach(function(h){(h.lines||[]).forEach(function(ln){var d=document.createElement('div');var c=ln.charAt(0);d.className=c==='+'?'insrc-diff-add':c==='-'?'insrc-diff-del':'insrc-diff-ctx';d.textContent=ln;box.appendChild(d);});});if(review){var bar=document.createElement('div');bar.className='insrc-diff-actions';var ok=document.createElement('button');ok.textContent='accept';ok.addEventListener('click',function(){vs.postMessage({v:1,payload:{type:'edit-decision',path:path,accept:true}});bar.remove();});var no=document.createElement('button');no.textContent='reject';no.addEventListener('click',function(){vs.postMessage({v:1,payload:{type:'edit-decision',path:path,accept:false}});bar.remove();});bar.appendChild(ok);bar.appendChild(no);box.appendChild(bar);}t.appendChild(box);t.scrollTop=t.scrollHeight;}` +
-      `window.addEventListener('message',e=>{const m=e.data&&e.data.payload;if(!m)return;if(m.type==='turn-event'){const ev=m.event;if(ev&&ev.kind==='assistant-delta'){line(ev.text);}else{const mk=markerFor(ev);if(mk)line(mk.label,mk.cssClass);}}` +
+      // S001 sc1: the live turn-event append now routes through reg.renderRow. t1 maps every event to a
+      // 'fallback' row (renderRow -> line()), so the render is byte-identical; t4 adds toViewModel + the
+      // user/assistant-text/tool-command renderers so these kinds render richer through the SAME seam.
+      `window.addEventListener('message',e=>{const m=e.data&&e.data.payload;if(!m)return;if(m.type==='turn-event'){const ev=m.event;if(ev&&ev.kind==='assistant-delta'){reg.renderRow({kind:'fallback',text:ev.text});}else{const mk=markerFor(ev);if(mk)reg.renderRow({kind:'fallback',text:mk.label,cssClass:mk.cssClass});}}` +
       // S006: an edit-prompt carries the computed diff + the HOST's review flag -> render it
       // (+ accept/reject controls only when the host says review; never gated on local state).
       `else if(m.type==='edit-prompt'){renderDiff(m.path,m.diff,m.review===true);}` +

@@ -1056,8 +1056,8 @@ test('S002 ac2: renderShell embeds an icon-only Send/Stop button (#insrc-send) w
   // icon-only: the glyph is set by setRunning (▶/■), no text label baked in beyond the initial caret.
   assert.match(html, /function setRunning\(r\)\{running=r;/, 'setRunning toggles the button glyph/class');
   assert.match(html, /sendBtn\.textContent=r\?'\\u25a0':'\\u25b6'/, 'Stop=■ (u25a0) while running, Send=▶ (u25b6) at rest');
-  assert.match(html, /if\(running\)\{vs\.postMessage\(\{v:1,payload:\{type:'cancel-turn'\}\}\);\}else\{doSubmit\(\);\}/, 'the button posts cancel-turn while running, else submits');
-  assert.match(html, /function doSubmit\(\)\{vs\.postMessage\(\{v:1,payload:\{type:'submit-turn'/, 'doSubmit posts submit-turn + marks running');
+  assert.match(html, /if\(running\)\{vs\.postMessage\(\{v:1,payload:\{type:'cancel-turn'\}\}\);setRunning\(false\);hideProgress\(\);\}else\{doSubmit\(\);\}/, 'the button posts cancel-turn while running AND resets the UI locally (no stuck spinner), else submits');
+  assert.match(html, /function doSubmit\(\)\{if\(!box\.value\.trim\(\)\)return;vs\.postMessage\(\{v:1,payload:\{type:'submit-turn'/, 'doSubmit guards empty then posts submit-turn + marks running');
 });
 
 test('S002 ac1: the fixed-region layout holds — #insrc-term is the only scroll region; header + input stay flex:0', () => {
@@ -1110,4 +1110,53 @@ test('S002: an empty submit is a host no-op (no turn starts)', async () => {
   fc.send(env('submit-turn', { text: '   ' })); // whitespace-only
   await new Promise((r) => setTimeout(r, 30));
   assert.equal(ran, 0, 'an empty/whitespace submit starts no turn (runTurn no-ops)');
+});
+
+// ---- S002 t4: single animated progress widget + status reroute ----
+
+test('S002 ac3: renderShell embeds a single #insrc-progress widget above the input, hidden at rest', () => {
+  const fc = fakeChannel();
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter([]) }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+    genNonce: () => 'FIXEDNONCE',
+  });
+  host.open();
+  const html = fc.html();
+  assert.equal((html.match(/id="insrc-progress"/g) ?? []).length, 1, 'exactly one progress widget');
+  assert.match(html, /<div id="insrc-progress" hidden>/, 'hidden at rest');
+  // It sits above the input line.
+  assert.ok(html.indexOf('id="insrc-progress"') < html.indexOf('class="inputline"'), 'progress is above the input');
+  // It is animated (a keyframed spinner) and status routes to it, not a transcript row.
+  assert.match(html, /@keyframes insrc-pulse/, 'the widget is animated');
+  assert.match(html, /if\(ev&&ev\.kind==='status'\)\{var mkp=markerFor\(ev\);if\(running&&mkp\)setProgress\(mkp\.label\);\}/, 'status drives the progress widget (gated on running), not a row');
+  assert.match(html, /if\(ev&&\(ev\.kind==='done'\|\|ev\.kind==='error'\)\)\{setRunning\(false\);hideProgress\(\);\}/, 'done/error hides the widget + restores Send');
+});
+
+test('S002 ac3/lc1: status events are never persisted to the durable transcript (host skip unchanged)', async () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  const evs: TurnEvent[] = [
+    { kind: 'status', turnId: 't1', phase: 'thinking' },
+    { kind: 'status', turnId: 't1', phase: 'tool' },
+    { kind: 'assistant-delta', turnId: 't1', text: 'hi' },
+    { kind: 'done', turnId: 't1', ok: true, sessionId: 's1' },
+  ];
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter(evs) }, ['claude']),
+    store,
+    cwd: () => '/repo',
+  });
+  host.open();
+  fc.send(env('submit-turn', { text: 'go' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+  const s = store.list()[0]!;
+  const full = store.get(s.id)!;
+  const texts = full.transcript.map((r) => r.text);
+  assert.ok(!texts.includes('thinking…'), 'status(thinking) never persisted');
+  assert.ok(!texts.includes('running tool…'), 'status(tool) never persisted');
+  assert.ok(!full.transcript.some((r) => r.role === 'marker' && (r.text === 'thinking…' || r.text === 'running tool…')), 'no status marker rows in the durable transcript (lc1)');
 });

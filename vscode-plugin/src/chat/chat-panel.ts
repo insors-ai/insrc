@@ -206,6 +206,11 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // S002 ac2: the icon-only Send/Stop button (▶ green Send at rest / ■ red Stop while running).
       `#insrc-send{flex:0 0 auto;align-self:flex-end;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;background:var(--bg-inset);border:1px solid var(--border);border-radius:6px;color:var(--accent);font-family:var(--font);font-size:13px;line-height:1;cursor:pointer;outline:none;user-select:none;padding:0;}` +
       `#insrc-send:hover{border-color:var(--accent);}#insrc-send.stop{color:var(--red);}#insrc-send.stop:hover{border-color:var(--red);}` +
+      // S002 ac3: the SINGLE animated progress widget above the input (live-only, never persisted).
+      `#insrc-progress{display:flex;align-items:center;gap:8px;margin-top:8px;color:var(--accent2);font-size:12px;flex:0 0 auto;}` +
+      `#insrc-progress[hidden]{display:none;}` +
+      `#insrc-progress .spin{width:9px;height:9px;border-radius:50%;background:var(--accent2);animation:insrc-pulse 1s ease-in-out infinite;flex:0 0 auto;}` +
+      `@keyframes insrc-pulse{0%,100%{opacity:.25;transform:scale(.7);}50%{opacity:1;transform:scale(1);}}` +
       `#insrc-input{flex:1 1 auto;min-width:0;resize:vertical;min-height:2.4em;background:var(--bg-inset);color:var(--fg);caret-color:var(--accent);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-family:var(--font);font-size:13.5px;line-height:1.5;outline:none;}` +
       `#insrc-input::placeholder{color:var(--dim);}#insrc-input:focus{border-color:var(--accent);}` +
       `.statusbar{display:flex;gap:16px;align-items:center;padding:7px 16px;background:var(--bg-inset);border-top:1px solid var(--border);color:var(--muted);font-size:12px;flex-wrap:wrap;flex:0 0 auto;}` +
@@ -260,6 +265,13 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `var running=false;` +
       `const sendBtn=document.getElementById('insrc-send');` +
       `function setRunning(r){running=r;if(sendBtn){sendBtn.textContent=r?'\\u25a0':'\\u25b6';sendBtn.className='sendbtn'+(r?' stop':'');sendBtn.setAttribute('aria-label',r?'stop':'send');}}` +
+      // S002 ac3/lc1: the single live-only progress widget. setProgress shows + updates the ONE
+      // #insrc-progress label (gated on running by the caller); hideProgress hides it. It is never
+      // written to the transcript (the host status-skip stays as-is, k4).
+      `const prog=document.getElementById('insrc-progress');` +
+      `const progLabel=prog?prog.querySelector('.plabel'):null;` +
+      `function setProgress(text){if(prog){prog.hidden=false;if(progLabel)progLabel.textContent=text;}}` +
+      `function hideProgress(){if(prog)prog.hidden=true;}` +
       `ps.addEventListener('change',function(){if(ps.value){vs.postMessage({v:1,payload:{type:'new-chat',provider:ps.value}});}});` +
       `hs.addEventListener('change',function(){if(hs.value){vs.postMessage({v:1,payload:{type:'open-chat',chatId:hs.value}});}else if(ps.value){vs.postMessage({v:1,payload:{type:'new-chat',provider:ps.value}});}});` +
       // S006: per-session edit-mode toggle (auto/review) + the chat-view inline diff renderer.
@@ -275,9 +287,12 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // assistant-delta -> assistant-text row (its actual text, ac2); tool-call -> tool-command row
       // (the real command inline, ac3). Every other kind keeps the sc1 marker path (markerFor ->
       // fallback), so status/file-edit/done/error render exactly as today and an unknown kind is skipped.
-      `window.addEventListener('message',e=>{const m=e.data&&e.data.payload;if(!m)return;if(m.type==='turn-event'){const ev=m.event;if(ev&&(ev.kind==='assistant-delta'||ev.kind==='tool-call')){reg.renderRow(reg.toViewModel(ev));}else{const mk=markerFor(ev);if(mk)reg.renderRow({kind:'fallback',text:mk.label,cssClass:mk.cssClass});}` +
-      // S002 ac2: a terminal event returns the button to ▶ Send (t4 also hides the progress widget here).
-      `if(ev&&(ev.kind==='done'||ev.kind==='error'))setRunning(false);}` +
+      // S002 ac3: a status event drives the SINGLE progress widget (gated on running) instead of a
+      // transcript row — rapid phase changes update the one widget in place. assistant-delta/tool-call
+      // still render via the sc1 view-model (S001); other markers still append. done/error hides the
+      // widget + returns the button to ▶ (ac2). The host status-skip is untouched (lc1/k4).
+      `window.addEventListener('message',e=>{const m=e.data&&e.data.payload;if(!m)return;if(m.type==='turn-event'){const ev=m.event;if(ev&&ev.kind==='status'){var mkp=markerFor(ev);if(running&&mkp)setProgress(mkp.label);}else if(ev&&(ev.kind==='assistant-delta'||ev.kind==='tool-call')){reg.renderRow(reg.toViewModel(ev));}else{const mk=markerFor(ev);if(mk)reg.renderRow({kind:'fallback',text:mk.label,cssClass:mk.cssClass});}` +
+      `if(ev&&(ev.kind==='done'||ev.kind==='error')){setRunning(false);hideProgress();}}` +
       // S006: an edit-prompt carries the computed diff + the HOST's review flag -> render it
       // (+ accept/reject controls only when the host says review; never gated on local state).
       `else if(m.type==='edit-prompt'){renderDiff(m.path,m.diff,m.review===true);}` +
@@ -289,15 +304,19 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // keyed by transcript index, so it single-sources rendering with the live path and carries
       // each row's stored cssClass (marker rows -> fallback with the class), and resetKeys() clears
       // the reconciliation map for the fresh replay.
-      `else if(m.type==='session-restored'){cur=m.sessionId||'';t.textContent='';reg.resetKeys();(m.transcript||[]).forEach(function(x,i){reg.appendKeyed(reg.toViewModel(x),'r'+i);});hs.value=cur;}` +
+      `else if(m.type==='session-restored'){cur=m.sessionId||'';t.textContent='';reg.resetKeys();(m.transcript||[]).forEach(function(x,i){reg.appendKeyed(reg.toViewModel(x),'r'+i);});hs.value=cur;setRunning(false);hideProgress();}` +
       // S005: history-list (re)populates the dropdown; labels via textContent (no innerHTML); keep active selected.
       `else if(m.type==='history-list'){while(hs.options.length>1)hs.remove(1);(m.chats||[]).forEach(function(c){var o=document.createElement('option');o.value=c.id;o.textContent='['+c.provider+'] '+(c.title||c.id);hs.appendChild(o);});hs.value=cur;var _ac=(m.chats||[]).filter(function(c){return c.id===cur;})[0];if(_ac&&_ac.provider){ps.value=_ac.provider;}if(st)st.textContent=_ac&&_ac.title?clampTitle(_ac.title):'';}});` +
       `const box=document.getElementById('insrc-input');` +
       // S002 ac2: submit converges on ONE path (Cmd/Ctrl+Enter and the Send button); it posts
       // submit-turn + marks running. The Send/Stop button posts cancel-turn while running.
-      `function doSubmit(){vs.postMessage({v:1,payload:{type:'submit-turn',text:box.value}});box.value='';setRunning(true);}` +
+      // Guard on non-empty (matches the host runTurn no-op) so an empty submit never marks running
+      // or shows a stuck spinner. On submit, show the progress widget; status events refine its label.
+      `function doSubmit(){if(!box.value.trim())return;vs.postMessage({v:1,payload:{type:'submit-turn',text:box.value}});box.value='';setRunning(true);setProgress('working\\u2026');}` +
       `box.addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.metaKey||e.ctrlKey)){doSubmit();}});` +
-      `if(sendBtn)sendBtn.addEventListener('click',function(){if(running){vs.postMessage({v:1,payload:{type:'cancel-turn'}});}else{doSubmit();}});` +
+      // A user cancel posts cancel-turn AND resets the UI locally: the host reap posts no terminal
+      // event, so the webview must clear running + hide the progress widget itself (no stuck spinner).
+      `if(sendBtn)sendBtn.addEventListener('click',function(){if(running){vs.postMessage({v:1,payload:{type:'cancel-turn'}});setRunning(false);hideProgress();}else{doSubmit();}});` +
       `setRunning(false);`;
     return (
       `<!DOCTYPE html><html><head><meta charset="utf-8">` +
@@ -311,6 +330,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `</div>` +
       `<div class="pad">` +
       `<div id="insrc-term" class="term"></div>` +
+      // S002 ac3: the single animated progress widget, above the input, hidden until a turn runs.
+      `<div id="insrc-progress" hidden><span class="spin"></span><span class="plabel"></span></div>` +
       `<div class="inputline">` +
       `<span class="caret">❯</span>` +
       `<textarea id="insrc-input" rows="2" aria-label="message" placeholder="message claude… (⌘↵ send)"></textarea>` +

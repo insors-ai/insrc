@@ -1,0 +1,428 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "wf-1790425904314-8h4zh0",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-26T12:35:53.222Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 248893,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f9563bf5bbb29c43",
+    "epicSlug": "vs-code-editor-dev-chat-ui",
+    "review": {
+      "artifact": "define",
+      "stage": "define",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "ref": "c1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "In vscode-plugin/src/chat/chat-panel.ts the webview bootstrap renders each transcript row via a flat textContent line() helper and does not echo the user's prompt live on submit.",
+          "evidence": "read chat-panel.ts:234 confirms `function line(s,cls){...d.textContent=s;...}` (flat textContent render); submit-turn appears 3x with no live user-echo line() call.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl2",
+          "ref": "c3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "In vscode-plugin/src/chat/cli-adapter.ts the claude/codex spawn args contain no permission-mode / --ask-for-approval / auto flag.",
+          "evidence": "cli-adapter.ts shows `claude -p <prompt> --output-format=stream-json --verbose`; grep for permission-mode/ask-for-approval/dangerously-skip-permissions returns 0 — no permission flag, as claimed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl3",
+          "ref": "c4",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "The TurnEvent union in vscode-plugin/src/chat/stream-events.ts has no approval/permission kind (kinds are assistant-delta/tool-call/file-edit/status/done/error).",
+          "evidence": "TURN_EVENT_KINDS defined at stream-events.ts:50; grep approval|permission over stream-events.ts returns 0 — the union has no approval/permission kind (closed-union holds).",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl4",
+          "ref": "c4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "In vscode-plugin/src/chat/markers.ts the tool-call marker label is the tool/mcp name only (no command args).",
+          "evidence": "markers.ts:66 label = `event.mcp ? server · name : event.tool` — the tool/mcp NAME only, no command args, as claimed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl5",
+          "ref": "c2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The agreed UX design mock exists at the referenced docs path (post-review c2 re-pointed to this epic's own mocks.html).",
+          "evidence": "docs/epics/vs-code-editor-dev-chat-ui-E20260926f9563bf5/mocks.html exists on disk (authored + published v5 this session).",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 5
+      },
+      "reviewedAt": "2026-09-26T12:37:14.005Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-26T13:14:53.527Z",
+    "questionResolutions": {
+      "q42234e8d": {
+        "question": "Item a2: the low-confidence assumption (headless claude -p / codex exec permission behaviour is unverified) is carried as s4 localConstraint lc1 (a verification gate before S4 is designed/built) rather than a formal openQuestion field; the HLD must resolve it before S4.",
+        "status": "resolved",
+        "choice": "Resolve it now with a headless CLI spike",
+        "rationale": "Verified against the installed binaries: `claude -p` supports `--permission-mode` (incl. bypassPermissions/manual) and `--permission-prompts host|none` (host = the SDK host answers prompts; none = denied automatically, which is today's silent-block cause) plus --allowed-tools/--disallowed-tools; `codex exec` supports -s/--sandbox, approval-request routing, and --dangerously-bypass-approvals-and-sandbox, with --json events. Both expose headless permission handling + an auto/bypass flag, so S004 is designed on verified ground: host-answered permission prompts relayed to the webview + a permission-mode seam for auto/review. lc1 discharged.",
+        "resolvedAt": "2026-09-26T13:17:04.244Z"
+      }
+    }
+  },
+  "body": {
+    "flavor": "enhancement",
+    "problem": "The in-editor dev-chat runs turns correctly but its conversation view does not faithfully represent what happens during a turn, and it gives the user no control or visibility over actions that need a decision. While a turn runs, the user's own submitted prompt never appears in the conversation — it only shows up later if the session is reloaded — so the transcript reads as a one-sided stream. The assistant's output and the tools it runs are surfaced as terse step labels rather than the actual assistant content or the actual command that was run, so a reader cannot tell what was said or done. Long messages are undifferentiated flat text with no visual distinction between the user and the assistant, no way to collapse a long block, and no legible rendering when the content is markdown or structured data. The panel chrome is not pinned, so the header and the input area drift with the conversation, there is no explicit send or stop affordance, and progress is shown by a status line that repeats inside the conversation instead of a single persistent indicator. Finally, when an action needs the user's permission the request is invisible in the chat, so the action is silently blocked with no way for the user to approve it and no signal of whether an automatic no-prompt mode is in effect.",
+    "nonGoals": [
+      {
+        "text": "Changing the underlying claude/codex CLI providers, the daemon, or the analyze/workflow frameworks.",
+        "rationale": "Scope is the chat UI and its own event/protocol surface in vscode-plugin/src/chat + extension wiring; the backend is out of scope."
+      },
+      {
+        "text": "Adding provider integrations beyond claude and codex.",
+        "rationale": "The provider set is fixed for this epic; new providers are a separate concern."
+      },
+      {
+        "text": "Redesigning the docs-review pane.",
+        "rationale": "The docs-review surface (prior S007) is a distinct feature with its own approval flow; this epic is the chat turn loop only."
+      },
+      {
+        "text": "Persisting rich-rendered HTML (markdown/JSON widgets) into the durable session transcript.",
+        "rationale": "Rendering is a view concern; the stored transcript must stay a plain, replayable record so it round-trips across reloads and store versions (k4)."
+      }
+    ],
+    "assumptions": [
+      {
+        "text": "The chat renders in a VS Code webview whose only script is a per-render nonce'd inline bootstrap under a strict CSP with no external network access.",
+        "confidence": "high",
+        "source": "c1"
+      },
+      {
+        "text": "claude runs headless via `-p --output-format=stream-json --verbose` and codex via `exec --json`; the adapter parses their streamed JSON into TurnEvents.",
+        "confidence": "high",
+        "source": "c3"
+      },
+      {
+        "text": "Whether headless claude -p / codex exec emit approvable tool-permission prompts and accept a permission-mode / --ask-for-approval flag is UNVERIFIED; it must be confirmed (HLD/spike) before the approvals story is designed.",
+        "confidence": "low",
+        "source": "c3"
+      },
+      {
+        "text": "The durable transcript already stores user/assistant/marker rows; the conversation-fidelity gap is live in-turn rendering, not storage.",
+        "confidence": "high",
+        "source": "c1"
+      }
+    ],
+    "constraints": [
+      {
+        "id": "k1",
+        "text": "All webview rendering assets (styles, scripts, any markdown/JSON widget code) stay inline under the nonce'd CSP; no external network fetch from the webview.",
+        "type": "convention",
+        "source": "c1"
+      },
+      {
+        "id": "k2",
+        "text": "The shared TurnEvent + webview protocol contract is consumed by BOTH the adapter (producer) and the webview (consumer) and is covered by ~151 chat tests; any widening must keep every existing event kind + message working (additive, non-breaking).",
+        "type": "contract",
+        "source": "c4"
+      },
+      {
+        "id": "k3",
+        "text": "Cloud LLM access stays through the local claude/codex CLI subprocesses; no direct cloud REST is introduced (any permission-mode is a CLI flag, not an API call).",
+        "type": "contract",
+        "source": "c5"
+      },
+      {
+        "id": "k4",
+        "text": "The durable session transcript stays a plain, replayable record (roles + text + cssClass); rich rendering is derived at view time and never persisted.",
+        "type": "invariant",
+        "source": "c1"
+      },
+      {
+        "id": "k5",
+        "text": "The visual result follows the AGREED UX mock for this epic (docs/epics/vs-code-editor-dev-chat-ui-E20260926f9563bf5/mocks.html) EXACTLY — no deviation. That mock is the single design source of truth for every story; the single-dark terminal palette + JetBrains Mono are inherited from the original approved S001 mock.",
+        "type": "stakeholder",
+        "source": "c2"
+      },
+      {
+        "id": "k6",
+        "text": "Agreed interaction directions (locked in review, no deviation): (a) collapse/expand is an ICON-ONLY chevron (▸ collapsed / ▾ expanded) — no text labels, no line-count; (b) long user AND assistant messages default-COLLAPSED to a 3-line preview (uniform across roles); (c) tool RESULTS and INLINE DIFFS are also collapsible via the same chevron, collapsing to their caption header, default collapsed; (d) the single-line tool COMMAND row stays inline and always visible (surfacing the real command is required by S001 ac3 — never collapse it away); (e) Send/Stop is an ICON-ONLY square button (▶ green Send at rest / ■ red Stop while a turn runs), no text label; (f) the session name is truncated to 32 chars with an ellipsis; (g) header is fixed on top and the input is pinned at the bottom — only the transcript scrolls; (h) a single animated progress widget sits above the input (live-only, never persisted) — no repeated inline 'thinking' rows; (i) tool-permission requests surface in-chat as an approve/deny card and the chosen auto/review mode shows in the status bar.",
+        "type": "stakeholder",
+        "source": "c2"
+      }
+    ],
+    "stories": [
+      {
+        "id": "s1",
+        "title": "Conversation fidelity: echo the user, show assistant text + tool commands, truncate the session name",
+        "userValue": "As a chat user I can read a faithful record of the turn as it happens — my own prompt, the assistant's actual output at each step, and the real command each tool ran — so I can follow and trust what the agent is doing.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a chat session is open",
+            "when": "the user submits a prompt",
+            "then": "the user's prompt appears in the conversation immediately as its own message, during the turn (not only after a later session reload)",
+            "operationalizes": [
+              "k2",
+              "k4"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "the assistant produces output across multiple steps of a turn",
+            "when": "each step arrives",
+            "then": "the assistant's actual response content for that step is shown, not merely a step/status label",
+            "operationalizes": [
+              "k2"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "the agent runs a command-bearing tool during a turn",
+            "when": "the tool is invoked",
+            "then": "the actual command that was run is surfaced in the conversation, not just the tool's name",
+            "operationalizes": [
+              "k2"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "a session whose name is longer than 32 characters",
+            "when": "the session name is displayed in the header",
+            "then": "it is shown truncated to 32 characters with a trailing ellipsis",
+            "operationalizes": [
+              "k5"
+            ]
+          }
+        ],
+        "localConstraints": [
+          {
+            "id": "lc1",
+            "text": "The live user-prompt echo and the durable transcript must not double-render the same message on a subsequent session reload (the replay and the live echo agree on one user row).",
+            "type": "invariant",
+            "source": "c1"
+          }
+        ],
+        "dependsOn": [],
+        "sizeEstimate": "M",
+        "existingCapabilityRefs": [
+          "c1",
+          "c4"
+        ]
+      },
+      {
+        "id": "s2",
+        "title": "Layout & input: fixed header, bottom-pinned input with Send/Stop, animated thinking indicator",
+        "userValue": "As a chat user I always have the header and the input in view and an obvious way to send or stop a turn, with a single clear progress indicator, so the panel is usable at any conversation length.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a conversation longer than the panel height",
+            "when": "the user scrolls",
+            "then": "the header stays fixed at the top and the input area stays fixed at the bottom while only the conversation area scrolls",
+            "operationalizes": [
+              "k5"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "the input area",
+            "when": "the user wants to send a prompt or stop a running turn",
+            "then": "an explicit Send control submits the prompt and, while a turn is running, a Stop control cancels it",
+            "operationalizes": [
+              "k5"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "a turn is running",
+            "when": "the agent is working (thinking/streaming/using a tool)",
+            "then": "a single animated progress indicator is shown above the input area instead of repeated 'thinking' rows accumulating inside the conversation",
+            "operationalizes": [
+              "k5"
+            ]
+          }
+        ],
+        "localConstraints": [
+          {
+            "id": "lc1",
+            "text": "The animated progress indicator is a live-only view element; it is never written into the durable transcript.",
+            "type": "invariant",
+            "source": "c1"
+          }
+        ],
+        "dependsOn": [],
+        "sizeEstimate": "M",
+        "existingCapabilityRefs": [
+          "c1"
+        ]
+      },
+      {
+        "id": "s3",
+        "title": "Rich rendering: differentiate user vs assistant, collapse long messages, render markdown/JSON",
+        "userValue": "As a chat user I can quickly tell my messages from the assistant's, keep long messages compact, and read markdown or structured output in a legible form rather than flat text.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a conversation with both user and assistant messages",
+            "when": "the messages are displayed",
+            "then": "user messages are visually differentiated from assistant messages",
+            "operationalizes": [
+              "k5"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "a message longer than a few lines",
+            "when": "it is displayed",
+            "then": "it is collapsed to a ~3-line preview with a control to expand and re-collapse it",
+            "operationalizes": [
+              "k5"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "assistant output that is markdown or structured data (e.g. JSON)",
+            "when": "it is displayed",
+            "then": "it is rendered with a type-appropriate widget (formatted markdown / structured view) rather than as flat unstyled text",
+            "operationalizes": [
+              "k1",
+              "k5"
+            ]
+          }
+        ],
+        "localConstraints": [
+          {
+            "id": "lc1",
+            "text": "Rich rendering (markdown/JSON widgets, collapse state) is derived at view time from the plain transcript; the stored transcript stays a plain replayable record and no rendered HTML is persisted.",
+            "type": "invariant",
+            "source": "c1"
+          }
+        ],
+        "dependsOn": [
+          "s1"
+        ],
+        "sizeEstimate": "L",
+        "existingCapabilityRefs": [
+          "c1"
+        ]
+      },
+      {
+        "id": "s4",
+        "title": "Approvals & auto-mode: surface tool-permission requests and relay the chosen mode",
+        "userValue": "As a chat user I see when an action needs my permission and can approve or deny it in the chat, and when I choose an automatic mode the agent runs without blocking — so actions are never silently blocked with no way forward.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a running turn in which the agent needs permission to perform an action",
+            "when": "the underlying session requests that permission",
+            "then": "the request is surfaced to the user in the chat with approve and deny controls, rather than the action being silently blocked",
+            "operationalizes": [
+              "k2",
+              "k3"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "a surfaced permission request",
+            "when": "the user approves or denies it",
+            "then": "the decision is relayed to the underlying session so the action proceeds or is declined accordingly",
+            "operationalizes": [
+              "k3"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "the user has selected an automatic (no-prompt) mode",
+            "when": "a turn runs",
+            "then": "that mode is relayed to the underlying claude/codex session so it does not block on permissions, and the chat indicates that auto mode is active",
+            "operationalizes": [
+              "k3"
+            ]
+          }
+        ],
+        "localConstraints": [
+          {
+            "id": "lc1",
+            "text": "Before this story's surface is designed/built, it MUST be verified whether headless claude -p / codex exec emit approvable permission prompts and accept a permission-mode / --ask-for-approval flag; if they do not, the story's approach is revised in the HLD rather than built against an unverified CLI contract.",
+            "type": "contract",
+            "source": "c3"
+          },
+          {
+            "id": "lc2",
+            "text": "Any permission-mode is passed as a CLI flag to the local claude/codex subprocess; no direct cloud REST is introduced.",
+            "type": "contract",
+            "source": "c5"
+          }
+        ],
+        "dependsOn": [
+          "s1"
+        ],
+        "sizeEstimate": "L",
+        "existingCapabilityRefs": [
+          "c3",
+          "c4"
+        ]
+      }
+    ],
+    "openQuestions": [
+      "Item a2: the low-confidence assumption (headless claude -p / codex exec permission behaviour is unverified) is carried as s4 localConstraint lc1 (a verification gate before S4 is designed/built) rather than a formal openQuestion field; the HLD must resolve it before S4."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-panel.ts:167",
+      "quotedText": "renderShell() webview shell + nonce'd inline bootstrap; line() at :234 flat textContent; user prompt not echoed live (:262); durable transcript rows host-side."
+    },
+    {
+      "id": "c2",
+      "kind": "doc",
+      "ref": "docs/epics/vs-code-editor-dev-chat-ui-E20260926f9563bf5/mocks.html",
+      "quotedText": "The AGREED UX mock for this epic (v5) — single-dark terminal; icon-only chevron collapse (messages default 3-line, tool results + inline diffs collapse to caption); inline always-visible tool command; icon-only Send/Stop; 32-char session-name ellipsis; fixed header + bottom-pinned input; single animated progress widget; in-chat approval card + auto-mode status. Inherits the palette from the original approved S001 mock."
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/cli-adapter.ts:140",
+      "quotedText": "claude ['-p', prompt, '--output-format=stream-json', '--verbose']; codex ['exec','--json',prompt] — no permission-mode / --ask-for-approval / auto flag; no approval event."
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/stream-events.ts:30",
+      "quotedText": "TurnEvent union + TURN_EVENT_KINDS consumed by adapter + webview; tool-call carries only the tool name; ~151 tests depend on it."
+    },
+    {
+      "id": "c5",
+      "kind": "convention",
+      "ref": "CLAUDE.md — Project principles",
+      "quotedText": "No direct cloud REST; cloud LLM access happens through the local claude/codex CLI binaries."
+    }
+  ]
+}

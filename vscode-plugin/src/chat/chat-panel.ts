@@ -13,6 +13,7 @@
 import { renderTerminalStyle, surfaceClass, terminalTheme, type TerminalTheme } from './design-tokens.js';
 import { markerFor, markerWebviewSource } from './markers.js';
 import { renderRegistryWebviewSource, RENDER_REGISTRY_STYLE } from './render-registry.js';
+import { clampSessionTitleWebviewSource } from './session-title.js';
 import { envelope, type WebviewToHost, type HostToWebview } from './protocol.js';
 import type { ProviderRegistry, ProviderId } from './cli-adapter.js';
 import type { ChatSessionStore, ChatSession } from './session-store.js';
@@ -190,6 +191,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `.chrome{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-inset);border-bottom:1px solid var(--border);color:var(--muted);font-size:12px;flex:0 0 auto;flex-wrap:wrap;}` +
       `.chrome .dot{width:9px;height:9px;border-radius:50%;background:var(--accent);opacity:.85;flex:0 0 auto;}` +
       `.chrome .title{color:var(--fg);}.chrome .right{margin-left:auto;display:inline-flex;align-items:center;gap:5px;color:var(--dim);}` +
+      // S001 t6: the active session name in the header, clamped to 32 chars + ellipsis (ac4).
+      `.chrome .sesstitle{color:var(--muted);}.chrome .sesstitle:not(:empty)::before{content:'/';margin:0 6px;color:var(--dim);}` +
       `.pad{padding:14px 16px;flex:1 1 auto;display:flex;flex-direction:column;min-height:0;}` +
       `#insrc-term{flex:1 1 auto;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:2px;white-space:pre-wrap;word-break:break-word;color:var(--fg);}` +
       `#insrc-term>div{white-space:pre-wrap;}` +
@@ -245,6 +248,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `var cur='';` +
       `const ps=document.getElementById('insrc-provider');` +
       `const hs=document.getElementById('insrc-history');` +
+      // S001 t6: the header session-name clamp (>32 chars -> 32 + ellipsis, ac4), single-sourced
+      // with session-title.ts. VIEW-only: the stored title (history option label) is untouched (k4).
+      `const st=document.getElementById('insrc-sesstitle');` +
+      `const clampTitle=(${clampSessionTitleWebviewSource()});` +
       `ps.addEventListener('change',function(){if(ps.value){vs.postMessage({v:1,payload:{type:'new-chat',provider:ps.value}});}});` +
       `hs.addEventListener('change',function(){if(hs.value){vs.postMessage({v:1,payload:{type:'open-chat',chatId:hs.value}});}else if(ps.value){vs.postMessage({v:1,payload:{type:'new-chat',provider:ps.value}});}});` +
       // S006: per-session edit-mode toggle (auto/review) + the chat-view inline diff renderer.
@@ -274,7 +281,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // the reconciliation map for the fresh replay.
       `else if(m.type==='session-restored'){cur=m.sessionId||'';t.textContent='';reg.resetKeys();(m.transcript||[]).forEach(function(x,i){reg.appendKeyed(reg.toViewModel(x),'r'+i);});hs.value=cur;}` +
       // S005: history-list (re)populates the dropdown; labels via textContent (no innerHTML); keep active selected.
-      `else if(m.type==='history-list'){while(hs.options.length>1)hs.remove(1);(m.chats||[]).forEach(function(c){var o=document.createElement('option');o.value=c.id;o.textContent='['+c.provider+'] '+(c.title||c.id);hs.appendChild(o);});hs.value=cur;var _ac=(m.chats||[]).filter(function(c){return c.id===cur;})[0];if(_ac&&_ac.provider){ps.value=_ac.provider;}}});` +
+      `else if(m.type==='history-list'){while(hs.options.length>1)hs.remove(1);(m.chats||[]).forEach(function(c){var o=document.createElement('option');o.value=c.id;o.textContent='['+c.provider+'] '+(c.title||c.id);hs.appendChild(o);});hs.value=cur;var _ac=(m.chats||[]).filter(function(c){return c.id===cur;})[0];if(_ac&&_ac.provider){ps.value=_ac.provider;}if(st)st.textContent=_ac&&_ac.title?clampTitle(_ac.title):'';}});` +
       `const box=document.getElementById('insrc-input');` +
       `box.addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.metaKey||e.ctrlKey)){vs.postMessage({v:1,payload:{type:'submit-turn',text:box.value}});box.value='';}});`;
     return (
@@ -284,7 +291,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `<body class="insrc-term ${cls}">` +
       `<div class="box">` +
       `<div class="chrome">` +
-      `<span class="dot"></span><span class="title">insrc</span>` +
+      `<span class="dot"></span><span class="title">insrc</span><span class="sesstitle" id="insrc-sesstitle"></span>` +
       `<span class="right">session <select id="insrc-history" class="segsel ${histCls}" aria-label="history"><option value="">new…</option></select></span>` +
       `</div>` +
       `<div class="pad">` +

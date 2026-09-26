@@ -981,3 +981,28 @@ test('S001 lc1: two identical prompts yield two distinct-keyed live user-rows', 
   const keys = fc.posted.filter((m) => m.payload.type === 'user-row').map((m) => m.payload['key']);
   assert.equal(new Set(keys).size, 2, 'the two identical prompts got two distinct keys (two rows, not deduped)');
 });
+
+// ---- S001 t6: header session-name clamp (ac4) ----
+
+test('S001 ac4: the header embeds the session-name clamp wiring (>32 chars -> ellipsis, view-only)', () => {
+  const fc = fakeChannel();
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter([]) }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+    genNonce: () => 'FIXEDNONCE',
+  });
+  host.open();
+  const html = fc.html();
+  // The header carries a dedicated session-title element, fed by the single-sourced clamp.
+  assert.match(html, /id="insrc-sesstitle"/, 'the header has a session-title element');
+  assert.match(html, /const clampTitle=\(function\(s\)/, 'the clamp is embedded inline (single-sourced with session-title.ts)');
+  assert.match(html, /st\.textContent=_ac&&_ac\.title\?clampTitle\(_ac\.title\)/, 'the active session title is rendered through the clamp');
+  assert.match(html, /slice\(0,32\)/, 'the clamp truncates at 32 chars (ac4)');
+  // CSP/one-script/textContent invariants intact.
+  const scripts = html.match(/<script\b/g) ?? [];
+  assert.equal(scripts.length, 1, 'still exactly one inline script');
+  assert.doesNotMatch(html, /innerHTML/, 'textContent only, never innerHTML');
+  assert.doesNotMatch(html, /https?:\/\//, 'no remote origin');
+});

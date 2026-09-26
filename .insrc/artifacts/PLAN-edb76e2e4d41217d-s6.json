@@ -1,0 +1,375 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1790403105058-bk1inr",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-26T06:16:05.438Z",
+    "epicCreatedAt": "2026-09-25T13:25:32.966Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 260360,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "edb76e2e4d41217d",
+    "epicSlug": "work-framed-approved-spec-proceed-from",
+    "storyId": "s6",
+    "lldRunId": "wf-1790401938774-4m48s8",
+    "lldEffectiveHash": "e2745c4bac48a6e87b322daf9e2231b2f375790d6b3411568c9129535c418f61",
+    "approvedAt": "2026-09-26T06:20:41.150Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "New edit-governor.ts module (createEditGovernor + types + computeDiff)",
+        "summary": "Add vscode-plugin/src/chat/edit-governor.ts: createEditGovernor(deps) returning an EditGovernor with beginTurn/observe/resolveTurn/decide over injected seams (WorkspaceBaseline, FsSeam, EditRenderSeam, diffView accessor), plus the EditGovernorState in-memory type and a small pure computeDiff(before,after,path)->UnifiedDiff. Pure/vscode-free; total (seam failures caught -> degrade). Nothing wired yet.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "edit-governor.ts exports createEditGovernor + the EditGovernor/EditGovernorDeps/EditRenderSeam/WorkspaceBaseline/FsSeam types; imports no vscode",
+          "beginTurn captures a baseline handle (or no-baseline flag) + resets the edits map; observe computes a diff via computeDiff and calls render; decide reject restores baseline, accept keeps; resolveTurn clears state",
+          "computeDiff produces a UnifiedDiff from two strings independent of any sc2 payload (handles new-file baseline undefined + binary/non-text)"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "edit-governor: beginTurn snapshots once; observe computes+renders a diff (auto = visualize-only, no tracking)"
+          },
+          {
+            "level": "unit",
+            "name": "edit-governor: review decide(reject) restores baseline via fake fs; decide(accept) keeps disk"
+          },
+          {
+            "level": "unit",
+            "name": "edit-governor: same path observed twice keeps the first baseline; new-file baseline undefined -> all-additions, reject removes it; provider-agnostic diff from before/after"
+          },
+          {
+            "level": "unit",
+            "name": "edit-governor: non-git -> no-baseline visualize-only, reject no-op with note, never throws"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Extend ChatPanelHostDeps + reshape the turn loop to drive the governor",
+        "summary": "In chat-panel.ts, add OPTIONAL editGovernance seams + a diffView accessor to ChatPanelHostDeps and construct the EditGovernor when present. Reshape the turn loop to call governor.beginTurn(mode,cwd) before adapter.run(), governor.observe(path) on each sc2 file-edit event, and governor.resolveTurn() on the terminal (done/error) event. The existing marker-row render (S004/S008) is untouched; when the deps are absent the host behaves exactly as today.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "ChatPanelHostDeps gains optional editGovernance + diffView; existing construction without them compiles + behaves as before (marker-only)",
+          "beginTurn is invoked before adapter.run(); observe(path) fires per file-edit; resolveTurn on the terminal event",
+          "no change to the existing turn-event marker rendering path"
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "chat-panel: beginTurn fires before adapter.run; observe per file-edit; resolveTurn on terminal event"
+          },
+          {
+            "level": "integration",
+            "name": "chat-panel: host constructed WITHOUT editGovernance/diffView behaves as today (marker-only, edit marker still renders)"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Implement handleMessage set-edit-mode + edit-decision",
+        "summary": "Fill the reserved handleMessage default case (chat-panel.ts:312) with set-edit-mode (validate mode 'auto'|'review', set session.editMode, store.save per the S005 title-persist pattern, re-render the toggle) and edit-decision (validate path is a string, forward to governor.decide). Malformed payloads keep the existing drop-with-warn. Ordered before t4 so the edit-decision the webview controls emit is handled end-to-end.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "set-edit-mode sets + persists session.editMode via store.save; invalid mode dropped",
+          "edit-decision forwards to governor.decide(path, accept); non-string path dropped",
+          "existing message cases + the drop-with-warn default remain intact"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "chat-panel: set-edit-mode updates+persists editMode (store.get reflects it); mid-turn switch applies next turn"
+          },
+          {
+            "level": "integration",
+            "name": "chat-panel: edit-decision reject reverts via fake fs; accept keeps; stale/unknown path is a no-op"
+          },
+          {
+            "level": "unit",
+            "name": "session-store: editMode 'review' round-trips through save()/get(); defaults 'auto' on create"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Render the edit-mode toggle + chat-view inline diff in the webview",
+        "summary": "Inside the ONE nonce'd webview script, render the sc1-styled per-session edit-mode toggle (emits set-edit-mode) and the chat-view inline diff for an edit-prompt message (added/removed lines via the line(s,cls) writer using textContent + sc1 className, with accept/reject controls emitting edit-decision, handled by t3). No second script, no innerHTML, no remote origin; CSP unchanged.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "the webview renders an edit-mode toggle + a diff view for edit-prompt; still exactly one <script> under the strict CSP",
+          "diff hunk + control text set via textContent/className, never innerHTML; no remote origin / asWebviewUri added",
+          "accept/reject controls post edit-decision {path, accept} (handled by t3)"
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "chat-panel shell: edit-prompt diff renders inside the ONE nonce'd script; strict CSP, textContent/className only, no innerHTML, no remote/asWebviewUri"
+          },
+          {
+            "level": "unit",
+            "name": "chat-panel shell: hunk lines added via textContent styled by sc1 className, never markup"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Contribute the insrc.chat.diffView setting in package.json",
+        "summary": "Add insrc.chat.diffView to vscode-plugin/package.json contributes.configuration: type 'string', enum ['chat','editor'], default 'chat', with enumDescriptions + description, next to insrc.chat.enabled.",
+        "size": "S",
+        "order": 5,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "package.json contributes.configuration has insrc.chat.diffView with type 'string', enum ['chat','editor'], default 'chat'",
+          "it sits alongside insrc.chat.enabled and appears in VS Code's native Settings UI"
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "extension-chat-wiring: package.json has insrc.chat.diffView type 'string' enum ['chat','editor'] default 'chat'"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Wire extension.ts: read diffView + inject the real vscode-backed seams",
+        "summary": "In extension.ts, read insrc.chat.diffView via getConfiguration().get<'chat'|'editor'>(full dotted key) into a diffView accessor, and inject the real seams into createChatPanelHost: a git WorkspaceBaseline (shelled via the existing node child-process seam, no new dependency), an FsSeam (workspace.fs/node:fs read/write/remove), and an EditRenderSeam whose showChat posts the sc3 edit-prompt and showEditor opens a native vscode.diff (readonly baseline doc vs the file).",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "extension.ts reads insrc.chat.diffView with the full dotted key and passes a diffView accessor into createChatPanelHost",
+          "real git-baseline/fs/editorDiff seams are injected; the panel stays behind insrc.chat.enabled",
+          "no direct cloud REST introduced (k2); baseline uses the existing node spawn seam"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "extension-chat-wiring: extension.ts reads insrc.chat.diffView (full dotted key) + wires diffView + editGovernance seams into createChatPanelHost"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Tests: governor unit suite + host/wiring/store extensions + full sweep",
+        "summary": "Add edit-governor.test.ts (lifecycle, review accept/reject revert via fake fs, same-path-once baseline, new-file remove, non-git no-baseline, provider-agnostic diff) with fake WorkspaceBaseline/FsSeam/EditRenderSeam; extend chat-panel.test.ts (set-edit-mode persist, review vs auto, diffView chat/editor routing, shell CSP), extension-chat-wiring.test.ts (diffView manifest enum/default + wiring), session-store.test.ts (editMode round-trip). Each of ac1-ac4 must have an explicit passing proving test. Run the full plugin sweep + tsc --noEmit.",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3",
+          "t4",
+          "t5",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "ac1, ac2, ac3, ac4 each have at least one passing proving test (no ac silently uncovered)",
+          "edit-governor.test.ts + the three extended suites pass under tsx --test; tsc --noEmit clean",
+          "the CSP/one-script/no-innerHTML shell invariants are asserted for the chat-view diff"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "chat-panel: review turn posts sc3 edit-prompt; auto turn posts none; diffView 'chat'->showChat vs 'editor'->showEditor (no edit-prompt)"
+          },
+          {
+            "level": "smoke",
+            "name": "full vscode-plugin sweep green under tsx --test + tsc --noEmit clean; ac1-ac4 all have a passing proving test"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "beginTurn snapshots once; observe computes+renders a diff (auto: visualize-only, no tracking)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "review decide(reject) restores baseline content via the fake fs; decide(accept) keeps disk",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "same path observed twice keeps the first baseline (revert = true pre-turn)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "new file (baseline undefined) -> all-additions; reject removes it",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "non-git -> no-baseline: visualize-only, reject no-op with note, no throw",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "provider-agnostic: a codex empty-hunk signal still yields a real diff from before/after",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "review turn posts sc3 edit-prompt; edit-decision reject reverts via fake fs; accept keeps",
+        "coveredByTaskIds": [
+          "t3",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "auto turn posts NO edit-prompt + no revert; edit marker still renders",
+        "coveredByTaskIds": [
+          "t2",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "set-edit-mode updates+persists editMode; mid-turn switch applies next turn",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "diffView 'chat' -> showChat (edit-prompt); 'editor' -> showEditor + no edit-prompt",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "beginTurn before adapter.run; resolveTurn on terminal event",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "stale edit-decision for unknown/decided path is a no-op (no fs write)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "edit-prompt diff renders inside the ONE nonce'd script; one <script>, strict CSP, textContent/className only, no innerHTML, no remote/asWebviewUri",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "hunk lines added via textContent, styled via sc1 className, never markup",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "package.json has insrc.chat.diffView type 'string' enum ['chat','editor'] default 'chat'",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "extension.ts reads it via getConfiguration().get(full dotted key) + wires diffView into the host",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "editGovernance seams wired at construction",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "editMode 'review' round-trips through save()/get()",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "editMode defaults 'auto' on create (unchanged)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 contractDetails: createEditGovernor/EditGovernor/EditRenderSeam + createChatPanelHost turn-loop reshape + handleMessage set-edit-mode/edit-decision + chat-view render (host/webview/governor, vscode-free deps-injection)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 dataModelChanges: insrc.chat.diffView plugin-local setting + ChatSession.editMode (sc4) read/write via store.save (no shape change)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 interactionWithShared/invariants: consume sc2 file-edit as a SIGNAL and compute the diff itself (codex empty hunks + claude Write/MultiEdit) via the pre-turn baseline"
+    }
+  ]
+}

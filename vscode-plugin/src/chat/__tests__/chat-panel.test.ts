@@ -1006,3 +1006,35 @@ test('S001 ac4: the header embeds the session-name clamp wiring (>32 chars -> el
   assert.doesNotMatch(html, /innerHTML/, 'textContent only, never innerHTML');
   assert.doesNotMatch(html, /https?:\/\//, 'no remote origin');
 });
+
+// ---- S002 t2: cancel-turn routes to the existing cancelActive() ----
+
+test('S002 ac2: a cancel-turn message cancels the in-flight turn (cancelActive -> provider.cancel)', async () => {
+  const fc = fakeChannel();
+  let cancelled = false;
+  const adapter = scriptedAdapter([{ kind: 'status', turnId: 't1', phase: 'thinking' }], { hang: true, onCancel: () => { cancelled = true; } });
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: adapter }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+  });
+  host.open();
+  fc.send(env('submit-turn', { text: 'go' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'status')); // turn is in flight
+  fc.send(env('cancel-turn'));
+  await waitFor(() => cancelled);
+  assert.ok(cancelled, 'cancel-turn invoked the provider cancel via cancelActive()');
+});
+
+test('S002: a cancel-turn with no active turn is an idempotent no-op (no throw)', () => {
+  const fc = fakeChannel();
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter([]) }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+  });
+  host.open();
+  assert.doesNotThrow(() => fc.send(env('cancel-turn')));
+});

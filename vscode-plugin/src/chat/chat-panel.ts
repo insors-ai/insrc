@@ -473,6 +473,11 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       case 'submit-turn':
         void runTurn(msg.text);
         return;
+      case 'cancel-turn':
+        // S002 ac2: the Stop control cancels the in-flight turn via the existing reap.
+        // Idempotent when no turn is active (cancelActive() no-ops).
+        cancelActive();
+        return;
       case 'new-chat': {
         if (typeof msg.provider !== 'string') return;
         // S005: only start a chat on an INSTALLED agentic CLI (k4). A stale webview

@@ -34,6 +34,12 @@ export type TurnEvent =
       readonly turnId: string;
       readonly tool: string;
       readonly mcp?: { readonly server: string; readonly name: string };
+      /**
+       * S001 sc2 (additive): the actual command the tool ran, when the provider
+       * exposes it (Bash `input.command` / codex `item.command`). Absent for
+       * command-less tools — consumers then fall back to the tool name (k2).
+       */
+      readonly command?: string;
     }
   | { readonly kind: 'file-edit'; readonly turnId: string; readonly path: string; readonly diff: UnifiedDiff }
   | { readonly kind: 'status'; readonly turnId: string; readonly phase: 'thinking' | 'streaming' | 'tool' | 'editing' }
@@ -46,7 +52,15 @@ export type TurnEvent =
     }
   | { readonly kind: 'error'; readonly turnId: string; readonly message: string };
 
-/** The discriminant values of {@link TurnEvent}. Exported so consumers/tests can assert exhaustiveness. */
+/**
+ * The discriminant values of {@link TurnEvent}. Exported so consumers/tests can assert exhaustiveness.
+ *
+ * S001 sc2 (additive) RESERVES 'approval-request' as a kind S004 fills: the KIND is
+ * reserved here (so downstream switches/registries can already reference it and the
+ * sc1 registry routes it through its fallback), while the event's concrete shape is
+ * added to the {@link TurnEvent} union by S004. No existing kind changes shape (k2),
+ * and S001 registers no handler for it.
+ */
 export const TURN_EVENT_KINDS = [
   'assistant-delta',
   'tool-call',
@@ -54,6 +68,7 @@ export const TURN_EVENT_KINDS = [
   'status',
   'done',
   'error',
+  'approval-request',
 ] as const;
 
 export type TurnEventKind = (typeof TURN_EVENT_KINDS)[number];

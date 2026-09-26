@@ -191,6 +191,13 @@ export function renderRegistryWebviewSource(): string {
     `register('user',function(vm){return line(vm.text);});` +
     `register('assistant-text',function(vm){return line(vm.text);});` +
     `register('tool-command',function(vm){return line(vm.text,'insrc-term__marker--tool');});` +
-    `return {register:register,renderRow:renderRow,collapsible:collapsible,toViewModel:toViewModel};}`
+    // S001 t5 (lc1): keyed append. A row rendered with a key is remembered; re-appending the
+    // SAME key (a live echo and its session-restored twin) reconciles to the one existing node
+    // instead of double-rendering. resetKeys() is called when the transcript is cleared on
+    // session-restored, so the fresh replay re-keys from an empty map.
+    `var KEYS={};` +
+    `function appendKeyed(vm,key){if(key==null)return renderRow(vm);if(KEYS[key])return KEYS[key];var n=renderRow(vm);if(n)KEYS[key]=n;return n;}` +
+    `function resetKeys(){KEYS={};}` +
+    `return {register:register,renderRow:renderRow,collapsible:collapsible,toViewModel:toViewModel,appendKeyed:appendKeyed,resetKeys:resetKeys};}`
   );
 }

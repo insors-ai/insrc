@@ -51,6 +51,8 @@ interface Registry {
   renderRow(vm: unknown): FakeNode | null;
   collapsible(el: FakeNode, opts: { defaultCollapsed: boolean }): FakeNode;
   toViewModel(entry: unknown): RowViewModel;
+  appendKeyed(vm: unknown, key: string | null): FakeNode | null;
+  resetKeys(): void;
 }
 function makeRegistry(): { reg: Registry; appended: FakeNode[] } {
   const { document } = fakeDocument();
@@ -225,4 +227,40 @@ test('the tool-command renderer never wraps its content in the collapse primitiv
   // The rendered node is the flat line() div, never an .insrc-collapse wrapper.
   assert.equal(node, appended[0], 'renderRow returned the flat row node');
   assert.doesNotMatch(node!.className, /insrc-collapse/, 'the tool-command row is not collapsible');
+});
+
+// ---- t5: keyed append reconciliation (lc1) --------------------------------------
+
+test('lc1: appendKeyed renders once per key — a live echo and its replay twin reconcile to one row', () => {
+  const { reg, appended } = makeRegistry();
+  const vm = reg.toViewModel({ role: 'user', text: 'hello', at: 't' } as TranscriptEntry);
+  const first = reg.appendKeyed(vm, 'r0');
+  const second = reg.appendKeyed(vm, 'r0'); // the session-restored twin of the same row
+  assert.equal(appended.length, 1, 'the same key rendered exactly one row (no double-render)');
+  assert.equal(second, first, 'the second append returns the already-rendered node');
+});
+
+test('lc1: distinct keys render distinct rows (two identical prompts -> two rows)', () => {
+  const { reg, appended } = makeRegistry();
+  const vm = reg.toViewModel({ role: 'user', text: 'same', at: 't' } as TranscriptEntry);
+  reg.appendKeyed(vm, 'r0');
+  reg.appendKeyed(vm, 'r1');
+  assert.equal(appended.length, 2, 'two distinct keys -> two rows');
+});
+
+test('lc1: resetKeys() clears the map so a fresh replay re-renders (restore after a live echo)', () => {
+  const { reg, appended } = makeRegistry();
+  const vm = reg.toViewModel({ role: 'user', text: 'hello', at: 't' } as TranscriptEntry);
+  reg.appendKeyed(vm, 'r0'); // live echo
+  reg.resetKeys(); // session-restored clears the terminal + the reconciliation map
+  reg.appendKeyed(vm, 'r0'); // fresh replay after the clear
+  assert.equal(appended.length, 2, 'after resetKeys the same key renders again (fresh replay)');
+});
+
+test('appendKeyed(vm, null) always renders (unkeyed rows are never reconciled)', () => {
+  const { reg, appended } = makeRegistry();
+  const vm = reg.toViewModel({ kind: 'assistant-delta', turnId: 't', text: 'x' } as TurnEvent);
+  reg.appendKeyed(vm, null);
+  reg.appendKeyed(vm, null);
+  assert.equal(appended.length, 2, 'unkeyed appends are never deduped');
 });

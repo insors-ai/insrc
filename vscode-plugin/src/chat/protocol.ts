@@ -47,6 +47,10 @@ export type HostToWebview =
       readonly blocked: boolean;
       readonly commentable?: boolean;
     }
+  // S001 sc2 (additive): the live echo of the user's prompt on submit, so it appears
+  // during the turn (not only on a later session-restored replay). `key` is the row's
+  // stable transcript-index key, so the live echo and its replay reconcile to ONE row (lc1).
+  | { readonly type: 'user-row'; readonly text: string; readonly key: string }
   | { readonly type: 'theme'; readonly theme: TerminalTheme };
 
 /** Webview -> host: user intents. */
@@ -70,6 +74,7 @@ export const HOST_TO_WEBVIEW_TYPES = [
   'edit-prompt',
   'docs-list',
   'docs-content',
+  'user-row',
   'theme',
 ] as const;
 

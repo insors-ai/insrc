@@ -699,7 +699,7 @@ test('S008 integration: open-chat restore posts marker rows carrying their cssCl
   assert.equal(rows.find((x) => x.text === 'legacy')?.cssClass, undefined, 'the pre-S008 marker restores as plain text (ac3)');
 });
 
-test('S008 shell: session-restored replay passes the stored class via line(x.text,x.cssClass); CSP/one-script/textContent intact', () => {
+test('S001 shell: session-restored replay routes through the sc1 registry (keyed, single-sourced, carries the stored class); CSP/one-script/textContent intact', () => {
   const fc = fakeChannel();
   const host = createChatPanelHost({
     createPanel: () => fc.channel,
@@ -710,15 +710,19 @@ test('S008 shell: session-restored replay passes the stored class via line(x.tex
   });
   host.open();
   const html = fc.html();
-  // The restore replay forwards the stored class to the widened writer (not the bare line(x.text)).
-  assert.match(html, /forEach\(x=>line\(x\.text,x\.cssClass\)\)/, 'restore replays with the stored cssClass');
+  // S001 t5: the replay now single-sources rendering through reg.appendKeyed(reg.toViewModel(x))
+  // (keyed by transcript index) after reg.resetKeys(); the stored cssClass is carried by
+  // toViewModel (marker rows -> fallback with the class) into the widened line(s,cls) writer.
+  assert.match(html, /reg\.resetKeys\(\)/, 'restore resets the reconciliation map before replaying');
+  assert.match(html, /reg\.appendKeyed\(reg\.toViewModel\(x\),'r'\+i\)/, 'restore replays keyed via the sc1 registry');
   assert.doesNotMatch(html, /forEach\(x=>line\(x\.text\)\)/, 'the classless replay is gone');
-  // sc1/CSP/XSS invariants unchanged by the S008 edit.
+  // The cssClass is still delivered through the widened writer (via the fallback renderer).
+  assert.match(html, /function line\(s,cls\)/, 'the widened writer is unchanged');
+  assert.match(html, /className=cls/, 'the class is applied via className');
+  // sc1/CSP/XSS invariants unchanged.
   const scripts = html.match(/<script\b/g) ?? [];
   assert.equal(scripts.length, 1, 'still exactly one inline script');
   assert.match(html, /script-src 'nonce-FIXEDNONCE'/, 'strict CSP unchanged');
-  assert.match(html, /function line\(s,cls\)/, 'the widened writer is unchanged');
-  assert.match(html, /className=cls/, 'the class is applied via className');
   assert.doesNotMatch(html, /innerHTML/, 'textContent only, never innerHTML');
   assert.doesNotMatch(html, /https?:\/\//, 'no remote origin');
   assert.doesNotMatch(html, /asWebviewUri/, 'no asWebviewUri');
@@ -940,4 +944,40 @@ test('S006: the edit-prompt carries the HOST review flag (authoritative; not a w
   fcA.send(env('submit-turn', { text: 'go' }));
   await waitFor(() => editPrompts(fcA).length >= 1);
   assert.notEqual(editPrompts(fcA)[0]!.review, true, 'auto session -> edit-prompt.review not true (no controls)');
+});
+
+// ---- S001 t5: live user-row echo on submit + lc1 reconciliation ----
+
+test('S001 ac1: submit-turn posts a live user-row (the prompt appears during the turn, not only on reload)', async () => {
+  const fc = fakeChannel();
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter([{ kind: 'done', turnId: 't1', ok: true }]) }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+  });
+  host.open();
+  fc.send(env('submit-turn', { text: 'hello world' }));
+  await waitFor(() => fc.posted.some((m) => m.payload.type === 'user-row'));
+  const userRows = fc.posted.filter((m) => m.payload.type === 'user-row').map((m) => m.payload);
+  assert.equal(userRows.length, 1, 'exactly one live user-row was posted for the submit');
+  assert.equal(userRows[0]!['text'], 'hello world', 'it carries the submitted prompt');
+  assert.match(String(userRows[0]!['key']), /^r\d+$/, 'it carries a stable transcript-index key (lc1)');
+});
+
+test('S001 lc1: two identical prompts yield two distinct-keyed live user-rows', async () => {
+  const fc = fakeChannel();
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter([{ kind: 'done', turnId: 't', ok: true }]) }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+  });
+  host.open();
+  fc.send(env('submit-turn', { text: 'same' }));
+  await waitFor(() => fc.posted.filter((m) => m.payload.type === 'user-row').length >= 1);
+  fc.send(env('submit-turn', { text: 'same' }));
+  await waitFor(() => fc.posted.filter((m) => m.payload.type === 'user-row').length >= 2);
+  const keys = fc.posted.filter((m) => m.payload.type === 'user-row').map((m) => m.payload['key']);
+  assert.equal(new Set(keys).size, 2, 'the two identical prompts got two distinct keys (two rows, not deduped)');
 });

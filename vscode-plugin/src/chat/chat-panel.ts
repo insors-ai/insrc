@@ -264,9 +264,15 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // S006: an edit-prompt carries the computed diff + the HOST's review flag -> render it
       // (+ accept/reject controls only when the host says review; never gated on local state).
       `else if(m.type==='edit-prompt'){renderDiff(m.path,m.diff,m.review===true);}` +
+      // S001 ac1/lc1: the live user-row echo — reconciled to ONE row via its stable key.
+      `else if(m.type==='user-row'){reg.appendKeyed(reg.toViewModel({role:'user',text:m.text}),m.key);}` +
       // S005: session-restored CLEARS the terminal before replaying (so switching chats
       // does not append onto the prior chat's view) + tracks the active id for the dropdown.
-      `else if(m.type==='session-restored'){cur=m.sessionId||'';t.textContent='';(m.transcript||[]).forEach(x=>line(x.text,x.cssClass));hs.value=cur;}` +
+      // S001 t5: the replay routes through the sc1 registry (reg.appendKeyed(reg.toViewModel(x)))
+      // keyed by transcript index, so it single-sources rendering with the live path and carries
+      // each row's stored cssClass (marker rows -> fallback with the class), and resetKeys() clears
+      // the reconciliation map for the fresh replay.
+      `else if(m.type==='session-restored'){cur=m.sessionId||'';t.textContent='';reg.resetKeys();(m.transcript||[]).forEach(function(x,i){reg.appendKeyed(reg.toViewModel(x),'r'+i);});hs.value=cur;}` +
       // S005: history-list (re)populates the dropdown; labels via textContent (no innerHTML); keep active selected.
       `else if(m.type==='history-list'){while(hs.options.length>1)hs.remove(1);(m.chats||[]).forEach(function(c){var o=document.createElement('option');o.value=c.id;o.textContent='['+c.provider+'] '+(c.title||c.id);hs.appendChild(o);});hs.value=cur;var _ac=(m.chats||[]).filter(function(c){return c.id===cur;})[0];if(_ac&&_ac.provider){ps.value=_ac.provider;}}});` +
       `const box=document.getElementById('insrc-input');` +
@@ -346,6 +352,11 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     const s = session;
 
     s.transcript.push({ role: 'user', text: prompt, at: now() });
+    // S001 ac1/lc1: echo the user's prompt LIVE so it appears during the turn (not only on a
+    // later session-restored replay). ONE append is both the durable row and the live echo —
+    // its key is the row's transcript index, so the live row and its replay reconcile to a
+    // single rendered row webview-side (the stored transcript shape is unchanged, k4).
+    post({ type: 'user-row', text: prompt, key: `r${s.transcript.length - 1}` });
     // S005: name the chat from its FIRST user prompt (clipped) so the history dropdown
     // rows are distinguishable; a whitespace-only prompt is already rejected above, so
     // the clip is non-empty. Later turns keep the established title.

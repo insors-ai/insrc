@@ -203,6 +203,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `.insrc-term__marker--error{color:var(--red);}.insrc-term__marker--error::before{color:var(--red)!important;margin-right:.55em;}` +
       `.inputline{display:flex;gap:10px;align-items:flex-start;margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);flex:0 0 auto;}` +
       `.inputline .caret{color:var(--accent);font-weight:700;padding-top:6px;user-select:none;}` +
+      // S002 ac2: the icon-only Send/Stop button (▶ green Send at rest / ■ red Stop while running).
+      `#insrc-send{flex:0 0 auto;align-self:flex-end;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;background:var(--bg-inset);border:1px solid var(--border);border-radius:6px;color:var(--accent);font-family:var(--font);font-size:13px;line-height:1;cursor:pointer;outline:none;user-select:none;padding:0;}` +
+      `#insrc-send:hover{border-color:var(--accent);}#insrc-send.stop{color:var(--red);}#insrc-send.stop:hover{border-color:var(--red);}` +
       `#insrc-input{flex:1 1 auto;min-width:0;resize:vertical;min-height:2.4em;background:var(--bg-inset);color:var(--fg);caret-color:var(--accent);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-family:var(--font);font-size:13.5px;line-height:1.5;outline:none;}` +
       `#insrc-input::placeholder{color:var(--dim);}#insrc-input:focus{border-color:var(--accent);}` +
       `.statusbar{display:flex;gap:16px;align-items:center;padding:7px 16px;background:var(--bg-inset);border-top:1px solid var(--border);color:var(--muted);font-size:12px;flex-wrap:wrap;flex:0 0 auto;}` +
@@ -252,6 +255,11 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // with session-title.ts. VIEW-only: the stored title (history option label) is untouched (k4).
       `const st=document.getElementById('insrc-sesstitle');` +
       `const clampTitle=(${clampSessionTitleWebviewSource()});` +
+      // S002 ac2: webview-local turn running-state drives the icon-only Send/Stop button.
+      // ▶ (Send) at rest, ■ (Stop) while a turn runs; set on submit, cleared on done/error.
+      `var running=false;` +
+      `const sendBtn=document.getElementById('insrc-send');` +
+      `function setRunning(r){running=r;if(sendBtn){sendBtn.textContent=r?'\\u25a0':'\\u25b6';sendBtn.className='sendbtn'+(r?' stop':'');sendBtn.setAttribute('aria-label',r?'stop':'send');}}` +
       `ps.addEventListener('change',function(){if(ps.value){vs.postMessage({v:1,payload:{type:'new-chat',provider:ps.value}});}});` +
       `hs.addEventListener('change',function(){if(hs.value){vs.postMessage({v:1,payload:{type:'open-chat',chatId:hs.value}});}else if(ps.value){vs.postMessage({v:1,payload:{type:'new-chat',provider:ps.value}});}});` +
       // S006: per-session edit-mode toggle (auto/review) + the chat-view inline diff renderer.
@@ -267,7 +275,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // assistant-delta -> assistant-text row (its actual text, ac2); tool-call -> tool-command row
       // (the real command inline, ac3). Every other kind keeps the sc1 marker path (markerFor ->
       // fallback), so status/file-edit/done/error render exactly as today and an unknown kind is skipped.
-      `window.addEventListener('message',e=>{const m=e.data&&e.data.payload;if(!m)return;if(m.type==='turn-event'){const ev=m.event;if(ev&&(ev.kind==='assistant-delta'||ev.kind==='tool-call')){reg.renderRow(reg.toViewModel(ev));}else{const mk=markerFor(ev);if(mk)reg.renderRow({kind:'fallback',text:mk.label,cssClass:mk.cssClass});}}` +
+      `window.addEventListener('message',e=>{const m=e.data&&e.data.payload;if(!m)return;if(m.type==='turn-event'){const ev=m.event;if(ev&&(ev.kind==='assistant-delta'||ev.kind==='tool-call')){reg.renderRow(reg.toViewModel(ev));}else{const mk=markerFor(ev);if(mk)reg.renderRow({kind:'fallback',text:mk.label,cssClass:mk.cssClass});}` +
+      // S002 ac2: a terminal event returns the button to ▶ Send (t4 also hides the progress widget here).
+      `if(ev&&(ev.kind==='done'||ev.kind==='error'))setRunning(false);}` +
       // S006: an edit-prompt carries the computed diff + the HOST's review flag -> render it
       // (+ accept/reject controls only when the host says review; never gated on local state).
       `else if(m.type==='edit-prompt'){renderDiff(m.path,m.diff,m.review===true);}` +
@@ -283,7 +293,12 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // S005: history-list (re)populates the dropdown; labels via textContent (no innerHTML); keep active selected.
       `else if(m.type==='history-list'){while(hs.options.length>1)hs.remove(1);(m.chats||[]).forEach(function(c){var o=document.createElement('option');o.value=c.id;o.textContent='['+c.provider+'] '+(c.title||c.id);hs.appendChild(o);});hs.value=cur;var _ac=(m.chats||[]).filter(function(c){return c.id===cur;})[0];if(_ac&&_ac.provider){ps.value=_ac.provider;}if(st)st.textContent=_ac&&_ac.title?clampTitle(_ac.title):'';}});` +
       `const box=document.getElementById('insrc-input');` +
-      `box.addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.metaKey||e.ctrlKey)){vs.postMessage({v:1,payload:{type:'submit-turn',text:box.value}});box.value='';}});`;
+      // S002 ac2: submit converges on ONE path (Cmd/Ctrl+Enter and the Send button); it posts
+      // submit-turn + marks running. The Send/Stop button posts cancel-turn while running.
+      `function doSubmit(){vs.postMessage({v:1,payload:{type:'submit-turn',text:box.value}});box.value='';setRunning(true);}` +
+      `box.addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.metaKey||e.ctrlKey)){doSubmit();}});` +
+      `if(sendBtn)sendBtn.addEventListener('click',function(){if(running){vs.postMessage({v:1,payload:{type:'cancel-turn'}});}else{doSubmit();}});` +
+      `setRunning(false);`;
     return (
       `<!DOCTYPE html><html><head><meta charset="utf-8">` +
       `<meta http-equiv="Content-Security-Policy" content="${attr(csp)}">` +
@@ -299,6 +314,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `<div class="inputline">` +
       `<span class="caret">❯</span>` +
       `<textarea id="insrc-input" rows="2" aria-label="message" placeholder="message claude… (⌘↵ send)"></textarea>` +
+      // S002 ac2: icon-only Send/Stop button (glyph + class set by setRunning: ▶ Send / ■ Stop).
+      `<button id="insrc-send" class="sendbtn" type="button" aria-label="send">❯</button>` +
       `</div>` +
       `</div>` +
       // Approved layout: provider / session / edits live as STATUS-BAR segments at the bottom

@@ -1038,3 +1038,76 @@ test('S002: a cancel-turn with no active turn is an idempotent no-op (no throw)'
   host.open();
   assert.doesNotThrow(() => fc.send(env('cancel-turn')));
 });
+
+// ---- S002 t3: Send/Stop button + fixed-region layout ----
+
+test('S002 ac2: renderShell embeds an icon-only Send/Stop button (#insrc-send) wired to submit-turn / cancel-turn', () => {
+  const fc = fakeChannel();
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter([]) }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+    genNonce: () => 'FIXEDNONCE',
+  });
+  host.open();
+  const html = fc.html();
+  assert.match(html, /<button id="insrc-send"/, 'the input area has a Send/Stop button');
+  // icon-only: the glyph is set by setRunning (▶/■), no text label baked in beyond the initial caret.
+  assert.match(html, /function setRunning\(r\)\{running=r;/, 'setRunning toggles the button glyph/class');
+  assert.match(html, /sendBtn\.textContent=r\?'\\u25a0':'\\u25b6'/, 'Stop=■ (u25a0) while running, Send=▶ (u25b6) at rest');
+  assert.match(html, /if\(running\)\{vs\.postMessage\(\{v:1,payload:\{type:'cancel-turn'\}\}\);\}else\{doSubmit\(\);\}/, 'the button posts cancel-turn while running, else submits');
+  assert.match(html, /function doSubmit\(\)\{vs\.postMessage\(\{v:1,payload:\{type:'submit-turn'/, 'doSubmit posts submit-turn + marks running');
+});
+
+test('S002 ac1: the fixed-region layout holds — #insrc-term is the only scroll region; header + input stay flex:0', () => {
+  const fc = fakeChannel();
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter([]) }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+    genNonce: () => 'FIXEDNONCE',
+  });
+  host.open();
+  const html = fc.html();
+  assert.match(html, /#insrc-term\{flex:1 1 auto;min-height:0;overflow-y:auto/, '#insrc-term is the flex-growing scroll region');
+  assert.equal((html.match(/overflow-y:auto/g) ?? []).length, 1, '#insrc-term is the ONLY overflow-y:auto region');
+  assert.match(html, /\.chrome\{[^}]*flex:0 0 auto/, 'the header is fixed (flex:0)');
+  assert.match(html, /\.inputline\{[^}]*flex:0 0 auto/, 'the input line is fixed (flex:0)');
+});
+
+test('S002 ac1/k1: all pre-existing element ids remain; one inline script; no innerHTML/remote origin', () => {
+  const fc = fakeChannel();
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter([]) }, ['claude', 'codex']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+    genNonce: () => 'FIXEDNONCE',
+  });
+  host.open();
+  const html = fc.html();
+  for (const id of ['insrc-term', 'insrc-input', 'insrc-provider', 'insrc-history', 'insrc-editmode', 'insrc-sesstitle']) {
+    assert.match(html, new RegExp(`id="${id}"`), `${id} preserved`);
+  }
+  assert.equal((html.match(/<script\b/g) ?? []).length, 1, 'exactly one inline script');
+  assert.doesNotMatch(html, /innerHTML/, 'no innerHTML');
+  assert.doesNotMatch(html, /https?:\/\//, 'no remote origin');
+});
+
+test('S002: an empty submit is a host no-op (no turn starts)', async () => {
+  const fc = fakeChannel();
+  let ran = 0;
+  const adapter = scriptedAdapter([{ kind: 'done', turnId: 't', ok: true }], { onRun: () => { ran++; } });
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: adapter }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+  });
+  host.open();
+  fc.send(env('submit-turn', { text: '   ' })); // whitespace-only
+  await new Promise((r) => setTimeout(r, 30));
+  assert.equal(ran, 0, 'an empty/whitespace submit starts no turn (runTurn no-ops)');
+});

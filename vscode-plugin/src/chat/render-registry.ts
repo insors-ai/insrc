@@ -167,6 +167,20 @@ export function renderRegistryWebviewSource(): string {
     `chev.textContent=collapsed?'\\u25b8':'\\u25be';});` +
     `wrap.appendChild(chev);wrap.appendChild(body);return wrap;}` +
     `var host={collapsible:collapsible,tokens:{}};` +
+    // S003 t2: a message row is role-classed (user vs assistant tone, ac1) and, when long
+    // (>3 lines or a long single line), its content is wrapped in the sc1 collapse primitive
+    // (default-collapsed 3-line preview, ac2). Short messages render un-wrapped. textContent only (k1).
+    `function isLong(s){s=s||'';return s.split('\\n').length>3||s.length>240;}` +
+    `function msgRow(vm,host,roleCls,inner){` +
+    `var raw=vm&&vm.text!=null?vm.text:'';` +
+    `var d=line(raw);d.className='insrc-msg '+roleCls;` +
+    `var content=inner||null;var longMsg=isLong(raw);` +
+    `if(content||longMsg){` +
+    `if(!content){content=document.createElement('div');content.textContent=raw;}` +
+    `d.textContent='';` +
+    `d.appendChild(longMsg?host.collapsible(content,{defaultCollapsed:true}):content);` +
+    `}` +
+    `return d;}` +
     `function renderRow(vm){` +
     `var r=(vm&&REG[vm.kind])||REG.fallback;` +
     `try{return r.render(vm,host);}` +
@@ -188,8 +202,11 @@ export function renderRegistryWebviewSource(): string {
     // adds role differentiation + collapse-by-default via the collapsible primitive). The
     // tool-command renderer shows the real command INLINE with the sc1 tool tone and is NEVER
     // collapsed (k6 d).
-    `register('user',function(vm){return line(vm.text);});` +
-    `register('assistant-text',function(vm){return line(vm.text);});` +
+    // S003 t2: role-differentiated + collapse-when-long (ac1/ac2). t3 extends assistant-text with
+    // content-type widgets by passing an inner node to msgRow.
+    `register('user',function(vm,host){return msgRow(vm,host,'insrc-msg--user');});` +
+    `register('assistant-text',function(vm,host){return msgRow(vm,host,'insrc-msg--assistant');});` +
+    // tool-command stays inline via line() with the sc1 tool tone — never collapsed (k6 d).
     `register('tool-command',function(vm){return line(vm.text,'insrc-term__marker--tool');});` +
     // S001 t5 (lc1): keyed append. A row rendered with a key is remembered; re-appending the
     // SAME key (a live echo and its session-restored twin) reconciles to the one existing node

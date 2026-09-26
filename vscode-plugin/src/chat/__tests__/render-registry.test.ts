@@ -264,3 +264,36 @@ test('appendKeyed(vm, null) always renders (unkeyed rows are never reconciled)',
   reg.appendKeyed(vm, null);
   assert.equal(appended.length, 2, 'unkeyed appends are never deduped');
 });
+
+// ---- S003 t2: role differentiation + collapse-when-long ----
+
+test('S003 ac1: the user and assistant-text renderers emit distinct role tones', () => {
+  const { reg } = makeRegistry();
+  const u = reg.renderRow({ kind: 'user', role: 'user', text: 'hi', collapsible: true });
+  const a = reg.renderRow({ kind: 'assistant-text', role: 'assistant', text: 'yo', collapsible: true });
+  assert.match(u!.className, /insrc-msg--user/, 'user row carries the user tone');
+  assert.match(a!.className, /insrc-msg--assistant/, 'assistant row carries the assistant tone');
+  assert.notEqual(u!.className, a!.className, 'the two roles are visually distinct');
+});
+
+test('S003 ac2: a >3-line message is wrapped in the collapse primitive (default-collapsed); a short one is not', () => {
+  const { reg } = makeRegistry();
+  const longText = 'l1\nl2\nl3\nl4\nl5';
+  const longRow = reg.renderRow({ kind: 'assistant-text', role: 'assistant', text: longText, collapsible: true });
+  const wrap = longRow!.children.find((c) => /insrc-collapse/.test(c.className));
+  assert.ok(wrap, 'a long message is wrapped in the collapse primitive');
+  assert.match(wrap!.className, /insrc-collapse--collapsed/, 'default-collapsed (3-line preview)');
+  const chevron = wrap!.children.find((c) => c.className === 'insrc-collapse__chevron');
+  assert.equal(chevron!.textContent, '▸', 'icon-only chevron, collapsed glyph');
+  const shortRow = reg.renderRow({ kind: 'user', role: 'user', text: 'just one line', collapsible: true });
+  assert.ok(!shortRow!.children.some((c) => /insrc-collapse/.test(c.className)), 'a short message is NOT wrapped');
+  assert.equal(shortRow!.textContent, 'just one line', 'short message keeps its plain text');
+});
+
+test('S003 k6 d: the tool-command renderer stays inline, never wrapped in collapse', () => {
+  const { reg, appended } = makeRegistry();
+  const node = reg.renderRow({ kind: 'tool-command', text: 'grep -rn foo', collapsible: false });
+  assert.equal(node, appended[0], 'tool-command is the flat line() row');
+  assert.equal(node!.className, 'insrc-term__marker--tool', 'tool tone, no msg/collapse class');
+  assert.doesNotMatch(node!.className, /insrc-collapse|insrc-msg/, 'never collapsed, not a message row');
+});

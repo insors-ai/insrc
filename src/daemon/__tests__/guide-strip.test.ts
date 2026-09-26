@@ -78,10 +78,11 @@ test('is safe on empty-ish text', () => {
 test('the shipped asset carries guide sections; readSteeringBlock returns it whole', () => {
 	const whole = readSteeringBlock();
 	const keys = listWorkflowGuides(whole);
-	// S003 authored all 10 workflow guide sections.
+	// The shipped asset's workflow guide sections (bugfix added by the
+	// surface-bugfix-workflow story — auto-derived from its marker pair).
 	assert.deepEqual(
 		[...keys].sort(),
-		['brainstorm', 'build', 'code-review', 'define', 'design.epic', 'design.story', 'plan', 'review', 'tracker', 'triage'],
+		['brainstorm', 'bugfix', 'build', 'code-review', 'define', 'design.epic', 'design.story', 'plan', 'review', 'tracker', 'triage'],
 	);
 });
 

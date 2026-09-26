@@ -14,6 +14,7 @@ export { nextAfterIssue } from './next-after-issue.js';
 export { admitBugfixAdvance } from './admit.js';
 export { locateAndStampParent, defaultStampDeps } from './stamp.js';
 export { advanceBugfixAfterIssue, completeBugfixTracker } from './advance.js';
+export { advanceApprovedBugfixes, type AdvanceApprovedDeps } from './mount.js';
 export {
 	createBugfixTrackerIssue,
 	closeBugfixTrackerIssue,

@@ -577,14 +577,33 @@ export interface CodeReviewApprovalOutcome {
 	readonly at?:     string;
 }
 
+/** A post-approval seam outcome, recorded when a COMPLETED artifact triggered a
+ *  follow-on side effect (e.g. the bugfix chain advancing past an approved issue,
+ *  or the bugfix tracker closing at BUILD completion). Additive + optional on the
+ *  result — an approval that fires no seam simply omits `followOn`. `ok:false`
+ *  surfaces a seam that threw WITHOUT failing the approval (the approvedAt stamp
+ *  stands; the failure is reported, not swallowed). See `advanceApprovedBugfixes`
+ *  (src/workflow/bugfix/mount.ts) — the daemon `workflow.approve` handler runs the
+ *  seam AFTER this function returns and attaches the outcomes here. */
+export interface FollowOnOutcome {
+	readonly kind:        'bugfix-advance' | 'bugfix-complete';
+	readonly artifactPath: string;
+	readonly ok:          boolean;
+	readonly note?:       string;
+}
+
 /** Non-lossy result: approved artifacts + review-blocked ones (kept distinct
  *  so a batch never silently drops a blocked artifact). `codeReview[]` is the
  *  additive code-review gate surfacing (one entry per story-scoped artifact the
- *  gate ran on) — `approved`/`skipped` shapes are unchanged. */
+ *  gate ran on) — `approved`/`skipped` shapes are unchanged. `followOn` is the
+ *  additive post-approval-seam surfacing (attached by the daemon handler, not by
+ *  approveWorkflowTarget itself, which stays synchronous); absent when no seam
+ *  fired, so every existing caller is byte-for-byte unchanged. */
 export interface WorkflowApproveResult {
 	readonly approved: readonly { readonly path: string; readonly result: ApprovalResult }[];
 	readonly skipped:  readonly { readonly path: string; readonly reason: string }[];
 	readonly codeReview: readonly CodeReviewApprovalOutcome[];
+	readonly followOn?: readonly FollowOnOutcome[];
 }
 
 /** JSON paths of every DEF/HLD/LLD/PLAN/BUILD artifact under `epicHash` that is

@@ -7,6 +7,9 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 
 import {
 	guideMarkerStart,
@@ -115,4 +118,30 @@ test('guideListResult: returns { workflows } in document order', () => {
 
 test('guideListResult: read-seam throws -> { workflows: [] }, never escapes', () => {
 	assert.deepEqual(guideListResult(() => { throw new Error('boom'); }), { workflows: [] });
+});
+
+// --- the SHIPPED steering-block.md surfaces the bugfix guide (S001) -----------
+
+const SHIPPED_STEERING = readFileSync(
+	join(dirname(fileURLToPath(import.meta.url)), '../../prompts/steering-block.md'),
+	'utf8',
+);
+
+test('shipped steering-block.md enumerates bugfix without disturbing the existing keys/order', () => {
+	const keys = listWorkflowGuides(SHIPPED_STEERING);
+	// bugfix now auto-derives from its marker pair — no enumerator code change.
+	assert.ok(keys.includes('bugfix'), 'bugfix guide key is enumerated');
+	// The existing keys are all still present, in their original document order.
+	assert.deepEqual(
+		keys.filter(k => k !== 'bugfix'),
+		['triage', 'brainstorm', 'define', 'design.epic', 'design.story', 'plan', 'build', 'review', 'code-review', 'tracker'],
+		'existing guide keys + order unchanged',
+	);
+});
+
+test('guideGetResult({workflow:"bugfix"}) returns the bugfix section from the shipped asset', () => {
+	const r = guideGetResult(() => SHIPPED_STEERING, 'bugfix') as InsrcGuideOk;
+	assert.equal(r.workflow, 'bugfix');
+	assert.match(r.guidance, /triage/);
+	assert.match(r.guidance, /issue/);
 });

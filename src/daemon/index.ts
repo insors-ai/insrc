@@ -616,12 +616,30 @@ async function main(): Promise<void> {
 				return { error: 'workflow.approve: `repo` is required for an epicHash batch' };
 			}
 			const { approveWorkflowTarget } = await import('../workflow/gates.js');
-			return approveWorkflowTarget({
+			const result = approveWorkflowTarget({
 				repoPath,
 				...(p.artifactPath !== undefined ? { artifactPath: p.artifactPath } : {}),
 				...(p.epicHash !== undefined ? { epicHash: p.epicHash } : {}),
 				...(p.overrideReview !== undefined ? { overrideReview: p.overrideReview } : {}),
 			});
+			// Post-approval bugfix seam (a2 mount): approveWorkflowTarget stays sync;
+			// the async advance/close run here, one level up, over the artifacts it
+			// actually completed. DB-bound parent inference is bound to this daemon's
+			// graph handle (the same wiring the `locate.inferParents` IPC uses) and
+			// injected — the workflow layer stays DB-free. A seam throw is captured as
+			// an `ok:false` followOn, never failing the approval. Skipped when there is
+			// nothing completed to act on or no repo (a repo-independent single-path
+			// approve with no batch repo cannot resolve inference).
+			if (result.approved.length === 0 || repoPath.length === 0) {
+				return result;
+			}
+			const { advanceApprovedBugfixes } = await import('../workflow/bugfix/index.js');
+			const followOn = await advanceApprovedBugfixes(result.approved, {
+				repoPath,
+				inferCandidates: async (req: InferParentsRequest) =>
+					inferParentCandidates(daemonInferencePorts(db, req.repoPath), buildOwnershipIndex(req.repoPath), req),
+			});
+			return followOn.length > 0 ? { ...result, followOn } : result;
 		},
 
 		// sc1 (ide-artifact-review-panel S001): the pending-approval artifact

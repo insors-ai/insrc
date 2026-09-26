@@ -10,8 +10,8 @@ lookups carry the detail so this block can stay small:
 - **`insrc_guide`** — a workflow's full STEP-BY-STEP PROCEDURE. Call
   `insrc_guide({ workflow })` before running a workflow you don't have fresh in
   context, with one of: `define`, `design.epic`, `design.story`, `plan`,
-  `build`, `review`, `code-review`, `brainstorm`, `tracker`, `triage`. Omit
-  `workflow` to get the list of keys back.
+  `build`, `review`, `code-review`, `brainstorm`, `bugfix`, `tracker`, `triage`.
+  Omit `workflow` to get the list of keys back.
 
 **Schema-first rule:** call `insrc_schema` before emitting any insrc_* call whose
 shape (fields, or the `phase` you're in) you are not certain of. Don't hand-shape
@@ -30,6 +30,12 @@ a call from memory when the contract is one lookup away.
   `insrc_triage` (sizes + routes) → the routed workflow → review → approve →
   build → code-review → complete. Every feature, big or small, is tracked. See
   `insrc_guide({ workflow: 'triage' })` for the routing table.
+- **Fix a bug / defect** → same front door: `insrc_triage` classifies it
+  `bugfix` (magnitude `small` or `sized`) and routes to the `issue` stage — a
+  defect gets tracked exactly like a feature, never patched off-ledger. Small →
+  issue → build; sized → issue → design.story → plan → build. On the approval of
+  the tracked `issue`, the bugfix chain auto-advances to its next stage. See
+  `insrc_guide({ workflow: 'bugfix' })`.
 - **Produce a design artifact / decision / tracker push** (Epic, HLD, LLD,
   GitHub) → drive the workflow chain turn-by-turn with `insrc_workflow_step`.
   See the matching `insrc_guide` key.
@@ -92,6 +98,9 @@ or small, is tracked**. `insrc_triage` sizes the request (grounded on your own
 - **feature** → standalone `design.story` (LLD) → `plan` → `build`
 - **small** → standalone `design.story` (LLD) → `build`
 - **trivial** → `build` (no LLD; a standalone BUILD record is its ledger entry)
+- **bugfix** → `issue` stage (carries a `magnitude`: `small` → issue → build;
+  `sized` → issue → design.story → plan → build). A defect is tracked like a
+  feature; see `insrc_guide({ workflow: 'bugfix' })`.
 
 It returns a **pre-filled `nextCall`** — make exactly that call next. Two-turn
 loop: `phase:'start'` with `{ focus, repo? }` → ground + emit the `TriageResult`
@@ -249,3 +258,34 @@ GitHub tracker target comes only from per-repo config or its own git remote,
 never a global default. Loop mirrors the other workflows. Present-ask-approve
 any artifact it writes.
 <!-- insrc:guide:tracker:end -->
+
+<!-- insrc:guide:bugfix:start -->
+## bugfix — fix a defect on the ledger (triage `bugfix` → `issue` stage)
+
+There is no hand-picked "bugfix workflow" — a bug enters through the SAME front
+door as a feature and is tracked the same way. The only difference is triage
+classifies it `bugfix` and routes it to the `issue` stage.
+
+1. **`insrc_triage` FIRST** (as for any change). It sizes the defect and, for a
+   `bugfix`, returns a `magnitude`:
+   - **small** → `issue` → `build` (no LLD; the standalone BUILD is the ledger
+     entry).
+   - **sized** → `issue` → `design.story` (LLD) → `plan` → `build`.
+   Triage hands back a pre-filled `nextCall` that starts `insrc_workflow_step`
+   with `workflow: 'issue'` — make exactly that call.
+2. **Run the `issue` stage** with `insrc_workflow_step` (turn-by-turn, like every
+   workflow). It writes an **IssueArtifact** — the single defect record (root
+   cause, reproduction, fix intent) that also becomes the GitHub issue body.
+   Review it (`insrc_review_step`), then present-ask-approve.
+3. **Approve the issue** with `insrc_workflow_approve`. Approval AUTO-ADVANCES the
+   bugfix chain: the daemon locates + stamps the fix's parent, checks the advance
+   gate, and routes to the next stage (build for small, design.story for sized).
+   The approval result carries a `followOn` entry describing what fired; relay a
+   failed advance (`ok:false`) rather than assuming it advanced.
+4. **Continue the routed chain** (build, or design.story → plan → build), each
+   with its usual review + present-ask-approve gate. Completing the bugfix BUILD
+   is the code-review-gated completion act, exactly as for a feature story.
+
+Do NOT patch a bug off-ledger. Skip triage only for a one-liner the user
+explicitly scoped as trivial.
+<!-- insrc:guide:bugfix:end -->

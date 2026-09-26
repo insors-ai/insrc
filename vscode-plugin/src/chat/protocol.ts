@@ -64,7 +64,10 @@ export type WebviewToHost =
   // additive-optional, existing accept-only handlers ignore it.
   | { readonly type: 'docs-decision'; readonly artifactId: string; readonly accept: boolean; readonly note?: string }
   // S007: the docs-review read intent — open one pending artifact's body (additive).
-  | { readonly type: 'open-doc'; readonly artifactId: string };
+  | { readonly type: 'open-doc'; readonly artifactId: string }
+  // S002 (additive): the Stop control's intent — cancel the in-flight turn. The host
+  // routes it to the existing cancelActive() reap; a no-op when no turn is active.
+  | { readonly type: 'cancel-turn' };
 
 /** The discriminant values of each direction (exported so consumers/tests can assert exhaustiveness). */
 export const HOST_TO_WEBVIEW_TYPES = [
@@ -86,6 +89,7 @@ export const WEBVIEW_TO_HOST_TYPES = [
   'edit-decision',
   'docs-decision',
   'open-doc',
+  'cancel-turn',
 ] as const;
 
 export type HostToWebviewType = (typeof HOST_TO_WEBVIEW_TYPES)[number];

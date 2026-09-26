@@ -29,6 +29,7 @@
  */
 import { spawn as nodeChildSpawn, execFileSync } from 'node:child_process';
 import type { TurnEvent, UnifiedDiff } from './stream-events.js';
+import type { PermissionMode } from './protocol.js';
 
 export type ProviderId = 'claude' | 'codex';
 
@@ -42,6 +43,13 @@ export interface TurnRequest {
   readonly prompt: string;
   readonly resume?: SessionHandle;
   readonly cwd: string;
+  /**
+   * S004 (additive-optional): the tool-permission mode for this turn. `review`
+   * makes the CLI raise host-answered permission prompts (surfaced as approval
+   * cards); `auto` passes a no-prompt/bypass flag so the agent never blocks.
+   * Undefined preserves today's argv exactly (k2) — the CLI's own default.
+   */
+  readonly permissionMode?: PermissionMode;
 }
 
 export interface StreamAdapter {
@@ -148,6 +156,11 @@ const claudeMapper: ProviderMapper = {
   buildArgs(req: TurnRequest): string[] {
     const args = ['-p', req.prompt, '--output-format=stream-json', '--verbose'];
     if (req.resume) args.push('--resume', req.resume.nativeSessionId);
+    // S004: permission-mode flags (k3, verified spike 7100435). Undefined => no flag,
+    // byte-identical argv to today (k2). review => host answers prompts (approval cards);
+    // auto => bypass so the agent never blocks. Never both.
+    if (req.permissionMode === 'review') args.push('--permission-prompts', 'host');
+    else if (req.permissionMode === 'auto') args.push('--permission-mode', 'bypassPermissions');
     return args;
   },
   mapLine(line: string, turnId: string, state: TurnState): TurnEvent[] {
@@ -211,8 +224,12 @@ const codexMapper: ProviderMapper = {
   resume: true,
   buildArgs(req: TurnRequest): string[] {
     // `codex exec --json <prompt>`; resume via the `exec resume <id>` subcommand.
-    if (req.resume) return ['exec', 'resume', req.resume.nativeSessionId, '--json', req.prompt];
-    return ['exec', '--json', req.prompt];
+    // S004: auto => bypass approvals+sandbox so the agent never blocks (k3, spike 7100435);
+    // review => codex's default on-request approval routing (no extra flag); undefined =>
+    // byte-identical argv to today (k2). The flag goes before the prompt (positional).
+    const auto = req.permissionMode === 'auto' ? ['--dangerously-bypass-approvals-and-sandbox'] : [];
+    if (req.resume) return ['exec', 'resume', req.resume.nativeSessionId, '--json', ...auto, req.prompt];
+    return ['exec', '--json', ...auto, req.prompt];
   },
   mapLine(line: string, turnId: string, state: TurnState): TurnEvent[] {
     const trimmed = line.trim();

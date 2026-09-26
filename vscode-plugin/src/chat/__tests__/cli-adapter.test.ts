@@ -420,3 +420,51 @@ test('S004 t3: a SpawnedProcess that omits write() still runs a turn unchanged (
   const events = await collect(reg.get('claude').run(REQ({ provider: 'claude' })));
   assert.equal(events.at(-1)?.kind, 'done', 'turn completes normally with a write-less proc');
 });
+
+// ---- S004 t4: permissionMode -> buildArgs review/auto flags -------------------
+
+test('S004 t4: claude buildArgs — undefined is byte-identical to today; review/auto add the right flag only', async () => {
+  // undefined: no permission flag (k2 — byte-identical to today's argv).
+  {
+    const { deps, spawner } = depsFor(CLAUDE_TEXT_TURN);
+    await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude' })));
+    assert.deepEqual(spawner.calls[0]!.args, ['-p', 'hi', '--output-format=stream-json', '--verbose']);
+  }
+  // review: host answers prompts, never a bypass flag.
+  {
+    const { deps, spawner } = depsFor(CLAUDE_TEXT_TURN);
+    await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude', permissionMode: 'review' })));
+    const args = spawner.calls[0]!.args;
+    assert.deepEqual(args, ['-p', 'hi', '--output-format=stream-json', '--verbose', '--permission-prompts', 'host']);
+    assert.ok(!args.includes('bypassPermissions'), 'review never bypasses');
+  }
+  // auto: bypass, never a host-answered flag.
+  {
+    const { deps, spawner } = depsFor(CLAUDE_TEXT_TURN);
+    await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude', permissionMode: 'auto' })));
+    const args = spawner.calls[0]!.args;
+    assert.deepEqual(args, ['-p', 'hi', '--output-format=stream-json', '--verbose', '--permission-mode', 'bypassPermissions']);
+    assert.ok(!args.includes('--permission-prompts'), 'auto never asks the host');
+  }
+});
+
+test('S004 t4: codex buildArgs — undefined/review keep today argv; auto adds --dangerously-bypass-approvals-and-sandbox', async () => {
+  // undefined: byte-identical to today.
+  {
+    const { deps, spawner } = depsFor(CODEX_TEXT_TURN);
+    await collect(createProviderRegistry(deps).get('codex').run(REQ({ provider: 'codex' })));
+    assert.deepEqual(spawner.calls[0]!.args, ['exec', '--json', 'hi']);
+  }
+  // review: codex default on-request approval — no extra flag (same argv as undefined).
+  {
+    const { deps, spawner } = depsFor(CODEX_TEXT_TURN);
+    await collect(createProviderRegistry(deps).get('codex').run(REQ({ provider: 'codex', permissionMode: 'review' })));
+    assert.deepEqual(spawner.calls[0]!.args, ['exec', '--json', 'hi']);
+  }
+  // auto: bypass flag, placed before the positional prompt.
+  {
+    const { deps, spawner } = depsFor(CODEX_TEXT_TURN);
+    await collect(createProviderRegistry(deps).get('codex').run(REQ({ provider: 'codex', permissionMode: 'auto' })));
+    assert.deepEqual(spawner.calls[0]!.args, ['exec', '--json', '--dangerously-bypass-approvals-and-sandbox', 'hi']);
+  }
+});

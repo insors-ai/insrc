@@ -20,7 +20,7 @@
     "schemaVersion": 1,
     "epicHash": "edb76e2e4d41217d",
     "epicSlug": "work-framed-approved-spec-proceed-from",
-    "approvedAt": "2026-09-26T04:56:34.513Z"
+    "approvedAt": "2026-09-26T05:52:01.084Z"
   },
   "body": {
     "frameworkSummary": "Layered extension-host core + a thin terminal-styled webview (alternative a1). All chat logic lives in vscode-free, deps-injected host modules that mirror the repo's existing createWebviewPanelHost(deps) factory idiom, so streaming, session, edit-governance and docs-review logic are unit-testable without a webview harness. The webview holds no business logic — it paints terminal-styled surfaces and emits user intents over a single typed, versioned message protocol. Each agentic CLI's native structured stream is normalized to ONE event union by a per-provider stream adapter, quarantining the still-to-spike claude/codex stream/resume contract at that boundary so no downstream surface is provider-specific. Grounding + tracked-workflow behaviour come through the CLI's own insrc MCP (the extension observes, never orchestrates — k8). This revision is a preserve-only application of amendment AMD-edb76e2e4d41217d-2: it adds story boundary s8 (restored-marker style fidelity) and changes nothing else in the shipped framework or contracts.",
@@ -166,7 +166,7 @@
           "sc3",
           "sc4"
         ],
-        "internal": "The inline-diff renderer, the EditGovernor that applies the per-session auto/review toggle, and (review mode) the interception of the CLI's edit/write before the write reaches disk are private to S006; it consumes file-edit TurnEvents (sc2), the edit-mode field on the session (sc4), and the edit-prompt/edit-decision messages (sc3)."
+        "internal": "The inline-diff renderer (both a terminal-styled chat-panel view and a native VS Code editor-diff view, selected by the plugin-local insrc.chat.diffView setting), the EditGovernor that applies the per-session auto/review toggle, and the pre-turn snapshot baseline it reverts to on reject are private to S006. S006 is a passthrough observer (k8): it does NOT gate the CLI's write before disk; in review mode it renders the resulting edit and, on reject, restores the pre-turn snapshot. It consumes file-edit TurnEvents (sc2), the edit-mode field on the session (sc4), and the edit-prompt/edit-decision/set-edit-mode messages (sc3), and adds no new shared contract (the diffView setting is a plugin-local package.json config, not an Epic contract)."
       },
       {
         "storyId": "s7",

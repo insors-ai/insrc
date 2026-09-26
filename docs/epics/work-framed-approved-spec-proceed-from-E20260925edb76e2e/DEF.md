@@ -120,20 +120,22 @@ As a developer I can choose which CLI a new chat uses, switch between past chats
 
 **User value:** `size: L`
 
-As a developer I can see every code edit the assistant makes as an inline diff, and per session choose whether edits auto-apply (visualize-only) or require my accept/reject before hitting disk.
+As a developer I can see every code edit the assistant makes as an inline diff, and per session choose whether edits auto-apply (visualize-only) or require my accept/reject; rejecting reverts the file to its pre-turn state. I can choose (via an insrc setting) whether the diff renders in the chat panel or in a native VS Code editor diff.
 
 **Depends on:** `s2`, `s3`
 
 **Acceptance criteria:**
 
 - **ac1:** Given a session in auto mode, when the CLI edits a file, then the change is shown as an inline diff after it lands (visualize-only) in every mode. _(operationalizes `k1`)_
-- **ac2:** Given a session in review mode, when the CLI attempts a code edit, then the extension shows an inline diff with accept/reject and the write reaches disk only on accept. _(operationalizes `k1`)_
+- **ac2:** Given a session in review mode, when the CLI edits a file, then the extension shows the edit as an inline diff with accept/reject; accept keeps the change and reject reverts the file to its pre-turn (pre-edit) state (the extension observes the write post-hoc and reverts on reject, rather than gating before disk). _(operationalizes `k1`)_
 - **ac3:** Given a per-session edit-mode toggle, when I switch between auto and review, then subsequent edits in that session follow the selected mode. _(operationalizes `k1`)_
+- **ac4:** Given the `insrc.chat.diffView` setting is `'chat'` or `'editor'`, when an edit's diff is shown, then it renders in the chat panel (terminal-styled webview) when `'chat'` and in a native VS Code editor diff (pre-turn snapshot vs current) when `'editor'`; accept/reject behaves identically in both. _(operationalizes `k1`, `k6`)_
 
 **Local constraints:**
 
-- `lc1` (contract) Edit handling is a per-session toggle between auto (visualize-only, render on-disk change) and review (extension-gated accept/reject before the write). [[c1]]
-- `lc2` (contract) Review mode intercepts the CLI's edit/write tool calls before the write reaches disk. [[c1]]
+- `lc1` (contract) Edit handling is a per-session toggle between auto (visualize-only, render the on-disk change) and review (accept keeps, reject reverts the file to its pre-turn state). The extension is a passthrough observer (k8): it does not gate the CLI's write before disk; it renders the resulting change and, on reject, restores a pre-turn snapshot. [[c1]]
+- `lc2` (contract) Reject restores the file from a pre-turn, extension-owned snapshot baseline (content-based, separate from Git HEAD) captured before the first edit to that path in a turn; this also lets the extension compute an accurate diff for both providers (independent of the sc2 file-edit payload). [[c1]]
+- `lc3` (contract) A plugin-local insrc setting `insrc.chat.diffView` (enum `'chat'` | `'editor'`, default `'chat'`) selects the diff render surface; declared in `vscode-plugin/package.json` contributes.configuration and read via `getConfiguration().get` with the full dotted key, following the `insrc.chat.enabled` precedent (not the daemon config-catalog). It is global (a UI preference), distinct from the per-session edit-mode toggle. [[c1]]
 
 ### E20260925edb76e2e:S007 — Review the tracked workflow's pending documents inside VS Code
 

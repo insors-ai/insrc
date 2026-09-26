@@ -171,7 +171,7 @@ The provider-selector and history-dropdown UI, the new-chat vs open-chat flows, 
 
 **Depends on:** `sc1`, `sc2`, `sc3`, `sc4`
 
-The inline-diff renderer, the EditGovernor that applies the per-session auto/review toggle, and (review mode) the interception of the CLI's edit/write before the write reaches disk are private to S006; it consumes file-edit TurnEvents (sc2), the edit-mode field on the session (sc4), and the edit-prompt/edit-decision messages (sc3).
+The inline-diff renderer (both a terminal-styled chat-panel view and a native VS Code editor-diff view, selected by the plugin-local `insrc.chat.diffView` setting), the EditGovernor that applies the per-session auto/review toggle, and the pre-turn snapshot baseline it reverts to on reject are private to S006. S006 is a passthrough observer (k8): it does NOT gate the CLI's write before disk; in review mode it renders the resulting edit and, on reject, restores the pre-turn snapshot. It consumes file-edit TurnEvents (sc2), the edit-mode field on the session (sc4), and the edit-prompt/edit-decision/set-edit-mode messages (sc3), and adds no new shared contract (the diffView setting is a plugin-local package.json config, not an Epic contract).
 
 ### Story E20260926edb76e2e:S007
 

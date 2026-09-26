@@ -26,6 +26,7 @@ const SAMPLES: TurnEvent[] = [
   { kind: 'done', turnId: 't', ok: true },
   { kind: 'done', turnId: 't', ok: false },
   { kind: 'error', turnId: 't', message: 'boom' },
+  { kind: 'approval-request', turnId: 't', requestId: 'req-1', title: 'Run a command', detail: 'ls -la' },
 ];
 
 const ALL_CLASSES = new Set(Object.values(MARKER_CLASS));
@@ -78,10 +79,19 @@ test('markerFor: file-edit/done(ok true+false)/error map to the right class + la
 
 test('markerFor(assistant-delta) -> null; an unknown/forward kind -> null (no throw)', () => {
   assert.equal(markerFor({ kind: 'assistant-delta', turnId: 't', text: 'x' }), null);
-  // A future sc2 kind added before S004 catches up: cast past the closed union.
+  // A future sc2 kind added before this mapper catches up: cast past the closed union.
   const future = { kind: 'reasoning', turnId: 't' } as unknown as TurnEvent;
   assert.doesNotThrow(() => markerFor(future));
   assert.equal(markerFor(future), null);
+});
+
+test('S004: markerFor(approval-request) -> null (live-only card, never a durable marker, k4)', () => {
+  const ev: TurnEvent = { kind: 'approval-request', turnId: 't', requestId: 'r', title: 'x', detail: 'y' };
+  assert.equal(markerFor(ev), null);
+  // The webview mirror agrees (parity is also covered by the SAMPLES loop below).
+  // eslint-disable-next-line no-eval
+  const webviewMarkerFor = eval(`(${markerWebviewSource()})`) as (e: unknown) => MarkerLine | null;
+  assert.equal(webviewMarkerFor(ev), null);
 });
 
 test('every markerFor cssClass is one of the five sc1 insrc-term__marker--* stems', () => {

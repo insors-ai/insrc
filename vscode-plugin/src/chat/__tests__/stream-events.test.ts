@@ -45,3 +45,32 @@ test('every existing TurnEvent kind still constructs with its original shape (no
   ];
   assert.equal(samples.length, 6);
 });
+
+test('S004: ApprovalRequestEvent is a valid TurnEvent member with its reserved kind + correlation fields', () => {
+  // The kind was reserved by S001; S004 fills the concrete union member.
+  const ev: TurnEvent = {
+    kind: 'approval-request',
+    turnId: 't',
+    requestId: 'req-1',
+    title: 'Run a shell command',
+    detail: 'rm -rf build/',
+  };
+  assert.equal(ev.kind, 'approval-request');
+  // Narrow and read the correlation key + card fields.
+  if (ev.kind === 'approval-request') {
+    assert.equal(ev.requestId, 'req-1');
+    assert.equal(ev.title, 'Run a shell command');
+    assert.equal(ev.detail, 'rm -rf build/');
+    assert.equal(ev.toolName, undefined);
+  }
+  // toolName is optional-additive: present form still typechecks.
+  const withTool: TurnEvent = {
+    kind: 'approval-request',
+    turnId: 't',
+    requestId: 'req-2',
+    title: 'Edit a file',
+    detail: 'src/a.ts',
+    toolName: 'Edit',
+  };
+  assert.equal(withTool.kind === 'approval-request' ? withTool.toolName : undefined, 'Edit');
+});

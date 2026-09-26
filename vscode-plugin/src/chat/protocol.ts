@@ -29,6 +29,16 @@ export interface DocsArtifactSummary {
   readonly status: string;
 }
 
+/**
+ * S004 sc2 (additive): the tool-permission mode for a chat session. `review`
+ * surfaces each permission request as an in-chat approve/deny card (host answers
+ * the CLI); `auto` relays a no-prompt/bypass flag so the agent never blocks. This
+ * is the ONE canonical declaration both the adapter (cli-adapter.ts buildArgs) and
+ * the webview status-bar control import, so the two never drift (k2/k3). Distinct
+ * from the edit-mode ('set-edit-mode') which governs file edits, not tool perms.
+ */
+export type PermissionMode = 'review' | 'auto';
+
 /** Host -> webview: render + stream events. */
 export type HostToWebview =
   | { readonly type: 'turn-event'; readonly event: TurnEvent }

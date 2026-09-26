@@ -71,8 +71,12 @@ export function markerFor(event: TurnEvent): MarkerLine | null {
       return { cssClass: MARKER_CLASS.done, label: event.ok ? 'done' : 'done (failed)' };
     case 'error':
       return { cssClass: MARKER_CLASS.error, label: event.message };
+    case 'approval-request':
+      // Approval requests render as a live in-chat card, not a durable transcript
+      // marker — they are view-time only and never persisted (k4).
+      return null;
     default: {
-      // A future sc2 kind added before S004 catches up: skip it (no marker), never throw.
+      // A future sc2 kind added before this mapper catches up: skip it (no marker), never throw.
       const _never: never = event;
       void _never;
       return null;
@@ -105,6 +109,8 @@ export function markerWebviewSource(): string {
     `if(k==='file-edit')return{cssClass:${JSON.stringify(c.edit)},label:event.path};` +
     `if(k==='done')return{cssClass:${JSON.stringify(c.done)},label:event.ok?'done':'done (failed)'};` +
     `if(k==='error')return{cssClass:${JSON.stringify(c.error)},label:event.message};` +
+    // S004: approval-request is a live-only card, never a durable marker (k4).
+    `if(k==='approval-request')return null;` +
     `return null;}`
   );
 }

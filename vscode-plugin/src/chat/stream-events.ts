@@ -50,7 +50,24 @@ export type TurnEvent =
       /** The provider's native session id for this turn, when captured — the resume handle S005 persists. */
       readonly sessionId?: string;
     }
-  | { readonly kind: 'error'; readonly turnId: string; readonly message: string };
+  | { readonly kind: 'error'; readonly turnId: string; readonly message: string }
+  | {
+      /**
+       * S004 sc2 (additive): a tool-permission request the underlying CLI raised
+       * mid-turn (claude `--permission-prompts host` control line / codex approval
+       * item), surfaced so the webview can show an approve/deny card instead of the
+       * action being silently blocked. `requestId` is the correlation key the
+       * webview's permission-decision carries back so the adapter answers the RIGHT
+       * request. Live-only: markerFor maps it to null, so it never persists to the
+       * plain replayable transcript (k4).
+       */
+      readonly kind: 'approval-request';
+      readonly turnId: string;
+      readonly requestId: string;
+      readonly title: string;
+      readonly detail: string;
+      readonly toolName?: string;
+    };
 
 /**
  * The discriminant values of {@link TurnEvent}. Exported so consumers/tests can assert exhaustiveness.

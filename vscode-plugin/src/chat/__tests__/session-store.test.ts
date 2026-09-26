@@ -132,3 +132,43 @@ test('S005: maxSessions <= 0 is treated as unbounded (never wipes the active ses
   assert.equal(store.list().length, 2, 'no eviction with a non-positive cap');
   assert.ok(store.get(s1.id) && store.get(s2.id), 'both sessions survive');
 });
+
+// ---- S008: marker cssClass round-trip + backward-compat (ac2/ac3) ----
+
+test('S008: a marker row cssClass round-trips through append/save -> get() (ac2)', () => {
+  const f = fakeMemento();
+  const store = createMementoChatSessionStore({ ...f, now: () => 't', genId: seqId() });
+  const s = store.create('claude');
+  store.append(s.id, { role: 'marker', text: 'done', cssClass: 'insrc-term__marker--done', at: 't' });
+  const row = store.get(s.id)?.transcript[0];
+  assert.equal(row?.role, 'marker');
+  assert.equal(row?.text, 'done');
+  assert.equal(row?.cssClass, 'insrc-term__marker--done', 'the sc1 class survived the memento round-trip');
+});
+
+test('S008: an older session whose marker rows lack cssClass still validates + restores unchanged (ac3, no migration)', () => {
+  const f = fakeMemento();
+  // Seed a pre-S008 session blob directly: a marker row with NO cssClass field + no maxSessions.
+  f.map.set('insrc.chat.index', ['old']);
+  f.map.set('insrc.chat.session.old', {
+    id: 'old', provider: 'claude', createdAt: 't', title: 'legacy', editMode: 'auto',
+    transcript: [{ role: 'marker', text: 'done', at: 't' }],
+  });
+  const store = createMementoChatSessionStore({ ...f, now: () => 't', genId: seqId() });
+  const got = store.get('old');
+  assert.ok(got, 'a pre-S008 session still validates (isSession does no per-row check)');
+  const row = got!.transcript[0];
+  assert.equal(row?.text, 'done');
+  assert.equal(row?.cssClass, undefined, 'the legacy marker row has no cssClass -> restores as plain text');
+  assert.equal(store.list().length, 1, 'the legacy session is listed');
+});
+
+test('S008: user/assistant rows never carry a cssClass', () => {
+  const store = createInMemoryChatSessionStore({ genId: seqId() });
+  const s = store.create('claude');
+  store.append(s.id, { role: 'user', text: 'hi', at: 't' });
+  store.append(s.id, { role: 'assistant', text: 'ok', at: 't' });
+  for (const row of store.get(s.id)!.transcript) {
+    assert.equal(row.cssClass, undefined, `${row.role} row carries no cssClass`);
+  }
+});

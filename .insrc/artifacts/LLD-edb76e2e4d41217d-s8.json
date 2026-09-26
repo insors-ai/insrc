@@ -1,0 +1,614 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1790398606155-j0te3y",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-26T05:04:21.974Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 455800,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-09-25T13:25:32.966Z",
+    "epicHash": "edb76e2e4d41217d",
+    "epicSlug": "work-framed-approved-spec-proceed-from",
+    "storyId": "s8",
+    "hldBaseRunId": "wf-1790398081061-o81y85",
+    "hldEffectiveHash": "e2745c4bac48a6e87b322daf9e2231b2f375790d6b3411568c9129535c418f61",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "ref": "data-model/TranscriptEntry",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The sc4 TranscriptEntry type in session-store.ts is currently {readonly role; readonly text; readonly at} with no style field, so S008 adds an optional readonly cssClass?: string to it.",
+          "evidence": "grep resolves `interface TranscriptEntry` at vscode-plugin/src/chat/session-store.ts:15; the HLD copy (HLD.md:124) shows the current shape {readonly role; readonly text; readonly at} with no style field. The additive optional cssClass?: string is therefore correctly premised.",
+          "action": "none — verified sound",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl2",
+          "ref": "invariants/store-roundtrip",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "session-store.ts isSession() validates a session by checking only that transcript is an Array, so an added optional row field needs no migration and old rows still validate.",
+          "evidence": "isSession at session-store.ts:67 checks typeof object + id/provider/createdAt/title/editMode strings and Array.isArray(s['transcript']) — it does NO per-ROW validation of transcript entries. So an added optional row field validates on both old and new sessions with no migration, exactly as the premise's load-bearing point requires. (Minor imprecision: it also checks session-level fields, not 'only' the transcript array, but that does not affect the additive-no-migration conclusion.)",
+          "action": "none — verified sound",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl3",
+          "ref": "contract/appendEvent",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "chat-panel.ts appendEvent computes marker = markerFor(ev) for a durable marker kind and pushes a {role:'marker', text: marker.label} row, currently dropping marker.cssClass.",
+          "evidence": "grep resolves `function appendEvent(s: ChatSession, ev: TurnEvent)` at chat-panel.ts:246 (LLD's ~209 is an approximate anchor that resolves to the intended writer). S004 LLD confirms it derives the marker row from markerFor(ev).label; the cssClass-drop premise is sound.",
+          "action": "none — verified sound (actual line is chat-panel.ts:246)",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl4",
+          "ref": "contract/line",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "chat-panel.ts webview bootstrap defines a writer line(text, markerClass?) that sets className only when a marker class is passed and sets textContent (no innerHTML).",
+          "evidence": "grep resolves the webview writer at chat-panel.ts:103: `function line(s,cls){const d=document.createElement('div');if(cls)d.className=cls;d.textContent=s;...}` — confirms the S004-widened signature line(text, markerClass?), className set only when truthy, textContent only (no innerHTML). Premise sound (LLD's ~90 is an approximate anchor to the same writer).",
+          "action": "none — verified sound (actual line is chat-panel.ts:103)",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl5",
+          "ref": "migration/restore",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The chat-panel.ts webview session-restored branch replays each transcript row via line(x.text) with no class, which S008 changes to line(x.text, x.cssClass).",
+          "evidence": "grep resolves the session-restored replay at chat-panel.ts:115: `else if(m.type==='session-restored'){...t.textContent='';(m.transcript||[]).forEach(x=>line(x.text));...}` — currently replays with line(x.text) and no class, exactly as premised; S008 changes it to line(x.text, x.cssClass). (LLD's ~94 is an approximate anchor to this branch, actual :115.)",
+          "action": "none — verified sound (actual line is chat-panel.ts:115)",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl6",
+          "ref": "interaction/sc2-markerFor",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "markers.ts markerFor(ev) returns a {cssClass,label} object (MarkerLine) so the cssClass to persist is already computed at write time.",
+          "evidence": "grep resolves `export function markerFor(event: TurnEvent): MarkerLine | null` at markers.ts:43; S004 LLD:36 confirms MarkerLine = {cssClass, label} with cssClass one of the sc1 marker classes. So the cssClass to persist is already computed at write time.",
+          "action": "none — verified sound",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl7",
+          "ref": "interaction/sc1-classes",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "There are exactly five sc1 marker classes (insrc-term__marker--pending|tool|edit|done|error) defined for glyph+tone, and S008 does not modify design-tokens.ts.",
+          "evidence": "S004 LLD:36 enumerates exactly five sc1 marker classes: insrc-term__marker--pending|tool|edit|done|error; markerFor returns one of them. S008 modifies neither markers.ts nor design-tokens.ts. Inventory (5) confirmed.",
+          "action": "none — verified sound",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl8",
+          "ref": "interaction/sc3",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The sc3 session-restored message carries the transcript[] payload, so a new optional field on TranscriptEntry rides the existing message with no protocol change.",
+          "evidence": "session-restored is typed `{ type: 'session-restored'; sessionId: string; transcript: TranscriptEntry[] }` (HLD.md:98) and posted with session.transcript at chat-panel.ts:287/304/338. The added optional field on TranscriptEntry rides this existing payload with no protocol change.",
+          "action": "none — verified sound",
+          "fixability": "auto"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 8
+      },
+      "reviewedAt": "2026-09-26T05:09:16.359Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-26T05:10:57.554Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Layered extension-host core + a thin terminal-styled webview (alternative a1). All chat logic lives in vscode-free, deps-injected host modules that mirror the repo's existing createWebviewPanelHost(deps) factory idiom, so streaming, session, edit-governance and docs-review logic are unit-testable without a webview harness. The webview holds no business logic — it paints terminal-styled surfaces and emits user intents over a single typed, versioned message protocol. Each agentic CLI's native structured stream is normalized to ONE event union by a per-provider stream adapter, quarantining the still-to-spike claude/codex stream/resume contract at that boundary so no downstream surface is provider-specific. Grounding + tracked-workflow behaviour come through the CLI's own insrc MCP (the extension observes, never orchestrates — k8). This revision is a preserve-only application of amendment AMD-edb76e2e4d41217d-2: it adds story boundary s8 (restored-marker style fidelity) and changes nothing else in the shipped framework or contracts.",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "Terminal-UX design tokens + component vocabulary",
+          "purpose": "The single source of the terminal look & feel (monospace, box-drawing chrome, phosphor accents from the insrc docs-site TUI) that every rendered surface consumes, so the whole experience is terminal-styled and not a chat-bubble UI (k6).",
+          "interfaceSketch": "// design-tokens.ts (type-level)\nexport interface TerminalTheme {\n  readonly font: { mono: string; sizePx: number; linePx: number };\n  readonly color: { bg: string; fg: string; dim: string; accent: string; warn: string; err: string; sel: string };\n  readonly chrome: { border: string; boxChars: { h: string; v: string; tl: string; tr: string; bl: string; br: string } };\n  readonly marker: { pending: string; toolCall: string; edit: string; done: string; error: string };\n}\nexport type SurfaceKind = 'chat' | 'provider-dropdown' | 'history-dropdown' | 'inline-diff' | 'docs-review';",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8"
+          ],
+          "assumptions": [
+            "c2"
+          ]
+        },
+        {
+          "id": "sc2",
+          "name": "Normalized CLI stream-event schema",
+          "purpose": "The provider-agnostic event union the StreamAdapter emits per turn; the shared vocabulary that drives streaming render (s3), lifecycle markers (s4), edit detection (s6) and restored-marker style (s8), so a claude/codex stream-format difference never leaks past the adapter.",
+          "interfaceSketch": "// stream-events.ts (type-level)\nexport type TurnEvent =\n  | { kind: 'assistant-delta'; turnId: string; text: string }\n  | { kind: 'tool-call'; turnId: string; tool: string; mcp?: { server: string; name: string } }\n  | { kind: 'file-edit'; turnId: string; path: string; diff: UnifiedDiff }\n  | { kind: 'status'; turnId: string; phase: 'thinking' | 'streaming' | 'tool' | 'editing' }\n  | { kind: 'done'; turnId: string; ok: boolean }\n  | { kind: 'error'; turnId: string; message: string };\nexport interface UnifiedDiff { readonly path: string; readonly hunks: ReadonlyArray<{ oldStart: number; oldLines: number; newStart: number; newLines: number; lines: string[] }>; }",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s3",
+            "s4",
+            "s6",
+            "s8"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        },
+        {
+          "id": "sc3",
+          "name": "Webview↔extension message protocol",
+          "purpose": "The single typed, versioned channel between the host and the thin webview — host→webview render/stream events and webview→host user intents — that every UI surface (chat, markers, dropdowns, inline-diff, docs-review, restored-marker style) rides on, preventing ad-hoc channel drift.",
+          "interfaceSketch": "// protocol.ts (type-level)\nexport interface Envelope<T> { readonly v: 1; readonly payload: T; }\nexport type HostToWebview =\n  | { type: 'turn-event'; event: TurnEvent }\n  | { type: 'session-restored'; sessionId: string; transcript: TranscriptEntry[] }\n  | { type: 'history-list'; chats: ChatSummary[] }\n  | { type: 'edit-prompt'; path: string; diff: UnifiedDiff }\n  | { type: 'docs-list'; artifacts: DocsArtifactSummary[] }\n  | { type: 'theme'; theme: TerminalTheme };\nexport type WebviewToHost =\n  | { type: 'submit-turn'; text: string }\n  | { type: 'new-chat'; provider: ProviderId }\n  | { type: 'open-chat'; chatId: string }\n  | { type: 'set-edit-mode'; mode: 'auto' | 'review' }\n  | { type: 'edit-decision'; path: string; accept: boolean }\n  | { type: 'docs-decision'; artifactId: string; accept: boolean };",
+          "ownedByStory": "s3",
+          "consumedByStories": [
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8"
+          ],
+          "assumptions": []
+        },
+        {
+          "id": "sc4",
+          "name": "Extension-local chat/session store shape",
+          "purpose": "The persisted ChatSession record + store interface (transcript, fixed provider, native session-id, per-session edit-mode) kept extension-local (k3). Introduced by the panel that first needs a live session (s3), extended by history/provider (s5), per-session edit mode (s6) and restored-marker style (s8).",
+          "interfaceSketch": "// session-store.ts (type-level)\nexport interface ChatSession { readonly id: string; readonly provider: ProviderId; nativeSessionId?: string; readonly createdAt: string; title: string; editMode: 'auto' | 'review'; transcript: TranscriptEntry[]; }\nexport interface TranscriptEntry { readonly role: 'user' | 'assistant' | 'marker'; readonly text: string; readonly at: string; }\nexport interface ChatSummary { readonly id: string; readonly provider: ProviderId; readonly title: string; readonly updatedAt: string; }\nexport interface ChatSessionStore {\n  create(provider: ProviderId): ChatSession;\n  get(id: string): ChatSession | undefined;\n  list(): ReadonlyArray<ChatSummary>;\n  append(id: string, entry: TranscriptEntry): void;\n  save(session: ChatSession): void;\n}",
+          "ownedByStory": "s3",
+          "consumedByStories": [
+            "s5",
+            "s6",
+            "s8"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s8",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc4"
+        ],
+        "internal": "How a marker row's sc1 cssClass (computed by the s4 markerFor over an sc2 TurnEvent) is persisted onto the sc4 transcript entry and replayed on the sc3 session-restored message so a reopened chat reproduces each marker's glyph + phosphor tone, are private to S008. It adds no new shared contract; at its LLD it proposes a sharedContract.fieldAdd on sc4 (an optional TranscriptEntry.cssClass) owned by s3 — additive + backward-compatible (older rows without the field restore as plain text). Depends on s3 (sc3/sc4), s2 (sc2) and s1 (sc1), all shipped Phase-A/B contracts."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1"
+          ],
+          "depends": [],
+          "internal": "The concrete mockup deliverables (per-surface terminal-styled mock images/HTML), the design-rationale write-up, and the exact palette/character choices are private to S001; downstream stories consume only the sc1 token/vocabulary contract, not the mock files themselves."
+        },
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc2",
+            "sc5"
+          ],
+          "depends": [],
+          "internal": "The subprocess spawn mechanics, the per-provider parsing of each CLI's NATIVE stream format, the exact claude/codex flags (the stream/resume spike), backpressure/cancellation handling, and error normalization stay private to S002; consumers see only the normalized TurnEvent union (sc2) and the StreamAdapter/ProviderRegistry interface (sc5)."
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc3",
+            "sc4"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc5"
+          ],
+          "internal": "The terminal renderer internals (how TurnEvents paint as terminal output), the input box, the panel/webview lifecycle and single-active-panel management, and the CSP/webview bootstrap are private to S003; other stories consume only the message protocol (sc3) and the session-store shape (sc4)."
+        },
+        {
+          "storyId": "s4",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "How status/tool-call TurnEvents are mapped to terminal-style marker lines, and how observed insrc MCP tool-calls are named/enriched into markers, are private to S004; it adds no new shared contract — it renders sc2 events as sc1-styled markers over sc3."
+        },
+        {
+          "storyId": "s5",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc3",
+            "sc4",
+            "sc5"
+          ],
+          "internal": "The provider-selector and history-dropdown UI, the new-chat vs open-chat flows, and the wiring of the StreamAdapter's native session-resume handle into a restored session are private to S005; it persists through sc4 and drives turns through sc5, adding no new shared contract."
+        },
+        {
+          "storyId": "s6",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4"
+          ],
+          "internal": "The inline-diff renderer, the EditGovernor that applies the per-session auto/review toggle, and (review mode) the interception of the CLI's edit/write before the write reaches disk are private to S006; it consumes file-edit TurnEvents (sc2), the edit-mode field on the session (sc4), and the edit-prompt/edit-decision messages (sc3)."
+        },
+        {
+          "storyId": "s7",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc3"
+          ],
+          "internal": "The docs-review pane and its DocsReviewClient over the existing daemon IPC (the exact pendingApproval listing + insrc_workflow_approve method names/payloads, pinned at the S007 LLD) and the mirroring of the JetBrains review/comment/accept-reject panel are private to S007; it consumes only the message protocol (sc3) and the terminal tokens (sc1) and adds no new shared contract to the Epic."
+        }
+      ],
+      "rolloutPhase": "Phase C — provider/history, edit governance, docs review & restore fidelity",
+      "nonFunctional": {
+        "performance": "Streaming is incremental: assistant-delta events render to the terminal panel as they arrive (no wait-for-turn-complete); the host must not buffer a whole turn before painting. Marker updates are cheap status lines. The webview holds no heavy state. Restoring a chat replays its transcript rows without re-running any turn.",
+        "security": "No direct cloud REST from the extension (k2); all model access is via the user's own claude/codex CLI OAuth sessions. The webview runs under a strict CSP (no remote origins) with exactly one nonce'd inline script; host↔webview traffic is the typed sc3 protocol only, and dynamic text is set via textContent (no innerHTML). Chat history stays on the local machine (k3).",
+        "observability": "Per-turn lifecycle markers (thinking/tool-call/streaming/done) are the user-facing progress signal, live AND on restore; host modules log via the repo's getLogger, never console.log. Errors surface as an error TurnEvent rendered inline, not a silent failure.",
+        "durability": "Chat history + per-session provider/native-session-id/edit-mode + (s8) per-marker style persist extension-local (VS Code Memento) and survive window reload; nothing is written to the daemon. A missing/corrupt local store degrades to an empty history, and an older transcript row without the s8 cssClass restores as plain text — never a crash, no migration."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "appendEvent",
+          "signature": "appendEvent(s: ChatSession, ev: TurnEvent): void",
+          "parameters": [
+            {
+              "name": "s",
+              "type": "ChatSession",
+              "purpose": "The active session whose transcript receives the row (sc4, consumed).",
+              "optional": false
+            },
+            {
+              "name": "ev",
+              "type": "TurnEvent",
+              "purpose": "The sc2 event to record.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "The S004 host transcript writer (chat-panel.ts:~209), RESHAPED so a durable marker row now persists the sc1 cssClass alongside the label: it pushes { role:'marker', text: marker.label, cssClass: marker.cssClass } where marker = markerFor(ev). assistant-delta still -> role:'assistant'; status still skipped (transient); an unmapped kind (markerFor null) still writes no row."
+          },
+          "errors": [],
+          "preconditions": [
+            "marker = markerFor(ev) is non-null (a durable marker kind: tool-call/file-edit/done/error)."
+          ],
+          "postconditions": [
+            "Each persisted marker row carries both text (the label) and cssClass (one of the five sc1 insrc-term__marker--* classes); no daemon write (k3), no workflow call (k8).",
+            "The cssClass round-trips through the memento with the rest of the ChatSession (no store API change)."
+          ]
+        },
+        {
+          "name": "line",
+          "signature": "line(text: string, markerClass?: string): void",
+          "parameters": [
+            {
+              "name": "text",
+              "type": "string",
+              "purpose": "The row text (via textContent — XSS-safe, unchanged).",
+              "optional": false
+            },
+            {
+              "name": "markerClass",
+              "type": "string",
+              "purpose": "The sc1 marker class to set on the row <div>; omitted -> plain text row.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "The S004-widened webview writer (chat-panel.ts:~90), CONSUMED unchanged by s8. The change is at its CALL SITE in the session-restored branch (chat-panel.ts:~94): the replay now passes the stored class — line(x.text, x.cssClass) — instead of line(x.text)."
+          },
+          "errors": [],
+          "preconditions": [
+            "Called from inside the one nonce'd webview bootstrap script."
+          ],
+          "postconditions": [
+            "A restored marker row with a cssClass renders with its sc1 glyph + tone; a row without one (older data / user/assistant rows) renders as plain text — line() only sets className when markerClass is truthy.",
+            "Still textContent-only (no innerHTML); no second <script>; CSP unchanged."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "TranscriptEntry.cssClass (session-store.ts, sc4)",
+        "change": "field-add",
+        "details": "Add an optional `readonly cssClass?: string` to the sc4 TranscriptEntry. Set on marker rows (the sc1 class from markerFor); absent on user/assistant rows and on all pre-existing stored rows. Additive + backward-compatible: the memento JSON round-trip carries it automatically and isSession() (which only checks transcript is an Array) still validates old and new sessions. No store API/signature change, no migration. Current-behaviour invariant it changes: s1 bundle notes TranscriptEntry today is {role,text,at} with no style, so restored markers lose their glyph/tone (the S004 MED-1 regression).",
+        "schemaDiff": "  export interface TranscriptEntry {\n    readonly role: 'user' | 'assistant' | 'marker';\n    readonly text: string;\n+   readonly cssClass?: string; // sc1 marker class for a role:'marker' row (S008)\n    readonly at: string;\n  }",
+        "callSites": [
+          "vscode-plugin/src/chat/session-store.ts (TranscriptEntry definition; round-tripped by get/save)",
+          "vscode-plugin/src/chat/chat-panel.ts (appendEvent sets it on marker rows; the session-restored replay reads it into line(x.text, x.cssClass))"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc4",
+        "role": "consumes",
+        "howDetails": "Consumes the sc4 store; proposes an ADDITIVE fieldAdd (optional readonly cssClass?: string on TranscriptEntry, owned by s3) via the amendment below. The ChatSessionStore interface + create/get/list/append/save signatures are unchanged; the field rides the existing memento round-trip."
+      },
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "The persisted cssClass value is exactly one of the five sc1 insrc-term__marker--* classes that renderTerminalStyle defines (glyph + phosphor tone); s8 does not modify design-tokens.ts."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "The cssClass is computed by the s4 markerFor over the sc2 TurnEvent at write time; s8 reads the union as-is and does not reshape it."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "Rides the EXISTING sc3 session-restored message: once TranscriptEntry carries cssClass, the restored transcript payload conveys it with NO new message type/field on the protocol — s8 adds nothing to sc3."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A restored transcript row carries a cssClass that is not one of the five sc1 marker classes (corrupted store, or a future class the current sc1 does not define).",
+          "detection": "The webview restore passes x.cssClass to line() as a className; an unknown class simply matches no sc1 ::before rule (there is no lookup/throw).",
+          "response": "Render the row text with that class applied but no glyph/tone (the class has no matching CSS rule) — i.e. it degrades to plain text; never throws. Optionally the host only writes classes from markerFor, so this only arises from external corruption.",
+          "userImpact": "A corrupted/unknown class shows the label as plain text instead of a glyph — no crash, no broken rendering.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A restored row is malformed (missing text, or cssClass is a non-string) after a partial/corrupt memento write.",
+          "detection": "The webview restore forEach reads x.text / x.cssClass; the widened line(text, markerClass?) sets className only when markerClass is a truthy value and always sets textContent (so a non-string class is falsy-guarded).",
+          "response": "Skip the class (falsy -> no className) and render textContent; the S003 corruption-tolerant store already drops a whole malformed session to undefined before restore, so a per-row anomaly is the residual case and is rendered defensively.",
+          "userImpact": "The row still renders its text; at worst it loses its glyph — no exception in the one nonce'd script (which would break all later rows).",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A restored user or assistant row (role !== 'marker', no cssClass).",
+          "expected": "line(x.text, undefined) -> plain text row exactly as today; only marker rows carry a cssClass."
+        },
+        {
+          "input": "An older stored chat whose marker rows predate this change (no cssClass field).",
+          "expected": "x.cssClass is undefined -> line() sets no class -> plain-text marker (the S004 pre-fix look); no migration, no error (ac3)."
+        },
+        {
+          "input": "A live marker row that was just appended (this session) and is then restored via open-chat without a reload.",
+          "expected": "It already carries cssClass (appendEvent set it), so it restores with full glyph + tone — identical to the live render."
+        },
+        {
+          "input": "A done marker with ok=false (label 'done (failed)').",
+          "expected": "cssClass = insrc-term__marker--done (markerFor's value) is persisted + restored; the done glyph/tone shows, the failure is conveyed by the label text as in S004."
+        },
+        {
+          "input": "The live turn render path (turn-event message), unchanged by s8.",
+          "expected": "Still computes the marker webview-side via markerWebviewSource() and renders live; s8 only adds the persisted cssClass for the RESTORE path — no double-render, no change to live."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The webview keeps EXACTLY ONE nonce'd inline <script> under the strict CSP; s8 changes only the session-restored call site (line(x.text, x.cssClass)) inside that same script — no second script, no remote origin, no asWebviewUri. (s1 bundle: chat-panel.ts restore branch ~:94 within the one-script shell.)",
+          "source": "c2"
+        },
+        {
+          "text": "Marker rows render via textContent only (never innerHTML); cssClass is applied as a className attribute by the S004-widened line(), never interpolated into markup. The S003/S004 no-XSS invariant holds. (s1 bundle: chat-panel.ts line() writer.)",
+          "source": "c2"
+        },
+        {
+          "text": "Chat history stays extension-local via the injected Memento only; the cssClass persists on the transcript row through the existing round-trip — nothing is written to the daemon (k3). (s1 bundle: session-store.ts memento round-trip.)",
+          "source": "c1"
+        },
+        {
+          "text": "sc4 store API + round-trip are unchanged: create/get/list/append/save signatures are byte-identical and isSession() (which only checks transcript is an Array) still validates both old (no cssClass) and new rows — additive, no migration. (s1 bundle: session-store.ts isSession + round-trip.)",
+          "source": "c1"
+        },
+        {
+          "text": "The live render path is untouched: s8 only enriches the RESTORE replay + the persisted write; the turn-event/markerFor live rendering (S004) is unchanged, so restored == live with no duplicated mapper. (s1 bundle: chat-panel.ts appendEvent/markers.ts markerFor.)",
+          "source": "c2"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test + node:assert/strict, run via tsx --test (no vscode runtime; FakePanel + fake StreamAdapter + in-memory ChatSessionStore double, matching session-store.test.ts / chat-panel.test.ts)",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Pin the sc4 round-trip of the new optional cssClass field + backward-compat, extending session-store.test.ts.",
+          "subjects": [
+            "a marker TranscriptEntry with cssClass round-trips through append/save -> get(): the restored row's cssClass equals what was written",
+            "an older session whose marker rows lack cssClass still validates (isSession) + get()/list() return it unchanged (no field, no throw)",
+            "user/assistant rows never carry a cssClass"
+          ],
+          "fixturesNeeded": [
+            "in-memory ChatSessionStore with deterministic now()/genId()"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Drive a turn + restore through createChatPanelHost (FakePanel + fake adapter + in-memory store) and assert persistence + restore rendering, extending chat-panel.test.ts.",
+          "subjects": [
+            "a turn with tool-call(mcp)/file-edit/done events -> the persisted marker rows each carry cssClass = markerFor(ev).cssClass (ac2)",
+            "assistant-delta rows are role:'assistant' with no cssClass; status is not persisted (unchanged from S004/MED-2)",
+            "open-chat restore posts session-restored whose transcript marker rows include their cssClass (so the webview can style them)"
+          ],
+          "fixturesNeeded": [
+            "fake StreamAdapter emitting a scripted status->tool-call(mcp)->file-edit->done sequence",
+            "in-memory ChatSessionStore double"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Assert the rendered shell's session-restored branch applies the stored class + preserves the S003/S004 CSP/XSS invariants (rendered-shell contract).",
+          "subjects": [
+            "renderShell() session-restored replay calls line(x.text, x.cssClass) (passes the stored class), NOT line(x.text)",
+            "the shell still has EXACTLY ONE <script nonce=...> + strict CSP; line() sets textContent + className only (no innerHTML); no remote origin / asWebviewUri",
+            "a restore payload with a marker row lacking cssClass renders as plain text (no class), and a user/assistant row is unaffected"
+          ],
+          "fixturesNeeded": [
+            "createChatPanelHost with a FakePanel + injected genNonce; a session whose transcript mixes marker rows (with cssClass) + an old marker row (without) + assistant rows"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "unit(shell): session-restored replay applies x.cssClass via line(x.text, x.cssClass) so a marker row renders with its insrc-term__marker--* class",
+            "integration: open-chat restore posts marker rows carrying their cssClass (the webview styles them with glyph+tone)"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "integration: after a turn, each persisted marker row's cssClass equals markerFor(ev).cssClass",
+            "unit(store): a marker row's cssClass round-trips through append/save -> get()"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "unit(store): an older session with cssClass-less marker rows validates + round-trips unchanged (no migration)",
+            "unit(shell): a restored marker row without cssClass renders as plain text (line() sets no class), no throw"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "Per s1 bundles: sc4 TranscriptEntry is {readonly role; readonly text; readonly at} with no style. chat-panel.ts appendEvent computes markerFor(ev) for a durable marker kind but persists only {role:'marker', text: marker.label} — marker.cssClass is dropped. The webview session-restored branch replays each row via line(x.text) with no class. So a reopened chat's markers render as plain text, indistinguishable from assistant output (the S004 MED-1 regression). markers.ts markerFor already returns {cssClass,label}; the S004-widened webview line(text, markerClass?) already sets className when a class is passed; live rendering already styles markers.",
+      "stateAfter": "sc4 TranscriptEntry gains an optional readonly cssClass?: string. appendEvent persists it on marker rows (marker.cssClass); it round-trips through the memento with no store API change. The webview session-restored replay passes it — line(x.text, x.cssClass) — so restored marker rows show their sc1 glyph + phosphor tone identically to live. Old stored rows lack the field and restore as plain text (no migration). Live rendering, sc1/sc2/sc3, and the store API are unchanged; the panel stays behind insrc.chat.enabled.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the optional readonly cssClass?: string field to the sc4 TranscriptEntry type in session-store.ts (additive; the memento round-trip + isSession() need no change). Nothing writes it yet.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "In chat-panel.ts appendEvent, include cssClass: marker.cssClass when pushing a role:'marker' row (assistant-delta/status/unmapped paths unchanged).",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "In the chat-panel.ts webview session-restored replay, pass the stored class to the widened writer — line(x.text, x.cssClass) instead of line(x.text). Rows without a class (old data, user/assistant) render as plain text.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Extend session-store.test.ts (cssClass round-trips; old cssClass-less rows validate + restore) and chat-panel.test.ts (appendEvent persists cssClass; the shell restore replay applies x.cssClass; CSP/one-script intact); run the full sweep.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No public/shared-contract API is removed or reshaped: the sc4 ChatSessionStore interface + create/get/list/append/save signatures are byte-identical; cssClass is a new OPTIONAL readonly field on TranscriptEntry (a non-breaking fieldAdd). Existing stored sessions from S003/S004/S005 load unchanged — their marker rows simply lack cssClass and restore as plain text (the current behaviour), so NO data migration is required. line() keeps its S004 signature (the markerClass param is already optional); its restore call site just supplies the stored value. Live rendering + sc1/sc2/sc3 are untouched, so no other story is affected.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Persist markerFor's cssClass on TranscriptEntry; restore replays it",
+        "oneLineSummary": "Add an optional readonly cssClass?: string to sc4 TranscriptEntry (sharedContract.fieldAdd, additive); host appendEvent stores marker.cssClass alongside the label; the webview session-restored replay passes it to the S004-widened line(x.text, x.cssClass).",
+        "approach": "One field carries the already-computed style through persistence. markerFor(ev) (s4, markers.ts) already returns {cssClass,label}; appendEvent already calls it for marker rows but drops the cssClass — s8 pushes {role:'marker', text: marker.label, cssClass: marker.cssClass}. The whole ChatSession JSON round-trips through the memento, so the field persists + reloads with no store API change (isSession() checks only that transcript is an array). On restore, the webview's session-restored branch changes from line(x.text) to line(x.text, x.cssClass) — line() is the S004-widened writer that sets className only when a class is present, so a row without cssClass renders as plain text (ac3, backward-compatible). No sc3 message change (the field rides the existing transcript payload); no design-tokens.ts change (the classes already exist).",
+        "pros": [
+          "Reuses the exact live-render mapper (markerFor.cssClass) and the S004 line(text,cssClass) writer — restored markers are byte-identical to live (ac1) with no duplicated logic",
+          "Additive + backward-compatible: old rows lack the field and fall back to plain text; no migration (ac3)",
+          "Minimal + in-scope: one optional field + two one-line touches (appendEvent push, restore line()) inside s8's declared marker-persistence/restore slice; no sc3 reshape"
+        ],
+        "cons": [
+          "Touches the sc4 store contract (a fieldAdd HLD amendment) and the S003-owned chat-panel restore line — justified: this is exactly s8's boundary and the amendment is approved-gated"
+        ],
+        "costEstimate": "S"
+      },
+      {
+        "id": "a2",
+        "name": "Re-derive the marker class on restore (no persisted field)",
+        "oneLineSummary": "Store nothing new; on restore, infer each marker row's cssClass from its persisted text/role by re-running a classifier.",
+        "approach": "Leave TranscriptEntry unchanged. On session-restored, for each role:'marker' row, attempt to reconstruct the sc1 class from the text (e.g. pattern-match 'done'/'done (failed)', a path, an 'server · name' tool label) or from role alone.",
+        "pros": [
+          "No sc4 contract change / no HLD amendment",
+          "No new persisted data"
+        ],
+        "cons": [
+          "Fragile + lossy: the persisted text is the enriched LABEL (e.g. 'src/a.ts', 'insrc · x', an arbitrary error message) with the KIND already erased — a path vs an error message vs a tool label cannot be reliably distinguished, so the reconstructed class would frequently be wrong",
+          "Duplicates + diverges from markerFor: a second, text-based classifier that must be kept in sync with the sc2->class mapping (the very drift S004 avoided by single-sourcing)",
+          "role:'marker' alone cannot pick between tool/edit/done/error, so it cannot satisfy ac1's per-kind glyph+tone"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Avoids a contract change but VIOLATES ac1/ac2: the persisted label has already erased the kind, so restore cannot reliably recover the class, and nothing is stored to survive reload. Fundamentally cannot deliver the story."
+      },
+      {
+        "id": "a3",
+        "name": "Bake the glyph into the persisted marker text",
+        "oneLineSummary": "Prepend the sc1 glyph char to the marker row's stored text so restore shows a glyph without any class (the S004-rejected a2 pattern).",
+        "approach": "When appendEvent writes a marker row, store text = `${glyph} ${label}` using terminalTheme.marker glyphs; restore prints it plain via the existing line(x.text). No field, no restore-render change.",
+        "pros": [
+          "No sc4 contract change; restore path untouched",
+          "Live and restored rows both show the glyph char uniformly"
+        ],
+        "cons": [
+          "No per-kind COLOR tone — the glyph renders in default fg, not the sc1 phosphor accent/warn/err, so it is a weaker realization of ac1 (this is the exact reason S004 rejected its a2)",
+          "Couples persisted transcript text to the current glyph set (a future glyph change rewrites the meaning of old rows)",
+          "Diverges the persisted marker text from the live label (live uses class+bare label; persisted bakes the glyph) — two representations"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Cheapest and shows a glyph on restore, but scores partial on ac1/ac2/sc1 because it drops the phosphor tone and couples persisted text to the glyph set — the same trade-off S004 already rejected for live markers. Loses to a1 on fidelity."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1: session-store.ts (sc4) TranscriptEntry {role,text,at} + memento round-trip; isSession checks only transcript is an array",
+      "quotedText": "an added optional readonly cssClass?: string persists + reloads automatically; old rows validate fine; no migration"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1: chat-panel.ts appendEvent drops marker.cssClass + session-restored replays line(x.text) with no class (S004 MED-1); markers.ts markerFor returns {cssClass,label}; line(text,markerClass?) already accepts a class",
+      "quotedText": "persist marker.cssClass on the row + replay line(x.text, x.cssClass); one nonce'd script + textContent preserved"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1: sc1 marker classes (design-tokens.ts renderTerminalStyle) + sc3 session-restored (protocol.ts) consumed unchanged",
+      "quotedText": "the five insrc-term__marker--* ::before glyph+tone rules; session-restored carries transcript[] so the field rides the existing payload"
+    }
+  ]
+}

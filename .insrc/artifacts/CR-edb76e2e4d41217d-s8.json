@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1790399939129-n0ogwf",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-26T05:18:59.130Z",
+    "model": "client",
+    "elapsedMs": 3,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "edb76e2e4d41217d",
+    "storyId": "s8"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "edb76e2e4d41217d",
+    "storyId": "s8",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        ".insrc/artifacts/DEF-edb76e2e4d41217d.json",
+        ".insrc/artifacts/HLD-edb76e2e4d41217d.json",
+        "docs/epics/work-framed-approved-spec-proceed-from-E20260925edb76e2e/DEF.md",
+        "docs/epics/work-framed-approved-spec-proceed-from-E20260925edb76e2e/HLD.md",
+        "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+        "vscode-plugin/src/chat/__tests__/session-store.test.ts",
+        "vscode-plugin/src/chat/chat-panel.ts",
+        "vscode-plugin/src/chat/session-store.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/chat-panel.ts:260",
+            "message": "Meets the S008 LLD + all epic constraints: history stays extension-local via the injected Memento (k3) — appendEvent only pushes onto s.transcript and the store persists to the memento, no daemon write, no workflow call (k8). The added cssClass rides the EXISTING sc3 session-restored payload (no protocol change). ac1/ac2/ac3 all satisfied. No breach.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/session-store.ts:19",
+            "message": "Follows repo conventions: `readonly cssClass?: string` uses an explicit optional readonly field (exactOptionalPropertyTypes-safe — user/assistant pushes OMIT the field rather than setting undefined); vscode-free deps-injected module unchanged; the webview writer stays textContent+className only (no innerHTML), one nonce'd script under strict CSP. tsc --noEmit is clean. No deviation.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts:574",
+            "message": "Coverage confirmed by RUNNING the suite: 38/38 pass. New tests are non-trivial — store round-trip of cssClass (ac2), legacy cssClass-less session validates + restores as plain text with no migration (ac3), user/assistant rows carry no class; integration asserts each durable marker persists cssClass===markerFor(ev).cssClass and open-chat restore posts the class; the shell test regex-asserts the restore replay forwards line(x.text,x.cssClass) and re-pins the CSP/one-script/no-innerHTML/no-remote invariants. All three acceptance criteria are test-covered.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/chat-panel.ts:115",
+            "message": "Minimal, single-sourced change: reuses markerFor's already-computed cssClass (no duplicated mapper) and the S004-widened line(text,markerClass?) writer; the live render path is untouched so restored==live for durable markers. Backward-compatible additive field, no migration. cssClass value is never user-controlled (only markerFor's frozen MARKER_CLASS constants), so applying it via className is XSS-safe. No quality concern.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 4
+    }
+  }
+}

@@ -569,3 +569,85 @@ test('S005 a first-turn error still refreshes the history dropdown (title label)
   const s = store.get(store.list()[0]!.id);
   assert.equal(s?.title, 'do a thing', 'title was set from the first prompt despite the error');
 });
+
+// ---- S008: restored markers keep their glyph + tone (sc1 cssClass persisted + replayed) ----
+
+test('S008 integration: a turn persists each marker row with cssClass === markerFor(ev).cssClass (ac2); assistant rows carry none', async () => {
+  const fc = fakeChannel();
+  const evs: TurnEvent[] = [
+    { kind: 'tool-call', turnId: 't1', tool: 'x', mcp: { server: 'insrc', name: 'insrc_analyze_step' } },
+    { kind: 'assistant-delta', turnId: 't1', text: 'hi' },
+    { kind: 'file-edit', turnId: 't1', path: 'src/a.ts', diff: { path: 'src/a.ts', hunks: [] } },
+    { kind: 'done', turnId: 't1', ok: true },
+  ];
+  const store = createInMemoryChatSessionStore();
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter(evs) }, ['claude']),
+    store,
+    cwd: () => '/repo',
+  });
+  host.open();
+  fc.send(env('submit-turn', { text: 'go' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+
+  const s = store.get(store.list()[0]!.id);
+  const markers = s!.transcript.filter((r) => r.role === 'marker');
+  // Each durable marker persists its sc1 class (one of the five insrc-term__marker--* stems).
+  const byText = new Map(markers.map((r) => [r.text, r.cssClass]));
+  assert.equal(byText.get('insrc · insrc_analyze_step'), 'insrc-term__marker--tool', 'tool-call marker persisted its sc1 class');
+  assert.equal(byText.get('src/a.ts'), 'insrc-term__marker--edit', 'file-edit marker persisted its sc1 class');
+  assert.equal(byText.get('done'), 'insrc-term__marker--done', 'done marker persisted its sc1 class');
+  for (const m of markers) assert.match(m.cssClass ?? '', /^insrc-term__marker--/, 'every marker row carries an sc1 class');
+  assert.ok(
+    s!.transcript.some((r) => r.role === 'assistant' && r.text === 'hi' && r.cssClass === undefined),
+    'assistant-delta row carries no cssClass',
+  );
+});
+
+test('S008 integration: open-chat restore posts marker rows carrying their cssClass (ac1)', () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  const prior = store.create('claude');
+  store.append(prior.id, { role: 'marker', text: 'done', cssClass: 'insrc-term__marker--done', at: 't' });
+  store.append(prior.id, { role: 'marker', text: 'legacy', at: 't' }); // pre-S008 row (no cssClass)
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter([]) }, ['claude']),
+    store,
+    cwd: () => '/repo',
+  });
+  host.open();
+  fc.send(env('open-chat', { chatId: prior.id }));
+  const restored = fc.posted.filter((m) => m.payload.type === 'session-restored').map((m) => m.payload);
+  const payload = restored.find((r) => r['sessionId'] === prior.id);
+  assert.ok(payload, 'open-chat restored the prior chat');
+  const rows = payload!['transcript'] as Array<{ text: string; cssClass?: string }>;
+  assert.equal(rows.find((x) => x.text === 'done')?.cssClass, 'insrc-term__marker--done', 'the styled marker carries its class on restore');
+  assert.equal(rows.find((x) => x.text === 'legacy')?.cssClass, undefined, 'the pre-S008 marker restores as plain text (ac3)');
+});
+
+test('S008 shell: session-restored replay passes the stored class via line(x.text,x.cssClass); CSP/one-script/textContent intact', () => {
+  const fc = fakeChannel();
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter([]) }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+    genNonce: () => 'FIXEDNONCE',
+  });
+  host.open();
+  const html = fc.html();
+  // The restore replay forwards the stored class to the widened writer (not the bare line(x.text)).
+  assert.match(html, /forEach\(x=>line\(x\.text,x\.cssClass\)\)/, 'restore replays with the stored cssClass');
+  assert.doesNotMatch(html, /forEach\(x=>line\(x\.text\)\)/, 'the classless replay is gone');
+  // sc1/CSP/XSS invariants unchanged by the S008 edit.
+  const scripts = html.match(/<script\b/g) ?? [];
+  assert.equal(scripts.length, 1, 'still exactly one inline script');
+  assert.match(html, /script-src 'nonce-FIXEDNONCE'/, 'strict CSP unchanged');
+  assert.match(html, /function line\(s,cls\)/, 'the widened writer is unchanged');
+  assert.match(html, /className=cls/, 'the class is applied via className');
+  assert.doesNotMatch(html, /innerHTML/, 'textContent only, never innerHTML');
+  assert.doesNotMatch(html, /https?:\/\//, 'no remote origin');
+  assert.doesNotMatch(html, /asWebviewUri/, 'no asWebviewUri');
+});

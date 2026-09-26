@@ -1,0 +1,68 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "wf-1790397811942-lpvpfj",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-26T04:44:50.295Z",
+    "epicCreatedAt": "2026-09-25T13:25:32.966Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 78313,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "edb76e2e4d41217d",
+    "epicSlug": "work-framed-approved-spec-proceed-from",
+    "storyId": "s8",
+    "approvedAt": "2026-09-26T04:45:31.819Z"
+  },
+  "body": {
+    "scope": "S",
+    "notify": "Extends Epic `work-framed-approved-spec-proceed-from` (edb76e2e4d41217d) — builds on the shipped sc4 store (session-store.ts), S004 markers (markers.ts) and the S003 chat-panel restore path; adds ONE small story that amends sc4 (TranscriptEntry gains an optional cssClass) so restored chats reproduce each marker's glyph + tone. No new Epic.",
+    "addedStory": {
+      "id": "s8",
+      "title": "Persist marker style so restored chats keep their glyph + tone",
+      "userValue": "As a developer, when I reopen a past chat from the history dropdown, its tool-call / edit / done / error markers show with the same terminal glyph and phosphor colour as the live turn — so a restored transcript reads exactly like the live one and markers stay distinguishable from assistant text.",
+      "acceptanceCriteria": [
+        {
+          "id": "ac1",
+          "given": "a chat whose transcript contains marker rows (tool-call / file-edit / done / error)",
+          "when": "the chat is restored from the history dropdown",
+          "then": "each marker row renders with its sc1 glyph + phosphor tone (the insrc-term__marker--* class), not plain text",
+          "operationalizes": []
+        },
+        {
+          "id": "ac2",
+          "given": "a marker row is written during a live turn",
+          "when": "it is persisted to the extension-local transcript (k3)",
+          "then": "the row also stores the sc1 cssClass computed by markerFor, so the style survives a reload",
+          "operationalizes": []
+        },
+        {
+          "id": "ac3",
+          "given": "an older stored chat whose marker rows predate this change (no cssClass field)",
+          "when": "it is restored",
+          "then": "it renders without error — those rows fall back to plain text — with no data migration required",
+          "operationalizes": []
+        }
+      ],
+      "dependsOn": [
+        "s3"
+      ]
+    },
+    "amendmentId": "AMD-edb76e2e4d41217d-2",
+    "evidence": [],
+    "nextAction": {
+      "command": "insrc_workflow_step phase=start workflow=design.story params={\"epicHash\":\"edb76e2e4d41217d\",\"storyId\":\"s8\"}",
+      "description": "Approve the HLD amendment (`AMD-edb76e2e4d41217d-2`) and the updated Epic, then run `design.story` for the new Story `s8` to produce its LLD."
+    }
+  },
+  "citations": []
+}

@@ -537,6 +537,37 @@
           "s3"
         ],
         "sizeEstimate": "L"
+      },
+      {
+        "id": "s8",
+        "title": "Persist marker style so restored chats keep their glyph + tone",
+        "userValue": "As a developer, when I reopen a past chat from the history dropdown, its tool-call / edit / done / error markers show with the same terminal glyph and phosphor colour as the live turn — so a restored transcript reads exactly like the live one and markers stay distinguishable from assistant text.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a chat whose transcript contains marker rows (tool-call / file-edit / done / error)",
+            "when": "the chat is restored from the history dropdown",
+            "then": "each marker row renders with its sc1 glyph + phosphor tone (the insrc-term__marker--* class), not plain text",
+            "operationalizes": []
+          },
+          {
+            "id": "ac2",
+            "given": "a marker row is written during a live turn",
+            "when": "it is persisted to the extension-local transcript (k3)",
+            "then": "the row also stores the sc1 cssClass computed by markerFor, so the style survives a reload",
+            "operationalizes": []
+          },
+          {
+            "id": "ac3",
+            "given": "an older stored chat whose marker rows predate this change (no cssClass field)",
+            "when": "it is restored",
+            "then": "it renders without error — those rows fall back to plain text — with no data migration required",
+            "operationalizes": []
+          }
+        ],
+        "dependsOn": [
+          "s3"
+        ]
       }
     ],
     "openQuestions": []

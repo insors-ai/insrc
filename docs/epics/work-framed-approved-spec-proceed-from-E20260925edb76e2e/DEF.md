@@ -151,31 +151,14 @@ As a developer I can review the tracked workflow's pending design/plan documents
 - **ac2:** Given a listed artifact, when I read it and choose accept or reject, then the decision is applied through the daemon's approval flow (insrc_workflow_approve). _(operationalizes `k5`)_
 - **ac3:** Given the pane mirrors the JetBrains review panel, when it renders, then it uses the terminal-styled VS Code webview vocabulary and acts only on daemon-tracked artifacts, not ad-hoc chat-generated documents. _(operationalizes `k5`, `k6`)_
 
-## Citations
+### E20260925edb76e2e:S008 — Persist marker style so restored chats keep their glyph + tone
 
-- **[[c1]]** `prior-artifact` `docs/standalone/complete-editor-development-chat-interface-insrc-E2026092567260700/SPEC.md (approved SpecArtifact 67260700545c57e7)` — "12 settled decisions: extension-managed CLI spawn/stream; grounding via the CLI's own insrc MCP; extension-local history; general-purpose passthrough; auto/review inline-diff; claude/codex only (Ollam"
-- **[[c2]]** `analyze-bundle` `code structural-map of vscode-plugin/src` — "The only existing webview is panels/webview-host.ts createWebviewPanelHost (status/repo-config); NO chat webview exists. Factory+deps-injection idiom; functions camelCase, classes PascalCase, tests *."
-- **[[c3]]** `code` `jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/review/ (ReviewToolWindow.kt, ArtifactContentPane.kt, ReviewComment.kt)` — "The JetBrains-only artifact-review panel (review/comment/accept/reject over pendingApproval artifacts via the approval flow) that the VS Code docs-review pane must mirror; no VS Code equivalent exists"
-- **[[c4]]** `convention` `CLAUDE.md project principles (No direct cloud REST; cloud LLM via claude/codex CLI; daemon owns all DB access)` — "Cloud LLM access happens through the locally-installed claude and codex CLI binaries (via CliProvider). Direct REST providers must not be reintroduced. Daemon owns all DB access — IDE communicates via"
-- **[[c5]]** `code` `site/css/tui.css (insrc docs-site TUI aesthetic)` — "Monospace-everything, box-drawing chrome, phosphor accents, dark-first terminal look & feel — the visual vocabulary the core chat panel must adopt."
+**User value:**
 
-<!-- insrc:review -->
+As a developer, when I reopen a past chat from the history dropdown, its tool-call / edit / done / error markers show with the same terminal glyph and phosphor colour as the live turn — so a restored transcript reads exactly like the live one and markers stay distinguishable from assistant text.
 
-## Review
+**Acceptance criteria:**
 
-### ✅ Review `PASS` — define (define)
-
-**0 HIGH · 0 MED · 10 LOW** · model `client` · reviewed 2026-09-25T13:43:33.796Z
-
-| Ref | Kind | Severity | Fixability | Premise | Evidence | Action |
-| --- | --- | --- | --- | --- | --- | --- |
-| c2/S001/S003 | citation | LOW | auto | The VS Code extension exposes a webview host factory createWebviewPanelHost in vscode-plugin/src/panels/webview-host.ts, which is the reuse idiom cited for the new chat + docs-review panels. | createWebviewPanelHost has 33 grep hits and the cited anchor vscode-plugin/src/panels/webview-host.ts:111 read back OK — the reuse idiom exists as cited. | No action; citation confirmed. |
-| problem/c2 | citation | LOW | auto | No chat webview currently exists in the VS Code extension (the chat panel is net-new); the only webview is the status/repo-config one. | The only 'chat webview/ChatPanel/chat-panel' hits are in the SPEC.md and DEF.md docs; a scoped rg over vscode-plugin/src returns zero — confirming no chat webview exists in the extension (net-new). | No action; the net-new claim holds. |
-| c3/S007 | citation | LOW | auto | The only artifact-review UI in the repo is the JetBrains one (ReviewToolWindow.kt / ArtifactContentPane.kt / ReviewComment.kt), which the VS Code docs-review pane (S007) must mirror; no VS Code equivalent exists. | jetbrains-plugin/.../review/ReviewToolWindow.kt:1 read back OK; the JetBrains artifact-review panel exists as the mirror source and no VS Code equivalent was found. | No action; citation confirmed. |
-| c5/k6/S001 | citation | LOW | auto | The insrc docs-site TUI aesthetic exists at site/css/tui.css and is the visual vocabulary the terminal-look chat panel must adopt. | site/css/tui.css:1 read back OK — the docs-site TUI aesthetic the terminal chat panel adopts exists as cited. | No action; citation confirmed. |
-| c1/k5/S007 | citation | LOW | auto | The daemon exposes an approval flow (insrc_workflow_approve) that the docs-review pane's accept/reject calls into. | insrc_workflow_approve / workflow.approve has 50 grep hits — the daemon approval flow the docs-review pane calls exists. | No action; citation confirmed. |
-| c3/k5/S007 | citation | LOW | auto | The daemon has a notion of pendingApproval workflow artifacts the docs-review pane lists over IPC. | pendingApproval has 18 grep hits — the daemon's pendingApproval artifact concept the docs-review pane lists exists. | No action; citation confirmed. |
-| seed | cross-artifact | LOW | auto | This DEF is seeded from the approved SpecArtifact SPEC-67260700545c57e7 and preserves its settled decisions (incl. Ollama excluded, providers claude/codex only). | The amended SPEC json read OK and the 'Providers are the agentic coding CLIs only / Ollama is excluded' text matched (1 hit) — the DEF's seed + Ollama-exclusion decision are preserved from the approved spec. | No action; cross-artifact trace confirmed. |
-| stories | ordering | LOW | auto | The 7-story dependency graph is acyclic: s1,s2 are roots; s3 depends on s1,s2; s4 on s2,s3; s5 on s3; s6 on s2,s3; s7 on s1,s3. | DEF read OK; the declared dependency edges (s3<-s1,s2; s4<-s2,s3; s5<-s3; s6<-s2,s3; s7<-s1,s3) form no cycle — s1,s2 are roots and every edge points to an earlier-rooted story. | No action; the graph is acyclic. |
-| c1/k1/lc1/S002 | external-contract | LOW | assisted | The claude and codex CLIs each expose a machine-readable structured streaming mode (e.g. claude --output-format stream-json) and a native session resume/session-id mechanism the extension can drive per turn. | stream-json / --resume / session-id patterns hit 15 references (docs/prompts), but these do not prove the external claude/codex CLIs' exact flags — this is an out-of-process contract. The DEF already records it as a MED-confidence assumption, which is the correct treatment for a DEF; it must be validated by a spike at design.story/build (S002). | Keep as a recorded assumption; validate the exact claude/codex structured-stream + session-resume flags with a small spike during S002's design/build. No DEF change needed. |
-| c4/k2 | citation | LOW | auto | The project mandates cloud LLM access only via the local claude/codex CLI (CliProvider), no direct cloud REST — the constraint k2 the chat honours. | CliProvider / 'No direct cloud REST' / claude-codex-CLI patterns hit 50 references and CLAUDE.md read OK — the project mandate behind k2 is real as cited. | No action; citation confirmed. |
+- **ac1:** Given a chat whose transcript contains marker rows (tool-call / file-edit / done / error), when the chat is restored from the history dropdown, then each marker row renders with its sc1 glyph + phosphor tone (the insrc-term__marker--* class), not plain text.
+- **ac2:** Given a marker row is written during a live turn, when it is persisted to the extension-local transcript (k3), then the row also stores the sc1 cssClass computed by markerFor, so the style survives a reload.
+- **ac3:** Given an older stored chat whose marker rows predate this change (no cssClass field), when it is restored, then it renders without error — those rows fall back to plain text — with no data migration required.

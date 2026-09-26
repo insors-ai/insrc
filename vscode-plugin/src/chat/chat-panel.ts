@@ -112,7 +112,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `window.addEventListener('message',e=>{const m=e.data&&e.data.payload;if(!m)return;if(m.type==='turn-event'){const ev=m.event;if(ev&&ev.kind==='assistant-delta'){line(ev.text);}else{const mk=markerFor(ev);if(mk)line(mk.label,mk.cssClass);}}` +
       // S005: session-restored CLEARS the terminal before replaying (so switching chats
       // does not append onto the prior chat's view) + tracks the active id for the dropdown.
-      `else if(m.type==='session-restored'){cur=m.sessionId||'';t.textContent='';(m.transcript||[]).forEach(x=>line(x.text));hs.value=cur;}` +
+      `else if(m.type==='session-restored'){cur=m.sessionId||'';t.textContent='';(m.transcript||[]).forEach(x=>line(x.text,x.cssClass));hs.value=cur;}` +
       // S005: history-list (re)populates the dropdown; labels via textContent (no innerHTML); keep active selected.
       `else if(m.type==='history-list'){while(hs.options.length>1)hs.remove(1);(m.chats||[]).forEach(function(c){var o=document.createElement('option');o.value=c.id;o.textContent='['+c.provider+'] '+(c.title||c.id);hs.appendChild(o);});hs.value=cur;}});` +
       `const box=document.getElementById('insrc-input');` +
@@ -257,7 +257,11 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     // uses — so a host row and its live marker never drift. done now persists a marker row
     // (the S003 gap); an unmapped/future kind -> markerFor returns null -> no row.
     const marker = markerFor(ev);
-    if (marker !== null) s.transcript.push({ role: 'marker', text: marker.label, at: now() });
+    // S008: persist the sc1 cssClass alongside the label so a RESTORED chat reproduces
+    // each marker's glyph + phosphor tone (identical to live) instead of plain text.
+    if (marker !== null) {
+      s.transcript.push({ role: 'marker', text: marker.label, cssClass: marker.cssClass, at: now() });
+    }
   }
 
   function handleMessage(message: unknown): void {

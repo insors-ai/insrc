@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Marker Restore Fidelity</title>
+<meta name="description" content="sc4 follow-up: restored chat markers keep their sc1 glyph and phosphor tone instead of degrading to plain text.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>
+  /* Deliberately single-world: the insrc terminal palette (sc1 design-tokens.ts), verbatim. */
+  :root {
+    color-scheme: dark;
+    --bg: #0b0e14;         /* sc1 color.bg */
+    --fg: #c6cdd8;         /* sc1 color.fg */
+    --dim: #4a5464;        /* sc1 color.dim */
+    --accent: #4ade80;     /* sc1 color.accent */
+    --warn: #fbbf24;       /* sc1 color.warn */
+    --err: #f87171;        /* sc1 color.err */
+    --border: #222a36;     /* sc1 chrome.border */
+    --sel: rgba(74, 222, 128, 0.22); /* sc1 color.sel */
+    --page: #070910;       /* a touch darker than the terminal, for the page ground */
+    --panel: #0b0e14;
+    --mono: "JetBrains Mono", ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    --ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mk: 13px;
+  }
+
+  body {
+    margin: 0;
+    background: var(--page);
+    color: var(--fg);
+    font-family: var(--ui);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap {
+    max-width: 1040px;
+    margin: 0 auto;
+    padding-block: 40px 56px;
+    padding-inline: 16px;
+  }
+
+  /* ---- header ---- */
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 10px;
+  }
+  h1 {
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: clamp(24px, 4vw, 34px);
+    line-height: 1.15;
+    text-wrap: balance;
+    margin: 0 0 12px;
+    color: #e8edf4;
+  }
+  .lede {
+    max-width: 68ch;
+    font-size: 16px;
+    color: #aeb7c4;
+    margin: 0;
+  }
+  .lede b { color: var(--fg); font-weight: 600; }
+
+  /* ---- problem strip ---- */
+  .note {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    margin-top: 22px;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--warn);
+    border-radius: 8px;
+    background: #0d1119;
+    max-width: 78ch;
+  }
+  .note .tag {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--warn);
+    white-space: nowrap;
+    padding-top: 1px;
+  }
+  .note p { margin: 0; font-size: 14.5px; color: #b7c0cd; }
+  .note code {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--fg);
+    background: #11161f;
+    padding: 1px 5px;
+    border-radius: 4px;
+  }
+
+  /* ---- compare grid ---- */
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 32px;
+  }
+  @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
+
+  .col-head {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .col-head .state {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 5px;
+  }
+  .state.bad { color: var(--err); border: 1px solid rgba(248,113,113,0.4); }
+  .state.good { color: var(--accent); border: 1px solid rgba(74,222,128,0.4); }
+  .col-head .cap { font-size: 13px; color: var(--dim); }
+
+  /* ---- terminal window ---- */
+  .term {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--panel);
+    overflow: hidden;
+    box-shadow: 0 12px 40px -20px rgba(0,0,0,0.8);
+  }
+  .term__bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    background: #0d1119;
+  }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: #2a3340; }
+  .term__bar .sp { flex: 1; }
+  .chip {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--fg);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 3px 8px;
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+    background: #0b0e14;
+  }
+  .chip .car { color: var(--dim); }
+  .chip.hist { color: var(--fg); max-width: 190px; }
+  .chip.hist .t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .term__body {
+    font-family: var(--mono);
+    font-size: var(--mk);
+    line-height: 20px; /* sc1 font.linePx */
+    padding: 14px 14px 16px;
+    min-height: 300px;
+  }
+  .row { white-space: pre-wrap; word-break: break-word; }
+  .row + .row { margin-top: 4px; }
+  .u { color: var(--dim); }               /* user prompt line */
+  .u::before { content: "› "; color: var(--accent); }
+  .a { color: var(--fg); }                /* assistant text */
+
+  /* marker rows — the FIX renders these with a glyph + tone; the BUG renders them plain */
+  .mk { color: var(--fg); }
+  .mk--styled::before {
+    display: inline-block;
+    width: 1.4em;
+    font-weight: 700;
+  }
+  .mk--tool.mk--styled { color: var(--fg); }
+  .mk--tool.mk--styled::before { content: "▸"; color: var(--accent); }
+  .mk--edit.mk--styled { color: var(--fg); }
+  .mk--edit.mk--styled::before { content: "✎"; color: var(--warn); }
+  .mk--done.mk--styled::before { content: "✓"; color: var(--accent); }
+  .mk--done.mk--styled { color: var(--accent); }
+  .mk--err.mk--styled::before { content: "✗"; color: var(--err); }
+  .mk--err.mk--styled { color: var(--err); }
+  /* the mcp server segment gets a subtle tint when styled */
+  .mk--styled .srv { color: var(--accent); }
+
+  .caretline { color: var(--dim); margin-top: 8px; }
+  .caretline::before { content: "› "; color: var(--accent); }
+  .caretline .cur {
+    display: inline-block; width: 8px; height: 15px;
+    background: var(--accent); vertical-align: -2px; margin-left: 2px;
+    animation: blink 1.1s steps(1) infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .caretline .cur { animation: none; } }
+
+  .flag {
+    margin-top: 12px;
+    font-family: var(--ui);
+    font-size: 12.5px;
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+  }
+  .flag .b { font-size: 13px; line-height: 1.2; }
+  .flag.bad .b { color: var(--err); }
+  .flag.good .b { color: var(--accent); }
+  .flag span { color: var(--dim); }
+
+  /* ---- legend ---- */
+  .legend {
+    margin-top: 40px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--panel);
+    padding: 18px 18px 20px;
+  }
+  .legend h2 {
+    font-family: var(--mono);
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--dim);
+    margin: 0 0 14px;
+    font-weight: 700;
+  }
+  .marks {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px 18px;
+  }
+  .mrow { display: flex; align-items: baseline; gap: 10px; font-family: var(--mono); font-size: 13px; }
+  .mrow .g { width: 1.2em; text-align: center; font-weight: 700; }
+  .mrow .k { color: var(--dim); font-size: 11.5px; min-width: 52px; }
+  .mrow .lbl { color: var(--fg); }
+  .g.accent { color: var(--accent); } .g.warn { color: var(--warn); } .g.err { color: var(--err); }
+
+  /* ---- change note ---- */
+  .change {
+    margin-top: 32px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  @media (max-width: 720px) { .change { grid-template-columns: 1fr; } }
+  .change .box {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 16px 18px;
+    background: #0d1119;
+  }
+  .change h3 {
+    font-family: var(--mono); font-size: 12px; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--accent); margin: 0 0 10px; font-weight: 700;
+  }
+  .change ul { margin: 0; padding-left: 18px; }
+  .change li { font-size: 13.5px; color: #b7c0cd; margin: 6px 0; }
+  .change code {
+    font-family: var(--mono); font-size: 12.5px; color: var(--fg);
+    background: #11161f; padding: 1px 5px; border-radius: 4px;
+  }
+  .foot {
+    margin-top: 28px; font-size: 12.5px; color: var(--dim);
+    font-family: var(--mono); border-top: 1px solid var(--border); padding-top: 14px;
+  }
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">insrc dev-chat · epic edb76e2e · sc4 follow-up</p>
+  <h1>Restored markers keep their glyph &amp; tone</h1>
+  <p class="lede">In a live turn, lifecycle markers already render as terminal status lines with their
+  phosphor colour (shipped in S004). But when a chat is <b>restored from history</b>, every marker row
+  currently replays as plain text — indistinguishable from what the assistant said. This follow-up
+  persists a marker's style so a reloaded transcript reads exactly like the live one.</p>
+
+  <div class="note">
+    <span class="tag">why</span>
+    <p>The transcript row (<code>TranscriptEntry</code>, sc4) stores only <code>role</code> + <code>text</code>.
+    On restore the webview draws each row with <code>line(x.text)</code> and no CSS class, so the sc1
+    glyph and colour are lost. The fix adds an optional <code>cssClass</code> to the stored row.</p>
+  </div>
+
+  <div class="grid">
+    <!-- BEFORE -->
+    <div>
+      <div class="col-head">
+        <span class="state bad">Today</span>
+        <span class="cap">chat reopened from the history dropdown</span>
+      </div>
+      <div class="term" aria-label="terminal, current restore behaviour">
+        <div class="term__bar">
+          <span class="dot"></span>
+          <span class="chip">claude <span class="car">▾</span></span>
+          <span class="chip hist"><span class="t">fix the parser</span> <span class="car">▾</span></span>
+          <span class="sp"></span>
+        </div>
+        <div class="term__body">
+          <div class="row u">fix the parser for nested arrays</div>
+          <div class="row a">I'll start from the tokenizer and trace how arrays are read.</div>
+          <div class="row mk">insrc · insrc_analyze_step</div>
+          <div class="row a">Found it — readArray() drops the closing bracket on a nested literal.</div>
+          <div class="row mk">src/parser/array.ts</div>
+          <div class="row mk">done</div>
+          <div class="caretline"><span class="cur"></span></div>
+        </div>
+      </div>
+      <div class="flag bad">
+        <span class="b">✗</span>
+        <span>The three marker rows read as ordinary assistant output — no glyph, no colour. You can't tell a tool call or a file edit from prose.</span>
+      </div>
+    </div>
+
+    <!-- AFTER -->
+    <div>
+      <div class="col-head">
+        <span class="state good">With the fix</span>
+        <span class="cap">same chat, restored with marker style</span>
+      </div>
+      <div class="term" aria-label="terminal, fixed restore behaviour">
+        <div class="term__bar">
+          <span class="dot"></span>
+          <span class="chip">claude <span class="car">▾</span></span>
+          <span class="chip hist"><span class="t">fix the parser</span> <span class="car">▾</span></span>
+          <span class="sp"></span>
+        </div>
+        <div class="term__body">
+          <div class="row u">fix the parser for nested arrays</div>
+          <div class="row a">I'll start from the tokenizer and trace how arrays are read.</div>
+          <div class="row mk mk--tool mk--styled"><span class="srv">insrc</span> · insrc_analyze_step</div>
+          <div class="row a">Found it — readArray() drops the closing bracket on a nested literal.</div>
+          <div class="row mk mk--edit mk--styled">src/parser/array.ts</div>
+          <div class="row mk mk--done mk--styled">done</div>
+          <div class="caretline"><span class="cur"></span></div>
+        </div>
+      </div>
+      <div class="flag good">
+        <span class="b">✓</span>
+        <span>Each marker restores with its sc1 glyph + phosphor tone — a reloaded chat is byte-for-byte the live experience.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <h2>sc1 marker vocabulary (design-tokens.ts)</h2>
+    <div class="marks">
+      <div class="mrow"><span class="g accent">◆</span><span class="k">pending</span><span class="lbl">thinking…</span></div>
+      <div class="mrow"><span class="g accent">▸</span><span class="k">tool</span><span class="lbl">running tool…</span></div>
+      <div class="mrow"><span class="g warn">✎</span><span class="k">edit</span><span class="lbl">src/parser/array.ts</span></div>
+      <div class="mrow"><span class="g accent">✓</span><span class="k">done</span><span class="lbl">done</span></div>
+      <div class="mrow"><span class="g err">✗</span><span class="k">error</span><span class="lbl">codex exited (2)</span></div>
+    </div>
+  </div>
+
+  <div class="change">
+    <div class="box">
+      <h3>What changes (sc4)</h3>
+      <ul>
+        <li>Add optional <code>cssClass</code> to <code>TranscriptEntry</code> — set when a marker row is written.</li>
+        <li>Restore replay draws marker rows with <code>line(x.text, x.cssClass)</code> instead of bare text.</li>
+        <li>Older stored rows (no <code>cssClass</code>) still restore as plain text — no migration, no break.</li>
+      </ul>
+    </div>
+    <div class="box">
+      <h3>Stays the same</h3>
+      <ul>
+        <li>One nonce'd inline script + strict CSP; labels via <code>textContent</code> (no innerHTML).</li>
+        <li>Live rendering (S004) is untouched — this only enriches the restore path.</li>
+        <li>History stays extension-local (k3); passthrough only (k8).</li>
+      </ul>
+    </div>
+  </div>
+
+  <p class="foot">mock · colours + glyphs are the exact sc1 tokens · behind flag insrc.chat.enabled</p>
+</div>
+
+</head>
+<body></body>
+</html>

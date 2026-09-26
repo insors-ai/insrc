@@ -15,6 +15,8 @@ import type { ProviderId } from './cli-adapter.js';
 export interface TranscriptEntry {
   readonly role: 'user' | 'assistant' | 'marker';
   readonly text: string;
+  /** sc1 marker class for a role:'marker' row (S008); absent on user/assistant + pre-S008 rows. */
+  readonly cssClass?: string;
   readonly at: string;
 }
 

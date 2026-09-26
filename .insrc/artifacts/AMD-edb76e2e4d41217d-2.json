@@ -1,0 +1,21 @@
+{
+  "id": "AMD-edb76e2e4d41217d-2",
+  "epicHash": "edb76e2e4d41217d",
+  "epicSlug": "work-framed-approved-spec-proceed-from",
+  "hldBaseRunId": "wf-1790343836936-uhegob",
+  "amendment": {
+    "type": "storyBoundary.addStory",
+    "storyId": "s8",
+    "internal": "Private implementation of s8: Persist marker style so restored chats keep their glyph + tone"
+  },
+  "rationale": "Extends Epic `work-framed-approved-spec-proceed-from` (edb76e2e4d41217d) — builds on the shipped sc4 store (session-store.ts), S004 markers (markers.ts) and the S003 chat-panel restore path; adds ONE small story that amends sc4 (TranscriptEntry gains an optional cssClass) so restored chats reproduce each marker's glyph + tone. No new Epic.",
+  "citations": [],
+  "proposedBy": {
+    "workflow": "define",
+    "runId": "wf-1790397811942-lpvpfj",
+    "storyId": "s8",
+    "stepId": "scope.assess"
+  },
+  "proposedAt": "2026-09-26T04:44:50.293Z",
+  "status": "pending"
+}

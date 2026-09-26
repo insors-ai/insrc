@@ -98,6 +98,25 @@
         "category": "insrc"
       }
     ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "insrc",
+          "title": "insrc",
+          "icon": "media/insrc.svg"
+        }
+      ]
+    },
+    "views": {
+      "insrc": [
+        {
+          "id": "insrc.chatView",
+          "name": "Chat",
+          "type": "webview",
+          "when": "insrc.chat.ready"
+        }
+      ]
+    },
     "configuration": [
       {
         "title": "Chat (preview)",

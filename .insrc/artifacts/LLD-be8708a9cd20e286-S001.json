@@ -1,0 +1,555 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1790410257933-gdhoaz",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-26T08:17:25.125Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 387180,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "be8708a9cd20e286",
+    "epicSlug": "add-insrc-icon-vs-code-activity",
+    "storyId": "S001",
+    "hldBaseRunId": "wf-1790410257933-gdhoaz",
+    "hldEffectiveHash": "be8708a9cd20e286d2a0ba7ade292cc1ab107baf2db0051e6f69de2fd3752d1b",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "feature",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "c1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The ChatPanelChannel interface (chat-panel.ts:29) is exactly { setHtml, postMessage, onMessage, onDidDispose, reveal, dispose } — the surface a WebviewView must be adapted onto.",
+          "evidence": "reads confirm chat-panel.ts:29 = 'export interface ChatPanelChannel {' with setHtml(html) at :30 (and the interface carries postMessage/onMessage/onDidDispose/reveal/dispose). A WebviewView can satisfy all of these. Accurate.",
+          "action": "Confirmed; no change.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "createChatPanelHost.open() obtains its channel by calling the injected deps.createPanel(), so injecting createPanel:()=>webviewViewToChannel(view) binds the host to a pre-resolved WebviewView without modifying the host.",
+          "evidence": "grep confirms chat-panel.ts:418 `channel = deps.createPanel({ viewType, title })` inside open() (:412), and createChatPanelHost at :87. So injecting createPanel:()=>webviewViewToChannel(view) binds the host to a resolved view without modifying it. Accurate.",
+          "action": "Confirmed; no change.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The command insrc.chat.open is registered inside the if (chatEnabled) gate in extension.ts (today opening the editor-tab panel), and is reused/repointed by this story rather than replaced with a new command id.",
+          "evidence": "reads confirm extension.ts:535 registers insrc.chat.open, and :424 is the if (chatEnabled) gate. The command is reused/repointed, not duplicated. Accurate.",
+          "action": "Confirmed; no change.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c4",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "There are ZERO WebviewViewProvider/registerWebviewViewProvider/resolveWebviewView usages in the plugin today, and the local vscode.d.ts slice declares createWebviewPanel (so the sidebar-view API must be newly added).",
+          "evidence": "vscode.d.ts:98 = 'export function createWebviewPanel('; the WebviewViewProvider/registerWebviewViewProvider/resolveWebviewView greps return NONE in src (only the LLD itself) — confirming 0 usages today and that the sidebar-view API must be newly added. Accurate.",
+          "action": "Confirmed; add the type slice during build. No artifact change.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c5",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "contributes.commands has exactly 13 commands (pinned by truthful-sync.test.ts) and this story adds NO new command id (reuses insrc.chat.open), so the count stays 13.",
+          "evidence": "truthful-sync.test.ts:201 asserts cmds.length === 13; the story adds no new command id (reuses insrc.chat.open), so the count stays 13 and the exact-set tests stay green. Accurate.",
+          "action": "Confirmed; keep command count at 13. No artifact change.",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 5
+      },
+      "reviewedAt": "2026-09-26T08:18:35.973Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-26T08:19:58.664Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "S001",
+        "owns": [],
+        "depends": [],
+        "internal": "Host the insrc chat as an Activity Bar sidebar webview view"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "webviewViewToChannel",
+          "signature": "webviewViewToChannel(view: WebviewView): ChatPanelChannel",
+          "parameters": [
+            {
+              "name": "view",
+              "type": "WebviewView",
+              "purpose": "The sidebar view VS Code delivered to resolveWebviewView; its .webview is the render/message surface.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ChatPanelChannel",
+            "meaning": "A ChatPanelChannel (chat-panel.ts:29) backed by the resolved WebviewView: setHtml -> view.webview.html=; postMessage -> view.webview.postMessage; onMessage -> view.webview.onDidReceiveMessage; onDidDispose -> view.onDidDispose; reveal -> view.show(true); dispose -> no-op (VS Code owns the view's lifecycle). vscode-free at the type level."
+          },
+          "errors": [
+            {
+              "type": "none",
+              "condition": "Pure mapping; a postMessage to a hidden/disposed view is fire-and-forget (rejection swallowed, mirroring the panel channel)."
+            }
+          ],
+          "preconditions": [
+            "view.webview.options.enableScripts has been set true by the provider before the host renders the nonce'd shell."
+          ],
+          "postconditions": [
+            "The returned channel drives createChatPanelHost exactly as the editor-panel channel does today."
+          ]
+        },
+        {
+          "name": "createChatPanelHost",
+          "signature": "createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost",
+          "parameters": [
+            {
+              "name": "deps",
+              "type": "ChatPanelHostDeps",
+              "purpose": "REUSED UNCHANGED. For the sidebar, deps.createPanel is supplied as () => webviewViewToChannel(resolvedView); providers/store/cwd/editGovernance are the same objects wired today.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ChatPanelHost",
+            "meaning": "The existing chat host (chat-panel.ts:87); open() calls deps.createPanel() for the channel, wires onMessage/onDidDispose, setHtml(renderShell()), posts theme/session-restored/history, runs the unchanged turn-loop. NOT modified."
+          },
+          "errors": [
+            {
+              "type": "none-new",
+              "condition": "Behavior unchanged; the host is contract-stable (S003-owned)."
+            }
+          ],
+          "preconditions": [
+            "Constructed inside resolveWebviewView with a createPanel that returns the resolved-view channel."
+          ],
+          "postconditions": [
+            "The chat renders in the sidebar view and behaves identically to the editor-tab chat."
+          ]
+        },
+        {
+          "name": "createChatSidebarViewProvider",
+          "signature": "createChatSidebarViewProvider(deps: ChatSidebarViewDeps): WebviewViewProvider",
+          "parameters": [
+            {
+              "name": "deps",
+              "type": "ChatSidebarViewDeps",
+              "purpose": "Injected seams: { toChannel: (view) => ChatPanelChannel; makeHost: (createPanel) => ChatPanelHost; enableScripts: (view) => void; logger? }. Keeps the provider vscode-free/testable.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "WebviewViewProvider",
+            "meaning": "resolveWebviewView(view) enables scripts, wraps the view via toChannel, builds the host with createPanel:()=>thatChannel, and opens it. Re-resolution rebuilds channel+host so a stale host never posts into a disposed view."
+          },
+          "errors": [
+            {
+              "type": "guarded",
+              "condition": "A postMessage after the view is disposed is swallowed; re-resolution supersedes the prior host (generation/current-view guard)."
+            }
+          ],
+          "preconditions": [
+            "Registered via window.registerWebviewViewProvider('insrc.chatView', provider) ONLY inside the if (chatEnabled) gate."
+          ],
+          "postconditions": [
+            "Clicking the insrc Activity Bar icon shows the sidebar view rendering the chat."
+          ]
+        },
+        {
+          "name": "insrc.chat.open",
+          "signature": "commands.register({ id: 'insrc.chat.open', title: 'insrc: Open chat' }, () => vscode.commands.executeCommand('insrc.chatView.focus')): void",
+          "parameters": [],
+          "returns": {
+            "type": "void",
+            "meaning": "EXISTING command (extension.ts:535), REPOINTED from opening an editor-tab panel to focusing the sidebar view via the auto-generated '<viewId>.focus' command. Same command id (no new InsrcCommandId)."
+          },
+          "errors": [
+            {
+              "type": "none-new",
+              "condition": "executeCommand('insrc.chatView.focus') is a built-in command generated for the contributed view; reveals/focuses it."
+            }
+          ],
+          "preconditions": [
+            "insrc.chat.enabled is true (command + view exist only under the gate)."
+          ],
+          "postconditions": [
+            "The insrc sidebar view is revealed and focused."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "package.json contributes.viewsContainers.activitybar",
+        "change": "new",
+        "details": "Add the insrc Activity Bar container: [{ id:'insrc', title:'insrc', icon:'media/insrc.svg' }]. VS Code shows the container only while it owns a visible view, so the flag-gated view controls the icon's presence.",
+        "schemaDiff": "\"viewsContainers\": { \"activitybar\": [{ \"id\": \"insrc\", \"title\": \"insrc\", \"icon\": \"media/insrc.svg\" }] }",
+        "callSites": [
+          "vscode-plugin/package.json:13"
+        ]
+      },
+      {
+        "entity": "package.json contributes.views",
+        "change": "new",
+        "details": "Add a WEBVIEW view inside the insrc container, gated on the flag: { insrc: [{ id:'insrc.chatView', name:'Chat', type:'webview', when:'config.insrc.chat.enabled' }] }.",
+        "schemaDiff": "\"views\": { \"insrc\": [{ \"id\": \"insrc.chatView\", \"name\": \"Chat\", \"type\": \"webview\", \"when\": \"config.insrc.chat.enabled\" }] }",
+        "callSites": [
+          "vscode-plugin/package.json:13"
+        ]
+      },
+      {
+        "entity": "media/insrc.svg (Activity Bar icon asset)",
+        "change": "new",
+        "details": "New themeable monochrome SVG (currentColor) for the container icon, packaged in the .vsix (confirm no .vscodeignore exclusion). icon.png stays the Marketplace gallery icon.",
+        "schemaDiff": "new file vscode-plugin/media/insrc.svg",
+        "callSites": [
+          "vscode-plugin/package.json:13",
+          "vscode-plugin/icon.png"
+        ]
+      },
+      {
+        "entity": "src/chat/chat-view-channel.ts (new, vscode-free adapter)",
+        "change": "new",
+        "details": "webviewViewToChannel(view): ChatPanelChannel + createChatSidebarViewProvider(deps): WebviewViewProvider. Type-only vscode imports; unit-testable with a fake WebviewView. Reuses the ChatPanelChannel type from chat-panel.ts.",
+        "schemaDiff": "new file vscode-plugin/src/chat/chat-view-channel.ts",
+        "callSites": [
+          "vscode-plugin/src/chat/chat-panel.ts:29"
+        ]
+      },
+      {
+        "entity": "src/vscode.d.ts (local vscode type slice)",
+        "change": "field-add",
+        "details": "Add the sidebar-view API surface (WebviewView, WebviewViewProvider, window.registerWebviewViewProvider) reusing the existing Webview interface.",
+        "schemaDiff": "+ export interface WebviewView { readonly webview: Webview; readonly onDidDispose: Event<void>; readonly visible: boolean; show(preserveFocus?: boolean): void; }\n+ export interface WebviewViewProvider { resolveWebviewView(view: WebviewView, context: unknown, token: unknown): void | Thenable<void>; }\n+ namespace window { function registerWebviewViewProvider(viewId: string, provider: WebviewViewProvider, options?: { webviewOptions?: { retainContextWhenHidden?: boolean } }): Disposable; }",
+        "callSites": [
+          "vscode-plugin/src/vscode.d.ts:98"
+        ]
+      },
+      {
+        "entity": "src/extension.ts sidebar view registration + command repoint",
+        "change": "new",
+        "details": "Inside if (chatEnabled): build the provider via createChatSidebarViewProvider with real seams (toChannel wraps view.webview; makeHost = (createPanel) => createChatPanelHost({ createPanel, providers, store, cwd, editGovernance }); enableScripts sets view.webview.options), register with registerWebviewViewProvider('insrc.chatView', provider, { webviewOptions: { retainContextWhenHidden: true } }), and REPOINT insrc.chat.open to executeCommand('insrc.chatView.focus'). Replaces the prior editor-panel createPanel chat wiring; docs-review path untouched.",
+        "schemaDiff": "+ context.subscriptions.push(vscode.window.registerWebviewViewProvider('insrc.chatView', chatSidebarProvider, { webviewOptions: { retainContextWhenHidden: true } }));\n~ commands.register({ id: 'insrc.chat.open', ... }, () => vscode.commands.executeCommand('insrc.chatView.focus'))",
+        "callSites": [
+          "vscode-plugin/src/extension.ts:462",
+          "vscode-plugin/src/extension.ts:535"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The sidebar view id in package.json (insrc.chatView) does not match the id passed to registerWebviewViewProvider.",
+          "detection": "At runtime VS Code shows the view body empty / 'no view registered'; caught in dev by the manifest-vs-source assertion that both use the identical literal 'insrc.chatView'.",
+          "response": "Single-source the view id as one constant referenced by both the manifest-shape test and the provider registration; the wiring test asserts registerWebviewViewProvider is called with the exact contributed id.",
+          "userImpact": "Empty sidebar view (no chat) until the ids match.",
+          "recoverable": true
+        },
+        {
+          "scenario": "resolveWebviewView renders the nonce'd chat shell but scripts are disabled on the view's webview.",
+          "detection": "The webview loads but the inline bootstrap never runs (acquireVsCodeApi undefined); detectable because setHtml content shows but no session-restored render appears.",
+          "response": "The provider MUST set view.webview.options = { enableScripts: true } BEFORE the host renders; a wiring assertion checks enableScripts is set in resolveWebviewView.",
+          "userImpact": "A visible but inert chat (no streaming, no input) until scripts are enabled.",
+          "recoverable": true
+        },
+        {
+          "scenario": "VS Code disposes a hidden sidebar view and later re-resolves it while a stale host holds the old channel.",
+          "detection": "A post to the disposed webview rejects; the re-resolution path receives a fresh WebviewView instance distinct from the one the stale host captured.",
+          "response": "createChatSidebarViewProvider treats each resolveWebviewView as authoritative: it builds a fresh channel + host for the new view and lets the old host's channel dispose become a no-op / swallow late posts. postMessage stays fire-and-forget.",
+          "userImpact": "None when handled — the chat re-renders in the re-shown view; without the guard a stale turn could error silently.",
+          "recoverable": true
+        },
+        {
+          "scenario": "media/insrc.svg is missing from the packaged .vsix or the icon path is wrong.",
+          "detection": "Package-time the file is absent (.vscodeignore or wrong relative path); runtime VS Code draws a placeholder.",
+          "response": "Keep the SVG under media/, reference the correct relative path, add a packaging test asserting the file exists and the manifest icon path resolves.",
+          "userImpact": "Cosmetic — the container still works; a placeholder glyph shows instead of the insrc mark.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "insrc.chat.enabled is false.",
+          "expected": "The view's when-clause is false; VS Code hides the view and the whole insrc container/icon; the provider is not registered and insrc.chat.open is absent. No surface leaks."
+        },
+        {
+          "input": "insrc.chat.open is invoked from the command palette.",
+          "expected": "It runs executeCommand('insrc.chatView.focus'), revealing + focusing the sidebar view (resolving + rendering the chat if not already shown)."
+        },
+        {
+          "input": "The user collapses/hides the sidebar view, then reopens it.",
+          "expected": "With retainContextWhenHidden:true the webview state is preserved where VS Code allows; otherwise re-resolution rebuilds the host and restores the active session from the ChatSessionStore. No duplicate sessions."
+        },
+        {
+          "input": "No workspace folder is open.",
+          "expected": "Chat still renders; cwd falls back to process.cwd() exactly as the editor-panel path does today."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The chat turn-loop, session store, provider registry, markers, and edit-governance are reused verbatim through createChatPanelHost via the ChatPanelChannel seam — this story does NOT modify createChatPanelHost or the ChatPanelChannel interface (chat-panel.ts:29/87).",
+          "source": "c2"
+        },
+        {
+          "text": "The chat is driven ONLY through the ChatPanelChannel interface; the WebviewView is adapted to that exact interface, so host behavior is identical to the editor-panel channel.",
+          "source": "c2"
+        },
+        {
+          "text": "No new command id is introduced; insrc.chat.open is reused (repointed to <viewId>.focus), so the InsrcCommandId union and the exact-set command tests (count 13) are unchanged.",
+          "source": "c4"
+        },
+        {
+          "text": "The whole surface stays behind insrc.chat.enabled (default false): when disabled there is no Activity Bar container, no view, no provider, and no command.",
+          "source": "c1"
+        },
+        {
+          "text": "extension.ts remains the sole vscode importer; the new adapter/provider factory (chat-view-channel.ts) is vscode-free (type-only vscode imports), mirroring the createChatPanelHost deps-injected idiom.",
+          "source": "c3"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test + node:assert/strict, run via tsx --test (matches the existing vscode-plugin suites; no VS Code runtime — FakeChannel/fake-WebviewView doubles + regex-over-source + manifest-shape assertions, per chat-panel.test.ts / extension-chat-wiring.test.ts / packaging.test.ts)",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove the WebviewView->ChatPanelChannel adapter maps every ChatPanelChannel method onto the view's webview correctly, and that a fake WebviewView drives the existing chat host end to end.",
+          "subjects": [
+            "webviewViewToChannel(fakeView): setHtml -> fakeView.webview.html; postMessage -> fakeView.webview.postMessage; onMessage registers fakeView.webview.onDidReceiveMessage; onDidDispose registers fakeView.onDidDispose; reveal -> fakeView.show(true); dispose is a no-op",
+            "postMessage after the fake view is disposed is swallowed (never throws inward)",
+            "driving createChatPanelHost with createPanel:()=>webviewViewToChannel(fakeView) renders the shell (setHtml called) and posts theme/session-restored",
+            "createChatSidebarViewProvider.resolveWebviewView(fakeView) enables scripts THEN renders, and a second resolveWebviewView(freshView) rebuilds so the stale view is no longer posted to",
+            "chat-view-channel.ts imports nothing from 'vscode' at runtime (source-scan)"
+          ],
+          "fixturesNeeded": [
+            "a fake WebviewView { webview: fakeWebview(html/postMessage/onDidReceiveMessage/options), onDidDispose emitter, show() spy, visible }",
+            "the existing scripted StreamAdapter + in-memory ChatSessionStore doubles"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "Assert the new manifest contribution shape for the Activity Bar container + sidebar webview view.",
+          "subjects": [
+            "contributes.viewsContainers.activitybar has { id:'insrc', title, icon:'media/insrc.svg' }",
+            "contributes.views.insrc has { id:'insrc.chatView', type:'webview', when:'config.insrc.chat.enabled' }",
+            "contributes.commands is UNCHANGED (exact 13-command set; no new command id)"
+          ],
+          "fixturesNeeded": [
+            "the parsed package.json (as the existing manifest tests do)"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove extension.ts registers the sidebar provider inside the flag gate, repoints insrc.chat.open to focus the view, and the icon asset ships.",
+          "subjects": [
+            "source-scan: inside if (chatEnabled), extension.ts calls vscode.window.registerWebviewViewProvider('insrc.chatView', ...) with the exact contributed id and pushes the Disposable to context.subscriptions",
+            "source-scan: resolveWebviewView sets webview.options enableScripts before rendering",
+            "source-scan: insrc.chat.open handler calls executeCommand('insrc.chatView.focus') (no new command id)",
+            "packaging: vscode-plugin/media/insrc.svg exists, is currentColor/themeable, and is not .vscodeignore'd",
+            "vscode.d.ts declares WebviewView + WebviewViewProvider + registerWebviewViewProvider (tsc --noEmit clean)"
+          ],
+          "fixturesNeeded": [
+            "read extension.ts / package.json / .vscodeignore / media/insrc.svg / vscode.d.ts from disk (fs, no VS Code runtime)"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "contract: viewsContainers.activitybar has the insrc container referencing media/insrc.svg",
+            "contract: views.insrc has insrc.chatView (type:webview, when=config.insrc.chat.enabled)",
+            "integration: media/insrc.svg exists, is themeable, and is packaged"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "unit: webviewViewToChannel maps all ChatPanelChannel methods onto the view",
+            "unit: createChatPanelHost driven by the view-backed channel renders + streams (reuse proven)",
+            "unit: chat-view-channel.ts is vscode-free"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "integration: extension.ts registers registerWebviewViewProvider('insrc.chatView', ...) inside the chatEnabled gate with enableScripts set",
+            "integration: insrc.chat.open repointed to executeCommand('insrc.chatView.focus'); no new command id",
+            "contract: contributes.commands remains the exact 13-command set"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "unit: a second resolveWebviewView rebuilds the host so a stale/disposed view is not posted to",
+            "unit: postMessage after dispose is swallowed",
+            "integration: vscode.d.ts declares the WebviewView/WebviewViewProvider/registerWebviewViewProvider slice (tsc --noEmit clean)"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "The insrc chat is reachable only via the command palette (insrc.chat.open), which opens an editor-tab WebviewPanel through createChatPanelHost's injected createPanel -> vscode.window.createWebviewPanel (extension.ts ~462-535, chat-panel.ts:412). package.json contributes only `commands` + `configuration` (no viewsContainers/views), so there is NO Activity Bar icon and no sidebar chat. The chat host talks to VS Code only through the ChatPanelChannel interface (chat-panel.ts:29). Only the full-color icon.png asset exists.",
+      "stateAfter": "An insrc icon appears in the Activity Bar (when insrc.chat.enabled is true); clicking it reveals a sidebar webview view (insrc.chatView) that renders the SAME chat, driven by the unchanged createChatPanelHost over a WebviewView->ChatPanelChannel adapter. insrc.chat.open is repointed to focus that view. When the flag is off, the container/view/provider/command are all absent. The chat rendering now lives in the sidebar rather than an editor tab.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the themeable monochrome media/insrc.svg (currentColor) and confirm it is packaged (not .vscodeignore'd).",
+          "rollbackable": true,
+          "prerequisiteFlags": []
+        },
+        {
+          "order": 2,
+          "action": "Extend the local vscode.d.ts slice with WebviewView, WebviewViewProvider, and window.registerWebviewViewProvider so tsc stays clean.",
+          "rollbackable": true,
+          "prerequisiteFlags": []
+        },
+        {
+          "order": 3,
+          "action": "Add the vscode-free adapter module chat-view-channel.ts: webviewViewToChannel(view) + createChatSidebarViewProvider(deps) that on resolveWebviewView enables scripts, wraps the view, builds the host, and opens it — rebuilding on re-resolution.",
+          "rollbackable": true,
+          "prerequisiteFlags": []
+        },
+        {
+          "order": 4,
+          "action": "Add manifest contributions: viewsContainers.activitybar (insrc container -> media/insrc.svg) + views.insrc (insrc.chatView, type:webview, when:config.insrc.chat.enabled).",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "insrc.chat.enabled"
+          ]
+        },
+        {
+          "order": 5,
+          "action": "In extension.ts, inside if (chatEnabled), register the sidebar provider via registerWebviewViewProvider('insrc.chatView', ..., { webviewOptions: { retainContextWhenHidden: true } }) using the same providers/store/cwd/editGovernance deps, and REPOINT insrc.chat.open to executeCommand('insrc.chatView.focus'). Replace the prior editor-panel createPanel chat wiring (docs-review untouched).",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "insrc.chat.enabled"
+          ]
+        },
+        {
+          "order": 6,
+          "action": "Update tests: new chat-view-channel unit tests (adapter mapping + host-driven-by-view + re-resolution guard + vscode-free); extend extension-chat-wiring.test.ts (provider registration + command repoint + enableScripts); add manifest-shape assertions; confirm the command count stays 13.",
+          "rollbackable": true,
+          "prerequisiteFlags": []
+        }
+      ],
+      "backwardCompat": "One user-visible behavior change: insrc.chat.open now focuses the sidebar chat view instead of opening an editor-tab chat panel (the chat's new home is the sidebar, per the user decision). The command id, title, and palette entry are unchanged, so keybindings still work. All chat surface stays behind insrc.chat.enabled (default false). The createChatPanelHost / ChatPanelChannel contract and the chat session store are unchanged, so existing sessions/history carry over. No settings schema, stored-state, or IPC contract changes. Toggling the flag at runtime needs a window reload. The docs-review command/panel is untouched.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "WebviewView→ChatPanelChannel adapter, host reused unchanged (createPanel returns the resolved view)",
+        "oneLineSummary": "A WebviewViewProvider resolves the sidebar view, wraps it as a ChatPanelChannel, and drives the EXISTING createChatPanelHost by injecting a createPanel that hands back that already-resolved view's channel.",
+        "approach": "Add viewsContainers.activitybar (insrc -> media/insrc.svg) + views.insrc = [{ id:'insrc.chatView', type:'webview', when:'config.insrc.chat.enabled' }]. New vscode-free chat-view-channel.ts exposes webviewViewToChannel(view): ChatPanelChannel. extension.ts registers a WebviewViewProvider (inside the gate) whose resolveWebviewView enables scripts, wraps the view, constructs createChatPanelHost({ createPanel: () => channel, ...same deps }), and calls host.open(). insrc.chat.open -> executeCommand('insrc.chatView.focus'). createChatPanelHost NOT modified.",
+        "pros": [
+          "Zero change to the S003-owned createChatPanelHost / ChatPanelChannel contract — turn-loop/session/markers/edit-governance run identically.",
+          "Pure adapter + provider in extension.ts (the sole vscode importer); adapter is vscode-free and unit-testable.",
+          "Copilot/Claude/Codex parity: one click renders the chat in the sidebar.",
+          "No new command id — exact-set command tests stay at 13."
+        ],
+        "cons": [
+          "Slightly indirect: open() calls deps.createPanel() which ignores its arg and returns the pre-resolved view channel — a mild abuse of the createPanel seam.",
+          "Re-resolution must rebuild the channel + host; the provider needs a small guard so a stale host does not post into a disposed view."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Explicit externally-provided channel entry on the chat host (host bind refactor)",
+        "oneLineSummary": "Add a small createChatPanelHost option/entry that accepts an already-built ChatPanelChannel instead of creating one, and the provider passes the resolved-view channel to it.",
+        "approach": "Same manifest + adapter as a1, but refactor createChatPanelHost to accept an optional injected channel (deps.channel? or host.attach(channel)) that open() uses directly, falling back to createPanel otherwise. Provider builds the channel and calls attach/open.",
+        "pros": [
+          "Cleaner semantics: the host explicitly supports 'a surface is provided to me'.",
+          "Same adapter/provider structure; unit-testable with a FakeChannel."
+        ],
+        "cons": [
+          "Touches the S003-owned createChatPanelHost signature/contract + its tests — wider blast radius than a1 for a single new caller.",
+          "More change than the a1 adapter for no user-visible benefit."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "winnerRank 2: functionally equal and semantically cleaner, but 'partial' on nf-minimal-blast-radius because it modifies the S003 chat-host contract for one caller; a1 achieves the same reuse without touching that contract."
+      },
+      {
+        "id": "a3",
+        "name": "Dedicated sidebar chat host module (separate from createChatPanelHost)",
+        "oneLineSummary": "Write a new createChatSidebarHost that renders the shell and runs the turn-loop for a WebviewView directly, independent of createChatPanelHost.",
+        "approach": "A new module owns the sidebar view lifecycle end to end (resolveWebviewView -> render shell -> run the turn-loop -> post events), reusing lower-level pieces but NOT createChatPanelHost. insrc.chat.open focuses the view.",
+        "pros": [
+          "Full control over sidebar-specific lifecycle (visibility, retainContextWhenHidden).",
+          "No dependence on createPanel semantics."
+        ],
+        "cons": [
+          "DUPLICATES the entire chat turn-loop/session/single-in-flight/cancellation that createChatPanelHost already implements and that cold reviews hardened (S003/S005) — two copies drift.",
+          "Largest surface + highest regression risk; contradicts the reuse the story requires.",
+          "Much more to test."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "winnerRank 3: 'violates' both uv-reuse-turn-loop and nf-minimal-blast-radius by duplicating the entire chat turn-loop; highest regression risk."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 search.text+concept.resolve — VS Code manifest contribution surface today",
+      "quotedText": "package.json contributes ONLY commands and configuration — no viewsContainers/views; a container is shown only while it owns a visible view (gate the view on config.insrc.chat.enabled)."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 usage.example — createChatPanelHost / ChatPanelChannel lifecycle (chat-panel.ts:29/87/412)",
+      "quotedText": "The chat host talks to VS Code only through ChatPanelChannel (setHtml/postMessage/onMessage/onDidDispose/reveal/dispose); a WebviewView satisfies that interface, so the host is reused unchanged over an adapter."
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1 symbol.locate — webview mechanism + vscode.d.ts:98 slice",
+      "quotedText": "Zero WebviewViewProvider usages today; vscode.d.ts declares only createWebviewPanel — WebviewView/WebviewViewProvider/registerWebviewViewProvider must be added; adapter stays vscode-free."
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "s1 module.profile — command wiring + icon assets (extension.ts:535, command-registry.ts:14, icon.png)",
+      "quotedText": "insrc.chat.open is registered inside the chatEnabled gate; repoint it to <viewId>.focus (no new InsrcCommandId). Only icon.png exists; add a themeable media/insrc.svg."
+    }
+  ]
+}

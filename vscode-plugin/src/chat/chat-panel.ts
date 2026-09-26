@@ -69,6 +69,13 @@ export interface ChatPanelHostDeps {
   readonly genNonce?: () => string;
   /** S006: edit governance (inline diff + auto/review + revert). Absent -> marker-only. */
   readonly editGovernance?: ChatEditGovernanceDeps;
+  /**
+   * S-activitybar: on a FRESH host with no active session, resume this session id (if it
+   * still exists in the store) instead of creating a new empty chat. Lets the sidebar
+   * provider preserve the active conversation across host rebuilds (view re-resolution on
+   * window reload / host restart / view move). Absent -> always create a new session.
+   */
+  readonly resumeSessionId?: () => string | undefined;
 }
 
 export interface ChatPanelHost {
@@ -429,7 +436,14 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         post({ type: 'turn-event', event: { kind: 'error', turnId: 'none', message: 'no agentic CLI (claude/codex) installed' } });
         return;
       }
-      if (session === undefined) session = deps.store.create(available[0]!);
+      if (session === undefined) {
+        // S-activitybar: on a fresh host, resume the last active session (if it still exists)
+        // so a view re-resolution does not silently drop the conversation or leave a stray
+        // empty session; fall back to a new chat when there is nothing to resume.
+        const resumeId = deps.resumeSessionId?.();
+        const resumed = resumeId !== undefined ? deps.store.get(resumeId) : undefined;
+        session = resumed ?? deps.store.create(available[0]!);
+      }
       post({ type: 'theme', theme });
       post({ type: 'session-restored', sessionId: session.id, transcript: session.transcript });
       postHistory(); // S005: populate the history dropdown as soon as the panel opens

@@ -1,0 +1,320 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1790410807544-6ta5yk",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-26T08:23:13.302Z",
+    "epicCreatedAt": "2026-09-26T08:23:13.303Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 185754,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "be8708a9cd20e286",
+    "epicSlug": "add-insrc-icon-vs-code-activity",
+    "storyId": "S001",
+    "lldRunId": "wf-1790410257933-gdhoaz",
+    "lldEffectiveHash": "be8708a9cd20e286d2a0ba7ade292cc1ab107baf2db0051e6f69de2fd3752d1b",
+    "approvedAt": "2026-09-26T08:23:22.192Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add the themeable Activity Bar icon asset",
+        "summary": "Create vscode-plugin/media/insrc.svg as a single-color currentColor SVG derived from the insrc mark; ensure it is packaged (not excluded by .vscodeignore).",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "vscode-plugin/media/insrc.svg exists and uses currentColor (no hardcoded fill that breaks theming)",
+          "the file is not excluded by .vscodeignore"
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "packaging: media/insrc.svg exists on disk, uses currentColor, and is not .vscodeignore'd"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Extend the local vscode.d.ts type slice for sidebar-view APIs",
+        "summary": "Add WebviewView, WebviewViewProvider, and window.registerWebviewViewProvider to src/vscode.d.ts, reusing the existing Webview interface, so the adapter + extension compile.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "vscode.d.ts declares WebviewView (webview/onDidDispose/visible/show), WebviewViewProvider.resolveWebviewView, and window.registerWebviewViewProvider",
+          "tsc --noEmit is clean after the additions"
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "vscode.d.ts declares WebviewView + WebviewViewProvider + registerWebviewViewProvider (tsc --noEmit clean)"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Add the vscode-free WebviewView->ChatPanelChannel adapter + provider factory",
+        "summary": "Create src/chat/chat-view-channel.ts with webviewViewToChannel(view): ChatPanelChannel (setHtml/postMessage/onMessage/onDidDispose/reveal/dispose mapping) and createChatSidebarViewProvider(deps): WebviewViewProvider that on resolveWebviewView enables scripts, wraps the view, builds the host, opens it, and rebuilds on re-resolution. Type-only vscode imports; reuse ChatPanelChannel from chat-panel.ts.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "webviewViewToChannel maps all six ChatPanelChannel methods; dispose is a no-op; post-dispose postMessage is swallowed",
+          "createChatSidebarViewProvider.resolveWebviewView enables scripts before rendering and rebuilds host+channel on a fresh view (stale view not posted to)",
+          "chat-view-channel.ts imports nothing from 'vscode' at runtime (type-only)"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "webviewViewToChannel maps setHtml/postMessage/onMessage/onDidDispose/reveal(->show(true))/dispose(->noop) onto the fake view"
+          },
+          {
+            "level": "unit",
+            "name": "postMessage after the fake view is disposed is swallowed (never throws inward)"
+          },
+          {
+            "level": "unit",
+            "name": "createChatPanelHost driven by createPanel:()=>webviewViewToChannel(fakeView) renders the shell + posts theme/session-restored"
+          },
+          {
+            "level": "unit",
+            "name": "resolveWebviewView enables scripts THEN renders; a second resolveWebviewView(freshView) rebuilds so the stale view is not posted to"
+          },
+          {
+            "level": "unit",
+            "name": "chat-view-channel.ts is vscode-free (source-scan, no runtime 'vscode' import)"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Add the manifest Activity Bar container + sidebar webview view",
+        "summary": "In package.json add contributes.viewsContainers.activitybar (insrc container -> media/insrc.svg) and contributes.views.insrc (insrc.chatView, type:webview, when:config.insrc.chat.enabled). Add NO new command.",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "viewsContainers.activitybar has { id:'insrc', title, icon:'media/insrc.svg' }",
+          "views.insrc has { id:'insrc.chatView', type:'webview', when:'config.insrc.chat.enabled' }",
+          "contributes.commands remains the exact 13-command set (no new command id)"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "contract: viewsContainers.activitybar has { id:'insrc', title, icon:'media/insrc.svg' }"
+          },
+          {
+            "level": "integration",
+            "name": "contract: views.insrc has { id:'insrc.chatView', type:'webview', when:'config.insrc.chat.enabled' }"
+          },
+          {
+            "level": "integration",
+            "name": "contract: contributes.commands is UNCHANGED (exact 13-command set; no new command id)"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Wire the sidebar provider + repoint insrc.chat.open in extension.ts",
+        "summary": "Inside the existing if (chatEnabled) block, build the provider via createChatSidebarViewProvider with real vscode-bound seams (toChannel over view.webview; makeHost = (createPanel) => createChatPanelHost({ createPanel, providers, store, cwd, editGovernance }); enableScripts sets view.webview.options), register it via registerWebviewViewProvider('insrc.chatView', ..., { webviewOptions: { retainContextWhenHidden: true } }) pushed to context.subscriptions, and repoint insrc.chat.open to executeCommand('insrc.chatView.focus'). SCOPE THE EDIT to the CHAT host construction + insrc.chat.open handler ONLY — leave createDocsReviewHost / insrc.chat.docsReview and their createWebviewPanel wiring intact (per s3 critique).",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t2",
+          "t3",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "registerWebviewViewProvider is called with the exact contributed id 'insrc.chatView' inside the chatEnabled gate and its Disposable pushed to context.subscriptions",
+          "resolveWebviewView sets webview.options enableScripts before rendering",
+          "insrc.chat.open handler calls executeCommand('insrc.chatView.focus'); no new command id added",
+          "createDocsReviewHost + insrc.chat.docsReview registration remain intact (docs-review untouched)",
+          "extension.ts remains the sole vscode importer; tsc --noEmit clean"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "source-scan: inside if (chatEnabled), extension.ts calls registerWebviewViewProvider('insrc.chatView', ...) and pushes the Disposable to context.subscriptions"
+          },
+          {
+            "level": "integration",
+            "name": "source-scan: resolveWebviewView sets webview.options enableScripts before rendering"
+          },
+          {
+            "level": "integration",
+            "name": "source-scan: insrc.chat.open handler calls executeCommand('insrc.chatView.focus') (no new command id)"
+          },
+          {
+            "level": "integration",
+            "name": "source-scan: createDocsReviewHost + insrc.chat.docsReview remain registered (docs-review untouched)"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Tests + full sweep",
+        "summary": "Add chat-view-channel unit tests (adapter mapping, host-driven-by-fake-view render/stream, re-resolution guard, post-dispose swallow, vscode-free source-scan); extend extension-chat-wiring.test.ts (provider registration + command repoint + enableScripts + docs-review still registered) and packaging/truthful-sync manifest tests (container + webview view present, command count still 13). Run tsc --noEmit + the full vscode-plugin suite.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t3",
+          "t4",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "new chat-view-channel.test.ts covers adapter mapping + re-resolution + vscode-free",
+          "extension-chat-wiring/packaging/truthful-sync updated and green (incl. docs-review-still-registered assertion)",
+          "full vscode-plugin sweep passes (0 fail) and tsc --noEmit is clean"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "full vscode-plugin sweep (tsx --test) passes with 0 failures and tsc --noEmit is clean"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "webviewViewToChannel(fakeView): setHtml -> fakeView.webview.html; postMessage -> fakeView.webview.postMessage; onMessage registers fakeView.webview.onDidReceiveMessage; onDidDispose registers fakeView.onDidDispose; reveal -> fakeView.show(true); dispose is a no-op",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "postMessage after the fake view is disposed is swallowed (never throws inward)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "driving createChatPanelHost with createPanel:()=>webviewViewToChannel(fakeView) renders the shell (setHtml called) and posts theme/session-restored",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "createChatSidebarViewProvider.resolveWebviewView(fakeView) enables scripts THEN renders, and a second resolveWebviewView(freshView) rebuilds so the stale view is no longer posted to",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "chat-view-channel.ts imports nothing from 'vscode' at runtime (source-scan)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "contributes.viewsContainers.activitybar has { id:'insrc', title, icon:'media/insrc.svg' }",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "contributes.views.insrc has { id:'insrc.chatView', type:'webview', when:'config.insrc.chat.enabled' }",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "contributes.commands is UNCHANGED (exact 13-command set; no new command id)",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "source-scan: inside if (chatEnabled), extension.ts calls vscode.window.registerWebviewViewProvider('insrc.chatView', ...) with the exact contributed id and pushes the Disposable to context.subscriptions",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "source-scan: resolveWebviewView sets webview.options enableScripts before rendering",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "source-scan: insrc.chat.open handler calls executeCommand('insrc.chatView.focus') (no new command id)",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "packaging: vscode-plugin/media/insrc.svg exists, is currentColor/themeable, and is not .vscodeignore'd",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "vscode.d.ts declares WebviewView + WebviewViewProvider + registerWebviewViewProvider (tsc --noEmit clean)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 dataModelChanges: package.json viewsContainers.activitybar + views + media/insrc.svg icon asset"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails: webviewViewToChannel + createChatSidebarViewProvider reuse createChatPanelHost via ChatPanelChannel; insrc.chat.open repoint"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 dataModelChanges: src/vscode.d.ts WebviewView/WebviewViewProvider/registerWebviewViewProvider slice + vscode-free adapter"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 invariants: no new command id (reuse insrc.chat.open), contributes.commands count stays 13"
+    }
+  ]
+}

@@ -55,6 +55,7 @@ import { createProviderRegistry, nodeSpawner, defaultBinaryProbe } from './chat/
 import { defaultComputeDiff, type DiffView } from './chat/edit-governor.js';
 import { createDocsReviewHost } from './chat/docs-review-panel.js';
 import { createDocsReviewClient } from './chat/docs-review-client.js';
+import { webviewViewToChannel, createChatSidebarViewProvider } from './chat/chat-view-channel.js';
 import { createGitBaseline } from './chat/git-baseline.js';
 import { execFile as nodeExecFile } from 'node:child_process';
 import { promises as nodeFsp } from 'node:fs';
@@ -461,25 +462,31 @@ export function activate(context: vscode.ExtensionContext): void {
       }),
     );
 
-    const chatHost = createChatPanelHost({
+    // S-activitybar: the chat renders in the Activity Bar SIDEBAR as a webview view (like the
+    // Claude/Codex/Copilot extensions), reusing the S003 createChatPanelHost turn-loop VERBATIM
+    // via a WebviewView->ChatPanelChannel adapter. createChatPanelHost is unchanged; only its
+    // createPanel is supplied per-resolve to return the resolved sidebar view's channel. The
+    // shared host deps (edit-governance + providers + store + cwd) are identical to before.
+    const LAST_CHAT_SESSION_KEY = 'insrc.chat.lastSession';
+    const chatHostDeps = {
       editGovernance: {
         computeDiff: defaultComputeDiff,
         diffView: () =>
           (vscode.workspace.getConfiguration().get<DiffView>('insrc.chat.diffView') === 'editor' ? 'editor' : 'chat'),
-        notify: (m) => {
+        notify: (m: string) => {
           void vscode.window.showWarningMessage(`insrc chat: ${m}`);
         },
         baseline: workspaceBaseline,
         fs: {
-          read: async (path) => readText(absForFs(chatCwd(), path)),
-          write: async (path, content) => {
+          read: async (path: string) => readText(absForFs(chatCwd(), path)),
+          write: async (path: string, content: string) => {
             await nodeFsp.writeFile(absForFs(chatCwd(), path), content, 'utf8');
           },
-          remove: async (path) => {
+          remove: async (path: string) => {
             await nodeFsp.rm(absForFs(chatCwd(), path), { force: true });
           },
         },
-        editorDiff: async (path, baseline, opts) => {
+        editorDiff: async (path: string, baseline: string | undefined, opts: { review: boolean }) => {
           const abs = absForFs(chatCwd(), path);
           baselineDocs.set(abs, baseline ?? '');
           const baseUri = vscode.Uri.parse(`${BASELINE_SCHEME}:${encodeURIComponent(abs)}`);
@@ -506,34 +513,38 @@ export function activate(context: vscode.ExtensionContext): void {
           }
         },
       },
-      createPanel: ({ viewType, title }) => {
-        const panel = vscode.window.createWebviewPanel(viewType, title, vscode.ViewColumn.Active, { enableScripts: true });
-        return {
-          setHtml: (html) => {
-            panel.webview.html = html;
-          },
-          postMessage: (message) => {
-            // Fire-and-forget: a post to a disposed/hidden panel must never reject inward.
-            panel.webview.postMessage(message).then(undefined, () => {
-              /* ignore */
-            });
-          },
-          onMessage: (listener) => {
-            panel.webview.onDidReceiveMessage((m) => listener(m));
-          },
-          onDidDispose: (listener) => {
-            panel.onDidDispose(listener);
-          },
-          reveal: () => panel.reveal(),
-          dispose: () => panel.dispose(),
-        };
-      },
       providers: chatProviders,
       store: chatStore,
       cwd: () => vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? process.cwd(),
+      // H1: resume the last active conversation when a fresh host is built (view re-resolution
+      // on window reload / host restart / view move), instead of silently starting an empty chat.
+      resumeSessionId: () => context.globalState.get<string>(LAST_CHAT_SESSION_KEY),
+    };
+    const chatSidebarProvider = createChatSidebarViewProvider({
+      toChannel: (view) => webviewViewToChannel(view),
+      makeHost: (createPanel) => createChatPanelHost({ ...chatHostDeps, createPanel }),
+      enableScripts: (view) => {
+        view.webview.options = { enableScripts: true };
+      },
+      // Persist the active session id so the next fresh host resumes it (H1 continuity).
+      onActiveSession: (id) => {
+        void context.globalState.update(LAST_CHAT_SESSION_KEY, id);
+      },
     });
+    context.subscriptions.push(
+      vscode.window.registerWebviewViewProvider('insrc.chatView', chatSidebarProvider, {
+        webviewOptions: { retainContextWhenHidden: true },
+      }),
+    );
+    // M1: the view's `when` is a context key set ONLY here (at activate, inside the flag gate),
+    // NOT the live `config.insrc.chat.enabled`. So toggling the setting without a window reload
+    // cannot surface the Activity Bar icon before its provider exists (which would render a
+    // broken pane). The icon appears only after a reload re-runs activate with the flag on.
+    void vscode.commands.executeCommand('setContext', 'insrc.chat.ready', true);
+    // The command palette entry stays insrc.chat.open (no new command id) but now FOCUSES the
+    // sidebar view (VS Code auto-generates '<viewId>.focus') instead of opening an editor tab.
     commands.register({ id: 'insrc.chat.open', title: 'insrc: Open chat' }, async () => {
-      chatHost.open();
+      await vscode.commands.executeCommand('insrc.chatView.focus');
     });
 
     // S007: the docs-review pane — a thin, passthrough (k8) observer over the daemon's

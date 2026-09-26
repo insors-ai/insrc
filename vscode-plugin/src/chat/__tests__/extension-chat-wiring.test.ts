@@ -118,3 +118,57 @@ test('S007: the docs-review host + client modules are vscode-free', () => {
     assert.doesNotMatch(src, /require\(['"]vscode['"]\)/, `${f} has no vscode require`);
   }
 });
+
+// ---- S-activitybar: sidebar chat webview view ----
+
+test('S-activitybar: package.json contributes the insrc Activity Bar container + insrc.chatView webview view', () => {
+  const pkg = JSON.parse(read(PKG)) as {
+    contributes: {
+      viewsContainers?: { activitybar?: Array<{ id: string; title: string; icon: string }> };
+      views?: Record<string, Array<{ id: string; type?: string; when?: string }>>;
+      commands: Array<{ command: string }>;
+    };
+  };
+  const container = (pkg.contributes.viewsContainers?.activitybar ?? []).find((c) => c.id === 'insrc');
+  assert.ok(container, 'insrc Activity Bar container contributed');
+  assert.equal(container!.icon, 'media/insrc.svg', 'container uses the themeable media/insrc.svg icon');
+  const view = (pkg.contributes.views?.['insrc'] ?? []).find((v) => v.id === 'insrc.chatView');
+  assert.ok(view, 'insrc.chatView view contributed under the insrc container');
+  assert.equal(view!.type, 'webview', 'the chat view is a webview view');
+  assert.equal(view!.when, 'insrc.chat.ready', 'the view is gated on the activate-time context key (M1: not the live config key, so a runtime toggle cannot surface a provider-less broken pane)');
+  // No new command id — the sidebar reuses insrc.chat.open.
+  assert.ok(!pkg.contributes.commands.some((c) => c.command === 'insrc.chatView.focus'), 'no manual focus command is contributed (VS Code auto-generates it)');
+});
+
+test('S-activitybar: media/insrc.svg exists, is themeable (currentColor), and is not .vscodeignore’d', () => {
+  const svg = read(join(HERE, '..', '..', '..', 'media', 'insrc.svg'));
+  assert.match(svg, /currentColor/, 'the icon uses currentColor so VS Code themes it');
+  const ignore = read(join(HERE, '..', '..', '..', '.vscodeignore'));
+  assert.doesNotMatch(ignore, /^media(\/|\*)/m, '.vscodeignore does not exclude media/');
+});
+
+test('S-activitybar: extension.ts registers the sidebar provider + repoints insrc.chat.open, leaving docs-review intact', () => {
+  const src = read(EXT);
+  const block = /if \(chatEnabled\) \{([\s\S]*?)\n  \}/.exec(src);
+  assert.ok(block, 'the chatEnabled block is present');
+  const b = block![1]!;
+  assert.match(b, /createChatSidebarViewProvider\(\{/, 'builds the sidebar view provider');
+  assert.match(b, /registerWebviewViewProvider\(\s*'insrc\.chatView'/, 'registers the provider with the exact contributed view id');
+  assert.match(b, /retainContextWhenHidden:\s*true/, 'retains the webview context when hidden');
+  assert.match(b, /view\.webview\.options\s*=\s*\{\s*enableScripts:\s*true\s*\}/, 'enables scripts on the view');
+  assert.match(b, /makeHost:\s*\(createPanel\)\s*=>\s*createChatPanelHost\(\{\s*\.\.\.chatHostDeps,\s*createPanel\s*\}\)/, 'reuses createChatPanelHost with the shared deps + per-resolve createPanel');
+  assert.match(b, /commands\.register\(\{ id: 'insrc\.chat\.open'[\s\S]*?executeCommand\('insrc\.chatView\.focus'\)/, 'insrc.chat.open focuses the sidebar view (no new command id)');
+  assert.match(b, /createDocsReviewHost\(\{/, 'docs-review host remains registered (untouched)');
+  // H1: the host resumes the last active session across rebuilds; the provider persists it.
+  assert.match(b, /resumeSessionId:\s*\(\)\s*=>\s*context\.globalState\.get/, 'H1: chatHostDeps.resumeSessionId reads the persisted last-session id');
+  assert.match(b, /onActiveSession:\s*\(id\)\s*=>\s*\{[\s\S]*?context\.globalState\.update\(LAST_CHAT_SESSION_KEY, id\)/, 'H1: the provider persists the active session id');
+  // M1: the view is gated on an activate-time context key, set only inside the flag gate.
+  assert.match(b, /setContext',\s*'insrc\.chat\.ready',\s*true/, 'M1: sets the insrc.chat.ready context key inside the chat gate');
+});
+
+test('S-activitybar: the chat-view-channel adapter module is runtime-vscode-free', () => {
+  const src = read(join(HERE, '..', 'chat-view-channel.ts'));
+  assert.doesNotMatch(src, /import\s+\{[^}]*\}\s+from ['"]vscode['"]/, 'no value import from vscode');
+  assert.doesNotMatch(src, /import\s+\*\s+as\s+\w+\s+from ['"]vscode['"]/, 'no namespace import from vscode');
+  assert.doesNotMatch(src, /require\(['"]vscode['"]\)/, 'no vscode require');
+});

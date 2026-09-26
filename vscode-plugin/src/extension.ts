@@ -53,6 +53,8 @@ import { createChatPanelHost } from './chat/chat-panel.js';
 import { createMementoChatSessionStore } from './chat/session-store.js';
 import { createProviderRegistry, nodeSpawner, defaultBinaryProbe } from './chat/cli-adapter.js';
 import { defaultComputeDiff, type DiffView } from './chat/edit-governor.js';
+import { createDocsReviewHost } from './chat/docs-review-panel.js';
+import { createDocsReviewClient } from './chat/docs-review-client.js';
 import { createGitBaseline } from './chat/git-baseline.js';
 import { execFile as nodeExecFile } from 'node:child_process';
 import { promises as nodeFsp } from 'node:fs';
@@ -532,6 +534,39 @@ export function activate(context: vscode.ExtensionContext): void {
     });
     commands.register({ id: 'insrc.chat.open', title: 'insrc: Open chat' }, async () => {
       chatHost.open();
+    });
+
+    // S007: the docs-review pane — a thin, passthrough (k8) observer over the daemon's
+    // existing review IPCs (workflow.pending/artifactContent/approve/resolveComment, built
+    // by the JetBrains ide-artifact-review-panel epic). It only reads + acts on
+    // daemon-tracked pending artifacts (k5), reuses the same webview channel seam, and
+    // persists nothing extension-side (k3). Gated behind the same insrc.chat.enabled flag.
+    const docsReviewHost = createDocsReviewHost({
+      client: createDocsReviewClient(client),
+      createPanel: ({ viewType, title }) => {
+        const panel = vscode.window.createWebviewPanel(viewType, title, vscode.ViewColumn.Active, { enableScripts: true });
+        return {
+          setHtml: (html) => {
+            panel.webview.html = html;
+          },
+          postMessage: (message) => {
+            panel.webview.postMessage(message).then(undefined, () => {
+              /* ignore posts to a disposed/hidden panel */
+            });
+          },
+          onMessage: (listener) => {
+            panel.webview.onDidReceiveMessage((m) => listener(m));
+          },
+          onDidDispose: (listener) => {
+            panel.onDidDispose(listener);
+          },
+          reveal: () => panel.reveal(),
+          dispose: () => panel.dispose(),
+        };
+      },
+    });
+    commands.register({ id: 'insrc.chat.docsReview', title: 'insrc: Review pending documents' }, async () => {
+      docsReviewHost.open();
     });
   }
 

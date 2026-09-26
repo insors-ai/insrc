@@ -91,6 +91,11 @@
         "command": "insrc.chat.open",
         "title": "Open chat",
         "category": "insrc"
+      },
+      {
+        "command": "insrc.chat.docsReview",
+        "title": "Review pending documents",
+        "category": "insrc"
       }
     ],
     "configuration": [

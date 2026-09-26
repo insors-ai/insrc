@@ -36,6 +36,17 @@ export type HostToWebview =
   | { readonly type: 'history-list'; readonly chats: ChatSummary[] }
   | { readonly type: 'edit-prompt'; readonly path: string; readonly diff: UnifiedDiff; readonly review?: boolean }
   | { readonly type: 'docs-list'; readonly artifacts: DocsArtifactSummary[] }
+  // S007: one pending artifact's rendered body for the docs-review pane (additive).
+  // `commentable` (optional; default true) hides request-changes for artifact kinds the
+  // daemon's resolveComment locator does not support (only DEF/HLD/LLD).
+  | {
+      readonly type: 'docs-content';
+      readonly artifactId: string;
+      readonly markdown: string;
+      readonly openQuestions: readonly string[];
+      readonly blocked: boolean;
+      readonly commentable?: boolean;
+    }
   | { readonly type: 'theme'; readonly theme: TerminalTheme };
 
 /** Webview -> host: user intents. */
@@ -45,7 +56,11 @@ export type WebviewToHost =
   | { readonly type: 'open-chat'; readonly chatId: string }
   | { readonly type: 'set-edit-mode'; readonly mode: 'auto' | 'review' }
   | { readonly type: 'edit-decision'; readonly path: string; readonly accept: boolean }
-  | { readonly type: 'docs-decision'; readonly artifactId: string; readonly accept: boolean };
+  // S007: `note` carries the reviewer's request-changes text on reject (accept:false) —
+  // additive-optional, existing accept-only handlers ignore it.
+  | { readonly type: 'docs-decision'; readonly artifactId: string; readonly accept: boolean; readonly note?: string }
+  // S007: the docs-review read intent — open one pending artifact's body (additive).
+  | { readonly type: 'open-doc'; readonly artifactId: string };
 
 /** The discriminant values of each direction (exported so consumers/tests can assert exhaustiveness). */
 export const HOST_TO_WEBVIEW_TYPES = [
@@ -54,6 +69,7 @@ export const HOST_TO_WEBVIEW_TYPES = [
   'history-list',
   'edit-prompt',
   'docs-list',
+  'docs-content',
   'theme',
 ] as const;
 
@@ -64,6 +80,7 @@ export const WEBVIEW_TO_HOST_TYPES = [
   'set-edit-mode',
   'edit-decision',
   'docs-decision',
+  'open-doc',
 ] as const;
 
 export type HostToWebviewType = (typeof HOST_TO_WEBVIEW_TYPES)[number];

@@ -24,7 +24,8 @@ export type InsrcCommandId =
   | 'insrc.status.detailed'
   | 'insrc.status.repoConfig'
   | 'insrc.models.setTier'
-  | 'insrc.chat.open';
+  | 'insrc.chat.open'
+  | 'insrc.chat.docsReview';
 
 export interface CommandDescriptor {
   id: InsrcCommandId;

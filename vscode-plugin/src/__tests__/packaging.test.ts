@@ -59,8 +59,8 @@ test('the 7 durable ad0d45c9 contributes.commands are preserved + the config/pan
   assert.ok(!ids.includes('insrc.status.menu'), 'insrc.status.menu is a status-bar command, not a palette entry');
   assert.deepEqual(
     ids.slice().sort(),
-    [...shipped, 'insrc.settings.refresh', 'insrc.status.detailed', 'insrc.status.repoConfig', 'insrc.models.setTier', 'insrc.chat.open'].sort(),
-    'the 7 shipped commands + insrc.settings.refresh + the 2 S004 panel commands + the S003 model-picker command + the dev-chat insrc.chat.open command, no others',
+    [...shipped, 'insrc.settings.refresh', 'insrc.status.detailed', 'insrc.status.repoConfig', 'insrc.models.setTier', 'insrc.chat.open', 'insrc.chat.docsReview'].sort(),
+    'the 7 shipped commands + insrc.settings.refresh + the 2 S004 panel commands + the S003 model-picker command + the dev-chat insrc.chat.open + the S007 insrc.chat.docsReview command, no others',
   );
 });
 

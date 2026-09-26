@@ -93,3 +93,28 @@ test('S006: the edit-governor module is vscode-free', () => {
   assert.doesNotMatch(src, /from ['"]vscode['"]/, 'edit-governor.ts imports nothing from vscode');
   assert.doesNotMatch(src, /require\(['"]vscode['"]\)/, 'edit-governor.ts has no vscode require');
 });
+
+// ---- S007: docs-review pane wiring ----
+
+test('S007: package.json contributes the insrc.chat.docsReview command', () => {
+  const pkg = JSON.parse(read(PKG)) as { contributes: { commands: Array<{ command: string }> } };
+  assert.ok(pkg.contributes.commands.some((c) => c.command === 'insrc.chat.docsReview'), 'insrc.chat.docsReview command contributed');
+});
+
+test('S007: extension.ts wires the docs-review host inside the chat gate over the shared client', () => {
+  const src = read(EXT);
+  const block = /if \(chatEnabled\) \{([\s\S]*?)\n  \}/.exec(src);
+  assert.ok(block, 'the chatEnabled block is present');
+  const b = block![1]!;
+  assert.match(b, /createDocsReviewHost\(\{/, 'builds the docs-review host inside the flag gate');
+  assert.match(b, /createDocsReviewClient\(client\)/, 'the client is built over the shared daemon IPC client (no new capability, k5)');
+  assert.match(b, /commands\.register\(\{ id: 'insrc\.chat\.docsReview'/, 'registers the docs-review command');
+});
+
+test('S007: the docs-review host + client modules are vscode-free', () => {
+  for (const f of ['docs-review-panel.ts', 'docs-review-client.ts']) {
+    const src = read(join(HERE, '..', f));
+    assert.doesNotMatch(src, /from ['"]vscode['"]/, `${f} imports nothing from vscode`);
+    assert.doesNotMatch(src, /require\(['"]vscode['"]\)/, `${f} has no vscode require`);
+  }
+});

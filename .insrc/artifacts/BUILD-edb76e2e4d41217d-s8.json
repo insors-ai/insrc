@@ -1,0 +1,19 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": false,
+    "epicHash": "edb76e2e4d41217d",
+    "storyId": "s8",
+    "createdAt": "2026-09-26T00:00:00.000Z",
+    "updatedAt": "2026-09-26T00:00:00.000Z"
+  },
+  "body": {
+    "commit": "c55210e",
+    "tasks": [
+      { "id": "t1", "passed": true },
+      { "id": "t2", "passed": true },
+      { "id": "t3", "passed": true },
+      { "id": "t4", "passed": true }
+    ]
+  }
+}

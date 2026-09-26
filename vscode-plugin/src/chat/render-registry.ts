@@ -22,6 +22,8 @@
  * test evals the factory and drives it against a fake document, so the webview
  * render logic is verified without a real DOM.
  */
+import type { TranscriptEntry } from './session-store.js';
+import type { TurnEvent } from './stream-events.js';
 
 /** The two conversational roles a message row can carry. */
 export type ChatRole = 'user' | 'assistant';
@@ -82,6 +84,41 @@ export interface RenderRegistry {
 }
 
 /**
+ * Derive the view-time {@link RowViewModel} from a plain durable {@link TranscriptEntry}
+ * or a live {@link TurnEvent}. Pure + total + deterministic: no DOM, no storage write,
+ * no I/O (k4 — rendering is derived at view time, never persisted). An unrecognised
+ * entry maps to kind:'fallback' so renderRow always resolves a renderer.
+ *
+ * Mapping (single-sourced with {@link renderRegistryWebviewSource}'s inline copy; a
+ * parity test pins the two together):
+ * - transcript role 'user'      -> { kind:'user', role:'user' }        (collapsible)
+ * - transcript role 'assistant' -> { kind:'assistant-text', role:'assistant' } (collapsible)
+ * - transcript role 'marker'    -> { kind:'fallback', cssClass }       (the sc1 marker row)
+ * - event 'assistant-delta'     -> { kind:'assistant-text', role:'assistant' } (ac2)
+ * - event 'tool-call'           -> { kind:'tool-command', text: command ?? tool/mcp } (ac3, never collapsed)
+ * - anything else               -> { kind:'fallback', text:'' }
+ */
+export function toViewModel(entry: TranscriptEntry | TurnEvent): RowViewModel {
+  // A TranscriptEntry carries `role`; a TurnEvent carries `kind`.
+  if ('role' in entry) {
+    if (entry.role === 'user') return { kind: 'user', role: 'user', text: entry.text, collapsible: true };
+    if (entry.role === 'assistant') return { kind: 'assistant-text', role: 'assistant', text: entry.text, collapsible: true };
+    // 'marker' (S008): keep the sc1 marker class so a restored marker row renders identically.
+    return entry.cssClass !== undefined
+      ? { kind: 'fallback', text: entry.text, cssClass: entry.cssClass, collapsible: false }
+      : { kind: 'fallback', text: entry.text, collapsible: false };
+  }
+  if (entry.kind === 'assistant-delta') {
+    return { kind: 'assistant-text', role: 'assistant', text: entry.text, collapsible: true };
+  }
+  if (entry.kind === 'tool-call') {
+    const label = entry.command ?? (entry.mcp ? `${entry.mcp.server} · ${entry.mcp.name}` : entry.tool);
+    return { kind: 'tool-command', text: label, collapsible: false };
+  }
+  return { kind: 'fallback', text: '', collapsible: false };
+}
+
+/**
  * The CSS the collapse primitive relies on: an icon-only chevron and a body that
  * clamps to a 3-line preview when collapsed (k6 a/b). Embedded once in the webview
  * `<style>` (t1). Kept as a single exported string so the shell and any test share
@@ -134,8 +171,26 @@ export function renderRegistryWebviewSource(): string {
     `var r=(vm&&REG[vm.kind])||REG.fallback;` +
     `try{return r.render(vm,host);}` +
     `catch(e){try{return REG.fallback.render(vm,host);}catch(_){return null;}}}` +
+    // toViewModel: single-sourced mirror of the host toViewModel (render-registry.ts); a parity
+    // test pins the two together. Pure: derives the row from a transcript entry or a live event.
+    `function toViewModel(entry){` +
+    `if(!entry)return {kind:'fallback',text:'',collapsible:false};` +
+    `if('role' in entry){` +
+    `if(entry.role==='user')return {kind:'user',role:'user',text:entry.text,collapsible:true};` +
+    `if(entry.role==='assistant')return {kind:'assistant-text',role:'assistant',text:entry.text,collapsible:true};` +
+    `return entry.cssClass!==undefined?{kind:'fallback',text:entry.text,cssClass:entry.cssClass,collapsible:false}:{kind:'fallback',text:entry.text,collapsible:false};}` +
+    `if(entry.kind==='assistant-delta')return {kind:'assistant-text',role:'assistant',text:entry.text,collapsible:true};` +
+    `if(entry.kind==='tool-call'){var label=entry.command!=null?entry.command:(entry.mcp?(entry.mcp.server+' \\u00b7 '+entry.mcp.name):entry.tool);return {kind:'tool-command',text:label,collapsible:false};}` +
+    `return {kind:'fallback',text:'',collapsible:false};}` +
     // 'fallback' is the existing flat writer: byte-identical to the pre-sc1 render (k2).
     `register('fallback',function(vm){return line(vm&&vm.text!=null?vm.text:'',vm&&vm.cssClass);});` +
-    `return {register:register,renderRow:renderRow,collapsible:collapsible};}`
+    // t4 renderers. user/assistant-text render the plain text through line() (the S003 story
+    // adds role differentiation + collapse-by-default via the collapsible primitive). The
+    // tool-command renderer shows the real command INLINE with the sc1 tool tone and is NEVER
+    // collapsed (k6 d).
+    `register('user',function(vm){return line(vm.text);});` +
+    `register('assistant-text',function(vm){return line(vm.text);});` +
+    `register('tool-command',function(vm){return line(vm.text,'insrc-term__marker--tool');});` +
+    `return {register:register,renderRow:renderRow,collapsible:collapsible,toViewModel:toViewModel};}`
   );
 }

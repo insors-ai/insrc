@@ -9,7 +9,10 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { renderRegistryWebviewSource, RENDER_REGISTRY_STYLE } from '../render-registry.js';
+import { renderRegistryWebviewSource, RENDER_REGISTRY_STYLE, toViewModel } from '../render-registry.js';
+import type { RowViewModel } from '../render-registry.js';
+import type { TranscriptEntry } from '../session-store.js';
+import type { TurnEvent } from '../stream-events.js';
 
 /** A tiny DOM stand-in: records className/textContent/children + click listeners. */
 interface FakeNode {
@@ -47,6 +50,7 @@ interface Registry {
   register(kind: string, fn: (vm: unknown, host: unknown) => unknown): void;
   renderRow(vm: unknown): FakeNode | null;
   collapsible(el: FakeNode, opts: { defaultCollapsed: boolean }): FakeNode;
+  toViewModel(entry: unknown): RowViewModel;
 }
 function makeRegistry(): { reg: Registry; appended: FakeNode[] } {
   const { document } = fakeDocument();
@@ -144,4 +148,81 @@ test('renderRegistryWebviewSource() is CSP-safe: no import/remote/innerHTML/vsco
 test('RENDER_REGISTRY_STYLE clamps the collapsed body to a 3-line preview', () => {
   assert.match(RENDER_REGISTRY_STYLE, /-webkit-line-clamp:3/, '3-line clamp (k6 b)');
   assert.match(RENDER_REGISTRY_STYLE, /\.insrc-collapse__chevron\{[^}]*cursor:pointer/, 'the chevron is a clickable icon');
+});
+
+// ---- t4: toViewModel mapping + the registered renderers -------------------------
+
+test('toViewModel maps transcript rows: user/assistant/marker to the right kind + role', () => {
+  const user: TranscriptEntry = { role: 'user', text: 'hi there', at: 't' };
+  assert.deepEqual(toViewModel(user), { kind: 'user', role: 'user', text: 'hi there', collapsible: true });
+  const asst: TranscriptEntry = { role: 'assistant', text: 'hello', at: 't' };
+  assert.deepEqual(toViewModel(asst), { kind: 'assistant-text', role: 'assistant', text: 'hello', collapsible: true });
+  const marker: TranscriptEntry = { role: 'marker', text: 'done', cssClass: 'insrc-term__marker--done', at: 't' };
+  assert.deepEqual(toViewModel(marker), { kind: 'fallback', text: 'done', cssClass: 'insrc-term__marker--done', collapsible: false });
+});
+
+test('toViewModel maps live events: assistant-delta -> assistant-text (ac2), tool-call -> tool-command (ac3)', () => {
+  const delta: TurnEvent = { kind: 'assistant-delta', turnId: 't', text: 'step output' };
+  assert.deepEqual(toViewModel(delta), { kind: 'assistant-text', role: 'assistant', text: 'step output', collapsible: true });
+  // command-bearing -> the command is the row text.
+  const withCmd: TurnEvent = { kind: 'tool-call', turnId: 't', tool: 'Bash', command: 'npm test' };
+  assert.deepEqual(toViewModel(withCmd), { kind: 'tool-command', text: 'npm test', collapsible: false });
+  // command-less -> the tool name.
+  const noCmd: TurnEvent = { kind: 'tool-call', turnId: 't', tool: 'Read' };
+  assert.deepEqual(toViewModel(noCmd), { kind: 'tool-command', text: 'Read', collapsible: false });
+  // mcp, command-less -> `${server} · ${name}`.
+  const mcp: TurnEvent = { kind: 'tool-call', turnId: 't', tool: 'x', mcp: { server: 'insrc', name: 'insrc_analyze_step' } };
+  assert.deepEqual(toViewModel(mcp), { kind: 'tool-command', text: 'insrc · insrc_analyze_step', collapsible: false });
+});
+
+test('toViewModel is total: an unrecognised event maps to a fallback row', () => {
+  const status: TurnEvent = { kind: 'status', turnId: 't', phase: 'thinking' };
+  assert.deepEqual(toViewModel(status), { kind: 'fallback', text: '', collapsible: false });
+  const unknown = { kind: 'reasoning', turnId: 't' } as unknown as TurnEvent;
+  assert.deepEqual(toViewModel(unknown), { kind: 'fallback', text: '', collapsible: false });
+});
+
+test('parity: eval(webview toViewModel) equals host toViewModel for every sample (drift fails build)', () => {
+  const { reg } = makeRegistry();
+  const samples: Array<TranscriptEntry | TurnEvent> = [
+    { role: 'user', text: 'hi', at: 't' },
+    { role: 'assistant', text: 'yo', at: 't' },
+    { role: 'marker', text: 'done', cssClass: 'insrc-term__marker--done', at: 't' },
+    { role: 'marker', text: 'plain', at: 't' },
+    { kind: 'assistant-delta', turnId: 't', text: 'd' },
+    { kind: 'tool-call', turnId: 't', tool: 'Bash', command: 'ls' },
+    { kind: 'tool-call', turnId: 't', tool: 'Read' },
+    { kind: 'tool-call', turnId: 't', tool: 'x', mcp: { server: 'insrc', name: 'n' } },
+    { kind: 'status', turnId: 't', phase: 'thinking' },
+  ];
+  for (const s of samples) {
+    assert.deepEqual(reg.toViewModel(s), toViewModel(s), `webview/host toViewModel drift on ${JSON.stringify(s)}`);
+  }
+});
+
+test('integration: an assistant multi-step turn renders each step\'s actual text (ac2)', () => {
+  const { reg, appended } = makeRegistry();
+  const steps: TurnEvent[] = [
+    { kind: 'assistant-delta', turnId: 't', text: 'first step' },
+    { kind: 'assistant-delta', turnId: 't', text: 'second step' },
+  ];
+  for (const ev of steps) reg.renderRow(reg.toViewModel(ev));
+  assert.deepEqual(appended.map((n) => n.textContent), ['first step', 'second step']);
+});
+
+test('integration: a command-bearing tool-call renders the command; a command-less one renders the tool name (ac3)', () => {
+  const { reg, appended } = makeRegistry();
+  reg.renderRow(reg.toViewModel({ kind: 'tool-call', turnId: 't', tool: 'Bash', command: 'grep -rn foo' } as TurnEvent));
+  reg.renderRow(reg.toViewModel({ kind: 'tool-call', turnId: 't', tool: 'Read' } as TurnEvent));
+  assert.equal(appended[0]!.textContent, 'grep -rn foo', 'the command is shown inline');
+  assert.equal(appended[0]!.className, 'insrc-term__marker--tool', 'the tool-command row keeps the sc1 tool tone');
+  assert.equal(appended[1]!.textContent, 'Read', 'command-less falls back to the tool name');
+});
+
+test('the tool-command renderer never wraps its content in the collapse primitive (k6 d)', () => {
+  const { reg, appended } = makeRegistry();
+  const node = reg.renderRow(reg.toViewModel({ kind: 'tool-call', turnId: 't', tool: 'Bash', command: 'x' } as TurnEvent));
+  // The rendered node is the flat line() div, never an .insrc-collapse wrapper.
+  assert.equal(node, appended[0], 'renderRow returned the flat row node');
+  assert.doesNotMatch(node!.className, /insrc-collapse/, 'the tool-command row is not collapsible');
 });

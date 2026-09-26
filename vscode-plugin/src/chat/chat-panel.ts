@@ -256,10 +256,11 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // class by the +/-/space prefix computeDiff wrote. In review mode append accept/reject
       // buttons that post edit-decision for this path.
       `function renderDiff(path,diff,review){var box=document.createElement('div');box.className=${JSON.stringify(diffCls)};var hdr=document.createElement('div');hdr.className='insrc-diff-path';hdr.textContent=path;box.appendChild(hdr);var hunks=(diff&&diff.hunks)||[];hunks.forEach(function(h){(h.lines||[]).forEach(function(ln){var d=document.createElement('div');var c=ln.charAt(0);d.className=c==='+'?'insrc-diff-add':c==='-'?'insrc-diff-del':'insrc-diff-ctx';d.textContent=ln;box.appendChild(d);});});if(review){var bar=document.createElement('div');bar.className='insrc-diff-actions';var ok=document.createElement('button');ok.textContent='accept';ok.addEventListener('click',function(){vs.postMessage({v:1,payload:{type:'edit-decision',path:path,accept:true}});bar.remove();});var no=document.createElement('button');no.textContent='reject';no.addEventListener('click',function(){vs.postMessage({v:1,payload:{type:'edit-decision',path:path,accept:false}});bar.remove();});bar.appendChild(ok);bar.appendChild(no);box.appendChild(bar);}t.appendChild(box);t.scrollTop=t.scrollHeight;}` +
-      // S001 sc1: the live turn-event append now routes through reg.renderRow. t1 maps every event to a
-      // 'fallback' row (renderRow -> line()), so the render is byte-identical; t4 adds toViewModel + the
-      // user/assistant-text/tool-command renderers so these kinds render richer through the SAME seam.
-      `window.addEventListener('message',e=>{const m=e.data&&e.data.payload;if(!m)return;if(m.type==='turn-event'){const ev=m.event;if(ev&&ev.kind==='assistant-delta'){reg.renderRow({kind:'fallback',text:ev.text});}else{const mk=markerFor(ev);if(mk)reg.renderRow({kind:'fallback',text:mk.label,cssClass:mk.cssClass});}}` +
+      // S001 sc1/t4: the live turn-event append routes through reg.renderRow(reg.toViewModel(ev)).
+      // assistant-delta -> assistant-text row (its actual text, ac2); tool-call -> tool-command row
+      // (the real command inline, ac3). Every other kind keeps the sc1 marker path (markerFor ->
+      // fallback), so status/file-edit/done/error render exactly as today and an unknown kind is skipped.
+      `window.addEventListener('message',e=>{const m=e.data&&e.data.payload;if(!m)return;if(m.type==='turn-event'){const ev=m.event;if(ev&&(ev.kind==='assistant-delta'||ev.kind==='tool-call')){reg.renderRow(reg.toViewModel(ev));}else{const mk=markerFor(ev);if(mk)reg.renderRow({kind:'fallback',text:mk.label,cssClass:mk.cssClass});}}` +
       // S006: an edit-prompt carries the computed diff + the HOST's review flag -> render it
       // (+ accept/reject controls only when the host says review; never gated on local state).
       `else if(m.type==='edit-prompt'){renderDiff(m.path,m.diff,m.review===true);}` +

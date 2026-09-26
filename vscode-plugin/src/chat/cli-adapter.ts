@@ -168,7 +168,16 @@ const claudeMapper: ProviderMapper = {
             out.push({ kind: 'file-edit', turnId, path: input['file_path'] as string, diff: diffFromClaudeEdit(input['file_path'] as string, input) });
           } else {
             const mcp = parseMcpTool(toolName);
-            out.push(mcp ? { kind: 'tool-call', turnId, tool: toolName, mcp } : { kind: 'tool-call', turnId, tool: toolName });
+            // S001 sc2: surface the real command the tool ran (Bash `input.command`), when the
+            // provider exposes one; command-less tools omit it and render as the tool name (k2).
+            const command = typeof input['command'] === 'string' ? (input['command'] as string) : undefined;
+            out.push({
+              kind: 'tool-call',
+              turnId,
+              tool: toolName,
+              ...(mcp ? { mcp } : {}),
+              ...(command !== undefined ? { command } : {}),
+            });
           }
         }
       }
@@ -219,8 +228,11 @@ const codexMapper: ProviderMapper = {
         return [{ kind: 'file-edit', turnId, path, diff: { path, hunks: [] } }];
       }
       if (itemType === 'command_execution' || itemType === 'tool_call') {
-        const tool = typeof item['tool'] === 'string' ? (item['tool'] as string) : typeof item['command'] === 'string' ? (item['command'] as string) : 'tool';
-        return [{ kind: 'tool-call', turnId, tool }];
+        // S001 sc2: carry the actual command (codex `item.command`) as the additive command
+        // field, while `tool` keeps its existing label fallback. Command-less items omit it (k2).
+        const command = typeof item['command'] === 'string' ? (item['command'] as string) : undefined;
+        const tool = typeof item['tool'] === 'string' ? (item['tool'] as string) : command ?? 'tool';
+        return [{ kind: 'tool-call', turnId, tool, ...(command !== undefined ? { command } : {}) }];
       }
       const text = typeof item['text'] === 'string' ? (item['text'] as string) : '';
       return text === '' ? [] : [{ kind: 'assistant-delta', turnId, text }];

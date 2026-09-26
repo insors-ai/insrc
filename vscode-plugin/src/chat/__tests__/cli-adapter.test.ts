@@ -271,6 +271,67 @@ test('ProviderRegistry.get() on an absent provider throws unknown-provider', () 
   assert.throws(() => reg.get('codex'), /unknown-provider/);
 });
 
+// ---- S001 t3: ToolCallEvent.command population (sc2 additive) -------------------
+
+const toolCall = (events: TurnEvent[]): { tool: string; command?: string; mcp?: unknown } | undefined =>
+  events.find((e) => e.kind === 'tool-call') as { tool: string; command?: string; mcp?: unknown } | undefined;
+
+test('claude: a Bash tool_use sets ToolCallEvent.command from input.command', async () => {
+  const lines = [
+    JSON.stringify({ type: 'system', subtype: 'init', session_id: 's' }),
+    JSON.stringify({ type: 'assistant', message: { content: [{ type: 'tool_use', name: 'Bash', input: { command: 'ls -la' } }] } }),
+    JSON.stringify({ type: 'result' }),
+  ];
+  const { deps } = depsFor({ lines });
+  const reg = createProviderRegistry(deps);
+  const tc = toolCall(await collect(reg.get('claude').run(REQ({ provider: 'claude' }))));
+  assert.ok(tc, 'a tool-call was emitted');
+  assert.equal(tc!.tool, 'Bash');
+  assert.equal(tc!.command, 'ls -la', 'the real command is surfaced');
+});
+
+test('claude: a command-less tool_use omits command (renders as the tool name, k2)', async () => {
+  const lines = [
+    JSON.stringify({ type: 'system', subtype: 'init', session_id: 's' }),
+    JSON.stringify({ type: 'assistant', message: { content: [{ type: 'tool_use', name: 'Read', input: { file_path: '/repo/x.ts' } }] } }),
+    JSON.stringify({ type: 'result' }),
+  ];
+  const { deps } = depsFor({ lines });
+  const reg = createProviderRegistry(deps);
+  const tc = toolCall(await collect(reg.get('claude').run(REQ({ provider: 'claude' }))));
+  assert.ok(tc, 'a tool-call was emitted');
+  assert.equal(tc!.tool, 'Read');
+  assert.equal(tc!.command, undefined, 'command is omitted for a command-less tool');
+});
+
+test('codex: a command_execution item sets command from item.command', async () => {
+  const lines = [
+    JSON.stringify({ type: 'thread.started', thread_id: 't' }),
+    JSON.stringify({ type: 'item.completed', item: { type: 'command_execution', command: 'grep -rn foo src' } }),
+    JSON.stringify({ type: 'turn.completed' }),
+  ];
+  const { deps } = depsFor({ lines });
+  const reg = createProviderRegistry(deps);
+  const tc = toolCall(await collect(reg.get('codex').run(REQ({ provider: 'codex' }))));
+  assert.ok(tc, 'a tool-call was emitted');
+  assert.equal(tc!.command, 'grep -rn foo src', 'the codex command is surfaced');
+  assert.equal(tc!.tool, 'grep -rn foo src', 'tool keeps its existing command-as-label fallback');
+});
+
+test('codex: a tool_call item without a command omits command (k2)', async () => {
+  const lines = [
+    JSON.stringify({ type: 'thread.started', thread_id: 't' }),
+    JSON.stringify({ type: 'item.completed', item: { type: 'tool_call', tool: 'search' } }),
+    JSON.stringify({ type: 'turn.completed' }),
+  ];
+  const { deps } = depsFor({ lines });
+  const reg = createProviderRegistry(deps);
+  const tc = toolCall(await collect(reg.get('codex').run(REQ({ provider: 'codex' }))));
+  assert.ok(tc, 'a tool-call was emitted');
+  assert.equal(tc!.tool, 'search');
+  assert.equal(tc!.command, undefined, 'command is omitted for a command-less item');
+});
+
 // ---- deriveChatTitle (LLM chat titling, option 1) ------------------------------
 
 import { deriveChatTitle } from '../cli-adapter.js';

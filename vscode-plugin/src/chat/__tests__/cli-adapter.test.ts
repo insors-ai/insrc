@@ -19,6 +19,9 @@ import {
   CLAUDE_TOOL_TURN,
   CLAUDE_ERROR_TURN,
   CODEX_TEXT_TURN,
+  CLAUDE_PERMISSION_TURN,
+  CLAUDE_PERMISSION_IDLESS,
+  CODEX_PERMISSION_TURN,
   type FakeProcScript,
 } from './fixtures.js';
 
@@ -341,7 +344,7 @@ function titleReg(adapter: StreamAdapter): ProviderRegistry {
   return { available: ['claude'], get: (id) => { if (id !== 'claude') throw new Error('unknown'); return adapter; } };
 }
 function scriptedTitleAdapter(run: (req: TurnRequest) => AsyncIterable<TurnEvent>): StreamAdapter {
-  return { run, cancel: () => {}, capabilities: { resume: true } };
+  return { run, cancel: () => {}, decide: () => {}, capabilities: { resume: true } };
 }
 async function* emit(events: TurnEvent[]): AsyncIterable<TurnEvent> {
   for (const ev of events) { await Promise.resolve(); yield ev; }
@@ -368,6 +371,7 @@ test('deriveChatTitle: a hung provider is cancel()led at the timeout -> undefine
       while (!cancelled) await new Promise((r) => setTimeout(r, 5));
     },
     cancel: (turnId) => { assert.equal(turnId, 'th', 'cancels the captured turnId'); cancelled = true; },
+    decide: () => {},
     capabilities: { resume: true },
   };
   const start = Date.now();
@@ -467,4 +471,96 @@ test('S004 t4: codex buildArgs — undefined/review keep today argv; auto adds -
     await collect(createProviderRegistry(deps).get('codex').run(REQ({ provider: 'codex', permissionMode: 'auto' })));
     assert.deepEqual(spawner.calls[0]!.args, ['exec', '--json', '--dangerously-bypass-approvals-and-sandbox', 'hi']);
   }
+});
+
+// ---- S004 t5: mapLine permission branch + pending registry + decide -----------
+
+test('S004 t5: a claude permission line maps to exactly one ApprovalRequestEvent (normalized via aliases)', async () => {
+  const { deps } = depsFor({ lines: CLAUDE_PERMISSION_TURN });
+  const events = await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude', permissionMode: 'review' })));
+  const apprs = events.filter((e) => e.kind === 'approval-request');
+  assert.equal(apprs.length, 1, 'exactly one approval-request');
+  const ev = apprs[0]!;
+  if (ev.kind === 'approval-request') {
+    assert.equal(ev.requestId, 'perm-claude-1');
+    assert.equal(ev.toolName, 'Bash');
+    assert.equal(ev.detail, 'rm -rf build');
+  }
+  // Non-permission lines are unchanged (still a done terminal); k2.
+  assert.equal(events.at(-1)?.kind, 'done');
+});
+
+test('S004 t5: a codex approval item maps to exactly one ApprovalRequestEvent', async () => {
+  const { deps } = depsFor({ lines: CODEX_PERMISSION_TURN });
+  const events = await collect(createProviderRegistry(deps).get('codex').run(REQ({ provider: 'codex', permissionMode: 'review' })));
+  const apprs = events.filter((e) => e.kind === 'approval-request');
+  assert.equal(apprs.length, 1);
+  const ev = apprs[0]!;
+  if (ev.kind === 'approval-request') {
+    assert.equal(ev.requestId, 'perm-codex-1');
+    assert.equal(ev.detail, 'git push');
+  }
+});
+
+test('S004 t5: an idless permission line yields no approval-request (normalizer -> null -> [])', async () => {
+  const { deps } = depsFor({ lines: CLAUDE_PERMISSION_IDLESS });
+  const events = await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude', permissionMode: 'review' })));
+  assert.equal(events.filter((e) => e.kind === 'approval-request').length, 0);
+  assert.equal(events.at(-1)?.kind, 'done', 'turn still completes');
+});
+
+test('S004 t5: an unparseable line is skipped+logged, never thrown (as today)', async () => {
+  const { deps, warns } = depsFor({ lines: ['{ not json', JSON.stringify({ type: 'result', is_error: false })], exit: { code: 0, signal: null } });
+  const events = await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude' })));
+  assert.equal(events.at(-1)?.kind, 'done');
+  assert.ok(warns.some((w) => /unparseable/.test(w)), 'the bad line was skipped with a warning');
+});
+
+/** Drive a review turn until the first approval-request, returning it + the live iterator (turn stays open). */
+async function openUntilApproval(providerId: ProviderId, script: FakeProcScript) {
+  const { deps, spawner } = depsFor(script);
+  const adapter = createProviderRegistry(deps).get(providerId);
+  const it = adapter.run(REQ({ provider: providerId, permissionMode: 'review' }))[Symbol.asyncIterator]();
+  let appr: Extract<TurnEvent, { kind: 'approval-request' }> | undefined;
+  for (;;) {
+    const { value, done } = await it.next();
+    if (done) break;
+    if (value.kind === 'approval-request') { appr = value; break; }
+  }
+  return { adapter, spawner, it, appr };
+}
+
+test('S004 t5: decide() writes the correct control response for a live requestId; stale/unknown -> no-op (<=1 write per id)', async () => {
+  const hangingPerm: FakeProcScript = { lines: [...CLAUDE_PERMISSION_TURN.slice(0, 2)], hangUntilKilled: true };
+  const { adapter, spawner, it, appr } = await openUntilApproval('claude', hangingPerm);
+  assert.ok(appr, 'surfaced an approval-request');
+  adapter.decide(appr!.turnId, appr!.requestId, 'approve');
+  const writes = spawner.procs[0]!.writes();
+  assert.equal(writes.length, 1, 'exactly one control response written');
+  assert.match(writes[0]!, /perm-claude-1/, 'carries the correlation id');
+  assert.match(writes[0]!, /allow/, 'approve -> allow behavior');
+  // A duplicate/late decide for the same id is a no-op (at most one write per id).
+  adapter.decide(appr!.turnId, appr!.requestId, 'deny');
+  assert.equal(spawner.procs[0]!.writes().length, 1);
+  // An unknown id is a no-op.
+  adapter.decide(appr!.turnId, 'no-such-req', 'approve');
+  assert.equal(spawner.procs[0]!.writes().length, 1);
+  adapter.cancel(appr!.turnId);
+  await it.return?.(undefined);
+});
+
+test('S004 t5: pending entries are auto-cleaned on cancel() -> a later decide() writes nothing (no dangling card)', async () => {
+  const hangingPerm: FakeProcScript = { lines: [...CLAUDE_PERMISSION_TURN.slice(0, 2)], hangUntilKilled: true };
+  const { adapter, spawner, it, appr } = await openUntilApproval('claude', hangingPerm);
+  assert.ok(appr);
+  adapter.cancel(appr!.turnId); // kills the turn + clears the registry
+  adapter.decide(appr!.turnId, appr!.requestId, 'approve');
+  assert.equal(spawner.procs[0]!.writes().length, 0, 'no write after cancel — the request was cleaned up');
+  await it.return?.(undefined);
+});
+
+test('S004 t5: decide() on an unknown turn is a safe no-op (never throws)', () => {
+  const { deps } = depsFor(CLAUDE_TEXT_TURN);
+  const adapter = createProviderRegistry(deps).get('claude');
+  assert.doesNotThrow(() => adapter.decide('no-such-turn', 'r', 'approve'));
 });

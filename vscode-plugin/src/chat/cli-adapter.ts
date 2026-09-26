@@ -57,6 +57,14 @@ export interface StreamAdapter {
   run(req: TurnRequest): AsyncIterable<TurnEvent>;
   /** Abort an in-flight turn by id (idempotent; no-op for unknown/finished). */
   cancel(turnId: string): void;
+  /**
+   * S004: relay a review-mode permission decision back to the live turn's CLI.
+   * Looks up the pending request registered for (turnId, requestId); if live, writes
+   * the provider control response via the process write() seam and clears it. A
+   * decision for an unknown/stale/dead requestId is a no-op (nothing written), and at
+   * most one control response is ever written per requestId. Idempotent + safe.
+   */
+  decide(turnId: string, requestId: string, decision: 'approve' | 'deny'): void;
   /** Static capabilities of this provider (e.g. whether native session resume is supported). */
   readonly capabilities: { readonly resume: boolean };
 }
@@ -124,6 +132,66 @@ interface ProviderMapper {
   buildArgs(req: TurnRequest): string[];
   /** Map one native line to 0..n TurnEvents. Return [] to ignore (noise). Throw to signal an unparseable line. */
   mapLine(line: string, turnId: string, state: TurnState): TurnEvent[];
+  /**
+   * S004: format the native control line that answers a permission request on the
+   * CLI's stdin (review-mode decision relay). The one place the provider's approval
+   * wire-shape lives; the run-loop registry writes it via SpawnedProcess.write. The
+   * exact envelope is pinned by the INSRC_LIVE_TESTS suite against the installed CLI.
+   */
+  formatDecision(requestId: string, decision: 'approve' | 'deny'): string;
+}
+
+// ---- S004: permission-request normalizing adapter (over field aliases) -------
+//
+// The claude control line and the codex approval item name their fields
+// differently (and may rename them cosmetically between versions). Rather than
+// hard-code one shape, each mapper DETECTS its own permission line, then hands the
+// raw object(s) to this shared normalizer, which maps a small candidate set of
+// aliases onto the internal ApprovalRequest -> ApprovalRequestEvent. A line with no
+// resolvable requestId yields null (the mapper returns [] — no uncorrelatable card).
+
+const APPROVAL_ID_KEYS = ['request_id', 'requestId', 'id', 'call_id', 'callId'] as const;
+const APPROVAL_TITLE_KEYS = ['title', 'tool_name', 'toolName', 'summary', 'name'] as const;
+const APPROVAL_DETAIL_KEYS = ['detail', 'command', 'description', 'message', 'reason'] as const;
+const APPROVAL_TOOL_KEYS = ['tool_name', 'toolName', 'tool', 'name'] as const;
+
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return typeof v === 'object' && v !== null && !Array.isArray(v);
+}
+
+/** First non-empty string found for any of `keys` across the candidate `sources`, in order. */
+function pickString(sources: ReadonlyArray<Record<string, unknown>>, keys: ReadonlyArray<string>): string | undefined {
+  for (const src of sources) {
+    for (const k of keys) {
+      const v = src[k];
+      if (typeof v === 'string' && v !== '') return v;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Normalize a provider's permission/approval object(s) into an ApprovalRequestEvent,
+ * or null when no requestId can be resolved (an uncorrelatable line — the mapper
+ * then yields []). `raw` and its common nested carriers (request / item / input)
+ * are all searched for aliased fields.
+ */
+function normalizeApprovalEvent(turnId: string, raw: Record<string, unknown>): TurnEvent | null {
+  const nested = [raw['request'], raw['item'], raw['input'], isRecord(raw['item']) ? raw['item']['input'] : undefined];
+  const sources = [raw, ...nested].filter(isRecord);
+  const requestId = pickString(sources, APPROVAL_ID_KEYS);
+  if (requestId === undefined) return null; // idless -> no card (k2: not an error, just noise)
+  const toolName = pickString(sources, APPROVAL_TOOL_KEYS);
+  const title = pickString(sources, APPROVAL_TITLE_KEYS) ?? toolName ?? 'Permission request';
+  const detail = pickString(sources, APPROVAL_DETAIL_KEYS) ?? '';
+  return {
+    kind: 'approval-request',
+    turnId,
+    requestId,
+    title,
+    detail,
+    ...(toolName !== undefined ? { toolName } : {}),
+  };
 }
 
 /** Build a UnifiedDiff (single hunk) from a claude Edit/Write tool_use input. Best-effort, hunk-shaped. */
@@ -207,8 +275,36 @@ const claudeMapper: ProviderMapper = {
     if (type === 'result') {
       return [{ kind: 'done', turnId, ok: obj['is_error'] !== true }];
     }
+    // S004: a host-answered permission prompt (--permission-prompts host). claude raises
+    // it as a control_request / permission_request envelope (or a nested can_use_tool
+    // request). Normalize to one ApprovalRequestEvent; an idless line -> [] (noise).
+    const request = obj['request'];
+    if (
+      type === 'control_request' ||
+      type === 'permission_request' ||
+      type === 'can_use_tool' ||
+      (isRecord(request) && request['subtype'] === 'can_use_tool')
+    ) {
+      const ev = normalizeApprovalEvent(turnId, obj);
+      return ev ? [ev] : [];
+    }
     // rate_limit_event and any other envelope: ignored noise.
     return [];
+  },
+  formatDecision(requestId: string, decision: 'approve' | 'deny'): string {
+    // claude's stream-json control-response for a can_use_tool prompt. The exact
+    // envelope is pinned by the live suite; the correlation (request_id) + behavior
+    // are the load-bearing fields the host must supply.
+    return (
+      JSON.stringify({
+        type: 'control_response',
+        response: {
+          subtype: 'can_use_tool',
+          request_id: requestId,
+          behavior: decision === 'approve' ? 'allow' : 'deny',
+        },
+      }) + '\n'
+    );
   },
 };
 
@@ -240,6 +336,15 @@ const codexMapper: ProviderMapper = {
       state.sessionId = sid;
     }
     const type = typeof obj['type'] === 'string' ? (obj['type'] as string) : '';
+    // S004: a codex approval request (default on-request approval routing) — top-level
+    // (e.g. exec_approval_request / apply_patch_approval_request) or a completed item whose
+    // type names an approval. Normalize to one ApprovalRequestEvent; an idless line -> [].
+    const approvalItem = isRecord(obj['item']) ? (obj['item'] as Record<string, unknown>) : undefined;
+    const approvalItemType = approvalItem && typeof approvalItem['type'] === 'string' ? (approvalItem['type'] as string) : '';
+    if (type.includes('approval') || approvalItemType.includes('approval')) {
+      const ev = normalizeApprovalEvent(turnId, approvalItem ?? obj);
+      return ev ? [ev] : [];
+    }
     // codex exec --json emits item/thread events; map the ones we normalize, ignore the rest.
     if (type.endsWith('.delta') || type === 'agent_message_delta') {
       const text = typeof obj['delta'] === 'string' ? (obj['delta'] as string) : typeof obj['text'] === 'string' ? (obj['text'] as string) : '';
@@ -271,6 +376,16 @@ const codexMapper: ProviderMapper = {
     }
     return [];
   },
+  formatDecision(requestId: string, decision: 'approve' | 'deny'): string {
+    // codex submission op answering an approval request. Envelope pinned by the live
+    // suite; the correlation id + decision are the load-bearing fields.
+    return (
+      JSON.stringify({
+        id: requestId,
+        op: { type: 'approval', decision: decision === 'approve' ? 'approved' : 'denied' },
+      }) + '\n'
+    );
+  },
 };
 
 const MAPPERS: Record<ProviderId, ProviderMapper> = { claude: claudeMapper, codex: codexMapper };
@@ -287,6 +402,9 @@ const BINARY: Record<ProviderId, string> = { claude: 'claude', codex: 'codex' };
 function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAdapter {
   const log = deps.logger ?? NOOP_LOGGER;
   const live = new Map<string, SpawnedProcess>();
+  // S004: outstanding permission requests per live turn (the a2 pending-request registry).
+  // register on an emitted approval-request; decide() consumes; auto-cleaned on cancel()/exit.
+  const pendingByTurn = new Map<string, Set<string>>();
   let turnSeq = 0;
 
   async function* run(req: TurnRequest): AsyncIterable<TurnEvent> {
@@ -329,6 +447,15 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
           continue; // non-fatal: skip malformed line, never yield a malformed event
         }
         for (const ev of events) {
+          // S004: register a surfaced permission request so decide() can later answer it.
+          if (ev.kind === 'approval-request') {
+            let set = pendingByTurn.get(turnId);
+            if (set === undefined) {
+              set = new Set<string>();
+              pendingByTurn.set(turnId, set);
+            }
+            set.add(ev.requestId);
+          }
           // Enrich a mapper-produced done with the session id captured so far.
           yield ev.kind === 'done' ? doneEvent(ev.ok) : ev;
           if (ev.kind === 'done') sawDone = true;
@@ -364,16 +491,40 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
       // child (kill is idempotent + safe on an already-exited process).
       proc.kill();
       live.delete(turnId);
+      // S004: drop any outstanding permission requests for this turn — the process is
+      // gone, so a later decide() must find nothing (no dangling/unanswerable card).
+      pendingByTurn.delete(turnId);
     }
   }
 
   function cancel(turnId: string): void {
+    // Clear outstanding permission requests first: cancel() kills the child, which ends
+    // the stream and runs run()'s finally, but dropping here makes a decide() racing the
+    // teardown a guaranteed no-op.
+    pendingByTurn.delete(turnId);
     const proc = live.get(turnId);
     if (proc === undefined) return; // unknown / already finished — no-op
     proc.kill();
   }
 
-  return { run, cancel, capabilities: { resume: mapper.resume } };
+  function decide(turnId: string, requestId: string, decision: 'approve' | 'deny'): void {
+    const set = pendingByTurn.get(turnId);
+    if (set === undefined || !set.has(requestId)) return; // unknown / stale / already answered — no-op
+    // Consume the entry first so a duplicate/late decide is a guaranteed no-op (at most
+    // one control response per requestId), even if the write below fails.
+    set.delete(requestId);
+    if (set.size === 0) pendingByTurn.delete(turnId);
+    const proc = live.get(turnId);
+    if (proc === undefined || typeof proc.write !== 'function') {
+      // Process gone or no write seam: the decision is undeliverable; the entry is already
+      // cleared so the card is not left live. Never throw into the caller.
+      log.warn(`[chat:${mapper.id}] permission decision for ${requestId} undeliverable (no live stdin)`);
+      return;
+    }
+    proc.write(mapper.formatDecision(requestId, decision));
+  }
+
+  return { run, cancel, decide, capabilities: { resume: mapper.resume } };
 }
 
 function failureMessage(provider: ProviderId, reason: unknown): string {

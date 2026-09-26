@@ -144,10 +144,41 @@ export const CLAUDE_ERROR_TURN: readonly string[] = [
   JSON.stringify({ type: 'result', subtype: 'error_max_turns', is_error: true, session_id: 'sess-claude-3' }),
 ];
 
+// S004: a claude host-answered permission prompt (--permission-prompts host). The
+// control_request carries the can_use_tool request the normalizing adapter maps to an
+// ApprovalRequestEvent (requestId/toolName/detail via field aliases).
+export const CLAUDE_PERMISSION_TURN: readonly string[] = [
+  JSON.stringify({ type: 'system', subtype: 'init', session_id: 'sess-claude-perm' }),
+  JSON.stringify({
+    type: 'control_request',
+    request: { subtype: 'can_use_tool', request_id: 'perm-claude-1', tool_name: 'Bash', command: 'rm -rf build' },
+  }),
+  JSON.stringify({ type: 'result', subtype: 'success', is_error: false, session_id: 'sess-claude-perm' }),
+];
+
+// S004: a claude permission line with NO resolvable request id -> normalizer returns
+// null -> the mapper yields [] (no uncorrelatable card).
+export const CLAUDE_PERMISSION_IDLESS: readonly string[] = [
+  JSON.stringify({ type: 'system', subtype: 'init', session_id: 'sess-claude-idless' }),
+  JSON.stringify({ type: 'control_request', request: { subtype: 'can_use_tool', tool_name: 'Bash' } }),
+  JSON.stringify({ type: 'result', subtype: 'success', is_error: false, session_id: 'sess-claude-idless' }),
+];
+
 // ---- codex fixtures ---------------------------------------------------------
 
 export const CODEX_TEXT_TURN: readonly string[] = [
   JSON.stringify({ type: 'thread.started', thread_id: 'thread-codex-1' }),
   JSON.stringify({ type: 'item.completed', item: { type: 'agent_message', text: 'Done reasoning.' } }),
+  JSON.stringify({ type: 'turn.completed' }),
+];
+
+// S004: a codex approval request (default on-request approval routing). The completed
+// item's type names an approval; the normalizer maps call_id/command via aliases.
+export const CODEX_PERMISSION_TURN: readonly string[] = [
+  JSON.stringify({ type: 'thread.started', thread_id: 'thread-codex-perm' }),
+  JSON.stringify({
+    type: 'item.completed',
+    item: { type: 'exec_approval_request', call_id: 'perm-codex-1', name: 'shell', command: 'git push', reason: 'network access' },
+  }),
   JSON.stringify({ type: 'turn.completed' }),
 ];

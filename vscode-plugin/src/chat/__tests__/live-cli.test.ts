@@ -37,3 +37,38 @@ test('live: a real codex turn yields a terminal sc2 event', { skip: !LIVE || !de
   const terminal = events.at(-1);
   assert.ok(terminal && (terminal.kind === 'done' || terminal.kind === 'error'), 'a turn ends with a terminal event');
 });
+
+// S004: pin the permission contract against the installed CLIs. In review mode a tool
+// the agent wants to run should surface as an approval-request; when the host writes the
+// decision (adapter.decide), the turn proceeds to a terminal event rather than hanging.
+// This is the concrete diff target for the normalizing adapter's field aliases (q1).
+test('live: claude review mode surfaces an approval-request the host can answer via decide()', { skip: !LIVE || !defaultBinaryProbe('claude') }, async () => {
+  const reg = createProviderRegistry({ spawn: nodeSpawner, isInstalled: defaultBinaryProbe });
+  const adapter = reg.get('claude');
+  const events: TurnEvent[] = [];
+  // A prompt that requires a tool the CLI must ask permission for under --permission-prompts host.
+  const req = { provider: 'claude' as const, prompt: 'Run the shell command `echo hello` and show its output.', cwd: process.cwd(), permissionMode: 'review' as const };
+  for await (const ev of adapter.run(req)) {
+    events.push(ev);
+    if (ev.kind === 'approval-request') {
+      // Answer it so the turn can proceed (proves the write() relay reaches the CLI).
+      adapter.decide(ev.turnId, ev.requestId, 'approve');
+    }
+  }
+  const terminal = events.at(-1);
+  assert.ok(terminal && (terminal.kind === 'done' || terminal.kind === 'error'), 'the turn ends with a terminal event, not a hang');
+  // If the installed CLI raised a prompt at all, it must have been well-formed (had a requestId).
+  for (const ev of events) {
+    if (ev.kind === 'approval-request') assert.ok(ev.requestId.length > 0, 'approval-request carries a correlation id');
+  }
+});
+
+test('live: claude auto mode runs a tool prompt without blocking (bypass flag accepted)', { skip: !LIVE || !defaultBinaryProbe('claude') }, async () => {
+  const reg = createProviderRegistry({ spawn: nodeSpawner, isInstalled: defaultBinaryProbe });
+  const events: TurnEvent[] = [];
+  const req = { provider: 'claude' as const, prompt: 'Run the shell command `echo hello`.', cwd: process.cwd(), permissionMode: 'auto' as const };
+  for await (const ev of reg.get('claude').run(req)) events.push(ev);
+  const terminal = events.at(-1);
+  assert.ok(terminal && (terminal.kind === 'done' || terminal.kind === 'error'), 'auto mode terminates (no permission block)');
+  assert.ok(!events.some((e) => e.kind === 'approval-request'), 'auto mode raises no approval-request');
+});

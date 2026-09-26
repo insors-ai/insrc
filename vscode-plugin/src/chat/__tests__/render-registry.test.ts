@@ -351,3 +351,17 @@ test('S003: almost-JSON falls through to plain text without throwing (per-row is
 test('S003: no innerHTML anywhere in the render-registry source (k1)', () => {
   assert.doesNotMatch(renderRegistryWebviewSource(), /innerHTML/, 'no innerHTML');
 });
+
+// ---- S003 t4: collapsible inline-diff + tool-result renderers (k6 c) ----
+
+test('S003 k6 c: inline-diff + tool-result wrap their body in the collapse primitive with a caption', () => {
+  const { reg } = makeRegistry();
+  for (const kind of ['inline-diff', 'tool-result']) {
+    const row = reg.renderRow({ kind, text: 'line a\nline b', collapsible: true } as unknown as RowViewModel)!;
+    const cap = findByClass(row, 'insrc-caption');
+    assert.ok(cap, `${kind} has a caption`);
+    const wrap = findByClass(row, 'insrc-collapse');
+    assert.ok(wrap, `${kind} wraps its body in the collapse primitive`);
+    assert.match(wrap!.className, /insrc-collapse--collapsed/, `${kind} is default-collapsed (collapsed to caption)`);
+  }
+});

@@ -247,6 +247,16 @@ export function renderRegistryWebviewSource(): string {
     `register('assistant-text',function(vm,host){return msgRow(vm,host,'insrc-msg--assistant',detectAssistant(vm&&vm.text));});` +
     // tool-command stays inline via line() with the sc1 tool tone — never collapsed (k6 d).
     `register('tool-command',function(vm){return line(vm.text,'insrc-term__marker--tool');});` +
+    // S003 t4: tool results + inline diffs collapse to their caption header via the SAME sc1
+    // chevron primitive (k6 c). A caption line stays visible; the body is default-collapsed.
+    `function captionRow(vm,host,caption){` +
+    `var d=line('');d.className='insrc-msg';` +
+    `var cap=document.createElement('div');cap.className='insrc-caption';cap.textContent=caption;` +
+    `var body=document.createElement('div');body.textContent=vm&&vm.text!=null?vm.text:'';` +
+    `d.textContent='';d.appendChild(cap);d.appendChild(host.collapsible(body,{defaultCollapsed:true}));` +
+    `return d;}` +
+    `register('inline-diff',function(vm,host){return captionRow(vm,host,(vm&&vm.meta&&vm.meta.caption)||'diff');});` +
+    `register('tool-result',function(vm,host){return captionRow(vm,host,(vm&&vm.meta&&vm.meta.caption)||'result');});` +
     // S001 t5 (lc1): keyed append. A row rendered with a key is remembered; re-appending the
     // SAME key (a live echo and its session-restored twin) reconciles to the one existing node
     // instead of double-rendering. resetKeys() is called when the transcript is cleared on

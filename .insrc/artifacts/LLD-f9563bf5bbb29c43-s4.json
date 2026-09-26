@@ -158,6 +158,13 @@
         "choice": "Normalizing adapter over field aliases",
         "rationale": "Keeps one internal ApprovalRequest type behind each ProviderMapper (upholds the 'provider difference lives only in the mapper' invariant), survives a cosmetic CLI field rename, and raises a typed parse error on genuinely unknown shapes; paired with fixtures captured from the installed CLIs so the INSRC_LIVE_TESTS suite has a concrete diff target.",
         "resolvedAt": "2026-09-26T16:36:09.642Z"
+      },
+      "q1b9abdd3": {
+        "question": "Whether scope:'session' auto-answer is wired in this Story or deferred: the a2 registry supports it, but ac1-ac3 only require per-request approve/deny — recommend building the 'once' path and leaving 'session' as an optional field the registry can honour later.",
+        "status": "resolved",
+        "choice": "Once-only, scope field accepted but inert",
+        "rationale": "Satisfies ac1-ac3 exactly and stays inside the Story boundary; the scope field is parsed/persisted by the a2 registry but no prompt is short-circuited, keeping the decision wire shape stable so a later story adds the 'session' auto-answer without a breaking change.",
+        "resolvedAt": "2026-09-26T16:36:39.905Z"
       }
     }
   },

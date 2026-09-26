@@ -329,6 +329,8 @@ Keep SpawnedProcess unchanged; on a permission line emit the event, then kill()+
 
 - `qee8aadf4` — The precise claude stream-json permission control-line schema + codex approval-item schema (field names for requestId/title/detail) are confirmed to EXIST by the 7100435 spike but must be pinned against the installed CLI versions during build; unit tests use scripted samples and the INSRC_LIVE_TESTS suite validates the real shape.
   - **resolved**: Normalizing adapter over field aliases — Keeps one internal ApprovalRequest type behind each ProviderMapper (upholds the 'provider difference lives only in the mapper' invariant), survives a cosmetic CLI field rename, and raises a typed parse error on genuinely unknown shapes; paired with fixtures captured from the installed CLIs so the INSRC_LIVE_TESTS suite has a concrete diff target. _(2026-09-26T16:36:09.642Z)_
+- `q1b9abdd3` — Whether scope:'session' auto-answer is wired in this Story or deferred: the a2 registry supports it, but ac1-ac3 only require per-request approve/deny — recommend building the 'once' path and leaving 'session' as an optional field the registry can honour later.
+  - **resolved**: Once-only, scope field accepted but inert — Satisfies ac1-ac3 exactly and stays inside the Story boundary; the scope field is parsed/persisted by the a2 registry but no prompt is short-circuited, keeping the decision wire shape stable so a later story adds the 'session' auto-answer without a breaking change. _(2026-09-26T16:36:39.905Z)_
 
 ## Citations
 

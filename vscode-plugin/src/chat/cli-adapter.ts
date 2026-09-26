@@ -72,6 +72,14 @@ export interface SpawnedProcess {
   readonly spawnError: Promise<NodeJS.ErrnoException | undefined>;
   /** Terminate the process (SIGTERM). Idempotent. */
   kill(): void;
+  /**
+   * S004 (additive-optional): write a native control line to the process stdin —
+   * the review-mode permission-decision relay (host answers the CLI's prompt).
+   * Optional so existing spawner impls/tests that never answer prompts keep
+   * compiling and behaving as today (k2); the decision relay guards on its
+   * presence before calling. Only review mode uses it; auto mode never does.
+   */
+  write?(data: string): void;
 }
 
 export type SpawnFn = (command: string, args: readonly string[], opts: { readonly cwd: string }) => SpawnedProcess;
@@ -456,7 +464,9 @@ export async function deriveChatTitle(
  * and with no HTTP/REST client (k2).
  */
 export const nodeSpawner: SpawnFn = (command, args, opts) => {
-  const child = nodeChildSpawn(command, [...args], { cwd: opts.cwd, stdio: ['ignore', 'pipe', 'pipe'] });
+  // stdin is a pipe (not 'ignore') so the review-mode permission-decision relay can
+  // write a control line back to the CLI (S004 write() seam); stdout/stderr piped as before.
+  const child = nodeChildSpawn(command, [...args], { cwd: opts.cwd, stdio: ['pipe', 'pipe', 'pipe'] });
   let stderrBuf = '';
   child.stderr?.on('data', (d: Buffer) => {
     stderrBuf += d.toString('utf8');
@@ -506,6 +516,15 @@ export const nodeSpawner: SpawnFn = (command, args, opts) => {
     spawnError,
     kill: () => {
       child.kill('SIGTERM');
+    },
+    write: (data: string) => {
+      // Best-effort: a closed/absent stdin must never crash the stream loop — the
+      // decision relay treats a failed write as "decision undeliverable" (k3, local stdio only).
+      try {
+        child.stdin?.write(data);
+      } catch {
+        /* stdin closed / process gone — the pending entry is cleared by the caller */
+      }
     },
   };
 };

@@ -20,9 +20,11 @@ export interface FakeProcScript {
   readonly throwAfter?: number;
 }
 
-/** Observable handle over a spawned fake process (for asserting kill / cleanup). */
+/** Observable handle over a spawned fake process (for asserting kill / cleanup / write relay). */
 export interface FakeProcHandle {
   wasKilled(): boolean;
+  /** S004: every string written to the fake process stdin via write(), in call order. */
+  writes(): readonly string[];
 }
 
 export interface FakeSpawnCall {
@@ -58,6 +60,7 @@ export function makeFakeSpawner(script: FakeProcScript | FakeProcScript[]): Fake
 
 function makeFakeProc(s: FakeProcScript): { proc: SpawnedProcess; handle: FakeProcHandle } {
   let killed = false;
+  const writes: string[] = [];
   // Created eagerly so kill() can always resolve it, with no race against the
   // generator reaching the hang `await` (that race deadlocked the cancel test).
   let releaseHang!: () => void;
@@ -105,8 +108,11 @@ function makeFakeProc(s: FakeProcScript): { proc: SpawnedProcess; handle: FakePr
       releaseHang();
       resolveExit({ code: null, signal: 'SIGTERM' });
     },
+    write: (data: string) => {
+      writes.push(data);
+    },
   };
-  return { proc, handle: { wasKilled: () => killed } };
+  return { proc, handle: { wasKilled: () => killed, writes: () => writes } };
 }
 
 // ---- claude fixtures --------------------------------------------------------

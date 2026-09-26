@@ -11,7 +11,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createProviderRegistry } from '../cli-adapter.js';
-import type { AdapterDeps, ProviderId, TurnRequest, SessionHandle } from '../cli-adapter.js';
+import type { AdapterDeps, ProviderId, TurnRequest, SessionHandle, SpawnedProcess, SpawnFn } from '../cli-adapter.js';
 import type { TurnEvent } from '../stream-events.js';
 import {
   makeFakeSpawner,
@@ -382,4 +382,41 @@ test('deriveChatTitle: an error event -> undefined; an unknown provider -> undef
   assert.equal(await deriveChatTitle(errReg, { provider: 'claude', prompt: 'x', cwd: '/repo' }), undefined);
   const badReg: ProviderRegistry = { available: [], get: () => { throw new Error('unknown'); } };
   assert.equal(await deriveChatTitle(badReg, { provider: 'claude', prompt: 'x', cwd: '/repo' }), undefined);
+});
+
+// ---- S004 t3: SpawnedProcess.write seam + fake spawner recording -------------
+
+test('S004 t3: the fake spawner records write() calls on the spawned proc (decision-relay seam)', () => {
+  const spawner = makeFakeSpawner({ lines: [], exit: { code: 0, signal: null } });
+  const proc = spawner.spawn('claude', [], { cwd: '/repo' });
+  // The optional write() seam is present and records what is written, in order.
+  assert.equal(typeof proc.write, 'function');
+  proc.write?.('{"type":"permission_response","id":"req-1","decision":"approve"}\n');
+  proc.write?.('{"type":"permission_response","id":"req-2","decision":"deny"}\n');
+  assert.deepEqual(spawner.procs[0]!.writes(), [
+    '{"type":"permission_response","id":"req-1","decision":"approve"}\n',
+    '{"type":"permission_response","id":"req-2","decision":"deny"}\n',
+  ]);
+});
+
+test('S004 t3: a SpawnedProcess that omits write() still runs a turn unchanged (optional, k2)', async () => {
+  // A minimal spawner whose procs have NO write() method — proves the seam is
+  // additive-optional: existing spawner shapes compile and behave as today.
+  const noWriteSpawn: SpawnFn = () => {
+    const proc: SpawnedProcess = {
+      async *lines() {
+        yield JSON.stringify({ type: 'result', subtype: 'success', is_error: false, session_id: 's' });
+      },
+      stderr: () => '',
+      exit: Promise.resolve({ code: 0, signal: null }),
+      spawnError: Promise.resolve(undefined),
+      kill: () => {},
+    };
+    return proc;
+  };
+  assert.equal((noWriteSpawn('claude', [], { cwd: '/repo' }) as SpawnedProcess).write, undefined);
+  const deps: AdapterDeps = { spawn: noWriteSpawn, isInstalled: () => true };
+  const reg = createProviderRegistry(deps);
+  const events = await collect(reg.get('claude').run(REQ({ provider: 'claude' })));
+  assert.equal(events.at(-1)?.kind, 'done', 'turn completes normally with a write-less proc');
 });

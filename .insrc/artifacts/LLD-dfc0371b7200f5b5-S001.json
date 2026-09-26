@@ -1,0 +1,536 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1790422725372-b14sql",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-26T11:44:45.049Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 359672,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "dfc0371b7200f5b5",
+    "epicSlug": "surface-bugfix-workflow-properly-so-first",
+    "storyId": "S001",
+    "hldBaseRunId": "wf-1790422725372-b14sql",
+    "hldEffectiveHash": "dfc0371b7200f5b59a72695e5a18484524c67ff3a799c3dd2d4f4666920692f5",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "feature",
+    "triageRationale": "Grounded on the real graph, this is NOT net-new subsystem work — the bugfix module already exists and is fully unit-tested, and the front of the flow is already wired: the 'issue' workflow stage, the triage sizeClass='bugfix' enum + routing + nextCall→workflow:'issue'. insrc_guide's validWorkflows is auto-derived from steering markers. The remaining work is mounting the exported-but-unmounted orchestration seam (advanceBugfixAfterIssue + completeBugfixTracker) on the approve/completion path, and adding a bugfix guide marker section + front-door steering mentions.",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "ref": "c1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "advanceBugfixAfterIssue and completeBugfixTracker are exported at src/workflow/bugfix/advance.ts:28 and :79 and re-exported at index.ts:16.",
+          "evidence": "grep + reads confirm `export async function advanceBugfixAfterIssue(` at advance.ts:28, `export async function completeBugfixTracker(` at advance.ts:79, and the re-export `export { advanceBugfixAfterIssue, completeBugfixTracker } from './advance.js';` at index.ts:16.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl2",
+          "ref": "c5",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "approveWorkflowTarget is the approve/completion choke point in src/workflow/gates.ts and the daemon 'workflow.approve' handler in src/daemon/index.ts delegates to it.",
+          "evidence": "read gates.ts:611 lands in the approveWorkflowTarget docblock ('Each artifact goes through approveArtifactByJsonPath'), confirming the choke point is in gates.ts; read daemon/index.ts:610 is the `'workflow.approve': async (params) => {` handler that delegates to it.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl3",
+          "ref": "c2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "routeForSizeClass in src/workflow/triage/classify.ts has a 'bugfix' case (line 50) routing to startStage 'issue'.",
+          "evidence": "grep + read confirm `case 'bugfix': {` at src/workflow/triage/classify.ts:50; the prior-artifact docs corroborate it returns startStage 'issue'.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl4",
+          "ref": "c4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "listWorkflowGuides in src/daemon/guide-sections.ts derives validWorkflows by scanning GUIDE_START_RE marker pairs (not hardcoded).",
+          "evidence": "grep confirms `const GUIDE_START_RE = /<!--\\s*insrc:guide:([A-Za-z0-9._-]+):start\\s*-->/g;` at guide-sections.ts:50 and read confirms `export function listWorkflowGuides(steeringText: string): string[]` at :75 — validWorkflows is marker-derived, not hardcoded.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl5",
+          "ref": "c3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "'issue' is a registered workflow name in WORKFLOW_NAMES at src/workflow/types.ts:81.",
+          "evidence": "read types.ts:81 confirms `'issue',` inside WORKFLOW_NAMES with the comment 'Bugfix flow — the defect issue record ... NAME only here'.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 5
+      },
+      "reviewedAt": "2026-09-26T11:48:52.593Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-26T11:50:04.854Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "S001",
+        "owns": [],
+        "depends": [],
+        "internal": "Mount the bugfix orchestration seam and surface bugfix guidance"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "approveWorkflowTarget",
+          "signature": "async function approveWorkflowTarget(input: { repoPath: string; artifactPath?: string; epicHash?: string; overrideReview?: string }): Promise<ApproveWorkflowTargetResult>",
+          "parameters": [
+            {
+              "name": "input.repoPath",
+              "type": "string",
+              "purpose": "Registered repo the approval targets.",
+              "optional": false
+            },
+            {
+              "name": "input.artifactPath",
+              "type": "string",
+              "purpose": "Single artifact to approve (mutually exclusive with epicHash).",
+              "optional": true
+            },
+            {
+              "name": "input.epicHash",
+              "type": "string",
+              "purpose": "Batch-approve every pending artifact under the epic.",
+              "optional": true
+            },
+            {
+              "name": "input.overrideReview",
+              "type": "string",
+              "purpose": "Explicit override reason that lets a review/code-review-blocked artifact through.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "ApproveWorkflowTargetResult",
+            "meaning": "Existing result (approved[], skipped[] with block reasons) EXTENDED with an optional followOn descriptor describing any post-approval seam that fired (e.g. bugfix advance / tracker completion). [c5]"
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "repo not registered / artifact path invalid — unchanged from current behaviour."
+            }
+          ],
+          "preconditions": [
+            "Artifact exists and is pending; existing review/code-review block gate is evaluated before completion. [c5]",
+            "The seam must only be consulted for artifacts that actually completed (were added to approved[]), never for skipped[]."
+          ],
+          "postconditions": [
+            "approvedAt stamped exactly as today. [c5]",
+            "If a completed artifact is an approved 'issue' artifact (meta.issueHash present / workflow==='issue'), advanceBugfixAfterIssue was invoked and its outcome recorded in followOn. [c1]",
+            "If a completed artifact is a bugfix BUILD reaching completion, completeBugfixTracker was invoked and its outcome recorded in followOn. [c1]",
+            "Existing skipped[]/block-verdict semantics are byte-for-byte unchanged for non-bugfix artifacts. [c5]"
+          ]
+        },
+        {
+          "name": "advanceBugfixAfterIssue",
+          "signature": "async function advanceBugfixAfterIssue(input: { repoPath: string; issueArtifactPath: string }): Promise<BugfixAdvanceResult>",
+          "parameters": [
+            {
+              "name": "input.repoPath",
+              "type": "string",
+              "purpose": "Repo the bugfix run belongs to.",
+              "optional": false
+            },
+            {
+              "name": "input.issueArtifactPath",
+              "type": "string",
+              "purpose": "The just-approved IssueArtifact path that triggers stamp→admit→nextAfterIssue.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "BugfixAdvanceResult",
+            "meaning": "The composed post-issue advance outcome (existing seam return — consumed as-is, not redesigned). [c1]"
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "Issue artifact missing required bugfix meta — surfaced from the existing seam; the mount catches and records rather than crashing the approve."
+            }
+          ],
+          "preconditions": [
+            "Called ONLY after the issue artifact has been approved (approvedAt stamped).",
+            "The exact parameter shape is read from advance.ts:28 during build — the LLD consumes the existing signature and must not redefine it. [c1]"
+          ],
+          "postconditions": [
+            "Bugfix chain advanced to its next stage per magnitude (small→build, sized→design→plan→build). [c3]"
+          ]
+        },
+        {
+          "name": "completeBugfixTracker",
+          "signature": "async function completeBugfixTracker(input: { repoPath: string; buildArtifactPath: string }): Promise<BugfixTrackerResult>",
+          "parameters": [
+            {
+              "name": "input.repoPath",
+              "type": "string",
+              "purpose": "Repo the bugfix run belongs to.",
+              "optional": false
+            },
+            {
+              "name": "input.buildArtifactPath",
+              "type": "string",
+              "purpose": "The just-completed bugfix BUILD artifact whose approval closes the GH issue.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "BugfixTrackerResult",
+            "meaning": "Tracker-completion outcome (existing seam return — consumed as-is). [c1]"
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "GH tracker unavailable / issue already closed — surfaced from the existing seam; mount records it in followOn, does not fail the approval."
+            }
+          ],
+          "preconditions": [
+            "Called ONLY when a bugfix BUILD artifact reached completion (passed the code-review gate, added to approved[]).",
+            "Exact parameter shape read from advance.ts:79 during build — consume, do not redefine. [c1]"
+          ],
+          "postconditions": [
+            "The GH issue for the bugfix run is closed / the tracker is finalized. [c1]"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "ApproveWorkflowTargetResult",
+        "change": "field-add",
+        "details": "Add an optional `followOn?` field capturing any post-approval seam that fired: { kind: 'bugfix-advance' | 'bugfix-complete'; artifactPath: string; ok: boolean; note?: string }[]. Additive and optional so every existing caller (daemon workflow.approve, MCP insrc_workflow_approve, gate tests) compiles and behaves identically when no seam fires.",
+        "schemaDiff": "interface ApproveWorkflowTargetResult { approved: ...; skipped: ...; followOn?: FollowOnOutcome[] }",
+        "callSites": [
+          "src/daemon/index.ts:610",
+          "src/mcp/server.ts:853",
+          "src/workflow/gates.ts:611"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "advanceBugfixAfterIssue rejects (e.g. issue artifact missing required bugfix meta, or stamp/admit fails) after the issue artifact was already approved.",
+          "detection": "The mount wraps the dynamically-imported seam call in try/catch; a rejected promise is caught at the await inside approveWorkflowTarget.",
+          "response": "Record a followOn entry { kind:'bugfix-advance', artifactPath, ok:false, note:<error message> } and continue — do NOT rethrow. approvedAt is already stamped, so the approval itself stands; the failed advance is surfaced, not swallowed.",
+          "userImpact": "The issue is approved but the chain did not advance; the controller sees ok:false in followOn and can re-drive the next stage manually.",
+          "recoverable": true
+        },
+        {
+          "scenario": "completeBugfixTracker rejects (GH CLI unavailable, issue already closed, or network error) at bugfix BUILD completion.",
+          "detection": "try/catch around the dynamically-imported completeBugfixTracker await.",
+          "response": "Record followOn { kind:'bugfix-complete', artifactPath, ok:false, note } and continue; the BUILD completion (approvedAt) is not rolled back.",
+          "userImpact": "BUILD is completed but the GH issue was not auto-closed; controller/user can close it manually. No corruption of the ledger.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Dynamic import of src/workflow/bugfix fails to resolve (module moved/renamed, or build artifact missing).",
+          "detection": "The `await import('../workflow/bugfix/index.js')` (or equivalent) rejection is caught before the seam is invoked.",
+          "response": "Record a followOn ok:false with an import-failure note; approval proceeds unchanged.",
+          "userImpact": "Seam silently no-ops for that approval but the failure is visible in followOn; non-bugfix approvals are unaffected.",
+          "recoverable": true
+        },
+        {
+          "scenario": "An 'issue'-workflow artifact reaches approval WITHOUT the meta the seam requires (e.g. meta.issueHash absent).",
+          "detection": "A guard reads the completed artifact's meta before calling the seam; if the bugfix discriminant (workflow==='issue' && meta.issueHash) is not satisfied, the seam is not called.",
+          "response": "Skip the seam for that artifact (no followOn entry, or a followOn note explaining it was not a bugfix issue); approval unchanged.",
+          "userImpact": "No spurious advance is triggered for a non-conforming artifact.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Batch approval via epicHash where the completed set contains BOTH an 'issue' artifact and an unrelated non-bugfix artifact.",
+          "expected": "The seam is evaluated per completed artifact: advanceBugfixAfterIssue fires only for the issue artifact; the non-bugfix artifact is untouched. followOn lists exactly the seams that fired."
+        },
+        {
+          "input": "An artifact that was WITHHELD into skipped[] by a review/code-review block verdict (no overrideReview).",
+          "expected": "The seam is NOT consulted for skipped artifacts — only approved[] entries are eligible. No followOn entry for it."
+        },
+        {
+          "input": "A bugfix BUILD artifact completed only because overrideReview was supplied for a code-review block.",
+          "expected": "It is in approved[] (completed), so completeBugfixTracker fires normally — completion, however reached, triggers tracker closure."
+        },
+        {
+          "input": "A completely non-bugfix approval (e.g. a normal design.story LLD) — the common case.",
+          "expected": "No bugfix discriminant matches; no seam import, no seam call, followOn absent/empty; behaviour byte-for-byte identical to today."
+        },
+        {
+          "input": "insrc_guide called after the new bugfix marker is added to steering-block.md.",
+          "expected": "listWorkflowGuides auto-derives 'bugfix' into validWorkflows with no code change; the existing keys and their order are unchanged; insrc_guide({workflow:'bugfix'}) returns the new section text."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The review/code-review block-verdict gating and skipped[] semantics are unchanged for every non-bugfix artifact: approveWorkflowTarget still withholds blocked completions into skipped[] exactly as before, and the seam never fires for a skipped artifact.",
+          "source": "c5"
+        },
+        {
+          "text": "approvedAt is stamped by approveArtifactByJsonPath on completion exactly as today; the seam runs AFTER stamping and never gates or reverts it.",
+          "source": "c5"
+        },
+        {
+          "text": "insrc_guide's validWorkflows is derived from steering-block.md marker pairs at runtime; adding a bugfix marker must add exactly one key and not alter the existing enumeration or per-key guidance text.",
+          "source": "c4"
+        },
+        {
+          "text": "All bugfix orchestration logic remains inside src/workflow/bugfix/ (advance.ts etc.); the mount only detects completion and calls the existing exported seam — it does not reimplement stamp/admit/nextAfterIssue/tracker.",
+          "source": "c1"
+        }
+      ],
+      "hld": {}
+    },
+    "testStrategy": {
+      "testFramework": "node:test (node --test / `npx tsx --test`) with node:assert/strict — the repo-wide convention; existing bugfix tests live in src/workflow/__tests__/bugfix-orchestration.test.ts and bugfix-tracker.test.ts.",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove the approve/completion mount fires the right seam for the right completed artifact and NEVER for skipped or non-bugfix artifacts, with the seam injected/faked so no real GH or filesystem side effects run.",
+          "subjects": [
+            "approveWorkflowTarget fires advanceBugfixAfterIssue exactly once for a completed 'issue' artifact (meta.issueHash present)",
+            "approveWorkflowTarget fires completeBugfixTracker for a completed bugfix BUILD artifact",
+            "seam NOT called for a skipped (block-verdict) artifact",
+            "seam NOT called for a non-bugfix approval (byte-for-byte identical result, followOn absent)",
+            "a rejecting seam is caught → followOn ok:false, approvedAt still stamped, approval not rethrown",
+            "batch epicHash approval fires the seam per matching completed artifact only"
+          ],
+          "fixturesNeeded": [
+            "in-memory / temp repo with a pending 'issue' artifact carrying meta.issueHash",
+            "a pending bugfix BUILD artifact",
+            "a non-bugfix design.story artifact",
+            "an injected/faked bugfix seam module (spy) so calls are asserted without side effects"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove insrc_guide surfaces the new bugfix key from the steering markers with no code change to the enumerator.",
+          "subjects": [
+            "listWorkflowGuides(steering-block.md) includes 'bugfix' after the marker is added",
+            "guideGetResult({workflow:'bugfix'}) returns the bugfix section text",
+            "existing keys + order unchanged (triage..tracker still present)"
+          ],
+          "fixturesNeeded": [
+            "the updated src/prompts/steering-block.md content (or a fixture copy) with the bugfix marker pair"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "Regression-guard that triage still classifies + routes a declared bugfix to workflow:'issue' (already wired; must not regress).",
+          "subjects": [
+            "routeForSizeClass('bugfix','small') → startStage 'issue', small chain",
+            "routeForSizeClass('bugfix','sized') → startStage 'issue', design→plan→build",
+            "triage nextCall returns insrc_workflow_step workflow:'issue' for a bugfix result"
+          ],
+          "fixturesNeeded": []
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove the front-door steering assets now advertise bugfix so the controller routes reflexively.",
+          "subjects": [
+            "src/prompts/steering-block.md contains bugfix in the routing overview + workflow table + a guide marker section",
+            "src/daemon/steering-inject.ts / src/mcp/steering-template.md reference bugfix"
+          ],
+          "fixturesNeeded": []
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "listWorkflowGuides includes 'bugfix' + guideGetResult({workflow:'bugfix'}) returns the section",
+            "existing guide keys + order unchanged after adding the marker"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "routeForSizeClass('bugfix', small|sized) regression tests",
+            "triage nextCall → workflow:'issue' regression test"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "approveWorkflowTarget fires advanceBugfixAfterIssue for a completed issue artifact",
+            "approveWorkflowTarget fires completeBugfixTracker for a completed bugfix BUILD",
+            "seam not fired for skipped / non-bugfix artifacts",
+            "rejecting seam → followOn ok:false, approval stands"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "steering-block.md contains bugfix in overview + table + guide marker",
+            "steering-inject/steering-template reference bugfix"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "The bugfix flow is half-wired: triage classifies sizeClass='bugfix' + magnitude and routes to workflow:'issue' (triage/classify.ts:50, mcp/triage-step/phases/classify.ts:51), and the 'issue' stage runs end-to-end (types.ts:81, orchestrator.ts:154/272/385). BUT the orchestration seam advanceBugfixAfterIssue/completeBugfixTracker (advance.ts:28,79, re-exported index.ts:16) has ZERO production callers — approveWorkflowTarget (gates.ts:611) and the daemon workflow.approve handler (daemon/index.ts:610) have no bugfix awareness (grep 'bugfix|issue' in gates.ts = 0 hits). And bugfix appears NOWHERE in steering (steering-block.md, steering-inject.ts, steering-template.md = 0 hits), so insrc_guide does not enumerate it and the front door never routes to it.",
+      "stateAfter": "approveWorkflowTarget, after stamping approvedAt on a completed artifact, detects a completed bugfix 'issue' artifact and invokes advanceBugfixAfterIssue, and a completed bugfix BUILD and invokes completeBugfixTracker — recording each in an optional followOn field — while leaving skipped[]/block-verdict semantics unchanged for every non-bugfix artifact. steering-block.md carries a bugfix guide marker section (so insrc_guide auto-enumerates 'bugfix') plus bugfix mentions in the routing overview + workflow table, and steering-inject/steering-template reference bugfix, so the controller routes bugs to the tracked bugfix flow reflexively.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the optional additive `followOn?` field to the ApproveWorkflowTargetResult type. No existing caller reads it, so this is transparent.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "In approveWorkflowTarget, after the existing completion/stamp step, add a guarded post-completion pass that (only for artifacts in approved[]) detects the bugfix discriminant from meta and dynamically imports + calls the existing seam, wrapping each call in try/catch and recording followOn. Non-bugfix approvals take an early no-op path.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add a bugfix guide marker section (<!-- insrc:guide:bugfix:start/end -->) with the full step-by-step procedure to src/prompts/steering-block.md; the enumerator auto-derives it — no code change to guide-sections.ts.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Add bugfix mentions to the steering front-door: routing overview + workflow table in steering-block.md, and steering-inject.ts / steering-template.md, so the controller routes bugs to triage→issue reflexively.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Add/extend tests: gate-mount unit tests (seam fires for completed issue/build, not for skipped/non-bugfix, rejecting-seam → followOn ok:false), a guide-enumeration test (bugfix present, order unchanged), and triage-routing regression assertions. Then rebuild so out/ + copied steering assets refresh.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "The only public-surface change is the ADDITIVE optional followOn field on ApproveWorkflowTargetResult — every existing caller (daemon/index.ts:610, mcp/server.ts:853, gate tests) compiles unchanged and behaves identically when no seam fires (followOn absent/empty). The seam runs only for bugfix artifacts in approved[], so non-bugfix approvals are byte-for-byte identical. No signature of approveWorkflowTarget's inputs changes. Steering additions are content-only and additive (existing guide keys + order preserved).",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Mount inside gates.ts approveWorkflowTarget (single choke point)",
+        "oneLineSummary": "Add bugfix awareness directly in approveWorkflowTarget so both the daemon IPC handler and MCP forwards trigger the seam.",
+        "approach": "Extend approveWorkflowTarget (gates.ts:611) so that after it stamps approvedAt on an artifact, it inspects the just-approved artifact's meta: if it is an approved 'issue' artifact (meta.issueHash / workflow==='issue'), invoke advanceBugfixAfterIssue; if it is a bugfix BUILD artifact reaching completion (and passing the existing review/code-review block gate), invoke completeBugfixTracker. The existing skipped[]/block-verdict semantics are preserved unchanged — the seam only fires on a genuinely completed approval. Return value gains an optional advance descriptor so callers can relay what happened next.",
+        "pros": [
+          "Single choke point: daemon workflow.approve (index.ts:610) AND MCP insrc_workflow_approve both forward here, so one mount covers every caller.",
+          "Keeps the completion contract (review/code-review gating, skipped[]) authoritative in one function — the seam cannot fire on a withheld completion.",
+          "Smallest surface for the mount detection logic; reuses the meta already loaded during approval."
+        ],
+        "cons": [
+          "gates.ts becomes aware of the bugfix module (a workflow-domain dependency inside the gate layer) — mild layering coupling.",
+          "advanceBugfixAfterIssue side effects (stamp→admit→nextAfterIssue, GH issue) now run inside the approve call, lengthening it and mixing pure-gate logic with orchestration."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Mount in the daemon workflow.approve handler (orchestration layer)",
+        "oneLineSummary": "Keep gates.ts pure; let the daemon handler post-process the approve result and fire the seam.",
+        "approach": "Leave approveWorkflowTarget unchanged but enrich its result to report which artifact(s) were actually completed (path + meta). The daemon 'workflow.approve' handler (index.ts:610) then inspects that result and, for a completed 'issue' artifact, calls advanceBugfixAfterIssue; for a completed bugfix BUILD, calls completeBugfixTracker. Orchestration lives at the daemon layer where dynamic imports and IPC side effects already happen.",
+        "pros": [
+          "gates.ts stays a pure approval/gating function with no bugfix dependency — cleaner layering.",
+          "Side-effectful orchestration (GH tracker calls) sits at the daemon boundary where other IPC side effects already live.",
+          "Easy to unit-test the handler branch in isolation with a faked approveWorkflowTarget result."
+        ],
+        "cons": [
+          "MCP insrc_workflow_approve forwards through this same daemon handler, so it IS covered — but any future non-daemon caller of approveWorkflowTarget would silently skip the seam.",
+          "Requires widening the approveWorkflowTarget return contract to carry enough meta for the handler to decide, duplicating a little detection logic.",
+          "Two places now must agree on what 'a completed bugfix artifact' means."
+        ],
+        "reasonRejected": "Keeps gates pure but splits the 'what is a completed bugfix artifact' decision across two places and widens the return contract; weakest on c1/c3 (all-callers, minimal-surface) without a3's reusable-dispatcher upside."
+      },
+      {
+        "id": "a3",
+        "name": "Dedicated post-approval dispatcher module consumed by the daemon handler",
+        "oneLineSummary": "Introduce a thin advanceAfterApproval dispatcher that maps a completed artifact to its follow-on seam, called once by the daemon handler.",
+        "approach": "Add a small dispatcher (e.g. src/workflow/after-approval.ts) exporting advanceAfterApproval(completed[]) that, per completed artifact, pattern-matches on workflow/stage/meta and calls the right follow-on — today only the bugfix seams (advanceBugfixAfterIssue, completeBugfixTracker), but structured so future workflows can register follow-ons. approveWorkflowTarget returns the completed set; the daemon handler calls the dispatcher once.",
+        "pros": [
+          "Clean separation: gates.ts stays pure, the daemon handler stays thin, and follow-on routing is one testable unit.",
+          "Extensible — a natural home if other workflows later need post-approval side effects.",
+          "The dispatcher is trivially unit-testable with scripted completed-artifact inputs."
+        ],
+        "cons": [
+          "More new surface than the story strictly needs — borders on over-engineering for a single (bugfix) follow-on today (YAGNI risk).",
+          "Still depends on approveWorkflowTarget exposing the completed set, so it shares a2's return-contract widening.",
+          "One extra module + indirection for reviewers to follow."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Cleanest layering and most testable, but adds indirection/new surface for one follow-on and leaves non-handler callers uncovered — loses to a1 on c1 (all-callers) and c3 (minimal-surface). Can be revisited if a second workflow later needs post-approval follow-ons."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/bugfix/advance.ts:28,79 + index.ts:16 — bugfix orchestration seam (advanceBugfixAfterIssue, completeBugfixTracker) exported + unit-tested but with zero production callers.",
+      "quotedText": "The ONLY importers are tests (bugfix-orchestration.test.ts:29, bugfix-tracker.test.ts:36) — zero production callers. EXISTS + fully tested but UNMOUNTED."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/triage/classify.ts:50 + mcp/triage-step/phases/classify.ts:51 — triage already classifies sizeClass='bugfix' and routes to workflow:'issue'.",
+      "quotedText": "routeForSizeClass has a bugfix branch: small→issue→build, sized→issue→design→plan→build; nextCall returns workflow:'issue'. No triage code change needed — already wired."
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/types.ts:81 + orchestrator.ts:154/272/385 — the 'issue' workflow stage is fully wired and runnable.",
+      "quotedText": "The 'issue' stage is a first-class, fully-wired workflow ... reachable today via insrc_workflow_step workflow:'issue'."
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "src/daemon/guide-sections.ts:75 + src/prompts/steering-block.md marker pairs — insrc_guide validWorkflows is auto-derived from <!-- insrc:guide:<key>:start/end --> markers.",
+      "quotedText": "validWorkflows is NOT hardcoded — it is derived at runtime from marker pairs ... adding one is net-new content; the enumeration auto-picks it up with no code change."
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "src/daemon/index.ts:610 + src/workflow/gates.ts:611 (approveWorkflowTarget) — the approve/completion choke point that stamps approvedAt and enforces review/code-review block verdicts.",
+      "quotedText": "approveWorkflowTarget batch/single approves, stamps approvedAt ... enforces review/code-review block verdicts, withholding completion into skipped[]. grep 'bugfix|issue' in gates.ts returns ZERO hits."
+    },
+    {
+      "id": "c6",
+      "kind": "analyze-bundle",
+      "ref": "src/prompts/steering-block.md + src/mcp/steering-template.md + src/daemon/steering-inject.ts — bugfix/issue absent from all shipped steering/front-door assets.",
+      "quotedText": "bugfix/issue appear NOWHERE in the shipped steering/front-door ... Net-new content required."
+    }
+  ]
+}

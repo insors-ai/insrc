@@ -10,6 +10,34 @@ declare module 'vscode' {
     dispose(): void;
   }
 
+  /** A typed event (S006 edit-governance content-provider change signal). */
+  export type Event<T> = (listener: (e: T) => unknown) => Disposable;
+
+  /** Fires a typed {@link Event} (S006 baseline content-provider refresh). */
+  export class EventEmitter<T> {
+    readonly event: Event<T>;
+    fire(data: T): void;
+    dispose(): void;
+  }
+
+  /** A resource identifier (S006 native editor-diff: baseline virtual doc vs the file). */
+  export interface Uri {
+    readonly scheme: string;
+    readonly path: string;
+    readonly fsPath: string;
+    toString(): string;
+  }
+  export namespace Uri {
+    export function file(path: string): Uri;
+    export function parse(value: string): Uri;
+  }
+
+  /** Supplies read-only content for a custom-scheme document (S006 baseline diff side). */
+  export interface TextDocumentContentProvider {
+    readonly onDidChange?: Event<Uri>;
+    provideTextDocumentContent(uri: Uri): string | undefined | PromiseLike<string | undefined>;
+  }
+
   export interface StatusBarItem extends Disposable {
     text: string;
     tooltip: string | undefined;
@@ -64,6 +92,8 @@ declare module 'vscode' {
     export function showInformationMessage(message: string, options: MessageOptions, ...items: string[]): PromiseLike<string | undefined>;
     /** Surface a non-blocking error toast (sc8 Notifier — a rejected config write). */
     export function showErrorMessage(message: string): PromiseLike<string | undefined>;
+    /** Surface a non-blocking warning toast (S006 edit-governance notes, e.g. non-git revert). */
+    export function showWarningMessage(message: string, ...items: string[]): PromiseLike<string | undefined>;
     /** Create a webview panel in `showOptions` column (S004 sc9 WebviewPanelHost). */
     export function createWebviewPanel(
       viewType: string,
@@ -135,6 +165,8 @@ declare module 'vscode' {
     export function getConfiguration(section?: string): WorkspaceConfiguration;
     /** Subscribe to settings-change events (sc8 live-sync listener). */
     export function onDidChangeConfiguration(listener: (e: ConfigurationChangeEvent) => unknown): Disposable;
+    /** Register a read-only content provider for a custom URI scheme (S006 baseline diff side). */
+    export function registerTextDocumentContentProvider(scheme: string, provider: TextDocumentContentProvider): Disposable;
   }
 
   /** A per-scope persisted key/value store (VS Code's `Memento`). */

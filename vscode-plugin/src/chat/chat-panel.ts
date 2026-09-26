@@ -15,7 +15,15 @@ import { markerFor, markerWebviewSource } from './markers.js';
 import { envelope, type WebviewToHost, type HostToWebview } from './protocol.js';
 import type { ProviderRegistry } from './cli-adapter.js';
 import type { ChatSessionStore, ChatSession } from './session-store.js';
-import type { TurnEvent } from './stream-events.js';
+import type { TurnEvent, UnifiedDiff } from './stream-events.js';
+import {
+  createEditGovernor,
+  type EditGovernor,
+  type EditRenderSeam,
+  type WorkspaceBaseline,
+  type FsSeam,
+  type DiffView,
+} from './edit-governor.js';
 
 /** The injected panel seam (mirrors extension.ts's PanelHandle). All vscode API lives here. */
 export interface ChatPanelChannel {
@@ -33,6 +41,22 @@ export interface ChatPanelLogger {
   error(msg: string): void;
 }
 
+/**
+ * S006 edit-governance seams the host injects into the EditGovernor. Optional: when
+ * absent the host behaves exactly as before (marker-only, no diff/governance). The
+ * host itself provides the CHAT render (posts the sc3 edit-prompt); extension.ts
+ * supplies the git/fs seams, the native-editor diff, and the diffView accessor.
+ */
+export interface ChatEditGovernanceDeps {
+  readonly baseline: WorkspaceBaseline;
+  readonly fs: FsSeam;
+  readonly computeDiff: (before: string | undefined, after: string, path: string) => UnifiedDiff;
+  /** Open the edit's diff in a native VS Code editor (ac4, diffView='editor'). */
+  readonly editorDiff: (path: string, baseline: string | undefined, opts: { review: boolean }) => Promise<void>;
+  readonly diffView: () => DiffView;
+  readonly notify?: (msg: string) => void;
+}
+
 export interface ChatPanelHostDeps {
   createPanel(opts: { viewType: string; title: string }): ChatPanelChannel;
   readonly providers: ProviderRegistry;
@@ -43,6 +67,8 @@ export interface ChatPanelHostDeps {
   readonly logger?: ChatPanelLogger;
   readonly now?: () => string;
   readonly genNonce?: () => string;
+  /** S006: edit governance (inline diff + auto/review + revert). Absent -> marker-only. */
+  readonly editGovernance?: ChatEditGovernanceDeps;
 }
 
 export interface ChatPanelHost {
@@ -78,6 +104,32 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     channel.postMessage(envelope(msg));
   };
 
+  // S006: the EditGovernor (inline diff + auto/review + revert). The CHAT surface
+  // render is host-internal (posts the sc3 edit-prompt into the one webview); the
+  // EDITOR surface + git/fs seams are injected via deps.editGovernance. Absent ->
+  // no governor -> the host renders edits exactly as before (the S004 edit marker).
+  let governor: EditGovernor | undefined;
+  if (deps.editGovernance !== undefined) {
+    const eg = deps.editGovernance;
+    const editRender: EditRenderSeam = {
+      // The host is authoritative for review: carry opts.review on the edit-prompt so the
+      // webview gates its accept/reject controls on the HOST's decision, not a drifting
+      // webview-local toggle (a stale toggle after a session switch never hides a real
+      // control nor shows a dead one).
+      showChat: (path, diff, opts) => post({ type: 'edit-prompt', path, diff, review: opts.review }),
+      showEditor: (path, baseline, opts) => eg.editorDiff(path, baseline, opts),
+    };
+    governor = createEditGovernor({
+      baseline: eg.baseline,
+      fs: eg.fs,
+      computeDiff: eg.computeDiff,
+      render: editRender,
+      diffView: eg.diffView,
+      logger: { warn: (m) => log.warn(m) },
+      ...(eg.notify !== undefined ? { notify: eg.notify } : {}),
+    });
+  }
+
   // S005: (re)post the extension-local chat history so the webview history-dropdown stays current.
   const postHistory = (): void => post({ type: 'history-list', chats: [...deps.store.list()] });
 
@@ -88,6 +140,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     const cls = surfaceClass('chat');
     const provCls = surfaceClass('provider-dropdown');
     const histCls = surfaceClass('history-dropdown');
+    const diffCls = surfaceClass('inline-diff'); // S006: sc1 'inline-diff' surface for the chat-view diff
     // S005: provider <option>s are rendered server-side from providers.available (the
     // installed claude/codex set is fixed per panel, k4) so NO new sc3 message is needed;
     // values are attribute-escaped. Empty available -> the selector is disabled.
@@ -109,7 +162,19 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `const hs=document.getElementById('insrc-history');` +
       `ps.addEventListener('change',function(){if(ps.value){vs.postMessage({v:1,payload:{type:'new-chat',provider:ps.value}});ps.value='';}});` +
       `hs.addEventListener('change',function(){if(hs.value){vs.postMessage({v:1,payload:{type:'open-chat',chatId:hs.value}});}});` +
+      // S006: per-session edit-mode toggle (auto/review) + the chat-view inline diff renderer.
+      // emode gates the accept/reject controls webview-side; the host is authoritative for revert.
+      `var emode='auto';` +
+      `const em=document.getElementById('insrc-editmode');` +
+      `em.addEventListener('change',function(){emode=em.value==='review'?'review':'auto';vs.postMessage({v:1,payload:{type:'set-edit-mode',mode:emode}});});` +
+      // renderDiff: one row per hunk line via textContent (no innerHTML); add/remove/context
+      // class by the +/-/space prefix computeDiff wrote. In review mode append accept/reject
+      // buttons that post edit-decision for this path.
+      `function renderDiff(path,diff,review){var box=document.createElement('div');box.className=${JSON.stringify(diffCls)};var hdr=document.createElement('div');hdr.className='insrc-diff-path';hdr.textContent=path;box.appendChild(hdr);var hunks=(diff&&diff.hunks)||[];hunks.forEach(function(h){(h.lines||[]).forEach(function(ln){var d=document.createElement('div');var c=ln.charAt(0);d.className=c==='+'?'insrc-diff-add':c==='-'?'insrc-diff-del':'insrc-diff-ctx';d.textContent=ln;box.appendChild(d);});});if(review){var bar=document.createElement('div');bar.className='insrc-diff-actions';var ok=document.createElement('button');ok.textContent='accept';ok.addEventListener('click',function(){vs.postMessage({v:1,payload:{type:'edit-decision',path:path,accept:true}});bar.remove();});var no=document.createElement('button');no.textContent='reject';no.addEventListener('click',function(){vs.postMessage({v:1,payload:{type:'edit-decision',path:path,accept:false}});bar.remove();});bar.appendChild(ok);bar.appendChild(no);box.appendChild(bar);}t.appendChild(box);t.scrollTop=t.scrollHeight;}` +
       `window.addEventListener('message',e=>{const m=e.data&&e.data.payload;if(!m)return;if(m.type==='turn-event'){const ev=m.event;if(ev&&ev.kind==='assistant-delta'){line(ev.text);}else{const mk=markerFor(ev);if(mk)line(mk.label,mk.cssClass);}}` +
+      // S006: an edit-prompt carries the computed diff + the HOST's review flag -> render it
+      // (+ accept/reject controls only when the host says review; never gated on local state).
+      `else if(m.type==='edit-prompt'){renderDiff(m.path,m.diff,m.review===true);}` +
       // S005: session-restored CLEARS the terminal before replaying (so switching chats
       // does not append onto the prior chat's view) + tracks the active id for the dropdown.
       `else if(m.type==='session-restored'){cur=m.sessionId||'';t.textContent='';(m.transcript||[]).forEach(x=>line(x.text,x.cssClass));hs.value=cur;}` +
@@ -125,6 +190,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `<div class="insrc-term-controls">` +
       `<select id="insrc-provider" class="${provCls}" aria-label="provider"${provDisabled}>${providerOpts}</select>` +
       `<select id="insrc-history" class="${histCls}" aria-label="history"><option value="">history…</option></select>` +
+      `<select id="insrc-editmode" class="${provCls}" aria-label="edit mode"><option value="auto">auto-apply</option><option value="review">review edits</option></select>` +
       `</div>` +
       `<div id="insrc-term"></div>` +
       `<textarea id="insrc-input" rows="2" aria-label="message"></textarea>` +
@@ -199,6 +265,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       ? { provider: s.provider, prompt, cwd: deps.cwd(), resume: { provider: s.provider, nativeSessionId: s.nativeSessionId } }
       : { provider: s.provider, prompt, cwd: deps.cwd() };
 
+    // S006: capture the pre-turn baseline BEFORE the CLI can write (governor.beginTurn),
+    // so the diff + revert are computed against the true pre-turn content (k8 observer).
+    if (governor !== undefined) await governor.beginTurn({ mode: s.editMode, cwd: deps.cwd() });
+
     // Hold the iterator explicitly so cancelActive() can .return() it even while it
     // is parked awaiting its first event.
     const iterator = adapter.run(req)[Symbol.asyncIterator]();
@@ -213,14 +283,20 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         activeTurnId = ev.turnId;
         post({ type: 'turn-event', event: ev });
         appendEvent(s, ev);
+        // S006: an observed file-edit -> the governor computes + renders its own diff
+        // (auto: visualize-only; review: track for accept/reject). Fire-and-forget so
+        // the incremental turn loop never blocks on git/fs IO.
+        if (governor !== undefined && ev.kind === 'file-edit') void governor.observe(ev.path);
         if (ev.kind === 'done') {
           if (ev.sessionId !== undefined) s.nativeSessionId = ev.sessionId;
           deps.store.save(s);
+          if (governor !== undefined) void governor.resolveTurn();
           postHistory(); // S005: title/updatedAt changed -> refresh the history dropdown
           break;
         }
         if (ev.kind === 'error') {
           deps.store.save(s); // persist the errored turn's transcript rows too
+          if (governor !== undefined) void governor.resolveTurn();
           postHistory(); // S005: a first-turn error still set the title -> refresh the dropdown label
           break;
         }
@@ -309,9 +385,25 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         postHistory(); // S005: keep the dropdown selection/order in sync
         return;
       }
+      case 'set-edit-mode': {
+        // S006: per-session auto/review toggle (sc4). Persist it (the S005 title-persist
+        // pattern) so subsequent turns read the new mode at beginTurn (ac3).
+        if (msg.mode !== 'auto' && msg.mode !== 'review') return; // invalid -> drop
+        if (session === undefined) return;
+        session.editMode = msg.mode;
+        deps.store.save(session);
+        return;
+      }
+      case 'edit-decision': {
+        // S006: accept keeps the on-disk change; reject reverts to the pre-turn baseline.
+        // An unknown/decided path is a no-op inside the governor.
+        if (typeof msg.path !== 'string' || typeof msg.accept !== 'boolean') return;
+        if (governor !== undefined) void governor.decide(msg.path, msg.accept);
+        return;
+      }
       default:
-        // set-edit-mode (S006), edit-decision (S006), docs-decision (S007), or any
-        // unknown/forward variant: accepted-but-ignored seam — never an error.
+        // docs-decision (S007) or any unknown/forward variant: accepted-but-ignored
+        // seam — never an error.
         return;
     }
   }

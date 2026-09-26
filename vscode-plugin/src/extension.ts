@@ -52,6 +52,11 @@ import { runDaemonFreshnessCheck } from './freshness/daemon-freshness.js';
 import { createChatPanelHost } from './chat/chat-panel.js';
 import { createMementoChatSessionStore } from './chat/session-store.js';
 import { createProviderRegistry, nodeSpawner, defaultBinaryProbe } from './chat/cli-adapter.js';
+import { defaultComputeDiff, type DiffView } from './chat/edit-governor.js';
+import { createGitBaseline } from './chat/git-baseline.js';
+import { execFile as nodeExecFile } from 'node:child_process';
+import { promises as nodeFsp } from 'node:fs';
+import { relative as pathRelative, isAbsolute as pathIsAbsolute, join as pathJoin } from 'node:path';
 
 /** The workspaceState key prefix for the one-time register-prompt dismissal flag (S004). */
 const REGISTER_DISMISSED_KEY = 'insrc.workspace.register.dismissed';
@@ -419,7 +424,86 @@ export function activate(context: vscode.ExtensionContext): void {
     // (the S003 L4 follow-up). save() evicts the oldest non-active sessions beyond this.
     const chatStore = createMementoChatSessionStore({ memento: context.globalState, maxSessions: 200 });
     const chatProviders = createProviderRegistry({ spawn: nodeSpawner, isInstalled: defaultBinaryProbe });
+
+    // S006: edit-governance seams. All model access stays via the user's CLIs (k2); the
+    // baseline shells local git (no new dependency, no cloud REST) and captures the exact
+    // pre-turn working tree without disturbing it. Everything stays extension-local (k3).
+    const chatCwd = (): string => vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? process.cwd();
+    const runGit = (cwd: string, args: string[]): Promise<{ ok: boolean; stdout: string }> =>
+      new Promise((resolve) => {
+        nodeExecFile('git', ['-C', cwd, ...args], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }, (err, stdout) => {
+          resolve({ ok: err === null, stdout: stdout ?? '' });
+        });
+      });
+    const relForGit = (cwd: string, p: string): string => (pathIsAbsolute(p) ? pathRelative(cwd, p) : p).split('\\').join('/');
+    const absForFs = (cwd: string, p: string): string => (pathIsAbsolute(p) ? p : pathJoin(cwd, p));
+    const readText = async (abs: string): Promise<string | undefined> => {
+      try {
+        const buf = await nodeFsp.readFile(abs);
+        if (buf.includes(0)) return undefined; // binary -> no text diff
+        return buf.toString('utf8');
+      } catch {
+        return undefined;
+      }
+    };
+    // S006: git-backed baseline (untracked-safe + subdir-safe; see git-baseline.ts).
+    const workspaceBaseline = createGitBaseline({ runGit, readText, cwd: chatCwd, toAbs: absForFs, toRel: relForGit });
+    // Baseline docs for the native editor-diff (read-only left side), keyed by fs path.
+    const baselineDocs = new Map<string, string>();
+    const BASELINE_SCHEME = 'insrc-baseline';
+    const baselineEmitter = new vscode.EventEmitter<vscode.Uri>();
+    context.subscriptions.push(
+      vscode.workspace.registerTextDocumentContentProvider(BASELINE_SCHEME, {
+        onDidChange: baselineEmitter.event,
+        provideTextDocumentContent: (uri) => baselineDocs.get(decodeURIComponent(uri.path)) ?? '',
+      }),
+    );
+
     const chatHost = createChatPanelHost({
+      editGovernance: {
+        computeDiff: defaultComputeDiff,
+        diffView: () =>
+          (vscode.workspace.getConfiguration().get<DiffView>('insrc.chat.diffView') === 'editor' ? 'editor' : 'chat'),
+        notify: (m) => {
+          void vscode.window.showWarningMessage(`insrc chat: ${m}`);
+        },
+        baseline: workspaceBaseline,
+        fs: {
+          read: async (path) => readText(absForFs(chatCwd(), path)),
+          write: async (path, content) => {
+            await nodeFsp.writeFile(absForFs(chatCwd(), path), content, 'utf8');
+          },
+          remove: async (path) => {
+            await nodeFsp.rm(absForFs(chatCwd(), path), { force: true });
+          },
+        },
+        editorDiff: async (path, baseline, opts) => {
+          const abs = absForFs(chatCwd(), path);
+          baselineDocs.set(abs, baseline ?? '');
+          const baseUri = vscode.Uri.parse(`${BASELINE_SCHEME}:${encodeURIComponent(abs)}`);
+          baselineEmitter.fire(baseUri);
+          await vscode.commands.executeCommand(
+            'vscode.diff',
+            baseUri,
+            vscode.Uri.file(abs),
+            `insrc: ${path} (baseline \u2194 current)`,
+          );
+          // Editor-mode review decision is self-contained here (no webview edit-decision):
+          // a modal Keep/Revert; Revert restores the pre-turn baseline (or removes a new file).
+          if (opts.review) {
+            const pick = await vscode.window.showInformationMessage(
+              `Review edit to ${path}`,
+              { modal: true },
+              'Keep',
+              'Revert',
+            );
+            if (pick === 'Revert') {
+              if (baseline === undefined) await nodeFsp.rm(abs, { force: true });
+              else await nodeFsp.writeFile(abs, baseline, 'utf8');
+            }
+          }
+        },
+      },
       createPanel: ({ viewType, title }) => {
         const panel = vscode.window.createWebviewPanel(viewType, title, vscode.ViewColumn.Active, { enableScripts: true });
         return {

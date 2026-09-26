@@ -7,10 +7,11 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createChatPanelHost, type ChatPanelChannel } from '../chat-panel.js';
+import { createChatPanelHost, type ChatPanelChannel, type ChatEditGovernanceDeps } from '../chat-panel.js';
 import { createInMemoryChatSessionStore } from '../session-store.js';
 import type { ProviderId, StreamAdapter, ProviderRegistry, TurnRequest } from '../cli-adapter.js';
 import type { TurnEvent } from '../stream-events.js';
+import { defaultComputeDiff, type DiffView } from '../edit-governor.js';
 
 interface FakeChannel {
   channel: ChatPanelChannel;
@@ -650,4 +651,221 @@ test('S008 shell: session-restored replay passes the stored class via line(x.tex
   assert.doesNotMatch(html, /innerHTML/, 'textContent only, never innerHTML');
   assert.doesNotMatch(html, /https?:\/\//, 'no remote origin');
   assert.doesNotMatch(html, /asWebviewUri/, 'no asWebviewUri');
+});
+
+// ---- S006: edit governance (inline diff + auto/review + revert) + chat-vs-editor diffView ----
+
+interface FakeGov {
+  deps: ChatEditGovernanceDeps;
+  disk: Map<string, string>;
+  baseline: Map<string, string>;
+  editorCalls: Array<{ path: string; review: boolean }>;
+  setDiffView: (v: DiffView) => void;
+}
+function fakeGovernance(): FakeGov {
+  const disk = new Map<string, string>();
+  const baseline = new Map<string, string>();
+  const editorCalls: FakeGov['editorCalls'] = [];
+  let view: DiffView = 'chat';
+  const deps: ChatEditGovernanceDeps = {
+    computeDiff: defaultComputeDiff,
+    diffView: () => view,
+    baseline: {
+      available: async () => true,
+      snapshot: async () => ({ ref: 'SNAP' }),
+      read: async (_h, path) => baseline.get(path),
+    },
+    fs: {
+      read: async (path) => disk.get(path),
+      write: async (path, content) => { disk.set(path, content); },
+      remove: async (path) => { disk.delete(path); },
+    },
+    editorDiff: async (path, _base, o) => { editorCalls.push({ path, review: o.review }); },
+  };
+  return { deps, disk, baseline, editorCalls, setDiffView: (v) => { view = v; } };
+}
+const editPrompts = (fc: FakeChannel): Array<{ path: string; diff: unknown; review?: boolean }> =>
+  fc.posted.filter((m) => m.payload.type === 'edit-prompt').map((m) => m.payload as { path: string; diff: unknown; review?: boolean });
+
+test('S006 integration: a REVIEW turn posts an sc3 edit-prompt; edit-decision reject reverts via the fs seam; accept keeps', async () => {
+  const fc = fakeChannel();
+  const gov = fakeGovernance();
+  gov.baseline.set('src/a.ts', 'old\n');
+  gov.disk.set('src/a.ts', 'NEW\n');
+  const store = createInMemoryChatSessionStore();
+  const evs: TurnEvent[] = [
+    { kind: 'file-edit', turnId: 't1', path: 'src/a.ts', diff: { path: 'src/a.ts', hunks: [] } },
+    { kind: 'done', turnId: 't1', ok: true },
+  ];
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter(evs) }, ['claude']),
+    store,
+    cwd: () => '/repo',
+    editGovernance: gov.deps,
+  });
+  host.open();
+  // put the (default) session into review mode first
+  fc.send(env('set-edit-mode', { mode: 'review' }));
+  fc.send(env('submit-turn', { text: 'go' }));
+  await waitFor(() => editPrompts(fc).length >= 1);
+  assert.equal(editPrompts(fc)[0]!.path, 'src/a.ts', 'review turn posted an edit-prompt for the edited path');
+  fc.send(env('edit-decision', { path: 'src/a.ts', accept: false }));
+  await waitFor(() => gov.disk.get('src/a.ts') === 'old\n');
+  assert.equal(gov.disk.get('src/a.ts'), 'old\n', 'reject reverted to the pre-turn baseline');
+});
+
+test('S006 integration: an AUTO turn renders visualize-only (no accept/reject revert on reject) + edit marker still renders', async () => {
+  const fc = fakeChannel();
+  const gov = fakeGovernance();
+  gov.baseline.set('src/a.ts', 'old\n');
+  gov.disk.set('src/a.ts', 'NEW\n');
+  const store = createInMemoryChatSessionStore();
+  const evs: TurnEvent[] = [
+    { kind: 'file-edit', turnId: 't1', path: 'src/a.ts', diff: { path: 'src/a.ts', hunks: [] } },
+    { kind: 'done', turnId: 't1', ok: true },
+  ];
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter(evs) }, ['claude']),
+    store,
+    cwd: () => '/repo',
+    editGovernance: gov.deps,
+  });
+  host.open(); // default session is 'auto'
+  fc.send(env('submit-turn', { text: 'go' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+  await waitFor(() => editPrompts(fc).length >= 1); // auto still shows the diff (ac1)
+  // the existing edit marker (S004) still renders as a turn-event
+  assert.ok(turnEvents(fc).some((e) => e.kind === 'file-edit'), 'file-edit still posted as a turn-event (marker unchanged)');
+  // a stray reject in auto is not tracked -> no revert
+  fc.send(env('edit-decision', { path: 'src/a.ts', accept: false }));
+  await new Promise((r) => setTimeout(r, 30));
+  assert.equal(gov.disk.get('src/a.ts'), 'NEW\n', 'auto mode: reject does not revert (edit not tracked)');
+});
+
+test('S006 integration: set-edit-mode updates + persists session.editMode', async () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter([]) }, ['claude']),
+    store,
+    cwd: () => '/repo',
+    editGovernance: fakeGovernance().deps,
+  });
+  host.open();
+  const id = store.list()[0]!.id;
+  assert.equal(store.get(id)!.editMode, 'auto', 'defaults to auto');
+  fc.send(env('set-edit-mode', { mode: 'review' }));
+  assert.equal(store.get(id)!.editMode, 'review', 'set-edit-mode persisted review');
+  fc.send(env('set-edit-mode', { mode: 'bogus' }));
+  assert.equal(store.get(id)!.editMode, 'review', 'an invalid mode is dropped (unchanged)');
+});
+
+test('S006 integration: diffView=editor routes to the native editor seam (no chat edit-prompt)', async () => {
+  const fc = fakeChannel();
+  const gov = fakeGovernance();
+  gov.setDiffView('editor');
+  gov.baseline.set('src/a.ts', 'old\n');
+  gov.disk.set('src/a.ts', 'NEW\n');
+  const store = createInMemoryChatSessionStore();
+  const evs: TurnEvent[] = [
+    { kind: 'file-edit', turnId: 't1', path: 'src/a.ts', diff: { path: 'src/a.ts', hunks: [] } },
+    { kind: 'done', turnId: 't1', ok: true },
+  ];
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter(evs) }, ['claude']),
+    store,
+    cwd: () => '/repo',
+    editGovernance: gov.deps,
+  });
+  host.open();
+  fc.send(env('submit-turn', { text: 'go' }));
+  await waitFor(() => gov.editorCalls.length >= 1);
+  assert.equal(gov.editorCalls[0]!.path, 'src/a.ts', 'editor diff opened for the edited path');
+  assert.equal(editPrompts(fc).length, 0, 'editor mode posts NO chat edit-prompt');
+});
+
+test('S006: without editGovernance the host behaves as before (no edit-prompt; file-edit marker still renders)', async () => {
+  const fc = fakeChannel();
+  const evs: TurnEvent[] = [
+    { kind: 'file-edit', turnId: 't1', path: 'src/a.ts', diff: { path: 'src/a.ts', hunks: [] } },
+    { kind: 'done', turnId: 't1', ok: true },
+  ];
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter(evs) }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+  });
+  host.open();
+  fc.send(env('submit-turn', { text: 'go' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+  assert.equal(editPrompts(fc).length, 0, 'no governance -> no edit-prompt');
+  assert.ok(turnEvents(fc).some((e) => e.kind === 'file-edit'), 'file-edit still posted (marker path unchanged)');
+});
+
+test('S006 shell: edit-mode toggle + diff renderer live inside the ONE nonce\'d script; CSP/textContent invariants intact', () => {
+  const fc = fakeChannel();
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter([]) }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+    genNonce: () => 'FIXEDNONCE',
+    editGovernance: fakeGovernance().deps,
+  });
+  host.open();
+  const html = fc.html();
+  assert.match(html, /<select id="insrc-editmode"/, 'the edit-mode toggle is contributed');
+  assert.match(html, /function renderDiff\(/, 'the chat-view diff renderer is embedded');
+  assert.match(html, /renderDiff\(m\.path,m\.diff,m\.review===true\)/, 'controls gate on the HOST review flag, not a webview-local toggle');
+  assert.match(html, /type:'edit-decision'/, 'accept/reject controls post edit-decision');
+  assert.match(html, /type:'set-edit-mode'/, 'the toggle posts set-edit-mode');
+  const scripts = html.match(/<script\b/g) ?? [];
+  assert.equal(scripts.length, 1, 'still exactly one inline script');
+  assert.match(html, /script-src 'nonce-FIXEDNONCE'/, 'strict CSP unchanged');
+  assert.doesNotMatch(html, /innerHTML/, 'textContent only, never innerHTML');
+  assert.doesNotMatch(html, /https?:\/\//, 'no remote origin');
+  assert.doesNotMatch(html, /asWebviewUri/, 'no asWebviewUri');
+});
+
+test('S006: the edit-prompt carries the HOST review flag (authoritative; not a webview-local toggle) — review vs auto', async () => {
+  // review session -> edit-prompt.review === true
+  const fcR = fakeChannel();
+  const govR = fakeGovernance();
+  govR.baseline.set('a.ts', 'old\n');
+  govR.disk.set('a.ts', 'new\n');
+  const storeR = createInMemoryChatSessionStore();
+  const hostR = createChatPanelHost({
+    createPanel: () => fcR.channel,
+    providers: registry({ claude: scriptedAdapter([{ kind: 'file-edit', turnId: 't1', path: 'a.ts', diff: { path: 'a.ts', hunks: [] } }, { kind: 'done', turnId: 't1', ok: true }]) }, ['claude']),
+    store: storeR,
+    cwd: () => '/repo',
+    editGovernance: govR.deps,
+  });
+  hostR.open();
+  fcR.send(env('set-edit-mode', { mode: 'review' }));
+  fcR.send(env('submit-turn', { text: 'go' }));
+  await waitFor(() => editPrompts(fcR).length >= 1);
+  assert.equal(editPrompts(fcR)[0]!.review, true, 'review session -> edit-prompt.review true');
+
+  // auto session -> edit-prompt.review falsy (webview shows no controls, regardless of its local toggle)
+  const fcA = fakeChannel();
+  const govA = fakeGovernance();
+  govA.baseline.set('a.ts', 'old\n');
+  govA.disk.set('a.ts', 'new\n');
+  const hostA = createChatPanelHost({
+    createPanel: () => fcA.channel,
+    providers: registry({ claude: scriptedAdapter([{ kind: 'file-edit', turnId: 't1', path: 'a.ts', diff: { path: 'a.ts', hunks: [] } }, { kind: 'done', turnId: 't1', ok: true }]) }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+    editGovernance: govA.deps,
+  });
+  hostA.open(); // default auto
+  fcA.send(env('submit-turn', { text: 'go' }));
+  await waitFor(() => editPrompts(fcA).length >= 1);
+  assert.notEqual(editPrompts(fcA)[0]!.review, true, 'auto session -> edit-prompt.review not true (no controls)');
 });

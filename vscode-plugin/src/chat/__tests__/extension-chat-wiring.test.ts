@@ -62,3 +62,34 @@ test('package.json contributes the chat command + the insrc.chat.enabled config 
   assert.equal(props['insrc.chat.enabled'].type, 'boolean');
   assert.equal(props['insrc.chat.enabled'].default, false, 'flag defaults off');
 });
+
+// ---- S006: diffView setting + edit-governance wiring ----
+
+test('S006: package.json contributes insrc.chat.diffView (string enum chat|editor, default chat)', () => {
+  const pkg = JSON.parse(read(PKG)) as {
+    contributes: { configuration: Array<{ properties?: Record<string, { type?: string; default?: unknown; enum?: unknown[] }> }> };
+  };
+  const props = Object.assign({}, ...pkg.contributes.configuration.map((g) => g.properties ?? {}));
+  assert.ok('insrc.chat.diffView' in props, 'insrc.chat.diffView config contributed');
+  assert.equal(props['insrc.chat.diffView'].type, 'string');
+  assert.deepEqual(props['insrc.chat.diffView'].enum, ['chat', 'editor'], 'enum is chat|editor');
+  assert.equal(props['insrc.chat.diffView'].default, 'chat', 'diffView defaults to chat');
+});
+
+test('S006: extension.ts reads insrc.chat.diffView (full dotted key) + injects editGovernance seams', () => {
+  const src = read(EXT);
+  const block = /if \(chatEnabled\) \{([\s\S]*?)\n  \}/.exec(src);
+  assert.ok(block, 'the chatEnabled block is present');
+  const b = block![1]!;
+  assert.match(b, /getConfiguration\(\)\.get<DiffView>\('insrc\.chat\.diffView'\)/, 'reads diffView with the full dotted key');
+  assert.match(b, /editGovernance:\s*\{/, 'passes editGovernance into createChatPanelHost');
+  assert.match(b, /computeDiff:\s*defaultComputeDiff/, 'injects the graph-free computeDiff');
+  assert.match(b, /vscode\.commands\.executeCommand\(\s*'vscode\.diff'/, 'editor surface opens a native vscode.diff');
+  assert.match(b, /'git',\s*\['-C', cwd/, 'baseline shells local git (no cloud REST, k2)');
+});
+
+test('S006: the edit-governor module is vscode-free', () => {
+  const src = read(join(HERE, '..', 'edit-governor.ts'));
+  assert.doesNotMatch(src, /from ['"]vscode['"]/, 'edit-governor.ts imports nothing from vscode');
+  assert.doesNotMatch(src, /require\(['"]vscode['"]\)/, 'edit-governor.ts has no vscode require');
+});

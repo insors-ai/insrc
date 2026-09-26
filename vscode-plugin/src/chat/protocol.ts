@@ -34,7 +34,7 @@ export type HostToWebview =
   | { readonly type: 'turn-event'; readonly event: TurnEvent }
   | { readonly type: 'session-restored'; readonly sessionId: string; readonly transcript: TranscriptEntry[] }
   | { readonly type: 'history-list'; readonly chats: ChatSummary[] }
-  | { readonly type: 'edit-prompt'; readonly path: string; readonly diff: UnifiedDiff }
+  | { readonly type: 'edit-prompt'; readonly path: string; readonly diff: UnifiedDiff; readonly review?: boolean }
   | { readonly type: 'docs-list'; readonly artifacts: DocsArtifactSummary[] }
   | { readonly type: 'theme'; readonly theme: TerminalTheme };
 

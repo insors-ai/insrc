@@ -172,3 +172,17 @@ test('S008: user/assistant rows never carry a cssClass', () => {
     assert.equal(row.cssClass, undefined, `${row.role} row carries no cssClass`);
   }
 });
+
+// ---- S006: per-session editMode (sc4) round-trip ----
+
+test('S006: editMode defaults to auto on create and a review update round-trips through save()/get()', () => {
+  const f = fakeMemento();
+  const store = createMementoChatSessionStore({ ...f, now: () => 't', genId: seqId() });
+  const s = store.create('claude');
+  assert.equal(s.editMode, 'auto', 'defaults to auto');
+  s.editMode = 'review';
+  store.save(s);
+  assert.equal(store.get(s.id)?.editMode, 'review', 'editMode round-trips through the memento');
+  // list summaries are unaffected by the editMode field
+  assert.equal(store.list().length, 1);
+});

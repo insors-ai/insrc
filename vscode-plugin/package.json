@@ -102,6 +102,17 @@
             "default": false,
             "markdownDescription": "Enable the in-editor terminal chat panel (Phase B preview) over your own claude/codex CLI. Off by default.",
             "scope": "machine"
+          },
+          "insrc.chat.diffView": {
+            "type": "string",
+            "enum": ["chat", "editor"],
+            "enumDescriptions": [
+              "Show edit diffs inside the terminal chat panel",
+              "Show edit diffs in a native VS Code editor diff"
+            ],
+            "default": "chat",
+            "markdownDescription": "Where insrc chat renders assistant code-edit diffs: inside the terminal chat panel, or in a native VS Code editor diff.",
+            "scope": "machine"
           }
         }
       },

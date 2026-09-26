@@ -229,6 +229,16 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `.insrc-diff-actions button:hover{border-color:var(--accent);}` +
       // S001 sc1: the shared collapse/chevron primitive styles (icon-only chevron + 3-line clamp, k6 a/b).
       RENDER_REGISTRY_STYLE +
+      // S003: role tones (user vs assistant, ac1) + the markdown/JSON widget + tool-result/inline-diff
+      // caption styling. Reuses the sc1 .insrc-collapse* classes; inline under the CSP, no remote origin (k1).
+      `.insrc-msg{white-space:pre-wrap;word-break:break-word;}` +
+      `.insrc-msg--user{color:var(--user,#8ab4ff);}.insrc-msg--assistant{color:var(--fg);}` +
+      `.insrc-md h1,.insrc-md h2,.insrc-md h3{color:var(--fg-strong);font-weight:600;margin:.3em 0;}` +
+      `.insrc-md code,.insrc-md .insrc-md-code{font-family:var(--font);background:var(--bg-inset);border-radius:4px;padding:0 4px;color:var(--accent);}` +
+      `.insrc-md pre{background:var(--bg-inset);border:1px solid var(--border);border-radius:6px;padding:8px 10px;overflow-x:auto;}` +
+      `.insrc-md ul{margin:.3em 0;padding-left:1.4em;}.insrc-md em{font-style:italic;color:var(--fg-strong);}` +
+      `.insrc-json{font-family:var(--font);}.insrc-json .insrc-json-key{color:var(--accent2);}.insrc-json .insrc-json-val{color:var(--fg);}.insrc-json .insrc-json-punct{color:var(--dim);}` +
+      `.insrc-caption{color:var(--muted);cursor:default;}` +
       `</style>`;
     const provCls = surfaceClass('provider-dropdown');
     const histCls = surfaceClass('history-dropdown');

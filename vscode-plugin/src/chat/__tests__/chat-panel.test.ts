@@ -1160,3 +1160,30 @@ test('S002 ac3/lc1: status events are never persisted to the durable transcript 
   assert.ok(!texts.includes('running tool…'), 'status(tool) never persisted');
   assert.ok(!full.transcript.some((r) => r.role === 'marker' && (r.text === 'thinking…' || r.text === 'running tool…')), 'no status marker rows in the durable transcript (lc1)');
 });
+
+// ---- S003 t1: role-tone + markdown/JSON-widget + caption CSS ----
+
+test('S003 t1: renderShell embeds the role-tone + markdown/JSON widget + caption CSS (inline, CSP-safe)', () => {
+  const fc = fakeChannel();
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter([]) }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+    genNonce: () => 'FIXEDNONCE',
+  });
+  host.open();
+  const html = fc.html();
+  assert.match(html, /\.insrc-msg--user\{/, 'user role tone');
+  assert.match(html, /\.insrc-msg--assistant\{/, 'assistant role tone');
+  assert.match(html, /\.insrc-md /, 'markdown widget styling');
+  assert.match(html, /\.insrc-json /, 'JSON widget styling');
+  assert.match(html, /\.insrc-caption\{/, 'tool-result/inline-diff caption styling');
+  // CSP/one-script/textContent invariants intact.
+  assert.equal((html.match(/<script\b/g) ?? []).length, 1, 'still exactly one inline script');
+  assert.doesNotMatch(html, /innerHTML/, 'no innerHTML');
+  assert.doesNotMatch(html, /https?:\/\//, 'no remote origin');
+  for (const id of ['insrc-term', 'insrc-input', 'insrc-send', 'insrc-progress', 'insrc-sesstitle']) {
+    assert.match(html, new RegExp(`id="${id}"`), `${id} preserved`);
+  }
+});

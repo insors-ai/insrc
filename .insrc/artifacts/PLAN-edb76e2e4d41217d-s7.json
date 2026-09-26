@@ -1,0 +1,311 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1790406504934-virzfs",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-26T07:11:57.683Z",
+    "epicCreatedAt": "2026-09-25T13:25:32.966Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 212740,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "edb76e2e4d41217d",
+    "epicSlug": "work-framed-approved-spec-proceed-from",
+    "storyId": "s7",
+    "lldRunId": "wf-1790405792957-sachfw",
+    "lldEffectiveHash": "e2745c4bac48a6e87b322daf9e2231b2f375790d6b3411568c9129535c418f61",
+    "approvedAt": "2026-09-26T07:12:09.242Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add the additive sc3 docs-content + open-doc messages",
+        "summary": "In vscode-plugin/src/chat/protocol.ts add the two additive optional union members: HostToWebview `{ type:'docs-content'; artifactId; markdown; openQuestions: string[]; blocked: boolean }` + WebviewToHost `{ type:'open-doc'; artifactId }`, plus their entries in the HOST_TO_WEBVIEW_TYPES / WEBVIEW_TO_HOST_TYPES arrays. Additive; existing consumers ignore unknown types.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "protocol.ts declares docs-content (HostToWebview) + open-doc (WebviewToHost) with the stated fields; the *_TYPES arrays include them",
+          "docs-list/docs-decision + all existing message shapes are unchanged (additive only)"
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "docs-review-panel shell: renderShell has exactly one <script nonce=...> under strict CSP (the docs-content message the shell handles rides sc3)"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "New docs-review-client.ts (DocsReviewClient over the shared IpcClient)",
+        "summary": "Add vscode-plugin/src/chat/docs-review-client.ts: createDocsReviewClient(client) + DocsReviewClient (pending/content/approve/comment) + DocsContent type, wrapping workflow.pending/artifactContent/approve/resolveComment. pending() maps PendingArtifact -> DocsArtifactSummary + retains id->mdPath; every { error } arm throws. Pure/vscode-free (mirrors createDaemonConfigGateway).",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "exports createDocsReviewClient + DocsReviewClient/DocsContent; imports no vscode",
+          "pending() maps PendingArtifact->DocsArtifactSummary (+ id->mdPath); { error } throws; { artifacts:[] } -> []",
+          "content/approve/comment call the right rpc method with the right params; { error } throws"
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "docs-review-client: pending() maps PendingArtifact->DocsArtifactSummary + retains id->mdPath; { error } throws; { artifacts:[] } -> []"
+          },
+          {
+            "level": "unit",
+            "name": "docs-review-client: content(mdPath) returns { markdown, openQuestions, blocked }; { error } throws"
+          },
+          {
+            "level": "unit",
+            "name": "docs-review-client: approve(mdPath) -> rpc('workflow.approve',{artifactPath:mdPath}) returns WorkflowApproveResult verbatim; comment(id,note) -> rpc('workflow.resolveComment'); only client.rpc used"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "New docs-review-panel.ts (createDocsReviewHost + sc1 docs-review shell)",
+        "summary": "Add vscode-plugin/src/chat/docs-review-panel.ts: createDocsReviewHost(deps) over the injected ChatPanelChannel seam + DocsReviewClient. Renders the sc1 'docs-review' shell (one nonce'd CSP script, textContent/className only) with the pending list + body view + accept/reject/comment controls; open() posts docs-list from pending(); handleMessage fills open-doc (->content->docs-content) + docs-decision (accept->approve + re-fetch + surface skipped[]; !accept->comment, keep pending); holds id->mdPath in memory.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "createDocsReviewHost renders one nonce'd CSP script (sc1 docs-review surface); textContent/className only, no innerHTML/remote/asWebviewUri; imports no vscode",
+          "open() posts docs-list from client.pending(); open-doc -> client.content -> docs-content; empty/{error} handled as inline notices",
+          "docs-decision accept -> client.approve(mdPath) (+ re-fetch, skipped[] surfaced); reject-with-note -> client.comment; empty note is a no-op"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "docs-review-panel: open() posts docs-list from pending() (ac1); empty -> empty-state; { error } -> notice"
+          },
+          {
+            "level": "integration",
+            "name": "docs-review-panel: open-doc -> content(mdPath) -> posts docs-content; unknown id ignored; empty mdPath -> 'content unavailable' without content('')"
+          },
+          {
+            "level": "integration",
+            "name": "docs-review-panel: docs-decision accept -> approve(mdPath) (+ skipped surfaced + re-fetch); reject-with-note -> comment + stays pending; empty note is a no-op; no chat/orchestration path (k8)"
+          },
+          {
+            "level": "unit",
+            "name": "docs-review-panel shell: one nonce'd script + strict CSP + textContent/className only + sc1 docs-review surface class; no innerHTML/remote/asWebviewUri"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Contribute the insrc.chat.docsReview command in package.json",
+        "summary": "Add { command: 'insrc.chat.docsReview', title: 'Review pending documents', category: 'insrc' } to vscode-plugin/package.json contributes.commands (mirrors insrc.chat.open). Update the EXACT-set manifest tests (packaging cmd list / truthful-sync count) if they trip (S003 precedent).",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "package.json contributes.commands has insrc.chat.docsReview",
+          "any EXACT-set manifest test (command list / count) is updated to stay green"
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "extension-chat-wiring: package.json contributes insrc.chat.docsReview (+ any EXACT-set manifest count updated)"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Wire extension.ts: construct the client + host + register the command",
+        "summary": "In extension.ts, inside the insrc.chat.enabled gate, construct createDocsReviewClient over the shared IpcClient (the one already used for the config gateway) + createDocsReviewHost with the real createWebviewPanel seam, and register insrc.chat.docsReview to open it (mirroring insrc.chat.open).",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t2",
+          "t3",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "extension.ts constructs createDocsReviewClient(sharedClient) + createDocsReviewHost with the real createWebviewPanel seam",
+          "insrc.chat.docsReview is registered inside the chatEnabled gate; no direct cloud REST (k2)"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "extension-chat-wiring: extension.ts registers insrc.chat.docsReview inside the chatEnabled gate + constructs createDocsReviewHost with a DocsReviewClient over the shared client"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Tests: client unit + host integration + wiring + full sweep",
+        "summary": "Add docs-review-client.test.ts + docs-review-panel.test.ts (FakePanel + fake IpcClient/DocsReviewClient) + extend extension-chat-wiring.test.ts; each of ac1-ac3 gets a passing proving test. Run the full sweep + tsc --noEmit.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3",
+          "t4",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "ac1, ac2, ac3 each have >=1 passing proving test",
+          "docs-review-client.test.ts + docs-review-panel.test.ts + the extended wiring suite pass under tsx --test; tsc --noEmit clean",
+          "the docs-review shell CSP/one-script/no-innerHTML invariants are asserted"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "docs-review-client.ts + docs-review-panel.ts import nothing from 'vscode' (source-scan)"
+          },
+          {
+            "level": "smoke",
+            "name": "full vscode-plugin sweep green under tsx --test + tsc --noEmit clean; ac1-ac3 all have a passing proving test"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "pending() maps PendingArtifact -> DocsArtifactSummary + retains id->mdPath",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "pending() throws on { error }; { artifacts:[] } -> []",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "content(mdPath) returns { markdown, openQuestions, blocked }; { error } -> throws",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "approve(mdPath) calls rpc('workflow.approve',{artifactPath:mdPath}) + returns WorkflowApproveResult verbatim",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "comment(id,note) calls rpc('workflow.resolveComment'); only client.rpc used (no cloud path)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "open() posts docs-list from pending() (ac1); empty -> empty-state; { error } -> notice",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "open-doc -> content(mdPath) -> posts docs-content; unknown id ignored; empty mdPath -> 'content unavailable' without content('')",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "docs-decision accept -> approve(mdPath); skipped[] block reason surfaced + artifact stays; success -> re-fetch pending()",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "docs-decision reject with a note -> comment(id,note) + stays pending; empty note is a no-op",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "the host invokes no chat/StreamAdapter/orchestration path (k8)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "renderShell() = exactly one <script nonce=...> under strict CSP; no innerHTML/remote/asWebviewUri",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "list/body/controls via textContent + className only, sc1 'docs-review' surface class",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "package.json contributes insrc.chat.docsReview",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "extension.ts registers it inside the insrc.chat.enabled gate + constructs createDocsReviewHost with a DocsReviewClient over the shared client",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "docs-review-client.ts + docs-review-panel.ts import nothing from 'vscode'",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s7 contractDetails: DocsReviewClient (pending/content/approve/comment) over the shared IpcClient wrapping the existing workflow.pending/artifactContent/approve/resolveComment daemon IPCs; createDocsReviewHost turn/message handling"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s7 dataModelChanges: insrc.chat.docsReview command (package.json) + extension.ts wiring behind insrc.chat.enabled"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s7 interactionWithShared/contractDetails: additive sc3 docs-content/open-doc + the sc1 docs-review terminal webview shell (one nonce'd CSP script, textContent/className)"
+    }
+  ]
+}

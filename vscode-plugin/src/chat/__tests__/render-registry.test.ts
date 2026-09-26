@@ -53,6 +53,7 @@ interface Registry {
   toViewModel(entry: unknown): RowViewModel;
   appendKeyed(vm: unknown, key: string | null): FakeNode | null;
   resetKeys(): void;
+  onApprovalDecision(cb: (requestId: string, decision: 'approve' | 'deny') => void): void;
 }
 function makeRegistry(): { reg: Registry; appended: FakeNode[] } {
   const { document } = fakeDocument();
@@ -364,4 +365,48 @@ test('S003 k6 c: inline-diff + tool-result wrap their body in the collapse primi
     assert.ok(wrap, `${kind} wraps its body in the collapse primitive`);
     assert.match(wrap!.className, /insrc-collapse--collapsed/, `${kind} is default-collapsed (collapsed to caption)`);
   }
+});
+
+// ---- S004 t6: the approval-card renderer -------------------------------------
+
+test("S004 t6: the 'approval' renderer builds an icon-only approve/deny card via className/textContent", () => {
+  const { reg } = makeRegistry();
+  const vm = {
+    kind: 'approval',
+    text: 'Permission request',
+    collapsible: false,
+    meta: { requestId: 'perm-1', title: 'Run a shell command', detail: 'rm -rf build', toolName: 'Bash' },
+  };
+  const card = reg.renderRow(vm);
+  assert.ok(card, 'rendered a node');
+  assert.ok(card!.className.split(' ').includes('insrc-approval'), 'card carries the insrc-approval class');
+  assert.equal(card!.attrs['data-request-id'], 'perm-1', 'card carries the correlation id');
+  // Title + detail come from meta, via textContent (no innerHTML).
+  assert.equal(findByClass(card!, 'insrc-approval__title')?.textContent, 'Run a shell command');
+  assert.equal(findByClass(card!, 'insrc-approval__detail')?.textContent, 'rm -rf build');
+  // Icon-only buttons: glyphs only, no text label (k6 i).
+  const approve = findByClass(card!, 'insrc-approval__btn--approve')!;
+  const deny = findByClass(card!, 'insrc-approval__btn--deny')!;
+  assert.equal(approve.tag, 'button');
+  assert.equal(deny.tag, 'button');
+  assert.equal(approve.textContent, '✓', 'approve is an icon-only check');
+  assert.equal(deny.textContent, '✗', 'deny is an icon-only cross');
+  assert.equal(approve.attrs['aria-label'], 'approve', 'a11y label present since the button is icon-only');
+  assert.equal(deny.attrs['aria-label'], 'deny');
+});
+
+test('S004 t6: card buttons invoke the registered decision sink with (requestId, decision)', () => {
+  const { reg } = makeRegistry();
+  const decisions: Array<[string, string]> = [];
+  reg.onApprovalDecision((requestId, decision) => decisions.push([requestId, decision]));
+  const card = reg.renderRow({ kind: 'approval', text: '', collapsible: false, meta: { requestId: 'perm-9', title: 'x' } })!;
+  findByClass(card, 'insrc-approval__btn--approve')!.click();
+  findByClass(card, 'insrc-approval__btn--deny')!.click();
+  assert.deepEqual(decisions, [['perm-9', 'approve'], ['perm-9', 'deny']]);
+});
+
+test('S004 t6: an approval card with no decision sink registered does not throw on click', () => {
+  const { reg } = makeRegistry();
+  const card = reg.renderRow({ kind: 'approval', text: '', collapsible: false, meta: { requestId: 'perm-2', title: 'y' } })!;
+  assert.doesNotThrow(() => findByClass(card, 'insrc-approval__btn--approve')!.click());
 });

@@ -129,7 +129,17 @@ export const RENDER_REGISTRY_STYLE =
   `.insrc-collapse__chevron{color:var(--muted);cursor:pointer;user-select:none;flex:0 0 auto;line-height:1.5;}` +
   `.insrc-collapse__chevron:hover{color:var(--accent);}` +
   `.insrc-collapse__body{flex:1 1 auto;min-width:0;}` +
-  `.insrc-collapse--collapsed .insrc-collapse__body{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}`;
+  `.insrc-collapse--collapsed .insrc-collapse__body{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}` +
+  // S004: the in-chat permission-approval card (k6 i). Icon-only approve/deny buttons
+  // (▹ green ✓ / red ✗); the whole card is bordered to read as an action, not prose.
+  `.insrc-approval{border:1px solid var(--border);border-radius:4px;padding:8px 10px;margin:2px 0;display:flex;flex-direction:column;gap:4px;}` +
+  `.insrc-approval__title{font-weight:600;}` +
+  `.insrc-approval__detail{color:var(--muted);white-space:pre-wrap;word-break:break-word;}` +
+  `.insrc-approval__actions{display:flex;gap:8px;margin-top:2px;}` +
+  `.insrc-approval__btn{cursor:pointer;border:1px solid var(--border);background:var(--bg-inset);border-radius:3px;padding:2px 8px;line-height:1.4;font-size:13px;}` +
+  `.insrc-approval__btn--approve{color:var(--accent);}` +
+  `.insrc-approval__btn--deny{color:var(--danger,#e06c75);}` +
+  `.insrc-approval__btn:hover{filter:brightness(1.2);}`;
 
 /**
  * The webview-embeddable factory source. Evaluating it yields
@@ -167,6 +177,10 @@ export function renderRegistryWebviewSource(): string {
     `chev.textContent=collapsed?'\\u25b8':'\\u25be';});` +
     `wrap.appendChild(chev);wrap.appendChild(body);return wrap;}` +
     `var host={collapsible:collapsible,tokens:{}};` +
+    // S004: the approval-card decision sink. chat-panel (t7) registers a callback via
+    // onApprovalDecision(cb); the card buttons call it with (requestId, decision). Kept
+    // as a factory-level hook so the renderer stays CSP-safe (no postMessage/vscode ref).
+    `var DEC=null;function onApprovalDecision(cb){DEC=cb;}` +
     // S003 t2: a message row is role-classed (user vs assistant tone, ac1) and, when long
     // (>3 lines or a long single line), its content is wrapped in the sc1 collapse primitive
     // (default-collapsed 3-line preview, ac2). Short messages render un-wrapped. textContent only (k1).
@@ -257,6 +271,25 @@ export function renderRegistryWebviewSource(): string {
     `return d;}` +
     `register('inline-diff',function(vm,host){return captionRow(vm,host,(vm&&vm.meta&&vm.meta.caption)||'diff');});` +
     `register('tool-result',function(vm,host){return captionRow(vm,host,(vm&&vm.meta&&vm.meta.caption)||'result');});` +
+    // S004: the approval card (k6 i). requestId/title/detail ride vm.meta (chat-panel's live
+    // handler builds the vm from an ApprovalRequestEvent). Icon-only approve(\\u2713)/deny(\\u2717)
+    // buttons call the decision sink with (requestId, decision). textContent/className only (k1).
+    `register('approval',function(vm){` +
+    `var meta=(vm&&vm.meta)||{};` +
+    `var rid=meta.requestId!=null?String(meta.requestId):'';` +
+    `var card=document.createElement('div');card.className='insrc-approval';card.setAttribute('data-request-id',rid);` +
+    `var title=document.createElement('div');title.className='insrc-approval__title';` +
+    `title.textContent=meta.title!=null?String(meta.title):((vm&&vm.text)||'Permission request');card.appendChild(title);` +
+    `if(meta.detail!=null&&String(meta.detail)!==''){var det=document.createElement('div');det.className='insrc-approval__detail';det.textContent=String(meta.detail);card.appendChild(det);}` +
+    `var actions=document.createElement('div');actions.className='insrc-approval__actions';` +
+    `var approve=document.createElement('button');approve.className='insrc-approval__btn insrc-approval__btn--approve';` +
+    `approve.setAttribute('aria-label','approve');approve.setAttribute('title','Approve');approve.textContent='\\u2713';` +
+    `var deny=document.createElement('button');deny.className='insrc-approval__btn insrc-approval__btn--deny';` +
+    `deny.setAttribute('aria-label','deny');deny.setAttribute('title','Deny');deny.textContent='\\u2717';` +
+    `approve.addEventListener('click',function(){if(DEC)DEC(rid,'approve');});` +
+    `deny.addEventListener('click',function(){if(DEC)DEC(rid,'deny');});` +
+    `actions.appendChild(approve);actions.appendChild(deny);card.appendChild(actions);` +
+    `return card;});` +
     // S001 t5 (lc1): keyed append. A row rendered with a key is remembered; re-appending the
     // SAME key (a live echo and its session-restored twin) reconciles to the one existing node
     // instead of double-rendering. resetKeys() is called when the transcript is cleared on
@@ -264,6 +297,6 @@ export function renderRegistryWebviewSource(): string {
     `var KEYS={};` +
     `function appendKeyed(vm,key){if(key==null)return renderRow(vm);if(KEYS[key])return KEYS[key];var n=renderRow(vm);if(n)KEYS[key]=n;return n;}` +
     `function resetKeys(){KEYS={};}` +
-    `return {register:register,renderRow:renderRow,collapsible:collapsible,toViewModel:toViewModel,appendKeyed:appendKeyed,resetKeys:resetKeys};}`
+    `return {register:register,renderRow:renderRow,collapsible:collapsible,toViewModel:toViewModel,appendKeyed:appendKeyed,resetKeys:resetKeys,onApprovalDecision:onApprovalDecision};}`
   );
 }

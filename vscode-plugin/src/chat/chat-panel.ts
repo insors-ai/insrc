@@ -203,7 +203,6 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     const nonce = genNonce();
     const style = renderStyle(theme); // a complete <style>…</style> (sc1 palette: --it-* tokens)
     const csp = `default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';`;
-    const cls = surfaceClass('chat');
     // The chat-surface LAYOUT (S003), ported VERBATIM from the reviewed S001 design mock
     // (docs/epics/…/S001/mocks.html): a single-dark terminal .box (chrome header · .pad transcript
     // with row/gutter markers · dashed .inputline with a ❯ caret · .statusbar), filling the panel
@@ -388,7 +387,13 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `<!DOCTYPE html><html><head><meta charset="utf-8">` +
       `<meta http-equiv="Content-Security-Policy" content="${attr(csp)}">` +
       `${style}${layoutStyle}</head>` +
-      `<body class="insrc-term ${cls}">` +
+      // The body carries ONLY `insrc-term` (which defines the --it-* tokens + base font the marker
+      // rows inherit). It must NOT carry a surface class (surfaceClass('chat') etc.): that rule is
+      // `.insrc-term-chat{display:block;border:…}` and, as a class (0,1,0), it OVERRIDES the element
+      // rule `body{display:flex}` (0,0,1) — collapsing the whole flex-fill layout so the panel box
+      // only grows to content height (the "box doesn't fill / input floats mid-panel" bug). Surface
+      // classes belong on the inner surface divs, never the root body.
+      `<body class="insrc-term">` +
       `<div class="box">` +
       `<div class="chrome">` +
       `<span class="dot"></span><span class="title">insrc</span><span class="sesstitle" id="insrc-sesstitle"></span>` +

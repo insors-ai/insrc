@@ -1080,6 +1080,27 @@ test('S002 ac1: the fixed-region layout holds — #insrc-term is the only scroll
   assert.match(html, /\.inputline\{[^}]*flex:0 0 auto/, 'the input line is fixed (flex:0)');
 });
 
+test('S001 (bugfix): the <body> carries no surface class — so .insrc-term-<surface>{display:block} cannot override body{display:flex} and collapse the flex-fill', () => {
+  const fc = fakeChannel();
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter([]) }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+    genNonce: () => 'FIXEDNONCE',
+  });
+  host.open();
+  const html = fc.html();
+  const body = html.match(/<body class="([^"]*)"/);
+  assert.ok(body, 'the shell has a <body class="…">');
+  const classes = body![1]!.split(/\s+/).filter(Boolean);
+  assert.deepEqual(classes, ['insrc-term'], 'body carries ONLY insrc-term (the --it-* token host), never a surface class');
+  // A surface class rule IS emitted in the <style> (for the inner surface divs) with display:block —
+  // proving the regression is real: had it been on <body>, its 0,1,0 specificity would beat body{}.
+  assert.match(html, /\.insrc-term-chat \{ display: block;/, 'the surface rule still exists (for surface divs, not the body)');
+  assert.match(html, /body\{[^}]*display:flex/, 'the body is the flex column that fills the panel');
+});
+
 test('S002 ac1/k1: all pre-existing element ids remain; one inline script; no innerHTML/remote origin', () => {
   const fc = fakeChannel();
   const host = createChatPanelHost({

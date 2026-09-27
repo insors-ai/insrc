@@ -151,6 +151,21 @@ export const epicFrameSchema = {
 				additionalProperties: false,
 			},
 		},
+		// OPTIONAL doc-level functional requirements (S001 back-fill). The model
+		// emits outcome-worded STATEMENTS only — no id, no scope. `defineSynthesizer`
+		// mints the stable FR ids (scope 'doc') via `mintFrId`. Absent-safe.
+		functionalRequirements: {
+			type: 'array',
+			items: {
+				type: 'object',
+				required: ['statement'],
+				properties: {
+					statement: { type: 'string', minLength: 1 },
+					rationale: { type: 'string', minLength: 1 },
+				},
+				additionalProperties: false,
+			},
+		},
 		citations: {
 			type: 'array',
 			minItems: 1,
@@ -232,6 +247,21 @@ export const storiesComposeSchema = {
 					existingCapabilityRefs: {
 						type:  'array',
 						items: { type: 'string', pattern: '^c\\d+$' },
+					},
+					// OPTIONAL per-story functional requirements (S001 back-fill). Outcome-worded
+					// STATEMENTS only — no id, no scope; `defineSynthesizer` mints stable FR ids
+					// (scope 'item', itemRef = this story's id) via `mintFrId`. Absent-safe.
+					functionalRequirements: {
+						type: 'array',
+						items: {
+							type: 'object',
+							required: ['statement'],
+							properties: {
+								statement: { type: 'string', minLength: 1 },
+								rationale: { type: 'string', minLength: 1 },
+							},
+							additionalProperties: false,
+						},
 					},
 				},
 				additionalProperties: false,

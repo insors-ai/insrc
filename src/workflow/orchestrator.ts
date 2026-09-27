@@ -127,6 +127,12 @@ import {
 	type AmendmentRecord,
 } from './amendments/index.js';
 import { isAmendment } from './amendments/types.js';
+import { mintFrId } from './id.js';
+import {
+	validateFunctionalDefinition,
+	type FunctionalDefinition,
+	type FunctionalRequirement,
+} from './artifacts/functional-definition.js';
 import { assertEpicHash, computeEpicHash } from './hash.js';
 import { SIZE_CLASSES, type SizeClass } from './triage/types.js';
 import { isStandaloneParams, standaloneStoryContext } from './runners/design-story/standalone.js';
@@ -917,6 +923,7 @@ function defineSynthesizer(
 		'- `citations[]` MUST be the UNION of s2.citations + s3.citations, de-duplicated by id. No new citation ids invented at this step.',
 		'- `openQuestions` is populated from s4 verdict: every `missed`/`ambiguous` result (except the sb1/sb2/sb3 hard-fail items — those fail the whole synthesize) becomes an open question phrased as "Item <itemId>: <notes|verdict>".',
 		'- `body.flavor` matches s1.flavor exactly.',
+		'- Do NOT emit `functionalDefinition` (or any FR ids) in the body: the framework assembles the functional-definition record from the FR statements elicited in s2/s3 and mints its stable ids deterministically after this step.',
 	].join('\n');
 	const userTurn = [
 		`Focus: ${intent.focus}`,
@@ -1001,6 +1008,72 @@ function persistScopeAnalyzeCache(epicHash: string, bundles: unknown): void {
 	} catch { /* cache is best-effort */ }
 }
 
+/** An FR statement as elicited (statement + optional rationale, NO id/scope). */
+interface FrStatement { readonly statement?: unknown; readonly rationale?: unknown }
+
+/**
+ * S001 back-fill: assemble the functional-definition record from the FR
+ * STATEMENTS elicited in s2 (`epic.frame`, doc-level) + s3 (`stories.compose`,
+ * per-story). Ids are MINTED here — off the model — via `mintFrId` in a fixed
+ * order (doc-level first by emission order, then per-story in story order), so
+ * they stay stable + sequence-numbered (S001's guarantee). Scope/itemRef are
+ * inferred from the elicitation site, so a per-item FR can never carry a
+ * dangling itemRef. Returns `{}` when no FRs were elicited (absent-safe), `{ fd }`
+ * for a validated record, or `{ error }` when the assembled record fails
+ * `validateFunctionalDefinition`.
+ */
+export function assembleFunctionalDefinition(
+	stepOutputs:  Readonly<Record<string, unknown>>,
+	stories:      readonly { readonly id: string }[],
+	epicHash:     string,
+	createdAtISO: string,
+): { fd?: FunctionalDefinition; error?: string } {
+	const clean = (v: unknown): string | undefined =>
+		typeof v === 'string' && v.trim().length > 0 ? v : undefined;
+	const reqs: FunctionalRequirement[] = [];
+	// Doc-level FRs from s2 (epic.frame).
+	const s2 = stepOutputs['s2'] as { functionalRequirements?: readonly FrStatement[] } | undefined;
+	let docOrd = 0;
+	for (const fr of s2?.functionalRequirements ?? []) {
+		const statement = clean(fr.statement);
+		if (statement === undefined) continue;
+		docOrd += 1;
+		const rationale = clean(fr.rationale);
+		reqs.push({
+			id:        mintFrId(epicHash, createdAtISO, docOrd),
+			statement,
+			scope:     'doc',
+			...(rationale !== undefined ? { rationale } : {}),
+		});
+	}
+	// Per-story FRs from s3 (stories.compose); ordinal restarts per story (the
+	// `S<nnn>` segment disambiguates), itemRef = the story id.
+	const s3 = stepOutputs['s3'] as { stories?: readonly { id?: unknown; functionalRequirements?: readonly FrStatement[] }[] } | undefined;
+	for (const story of s3?.stories ?? []) {
+		const storyId = clean(story.id);
+		if (storyId === undefined) continue;
+		let itemOrd = 0;
+		for (const fr of story.functionalRequirements ?? []) {
+			const statement = clean(fr.statement);
+			if (statement === undefined) continue;
+			itemOrd += 1;
+			const rationale = clean(fr.rationale);
+			reqs.push({
+				id:        mintFrId(epicHash, createdAtISO, itemOrd, storyId),
+				statement,
+				scope:     'item',
+				itemRef:   storyId,
+				...(rationale !== undefined ? { rationale } : {}),
+			});
+		}
+	}
+	if (reqs.length === 0) return {};
+	const fd: FunctionalDefinition = { requirements: reqs };
+	const err = validateFunctionalDefinition(fd, new Set(stories.map(s => s.id)));
+	if (err !== null) return { error: `functionalDefinition assembly invalid: ${err}` };
+	return { fd };
+}
+
 function finalizeDefine(
 	intent:      WorkflowIntent,
 	stepOutputs: Readonly<Record<string, unknown>>,
@@ -1058,12 +1131,23 @@ function finalizeDefine(
 	const seededFromSpec = typeof intent.params['specHash'] === 'string' && intent.params['specHash'].length > 0
 		? intent.params['specHash'] as string
 		: undefined;
+	// createdAt is the mint input for FR ids (below) AND the meta stamp — compute once.
+	const createdAt = new Date().toISOString();
+	// S001 back-fill: assemble the functional-definition record from the FR
+	// statements elicited in s2/s3, minting stable ids off the model here.
+	const frAssembly = assembleFunctionalDefinition(stepOutputs, body.stories, epicHash, createdAt);
+	if (frAssembly.error !== undefined) {
+		return { ok: false, failure: schemaFailure(frAssembly.error) };
+	}
+	const finalBody = frAssembly.fd !== undefined
+		? { ...body, functionalDefinition: frAssembly.fd }
+		: body;
 	const artifact: DefineArtifact = {
 		meta: {
 			workflow:      'define',
 			runId,
 			repoPath:      intent.repoPath,
-			createdAt:     new Date().toISOString(),
+			createdAt,
 			attribution:   attribution ?? singleModelAttribution(model),
 			elapsedMs,
 			repoIndexedAt: intent.repoIndexedAt,
@@ -1072,7 +1156,7 @@ function finalizeDefine(
 			epicSlug,
 			...(seededFromSpec !== undefined ? { seededFromSpec } : {}),
 		},
-		body,
+		body: finalBody,
 		citations,
 	};
 	const renderedBody = renderDefineMarkdown(artifact);

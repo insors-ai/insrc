@@ -264,10 +264,12 @@ test('runCodeReview: all four dimensions empty => a written PASS record (an empt
 	assert.equal(writes.length, 2);
 });
 
-// ---- DEFAULT_DEPS wires the four shipped judges in fixed order ----
+// ---- DEFAULT_DEPS wires the shipped judges in fixed order ----
 
-test('DEFAULT_DEPS: wires exactly the four shipped judges in [adherence,conventions,coverage,quality] order + writeAtomic', () => {
-	assert.deepEqual(DEFAULT_DEPS.judges.map(j => j.dimension), ['adherence', 'conventions', 'coverage', 'quality']);
+test('DEFAULT_DEPS: wires the base four judges + conditional functional-coverage last, in fixed order + writeAtomic', () => {
+	// functional-coverage (sc2 — S001) is listed last but conditionally applied per
+	// subject by effectiveJudges; DEFAULT_JUDGES carries all five slots.
+	assert.deepEqual(DEFAULT_DEPS.judges.map(j => j.dimension), ['adherence', 'conventions', 'coverage', 'quality', 'functional-coverage']);
 	assert.equal(typeof DEFAULT_DEPS.assembleGrounding, 'function');
 	assert.equal(typeof DEFAULT_DEPS.write, 'function');
 });

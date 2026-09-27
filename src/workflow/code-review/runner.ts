@@ -49,6 +49,7 @@ import { judgeAdherence } from './dimensions/adherence.js';
 import { judgeConventions } from './dimensions/conventions.js';
 import { judgeCoverage } from './dimensions/coverage.js';
 import { judgeQuality } from './dimensions/quality.js';
+import { judgeFunctionalCoverage, hasFunctionalDefinition } from './dimensions/functional-coverage.js';
 
 const log = getLogger('code-review:runner');
 
@@ -105,13 +106,26 @@ export interface CodeReviewProgress {
 	readonly detail?:    string | undefined;
 }
 
-/** The four shipped judges, in fixed evaluation order. */
+/** The shipped judges, in fixed evaluation order. `functional-coverage` (sc2 —
+ *  S001) is listed LAST but is CONDITIONAL: `effectiveJudges` drops it for a
+ *  subject with no functionalDefinition, so non-FR work keeps exactly the base
+ *  four (absent-safe). */
 const DEFAULT_JUDGES: readonly JudgeSlot[] = [
-	{ dimension: 'adherence',   judge: judgeAdherence },
-	{ dimension: 'conventions', judge: judgeConventions },
-	{ dimension: 'coverage',    judge: judgeCoverage },
-	{ dimension: 'quality',     judge: judgeQuality },
+	{ dimension: 'adherence',           judge: judgeAdherence },
+	{ dimension: 'conventions',         judge: judgeConventions },
+	{ dimension: 'coverage',            judge: judgeCoverage },
+	{ dimension: 'quality',             judge: judgeQuality },
+	{ dimension: 'functional-coverage', judge: judgeFunctionalCoverage },
 ];
+
+/** The judge slots that actually run for THIS subject: the base four always, plus
+ *  `functional-coverage` only when the subject carries a non-empty
+ *  functionalDefinition. Applied to both the serial loop and the expected-dimension
+ *  set fed to validateArtifact, so they can never disagree. */
+export function effectiveJudges(judges: readonly JudgeSlot[], subject: CodeReviewSubject): readonly JudgeSlot[] {
+	if (hasFunctionalDefinition(subject)) return judges;
+	return judges.filter(s => s.dimension !== 'functional-coverage');
+}
 
 /** The real dependency wiring: the four shipped judges + S001's assembler
  *  (backed by the LMDB graph) + writeAtomic. */
@@ -153,8 +167,9 @@ export async function runCodeReview(
 		//    signal is checked at every iteration boundary; a throwing judge
 		//    propagates to the catch below (=> {ok:false}, no write, later judges
 		//    never run).
+		const judges = effectiveJudges(deps.judges, subject);
 		const dimensions: DimensionResult[] = [];
-		for (const slot of deps.judges) {
+		for (const slot of judges) {
 			if (opts.signal?.aborted) return fail('aborted', emit);
 			emit({ phase: 'dimension-start', dimension: slot.dimension });
 			const result = await slot.judge(subject, grounding, provider);
@@ -172,7 +187,7 @@ export async function runCodeReview(
 		const artifact = buildArtifact(subject, dimensions, verdict, counts, opts, startedAtMs);
 
 		// 5. VALIDATE in memory — the last gate before the irreversible write.
-		const invalid = validateArtifact(artifact, deps.judges.map(j => j.dimension));
+		const invalid = validateArtifact(artifact, judges.map(j => j.dimension));
 		if (invalid !== null) return fail(`invalid code-review record: ${invalid}`, emit);
 
 		// 6. Finalize: write BOTH files (json load-bearing; md a deterministic

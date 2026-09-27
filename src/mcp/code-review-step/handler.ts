@@ -34,6 +34,7 @@ import { buildAdherencePrompt } from '../../workflow/code-review/dimensions/adhe
 import { buildConventionsPrompt } from '../../workflow/code-review/dimensions/conventions.js';
 import { buildCoveragePrompt } from '../../workflow/code-review/dimensions/coverage.js';
 import { buildQualityPrompt } from '../../workflow/code-review/dimensions/quality.js';
+import { buildFunctionalCoveragePrompt, hasFunctionalDefinition } from '../../workflow/code-review/dimensions/functional-coverage.js';
 import type {
 	CodeReviewGrounding,
 	CodeReviewSubject,
@@ -51,9 +52,18 @@ import type {
 
 const log = getLogger('mcp:code-review-step:handler');
 
-/** The four dimensions in fixed evaluation order — the same set the S006
- *  runner's DEFAULT_JUDGES uses; the judgements turn must cover exactly these. */
+/** The base four dimensions in fixed evaluation order — the same set the S006
+ *  runner's DEFAULT_JUDGES uses. `functional-coverage` (sc2 — S001) is a
+ *  CONDITIONAL fifth appended by `expectedDimensions` only when the subject
+ *  carries a non-empty functionalDefinition, so non-FR reviews cover exactly the
+ *  base four (absent-safe). */
 const DIMENSIONS: readonly ReviewDimension[] = ['adherence', 'conventions', 'coverage', 'quality'];
+
+/** The dimensions the judgements turn must cover for THIS subject: the base four,
+ *  plus functional-coverage when the subject declares functional requirements. */
+export function expectedDimensions(subject: CodeReviewSubject): readonly ReviewDimension[] {
+	return hasFunctionalDefinition(subject) ? [...DIMENSIONS, 'functional-coverage'] : DIMENSIONS;
+}
 
 /** Injectable seams so the handler tests stub the daemon/graph/runner. The s9
  *  gate adds `fetchFreshness` (the daemon freshness IPC), plus `sleep`/`now`
@@ -111,43 +121,45 @@ const DUMMY_PROVIDER = { capabilities: { structuredOutput: true } } as unknown a
  *  match — one DimensionResult per dimension; each finding pins its location to
  *  a `file:line` string (a malformed location is a bad-judgements error, never a
  *  silent drop). Handed back in the emit_judgements frame. */
-const JUDGEMENTS_SCHEMA: Record<string, unknown> = {
-	type: 'object',
-	additionalProperties: false,
-	required: ['judgements'],
-	properties: {
-		judgements: {
-			type: 'array',
-			minItems: 4,
-			maxItems: 4,
-			items: {
-				type: 'object',
-				additionalProperties: false,
-				required: ['dimension', 'findings'],
-				properties: {
-					dimension: { type: 'string', enum: [...DIMENSIONS] },
-					findings: {
-						type: 'array',
-						items: {
-							type: 'object',
-							additionalProperties: false,
-							required: ['dimension', 'severity', 'location', 'message'],
-							properties: {
-								dimension:      { type: 'string', enum: [...DIMENSIONS] },
-								severity:       { type: 'string', enum: ['HIGH', 'MED', 'LOW'] },
-								location:       { type: 'string', description: '`file:line` inside the Story\'s changed set' },
-								message:        { type: 'string' },
-								expectationRef: { type: 'string' },
-								counterpartRef: { type: 'string' },
-								confidence:     { type: 'string', enum: ['observation', 'breach'] },
+export function buildJudgementsSchema(dims: readonly ReviewDimension[]): Record<string, unknown> {
+	return {
+		type: 'object',
+		additionalProperties: false,
+		required: ['judgements'],
+		properties: {
+			judgements: {
+				type: 'array',
+				minItems: dims.length,
+				maxItems: dims.length,
+				items: {
+					type: 'object',
+					additionalProperties: false,
+					required: ['dimension', 'findings'],
+					properties: {
+						dimension: { type: 'string', enum: [...dims] },
+						findings: {
+							type: 'array',
+							items: {
+								type: 'object',
+								additionalProperties: false,
+								required: ['dimension', 'severity', 'location', 'message'],
+								properties: {
+									dimension:      { type: 'string', enum: [...dims] },
+									severity:       { type: 'string', enum: ['HIGH', 'MED', 'LOW'] },
+									location:       { type: 'string', description: '`file:line` inside the Story\'s changed set' },
+									message:        { type: 'string' },
+									expectationRef: { type: 'string' },
+									counterpartRef: { type: 'string' },
+									confidence:     { type: 'string', enum: ['observation', 'breach'] },
+								},
 							},
 						},
 					},
 				},
 			},
 		},
-	},
-};
+	};
+}
 
 export async function handleCodeReviewStep(
 	input: unknown,
@@ -362,18 +374,21 @@ function emitJudgementsResult(
 	grounding: CodeReviewGrounding,
 	token:     string,
 ): CodeReviewStepOutput {
+	const dims = expectedDimensions(subject);
+	const prompts = [
+		buildAdherencePrompt(subject, grounding, undefined),
+		buildConventionsPrompt(subject, grounding, undefined),
+		buildCoveragePrompt(subject, grounding, undefined),
+		buildQualityPrompt(subject, grounding, undefined),
+		...(hasFunctionalDefinition(subject) ? [buildFunctionalCoveragePrompt(subject, grounding, undefined)] : []),
+	];
 	return {
 		next:     'emit_judgements',
-		guidance: 'Judge each of the four dimensions (adherence, conventions, coverage, quality) over the grounding below, ' +
+		guidance: `Judge each of the ${dims.length} dimensions (${dims.join(', ')}) over the grounding below, ` +
 			'then call phase=\'judgements\' with judgements=<your JSON> + state. Emit one DimensionResult per dimension; each ' +
 			'finding\'s location must be a `file:line` inside the Story\'s changed set.',
-		prompts: [
-			buildAdherencePrompt(subject, grounding, undefined),
-			buildConventionsPrompt(subject, grounding, undefined),
-			buildCoveragePrompt(subject, grounding, undefined),
-			buildQualityPrompt(subject, grounding, undefined),
-		],
-		schema:    JUDGEMENTS_SCHEMA,
+		prompts,
+		schema:    buildJudgementsSchema(dims),
 		grounding,
 		state:     token,
 	};
@@ -434,7 +449,7 @@ async function handleJudgements(
 	// state; write persists via writeAtomic. So the record is byte-identical to
 	// the daemon-driven path (ac3/k2).
 	const injected: CodeReviewRunnerDeps = {
-		judges: DIMENSIONS.map((dimension) => ({
+		judges: expectedDimensions(payload.subject).map((dimension) => ({
 			dimension,
 			// eslint-disable-next-line @typescript-eslint/require-await
 			judge: async (): Promise<DimensionResult> => byDimension.get(dimension)!,
@@ -500,6 +515,7 @@ function validateJudgements(raw: readonly DimensionResult[] | undefined, subject
 		return { ok: false, message: 'judgements is missing or empty; supply one DimensionResult per dimension.' };
 	}
 	const changed = new Set(subject.changedFiles);
+	const expected = expectedDimensions(subject);
 	const seen = new Set<ReviewDimension>();
 	const byDimension = new Map<ReviewDimension, DimensionResult>();
 
@@ -507,8 +523,8 @@ function validateJudgements(raw: readonly DimensionResult[] | undefined, subject
 		if (typeof dr !== 'object' || dr === null || typeof dr.dimension !== 'string') {
 			return { ok: false, message: 'each judgement must be a DimensionResult with a `dimension` + `findings`.' };
 		}
-		if (!DIMENSIONS.includes(dr.dimension as ReviewDimension)) {
-			return { ok: false, message: `unknown dimension '${dr.dimension}'; expected one of ${DIMENSIONS.join(', ')}.` };
+		if (!expected.includes(dr.dimension as ReviewDimension)) {
+			return { ok: false, message: `unknown dimension '${dr.dimension}'; expected one of ${expected.join(', ')}.` };
 		}
 		const dimension = dr.dimension as ReviewDimension;
 		if (seen.has(dimension)) {
@@ -529,7 +545,7 @@ function validateJudgements(raw: readonly DimensionResult[] | undefined, subject
 		byDimension.set(dimension, { dimension, findings: kept });
 	}
 
-	const missing = DIMENSIONS.filter(d => !seen.has(d));
+	const missing = expected.filter(d => !seen.has(d));
 	if (missing.length > 0) {
 		return { ok: false, message: `missing dimension(s): ${missing.join(', ')}.` };
 	}

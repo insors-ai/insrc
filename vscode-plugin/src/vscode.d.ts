@@ -89,6 +89,15 @@ declare module 'vscode' {
     onDidDispose(listener: () => unknown): Disposable;
   }
 
+  /**
+   * S001 (bugfix): restores a serialized webview panel across a window reload / extension
+   * update. The extension registers one per viewType; VS Code calls deserializeWebviewPanel
+   * with the restored panel so the host can re-wire it (else the panel is a dead shell).
+   */
+  export interface WebviewPanelSerializer {
+    deserializeWebviewPanel(panel: WebviewPanel, state: unknown): Thenable<void> | void;
+  }
+
   export namespace window {
     export function createStatusBarItem(alignment?: StatusBarAlignment, priority?: number): StatusBarItem;
     export function showInformationMessage(message: string, options: MessageOptions, ...items: string[]): PromiseLike<string | undefined>;
@@ -108,6 +117,8 @@ declare module 'vscode' {
       items: readonly T[] | PromiseLike<readonly T[]>,
       options?: { placeHolder?: string | undefined },
     ): PromiseLike<T | undefined>;
+    /** S001 (bugfix): register a serializer so a restored webview panel of `viewType` is handed back to the extension. */
+    export function registerWebviewPanelSerializer(viewType: string, serializer: WebviewPanelSerializer): Disposable;
   }
 
   export namespace commands {

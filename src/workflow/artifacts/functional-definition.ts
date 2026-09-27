@@ -12,6 +12,8 @@
  * the per-body optional field + renderer section are wired by later Tasks.
  */
 
+import { isFrId } from '../id.js';
+
 /**
  * A stable functional-requirement id, sequence-numbered like stories/tasks (lc1).
  *   - doc-level : `E<YYYYMMDD><hash8>:FR<nnn>`
@@ -35,4 +37,42 @@ export interface FunctionalRequirement {
 /** The functional-definition record carried optionally on every artifact body. */
 export interface FunctionalDefinition {
 	readonly requirements: readonly FunctionalRequirement[];
+}
+
+/**
+ * Assembly validation for a functional-definition record, run before an artifact
+ * is persisted. Absent-safe: `undefined` or an empty `requirements[]` is treated
+ * as absent and passes (returns `null`). Otherwise it rejects — with a specific
+ * message — a malformed FR id, a duplicate FR id, a per-item requirement missing
+ * its `itemRef`, or a per-item `itemRef` that resolves to no known story/task id.
+ * (A requirement whose id could not be minted never reaches here — `mintFrId`
+ * throws at mint time.) Returns the error string, or `null` when the record is
+ * valid/absent.
+ *
+ * @param knownItemIds the story/task ids a per-item `itemRef` may point at.
+ */
+export function validateFunctionalDefinition(
+	fd: FunctionalDefinition | undefined,
+	knownItemIds: ReadonlySet<string> = new Set<string>(),
+): string | null {
+	if (fd === undefined || fd.requirements.length === 0) return null; // absent-safe
+	const seen = new Set<string>();
+	for (const r of fd.requirements) {
+		if (!isFrId(r.id)) {
+			return `functionalDefinition: '${r.id}' is not a valid FR id`;
+		}
+		if (seen.has(r.id)) {
+			return `functionalDefinition: duplicate FR id '${r.id}'`;
+		}
+		seen.add(r.id);
+		if (r.scope === 'item') {
+			if (r.itemRef === undefined || r.itemRef.length === 0) {
+				return `functionalDefinition: per-item FR '${r.id}' is missing itemRef`;
+			}
+			if (!knownItemIds.has(r.itemRef)) {
+				return `functionalDefinition: FR '${r.id}' has a dangling itemRef '${r.itemRef}'`;
+			}
+		}
+	}
+	return null;
 }

@@ -19,6 +19,7 @@ import { artifactIdMarker, hldArtifactId } from '../storage.js';
 import { safeCanonical, storyWorkflowId } from '../id.js';
 import { trackerRefLine } from '../tracker/refs.js';
 import type { Citation, WorkflowArtifact } from '../types.js';
+import type { FunctionalDefinition } from './functional-definition.js';
 
 // ---------------------------------------------------------------------------
 // Body sub-shapes
@@ -92,6 +93,8 @@ export interface HldBody {
 	readonly alternativesConsidered: readonly Alternative[];
 	readonly chosenAlternative:     string;           // alternative id
 	readonly openQuestions:         readonly string[];
+	/** sc1 (S001): additive + absent-safe functional-definition record (k2/k6). */
+	readonly functionalDefinition?: FunctionalDefinition | undefined;
 }
 
 export type HldArtifact = WorkflowArtifact<HldBody>;

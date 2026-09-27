@@ -30,6 +30,7 @@ import { artifactIdMarker, planArtifactId } from '../storage.js';
 import { safeCanonical, storyWorkflowId, taskWorkflowId } from '../id.js';
 import type { TestStrategy as LldTestStrategy } from './lld.js';
 import type { ArtifactMetaBase, Citation } from '../types.js';
+import type { FunctionalDefinition } from './functional-definition.js';
 
 // ---------------------------------------------------------------------------
 // sc4 — TaskTestPlan
@@ -80,6 +81,8 @@ export interface PlanMeta extends ArtifactMetaBase {
 export interface PlanBody {
 	readonly tasks:                readonly PlanTask[];
 	readonly testStrategyCoverage: readonly TestStrategyCoverage[];
+	/** sc1 (S001): additive + absent-safe functional-definition record (k2/k6). */
+	readonly functionalDefinition?: FunctionalDefinition | undefined;
 }
 
 export interface PlanArtifact {

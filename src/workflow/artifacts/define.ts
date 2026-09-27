@@ -21,6 +21,7 @@ import { artifactIdMarker, defineArtifactId } from '../storage.js';
 import { safeCanonical, storyWorkflowId } from '../id.js';
 import { trackerRefLine } from '../tracker/refs.js';
 import type { Citation, WorkflowArtifact } from '../types.js';
+import type { FunctionalDefinition } from './functional-definition.js';
 
 // ---------------------------------------------------------------------------
 // Body shape
@@ -73,6 +74,9 @@ export interface DefineBody {
 	readonly constraints: readonly DefineConstraint[];
 	readonly stories:     readonly DefineStory[];
 	readonly openQuestions: readonly string[];
+	/** sc1 (S001): the functional-definition record this document states. Additive +
+	 *  absent-safe — a body without it renders byte-identically to before (k2/k6). */
+	readonly functionalDefinition?: FunctionalDefinition | undefined;
 }
 
 export type DefineArtifact = WorkflowArtifact<DefineBody>;
